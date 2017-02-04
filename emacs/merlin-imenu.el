@@ -72,9 +72,8 @@
 ;; the main indexing function
 (defun merlin-imenu-create-index ()
   "Set imenu function"
-  (merlin/sync)
   (let* ((pos (merlin/unmake-point (point)))
-         (outline (merlin/send-command `outline)))
+         (outline (merlin/call 'outline)))
     (when outline
       ;; (message outline)
       (let ((module-list) (value-list) (type-list)
