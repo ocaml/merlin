@@ -173,7 +173,7 @@
   (message "Merlin: merlin-imenu is selected, rescanning buffer..."))
 
 ;; enable Merlin to use the default tuareg-imenu module
-(defun merlin-use-tuarge-imenu ()
+(defun merlin-use-tuareg-imenu ()
   "Merlin: use the default imenu feature from Tuareg"
   (interactive)
   ;; change the index function
