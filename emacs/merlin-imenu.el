@@ -5,7 +5,7 @@
 ;; Created: 10 July 2016
 ;; Version: 0.1
 ;; Keywords: ocaml, imenu, merlin
-;; URL: 
+;; URL:
 
 (require 'imenu)
 (require 'tuareg)
@@ -61,7 +61,7 @@
     (forward-line (- line 1))
     ;; go to column
     (move-to-column col)
-    ;; go to the beginning position of the item 
+    ;; go to the beginning position of the item
     (search-forward item)
     (search-backward item)
     ;; return the marker
