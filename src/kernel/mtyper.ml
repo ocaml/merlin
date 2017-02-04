@@ -104,7 +104,8 @@ let type_implementation config caught cached parsetree =
 let type_interface config caught cached parsetree =
   let env0, snap0, (prefix, parsetree)  =
     match cached with
-    | Some (env0, snap0, `Interface items) when Btype.is_valid snap0 ->
+    | Some (env0, snap0, `Interface items) when
+        Btype.is_valid snap0 ->
       env0, snap0, compatible_prefix items parsetree
     | Some (env0, snap0, `Implementation _)  when Btype.is_valid snap0 ->
       env0, snap0, ([], parsetree)
@@ -135,10 +136,14 @@ let run tr config source parsetree =
   @@ fun tr ->
   Mocaml.setup_config config;
   let cached, state = match !cache with
-    | Some (config', state, result) when compare config' config = 0 ->
+    | Some (config', state, result)
+      when compare config' config = 0
+           && Mocaml.with_state state Env.check_state_consistency
+      ->
       (Some (result.initial_env, result.initial_snapshot, result.typedtree),
        state)
     | Some _ | None ->
+      Mocaml.flush_caches ();
       cache := None;
       (None, Mocaml.new_state ~unit_name:(Msource.unitname source))
   in
@@ -166,7 +171,7 @@ let with_typer t f =
   Mocaml.with_state t.state f
 
 let get_env ?pos t =
-  assert (Mocaml.is_state t.state);
+  assert (Mocaml.is_current_state t.state);
   Option.value ~default:t.initial_env (
     match t.typedtree with
     | `Implementation l -> Option.map ~f:(fun x -> x.part_env) (List.last l)
@@ -174,7 +179,7 @@ let get_env ?pos t =
   )
 
 let get_errors t =
-  assert (Mocaml.is_state t.state);
+  assert (Mocaml.is_current_state t.state);
   let errors, checks = Option.value ~default:([],[]) (
       let f x = x.part_errors, x.part_checks in
       match t.typedtree with
@@ -190,7 +195,7 @@ let get_errors t =
   (!caught)
 
 let get_typedtree t =
-  assert (Mocaml.is_state t.state);
+  assert (Mocaml.is_current_state t.state);
   let split_items l =
     let typd, typs = List.split (List.map ~f:(fun x -> x.typedtree_items) l) in
     (List.concat typd, List.concat typs)
@@ -208,7 +213,7 @@ let node_at tr ?(skip_recovered=false) t pos_cursor =
     print_result t Lexing.print_position pos_cursor
     ~return:Mbrowse.print
   @@ fun tr ->
-  assert (Mocaml.is_state t.state);
+  assert (Mocaml.is_current_state t.state);
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node

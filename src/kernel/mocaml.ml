@@ -1,5 +1,6 @@
 open Std
 
+
 (* Build settings *)
 
 let setup_config config = (
@@ -41,7 +42,7 @@ let with_state state f =
     current_state := state';
     reraise exn
 
-let is_state state = match !current_state with
+let is_current_state state = match !current_state with
   | Some state' -> state == state'
   | None -> false
 
@@ -100,4 +101,10 @@ let with_printer printer f =
 let clear_caches () = (
   Cmi_cache.clear ();
   Cmt_cache.clear ()
+)
+
+(* Flush cache *)
+let flush_caches () = (
+  Cmi_cache.flush ();
+  Cmt_cache.flush ()
 )

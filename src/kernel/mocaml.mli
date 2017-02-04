@@ -6,7 +6,7 @@ type typer_state
 
 val new_state : unit_name:string -> typer_state
 val with_state : typer_state -> (unit -> 'a) -> 'a
-val is_state : typer_state -> bool
+val is_current_state : typer_state -> bool
 
 (* Replace Outcome printer *)
 val default_printer :
@@ -16,5 +16,8 @@ val with_printer :
   (Format.formatter -> Extend_protocol.Reader.outcometree -> unit) ->
   (unit -> 'a) -> 'a
 
-(* Clear caches *)
+(* Clear caches, remove all items *)
 val clear_caches : unit -> unit
+
+(* Flush caches, remove outdated items *)
+val flush_caches : unit -> unit
