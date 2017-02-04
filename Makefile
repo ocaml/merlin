@@ -6,6 +6,7 @@ TARGET = ocamlmerlin-server
 ifdef ENABLE_COMPILED_EMACS_MODE
     TARGET_EMACS = emacs/merlin.elc \
 									 emacs/merlin-iedit.elc \
+									 emacs/merlin-imenu.elc \
 									 emacs/merlin-ac.elc \
 									 emacs/merlin-cap.elc \
 									 emacs/merlin-company.elc \
@@ -92,6 +93,8 @@ install-share: $(TARGET_EMACS)
 	test -f emacs/merlin.elc && install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc || true
 	install -m 644 emacs/merlin-iedit.el $(SHARE_DIR)/emacs/site-lisp/merlin-iedit.el
 	-install -m 644 emacs/merlin-iedit.elc $(SHARE_DIR)/emacs/site-lisp/merlin-iedit.elc
+	install -m 644 emacs/merlin-imenu.el $(SHARE_DIR)/emacs/site-lisp/merlin-imenu.el
+	-install -m 644 emacs/merlin-imenu.elc $(SHARE_DIR)/emacs/site-lisp/merlin-imenu.elc
 	install -m 644 emacs/merlin-ac.el $(SHARE_DIR)/emacs/site-lisp/merlin-ac.el
 	-install -m 644 emacs/merlin-ac.elc $(SHARE_DIR)/emacs/site-lisp/merlin-ac.elc
 	install -m 644 emacs/merlin-cap.el $(SHARE_DIR)/emacs/site-lisp/merlin-cap.el
