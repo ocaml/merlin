@@ -9,6 +9,7 @@
 
 (require 'imenu)
 (require 'tuareg)
+(require 'subr-x)
 
 ;;; enable depth and size threshold for OCaml modules with big size
 (setq max-lisp-eval-depth 10000)
