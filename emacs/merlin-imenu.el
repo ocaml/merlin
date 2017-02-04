@@ -10,6 +10,7 @@
 (require 'imenu)
 (require 'tuareg)
 (require 'subr-x)
+(require 'merlin)
 
 ;;; enable depth and size threshold for OCaml modules with big size
 (setq max-lisp-eval-depth 10000)
@@ -78,7 +79,8 @@
       ;; (message outline)
       (let ((module-list) (value-list) (type-list)
             (class-list) (exception-list) (constructor-list)
-            (label-list) (misc-list))
+            (label-list) (misc-list)
+            (marker) (start-pos) (fitem))
         (cl-labels
             ((visit-one (prefix x)
                         (let* ((fstart (nth 1 x))
