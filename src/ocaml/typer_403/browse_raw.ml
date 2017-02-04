@@ -75,6 +75,7 @@ type node =
   | Open_description         of open_description
 
   | Method_call              of expression * meth * Location.t
+  | Record_field             of expression * Types.label_description * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -82,6 +83,7 @@ type node =
 let node_update_env env0 = function
   | Pattern        {pat_env = env}  | Expression     {exp_env = env}
   | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _, _)
+  | Record_field   ({exp_env = env}, _, _)
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
   | Structure_item (_, env)         | Signature_item (_, env)
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
@@ -109,6 +111,7 @@ let node_real_loc loc0 = function
   | Expression              {exp_loc = loc}
   | Pattern                 {pat_loc = loc}
   | Method_call             (_, _, loc)
+  | Record_field            (_, _, loc)
   | Class_expr              {cl_loc = loc}
   | Module_expr             {mod_loc = loc}
   | Structure_item          ({str_loc = loc}, _)

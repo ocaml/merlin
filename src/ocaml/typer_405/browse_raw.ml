@@ -75,6 +75,8 @@ type node =
   | Open_description         of open_description
 
   | Method_call              of expression * meth * Location.t
+  | Record_field             of [`Expression of expression | `Pattern of pattern]
+                                * Types.label_description * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -82,6 +84,8 @@ type node =
 let node_update_env env0 = function
   | Pattern        {pat_env = env}  | Expression     {exp_env = env}
   | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _, _)
+  | Record_field   (`Expression {exp_env = env}, _, _)
+  | Record_field   (`Pattern {pat_env = env}, _, _)
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
   | Structure_item (_, env)         | Signature_item (_, env)
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
@@ -109,6 +113,7 @@ let node_real_loc loc0 = function
   | Expression              {exp_loc = loc}
   | Pattern                 {pat_loc = loc}
   | Method_call             (_, _, loc)
+  | Record_field            (_, _, loc)
   | Class_expr              {cl_loc = loc}
   | Module_expr             {mod_loc = loc}
   | Structure_item          ({str_loc = loc}, _)
@@ -176,6 +181,8 @@ let node_attributes = function
   | Class_description ci -> ci.ci_attributes
   | Class_type_declaration ci -> ci.ci_attributes
   | Method_call (obj,_,_) -> obj.exp_attributes
+  | Record_field (`Expression obj,_,_) -> obj.exp_attributes
+  | Record_field (`Pattern obj,_,_) -> obj.pat_attributes
   | _ -> []
 
 let node_merlin_loc loc0 node =
@@ -246,13 +253,24 @@ let of_pat_extra (pat,_,_) = match pat with
   | Tpat_constraint ct -> of_core_type ct
   | Tpat_type _ | Tpat_unpack | Tpat_open _ -> id_fold
 
+let of_record_field obj loc lbl =
+  fun env (f : _ f0) acc ->
+  app (Record_field (obj,lbl,loc)) env f acc
+
+let of_exp_record_field obj loc lbl =
+  of_record_field (`Expression obj) loc lbl
+
+let of_pat_record_field obj loc lbl =
+  of_record_field (`Pattern obj) loc lbl
+
 let of_pattern_desc = function
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p -> of_pattern p
   | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
     list_fold of_pattern ps
   | Tpat_record (ls,_) ->
-    list_fold (fun (_,_,p) -> of_pattern p) ls
+    list_fold (fun ({Location. txt = _; loc},desc,p) ->
+        of_pat_record_field p loc desc ** of_pattern p) ls
   | Tpat_or (p1,p2,_) ->
     of_pattern p1 ** of_pattern p2
 
@@ -288,17 +306,22 @@ let of_expression_desc loc = function
     list_fold of_case cs
   | Texp_tuple es | Texp_construct (_,_,es) | Texp_array es ->
     list_fold of_expression es
-  | Texp_variant (_,Some e) | Texp_field (e,_,_)
+  | Texp_variant (_,Some e)
   | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
     of_expression e
   | Texp_record { fields; extended_expression } ->
     option_fold of_expression extended_expression **
     let fold_field = function
       | (_,Typedtree.Kept _) -> id_fold
-      | (_,Typedtree.Overridden (_,e)) -> of_expression e
+      | (desc,Typedtree.Overridden (_,e)) ->
+        of_exp_record_field e loc desc ** of_expression e
     in
     array_fold fold_field fields
-  | Texp_setfield (e1,_,_,e2) | Texp_ifthenelse (e1,e2,None)
+  | Texp_field (e,{Location.loc},lbl) ->
+    of_expression e ** of_exp_record_field e loc lbl
+  | Texp_setfield (e1,{Location.loc},lbl,e2) ->
+    of_expression e1 ** of_expression e2 ** of_exp_record_field e1 loc lbl
+  | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
     of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
@@ -598,6 +621,7 @@ let of_node = function
     app (Class_type ci_expr) **
     list_fold of_typ_param ci_params
   | Method_call _ -> id_fold
+  | Record_field _ -> id_fold
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
@@ -653,6 +677,7 @@ let string_of_node = function
   | Class_description       _ -> "class_description"
   | Class_type_declaration  _ -> "class_type_declaration"
   | Method_call             _ -> "method_call"
+  | Record_field            _ -> "record_field"
   | Module_binding_name     _ -> "module_binding_name"
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
@@ -806,6 +831,8 @@ let node_paths =
   | Class_declaration ci -> ci_paths ci
   | Class_description ci -> ci_paths ci
   | Class_type_declaration ci -> ci_paths ci
+  | Record_field (_,{Types.lbl_res; lbl_name; _},loc) ->
+    fake_path lbl_res lbl_name loc
   | _ -> []
 
 let node_is_constructor = function

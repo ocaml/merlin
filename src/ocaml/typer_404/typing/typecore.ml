@@ -3214,11 +3214,27 @@ and type_label_access env srecord lid =
       Some(p0, p, ty_exp.level = generic_level || not !Clflags.principal)
     with Not_found -> None
   in
-  let labels = Typetexp.find_all_labels env lid.loc lid.txt in
-  let label =
-    wrap_disambiguate "This expression has" ty_exp
-      (Label.disambiguate lid env opath) labels in
-  (record, label, opath)
+  try
+    let labels = Typetexp.find_all_labels env lid.loc lid.txt in
+    let label =
+      wrap_disambiguate "This expression has" ty_exp
+        (Label.disambiguate lid env opath) labels in
+    (record, label, opath)
+  with exn ->
+    raise_error exn;
+    let fake_label = {
+      lbl_name = "";
+      lbl_res = ty_exp;
+      lbl_arg = newvar ();
+      lbl_mut = Mutable;
+      lbl_pos = 0;
+      lbl_all = [||];
+      lbl_repres = Record_regular;
+      lbl_private = Public;
+      lbl_loc = lid.loc;
+      lbl_attributes = [];
+    } in
+    (record, fake_label, opath)
 
 (* Typing format strings for printing or reading.
    These formats are used by functions in modules Printf, Format, and Scanf.

@@ -151,3 +151,6 @@ val create_package_type : Location.t -> Env.t ->
   Path.t * (Longident.t * Typedtree.core_type) list * Types.type_expr
 
 val constant: Parsetree.constant -> (Asttypes.constant, error) result
+
+val extract_concrete_record :
+  Env.t -> Types.type_expr -> Path.t * Path.t * Types.label_declaration list
