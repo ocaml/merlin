@@ -336,8 +336,10 @@ static void compute_socketpath(char socket_path[PATHSZ], const char merlin_path[
     tmpdir = "/tmp/";
 
   snprintf(socket_path, PATHSZ,
-      "%s/ocamlmerlin_%llu_%llu.socket", tmpdir,
-      (unsigned long long)st.st_dev, (unsigned long long)st.st_ino);
+      "%s/ocamlmerlin_%llu_%llu_%llu.socket", tmpdir,
+      (unsigned long long)getuid(),
+      (unsigned long long)st.st_dev,
+      (unsigned long long)st.st_ino);
 }
 
 /* Main */
