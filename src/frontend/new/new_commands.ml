@@ -378,6 +378,24 @@ of the buffer."
     end
   ;
 
+  command "search-by-polarity"
+    ~doc:"search-by-polarity -position pos -query ident\n\t\
+          TODO"
+    ~spec: [
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (query,_pos) -> (query,pos)));
+      arg "-query" "<string> Query of the form TODO"
+        (Marg.param "string" (fun query (_prefix,pos) -> (query,pos)));
+    ]
+    ~default:("",`None)
+    begin fun buffer (query,pos) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Polarity_search (query,pos))
+    end
+  ;
+
   command "shape"
 ~doc:"This command can be used to assist navigation in a source code buffer.
 It returns a tree of all relevant locations around the cursor.

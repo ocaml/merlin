@@ -222,6 +222,8 @@ let request_of_json context =
       request (Query (Complete_prefix (prefix, pos_of_json jpos, true, true)))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       request (Query (Expand_prefix (prefix, pos_of_json jpos, true)))
+    | [`String "search"; `String "polarity"; `String query; `String "at"; jpos] ->
+      request (Query (Polarity_search (query, pos_of_json jpos)))
     | (`String "document" :: (`String "" | `Null) :: pos) ->
       request (Query (Document (None, mandatory_position pos)))
     | (`String "document" :: `String path :: pos) ->

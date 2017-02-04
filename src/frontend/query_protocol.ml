@@ -97,6 +97,9 @@ type _ t =
   | Expand_prefix(* *)
     :  string * Msource.position * [`with_types] _bool
     -> completions t
+  | Polarity_search
+    :  string * Msource.position
+    -> completions t
   | Document(* *)
     : string option * Msource.position
     -> [ `Found of string

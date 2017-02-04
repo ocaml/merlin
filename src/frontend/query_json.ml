@@ -154,6 +154,11 @@ let dump (type a) : a t -> json =
           | `Source -> `String "source"
         );
     ]
+  | Polarity_search (query, pos) ->
+    mk "polarity-search" [
+      "query", `String query;
+      "position", mk_position pos;
+    ]
   | Occurrences (`Ident_at pos) ->
     mk "occurrences" [
       "kind", `String "identifiers";
@@ -253,6 +258,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Complete_prefix _, compl ->
     json_of_completions compl
   | Expand_prefix _, compl ->
+    json_of_completions compl
+  | Polarity_search _, compl ->
     json_of_completions compl
   | Document _, resp ->
     begin match resp with

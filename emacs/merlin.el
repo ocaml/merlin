@@ -945,6 +945,28 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
     (cons (if bounds (car bounds) (point))
           (point))))
 
+;;;;;;;;;;;;;;;;;;;;;
+;; POLARITY SEARCH ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--search (query &optional point)
+  (unless point (setq point (point)))
+  (merlin/call "search-by-polarity"
+               "-query" query
+               "-position" (merlin/unmake-point point)))
+
+(defun merlin-search (query)
+  (interactive "sSearch pattern: ")
+  (let* ((result (merlin--search query))
+         (entries (cdr (assoc 'entries result)))
+         (transform
+          (lambda (entry)
+            (let ((text (merlin/completion-entry-text "" entry))
+                  (desc (merlin/completion-entry-short-description entry)))
+              (vector (concat text " : " desc)
+                      `(lambda () (insert ,text)))))))
+    (popup-menu (easy-menu-create-menu "Results" (mapcar transform entries)))))
+
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
 ;;;;;;;;;;;;;;;;;

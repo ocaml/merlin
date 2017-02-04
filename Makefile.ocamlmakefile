@@ -239,6 +239,7 @@ SOURCES_LIB = \
 	src/analysis/ocamldoc.ml          \
 	src/analysis/track_definition.mli \
 	src/analysis/track_definition.ml  \
+	src/analysis/polarity_search.ml   \
 	src/analysis/expansion.ml         \
 	src/analysis/completion.mli       \
 	src/analysis/completion.ml        \
