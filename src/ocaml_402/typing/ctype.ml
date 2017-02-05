@@ -486,7 +486,7 @@ let closed_schema ty =
     unmark_type ty;
     false
 
-exception Non_closed of type_expr * bool
+exception Non_closed_type of type_expr * bool
 
 let free_variables = ref []
 let really_closed = ref None
@@ -540,12 +540,12 @@ let free_variables ?env ty =
 let closed_type ty =
   match free_vars ty with
       []           -> ()
-  | (v, real) :: _ -> raise (Non_closed (v, real))
+  | (v, real) :: _ -> raise (Non_closed_type (v, real))
 
 let closed_parameterized_type params ty =
   List.iter mark_type params;
   let ok =
-    try closed_type ty; true with Non_closed _ -> false in
+    try closed_type ty; true with Non_closed_type _ -> false in
   List.iter unmark_type params;
   unmark_type ty;
   ok
@@ -573,7 +573,7 @@ let closed_type_decl decl =
     end;
     unmark_type_decl decl;
     None
-  with Non_closed (ty, _) ->
+  with Non_closed_type (ty, _) ->
     unmark_type_decl decl;
     Some ty
 
@@ -586,7 +586,7 @@ let closed_extension_constructor ext =
     end;
     unmark_extension_constructor ext;
     None
-  with Non_closed (ty, _) ->
+  with Non_closed_type (ty, _) ->
     unmark_extension_constructor ext;
     Some ty
 
@@ -594,7 +594,7 @@ type closed_class_failure =
     CC_Method of type_expr * bool * string * type_expr
   | CC_Value of type_expr * bool * string * type_expr
 
-exception Failure of closed_class_failure
+exception CC_Failure of closed_class_failure
 
 let closed_class params sign =
   let ty = object_fields (repr sign.csig_self) in
@@ -609,14 +609,14 @@ let closed_class params sign =
     List.iter
       (fun (lab, kind, ty) ->
         if field_kind_repr kind = Fpresent then
-        try closed_type ty with Non_closed (ty0, real) ->
-          raise (Failure (CC_Method (ty0, real, lab, ty))))
+        try closed_type ty with Non_closed_type (ty0, real) ->
+          raise (CC_Failure (CC_Method (ty0, real, lab, ty))))
       fields;
     mark_type_params (repr sign.csig_self);
     List.iter unmark_type params;
     unmark_class_signature sign;
     None
-  with Failure reason ->
+  with CC_Failure reason ->
     mark_type_params (repr sign.csig_self);
     List.iter unmark_type params;
     unmark_class_signature sign;
@@ -3378,7 +3378,7 @@ type class_match_failure =
   | CM_Private_method of string
   | CM_Virtual_method of string
 
-exception Failure of class_match_failure list
+exception CM_Failure of class_match_failure list
 
 let rec moregen_clty trace type_pairs env cty1 cty2 =
   try
@@ -3389,7 +3389,7 @@ let rec moregen_clty trace type_pairs env cty1 cty2 =
         moregen_clty true type_pairs env cty1 cty2
     | Cty_arrow (l1, ty1, cty1'), Cty_arrow (l2, ty2, cty2') when l1 = l2 ->
         begin try moregen true type_pairs env ty1 ty2 with Unify trace ->
-          raise (Failure [CM_Parameter_mismatch (env, expand_trace env trace)])
+          raise (CM_Failure [CM_Parameter_mismatch (env, expand_trace env trace)])
         end;
         moregen_clty false type_pairs env cty1' cty2'
     | Cty_signature sign1, Cty_signature sign2 ->
@@ -3401,7 +3401,7 @@ let rec moregen_clty trace type_pairs env cty1 cty2 =
         List.iter
           (fun (lab, k1, t1, k2, t2) ->
             begin try moregen true type_pairs env t1 t2 with Unify trace ->
-              raise (Failure [CM_Meth_type_mismatch
+              raise (CM_Failure [CM_Meth_type_mismatch
                                  (lab, env, expand_trace env trace)])
            end)
         pairs;
@@ -3409,14 +3409,14 @@ let rec moregen_clty trace type_pairs env cty1 cty2 =
         (fun lab (mut, v, ty) ->
            let (mut', v', ty') = Vars.find lab sign1.csig_vars in
            try moregen true type_pairs env ty' ty with Unify trace ->
-             raise (Failure [CM_Val_type_mismatch
+             raise (CM_Failure [CM_Val_type_mismatch
                                 (lab, env, expand_trace env trace)]))
         sign2.csig_vars
   | _ ->
-      raise (Failure [])
+      raise (CM_Failure [])
   with
-    Failure error when trace || error = [] ->
-      raise (Failure (CM_Class_type_mismatch (env, cty1, cty2)::error))
+    CM_Failure error when trace || error = [] ->
+      raise (CM_Failure (CM_Class_type_mismatch (env, cty1, cty2)::error))
 
 let match_class_types ?(trace=true) env pat_sch subj_sch =
   let type_pairs = TypePairs.create 53 in
@@ -3505,7 +3505,7 @@ let match_class_types ?(trace=true) env pat_sch subj_sch =
           moregen_clty trace type_pairs env patt subj;
           []
         with
-          Failure r -> r
+          CM_Failure r -> r
         end
     | error ->
         CM_Class_type_mismatch (env, patt, subj)::error
@@ -3524,7 +3524,7 @@ let rec equal_clty trace type_pairs subst env cty1 cty2 =
         equal_clty true type_pairs subst env cty1 cty2
     | Cty_arrow (l1, ty1, cty1'), Cty_arrow (l2, ty2, cty2') when l1 = l2 ->
         begin try eqtype true type_pairs subst env ty1 ty2 with Unify trace ->
-          raise (Failure [CM_Parameter_mismatch (env, expand_trace env trace)])
+          raise (CM_Failure [CM_Parameter_mismatch (env, expand_trace env trace)])
         end;
         equal_clty false type_pairs subst env cty1' cty2'
     | Cty_signature sign1, Cty_signature sign2 ->
@@ -3537,7 +3537,7 @@ let rec equal_clty trace type_pairs subst env cty1 cty2 =
           (fun (lab, k1, t1, k2, t2) ->
              begin try eqtype true type_pairs subst env t1 t2 with
                Unify trace ->
-                 raise (Failure [CM_Meth_type_mismatch
+                 raise (CM_Failure [CM_Meth_type_mismatch
                                     (lab, env, expand_trace env trace)])
              end)
           pairs;
@@ -3545,16 +3545,16 @@ let rec equal_clty trace type_pairs subst env cty1 cty2 =
           (fun lab (_, _, ty) ->
              let (_, _, ty') = Vars.find lab sign1.csig_vars in
              try eqtype true type_pairs subst env ty' ty with Unify trace ->
-               raise (Failure [CM_Val_type_mismatch
+               raise (CM_Failure [CM_Val_type_mismatch
                                   (lab, env, expand_trace env trace)]))
           sign2.csig_vars
     | _ ->
         raise
-          (Failure (if trace then []
+          (CM_Failure (if trace then []
                     else [CM_Class_type_mismatch (env, cty1, cty2)]))
   with
-    Failure error when trace ->
-      raise (Failure (CM_Class_type_mismatch (env, cty1, cty2)::error))
+    CM_Failure error when trace ->
+      raise (CM_Failure (CM_Class_type_mismatch (env, cty1, cty2)::error))
 
 let match_class_declarations env patt_params patt_type subj_params subj_type =
   let type_pairs = TypePairs.create 53 in
@@ -3636,10 +3636,10 @@ let match_class_declarations env patt_params patt_type subj_params subj_type =
         let lp = List.length patt_params in
         let ls = List.length subj_params in
         if lp  <> ls then
-          raise (Failure [CM_Parameter_arity_mismatch (lp, ls)]);
+          raise (CM_Failure [CM_Parameter_arity_mismatch (lp, ls)]);
         List.iter2 (fun p s ->
           try eqtype true type_pairs subst env p s with Unify trace ->
-            raise (Failure [CM_Type_parameter_mismatch
+            raise (CM_Failure [CM_Type_parameter_mismatch
                                (env, expand_trace env trace)]))
           patt_params subj_params;
      (* old code: equal_clty false type_pairs subst env patt_type subj_type; *)
@@ -3653,7 +3653,7 @@ let match_class_declarations env patt_params patt_type subj_params subj_type =
           (clty_params patt_params patt_type)
           (clty_params subj_params subj_type)
       with
-        Failure r -> r
+        CM_Failure r -> r
       end
   | error ->
       error
