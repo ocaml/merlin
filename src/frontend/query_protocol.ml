@@ -78,6 +78,8 @@ type shape = {
 
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
+type _ _bool = bool
+
 type _ t =
   | Type_expr(* *)
     :  string * Msource.position
@@ -89,10 +91,11 @@ type _ t =
     :  Msource.position
     -> Location.t list t
   | Complete_prefix(* *)
-    :  string * Msource.position * bool
+    :  string * Msource.position *
+       [`with_documentation] _bool * [`with_types] _bool
     -> completions t
   | Expand_prefix(* *)
-    :  string * Msource.position
+    :  string * Msource.position * [`with_types] _bool
     -> completions t
   | Document(* *)
     : string option * Msource.position

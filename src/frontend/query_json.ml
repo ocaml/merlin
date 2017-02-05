@@ -67,17 +67,19 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
-  | Complete_prefix (prefix, pos, doc) ->
+  | Complete_prefix (prefix, pos, doc, typ) ->
     mk "complete-prefix" [
       "prefix", `String prefix;
       "position", mk_position pos;
-      "doc", `Bool doc;
+      "with-doc", `Bool doc;
+      "with-types", `Bool typ;
     ]
 
-  | Expand_prefix (prefix, pos) ->
+  | Expand_prefix (prefix, pos, typ) ->
     mk "expand-prefix" [
       "prefix", `String prefix;
       "position", mk_position pos;
+      "with-types", `Bool typ;
     ]
   | Document (identifier, pos) ->
     mk "document" [

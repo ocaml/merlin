@@ -32,31 +32,33 @@ open Misc
 open Query_protocol
 module Printtyp = Type_utils.Printtyp
 
-let print_completion_entries tr config source entries =
-  let input_ref = ref [] and output_ref = ref [] in
-  let preprocess entry =
-    match Completion.raw_info_printer entry with
-    | `String s -> `String s
-    | `Print t ->
-      let r = ref "" in
-      input_ref := t :: !input_ref;
-      output_ref := r :: !output_ref;
-      `Print r
-    | `Concat (s,t) ->
-      let r = ref "" in
-      input_ref := t :: !input_ref;
-      output_ref := r :: !output_ref;
-      `Concat (s,r)
-  in
-  let entries = List.map ~f:(Completion.map_entry preprocess) entries in
-  let outcomes = Mreader.print_batch_outcome tr config source !input_ref in
-  List.iter2 (:=) !output_ref outcomes;
-  let postprocess = function
-    | `String s -> s
-    | `Print r -> !r
-    | `Concat (s,r) -> s ^ !r
-  in
-  List.rev_map ~f:(Completion.map_entry postprocess) entries
+let print_completion_entries ~with_types tr config source entries =
+  if with_types then
+    let input_ref = ref [] and output_ref = ref [] in
+    let preprocess entry =
+      match Completion.raw_info_printer entry with
+      | `String s -> `String s
+      | `Print t ->
+        let r = ref "" in
+        input_ref := t :: !input_ref;
+        output_ref := r :: !output_ref;
+        `Print r
+      | `Concat (s,t) ->
+        let r = ref "" in
+        input_ref := t :: !input_ref;
+        output_ref := r :: !output_ref;
+        `Concat (s,r)
+    in
+    let entries = List.map ~f:(Completion.map_entry preprocess) entries in
+    let outcomes = Mreader.print_batch_outcome tr config source !input_ref in
+    List.iter2 (:=) !output_ref outcomes;
+    let postprocess = function
+      | `String s -> s
+      | `Print r -> !r
+      | `Concat (s,r) -> s ^ !r
+    in
+    List.rev_map ~f:(Completion.map_entry postprocess) entries
+  else List.rev_map ~f:(Completion.map_entry (fun _ -> "")) entries
 
 let make_pipeline (trace,config,source) =
   Mpipeline.make trace config source
@@ -336,7 +338,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
-  | Complete_prefix (prefix, pos, with_doc) ->
+  | Complete_prefix (prefix, pos, with_doc, with_types) ->
     with_typer buffer ~for_completion:pos @@ fun pipeline typer ->
     let config = Mpipeline.final_config pipeline in
     let no_labels = Mpipeline.reader_no_labels_for_completion pipeline in
@@ -354,8 +356,9 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-      print_completion_entries tr config (Mpipeline.input_source pipeline) @@
-      Completion.node_complete config ?get_doc ?target_type env node prefix
+      Completion.node_complete config ?get_doc ?target_type env node prefix |>
+      print_completion_entries ~with_types tr config
+        (Mpipeline.input_source pipeline)
     and context = match context with
       | `Application context when no_labels ->
         `Application {context with Compl.labels = []}
@@ -363,15 +366,16 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     {Compl. entries; context }
 
-  | Expand_prefix (prefix, pos) ->
+  | Expand_prefix (prefix, pos, with_types) ->
     with_typer buffer @@ fun pipeline typer ->
     let source = Mpipeline.input_source pipeline in
     let pos = Msource.get_lexing_pos tr source pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at tr typer pos) in
     let config = Mpipeline.final_config pipeline in
     let global_modules = Mconfig.global_modules config in
-    let entries = print_completion_entries tr config source @@
-      Completion.expand_prefix env ~global_modules prefix
+    let entries =
+      Completion.expand_prefix env ~global_modules prefix |>
+      print_completion_entries ~with_types tr config source
     in
     { Compl. entries ; context = `Unknown }
 
@@ -454,7 +458,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
          `Int l1; `Int c1;
          `Int l2; `Int c2;
        ]
-    in 
+    in
     Logger.logj "destruct" "nodes before" (fun () -> `List (List.map nodes ~f:dump_node));
     let nodes =
       List.drop_while nodes

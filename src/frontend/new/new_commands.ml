@@ -77,23 +77,27 @@ let all_commands = [
     ~spec: [
       ("-position",
        "<position> Position to complete",
-       marg_position (fun pos (prefix,_pos,doc) -> (prefix,pos,doc))
+       marg_position (fun pos (txt,_pos,doc,typ) -> (txt,pos,doc,typ))
       );
       ("-doc",
-       "<bool> Add docstring to entries",
-       Marg.bool (fun doc (prefix,pos,_doc) -> (prefix,pos,doc))
+       "<bool> Add docstring to entries (default is false)",
+       Marg.bool (fun doc (txt,pos,_doc,typ) -> (txt,pos,doc,typ))
       );
       ("-prefix",
        "<string> Prefix to complete",
-       Marg.param "string" (fun prefix (_prefix,pos,doc) -> (prefix,pos,doc))
+       Marg.param "string" (fun txt (_prefix,pos,doc,typ) -> (txt,pos,doc,typ))
+      );
+      ("-types",
+       "<bool> Report type information (default is true)",
+       Marg.bool (fun typ (txt,pos,doc,_typ) -> (txt,pos,doc,typ))
       );
     ]
-    ~default:("",`None,false)
-    begin fun buffer (prefix,pos,doc) ->
+    ~default:("",`None,false,true)
+    begin fun buffer (txt,pos,doc,typ) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        run buffer (Query_protocol.Complete_prefix (prefix,pos,doc))
+        run buffer (Query_protocol.Complete_prefix (txt,pos,doc,typ))
     end
   ;
 
@@ -153,19 +157,23 @@ let all_commands = [
     ~spec: [
       ("-position",
        "<position> Position to complete",
-       marg_position (fun pos (prefix,_pos) -> (prefix,pos))
+       marg_position (fun pos (txt,_pos,typ) -> (txt,pos,typ))
       );
       ("-prefix",
        "<string> Prefix to complete",
-       Marg.param "string" (fun prefix (_prefix,pos) -> (prefix,pos))
+       Marg.param "string" (fun txt (_prefix,pos,typ) -> (txt,pos,typ))
+      );
+      ("-types",
+       "<bool> Report type information (default is false)",
+       Marg.bool (fun typ (txt,pos,_typ) -> (txt,pos,typ))
       );
     ]
-    ~default:("",`None)
-    begin fun buffer (prefix,pos) ->
+    ~default:("",`None,false)
+    begin fun buffer (txt,pos,typ) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        run buffer (Query_protocol.Expand_prefix (prefix,pos))
+        run buffer (Query_protocol.Expand_prefix (txt,pos,typ))
     end
   ;
 

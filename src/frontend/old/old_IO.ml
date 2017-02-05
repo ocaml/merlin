@@ -216,12 +216,12 @@ let request_of_json context =
     | [`String "enclosing"; jpos] ->
       request (Query (Enclosing (pos_of_json jpos)))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
-      request (Query (Complete_prefix (prefix, pos_of_json jpos, false)))
+      request (Query (Complete_prefix (prefix, pos_of_json jpos, false, true)))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos;
        `String "with"; `String "doc"] ->
-      request (Query (Complete_prefix (prefix, pos_of_json jpos, true)))
+      request (Query (Complete_prefix (prefix, pos_of_json jpos, true, true)))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
-      request (Query (Expand_prefix (prefix, pos_of_json jpos)))
+      request (Query (Expand_prefix (prefix, pos_of_json jpos, true)))
     | (`String "document" :: (`String "" | `Null) :: pos) ->
       request (Query (Document (None, mandatory_position pos)))
     | (`String "document" :: `String path :: pos) ->
