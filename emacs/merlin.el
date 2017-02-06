@@ -460,13 +460,7 @@ return (LOC1 . LOC2)."
         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
                                           merlin-buffer-packages))
         )
-    ;; Log last commands
-    (setq merlin-debug-last-commands
-          (cons (cons (cons command args) nil) merlin-debug-last-commands))
-    (let ((cdr (nthcdr 5 merlin-debug-last-commands)))
-      (when cdr (setcdr cdr nil)))
     ;; Compute verbosity
-
     (when (eq merlin/verbosity-context t)
         (setq merlin/verbosity-context (cons command args)))
     (if (not merlin/verbosity-context)
@@ -474,6 +468,7 @@ return (LOC1 . LOC2)."
       (if (equal merlin/verbosity-context (car-safe merlin--verbosity-cache))
           (setcdr merlin--verbosity-cache (1+ (cdr merlin--verbosity-cache)))
         (setq merlin--verbosity-cache (cons merlin/verbosity-context 0))))
+    ;; Compute full command line.
     (setq args (merlin--map-flatten-to-string
                  "single" command "-protocol" "sexp"
                  ;; Is debug mode enabled
@@ -487,6 +482,12 @@ return (LOC1 . LOC2)."
                    (cons "-flags" merlin-buffer-flags))
                  "-filename" (buffer-file-name (buffer-base-buffer))
                  args))
+    ;; Log last commands
+    (setq merlin-debug-last-commands
+          (cons (cons (cons command args) nil) merlin-debug-last-commands))
+    (let ((cdr (nthcdr 5 merlin-debug-last-commands)))
+      (when cdr (setcdr cdr nil)))
+    ;; Call merlin process
     (setcdr (car merlin-debug-last-commands)
             (merlin--call-process binary args))))
 
