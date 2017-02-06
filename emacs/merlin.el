@@ -783,11 +783,14 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
       (message "%s" (cdr (assoc 'message e))))
     (merlin-transform-display-errors errors)
     (when view-errors-p
-      (if merlin-erroneous-buffer
-          (message "(%d pending errors, use %s to jump)"
-                   (length errors)
-                   (substitute-command-keys "\\[merlin-error-next]"))
-        (message "No errors")))))
+      (let ((prefix (current-message)))
+	(setq prefix (if prefix (concat prefix " ") ""))
+	(if merlin-erroneous-buffer
+	    (message "%s(%d pending errors, use %s to jump)"
+		     prefix
+		     (length errors)
+		     (substitute-command-keys "\\[merlin-error-next]"))
+	  (message "%sNo errors" prefix))))))
 
 (defun merlin-error-after-save ()
   "Determine whether the buffer should be checked for errors depending on the value of merlin-error-after-save setting."
