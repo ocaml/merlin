@@ -1544,7 +1544,7 @@ Empty string defaults to jumping to all these."
   "Print the version of the ocamlmerlin binary."
   (interactive)
   (with-demoted-errors "Error invoking merlin: %S"
-    (message "%s (from shell)" (merlin--call-merlin "-version"))))
+    (message "%s" (merlin--call-merlin "-version"))))
 
 (defun merlin--configuration ()
   (when (or merlin-configuration-function merlin-grouping-function)
