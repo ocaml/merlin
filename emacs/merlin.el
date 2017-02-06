@@ -451,7 +451,7 @@ return (LOC1 . LOC2)."
   ; Really start process
   (let ((binary      (merlin-command))
         (flags       (merlin-lookup 'flags merlin-buffer-configuration))
-        (process-environment (merlin-lookup 'env merlin-buffer-configuration))
+        (process-environment (copy-list process-environment))
         ; FIXME use logfile
         (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
                          merlin-logfile))
@@ -460,6 +460,16 @@ return (LOC1 . LOC2)."
         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
                                           merlin-buffer-packages))
         )
+    ;; Update environment
+    (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
+      (let* ((equal-pos (string-match "=" binding))
+             (prefix (if equal-pos
+                       (substring binding 0 (1+ equal-pos))
+                       binding))
+             (is-prefix (lambda (x) (string-prefix-p prefix x))))
+        (setq process-environment (delete-if is-prefix process-environment))
+        (when equal-pos
+          (setq process-environment (cons binding process-environment)))))
     ;; Compute verbosity
     (when (eq merlin/verbosity-context t)
         (setq merlin/verbosity-context (cons command args)))
@@ -783,13 +793,13 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (merlin-transform-display-errors errors)
     (when view-errors-p
       (let ((prefix (current-message)))
-	(setq prefix (if prefix (concat prefix " ") ""))
-	(if merlin-erroneous-buffer
-	    (message "%s(%d pending errors, use %s to jump)"
-		     prefix
-		     (length errors)
-		     (substitute-command-keys "\\[merlin-error-next]"))
-	  (message "%sNo errors" prefix))))))
+        (setq prefix (if prefix (concat prefix " ") ""))
+        (if merlin-erroneous-buffer
+          (message "%s(%d pending errors, use %s to jump)"
+                   prefix
+                   (length errors)
+                   (substitute-command-keys "\\[merlin-error-next]"))
+          (message "%sNo errors" prefix))))))
 
 (defun merlin-error-after-save ()
   "Determine whether the buffer should be checked for errors depending on the value of merlin-error-after-save setting."
@@ -1690,7 +1700,7 @@ Short cuts:
     ;; When disabling merlin
     (progn
       (when merlin-highlight-overlay
-	(delete-overlay merlin-highlight-overlay))
+        (delete-overlay merlin-highlight-overlay))
       (remove-overlays nil nil 'merlin-kind 'highlight)
       (remove-overlays nil nil 'merlin-kind 'error))))
 
