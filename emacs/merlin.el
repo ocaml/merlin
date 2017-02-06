@@ -1618,7 +1618,7 @@ Empty string defaults to jumping to all these."
       '(menu-item "Check configuration" merlin-configuration-check
                   :help "Display status of '.merlin'."))
     (define-key merlin-menu-map [setflags]
-      '(menu-item "Set compiler flags" merlin-flags-set
+      '(menu-item "Set compiler flags" merlin-flags
                   :help "Pass specific compiler flags for current buffer."))
     (define-key merlin-menu-map [extensions]
       '(menu-item "Syntax extensions" merlin-extensions
