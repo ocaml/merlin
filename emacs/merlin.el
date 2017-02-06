@@ -512,8 +512,7 @@ return (LOC1 . LOC2)."
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
     (merlin--call-merlin "stop-server")
-    (setq merlin-erroneous-buffer nil)
-    (message "Restarted merlin %S" merlin-instance)))
+    (setq merlin-erroneous-buffer nil)))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
