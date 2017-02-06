@@ -36,6 +36,7 @@ module Server = struct
         | exception Exit -> raise Exit
         | exception _exn -> "\x01"
       in
+      flush_all ();
       io_move io_std' io_std;
       protect_eintr (fun () -> ignore (Unix.write fd result 0 1))
 
