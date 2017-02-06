@@ -480,7 +480,7 @@ return (LOC1 . LOC2)."
         (setq merlin--verbosity-cache (cons merlin/verbosity-context 0))))
     ;; Compute full command line.
     (setq args (merlin--map-flatten-to-string
-                 "single" command "-protocol" "sexp"
+                 "server" command "-protocol" "sexp"
                  ;; Is debug mode enabled
                  (when merlin-debug '("-log-file" "-"))
                  ;; If command is repeated, increase verbosity
