@@ -61,6 +61,7 @@ module Cache = File_cache.Make (struct
         let rec aux () =
           let line = String.trim (input_line ic) in
           if line = "" then ()
+
           else if String.is_prefixed ~by:"B " line then
             tell (`B (String.drop 2 line))
           else if String.is_prefixed ~by:"S " line then
@@ -103,6 +104,8 @@ module Cache = File_cache.Make (struct
       | exn ->
         close_in_noerr ic;
         raise exn
+
+    let cache_name = "Mconfig_dot"
   end)
 
 let find fname =

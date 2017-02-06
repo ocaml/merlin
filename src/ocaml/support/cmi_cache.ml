@@ -37,4 +37,5 @@ include File_cache.Make (struct
     cmi = Cmi_format.read_cmi name;
     cmi_cache = ref Not_found;
   }
+  let cache_name = "Cmi_cache"
 end)

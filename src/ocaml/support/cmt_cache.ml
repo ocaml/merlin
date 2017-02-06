@@ -60,4 +60,6 @@ include File_cache.Make (struct
     cmt_infos = Cmt_format.read_cmt file ;
     location_trie = String.Map.empty ;
   }
+
+  let cache_name = "Cmt_cache"
 end)

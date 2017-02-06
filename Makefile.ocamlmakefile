@@ -45,10 +45,10 @@ SOURCES_LIB = \
 	src/utils/misc.ml                 \
 	src/utils/sexp.mli                \
 	src/utils/sexp.ml                 \
-	src/utils/file_cache.mli          \
-	src/utils/file_cache.ml           \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
+	src/utils/file_cache.mli          \
+	src/utils/file_cache.ml           \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
 	src/ocaml/support/identifiable.mli \

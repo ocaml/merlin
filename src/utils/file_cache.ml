@@ -29,7 +29,11 @@
 module Make(Input : sig
   type t
   val read : string -> t
+
+  val cache_name : string
 end) = struct
+  let section = "File_cache("^Input.cache_name^")"
+
   let cache : (string, Misc.file_id * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
@@ -37,27 +41,36 @@ end) = struct
     let fid = Misc.file_id filename in
     try
       let fid', file = Hashtbl.find cache filename in
-      if not (Misc.file_id_check fid fid') then raise Not_found;
+      if (Misc.file_id_check fid fid') then
+        Logger.logf section "read" "reusing %S" filename
+      else (
+        Logger.logf section "read" "%S was updated on disk" filename;
+        raise Not_found;
+      );
       file
     with Not_found ->
     try
+      Logger.logf section "read" "reading %S from disk" filename;
       let file = Input.read filename in
       Hashtbl.replace cache filename (fid, file);
       file
     with exn ->
+      Logger.logf section "read" "failed to read %S (%t)"
+        filename (fun () -> Printexc.to_string exn);
       Hashtbl.remove cache filename;
       raise exn
 
   let flush () =
-    let invalid =
-      Hashtbl.fold
-        (fun filename (fid, _) lst ->
-           if Misc.file_id_check (Misc.file_id filename) fid then
-             lst
-           else
-             filename :: lst)
-        cache []
+    let add_invalid filename (fid, _) invalids =
+      if Misc.file_id_check (Misc.file_id filename) fid then (
+        Logger.logf section "flush" "keeping %S" filename;
+        invalids
+      ) else (
+        Logger.logf section "flush" "removing %S" filename;
+        filename :: invalids
+      )
     in
+    let invalid = Hashtbl.fold add_invalid cache [] in
     List.iter (Hashtbl.remove cache) invalid
 
   let clear () =
