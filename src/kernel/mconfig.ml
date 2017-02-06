@@ -682,7 +682,11 @@ let build_path config = (
     List.map (Misc.expand_directory stdlib) dirs
   in
   let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
-  config.query.directory :: List.rev_append exp_dirs stdlib
+  let result = config.query.directory :: List.rev_append exp_dirs stdlib in
+  Logger.logf "Mconfig" "build_path" "%d items in path, %t after deduplication"
+    (List.length result)
+    (fun () -> string_of_int (List.length (List.filter_dup result)));
+  result
 )
 
 let cmt_path config = (
