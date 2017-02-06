@@ -31,3 +31,7 @@ exception Constr_not_found
 val find_constr_by_tag:
   constructor_tag -> constructor_declaration list ->
     constructor_declaration
+
+val label_descrs :
+  type_expr -> label_declaration list -> record_representation ->
+  Asttypes.private_flag -> (Ident.t * label_description) list

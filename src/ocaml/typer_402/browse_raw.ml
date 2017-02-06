@@ -75,6 +75,7 @@ type node =
   | Open_description         of open_description
 
   | Method_call              of expression * meth * Location.t
+  | Record_field             of expression * Types.label_description * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -82,6 +83,7 @@ type node =
 let node_update_env env0 = function
   | Pattern        {pat_env = env}  | Expression     {exp_env = env}
   | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _, _)
+  | Record_field   ({exp_env = env}, _, _)
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
   | Structure_item (_, env)         | Signature_item (_, env)
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
@@ -109,10 +111,11 @@ let node_real_loc loc0 = function
   | Expression              {exp_loc = loc}
   | Pattern                 {pat_loc = loc}
   | Method_call             (_, _, loc)
+  | Record_field            (_, _, loc)
   | Class_expr              {cl_loc = loc}
   | Module_expr             {mod_loc = loc}
-  | Signature_item          ({sig_loc = loc}, _)
   | Structure_item          ({str_loc = loc}, _)
+  | Signature_item          ({sig_loc = loc}, _)
   | Module_type             {mty_loc = loc}
   | Core_type               {ctyp_loc = loc}
   | Class_type              {cltyp_loc = loc}
@@ -212,6 +215,10 @@ let of_method_call obj meth arg loc =
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
+let of_record_field obj loc lbl =
+  fun env (f : _ f0) acc ->
+  app (Record_field (obj,lbl,loc)) env f acc
+
 let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ -> id_fold
@@ -234,13 +241,17 @@ let of_expression_desc loc = function
     list_fold of_case cs
   | Texp_tuple es | Texp_construct (_,_,es) | Texp_array es ->
     list_fold of_expression es
-  | Texp_variant (_,Some e) | Texp_field (e,_,_)
+  | Texp_variant (_,Some e)
   | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
     of_expression e
   | Texp_record (ls,e) ->
     option_fold of_expression e **
     list_fold (fun (_,_,e) -> of_expression e) ls
-  | Texp_setfield (e1,_,_,e2) | Texp_ifthenelse (e1,e2,None)
+  | Texp_field (e,{Location.loc},lbl) ->
+    of_expression e ** of_record_field e loc lbl
+  | Texp_setfield (e1,{Location.loc},lbl,e2) ->
+    of_expression e1 ** of_expression e2 ** of_record_field e1 loc lbl
+  | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
     of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
@@ -535,6 +546,7 @@ let of_node = function
     app (Class_type ci_expr) **
     list_fold of_typ_param ci_params
   | Method_call _ -> id_fold
+  | Record_field _ -> id_fold
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
@@ -590,6 +602,7 @@ let string_of_node = function
   | Class_description       _ -> "class_description"
   | Class_type_declaration  _ -> "class_type_declaration"
   | Method_call             _ -> "method_call"
+  | Record_field            _ -> "record_field"
   | Module_binding_name     _ -> "module_binding_name"
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
@@ -759,4 +772,5 @@ let node_attributes = function
   | Class_description ci -> ci.ci_attributes
   | Class_type_declaration ci -> ci.ci_attributes
   | Method_call (obj,_,_) -> obj.exp_attributes
+  | Record_field (obj,_,_) -> obj.exp_attributes
   | _ -> []

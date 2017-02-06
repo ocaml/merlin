@@ -52,3 +52,16 @@ let rec last = function
   | Pident id -> Ident.name id
   | Pdot(_, s, _) -> s
   | Papply(_, p) -> last p
+
+let rec compare p1 p2 =
+  match (p1, p2) with
+    (Pident id1, Pident id2) -> Pervasives.compare id1 id2
+  | (Pdot(p1, s1, _pos1), Pdot(p2, s2, _pos2)) ->
+      let h = compare p1 p2 in
+      if h <> 0 then h else String.compare s1 s2
+  | (Papply(fun1, arg1), Papply(fun2, arg2)) ->
+      let h = compare fun1 fun2 in
+      if h <> 0 then h else compare arg1 arg2
+  | ((Pident _ | Pdot _), (Pdot _ | Papply _)) -> -1
+  | ((Pdot _ | Papply _), (Pident _ | Pdot _)) -> 1
+

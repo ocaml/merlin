@@ -42,3 +42,5 @@ type typath =
 
 val constructor_typath: t -> typath
 val is_constructor_typath: t -> bool
+
+val compare : t -> t -> int
