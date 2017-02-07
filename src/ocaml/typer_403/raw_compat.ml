@@ -84,7 +84,7 @@ let dest_tstr_eval str =
 (* For Completion *)
 
 let labels_of_application ~prefix = function
-  | {Typedtree. exp_desc = Texp_apply (f, args); exp_env; _} ->
+  | {Typedtree. exp_desc = Typedtree.Texp_apply (f, args); exp_env; _} ->
     let open Typedtree in
     let rec labels t =
       let t = Ctype.repr t in
