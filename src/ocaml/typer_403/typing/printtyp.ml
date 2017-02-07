@@ -584,7 +584,9 @@ let set_printing_env env =
 let wrap_printing_env env f =
   let printing_state' = !printing_state in
   set_printing_env env;
-  try_finally f (fun () -> printing_state := printing_state')
+  try_finally
+    (fun () -> Env.without_cmis f)
+    (fun () -> printing_state := printing_state')
 
 let curr_printing_env () = !printing_state.printenv
 
