@@ -86,8 +86,16 @@ let rec split_path path acc =
 
 external fs_exact_case : string -> string = "ml_merlin_fs_exact_case"
 
+(* A replacement for sys_file_exists that makes use of stat_cache *)
+module File_exists = File_cache.Make(struct
+    type t = bool
+    let read = Sys.file_exists
+    let cache_name = "File_exists"
+    let policy = `Stat_dir_cache
+  end)
+
 let exact_file_exists path =
-  Sys.file_exists path &&
+  File_exists.read path &&
   let path' = fs_exact_case path in
   path == path' || Filename.basename path = Filename.basename path'
 
@@ -175,7 +183,7 @@ let find_in_path_rel path name =
     [] -> raise Not_found
   | dir::rem ->
       let fullname = simplify (Filename.concat dir name) in
-      if Sys.file_exists fullname then fullname else try_dir rem
+      if File_exists.read fullname then fullname else try_dir rem
   in try_dir path
 
 let find_in_path_uncap ?(fallback="") path name =
@@ -543,23 +551,6 @@ let cut_at s c =
 
 module StringSet = Set.Make(struct type t = string let compare = compare end)
 module StringMap = Map.Make(struct type t = string let compare = compare end)
-
-type file_id = Unix.stats option
-
-let file_id filename =
-  try Some (Unix.stat filename)
-  with _ -> None
-
-let file_id_check a b =
-  let open Unix in
-  match a, b with
-  | None, None -> true
-  | Some a, Some b ->
-    a.st_mtime = b.st_mtime &&
-    a.st_size = b.st_size &&
-    a.st_ino = b.st_ino &&
-    a.st_dev = b.st_dev
-  | Some _, None | None, Some _ -> false
 
 let normalise_eol s =
   let b = Buffer.create 80 in

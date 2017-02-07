@@ -41,14 +41,16 @@ SOURCES_LIB = \
 	src/utils/std.ml                  \
 	src/utils/local_store.ml          \
 	src/utils/local_store.mli         \
+	src/utils/logger.mli              \
+	src/utils/logger.ml               \
+	src/utils/stat_cache.mli          \
+	src/utils/stat_cache.ml           \
+	src/utils/file_cache.mli          \
+	src/utils/file_cache.ml           \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
 	src/utils/sexp.mli                \
 	src/utils/sexp.ml                 \
-	src/utils/logger.mli              \
-	src/utils/logger.ml               \
-	src/utils/file_cache.mli          \
-	src/utils/file_cache.ml           \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
 	src/ocaml/support/identifiable.mli \

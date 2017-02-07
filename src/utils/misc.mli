@@ -236,21 +236,6 @@ module StringMap: Map.S with type key = string
 (* TODO: replace all custom instantiations of StringSet/StringMap in various
    compiler modules with this one. *)
 
-type file_id
-(** An instance of file_id represents the identity of a file contents.
-    Use this to quickly detect if a file has changed.
-    (Detection is done by checking some fields from stat syscall,
-    it an be tricked but should behave well in regular cases.
-    FIXME: precision of mtime is still the second?!
-*)
-
-val file_id_check: file_id -> file_id -> bool
-(** Returns true iff the heuristic determines that the file contents has not
-    changed. *)
-
-val file_id: string -> file_id
-(** [file_id filename] computes an id for the current contents of [filename] *)
-
 val normalise_eol: string -> string
 (** [normalise_eol s] returns a fresh copy of [s] with any '\r' characters
    removed. Intended for pre-processing text which will subsequently be printed

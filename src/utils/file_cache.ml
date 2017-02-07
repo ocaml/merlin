@@ -29,19 +29,25 @@
 module Make(Input : sig
   type t
   val read : string -> t
-
   val cache_name : string
+  val policy : [ `Stat_fs | `Stat_dir_cache ]
 end) = struct
   let section = "File_cache("^Input.cache_name^")"
 
-  let cache : (string, Misc.file_id * Input.t) Hashtbl.t
+  let cache : (string, Stat_cache.file_id * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
+  let file_id = match Input.policy with
+    | `Stat_fs -> Stat_cache.file_id
+    | `Stat_dir_cache ->
+      fun filename ->
+        Stat_cache.cached_file_id (Filename.dirname filename)
+
   let read filename =
-    let fid = Misc.file_id filename in
+    let fid = file_id filename in
     try
       let fid', file = Hashtbl.find cache filename in
-      if (Misc.file_id_check fid fid') then
+      if (Stat_cache.file_id_check fid fid') then
         Logger.logf section "read" "reusing %S" filename
       else (
         Logger.logf section "read" "%S was updated on disk" filename;
@@ -62,7 +68,7 @@ end) = struct
 
   let flush () =
     let add_invalid filename (fid, _) invalids =
-      if Misc.file_id_check (Misc.file_id filename) fid then (
+      if Stat_cache.file_id_check (file_id filename) fid then (
         Logger.logf section "flush" "keeping %S" filename;
         invalids
       ) else (

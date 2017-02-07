@@ -670,4 +670,5 @@ def setup_merlin():
 
 def vim_last_commands():
     global last_commands
-    print("Last merlin commands:\n" + "\n".join(last_commands))
+    args = map(lambda x: " ".join(x), last_commands)
+    print("Last merlin commands:\n" + "\n".join(args))

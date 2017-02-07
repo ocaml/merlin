@@ -28,7 +28,6 @@
 
 open Std
 open Sturgeon_stub
-open Misc
 
 type title = string
 type section = string
@@ -109,7 +108,10 @@ let with_log_file file f =
     in
     let destination0 = !destination in
     destination := destination';
-    try_finally f
-      (fun () ->
-         destination := destination0;
-         release ())
+    let release () =
+      destination := destination0;
+      release ()
+    in
+    match f () with
+    | v -> release (); v
+    | exception exn -> release (); reraise exn

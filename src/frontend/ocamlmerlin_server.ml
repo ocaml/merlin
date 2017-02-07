@@ -57,13 +57,13 @@ module Server = struct
         in
         Unix.close clientfd;
         if continue then
-          let merlinid' = Misc.file_id Sys.executable_name in
-          if Misc.file_id_check merlinid merlinid' then
+          let merlinid' = Stat_cache.file_id Sys.executable_name in
+          if Stat_cache.file_id_check merlinid merlinid' then
             loop merlinid fd
 
   let start socket_path socket_fd =
     let fd = Os_ipc.get_fd socket_fd in
-    let merlinid = Misc.file_id Sys.executable_name in
+    let merlinid = Stat_cache.file_id Sys.executable_name in
     loop merlinid fd;
     Unix.unlink socket_path;
     Unix.close fd

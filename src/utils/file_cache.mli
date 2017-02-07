@@ -30,6 +30,8 @@ module Make (Input : sig
   type t
   val read : string -> t
   val cache_name : string
+
+  val policy : [ `Stat_fs | `Stat_dir_cache ]
 end) : sig
   val read  : string -> Input.t
   val flush : unit -> unit
