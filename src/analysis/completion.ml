@@ -140,6 +140,16 @@ open Query_protocol.Compl
 let map_entry f entry =
   {entry with desc = f entry.desc; info = f entry.info}
 
+(* Put parenthesis around operators *)
+let cleanup_name name =
+  if name = "" || not (Oprint.parenthesized_ident name) then name
+  else (
+    if name.[0] = '*' || name.[String.length name - 1] = '*' then
+      "( " ^ name ^ " )"
+    else
+      "(" ^ name ^ ")"
+  )
+
 let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
   let ident = match path with
     | Some path -> Ident.create (Path.last path)
@@ -180,6 +190,15 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | `Variant (_, Some _) -> "(" ^ name ^ " )"
     | _ -> name
   in*)
+  let name =
+    if name = "" || not (Oprint.parenthesized_ident name) then name
+    else (
+      if name.[0] = '*' || name.[String.length name - 1] = '*' then
+        "( " ^ name ^ " )"
+      else
+        "(" ^ name ^ ")"
+    )
+  in
   let desc =
     match kind with
     | `Module | `Modtype -> `None
