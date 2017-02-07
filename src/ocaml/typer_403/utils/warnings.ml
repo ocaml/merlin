@@ -204,8 +204,11 @@ let backup () = !current
 
 let restore x = current := x
 
-let is_active x = (!current).active.(number x);;
-let is_error x = (!current).error.(number x);;
+(* Some warnings are not properly implemented in merlin, just disable *)
+let disabled x = (x >= 32 && x <= 39)
+
+let is_active x = let x = number x in not (disabled x) && (!current).active.(x);;
+let is_error x = let x = number x in not (disabled x) && (!current).error.(x);;
 
 let parse_opt error active flags s =
   let set i = flags.(i) <- true in
