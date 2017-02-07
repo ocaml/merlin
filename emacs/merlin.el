@@ -1710,6 +1710,8 @@ Short cuts:
   (if merlin-mode
     ;; When enabling merlin
     (progn
+      (when (member major-mode '(tuareg-mode caml-mode))
+	(setq merlin-guessed-favorite-caml-mode major-mode))
       (if (merlin-can-handle-buffer)
           (merlin-setup)
         (merlin-mode -1)))
