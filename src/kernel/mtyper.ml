@@ -27,7 +27,33 @@ type result = {
   ];
 }
 
-let cache = ref None
+let cache = ref []
+
+let cache_key config =
+  Mconfig.(config.query.directory, config.query.filename, config.ocaml)
+
+let pop_cache config =
+  let key = cache_key config in
+  match List.assoc key !cache with
+  | (state, result) ->
+    cache := List.remove_assoc key !cache;
+    Logger.log "Mtyper" "pop_cache"
+      "found entry for this configuration";
+    if Mocaml.with_state state Env.check_state_consistency then (
+      Logger.log "Mtyper" "pop_cache" "consistent state, reusing";
+      `Cached (state, result)
+    )
+    else (
+      Logger.log "Mtyper" "pop_cache" "inconsistent state, dropping";
+      `Inconsistent
+    )
+  | exception Not_found ->
+    Logger.log "Mtyper" "pop_cache" "nothing cached for this configuration";
+    `None
+
+let push_cache config state t =
+  let t = (t.initial_env, t.initial_snapshot, t.typedtree) in
+  cache := List.take_n 5 ((cache_key config, (state, t)) :: !cache)
 
 let print_result () _ = "<Mtyper.result>"
 
@@ -138,32 +164,11 @@ let run tr config source parsetree =
     ~return:print_result
   @@ fun tr ->
   Mocaml.setup_config config;
-  let flush_caches reason =
-    Logger.logf "Mtyper" "cached config"
-      "failed to use cache (%s), starting new typer" reason;
-    Mocaml.flush_caches ();
-    cache := None;
-    (None, Mocaml.new_state ~unit_name:(Msource.unitname source))
-  in
-  let cached, state = match !cache with
-    | Some (config', state, result) ->
-      if compare config'.Mconfig.ocaml config.Mconfig.ocaml = 0 then (
-        Logger.log "Mtyper" "cached config" "config didn't change";
-        if Mocaml.with_state state Env.check_state_consistency then (
-          Logger.log "Mtyper" "cached config" "state consistent";
-          Logger.log "Mtyper" "cached config" "using cached typer";
-          (Some (result.initial_env, result.initial_snapshot, result.typedtree),
-           state)
-        )
-        else flush_caches "inconsistent environment"
-      )
-      else (
-        Logger.logj "Mtyper" "cached config incompatible"
-          (fun () -> `Assoc ["old", Mconfig.dump_ocaml config'.Mconfig.ocaml;
-                             "new", Mconfig.dump_ocaml config.Mconfig.ocaml]);
-        flush_caches "config changed"
-      )
-    | None -> flush_caches "cache is empty"
+  let state, cached = match pop_cache config with
+    | `Cached (state, entry) -> (state, Some entry)
+    | `None | `Inconsistent ->
+      Mocaml.flush_caches ();
+      (Mocaml.new_state ~unit_name:(Msource.unitname source), None)
   in
   Mocaml.with_state state @@ fun () ->
   let caught = ref [] in
@@ -182,8 +187,7 @@ let run tr config source parsetree =
         typedtree = `Interface items }
   in
   Typecore.reset_delayed_checks ();
-  Logger.log "Mtyper" "updating cache" "";
-  cache := Some (config, state, result);
+  push_cache config state result;
   result
 
 let with_typer t f =
