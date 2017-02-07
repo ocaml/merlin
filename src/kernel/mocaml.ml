@@ -8,6 +8,7 @@ let setup_config config = (
   let open Clflags in
   let ocaml = config.ocaml in
   Config.load_path := Mconfig.build_path config;
+  Location.input_name  := config.query.filename;
   fast                 := ocaml.unsafe ;
   classic              := ocaml.classic ;
   principal            := ocaml.principal ;
