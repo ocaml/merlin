@@ -85,8 +85,8 @@ type _ t =
     :  string * Msource.position
     -> string t
   | Type_enclosing(* *)
-    :  (string * int) option * Msource.position
-    -> (Location.t * string * is_tail_position) list t
+    :  (string * int) option * Msource.position * int option
+    -> (Location.t * [`String of string | `Index of int] * is_tail_position) list t
   | Enclosing(* *)
     :  Msource.position
     -> Location.t list t

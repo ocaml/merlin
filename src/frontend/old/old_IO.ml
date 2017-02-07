@@ -208,9 +208,9 @@ let request_of_json context =
       request (Query (Type_expr (expr, mandatory_position opt_pos)))
     | [`String "type"; `String "enclosing";
        `Assoc [ "expr", `String expr ; "offset", `Int offset] ; jpos] ->
-      request (Query (Type_enclosing (Some (expr, offset), pos_of_json jpos)))
+      request (Query (Type_enclosing (Some (expr, offset), pos_of_json jpos, None)))
     | [`String "type"; `String "enclosing"; `String "at"; jpos] ->
-      request (Query (Type_enclosing (None, pos_of_json jpos)))
+      request (Query (Type_enclosing (None, pos_of_json jpos, None)))
     | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
       request (Query (Case_analysis (pos_of_json x, pos_of_json y)))
     | [`String "enclosing"; jpos] ->

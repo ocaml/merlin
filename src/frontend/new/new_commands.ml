@@ -383,24 +383,33 @@ let all_commands = [
     ~spec: [
       ("-position",
        "<position> Position to complete",
-       marg_position (fun pos (expr,cursor,_pos) -> (expr,cursor,pos))
+       marg_position (fun pos (expr,cursor,_pos,index) -> (expr,cursor,pos,index))
       );
       ("-expression",
        "<string> Expression to type",
-       Marg.param "string" (fun expr (_expr,cursor,pos) -> (expr,cursor,pos))
+       Marg.param "string" (fun expr (_expr,cursor,pos,index) -> (expr,cursor,pos,index))
       );
       ("-cursor",
        "<int> Position of the cursor inside expression",
-       Marg.param "int" (fun cursor (expr,_cursor,pos) ->
+       Marg.param "int" (fun cursor (expr,_cursor,pos,index) ->
            match int_of_string cursor with
-           | cursor -> (expr,cursor,pos)
+           | cursor -> (expr,cursor,pos,index)
            | exception exn ->
              failwith "cursor should be an integer"
          )
       );
+      ("-index",
+       "<int> Only print type of <index>'th result",
+       Marg.param "int" (fun index (expr,cursor,pos,_index) ->
+           match int_of_string index with
+           | index -> (expr,cursor,pos,Some index)
+           | exception exn ->
+             failwith "index should be an integer"
+         )
+      );
     ]
-    ~default:("",-1,`None)
-    begin fun buffer (expr,cursor,pos) ->
+    ~default:("",-1,`None,None)
+    begin fun buffer (expr,cursor,pos,index) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
@@ -410,7 +419,7 @@ let all_commands = [
             let cursor = if cursor = -1 then String.length expr else cursor in
             Some (expr, cursor)
         in
-        run buffer (Query_protocol.Type_enclosing (expr,pos))
+        run buffer (Query_protocol.Type_enclosing (expr,pos,index))
     end
   ;
 

@@ -235,7 +235,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
     to_string ()
 
-  | Type_enclosing (expro, pos) ->
+  | Type_enclosing (expro, pos, index) ->
     let open Typedtree in
     let open Override in
     with_typer buffer @@ fun pipeline typer ->
@@ -249,22 +249,15 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     let aux (node,tail) =
       let open Browse_raw in
+      let ret x = Some (Mbrowse.node_loc node, x, tail) in
       match node with
       | Expression {exp_type = t}
       | Pattern {pat_type = t}
       | Core_type {ctyp_type = t}
       | Value_description { val_desc = { ctyp_type = t } } ->
-        let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env ~verbosity
-          (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
-        Some (Mbrowse.node_loc node, to_string (), tail)
-
+        ret (`Type t)
       | Type_declaration { typ_id = id; typ_type = t} ->
-        let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env ~verbosity
-          (fun () -> Printtyp.type_declaration env id ppf t);
-        Some (Mbrowse.node_loc node, to_string (), tail)
-
+        ret (`Type_decl (id,t))
       | Module_expr {mod_type = m}
       | Module_type {mty_type = m}
       | Module_binding {mb_expr = {mod_type = m}}
@@ -273,11 +266,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
       | Module_binding_name {mb_expr = {mod_type = m}}
       | Module_declaration_name {md_type = {mty_type = m}}
       | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
-        let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env ~verbosity
-          (fun () -> Printtyp.modtype env ppf m);
-        Some (Mbrowse.node_loc node, to_string (), tail)
-
+        ret (`Modtype m)
       | _ -> None
     in
     let result = List.filter_map ~f:aux path in
@@ -311,7 +300,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
             try
               let ppf, to_string = Format.to_string () in
               if Type_utils.type_in_env ~verbosity env ppf source then
-                Some (loc, to_string (), `No)
+                Some (loc, `String (to_string ()), `No)
               else
                 None
             with _ ->
@@ -320,13 +309,34 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     let normalize ({Location. loc_start; loc_end}, text, _tail) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
-    List.merge_cons
-      ~f:(fun a b ->
-          (* Tail position is computed only on result, and result comes last
-             As an approximation, when two items are similar, we returns the
-             rightmost one *)
-          if normalize a = normalize b then Some b else None)
-      (small_enclosings @ result)
+    let all_items =
+      List.merge_cons
+        ~f:(fun a b ->
+            (* Tail position is computed only on result, and result comes last
+               As an approximation, when two items are similar, we returns the
+               rightmost one *)
+            if compare (normalize a) (normalize b) = 0 then Some b else None)
+        (small_enclosings @ result)
+    in
+    Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
+    let ppf = Format.str_formatter in
+    List.mapi all_items
+      ~f:(fun i (loc,text,tail) ->
+          let print = match index with None -> true | Some index -> index = i in
+          let ret x = (loc, x, tail) in
+          match text with
+          | `String str -> ret (`String str)
+          | `Type t when print ->
+            Type_utils.print_type_with_decl ~verbosity env ppf t;
+            ret (`String (Format.flush_str_formatter ()))
+          | `Type_decl (id,t) when print ->
+            Printtyp.type_declaration env id ppf t;
+            ret (`String (Format.flush_str_formatter ()))
+          | `Modtype m when print ->
+            Printtyp.modtype env ppf m;
+            ret (`String (Format.flush_str_formatter ()))
+          | _ -> ret (`Index i)
+        )
 
   | Enclosing pos ->
     with_typer buffer @@ fun pipeline typer ->

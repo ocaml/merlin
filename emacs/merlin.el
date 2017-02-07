@@ -1046,12 +1046,26 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (merlin--type-enclosing-reset)
       (remove-hook 'pre-command-hook 'merlin--type-enclosing-reset-hooked))))
 
+(defun merlin--type-enclosing-text (item)
+  (if (stringp (car item))
+      (car item)
+    (with-demoted-errors "Error retrieving type enclosing: %S"
+      (let* ((key (car item))
+             (index (elt key 0))
+             (position (elt key 1))
+             (tail (elt key 2))
+             (types (merlin/call "type-enclosing" "-position" position "-index" index))
+             (obj (elt types index))
+             (type (cdr (assoc 'type obj))))
+        (setcar item (concat type tail)))
+      (car item))))
+
 (defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
   (merlin--type-enclosing-reset)
   (let* ((merlin/verbosity-context t) ; increase verbosity level if necessary
-         (types (merlin/call "type-enclosing"
-                            "-position" (merlin/unmake-point (point)))))
+         (position (merlin/unmake-point (point)))
+         (types (merlin/call "type-enclosing" "-position" position "-index" 0)))
     (when types
       (setq merlin-enclosing-types
             (mapcar (lambda (obj)
@@ -1062,7 +1076,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                           " (* tail call *)")
                                          (t "")))
                              (type (cdr (assoc 'type obj))))
-                        (cons (concat type tail)
+                        (cons (if (stringp type) (concat type tail)
+                                (list type position tail))
                               (merlin--make-bounds obj))))
                     types))
       (setq merlin-enclosing-offset -1)
@@ -1072,7 +1087,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Highlight the given corresponding enclosing data (of the form (TYPE . BOUNDS)."
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
     (if (cddr data)
-        (merlin--type-display (cdr data) (car data)))))
+        (merlin--type-display (cdr data) (merlin--type-enclosing-text data)))))
 
 (defun merlin-type-enclosing-go-up ()
   "Go up in the enclosing type list."
@@ -1096,8 +1111,9 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (interactive)
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
     (when (cddr data)
-      (message "Copied %s to kill-ring" (car data))
-      (kill-new (car data)))))
+      (setq data (merlin--type-enclosing-text data))
+      (message "Copied %s to kill-ring" data)
+      (kill-new data))))
 
 (defun merlin--type-enclosing-after ()
   (when (and (fboundp 'set-temporary-overlay-map)

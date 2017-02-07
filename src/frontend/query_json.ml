@@ -50,7 +50,7 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
-  | Type_enclosing (opt_cursor, pos) ->
+  | Type_enclosing (opt_cursor, pos, index) ->
     mk "type-enclosing" [
       "cursor", (match opt_cursor with
           | None -> `Null
@@ -58,6 +58,10 @@ let dump (type a) : a t -> json =
               "text", `String text;
               "offset", `Int offset;
             ]
+        );
+      "index", (match index with
+          | None -> `String "all"
+          | Some n -> `Int n
         );
       "position", mk_position pos;
     ]
@@ -178,9 +182,11 @@ let with_location ?(skip_none=false) loc assoc =
             ("end",   Lexing.json_of_position loc.Location.loc_end) ::
             assoc)
 
-let json_of_type_loc (loc,str,tail) =
+let json_of_type_loc (loc,desc,tail) =
   with_location loc [
-    "type", `String str;
+    "type", (match desc with
+        | `String _ as str -> str
+        | `Index n -> `Int n);
     "tail", `String (match tail with
         | `No -> "no"
         | `Tail_position -> "position"
