@@ -671,8 +671,8 @@ let structure_item_paths { Typedtree. str_desc } =
   match str_desc with
   | Tstr_class_type cls ->
     List.map ~f:(fun (id,loc,_) -> reloc (Path.Pident id) loc) cls
-  | Tstr_open { Typedtree. open_path; open_loc } ->
-    [mkloc open_path open_loc]
+  | Tstr_open { Typedtree. open_path; open_txt } ->
+    [reloc open_path open_txt]
   | _ -> []
 
 let module_type_paths { Typedtree. mty_desc } =
@@ -687,8 +687,8 @@ let module_type_paths { Typedtree. mty_desc } =
 
 let signature_item_paths { Typedtree. sig_desc } =
   match sig_desc with
-  | Tsig_open { Typedtree. open_path; open_loc } ->
-    [mkloc open_path open_loc]
+  | Tsig_open { Typedtree. open_path; open_txt } ->
+    [reloc open_path open_txt]
   | _ -> []
 
 let with_constraint_paths = function
