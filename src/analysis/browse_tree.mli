@@ -50,5 +50,5 @@ val all_constructor_occurrences :
   t * [ `Description of Types.constructor_description
       | `Declaration of Typedtree.constructor_declaration ]
   -> t -> t Location.loc list
-val all_occurrences_of_prefix : Path.t ->
+val all_occurrences_of_prefix : strict_prefix:bool -> Path.t ->
   Browse_raw.node -> (Browse_raw.node * Path.t Location.loc list) list
