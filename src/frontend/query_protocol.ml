@@ -100,6 +100,9 @@ type _ t =
   | Polarity_search
     :  string * Msource.position
     -> completions t
+  | Refactor_open
+    :  [`Qualify | `Unqualify] * Msource.position
+    -> (string * Location.t) list t
   | Document(* *)
     : string option * Msource.position
     -> [ `Found of string

@@ -378,6 +378,30 @@ of the buffer."
     end
   ;
 
+  command "refactor-open"
+    ~doc:"search-by-polarity -position pos -action <qualify|unqualify>\n\t\
+          TODO"
+    ~spec: [
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (action,_pos) -> (action,pos)));
+      arg "-action" "<qualify|unqualify> Direction of rewriting"
+        (Marg.param "<qualify|unqualify>" (fun action (_action,pos) ->
+             match action with
+             | "qualify" -> (Some `Qualify,pos)
+             | "unqualify" -> (Some `Unqualify,pos)
+             | _ -> failwith "invalid -action"
+           )
+        );
+    ]
+    ~default:(None,`None)
+    begin fun buffer -> function
+      | (None, _) -> failwith "-action is mandatory"
+      | (_, `None) -> failwith "-position is mandatory"
+      | (Some action, (#Msource.position as pos)) ->
+        run buffer (Query_protocol.Refactor_open (action,pos))
+    end
+  ;
+
   command "search-by-polarity"
     ~doc:"search-by-polarity -position pos -query ident\n\t\
           TODO"

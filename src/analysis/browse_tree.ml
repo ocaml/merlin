@@ -118,3 +118,22 @@ let all_constructor_occurrences ({t_env = env},d) t =
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
   in
   aux [] t
+
+let all_occurrences_of_prefix path node =
+  let rec path_prefix ~prefix path =
+    Path.same prefix path ||
+    match path with
+    | Path.Pdot (p,_,_) -> path_prefix ~prefix p
+    | _ -> false
+  in
+  let rec aux env node acc =
+    let acc =
+      let paths = Browse_raw.node_paths node in
+      let has_prefix l = path_prefix ~prefix:path l.Location.txt in
+      match List.filter ~f:has_prefix paths with
+      | [] -> acc
+      | paths -> (node, paths) :: acc
+    in
+    Browse_raw.fold_node aux env node acc
+  in
+  aux Env.empty node []

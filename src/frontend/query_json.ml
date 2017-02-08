@@ -164,6 +164,12 @@ let dump (type a) : a t -> json =
       "kind", `String "identifiers";
       "position", mk_position pos;
     ]
+  | Refactor_open (action, pos) ->
+    mk "refactor-open" [
+      "action", `String (match action with `Qualify -> "qualify"
+                                         | `Unqualify -> "unqualify");
+      "position", mk_position pos;
+    ]
   | Version -> mk "version" []
 
 let string_of_completion_kind = function
@@ -261,6 +267,9 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     json_of_completions compl
   | Polarity_search _, compl ->
     json_of_completions compl
+  | Refactor_open _, locations ->
+    `List (List.map locations ~f:(fun (name,loc) ->
+        with_location loc ["content",`String name]))
   | Document _, resp ->
     begin match resp with
       | `No_documentation -> `String "No documentation available"
