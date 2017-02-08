@@ -1051,10 +1051,13 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (car item)
     (with-demoted-errors "Error retrieving type enclosing: %S"
       (let* ((key (car item))
-             (index (elt key 0))
-             (position (elt key 1))
-             (tail (elt key 2))
-             (types (merlin/call "type-enclosing" "-position" position "-index" index))
+             (index     (elt key 0))
+             (position  (elt key 1))
+             (tail      (elt key 2))
+             (verbosity (elt key 3))
+             (types (merlin/call
+                      "type-enclosing" "-position" position "-index" index
+                      (when verbosity (cons "-verbosity" verbosity))))
              (obj (elt types index))
              (type (cdr (assoc 'type obj))))
         (setcar item (concat type tail)))
@@ -1065,6 +1068,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (merlin--type-enclosing-reset)
   (let* ((merlin/verbosity-context t) ; increase verbosity level if necessary
          (position (merlin/unmake-point (point)))
+         (verbosity (cdr-safe merlin--verbosity-cache))
          (types (merlin/call "type-enclosing" "-position" position "-index" 0)))
     (when types
       (setq merlin-enclosing-types
@@ -1077,7 +1081,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                          (t "")))
                              (type (cdr (assoc 'type obj))))
                         (cons (if (stringp type) (concat type tail)
-                                (list type position tail))
+                                (list type position tail verbosity))
                               (merlin--make-bounds obj))))
                     types))
       (setq merlin-enclosing-offset -1)
