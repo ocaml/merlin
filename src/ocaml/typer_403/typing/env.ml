@@ -2179,3 +2179,5 @@ let check_state_consistency () =
 let without_cmis f =
   Std.let_ref can_load_cmis false f
 
+let with_cmis f =
+  Std.let_ref can_load_cmis true f

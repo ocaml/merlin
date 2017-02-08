@@ -61,6 +61,7 @@ module Printtyp = struct
   include Printtyp
 
   let expand_type env ty =
+    Env.with_cmis @@ fun () -> (* ?? Not sure *)
     if !verbosity = 0 then ty
     else
       (* Fresh copy of the type to mutilate *)
@@ -98,7 +99,9 @@ module Printtyp = struct
     | Some m -> {ty with Types.type_manifest = Some (expand_type env m)}
     | None -> ty
 
-  let expand_sig = Env.scrape_alias
+  let expand_sig env mty =
+    Env.with_cmis @@ fun () ->
+    Env.scrape_alias env mty
 
   let verbose_type_scheme env ppf t =
     Printtyp.type_scheme ppf (expand_type env t)
@@ -217,6 +220,7 @@ let print_exn ppf exn =
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
+      Env.with_cmis @@ fun () ->
       Typemod.type_toplevel_phrase env
         [Ast_helper.Str.eval expression]
     in

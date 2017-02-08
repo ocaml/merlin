@@ -2180,3 +2180,6 @@ let check_state_consistency () =
       ) !persistent_structures;
     true
   with Not_found -> false
+
+let with_cmis f =
+  Std.let_ref can_load_cmis true f

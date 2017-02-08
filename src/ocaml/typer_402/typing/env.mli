@@ -290,3 +290,5 @@ val check_value_name: string -> Location.t -> unit
 
 val state : Local_store.bindings
 val check_state_consistency: unit -> bool
+
+val with_cmis : (unit -> 'a) -> 'a
