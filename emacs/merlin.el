@@ -944,7 +944,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
                 (string-match "\n" text pos))
            (setq pos (match-end 0))
            (setq count (1+ count)))
-    count))
+    (<= count 8)))
 
 (defun merlin/display-in-type-buffer (text)
   "Change content of type-buffer."
