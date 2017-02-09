@@ -160,7 +160,7 @@ def command2(args, context=None, track_verbosity=None):
 
     result = json.loads(merlin_exec(cmdline,input=content))
     for notification in result['notifications']:
-        print("(merlin) " + notification['section'] + ": " + notification['message'])
+        print("(merlin) " + notification)
     class_ = result['class']
     value = result['value']
     if class_ == "return":
