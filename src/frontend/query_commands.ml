@@ -352,7 +352,8 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     with_typer buffer ~for_completion:pos @@ fun pipeline typer ->
     let config = Mpipeline.final_config pipeline in
     let no_labels = Mpipeline.reader_no_labels_for_completion pipeline in
-    let pos = Msource.get_lexing_pos tr (Mpipeline.input_source pipeline) pos in
+    let source = Mpipeline.input_source pipeline in
+    let pos = Msource.get_lexing_pos tr source pos in
     let path = Mtyper.node_at tr ~skip_recovered:true typer pos in
     let env, node = Mbrowse.leaf_node path in
     let target_type, context =
@@ -367,8 +368,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
       Completion.node_complete config ?get_doc ?target_type env node prefix |>
-      print_completion_entries ~with_types tr config
-        (Mpipeline.input_source pipeline)
+      print_completion_entries ~with_types tr config source
     and context = match context with
       | `Application context when no_labels ->
         `Application {context with Compl.labels = []}
