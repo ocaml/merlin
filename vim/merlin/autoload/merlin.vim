@@ -428,9 +428,9 @@ function! merlin#Occurrences()
   endif
 
   call setloclist(0, l:occurrences)
+  execute ":ll! " . l:pos
   if g:merlin_display_occurrence_list
     lopen
-    execute ":ll! " . l:pos
   endif
 endfunction
 
