@@ -363,8 +363,15 @@ let standard_library ?conf ?path () =
 let path_of_packages ?conf ?path packages =
   set_findlib_path ?conf ?path ();
   let f name (pkgs,failures) =
+    let last = String.length name - 1 in
+    let optional = last >= 0 && name.[last] = '?' in
+    let name = if optional then String.sub name 0 last else name in
     match Findlib.package_deep_ancestors [] [name] with
     | pkg -> (pkg @ pkgs, failures)
+    | exception (Fl_package_base.No_such_package (name', msg)) when optional ->
+      Logger.logf "Mconfig_dot" "path_of_packages"
+        "Failed to load optional package %S: %S %s" name name' msg;
+      (pkgs, failures)
     | exception (Fl_package_base.No_such_package (name, "")) ->
       (pkgs, sprintf "Failed to load %S" name :: failures)
     | exception (Fl_package_base.No_such_package (name, msg)) ->
