@@ -604,8 +604,8 @@ let expand_prefix ~global_modules env prefix =
     Expansion.get_lidents ts prefix
   in
   let validate' =
-    let last = Str.regexp (Expansion.regex_of_path_prefix last) in
-    fun s -> Str.string_match last s 0
+    let last = Expansion.spell_index last in
+    fun s -> Expansion.spell_match last s
   in
   let validate _ _ s = validate' s in
   let process_prefix_path prefix_path =

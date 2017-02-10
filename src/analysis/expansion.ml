@@ -24,35 +24,77 @@ let explore ?(global_modules=[]) env =
   List.fold_left ~f:add_module global_modules
     ~init:(Env.fold_modules add_module' None env [])
 
-let regex_of_path_prefix pattern =
-  let buf = Buffer.create 16 in
-  Buffer.add_char buf '^';
-  for i = 0 to String.length pattern - 1 do
-    match pattern.[i] with
-    | '*' -> Buffer.add_string buf ".*"
-    | '_' -> Buffer.add_string buf ".*_"
-    | c when Char.is_strictly_uppercase c && i > 0 &&
-             Char.is_strictly_uppercase pattern.[i-1] ->
-      Buffer.add_string buf ".*";
-      Buffer.add_char buf c
-    | c when Char.is_strictly_uppercase c || Char.is_strictly_lowercase c ->
-      Buffer.add_char buf c
-    | c ->
-      Buffer.add_string buf (Str.quote (String.make 1 c))
-  done;
-  Buffer.contents buf
+(* This is a hacked up heuristic spell checking function.
+   It checks only the prefix of the key.
+   A proper damerau-levenshtein might be better but certainly not urgent.
 
-(*let regex_of_path_pattern pattern =
-  regex_of_path_prefix pattern ^ "$"*)
+   Implementation is a fork of
+   https://github.com/c-cube/spelll/blob/master/src/spelll.ml
+   Thanks companion-cube :) *)
+let optimal_string_alignment key cutoff =
+  let equal_char : char -> char -> bool = (=) in
+  let min_int x y : int = if x < y then x else y in
+  if String.length key = 0
+  then (fun str -> String.length str)
+  else
+    (* distance vectors (v0=previous, v1=current) *)
+    let v0 = Array.make (String.length key + 1) 0 in
+    let v1 = Array.make (String.length key + 1) 0 in
+    fun str ->
+      let l1 = min (String.length str) (String.length key) in
+      if l1 = 0 then
+        String.length key
+      else if str = key then
+        0
+      else
+        try
+          (* initialize v0: v0(i) = A(0)(i) = delete i chars from t *)
+          for i = 0 to String.length key do
+            v0.(i) <- i
+          done;
+          (* main loop for the bottom up dynamic algorithm *)
+          for i = 0 to l1 - 1 do
+            (* first edit distance is the deletion of i+1 elements from s *)
+            v1.(0) <- i+1;
+
+            let min = ref (i+1) in
+            (* try add/delete/replace operations *)
+            for j = 0 to String.length key - 1 do
+              let cost = if equal_char str.[i] key.[j] then 0 else 1 in
+              v1.(j+1) <- min_int (v1.(j) + 1) (min_int (v0.(j+1) + 1) (v0.(j) + cost));
+              if i > 0 && j > 0 && str.[i] = key.[j-1] && str.[i-1] = key.[j] then
+                v1.(j+1) <- min_int v1.(j+1) (v0.(j-1) + cost);
+
+              min := min_int !min v1.(j+1)
+            done;
+
+            if !min > cutoff then raise Exit;
+
+            (* copy v1 into v0 for next iteration *)
+            Array.blit v1 0 v0 0 (String.length key + 1);
+          done;
+          v1.(String.length key)
+        with Exit -> cutoff + 1
+
+let spell_index s1 =
+  let cutoff = match String.length s1 with
+    | 0 -> 0
+    | 1 -> 0
+    | 2 -> 1
+    | _ -> 2
+  in
+  let f = optimal_string_alignment s1 cutoff in
+  fun s2 -> (s1 = "" || s2 = "" || (s1.[0] = s2.[0] && (f s2 <= cutoff)))
+
+let spell_match index str = index str
 
 let filter path ts =
-  let path = List.map regex_of_path_prefix path in
-  let path = List.map Str.regexp path in
+  let path = List.map spell_index path in
   let rec aux_ts ts = function
     | [] -> []
     | p0 :: ps -> List.filter_map ~f:(aux_t p0 ps) ts
   and aux_t p0 ps (Trie (name, ident, ts)) =
-    if Str.string_match p0 name 0 then
+    if spell_match p0 name then
       Some (Trie (name, ident, lazy (aux_ts (Lazy.force ts) ps)))
     else
       None
