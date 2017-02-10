@@ -86,7 +86,7 @@ def current_context():
 
 last_commands = []
 
-def merlin_exec(*args, input=""):
+def merlin_exec(args, input=""):
     global last_commands
     env = os.environ
     if vim.eval("exists('b:merlin_path')") == '1':
@@ -139,7 +139,7 @@ def merlin_exec(*args, input=""):
 
 verbosity_counter = (None,None)
 
-def command(*args, context=None, track_verbosity=None):
+def command2(args, context=None, track_verbosity=None):
     global verbosity_counter
     if track_verbosity:
         if track_verbosity is True:
@@ -158,7 +158,7 @@ def command(*args, context=None, track_verbosity=None):
             vim.eval('g:merlin_binary_flags') + \
             vim_list_if_set('b:merlin_flags')
 
-    result = json.loads(merlin_exec(input=content,*cmdline))
+    result = json.loads(merlin_exec(cmdline,input=content))
     for notification in result['notifications']:
         print("(merlin) " + notification['section'] + ": " + notification['message'])
     class_ = result['class']
@@ -171,6 +171,9 @@ def command(*args, context=None, track_verbosity=None):
         raise Error(value)
     elif class_ == "exception":
         raise MerlinException(value)
+
+def command(*args):
+    return command2(args)
 
 def uniq(seq):
     seen = set()
@@ -201,7 +204,7 @@ def fmtpos(arg):
 
 def command_version():
     try:
-        str = merlin_exec("-version")
+        str = merlin_exec(["-version"])
         print(str)
     except MerlinExc as e:
         try_print_error(e)
@@ -215,12 +218,12 @@ def command_complete_cursor(base,pos):
     with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)
     cmd = ["complete-prefix", "-position", fmtpos(pos), "-prefix", base,
            "-doc", (with_doc and "y" or "n")]
-    return command(*cmd,track_verbosity=True)
+    return command2(cmd,track_verbosity=True)
 
 def command_document(path, pos):
     try:
         cmd = ["document", "-ident", path, "-position", fmtpos(pos)]
-        print(command(*cmd))
+        print(command2(cmd))
     except MerlinExc as e:
         try_print_error(e)
 
@@ -456,7 +459,7 @@ def vim_type(expr):
             "-expression", expr,
             "-position", fmtpos(vim.current.window.cursor)]
     try:
-        ty = command(*cmd)
+        ty = command2(cmd)
         res = {'type': str(ty), 'matcher': '', 'tail_info':''}
         return json.dumps(res)
     except MerlinExc as e:
@@ -550,7 +553,7 @@ def vim_type_enclosing():
     vim_type_reset()
     try:
         to_line, to_col = vim.current.window.cursor
-        enclosing_types = command("type-enclosing", "-position", fmtpos((to_line,to_col)), track_verbosity=True)
+        enclosing_types = command2(["type-enclosing", "-position", fmtpos((to_line,to_col))], track_verbosity=True)
         if enclosing_types != []:
             return vim_next_enclosing()
         else:
