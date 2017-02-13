@@ -427,32 +427,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
   | Refactor_open (mode, pos) ->
     with_typer pipeline @@ fun tr typer ->
     let pos = Msource.get_lexing_pos tr (Mpipeline.input_source pipeline) pos in
-    let open Browse_raw in
-    let rec select_node = function
-      | (_, ( Structure_item ({Typedtree.str_desc = Typedtree.Tstr_open op}, _)
-            | Signature_item ({Typedtree.sig_desc = Typedtree.Tsig_open op}, _)))
-        :: ancestors ->
-        Some (op.Typedtree.open_path, ancestors)
-      | (_, Pattern {Typedtree.pat_extra; _}) :: ancestors
-        when List.exists pat_extra
-            ~f:(function (Typedtree.Tpat_open _, _ ,_) -> true | _ -> false) ->
-        let p = List.find_map pat_extra
-            ~f:(function | Typedtree.Tpat_open (p,_,_), _ ,_ -> Some p
-                         | _ -> None)
-        in
-        Some (p, ancestors)
-      | (_, Expression {Typedtree.exp_extra; _}) :: ancestors
-        when List.exists exp_extra
-            ~f:(function (Typedtree.Texp_open _, _ ,_) -> true | _ -> false) ->
-        let p = List.find_map exp_extra
-            ~f:(function | Typedtree.Texp_open (_,p,_,_), _ ,_ -> Some p
-                         | _ -> None)
-        in
-        Some (p, ancestors)
-      | [] -> None
-      | _ :: ancestors -> select_node ancestors
-    in
-    begin match select_node (Mtyper.node_at tr typer pos) with
+    begin match Raw_compat.select_open_node (Mtyper.node_at tr typer pos) with
       | None | Some (_, []) -> []
       | Some (path, ((_, node) :: _)) ->
         let paths =

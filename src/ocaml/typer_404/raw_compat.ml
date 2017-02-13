@@ -116,6 +116,35 @@ let labels_of_application ~prefix = function
       ) labels
   | _ -> []
 
+(* Select open nodes *)
+
+let rec select_open_node =
+  let open Browse_raw in
+  let open Typedtree in
+  function
+  | (_, ( Structure_item ({Typedtree.str_desc = Typedtree.Tstr_open op}, _)
+        | Signature_item ({Typedtree.sig_desc = Typedtree.Tsig_open op}, _)))
+    :: ancestors ->
+    Some (op.Typedtree.open_path, ancestors)
+  | (_, Pattern {Typedtree.pat_extra; _}) :: ancestors
+    when List.exists pat_extra
+        ~f:(function (Typedtree.Tpat_open _, _ ,_) -> true | _ -> false) ->
+    let p = List.find_map pat_extra
+        ~f:(function | Typedtree.Tpat_open (p,_,_), _ ,_ -> Some p
+                     | _ -> None)
+    in
+    Some (p, ancestors)
+  | (_, Expression {Typedtree.exp_extra; _}) :: ancestors
+    when List.exists exp_extra
+        ~f:(function (Typedtree.Texp_open _, _ ,_) -> true | _ -> false) ->
+    let p = List.find_map exp_extra
+        ~f:(function | Typedtree.Texp_open (_,p,_,_), _ ,_ -> Some p
+                     | _ -> None)
+    in
+    Some (p, ancestors)
+  | [] -> None
+  | _ :: ancestors -> select_open_node ancestors
+
 let texp_function_cases = function
   | Typedtree.Texp_function (_,cs,_) -> cs
   | _ -> assert false
