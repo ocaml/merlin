@@ -238,7 +238,10 @@ def command_locate(path, pos):
         if pos is None:
             return command("locate", "-prefix", path, "-look-for", choice)
         else:
-            pos_or_err = command("locate", "-prefix", path, "-look-for", choice, "-position", fmtpos(pos))
+            if path is None:
+                pos_or_err = command("locate", "-look-for", choice, "-position", fmtpos(pos))
+            else:
+                pos_or_err = command("locate", "-prefix", path, "-look-for", choice, "-position", fmtpos(pos))
         if not isinstance(pos_or_err, dict):
             print(pos_or_err)
         else:
@@ -377,7 +380,7 @@ def vim_loclist(vimvar, ignore_warnings):
 
 # Locate
 def vim_locate_at_cursor(path):
-    command_locate(path, line, vim.current.window.cursor)
+    command_locate(path, vim.current.window.cursor)
 
 def vim_locate_under_cursor():
     vim_locate_at_cursor(None)
