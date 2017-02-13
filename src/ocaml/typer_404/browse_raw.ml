@@ -619,9 +619,26 @@ let string_of_node = function
 let mkloc = Location.mkloc
 let reloc txt loc = {loc with Location. txt}
 
-let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
+(* FAKE, value constructors don't really exist :p *)
+let path_of_value_constructor env = function
+  | Longident.Lident str -> Path.Pident (Ident.create_persistent str)
+  | lid ->
+    let rec aux = function
+      | Longident.Lapply (l1,l2) -> Path.Papply (aux l1, aux l2)
+      | Longident.Ldot (lid, dot) -> Path.Pdot (aux lid, dot, 0)
+      | Longident.Lident _ as lid ->
+        Env.lookup_module ~load:false lid env
+    in
+    aux lid
+
+let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc; pat_env } =
   let init =
     match pat_desc with
+    | Tpat_construct ({Location. txt; loc},_,_) ->
+      begin match path_of_value_constructor pat_env txt with
+        | p -> [mkloc p loc]
+        | exception _ -> []
+      end
     | Tpat_var (id,_) -> [mkloc (Path.Pident id) pat_loc]
     | Tpat_alias (_,id,loc) -> [reloc (Path.Pident id) loc]
     | _ -> []
@@ -629,21 +646,35 @@ let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
   List.fold_left ~init pat_extra
     ~f:(fun acc (extra,_,_) ->
       match extra with
-      | Tpat_type (path,loc) -> reloc path loc :: acc
+      | Tpat_open (path,loc,_) | Tpat_type (path,loc) ->
+        reloc path loc :: acc
       | _ -> acc)
 
-let expression_paths { Typedtree. exp_desc; exp_extra } =
-  match exp_desc with
-  | Texp_ident (path,loc,_) -> [reloc path loc]
-  | Texp_new (path,loc,_) -> [reloc path loc]
-  | Texp_instvar (_,path,loc)  -> [reloc path loc]
-  | Texp_setinstvar (_,path,loc,_) -> [reloc path loc]
-  | Texp_override (_,ps) ->
-    List.map (fun (path,loc,_) -> reloc path loc) ps
-  | Texp_letmodule (id,loc,_,_) -> [reloc (Path.Pident id) loc]
-  | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
-    [mkloc (Path.Pident id) loc]
-  | _ -> []
+let expression_paths { Typedtree. exp_desc; exp_extra; exp_env } =
+  let init =
+    match exp_desc with
+    | Texp_ident (path,loc,_) -> [reloc path loc]
+    | Texp_new (path,loc,_) -> [reloc path loc]
+    | Texp_instvar (_,path,loc)  -> [reloc path loc]
+    | Texp_setinstvar (_,path,loc,_) -> [reloc path loc]
+    | Texp_override (_,ps) ->
+      List.map (fun (path,loc,_) -> reloc path loc) ps
+    | Texp_letmodule (id,loc,_,_) -> [reloc (Path.Pident id) loc]
+    | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
+      [mkloc (Path.Pident id) loc]
+    | Texp_construct ({Location. txt; loc}, _, _) ->
+      begin match path_of_value_constructor exp_env txt with
+        | p -> [mkloc p loc]
+        | exception _ -> []
+      end
+    | _ -> []
+  in
+  List.fold_left ~init exp_extra
+    ~f:(fun acc (extra,_,_) ->
+        match extra with
+        | Texp_open (_,path,loc,_) ->
+          reloc path loc :: acc
+        | _ -> acc)
 
 let core_type_paths { Typedtree. ctyp_desc } =
   match ctyp_desc with
