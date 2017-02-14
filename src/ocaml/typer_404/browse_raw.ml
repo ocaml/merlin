@@ -2,7 +2,7 @@
 
   This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2013 - 2014  Frédéric Bour  <frederic.bour(_)lakaban.net>
+  Copyright (C) 2013 - 2017  Frédéric Bour  <frederic.bour(_)lakaban.net>
                              Thomas Refis  <refis.thomas(_)gmail.com>
                              Simon Castellan  <simon.castellan(_)iuwt.fr>
 
@@ -75,8 +75,8 @@ type node =
   | Open_description         of open_description
 
   | Method_call              of expression * meth * Location.t
-  | Record_field             of [ `Expression of expression | `Pattern of pattern ] *
-                                Types.label_description * Location.t
+  | Record_field             of [`Expression of expression | `Pattern of pattern]
+                                * Types.label_description * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -703,7 +703,7 @@ let fake_path typ name loc =
       | exception Not_found -> []
     end
 
-let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc; pat_env } =
+let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
     match pat_desc with
     | Tpat_construct ({Location. loc},{Types. cstr_name; cstr_res; _},_) ->
@@ -719,7 +719,7 @@ let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc; pat_env } =
         reloc path loc :: acc
       | _ -> acc)
 
-let expression_paths { Typedtree. exp_desc; exp_extra; exp_env } =
+let expression_paths { Typedtree. exp_desc; exp_extra } =
   let init =
     match exp_desc with
     | Texp_ident (path,loc,_) -> [reloc path loc]
