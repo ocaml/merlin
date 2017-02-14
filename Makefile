@@ -73,13 +73,16 @@ clean:
 	@rm -f Makefile.config $(CONFIG_FILES)
 	@rm -f emacs/merlin.elc
 	@rm -f src/ocaml/*/*/*.cmly
-	$(MAKE) -f Makefile.preprocess clean
+	$(MAKE) preprocessclean
 	@find src/ -name '*.cm*' -delete
 	+$(OCAMLMAKEFILE) clean
 
 distclean: clean
 	@echo
 	rm -f $(TARGET)
+
+preprocessclean:
+	$(MAKE) -f Makefile.preprocess clean
 
 install-binary: $(TARGET)
 	install -d $(BIN_DIR)
