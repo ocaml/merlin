@@ -48,13 +48,13 @@ val raw_info_printer : raw_info ->
 val map_entry : ('a -> 'b) ->
   'a Query_protocol.Compl.raw_entry -> 'b Query_protocol.Compl.raw_entry
 
-val node_complete
+val branch_complete
   :  Mconfig.t
   -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
                -> [> `Found of string ])
   -> ?target_type:Types.type_expr
-  -> Env.t -> Browse_raw.node
   -> string
+  -> Mbrowse.t
   -> raw_info Query_protocol.Compl.raw_entry list
 
 val expand_prefix : global_modules:string list -> Env.t -> string ->

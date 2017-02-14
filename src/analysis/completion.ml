@@ -278,7 +278,7 @@ let fold_variant_constructors ~env ~init ~f =
   in
   aux init
 
-let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env =
+let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch =
   let cstr_attributes c = c.Types.cstr_attributes in
   let val_attributes v = v.Types.val_attributes in
   let type_attributes t = t.Types.type_attributes in
@@ -355,17 +355,23 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
     in
     let rec of_kind = function
       | `Variants ->
-        begin match target_type with
-        | None -> []
-        | Some t ->
-          fold_variant_constructors t ~init:[] ~f:(fun name param candidates ->
-            if not @@ validate `Variant `Variant name then candidates else
+        let add_variant name param candidates =
+          if not @@ validate `Variant `Variant name then candidates else
             make_weighted_candidate name ~exact:false ~priority:2 ~attrs:[]
-                (`Variant (name, param))
+              (`Variant (name, param))
             :: candidates
-          ) ~env
-        end
-
+        in
+        let result = match target_type with
+          | None -> []
+          | Some t -> fold_variant_constructors t ~init:[] ~f:add_variant ~env
+        in
+        let result = match branch with
+          | _ :: (_, Expression {Typedtree. exp_type = t; _}) :: _
+          | (_, Expression {Typedtree. exp_type = t; _}) :: _ ->
+            fold_variant_constructors t ~init:result ~f:add_variant ~env
+          | _ -> result
+        in
+        result
       | `Values ->
         let type_check {Types. val_type} = type_check val_type in
         Env.fold_values (fun name path v candidates ->
@@ -465,7 +471,8 @@ type is_label =
   | `Declaration of Types.type_expr * Types.label_declaration list
   ]
 
-let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
+let complete_prefix ?get_doc ?target_type ~prefix ~is_label
+    config (env,node) branch =
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
     then false
@@ -506,7 +513,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
       let kind = classify_node node in
       let order = completion_order kind in
       let add_completions acc kind =
-        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env @ acc
+        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch @ acc
       in
       List.fold_left ~f:add_completions order ~init:[]
     | `Maybe ->
@@ -542,71 +549,78 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
   with Not_found -> []
 
 (* Propose completion from a particular node *)
-let node_complete buffer ?get_doc ?target_type env node prefix =
-  match node with
-  | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
-  | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; pat_type = t }
-  | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; exp_type = t } ->
-    let is_label =
-      try match t.Types.desc with
-        | Types.Tconstr (p, _, _) ->
-          (match (Env.find_type p env).Types.type_kind with
-           | Types.Type_record (labels, _) ->  `Declaration (t, labels)
-           | _ -> `Maybe)
-        | _ -> `Maybe
-      with _ -> `Maybe
-    in
-    let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label
-      buffer node
-  | Record_field (parent, lbl, loc) ->
-    let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-    let snap = Btype.snapshot () in
-    let is_label = match lbl.Types.lbl_all with
-      | [||] ->
-        begin match
-            let ty = match parent with
-              | `Expression e -> e.Typedtree.exp_type
-              | `Pattern p -> p.Typedtree.pat_type
-            in
-            let _, _, lbls = Typecore.extract_concrete_record env ty in
-            if lbls = [] then raise Not_found;
-            (ty, lbls)
-          with
-          | exception _ -> `Maybe
-          | (ty, lbls) ->
-            try
-              let lbls = Datarepr.label_descrs ty lbls
-                  Types.Record_regular Asttypes.Public
+let branch_complete buffer ?get_doc ?target_type prefix = function
+  | [] -> []
+  | (env, node) :: branch ->
+    Printtyp.wrap_printing_env env @@ fun () ->
+    match node with
+    | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
+    | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record _ ; pat_type = t }
+    | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; exp_type = t } ->
+      let is_label =
+        try match t.Types.desc with
+          | Types.Tconstr (p, _, _) ->
+            (match (Env.find_type p env).Types.type_kind with
+             | Types.Type_record (labels, _) ->
+               List.iter (fun l -> prerr_endline (Ident.name l.Types.ld_id)) labels;
+               `Declaration (t, labels)
+             | _ -> `Maybe)
+          | _ -> `Maybe
+        with _ -> `Maybe
+      in
+      let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
+      complete_prefix ?get_doc ?target_type ~prefix ~is_label buffer
+        (env,node) branch
+    | Record_field (parent, lbl, loc) ->
+      let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
+      let snap = Btype.snapshot () in
+      let is_label = match lbl.Types.lbl_all with
+        | [||] ->
+          begin match
+              let ty = match parent with
+                | `Expression e -> e.Typedtree.exp_type
+                | `Pattern p -> p.Typedtree.pat_type
               in
-              let labels = List.map lbls ~f:(fun (_,lbl) ->
-                  try
-                    let _, lbl_res, lbl_arg = Ctype.instance_label false lbl in
-                    begin try
-                        Ctype.unify_var env ty lbl_res;
-                      with _ -> ()
-                    end;
-                    (* FIXME: the two subst can lose some sharing between types *)
-                    let lbl_res = Subst.type_expr Subst.identity lbl_res in
-                    let lbl_arg = Subst.type_expr Subst.identity lbl_arg in
-                    {lbl with Types. lbl_res; lbl_arg}
-                  with _ -> lbl
-                ) in
-              `Description labels
-            with _ -> `Declaration (ty, lbls)
-        end
-      | lbls ->
-        `Description (Array.to_list lbls)
-    in
-    let result =
-      complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node
-    in
-    Btype.backtrack snap;
-    result
-  | x ->
-    let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
-    complete_prefix ?get_doc ?target_type ~env ~prefix
-      ~is_label:(if is_label then `Maybe else `No) buffer node
+              let _, _, lbls = Typecore.extract_concrete_record env ty in
+              if lbls = [] then raise Not_found;
+              (ty, lbls)
+            with
+            | exception _ -> `Maybe
+            | (ty, lbls) ->
+              try
+                let lbls = Datarepr.label_descrs ty lbls
+                    Types.Record_regular Asttypes.Public
+                in
+                let labels = List.map lbls ~f:(fun (_,lbl) ->
+                    try
+                      let _, lbl_res, lbl_arg = Ctype.instance_label false lbl in
+                      begin try
+                          Ctype.unify_var env ty lbl_res;
+                        with _ -> ()
+                      end;
+                      (* FIXME: the two subst can lose some sharing between types *)
+                      let lbl_res = Subst.type_expr Subst.identity lbl_res in
+                      let lbl_arg = Subst.type_expr Subst.identity lbl_arg in
+                      {lbl with Types. lbl_res; lbl_arg}
+                    with _ -> lbl
+                  ) in
+                `Description labels
+              with _ -> `Declaration (ty, lbls)
+          end
+        | lbls ->
+          `Description (Array.to_list lbls)
+      in
+      let result =
+        complete_prefix ?get_doc ?target_type ~prefix ~is_label buffer
+          (env, node) branch
+      in
+      Btype.backtrack snap;
+      result
+    | x ->
+      let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
+      complete_prefix ?get_doc ?target_type ~prefix buffer
+        ~is_label:(if is_label then `Maybe else `No)
+        (env, node) branch
 
 let expand_prefix ~global_modules env prefix =
   let lidents, last =
@@ -621,7 +635,7 @@ let expand_prefix ~global_modules env prefix =
   let process_prefix_path prefix_path =
     let candidates =
       let aux compl kind =
-        get_candidates ?prefix_path ~prefix:"" kind ~validate env @ compl in
+        get_candidates ?prefix_path ~prefix:"" kind ~validate env [] @ compl in
       List.fold_left ~f:aux default_kinds ~init:[]
     in
     match prefix_path with

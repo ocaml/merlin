@@ -354,9 +354,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let no_labels = Mpipeline.reader_no_labels_for_completion pipeline in
     let source = Mpipeline.input_source pipeline in
     let pos = Msource.get_lexing_pos tr source pos in
-    let path = Mtyper.node_at tr ~skip_recovered:true typer pos in
-    let env, node = Mbrowse.leaf_node path in
-    let target_type, context = Completion.application_context ~prefix path in
+    let branch = Mtyper.node_at tr ~skip_recovered:true typer pos in
+    let env, _ = Mbrowse.leaf_node branch in
+    let target_type, context =
+      Completion.application_context ~prefix branch in
     let get_doc =
       if not with_doc then None else
         let local_defs = Mtyper.get_typedtree typer in
@@ -366,7 +367,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-      Completion.node_complete config ?get_doc ?target_type env node prefix |>
+      Completion.branch_complete config ?get_doc ?target_type prefix branch |>
       print_completion_entries ~with_types tr config source
     and context = match context with
       | `Application context when no_labels ->
