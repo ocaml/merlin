@@ -2984,7 +2984,7 @@ let recover =
   | 1548 -> One (r1010)
   | 1552 -> One (r1011)
   | 688 -> Select (function
-    | -1 | -1 -> [R 97]
+    | -1 -> [R 97]
     | _ -> r563)
   | 413 -> Select (function
     | -1 -> S (T T_TYPE) :: r305
@@ -2996,10 +2996,10 @@ let recover =
     | -1 -> S (T T_UIDENT) :: r360
     | _ -> r300)
   | 504 -> Select (function
-    | -1 | -1 -> S (T T_RPAREN) :: r47
+    | -1 -> S (T T_RPAREN) :: r47
     | _ -> r46)
   | 636 -> Select (function
-    | -1 | -1 -> S (T T_RBRACKET) :: r254
+    | -1 -> S (T T_RBRACKET) :: r254
     | _ -> Sub (r485) :: r488)
   | 629 -> Select (function
     | 59 | 90 | 330 | 379 | 412 | 1071 | 1077 | 1423 -> r477
@@ -3011,7 +3011,7 @@ let recover =
     | 351 -> r247
     | _ -> Sub (r118) :: r253)
   | 529 -> Select (function
-    | -1 | -1 -> r48
+    | -1 -> r48
     | _ -> r132)
   | 173 -> Select (function
     | 1013 -> r78
