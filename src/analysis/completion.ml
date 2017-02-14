@@ -137,7 +137,8 @@ let classify_node = function
   | Class_description        _ -> `Type
   | Class_type_declaration   _ -> `Type
   | Method_call              _ -> `Expression
-  | Record_field             _ -> `Expression
+  | Record_field             (`Expression _, _, _) -> `Expression
+  | Record_field             (`Pattern _, _, _) -> `Pattern
   | Module_binding_name      _ -> `Module
   | Module_declaration_name  _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
@@ -544,18 +545,27 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
 let node_complete buffer ?get_doc ?target_type env node prefix =
   match node with
   | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
-  | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; _ }
-  | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; _ } ->
+  | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; pat_type = t }
+  | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; exp_type = t } ->
+    let is_label =
+      try match t.Types.desc with
+        | Types.Tconstr (p, _, _) ->
+          (match (Env.find_type p env).Types.type_kind with
+           | Types.Type_record (labels, _) ->  `Declaration (t, labels)
+           | _ -> `Maybe)
+        | _ -> `Maybe
+      with _ -> `Maybe
+    in
     let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label:`Maybe
+    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label
       buffer node
-  | Record_field (obj, lbl, loc) ->
+  | Record_field (parent, lbl, loc) ->
     let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
     let snap = Btype.snapshot () in
     let is_label = match lbl.Types.lbl_all with
       | [||] ->
         begin match
-            let ty = match obj with
+            let ty = match parent with
               | `Expression e -> e.Typedtree.exp_type
               | `Pattern p -> p.Typedtree.pat_type
             in

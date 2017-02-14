@@ -445,7 +445,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         in
         List.filter_map paths ~f:(fun {Location. txt = path; loc} ->
             if not loc.Location.loc_ghost &&
-               Location_aux.compare_pos pos (Mbrowse.node_loc node) <= 0 then
+               Location_aux.compare_pos pos loc <= 0 then
               try Some (path_to_string [] path, loc)
               with Not_found -> None
             else None

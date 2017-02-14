@@ -75,7 +75,8 @@ type node =
   | Open_description         of open_description
 
   | Method_call              of expression * meth * Location.t
-  | Record_field             of expression * Types.label_description * Location.t
+  | Record_field             of [ `Expression of expression | `Pattern of pattern ] *
+                                Types.label_description * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -83,7 +84,8 @@ type node =
 let node_update_env env0 = function
   | Pattern        {pat_env = env}  | Expression     {exp_env = env}
   | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _, _)
-  | Record_field   ({exp_env = env}, _, _)
+  | Record_field   (`Expression {exp_env = env}, _, _)
+  | Record_field   (`Pattern {pat_env = env}, _, _)
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
   | Structure_item (_, env)         | Signature_item (_, env)
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
@@ -147,15 +149,60 @@ let node_real_loc loc0 = function
   | Dummy
     -> loc0
 
-let node_merlin_loc loc0 = function
-  | Expression {exp_loc = loc; exp_attributes} ->
-    begin
-      let pred (loc,_) = Location_aux.is_relaxed_location loc in
-      match List.find exp_attributes ~f:pred with
-      | s, _ -> s.Location.loc
-      | exception Not_found -> loc
-    end
-  | node -> node_real_loc loc0 node
+let node_attributes = function
+  | Expression exp        -> exp.exp_attributes
+  | Pattern pat           -> pat.pat_attributes
+  | Class_expr cl         -> cl.cl_attributes
+  | Class_field cf        -> cf.cf_attributes
+  | Module_expr me        -> me.mod_attributes
+  | Structure_item ({str_desc = Tstr_eval (_,attr)},_) -> attr
+  | Structure_item ({str_desc = Tstr_attribute a},_) -> [a]
+  | Signature_item ({sig_desc = Tsig_attribute a},_) -> [a]
+  | Module_binding mb     -> mb.mb_attributes
+  | Value_binding vb      -> vb.vb_attributes
+  | Module_type mt        -> mt.mty_attributes
+  | Module_declaration md -> md.md_attributes
+  | Module_type_declaration mtd -> mtd.mtd_attributes
+  | Open_description o    -> o.open_attributes
+  | Include_declaration i -> i.incl_attributes
+  | Include_description i -> i.incl_attributes
+  | Core_type ct          -> ct.ctyp_attributes
+  (* FIXME: core type object attributes are ignored *)
+  | Row_field (Ttag (_,attr,_,_)) -> attr
+  | Value_description vd  -> vd.val_attributes
+  | Type_declaration td   -> td.typ_attributes
+  | Label_declaration ld  -> ld.ld_attributes
+  | Constructor_declaration cd -> cd.cd_attributes
+  | Type_extension te     -> te.tyext_attributes
+  | Extension_constructor ec -> ec.ext_attributes
+  | Class_type ct         -> ct.cltyp_attributes
+  | Class_type_field ctf  -> ctf.ctf_attributes
+  | Class_declaration ci -> ci.ci_attributes
+  | Class_description ci -> ci.ci_attributes
+  | Class_type_declaration ci -> ci.ci_attributes
+  | Method_call (obj,_,_) -> obj.exp_attributes
+  | Record_field (`Expression obj,_,_) -> obj.exp_attributes
+  | Record_field (`Pattern obj,_,_) -> obj.pat_attributes
+  | _ -> []
+
+let node_merlin_loc loc0 node =
+  let attributes = node_attributes node in
+  let loc =
+    let pred (loc,_) = Location_aux.is_relaxed_location loc in
+    match List.find attributes ~f:pred with
+    | s, _ -> s.Location.loc
+    | exception Not_found -> node_real_loc loc0 node
+  in
+  let loc = match node with
+    | Expression {exp_extra; _} ->
+      List.fold_left ~f:(fun loc0 (_,loc,_) -> Location_aux.union loc0 loc)
+        ~init:loc exp_extra
+    | Pattern {pat_extra; _} ->
+      List.fold_left ~f:(fun loc0 (_,loc,_) -> Location_aux.union loc0 loc)
+        ~init:loc pat_extra
+    | _ -> loc
+  in
+  loc
 
 let app node env f acc =
   f (node_update_env env node)
@@ -206,13 +253,24 @@ let of_pat_extra (pat,_,_) = match pat with
   | Tpat_constraint ct -> of_core_type ct
   | Tpat_type _ | Tpat_unpack | Tpat_open _ -> id_fold
 
+let of_record_field obj loc lbl =
+  fun env (f : _ f0) acc ->
+  app (Record_field (obj,lbl,loc)) env f acc
+
+let of_exp_record_field obj loc lbl =
+  of_record_field (`Expression obj) loc lbl
+
+let of_pat_record_field obj loc lbl =
+  of_record_field (`Pattern obj) loc lbl
+
 let of_pattern_desc = function
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p -> of_pattern p
   | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
     list_fold of_pattern ps
   | Tpat_record (ls,_) ->
-    list_fold (fun (_,_,p) -> of_pattern p) ls
+    list_fold (fun ({Location. txt = _; loc},desc,p) ->
+        of_pat_record_field p loc desc ** of_pattern p) ls
   | Tpat_or (p1,p2,_) ->
     of_pattern p1 ** of_pattern p2
 
@@ -225,10 +283,6 @@ let of_method_call obj meth arg loc =
   in
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
-
-let of_record_field obj loc lbl =
-  fun env (f : _ f0) acc ->
-  app (Record_field (obj,lbl,loc)) env f acc
 
 let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
@@ -259,13 +313,14 @@ let of_expression_desc loc = function
     option_fold of_expression extended_expression **
     let fold_field = function
       | (_,Typedtree.Kept _) -> id_fold
-      | (_,Typedtree.Overridden (_,e)) -> of_expression e
+      | (desc,Typedtree.Overridden (_,e)) ->
+        of_exp_record_field e loc desc ** of_expression e
     in
     array_fold fold_field fields
   | Texp_field (e,{Location.loc},lbl) ->
-    of_expression e ** of_record_field e loc lbl
+    of_expression e ** of_exp_record_field e loc lbl
   | Texp_setfield (e1,{Location.loc},lbl,e2) ->
-    of_expression e1 ** of_expression e2 ** of_record_field e1 loc lbl
+    of_expression e1 ** of_expression e2 ** of_exp_record_field e1 loc lbl
   | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
     of_expression e1 ** of_expression e2
@@ -633,26 +688,26 @@ let string_of_node = function
 let mkloc = Location.mkloc
 let reloc txt loc = {loc with Location. txt}
 
-(* FAKE, value constructors don't really exist :p *)
-let path_of_value_constructor env = function
-  | Longident.Lident str -> Path.Pident (Ident.create_persistent str)
-  | lid ->
-    let rec aux = function
-      | Longident.Lapply (l1,l2) -> Path.Papply (aux l1, aux l2)
-      | Longident.Ldot (lid, dot) -> Path.Pdot (aux lid, dot, 0)
-      | Longident.Lident _ as lid ->
-        Env.lookup_module ~load:false lid env
-    in
-    aux lid
+let type_constructor_path = function
+  | {Types.desc = Types.Tconstr (p,_,_)} -> p
+  | _ -> raise Not_found
+
+(* Build a fake path for value constructors and labels *)
+let fake_path typ name loc =
+    begin match type_constructor_path typ with
+      | Path.Pdot (p, _, _) ->
+        [mkloc (Path.Pdot (p, name, 0)) loc]
+      | Path.Pident _ ->
+        [mkloc (Path.Pident (Ident.create_persistent name)) loc]
+      | _ -> []
+      | exception Not_found -> []
+    end
 
 let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc; pat_env } =
   let init =
     match pat_desc with
-    | Tpat_construct ({Location. txt; loc},_,_) ->
-      begin match path_of_value_constructor pat_env txt with
-        | p -> [mkloc p loc]
-        | exception _ -> []
-      end
+    | Tpat_construct ({Location. loc},{Types. cstr_name; cstr_res; _},_) ->
+      fake_path cstr_res cstr_name loc
     | Tpat_var (id,_) -> [mkloc (Path.Pident id) pat_loc]
     | Tpat_alias (_,id,loc) -> [reloc (Path.Pident id) loc]
     | _ -> []
@@ -676,11 +731,8 @@ let expression_paths { Typedtree. exp_desc; exp_extra; exp_env } =
     | Texp_letmodule (id,loc,_,_) -> [reloc (Path.Pident id) loc]
     | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
       [mkloc (Path.Pident id) loc]
-    | Texp_construct ({Location. txt; loc}, _, _) ->
-      begin match path_of_value_constructor exp_env txt with
-        | p -> [mkloc p loc]
-        | exception _ -> []
-      end
+    | Texp_construct ({Location. loc}, {Types. cstr_name; cstr_res; _}, _) ->
+      fake_path cstr_res cstr_name loc
     | _ -> []
   in
   List.fold_left ~init exp_extra
@@ -779,7 +831,8 @@ let node_paths =
   | Class_declaration ci -> ci_paths ci
   | Class_description ci -> ci_paths ci
   | Class_type_declaration ci -> ci_paths ci
-
+  | Record_field (_,{Types.lbl_res; lbl_name; _},loc) ->
+    fake_path lbl_res lbl_name loc
   | _ -> []
 
 let node_is_constructor = function
@@ -790,38 +843,3 @@ let node_is_constructor = function
   | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None
-
-let node_attributes = function
-  | Expression exp        -> exp.exp_attributes
-  | Pattern pat           -> pat.pat_attributes
-  | Class_expr cl         -> cl.cl_attributes
-  | Class_field cf        -> cf.cf_attributes
-  | Module_expr me        -> me.mod_attributes
-  | Structure_item ({str_desc = Tstr_eval (_,attr)},_) -> attr
-  | Structure_item ({str_desc = Tstr_attribute a},_) -> [a]
-  | Signature_item ({sig_desc = Tsig_attribute a},_) -> [a]
-  | Module_binding mb     -> mb.mb_attributes
-  | Value_binding vb      -> vb.vb_attributes
-  | Module_type mt        -> mt.mty_attributes
-  | Module_declaration md -> md.md_attributes
-  | Module_type_declaration mtd -> mtd.mtd_attributes
-  | Open_description o    -> o.open_attributes
-  | Include_declaration i -> i.incl_attributes
-  | Include_description i -> i.incl_attributes
-  | Core_type ct          -> ct.ctyp_attributes
-  (* FIXME: core type object attributes are ignored *)
-  | Row_field (Ttag (_,attr,_,_)) -> attr
-  | Value_description vd  -> vd.val_attributes
-  | Type_declaration td   -> td.typ_attributes
-  | Label_declaration ld  -> ld.ld_attributes
-  | Constructor_declaration cd -> cd.cd_attributes
-  | Type_extension te     -> te.tyext_attributes
-  | Extension_constructor ec -> ec.ext_attributes
-  | Class_type ct         -> ct.cltyp_attributes
-  | Class_type_field ctf  -> ctf.ctf_attributes
-  | Class_declaration ci -> ci.ci_attributes
-  | Class_description ci -> ci.ci_attributes
-  | Class_type_declaration ci -> ci.ci_attributes
-  | Method_call (obj,_,_) -> obj.exp_attributes
-  | Record_field (obj,_,_) -> obj.exp_attributes
-  | _ -> []
