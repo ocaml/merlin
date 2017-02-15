@@ -562,7 +562,6 @@ let branch_complete buffer ?get_doc ?target_type prefix = function
           | Types.Tconstr (p, _, _) ->
             (match (Env.find_type p env).Types.type_kind with
              | Types.Type_record (labels, _) ->
-               List.iter (fun l -> prerr_endline (Ident.name l.Types.ld_id)) labels;
                `Declaration (t, labels)
              | _ -> `Maybe)
           | _ -> `Maybe
