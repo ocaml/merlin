@@ -644,9 +644,9 @@ structure [@recovery []]:
 
 structure_head :
 | toplevel_directives seq_expr post_item_attributes structure_tail
-    { mkstrexp $2 $3 :: $4 }
+    { List.rev_append $1 @ mkstrexp $2 $3 :: $4 }
 | toplevel_directives structure_tail
-    { $2 }
+    { List.rev_append $1 @ $2 }
 
 structure_tail:
 | (* empty *)
@@ -2568,14 +2568,27 @@ let_operator:
 ;
 
 (* Toplevel directives *)
+%inline toplevel_payload:
+    /* Empty */ { None }
+  | STRING      { let (s, d) = $1 in 
+                  Some (Exp.constant (Const_string (s, d) )) }
+  | INT         { Some (Exp.constant (Const_int $1)) }
+  | val_longident | mod_longident { Some (Exp.ident (mkloc $1 (rloc $startpos $endpos))) }
+  | FALSE       { Some (Exp.construct (mkloc (Longident.Lident "false") (rloc $startpos $endpos)) None) }
+  | TRUE        { Some (Exp.construct (mkloc (Longident.Lident "true") (rloc $startpos $endpos)) None) }
+;
+
 toplevel_directives:
-    (* empty *) { () }
-  | toplevel_directives SHARP ident { () }
-  | toplevel_directives SHARP ident STRING { () }
-  | toplevel_directives SHARP ident INT { () }
-  | toplevel_directives SHARP ident val_longident { () }
-  | toplevel_directives SHARP ident FALSE { () }
-  | toplevel_directives SHARP ident TRUE { () }
+    (* empty *) { [] }
+  | toplevel_directives SHARP ident toplevel_payload
+    { let id = mkloc ("merlin.directive." ^ $3) (rloc $startpos($3) $endpos($3)) in
+      let payload = 
+        match $4 with
+        | None -> PStr []
+        | Some exp -> PStr [mkstrexp exp []]
+      in
+      mkstr(Pstr_attribute (id,payload)) :: $1
+    }
 ;
 
 %%

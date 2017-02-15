@@ -82,7 +82,9 @@ let process trace
     config source =
   let reader = timed_lazy reader_time (lazy (
       let result = Mreader.parse trace ?for_completion config source in
-      let config = Mconfig.normalize trace result.Mreader.config in
+      let config = result.Mreader.config in
+      let config = Mreader.apply_directives config result.Mreader.parsetree in
+      let config = Mconfig.normalize trace config in
       result, config
     )) in
   let ppx = timed_lazy ppx_time (lazy (

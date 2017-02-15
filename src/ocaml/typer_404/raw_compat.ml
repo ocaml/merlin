@@ -118,7 +118,6 @@ let labels_of_application ~prefix = function
 
 (* Select open nodes *)
 
-
 let rec select_open_node =
   let open Typedtree in
   let open Browse_raw in

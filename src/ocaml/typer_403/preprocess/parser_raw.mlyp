@@ -2570,15 +2570,27 @@ class_longident:
 
 /* Toplevel directives */
 
+%inline toplevel_payload:
+    /* Empty */ { None }
+  | STRING      { let (s, d) = $1 in 
+                  Some (Exp.constant (Pconst_string (s, d) )) }
+  | INT         { let (n, m) = $1 in 
+                  Some (Exp.constant (Pconst_integer (n, m))) }
+  | val_longident | mod_longident { Some (Exp.ident (mkloc $1 ($loc))) }
+  | FALSE       { Some (Exp.construct (mkloc (Longident.Lident "false") ($loc)) None) }
+  | TRUE        { Some (Exp.construct (mkloc (Longident.Lident "true") ($loc)) None) }
+;
+
 toplevel_directive:
-    SHARP ident                 { Ptop_dir($2, Pdir_none) }
-  | SHARP ident STRING          { Ptop_dir($2, Pdir_string (fst $3)) }
-  | SHARP ident INT             { let (n, m) = $3 in
-                                  Ptop_dir($2, Pdir_int (n ,m)) }
-  | SHARP ident val_longident   { Ptop_dir($2, Pdir_ident $3) }
-  | SHARP ident mod_longident   { Ptop_dir($2, Pdir_ident $3) }
-  | SHARP ident FALSE           { Ptop_dir($2, Pdir_bool false) }
-  | SHARP ident TRUE            { Ptop_dir($2, Pdir_bool true) }
+  SHARP ident toplevel_payload
+    { let id = mkloc ("merlin.directive." ^ $2) ($locof(2)) in
+      let payload = 
+        match $3 with
+        | None -> PStr []
+        | Some exp -> PStr [mkstrexp exp []]
+      in
+      mkstr(Pstr_attribute (id,payload))
+    }
 ;
 
 /* Miscellaneous */

@@ -312,7 +312,7 @@ module MenhirInterpreter : sig
     | N_type_declarations : (Parsetree.type_declaration list) nonterminal
     | N_type_declaration : (Parsetree.type_declaration) nonterminal
     | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal
-    | N_toplevel_directives : (unit) nonterminal
+    | N_toplevel_directives : (Parsetree.structure_item list) nonterminal
     | N_tag_field : (Parsetree.row_field) nonterminal
     | N_subtractive : (string) nonterminal
     | N_structure_tail : (Parsetree.structure) nonterminal

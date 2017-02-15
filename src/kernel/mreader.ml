@@ -162,3 +162,40 @@ let parse tr ?for_completion config source =
     { config; lexer_errors; parser_errors; comments; parsetree;
       no_labels_for_completion; }
   | None -> normal_parse tr ?for_completion config source
+
+(* Update config after parse *)
+
+let apply_directives config tree =
+  let config = ref config in
+  let read_payload =
+    let open Parsetree in function
+      | PStr[{ pstr_desc = Pstr_eval(expr, _) }] ->
+        begin match expr with
+          | {Parsetree. pexp_desc =
+               Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _)) } ->
+            Some (msg, expr.pexp_loc)
+          | _ -> None
+        end
+      | _ -> None
+  in
+  let attribute _ ({Location. txt = name; _}, payload) =
+    match name with
+    | "merlin.directive.require" ->
+      begin match read_payload payload with
+        | None -> ()
+        | Some (package, _) ->
+          let open Mconfig in
+          let merlin = !config.merlin in
+          let merlin = {merlin with packages_to_load =
+                                      package :: merlin.packages_to_load} in
+          config := {!config with merlin}
+      end
+    | _ -> ()
+  in
+  let open Ast_iterator in
+  let iterator = {default_iterator with attribute} in
+  begin match tree with
+    | `Interface sg -> iterator.signature iterator sg
+    | `Implementation str -> iterator.structure iterator str
+  end;
+  !config

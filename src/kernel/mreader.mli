@@ -42,3 +42,6 @@ val print_batch_outcome : Trace.t ->
 val reconstruct_identifier: Trace.t ->
   Mconfig.t -> Msource.t -> Lexing.position -> string Location.loc list
 
+(* Update config after parse *)
+
+val apply_directives: Mconfig.t -> parsetree -> Mconfig.t

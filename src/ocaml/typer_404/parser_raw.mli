@@ -309,7 +309,7 @@ module MenhirInterpreter : sig
   string Asttypes.loc option) nonterminal
     | N_type_declaration : (Asttypes.rec_flag * Parsetree.type_declaration * string Asttypes.loc option) nonterminal
     | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal
-    | N_toplevel_directive : (Parsetree.toplevel_phrase) nonterminal
+    | N_toplevel_directive : (Parsetree.structure_item) nonterminal
     | N_tag_field : (Parsetree.row_field) nonterminal
     | N_subtractive : (string) nonterminal
     | N_structure_tail : (Parsetree.structure) nonterminal
