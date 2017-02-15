@@ -55,10 +55,15 @@ let run = function
             Mconfig.({config with merlin = {config.merlin with failures}}) in
           let config = Mconfig.(match config.query.directory with
               | "" -> config
-              | dir ->
+              | cwd ->
                 let merlin = config.merlin in
-                let merlin = {merlin with dotmerlin_to_load =
-                                            dir :: merlin.dotmerlin_to_load} in
+                let path = Misc.canonicalize_filename ~cwd config.query.filename in
+                let path =
+                  let base = "." ^ Filename.basename path ^ ".merlin" in
+                  Filename.concat (Filename.dirname path) base
+                in
+                let dotmerlin_to_load = path :: merlin.dotmerlin_to_load in
+                let merlin = {merlin with dotmerlin_to_load} in
                 {config with merlin}
             )
           in

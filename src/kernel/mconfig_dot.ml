@@ -133,7 +133,11 @@ let rec directives_of_file fname =
     file ::
     if file.recurse then
       let path = file.path in
-      let dir = Filename.dirname @@ Filename.dirname @@ path in
+      let dir =
+        let dir = Filename.dirname path in
+        if Filename.basename path <> ".merlin"
+        then dir else Filename.dirname dir
+      in
       if dir <> path then
         directives_of_file dir
       else []
