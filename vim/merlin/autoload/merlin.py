@@ -304,13 +304,23 @@ def command_occurrences(pos):
 
 ######## VIM FRONTEND
 
+def vim_complete_prepare(str):
+    return re.sub(re_wspaces, " ", str).replace("'", "''")
+
+def vim_fillentries(entries, vimvar):
+    prep = vim_complete_prepare
+    for prop in entries:
+        vim.command("let tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+                (prep(prop['name']),prep(prop['desc']),prep(prop['info']),prep(prop['kind'][:1])))
+        vim.command("call add(%s, tmp)" % vimvar)
+
 # Complete
 def vim_complete_cursor(base, suffix, vimvar):
     vim.command("let %s = []" % vimvar)
-    prep = lambda str: re.sub(re_wspaces, " ", str).replace("'", "''")
     try:
         completions = command_complete_cursor(base,vim.current.window.cursor)
         nb_entries = len(completions['entries'])
+        prep = vim_complete_prepare
         if completions['context'] and completions['context'][0] == 'application':
             app = completions['context'][1]
             if not base or base == suffix:
@@ -329,26 +339,34 @@ def vim_complete_cursor(base, suffix, vimvar):
                 vim.command("let l:tmp = {'word':'%s','abbr':'<type>','kind':':','menu':'%s','empty':1}" %
                         (prep(suffix),prep(app['argument_type'])))
                 vim.command("call insert(%s, l:tmp)" % vimvar)
-        for prop in completions['entries']:
-            vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-                    (prep(prop['name']),prep(prop['desc']),prep(prop['info']),prep(prop['kind'][:1])))
-            vim.command("call add(%s, l:tmp)" % vimvar)
+        vim_fillentries(completions['entries'], vimvar)
         return (nb_entries > 0)
     except MerlinExc as e:
         try_print_error(e)
         return False
 
-def vim_expand_prefix(base, vimvar):
+def vim_expand_prefix(base, vimvar, kinds=[]):
     vim.command("let %s = []" % vimvar)
     try:
-        l = command("expand-prefix", "-position", fmtpos(vim.current.window.cursor),
-                                     "-prefix", base)
+        kinds = concat_map(lambda kind: ("-kind",kind), kinds)
+        args = ["expand-prefix",
+                "-position", fmtpos(vim.current.window.cursor),
+                "-prefix", base] + kinds
+        l = command2(args)
         l = l['entries']
         l = map(lambda prop: prop['name'], l)
         l = uniq(sorted(l))
         for prop in l:
             name = prop.replace("'", "''")
             vim.command("call add(%s, '%s')" % (vimvar, name))
+    except MerlinExc as e:
+        try_print_error(e)
+
+def vim_polarity_search(query, vimvar):
+    vim.command("let %s = []" % vimvar)
+    try:
+        l = command("search-by-polarity", "-query", query, "-position", fmtpos(vim.current.window.cursor))
+        vim_fillentries(l['entries'], vimvar)
     except MerlinExc as e:
         try_print_error(e)
 

@@ -138,6 +138,12 @@ function! merlin#ExpandPrefix(ArgLead, CmdLine, CursorPos)
   return l:compl
 endfunction
 
+function! merlin#ExpandTypePrefix(ArgLead, CmdLine, CursorPos)
+  let l:compl = []
+  MerlinPy merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl",kinds=["type"])
+  return l:compl
+endfunction
+
 function! s:MakeCompletionList(var, pyfun)
   let l:all = []
   execute 'MerlinPy ' . a:pyfun . '("l:all")'
@@ -226,6 +232,19 @@ endfunction
 
 function! merlin#TypeOfSel()
   call merlin#TypeOf(s:get_visual_selection())
+endfunction
+
+function! merlin#PolaritySearch(debug,query)
+  let s:search_result = []
+  MerlinPy merlin.vim_polarity_search(vim.eval("a:query"), "s:search_result")
+  if a:debug != 1 && s:search_result != []
+    call feedkeys("i=merlin#PolarityComplete()","n")
+  endif
+endfunction
+
+function! merlin#PolarityComplete()
+  call complete(col('.'), s:search_result)
+  return ''
 endfunction
 
 function! s:StopHighlight()
@@ -604,6 +623,10 @@ function! merlin#Register()
   """ 'semantic movement'  -----------------------------------------------------
   " TODO: bind (,),{,} ?
   command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
+
+  """ Polarity search
+  command! -buffer -nargs=* MerlinSearch call merlin#Phrase()
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=* MerlinSearch call merlin#PolaritySearch(0,<q-args>)
 
   """ debug --------------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
