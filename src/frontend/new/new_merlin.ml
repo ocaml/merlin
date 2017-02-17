@@ -83,7 +83,11 @@ let run = function
             | exception (Failure str) ->
               ("failure", `String str)
             | exception exn ->
-              ("exception", `String (Printexc.to_string exn))
+              match Location.error_of_exn exn with
+              | None -> ("exception", `String (Printexc.to_string exn))
+              | Some err ->
+                Location.report_error Format.str_formatter err;
+                ("error", `String (Format.flush_str_formatter ()))
           in
           let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
           `Assoc ["class", `String class_; "value", message;
