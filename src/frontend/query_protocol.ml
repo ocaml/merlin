@@ -49,6 +49,16 @@ struct
              | `Application of application_context
              ]
   }
+
+  type kind = [
+    | `Constructor
+    | `Labels
+    | `Modules
+    | `Modules_type
+    | `Types
+    | `Values
+    | `Variants
+  ]
 end
 
 type completions = Compl.t
@@ -91,11 +101,11 @@ type _ t =
     :  Msource.position
     -> Location.t list t
   | Complete_prefix(* *)
-    :  string * Msource.position *
+    :  string * Msource.position * Compl.kind list *
        [`with_documentation] _bool * [`with_types] _bool
     -> completions t
   | Expand_prefix(* *)
-    :  string * Msource.position * [`with_types] _bool
+    :  string * Msource.position * Compl.kind list * [`with_types] _bool
     -> completions t
   | Polarity_search
     :  string * Msource.position

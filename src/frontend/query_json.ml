@@ -43,6 +43,17 @@ let dump (type a) : a t -> json =
     | `Logical (line,col) ->
       `Assoc ["line", `Int line; "column", `Int col]
   in
+  let kinds_to_json kind =
+    `List (List.map (function
+        | `Constructor  -> `String "constructor"
+        | `Labels       -> `String "label"
+        | `Modules      -> `String "module"
+        | `Modules_type -> `String "module-type"
+        | `Types        -> `String "type"
+        | `Values       -> `String "value"
+        | `Variants     -> `String "variant"
+      ) kind)
+  in
   function
   | Type_expr (expr, pos) ->
     mk "type-expression" [
@@ -71,19 +82,21 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
-  | Complete_prefix (prefix, pos, doc, typ) ->
+  | Complete_prefix (prefix, pos, kind, doc, typ) ->
     mk "complete-prefix" [
       "prefix", `String prefix;
       "position", mk_position pos;
       "with-doc", `Bool doc;
       "with-types", `Bool typ;
+      "kind", kinds_to_json kind;
     ]
 
-  | Expand_prefix (prefix, pos, typ) ->
+  | Expand_prefix (prefix, pos, kind, typ) ->
     mk "expand-prefix" [
       "prefix", `String prefix;
       "position", mk_position pos;
       "with-types", `Bool typ;
+      "kind", kinds_to_json kind;
     ]
   | Document (identifier, pos) ->
     mk "document" [

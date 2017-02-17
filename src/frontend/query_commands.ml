@@ -347,7 +347,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
-  | Complete_prefix (prefix, pos, with_doc, with_types) ->
+  | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
     for_completion pipeline pos @@ fun tr pipeline typer ->
     let config = Mpipeline.final_config pipeline in
     let verbosity = Mconfig.(config.query.verbosity) in
@@ -376,7 +376,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     {Compl. entries; context }
 
-  | Expand_prefix (prefix, pos, with_types) ->
+  | Expand_prefix (prefix, pos, kinds, with_types) ->
     for_completion pipeline pos @@ fun tr pipeline typer ->
     let source = Mpipeline.input_source pipeline in
     let pos = Msource.get_lexing_pos tr source pos in
@@ -384,7 +384,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let config = Mpipeline.final_config pipeline in
     let global_modules = Mconfig.global_modules config in
     let entries =
-      Completion.expand_prefix env ~global_modules prefix |>
+      Completion.expand_prefix env ~global_modules ~kinds prefix |>
       print_completion_entries ~with_types tr config source
     in
     { Compl. entries ; context = `Unknown }

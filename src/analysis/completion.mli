@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Query_protocol
+
 (* TODO: document all the following functions *)
 
 type raw_info =
@@ -46,20 +48,24 @@ val raw_info_printer : raw_info ->
   ]
 
 val map_entry : ('a -> 'b) ->
-  'a Query_protocol.Compl.raw_entry -> 'b Query_protocol.Compl.raw_entry
+  'a Compl.raw_entry -> 'b Compl.raw_entry
 
 val branch_complete
   :  Mconfig.t
   -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
                -> [> `Found of string ])
   -> ?target_type:Types.type_expr
+  -> ?kinds:Compl.kind list
   -> string
   -> Mbrowse.t
-  -> raw_info Query_protocol.Compl.raw_entry list
+  -> raw_info Compl.raw_entry list
 
-val expand_prefix : global_modules:string list -> Env.t -> string ->
-  raw_info Query_protocol.Compl.raw_entry list
+val expand_prefix
+  : global_modules:string list
+  -> ?kinds:Compl.kind list
+  -> Env.t -> string
+  -> raw_info Compl.raw_entry list
 
 val application_context : prefix:Asttypes.label -> Mbrowse.t ->
   Types.type_expr option *
-  [> `Application of Query_protocol.Compl.application_context | `Unknown ]
+  [> `Application of Compl.application_context | `Unknown ]

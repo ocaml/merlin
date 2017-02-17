@@ -353,7 +353,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         Btype.backtrack snap;
         1000 - cost
     in
-    let rec of_kind = function
+    let of_kind = function
       | `Variants ->
         let add_variant name param candidates =
           if not @@ validate `Variant `Variant name then candidates else
@@ -425,10 +425,12 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
               ~attrs:(lbl_attributes l)
             :: candidates
         ) prefix_path env []
-
-      | `Group (kinds) -> List.concat_map ~f:of_kind kinds
     in
-    try of_kind kind
+    let rec of_kind_group = function
+      | #Query_protocol.Compl.kind as k -> of_kind k
+      | `Group kinds -> List.concat_map ~f:of_kind kinds
+    in
+    try of_kind_group kind
     with exn ->
       Logger.logf "Completion" "get_candidates/of_kind"
         "Failed with exception: %a" (fun () -> Printexc.to_string) exn;
@@ -451,6 +453,8 @@ let completion_order = function
   | `Signature   -> [`Types; `Modules; `Modules_type; gen_values]
   | `Type        -> [`Types; `Modules; `Modules_type; gen_values]
 
+type kinds = [kind | `Group of kind list] list
+
 let complete_methods ~env ~prefix obj =
   let t = obj.Typedtree.exp_type in
   let has_prefix (name,_) =
@@ -471,8 +475,9 @@ type is_label =
   | `Declaration of Types.type_expr * Types.label_declaration list
   ]
 
-let complete_prefix ?get_doc ?target_type ~prefix ~is_label
+let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
     config (env,node) branch =
+  Env.with_cmis @@ fun () ->
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
     then false
@@ -510,8 +515,13 @@ let complete_prefix ?get_doc ?target_type ~prefix ~is_label
     in
     match (is_label : is_label) with
     | `No ->
-      let kind = classify_node node in
-      let order = completion_order kind in
+      let order =
+        if kinds = [] then
+          let kind = classify_node node in
+          completion_order kind
+        else
+          (kinds : kind list :> kinds)
+      in
       let add_completions acc kind =
         get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch @ acc
       in
@@ -549,10 +559,9 @@ let complete_prefix ?get_doc ?target_type ~prefix ~is_label
   with Not_found -> []
 
 (* Propose completion from a particular node *)
-let branch_complete buffer ?get_doc ?target_type prefix = function
+let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
   | [] -> []
   | (env, node) :: branch ->
-    Printtyp.wrap_printing_env env @@ fun () ->
     match node with
     | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
     | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record _ ; pat_type = t }
@@ -568,7 +577,7 @@ let branch_complete buffer ?get_doc ?target_type prefix = function
         with _ -> `Maybe
       in
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-      complete_prefix ?get_doc ?target_type ~prefix ~is_label buffer
+      complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
         (env,node) branch
     | Record_field (parent, lbl, loc) ->
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
@@ -610,18 +619,19 @@ let branch_complete buffer ?get_doc ?target_type prefix = function
           `Description (Array.to_list lbls)
       in
       let result =
-        complete_prefix ?get_doc ?target_type ~prefix ~is_label buffer
+        complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
           (env, node) branch
       in
       Btype.backtrack snap;
       result
     | x ->
       let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
-      complete_prefix ?get_doc ?target_type ~prefix buffer
+      complete_prefix ?get_doc ?target_type ?kinds ~prefix buffer
         ~is_label:(if is_label then `Maybe else `No)
         (env, node) branch
 
-let expand_prefix ~global_modules env prefix =
+let expand_prefix ~global_modules ?kinds env prefix =
+  Env.with_cmis @@ fun () ->
   let lidents, last =
     let ts = Expansion.explore ~global_modules env in
     Expansion.get_lidents ts prefix
@@ -631,11 +641,15 @@ let expand_prefix ~global_modules env prefix =
     fun s -> Expansion.spell_match last s
   in
   let validate _ _ s = validate' s in
+  let kinds = match kinds with
+    | None -> default_kinds
+    | Some kinds -> (kinds : kind list :> kinds)
+  in
   let process_prefix_path prefix_path =
     let candidates =
       let aux compl kind =
         get_candidates ?prefix_path ~prefix:"" kind ~validate env [] @ compl in
-      List.fold_left ~f:aux default_kinds ~init:[]
+      List.fold_left ~f:aux kinds ~init:[]
     in
     match prefix_path with
     | None ->

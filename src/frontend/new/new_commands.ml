@@ -37,6 +37,22 @@ let marg_position f = Marg.param "position"
               str
     )
 
+let marg_completion_kind f = Marg.param "completion-kind"
+    (function
+      | "t" | "type" | "types"           -> f `Types
+      | "v" | "val" | "value" | "values" -> f `Values
+      | "variant" | "variants" | "var"   -> f `Variants
+      | "c" | "constr" | "constructor"   -> f `Constructor
+      | "l" | "label" | "labels"         -> f `Labels
+      | "m" | "mod" | "module"           -> f `Modules
+      | "mt" | "modtype" | "module-type" -> f `Modules_type
+      | str ->
+        failwithf "expecting completion kind, got %S. \
+                   kind can be value, variant, constructor, \
+                   label, module or module-type"
+          str
+    )
+
 let rec find_command name = function
   | [] -> raise Not_found
   | (Command (name', _, _, _, _) as command) :: xs ->
@@ -82,13 +98,15 @@ The return value has the shape \
   command "complete-prefix"
     ~spec: [
       arg "-position" "<position> Position to complete"
-          (marg_position (fun pos (txt,_pos,doc,typ) -> (txt,pos,doc,typ)));
+        (marg_position (fun pos (txt,_pos,kinds,doc,typ) -> (txt,pos,kinds,doc,typ)));
       optional "-doc" "<bool> Add docstring to entries (default is false)"
-          (Marg.bool (fun doc (txt,pos,_doc,typ) -> (txt,pos,doc,typ)));
+        (Marg.bool (fun doc (txt,pos,kinds,_doc,typ) -> (txt,pos,kinds,doc,typ)));
       arg "-prefix" "<string> Prefix to complete"
-          (Marg.param "string" (fun txt (_,pos,doc,typ) -> (txt,pos,doc,typ)));
+        (Marg.param "string" (fun txt (_,pos,kinds,doc,typ) -> (txt,pos,kinds,doc,typ)));
       optional "-types" "<bool> Report type information (default is true)"
-          (Marg.bool (fun typ (txt,pos,doc,_typ) -> (txt,pos,doc,typ)));
+        (Marg.bool (fun typ (txt,pos,kinds,doc,_typ) -> (txt,pos,kinds,doc,typ)));
+      optional "-kind" "<completion-kind> Namespace to complete (value, constructor, type, variant, label, module, module-type). Default is decided by cursor context"
+        (marg_completion_kind (fun kind (txt,pos,kinds,doc,typ) -> (txt,pos,kind::kinds,doc,typ)));
     ]
 ~doc:"This functions completes an identifier that the user started to type.
 It returns a list of possible completions.
@@ -110,12 +128,12 @@ Entries is the list of possible completion. Each entry is made of:
 - a kind, one of `'value'`, `'variant'`, `'constructor'`, `'label'`, `'module'`, `'signature'`, `'type'`, `'method'`, `'#'` (for method calls), `'exn'`, `'class'`
 - a description, most of the time a type or a definition line, to be put next to the name in completion box
 - optional informations which might not fit in the completion box, like signatures for modules or documentation string."
-    ~default:("",`None,false,true)
-    begin fun buffer (txt,pos,doc,typ) ->
+    ~default:("",`None,[],false,true)
+    begin fun buffer (txt,pos,kinds,doc,typ) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        run buffer (Query_protocol.Complete_prefix (txt,pos,doc,typ))
+        run buffer (Query_protocol.Complete_prefix (txt,pos,List.rev kinds,doc,typ))
     end
   ;
 
@@ -195,18 +213,21 @@ Be careful that it always return fully qualified paths, whereas normal \
 completion only completes an identifier (last part of a module path)."
     ~spec: [
       arg "-position" "<position> Position to complete"
-        (marg_position (fun pos (txt,_pos,typ) -> (txt,pos,typ)));
+        (marg_position (fun pos (txt,_pos,kinds,typ) -> (txt,pos,kinds,typ)));
       arg "-prefix" "<string> Prefix to complete"
-        (Marg.param "string" (fun txt (_prefix,pos,typ) -> (txt,pos,typ)));
+        (Marg.param "string" (fun txt (_prefix,pos,kinds,typ) -> (txt,pos,kinds,typ)));
       optional "-types" "<bool> Report type information (default is false)"
-        (Marg.bool (fun typ (txt,pos,_typ) -> (txt,pos,typ)));
+        (Marg.bool (fun typ (txt,pos,kinds,_typ) -> (txt,pos,kinds,typ)));
+      optional "-kind"
+        "<completion-kind> Namespace to complete (value, constructor, type, variant, label, module, module-type). Default is decided by cursor context"
+        (marg_completion_kind (fun kind (txt,pos,kinds,typ) -> (txt,pos,kind::kinds,typ)));
     ]
-    ~default:("",`None,false)
-    begin fun buffer (txt,pos,typ) ->
+    ~default:("",`None,[],false)
+    begin fun buffer (txt,pos,kinds,typ) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        run buffer (Query_protocol.Expand_prefix (txt,pos,typ))
+        run buffer (Query_protocol.Expand_prefix (txt,pos,List.rev kinds,typ))
     end
   ;
 
