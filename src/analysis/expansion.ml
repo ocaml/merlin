@@ -80,7 +80,8 @@ let spell_index s1 =
   let cutoff = match String.length s1 with
     | 0 -> 0
     | 1 -> 0
-    | 2 -> 1
+    | 2 -> 0
+    | 3 -> 1
     | _ -> 2
   in
   let f = optimal_string_alignment s1 cutoff in
