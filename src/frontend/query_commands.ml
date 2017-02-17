@@ -438,7 +438,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Path.Pident ident ->
             String.concat ~sep:"." (Ident.name ident :: acc)
           | Path.Pdot (path', s, _) when
-              mode = `Qualify && Path.same path path' ->
+              mode = `Unqualify && Path.same path path' ->
             String.concat ~sep:"." (s :: acc)
           | Path.Pdot (path', s, _) ->
             path_to_string (s :: acc) path'

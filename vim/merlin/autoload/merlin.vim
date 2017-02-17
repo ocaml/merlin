@@ -438,12 +438,8 @@ function! merlin#OccurrencesRename(text)
   MerlinPy merlin.vim_occurrences_replace(vim.eval("a:text"))
 endfunction
 
-function! merlin#RefactorOpen()
-  MerlinPy merlin.vim_refactor_open("qualify")
-endfunction
-
-function! merlin#RefactorUnopen()
-  MerlinPy merlin.vim_refactor_open("unqualify")
+function! merlin#RefactorOpen(str)
+  MerlinPy merlin.vim_refactor_open(vim.eval("a:str"))
 endfunction
 
 function! merlin#ErrorLocList()
@@ -608,8 +604,8 @@ function! merlin#Register()
   endif
 
   """ Open / Unopen ------------------------------------------------------------
-  command! -buffer -nargs=0 MerlinOpen call merlin#RefactorOpen()
-  command! -buffer -nargs=0 MerlinUnopen call merlin#RefactorUnopen()
+  command! -buffer -nargs=0 MerlinRefactorOpen call merlin#RefactorOpen("unqualify")
+  command! -buffer -nargs=0 MerlinRefactorOpenQualify call merlin#RefactorOpen("qualify")
 
   """ Path management  ---------------------------------------------------------
   command! -buffer -nargs=* -complete=dir MerlinSourcePath call merlin#Path("-source-path", <f-args>)

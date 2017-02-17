@@ -1553,29 +1553,36 @@ Empty string defaults to jumping to all these."
           (merlin-occurrences-list r)
         (error "%s" r)))))
 
+;;;;;;;;;;;;;;;;;;;
+;; OPEN REFACTOR ;;
+;;;;;;;;;;;;;;;;;;;
+
+(defun merlin/refactor-open (mode)
+  "Refactor open statement under cursor. mode can be 'qualify or 'unqualify"
+  (save-excursion
+    (dolist (occurrence (nreverse (merlin/call
+                                   "refactor-open"
+                                   "-position" (merlin/unmake-point (point))
+                                   "-action" mode)))
+      (let ((bounds (merlin--make-bounds occurrence))
+            (content (cdr (assoc 'content occurrence))))
+        (goto-char (car bounds))
+        (delete-char (- (cdr bounds) (car bounds)))
+        (insert content)))))
+
+(defun merlin-refactor-open ()
+  "Refactor open statement under cursor: unqualify paths"
+  (interactive)
+  (merlin/refactor-open 'unqualify))
+
+(defun merlin-refactor-open-qualify ()
+  "Refactor open statement under cursor: qualify paths"
+  (interactive)
+  (merlin/refactor-open 'qualify))
+
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun merlin--traverse-update (point cell pos)
-  (let ((set-l (and pos (< pos point)
-                    (or (not (car cell)) (<= (car cell) pos))))
-        (set-r (and pos (> pos (1+ point))
-                    (or (not (cdr cell)) (>= (cdr cell) pos)))))
-    (when set-l (setcar cell pos))
-    (when set-r (setcdr cell pos))
-    (or set-l set-r)))
-
-
-(defun merlin--traverse-shape (point cell shape)
-  (let* ((bounds (merlin--make-bounds shape))
-         (set-l (when (car bounds)
-                  (merlin--traverse-update point cell (car bounds))))
-         (set-r (when (cdr bounds)
-                  (merlin--traverse-update point cell (cdr bounds)))))
-    (when (or set-l set-r)
-      (dolist (child (cdr (assoc 'children shape)))
-        (merlin--traverse-shape point cell child)))))
 
 (defun merlin-error-check ()
   "Update merlin to the end-of-file, reporting errors."
