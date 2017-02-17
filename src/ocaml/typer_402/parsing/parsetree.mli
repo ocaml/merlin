@@ -37,7 +37,6 @@ and payload =
   | PStr of structure
   | PTyp of core_type  (* : T *)
   | PPat of pattern * expression option  (* ? P  or  ? P when E *)
-  | PCustom of exn
 
 (** {2 Core language} *)
 

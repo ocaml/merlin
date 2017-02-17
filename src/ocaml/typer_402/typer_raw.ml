@@ -95,7 +95,6 @@ module Rewrite_loc = struct
     | PStr str -> PStr (u_structure str)
     | PTyp ct  -> PTyp (u_core_type ct)
     | PPat (p, eo) -> PPat (u_pattern p, u_option u_expression eo)
-    | PCustom _ as pl -> pl
 
   and u_core_type {ptyp_desc; ptyp_attributes; ptyp_loc} =
     enter ();
