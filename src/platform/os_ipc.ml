@@ -7,6 +7,8 @@ type client = {
 
 external connect : Unix.file_descr -> client option = "ml_merlin_daemon_connect"
 
+external unsetenv : string -> unit = "ml_unsetenv"
+
 let get_fd arg =
   try
     let fd : Unix.file_descr = Obj.magic (int_of_string arg) in

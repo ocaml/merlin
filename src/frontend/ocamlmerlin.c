@@ -108,25 +108,58 @@ static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
 
 #define byte(x,n) ((unsigned)((x) >> (n * 8)) & 0xFF)
 
+static const char *envvars[] = {
+  "OCAMLLIB",
+  "OCAMLFIND_CONF",
+  "MERLIN_LOG",
+  NULL
+};
+
+static void append_argument(unsigned char *buffer, size_t len, ssize_t *pos, const char *p)
+{
+  ssize_t j = *pos;
+  while (*p && j < len)
+  {
+    buffer[j] = *p;
+    j += 1;
+    p += 1;
+  }
+
+  if (j >= len)
+    failwith("maximum number of arguments exceeded");
+
+  buffer[j] = 0;
+  j += 1;
+  *pos = j;
+}
+
 static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **argv)
 {
-  /* Append arguments */
   int i = 0;
   ssize_t j = 4;
+
+  /* Append env var */
+  for (i = 0; envvars[i] != NULL; ++i)
+  {
+    append_argument(buffer, len, &j, envvars[i]);
+
+    const char *v = getenv(envvars[i]);
+    if (v != NULL)
+    {
+      j -= 1; /* Overwrite delimiting 0 */
+      append_argument(buffer, len, &j, "=");
+      j -= 1; /* Overwrite delimiting 0 */
+      append_argument(buffer, len, &j, v);
+    }
+  }
+
+  /* Env var delimiter */
+  append_argument(buffer, len, &j, "");
+
+  /* Append arguments */
   for (i = 0; i < argc && j < len; ++i)
   {
-    const char *p = argv[i];
-    while (*p && j < len-1)
-    {
-      buffer[j] = *p;
-      j += 1;
-      p += 1;
-    }
-
-    if (*p) failwith("maximum number of arguments exceeded");
-
-    buffer[j] = 0;
-    j += 1;
+    append_argument(buffer, len, &j, argv[i]);
   }
 
   /* Put size at the beginning */

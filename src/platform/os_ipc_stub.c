@@ -126,3 +126,10 @@ value ml_merlin_daemon_connect(value file_descr)
 
   CAMLreturn(ret);
 }
+
+value ml_unsetenv(value key)
+{
+  CAMLparam1(key);
+  unsetenv(String_val(key));
+  CAMLreturn(Val_unit);
+}

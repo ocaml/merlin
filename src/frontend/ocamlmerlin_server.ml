@@ -9,10 +9,18 @@ module Server = struct
     | exception (Unix.Unix_error(Unix.EINTR, _, _)) -> protect_eintr f
     | result -> result
 
+  let process_arguments argv =
+    let rec aux acc = function
+      | "" :: args | ([] as args) -> (acc, args)
+      | var :: rest -> aux (var :: acc) rest
+    in
+    aux [] (Array.to_list argv)
+
+
   let process_request argv =
-    match Array.to_list argv with
-    | "stop-server" :: _ -> raise Exit
-    | args -> New_merlin.run args
+    match process_arguments argv with
+    | _, ("stop-server" :: _) -> raise Exit
+    | env, args -> New_merlin.run env args
 
   (* Work with triplet (stdin,stdout,stderr) *)
   let io_close (a,b,c) = Unix.(close a; close b; close c)
@@ -71,7 +79,7 @@ end
 
 let main () =
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run args)
+  | "single" :: args -> exit (New_merlin.run [] args)
   | "old-protocol" :: args -> Old_merlin.run args
   | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->

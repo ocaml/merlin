@@ -14,7 +14,45 @@ let usage () =
       prerr_endline doc
     ) New_commands.all_commands
 
-let run = function
+
+let with_env env f =
+  let parseenv var =
+    match String.index var '=' with
+    | pos ->
+      let key = String.sub var 0 pos in
+      let value = String.sub var (pos + 1) (String.length var - pos - 1) in
+      (key, Some value)
+    | exception Not_found -> (var, None)
+  in
+  let getenv key =
+    match Unix.getenv key with
+    | value -> Some value
+    | exception Not_found -> None
+  in
+  let setenv key = function
+    | None -> Os_ipc.unsetenv key
+    | Some value -> Unix.putenv key value
+  in
+  let rec setup = function
+    | [] -> f ()
+    | var :: vs ->
+      let (key, value) = parseenv var in
+      if key = "MERLIN_LOG" then
+        Logger.with_log_file value (fun () -> setup vs)
+      else
+        let value' = getenv key in
+        setenv key value;
+        match setup vs with
+        | exception exn ->
+          setenv key value';
+          Std.reraise exn
+        | result ->
+          setenv key value';
+          result
+  in
+  setup env
+
+let run env = function
   | [] ->
     usage ();
     1
