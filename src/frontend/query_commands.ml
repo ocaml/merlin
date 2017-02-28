@@ -237,7 +237,6 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
 
   | Type_enclosing (expro, pos, index) ->
     let open Typedtree in
-    let open Override in
     with_typer buffer @@ fun pipeline typer ->
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Msource.get_lexing_pos tr (Mpipeline.input_source pipeline) pos in

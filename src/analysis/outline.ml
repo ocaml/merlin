@@ -31,7 +31,6 @@ open Option.Infix
 
 (* Réglisse la police *)
 open Typedtree
-open Typedtree.Override
 
 open Browse_raw
 open Browse_tree

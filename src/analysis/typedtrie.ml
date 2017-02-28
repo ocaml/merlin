@@ -297,7 +297,6 @@ let rec build ?(local_buffer=false) ~trie browses =
           Trie.add_multiple id (loc, doc, `Vals, Leaf) trie
       )
     | Value_description vd ->
-      let open Typedtree.Override in
       Trie.add_multiple (Ident.name vd.val_id) (t.t_loc, doc, `Vals, Leaf) trie
     | Module_binding mb ->
       let node =
@@ -321,7 +320,6 @@ let rec build ?(local_buffer=false) ~trie browses =
     | Type_declaration td ->
       (* TODO: add constructors and labels as well.
          Because why the hell not. *)
-      let open Typedtree.Override in
       Trie.add_multiple (Ident.name td.typ_id) (t.t_loc, doc, `Type, Leaf) trie
     | Type_extension te ->
       (* TODO: add constructors and labels as well.
