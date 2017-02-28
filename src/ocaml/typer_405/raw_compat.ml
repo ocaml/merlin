@@ -152,3 +152,7 @@ let rec select_open_node =
     Some (p, ancestors)
   | [] -> None
   | _ :: ancestors -> select_open_node ancestors
+
+let texp_function_cases = function
+  | Typedtree.Texp_function {cases; _} -> cases
+  | _ -> assert false

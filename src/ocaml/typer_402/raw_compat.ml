@@ -140,3 +140,7 @@ let labels_of_application =
     | Texp_apply (f, args) ->
       real_labels_of_application node.exp_env prefix f args
     | _ -> []
+
+let texp_function_cases = function
+  | Typedtree.Texp_function (_,cs,_) -> cs
+  | _ -> assert false

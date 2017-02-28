@@ -122,3 +122,7 @@ let labels_of_application ~prefix = function
           Some ("?" ^ str, ty)
       ) labels
   | _ -> []
+
+let texp_function_cases = function
+  | Typedtree.Texp_function (_,cs,_) -> cs
+  | _ -> assert false
