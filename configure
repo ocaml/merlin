@@ -148,15 +148,17 @@ check_package yojson "Install yojson"
 OCAML_VERSION="403"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
 OCAML_VERSION_VAL='`OCaml_4_03_0'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 ]'
 
-MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number | cut -d' ' -f2)
+MAGIC_NUMBERS=$(ocamlfind c -config | grep _magic_number)
+CMI_NUMBER=$(echo "$MAGIC_NUMBERS" | grep cmi_magic_number | cut -d' ' -f2)
+CMT_NUMBER=$(echo "$MAGIC_NUMBERS" | grep cmt_magic_number | cut -d' ' -f2)
 FULL_VERSION=$(ocamlfind c -version)
 
 ### Patch certain versions of the typechecker
 ### =========================================
 
-case "$MAGIC_VERSION" in
+case "$CMI_NUMBER" in
   "Caml1999I017")
     OCAML_VERSION="402"
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
@@ -187,10 +189,18 @@ case "$MAGIC_VERSION" in
     OCAML_VERSION_VAL='`OCaml_4_03_0'
     ;;
   "Caml1999I021")
-    OCAML_VERSION="404"
-    OCAML_VERSION_MESSAGE="OCaml 4.04.0"
-    OCAML_VERSION_VAL='`OCaml_4_04_0'
-    ;;
+    case "$CMT_NUMBER" in
+      "Caml2012T008")
+        OCAML_VERSION="404"
+        OCAML_VERSION_MESSAGE="OCaml 4.04.0"
+        OCAML_VERSION_VAL='`OCaml_4_04_0'
+        ;;
+      *)
+        OCAML_VERSION="405"
+        OCAML_VERSION_MESSAGE="OCaml 4.05.0"
+        OCAML_VERSION_VAL='`OCaml_4_05_0'
+        ;;
+    esac;;
 esac
 
 ## Findlib version check
