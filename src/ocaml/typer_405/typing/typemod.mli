@@ -47,7 +47,7 @@ val path_of_module : Typedtree.module_expr -> Path.t option
 
 val save_signature:
   string -> Typedtree.signature -> string -> string ->
-  Env.t -> Types.signature_item list -> unit
+  Env.t -> Cmi_format.cmi_infos -> unit
 
 val package_units:
   Env.t -> string list -> string -> string -> Typedtree.module_coercion
@@ -85,7 +85,3 @@ module ImplementationHooks : Misc.HookSig
   with type t = Typedtree.structure * Typedtree.module_coercion
 module InterfaceHooks : Misc.HookSig
   with type t = Typedtree.signature
-
-(* merlin *)
-
-val normalize_signature : Env.t -> Types.signature -> unit

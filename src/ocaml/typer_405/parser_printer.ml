@@ -216,6 +216,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern) -> "pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_expression) -> "parse_expression"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parent_binder) -> "parent_binder"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_paren_module_expr) -> "paren_module_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_package_type) -> "package_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_override_flag) -> "override_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_variable) -> "optional_type_variable"
@@ -554,6 +555,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_pattern -> (fun _ -> "pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_expression -> (fun _ -> "parse_expression")
   | MenhirInterpreter.N MenhirInterpreter.N_parent_binder -> (fun _ -> "parent_binder")
+  | MenhirInterpreter.N MenhirInterpreter.N_paren_module_expr -> (fun _ -> "paren_module_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_package_type -> (fun _ -> "package_type")
   | MenhirInterpreter.N MenhirInterpreter.N_override_flag -> (fun _ -> "override_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_variable -> (fun _ -> "optional_type_variable")

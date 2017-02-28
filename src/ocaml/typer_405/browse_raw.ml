@@ -288,8 +288,8 @@ let of_expression_desc loc = function
   | Texp_variant (_,None) | Texp_new _ -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
-  | Texp_function (_,cs,_) ->
-    list_fold of_case cs
+  | Texp_function { cases; _ } ->
+    list_fold of_case cases
   | Texp_apply (e,ls) ->
     of_expression e **
     list_fold (function

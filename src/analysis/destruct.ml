@@ -183,7 +183,7 @@ let rec needs_parentheses = function
         (* We are after the "in" keyword, we need to look at the parent of the
            binding. *)
         needs_parentheses ts
-      | Typedtree.Texp_function (_, cases, _) when List.length cases = 1 ->
+      | Typedtree.Texp_function {cases; _} when List.length cases = 1 ->
         (* The assumption here is that we're not in a [function ... | ...]
             situation but either in [fun param] or [let name param]. *)
         needs_parentheses ts

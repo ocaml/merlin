@@ -68,6 +68,8 @@ SOURCES_LIB = \
 	$(TYPER)/parsing/location.ml      \
 	src/ocaml/support/location_aux.mli \
 	src/ocaml/support/location_aux.ml  \
+	$(TYPER)/parsing/syntaxerr.mli    \
+	$(TYPER)/parsing/syntaxerr.ml     \
 	$(TYPER)/parsing/attr_helper.mli  \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
@@ -127,8 +129,6 @@ SOURCES_LIB = \
 	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
-	$(TYPER)/parsing/syntaxerr.mli    \
-	$(TYPER)/parsing/syntaxerr.ml     \
 	src/ocaml/support/cmt_cache.ml    \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \

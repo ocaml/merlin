@@ -113,9 +113,9 @@ val tool_name: unit -> string
     calling it ["ocamlc"], ["ocamlopt"], ["ocamldoc"], ["ocamldep"],
     ["ocaml"], ...  Some global variables that reflect command-line
     options are automatically synchronized between the calling tool
-    and the ppx preprocessor: [Clflags.include_dirs],
-    [Config.load_path], [Clflags.open_modules], [Clflags.for_package],
-    [Clflags.debug]. *)
+    and the ppx preprocessor: {!Clflags.include_dirs},
+    {!Config.load_path}, {!Clflags.open_modules}, {!Clflags.for_package},
+    {!Clflags.debug}. *)
 
 
 val apply: source:string -> target:string -> mapper -> unit
@@ -127,7 +127,7 @@ val apply: source:string -> target:string -> mapper -> unit
 val run_main: (string list -> mapper) -> unit
 (** Entry point to call to implement a standalone -ppx rewriter from a
     mapper, parametrized by the command line arguments.  The current
-    unit name can be obtained from [Location.input_name].  This
+    unit name can be obtained from {!Location.input_name}.  This
     function implements proper error reporting for uncaught
     exceptions. *)
 
@@ -198,10 +198,3 @@ val drop_ppx_context_sig:
 
 val set_cookie: string -> Parsetree.expression -> unit
 val get_cookie: string -> Parsetree.expression option
-
-(** merlin: manage internal state *)
-
-type state
-
-val new_state : unit -> state
-val state : state ref

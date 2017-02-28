@@ -78,7 +78,13 @@ let get_unboxed_from_attributes sdecl =
 
 (* Enter all declared types in the environment as abstract types *)
 
-let enter_type env sdecl id =
+let enter_type rec_flag env sdecl id =
+  let needed =
+    match rec_flag with
+    | Asttypes.Nonrecursive -> Btype.is_row_name (Ident.name id)
+    | Asttypes.Recursive -> true
+  in
+  if not needed then env else
   let decl =
     { type_params =
         List.map (fun _ -> Btype.newgenvar ()) sdecl.ptype_params;
@@ -133,7 +139,8 @@ let rec get_unboxed_type_representation env ty fuel =
   | _ -> Some ty
 
 let get_unboxed_type_representation env ty =
-  get_unboxed_type_representation env ty 100000
+  (* Do not give too much fuel: PR#7424 *)
+  get_unboxed_type_representation env ty 100
 ;;
 
 (* Determine if a type's values are represented by floats at run-time. *)
@@ -1204,10 +1211,7 @@ let transl_type_decl env rec_flag sdecl_list =
   Ctype.begin_def();
   (* Enter types. *)
   let temp_env =
-    match rec_flag with
-    | Asttypes.Nonrecursive -> env
-    | Asttypes.Recursive -> List.fold_left2 enter_type env sdecl_list id_list
-  in
+    List.fold_left2 (enter_type rec_flag) env sdecl_list id_list in
   (* Translate each declaration. *)
   let current_slot = ref None in
   let warn_unused = Warnings.is_active (Warnings.Unused_type_declaration "") in
@@ -1330,7 +1334,7 @@ let transl_extension_constructor env type_path type_params
         in
           args, ret_type, Text_decl(targs, tret_type)
     | Pext_rebind lid ->
-        let cdescr = Typetexp.find_constructor env sext.pext_loc lid.txt in
+        let cdescr = Typetexp.find_constructor env lid.loc lid.txt in
         let usage =
           if cdescr.cstr_private = Private || priv = Public
           then Env.Positive else Env.Privatize
@@ -1438,7 +1442,8 @@ let transl_type_extension check_open env loc styext =
   reset_type_variables();
   Ctype.begin_def();
   let (type_path, type_decl) =
-    Typetexp.find_type env loc styext.ptyext_path.txt
+    let lid = styext.ptyext_path in
+    Typetexp.find_type env lid.loc lid.txt
   in
   begin
     match type_decl.type_kind with
@@ -1640,11 +1645,11 @@ let transl_value_decl env loc valdecl =
   let ty = cty.ctyp_type in
   let v =
   match valdecl.pval_prim with
-    [] ->
-    if not (Env.is_in_signature env) then
-      Msupport.raise_error (Error(valdecl.pval_loc, Val_in_structure));
-    { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
-      val_attributes = valdecl.pval_attributes }
+    [] when Env.is_in_signature env ->
+      { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
+        val_attributes = valdecl.pval_attributes }
+  | [] ->
+      raise (Error(valdecl.pval_loc, Val_in_structure))
   | _ ->
       let global_repr =
         match
@@ -1661,9 +1666,9 @@ let transl_value_decl env loc valdecl =
           ~native_repr_args
           ~native_repr_res
       in
-      (*if prim.prim_arity = 0 &&
+      if prim.prim_arity = 0 &&
          (prim.prim_name = "" || prim.prim_name.[0] <> '%') then
-        raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));*)
+        raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));
       if !Clflags.native_code
       && prim.prim_arity > 5
       && prim.prim_native_name = ""

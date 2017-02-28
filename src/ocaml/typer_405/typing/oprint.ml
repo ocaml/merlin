@@ -212,8 +212,8 @@ and print_simple_out_type ppf =
           Ovar_fields fields ->
             print_list print_row_field (fun ppf -> fprintf ppf "@;<1 -2>| ")
               ppf fields
-        | Ovar_name (id, tyl) ->
-            fprintf ppf "@[%a%a@]" print_typargs tyl print_ident id
+        | Ovar_typ typ ->
+           print_simple_out_type ppf typ
       in
       fprintf ppf "%s[%s@[<hv>@[<hv>%a@]%a ]@]" (if non_gen then "_" else "")
         (if closed then if tags = None then " " else "< "
@@ -454,9 +454,6 @@ and print_out_sig_item ppf =
           ppf td
   | Osig_value vd ->
       let kwd = if vd.oval_prims = [] then "val" else "external" in
-      let not_bucklescript s =
-        not (String.length s > 3 && s.[0] = 'B' && s.[1] = 'S' && s.[2] = ':')
-      in
       let pr_prims ppf =
         function
           [] -> ()
@@ -465,8 +462,7 @@ and print_out_sig_item ppf =
             List.iter (fun s -> fprintf ppf "@ \"%s\"" s) sl
       in
       fprintf ppf "@[<2>%s %a :@ %a%a%a@]" kwd value_ident vd.oval_name
-        !out_type vd.oval_type pr_prims
-        (List.filter not_bucklescript vd.oval_prims)
+        !out_type vd.oval_type pr_prims vd.oval_prims
         (fun ppf -> List.iter (fun a -> fprintf ppf "@ [@@@@%s]" a.oattr_name))
         vd.oval_attributes
   | Osig_ellipsis ->

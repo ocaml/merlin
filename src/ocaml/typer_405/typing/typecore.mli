@@ -69,6 +69,8 @@ val delayed_checks: delayed_check list ref
 val reset_delayed_checks: unit -> unit
 val force_delayed_checks: unit -> unit
 
+val name_pattern : string -> Typedtree.case list -> Ident.t
+
 val self_coercion : (Path.t * Location.t list ref) list ref
 
 type error =
