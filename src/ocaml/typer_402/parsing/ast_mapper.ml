@@ -904,10 +904,3 @@ let run_main mapper =
 
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name f
-
-(** merlin: manage internal state *)
-
-type state = Parsetree.expression StringMap.t
-
-let new_state () = StringMap.empty
-let state = cookies
