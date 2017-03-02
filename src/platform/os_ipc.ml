@@ -1,18 +1,34 @@
+type server
+type context
+
 type client = {
-  stdin  : Unix.file_descr;
-  stdout : Unix.file_descr;
-  stderr : Unix.file_descr;
-  argv   : string array;
+  context : context;
+  argv    : string array;
 }
 
-external connect : Unix.file_descr -> client option = "ml_merlin_daemon_connect"
+(* {1 Server management}
+   Listen, accept client and close *)
 
-external unsetenv : string -> unit = "ml_unsetenv"
+external server_setup : string -> string -> server option =
+  "ml_merlin_server_setup"
 
-let get_fd arg =
-  try
-    let fd : Unix.file_descr = Obj.magic (int_of_string arg) in
-    ignore (Unix.fstat fd);
-    fd
-  with _ ->
-    failwith ("invalid server socket (" ^ arg ^ ")")
+external server_accept : server -> timeout:float -> client option =
+  "ml_merlin_server_accept"
+
+external server_close : server -> unit =
+  "ml_merlin_server_close"
+
+(* {1 Context management (stdin, stdout, stderr)}
+   Setup and close *)
+
+external context_setup : context -> unit =
+  "ml_merlin_context_setup"
+
+external context_close : context -> return_code:int -> unit =
+  "ml_merlin_context_close"
+
+(* {1 Environment management}
+   Primitive missing from Unix/Sys. *)
+
+external unsetenv : string -> unit =
+  "ml_merlin_unsetenv"
