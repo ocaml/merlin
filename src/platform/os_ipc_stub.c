@@ -95,7 +95,7 @@ value ml_merlin_server_setup(value path, value strfd)
 {
   CAMLparam2(path, strfd);
   CAMLlocal2(payload, ret);
-  const char *endptr = NULL;
+  char *endptr = NULL;
 
   int fd = strtol(String_val(strfd), &endptr, 0);
   if (endptr && *endptr == '\0')
