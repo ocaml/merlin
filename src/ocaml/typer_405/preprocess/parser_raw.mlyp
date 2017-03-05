@@ -922,10 +922,6 @@ paren_module_expr:
       { unclosed("(", 1, ")", 6) }*)
   (*| LPAREN VAL attributes expr error
       { unclosed("(", 1, ")", 5) }*)
-  | module_expr attribute
-      { Mod.attr $1 $2 }
-  | extension
-      { mkmod(Pmod_extension $1) }
 ;
 
 structure [@recovery []]:
