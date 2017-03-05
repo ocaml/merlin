@@ -9,8 +9,7 @@ ifdef ENABLE_COMPILED_EMACS_MODE
 									 emacs/merlin-imenu.elc \
 									 emacs/merlin-ac.elc \
 									 emacs/merlin-cap.elc \
-									 emacs/merlin-company.elc \
-									 emacs/merlin-compat.elc
+									 emacs/merlin-company.elc
 endif
 
 EMACS = emacs

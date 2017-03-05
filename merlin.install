@@ -28,8 +28,6 @@ share_root: [
   "?emacs/merlin-cap.elc" {"emacs/site-lisp/merlin-cap.elc"}
   "emacs/merlin-company.el" {"emacs/site-lisp/merlin-company.el"}
   "?emacs/merlin-company.elc" {"emacs/site-lisp/merlin-company.elc"}
-  "emacs/merlin-compat.el" {"emacs/site-lisp/merlin-compat.el"}
-  "?emacs/merlin-compat.elc" {"emacs/site-lisp/merlin-compat.elc"}
   "emacs/merlin.el" {"emacs/site-lisp/merlin.el"}
   "?emacs/merlin.elc" {"emacs/site-lisp/merlin.elc"}
   "emacs/merlin-iedit.el" {"emacs/site-lisp/merlin-iedit.el"}
