@@ -462,7 +462,7 @@ return (LOC1 . LOC2)."
                                           merlin-buffer-extensions))
         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
                                           merlin-buffer-packages))
-        )
+        (filename    (buffer-file-name (buffer-base-buffer))))
     ;; Update environment
     (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
       (let* ((equal-pos (string-match "=" binding))
@@ -494,7 +494,8 @@ return (LOC1 . LOC2)."
                  extensions
                  (unless (string-equal merlin-buffer-flags "")
                    (cons "-flags" merlin-buffer-flags))
-                 "-filename" (buffer-file-name (buffer-base-buffer))
+                 (when filename
+                   (cons "-filename" filename))
                  args))
     ;; Log last commands
     (setq merlin-debug-last-commands
