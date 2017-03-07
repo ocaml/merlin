@@ -155,6 +155,7 @@ def command2(args, context=None, track_verbosity=None):
     cmdline = ["server"] + list(args) + ["-filename",filename] + verbosity + \
             concat_map(lambda ext: ("-extension",ext), vim_list_if_set("b:merlin_extensions")) + \
             concat_map(lambda pkg: ("-package",pkg), vim_list_if_set("b:merlin_packages")) + \
+            concat_map(lambda dm: ("-dot-merlin",dm), vim_list_if_set("b:merlin_dot_merlins")) + \
             vim.eval('g:merlin_binary_flags') + \
             vim_list_if_set('b:merlin_flags')
 
