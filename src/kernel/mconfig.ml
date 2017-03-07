@@ -262,6 +262,12 @@ let merlin_flags = [
     marg_path (fun path merlin -> {merlin with stdlib = Some path}),
     "<path> Change path of ocaml standard library"
   );
+  (
+    (* Legacy support for janestreet. Ignored. To be removed soon. *)
+    "-attributes-allowed",
+    Marg.unit_ignore,
+    " DEPRECATED"
+  );
 ]
 
 type query = {
