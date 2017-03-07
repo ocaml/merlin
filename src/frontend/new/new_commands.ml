@@ -301,8 +301,8 @@ let all_commands = [
        "<interface|implementation> Prefer opening interface or implementation",
        Marg.param "<interface|implementation>"
          (fun kind (prefix,pos,_) -> match kind with
-            | "interface" -> (prefix,pos,`MLI)
-            | "implementation" -> (prefix,pos,`ML)
+            | "mli" | "interface" -> (prefix,pos,`MLI)
+            | "ml"  | "implementation" -> (prefix,pos,`ML)
             | str ->
               failwithf "expecting interface or implementation, got %S." str)
       );
