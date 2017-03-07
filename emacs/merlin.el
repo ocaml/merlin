@@ -204,6 +204,8 @@ The association list can contain the following optional keys:
 - `env': list of strings (of the shape VARIABLE=FOO) (see
 `process-environment') that will be prepended to the environment of merlin
 
+- `dot-merlin': path to a .merlin file
+
 - `logfile': path to the logfile
 
 - `name': a short name for this configuration, displayed in user notifications."
@@ -452,6 +454,7 @@ return (LOC1 . LOC2)."
   (let ((binary      (merlin-command))
         (flags       (merlin-lookup 'flags merlin-buffer-configuration))
         (process-environment (copy-list process-environment))
+        (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
         ; FIXME use logfile
         (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
                          merlin-logfile))
@@ -481,6 +484,7 @@ return (LOC1 . LOC2)."
     ;; Compute full command line.
     (setq args (merlin--map-flatten-to-string
                  "server" command "-protocol" "sexp"
+                 (when dot-merlin '("-dot-merlin" dot-merlin))
                  ;; Is debug mode enabled
                  (when merlin-debug '("-log-file" "-"))
                  ;; If command is repeated, increase verbosity
