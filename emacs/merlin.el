@@ -484,7 +484,8 @@ return (LOC1 . LOC2)."
     ;; Compute full command line.
     (setq args (merlin--map-flatten-to-string
                  "server" command "-protocol" "sexp"
-                 (when dot-merlin '("-dot-merlin" dot-merlin))
+                 (when dot-merlin
+                   (list "-dot-merlin" dot-merlin))
                  ;; Is debug mode enabled
                  (when merlin-debug '("-log-file" "-"))
                  ;; If command is repeated, increase verbosity
