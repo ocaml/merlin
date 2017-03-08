@@ -6,20 +6,12 @@ function! SyntaxCheckers_ocaml_merlin_IsAvailable()
   if !exists("*merlin#SelectBinary")
     return 0
   endif
-  let l:path = ""
   try
-    if !exists("b:merlin_binary")
-      let l:path = merlin#SelectBinary()
-    else
-      let l:path = b:merlin_binary
-    endif
+    let l:path = merlin#SelectBinary()
+    return executable(l:path)
   catch
     return 0
   endtry
-  if exists("b:merlin_path")
-    let l:path = b:merlin_path
-  endif
-  return executable(l:path)
 endfunction
 
 function! SyntaxCheckers_ocaml_merlin_GetLocList()

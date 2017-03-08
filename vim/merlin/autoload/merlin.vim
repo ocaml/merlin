@@ -681,14 +681,17 @@ function! merlin#FindBinary()
 endfunction
 
 function! merlin#SelectBinary()
-  if !exists("b:merlin_binary")
+  if !exists("b:merlin_path")
     if exists("*MerlinSelectBinary")
-      let b:merlin_binary = MerlinSelectBinary()
+      let l:merlin_path = MerlinSelectBinary()
+      if !exists("b:merlin_path")
+        let b:merlin_path = l:merlin_path
+      end
     else
-      let b:merlin_binary = merlin#FindBinary()
+      let b:merlin_path = merlin#FindBinary()
     end
   endif
-  return b:merlin_binary
+  return b:merlin_path
 endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile(["ml","mli"],<f-args>)

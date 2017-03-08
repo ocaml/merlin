@@ -89,10 +89,7 @@ last_commands = []
 def merlin_exec(args, input=""):
     global last_commands
     env = os.environ
-    if vim.eval("exists('b:merlin_path')") == '1':
-        path = vim.eval("b:merlin_path")
-    else:
-        path = vim.eval("merlin#SelectBinary()")
+    path = vim.eval("merlin#SelectBinary()")
     if vim.eval("exists('b:merlin_env')") == '1':
         env = env.copy()
         newenv = vim.eval("b:merlin_env")
