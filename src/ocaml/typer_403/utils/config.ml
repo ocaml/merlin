@@ -23,6 +23,17 @@
 (***********************************************************************)
 
 
+let standard_library_default = Findlib.ocaml_stdlib ()
+
+let standard_library =
+  try
+    Sys.getenv "OCAMLLIB"
+  with Not_found ->
+  try
+    Sys.getenv "CAMLLIB"
+  with Not_found ->
+    standard_library_default
+
 let windows =
   match Sys.os_type with
   | "Win32" -> true
