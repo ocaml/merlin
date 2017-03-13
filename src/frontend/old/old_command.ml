@@ -237,7 +237,7 @@ let dispatch tr (type a) (context : Context.t) (cmd : a command) =
   match cmd with
   | Query q ->
     Mreader.with_ambient_reader tr config state.buffer.source @@ fun () ->
-    Query_commands.dispatch (Trace.start (), config,state.buffer.source) q
+    Query_commands.dispatch (Trace.null, config,state.buffer.source) q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer tr context in
     state.buffer <- buffer
