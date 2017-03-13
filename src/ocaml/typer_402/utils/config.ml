@@ -46,12 +46,3 @@ let load_path = ref ([] : string list)
 let interface_suffix = ref ".mli"
 
 let max_tag = 245
-
-let print_config oc =
-  let p name valu = Printf.fprintf oc "%s: %s\n" name valu in
-  p "version" version;
-  p "standard_library_default" standard_library_default;
-  p "standard_library" standard_library;
-  p "os_type" Sys.os_type;
-  flush oc;
-;;
