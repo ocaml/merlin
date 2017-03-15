@@ -1,6 +1,6 @@
-![merlin completion in vim](https://github.com/the-lambda-church/merlin/wiki/vim_complete.png)
+![merlin completion in vim](https://github.com/ocaml/merlin/wiki/vim_complete.png)
 
-[Merlin](https://the-lambda-church.github.io/merlin/) is an editor service that provides modern IDE features for OCaml.
+[Merlin](https://ocaml.github.io/merlin/) is an editor service that provides modern IDE features for OCaml.
 
 Emacs and Vim support is provided out-of-the-box. External contributors added support for Visual Studio Code, Sublime Text and Atom.
 
@@ -68,7 +68,7 @@ The default configuration can be seen in:
 
 After adding merlin to vim runtime path, you will probably want to run `:helptags <SHARE_DIR>/merlin/vim/doc` to register Merlin documentation inside vim.
 
-A more comprehensive documentation can be found on the [vim-from-scratch wiki](https://github.com/the-lambda-church/merlin/wiki/vim-from-scratch).
+A more comprehensive documentation can be found on the [vim-from-scratch wiki](https://github.com/ocaml/merlin/wiki/vim-from-scratch).
 
 ### Emacs setup
 
@@ -86,14 +86,14 @@ All you need to do is add the following to your .emacs:
 
 `merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if it is installed.
 
-A more comprehensive documentation can be found on the [emacs-from-scratch wiki](https://github.com/the-lambda-church/merlin/wiki/emacs-from-scratch).
+A more comprehensive documentation can be found on the [emacs-from-scratch wiki](https://github.com/ocaml/merlin/wiki/emacs-from-scratch).
 
 ### Other editors
 
 The wiki also contains pages for:  
-- [Acme](https://github.com/the-lambda-church/merlin/wiki/acme-from-scratch)  
-- [Atom](https://github.com/the-lambda-church/merlin/wiki/atom-from-scratch)  
-- [Spacemacs](https://github.com/the-lambda-church/merlin/wiki/spacemacs-from-scratch)
+- [Acme](https://github.com/ocaml/merlin/wiki/acme-from-scratch)  
+- [Atom](https://github.com/ocaml/merlin/wiki/atom-from-scratch)  
+- [Spacemacs](https://github.com/ocaml/merlin/wiki/spacemacs-from-scratch)
 
 External contributors have implemented modes for more editors:  
 * [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)  
@@ -104,47 +104,47 @@ External contributors have implemented modes for more editors:
 Next steps
 ==========
 
-To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/the-lambda-church/merlin/wiki/project-configuration) file.
+To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file.
 
-Read more in the [wiki](https://github.com/the-lambda-church/merlin/wiki) to learn how to make full use of Merlin in your projects.
+Read more in the [wiki](https://github.com/ocaml/merlin/wiki) to learn how to make full use of Merlin in your projects.
 
 Development of Merlin
 =====================
  
-Most of the development happens through the [github page](https://github.com/the-lambda-church/merlin).
+Most of the development happens through the [github page](https://github.com/ocaml/merlin).
 
 The [mailing list](https://lists.forge.ocamlcore.org/cgi-bin/listinfo/merlin-discuss) welcomes general questions and discussions.
 
 Merlin Labels
 -------------
 
-[Area/Emacs](https://github.com/the-lambda-church/merlin/labels/Area%2FEmacs): Related to Emacs
+[Area/Emacs](https://github.com/ocaml/merlin/labels/Area%2FEmacs): Related to Emacs
 
-[Area/Vim](https://github.com/the-lambda-church/merlin/labels/Area%2FVim): Related to Vim
+[Area/Vim](https://github.com/ocaml/merlin/labels/Area%2FVim): Related to Vim
 
-[Kind/Bug](https://github.com/the-lambda-church/merlin/labels/Kind%2FBug): This issue describes a problem
+[Kind/Bug](https://github.com/ocaml/merlin/labels/Kind%2FBug): This issue describes a problem
 
-[Kind/Docs](https://github.com/the-lambda-church/merlin/labels/Kind%2FDocs): This issue describes a documentation change
+[Kind/Docs](https://github.com/ocaml/merlin/labels/Kind%2FDocs): This issue describes a documentation change
 
-[Kind/Feature-Request](https://github.com/the-lambda-church/merlin/labels/Kind%2FFeature-request): Solving this issue requires implementing a new feature
+[Kind/Feature-Request](https://github.com/ocaml/merlin/labels/Kind%2FFeature-request): Solving this issue requires implementing a new feature
 
-[Kind/To-discuss](https://github.com/the-lambda-church/merlin/labels/Kind%2FTo-discuss): Discussion needed to converge on a solution; often aesthetic. See mailing list for discussion
+[Kind/To-discuss](https://github.com/ocaml/merlin/labels/Kind%2FTo-discuss): Discussion needed to converge on a solution; often aesthetic. See mailing list for discussion
 
-[Status/0-More-info-needed](https://github.com/the-lambda-church/merlin/labels/Status%2F0-More-info-needed): More information is needed before this issue can be triaged
+[Status/0-More-info-needed](https://github.com/ocaml/merlin/labels/Status%2F0-More-info-needed): More information is needed before this issue can be triaged
 
-[Status/0-Triage](https://github.com/the-lambda-church/merlin/labels/Status%2F0-Triage): This issue needs triaging
+[Status/0-Triage](https://github.com/ocaml/merlin/labels/Status%2F0-Triage): This issue needs triaging
 
-[Status/1-Acknowledged](https://github.com/the-lambda-church/merlin/labels/Status%2F1-Acknowledged): This issue has been triaged and is being investigated
+[Status/1-Acknowledged](https://github.com/ocaml/merlin/labels/Status%2F1-Acknowledged): This issue has been triaged and is being investigated
 
-[Status/2-Regression](https://github.com/the-lambda-church/merlin/labels/Status%2F2-Regression): Known workaround to be applied and tested
+[Status/2-Regression](https://github.com/ocaml/merlin/labels/Status%2F2-Regression): Known workaround to be applied and tested
 
-[Status/3-Fixed-need-test](https://github.com/the-lambda-church/merlin/labels/Status%2F3-Fixed-need-test): This issue has been fixed and needs checking
+[Status/3-Fixed-need-test](https://github.com/ocaml/merlin/labels/Status%2F3-Fixed-need-test): This issue has been fixed and needs checking
 
-[Status/4-Fixed](https://github.com/the-lambda-church/merlin/labels/Status%2F4-Fixed): This issue has been fixed!
+[Status/4-Fixed](https://github.com/ocaml/merlin/labels/Status%2F4-Fixed): This issue has been fixed!
 
-[Status/5-Awaiting-feedback](https://github.com/the-lambda-church/merlin/labels/Status%2F5-Awaiting-feedback): This issue requires feedback on a previous fix
+[Status/5-Awaiting-feedback](https://github.com/ocaml/merlin/labels/Status%2F5-Awaiting-feedback): This issue requires feedback on a previous fix
 
-You can see current areas of development in our [Merlin Project Roadmaps](https://github.com/the-lambda-church/merlin/projects) that we keep up to date.
+You can see current areas of development in our [Merlin Project Roadmaps](https://github.com/ocaml/merlin/projects) that we keep up to date.
 
 Contributing to Merlin
 ----------------------

@@ -7,7 +7,7 @@
 ;; Created: 27 June 2014
 ;; Version: 0.1
 ;; Keywords: ocaml languages
-;; URL: http://github.com/the-lambda-church/merlin
+;; URL: http://github.com/ocaml/merlin
 
 (require 'iedit)
 

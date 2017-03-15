@@ -3,9 +3,9 @@ name:         "merlin"
 version:      "3.0.0"
 maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
-homepage:     "https://github.com/the-lambda-church/merlin"
-bug-reports:  "https://github.com/the-lambda-church/merlin/issues"
-dev-repo:     "https://github.com/the-lambda-church/merlin.git"
+homepage:     "https://github.com/ocaml/merlin"
+bug-reports:  "https://github.com/ocaml/merlin/issues"
+dev-repo:     "https://github.com/ocaml/merlin.git"
 
 build: [
   ["./configure" "--prefix" prefix]
@@ -45,7 +45,7 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
     ;; Use opam switch to lookup ocamlmerlin binary
     (setq merlin-command 'opam)))
 
-Take a look at https://github.com/the-lambda-church/merlin for more information
+Take a look at https://github.com/ocaml/merlin for more information
 
 Quick setup with opam-user-setup
 --------------------------------

@@ -122,7 +122,7 @@ message:
 	@echo '  (require '"'"'merlin)'
 	@echo 'Then issue M-x merlin-mode in a ML buffer.'
 	@echo
-	@echo 'Take a look at https://github.com/the-lambda-church/merlin for more information.'
+	@echo 'Take a look at https://github.com/ocaml/merlin for more information.'
 	@echo
 
 install: install-binary install-share install-vim

@@ -5,7 +5,7 @@
 ;; Created: 30 August 2016
 ;; Version: 3.0
 ;; Keywords: ocaml languages
-;; URL: https://github.com/the-lambda-church/merlin
+;; URL: https://github.com/ocaml/merlin
 
 ;;; Commentary:
 ;; merlin-mode is an Emacs interface to merlin.  It allows you to perform
@@ -23,7 +23,7 @@
 (require 'cl)
 (require 'crm) ;; for completing-read-multiple
 ;; caml-types for highlighting
-;; (https://github.com/the-lambda-church/merlin/issues/331)
+;; (https://github.com/ocaml/merlin/issues/331)
 (require 'caml-types nil 'noerror)
 
 ;; silence free variable warning

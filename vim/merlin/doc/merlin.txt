@@ -345,6 +345,6 @@ If the plugin is installed, they will work out of the box.
 Contact us ~
 
 If you have any comment, question or bug to report, you can contact us through
-github : https://github.com/the-lambda-church/merlin/issues
+github : https://github.com/ocaml/merlin/issues
 
  vim:tw=78:et:ft=help:norl:

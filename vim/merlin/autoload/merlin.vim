@@ -338,7 +338,7 @@ function! merlin#Complete(findstart,base)
     endif
   endif
 
-  " Workaround https://github.com/the-lambda-church/merlin/issues/223 vim 704
+  " Workaround https://github.com/ocaml/merlin/issues/223 vim 704
   return s:compl_result
   "if v:version <= 703
   "  return l:props
