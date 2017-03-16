@@ -341,28 +341,39 @@ let standard_library ?conf ?path () =
   set_findlib_path ?conf ?path ();
   Findlib.ocaml_stdlib ()
 
+let is_package_optional name =
+  let last = String.length name - 1 in
+  last >= 0 && name.[last] = '?'
+
+let remove_option name =
+  let last = String.length name - 1 in
+  if last >= 0 && name.[last] = '?' then String.sub name 0 last else name
+
 let path_of_packages ?conf ?path packages =
   set_findlib_path ?conf ?path ();
-  let f name (pkgs,failures) =
-    let last = String.length name - 1 in
-    let optional = last >= 0 && name.[last] = '?' in
-    let name = if optional then String.sub name 0 last else name in
-    match Findlib.package_deep_ancestors [] [name] with
-    | pkg -> (pkg @ pkgs, failures)
-    | exception (Fl_package_base.No_such_package (name', msg)) when optional ->
-      Logger.logf "Mconfig_dot" "path_of_packages"
-        "Failed to load optional package %S: %S %s" name name' msg;
-      (pkgs, failures)
-    | exception (Fl_package_base.No_such_package (name, "")) ->
-      (pkgs, sprintf "Failed to load %S" name :: failures)
-    | exception (Fl_package_base.No_such_package (name, msg)) ->
-      (pkgs, sprintf "Failed to load %S: %s" name msg :: failures)
-    | exception exn ->
-      let failure = sprintf "Failed to load %S: %a" name
-          (fun () -> Printexc.to_string) exn in
-      (pkgs, failure :: failures)
+  let recorded_packages, invalid_packages =
+    List.partition packages
+      ~f:(fun name ->
+          match Findlib.package_directory (remove_option name) with
+          | _ -> true
+          | exception _ -> false)
   in
-  let packages, failures = List.fold_right ~f ~init:([],[]) packages in
+  let failures =
+    List.filter_map invalid_packages
+      ~f:(fun pkg ->
+          if is_package_optional pkg then
+            (Logger.logf "Mconfig_dot" "path_of_packages"
+              "Uninstalled package %S" pkg;
+            None)
+          else Some (sprintf "Failed to load %S" pkg))
+  in
+  let recorded_packages = List.map ~f:remove_option recorded_packages in
+  let packages, failures =
+    match Findlib.package_deep_ancestors [] recorded_packages with
+    | packages -> packages, failures
+    | exception exn ->
+      [], (sprintf "Findlib failure: %S" (Printexc.to_string exn) :: failures)
+  in
   let packages = List.filter_dup packages in
   let path = List.map ~f:Findlib.package_directory packages in
   let ppxs = List.fold_left ~f:ppx_of_package packages ~init:Ppxsetup.empty in
