@@ -75,6 +75,15 @@ let lookup_env f x env =
   try Some (f x env)
   with Not_found | Env.Error _ -> None
 
+let parenthesize_name name =
+  (* Qualified operators need parentheses *)
+  if name = "" || not (Oprint.parenthesized_ident name) then name else (
+    if name.[0] = '*' || name.[String.length name - 1] = '*' then
+      "( " ^ name ^ " )"
+    else
+      "(" ^ name ^ ")"
+  )
+
 let rec methods_of_type env ?(acc=[]) type_expr =
   let open Types in
   match type_expr.desc with
@@ -140,7 +149,7 @@ open Query_protocol.Compl
 let map_entry f entry =
   {entry with desc = f entry.desc; info = f entry.info}
 
-let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
+let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
   let ident = match path with
     | Some path -> Ident.create (Path.last path)
     | None -> Extension.ident
@@ -181,17 +190,9 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | _ -> name
   in*)
   let name =
-    match path with
+    match prefix_path with
     | None -> name
-    | Some _ ->
-      (* Qualified operators need parentheses *)
-      if name = "" || not (Oprint.parenthesized_ident name) then name
-      else (
-        if name.[0] = '*' || name.[String.length name - 1] = '*' then
-          "( " ^ name ^ " )"
-        else
-          "(" ^ name ^ ")"
-      )
+    | Some _ -> parenthesize_name name
   in
   let desc =
     match kind with
@@ -269,7 +270,7 @@ let fold_variant_constructors ~env ~init ~f =
   in
   aux init
 
-let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
+let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env =
   let cstr_attributes c = c.Types.cstr_attributes in
   let val_attributes v = v.Types.val_attributes in
   let type_attributes t = t.Types.type_attributes in
@@ -366,7 +367,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
             ~attrs:(val_attributes v)
             (`Value v) ~loc:v.Types.val_loc
           :: candidates
-        ) path env []
+        ) prefix_path env []
 
       | `Constructor ->
         let type_check {Types. cstr_res} = type_check cstr_res in
@@ -376,7 +377,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
           make_weighted_candidate ~exact:(name=prefix) name (`Cons v) ~priority
             ~attrs:(cstr_attributes v)
           :: candidates
-        ) path env []
+        ) prefix_path env []
 
       | `Types ->
         fold_types (fun name path decl candidates ->
@@ -384,7 +385,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
           make_weighted_candidate ~exact:(name = prefix) name ~path (`Typ decl)
             ~loc:decl.Types.type_loc ~attrs:(type_attributes decl)
           :: candidates
-        ) path env []
+        ) prefix_path env []
 
       | `Modules ->
         Env.fold_modules (fun name path v candidates ->
@@ -393,7 +394,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
           if not @@ validate `Uident `Mod name then candidates else
             make_weighted_candidate ~exact:(name = prefix) name ~path (`Mod v) ~attrs
           :: candidates
-        ) path env []
+        ) prefix_path env []
 
       | `Modules_type ->
         Env.fold_modtypes (fun name path v candidates ->
@@ -401,7 +402,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
             make_weighted_candidate ~exact:(name=prefix) name ~path (`ModType v)
               ~attrs:(mtd_attributes v)
             :: candidates
-        ) path env []
+        ) prefix_path env []
 
       | `Labels ->
         Env.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
@@ -409,7 +410,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
             make_weighted_candidate ~exact:(name = prefix) name (`Label l)
               ~attrs:(lbl_attributes l)
             :: candidates
-        ) path env []
+        ) prefix_path env []
 
       | `Group (kinds) -> List.concat_map ~f:of_kind kinds
     in
@@ -452,7 +453,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
     then false
     else (Hashtbl.add seen n (); true)
   in
-  let find ?path ~is_label prefix =
+  let find ?prefix_path ~is_label prefix =
     let valid tag name =
       try
         (* Prevent identifiers introduced by type checker to leak *)
@@ -474,7 +475,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
       let kind = classify_node node in
       let order = completion_order kind in
       let add_completions acc kind =
-        get_candidates ?get_doc ?target_type prefix path kind ~validate env @ acc
+        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env @ acc
       in
       List.fold_left ~f:add_completions order ~init:[]
     else
@@ -482,11 +483,11 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
         if not (valid `Label name) then candidates else
           make_candidate ?get_doc ~exact:(name = prefix) name (`Label l) ~attrs:[]
           :: candidates
-      ) path env []
+      ) prefix_path env []
   in
   try
     match prefix with
-    | Longident.Ldot (path, prefix) -> find ~path ~is_label prefix
+    | Longident.Ldot (prefix_path, prefix) -> find ~prefix_path ~is_label prefix
     | Longident.Lident prefix ->
       let compl = find ~is_label prefix in
       (* Add modules on path but not loaded *)
@@ -532,35 +533,36 @@ let expand_prefix ~global_modules env prefix =
     fun s -> Str.string_match last s 0
   in
   let validate _ _ s = validate' s in
-  let process_lident lident =
+  let process_prefix_path prefix_path =
     let candidates =
-      let aux compl kind = get_candidates "" lident kind ~validate env @ compl in
+      let aux compl kind =
+        get_candidates ?prefix_path ~prefix:"" kind ~validate env @ compl in
       List.fold_left ~f:aux default_kinds ~init:[]
     in
-    match lident with
+    match prefix_path with
     | None ->
       let f name =
         if not (validate' name) then None else
-        Some (item_for_global_module name)
+          Some (item_for_global_module name)
       in
       candidates @ List.filter_map global_modules ~f
     | Some lident ->
       let lident = Longident.flatten lident in
       let lident = String.concat ~sep:"." lident ^ "." in
-      List.map candidates ~f:(fun c -> { c with name = lident ^ c.name })
+      List.map candidates ~f:(fun c -> { c with name = lident ^ parenthesize_name c.name })
   in
-  List.concat_map ~f:process_lident lidents
+  List.concat_map ~f:process_prefix_path lidents
 
 open Typedtree
 
 let application_context ~verbosity ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
-    match snd (List.hd path) with
-    | Expression { exp_type = ty }
-    | Pattern { pat_type = ty } -> Some ty
-    | _ -> None
-  )
+      match snd (List.hd path) with
+      | Expression { exp_type = ty }
+      | Pattern { pat_type = ty } -> Some ty
+      | _ -> None
+    )
   in
   let context = match path with
     | (_, Expression earg) ::
