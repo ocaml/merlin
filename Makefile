@@ -83,7 +83,7 @@ distclean: clean
 preprocessclean:
 	$(MAKE) -f Makefile.preprocess clean
 
-install-binary: $(TARGET)
+install-binary: $(TARGET) ocamlmerlin
 	install -d $(BIN_DIR)
 	install $(TARGET)$(EXE) $(BIN_DIR)/ocamlmerlin-server$(EXE)
 	install ocamlmerlin$(EXE) $(BIN_DIR)/ocamlmerlin$(EXE)
