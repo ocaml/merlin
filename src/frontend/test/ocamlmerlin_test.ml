@@ -304,6 +304,30 @@ let tests = [
     ]
   );
 
+  group "completion" (
+    let assert_entry name result query =
+      let open Query_protocol.Compl in
+      assertf (List.exists ~f:(fun x -> x.name = name) result.entries)
+        "expected %S in %s" name query;
+    in
+    [
+      validate_output "expansion.ml"
+        "let x = L.m"
+        (Query_protocol.Expand_prefix ("L.m", `Logical(1,11), [], false))
+        (fun result ->
+           assert_entry "List.map" result "L.m expansion";
+           assert_entry "ListLabels.map" result "L.m expansion");
+      validate_output "expansion2.ml"
+        "let x = Lsi.m"
+        (Query_protocol.Expand_prefix ("Lsi.m", `Logical(1,11), [], false))
+        (fun result ->
+           assert_entry "List.map" result "Lsi.m expansion";
+           assert_entry "ListLabels.map" result "Lsi.m expansion";
+        )
+    ]
+
+  );
+
   group "misc" (
     [
       assert_errors "relaxed_external.ml"
