@@ -630,7 +630,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
         ~is_label:(if is_label then `Maybe else `No)
         (env, node) branch
 
-let expand_prefix ~global_modules ?kinds env prefix =
+let expand_prefix ~global_modules ?(kinds=[]) env prefix =
   Env.with_cmis @@ fun () ->
   let lidents, last =
     let ts = Expansion.explore ~global_modules env in
@@ -642,8 +642,8 @@ let expand_prefix ~global_modules ?kinds env prefix =
   in
   let validate _ _ s = validate' s in
   let kinds = match kinds with
-    | None -> default_kinds
-    | Some kinds -> (kinds : kind list :> kinds)
+    | [] -> default_kinds
+    | kinds -> (kinds : kind list :> kinds)
   in
   let process_prefix_path prefix_path =
     let candidates =
