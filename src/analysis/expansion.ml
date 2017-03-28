@@ -31,7 +31,7 @@ let explore ?(global_modules=[]) env =
    Implementation is a fork of
    https://github.com/c-cube/spelll/blob/master/src/spelll.ml
    Thanks companion-cube :) *)
-let optimal_string_alignment key cutoff =
+let optimal_string_prefix_alignment key cutoff =
   let equal_char : char -> char -> bool = (=) in
   let min_int x y : int = if x < y then x else y in
   if String.length key = 0
@@ -73,7 +73,8 @@ let optimal_string_alignment key cutoff =
             (* copy v1 into v0 for next iteration *)
             Array.blit v1 0 v0 0 (String.length key + 1);
           done;
-          v1.(String.length key)
+          let idx = String.length key in
+          min v1.(idx-1) v1.(idx)
         with Exit -> cutoff + 1
 
 let spell_index s1 =
@@ -84,7 +85,7 @@ let spell_index s1 =
     | 3 -> 1
     | _ -> 2
   in
-  let f = optimal_string_alignment s1 cutoff in
+  let f = optimal_string_prefix_alignment s1 cutoff in
   fun s2 -> (s1 = "" || s2 = "" || (s1.[0] = s2.[0] && (f s2 <= cutoff)))
 
 let spell_match index str = index str
