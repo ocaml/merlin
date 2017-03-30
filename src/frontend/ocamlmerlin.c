@@ -393,6 +393,25 @@ static void dumpinfo(void)
       "merlin path: %s\nsocket path: %s\n", merlin_path, socket_path);
 }
 
+static void abnormal_termination(int argc, char **argv)
+{
+  int sexp = 0;
+  int i;
+
+  for (i = 1; i < argc - 1; ++i)
+  {
+    if (strcmp(argv[i], "-protocol") == 0 &&
+        strcmp(argv[i+1], "sexp") == 0)
+      sexp = 1;
+  }
+
+  puts(sexp
+      ?  "((assoc) (class . \"failure\") (value . \"abnormal termination\") (notifications))"
+      : "{\"class\": \"failure\", \"value\": \"abnormal termination\", \"notifications\": [] }"
+      );
+  failwith("abnormal termination");
+}
+
 int main(int argc, char **argv)
 {
   compute_merlinpath(merlin_path, argv[0]);
@@ -411,7 +430,7 @@ int main(int argc, char **argv)
     if (err == 1)
       exit(result);
 
-    exit(EXIT_FAILURE);
+    abnormal_termination(argc, argv);
   }
   else
   {
