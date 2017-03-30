@@ -500,16 +500,20 @@ return (LOC1 . LOC2)."
                  args))
     ;; Log last commands
     (setq merlin-debug-last-commands
-          (cons (cons (cons command args) nil) merlin-debug-last-commands))
+          (cons (cons (cons binary args) nil) merlin-debug-last-commands))
     (let ((cdr (nthcdr 5 merlin-debug-last-commands)))
       (when cdr (setcdr cdr nil)))
     ;; Call merlin process
-    (setcdr (car merlin-debug-last-commands)
-            (merlin--call-process binary args))))
+    (setcdr (car merlin-debug-last-commands) (merlin--call-process binary args))))
 
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
-  (let ((result (car (read-from-string (merlin--call-merlin command args)))))
+  (let ((result (merlin--call-merlin command args)))
+    (condition-case err
+        (setq result (car (read-from-string result)))
+      (error
+        (error "merlin: error %s trying to parse answer: %s"
+               err result)))
     (let ((notifications (cdr-safe (assoc 'notifications result)))
           (class (cdr-safe (assoc 'class result)))
           (value (cdr-safe (assoc 'value result))))
