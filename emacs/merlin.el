@@ -517,9 +517,9 @@ return (LOC1 . LOC2)."
         (message "(merlin) %s" notification))
       (cond ((string-equal class "return") value)
             ((string-equal class "failure")
-             (error "merlin-mode failure: %S" value))
+             (error "merlin-mode failure: %s" value))
             ((string-equal class "error")
-             (error "merlin: %S" value))
+             (error "merlin: %s" value))
             (t (error "unknown answer: %S:%S" class value))))))
 
 (defun merlin-stop-server ()
@@ -1191,11 +1191,6 @@ strictly within, or nil if there is no such element."
   (let ((result (merlin/call "case-analysis"
                             "-start" (merlin/unmake-point (car bounds))
                             "-end" (merlin/unmake-point (cdr bounds)))))
-    ;; FIXME   (lambda (errinfo)
-    ;; FIXME     (let ((msg (cdr (assoc 'message errinfo))))
-    ;; FIXME       (if msg
-    ;; FIXME           (message "%s" msg)
-    ;; FIXME         (message "bug in merlin: failed to destructure error")))))))
     (when result
       (let* ((loc   (car result))
              (start (cdr (assoc 'start loc)))

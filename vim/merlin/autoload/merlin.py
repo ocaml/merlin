@@ -35,7 +35,7 @@ def try_print_error(e, msg=None):
         raise e
     except Error as e:
         if msg: print(msg)
-        else: print(e.value['message'])
+        else: print(e.value)
     except Exception as e:
         # Always print to stdout
         # vim try to be 'smart' and prepend a backtrace when writing to stderr
