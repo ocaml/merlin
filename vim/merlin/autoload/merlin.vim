@@ -694,5 +694,14 @@ function! merlin#SelectBinary()
   return b:merlin_path
 endfunction
 
+function! merlin#ShortEcho(msg)
+  " From http://vim.wikia.com/wiki/Get_shortened_messages_from_using_echomsg
+  " Suggested by @jordwalke
+  let saved=&shortmess
+  set shortmess+=T
+  exe "norm :echomsg a:msg\n"
+  let &shortmess=saved
+endfunction
+
 command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile(["ml","mli"],<f-args>)
 command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile(["mli","ml"],<f-args>)

@@ -30,28 +30,32 @@ class Error(MerlinExc):
 class MerlinException(MerlinExc):
     pass
 
+def vimprint(msg):
+    msg = msg.replace('"',r'\"')
+    vim.command("call merlin#ShortEcho(\"%s\")" % msg)
+
 def try_print_error(e, msg=None):
     try:
         raise e
     except Error as e:
-        if msg: print(msg)
-        else: print(e.value)
+        if msg: vimprint(msg)
+        else: vimprint(e.value)
     except Exception as e:
         # Always print to stdout
         # vim try to be 'smart' and prepend a backtrace when writing to stderr
         # WTF?!
-        if msg: print (msg)
+        if msg: vimprint(msg)
         else:
             msg = str(e)
             if re.search('Not_found',msg):
-                print ("error: Not found")
+                vimprint("error: Not found")
                 return None
             elif re.search('Cmi_format.Error', msg):
                 if vim.eval('exists("b:merlin_incompatible_version")') == '0':
                     vim.command('let b:merlin_incompatible_version = 1')
-                    print ("The version of merlin you're using doesn't support this version of ocaml")
+                    vimprint("The version of merlin you're using doesn't support this version of ocaml")
                 return None
-            print (msg)
+            vimprint(msg)
 
 def vim_codec():
     # Vim passed incorrectly encoded strings to python2.
@@ -131,7 +135,7 @@ def merlin_exec(args, input=""):
         if errors: sys.stderr.write(errors + "\n")
         return response
     except OSError as e:
-        print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
+        vimprint("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
         raise e
 
 verbosity_counter = (None,None)
@@ -157,8 +161,9 @@ def command2(args, context=None, track_verbosity=None):
             vim_list_if_set('b:merlin_flags')
 
     result = json.loads(merlin_exec(cmdline,input=content))
-    for notification in result['notifications']:
-        print("(merlin) " + notification)
+    notifications = "\n".join(result['notifications'])
+    if notifications:
+        vimprint("(merlin) notifications:\n" + notifications)
     class_ = result['class']
     value = result['value']
     if class_ == "return":
@@ -209,8 +214,8 @@ def command_version():
 
 def display_load_failures(result):
     if 'failures' in result:
-        for failure in result['failures']:
-            print(failure)
+        failures = ", ".join(result['failures'])
+        vimprint("merlin: " + failures)
 
 def command_complete_cursor(base,pos):
     with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)

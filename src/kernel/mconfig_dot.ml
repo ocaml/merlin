@@ -363,13 +363,17 @@ let path_of_packages ?conf ?path packages =
           | exception _ -> false)
   in
   let failures =
-    List.filter_map invalid_packages
-      ~f:(fun pkg ->
-          if is_package_optional pkg then
-            (Logger.logf "Mconfig_dot" "path_of_packages"
-              "Uninstalled package %S" pkg;
-            None)
-          else Some (sprintf "Failed to load %S" pkg))
+    match
+      List.filter_map invalid_packages
+        ~f:(fun pkg ->
+            if is_package_optional pkg then
+              (Logger.logf "Mconfig_dot" "path_of_packages"
+                 "Uninstalled package %S" pkg;
+               None)
+            else Some pkg)
+    with
+    | [] -> []
+    | xs -> ["Failed to load packages: " ^ String.concat ~sep:"," xs]
   in
   let recorded_packages = List.map ~f:remove_option recorded_packages in
   let packages, failures =
