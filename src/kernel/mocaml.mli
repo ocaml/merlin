@@ -20,4 +20,4 @@ val with_printer :
 val clear_caches : unit -> unit
 
 (* Flush caches, remove outdated items *)
-val flush_caches : unit -> unit
+val flush_caches : ?older_than:float -> unit -> unit

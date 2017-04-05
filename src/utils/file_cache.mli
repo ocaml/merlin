@@ -34,6 +34,6 @@ module Make (Input : sig
   val policy : [ `Stat_fs | `Stat_dir_cache ]
 end) : sig
   val read  : string -> Input.t
-  val flush : unit -> unit
+  val flush : ?older_than:float -> unit -> unit
   val clear : unit -> unit
 end

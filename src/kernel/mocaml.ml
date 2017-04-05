@@ -105,7 +105,7 @@ let clear_caches () = (
 )
 
 (* Flush cache *)
-let flush_caches () = (
-  Cmi_cache.flush ();
-  Cmt_cache.flush ()
+let flush_caches ?older_than () = (
+  Cmi_cache.flush ?older_than ();
+  Cmt_cache.flush ?older_than ()
 )

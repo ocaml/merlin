@@ -39,8 +39,26 @@ module Server = struct
         (Printexc.to_string exn);
       close_with (-1)
 
+  let server_accept merlinid server =
+    let rec loop total =
+      let merlinid' = Stat_cache.file_id Sys.executable_name in
+      if total > merlin_timeout ||
+         not (Stat_cache.file_id_check merlinid merlinid') then
+        None
+      else
+        let timeout = max 10.0 (min 60.0 (merlin_timeout -. total)) in
+        match Os_ipc.server_accept server ~timeout with
+        | Some _ as result -> result
+        | None -> loop (total +. timeout)
+    in
+    match Os_ipc.server_accept server ~timeout:1.0 with
+    | Some _ as result -> result
+    | None ->
+      Mocaml.flush_caches ~older_than:300.0 ();
+      loop 1.0
+
   let rec loop merlinid server =
-    match Os_ipc.server_accept server ~timeout:merlin_timeout with
+    match server_accept merlinid server with
     | None -> (* Timeout *)
       ()
     | Some client ->
@@ -49,10 +67,7 @@ module Server = struct
         | exception Exit -> false
         | () -> true
       in
-      if continue then
-        let merlinid' = Stat_cache.file_id Sys.executable_name in
-        if Stat_cache.file_id_check merlinid merlinid' then
-          loop merlinid server
+      if continue then loop merlinid server
 
   let start socket_path socket_fd =
     match Os_ipc.server_setup socket_path socket_fd with

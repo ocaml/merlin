@@ -34,7 +34,7 @@ module Make(Input : sig
 end) = struct
   let section = "File_cache("^Input.cache_name^")"
 
-  let cache : (string, Stat_cache.file_id * Input.t) Hashtbl.t
+  let cache : (string, Stat_cache.file_id * float ref * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
   let file_id = match Input.policy with
@@ -46,19 +46,20 @@ end) = struct
   let read filename =
     let fid = file_id filename in
     try
-      let fid', file = Hashtbl.find cache filename in
+      let fid', latest_use, file = Hashtbl.find cache filename in
       if (Stat_cache.file_id_check fid fid') then
         Logger.logf section "read" "reusing %S" filename
       else (
         Logger.logf section "read" "%S was updated on disk" filename;
         raise Not_found;
       );
+      latest_use := Unix.time ();
       file
     with Not_found ->
     try
       Logger.logf section "read" "reading %S from disk" filename;
       let file = Input.read filename in
-      Hashtbl.replace cache filename (fid, file);
+      Hashtbl.replace cache filename (fid, ref (Unix.time ()), file);
       file
     with exn ->
       Logger.logf section "read" "failed to read %S (%t)"
@@ -66,9 +67,13 @@ end) = struct
       Hashtbl.remove cache filename;
       raise exn
 
-  let flush () =
-    let add_invalid filename (fid, _) invalids =
-      if Stat_cache.file_id_check (file_id filename) fid then (
+  let flush ?older_than () =
+    let limit = match older_than with
+      | None -> -.max_float
+      | Some dt -> Unix.time () -. dt
+    in
+    let add_invalid filename (fid, latest_use, _) invalids =
+      if !latest_use > limit && Stat_cache.file_id_check (file_id filename) fid then (
         Logger.logf section "flush" "keeping %S" filename;
         invalids
       ) else (
