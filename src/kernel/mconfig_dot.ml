@@ -333,6 +333,10 @@ let set_findlib_path =
         | "" -> None
         | s -> Some s
       in
+      Logger.logf "Mconfig_dot" "set_findlib_path"
+        "findlib_conf = %s; findlib_path = %s\n"
+        conf
+        (String.concat ~sep:path_separator path);
       Findlib.init ?env_ocamlpath ?config ();
       findlib_cache := (conf,path)
     end

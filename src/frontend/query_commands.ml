@@ -579,7 +579,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     List.concat_map ~f:with_ext exts
 
   | Findlib_list ->
-    let (_, config, _) = buffer in
+    let config = Mpipeline.final_config (make_pipeline buffer) in
     let {Mconfig. conf; path} = config.Mconfig.findlib in
     Mconfig_dot.list_packages ?conf ~path ()
 

@@ -748,7 +748,12 @@ let normalize_step _trace t =
       dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
       packages_to_load = dot.packages @ merlin.packages_to_load;
     } in
-    { t with merlin }
+    let findlib = {
+      conf = (if Option.is_some dot.findlib then
+                dot.findlib else t.findlib.conf);
+      path = dot.findlib_path @ t.findlib.path;
+    } in
+    { t with merlin; findlib }
   else if merlin.packages_to_load <> [] then
     let path, ppx, failures = path_of_packages
         ?conf:findlib.conf
