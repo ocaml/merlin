@@ -131,7 +131,10 @@ let run env = function
           in
           let total_time = Misc.time_spent () -. start_time in
           let timing = Mpipeline.timing_information pipeline in
-          let timing = ("total", total_time) :: timing in
+          let pipeline_time =
+            List.fold_left (fun acc (_, k) -> k +. acc) 0.0 timing in
+          let timing = ("total", total_time) ::
+                       ("query", (total_time -. pipeline_time)) :: timing in
           let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
           `Assoc [
             "class", `String class_; "value", message;
