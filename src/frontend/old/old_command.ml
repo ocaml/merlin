@@ -112,8 +112,11 @@ let make_pipeline tr buffer =
       Mpipeline.make tr buffer.config buffer.source
 
 let with_typer tr ?for_completion buffer f =
-  let pipeline =
-    Mpipeline.make tr ?for_completion buffer.config buffer.source in
+  let pipeline = Mpipeline.make tr buffer.config buffer.source in
+  let pipeline = match for_completion with
+    | None -> pipeline
+    | Some pos -> Mpipeline.for_completion pos pipeline
+  in
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
 
@@ -231,13 +234,15 @@ let dispatch tr (type a) (context : Context.t) (cmd : a command) =
     | Some printer_width ->
       Mconfig.({config with query = {config.query with printer_width}})
   in
+  state.buffer.config <- config;
   (* Printer width *)
   Format.default_width := Option.value ~default:0 context.printer_width;
   (* Actual dispatch *)
   match cmd with
   | Query q ->
-    Mreader.with_ambient_reader tr config state.buffer.source @@ fun () ->
-    Query_commands.dispatch (Trace.null, config,state.buffer.source) q
+    let pipeline = make_pipeline tr state.buffer in
+    Mpipeline.with_reader pipeline @@ fun () ->
+    Query_commands.dispatch pipeline q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer tr context in
     state.buffer <- buffer

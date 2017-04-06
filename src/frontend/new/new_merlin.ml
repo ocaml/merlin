@@ -130,7 +130,8 @@ let run env = function
           let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
           `Assoc ["class", `String class_; "value", message;
                   "notifications",
-                  `List (List.rev_map notify !notifications)];
+                  `List (List.rev_map notify !notifications);
+                 ];
         in
         begin match Mconfig.(config.merlin.protocol) with
           | `Sexp -> Sexp.tell_sexp print_string (Sexp.of_json json)

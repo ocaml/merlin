@@ -1,12 +1,14 @@
 type t
 
-val make : Trace.t ->
-  ?for_completion:Msource.position -> Mconfig.t -> Msource.t -> t
+val make : Trace.t -> Mconfig.t -> Msource.t -> t
+val for_completion : Msource.position -> t -> t
+
+val get_trace : t -> Trace.t
 
 val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t
 
-val with_reader : Trace.t -> t -> (unit -> 'a) -> 'a
+val with_reader : t -> (unit -> 'a) -> 'a
 val reader_config : t -> Mconfig.t
 val reader_comments : t -> (string * Location.t) list
 val reader_parsetree : t -> Mreader.parsetree

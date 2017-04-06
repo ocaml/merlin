@@ -29,4 +29,4 @@
 
 open Sturgeon_stub
 
-val dispatch : (Trace.t * Mconfig.t * Msource.t) -> 'a Query_protocol.t -> 'a
+val dispatch : Mpipeline.t -> 'a Query_protocol.t -> 'a
