@@ -1,11 +1,16 @@
 open Std
 
 type command =
-    Command : string * Marg.docstring * 'args Marg.spec list * 'args *
-              (Mpipeline.t -> 'args -> json) -> command
+Command : string * Marg.docstring *
+          ([`Mandatory|`Optional|`Many] * 'args Marg.spec) list * 'args *
+          (Mpipeline.t -> 'args -> json) -> command
 
 let command name ?(doc="") ~spec ~default f =
   Command (name, doc, spec, default, f)
+
+let arg ?(kind=`Mandatory) name doc action = (kind, (name, doc, action))
+let optional x = arg ~kind:`Optional x
+let many x = arg ~kind:`Many x
 
 open Mconfig
 
@@ -50,18 +55,21 @@ let run pipeline query =
 let all_commands = [
 
   command "case-analysis"
-    ~doc:"case-analysis -start position -end position\n\t\
-          TODO"
     ~spec: [
-      ("-start",
-       "<position> Where analysis starts",
-       marg_position (fun startp (_startp,endp) -> (startp,endp))
-      );
-      ("-end",
-       "<position> Where analysis ends",
-       marg_position (fun endp (startp,_endp) -> (startp,endp))
-      );
+      arg "-start" "<position> Where analysis starts"
+        (marg_position (fun startp (_startp,endp) -> (startp,endp)));
+      arg "-end" "<position> Where analysis ends"
+        (marg_position (fun endp (startp,_endp) -> (startp,endp)));
     ]
+~doc:"When the range determined by (-start, -end) positions is an expression,
+this command replaces it with [match expr with _] expression where a branch \
+is introduced for each immediate value constructor of the type that was \
+determined for expr.
+When it is a variable pattern, it is further expanded and new branches are \
+introduced for each possible immediate constructor of this variable.
+The return value has the shape \
+`[{'start': position, 'end': position}, content]`, where content is string.
+"
     ~default:(`Offset (-1), `Offset (-1))
     begin fun buffer -> function
       | (`Offset (-1), _) -> failwith "-start <pos> is mandatory"
@@ -72,26 +80,36 @@ let all_commands = [
   ;
 
   command "complete-prefix"
-    ~doc:"complete-prefix -position pos -prefix ident [-doc (y|n)]\n\t\
-          TODO"
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (txt,_pos,doc,typ) -> (txt,pos,doc,typ))
-      );
-      ("-doc",
-       "<bool> Add docstring to entries (default is false)",
-       Marg.bool (fun doc (txt,pos,_doc,typ) -> (txt,pos,doc,typ))
-      );
-      ("-prefix",
-       "<string> Prefix to complete",
-       Marg.param "string" (fun txt (_prefix,pos,doc,typ) -> (txt,pos,doc,typ))
-      );
-      ("-types",
-       "<bool> Report type information (default is true)",
-       Marg.bool (fun typ (txt,pos,doc,_typ) -> (txt,pos,doc,typ))
-      );
+      arg "-position" "<position> Position to complete"
+          (marg_position (fun pos (txt,_pos,doc,typ) -> (txt,pos,doc,typ)));
+      optional "-doc" "<bool> Add docstring to entries (default is false)"
+          (Marg.bool (fun doc (txt,pos,_doc,typ) -> (txt,pos,doc,typ)));
+      arg "-prefix" "<string> Prefix to complete"
+          (Marg.param "string" (fun txt (_,pos,doc,typ) -> (txt,pos,doc,typ)));
+      optional "-types" "<bool> Report type information (default is true)"
+          (Marg.bool (fun typ (txt,pos,doc,_typ) -> (txt,pos,doc,typ)));
     ]
+~doc:"This functions completes an identifier that the user started to type.
+It returns a list of possible completions.
+With '-types y' (default), each completion comes with type information.
+With '-doc y' it tries to lookup OCamldoc, which is slightly more time consuming.
+
+The result has the form:
+```javascript
+{
+  'context': (null | ['application',{'argument_type': string, 'labels': [{'name':string,'type':string}]}]),
+  'entries': [{'name':string,'kind':string,'desc':string,'info':string}]
+}
+```
+
+Context describe where completion is occurring. Only application is distinguished now: that's when one is completing the arguments to a function call. In this case, one gets the type expected at the cursor as well as the other labels.
+
+Entries is the list of possible completion. Each entry is made of:
+- a name, the text that should be put in the buffer if selected
+- a kind, one of `'value'`, `'variant'`, `'constructor'`, `'label'`, `'module'`, `'signature'`, `'type'`, `'method'`, `'#'` (for method calls), `'exn'`, `'class'`
+- a description, most of the time a type or a definition line, to be put next to the name in completion box
+- optional informations which might not fit in the completion box, like signatures for modules or documentation string."
     ~default:("",`None,false,true)
     begin fun buffer (txt,pos,doc,typ) ->
       match pos with
@@ -102,17 +120,15 @@ let all_commands = [
   ;
 
   command "document"
-    ~doc:"document -position pos [-identifier ident]\n\t\
-          TODO"
+~doc:"Returns OCamldoc documentation as a string.
+If `-identifier ident` is specified, documentation for this ident is looked \
+up from environment at `-position`.
+Otherwise, Merlin looks for the documentation for the entity under the cursor (at `-position`)."
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (ident,_pos) -> (ident,pos))
-      );
-      ("-identifier",
-       "<string> Identifier",
-       Marg.param "string" (fun ident (_ident,pos) -> (Some ident,pos))
-      );
+      arg "-position" "<position> Position to complete"
+          (marg_position (fun pos (ident,_pos) -> (ident,pos)));
+      optional "-identifier" "<string> Identifier"
+          (Marg.param "string" (fun ident (_ident,pos) -> (Some ident,pos)));
     ]
     ~default:(None,`None)
     begin fun buffer (ident,pos) ->
@@ -124,14 +140,13 @@ let all_commands = [
   ;
 
   command "enclosing"
-    ~doc:"enclosing -position pos\n\t\
-          TODO"
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos _pos -> pos)
-      );
+      arg "-position" "<position> Position to complete"
+          (marg_position (fun pos _pos -> pos));
     ]
+~doc:"Returns a list of locations `{'start': position, 'end': position}` in \
+increasing size of all entities surrounding the position.
+(In a lisp, this would be the locations of all s-exps that contain the cursor.)"
     ~default:`None
     begin fun buffer pos ->
       match pos with
@@ -142,8 +157,27 @@ let all_commands = [
   ;
 
   command "errors"
-    ~doc:"errors\n\t\
-          TODO"
+    ~doc:"Returns a list of errors in current buffer.
+The value is a list where each item as the shape:
+
+```javascript
+{
+'start' : position,
+'end'   : position,
+'valid' : bool,
+'message' : string,
+'type'  : ('type'|'parser'|'env'|'warning'|'unkown')
+}
+```
+
+`start` and `end` are omitted if error has no location \
+(e.g. wrong file format), otherwise the editor should probably highlight / \
+mark this range.
+`type` is an attempt to classify the error.
+`valid` is here mostly for informative purpose. \
+It reflects whether Merlin was expecting such an error to be possible or not, \
+and is useful for debugging purposes.
+`message` is the error description to be shown to the user."
     ~spec:[]
     ~default:()
     begin fun buffer () ->
@@ -152,21 +186,20 @@ let all_commands = [
   ;
 
   command "expand-prefix"
-    ~doc:"expand-prefix -position pos -prefix ident\n\t\
-          TODO"
+~doc:"
+The function behaves like `complete-prefix`, but it also handles partial, \
+incorrect, or wrongly spelled prefixes (as determined by some heuristic).
+For instance, `L.ma` can get expanded to `List.map`. This function is a \
+useful fallback if normal completion gave no results.
+Be careful that it always return fully qualified paths, whereas normal \
+completion only completes an identifier (last part of a module path)."
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (txt,_pos,typ) -> (txt,pos,typ))
-      );
-      ("-prefix",
-       "<string> Prefix to complete",
-       Marg.param "string" (fun txt (_prefix,pos,typ) -> (txt,pos,typ))
-      );
-      ("-types",
-       "<bool> Report type information (default is false)",
-       Marg.bool (fun typ (txt,pos,_typ) -> (txt,pos,typ))
-      );
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (txt,_pos,typ) -> (txt,pos,typ)));
+      arg "-prefix" "<string> Prefix to complete"
+        (Marg.param "string" (fun txt (_prefix,pos,typ) -> (txt,pos,typ)));
+      optional "-types" "<bool> Report type information (default is false)"
+        (Marg.bool (fun typ (txt,pos,_typ) -> (txt,pos,typ)));
     ]
     ~default:("",`None,false)
     begin fun buffer (txt,pos,typ) ->
@@ -178,20 +211,18 @@ let all_commands = [
   ;
 
   command "extension-list"
-    ~doc:"extension-list [-status (all|enabled|disabled)]\n\t\
-          List extensions"
     ~spec: [
-      ("-status",
-       "<all|enabled|disabled> Filter extensions",
-       Marg.param "<all|enabled|disabled>"
+      optional "-status" "<all|enabled|disabled> Filter extensions"
+        (Marg.param "<all|enabled|disabled>"
          (fun status _status -> match status with
             | "all" -> `All
             | "enabled" -> `Enabled
             | "disabled" -> `Disabled
             | _ -> failwith "-status should be one of all, disabled or enabled"
-         )
-      );
+         ));
     ]
+    ~doc:"List all known / currently enabled / currently disabled extensions \
+          as a list of strings."
     ~default:`All
     begin fun buffer status ->
       run buffer (Query_protocol.Extension_list status)
@@ -199,8 +230,7 @@ let all_commands = [
   ;
 
   command "findlib-list"
-    ~doc:"findlib-list\n\t\
-          List all findlib packages"
+    ~doc:"Returns all known findlib packages as a list of string."
     ~spec:[]
     ~default:()
     begin fun buffer () ->
@@ -209,9 +239,10 @@ let all_commands = [
   ;
 
   command "flags-list"
-    ~doc:"flags-list\n\t\
-          List flags"
     ~spec:[]
+~doc:"Returns supported compiler flags.\
+The purpose of this command is to implement interactive completion of \
+compiler settings in an IDE."
     ~default:()
     begin fun buffer () ->
       `List (List.map Json.string (Mconfig.flags_for_completion ()))
@@ -219,18 +250,18 @@ let all_commands = [
   ;
 
   command "jump"
-    ~doc:"locate -target target -position pos\n\t\
-          TODO"
     ~spec: [
-      ("-target",
-       "<string> Entity to jump to",
-       Marg.param "string" (fun target (_,pos) -> (target,pos))
-      );
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (target,_pos) -> (target,pos))
-      );
+      arg "-target" "<string> Entity to jump to"
+        (Marg.param "string" (fun target (_,pos) -> (target,pos)));
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (target,_pos) -> (target,pos)));
     ]
+~doc:"This command can be used to assist navigation in a source code buffer.
+Target is a string that can contain one or more of the 'fun', 'let', 'module' \
+and 'match' words.
+It returns the starting position of the function, let definition, module or \
+match expression that contains the cursor
+"
     ~default:("",`None)
     begin fun buffer (target,pos) ->
       match pos with
@@ -241,23 +272,19 @@ let all_commands = [
   ;
 
   command "phrase"
-    ~doc:"phrase -target [next|prev] -position pos\n\t\
-          TODO"
     ~spec: [
-      ("-target",
-       "<next|prev> Entity to jump to",
-       Marg.param "string" (fun target (_,pos) ->
+      arg "-target" "<next|prev> Entity to jump to"
+        (Marg.param "string" (fun target (_,pos) ->
            match target with
            | "next" -> (`Next,pos)
            | "prev" -> (`Prev,pos)
            | _ -> failwith "-target should be one of 'next' or 'prev'"
-         )
-      );
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (target,_pos) -> (target,pos))
-      );
+         ));
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (target,_pos) -> (target,pos)));
     ]
+    ~doc:"Returns the position of the next or previous phrase \
+          (top-level definition or module definition)."
     ~default:(`Next,`None)
     begin fun buffer (target,pos) ->
       match pos with
@@ -268,15 +295,12 @@ let all_commands = [
   ;
 
   command "list-modules"
-    ~doc:"list-modules -ext .ml -ext .mli ...\n\t\
-          looks into project source paths for files with an extension \
-          matching and prints the corresponding module name"
     ~spec:[
-      ("-ext",
-       "<extension> file extensions to look for",
-       Marg.param "extension" (fun ext exts -> ext :: exts)
-      )
+      many "-ext" "<extension> file extensions to look for"
+        (Marg.param "extension" (fun ext exts -> ext :: exts));
     ]
+~doc:"Looks into project source paths for files with an extension \
+matching and prints the corresponding module name."
     ~default:[]
 
     begin fun buffer extensions ->
@@ -285,28 +309,26 @@ let all_commands = [
   ;
 
   command "locate"
-    ~doc:"locate -prefix prefix -position pos \
-          [-look-for (interface|implementation)]\n\t\
-          TODO"
     ~spec: [
-      ("-prefix",
-       "<string> Prefix to complete",
-       Marg.param "string" (fun prefix (_,pos,kind) -> (Some prefix,pos,kind))
-      );
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (prefix,_pos,kind) -> (prefix,pos,kind))
-      );
-      ("-look-for",
-       "<interface|implementation> Prefer opening interface or implementation",
-       Marg.param "<interface|implementation>"
-         (fun kind (prefix,pos,_) -> match kind with
+      optional "-prefix" "<string> Prefix to complete"
+        (Marg.param "string" (fun txt (_,pos,kind) -> (Some txt,pos,kind)));
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (prefix,_pos,kind) -> (prefix,pos,kind)));
+      optional "-look-for" "<interface|implementation> Prefer opening interface or implementation"
+        (Marg.param "<interface|implementation>"
+          (fun kind (prefix,pos,_) -> match kind with
             | "mli" | "interface" -> (prefix,pos,`MLI)
             | "ml"  | "implementation" -> (prefix,pos,`ML)
             | str ->
-              failwithf "expecting interface or implementation, got %S." str)
-      );
+              failwithf "expecting interface or implementation, got %S." str));
     ]
+~doc:"Finds the declaration of entity at the specified position, \
+Or referred to by specified string.
+Returns either:
+- if location failed, a `string` describing the reason to the user,
+- `{'pos': position}` if the location is in the current buffer,
+- `{'file': string, 'pos': position}` if definition is located in a \
+different file."
     ~default:(None,`None,`MLI)
     begin fun buffer (prefix,pos,lookfor) ->
       match pos with
@@ -317,14 +339,12 @@ let all_commands = [
   ;
 
   command "occurrences"
-    ~doc:"occurrences -identifier-at pos\n\t\
-          TODO"
     ~spec: [
-      ("-identifier-at",
-       "<position> Position to complete",
-       marg_position (fun pos _pos -> (`Ident_at pos))
-      );
+      arg "-identifier-at" "<position> Position to complete"
+        (marg_position (fun pos _pos -> (`Ident_at pos)));
     ]
+~doc:"Returns a list of locations `{'start': position, 'end': position}` \
+of all occurrences in current buffer of the entity at the specified position."
     ~default:`None
     begin fun buffer -> function
       | `None -> failwith "-identifier-at <pos> is mandatory"
@@ -334,9 +354,10 @@ let all_commands = [
   ;
 
   command "outline"
-    ~doc:"outline\n\t\
-          TODO"
     ~spec:[]
+~doc:"Returns a tree of objects `{'start': position, 'end': position, \
+'name': string, 'kind': string, 'children': subnodes}` describing the content \
+of the buffer."
     ~default:()
     begin fun buffer () ->
       run buffer (Query_protocol.Outline)
@@ -344,14 +365,11 @@ let all_commands = [
   ;
 
   command "path-of-source"
-    ~doc:"path-of-source -file a.mli -file a.ml\n\
-          \tlooks for first file with a matching name in the project source \
+    ~doc:"Looks for first file with a matching name in the project source \
           and build paths"
     ~spec: [
-      ("-file",
-       "<filename> filename to look for in project paths",
-       Marg.param "filename" (fun file files -> file :: files)
-      )
+      arg "-file" "<filename> filename to look for in project paths"
+        (Marg.param "filename" (fun file files -> file :: files));
     ]
     ~default:[]
 
@@ -361,13 +379,22 @@ let all_commands = [
   ;
 
   command "shape"
-    ~doc:"shape -position pos\n\t\
-          TODO"
+~doc:"This command can be used to assist navigation in a source code buffer.
+It returns a tree of all relevant locations around the cursor.
+It is similar to outline without telling any information about the entity \
+at a given location.
+```javascript
+shape =
+{
+  'start' : position,
+  'end'   : position,
+  'children' : [shape]
+}
+```
+"
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos _pos -> pos)
-      );
+      arg "-position" "<position> Position "
+        (marg_position (fun pos _pos -> pos));
     ]
     ~default:`None
     begin fun buffer -> function
@@ -378,35 +405,48 @@ let all_commands = [
   ;
 
   command "type-enclosing"
-    ~doc:"type-enclosing -position pos [-expression expr -cursor n]\n\t\
-          TODO"
+~doc:"Returns a list of type information for all expressions at given \
+position, sorted by increasing size.
+That is asking for type enlosing around `2` in `string_of_int 2` will return \
+the types of `2 : int` and `string_of_int 2 : string`.
+
+If `-expression` and `-cursor` are specified, the first result will be the type
+relevant to the prefix ending at the `cursor` offset.
+
+`-index` can be used to print only one type information. This is useful to
+query the types lazily: normally, Merlin would return the signature of all
+enclosing modules, which can be very expensive.
+
+The result is returned as a list of:
+```javascript
+{
+  'start': position,
+  'end': position,
+  'type': string,
+  // is this expression not in tail position, in tail position, \
+or even a tail call?
+  'tail': ('no' | 'position' | 'call')
+}
+```"
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (expr,cursor,_pos,index) -> (expr,cursor,pos,index))
-      );
-      ("-expression",
-       "<string> Expression to type",
-       Marg.param "string" (fun expr (_expr,cursor,pos,index) -> (expr,cursor,pos,index))
-      );
-      ("-cursor",
-       "<int> Position of the cursor inside expression",
-       Marg.param "int" (fun cursor (expr,_cursor,pos,index) ->
-           match int_of_string cursor with
-           | cursor -> (expr,cursor,pos,index)
-           | exception exn ->
-             failwith "cursor should be an integer"
-         )
-      );
-      ("-index",
-       "<int> Only print type of <index>'th result",
-       Marg.param "int" (fun index (expr,cursor,pos,_index) ->
-           match int_of_string index with
-           | index -> (expr,cursor,pos,Some index)
-           | exception exn ->
-             failwith "index should be an integer"
-         )
-      );
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (expr,cursor,_pos,index) -> (expr,cursor,pos,index)));
+      optional "-expression" "<string> Expression to type"
+        (Marg.param "string" (fun expr (_expr,cursor,pos,index) -> (expr,cursor,pos,index)));
+      optional "-cursor" "<int> Position of the cursor inside expression"
+        (Marg.param "int" (fun cursor (expr,_cursor,pos,index) ->
+            match int_of_string cursor with
+            | cursor -> (expr,cursor,pos,index)
+            | exception exn ->
+              failwith "cursor should be an integer"
+          ));
+      optional "-index" "<int> Only print type of <index>'th result"
+        (Marg.param "int" (fun index (expr,cursor,pos,_index) ->
+            match int_of_string index with
+            | index -> (expr,cursor,pos,Some index)
+            | exception exn ->
+              failwith "index should be an integer"
+          ));
     ]
     ~default:("",-1,`None,None)
     begin fun buffer (expr,cursor,pos,index) ->
@@ -424,17 +464,13 @@ let all_commands = [
   ;
 
   command "type-expression"
-    ~doc:"type-expression -position pos -expression expr\n\t\
-          TODO"
+~doc:"Returns the type of the expression when typechecked in the environment \
+around the specified position."
     ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (expr,_pos) -> (expr,pos))
-      );
-      ("-expression",
-       "<string> Expression to type",
-       Marg.param "string" (fun expr (_expr,pos) -> (expr,pos))
-      );
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos (expr,_pos) -> (expr,pos)));
+      arg "-expression" "<string> Expression to type"
+        (Marg.param "string" (fun expr (_expr,pos) -> (expr,pos)));
     ]
     ~default:("",`None)
     begin fun buffer (expr,pos) ->
@@ -448,9 +484,15 @@ let all_commands = [
   (* Implemented without support from Query_protocol.  This command might be
      refactored if it proves useful for old protocol too.  *)
   command "check-configuration"
-    ~doc:"check-configuration\n\t\
-          TODO"
     ~spec:[]
+~doc:"This command checks that merlin project and options are correct.
+The return value has the shape:
+```javascript
+{
+  'dot_merlins': [path], // a list of string
+  'failures': [message]  // a list of string
+}
+```"
     ~default:()
     begin fun pipeline () ->
       let config = Mpipeline.final_config pipeline in

@@ -7,11 +7,35 @@ let usage () =
     \  -version     Print version and exit\n\
     \  -vnum        Print version number and exit\n\
     \  -warn-help   Show description of warning numbers\n\
-    \  -flags-help  Show description of accepted compiler flags\n";
-  prerr_endline "Query commands are:";
-  List.iter (fun (New_commands.Command (name, doc, _, _, _)) ->
-      prerr_string ("  " ^ name ^ "\n\t");
-      prerr_endline doc
+    \  -flags-help  Show description of accepted compiler flags\n"
+
+let commands_help () =
+  print_endline "Query commands are:";
+  List.iter (fun (New_commands.Command (name, doc, args, _, _)) ->
+      print_newline ();
+      let args = List.map (fun (kind, (key0,desc,_)) ->
+        let key1, desc =
+          let len = String.length desc in
+          match String.index desc ' ' with
+          | 0 -> key0, String.sub desc 1 (len - 1)
+          | idx -> key0 ^ " " ^ String.sub desc 0 idx,
+                   String.sub desc (idx + 1) (len - idx - 1)
+          | exception Not_found -> key0, desc
+        in
+        let key = match kind with
+          | `Mandatory -> key1
+          | `Optional  -> "[ " ^ key1 ^ " ]"
+          | `Many      -> "[ " ^ key1 ^ " " ^ key0 ^ " ... ]"
+        in
+        key, (key1, desc)
+      ) args in
+      let args, descs = List.split args in
+      print_endline ("### `" ^ String.concat " " (name :: args) ^ "`");
+      print_newline ();
+      let print_desc (k,d) = print_endline (Printf.sprintf "% 24s  %s" k d) in
+      List.iter print_desc descs;
+      print_newline ();
+      print_endline doc
     ) New_commands.all_commands
 
 
@@ -69,6 +93,9 @@ let run env = function
   | "-flags-help" :: _ ->
     Mconfig.document_arguments stdout;
     0
+  | "-commands-help" :: _ ->
+    commands_help ();
+    0
   | query :: raw_args ->
     match New_commands.find_command query New_commands.all_commands with
     | exception Not_found ->
@@ -85,7 +112,7 @@ let run env = function
           let fails = ref [] in
           let config, command_args =
             Marg.parse_all ~warning:(fun fail -> fails := fail :: !fails)
-              Mconfig.arguments_table spec
+              Mconfig.arguments_table (List.map snd spec)
               raw_args Mconfig.initial command_args
           in
           let config =
