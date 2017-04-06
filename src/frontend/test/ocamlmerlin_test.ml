@@ -24,14 +24,14 @@ let str_match ~re str =
 (* Setting up merlin *)
 module M = Mpipeline
 
-let from_source ?(with_config=fun x -> x) ~filename text =
+let process ?(with_config=fun x -> x) ?for_completion filename text =
   let config = with_config Mconfig.initial in
   let config = Mconfig.({config with query = {config.query with filename}}) in
-  (config, Msource.make Trace.null config text)
-
-let process ?with_config ?for_completion filename text =
-  let config, source = from_source ?with_config ~filename text in
-  M.make Trace.null ?for_completion config source
+  let source = Msource.make Trace.null config text in
+  let pipeline = M.make Trace.null config source in
+  match for_completion with
+  | None -> pipeline
+  | Some pos -> M.for_completion pos pipeline
 
 (* All tests *)
 
@@ -75,9 +75,8 @@ let assertf b fmt =
 
 let validate_output ?with_config filename source query pred =
   test filename (fun () ->
-      let config, source = from_source ?with_config ~filename source in
-      let result =
-        Query_commands.dispatch (Trace.start (), config, source) query in
+      let pipeline = process ?with_config filename source in
+      let result = Query_commands.dispatch pipeline query in
       try pred result
       with exn ->
         let info = `Assoc [
@@ -90,9 +89,9 @@ let validate_output ?with_config filename source query pred =
 (* FIXME: this sucks. improve. *)
 let validate_failure ?with_config filename source query pred =
   test filename (fun () ->
-      let config, source = from_source ?with_config ~filename source in
+      let pipeline = process ?with_config filename source in
       let for_info, wrapped =
-        match Query_commands.dispatch (Trace.start (), config, source) query with
+        match Query_commands.dispatch pipeline query with
         | exception e -> ("failure", `String (Printexc.to_string e)), `Error e
         | res -> ("result", Query_json.json_of_response query res), `Ok res
       in
