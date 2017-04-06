@@ -230,6 +230,10 @@ val cut_at : string -> char -> string * string
    @since 4.01
 *)
 
+val time_spent : unit -> float
+(** Returns a more precise measurement of resources usage than
+    Sys.times/Unix.times.
+    Both user and kernel cpu time is accounted.  *)
 
 module StringSet: Set.S with type elt = string
 module StringMap: Map.S with type key = string

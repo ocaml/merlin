@@ -1,3 +1,15 @@
+let timed_lazy r x =
+  lazy (
+    let start = Misc.time_spent () in
+    match Lazy.force x with
+    | x ->
+      r := Misc.time_spent () -. start;
+      x
+    | exception exn ->
+      r := Misc.time_spent () -. start;
+      Std.reraise exn
+  )
+
 module Typer = struct
   type t = {
     errors : exn list lazy_t;
@@ -19,6 +31,11 @@ type t = {
   reader : (Mreader.result * Mconfig.t) lazy_t;
   ppx    : Ppx.t lazy_t;
   typer  : Typer.t lazy_t;
+
+  reader_time : float ref;
+  ppx_time    : float ref;
+  typer_time  : float ref;
+  error_time  : float ref;
 }
 
 let input_config t = t.config
@@ -49,20 +66,26 @@ let typer_result t = (typer t).Typer.result
 let typer_errors t = Lazy.force (typer t).Typer.errors
 
 let process tr config source reader =
-  let ppx = lazy (
+  let reader_time = ref 0.0 in
+  let reader = timed_lazy reader_time reader in
+  let ppx_time    = ref 0.0 in
+  let ppx = timed_lazy ppx_time (lazy (
     let lazy ({Mreader.parsetree}, config) = reader in
     let caught = ref [] in
     Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
     let config, parsetree = Mppx.rewrite tr config parsetree in
     { Ppx. config; parsetree; errors = !caught }
-  ) in
-  let typer = lazy (
+  )) in
+  let typer_time  = ref 0.0 in
+  let error_time  = ref 0.0 in
+  let typer = timed_lazy typer_time (lazy (
     let lazy { Ppx. config; parsetree; errors } = ppx in
     let result = Mtyper.run tr config source parsetree in
-    let errors = lazy (Mtyper.get_errors result) in
+    let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
     { Typer. errors; result }
-  ) in
-  { config; source; reader; ppx; typer }
+  )) in
+  { config; source; reader; ppx; typer;
+    reader_time; ppx_time; typer_time; error_time }
 
 let make tr ?for_completion config source =
   let config = Mconfig.normalize tr config in
@@ -72,3 +95,10 @@ let make tr ?for_completion config source =
     result, config
   ) in
   process tr config source reader
+
+let timing_information t = [
+  "reader" , !(t.reader_time);
+  "ppx"    , !(t.ppx_time);
+  "typer"  , !(t.typer_time);
+  "error"  , !(t.error_time);
+]

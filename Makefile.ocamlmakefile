@@ -28,7 +28,7 @@ CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES_LIB = \
 	src/config/my_config.ml           \
-	src/platform/fs_case.c            \
+	src/platform/platform_misc.c      \
 	src/platform/os_ipc_stub.c        \
 	src/platform/os_ipc.ml            \
 	$(STURGEON)/sturgeon_stub.ml      \
