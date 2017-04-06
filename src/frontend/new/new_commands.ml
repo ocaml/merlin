@@ -2,7 +2,7 @@ open Std
 
 type command =
     Command : string * Marg.docstring * 'args Marg.spec list * 'args *
-              (Trace.t * Mconfig.t * Msource.t -> 'args -> json) -> command
+              (Mpipeline.t -> 'args -> json) -> command
 
 let command name ?(doc="") ~spec ~default f =
   Command (name, doc, spec, default, f)
@@ -39,9 +39,8 @@ let rec find_command name = function
       command
     else find_command name xs
 
-let run (trace, config, source as buffer) query =
+let run pipeline query =
   Logger.logj "New_commands.run" "query" (fun () -> Query_json.dump query);
-  let pipeline = Mpipeline.make trace config source in
   Mpipeline.with_reader pipeline @@ fun () ->
   let result = Query_commands.dispatch pipeline query in
   let json = Query_json.json_of_response query result in
@@ -453,8 +452,7 @@ let all_commands = [
           TODO"
     ~spec:[]
     ~default:()
-    begin fun (trace, config, source) () ->
-      let pipeline = Mpipeline.make trace config source in
+    begin fun pipeline () ->
       let config = Mpipeline.final_config pipeline in
       `Assoc [
         "dot_merlins", `List (List.rev_map Json.string

@@ -113,9 +113,11 @@ let run env = function
         let tr = (if Mconfig.(config.merlin.trace) then
                     Trace.start () else Trace.null) in
         let source = Msource.make tr config (Misc.string_of_file stdin) in
+        let pipeline = Mpipeline.make tr config source in
         let json =
+          let start_time = Misc.time_spent () in
           let class_, message =
-            match command_action (tr,config,source) command_args with
+            match command_action pipeline command_args with
             | result ->
               ("return", result)
             | exception (Failure str) ->
@@ -127,11 +129,15 @@ let run env = function
                 Location.report_error Format.str_formatter err;
                 ("error", `String (Format.flush_str_formatter ()))
           in
+          let total_time = Misc.time_spent () -. start_time in
+          let timing = Mpipeline.timing_information pipeline in
+          let timing = ("total", total_time) :: timing in
           let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
-          `Assoc ["class", `String class_; "value", message;
-                  "notifications",
-                  `List (List.rev_map notify !notifications);
-                 ];
+          `Assoc [
+            "class", `String class_; "value", message;
+            "notifications", `List (List.rev_map notify !notifications);
+            "timing", `Assoc (List.map (fun (k,v) -> k, `Float v) timing)
+          ];
         in
         begin match Mconfig.(config.merlin.protocol) with
           | `Sexp -> Sexp.tell_sexp print_string (Sexp.of_json json)
