@@ -161,8 +161,8 @@ def command2(args, context=None, track_verbosity=None):
             vim_list_if_set('b:merlin_flags')
 
     result = json.loads(merlin_exec(cmdline,input=content))
-    notifications = "\n".join(result['notifications'])
-    if notifications:
+    if result['notifications']:
+        notifications = "\n".join(result['notifications'])
         vimprint("(merlin) notifications:\n" + notifications)
     class_ = result['class']
     value = result['value']
@@ -213,7 +213,7 @@ def command_version():
         try_print_error(e)
 
 def display_load_failures(result):
-    if 'failures' in result:
+    if 'failures' in result and result['failures']:
         failures = ", ".join(result['failures'])
         vimprint("merlin: " + failures)
 
