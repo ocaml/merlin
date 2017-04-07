@@ -257,44 +257,23 @@ let apply_nth n args =
 
 let best_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
-  then (
-    if not !Clflags.real_paths && !printing_env == Env.empty then (
-      prerr_endline "SKIP because !printing_env == Env.empty";
-      prerr_endline Printexc.(raw_backtrace_to_string (get_callstack 30));
-    );
-    Path(None, p)
-  )
+  then Path(None, p)
   else Short_paths.find_type (Env.short_paths !printing_env) p
 
 let best_type_path_resolution p =
   if !Clflags.real_paths || !printing_env == Env.empty
-  then (
-    if not !Clflags.real_paths && !printing_env == Env.empty then (
-      prerr_endline "SKIP because !printing_env == Env.empty";
-      prerr_endline Printexc.(raw_backtrace_to_string (get_callstack 30));
-    );
-    Id
-  ) else Short_paths.find_type_resolution (Env.short_paths !printing_env) p
+  then Id
+  else Short_paths.find_type_resolution (Env.short_paths !printing_env) p
 
 let best_module_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
-  then (
-    if not !Clflags.real_paths && !printing_env == Env.empty then (
-      prerr_endline "SKIP because !printing_env == Env.empty";
-      prerr_endline Printexc.(raw_backtrace_to_string (get_callstack 30));
-    );
-    p
-  ) else Short_paths.find_module_type (Env.short_paths !printing_env) p
+  then p
+  else Short_paths.find_module_type (Env.short_paths !printing_env) p
 
 let best_module_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
-  then (
-    if not !Clflags.real_paths && !printing_env == Env.empty then (
-      prerr_endline "SKIP because !printing_env == Env.empty";
-      prerr_endline Printexc.(raw_backtrace_to_string (get_callstack 30));
-    );
-    p
-  ) else Short_paths.find_module (Env.short_paths !printing_env) p
+  then p
+  else Short_paths.find_module (Env.short_paths !printing_env) p
 
 (* Print a type expression *)
 
