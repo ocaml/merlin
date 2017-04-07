@@ -8,7 +8,7 @@ type ocaml = {
   unsafe               : bool;
   classic              : bool;
   principal            : bool;
-  real_paths           : [ `Real | `Short | `Opened ];
+  real_paths           : bool;
   threads              : [ `None | `Threads | `Vmthreads ];
   recursive_types      : bool;
   strict_sequence      : bool;
@@ -34,10 +34,7 @@ let dump_ocaml x = `Assoc [
     "unsafe"               , `Bool x.unsafe;
     "classic"              , `Bool x.classic;
     "principal"            , `Bool x.principal;
-    "real_paths"           , `String (
-      match x.real_paths with
-        `Real -> "real" | `Short -> "short" | `Opened -> "opened"
-    );
+    "real_paths"           , `Bool x.real_paths;
     "recursive_types"      , `Bool x.recursive_types;
     "strict_sequence"      , `Bool x.strict_sequence;
     "applicative_functors" , `Bool x.applicative_functors;
@@ -399,18 +396,13 @@ let ocaml_flags = [
   );
   (
     "-real-paths",
-    Marg.unit (fun ocaml -> {ocaml with real_paths = `Real}),
+    Marg.unit (fun ocaml -> {ocaml with real_paths = true}),
     " Display real paths in types rather than short ones"
   );
   (
     "-short-paths",
-    Marg.unit (fun ocaml -> {ocaml with real_paths = `Short}),
+    Marg.unit (fun ocaml -> {ocaml with real_paths = false}),
     " Shorten paths in types"
-  );
-  (
-    "-opened-paths",
-    Marg.unit (fun ocaml -> {ocaml with real_paths = `Opened}),
-    " Remove opened prefix from displayed types"
   );
   (
     "-rectypes",
@@ -507,7 +499,7 @@ let initial = {
     unsafe               = false;
     classic              = false;
     principal            = false;
-    real_paths           = `Real;
+    real_paths           = true;
     threads              = `None;
     recursive_types      = false;
     strict_sequence      = false;

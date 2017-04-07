@@ -8,7 +8,7 @@ type ocaml = {
   unsafe               : bool;
   classic              : bool;
   principal            : bool;
-  real_paths           : [ `Real | `Short | `Opened ];
+  real_paths           : bool;
   threads              : [ `None | `Threads | `Vmthreads ];
   recursive_types      : bool;
   strict_sequence      : bool;

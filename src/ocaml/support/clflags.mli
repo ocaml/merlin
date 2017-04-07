@@ -10,7 +10,7 @@ val include_dirs         : string list ref
 val fast                 : bool ref
 val classic              : bool ref
 val principal            : bool ref
-val real_paths           : [`Real | `Short | `Opened ] ref
+val real_paths           : bool ref
 val recursive_types      : bool ref
 val strict_sequence      : bool ref
 val applicative_functors : bool ref

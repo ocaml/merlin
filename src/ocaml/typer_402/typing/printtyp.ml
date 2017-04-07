@@ -573,7 +573,7 @@ let is_unambiguous path env =
       Path.same p (Env.lookup_type id env)
 
 let set_printing_env env =
-  if !Clflags.real_paths = `Real then
+  if !Clflags.real_paths then
     printing_state := printing_empty
   else
     let am = aliasmap env in
@@ -605,16 +605,16 @@ let shorten_path ?(env=curr_printing_env ()) path =
 
 let best_type_path p =
   if !printing_state == printing_empty then (p, Id)
-  else match !Clflags.real_paths with
-    | `Real  -> (p, Id)
-    | _  ->
-      let (p', s) = normalize_type_path !printing_state.printenv p in
-      let p'' =
-        try Lazy.force !printing_state.pathmap p'
+  else if !Clflags.real_paths
+  then (p, Id)
+  else
+    let (p', s) = normalize_type_path !printing_state.printenv p in
+    let p'' =
+      try Lazy.force !printing_state.pathmap p'
         with Not_found -> p'
-      in
-      (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
-      (p'', s)
+    in
+    (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
+    (p'', s)
 
 (* Print a type expression *)
 

@@ -305,7 +305,7 @@ let same_printing_env env =
   Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
 let set_printing_env env =
-  printing_env := if !Clflags.real_paths = `Real then Env.empty else env;
+  printing_env := if !Clflags.real_paths then Env.empty else env;
   if !printing_env == Env.empty || same_printing_env env then () else
   begin
     (* printf "Reset printing_map@."; *)
@@ -370,7 +370,7 @@ let rec get_best_path r =
       get_best_path r
 
 let best_type_path p =
-  if !Clflags.real_paths = `Real || !printing_env == Env.empty
+  if !Clflags.real_paths || !printing_env == Env.empty
   then (p, Id)
   else
     let (p', s) = normalize_type_path !printing_env p in
@@ -1175,7 +1175,7 @@ let dummy =
 
 let hide_rec_items = function
   | Sig_type(id, _decl, rs) ::rem
-    when rs = Trec_first && !Clflags.real_paths <> `Real ->
+    when rs = Trec_first && not !Clflags.real_paths ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
             id :: get_ids rem
