@@ -62,11 +62,17 @@ module Ident : sig
 
   val global : string -> t
 
+  (* TODO remove when tracing goes *)
+  val print : Format.formatter -> t -> unit
+
 end
 
-module Ident_map : Map.S with type key = Ident.t
-
-module Ident_set : Set.S with type elt = Ident.t
+(* TODO remove when tracing goes *)
+(* module Ident_map : Map.S with type key = Ident.t *)
+(* module Ident_set : Set.S with type elt = Ident.t *)
+module IdentId : Identifiable.S with type t := Ident.t
+module Ident_map = IdentId.Map
+module Ident_set = IdentId.Set
 
 module Path : sig
 
@@ -79,11 +85,17 @@ module Path : sig
 
   val compare : t -> t -> int
 
+  (* TODO remove when tracing goes *)
+  val print : Format.formatter -> t -> unit
+
 end
 
-module Path_map : Map.S with type key = Path.t
-
-module Path_set : Set.S with type elt = Path.t
+(* TODO remove when tracing goes *)
+(* module Path_map : Map.S with type key = Path.t *)
+(* module Path_set : Set.S with type elt = Path.t *)
+module PathId : Identifiable.S with type t := Path.t
+module Path_map = PathId.Map
+module Path_set = PathId.Set
 
 module Sort : sig
 
@@ -108,6 +120,7 @@ module Origin : sig
 
   val hash : t -> int
 
+  val pp : Format.formatter -> t -> unit
 end
 
 type graph
