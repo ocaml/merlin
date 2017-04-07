@@ -4,10 +4,11 @@ let usage () =
   prerr_endline
     "Usage: ocamlmerlin command [options] -- [compiler flags]\n\
      Help commands are:\n\
-    \  -version     Print version and exit\n\
-    \  -vnum        Print version number and exit\n\
-    \  -warn-help   Show description of warning numbers\n\
-    \  -flags-help  Show description of accepted compiler flags\n"
+    \  -version        Print version and exit\n\
+    \  -vnum           Print version number and exit\n\
+    \  -warn-help      Show description of warning numbers\n\
+    \  -flags-help     Show description of accepted compiler flags\n\
+    \  -commands-help  Describe all accepted commands\n"
 
 let commands_help () =
   print_endline "Query commands are:";
@@ -108,6 +109,7 @@ let run env = function
       Logger.with_notifications notifications @@ fun () ->
       (* Parse commandline *)
       match begin
+        let start_time = Misc.time_spent () in
         let config, command_args =
           let fails = ref [] in
           let config, command_args =
@@ -142,7 +144,6 @@ let run env = function
         let source = Msource.make tr config (Misc.string_of_file stdin) in
         let pipeline = Mpipeline.make tr config source in
         let json =
-          let start_time = Misc.time_spent () in
           let class_, message =
             match command_action pipeline command_args with
             | result ->

@@ -1,15 +1,24 @@
 # Merlin 3 protocol documentation
 
+
 ## Changes from merlin 2
 
-The communication protocol was redesigned between merlin 2 and 3. Answers have the same format, but merlin is no longer invoked as an asynchronous process: a new merlin process is started for each query.
-Under the hood, merlin will make its best to manage resources in an efficient way (via a resident process called *ocamlmerlin-server*).
+The communication protocol was redesigned between merlin 2 and 3. Answers have
+the same format, but merlin is no longer invoked as an asynchronous process: a
+new merlin process is started for each query.  Under the hood, merlin will make
+its best to manage resources in an efficient way (via a resident process called
+*ocamlmerlin-server*).
 
 In other word, editor modes no longer have to do process management.
 
-Finally, commands no longer maintain state on merlin side. In previous versions, buffer specific settings (compiler flags, findlib packages, syntax extensions, ...) were set by calling the appropriate commands.  State was split between merlin and the editor, which was hard to track and could cause desynchronization.
+Finally, commands no longer maintain state on merlin side. In previous
+versions, buffer specific settings (compiler flags, findlib packages, syntax
+extensions, ...) were set by calling the appropriate commands.  State was split
+between merlin and the editor, which was hard to track and could cause
+desynchronization.
 
-In this version, all this settings are passed on the command line. Arguments look a lot like the ocaml compiler ones.
+In this version, all this settings are passed on the command line. Arguments
+look a lot like the ocaml compiler ones.
 
 Try calling:
 - `ocamlmerlin single -help` for general information
@@ -18,11 +27,158 @@ Try calling:
 
 ### Backward compatibility
 
-This change is made in a backward compatible way: sessions that worked with merlin 2 should give the same answer with merlin 3.
+This change is made in a backward compatible way: sessions that worked with
+merlin 2 should give the same answer with merlin 3.
 This new protocol is only enabled if a command is passed on the commandline.
 
-## Merlin 3 commands
+Two binaries are distributed: `ocamlmerlin` and `ocamlmerlin-server`.
+`ocamlmerlin` is a lightweight wrapper that will call the server in the way it
+determined to be appropriate.
 
+In simple cases, a new instance of ocamlmerlin-server is ran for each query.  A
+more efficient but more complex setup is to reuse an existing instance. The
+wrapper will take care of that transparently.
+
+`ocamlmerlin` is the only binary one should execute. `ocamlmerlin-server` will
+be used by the wrapper if necessary and should never be executed manually.
+
+The first argument passed to `ocamlmerlin` determines how merlin will behave:
+
+- `old-protocol` executes the merlin frontend from previous version.  It is a
+  top level reading and writing commands in a JSON form.
+
+- `single` is a simpler frontend that reads input from stdin, processes a
+  single query and outputs result on stdout.
+
+- `server` works like `single`, but uses a background process to speedup
+  processing.
+
+If the first argument is not one of these, Merlin fallbacks to `old-protocol`
+for compatibility. The new protocol is enabled only with `single` and `server`.
+
+Finally, `ocamlmerlin server stop-server` is a special case to shutdown the
+background server, if it is running.
+
+During development or debugging of the editor mode, one can use the single mode
+and switch to server mode for deployment: visible behavior shouldn't differ,
+the merlin server will be managed automatically.
+
+## Getting started
+
+You can play with Merlin from the commandline. This can give you a feeling of
+how Merlin could be driven from an editor:
+
+```shell
+$ cat test.ml
+let x = 5
+let y = 3.0 *. x
+$ ocamlmerlin single type-enclosing -position '1:5' -filename test.ml < test.ml 
+{
+  "class" : "return",
+  "value" : [
+    {
+      "tail" : "no",
+      "end" : {
+        "line" : 1,
+        "col" : 5
+      },
+      "type" : "int",
+      "start" : {
+        "line" : 1,
+        "col" : 4
+      }
+    }
+  ]
+}
+$ ocamlmerlin single complete-prefix -prefix 'List.m' -position '2:14' -filename test.ml < test.ml 
+{
+  "class" : "return",
+  "value" : {
+    "entries" : [
+      {
+        "info" : "",
+        "name" : "map",
+        "kind" : "Value",
+        "desc" : "('a -> 'b) -> 'a list -> 'b list"
+      },
+      {
+        "info" : "",
+        "name" : "map2",
+        "kind" : "Value",
+        "desc" : "('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list"
+      },
+      {
+        "name" : "mapi",
+        "info" : "",
+        "desc" : "(int -> 'a -> 'b) -> 'a list -> 'b list",
+        "kind" : "Value"
+      },
+      {
+        "name" : "mem",
+        "info" : "",
+        "desc" : "'a -> 'a list -> bool",
+        "kind" : "Value"
+      },
+      ... 
+    ],
+    "context" : null
+  }
+}
+$ ocamlmerlin single errors -filename test.ml < test.ml
+{
+  "class" : "return",
+  "value" : [
+    {
+      "message" : "Unbound value List.m",
+      "valid" : true,
+      "end" : {
+        "line" : 2,
+        "col" : 14
+      },
+      "sub" : [],
+      "type" : "error",
+      "start" : {
+        "col" : 8,
+        "line" : 2
+      }
+    }
+  ]
+}
+```
+
+## Anatomy of command line arguments
+
+Merlin command line looks like:
+
+```shell
+$ ocamlmerlin <single|server> <command-global-and-compiler-flags> < ml-source.ml
+```
+
+Command flags are described below. Global and compilers flags are described by
+`ocamlmerlin single -flags-help`.
+
+## Answers
+
+Merlin answers always have the same shape:
+
+```javascript
+{
+  "class": "return" | "failure" | "error" | "exception",
+  "value": <defined-by-class-and-request>,
+  "notifications": string list 
+}
+```
+
+If processing succeeded, class is "return" and "value" is defied by the
+command. Otherwise, value is a string:
+- "exception" means something bad happened to Merlin, you should fill a bug
+  report
+- "failure" means that Merlin couldn't understand your request, maybe there is
+  a typo, an argument missing, etc.
+- "error" means Merlin couldn't process the query because of some problem with
+  the setup: wrong OCaml version, missing file, etc.
+
+## Commands
 
 ### `case-analysis -start <position> -end <position>`
 
@@ -255,4 +411,7 @@ passing environment variable
 
 ## Miscellaneous
 
-`__MERLIN_MASTER_PID` environment variable is set in processes invoked by merlin.
+`__MERLIN_MASTER_PID` environment variable is set in processes invoked by
+merlin.
+
+For PPX writers, the tool name is set to "merlin".
