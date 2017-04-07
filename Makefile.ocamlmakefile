@@ -55,8 +55,10 @@ SOURCES_LIB = \
 	src/utils/ppxsetup.ml             \
 	src/ocaml/support/identifiable.mli \
 	src/ocaml/support/identifiable.ml  \
-	src/ocaml/support/tbl.mli          \
-	src/ocaml/support/tbl.ml           \
+	src/ocaml/support/natural.mli     \
+	src/ocaml/support/natural.ml      \
+	src/ocaml/support/tbl.mli         \
+	src/ocaml/support/tbl.ml          \
 	$(TYPER)/utils/warnings.mli       \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \
@@ -106,6 +108,10 @@ SOURCES_LIB = \
 	$(TYPER)/typing/cmi_format.ml     \
 	$(TYPER)/typing/predef.mli        \
 	$(TYPER)/typing/predef.ml         \
+	$(TYPER)/typing/short_paths_graph.mli \
+	$(TYPER)/typing/short_paths_graph.ml  \
+	$(TYPER)/typing/short_paths.mli   \
+	$(TYPER)/typing/short_paths.ml    \
 	$(TYPER)/typing/datarepr.mli      \
 	$(TYPER)/typing/datarepr.ml       \
 	$(TYPER)/typing/subst.mli         \
