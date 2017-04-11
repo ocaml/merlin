@@ -207,6 +207,11 @@ static void make_daemon(int sock)
   dup2(0,1);
   dup2(0,2);
 
+  /* Change directory to root, so that process still works if directory
+   * is delete. */
+  if (chdir("/") != 0)
+    failwith_perror("chdir");
+
   //int x;
   //for (x = sysconf(_SC_OPEN_MAX); x>2; x--)
   //{
