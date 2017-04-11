@@ -512,7 +512,6 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
 
 (* Propose completion from a particular node *)
 let node_complete buffer ?get_doc ?target_type env node prefix =
-  Printtyp.wrap_printing_env env @@ fun () ->
   match node with
   | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
   | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; _ }
@@ -555,7 +554,7 @@ let expand_prefix ~global_modules env prefix =
 
 open Typedtree
 
-let application_context ~verbosity ~prefix path =
+let application_context ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
       match snd (List.hd path) with
@@ -569,7 +568,6 @@ let application_context ~verbosity ~prefix path =
       (_, Expression ({ exp_desc = Texp_apply (efun, _);
                         exp_type = app_type; exp_env } as app)) :: _
       when earg != efun ->
-      Printtyp.wrap_printing_env exp_env ~verbosity @@ fun () ->
       (* Type variables shared accross arguments should all be
          printed with the same name.
          [Printtyp.type_scheme] ensure that a name is unique within a given

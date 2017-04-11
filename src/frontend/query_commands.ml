@@ -49,7 +49,8 @@ let print_completion_entries ~with_types tr config source entries =
         output_ref := r :: !output_ref;
         `Concat (s,r)
     in
-    let entries = List.map ~f:(Completion.map_entry preprocess) entries in
+    let entries = List.rev_map ~f:(Completion.map_entry preprocess) entries in
+    let entries = List.rev entries in
     let outcomes = Mreader.print_batch_outcome tr config source !input_ref in
     List.iter2 (:=) !output_ref outcomes;
     let postprocess = function
@@ -355,8 +356,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let pos = Msource.get_lexing_pos tr source pos in
     let path = Mtyper.node_at tr ~skip_recovered:true typer pos in
     let env, node = Mbrowse.leaf_node path in
-    let target_type, context =
-      Completion.application_context ~verbosity ~prefix path in
+    let target_type, context = Completion.application_context ~prefix path in
     let get_doc =
       if not with_doc then None else
         let local_defs = Mtyper.get_typedtree typer in

@@ -60,6 +60,6 @@ val node_complete
 val expand_prefix : global_modules:string list -> Env.t -> string ->
   raw_info Query_protocol.Compl.raw_entry list
 
-val application_context : verbosity:int -> prefix:Asttypes.label -> Mbrowse.t ->
+val application_context : prefix:Asttypes.label -> Mbrowse.t ->
   Types.type_expr option *
   [> `Application of Query_protocol.Compl.application_context | `Unknown ]
