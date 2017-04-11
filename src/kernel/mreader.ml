@@ -76,12 +76,22 @@ let get_reader config =
       -> ["reason"]
   | x -> x
 
+let mocaml_printer tr reader ppf otree =
+  let str = match reader with
+    | lazy (Some reader) -> Mreader_extend.print_outcome tr otree reader
+    | _ -> None
+  in
+  match str with
+  | Some str -> Format.pp_print_string ppf str
+  | None -> Mocaml.default_printer ppf otree
+
 let with_ambient_reader tr config source f =
   let ambient_reader' = !ambient_reader in
   let reader_spec = get_reader config in
   let reader, stop = instantiate_reader tr reader_spec source in
   ambient_reader := Some (reader, reader_spec, source);
-  Misc.try_finally f
+  Misc.try_finally
+    (fun () -> Mocaml.with_printer (mocaml_printer tr reader) f)
     (fun () -> ambient_reader := ambient_reader'; stop ())
 
 let try_with_reader tr config source f =
@@ -121,7 +131,8 @@ let default_print_outcome tree =
   Format.flush_str_formatter ()
 
 let print_outcome tr config source tree =
-  match try_with_reader tr config source (Mreader_extend.print_outcome tr tree) with
+  match try_with_reader tr config source
+          (Mreader_extend.print_outcome tr tree) with
   | Some result -> result
   | None -> default_print_outcome tree
 
