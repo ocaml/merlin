@@ -208,403 +208,61 @@ let () = Btype.print_raw := raw_type_expr
 
 (* Normalize paths *)
 
-type param_subst = Id | Nth of int | Map of int list
-
-let is_nth = function
-    Nth _ -> true
-  | _ -> false
-
-let compose l1 = function
-  | Id -> Map l1
-  | Map l2 -> Map (List.map (List.nth l1) l2)
-  | Nth n  -> Nth (List.nth l1 n)
-
-let apply_subst s1 tyl =
-  match s1 with
-    Nth n1 -> [List.nth tyl n1]
-  | Map l1 -> List.map (List.nth tyl) l1
-  | Id -> tyl
+let printing_env = ref Env.empty
 
 let same_type t t' = repr t == repr t'
 
-let rec index l x =
-  match l with
-    [] -> raise Not_found
-  | a :: l -> if x == a then 0 else 1 + index l x
-
-let rec uniq = function
-    [] -> true
-  | a :: l -> not (List.memq a l) && uniq l
-
-let rec normalize_type_path ?(cache=false) env p =
-  try
-    let (params, ty, _) = Env.find_type_expansion p env in
-    let params = List.map repr params in
-    match repr ty with
-      {desc = Tconstr (p1, tyl, _)} ->
-        let tyl = List.map repr tyl in
-        if List.length params = List.length tyl
-        && List.for_all2 (==) params tyl
-        && p != p1
-        then normalize_type_path ~cache env p1
-        else if cache || List.length params <= List.length tyl
-             || not (uniq tyl) then (p, Id)
-        else
-          let l1 = List.map (index params) tyl in
-          let (p2, s2) = normalize_type_path ~cache env p1 in
-          (p2, compose l1 s2)
-    | ty ->
-        (p, Nth (index params ty))
-  with
-    Not_found -> (p, Id)
-
-(* Short-path debugging *)
-
-let debug = try Sys.getenv "PRINTDBG" = "1" with Not_found -> false
-
-let dprintf =
-  if debug then Printf.eprintf else (fun fmt -> Printf.ikfprintf ignore stderr fmt)
-
-let to_str path = String.concat "." (Path_aux.to_string_list path) ^ "/" ^
-                  (string_of_int (try Ident.binding_time (Path.head path) with _ -> -1))
-
-(* Alias map computation *)
-
-let register_short_type map env p (p', decl) =
-  let (p1, s1) = normalize_type_path env p' ~cache:true in
-  (* Format.eprintf "%a -> %a = %a@." path p path p' path p1 *)
-  if s1 = Id then
-  try
-    let r = Path_aux.Map.find p1 !map in
-    r := p :: !r
-  with Not_found ->
-    map := Path_aux.Map.add p1 (ref [p]) !map
-
-let register_short_module map env p p' =
-  match Env.normalize_path None env p' with
-  | p' -> (
-      if debug then
-        dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
-      try
-        let r = Path_aux.Map.find p' !map in
-        r := p :: !r
-      with Not_found ->
-        map := Path_aux.Map.add p' (ref [p]) !map
-    )
-  | exception exn -> ()
-
-let pathmap_append ta tb =
-  Path_aux.Map.union (fun _ a b -> Some (a @ b)) ta tb
-
-let aliasmap env =
-  let update am idents =
-    let typ_ = ref Path_aux.Map.empty in
-    let mod_ = ref Path_aux.Map.empty in
-    let open_ = ref am.Env.am_open in
-    let register_type_diff = function
-      | `Type (id, path) ->
-        register_short_type typ_ env (Path.Pident id) (path, ())
-      | `Module id ->
-        Env.iter_module_types_and_aliases
-          ~only_val:true
-          (register_short_type typ_ env)
-          (register_short_module mod_ env)
-          id env
-      | `Open path -> open_ := Path_aux.Set.add path !open_
-    in
-    List.iter register_type_diff idents;
-    let typ_ = Path_aux.Map.map (!) !typ_ in
-    let mod_ = Path_aux.Map.map (!) !mod_ in
-    { Env.
-      am_mod = pathmap_append mod_ am.Env.am_mod;
-      am_typ = pathmap_append typ_ am.Env.am_typ;
-      am_open = !open_;
-    }
-  in
-  Env.get_aliasmap env update
-
-(* Persistent alias maps *)
-
-let pers_map name =
-  try Env.find_pers_map name
-  with Not_found ->
-    let types = ref Path_aux.Map.empty in
-    let modules = ref Path_aux.Map.empty in
-    Env.iter_module_types_and_aliases
-      ~only_val:false
-      (register_short_type types Env.empty)
-      (register_short_module modules Env.empty)
-      (Ident.create_persistent name) Env.empty;
-    let types = Path_aux.Map.map (!) !types in
-    let modules = Path_aux.Map.map (!) !modules in
-    let map = (types, modules) in
-    begin try Env.set_pers_map name map
-      with Not_found ->
-        prerr_endline ("Env.set_pers_map: " ^ name ^ " not found")
-    end;
-    map
-
-let compute_map_for_pers name =
-  try
-    ignore (Env.find_pers_map name : _ * _);
-    false
-  with Not_found ->
-    ignore (pers_map name : _ * _);
-    true
-
-let pers_maps =
-  (* Loading persistent map can trigger loading of other maps.
-     Repeat until reaching a fix point *)
-  let rec fix concr concr' acc =
-    let dconcr = Concr.diff concr' concr in
-    if Concr.is_empty dconcr then
-      concr', acc
-    else
-      fix concr' (Env.used_persistent ())
-        (Concr.fold (fun name acc ->
-             let types', mods' = pers_map name in
-             {acc with Env.
-              am_typ = pathmap_append types' acc.Env.am_typ;
-              am_mod = pathmap_append mods' acc.Env.am_mod;
-             }
-           ) dconcr acc)
-  in
-  let empty = {Env. am_typ = Path_aux.Map.empty; am_mod = Path_aux.Map.empty; am_open = Path_aux.Set.empty } in
-  let cache = ref (Concr.empty, empty) in
-  fun () ->
-    let concr = Env.used_persistent () in
-    if not (Concr.equal concr (fst !cache)) then
-      cache := fix Concr.empty concr empty;
-    snd !cache
-
-let fold_aliases am1 =
-  let am2 = pers_maps () in
-  let type_aliases path f acc =
-    let acc = List.fold_left f acc (try Path_aux.Map.find path am1.Env.am_typ with Not_found -> []) in
-    let acc = List.fold_left f acc (try Path_aux.Map.find path am2.Env.am_typ with Not_found -> []) in
-    acc
-  and modules_aliases path f acc =
-    let acc = List.fold_left f acc (try Path_aux.Map.find path am1.Env.am_mod with Not_found -> []) in
-    let acc = List.fold_left f acc (try Path_aux.Map.find path am2.Env.am_mod with Not_found -> []) in
-    acc
-  in
-  type_aliases, modules_aliases
-
-(* Shortest module alias computation *)
-
-let penalty id =
-  if id <> "" && id.[0] = '_' then 10
-  else if not (Std.String.no_double_underscore id) then 10
-  else 1
-
-let rec path_penalty = function
-  | Pident id ->
-    penalty (Ident.name id)
-  | Pdot (p', dot, pos) ->
-    path_penalty p' + penalty dot
-  | Papply (p1, p2) ->
-    path_penalty p1 + path_penalty p2
-
-let min_cost (n1, _ as r1) (n2, _ as r2) =
-  if n1 < n2 then r1 else r2
-
-let add_component p name pos = match p with
-  | Some p' -> Pdot (p', name, pos)
-  | None -> Pident (Ident.create_persistent name)
-
-let indent = ref ""
-
-let enter fmt1 =
-  if debug then
-    let indent' = !indent in
-    let restore () = indent := indent' in
-    indent := indent' ^ "  ";
-    Printf.fprintf stderr "%s--> " !indent;
-    Printf.kfprintf (fun _oc f fmt2 ->
-        Printf.fprintf stderr "\n";
-        let r = try_finally f restore in
-        Printf.fprintf stderr "%s  <-- " !indent;
-        Printf.kfprintf (fun _oc p -> Printf.fprintf stderr " = %a\n" p r; r) stderr fmt2
-      )
-      stderr fmt1
-  else
-    Printf.ikfprintf (fun _oc f fmt2 ->
-        let r = f () in
-        Printf.ikfprintf (fun _oc p -> r) stderr fmt2
-      ) stderr fmt1
-
-let message fmt =
-  if debug then
-    (Printf.fprintf stderr "%s### " !indent;
-     Printf.kfprintf (fun _oc p r -> Printf.fprintf stderr "= %a\n" p r; r) stderr fmt)
-  else
-    Printf.ikfprintf (fun _oc _p r -> r) stderr fmt
-
-let dump_path oc path =
-  output_string oc (string_of_path path)
-
-let shortest_module_alias am (_, fold) fixed path =
-  if Path_aux.Set.mem path am.Env.am_open then (0, None) else begin
-    let r = fold path
-        (fun acc path' -> min_cost acc (fixed path')) (max_int, None) in
-    if fst r = 0 then r else
-      let r' = match path with
-        | Papply (p1, p2) ->
-          let not_none p =
-            match fixed p with
-            | cost, Some p' -> (cost, p')
-            | _, None ->
-              begin match p with
-                | Pdot (p', name, pos) ->
-                  let cost, p' = fixed p' in
-                  cost + penalty name, add_component p' name pos
-                | p ->
-                  (path_penalty p, p)
-              end
-          in
-          let c1, p1 = not_none p1 and c2, p2 = not_none p2 in
-          (c1 + c2, Some (Papply (p1, p2)))
-        | Pident id -> (penalty (Ident.name id), Some path)
-        | Pdot (p, n, pos) ->
-          let cost, p' = fixed p in
-          (cost + penalty n, Some (add_component p' n pos))
-      in
-      min_cost r r'
-    end
-
-let shortest_type_alias (fold, _) mod_alias fixed path =
-  let r = fold path (fun acc path' -> min_cost acc (fixed path')) (max_int, path) in
-  let r' = match path with
-    | Papply (_, _) -> assert false (* type path cannot start with application *)
-    | Pident id -> (penalty (Ident.name id), path)
-    | Pdot (p, n, pos) ->
-       let cost, p' = mod_alias p in
-       (cost + penalty n, add_component p' n pos)
-  in
-  min_cost r r'
-
-let shortest_type_alias am =
-  let fold_aliases = fold_aliases am in
-  let modtbl = Path_aux.Tbl.create 7 in
-  let dump_cost oc c =
-    if c = max_int
-    then Printf.fprintf oc "cycle"
-    else Printf.fprintf oc "cost:%d" c
-  in
-  let rec mod_alias path =
-    let dump_result oc (n, po) = match po with
-      | None -> Printf.fprintf oc "(%a, opened)" dump_cost n
-      | Some path -> Printf.fprintf oc "(%a, %a)" dump_cost n dump_path path
-    in
-    match Path_aux.Tbl.find modtbl path with
-    | v -> message "module_alias(%a)" dump_path path dump_result v
-    | exception Not_found ->
-      enter
-        "module_alias(%a)" dump_path path
-        begin fun () ->
-          Path_aux.Tbl.add modtbl path (max_int, Some path);
-          let r = shortest_module_alias am fold_aliases mod_alias path in
-          Path_aux.Tbl.replace modtbl path r;
-          r
-        end
-        "module_alias(%a)" dump_path path
-        dump_result
-  in
-  let typtbl = Path_aux.Tbl.create 7 in
-  let rec typ_alias path =
-    let dump_result oc (n, p) =
-      Printf.fprintf oc "(%a, %a)" dump_cost n dump_path p
-    in
-    match Path_aux.Tbl.find typtbl path with
-    | v -> message "typ_alias(%a)" dump_path path dump_result v
-    | exception Not_found ->
-      enter
-        "typ_alias(%a)" dump_path path
-        begin fun () ->
-          Path_aux.Tbl.add typtbl path (max_int, path);
-          let r = shortest_type_alias fold_aliases mod_alias typ_alias path in
-          Path_aux.Tbl.replace typtbl path r;
-          r
-        end
-        "typ_alias(%a)" dump_path path
-        dump_result
-  in
-  fun path -> snd (typ_alias path)
-
-type printing_state = {
-  printenv: Env.t;
-  aliasmap: Env.aliasmap;
-  pathmap: (Path.t -> Path.t) lazy_t;
-}
-
-let printing_empty = {
-  printenv = Env.empty;
-  aliasmap = Env.aliasmap_empty;
-  pathmap = lazy (fun x -> x);
-}
-
-let printing_state = ref printing_empty
-
-let is_unambiguous path env =
-  let l = Env.find_shadowed_types path env in
-  List.exists (Path.same path) l || (* concrete paths are ok *)
-  match l with
-    [] -> true
-  | p :: rem ->
-      (* allow also coherent paths:  *)
-      let normalize p = fst (normalize_type_path ~cache:true env p) in
-      let p' = normalize p in
-      List.for_all (fun p -> Path.same (normalize p) p') rem ||
-      (* also allow repeatedly defining and opening (for toplevel) *)
-      let id = lid_of_path p in
-      List.for_all (fun p -> lid_of_path p = id) rem &&
-      Path.same p (Env.lookup_type id env)
-
 let set_printing_env env =
-  if !Clflags.real_paths then
-    printing_state := printing_empty
-  else
-    let am = aliasmap env in
-    if !printing_state.aliasmap == am then ()
-    else
-      let pathmap =
-        lazy begin
-          let type_alias = shortest_type_alias am in
-          let type_alias = function
-            (* Predefined types have binding_time < 1000 (see [Predef]) *)
-            | (Pident id) as path when Ident.binding_time id < 1000 ->
-              path
-            | path -> type_alias path
-          in
-          type_alias
-        end
-      in
-      printing_state := { aliasmap = am; pathmap; printenv = env }
+  printing_env :=
+    if !Clflags.real_paths then Env.empty
+    else env
 
 let wrap_printing_env env f =
-  let printing_state' = !printing_state in
-  set_printing_env env;
-  try_finally
-    (fun () -> Env.without_cmis f)
-    (fun () -> printing_state := printing_state')
+  set_printing_env (Env.update_short_paths env);
+  try_finally f (fun () -> set_printing_env Env.empty)
 
-let curr_printing_env () = !printing_state.printenv
+let wrap_printing_env env f =
+  Env.without_cmis (wrap_printing_env env) f
 
-let shorten_path ?(env=curr_printing_env ()) path =
-  shortest_type_alias (aliasmap env) path
+type type_result = Short_paths.type_result =
+  | Nth of int
+  | Path of int list option * Path.t
+
+type type_resolution = Short_paths.type_resolution =
+  | Nth of int
+  | Subst of int list
+  | Id
+
+let apply_subst ns args =
+  List.map (List.nth args) ns
+
+let apply_subst_opt nso args =
+  match nso with
+  | None -> args
+  | Some ns -> apply_subst ns args
+
+let apply_nth n args =
+  List.nth args n
 
 let best_type_path p =
-  if !printing_state == printing_empty then (p, Id)
-  else if !Clflags.real_paths
-  then (p, Id)
-  else
-    let (p', s) = normalize_type_path !printing_state.printenv p in
-    let p'' =
-      try Lazy.force !printing_state.pathmap p'
-      with Not_found -> p'
-    in
-    (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
-    (p'', s)
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then Path(None, p)
+  else Short_paths.find_type (Env.short_paths !printing_env) p
+
+let best_type_path_resolution p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then Id
+  else Short_paths.find_type_resolution (Env.short_paths !printing_env) p
+
+let best_module_type_path p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then p
+  else Short_paths.find_module_type (Env.short_paths !printing_env) p
+
+let best_module_path p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then p
+  else Short_paths.find_module (Env.short_paths !printing_env) p
 
 (* Print a type expression *)
 
@@ -681,8 +339,11 @@ let add_alias ty =
 let aliasable ty =
   match ty.desc with
     Tvar _ | Tunivar _ | Tpoly _ -> false
-  | Tconstr (p, _, _) ->
-      not (is_nth (snd (best_type_path p)))
+  | Tconstr (p, _, _) -> begin
+      match best_type_path_resolution p with
+      | Nth _ -> false
+      | Subst _ | Id -> true
+    end
   | _ -> true
 
 let namable_row row =
@@ -705,9 +366,15 @@ let rec mark_loops_rec visited ty =
     | Tarrow(_, ty1, ty2, _) ->
         mark_loops_rec visited ty1; mark_loops_rec visited ty2
     | Ttuple tyl -> List.iter (mark_loops_rec visited) tyl
-    | Tconstr(p, tyl, _) ->
-        let (p', s) = best_type_path p in
-        List.iter (mark_loops_rec visited) (apply_subst s tyl)
+    | Tconstr(p, tyl, _) -> begin
+        match best_type_path_resolution p with
+        | Nth n ->
+            mark_loops_rec visited (apply_nth n tyl)
+        | Subst ns ->
+            List.iter (mark_loops_rec visited) (apply_subst ns tyl)
+        | Id ->
+            List.iter (mark_loops_rec visited) tyl
+      end
     | Tpackage (_, _, tyl) ->
         List.iter (mark_loops_rec visited) tyl
     | Tvariant row ->
@@ -798,11 +465,13 @@ let rec tree_of_typexp sch ty =
         pr_arrow l ty1 ty2
     | Ttuple tyl ->
         Otyp_tuple (tree_of_typlist sch tyl)
-    | Tconstr(p, tyl, abbrev) ->
-        let p', s = best_type_path p in
-        let tyl' = apply_subst s tyl in
-        if is_nth s then tree_of_typexp sch (List.hd tyl') else
-        Otyp_constr (tree_of_path p', tree_of_typlist sch tyl')
+    | Tconstr(p, tyl, _abbrev) -> begin
+        match best_type_path p with
+        | Nth n -> tree_of_typexp sch (apply_nth n tyl)
+        | Path(nso, p) ->
+            let tyl = apply_subst_opt nso tyl in
+            Otyp_constr (tree_of_path p, tree_of_typlist sch tyl)
+      end
     | Tvariant row ->
         let row = row_repr row in
         let fields =
@@ -820,23 +489,32 @@ let rec tree_of_typexp sch ty =
         let all_present = List.length present = List.length fields in
         begin match row.row_name with
         | Some(p, tyl) when namable_row row ->
-            let (p', s) = best_type_path p in
-            let id = tree_of_path p' in
-            let args = tree_of_typlist sch (apply_subst s tyl) in
-            if row.row_closed && all_present then
-              if is_nth s then List.hd args else Otyp_constr (id, args)
-            else
+            if row.row_closed && all_present then begin
+              match best_type_path p with
+              | Nth n -> tree_of_typexp sch (apply_nth n tyl)
+              | Path(nso, p') ->
+                  let id = tree_of_path p' in
+                  let args = tree_of_typlist sch (apply_subst_opt nso tyl) in
+                  Otyp_constr (id, args)
+            end else begin
               let non_gen = is_non_gen sch px in
               let tags =
                 if all_present then None else Some (List.map fst present) in
               let inh =
-                match args with
-                  [Otyp_constr (i, a)] when is_nth s -> Ovar_name (i, a)
-                | _ ->
+                match best_type_path_resolution p with
+                | Nth n -> begin
+                    match tree_of_typexp sch (apply_nth n tyl) with
+                    | Otyp_constr (i, a) -> Ovar_name (i, a)
+                    | _ ->
+                        (* fallback case, should change outcometree... *)
+                        Ovar_name (tree_of_path p, tree_of_typlist sch tyl)
+                  end
+                | Subst _ | Id ->
                     (* fallback case, should change outcometree... *)
                     Ovar_name (tree_of_path p, tree_of_typlist sch tyl)
               in
               Otyp_variant (non_gen, inh, row.row_closed, tags)
+            end
         | _ ->
             let non_gen =
               not (row.row_closed && all_present) && is_non_gen sch px in
@@ -914,12 +592,14 @@ and tree_of_typobject sch fi nm =
         tree_of_typfields sch rest sorted_fields in
       let (fields, rest) = pr_fields fi in
       Otyp_object (fields, rest)
-  | Some (p, ty :: tyl) ->
+  | Some (p, ty :: tyl) -> begin
       let non_gen = is_non_gen sch (repr ty) in
       let args = tree_of_typlist sch tyl in
-      let (p', s) = best_type_path p in
-      assert (s = Id);
-      Otyp_class (non_gen, tree_of_path p', args)
+      match best_type_path p with
+      | Nth _ | Path(Some _, _) -> assert false
+      | Path(None, p) ->
+          Otyp_class (non_gen, tree_of_path p, args)
+    end
   | _ ->
       fatal_error "Printtyp.tree_of_typobject"
   end
@@ -1371,9 +1051,12 @@ let cltype_declaration id ppf cl =
 (* Print a module type *)
 
 let wrap_env fenv ftree arg =
-  let env = !printing_state.printenv in
-  wrap_printing_env (fenv env)
-    (fun () -> ftree arg)
+  let env = !printing_env in
+  let env' = Env.update_short_paths (fenv env) in
+  set_printing_env env';
+  let tree = ftree arg in
+  set_printing_env env;
+  tree
 
 let filter_rem_sig item rem =
   match item, rem with
@@ -1393,7 +1076,7 @@ let dummy =
   }
 
 let hide_rec_items = function
-  (*| Sig_type(id, decl, rs) ::rem
+  | Sig_type(id, decl, rs) ::rem
     when rs = Trec_first && not !Clflags.real_paths ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
@@ -1401,14 +1084,18 @@ let hide_rec_items = function
         | _ -> []
       in
       let ids = id :: get_ids rem in
-      set_printing_env
-        (List.fold_right
-           (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
-           ids !printing_state.aliasmap.am_env)*)
+      let env =
+        List.fold_right
+          (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
+          ids !printing_env
+      in
+      let env = Env.update_short_paths env in
+      set_printing_env env
   | _ -> ()
 
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
+      let p = best_module_type_path p in
       Omty_ident (tree_of_path p)
   | Mty_signature sg ->
       Omty_signature (if ellipsis then [Osig_ellipsis]
@@ -1423,20 +1110,26 @@ let rec tree_of_modtype ?(ellipsis=false) = function
       Omty_functor (Ident.name param,
                     may_map (tree_of_modtype ~ellipsis:false) ty_arg, res)
   | Mty_alias p ->
+      let p = best_module_path p in
       Omty_alias (tree_of_path p)
 
 and tree_of_signature sg =
-  wrap_env (fun env -> env) (tree_of_signature_rec !printing_state.printenv false) sg
+  wrap_env (fun env -> env) (tree_of_signature_rec !printing_env false) sg
 
 and tree_of_signature_rec env' in_type_group = function
     [] -> []
   | item :: rem as items ->
-      let in_type_group =
+      let env', in_type_group =
         match in_type_group, item with
-          true, Sig_type (_, _, Trec_next) -> true
+          true, Sig_type (_, _, Trec_next) -> env', true
         | _, Sig_type (_, _, (Trec_not | Trec_first)) ->
-            set_printing_env env'; true
-        | _ -> set_printing_env env'; false
+          let env' = Env.update_short_paths env' in
+          set_printing_env env';
+          env', true
+        | _ ->
+          let env' = Env.update_short_paths env' in
+          set_printing_env env';
+          env', false
       in
       let (sg, rem) = filter_rem_sig item rem in
       hide_rec_items items;
@@ -1505,12 +1198,12 @@ let same_path t t' =
   let t = repr t and t' = repr t' in
   t == t' ||
   match t.desc, t'.desc with
-    Tconstr(p,tl,_), Tconstr(p',tl',_) ->
-      let (p1, s1) = best_type_path p and (p2, s2)  = best_type_path p' in
-      begin match s1, s2 with
-        Nth n1, Nth n2 when n1 = n2 -> true
-      | (Id | Map _), (Id | Map _) when Path.same p1 p2 ->
-          let tl = apply_subst s1 tl and tl' = apply_subst s2 tl' in
+  | Tconstr(p,tl,_), Tconstr(p',tl',_) -> begin
+      match best_type_path p, best_type_path p' with
+      | Nth n, Nth n' when n = n' -> true
+      | Path(nso, p), Path(nso', p') when Path.same p p' ->
+          let tl = apply_subst_opt nso tl in
+          let tl' = apply_subst_opt nso' tl' in
           List.length tl = List.length tl' &&
           List.for_all2 same_type tl tl'
       | _ -> false
@@ -1652,11 +1345,11 @@ let explanation unif t3 t4 ppf =
         row1.row_fields, row1.row_closed, row2.row_fields, row2.row_closed with
       | [], true, [], true ->
           fprintf ppf "@,These two variant types have no intersection"
-      | [], true, fields, _ ->
+      | [], true, (_::_ as fields), _ ->
           fprintf ppf
             "@,@[The first variant type does not allow tag(s)@ @[<hov>%a@]@]"
             print_tags fields
-      | fields, _, [], true ->
+      | (_::_ as fields), _, [], true ->
           fprintf ppf
             "@,@[The second variant type does not allow tag(s)@ @[<hov>%a@]@]"
             print_tags fields
@@ -1700,8 +1393,12 @@ let rec path_same_name p1 p2 =
 
 let type_same_name t1 t2 =
   match (repr t1).desc, (repr t2).desc with
-    Tconstr (p1, _, _), Tconstr (p2, _, _) ->
-      path_same_name (fst (best_type_path p1)) (fst (best_type_path p2))
+  | Tconstr (p1, _, _), Tconstr (p2, _, _) -> begin
+      match best_type_path p1, best_type_path p2 with
+      | Path(_, p1), Path(_, p2) ->
+          path_same_name p1 p2
+      | _, _ -> ()
+    end
   | _ -> ()
 
 let rec trace_same_names = function

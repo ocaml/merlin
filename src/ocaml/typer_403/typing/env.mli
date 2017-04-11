@@ -17,14 +17,6 @@
 
 open Types
 
-type aliasmap = {
-  am_typ: Path.t list Path_aux.Map.t;
-  am_mod: Path.t list Path_aux.Map.t;
-  am_open: Path_aux.Set.t;
-}
-
-val aliasmap_empty: aliasmap
-
 type summary =
     Env_empty
   | Env_value of summary * Ident.t * value_description
@@ -36,7 +28,6 @@ type summary =
   | Env_cltype of summary * Ident.t * class_type_declaration
   | Env_open of summary * Path.t
   | Env_functor_arg of summary * Ident.t
-  | Env_aliasmap of summary * aliasmap ref
 
 type t
 
@@ -47,25 +38,6 @@ val diff: t -> t -> Ident.t list
 
 type type_descriptions =
     constructor_description list * label_description list
-
-(* For short-paths *)
-val iter_types_and_aliases:
-    ?only_val:bool ->
-    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
-    (Path.t -> Path.t -> unit) ->
-    t -> unit
-
-val iter_module_types_and_aliases:
-    ?only_val:bool ->
-    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
-    (Path.t -> Path.t -> unit) ->
-    Ident.t -> t -> unit
-
-type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
-val get_aliasmap: t -> (aliasmap -> type_diff list -> aliasmap) -> aliasmap
-
-val find_pers_map: string -> Path.t list Path_aux.Map.t * Path.t list Path_aux.Map.t
-val set_pers_map: string -> Path.t list Path_aux.Map.t * Path.t list Path_aux.Map.t -> unit
 
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t
@@ -237,6 +209,12 @@ val summary: t -> summary
 val keep_only_summary : t -> t
 val env_of_only_summary : (summary -> Subst.t -> t) -> t -> t
 
+(* Update the short paths table *)
+val update_short_paths : t -> t
+
+(* Return the short paths table *)
+val short_paths : t -> Short_paths.t
+
 (* Error report *)
 
 type error =
@@ -324,5 +302,5 @@ val state : Local_store.bindings
 
 val check_state_consistency: unit -> bool
 
-val without_cmis : (unit -> 'a) -> 'a
+val without_cmis : ('a -> 'b) -> 'a -> 'b
 val with_cmis : (unit -> 'a) -> 'a
