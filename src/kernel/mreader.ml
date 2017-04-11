@@ -69,16 +69,23 @@ let instantiate_reader tr spec source = match spec with
          | None -> ()
          | Some reader -> Mreader_extend.stop tr reader))
 
+let get_reader config =
+  match Mconfig.(config.merlin.reader) with
+  | [] when Filename.check_suffix Mconfig.(config.query.filename) ".re"
+         || Filename.check_suffix Mconfig.(config.query.filename) ".rei"
+      -> ["reason"]
+  | x -> x
+
 let with_ambient_reader tr config source f =
   let ambient_reader' = !ambient_reader in
-  let reader_spec = Mconfig.(config.merlin.reader) in
+  let reader_spec = get_reader config in
   let reader, stop = instantiate_reader tr reader_spec source in
   ambient_reader := Some (reader, reader_spec, source);
   Misc.try_finally f
     (fun () -> ambient_reader := ambient_reader'; stop ())
 
 let try_with_reader tr config source f =
-  let reader_spec = Mconfig.(config.merlin.reader) in
+  let reader_spec = get_reader config in
   let lazy reader, stop =
     match !ambient_reader with
     | Some (reader, reader_spec', source')
