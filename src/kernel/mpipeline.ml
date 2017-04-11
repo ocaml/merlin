@@ -1,13 +1,18 @@
+let time_shift = ref 0.0
+
 let timed_lazy r x =
   lazy (
     let start = Misc.time_spent () in
+    let time_shift0 = !time_shift in
+    let update () =
+      let delta = Misc.time_spent () -. start in
+      let shift = !time_shift -. time_shift0 in
+      time_shift := time_shift0 +. delta;
+      r := !r +. delta -. shift;
+    in
     match Lazy.force x with
-    | x ->
-      r := !r +. Misc.time_spent () -. start;
-      x
-    | exception exn ->
-      r := !r +. Misc.time_spent () -. start;
-      Std.reraise exn
+    | x -> update (); x
+    | exception exn -> update (); Std.reraise exn
   )
 
 module Typer = struct
