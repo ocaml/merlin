@@ -64,6 +64,8 @@ module Server = struct
 end
 
 let main () =
+  (* Setup env for extensions *)
+  Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
   | "single" :: args -> exit (New_merlin.run [] args)
   | "old-protocol" :: args -> Old_merlin.run args

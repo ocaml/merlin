@@ -112,10 +112,7 @@ let setup_system () =
   (* Setup signals, unix is a disaster *)
   signal Sys.sigusr1 Sys.Signal_ignore;
   signal Sys.sigpipe Sys.Signal_ignore;
-  signal Sys.sighup  Sys.Signal_ignore;
-
-  (* Setup env for extensions *)
-  Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
+  signal Sys.sighup  Sys.Signal_ignore
 
 let setup_merlin args =
   let config, protocol =
