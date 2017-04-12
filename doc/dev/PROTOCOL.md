@@ -415,3 +415,43 @@ passing environment variable
 merlin.
 
 For PPX writers, the tool name is set to "merlin".
+
+### Locations in PPX rewriters
+
+FIXME: this should go somewhere else.
+
+When trying to match a location with an AST node, Merlin traverses the tree
+from the root, descending into all nodes that overlaps the location.
+
+The most important part is that the locations of the rewritten AST nodes
+actually form a tree.
+
+A few attributes can be added on AST nodes to guide Merlin.
+
+#### `[@merlin.loc]`
+
+The location of "merlin.loc" will be used instead of the normal location of the
+node when traversing the AST.  This is useful to extend the range of nodes.
+
+For instance in the AST for `let x = y in z` nothing can be said about the
+location of `in` as it doesn't appear in the abstract syntax.
+
+Thus if the cursor is after `y` and before `z`, merlin cannot tell which node
+to chose (should the completion use the context `y`, where `x` doesn't appear,
+or the context of `z` ?).
+
+This is solved by tweaking the parser to add `[@merlin.loc]` attributes, with
+the locations marked by `[]`: `let x =[ y ]in[ z]`.
+
+This way, merlin will pick `z` node after `in` and `y` node before. 
+
+#### `[@merlin.hide]` and `[@merlin.focus]`
+
+PPX rewriters sometime generate codes that need to be given a location so that
+errors are reported appropriately but for which other Merlin features are not
+meaningful (completion or type-enclosing).
+
+`[@merlin.hide]` attribute causes merlin to ignore a branch of the AST.
+
+When multiple branches overlap a location, `[@merlin.focus]` attribute forces
+merlin to select a single branch and ignore the others.
