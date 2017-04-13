@@ -39,16 +39,17 @@
 (defun merlin-iedit-occurrences ()
   "Edit occurrences of identifier under cursor using `iedit'"
   (interactive)
-  (let ((r (merlin/call "occurrences"
-                        "-identifier-at" (merlin/unmake-point (point)))))
-    (when r
-      (if (listp r)
-          (flet ((iedit-printable (a)
-                   (merlin-iedit--printable))
-                 (iedit-make-occurrences-overlays (a b c)
-                   (merlin-iedit--make-occurrences-overlays a)))
-            (iedit-start r (point-min) (point-max)))
-        (message r)))))
+  (if iedit-mode (iedit-mode -1)
+    (let ((r (merlin/call "occurrences"
+                          "-identifier-at" (merlin/unmake-point (point)))))
+      (when r
+        (if (listp r)
+            (flet ((iedit-printable (a)
+                     (merlin-iedit--printable))
+                   (iedit-make-occurrences-overlays (a b c)
+                     (merlin-iedit--make-occurrences-overlays a)))
+              (iedit-start r (point-min) (point-max)))
+          (message r))))))
 
 (provide 'merlin-iedit)
 ;;; merlin.el ends here
