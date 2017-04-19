@@ -72,7 +72,6 @@ let compatible_prefix result_items tree_items =
 
 let fresh_env config =
   let env0 = Typer_raw.fresh_env () in
-  let env0 = Env.open_pers_signature "Pervasives" env0 in
   let env0 = Extension.register Mconfig.(config.merlin.extensions) env0 in
   let snap0 = Btype.snapshot () in
   (env0, snap0)
