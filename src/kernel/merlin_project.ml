@@ -88,11 +88,11 @@ let compute_flags ppxsetup prj =
   let process_flags_list lst =
     List.fold_left lst ~init:[] ~f:(fun acc lst ->
         let flags = Array.of_list ("merlin" :: lst) in
-        List.rev_append (process_flags Clflags.arg_spec flags) acc
+        List.rev_append (process_flags Main_args.flags flags) acc
       )
   in
   let dfails = process_flags_list (Dot_merlin.config prj.dot_merlin).Dot_merlin.flags in
-  let dfails = List.rev_append (process_flags (Main_args.flags @ Clflags.arg_spec) Sys.argv) dfails in
+  let dfails = List.rev_append (process_flags Main_args.flags Sys.argv) dfails in
   let ufails = process_flags_list prj.user_config.Dot_merlin.flags in
   Clflags.ppx := Ppxsetup.union !Clflags.ppx ppxsetup;
   dfails, ufails, Clflags.save (), Warnings.backup ()

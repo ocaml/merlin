@@ -56,8 +56,9 @@ let protocol_spec =
 let unexpected_argument s =
   failwith ("Unexpected argument: " ^ s)
 
-let ignore_non_parametrized =
-  List.map (fun x -> x, Arg.Unit ignore, " Ignored (ocaml compatibility)") [
+let ocaml_ignored_flags =
+  let arg_ignore key = (key, Arg.Unit ignore, "") in
+  List.map arg_ignore [
     "-a"; "-absname"; "-alias-deps"; "-annot"; "-app-funct"; "-bin-annot";
     "-c"; "-compact"; "-compat-32"; "-config"; "-custom"; "-dalloc";
     "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
@@ -66,7 +67,7 @@ let ignore_non_parametrized =
     "-drawclambda"; "-drawflambda"; "-drawlambda"; "-dreload"; "-dscheduling";
     "-dsel"; "-dsource"; "-dspill"; "-dsplit"; "-dstartup"; "-dtimings";
     "-dtypedtree"; "-dtypes"; "-dump-pass"; "-fno-PIC"; "-fPIC"; "-g"; "-i";
-    "-inlining-report"; "-keep-docs"; "-keep-docs"; "-keep-locs"; "-linkall";
+    "-inlining-report"; "-keep-docs"; "-keep-locs"; "-linkall";
     "-make_runtime"; "-make-runtime"; "-modern"; "-no-alias-deps"; "-noassert";
     "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
     "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
@@ -77,8 +78,9 @@ let ignore_non_parametrized =
     "-verbose"; "-where";
   ]
 
-let ignore_parametrized =
-  List.map (fun x -> x, Arg.String ignore, " Ignored (ocaml compatibility)") [
+let ocaml_ignored_parametrized_flags =
+  let arg_ignorep key = (key, Arg.String ignore, "") in
+  List.map arg_ignorep [
     "-cc"; "-cclib"; "-ccopt"; "-color"; "-dflambda-let"; "-dllib"; "-dllpath";
     "-for-pack"; "-impl"; "-inline-alloc-cost"; "-inline-branch-cost";
     "-inline-branch-factor"; "-inline-call-cost"; "-inline-indirect-cost";
@@ -97,8 +99,8 @@ let flags =
       warn_help_spec;
       protocol_spec;
     ];
-    ignore_non_parametrized;
-    ignore_parametrized;
+    ocaml_ignored_flags;
+    ocaml_ignored_parametrized_flags;
     Clflags.arg_spec;
   ]
 

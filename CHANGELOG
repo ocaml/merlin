@@ -1,3 +1,12 @@
+merlin 2.5.4
+============
+Tue Apr 25 15:07:18 CEST 2017
+
+Minor release:
+- handle hole in 4.04
+- bug fixes in emacs mode
+- introduce merlin-imenu
+
 merlin 2.5.3
 ============
 Mon Nov 28 09:54:57 CET 2016
