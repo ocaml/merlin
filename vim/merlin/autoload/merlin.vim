@@ -1,7 +1,7 @@
 if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 
 if !exists('g:merlin_python_version')
-    let g:merlin_python_version = 2
+  let g:merlin_python_version = 2
 endif
 
 if has('python3') && !(has('python') && g:merlin_python_version == 2)
@@ -16,15 +16,15 @@ else
 endif
 
 if !exists('g:merlin_split_method')
-    let g:merlin_split_method = 'horizontal'
+  let g:merlin_split_method = 'horizontal'
 endif
 
 if !exists('g:merlin_locate_preference')
-    let g:merlin_locate_preference = 'ml'
+  let g:merlin_locate_preference = 'ml'
 endif
 
 if !exists('g:merlin_binary_flags')
-    let g:merlin_binary_flags = []
+  let g:merlin_binary_flags = []
 endif
 
 if !exists("g:merlin_ignore_warnings")
@@ -62,11 +62,15 @@ if !exists("g:merlin_completion_argtype")
 endif
 
 if !exists("g:merlin_completion_with_doc")
-    let g:merlin_completion_with_doc = "false"
+  let g:merlin_completion_with_doc = "false"
 endif
 
 if !exists("g:merlin_disable_default_keybindings")
   let g:merlin_disable_default_keybindings = 0
+endif
+
+if !exists('g:merlin_debug')
+  let g:merlin_debug = 0
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
@@ -177,6 +181,15 @@ endfunction
 
 function! merlin#Flags(...)
   let b:merlin_flags = a:000
+endfunction
+
+function! merlin#DebugEnable()
+  let g:merlin_debug=1
+  split *merlin-log*
+endfunction
+
+function! merlin#DebugDisable()
+  let g:merlin_debug=0
 endfunction
 
 function! s:ShowTypeEnclosing(type)
@@ -630,6 +643,8 @@ function! merlin#Register()
 
   """ debug --------------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
+  command! -buffer -nargs=0 MerlinDebugDisable call merlin#DebugDisable()
+  command! -buffer -nargs=0 MerlinDebugEnable  call merlin#DebugEnable()
 
   if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
     vmap <silent><buffer> <TAB>         :<C-u>MerlinPhrase<return>

@@ -132,7 +132,9 @@ def merlin_exec(args, input=""):
                     )
         # Send buffer content
         (response, errors) = process.communicate(input=input)
-        if errors: sys.stderr.write(errors + "\n")
+        if errors:
+            buf = int(vim.eval("bufnr('*merlin-log*',1)"))
+            vim.buffers[buf].append(errors.split('\n'))
         return response
     except OSError as e:
         vimprint("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
@@ -153,10 +155,15 @@ def command2(args, context=None, track_verbosity=None):
     else:
         verbosity = []
     (filename, content) = context or current_context()
+    if vim_is_set("g:merlin_debug"):
+        log_errors = ["-log-file", "-"]
+    else:
+        log_errors = []
     cmdline = ["server"] + list(args) + ["-filename",filename] + verbosity + \
             concat_map(lambda ext: ("-extension",ext), vim_list_if_set("b:merlin_extensions")) + \
             concat_map(lambda pkg: ("-package",pkg), vim_list_if_set("b:merlin_packages")) + \
             concat_map(lambda dm: ("-dot-merlin",dm), vim_list_if_set("b:merlin_dot_merlins")) + \
+            log_errors + \
             vim.eval('g:merlin_binary_flags') + \
             vim_list_if_set('b:merlin_flags')
 
