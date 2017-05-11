@@ -104,24 +104,15 @@ function! merlin#Version()
   MerlinPy merlin.command_version()
 endfunction
 
-function! merlin#Path(var,path)
-  if a:path == ""
-    let l:path = ""
-  else
-    let l:raw = (a:path =~ '^\')
-    let l:path = l:raw ? substitute(a:path, '^\\\(.*\)$', '\1', '') : fnamemodify(a:path,':p')
+function! merlin#Path(var,...)
+  if !exists("b:merlin_flags")
+    let b:merlin_flags = []
   endif
-MerlinPy <<EOF
-path = vim.eval("l:path")
-if path == "":
-  for path in merlin.command("path","list", vim.eval("a:var")):
-    if path != "":
-      print(path)
-else:
-  print(path)
-  merlin.command("path", "add", vim.eval("a:var"), path)
-merlin.vim_reload()
-EOF
+
+  for i in a:000
+    call add(b:merlin_flags, a:var)
+    call add(b:merlin_flags, fnameescape(i))
+  endfor
 endfunction
 
 function! merlin#MLList(ArgLead, CmdLine, CursorPos)
@@ -609,8 +600,8 @@ function! merlin#Register()
   endif
 
   """ Path management  ---------------------------------------------------------
-  command! -buffer -nargs=? -complete=dir MerlinSourcePath call merlin#Path("source", <q-args>)
-  command! -buffer -nargs=? -complete=dir MerlinBuildPath  call merlin#Path("build", <q-args>)
+  command! -buffer -nargs=* -complete=dir MerlinSourcePath call merlin#Path("-source-path", <f-args>)
+  command! -buffer -nargs=* -complete=dir MerlinBuildPath  call merlin#Path("-build-path", <f-args>)
 
   """ Findlib  -----------------------------------------------------------------
   command! -buffer -complete=custom,merlin#CompletePackages -nargs=* MerlinPackages call merlin#Packages(<f-args>)
