@@ -177,15 +177,14 @@ let rec build ?(local_buffer=false) ~trie browses =
       Internal (build ~local_buffer ~trie:Trie.empty [of_signature s])
     | `Mod_expr me -> node_for_direct_mod `Mod (remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (remove_indir_mty mty)
-    | `Functor (located_name, pack_loc, packed) when local_buffer ->
-      (* We don't actually care about the namespace here. But whatever. *)
-      let result = [ pack_loc, None, `Functor, node_for_direct_mod `Functor packed ] in
-      let param  = [ located_name.Asttypes.loc, None, `Modtype, Leaf ] in
+    | `Functor (located_arg_name, pack_loc, packed) when local_buffer ->
+      let arg_node = [ located_arg_name.Asttypes.loc, None, namespace, Leaf ] in
       let trie =
-        Trie.of_list [
-          located_name.Asttypes.txt, param;
-          "0", result;
-        ]
+        begin match node_for_direct_mod `Mod packed with
+        | Internal t ->
+          Trie.add located_arg_name.Asttypes.txt arg_node t
+        | _ -> Trie.singleton located_arg_name.Asttypes.txt arg_node
+        end
       in
       Internal trie
     | `Apply (me1, me2) ->
