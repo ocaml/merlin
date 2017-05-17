@@ -325,7 +325,7 @@ let rec locate ~config ?pos path trie =
     logf "locate" "alias of %s" (Typedtrie.path_to_string new_path) ;
     (* TODO: maybe give the option to NOT follow module aliases? *)
     Fallback.set loc;
-    from_path ~config new_path
+    locate ~config ~pos:loc.Location.loc_start new_path trie
 
 and browse_cmts ~config ~root modules =
   let open Cmt_format in
