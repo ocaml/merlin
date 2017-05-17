@@ -183,7 +183,7 @@ let merlin_flags = [
   (
     "-source-path",
     marg_path (fun dir merlin ->
-        {merlin with source_path = dir :: merlin.build_path}),
+        {merlin with source_path = dir :: merlin.source_path}),
     "<dir> Add <dir> to merlin source path"
   );
   (
@@ -725,7 +725,7 @@ let normalize_step _trace t =
     let merlin = {
       merlin with
       build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.build_path @ merlin.source_path;
+      source_path = dot.source_path @ merlin.source_path;
       cmi_path = dot.cmi_path @ merlin.cmi_path;
       cmt_path = dot.cmt_path @ merlin.cmt_path;
       extensions = dot.extensions @ merlin.extensions;
