@@ -28,8 +28,6 @@
 
 open Std
 
-let sources_path = ref []
-let cfg_cmt_path = ref []
 let loadpath     = ref []
 
 let last_location = ref Location.none
@@ -53,9 +51,9 @@ let erase_loadpath ~cwd ~new_path k =
   in
   let_ref loadpath str_path_list k
 
-let restore_loadpath k =
+let restore_loadpath ~config k =
   log "restore_loadpath" "Restored load path";
-  let_ref loadpath !cfg_cmt_path k
+  let_ref loadpath (Mconfig.cmt_path config) k
 
 module Fallback = struct
   let fallback = ref None
@@ -197,15 +195,15 @@ module Utils = struct
     with Not_found -> (file, None)
 
 
-  let synonym_extension file (implAlias, intfAlias) =
+  let synonym_extension file (impl_alias, intf_alias) =
     match split_extension file with
       | (without_ext, None) -> without_ext
       | (without_ext, Some ext) ->
         if ext = ".ml" then
-          without_ext ^ implAlias
+          without_ext ^ impl_alias
         else (
           if ext = ".mli" then
-            without_ext ^ intfAlias
+            without_ext ^ intf_alias
           else
             file
         )
@@ -254,16 +252,13 @@ module Utils = struct
       | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
       | _ -> assert false
     in
-    let path = !sources_path in
-
-    let filesList =
-      List.map (fun synonym_pair -> (
-          let fallback = synonym_extension fallback synonym_pair in
-          let fname = synonym_extension fname synonym_pair in
-          find_all_in_path_uncap ~fallback path fname
-        )) Mconfig.(config.merlin.suffixes)
+    let files =
+      List.concat_map (fun synonym_pair ->
+        let fallback = synonym_extension fallback synonym_pair in
+        let fname = synonym_extension fname synonym_pair in
+        find_all_in_path_uncap ~fallback (Mconfig.source_path config) fname
+      ) Mconfig.(config.merlin.suffixes)
     in
-    let files = List.concat filesList in
     List.uniq files ~cmp:String.compare
 
   let find_file_with_path ~config ?(with_fallback=false) file path =
@@ -304,7 +299,7 @@ module Utils = struct
   let find_file ~config ?with_fallback file =
     find_file_with_path ~config ?with_fallback file @@
         match file with
-        | File.ML  _ | File.MLI _  -> !sources_path
+        | File.ML  _ | File.MLI _  -> Mconfig.source_path config
         | File.CMT _ | File.CMTI _ -> !loadpath
 end
 
@@ -410,7 +405,7 @@ and from_path ~config path =
       let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
       save_digest_and_return cmt_file
     with File.Not_found (File.CMT fname | File.CMTI fname) ->
-      restore_loadpath (fun () ->
+      restore_loadpath ~config (fun () ->
         try
           let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
           save_digest_and_return cmt_file
@@ -431,7 +426,7 @@ and from_path ~config path =
       let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~config ~root:cmt_file modules
     with File.Not_found (File.CMT fname | File.CMTI fname) as exn ->
-      restore_loadpath (fun () ->
+      restore_loadpath ~config (fun () ->
         try
           let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
           browse_cmts ~config ~root:cmt_file modules
@@ -496,8 +491,10 @@ let find_source ~config loc =
     end
   | [ x ] -> Some x
   | files ->
-    logf "find_source"
-      "multiple files named %s exist in the source path..." filename;
+    logf (sprintf "find_source(%s)" filename)
+      "multiple matches in the source path (%s) : %s"
+      (String.concat ~sep:", " @@ Mconfig.source_path config)
+      (String.concat ~sep:" , " files);
     try
       match File_switching.source_digest () with
       | None ->
@@ -771,10 +768,7 @@ let from_string ~config ~env ~local_defs ~pos switch path =
   | Some ctxt ->
     logf "from_string" "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
-    let cmt_path = Mconfig.cmt_path config in
-    let_ref sources_path (Mconfig.source_path config) @@ fun () ->
-    let_ref cfg_cmt_path cmt_path @@ fun () ->
-    let_ref loadpath     cmt_path @@ fun () ->
+    let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
     match
       from_longident ~config ~pos ~env ~lazy_trie ctxt switch lid
     with
@@ -801,10 +795,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [Browse_tree.of_browse browse]) in
   fun path ->
-  let cmt_path = Mconfig.cmt_path config in
-  let_ref sources_path (Mconfig.source_path config) @@ fun () ->
-  let_ref cfg_cmt_path cmt_path @@ fun () ->
-  let_ref loadpath     cmt_path @@ fun () ->
+  let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
   let_ref last_location Location.none @@ fun () ->
   match
     match path with
