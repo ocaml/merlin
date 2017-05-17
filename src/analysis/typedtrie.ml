@@ -285,17 +285,21 @@ let rec build ?(local_buffer=false) ~trie browses =
       end
     | Value_binding vb ->
       (* The following doesn't seem quite correct wrt documentation. Oh well. *)
-      let idlocs = pattern_idlocs vb.vb_pat in
-      List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
-        if local_buffer then
-          let children = collect_local_modules Trie.empty t.t_children in
-          if Trie.is_empty children then
-            Trie.add_multiple id (t.t_loc, doc, `Vals, Leaf) trie
+      begin match pattern_idlocs vb.vb_pat with
+      | [] when local_buffer ->
+        collect_local_modules trie t.t_children
+      | idlocs ->
+        List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
+          if local_buffer then
+            let children = collect_local_modules Trie.empty t.t_children in
+            if Trie.is_empty children then
+              Trie.add_multiple id (t.t_loc, doc, `Vals, Leaf) trie
+            else
+              Trie.add_multiple id (t.t_loc, doc, `Vals, Internal children) trie
           else
-            Trie.add_multiple id (t.t_loc, doc, `Vals, Internal children) trie
-        else
-          Trie.add_multiple id (loc, doc, `Vals, Leaf) trie
-      )
+            Trie.add_multiple id (loc, doc, `Vals, Leaf) trie
+        )
+      end
     | Value_description vd ->
       Trie.add_multiple (Ident.name vd.val_id) (t.t_loc, doc, `Vals, Leaf) trie
     | Module_binding mb ->
@@ -355,10 +359,11 @@ let rec follow ?before trie = function
       with
       | [] -> Resolves_to (path, None)
       | (loc, doc, _, Leaf) :: _ ->
-        (* FIXME: it seems wrong to return [Resolves_to] here.
-           The prefix of the path is a leaf, anything else we might look up will
-           be *wrong* *)
-        if xs = [] then Found (loc, doc) else Resolves_to (path, None)
+        (* we're not checking whether [xs = []] here, as we wouldn't be able to
+           lookup anything else which would be correct I think.
+           [xs] can be non-nil in this case when [x] is a first class module.
+           ... and perhaps in other situations I am not aware of.  *)
+        Found (loc, doc)
       | (loc, _, _, Alias path) :: _ ->
         begin match xs with
         | [] ->
