@@ -566,7 +566,7 @@ let application_context ~verbosity ~prefix path =
   in
   let context = match path with
     | (_, Expression earg) ::
-      (_, Expression ({ exp_desc = Texp_apply (efun, _);
+      (_, Expression ({ exp_desc = Texp_apply (efun, existing_args);
                         exp_type = app_type; exp_env } as app)) :: _
       when earg != efun ->
       Printtyp.wrap_printing_env exp_env ~verbosity @@ fun () ->
@@ -583,6 +583,43 @@ let application_context ~verbosity ~prefix path =
         Printtyp.type_sch ppf t;
         to_string ()
       in
+      let func_name = match efun.exp_desc with
+        | Texp_ident (path, { Location.txt = ident }, _) ->
+          Some (String.concat ~sep:"." (Longident.flatten ident))
+        | _ -> None
+      in
+      let func_loc = efun.exp_loc in
+      let func_sig = Raw_compat.get_signature efun.exp_type in
+      let args_before = List.take_while existing_args
+          ~f:(function (_, Some { exp_loc }) -> exp_loc <> earg.exp_loc | (_, None) -> true) in
+      let labels = Raw_compat.labels_of_application ~prefix app in
+      let rec index_of_current_arg args fsig m =
+        match args, fsig with
+        | [], (None, _) :: rhs :: _ ->
+          Some m
+        | [], (Some _label, _) :: (rhs :: _ as rest) ->
+          index_of_current_arg [] rest (m + 1)
+        | _, (_ :: [] | []) ->
+          None
+        | (((Asttypes.Labelled _ | Asttypes.Optional _), _) :: args), fsig ->
+          index_of_current_arg args fsig m  (* skip labelled application *)
+        | args, ((Some _, _) :: fsig) ->
+          index_of_current_arg args fsig (m + 1)  (* skip label *)
+        | (_ :: args), (_ :: fsig) ->
+          index_of_current_arg args fsig (m + 1)
+      in
+      let index = index_of_current_arg args_before func_sig 0 in
+      let index = match index, labels with
+        | Some i, _ -> Some i
+        | None, [] -> None
+        | None, ((label, _) :: _) ->
+          (* if no unlabelled arguments left, use first label *)
+          try
+            Some (List.index func_sig ~f:(function (Some l, _) when l = label -> true | _ -> false))
+          with
+          | Not_found ->
+            None
+      in
       (* Special case for optional arguments applied with ~,
          get the argument wrapped inside Some _ *)
       let earg =
@@ -592,10 +629,14 @@ let application_context ~verbosity ~prefix path =
           target_type := Some earg.exp_type;
           earg
       in
-      let labels = Raw_compat.labels_of_application ~prefix app in
-      `Application { argument_type = pr earg.exp_type;
-                     labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
-                   }
+      `Application {
+        argument_type = pr earg.exp_type;
+        labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
+        index;
+        func_name;
+        func_loc;
+        func_sig = List.map (fun (lbl,ty) -> lbl, pr ty) func_sig;
+      }
     | _ -> `Unknown
   in
   !target_type, context

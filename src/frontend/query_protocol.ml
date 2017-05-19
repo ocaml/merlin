@@ -40,7 +40,11 @@ struct
 
   type application_context = {
     argument_type: string;
-    labels : (string * string) list;
+    labels: (string * string) list;
+    func_loc: Location.t;
+    func_name: string option;
+    func_sig: (string option * string) list;
+    index: int option;
   }
 
   type t = {
