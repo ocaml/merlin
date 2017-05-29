@@ -5,15 +5,11 @@ module Default = struct
   open Asttypes
   open Parsetree
   open Ast_helper
-
   let default_loc = ref Location.none
-
   let default_expr () =
     let id = Location.mkloc "merlin.hole" !default_loc in
     Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
-
   let default_pattern () = Pat.any ~loc:!default_loc ()
-
   let default_module_expr () = Mod.structure ~loc:!default_loc[]
   let default_module_type () = Mty.signature ~loc:!default_loc[]
 
@@ -73,7 +69,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> "_"
     | MenhirInterpreter.T MenhirInterpreter.T_LET_LWT -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_LETOP -> ""
     | MenhirInterpreter.T MenhirInterpreter.T_LET -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESS -> ()

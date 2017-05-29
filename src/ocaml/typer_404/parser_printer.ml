@@ -3,11 +3,9 @@ open Parser_raw
   let string_of_INT = function
     | (s, None) -> Printf.sprintf "INT(%s)" s
     | (s, Some c) -> Printf.sprintf "INT(%s%c)" s c
-
   let string_of_FLOAT = function
     | (s, None) -> Printf.sprintf "FLOAT(%s)" s
     | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
-
   let string_of_STRING = function
     | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
     | s, None -> Printf.sprintf "STRING(%S)" s
@@ -69,7 +67,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LPAREN) -> ")"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LIDENT) -> "LIDENT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LET_LWT) -> "lwt"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LETOP) -> "let<op>"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LET) -> "let"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS) -> "<-"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LESS) -> "<"
@@ -407,7 +404,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> (fun _ -> ")")
   | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> (Printf.sprintf "LIDENT(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_LET_LWT -> (fun _ -> "lwt")
-  | MenhirInterpreter.T MenhirInterpreter.T_LETOP -> (Printf.sprintf "LETOP(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_LET -> (fun _ -> "let")
   | MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS -> (fun _ -> "<-")
   | MenhirInterpreter.T MenhirInterpreter.T_LESS -> (fun _ -> "<")
@@ -744,7 +740,6 @@ let print_token = function
   | LPAREN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LPAREN) ()
   | LIDENT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LIDENT) v
   | LET_LWT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LET_LWT) ()
-  | LETOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LETOP) v
   | LET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LET) ()
   | LESSMINUS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS) ()
   | LESS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LESS) ()
@@ -877,7 +872,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_LPAREN -> LPAREN
   | MenhirInterpreter.T_LIDENT -> LIDENT v
   | MenhirInterpreter.T_LET_LWT -> LET_LWT
-  | MenhirInterpreter.T_LETOP -> LETOP v
   | MenhirInterpreter.T_LET -> LET
   | MenhirInterpreter.T_LESSMINUS -> LESSMINUS
   | MenhirInterpreter.T_LESS -> LESS

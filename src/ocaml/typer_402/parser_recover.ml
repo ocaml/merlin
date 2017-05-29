@@ -1176,7 +1176,7 @@ let recover =
   let r710 = [R 501] in
   let r711 = S (T T_BARRBRACKET) :: r710 in
   let r712 = R 350 :: r711 in
-  let r713 = [R 130] in
+  let r713 = [R 127] in
   let r714 = Sub (r3) :: r713 in
   let r715 = S (T T_IN) :: r714 in
   let r716 = Sub (r289) :: r715 in
@@ -1253,7 +1253,7 @@ let recover =
   let r787 = [R 283] in
   let r788 = [R 256] in
   let r789 = Sub (r289) :: r788 in
-  let r790 = [R 129] in
+  let r790 = [R 130] in
   let r791 = Sub (r3) :: r790 in
   let r792 = S (T T_IN) :: r791 in
   let r793 = Sub (r789) :: r792 in
@@ -1472,8 +1472,8 @@ let recover =
   | 63 -> One ([R 93])
   | 221 -> One ([R 102])
   | 1074 -> One ([R 116])
-  | 908 -> One ([R 127])
-  | 1056 -> One ([R 128])
+  | 908 -> One ([R 128])
+  | 1056 -> One ([R 129])
   | 940 -> One ([R 138])
   | 949 -> One ([R 139])
   | 926 -> One ([R 140])

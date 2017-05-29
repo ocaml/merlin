@@ -5,15 +5,11 @@ module Default = struct
   open Asttypes
   open Parsetree
   open Ast_helper
-
   let default_loc = ref Location.none
-
   let default_expr () =
     let id = Location.mkloc "merlin.hole" !default_loc in
     Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
-
   let default_pattern () = Pat.any ~loc:!default_loc ()
-
   let default_module_expr () = Mod.structure ~loc:!default_loc[]
   let default_module_type () = Mty.signature ~loc:!default_loc[]
 
@@ -73,7 +69,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> "_"
     | MenhirInterpreter.T MenhirInterpreter.T_LET_LWT -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_LETOP -> ""
     | MenhirInterpreter.T MenhirInterpreter.T_LET -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESS -> ()
@@ -975,8 +970,8 @@ let recover =
   let r489 = [R 141] in
   let r490 = S (N N_match_cases) :: r489 in
   let r491 = R 364 :: r490 in
-  let r492 = [R 278] in
-  let r493 = S (T T_DOT) :: r492 in
+  let r492 = [R 276] in
+  let r493 = Sub (r1) :: r492 in
   let r494 = S (T T_MINUSGREATER) :: r493 in
   let r495 = [R 277] in
   let r496 = Sub (r1) :: r495 in
@@ -1584,7 +1579,7 @@ let recover =
   | 661 -> One ([R 272])
   | 721 -> One ([R 274])
   | 797 -> One ([R 275])
-  | 915 -> One ([R 276])
+  | 914 -> One ([R 278])
   | 919 -> One ([R 279])
   | 255 -> One ([R 281])
   | 254 -> One ([R 282])
@@ -2452,7 +2447,7 @@ let recover =
   | 916 -> One (r489)
   | 642 -> One (r490)
   | 641 -> One (r491)
-  | 914 -> One (r492)
+  | 915 -> One (r492)
   | 913 -> One (r493)
   | 643 -> One (r494)
   | 912 -> One (r495)

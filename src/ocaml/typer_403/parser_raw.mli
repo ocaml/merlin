@@ -56,7 +56,6 @@ type token =
   | LPAREN
   | LIDENT of (string)
   | LET_LWT
-  | LETOP of (string)
   | LET
   | LESSMINUS
   | LESS
@@ -209,7 +208,6 @@ module MenhirInterpreter : sig
     | T_LPAREN : unit terminal
     | T_LIDENT : (string) terminal
     | T_LET_LWT : unit terminal
-    | T_LETOP : (string) terminal
     | T_LET : unit terminal
     | T_LESSMINUS : unit terminal
     | T_LESS : unit terminal
@@ -498,12 +496,12 @@ module MenhirInterpreter : sig
   
   (* The inspection API. *)
   
-  include MenhirLib.IncrementalEngine.INSPECT_AND_DEBUG
+  include MenhirLib.IncrementalEngine.INSPECTION
     with type 'a lr1state := 'a lr1state
     with type production := production
-    with type 'a env := 'a env
     with type 'a terminal := 'a terminal
     with type 'a nonterminal := 'a nonterminal
+    with type 'a env := 'a env
   
 end
 
