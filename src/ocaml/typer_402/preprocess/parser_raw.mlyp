@@ -656,7 +656,7 @@ structure_tail:
 | structure_item structure_tail
     { $1 @ $2 }
 
-structure_item:
+%public structure_item:
 | LET [@item "let"] ext_attributes rec_flag let_bindings
     {
       let (extensions, attributes) = $2 in
@@ -758,7 +758,7 @@ signature :
 | signature_item signature
     { $1 @ $2 }
 
-signature_item:
+%public signature_item:
 | VAL [@item "val"] val_ident COLON core_type post_item_attributes
     { mksig $startpos $endpos (Psig_value
                 (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4 ~attrs:$5 ~loc:(rloc $startpos $endpos))) }
@@ -1122,16 +1122,13 @@ let_pattern [@recovery default_pattern ()]:
 | pattern COLON core_type
     { mkpat $startpos $endpos (Ppat_constraint($1, $3)) }
 
-expr [@recovery default_expr ()]:
+%public expr [@recovery default_expr ()]:
 | simple_expr %prec below_SHARP
     { $1 }
 | simple_expr simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
 | LET [@item "let"] ext_attributes rec_flag let_bindings_no_attrs IN seq_expr
     { mkexp_attrs $startpos $endpos (Pexp_let($3, List.rev $4, $merloc(5,6))) $2 }
-| let_operator [@item "meta-let"] ext_attributes let_bindings IN seq_expr
-    { wrap_exp_attrs $startpos $endpos
-      (let_operator $startpos $endpos $1 $3 $5) $2 }
 | LET MODULE [@item "let module"]
   ext_attributes UIDENT module_binding_body IN seq_expr
     { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos($4) $endpos($4) $4, $5, $merloc(6,7))) $3 }
@@ -2484,7 +2481,7 @@ expr_open :
     { $1, mkrhs $startpos($3) $endpos($3) $3, $2 }
 
 (* Caml p4 extensions *)
-structure_item:
+%public structure_item:
 | LET_LWT [@item "lwt"] ext_attributes rec_flag let_bindings
     { match $4 with
     | [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
@@ -2506,13 +2503,13 @@ structure_item:
       let loc = rloc $startpos($2) $endpos($2) in
       mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) }
 
-signature_item:
+%public signature_item:
 | TYPE NONREC [@item "type nonrec"] decls = type_declarations
     { let ty = List.map fake_tydecl decls in
       let loc = rloc $startpos($2) $endpos($2) in
       mksig $startpos $endpos (Psig_type (List.rev_map (tag_nonrec loc) ty)) }
 
-expr:
+%public expr:
 | LET_LWT [@item "lwt"]
   ext_attributes rec_flag let_bindings IN [@shift 2] seq_expr
     { let expr = Pexp_let($3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) $4, $merloc(5,6)) in
@@ -2555,6 +2552,9 @@ expr:
              Fake.(app Lwt.unit_lwt $7)))
           $2
     }
+| let_operator [@item "meta-let"] ext_attributes let_bindings IN seq_expr
+    { wrap_exp_attrs $startpos $endpos
+      (let_operator $startpos $endpos $1 $3 $5) $2 }
 ;
 
 (* Meta OCaml *)
@@ -2565,6 +2565,7 @@ let_operator:
 | mod_longident DOT LETOP
   { mkexp $startpos $endpos
     (Pexp_ident(mkloc (Ldot ($1,$3)) (rloc $startpos $endpos))) }
+;
 
 (* Toplevel directives *)
 toplevel_directives:

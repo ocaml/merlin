@@ -77,21 +77,18 @@ module Dump = struct
     )
 
   let env k env =
-    match I.stack env with
-    | None ->
-      text k "Initial state."
-    | Some stack ->
-      element k (I.stack_element stack)
+    match I.top env with
+    | None -> text k "Initial state."
+    | Some env -> element k env
 
   let stack k env =
     let rec aux = function
-    | None ->
-      text k "Initial state."
-    | Some stack ->
-      element k (I.stack_element stack);
-      aux (I.stack_next stack)
+    | None -> text k "Initial state."
+    | Some env ->
+      Option.iter ~f:(element k) (I.top env);
+      aux (I.pop env)
     in
-    aux (I.stack env)
+    aux (Some env)
 end
 
 module R = Mreader_recover.Make

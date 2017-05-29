@@ -6,7 +6,8 @@ OCamlMakefile:
 	ln -sf ../../$@ $@
 
 SOURCES = \
-  utils.ml                             \
+  utils.ml fix.mli fix.ml              \
+  gSet.ml compressedBitSet.mli compressedBitSet.ml \
   recover_attrib.mli recover_attrib.ml \
   synthesis.mli synthesis.ml           \
   emitter.mli emitter.ml               \
@@ -14,6 +15,6 @@ SOURCES = \
   main.ml
 
 RESULT = gen_recover
-PACKS = menhirSdk
+PACKS = unix,menhirSdk
 
 -include $(OCAMLMAKEFILE)

@@ -1,7 +1,7 @@
-open MenhirSdk.Cmly_format
+open MenhirSdk.Cmly_api
 
 module type S = sig
-  module G : Utils.G
+  module G : GRAMMAR
 
   type variable =
     | Head of G.lr1 * G.nonterminal
@@ -30,4 +30,4 @@ module type S = sig
   val report   : Format.formatter -> unit
 end
 
-module Make (G : Utils.G) (A : Recover_attrib.S with module G = G) : S with module G = G
+module Make (G : GRAMMAR) (A : Recover_attrib.S with module G = G) : S with module G = G

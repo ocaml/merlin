@@ -106,8 +106,6 @@ rule token = parse
   | '#' (symbolchar | '#') +
             { let s = Lexing.lexeme lexbuf in
               SHARPOP s }
-  | "let" symbolcharnopercent symbolchar *
-            { LETOP(Lexing.lexeme lexbuf) }
   | eof { EOF }
   | int_literal
   | float_literal

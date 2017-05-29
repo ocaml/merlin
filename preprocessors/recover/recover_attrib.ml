@@ -1,7 +1,8 @@
+open MenhirSdk
 open Utils
 
 module type S = sig
-  module G : G
+  module G : Cmly_api.GRAMMAR
 
   val cost_of_prod    : G.production -> float
   val penalty_of_item : G.production * int -> float
@@ -12,21 +13,21 @@ module type S = sig
   val default_nonterminal : G.nonterminal -> string option
 end
 
-module Make (G : G) : S with module G = G = struct
+module Make (G : Cmly_api.GRAMMAR) : S with module G = G = struct
   module G = G
   open G
 
   let cost_of_attributes prj attrs =
     List.fold_left
       (fun total attr ->
-         if is_attribute "cost" attr then
-           total +. float_of_string (string_of_stretch (snd attr))
+         if Attribute.has_label "cost" attr then
+           total +. float_of_string (Attribute.payload attr)
          else total)
       0. (prj attrs)
 
   let cost_of_symbol =
     let measure ~default prj attrs =
-      if List.exists (is_attribute "recovery") (prj attrs) then
+      if List.exists (Attribute.has_label "recovery") (prj attrs) then
         cost_of_attributes prj attrs
       else default
     in
@@ -57,14 +58,14 @@ module Make (G : G) : S with module G = G = struct
 
   let default_prelude ppf =
     List.iter (fun a ->
-        if is_attribute "header" a || is_attribute "recovery.header" a then
-          Format.fprintf ppf "%s\n" (string_of_stretch (snd a))
+        if Attribute.has_label "header" a || Attribute.has_label "recovery.header" a then
+          Format.fprintf ppf "%s\n" (Attribute.payload a)
       ) Grammar.attributes
 
   let default_printer ?(fallback="raise Not_found") attrs =
-    match List.find (is_attribute "recovery") attrs with
+    match List.find (Attribute.has_label "recovery") attrs with
     | exception Not_found -> fallback
-    | (_, stretch) -> string_of_stretch stretch
+    | attr -> Attribute.payload attr
 
   let default_terminal t =
     match Terminal.kind t with

@@ -1,7 +1,4 @@
 open MenhirSdk
-open Cmly_format
-
-module type G = Cmly_io.GRAMMAR
 
 let const c = fun _ -> c
 
@@ -57,16 +54,6 @@ let list_fmt f l =
   "[" ^ String.concat "; " (List.map f l) ^ "]"
 
 let fst3 (x,_,_) = x
-
-let is_attribute name (name', stretch : attribute) =
-  name = Positions.value name'
-
-let string_of_stretch s =
-  s.Stretch.stretch_raw_content
-
-let string_of_type = function
-  | Stretch.Inferred s -> s
-  | Stretch.Declared s -> string_of_stretch s
 
 let rec list_last = function
   | [x] -> x

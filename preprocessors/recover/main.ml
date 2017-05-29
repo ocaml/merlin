@@ -1,5 +1,5 @@
 open MenhirSdk
-open Cmly_format
+open Cmly_api
 
 let name = ref ""
 let verbose = ref false
@@ -21,10 +21,7 @@ let () =
   if !name = "" then
     usage ()
 
-module G = Cmly_io.Make_grammar(struct
-    let grammar = Cmly_io.read_file !name
-  end)
-
+module G = Cmly_read.Read (struct let filename = !name end)
 module A = Recover_attrib.Make(G)
 
 let () =

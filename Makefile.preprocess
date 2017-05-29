@@ -21,13 +21,19 @@ LEXER_O = $(TYPER)/lexer_raw.ml
 ILEXER_I = $(SUPPORT)/preprocess/lexer_ident.mll
 ILEXER_O = $(SUPPORT)/lexer_ident.ml
 
+## Menhir runtime library
+
+MENHIRLIB_PATH=$(shell ocamlfind query menhirLib)
+MENHIRLIB=$(SRC)/utils/menhirLib
+
 ### Derived files
 
 TARGETS =                    \
   $(ILEXER_O) $(LEXER_O) $(PARSER_O) \
   $(TYPER)/parser_printer.ml \
   $(TYPER)/parser_recover.ml \
-  $(TYPER)/parser_explain.ml
+  $(TYPER)/parser_explain.ml \
+	$(MENHIRLIB).mli $(MENHIRLIB).ml
 
 all: $(TARGETS)
 
@@ -78,6 +84,13 @@ $(TYPER)/parser_recover.ml: $(TYPER)/parser_raw.cmly $(GEN_RECOVER)
 
 $(TYPER)/parser_explain.ml: $(TYPER)/parser_raw.cmly $(GEN_EXPLAIN)
 	$(GEN_EXPLAIN) $< > $@
+
+### Menhir runtime library
+
+MENHIRLIB_PATH=$(shell ocamlfind query menhirLib)
+
+$(MENHIRLIB).%: $(MENHIRLIB_PATH)/menhirLib.%
+	cp $^ $@
 
 ### Clean
 

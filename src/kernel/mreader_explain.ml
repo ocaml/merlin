@@ -52,10 +52,9 @@ let explain env (unexpected, startp, endp) popped shifted =
   let return item =
     { item; unclosed = !unclosed; location; popped; shifted; unexpected }
   in
-  let rec process = function
+  let rec process env = match top env with
     | None -> return None
-    | Some stack ->
-      let Element (st, v, startp, endp) = stack_element stack in
+    | Some (Element (st, v, startp, endp)) ->
       if closing_st st then incr closed;
       begin match opening_st st with
         | None -> ()
@@ -68,12 +67,11 @@ let explain env (unexpected, startp, endp) popped shifted =
       match Parser_explain.named_item_at (number st) with
       | name -> return (Some (name, mkloc startp endp))
       | exception Not_found ->
-        process (stack_next stack)
+        match pop env with
+        | None -> return None
+        | Some env -> process env
   in
-  match stack env with
-  | Some stack ->
-    process (Some stack)
-  | None -> return None
+  process env
 
 let to_error { item; unclosed; location; popped; shifted; unexpected } =
   let inside = match item with

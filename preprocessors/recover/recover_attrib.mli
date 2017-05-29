@@ -1,5 +1,7 @@
+open MenhirSdk
+
 module type S = sig
-  module G : Utils.G
+  module G : Cmly_api.GRAMMAR
 
   val cost_of_prod    : G.production -> float
   val penalty_of_item : G.production * int -> float
@@ -10,4 +12,4 @@ module type S = sig
   val default_nonterminal : G.nonterminal -> string option
 end
 
-module Make (G : Utils.G) : S with module G = G
+module Make (G : Cmly_api.GRAMMAR) : S with module G = G

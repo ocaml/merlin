@@ -1,4 +1,4 @@
-open MenhirSdk.Cmly_format
+open MenhirSdk.Cmly_api
 open Utils
 
 let menhir = "MenhirInterpreter"
@@ -115,7 +115,7 @@ end = struct
 end
 
 module Make
-    (G : Utils.G)
+    (G : GRAMMAR)
     (A : Recover_attrib.S with module G = G)
     (S : Synthesis.S with module G = G)
     (R : Recovery.S with module G = G) :

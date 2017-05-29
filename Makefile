@@ -74,6 +74,7 @@ clean:
 	@rm -f src/ocaml/*/*/*.cmly
 	$(MAKE) preprocessclean
 	@find src/ -name '*.cm*' -delete
+	@rm -f ocamlmerlin ocamlmerlin-test
 	+$(OCAMLMAKEFILE) clean
 
 distclean: clean

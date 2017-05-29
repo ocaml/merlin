@@ -67,10 +67,9 @@ struct
   end
 
   let env_state env =
-    match Parser.stack env with
+    match Parser.top env with
     | None -> -1
-    | Some stack ->
-      let Parser.Element (state, _, _, _) = Parser.stack_element stack in
+    | Some (Parser.Element (state, _, _, _)) ->
       Parser.number state
 
   let feed_token ~allow_reduction token env =
@@ -84,38 +83,34 @@ struct
     in
     aux allow_reduction (Parser.offer (T.inj (T.InputNeeded env)) token)
 
-  let rec follow_guide col = function
+  let rec follow_guide col env = match Parser.top env with
     | None -> col
-    | Some stack ->
-      let Parser.Element (state, _, pos, _) =
-        Parser.stack_element stack in
+    | Some (Parser.Element (state, _, pos, _)) ->
       if Recovery.guide (Parser.incoming_symbol state) then
-        follow_guide
-          (snd (Lexing.split_pos pos)) (Parser.stack_next stack)
+        match Parser.pop env with
+        | None -> col
+        | Some env -> follow_guide (snd (Lexing.split_pos pos)) env
       else
         col
 
   let candidate env =
     let line, min_col, max_col =
-      match Parser.stack env with
+      match Parser.top env with
       | None -> 1, 0, 0
-      | Some stack ->
-        let Parser.Element (state, _, pos, _) = Parser.stack_element stack in
+      | Some (Parser.Element (state, _, pos, _)) ->
         let depth = Recovery.depth.(Parser.number state) in
         let line, col = Lexing.split_pos pos in
         if depth = 0 then
           line, col, col
         else
-          let rec aux depth = function
+          let col' = match Parser.pop_many depth env with
             | None -> max_int
-            | Some stack when depth = 0 ->
-              let Parser.Element (_, _, pos, _) = Parser.stack_element stack in
-              follow_guide
-                (snd (Lexing.split_pos pos)) (Parser.stack_next stack)
-            | Some stack ->
-              aux (depth - 1) (Parser.stack_next stack)
+            | Some env ->
+              match Parser.top env with
+              | None -> max_int
+              | Some (Parser.Element (_, _, pos, _)) ->
+                follow_guide (snd (Lexing.split_pos pos)) env
           in
-          let col' = aux (depth - 1) (Parser.stack_next stack) in
           line, min col col', max col col'
     in
     { line; min_col; max_col; env }
@@ -167,21 +162,22 @@ struct
     in
     aux recoveries
 
-  let decide stack =
-    let rec nth_state stack n =
+  let decide env =
+    let rec nth_state env n =
       if n = 0 then
-        let Parser.Element (state, _, _, _) = Parser.stack_element stack in
-        Parser.number state
+        match Parser.top env with
+        | None -> assert false
+        | Some (Parser.Element (state, _, _, _)) -> Parser.number state
       else
-        match Parser.stack_next stack with
+        match Parser.pop env with
         | None -> assert (n = 1); -1
-        | Some stack -> nth_state stack (n - 1)
+        | Some env -> nth_state env (n - 1)
     in
-    let st = nth_state stack 0 in
+    let st = nth_state env 0 in
     match Recovery.recover st with
     | Recovery.Nothing -> []
     | Recovery.One actions -> actions
-    | Recovery.Select f -> f (nth_state stack Recovery.depth.(st))
+    | Recovery.Select f -> f (nth_state env Recovery.depth.(st))
 
   let generate k (type a) (env : a Parser.env) =
     let module E = struct
@@ -189,14 +185,12 @@ struct
     end in
     let shifted = ref None in
     let rec aux acc env =
-      match Parser.stack env with
+      match Parser.top env with
       | None -> None, acc
-      | Some stack ->
-        let elt = Parser.stack_element stack in
-        let Parser.Element (state, v, startp, endp) = elt in
+      | Some (Parser.Element (state, v, startp, endp) as elt) ->
         Dump.element k elt;
         Logger.log "recover" "decide state" (string_of_int (Parser.number state));
-        let actions = decide stack in
+        let actions = decide env in
         let candidate0 = candidate env in
         let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
           | Recovery.Abort ->
@@ -222,7 +216,7 @@ struct
             Logger.log "recover" "eval Shift N" (Dump.symbol xsym);
             let loc = {Location. loc_start = endp; loc_end = endp; loc_ghost = true} in
             let v = Recovery.default_value loc sym in
-            Parser.feed_nonterminal n endp v endp env
+            Parser.feed sym endp v endp env
           | Recovery.S (Parser.T t as sym) ->
             let xsym = Parser.X sym in
             if !shifted = None then shifted := Some xsym;
@@ -280,32 +274,13 @@ struct
         end
       | _ -> false
       in*)
-    let should_pop _ = false in
-    let rec pop_first env =
-      match Parser.stack env with
-      | Some stack when should_pop stack ->
-        begin match Parser.pop env with
-          | None -> assert false
-          | Some env' ->
-            Logger.log "recover" "pre-eval Pop" "";
-            pop_first env'
-        end
-      | _ -> env
-    in
-    let final, candidates = aux [] (pop_first env) in
+    let final, candidates = aux [] env in
     (List.rev !popped, !shifted, final, candidates)
 
   let generate k env =
     let popped, shifted, final, candidates = generate k env in
-    let candidates =
-      List.rev_filter ~f:(fun { env } ->
-          match Parser.stack env with
-          | None -> false
-          | Some stack ->
-            let Parser.Element (state, _, _, _) =
-              Parser.stack_element stack in
-            Parser.default_reduction state = None)
-        candidates
+    let candidates = List.rev_filter candidates
+        ~f:(fun t -> not (Parser.env_has_default_reduction t.env))
     in
     { popped; shifted; final; candidates = (candidate env) :: candidates }
 
