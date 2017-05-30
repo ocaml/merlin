@@ -21,11 +21,11 @@ let param_ignore =
 
 let bool f = param "bool"
     (function
-      | "y" | "Y" | "true" | "True" | "1" -> f true
-      | "n" | "N" | "false" | "False" | "0" -> f false
+      | "yes" | "y" | "Y" | "true" | "True" | "1" -> f true
+      | "no" | "n" | "N" | "false" | "False" | "0" -> f false
       | str ->
         failwithf "expecting boolean (%s), got %S."
-          "y|Y|true|1 / n|N|false|0"
+          "yes|y|Y|true|1 / no|n|N|false|0"
           str
     )
 
