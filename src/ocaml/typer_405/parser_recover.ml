@@ -69,7 +69,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> "_"
     | MenhirInterpreter.T MenhirInterpreter.T_LET_LWT -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_LETOP -> ""
     | MenhirInterpreter.T MenhirInterpreter.T_LET -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESSMINUS -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LESS -> ()
