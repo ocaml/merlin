@@ -870,10 +870,15 @@ end
 
 and Component : sig
 
+  type source =
+    | Global
+    | Local
+    | Open
+
   type t =
-    | Type of Origin.t * Ident.t * Desc.Type.t * bool
-    | Module_type of Origin.t * Ident.t * Desc.Module_type.t * bool
-    | Module of Origin.t * Ident.t * Desc.Module.t * bool
+    | Type of Origin.t * Ident.t * Desc.Type.t * source
+    | Module_type of Origin.t * Ident.t * Desc.Module_type.t * source
+    | Module of Origin.t * Ident.t * Desc.Module.t * source
     | Declare_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
     | Declare_module of Origin.t * Ident.t
@@ -905,9 +910,10 @@ and Graph : sig
 end = struct
 
   type defs =
-    | Concrete of Ident.t
+    | Global of Ident.t
+    | Local of Ident.t
     | Unambiguous of Ident.t
-    | Ambiguous of Ident.t * bool * Ident.t list
+    | Ambiguous of Ident.t * Ident.t list
 
   type t =
     { types : Type.t Ident_map.t;
@@ -925,44 +931,43 @@ end = struct
       module_type_names = String_map.empty;
       module_names = String_map.empty; }
 
-  let previous_type t concrete id =
+  let previous_type t id =
     match Ident_map.find id t.types with
     | exception Not_found -> None
     | prev ->
-      if not concrete then failwith "Graph.add: type already defined";
       match Type.declaration prev with
       | None -> failwith "Graph.add: type already defined"
       | Some _ as o -> o
 
-  let previous_module_type t concrete id =
+  let previous_module_type t id =
     match Ident_map.find id t.module_types with
     | exception Not_found -> None
     | prev ->
-      if not concrete then failwith "Graph.add: module type already defined";
       match Module_type.declaration prev with
       | None -> failwith "Graph.add: module type already defined"
       | Some _ as o -> o
 
-  let previous_module t concrete id =
+  let previous_module t id =
     match Ident_map.find id t.modules with
     | exception Not_found -> None
     | prev ->
-      if not concrete then failwith "Graph.add: module already defined";
       match Module.declaration prev with
       | None -> failwith "Graph.add: module already defined"
       | Some _ as o -> o
 
-  let add_name concrete id names =
+  let add_name source id names =
     let name = Ident.name id in
     let defs =
-      if concrete then begin
-        (Concrete id)
-      end else begin
+      match source with
+      | Component.Global -> Global id
+      | Component.Local -> Local id
+      | Component.Open -> begin
         match String_map.find name names with
         | exception Not_found -> Unambiguous id
-        | Concrete id' -> Ambiguous(id, true, [id'])
-        | Unambiguous id' -> Ambiguous(id, false, [id'])
-        | Ambiguous(id', conc, ids) -> Ambiguous(id, conc, id' :: ids)
+        | Global id' -> Unambiguous id
+        | Local id' -> Ambiguous(id, [id'])
+        | Unambiguous id' -> Ambiguous(id, [id'])
+        | Ambiguous(id', ids) -> Ambiguous(id, id' :: ids)
       end
     in
     String_map.add name defs names
@@ -971,56 +976,61 @@ end = struct
     let name = Ident.name id in
     match String_map.find name names with
     | exception Not_found ->
-        String_map.add name (Concrete id) names
-    | Concrete _ | Ambiguous(_, true, _) -> names
-    | Ambiguous(id', false, ids) ->
-        String_map.add name (Ambiguous(id', true, ids @ [id])) names
-    | Unambiguous id' ->
-        String_map.add name (Ambiguous(id', true, [id])) names
+        String_map.add name (Global id) names
+    | _ -> names
 
   let add t descs =
     let rec loop acc diff declarations = function
       | [] -> loop_declarations acc diff declarations
-      | Component.Type(origin, id, desc, concrete) :: rest ->
-          let prev = previous_type acc concrete id in
+      | Component.Type(origin, id, desc, source) :: rest ->
+          let prev = previous_type acc id in
           let typ = Type.base origin id (Some desc) in
           let types = Ident_map.add id typ acc.types in
-          let type_names = add_name concrete id acc.type_names in
+          let type_names = add_name source id acc.type_names in
           let item = Diff.Item.Type(id, typ, prev) in
           let diff = item :: diff in
           let acc = { acc with types; type_names } in
           loop acc diff declarations rest
-      | Component.Module_type(origin,id, desc, concrete) :: rest ->
-          let prev = previous_module_type acc concrete id in
+      | Component.Module_type(origin,id, desc, source) :: rest ->
+          let prev = previous_module_type acc id in
           let mty = Module_type.base origin id (Some desc) in
           let module_types = Ident_map.add id mty acc.module_types in
-          let module_type_names = add_name concrete id acc.module_type_names in
+          let module_type_names = add_name source id acc.module_type_names in
           let item = Diff.Item.Module_type(id, mty, prev) in
           let diff = item :: diff in
           let acc = { acc with module_types; module_type_names } in
           loop acc diff declarations rest
-      | Component.Module(origin,id, desc, concrete) :: rest ->
-          let prev = previous_module acc concrete id in
+      | Component.Module(origin,id, desc, source) :: rest ->
+          let prev = previous_module acc id in
           let md = Module.base origin id (Some desc) in
           let modules = Ident_map.add id md acc.modules in
-          let module_names = add_name concrete id acc.module_names in
+          let module_names = add_name source id acc.module_names in
           let item = Diff.Item.Module(id, md, prev) in
           let diff = item :: diff in
           let acc = { acc with modules; module_names } in
           loop acc diff declarations rest
       | Component.Declare_type(_, id) as decl :: rest ->
           let declarations = decl :: declarations in
-          let type_names = add_name true id acc.type_names in
+          let type_names =
+            (* CR lwhite: This should probably not always be [Global] *)
+            add_name Component.Global id acc.type_names
+          in
           let acc = { acc with type_names } in
           loop acc diff declarations rest
       | Component.Declare_module_type(_, id) as decl :: rest ->
           let declarations = decl :: declarations in
-          let module_type_names = add_name true id acc.module_type_names in
+          let module_type_names =
+            (* CR lwhite: This should probably not always be [Global] *)
+            add_name Component.Global id acc.module_type_names
+          in
           let acc = { acc with module_type_names } in
           loop acc diff declarations rest
       | Component.Declare_module(_, id) as decl :: rest ->
           let declarations = decl :: declarations in
-          let module_names = add_name true id acc.module_names in
+          let module_names =
+            (* CR lwhite: This should probably not always be [Global] *)
+            add_name Component.Global id acc.module_names
+          in
           let acc = { acc with module_names } in
           loop acc diff declarations rest
     and loop_declarations acc diff = function
@@ -1130,9 +1140,10 @@ end = struct
         let name = Ident.name id in
         match String_map.find name t.module_names with
         | exception Not_found -> false
-        | Concrete id' -> Ident.equal id id'
+        | Local id' -> Ident.equal id id'
+        | Global id' -> Ident.equal id id'
         | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', _, ids) ->
+        | Ambiguous(id', ids) ->
           if not (Ident.equal id id') then false
           else begin
             let paths = List.map (canonical_module_path t) ids in
@@ -1151,9 +1162,10 @@ end = struct
         let name = Ident.name id in
         match String_map.find name t.type_names with
         | exception Not_found -> false
-        | Concrete id' -> Ident.equal id id'
+        | Local id' -> Ident.equal id id'
+        | Global id' -> Ident.equal id id'
         | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', _, ids) ->
+        | Ambiguous(id', ids) ->
           if not (Ident.equal id id') then false
           else begin
             let paths = List.map (canonical_type_path t) ids in
@@ -1172,9 +1184,10 @@ end = struct
         let name = Ident.name id in
         match String_map.find name t.module_type_names with
         | exception Not_found -> false
-        | Concrete id' -> Ident.equal id id'
+        | Local id' -> Ident.equal id id'
+        | Global id' -> Ident.equal id id'
         | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', _, ids) ->
+        | Ambiguous(id', ids) ->
           if not (Ident.equal id id') then false
           else begin
             let paths = List.map (canonical_module_type_path t) ids in

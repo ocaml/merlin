@@ -183,10 +183,15 @@ end
 
 module Component : sig
 
+  type source =
+    | Global
+    | Local
+    | Open
+
   type t =
-    | Type of Origin.t * Ident.t * Desc.Type.t * bool
-    | Module_type of Origin.t * Ident.t * Desc.Module_type.t * bool
-    | Module of Origin.t * Ident.t * Desc.Module.t * bool
+    | Type of Origin.t * Ident.t * Desc.Type.t * source
+    | Module_type of Origin.t * Ident.t * Desc.Module_type.t * source
+    | Module of Origin.t * Ident.t * Desc.Module.t * source
     | Declare_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
     | Declare_module of Origin.t * Ident.t

@@ -1070,6 +1070,10 @@ module Shortest = struct
     let todos = Todo.create graph rev_deps diff in
     { kind; graph; sections; todos }
 
+  let local_or_open conc =
+    if conc then Component.Local
+    else Component.Open
+
   let env parent desc =
     update parent;
     let age = Age.succ (age parent) in
@@ -1079,11 +1083,11 @@ module Shortest = struct
         (fun desc ->
            match desc with
            | Desc.Type(id, desc, conc) ->
-               Component.Type(origin, id, desc, conc)
+               Component.Type(origin, id, desc, local_or_open conc)
            | Desc.Module_type(id, desc, conc) ->
-               Component.Module_type(origin, id, desc, conc)
+               Component.Module_type(origin, id, desc, local_or_open conc)
            | Desc.Module(id, desc, conc) ->
-               Component.Module(origin, id, desc, conc)
+               Component.Module(origin, id, desc, local_or_open conc)
            | Desc.Declare_type id ->
                Component.Declare_type(origin, id)
            | Desc.Declare_module_type id ->
@@ -1752,7 +1756,7 @@ module Basis = struct
            let index = String_map.find name t.assignment in
            let origin = Origin.Dependency index in
            let id = Ident.global name in
-           Component.Module(origin, id, desc, true))
+           Component.Module(origin, id, desc, Component.Global))
         loads
     in
     let components =
