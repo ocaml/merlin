@@ -54,7 +54,6 @@ type merlin = {
   trace       : bool;
 
   flags_to_apply    : flag_list list;
-  dotmerlin_to_load : string list;
   packages_to_load  : string list;
 
   flags_applied    : flag_list list;
@@ -90,6 +89,8 @@ type t = {
 val initial : t
 
 val dump : t -> json
+
+val load_dotmerlins : filenames:string list -> t -> t
 
 val normalize : Trace.t -> t -> t
 

@@ -118,21 +118,7 @@ let run env = function
               raw_args Mconfig.initial command_args
           in
           let config =
-            let failures = !fails in
-            Mconfig.({config with merlin = {config.merlin with failures}}) in
-          let config = Mconfig.(match config.query.directory with
-              | "" -> config
-              | cwd ->
-                let merlin = config.merlin in
-                let path = Misc.canonicalize_filename ~cwd config.query.filename in
-                let path =
-                  let base = "." ^ Filename.basename path ^ ".merlin" in
-                  Filename.concat (Filename.dirname path) base
-                in
-                let dotmerlin_to_load = path :: merlin.dotmerlin_to_load in
-                let merlin = {merlin with dotmerlin_to_load} in
-                {config with merlin}
-            )
+            Mconfig.({config with merlin = {config.merlin with failures = !fails}})
           in
           config, command_args
         in

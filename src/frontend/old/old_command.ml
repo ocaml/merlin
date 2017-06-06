@@ -48,19 +48,19 @@ let normalize_document doc =
 
 let new_buffer tr (path, dot_merlins) =
   let open Mconfig in
-  let query = match path with
-    | None -> !default_config.query
-    | Some path -> {
-        !default_config.query with
-        filename = Filename.basename path;
-        directory = Misc.canonicalize_filename (Filename.dirname path);
-      }
-  and merlin = {
-    !default_config.merlin with dotmerlin_to_load =
-      (Option.cons (Option.map ~f:Filename.dirname path) (Option.value ~default:[] dot_merlins))
-  }
+  let config = !default_config in
+  let config = {config with query = match path with
+      | None -> config.query
+      | Some path -> {
+          config.query with
+          filename = Filename.basename path;
+          directory = Misc.canonicalize_filename (Filename.dirname path);
+        }
+    } in
+  let config = load_dotmerlins config
+      ~filenames:(Option.cons (Option.map ~f:Filename.dirname path)
+                    (Option.value ~default:[] dot_merlins))
   in
-  let config = {!default_config with query; merlin} in
   { config; source = Msource.make tr config "" }
 
 let new_state tr document =

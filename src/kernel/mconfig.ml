@@ -81,22 +81,6 @@ let dump_findlib x = `Assoc [
     "path", `List (List.map Json.string x.path);
   ]
 
-let findlib_flags = [
-  (
-    "-findlib-conf",
-    marg_path (fun conf findlib ->
-        let conf = if conf = "" then None else Some conf in
-        {findlib with conf}),
-    "<path> Path to findlib.conf to use for resolving packages"
-  );
-  (
-    "-findlib-path",
-    marg_path (fun path findlib ->
-        {findlib with path = path :: findlib.path}),
-    "<path> Add <path> to the list of paths considered "
-  );
-]
-
 (** {1 Merlin high-level settings} *)
 
 type flag_list = {
@@ -121,7 +105,6 @@ type merlin = {
   trace       : bool;
 
   flags_to_apply    : flag_list list;
-  dotmerlin_to_load : string list;
   packages_to_load  : string list;
 
   flags_applied    : flag_list list;
@@ -164,7 +147,6 @@ let dump_merlin x =
     "log_file"     , Json.option Json.string x.log_file;
     "trace"        , `Bool x.trace;
     "flags_to_apply"   , `List (List.map dump_flag_list x.flags_to_apply);
-    "dotmerlin_to_load", `List (List.map Json.string x.dotmerlin_to_load);
     "packages_to_load" , `List (List.map Json.string x.packages_to_load);
     "dotmerlin_loaded" , `List (List.map Json.string x.dotmerlin_loaded);
     "packages_loaded"  , `List (List.map Json.string x.packages_loaded);
@@ -172,6 +154,143 @@ let dump_merlin x =
 
     "failures"         , `List (List.map Json.string x.failures);
   ]
+
+type query = {
+  filename  : string;
+  directory : string;
+  printer_width : int;
+  verbosity : int;
+}
+
+let dump_query x = `Assoc [
+    "filename"  , `String x.filename;
+    "directory" , `String x.directory;
+    "printer_width", `Int x.printer_width;
+    "verbosity" , `Int x.verbosity;
+  ]
+
+type t = {
+  ocaml   : ocaml;
+  findlib : findlib;
+  merlin  : merlin;
+  query   : query;
+}
+
+let dump x = `Assoc [
+    "ocaml"   , dump_ocaml x.ocaml;
+    "findlib" , dump_findlib x.findlib;
+    "merlin"  , dump_merlin x.merlin;
+    "query"   , dump_query x.query;
+  ]
+
+let arguments_table = Hashtbl.create 67
+
+let stdlib =
+  let env =
+    try Some (Sys.getenv "OCAMLLIB")
+    with Not_found ->
+    try Some (Sys.getenv "CAMLLIB")
+    with Not_found -> None
+  in
+  fun config ->
+    match config.merlin.stdlib with
+    | Some stdlib -> stdlib
+    | None -> match env with
+      | Some stdlib -> stdlib
+      | None ->
+        Mconfig_dot.standard_library
+          ?conf:config.findlib.conf ~path:config.findlib.path ()
+
+let normalize_step t =
+  let merlin = t.merlin and findlib = t.findlib in
+  let open Mconfig_dot in
+  if merlin.packages_to_load <> [] then
+    let path, ppx, failures = path_of_packages
+        ?conf:findlib.conf
+        ~path:findlib.path
+        merlin.packages_to_load
+    in
+    { t with merlin =
+               { merlin with
+                 packages_to_load = [];
+                 packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
+                 packages_path = path @ merlin.packages_path;
+                 packages_ppx  = Ppxsetup.union ppx merlin.packages_ppx;
+                 failures = failures @ merlin.failures
+               }
+    }
+  else if merlin.flags_to_apply <> [] then
+    let flagss = merlin.flags_to_apply in
+    let t = {t with merlin = { merlin with
+                               flags_to_apply = [];
+                               flags_applied = flagss @ merlin.flags_applied;
+                             } }
+    in
+    let failures = ref [] in
+    let warning failure = failures := failure :: !failures in
+    let t = List.fold_left ~f:(fun t {flag_cwd; flag_list} ->
+        fst (resolve_relative_path ?cwd:flag_cwd
+               (Marg.parse_all ~warning arguments_table [] flag_list t))
+      ) ~init:t flagss
+    in
+    {t with merlin = {t.merlin with failures = !failures @ t.merlin.failures}}
+  else
+    t
+
+let is_normalized t =
+  let merlin = t.merlin in
+  merlin.flags_to_apply = [] &&
+  merlin.packages_to_load = []
+
+let rec normalize trace t =
+  if is_normalized t then
+    (Logger.logj "Mconfig" "normalize" (fun () -> dump t); t)
+  else normalize trace (normalize_step t)
+
+let load_dotmerlins ~filenames t =
+  let open Mconfig_dot in
+  let stdlib = stdlib t in
+  let dot = Mconfig_dot.load ~stdlib filenames in
+  let merlin = t.merlin in
+  let merlin = {
+    merlin with
+    build_path = dot.build_path @ merlin.build_path;
+    source_path = dot.source_path @ merlin.source_path;
+    cmi_path = dot.cmi_path @ merlin.cmi_path;
+    cmt_path = dot.cmt_path @ merlin.cmt_path;
+    extensions = dot.extensions @ merlin.extensions;
+    suffixes = dot.suffixes @ merlin.suffixes;
+    stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+    reader =
+      if dot.reader = []
+      then merlin.reader
+      else dot.reader;
+    flags_to_apply = List.map flag_list dot.flags @ merlin.flags_to_apply;
+    dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
+    packages_to_load = dot.packages @ merlin.packages_to_load;
+  } in
+  let findlib = {
+    conf = (if Option.is_some dot.findlib then
+              dot.findlib else t.findlib.conf);
+    path = dot.findlib_path @ t.findlib.path;
+  } in
+  normalize Trace.null { t with merlin; findlib }
+
+let findlib_flags = [
+  (
+    "-findlib-conf",
+    marg_path (fun conf findlib ->
+        let conf = if conf = "" then None else Some conf in
+        {findlib with conf}),
+    "<path> Path to findlib.conf to use for resolving packages"
+  );
+  (
+    "-findlib-path",
+    marg_path (fun path findlib ->
+        {findlib with path = path :: findlib.path}),
+    "<path> Add <path> to the list of paths considered "
+  );
+]
 
 let merlin_flags = [
   (
@@ -203,14 +322,6 @@ let merlin_flags = [
     Marg.param "command" (fun reader merlin ->
         {merlin with reader = Shell.split_command reader }),
     "<command> Use <command> as a merlin reader"
-  );
-  (
-    "-dot-merlin",
-    marg_path (fun dotmerlin merlin ->
-        {merlin with dotmerlin_to_load =
-                       dotmerlin :: merlin.dotmerlin_to_load}),
-    "<path> Load <path> as a .merlin; if it is a directory, \
-     look for .merlin here or in a parent directory"
   );
   (
     "-extension",
@@ -267,33 +378,7 @@ let merlin_flags = [
   );
 ]
 
-type query = {
-  filename  : string;
-  directory : string;
-  printer_width : int;
-  verbosity : int;
-}
-
-let dump_query x = `Assoc [
-    "filename"  , `String x.filename;
-    "directory" , `String x.directory;
-    "printer_width", `Int x.printer_width;
-    "verbosity" , `Int x.verbosity;
-  ]
-
 let query_flags = [
-  (
-    "-filename",
-    marg_path (fun path query ->
-        let path = Misc.canonicalize_filename path in
-        let filename = Filename.basename path in
-        let directory = Filename.dirname path in
-        {query with filename; directory}),
-    "<path> Path of the buffer; \
-     extension determines the kind of file (interface or implementation), \
-     basename is used as name of the module being definer, \
-     directory is used to resolve other relative paths"
-  );
   (
     "-verbosity",
     Marg.param "integer" (fun verbosity query ->
@@ -315,13 +400,6 @@ let query_flags = [
     "<integer> Optimal width for formatting types, signatures, etc"
   )
 ]
-
-type t = {
-  ocaml   : ocaml;
-  findlib : findlib;
-  merlin  : merlin;
-  query   : query;
-}
 
 let ocaml_ignored_flags = [
   "-a"; "-absname"; "-alias-deps"; "-annot"; "-app-funct"; "-bin-annot";
@@ -530,7 +608,6 @@ let initial = {
     trace       = false;
 
     flags_to_apply    = [];
-    dotmerlin_to_load = [];
     packages_to_load  = [];
     flags_applied     = [];
     dotmerlin_loaded  = [];
@@ -549,34 +626,36 @@ let initial = {
   }
 }
 
-let dump x = `Assoc [
-    "ocaml"   , dump_ocaml x.ocaml;
-    "findlib" , dump_findlib x.findlib;
-    "merlin"  , dump_merlin x.merlin;
-    "query"   , dump_query x.query;
-  ]
+let global_flags = [
+  (
+    "-filename",
+    marg_path (fun path t ->
+        let query = t.query in
+        let path = Misc.canonicalize_filename path in
+        let filename = Filename.basename path in
+        let directory = Filename.dirname path in
+        let t = {t with query = {query with filename; directory}} in
+        load_dotmerlins t ~filenames:[
+          let base = "." ^ filename ^ ".merlin" in
+          Filename.concat directory base
+        ]),
+    "<path> Path of the buffer; \
+     extension determines the kind of file (interface or implementation), \
+     basename is used as name of the module being definer, \
+     directory is used to resolve other relative paths"
+  );
+  (
+    "-dot-merlin",
+    marg_path (fun dotmerlin t -> load_dotmerlins ~filenames:[dotmerlin] t),
+    "<path> Load <path> as a .merlin; if it is a directory, \
+     look for .merlin here or in a parent directory"
+  );
+]
 
-let stdlib =
-  let env =
-    try Some (Sys.getenv "OCAMLLIB")
-    with Not_found ->
-    try Some (Sys.getenv "CAMLLIB")
-    with Not_found -> None
-  in
-  fun config ->
-    match config.merlin.stdlib with
-    | Some stdlib -> stdlib
-    | None -> match env with
-      | Some stdlib -> stdlib
-      | None ->
-        Mconfig_dot.standard_library
-          ?conf:config.findlib.conf ~path:config.findlib.path ()
-
-let arguments_table =
-  let table = Hashtbl.create 67 in
-  List.iter (fun name -> Hashtbl.add table name Marg.unit_ignore)
+let () =
+  List.iter (fun name -> Hashtbl.add arguments_table name Marg.unit_ignore)
     ocaml_ignored_flags;
-  List.iter (fun name -> Hashtbl.add table name Marg.param_ignore)
+  List.iter (fun name -> Hashtbl.add arguments_table name Marg.param_ignore)
     ocaml_ignored_parametrized_flags;
   let lens prj upd flag : _ Marg.t = fun args a ->
     let cwd' = match !cwd with
@@ -588,8 +667,8 @@ let arguments_table =
     args, (upd a b)
   in
   let add prj upd (name,flag,_doc) =
-    assert (not (Hashtbl.mem table name));
-    Hashtbl.add table name (lens prj upd flag)
+    assert (not (Hashtbl.mem arguments_table name));
+    Hashtbl.add arguments_table name (lens prj upd flag)
   in
   List.iter
     (add (fun x -> x.ocaml) (fun x ocaml -> {x with ocaml}))
@@ -603,7 +682,9 @@ let arguments_table =
   List.iter
     (add (fun x -> x.query) (fun x query -> {x with query}))
     query_flags;
-  table
+  List.iter
+    (add (fun x -> x) (fun _ x -> x))
+    global_flags
 
 let flags_for_completion () =
   List.sort ~cmp:compare (
@@ -715,77 +796,3 @@ let global_modules ?(include_current=false) config = (
     | "" -> modules
     | filename -> List.remove (Misc.unitname filename) modules
 )
-
-let normalize_step _trace t =
-  let merlin = t.merlin and findlib = t.findlib in
-  let open Mconfig_dot in
-  if merlin.dotmerlin_to_load <> [] then
-    let stdlib = stdlib t in
-    let dot = Mconfig_dot.load ~stdlib merlin.dotmerlin_to_load in
-    let merlin = {
-      merlin with
-      build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.source_path @ merlin.source_path;
-      cmi_path = dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.cmt_path @ merlin.cmt_path;
-      extensions = dot.extensions @ merlin.extensions;
-      suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-      reader =
-        if dot.reader = []
-        then merlin.reader
-        else dot.reader;
-      flags_to_apply = List.map flag_list dot.flags @ merlin.flags_to_apply;
-      dotmerlin_to_load = [];
-      dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
-      packages_to_load = dot.packages @ merlin.packages_to_load;
-    } in
-    let findlib = {
-      conf = (if Option.is_some dot.findlib then
-                dot.findlib else t.findlib.conf);
-      path = dot.findlib_path @ t.findlib.path;
-    } in
-    { t with merlin; findlib }
-  else if merlin.packages_to_load <> [] then
-    let path, ppx, failures = path_of_packages
-        ?conf:findlib.conf
-        ~path:findlib.path
-        merlin.packages_to_load
-    in
-    { t with merlin =
-               { merlin with
-                 packages_to_load = [];
-                 packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
-                 packages_path = path @ merlin.packages_path;
-                 packages_ppx  = Ppxsetup.union ppx merlin.packages_ppx;
-                 failures = failures @ merlin.failures
-               }
-    }
-  else if merlin.flags_to_apply <> [] then
-    let flagss = merlin.flags_to_apply in
-    let t = {t with merlin = { merlin with
-                               flags_to_apply = [];
-                               flags_applied = flagss @ merlin.flags_applied;
-                             } }
-    in
-    let failures = ref [] in
-    let warning failure = failures := failure :: !failures in
-    let t = List.fold_left ~f:(fun t {flag_cwd; flag_list} ->
-        fst (resolve_relative_path ?cwd:flag_cwd
-               (Marg.parse_all ~warning arguments_table [] flag_list t))
-      ) ~init:t flagss
-    in
-    {t with merlin = {t.merlin with failures = !failures @ t.merlin.failures}}
-  else
-    t
-
-let is_normalized t =
-  let merlin = t.merlin in
-  merlin.flags_to_apply = [] &&
-  merlin.dotmerlin_to_load = [] &&
-  merlin.packages_to_load = []
-
-let rec normalize trace t =
-  if is_normalized t then
-    (Logger.logj "Mconfig" "normalize" (fun () -> dump t); t)
-  else normalize trace (normalize_step trace t)
