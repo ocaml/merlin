@@ -511,16 +511,12 @@ let read_pers_struct check modname filename =
   acknowledge_pers_struct check modname
     { Persistent_signature.filename; cmi; cmi_cache }
 
-let can_load_cmis = ref true
-let without_cmis f x =
-  Misc.(protect_refs [R (can_load_cmis, false)] (fun () -> f x))
-
 let find_pers_struct check name =
   if name = "*predef*" then raise Not_found;
   match Hashtbl.find !persistent_structures name with
   | Some ps -> ps
   | None -> raise Not_found
-  | exception Not_found when !can_load_cmis ->
+  | exception Not_found ->
       let ps =
         match !Persistent_signature.load ~unit_name:name with
         | Some ps -> ps
@@ -2177,5 +2173,4 @@ let check_state_consistency () =
     true
   with Not_found -> false
 
-let with_cmis f =
-  Std.let_ref can_load_cmis true f
+let with_cmis f = f ()

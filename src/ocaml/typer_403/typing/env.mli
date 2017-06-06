@@ -302,5 +302,4 @@ val state : Local_store.bindings
 
 val check_state_consistency: unit -> bool
 
-val without_cmis : ('a -> 'b) -> 'a -> 'b
 val with_cmis : (unit -> 'a) -> 'a
