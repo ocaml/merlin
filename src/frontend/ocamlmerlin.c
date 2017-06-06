@@ -64,6 +64,25 @@ static void failwith(const char *msg)
   exit(EXIT_FAILURE);
 }
 
+#define PATHSZ (PATH_MAX+1)
+
+#define BEGIN_PROTECTCWD \
+  { char previous_cwd[PATHSZ]; \
+    if (!getcwd(previous_cwd, PATHSZ)) previous_cwd[0] = '\0';
+
+#define END_PROTECTCWD \
+    if (previous_cwd[0] != '\0') chdir(previous_cwd); }
+
+static const char *path_socketdir(void)
+{
+  static const char *tmpdir = NULL;
+  if (tmpdir == NULL)
+    tmpdir = getenv("TMPDIR");
+  if (tmpdir == NULL)
+    tmpdir = "/tmp";
+  return tmpdir;
+}
+
 /** Deal with UNIX IPC **/
 
 static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
@@ -170,19 +189,24 @@ static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **
   return j;
 }
 
-static int connect_socket(const char *socket_path, int fail)
+static int connect_socket(const char *socketname, int fail)
 {
-  struct sockaddr_un address;
-  int address_len, sock;
-  address.sun_family = AF_UNIX;
-  strcpy(address.sun_path, socket_path);
-  address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
-
-  sock = socket(PF_UNIX, SOCK_STREAM, 0);
+  int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1) failwith_perror("socket");
 
   int err;
-  NO_EINTR(err, connect(sock, (struct sockaddr*)&address, address_len));
+
+  BEGIN_PROTECTCWD
+    struct sockaddr_un address;
+    int address_len;
+
+    chdir(path_socketdir());
+    address.sun_family = AF_UNIX;
+    snprintf(address.sun_path, 104, "./%s", socketname);
+    address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
+
+    NO_EINTR(err, connect(sock, (struct sockaddr*)&address, address_len));
+  END_PROTECTCWD
 
   if (err == -1)
   {
@@ -231,22 +255,26 @@ static void make_daemon(int sock)
     exit(EXIT_SUCCESS);
 }
 
-static void start_server(const char *socket_path, const char *exec_path)
+static void start_server(const char *socketname, const char *exec_path)
 {
-  struct sockaddr_un address;
-  int address_len, sock;
-
-  address.sun_family = AF_UNIX;
-  strcpy(address.sun_path, socket_path);
-  address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
-  unlink(address.sun_path);
-
-  sock = socket(PF_UNIX, SOCK_STREAM, 0);
+  int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1)
     failwith_perror("socket");
 
   int err;
-  NO_EINTR(err, bind(sock, (struct sockaddr*)&address, address_len));
+
+  BEGIN_PROTECTCWD
+    struct sockaddr_un address;
+    int address_len;
+
+    chdir(path_socketdir());
+    address.sun_family = AF_UNIX;
+    snprintf(address.sun_path, 104, "./%s", socketname);
+    address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
+    unlink(address.sun_path);
+
+    NO_EINTR(err, bind(sock, (struct sockaddr*)&address, address_len));
+  END_PROTECTCWD
 
   if (err == -1)
     failwith_perror("bind");
@@ -263,8 +291,9 @@ static void start_server(const char *socket_path, const char *exec_path)
   {
     make_daemon(sock);
 
-    char socket_fd[50];
+    char socket_fd[50], socket_path[PATHSZ];
     sprintf(socket_fd, "%d", sock);
+    snprintf(socket_path, PATHSZ, "%s/%s", path_socketdir(), socketname);
     //execlp("nohup", "nohup", exec_path, "server", socket_path, socket_fd, NULL);
     execlp(exec_path, exec_path, "server", socket_path, socket_fd, NULL);
     failwith_perror("execlp");
@@ -289,8 +318,6 @@ static int connect_and_serve(const char *socket_path, const char *exec_path)
 
   return sock;
 }
-
-#define PATHSZ (PATH_MAX+1)
 
 /* OCaml merlin path */
 
@@ -363,18 +390,14 @@ static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0)
   strcpy(merlin_path + strsz, "ocamlmerlin-server");
 }
 
-static void compute_socketpath(char socket_path[PATHSZ], const char merlin_path[PATHSZ])
+static void compute_socketname(char socketname[PATHSZ], const char merlin_path[PATHSZ])
 {
   struct stat st;
   if (stat(merlin_path, &st) != 0)
     failwith_perror("stat (cannot find ocamlmerlin binary)");
 
-  const char *tmpdir = getenv("TMPDIR");
-  if (tmpdir == NULL)
-    tmpdir = "/tmp/";
-
-  snprintf(socket_path, PATHSZ,
-      "%s/ocamlmerlin_%llu_%llu_%llu.socket", tmpdir,
+  snprintf(socketname, PATHSZ,
+      "ocamlmerlin_%llu_%llu_%llu.socket",
       (unsigned long long)getuid(),
       (unsigned long long)st.st_dev,
       (unsigned long long)st.st_ino);
@@ -384,13 +407,13 @@ static void compute_socketpath(char socket_path[PATHSZ], const char merlin_path[
 
 static char
   merlin_path[PATHSZ] = "<not computed yet>",
-  socket_path[PATHSZ] = "<not computed yet>";
+  socketname[PATHSZ] = "<not computed yet>";
 static unsigned char argbuffer[65536];
 
 static void dumpinfo(void)
 {
   fprintf(stderr,
-      "merlin path: %s\nsocket path: %s\n", merlin_path, socket_path);
+      "merlin path: %s\nsocket path: %s/%s\n", merlin_path, path_socketdir(), socketname);
 }
 
 static void abnormal_termination(int argc, char **argv)
@@ -417,9 +440,9 @@ int main(int argc, char **argv)
   compute_merlinpath(merlin_path, argv[0]);
   if (argc >= 2 && strcmp(argv[1], "server") == 0)
   {
-    compute_socketpath(socket_path, merlin_path);
+    compute_socketname(socketname, merlin_path);
 
-    int sock = connect_and_serve(socket_path, merlin_path);
+    int sock = connect_and_serve(socketname, merlin_path);
     ssize_t len = prepare_args(argbuffer, sizeof(argbuffer), argc-2, argv+2);
     int fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
     ipc_send(sock, argbuffer, len, fds);
