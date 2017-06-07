@@ -1748,7 +1748,9 @@ and store_module ~check id path md env =
 and store_modtype id path info env =
   { env with
     modtypes = EnvTbl.add id (path, info) env.modtypes;
-    summary = Env_modtype(env.summary, id, info) }
+    summary = Env_modtype(env.summary, id, info);
+    short_paths_additions =
+      short_paths_module_type id path info env.short_paths_additions; }
 
 and store_class id path desc env =
   { env with
@@ -1872,40 +1874,75 @@ let rec add_signature sg env =
 (* Open a signature path *)
 
 let add_components slot root env0 comps =
-  let add_l w comps env0 =
-    Tbl.fold
-      (fun name ->
-         List.fold_right
-           (fun (c, _) acc ->
-              EnvTbl.add_open slot w
-                (Ident.hide (Ident.create name)) c acc env0
-           )
-      )
-      comps env0
-  in
-  let add_map w comps env0 f =
+  let add w comps env0 =
     Tbl.fold
       (fun name (c, pos) acc ->
          EnvTbl.add_open slot w (Ident.hide (Ident.create name))
-           (Pdot (root, name, pos), f c) acc env0
-      )
+           (Pdot (root, name, pos), c) acc env0)
       comps env0
   in
-  let add w comps env0 = add_map w comps env0 (fun x -> x) in
+  let add_list w comps env0 =
+    Tbl.fold
+      (fun name c_pos acc ->
+         List.fold_right
+           (fun (c, _) acc ->
+              EnvTbl.add_open slot w
+                (Ident.hide (Ident.create name)) c acc env0)
+           c_pos acc)
+      comps env0
+  in
+  let add_types w comps env0 additions =
+    Tbl.fold
+      (fun name ((decl, _) as c, pos) (acc, additions) ->
+         let id = Ident.hide (Ident.create name) in
+         let path = Pdot(root, name, pos) in
+         let acc = EnvTbl.add_open slot w id (path, c) acc env0 in
+         let additions = short_paths_type false id path decl additions in
+         acc, additions)
+      comps (env0, additions)
+  in
+  let add_modtypes w comps env0 additions =
+    Tbl.fold
+      (fun name (c, pos) (acc, additions) ->
+         let id = Ident.hide (Ident.create name) in
+         let path = Pdot(root, name, pos) in
+         let acc = EnvTbl.add_open slot w id (path, c) acc env0 in
+         let additions = short_paths_module_type id path c additions in
+         acc, additions)
+      comps (env0, additions)
+  in
+  let add_modules w comps env0 additions components =
+    Tbl.fold
+      (fun name (c, pos) (acc, additions) ->
+         let id = Ident.hide (Ident.create name) in
+         let path = Pdot(root, name, pos) in
+         let c = EnvLazy.force subst_modtype_maker c in
+         let acc = EnvTbl.add_open slot w id (path, c) acc env0 in
+         let comps =
+           match Tbl.find name components with
+           | comps, _ -> comps
+           | exception Not_found -> assert false
+         in
+         let additions = short_paths_module id path c comps additions in
+         acc, additions)
+      comps (env0, additions)
+  in
   let constrs =
-    add_l (fun x -> `Constructor x) comps.comp_constrs env0.constrs
+    add_list (fun x -> `Constructor x) comps.comp_constrs env0.constrs
   in
   let labels =
-    add_l (fun x -> `Label x) comps.comp_labels env0.labels
+    add_list (fun x -> `Label x) comps.comp_labels env0.labels
   in
   let values =
     add (fun x -> `Value x) comps.comp_values env0.values
   in
-  let types =
-    add (fun x -> `Type x) comps.comp_types env0.types
+  let types, short_paths_additions =
+    add_types (fun x -> `Type x) comps.comp_types
+      env0.types env0.short_paths_additions
   in
-  let modtypes =
-    add (fun x -> `Module_type x) comps.comp_modtypes env0.modtypes
+  let modtypes, short_paths_additions =
+    add_modtypes (fun x -> `Module_type x) comps.comp_modtypes
+      env0.modtypes short_paths_additions
   in
   let classes =
     add (fun x -> `Class x) comps.comp_classes env0.classes
@@ -1916,12 +1953,11 @@ let add_components slot root env0 comps =
   let components =
     add (fun x -> `Component x) comps.comp_components env0.components
   in
-  let modules =
+  let modules, short_paths_additions =
     (* one should avoid this force, by allowing lazy in env as well *)
-    add_map (fun x -> `Module x) comps.comp_modules env0.modules
-      (fun data -> EnvLazy.force subst_modtype_maker data)
+    add_modules (fun x -> `Module x) comps.comp_modules
+      env0.modules short_paths_additions comps.comp_components
   in
-
   { env0 with
     summary = Env_open(env0.summary, root);
     constrs;
@@ -1933,6 +1969,7 @@ let add_components slot root env0 comps =
     cltypes;
     components;
     modules;
+    short_paths_additions;
   }
 
 let open_signature slot root env0 =
