@@ -85,7 +85,6 @@ let node_update_env env0 = function
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
   | Structure_item (_, env)         | Signature_item (_, env)
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
-  | Structure {str_final_env = env} | Signature {sig_final_env = env}
     -> env
   | Dummy                     | Case                    _
   | Class_structure         _ | Class_signature         _
@@ -97,6 +96,7 @@ let node_update_env env0 = function
   | Module_binding_name     _ | Module_declaration_name _
   | Module_type_declaration _ | Module_type_constraint  _
   | Module_type_declaration_name _ | With_constraint    _
+  | Structure               _ | Signature               _
   | Value_description       _ | Value_binding           _
   | Constructor_declaration _ | Label_declaration       _
   | Class_declaration       _ | Class_description       _

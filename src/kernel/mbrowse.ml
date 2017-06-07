@@ -186,10 +186,20 @@ let deepest_before trace pos roots =
     (aux root)
 
 let of_structure str =
-  [str.str_final_env, Browse_raw.Structure str]
+  let env =
+    match str.str_items with
+    | [] -> str.str_final_env
+    | item :: _ -> item.str_env
+  in
+  [env, Browse_raw.Structure str]
 
 let of_signature sg =
-  [sg.sig_final_env, Browse_raw.Signature sg]
+  let env =
+    match sg.sig_items with
+    | [] -> sg.sig_final_env
+    | item :: _ -> item.sig_env
+  in
+  [env, Browse_raw.Signature sg]
 
 let of_typedtree = function
   | `Implementation str -> of_structure str
