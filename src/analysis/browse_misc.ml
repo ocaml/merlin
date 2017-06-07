@@ -132,22 +132,22 @@ let dump_browse node =
   in
   `List (append Env.empty node [])
 
-let annotate_tail_calls (ts : Browse_raw.node list) :
-  (Browse_raw.node * Query_protocol.is_tail_position) list =
+let annotate_tail_calls (ts : Mbrowse.t) :
+  (Env.t * Browse_raw.node * Query_protocol.is_tail_position) list =
   let is_one_of candidates node = List.mem node ~set:candidates in
-  let find_entry_points candidates node =
+  let find_entry_points candidates (env, node) =
     Tail_analysis.entry_points node,
-    (node, is_one_of candidates node) in
+    (env, node, is_one_of candidates node) in
   let _, entry_points = List.fold_n_map ts ~f:find_entry_points ~init:[] in
-  let propagate candidates (node,entry) =
+  let propagate candidates (env, node, entry) =
     let is_in_tail = entry || is_one_of candidates node in
     (if is_in_tail
      then Tail_analysis.tail_positions node
      else []),
-    (node, is_in_tail) in
+    (env, node, is_in_tail) in
   let _, tail_positions = List.fold_n_map entry_points ~f:propagate ~init:[] in
-  List.map ~f:(fun (node,tail) ->
-      node,
+  List.map ~f:(fun (env, node, tail) ->
+      env, node,
       if not tail then
         `No
       else if Tail_analysis.is_call node then
@@ -155,7 +155,3 @@ let annotate_tail_calls (ts : Browse_raw.node list) :
       else
         `Tail_position)
     tail_positions
-
-let annotate_tail_calls_from_leaf ts =
-  let ts = List.map ~f:snd ts in
-  List.rev (annotate_tail_calls (List.rev ts))

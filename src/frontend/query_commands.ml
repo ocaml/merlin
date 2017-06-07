@@ -240,13 +240,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let verbosity = verbosity pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Msource.get_lexing_pos tr (Mpipeline.input_source pipeline) pos in
-    let env, path = match Mbrowse.enclosing pos [structures] with
-      | [] -> Mtyper.get_env typer, []
-      | browse ->
-         fst (Mbrowse.leaf_node browse),
-         Browse_misc.annotate_tail_calls_from_leaf browse
+    let path = match Mbrowse.enclosing pos [structures] with
+      | [] -> []
+      | browse -> Browse_misc.annotate_tail_calls browse
     in
-    let aux (node,tail) =
+    let aux (env, node, tail) =
       let open Browse_raw in
       let ret x = Some (Mbrowse.node_loc node, x, tail) in
       match node with
@@ -254,9 +252,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | Pattern {pat_type = t}
       | Core_type {ctyp_type = t}
       | Value_description { val_desc = { ctyp_type = t } } ->
-        ret (`Type t)
+        ret (`Type (env, t))
       | Type_declaration { typ_id = id; typ_type = t} ->
-        ret (`Type_decl (id,t))
+        ret (`Type_decl (env, id, t))
       | Module_expr {mod_type = m}
       | Module_type {mty_type = m}
       | Module_binding {mb_expr = {mod_type = m}}
@@ -265,7 +263,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | Module_binding_name {mb_expr = {mod_type = m}}
       | Module_declaration_name {md_type = {mty_type = m}}
       | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
-        ret (`Modtype m)
+        ret (`Modtype (env, m))
       | _ -> None
     in
     let result = List.filter_map ~f:aux path in
@@ -317,7 +315,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
             if compare (normalize a) (normalize b) = 0 then Some b else None)
         (small_enclosings @ result)
     in
-    Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
     let ppf = Format.str_formatter in
     List.mapi all_items
       ~f:(fun i (loc,text,tail) ->
@@ -325,14 +322,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let ret x = (loc, x, tail) in
           match text with
           | `String str -> ret (`String str)
-          | `Type t when print ->
-            Type_utils.print_type_with_decl ~verbosity env ppf t;
+          | `Type (env, t) when print ->
+            Printtyp.wrap_printing_env env ~verbosity
+              (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
             ret (`String (Format.flush_str_formatter ()))
-          | `Type_decl (id,t) when print ->
-            Printtyp.type_declaration env id ppf t;
+          | `Type_decl (env, id, t) when print ->
+            Printtyp.wrap_printing_env env ~verbosity
+              (fun () -> Printtyp.type_declaration env id ppf t);
             ret (`String (Format.flush_str_formatter ()))
-          | `Modtype m when print ->
-            Printtyp.modtype env ppf m;
+          | `Modtype (env, m) when print ->
+            Printtyp.wrap_printing_env env ~verbosity
+              (fun () -> Printtyp.modtype env ppf m);
             ret (`String (Format.flush_str_formatter ()))
           | _ -> ret (`Index i)
         )
