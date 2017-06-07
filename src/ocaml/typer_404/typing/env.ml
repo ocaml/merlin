@@ -2162,28 +2162,31 @@ let short_paths_type_desc decl =
   match decl.type_manifest with
   | None -> Fresh
   | Some ty ->
-    match decl.type_private, decl.type_kind with
-    | Private, Type_abstract -> Fresh
-    | _, _ -> begin
-      let params = List.map repr decl.type_params in
-      match repr ty with
-      | {desc = Tconstr (path, args, _)} ->
-          let args = List.map repr args in
-          if List.length params = List.length args
-             && List.for_all2 (==) params args
-          then Alias path
-          else if List.length params <= List.length args
-                  || not (uniq args) then Fresh
-          else begin
-            match List.map (index params) args with
+    if ty.level <> generic_level then Fresh
+    else begin
+      match decl.type_private, decl.type_kind with
+      | Private, Type_abstract -> Fresh
+      | _, _ -> begin
+        let params = List.map repr decl.type_params in
+        match repr ty with
+        | {desc = Tconstr (path, args, _)} ->
+            let args = List.map repr args in
+            if List.length params = List.length args
+               && List.for_all2 (==) params args
+            then Alias path
+            else if List.length params <= List.length args
+                    || not (uniq args) then Fresh
+            else begin
+              match List.map (index params) args with
+              | exception Not_found -> Fresh
+              | ns -> Subst(path, ns)
+            end
+        | ty -> begin
+            match index params ty with
             | exception Not_found -> Fresh
-            | ns -> Subst(path, ns)
+            | n -> Nth n
           end
-      | ty -> begin
-          match index params ty with
-          | exception Not_found -> Fresh
-          | n -> Nth n
-        end
+      end
     end
 
 let short_paths_module_type_desc mty =
