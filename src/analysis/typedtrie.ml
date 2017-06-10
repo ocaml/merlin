@@ -113,8 +113,8 @@ let remove_indir_me me =
 
 let remove_indir_mty mty =
   match mty.Typedtree.mty_desc with
-  | Typedtree.Tmty_alias (path, _)
-  | Typedtree.Tmty_ident (path, _) -> `Alias path
+  | Typedtree.Tmty_alias (path, _) -> `Alias path
+  | Typedtree.Tmty_ident (path, _) -> `Ident path
   | Typedtree.Tmty_signature sg -> `Sg sg
   | Typedtree.Tmty_functor (_param_id, param_name, _param_sig, mty) ->
     `Functor (param_name, mty.Typedtree.mty_loc, `Mod_type mty)
@@ -171,6 +171,9 @@ let rec build ?(local_buffer=false) ~trie browses =
     | `Alias path ->
       let p = Path_aux.to_string_list path in
       Alias (tag_path ~namespace p)
+    | `Ident path ->
+      let p = Path_aux.to_string_list path in
+      Alias (tag_path ~namespace:`Modtype p)
     | `Str s ->
       Internal (build ~local_buffer ~trie:Trie.empty [of_structure s])
     | `Sg s ->
@@ -269,6 +272,9 @@ let rec build ?(local_buffer=false) ~trie browses =
               | `Mod_type _ -> `Modtype
             in
             let p = tag_path ~namespace (Path_aux.to_string_list path) in
+            f (Included p)
+          | `Ident p ->
+            let p = tag_path ~namespace:`Modtype (Path_aux.to_string_list p) in
             f (Included p)
           | `Mod_type _
           | `Mod_expr _ as packed -> helper packed
