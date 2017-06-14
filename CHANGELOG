@@ -1,3 +1,10 @@
+merlin 2.5.5
+============
+Wed Jun 14 14:54:32 CEST 2017
+
+Minor release:
+- fix flag parsing in .merlin (#661)
+
 merlin 2.5.4
 ============
 Tue Apr 25 15:07:18 CEST 2017
