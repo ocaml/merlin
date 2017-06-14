@@ -216,7 +216,6 @@ let merge c1 c2 = {
   findlib_path = c1.findlib_path @ c2.findlib_path;
 }
 
-let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
 let white_regexp = Str.regexp "[ \t]+"
 
 (* Parses suffixes pairs that were supplied as whitespace separated pairs
@@ -232,23 +231,6 @@ let parse_suffix str =
     let (first, second) = (List.nth split_on_white 0, List.nth split_on_white 1) in
     if String.get first 0 != '.' || String.get second 0 != '.' then []
     else [(first, second)]
-
-let rev_split_flags str =
-  let rec aux acc str i =
-    match try Some (Str.search_forward flg_regexp str i) with Not_found -> None with
-    | None -> acc
-    | Some first_match ->
-      let flag = Str.matched_string str in
-      let to_skip = String.length flag in
-      let flag =
-        if not @@ String.is_prefixed flag ~by:"'" then
-          flag
-        else
-          String.sub flag ~pos:1 ~len:(String.length flag - 2)
-      in
-      aux (flag :: acc) str (first_match + to_skip)
-  in
-  aux [] str 0
 
 let prepend_config {path; directives} config =
   let cwd = Filename.dirname path in
@@ -274,7 +256,7 @@ let prepend_config {path; directives} config =
     | `SUFFIX suffix ->
       {config with suffixes = (parse_suffix suffix) @ config.suffixes}
     | `FLG flags ->
-      let flags = List.rev (rev_split_flags flags) in
+      let flags = Shell.split_command flags in
       {config with flags = flags :: config.flags}
     | `STDLIB path ->
       {config with stdlib = canonicalize_filename path}
