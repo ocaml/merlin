@@ -32,6 +32,8 @@ type type_resolution =
 
 val find_type_resolution : t -> Path.t -> type_resolution
 
+val find_type_simple : t -> Path.t -> Path.t
+
 val find_module_type : t -> Path.t -> Path.t
 
 val find_module : t -> Path.t -> Path.t

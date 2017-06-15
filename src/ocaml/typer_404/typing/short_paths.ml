@@ -1666,6 +1666,12 @@ module Shortest = struct
     | Type.Path(Some ns, _) -> Subst ns
     | Type.Path(None, _) -> Id
 
+  let find_type_simple t path =
+    update t;
+    let typ = Graph.find_type t.graph path in
+    let search = Search.create t Search.Type typ in
+    Search.perform t search
+
   let find_module_type t path =
     update t;
     let mty = Graph.find_module_type t.graph path in
@@ -1845,6 +1851,12 @@ let find_type_resolution t path : type_resolution =
   match Shortest.find_type_resolution shortest path with
   | exception Not_found -> Id
   | subst -> subst
+
+let find_type_simple t path =
+  let Shortest shortest = shortest t in
+  match Shortest.find_type_simple shortest path with
+  | exception Not_found -> path
+  | path -> path
 
 let find_module_type t path =
   let Shortest shortest = shortest t in

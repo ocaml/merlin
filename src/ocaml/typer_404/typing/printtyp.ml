@@ -262,6 +262,11 @@ let best_type_path_resolution p =
   then Id
   else Short_paths.find_type_resolution (Env.short_paths !printing_env) p
 
+let best_type_path_simple p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then p
+  else Short_paths.find_type_simple (Env.short_paths !printing_env) p
+
 let best_module_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
   then p
@@ -500,8 +505,8 @@ let rec tree_of_typexp sch ty =
             if row.row_closed && all_present then begin
               match best_type_path p with
               | Nth n -> tree_of_typexp sch (apply_nth n tyl)
-              | Path(nso, p') ->
-                  let id = tree_of_path p' in
+              | Path(nso, p) ->
+                  let id = tree_of_path p in
                   let args = tree_of_typlist sch (apply_subst_opt nso tyl) in
                   Otyp_constr (id, args)
             end else begin
@@ -509,17 +514,22 @@ let rec tree_of_typexp sch ty =
               let tags =
                 if all_present then None else Some (List.map fst present) in
               let inh =
-                match best_type_path_resolution p with
+                match best_type_path p with
                 | Nth n -> begin
                     match tree_of_typexp sch (apply_nth n tyl) with
                     | Otyp_constr (i, a) -> Ovar_name (i, a)
                     | _ ->
                         (* fallback case, should change outcometree... *)
-                        Ovar_name (tree_of_path p, tree_of_typlist sch tyl)
+                        let p = best_type_path_simple p in
+                        let id = tree_of_path p in
+                        let args = tree_of_typlist sch tyl in
+                        Ovar_name (id, args)
                   end
-                | Subst _ | Id ->
-                    (* fallback case, should change outcometree... *)
-                    Ovar_name (tree_of_path p, tree_of_typlist sch tyl)
+                | Path(nso, p) -> begin
+                    let id = tree_of_path p in
+                    let args = tree_of_typlist sch (apply_subst_opt nso tyl) in
+                    Ovar_name (id, args)
+                  end
               in
               Otyp_variant (non_gen, inh, row.row_closed, tags)
             end
@@ -607,10 +617,8 @@ and tree_of_typobject sch fi nm =
   | Some (p, ty :: tyl) -> begin
       let non_gen = is_non_gen sch (repr ty) in
       let args = tree_of_typlist sch tyl in
-      match best_type_path p with
-      | Nth _ | Path(Some _, _) -> assert false
-      | Path(None, p) ->
-          Otyp_class (non_gen, tree_of_path p, args)
+      let p = best_type_path_simple p in
+      Otyp_class (non_gen, tree_of_path p, args)
     end
   | _ ->
       fatal_error "Printtyp.tree_of_typobject"
