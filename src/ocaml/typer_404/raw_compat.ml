@@ -124,6 +124,17 @@ let labels_of_application ~prefix = function
       ) labels
   | _ -> []
 
+let rec get_signature = function
+  | { Types.desc = Types.Tarrow (label, lhs, rhs, _) } ->
+    let label = begin match label with
+      | Asttypes.Nolabel -> None
+      | Asttypes.Labelled s -> Some ("~" ^ s)
+      | Asttypes.Optional s -> Some ("?" ^ s)
+    end in
+    (label, lhs) :: get_signature rhs
+  | typ ->
+    [None, typ]
+
 let texp_function_cases = function
   | Typedtree.Texp_function (_,cs,_) -> cs
   | _ -> assert false

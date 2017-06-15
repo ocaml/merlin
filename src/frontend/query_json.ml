@@ -220,11 +220,25 @@ let json_of_completions {Compl. entries; context } =
     "entries", `List (List.map json_of_completion entries);
     "context", (match context with
         | `Unknown -> `Null
-        | `Application {Compl. argument_type; labels} ->
-          let label (name,ty) = `Assoc ["name", `String name;
-                                        "type", `String ty] in
-          let a = `Assoc ["argument_type", `String argument_type;
-                          "labels", `List (List.map label labels)] in
+        | `Application {Compl. argument_type; index; func_name; func_sig; func_loc; labels; } ->
+          let { Lexing.pos_lnum; pos_bol; pos_cnum } = func_loc.Location.loc_start in
+          let label (name, ty) =
+            `Assoc ["name", `String name; "type", `String ty]
+          in
+          let arg (name, ty) =
+            `Assoc [
+              "name", (match name with None -> `Null | Some n -> `String n);
+              "type", `String ty
+            ]
+          in
+          let a = `Assoc [
+              "argument_type", `String argument_type;
+              "labels", `List (List.map label labels);
+              "func_sig", `List (List.map arg func_sig);
+              "func_name", (match func_name with Some n -> `String n | None -> `Null);
+              "func_pos", `List [`Int pos_lnum; `Int (pos_cnum - pos_bol)];
+              "index", (match index with None -> `Null | Some i -> `Int i);
+            ] in
           `List [`String "application"; a])
   ]
 
