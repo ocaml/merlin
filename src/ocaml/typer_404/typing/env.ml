@@ -265,9 +265,11 @@ and functor_components = {
 
 and short_paths_addition =
   | Type of Ident.t * type_declaration
+  | Class_type of Ident.t * class_type_declaration
   | Module_type of Ident.t * modtype_declaration
   | Module of Ident.t * module_declaration * module_components
   | Type_open of Ident.t * Path.t
+  | Class_type_open of Ident.t * Path.t
   | Module_type_open of Ident.t * Path.t
   | Module_open of Ident.t * Path.t
 
@@ -1471,6 +1473,17 @@ let short_paths_type predef id path decl old =
     addition :: old
   end
 
+let short_paths_class_type id path decl old =
+  if !Clflags.real_paths then old
+  else begin
+    let addition =
+      match path with
+      | Pident id' when Ident.same id id' -> Class_type(id, decl)
+      | _ -> Class_type_open(id, path)
+    in
+    addition :: old
+  end
+
 let short_paths_module_type id path decl old =
   if !Clflags.real_paths then old
   else begin
@@ -1760,7 +1773,9 @@ and store_class id path desc env =
 and store_cltype id path desc env =
   { env with
     cltypes = EnvTbl.add id (path, desc) env.cltypes;
-    summary = Env_cltype(env.summary, id, desc) }
+    summary = Env_cltype(env.summary, id, desc);
+    short_paths_additions =
+      short_paths_class_type id path desc env.short_paths_additions; }
 
 (* Compute the components of a functor application in a path. *)
 
@@ -1901,6 +1916,16 @@ let add_components slot root env0 comps =
          acc, additions)
       comps (env0, additions)
   in
+  let add_cltypes w comps env0 additions =
+    Tbl.fold
+      (fun name (c, pos) (acc, additions) ->
+         let id = Ident.hide (Ident.create name) in
+         let path = Pdot(root, name, pos) in
+         let acc = EnvTbl.add_open slot w id (path, c) acc env0 in
+         let additions = short_paths_class_type id path c additions in
+         acc, additions)
+      comps (env0, additions)
+  in
   let add_modtypes w comps env0 additions =
     Tbl.fold
       (fun name (c, pos) (acc, additions) ->
@@ -1947,8 +1972,9 @@ let add_components slot root env0 comps =
   let classes =
     add (fun x -> `Class x) comps.comp_classes env0.classes
   in
-  let cltypes =
-    add (fun x -> `Class_type x) comps.comp_cltypes env0.cltypes
+  let cltypes, short_path_additions =
+    add_cltypes (fun x -> `Class_type x) comps.comp_cltypes
+      env0.cltypes short_paths_additions
   in
   let components =
     add (fun x -> `Component x) comps.comp_components env0.components
@@ -2185,16 +2211,16 @@ and fold_cltypes f =
 
 (* Update short paths *)
 
+let rec index l x =
+  match l with
+    [] -> raise Not_found
+  | a :: l -> if x == a then 0 else 1 + index l x
+
+let rec uniq = function
+    [] -> true
+  | a :: l -> not (List.memq a l) && uniq l
+
 let short_paths_type_desc decl =
-  let rec index l x =
-    match l with
-      [] -> raise Not_found
-    | a :: l -> if x == a then 0 else 1 + index l x
-  in
-  let rec uniq = function
-      [] -> true
-    | a :: l -> not (List.memq a l) && uniq l
-  in
   let open Short_paths.Desc.Type in
   match decl.type_manifest with
   | None -> Fresh
@@ -2225,6 +2251,24 @@ let short_paths_type_desc decl =
           end
       end
     end
+
+let short_paths_class_type_desc clty =
+  let open Short_paths.Desc.Class_type in
+  match clty.clty_type with
+  | Cty_signature _ | Cty_arrow _ -> Fresh
+  | Cty_constr(path, args, _) ->
+      let params = List.map repr clty.clty_params in
+      let args = List.map repr args in
+      if List.length params = List.length args
+      && List.for_all2 (==) params args
+      then Alias path
+      else if List.length params <= List.length args
+             || not (uniq args) then Fresh
+      else begin
+        match List.map (index params) args with
+        | exception Not_found -> Fresh
+        | ns -> Subst(path, ns)
+      end
 
 let short_paths_module_type_desc mty =
   let open Short_paths.Desc.Module_type in
@@ -2265,6 +2309,14 @@ and short_paths_module_components_desc env mpath comp =
              let item = Short_paths.Desc.Module.Type(name, desc) in
              item :: acc)
           c.comp_types []
+      in
+      let comps =
+        Tbl.fold
+          (fun name (clty, _) acc ->
+             let desc = short_paths_class_type_desc clty in
+             let item = Short_paths.Desc.Module.Class_type(name, desc) in
+             item :: acc)
+          c.comp_cltypes comps
       in
       let comps =
         Tbl.fold
@@ -2317,6 +2369,9 @@ let short_paths_additions_desc env additions =
       | Type(id, decl) ->
           let desc = short_paths_type_desc decl in
           Short_paths.Desc.Type(id, desc, true)
+      | Class_type(id, clty) ->
+          let desc = short_paths_class_type_desc clty in
+          Short_paths.Desc.Class_type(id, desc, true)
       | Module_type(id, mtd) ->
           let desc = short_paths_module_type_desc mtd.mtd_type in
           Short_paths.Desc.Module_type(id, desc, true)
@@ -2327,6 +2382,10 @@ let short_paths_additions_desc env additions =
           let id = Ident.rename id in
           let desc = Short_paths.Desc.Type.Alias path in
           Short_paths.Desc.Type(id, desc, false)
+      | Class_type_open(id, path) ->
+          let id = Ident.rename id in
+          let desc = Short_paths.Desc.Class_type.Alias path in
+          Short_paths.Desc.Class_type(id, desc, false)
       | Module_type_open(id, path) ->
           let id = Ident.rename id in
           let desc = Short_paths.Desc.Module_type.Alias path in

@@ -277,6 +277,11 @@ let best_module_path p =
   then p
   else Short_paths.find_module (Env.short_paths !printing_env) p
 
+let best_class_type_path p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then None, p
+  else Short_paths.find_class_type (Env.short_paths !printing_env) p
+
 (* Print a type expression *)
 
 let names = ref ([] : (type_expr * string) list)
@@ -947,14 +952,17 @@ let rec prepare_class_type params = function
 
 let rec tree_of_class_type sch params =
   function
-  | Cty_constr (p', tyl, cty) ->
+  | Cty_constr (p, tyl, cty) ->
       let sty = Ctype.self_type cty in
       if List.memq (proxy sty) !visited_objects
       || not (List.for_all is_Tvar params)
       then
         tree_of_class_type sch params cty
-      else
-        Octy_constr (tree_of_path p', tree_of_typlist true tyl)
+      else begin
+        let nso, p = best_class_type_path p in
+        let tyl = apply_subst_opt nso tyl in
+        Octy_constr (tree_of_path p, tree_of_typlist true tyl)
+      end
   | Cty_signature sign ->
       let sty = repr sign.csig_self in
       let self_ty =
