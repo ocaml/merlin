@@ -73,7 +73,12 @@ cw.cursor = (1,0)
 
 idx = int(vim.eval("g:merlin_type_history"))
 typ = vim.eval("a:type")
-buf = vim.buffers[idx]
+buf = None
+for buffer in vim.buffers:
+  if buffer.number == idx:
+    buf = buffer
+    break
+assert buf, "s:RecordType tried to access a nonexistant buffer"
 # nous souhaitons informer notre aimable clientèle qu'un combat d'infirme se
 # déroule à la ligne suivante
 typ = list(map(lambda x: " " if (x == "") else x, typ))
