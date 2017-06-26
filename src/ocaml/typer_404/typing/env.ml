@@ -381,6 +381,11 @@ let strengthen =
   ref ((fun ~aliasable:_ _env _mty _path -> assert false) :
          aliasable:bool -> t -> module_type -> Path.t -> module_type)
 
+let shorten_module_path =
+  (* to be filled with Printtyp.shorten_module_path *)
+  ref ((fun env path -> assert false) :
+         t -> Path.t -> Path.t)
+
 let md md_type =
   {md_type; md_attributes=[]; md_loc=Location.none}
 
@@ -2019,8 +2024,10 @@ let open_signature ?(loc = Location.none) ?(toplevel = false) ovf root env =
     let used = ref false in
     !add_delayed_check_forward
       (fun () ->
-        if not !used then
+        if not !used then begin
+          let root = !shorten_module_path env root in
           Location.prerr_warning loc (Warnings.Unused_open (Path.name root))
+        end
       );
     let shadowed = ref [] in
     let slot s b =

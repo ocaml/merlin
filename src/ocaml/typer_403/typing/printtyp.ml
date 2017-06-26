@@ -1490,14 +1490,18 @@ let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
           txt2 type_path_list tpl
           txt3 (type_path_expansion tp0) tp0')
 
-let shorten_path path () =
+let shorten_type_path path () =
   match best_type_path path with
   | Path (None, path') -> path'
   | _ -> path
 
-let shorten_path ?env path =
+let shorten_type_path env path =
   match env with
-  | None -> shorten_path path ()
-  | Some env -> wrap_printing_env env (shorten_path path)
+  | None -> shorten_type_path path ()
+  | Some env -> wrap_printing_env env (shorten_type_path path)
+
+let shorten_module_type_path env path = path
+let shorten_module_path env path = path
+let shorten_class_type_path env path = path
 
 let compute_map_for_pers _name = true

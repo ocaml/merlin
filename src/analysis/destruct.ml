@@ -74,9 +74,6 @@ end
 let placeholder =
   Ast_helper.Exp.ident (mk_id "??")
 
-let shorten_path env path =
-  Printtyp.shorten_path ~env path
-
 let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -105,7 +102,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | constructors, _ ->
       let prefix =
-        let path = shorten_path env path in
+        let path = Printtyp.shorten_type_path env path in
         match Path_aux.to_string_list path with
         | [] -> assert false
         | p :: ps ->
@@ -420,7 +417,7 @@ let node tr config source node parents =
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
     | Some pat ->
-      let pat  = qualify_constructors shorten_path pat in
+      let pat  = qualify_constructors Printtyp.shorten_type_path pat in
       let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
       let case = Ast_helper.Exp.case ppat placeholder in
       let loc =

@@ -29,7 +29,10 @@ val string_of_label: Asttypes.arg_label -> string
 
 val wrap_printing_env: Env.t -> (unit -> 'a) -> 'a
 val compute_map_for_pers: string -> bool
-val shorten_path: ?env:Env.t -> Path.t -> Path.t
+val shorten_type_path: Env.t -> Path.t -> Path.t
+val shorten_module_type_path: Env.t -> Path.t -> Path.t
+val shorten_module_path: Env.t -> Path.t -> Path.t
+val shorten_class_type_path: Env.t -> Path.t -> Path.t
 
 val reset: unit -> unit
 val mark_loops: type_expr -> unit

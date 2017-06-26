@@ -282,6 +282,11 @@ let best_class_type_path p =
   then None, p
   else Short_paths.find_class_type (Env.short_paths !printing_env) p
 
+let best_class_type_path_simple p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then p
+  else Short_paths.find_class_type_simple (Env.short_paths !printing_env) p
+
 (* Print a type expression *)
 
 let names = ref ([] : (type_expr * string) list)
@@ -840,7 +845,8 @@ let constructor_arguments ppf a =
 
 let tree_of_extension_constructor id ext es =
   reset ();
-  let ty_name = Path.name ext.ext_type_path in
+  let type_path = best_type_path_simple ext.ext_type_path in
+  let ty_name = Path.name type_path in
   let ty_params = filter_params ext.ext_type_params in
   List.iter add_alias ty_params;
   List.iter mark_loops ty_params;
@@ -1523,14 +1529,24 @@ let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
           txt2 type_path_list tpl
           txt3 (type_path_expansion tp0) tp0')
 
-let shorten_path path () =
-  match best_type_path path with
-  | Path (None, path') -> path'
-  | _ -> path
+let shorten_type_path env p =
+  wrap_printing_env env
+    (fun () -> best_type_path_simple p)
 
-let shorten_path ?env path =
-  match env with
-  | None -> shorten_path path ()
-  | Some env -> wrap_printing_env env (shorten_path path)
+let shorten_module_type_path env p =
+  wrap_printing_env env
+    (fun () -> best_module_type_path p)
+
+let shorten_module_path env p =
+  wrap_printing_env env
+    (fun () -> best_module_path p)
+
+let shorten_class_type_path env p =
+  wrap_printing_env env
+    (fun () -> best_class_type_path_simple p)
+
+let () =
+  Env.shorten_module_path := shorten_module_path
 
 let compute_map_for_pers _name = true
+

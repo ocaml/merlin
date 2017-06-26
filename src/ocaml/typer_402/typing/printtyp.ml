@@ -600,8 +600,11 @@ let wrap_printing_env env f =
 
 let curr_printing_env () = !printing_state.printenv
 
-let shorten_path ?(env=curr_printing_env ()) path =
+let shorten_type_path env path =
   shortest_type_alias (aliasmap env) path
+let shorten_module_type_path env path = path
+let shorten_module_path env path = path
+let shorten_class_type_path env path = path
 
 let best_type_path p =
   if !printing_state == printing_empty then (p, Id)
