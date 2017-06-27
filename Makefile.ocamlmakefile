@@ -38,6 +38,8 @@ SOURCES_LIB = \
 	$(TYPER)/printf_compat.ml         \
 	src/utils/trace.mli               \
 	src/utils/trace.ml                \
+	src/utils/bitfield.mli            \
+	src/utils/bitfield.ml             \
 	src/utils/std.ml                  \
 	src/utils/local_store.ml          \
 	src/utils/local_store.mli         \
