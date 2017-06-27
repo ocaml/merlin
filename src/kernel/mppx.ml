@@ -24,8 +24,11 @@ let rewrite _trace cfg parsetree =
     restore ();
     cfg, parsetree
   | exception exn ->
-    Logger.logf "Mppx" "rewrite"
-      "failed with %t" (fun () -> Printexc.to_string exn);
+    Logger.logf "Mppx" "rewrite" "failed with %t" (fun () ->
+        match Location.error_of_exn exn with
+        | None -> Printexc.to_string exn
+        | Some err -> err.Location.msg
+      );
     Msupport.raise_error exn;
     restore ();
     cfg, parsetree
