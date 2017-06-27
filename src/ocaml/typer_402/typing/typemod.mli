@@ -79,3 +79,10 @@ val report_error: Env.t -> formatter -> error -> unit
 (* merlin *)
 
 val normalize_signature : Env.t -> Types.signature -> unit
+
+val merlin_type_structure:
+  Env.t -> Parsetree.structure -> Location.t ->
+  Typedtree.structure * Types.signature * Env.t
+
+val merlin_transl_signature:
+  Env.t -> Parsetree.signature -> Typedtree.signature

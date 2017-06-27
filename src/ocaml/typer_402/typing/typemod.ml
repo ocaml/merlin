@@ -564,8 +564,7 @@ let rec transl_modtype env smty =
   | Pmty_extension ext ->
       raise (Error_forward (Typetexp.error_of_extension ext))
 
-
-and transl_signature env sg =
+and transl_signature ?(keep_warnings = false) env sg =
   let type_names = ref StringSet.empty
   and module_names = ref StringSet.empty
   and modtype_names = ref StringSet.empty in
@@ -747,7 +746,8 @@ and transl_signature env sg =
         | Psig_extension (ext, _attrs) ->
             raise (Error_forward (Typetexp.error_of_extension ext))
   in
-  Msupport.with_saved_types ~warning_attribute:[]
+  Msupport.with_saved_types
+    ?warning_attribute:(if keep_warnings then None else Some [])
     ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
     (fun () ->
       let (trem, rem, final_env) = transl_sig (Env.in_signature env) sg in
@@ -1249,7 +1249,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
   | Pmod_extension ext ->
       raise (Error_forward (Typetexp.error_of_extension ext))
 
-and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
+and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body anchor env sstr scope =
   let type_names = ref StringSet.empty
   and module_names = ref StringSet.empty
   and modtype_names = ref StringSet.empty in
@@ -1515,7 +1515,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
   Msupport.with_saved_types
-    ?warning_attribute:(if toplevel then None else Some [])
+    ?warning_attribute:(if toplevel || keep_warnings then None else Some [])
     ~save_part:(fun (str,_,_) -> Cmt_format.Partial_structure str)
     (fun () ->
      let (items, sg, final_env) = type_struct env sstr in
@@ -1527,7 +1527,11 @@ let type_toplevel_phrase env s =
   type_structure ~toplevel:true false None env s Location.none
 (*let type_module_alias = type_module ~alias:true true false None*)
 let type_module ?alias = type_module ?alias true false None
+
+let merlin_type_structure = type_structure ~keep_warnings:true false None
 let type_structure = type_structure false None
+let merlin_transl_signature env sg = transl_signature ~keep_warnings:true env sg
+let transl_signature env sg = transl_signature env sg
 
 (* Normalize types in a signature *)
 

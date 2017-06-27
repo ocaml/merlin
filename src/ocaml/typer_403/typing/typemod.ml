@@ -572,7 +572,7 @@ let rec transl_modtype env smty =
   | Pmty_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
-and transl_signature env sg =
+and transl_signature ?(keep_warnings = false) env sg =
   let names = new_names () in
   let rec transl_sig env sg =
     Ctype.init_def(Ident.current_time());
@@ -813,9 +813,9 @@ and transl_signature env sg =
           Msupport.raise_error
             (Error_forward (Builtin_attributes.error_of_extension ext));
           transl_sig env srem
-
   in
-  Msupport.with_saved_types ~warning_attribute:[]
+  Msupport.with_saved_types
+    ?warning_attribute:(if keep_warnings then None else Some [])
     ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
     (fun () ->
       let (trem, rem, final_env) = transl_sig (Env.in_signature true env) sg in
@@ -1299,7 +1299,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
   | Pmod_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
-and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
+and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body anchor env sstr scope =
   let names = new_names () in
 
   let type_str_item env srem {pstr_loc = loc; pstr_desc = desc} =
@@ -1582,7 +1582,11 @@ let type_toplevel_phrase env s =
   type_structure ~toplevel:true false None env s Location.none
 let type_module_alias = type_module ~alias:true true false None
 let type_module = type_module true false None
+
+let merlin_type_structure = type_structure ~keep_warnings:true false None
 let type_structure = type_structure false None
+let merlin_transl_signature env sg = transl_signature ~keep_warnings:true env sg
+let transl_signature env sg = transl_signature env sg
 
 (* Normalize types in a signature *)
 
