@@ -13,11 +13,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 #if defined(__linux)
 #include <linux/limits.h>
 #elif defined(__APPLE__)
 #include <sys/syslimits.h>
+#elif defined(__OpenBSD__)
+#include <sys/param.h>
 #endif
 
 /** Portability information **/
