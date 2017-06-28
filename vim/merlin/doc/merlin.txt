@@ -319,6 +319,8 @@ To use merlin with syntastic set the following option: >
 
 Neocomplcache ~
 
+(Note that Neocomplcache has been superseded by Neocomplete
+    in later versions of Vim)
 Integration with [neocomplcache](https://github.com/Shougo/neocomplcache)
 for automatic completion can be enabled with: >
 
@@ -326,7 +328,28 @@ for automatic completion can be enabled with: >
       let g:neocomplcache_force_omni_patterns = {}
     endif
     let g:neocomplcache_force_omni_patterns.ocaml = '[^. *\t]\.\w*\|\h\w*|#'
-<
+
+
+Neocomplete ~
+
+Integration with [neocomplete](https://github.com/Shougo/neocomplete) for
+automatic completion can be enabled with:
+
+    if !exists('g:neocomplete#sources#omni#input_patterns')
+      let g:neocomplete#sources#omni#input_patterns = {}
+    endif
+    let g:neocomplete#sources#omni#input_patterns.ocaml = '[^. *\t]\.\w*\|\h\w*|#'
+
+
+Deoplete ~
+
+Integration with [deoplete](https://github.com/Shougo/deoplete.nvim)
+for automatic, asynchronous completion with NeoVim can be enabled with: >
+
+    if !exists('g:deoplete#omni_patterns')
+      let g:deoplete#omni#input_patterns = {}
+    endif
+    let g:deoplete#omni#input_patterns.ocaml = '[^. *\t]\.\w*|\s\w*|#'
 
 Supertab ~
 
