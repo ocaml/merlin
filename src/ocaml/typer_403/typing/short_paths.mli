@@ -32,6 +32,14 @@ type type_resolution =
 
 val find_type_resolution : t -> Path.t -> type_resolution
 
+val find_type_simple : t -> Path.t -> Path.t
+
+type class_type_result = int list option * Path.t
+
+val find_class_type : t -> Path.t -> class_type_result
+
+val find_class_type_simple : t -> Path.t -> Path.t
+
 val find_module_type : t -> Path.t -> Path.t
 
 val find_module : t -> Path.t -> Path.t

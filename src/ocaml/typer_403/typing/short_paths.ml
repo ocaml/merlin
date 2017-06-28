@@ -656,25 +656,34 @@ type type_result =
   | Nth of int
   | Path of int list option * Path.t
 
+type class_type_result = int list option * Path.t
+
 module Shortest = struct
 
   module Section = struct
 
     type t =
       { mutable types : Forward_path_map.t;
+        mutable class_types : Forward_path_map.t;
         mutable module_types : Forward_path_map.t;
         mutable modules : Forward_path_map.t; }
 
     let create () =
       let types = Forward_path_map.empty in
+      let class_types = Forward_path_map.empty in
       let module_types = Forward_path_map.empty in
       let modules = Forward_path_map.empty in
-      { types; module_types; modules }
+      { types; class_types; module_types; modules }
 
     let add_type graph t typ path =
       let canonical = Type.path graph typ in
       let sort = Type.sort graph typ in
       t.types <- Forward_path_map.add t.types sort canonical path
+
+    let add_class_type graph t mty path =
+      let canonical = Class_type.path graph mty in
+      let sort = Class_type.sort graph mty in
+      t.class_types <- Forward_path_map.add t.class_types sort canonical path
 
     let add_module_type graph t mty path =
       let canonical = Module_type.path graph mty in
@@ -688,22 +697,29 @@ module Shortest = struct
 
     let rebase t parent =
       t.types <- Forward_path_map.rebase t.types parent.types;
+      t.class_types <- Forward_path_map.rebase t.class_types parent.class_types;
       t.module_types <- Forward_path_map.rebase t.module_types parent.module_types;
       t.modules <- Forward_path_map.rebase t.modules parent.modules
 
-    let iter_updates ~type_ ~module_type ~module_ t id =
+    let iter_updates ~type_ ~class_type ~module_type ~module_ t id =
       Forward_path_map.iter_updates type_ t.types id;
+      Forward_path_map.iter_updates class_type t.class_types id;
       Forward_path_map.iter_updates module_type t.module_types id;
       Forward_path_map.iter_updates module_ t.modules id
 
-    let iter_forwards ~type_ ~module_type ~module_ t id =
+    let iter_forwards ~type_ ~class_type ~module_type ~module_ t id =
       Forward_path_map.iter_forwards type_ t.types id;
+      Forward_path_map.iter_forwards class_type t.class_types id;
       Forward_path_map.iter_forwards module_type t.module_types id;
       Forward_path_map.iter_forwards module_ t.modules id
 
     let find_type graph t typ =
       let canonical = Type.path graph typ in
       Forward_path_map.find t.types canonical
+
+    let find_class_type graph t mty =
+      let canonical = Class_type.path graph mty in
+      Forward_path_map.find t.class_types canonical
 
     let find_module_type graph t mty =
       let canonical = Module_type.path graph mty in
@@ -894,6 +910,11 @@ module Shortest = struct
       let section = Height.Array.get sections height in
       Section.add_type graph section typ path
 
+    let add_class_type graph t height mty path =
+      let sections = expand t height in
+      let section = Height.Array.get sections height in
+      Section.add_class_type graph section mty path
+
     let add_module_type graph t height mty path =
       let sections = expand t height in
       let section = Height.Array.get sections height in
@@ -905,15 +926,16 @@ module Shortest = struct
       Section.add_module graph section md path
 
     (* returns [true] if there might be updated paths at a greater height. *)
-    let iter_updates ~type_ ~module_type ~module_ t height id =
+    let iter_updates ~type_ ~class_type ~module_type ~module_ t height id =
       match get t height with
       | Some section ->
-          Section.iter_updates ~type_ ~module_type ~module_ section id;
+          Section.iter_updates ~type_ ~class_type
+            ~module_type ~module_ section id;
           true
       | None -> false
 
     (* returns [true] if there might be forward paths at a greater height. *)
-    let iter_forwards ~type_ ~module_type ~module_ t height id =
+    let iter_forwards ~type_ ~class_type ~module_type ~module_ t height id =
       let all_initialised =
         match t.initialised with
         | All -> true
@@ -924,7 +946,8 @@ module Shortest = struct
       in
       match get t height with
       | Some section ->
-          Section.iter_forwards ~type_ ~module_type ~module_ section id;
+          Section.iter_forwards ~type_ ~class_type
+            ~module_type ~module_ section id;
           true
       | None -> not all_initialised
 
@@ -939,6 +962,13 @@ module Shortest = struct
           let visible = Graph.is_type_path_visible graph path in
           if visible then Some path
           else get_visible_type graph rest
+
+    let rec get_visible_class_type graph = function
+      | [] -> None
+      | path :: rest ->
+          let visible = Graph.is_class_type_path_visible graph path in
+          if visible then Some path
+          else get_visible_class_type graph rest
 
     let rec get_visible_module_type graph = function
       | [] -> None
@@ -963,6 +993,23 @@ module Shortest = struct
           | exception Not_found -> Not_found_here
           | paths -> begin
               match get_visible_type graph paths with
+              | None -> Not_found_here
+              | Some path -> Found path
+            end
+        end
+      | None ->
+          if is_finished t then Not_found_here_or_later
+          else Not_found_here
+
+    let find_class_type graph t height mty =
+      check_initialised t height;
+      check_completed t height;
+      match get t height with
+      | Some section -> begin
+          match Section.find_class_type graph section mty with
+          | exception Not_found -> Not_found_here
+          | paths -> begin
+              match get_visible_class_type graph paths with
               | None -> Not_found_here
               | Some path -> Found path
             end
@@ -1084,12 +1131,16 @@ module Shortest = struct
            match desc with
            | Desc.Type(id, desc, conc) ->
                Component.Type(origin, id, desc, local_or_open conc)
+           | Desc.Class_type(id, desc, conc) ->
+               Component.Class_type(origin, id, desc, local_or_open conc)
            | Desc.Module_type(id, desc, conc) ->
                Component.Module_type(origin, id, desc, local_or_open conc)
            | Desc.Module(id, desc, conc) ->
                Component.Module(origin, id, desc, local_or_open conc)
            | Desc.Declare_type id ->
                Component.Declare_type(origin, id)
+           | Desc.Declare_class_type id ->
+               Component.Declare_class_type(origin, id)
            | Desc.Declare_module_type id ->
                Component.Declare_module_type(origin, id)
            | Desc.Declare_module id ->
@@ -1135,6 +1186,14 @@ module Shortest = struct
       Sections.add_module_type t.graph sections height mty path
     end
 
+  let process_class_type t height path mty =
+    let canonical_path = Class_type.path t.graph mty in
+    if not (Path.equal canonical_path path) then begin
+      let origin = Class_type.origin t.graph mty in
+      let sections = sections t origin in
+      Sections.add_class_type t.graph sections height mty path
+    end
+
   let process_module t height path md =
     let canonical_path = Module.path t.graph md in
     if not (Path.equal canonical_path path) then begin
@@ -1148,6 +1207,11 @@ module Shortest = struct
     let types =
       match Module.types t.graph md with
       | Some types -> types
+      | None -> String_map.empty
+    in
+    let class_types =
+      match Module.class_types t.graph md with
+      | Some class_types -> class_types
       | None -> String_map.empty
     in
     let module_types =
@@ -1167,6 +1231,13 @@ module Shortest = struct
            process_type t height path typ
          end)
       types;
+    String_map.iter
+      (fun name mty ->
+         if not (Height.hidden_name name) then begin
+           let path = Path.Pdot(path, name, 0) in
+           process_class_type t height path mty
+         end)
+      class_types;
     String_map.iter
       (fun name mty ->
          if not (Height.hidden_name name) then begin
@@ -1195,6 +1266,11 @@ module Shortest = struct
                     let path = Path.Pident id in
                     process_type t height path typ
                   end
+              | Todo.Item.Base (Diff.Item.Class_type(id, mty, _)) ->
+                  if not (Height.hidden_ident id) then begin
+                    let path = Path.Pident id in
+                    process_class_type t height path mty
+                  end
               | Todo.Item.Base (Diff.Item.Module_type(id, mty, _)) ->
                   if not (Height.hidden_ident id) then begin
                     let path = Path.Pident id in
@@ -1222,6 +1298,9 @@ module Shortest = struct
           ~type_:(fun canon path ->
             let typ = Graph.find_type t.graph canon in
             process_type t height path typ)
+          ~class_type:(fun canon path ->
+            let mty = Graph.find_class_type t.graph canon in
+            process_class_type t height path mty)
           ~module_type:(fun canon path ->
             let mty = Graph.find_module_type t.graph canon in
             process_module_type t height path mty)
@@ -1242,6 +1321,9 @@ module Shortest = struct
           ~type_:(fun canon path ->
             let typ = Graph.find_type t.graph canon in
             process_type t height path typ)
+          ~class_type:(fun canon path ->
+            let mty = Graph.find_class_type t.graph canon in
+            process_class_type t height path mty)
           ~module_type:(fun canon path ->
             let mty = Graph.find_module_type t.graph canon in
             process_module_type t height path mty)
@@ -1303,6 +1385,7 @@ module Shortest = struct
 
     type _ kind =
       | Type : Type.t kind
+      | Class_type : Class_type.t kind
       | Module_type : Module_type.t kind
       | Module : Module.t kind
 
@@ -1315,7 +1398,7 @@ module Shortest = struct
         height : Height.t; }
 
     type 'a t =
-      | Simple of
+      | Ident of
           { kind : 'a kind;
             node : 'a;
             origin : Origin.t;
@@ -1323,7 +1406,7 @@ module Shortest = struct
             min: Height.t;
             max: Height.t;
             finished : bool; }
-      | Declared of
+      | Dot of
           { kind : 'a kind;
             node : 'a;
             origin : Origin.t;
@@ -1349,18 +1432,18 @@ module Shortest = struct
             finished : bool; }
 
     let min_height = function
-      | Simple { min; _ } -> min
-      | Declared { min; _ } -> min
+      | Ident { min; _ } -> min
+      | Dot { min; _ } -> min
       | Application { min; _ } -> min
 
     let finished = function
-      | Simple { finished; _ } -> finished
-      | Declared { finished; _ } -> finished
+      | Ident { finished; _ } -> finished
+      | Dot { finished; _ } -> finished
       | Application { finished; _ } -> finished
 
     let best = function
-      | Simple { best; _ } -> best
-      | Declared { best; _ } -> best
+      | Ident { best; _ } -> best
+      | Dot { best; _ } -> best
       | Application { best; _ } -> best
 
     let min_application fst snd suffix =
@@ -1369,7 +1452,7 @@ module Shortest = struct
       | None -> base
       | Some { names; height } -> Height.plus base height
 
-    let min_declared parent name =
+    let min_dot parent name =
       let base = min_height parent in
       Height.plus base name.height
 
@@ -1382,63 +1465,53 @@ module Shortest = struct
             (fun acc name -> Path.Pdot(acc, name, 0))
             base names
 
-    let path_declared parent name =
+    let path_dot parent name =
       let base = best parent in
       Path.Pdot(base, name.name, 0)
 
     let create (type k) shortest (kind : k kind) (node : k) =
       let rec loop :
-        type k. k kind -> k -> Origin.t -> Sort.t -> Path.t ->
+        type k. k kind -> k -> Origin.t -> Path.t ->
           Height.t -> string list -> Path.t -> k t =
-        fun kind node origin sort best max suffix path ->
+        fun kind node origin best max suffix path ->
           match path with
           | Path.Pident _ ->
               let min = Height.one in
               let finished = false in
-              Simple
+              Ident
                 { kind; node; origin; best; min; max; finished; }
-          | Path.Pdot(parent, name, _) -> begin
-              match sort with
-              | Sort.Defined ->
-                  loop kind node origin sort
-                    best max (name :: suffix) parent
-              | Sort.Declared _ ->
-                  let graph = shortest.graph in
-                  let parent_md = Graph.find_module graph parent in
-                  let parent_max = Height.measure_path parent in
-                  let parent_origin = Module.origin graph parent_md in
-                  let parent =
-                    loop Module parent_md parent_origin
-                      sort parent parent_max [] parent
-                  in
-                  let finished = false in
-                  let name =
-                    let height = Height.measure_name name in
-                    { name; height }
-                  in
-                  let searched = false in
-                  let min = Height.one in
-                  Declared
-                    { kind; node; origin; best; min; max;
-                      parent; name; searched; finished }
-            end
+          | Path.Pdot(parent, name, _) ->
+              let graph = shortest.graph in
+              let parent_md = Graph.find_module graph parent in
+              let parent_max = Height.measure_path parent in
+              let parent_origin = Module.origin graph parent_md in
+              let parent =
+                loop Module parent_md parent_origin
+                  parent parent_max [] parent
+              in
+              let finished = false in
+              let name =
+                let height = Height.measure_name name in
+                { name; height }
+              in
+              let searched = false in
+              let min = Height.one in
+              Dot
+                { kind; node; origin; best; min; max;
+                  parent; name; searched; finished }
           | Path.Papply(func, arg) ->
               let graph = shortest.graph in
               let func_md = Graph.find_module graph func in
               let func_max = Height.measure_path func in
               let func_origin = Module.origin graph func_md in
-              let func_sort = Module.sort graph func_md in
               let func =
-                loop Module func_md func_origin
-                  func_sort func func_max [] func
+                loop Module func_md func_origin func func_max [] func
               in
               let arg_md = Graph.find_module graph arg in
               let arg_max = Height.measure_path arg in
               let arg_origin = Module.origin graph arg_md in
-              let arg_sort = Module.sort graph arg_md in
               let arg =
-                loop Module arg_md arg_origin
-                  arg_sort arg arg_max [] arg
+                loop Module arg_md arg_origin arg arg_max [] arg
               in
               let func_first =
                 Rev_deps.before (rev_deps shortest) arg_origin func_origin
@@ -1463,6 +1536,10 @@ module Shortest = struct
                     let searched = false in
                     let min = Height.one in
                     searched, min
+                | Class_type ->
+                    let searched = false in
+                    let min = Height.one in
+                    searched, min
                 | Module_type ->
                     let searched = false in
                     let min = Height.one in
@@ -1478,12 +1555,11 @@ module Shortest = struct
                   func; arg; suffix; func_first; searched; finished }
       in
       let graph = shortest.graph in
-      let canonical_path, origin, sort, max =
+      let canonical_path, origin, max =
         match kind with
         | Type ->
             let canonical_path = Type.path graph node in
             let origin = Type.origin graph node in
-            let sort = Type.sort graph node in
             let max =
               let visible =
                 Graph.is_type_path_visible graph canonical_path
@@ -1491,11 +1567,21 @@ module Shortest = struct
               if visible then Height.measure_path canonical_path
               else Height.maximum
             in
-            canonical_path, origin, sort, max
+            canonical_path, origin, max
+        | Class_type ->
+            let canonical_path = Class_type.path graph node in
+            let origin = Class_type.origin graph node in
+            let max =
+              let visible =
+                Graph.is_class_type_path_visible graph canonical_path
+              in
+              if visible then Height.measure_path canonical_path
+              else Height.maximum
+            in
+            canonical_path, origin, max
         | Module_type ->
             let canonical_path = Module_type.path graph node in
             let origin = Module_type.origin graph node in
-            let sort = Module_type.sort graph node in
             let max =
               let visible =
                 Graph.is_module_type_path_visible graph canonical_path
@@ -1503,11 +1589,10 @@ module Shortest = struct
               if visible then Height.measure_path canonical_path
               else Height.maximum
             in
-            canonical_path, origin, sort, max
+            canonical_path, origin, max
         | Module ->
             let canonical_path = Module.path graph node in
             let origin = Module.origin graph node in
-            let sort = Module.sort graph node in
             let max =
               let visible =
                 Graph.is_module_path_visible graph canonical_path
@@ -1515,15 +1600,17 @@ module Shortest = struct
               if visible then Height.measure_path canonical_path
               else Height.maximum
             in
-            canonical_path, origin, sort, max
+            canonical_path, origin, max
       in
-      loop kind node origin sort canonical_path max [] canonical_path
+      loop kind node origin canonical_path max [] canonical_path
 
     let find (type k) shortest origin height (kind : k kind) (node : k) =
       let sections = force shortest origin height in
       match kind with
       | Type ->
           Sections.find_type shortest.graph sections height node
+      | Class_type ->
+          Sections.find_class_type shortest.graph sections height node
       | Module_type ->
           Sections.find_module_type shortest.graph sections height node
       | Module ->
@@ -1534,66 +1621,62 @@ module Shortest = struct
         if finished search then search
         else begin
           match search with
-          | Simple r -> begin
+          | Ident r -> begin
               match find shortest r.origin r.min r.kind r.node with
               | Sections.Not_found_here ->
                   if Height.equal r.min r.max then
-                    Simple { r with finished = true }
+                    Ident { r with finished = true }
                   else
-                    Simple { r with min = Height.succ r.min }
+                    Ident { r with min = Height.succ r.min }
               | Sections.Not_found_here_or_later ->
-                  Simple { r with finished = true; min = r.max }
+                  Ident { r with finished = true; min = r.max }
               | Sections.Found path ->
                   let best = path in
                   let max = r.min in
                   let finished = true in
-                  Simple { r with best; max; finished }
+                  Ident { r with best; max; finished }
             end
-          | Declared r ->
-              let try_decl searched =
-                let parent = r.parent in
-                let parent =
-                  let should_try_decl =
-                    Height.equal
-                      (min_declared parent r.name) r.min
-                  in
-                  if not should_try_decl then parent
-                  else step shortest parent
+          | Dot r ->
+              let parent = r.parent in
+              let parent =
+                let should_try_dot =
+                  Height.equal
+                    (min_dot parent r.name) r.min
                 in
-                let found =
-                  finished parent
-                  && Height.equal (min_declared parent r.name) r.min
-                in
-                if found then begin
-                  let best = path_declared parent r.name in
-                  let max = r.min in
-                  let finished = true in
-                  Declared
-                    { r with best; parent; max; searched; finished }
-                end else begin
-                  let finished =
-                    searched
-                    && Height.less_than_or_equal
-                         r.max (min_declared parent r.name)
-                  in
-                  let min = if finished then r.max else Height.succ r.min in
-                  Declared
-                    { r with parent; min; searched; finished }
-                end
+                if not should_try_dot then parent
+                else step shortest parent
               in
-              if r.searched then try_decl true
-              else begin
-                match find shortest r.origin r.min r.kind r.node with
-                | Sections.Not_found_here ->
-                    try_decl (Height.equal r.min r.max)
-                | Sections.Not_found_here_or_later ->
-                    try_decl true
-                | Sections.Found path ->
-                    let best = path in
-                    let max = r.min in
-                    let searched = true in
-                    let finished = true in
-                    Declared { r with best; max; searched; finished }
+              let found =
+                finished parent
+                && Height.equal (min_dot parent r.name) r.min
+              in
+              if found then begin
+                let best = path_dot parent r.name in
+                let max = r.min in
+                let finished = true in
+                Dot
+                  { r with best; parent; max; finished }
+              end else begin
+                let best, max, searched, finished =
+                  if r.searched then r.best, r.max, r.searched, r.finished
+                  else begin
+                    match find shortest r.origin r.min r.kind r.node with
+                    | Sections.Not_found_here ->
+                        r.best, r.max, (Height.equal r.min r.max), r.finished
+                    | Sections.Not_found_here_or_later ->
+                        r.best, r.max, true, r.finished
+                    | Sections.Found path ->
+                        path, r.min, true, true
+                  end
+                in
+                let finished =
+                  finished ||
+                  (searched
+                   && Height.less_than_or_equal
+                        r.max (min_dot parent r.name))
+                in
+                let min = if finished then max else Height.succ r.min in
+                Dot { r with best; parent; min; max; searched; finished }
               end
          | Application r ->
               let try_app searched =
@@ -1682,6 +1765,26 @@ module Shortest = struct
     | Type.Nth n -> Nth n
     | Type.Path(Some ns, _) -> Subst ns
     | Type.Path(None, _) -> Id
+
+  let find_type_simple t path =
+    update t;
+    let typ = Graph.find_type t.graph path in
+    let search = Search.create t Search.Type typ in
+    Search.perform t search
+
+  let find_class_type t path =
+    update t;
+    let clty = Graph.find_class_type t.graph path in
+    let subst, clty = Class_type.resolve t.graph clty in
+    let search = Search.create t Search.Class_type clty in
+    let path = Search.perform t search in
+    (subst, path)
+
+  let find_class_type_simple t path =
+    update t;
+    let clty = Graph.find_class_type t.graph path in
+    let search = Search.create t Search.Class_type clty in
+    Search.perform t search
 
   let find_module_type t path =
     update t;
@@ -1862,6 +1965,24 @@ let find_type_resolution t path : type_resolution =
   match Shortest.find_type_resolution shortest path with
   | exception Not_found -> Id
   | subst -> subst
+
+let find_type_simple t path =
+  let Shortest shortest = shortest t in
+  match Shortest.find_type_simple shortest path with
+  | exception Not_found -> path
+  | path -> path
+
+let find_class_type t path =
+  let Shortest shortest = shortest t in
+  match Shortest.find_class_type shortest path with
+  | exception Not_found -> (None, path)
+  | result -> result
+
+let find_class_type_simple t path =
+  let Shortest shortest = shortest t in
+  match Shortest.find_class_type_simple shortest path with
+  | exception Not_found -> path
+  | path -> path
 
 let find_module_type t path =
   let Shortest shortest = shortest t in

@@ -251,6 +251,11 @@ let best_type_path_resolution p =
   then Id
   else Short_paths.find_type_resolution (Env.short_paths !printing_env) p
 
+let best_type_path_simple p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then p
+  else Short_paths.find_type_simple (Env.short_paths !printing_env) p
+
 let best_module_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
   then p
@@ -260,6 +265,16 @@ let best_module_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
   then p
   else Short_paths.find_module (Env.short_paths !printing_env) p
+
+let best_class_type_path p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then None, p
+  else Short_paths.find_class_type (Env.short_paths !printing_env) p
+
+let best_class_type_path_simple p =
+  if !Clflags.real_paths || !printing_env == Env.empty
+  then p
+  else Short_paths.find_class_type_simple (Env.short_paths !printing_env) p
 
 (* Print a type expression *)
 
@@ -489,8 +504,8 @@ let rec tree_of_typexp sch ty =
             if row.row_closed && all_present then begin
               match best_type_path p with
               | Nth n -> tree_of_typexp sch (apply_nth n tyl)
-              | Path(nso, p') ->
-                  let id = tree_of_path p' in
+              | Path(nso, p) ->
+                  let id = tree_of_path p in
                   let args = tree_of_typlist sch (apply_subst_opt nso tyl) in
                   Otyp_constr (id, args)
             end else begin
@@ -498,17 +513,23 @@ let rec tree_of_typexp sch ty =
               let tags =
                 if all_present then None else Some (List.map fst present) in
               let inh =
-                match best_type_path_resolution p with
+                match best_type_path p with
                 | Nth n -> begin
                     match tree_of_typexp sch (apply_nth n tyl) with
                     | Otyp_constr (i, a) -> Ovar_name (i, a)
                     | _ ->
                         (* fallback case, should change outcometree... *)
-                        Ovar_name (tree_of_path p, tree_of_typlist sch tyl)
+                        let p = best_type_path_simple p in
+                        let id = tree_of_path p in
+                        let args = tree_of_typlist sch tyl in
+                        Ovar_name (id, args)
                   end
-                | Subst _ | Id ->
-                    (* fallback case, should change outcometree... *)
-                    Ovar_name (tree_of_path p, tree_of_typlist sch tyl)
+                | Path(nso, p) -> begin
+                    let id = tree_of_path p in
+                    let args = tree_of_typlist sch (apply_subst_opt nso tyl) in
+                    Ovar_name (id, args)
+
+                  end
               in
               Otyp_variant (non_gen, inh, row.row_closed, tags)
             end
@@ -549,6 +570,7 @@ let rec tree_of_typexp sch ty =
     | Tunivar _ ->
         Otyp_var (false, name_of_type ty)
     | Tpackage (p, n, tyl) ->
+        let p = best_module_type_path p in
         let n =
           List.map (fun li -> String.concat "." (Longident.flatten li)) n in
         Otyp_module (Path.name p, n, tree_of_typlist sch tyl)
@@ -592,10 +614,8 @@ and tree_of_typobject sch fi nm =
   | Some (p, ty :: tyl) -> begin
       let non_gen = is_non_gen sch (repr ty) in
       let args = tree_of_typlist sch tyl in
-      match best_type_path p with
-      | Nth _ | Path(Some _, _) -> assert false
-      | Path(None, p) ->
-          Otyp_class (non_gen, tree_of_path p, args)
+      let p = best_type_path_simple p in
+      Otyp_class (non_gen, tree_of_path p, args)
     end
   | _ ->
       fatal_error "Printtyp.tree_of_typobject"
@@ -811,7 +831,8 @@ let constructor_arguments ppf a =
 
 let tree_of_extension_constructor id ext es =
   reset ();
-  let ty_name = Path.name ext.ext_type_path in
+  let type_path = best_type_path_simple ext.ext_type_path in
+  let ty_name = Path.name type_path in
   let ty_params = filter_params ext.ext_type_params in
   List.iter add_alias ty_params;
   List.iter mark_loops ty_params;
@@ -923,14 +944,17 @@ let rec prepare_class_type params = function
 
 let rec tree_of_class_type sch params =
   function
-  | Cty_constr (p', tyl, cty) ->
+  | Cty_constr (p, tyl, cty) ->
       let sty = Ctype.self_type cty in
       if List.memq (proxy sty) !visited_objects
       || not (List.for_all is_Tvar params)
       then
         tree_of_class_type sch params cty
-      else
-        Octy_constr (tree_of_path p', tree_of_typlist true tyl)
+      else begin
+        let nso, p = best_class_type_path p in
+        let tyl = apply_subst_opt nso tyl in
+        Octy_constr (tree_of_path p, tree_of_typlist true tyl)
+      end
   | Cty_signature sign ->
       let sty = repr sign.csig_self in
       let self_ty =
@@ -1490,18 +1514,23 @@ let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
           txt2 type_path_list tpl
           txt3 (type_path_expansion tp0) tp0')
 
-let shorten_type_path path () =
-  match best_type_path path with
-  | Path (None, path') -> path'
-  | _ -> path
+let shorten_type_path env p =
+  wrap_printing_env env
+    (fun () -> best_type_path_simple p)
 
-let shorten_type_path env path =
-  match env with
-  | None -> shorten_type_path path ()
-  | Some env -> wrap_printing_env env (shorten_type_path path)
+let shorten_module_type_path env p =
+  wrap_printing_env env
+    (fun () -> best_module_type_path p)
 
-let shorten_module_type_path env path = path
-let shorten_module_path env path = path
-let shorten_class_type_path env path = path
+let shorten_module_path env p =
+  wrap_printing_env env
+    (fun () -> best_module_path p)
+
+let shorten_class_type_path env p =
+  wrap_printing_env env
+    (fun () -> best_class_type_path_simple p)
+
+let () =
+  Env.shorten_module_path := shorten_module_path
 
 let compute_map_for_pers _name = true

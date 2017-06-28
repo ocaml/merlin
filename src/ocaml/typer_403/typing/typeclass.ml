@@ -276,7 +276,9 @@ let inheritance self_type env ovf concr_meths warn_vals loc parent =
         Some Fresh ->
           let cname =
             match parent with
-              Cty_constr (p, _, _) -> Path.name p
+              Cty_constr (p, _, _) ->
+                let p = Printtyp.shorten_class_type_path env p in
+                Path.name p
             | _ -> "inherited"
           in
           if not (Concr.is_empty over_meths) then
