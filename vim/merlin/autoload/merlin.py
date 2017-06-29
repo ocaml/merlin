@@ -584,7 +584,13 @@ def vim_type_enclosing():
     vim_type_reset()
     try:
         to_line, to_col = vim.current.window.cursor
-        enclosing_types = command2(["type-enclosing", "-position", fmtpos((to_line,to_col))], track_verbosity=True)
+        enclosing_types = command2(
+                ["type-enclosing",
+                 "-position", fmtpos((to_line,to_col)),
+                 "-index", "0"
+                ],
+                track_verbosity=True
+                )
         if enclosing_types != []:
             return vim_next_enclosing()
         else:
@@ -639,11 +645,25 @@ def enclosing_tail_info(record):
     if record['tail'] == 'position': return ' (* tail position *)'
     return ''
 
+def enclosing_type_text(record):
+    if isinstance(record['type'], int):
+        types = command2(
+                ["type-enclosing",
+                 "-position", fmtpos(record['start']),
+                 "-index", str(record['type'])
+                ],
+                track_verbosity=True
+                )
+        return types[record['type']]['type']
+    else:
+        return record['type']
+
 def vim_current_enclosing():
     global enclosing_types
     global current_enclosing
     tmp = enclosing_types[current_enclosing]
     tmp['matcher'] = make_matcher(tmp['start'], tmp['end'])
+    tmp['type'] = enclosing_type_text(tmp)
     tmp['tail_info'] = enclosing_tail_info(tmp)
     return json.dumps(tmp)
 
