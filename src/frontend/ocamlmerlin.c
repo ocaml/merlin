@@ -372,17 +372,30 @@ static const char *search_in_path(const char *PATH, const char *argv0, char *mer
   return NULL;
 }
 
-static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0)
-{
-  if (realpath(argv0, merlin_path) == NULL)
+static void prune_binary_name(char * buffer) {
+  size_t strsz = strlen(buffer);
+  while (strsz > 0 && buffer[strsz-1] != '/')
+    strsz -= 1;
+  buffer[strsz] = 0;
+}
+
+static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0) {
+  char argv0_dirname[PATHSZ];
+
+  strcpy(argv0_dirname, argv0);
+  prune_binary_name(argv0_dirname);
+
+  // Check if we were called with a path or not
+  if (strlen(argv0_dirname) == 0) {
     if (search_in_path(getenv("PATH"), argv0, merlin_path) == NULL)
       failwith("cannot resolve path to ocamlmerlin");
+  } else {
+    if (realpath(argv0, merlin_path) == NULL)
+      failwith("argv0 does not point to a valid file");
+  }
 
+  prune_binary_name(merlin_path);
   size_t strsz = strlen(merlin_path);
-  // Self directory
-  while (strsz > 0 && merlin_path[strsz-1] != '/')
-    strsz -= 1;
-  merlin_path[strsz] = 0;
 
   // Append ocamlmerlin-server
   if (strsz + 19 > PATHSZ)
