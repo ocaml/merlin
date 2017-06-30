@@ -613,11 +613,12 @@ let rec lookup ctxt ident env =
         | `Mod ->
           log "lookup" "lookup in module namespace" ;
           let path = Env.lookup_module ~load:true ident env in
-          raise (Found (path, tag `Mod path, Location.symbol_gloc ()))
+          let md = Env.find_module path env in
+          raise (Found (path, tag `Mod path, md.Types.md_loc))
         | `Modtype ->
           log "lookup" "lookup in module type namespace" ;
-          let path, _ = Env.lookup_modtype ident env in
-          raise (Found (path, tag `Modtype path, Location.symbol_gloc ()))
+          let path, mtd = Env.lookup_modtype ident env in
+          raise (Found (path, tag `Modtype path, mtd.Types.mtd_loc))
         | `Type ->
           log "lookup" "lookup in type namespace" ;
           let path = Env.lookup_type ident env in
