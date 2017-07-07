@@ -1299,8 +1299,8 @@ module Shortest = struct
             let typ = Graph.find_type t.graph canon in
             process_type t height path typ)
           ~class_type:(fun canon path ->
-            let mty = Graph.find_class_type t.graph canon in
-            process_class_type t height path mty)
+            let clty = Graph.find_class_type t.graph canon in
+            process_class_type t height path clty)
           ~module_type:(fun canon path ->
             let mty = Graph.find_module_type t.graph canon in
             process_module_type t height path mty)
@@ -1322,8 +1322,8 @@ module Shortest = struct
             let typ = Graph.find_type t.graph canon in
             process_type t height path typ)
           ~class_type:(fun canon path ->
-            let mty = Graph.find_class_type t.graph canon in
-            process_class_type t height path mty)
+            let clty = Graph.find_class_type t.graph canon in
+            process_class_type t height path clty)
           ~module_type:(fun canon path ->
             let mty = Graph.find_module_type t.graph canon in
             process_module_type t height path mty)
