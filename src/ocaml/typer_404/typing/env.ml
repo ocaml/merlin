@@ -2232,13 +2232,14 @@ let short_paths_type_desc decl =
   match decl.type_manifest with
   | None -> Fresh
   | Some ty ->
+    let ty = repr ty in
     if ty.level <> generic_level then Fresh
     else begin
       match decl.type_private, decl.type_kind with
       | Private, Type_abstract -> Fresh
       | _, _ -> begin
         let params = List.map repr decl.type_params in
-        match repr ty with
+        match ty with
         | {desc = Tconstr (path, args, _)} ->
             let args = List.map repr args in
             if List.length params = List.length args
