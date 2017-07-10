@@ -43,6 +43,8 @@ type error =
   | Recursive_module_require_explicit_type
   | Apply_generative
   | Cannot_scrape_alias of Path.t
+  | Package_type_missing of Path.t * module_type * Longident.t
+  | Package_type_arity of Path.t * module_type * Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -1652,8 +1654,21 @@ let type_package env m p nl tl =
   in
   let tl' =
     List.map
-      (fun name -> Btype.newgenty (Tconstr (mkpath mp name,[],ref Mnil)))
-      nl in
+      (fun name ->
+         let path = mkpath mp name in
+         match Env.find_type path env with
+         | decl -> begin
+             match decl.type_params with
+             | [] -> Btype.newgenty (Tconstr (path, [], ref Mnil))
+             | _ ->
+               raise (Error(m.pmod_loc, env,
+                            Package_type_arity(p, modl.mod_type, name)))
+           end
+         | exception Not_found ->
+             raise (Error(m.pmod_loc, env,
+                          Package_type_missing(p, modl.mod_type, name))))
+      nl
+  in
   (* go back to original level *)
   Ctype.end_def ();
   if nl = [] then
@@ -1910,6 +1925,16 @@ let report_error ppf = function
       fprintf ppf
         "This is an alias for module %a, which is missing"
         path p
+  | Package_type_missing(p, mty, lid) ->
+      fprintf ppf
+        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+        %a@;<1 -2>is not included in@ %a@]@ Type %a is missing.@]"
+        Printtyp.modtype mty path p longident lid
+  | Package_type_arity(p, mty, lid) ->
+      fprintf ppf
+        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+        %a@;<1 -2>is not included in@ %a@]@ Type %a has a different arity.@]"
+        Printtyp.modtype mty path p longident lid
 
 let report_error env ppf err =
   Printtyp.wrap_printing_env env (fun () -> report_error ppf err)
