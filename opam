@@ -17,7 +17,7 @@ depends: [
   "yojson"
 ]
 
-available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.05" ]
+available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.06" ]
 
 post-messages: [
   "merlin installed.
