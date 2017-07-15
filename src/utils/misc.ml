@@ -250,7 +250,7 @@ let string_of_file ic =
 (* Reading from a channel *)
 
 let input_bytes ic n =
-  let result = String.create n in
+  let result = Bytes.create n in
   really_input ic result 0 n;
   result
 
@@ -433,13 +433,13 @@ let (~:) = Lazy.from_val
 let file_contents filename =
   let ic = open_in filename in
   try
-    let str = String.create 1024 in
+    let str = Bytes.create 1024 in
     let buf = Buffer.create 1024 in
     let rec loop () =
       match input ic str 0 1024 with
       | 0 -> ()
       | n ->
-        Buffer.add_substring buf str 0 n;
+        Buffer.add_subbytes buf str 0 n;
         loop ()
     in
     loop ();
