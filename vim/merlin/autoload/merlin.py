@@ -133,7 +133,7 @@ def merlin_exec(args, input=""):
         # Send buffer content
         (response, errors) = process.communicate(input=input)
         if errors:
-            buf = int(vim.eval("bufnr('*merlin-log*',1)"))
+            buf = int(vim.eval("bufnr(':merlin-log:',1)"))
             vim.buffers[buf].append(errors.split('\n'))
         return response
     except OSError as e:

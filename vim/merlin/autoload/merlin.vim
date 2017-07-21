@@ -176,7 +176,7 @@ endfunction
 
 function! merlin#DebugEnable()
   let g:merlin_debug=1
-  split *merlin-log*
+  split :merlin-log:
 endfunction
 
 function! merlin#DebugDisable()
@@ -507,7 +507,7 @@ function! merlin#Phrase()
 endfunction
 
 function! merlin#Register()
-  if @% == "*merlin-type-history*"
+  if @% == ":merlin-type-history:"
     return
   endif
 
