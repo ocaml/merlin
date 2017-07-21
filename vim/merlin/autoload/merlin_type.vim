@@ -3,7 +3,7 @@ function! s:CreateTypeHistory()
     return
   endif
   let t:merlin_restore_windows = winrestcmd()
-  silent execute "bot " . g:merlin_type_history_height . "split *merlin-type-history*"
+  silent execute "bot " . g:merlin_type_history_height . "split :merlin-type-history:"
   setlocal filetype=ocaml
   setlocal buftype=nofile
   setlocal bufhidden=hide
