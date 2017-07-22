@@ -178,7 +178,7 @@ let of_file_descr ?(on_read=ignore) fd =
         if read = 0 then '\000'
         else
           begin
-            getch := getch_of_substring buffer 0 read;
+            getch := getch_of_substring (Bytes.to_string buffer) 0 read;
             !getch ()
           end
       | c -> c

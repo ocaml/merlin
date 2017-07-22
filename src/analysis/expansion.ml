@@ -26,7 +26,6 @@ let explore ?(global_modules=[]) env =
 
 let regex_of_path_prefix pattern =
   let buf = Buffer.create 16 in
-  let tmp = String.create 1 in
   Buffer.add_char buf '^';
   for i = 0 to String.length pattern - 1 do
     match pattern.[i] with
@@ -39,8 +38,7 @@ let regex_of_path_prefix pattern =
     | c when Char.is_strictly_uppercase c || Char.is_strictly_lowercase c ->
       Buffer.add_char buf c
     | c ->
-      tmp.[0] <- c;
-      Buffer.add_string buf (Str.quote tmp)
+      Buffer.add_string buf (Str.quote (String.make 1 c))
   done;
   Buffer.contents buf
 

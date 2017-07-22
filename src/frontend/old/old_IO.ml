@@ -421,14 +421,14 @@ let make_sexp ?on_read ~input ~output () =
     let sexp = Sexp.of_json json in
     Sexp.to_buf sexp buf;
     Buffer.add_char buf '\n';
-    let contents = Buffer.contents buf in
+    let contents = Buffer.to_bytes buf in
     let rec write_contents n l =
       if l > 0 then
         let l' = Unix.write output contents n l in
         if l' > 0 then
           write_contents (n + l') (l - l')
     in
-    write_contents 0 (String.length contents);
+    write_contents 0 (Bytes.length contents);
     if Buffer.length buf > 100_000
     then Buffer.reset buf
     else Buffer.clear buf

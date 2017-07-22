@@ -329,11 +329,11 @@ module String = struct
 
   let reverse s1 =
     let len = length s1 in
-    let s2  = make len 'a' in
+    let s2  = Bytes.make len 'a' in
     for i = 0 to len - 1 do
-      s2.[i] <- s1.[len - i - 1]
+      Bytes.set s2 i s1.[len - i - 1]
     done ;
-    s2
+    Bytes.to_string s2
 
   let common_prefix_len s1 s2 =
     let rec aux i =
@@ -721,13 +721,13 @@ let modules_in_path ~ext path =
 let file_contents filename =
   let ic = open_in filename in
   try
-    let str = String.create 1024 in
+    let str = Bytes.create 1024 in
     let buf = Buffer.create 1024 in
     let rec loop () =
       match input ic str 0 1024 with
       | 0 -> ()
       | n ->
-        Buffer.add_substring buf str 0 n;
+        Buffer.add_subbytes buf str 0 n;
         loop ()
     in
     loop ();
