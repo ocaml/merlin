@@ -161,6 +161,20 @@ let getch_of_string str =
 let of_string str =
   fst (read_sexp (getch_of_string str))
 
+let getch_of_subbytes str pos len =
+  let len = pos + len in
+  if pos < 0 || len > Bytes.length str then
+    invalid_arg "Sexp.getch_of_subbytes";
+  let pos = ref pos in
+  let getch () =
+    if !pos < len then
+      let r = Bytes.get str !pos in
+      incr pos;
+      r
+    else '\000'
+  in
+  getch
+
 let of_file_descr ?(on_read=ignore) fd =
   let getch = ref (fun () -> '\000') in
   let rest = ref None in
@@ -178,7 +192,7 @@ let of_file_descr ?(on_read=ignore) fd =
         if read = 0 then '\000'
         else
           begin
-            getch := getch_of_substring (Bytes.to_string buffer) 0 read;
+            getch := getch_of_subbytes buffer 0 read;
             !getch ()
           end
       | c -> c
