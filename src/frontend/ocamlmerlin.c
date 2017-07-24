@@ -14,7 +14,7 @@
 #include <fcntl.h>
 
 #if defined(__linux)
-#include <linux/limits.h>
+#include <sys/param.h>
 #elif defined(__APPLE__)
 #include <sys/syslimits.h>
 #elif defined(__OpenBSD__)
