@@ -615,8 +615,6 @@ function! merlin#Register()
 
   """ Extensions  --------------------------------------------------------------
   command! -buffer -complete=custom,merlin#CompleteExtensions -nargs=* MerlinExtensions  call merlin#Extensions(<f-args>)
-  " Backward compatibility
-  command! -buffer -complete=custom,merlin#CompleteExtensions -nargs=* MerlinExtEnable   call merlin#Extensions(<f-args>)
 
   """ .merlin  -----------------------------------------------------------------
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
