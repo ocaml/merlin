@@ -1,3 +1,56 @@
+
+merlin 3.0.0
+============
+Mon Jul 24 11:21:58 CEST 2017
+
+The major change is a new protocol that moves process management inside Merlin
+codebase, saving a lot of pain in Emacs and Vim. There are not much new user
+facing features.
+
+Windows support is not yet available.
+
+In editor configuration is now done with merlin-flags, merlin-extensions and
+merlin-use in Emacs and :MerlinFlags, :MerlinExtensions and :MerlinPackages in
+Vim.
+In previous versions, enabled extensions, flags and packages were retained
+while now only the last command is remembered.
+
+"M-x merlin-use a", "M-x merlin-use b" should be replaced by "M-x merlin-use a,b".
+":MerlinUse a", ":MerlinUse b" should be replaced by ":MerlinUse a b".
+
+The old protocol is still supported, so existing editor modes should not be
+affected (tested with Atom, Visual Studio and Sublime-text).
+
+Other main changes:
+- Support for OCaml 4.05 was added
+- Merlin uses a new implementation of short-path by Leo White which addresses
+  performance problems
+- Merlin now works with the upstream version of Menhir
+- numerous cleanup and refactoring to decrease the amount of changes to
+  upstream typechecker
+- emacs-imenu feature was contributed by tddsg. It is similar the "outline"
+  feature in vim for navigating in a buffer.
+
+Thanks to the many contributors (Jochen Bartl, tddsg, Ximin Luo, Jason Staten,
+Leo White, Leandro Ostera, Jacob Bass, Xavier Guérin, Yotam Barnoy, Jacques
+Pascal Deplaix, David Allsopp, ...).
+
+merlin 2.5.5
+============
+Wed Jun 14 14:54:32 CEST 2017
+
+Minor release:
+- fix flag parsing in .merlin (#661)
+
+merlin 2.5.4
+============
+Tue Apr 25 15:07:18 CEST 2017
+
+Minor release:
+- handle hole in 4.04
+- bug fixes in emacs mode
+- introduce merlin-imenu
+
 merlin 2.5.3
 ============
 Mon Nov 28 09:54:57 CET 2016
