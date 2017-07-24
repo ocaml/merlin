@@ -169,7 +169,7 @@ Merlin answers always have the same shape:
 }
 ```
 
-If processing succeeded, class is "return" and "value" is defied by the
+If processing succeeded, class is "return" and "value" is defined by the
 command. Otherwise, value is a string:
 - "exception" means something bad happened to Merlin, you should fill a bug
   report
@@ -177,6 +177,10 @@ command. Otherwise, value is a string:
   a typo, an argument missing, etc.
 - "error" means Merlin couldn't process the query because of some problem with
   the setup: wrong OCaml version, missing file, etc.
+
+Notifications are messages to be reported to the user. For instance if there is
+a typo in the `.merlin` file, Merlin will generate a notification then ignore
+the error and continue processing.
 
 ## Commands
 
