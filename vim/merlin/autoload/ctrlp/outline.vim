@@ -15,6 +15,7 @@ merlin_ctrlp_outlines = []
 merlin_ctrlp_context = None
 
 def merlin_ctrlp_linearize(prefix, lst):
+    global merlin_ctrlp_outlines
     for x in lst:
         name = "%s%s" % (prefix, x['name'])
         merlin_ctrlp_outlines.append(
@@ -22,8 +23,9 @@ def merlin_ctrlp_linearize(prefix, lst):
         merlin_ctrlp_linearize(name + ".", x['children'])
 
 def merlin_ctrlp_get_outlines():
+    global merlin_ctrlp_outlines
     merlin_ctrlp_outlines[:] = []
-    merlin_ctrlp_linearize("", merlin.command(context=merlin_ctrlp_context, "outline"))
+    merlin_ctrlp_linearize("", merlin.command2(["outline"], context=merlin_ctrlp_context))
     merlin_ctrlp_outlines.sort(key = lambda x: len(x['name']))
 
 def merlin_ctrlp_outline_init():
@@ -49,6 +51,7 @@ def merlin_ctrlp_outline_accept():
         print(str(e))
 
 def merlin_ctrlp_preinit():
+  global merlin_ctrlp_context
   merlin_ctrlp_context = merlin.current_context()
 
 EOF
