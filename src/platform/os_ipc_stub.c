@@ -4,10 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
-
-#if defined(__OpenBSD__)
 #include <sys/select.h>
-#endif
 
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
