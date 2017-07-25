@@ -1645,7 +1645,8 @@ let force_delayed_checks () =
   let snap = Btype.snapshot () in
   let w_old = Warnings.backup () in
   List.iter
-    (fun (f, w) -> Warnings.restore w; f ())
+    (fun (f, w) -> Warnings.restore w;
+     try f () with exn -> Msupport.raise_error exn)
     (List.rev !delayed_checks);
   Warnings.restore w_old;
   reset_delayed_checks ();
