@@ -582,8 +582,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Findlib_list ->
     let config = Mpipeline.final_config pipeline in
-    let {Mconfig. conf; path} = config.Mconfig.findlib in
-    Mconfig_dot.list_packages ?conf ~path ()
+    let {Mconfig. conf; path; toolchain} = config.Mconfig.findlib in
+    Mconfig_dot.list_packages ?conf ~path ?toolchain ()
 
   | Extension_list kind ->
     let config = Mpipeline.final_config pipeline in

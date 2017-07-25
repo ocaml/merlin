@@ -42,16 +42,17 @@ type config = {
   findlib      : string option;
   reader       : string list;
   findlib_path : string list;
+  findlib_toolchain : string option;
 }
 
 (** Load one or more .merlin file *)
 val load : stdlib:string -> string list -> config
 
-val standard_library : ?conf:string -> ?path:string list -> unit -> string
+val standard_library : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string
 
-val path_of_packages : ?conf:string -> ?path:string list -> string list ->
+val path_of_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> string list ->
   (string list (* packages *) *
    Ppxsetup.t *
    string list (* failures *))
 
-val list_packages : ?conf:string -> ?path:string list -> unit -> string list
+val list_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string list

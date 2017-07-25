@@ -42,6 +42,7 @@ type directive = [
   | `SUFFIX of string
   | `READER of string list
   | `FINDLIB_PATH of string
+  | `FINDLIB_TOOLCHAIN of string
 ]
 
 type file = {
@@ -90,6 +91,8 @@ module Cache = File_cache.Make (struct
             tell (`READER (List.rev (rev_split_words (String.drop 7 line))))
           else if String.is_prefixed ~by:"FINDLIB_PATH " line then
             tell (`FINDLIB_PATH (String.drop 13 line))
+          else if String.is_prefixed ~by:"FINDLIB_TOOLCHAIN " line then
+            tell (`FINDLIB_TOOLCHAIN (String.drop 18 line))
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -157,6 +160,7 @@ type config = {
   findlib      : string option;
   reader       : string list;
   findlib_path : string list;
+  findlib_toolchain : string option;
 }
 
 let empty_config = {
@@ -173,6 +177,7 @@ let empty_config = {
   findlib      = None;
   reader       = [];
   findlib_path = [];
+  findlib_toolchain = None;
 }
 
 let white_regexp = Str.regexp "[ \t]+"
@@ -226,6 +231,8 @@ let prepend_config ~stdlib {path; directives} config =
     | `FINDLIB_PATH path ->
       let canon_path = canonicalize_filename ~cwd path in
       { config with findlib_path = canon_path :: config.findlib_path }
+    | `FINDLIB_TOOLCHAIN path ->
+      {config with findlib_toolchain = Some path}
   ) directives
 
 let postprocess_config config =
@@ -244,6 +251,7 @@ let postprocess_config config =
     stdlib      = config.stdlib;
     findlib     = config.findlib;
     reader      = config.reader;
+    findlib_toolchain = config.findlib_toolchain;
   }
 
 
@@ -323,13 +331,17 @@ let path_separator =
     | _ -> ":"
 
 let set_findlib_path =
-  let findlib_cache = ref ("",[]) in
-  fun ?(conf="") ?(path=[]) () ->
-    if (conf,path) <> !findlib_cache then begin
+  let findlib_cache = ref ("",[],"") in
+  fun ?(conf="") ?(path=[]) ?(toolchain="") () ->
+    let key = (conf,path,toolchain) in
+    if key <> !findlib_cache then begin
       let env_ocamlpath = match path with
         | [] -> None
         | path -> Some (String.concat ~sep:path_separator path)
       and config = match conf with
+        | "" -> None
+        | s -> Some s
+      and toolchain = match toolchain with
         | "" -> None
         | s -> Some s
       in
@@ -337,12 +349,12 @@ let set_findlib_path =
         "findlib_conf = %s; findlib_path = %s\n"
         conf
         (String.concat ~sep:path_separator path);
-      Findlib.init ?env_ocamlpath ?config ();
-      findlib_cache := (conf,path)
+      Findlib.init ?env_ocamlpath ?config ?toolchain ();
+      findlib_cache := key
     end
 
-let standard_library ?conf ?path () =
-  set_findlib_path ?conf ?path ();
+let standard_library ?conf ?path ?toolchain () =
+  set_findlib_path ?conf ?path ?toolchain ();
   Findlib.ocaml_stdlib ()
 
 let is_package_optional name =
@@ -353,8 +365,8 @@ let remove_option name =
   let last = String.length name - 1 in
   if last >= 0 && name.[last] = '?' then String.sub name 0 last else name
 
-let path_of_packages ?conf ?path packages =
-  set_findlib_path ?conf ?path ();
+let path_of_packages ?conf ?path ?toolchain packages =
+  set_findlib_path ?conf ?path ?toolchain ();
   let recorded_packages, invalid_packages =
     List.partition packages
       ~f:(fun name ->
@@ -387,6 +399,6 @@ let path_of_packages ?conf ?path packages =
   let ppxs = List.fold_left ~f:ppx_of_package packages ~init:Ppxsetup.empty in
   path, ppxs, failures
 
-let list_packages ?conf ?path () =
-  set_findlib_path ?conf ?path ();
+let list_packages ?conf ?path ?toolchain () =
+  set_findlib_path ?conf ?path ?toolchain ();
   Fl_package_base.list_packages ()

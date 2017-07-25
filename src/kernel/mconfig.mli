@@ -29,6 +29,7 @@ val dump_ocaml : ocaml -> json
 type findlib = {
   conf : string option;
   path : string list;
+  toolchain : string option;
 }
 
 val dump_findlib : findlib -> json

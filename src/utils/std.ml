@@ -319,6 +319,10 @@ module Option = struct
     | None -> false
     | _ -> true
 
+  let plus a b = match a with
+    | Some _ -> a
+    | None -> b
+
   let print f () = function
     | None -> "None"
     | Some s -> "Some (" ^ f () s ^ ")"

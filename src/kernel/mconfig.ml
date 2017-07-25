@@ -74,11 +74,13 @@ let marg_exec_path f =
 type findlib = {
   conf : string option;
   path : string list;
+  toolchain : string option;
 }
 
 let dump_findlib x = `Assoc [
     "conf", Json.option Json.string x.conf;
     "path", `List (List.map Json.string x.path);
+    "toolchain", Json.option Json.string x.toolchain;
   ]
 
 (** {1 Merlin high-level settings} *)
@@ -199,7 +201,9 @@ let stdlib =
       | Some stdlib -> stdlib
       | None ->
         Mconfig_dot.standard_library
-          ?conf:config.findlib.conf ~path:config.findlib.path ()
+          ?conf:config.findlib.conf
+          ~path:config.findlib.path
+          ?toolchain:config.findlib.toolchain ()
 
 let normalize_step t =
   let merlin = t.merlin and findlib = t.findlib in
@@ -208,6 +212,7 @@ let normalize_step t =
     let path, ppx, failures = path_of_packages
         ?conf:findlib.conf
         ~path:findlib.path
+        ?toolchain:findlib.toolchain
         merlin.packages_to_load
     in
     { t with merlin =
@@ -270,9 +275,9 @@ let load_dotmerlins ~filenames t =
     packages_to_load = dot.packages @ merlin.packages_to_load;
   } in
   let findlib = {
-    conf = (if Option.is_some dot.findlib then
-              dot.findlib else t.findlib.conf);
+    conf = Option.plus dot.findlib t.findlib.conf;
     path = dot.findlib_path @ t.findlib.path;
+    toolchain = Option.plus dot.findlib_toolchain t.findlib.toolchain;
   } in
   normalize Trace.null { t with merlin; findlib }
 
@@ -593,6 +598,7 @@ let initial = {
   findlib = {
     conf = None;
     path = [];
+    toolchain = None;
   };
   merlin = {
     build_path  = [];
