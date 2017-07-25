@@ -150,10 +150,10 @@ OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
 OCAML_VERSION_VAL='`OCaml_4_03_0'
 OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 ]'
 
-MAGIC_NUMBERS=$(ocamlfind c -config | grep _magic_number)
-CMI_NUMBER=$(echo "$MAGIC_NUMBERS" | grep cmi_magic_number | cut -d' ' -f2)
-CMT_NUMBER=$(echo "$MAGIC_NUMBERS" | grep cmt_magic_number | cut -d' ' -f2)
-FULL_VERSION=$(ocamlfind c -version)
+MAGIC_NUMBERS=$(ocamlfind c -config | grep _magic_number | tr -d '\015')
+CMI_NUMBER=$(echo "$MAGIC_NUMBERS" | sed -ne "s/cmi_magic_number: //p")
+CMT_NUMBER=$(echo "$MAGIC_NUMBERS" | sed -ne "s/cmt_magic_number: //p")
+FULL_VERSION=$(ocamlfind c -version | tr -d '\015')
 
 ### Patch certain versions of the typechecker
 ### =========================================
@@ -206,7 +206,7 @@ esac
 ## Findlib version check
 ## =====================
 
-if [ "x1.5.1" = "x$(ocamlfind query findlib -format '%v')" ]; then
+if [ "x1.5.1" = "x$(ocamlfind query findlib -format '%v' | tr -d '\015')" ]; then
   printf "\nOld version of findlib detected (1.5.1), patching\n"
   filter_file src/kernel/dot_merlin.ml \
      sed -e 's/Findlib\.resolve_path ~base:d ~explicit:true/Findlib.resolve_path ~base:d/'
@@ -243,7 +243,7 @@ export MERLIN_STURGEON_PACKAGE=${STURGEON_PACKAGE}
 ## Windows compatibility checks
 ## ============================
 
-OS_TYPE=$(ocamlfind c -config | grep os_type|cut -d' ' -f2)
+OS_TYPE=$(ocamlfind c -config | sed -ne "s/os_type: //p" | tr -d '\015')
 
 # 64-bit Windows also has OS_TYPE = Win32
 case "$OS_TYPE" in
