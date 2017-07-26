@@ -233,7 +233,7 @@ def command_complete_cursor(base,pos):
 def command_document(path, pos):
     try:
         if path is not None:
-            cmd = ["document", "-ident", path, "-position", fmtpos(pos)]
+            cmd = ["document", "-identifier", path, "-position", fmtpos(pos)]
         else:
             cmd = ["document", "-position", fmtpos(pos)]
         print(command2(cmd))
