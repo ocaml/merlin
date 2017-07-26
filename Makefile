@@ -35,13 +35,13 @@ all: $(TARGET) $(TARGET_EMACS) ocamlmerlin
 #### Check configuration
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml/typer
-$(CONFIG_FILES):
+$(CONFIG_FILES)$(MERLIN_OCAML_VERSION):
 	@echo "Please run ./configure"
 	@if [ -d ._d ]; then printf \
 		"WARNING:\n\tThere are some build leftovers.\n\tConsider doing a 'make clean' before continuing.\n"; fi
 	@false
 
-assert_configured: $(CONFIG_FILES)
+assert_configured: $(CONFIG_FILES)$(MERLIN_OCAML_VERSION)
 
 #### C wrapper
 
