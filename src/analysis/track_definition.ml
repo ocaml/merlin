@@ -648,18 +648,15 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   Fallback.reset ();
   Preferences.set ml_or_mli;
   try
-    if not (Utils.is_ghost_loc loc) then `Found (loc, None)
-    else begin
-      logf "locate"
-        "present in the environment, but ghost lock.\n\
-         walking up the typedtree looking for '%s'"
-        (Typedtrie.path_to_string path);
-      let lazy trie = lazy_trie in
-      match locate ~config ~pos path trie with
-      | None when Fallback.is_set () -> recover str_ident
-      | None -> `Not_found (str_ident, File_switching.where_am_i ())
-      | Some (loc, doc) -> `Found (loc, doc)
-    end
+    logf "locate"
+      "present in the environment, walking up the typedtree looking for '%s'"
+      (Typedtrie.path_to_string path);
+    if not (Utils.is_ghost_loc loc) then Fallback.set loc;
+    let lazy trie = lazy_trie in
+    match locate ~config ~pos path trie with
+    | None when Fallback.is_set () -> recover str_ident
+    | None -> `Not_found (str_ident, File_switching.where_am_i ())
+    | Some (loc, doc) -> `Found (loc, doc)
   with
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
