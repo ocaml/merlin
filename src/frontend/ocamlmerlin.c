@@ -432,7 +432,7 @@ static void dumpinfo(void)
       "merlin path: %s\nsocket path: %s/%s\n", merlin_path, path_socketdir(), socketname);
 }
 
-static void abnormal_termination(int argc, char **argv)
+static void unexpected_termination(int argc, char **argv)
 {
   int sexp = 0;
   int i;
@@ -469,7 +469,7 @@ int main(int argc, char **argv)
     if (err == 1)
       exit(result);
 
-    abnormal_termination(argc, argv);
+    unexpected_termination(argc, argv);
   }
   else
   {
