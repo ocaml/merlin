@@ -134,6 +134,6 @@ merlin.install:
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin \
-				 $(BIN_DIR)/ocamlmerlin   \
+				 $(BIN_DIR)/ocamlmerlin$(EXE)   \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.el \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.elc
