@@ -18,3 +18,5 @@ config.iss
 
 # Ignore garbage files from editors
 *.un~
+*.swp
+*.swo
