@@ -778,13 +778,13 @@ let node_paths =
   | Class_field f -> class_field_paths f
   | Module_expr me -> module_expr_paths me
   | Structure_item (i,_) -> structure_item_paths i
-  | Module_binding { mb_id; mb_name } ->
+  | Module_binding_name { mb_id; mb_name } ->
     [reloc (Path.Pident mb_id) mb_name]
   | Module_type mt -> module_type_paths mt
   | Signature_item (i,_) -> signature_item_paths i
-  | Module_declaration { md_id; md_name } ->
+  | Module_declaration_name { md_id; md_name } ->
     [reloc (Path.Pident md_id) md_name]
-  | Module_type_declaration { mtd_id; mtd_name } ->
+  | Module_type_declaration_name { mtd_id; mtd_name } ->
     [reloc (Path.Pident mtd_id) mtd_name]
   | With_constraint c -> with_constraint_paths c
   | Core_type ct -> core_type_paths ct
