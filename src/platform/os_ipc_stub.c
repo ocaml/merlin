@@ -2,10 +2,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+#else
 #include <unistd.h>
 
 #include <sys/socket.h>
 #include <sys/select.h>
+#endif
 
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
@@ -14,12 +19,18 @@
 value ml_merlin_unsetenv(value key)
 {
   CAMLparam1(key);
+#ifdef _WIN32
+  SetEnvironmentVariable(String_val(key), NULL);
+#else
   unsetenv(String_val(key));
+#endif
   CAMLreturn(Val_unit);
 }
 
-static unsigned char buffer[65536];
+#define BUFFER_SIZE 65536
+static unsigned char buffer[BUFFER_SIZE];
 
+#ifndef _WIN32
 #define NO_EINTR(var, command) \
   do { (var) = command; } while ((var) == -1 && errno == EINTR)
 
@@ -93,20 +104,32 @@ static ssize_t recv_buffer(int fd, int fds[3])
 
   return recvd;
 }
+#endif
 
 value ml_merlin_server_setup(value path, value strfd)
 {
   CAMLparam2(path, strfd);
   CAMLlocal2(payload, ret);
   char *endptr = NULL;
+  int fd;
 
-  int fd = strtol(String_val(strfd), &endptr, 0);
-  if (endptr && *endptr == '\0')
+#ifdef _WIN32
+  fd = 0;
+  ret = strfd;
+#else
+  fd = strtol(String_val(strfd), &endptr, 0);
+  if (!endptr || *endptr != '\0')
+    fd = -1;
+  else
+    ret = Val_int(fd);
+#endif
+
+  if (fd != -1)
   {
     /* (path, fd) */
     payload = caml_alloc(2, 0);
     Store_field(payload, 0, path);
-    Store_field(payload, 1, Val_int(fd));
+    Store_field(payload, 1, ret);
 
     /* Some payload */
     ret = caml_alloc(1, 0);
@@ -129,6 +152,54 @@ value ml_merlin_server_accept(value server, value val_timeout)
   CAMLparam2(server, val_timeout);
   CAMLlocal4(ret, client, args, context);
 
+  ssize_t len = -1;
+
+#ifdef _WIN32
+  static BOOL bDoneReset = FALSE;
+  HANDLE hPipe = CreateNamedPipe(String_val(Field(server, 0)), PIPE_ACCESS_DUPLEX, PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, 1024, 1024, NMPWAIT_USE_DEFAULT_WAIT, NULL);
+  ret = Val_unit; /* None */
+  if (hPipe != INVALID_HANDLE_VALUE)
+  {
+    if (!bDoneReset)
+    {
+      HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, String_val(Field(server, 1)));
+      SetEvent(hEvent);
+      CloseHandle(hEvent);
+      bDoneReset = TRUE;
+    }
+    if (ConnectNamedPipe(hPipe, NULL) || GetLastError() == ERROR_PIPE_CONNECTED)
+    {
+      intptr_t fds[3];
+      DWORD dwNumberOfBytesRead;
+      if (ReadFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesRead, NULL) && dwNumberOfBytesRead == 3 * sizeof(HANDLE))
+      {
+        context = caml_alloc(4, 0); /* hPipe, stdin, stdout, stderr) */
+        Store_field(context, 0, caml_copy_nativeint((intnat)hPipe));
+        Store_field(context, 1, Val_int(_open_osfhandle(fds[0], 0)));
+        Store_field(context, 2, Val_int(_open_osfhandle(fds[1], 0)));
+        Store_field(context, 3, Val_int(_open_osfhandle(fds[2], 0)));
+        if (ReadFile(hPipe, buffer, BUFFER_SIZE, &dwNumberOfBytesRead, NULL))
+        {
+          len = dwNumberOfBytesRead;
+        }
+        else
+        {
+          DisconnectNamedPipe(hPipe);
+          CloseHandle(hPipe);
+        }
+      }
+      else
+      {
+        DisconnectNamedPipe(hPipe);
+        CloseHandle(hPipe);
+      }
+    }
+    else
+    {
+      CloseHandle(hPipe);
+    }
+  }
+#else
   // Compute timeout
   double timeout = Double_val(val_timeout);
   struct timeval tv;
@@ -146,7 +217,6 @@ value ml_merlin_server_accept(value server, value val_timeout)
   } while (selectres == -1 && errno == EINTR);
 
   int fds[3], clientfd;
-  ssize_t len = -1;
 
   if (selectres > 0)
   {
@@ -162,7 +232,11 @@ value ml_merlin_server_accept(value server, value val_timeout)
     Store_field(context, 1, Val_int(fds[0]));
     Store_field(context, 2, Val_int(fds[1]));
     Store_field(context, 3, Val_int(fds[2]));
+  }
+#endif
 
+  if (len != -1)
+  {
     ssize_t i, j;
     int argc = 0;
     for (i = 4; i < len; ++i)
@@ -197,8 +271,10 @@ value ml_merlin_server_accept(value server, value val_timeout)
 value ml_merlin_server_close(value server)
 {
   CAMLparam1(server);
+#ifndef _WIN32
   unlink(String_val(Field(server, 0)));
   close(Int_val(Field(server, 1)));
+#endif
   CAMLreturn(Val_unit);
 }
 
@@ -236,12 +312,21 @@ value ml_merlin_context_setup(value context)
 value ml_merlin_context_close(value context, value return_code)
 {
   CAMLparam1(context);
+  char code = (char)(Int_val(return_code));
+#ifdef _WIN32
+  HANDLE hPipe;
+  DWORD dwNumberOfBytesWritten;
+#else
+  ssize_t wrote_ = -1;
+#endif
   setup_fds(-1, -1, -1);
 
-  char code = (char)(Int_val(return_code));
-
-  ssize_t wrote_ = -1;
+#ifdef _WIN32
+  hPipe = (HANDLE)Nativeint_val(Field(context, 0));
+  WriteFile(hPipe, &code, sizeof(char), &dwNumberOfBytesWritten, NULL);
+#else
   NO_EINTR(wrote_, write(Int_val(Field(context, 0)), &code, sizeof(char)));
+#endif
 
   // Close stdin, stdout, stderr
   close(Int_val(Field(context, 1)));
@@ -249,7 +334,13 @@ value ml_merlin_context_close(value context, value return_code)
   close(Int_val(Field(context, 3)));
 
   // Close client connection
+#ifdef _WIN32
+  FlushFileBuffers(hPipe);
+  DisconnectNamedPipe(hPipe);
+  CloseHandle(hPipe);
+#else
   close(Int_val(Field(context, 0)));
+#endif
 
   CAMLreturn(Val_unit);
 }
