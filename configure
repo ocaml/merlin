@@ -248,6 +248,9 @@ OS_TYPE=$(ocamlfind c -config | sed -ne "s/os_type: //p" | tr -d '\015')
 # 64-bit Windows also has OS_TYPE = Win32
 if [ "$OS_TYPE" = "Win32" ] ; then
   EXE=.exe
+  MERLIN_CONFIG_ENV="$MERLIN_CONFIG_ENV
+export CC=$(ocamlfind c -config | sed -ne "s/bytecomp_c_compiler: //p" | cut -d' ' -f1)
+"
   ln -sf configure conftestLink
   # The easiest way of checking that a native Windows symbolic link was created!
   if [ "`cmd /c dir conftestLink 2>/dev/null | fgrep SYMLINK`" = "" ] ; then
