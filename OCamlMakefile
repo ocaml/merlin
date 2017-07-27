@@ -112,7 +112,7 @@ endif
 
 ####################  variables depending on your OCaml-installation
 
-SYSTEM := $(shell $(OCAMLFIND) c -config 2>/dev/null | grep system | sed 's/system: //')
+SYSTEM := $(shell $(OCAMLFIND) c -config 2>/dev/null | sed -ne "s/system: //p" | tr -d '\015')
     # This may be
     # - mingw
     # - mingw64
@@ -146,8 +146,8 @@ ifdef MINGW
   #endif
   ## The OCaml C header files use this flag:
   #CFLAGS += -D__MINGW32__
-  CC:= $(shell $(OCAMLFIND) ocamlc -config | awk '/^bytecomp_c_compiler/ {for(i=2;i<=NF;i++) printf "%s " ,$$i}')
-  AR:= $(shell $(OCAMLFIND) ocamlc -config | awk '/^bytecomp_c_compiler/ {print $$2}' | sed 's|gcc|ar|g')
+  CC:= $(shell $(OCAMLFIND) ocamlc -config | awk '/^bytecomp_c_compiler/ {for(i=2;i<=NF;i++) printf "%s " ,$$i}' | tr -d '\015')
+  AR:= $(shell $(OCAMLFIND) ocamlc -config | awk '/^bytecomp_c_compiler/ {print $$2}' | sed 's|gcc|ar|g' | tr -d '\015')
 endif
 ifdef MSVC
   export MSVC
