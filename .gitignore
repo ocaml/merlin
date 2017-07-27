@@ -6,7 +6,11 @@ emacs/merlin.elc
 *.tar.gz
 *.pyc
 *.o
-*.cm?
+*.cmo
+*.cmi
+*.cmx
+*.cmt
+*.cma
 *.cm??
 ocamlmerlin
 ocamlmerlin.exe
