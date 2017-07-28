@@ -9,6 +9,22 @@
 #include <windows.h>
 #include <Lmcons.h>
 #include <process.h>
+#ifndef STDIN_FILENO
+#define STDIN_FILENO _fileno(stdin)
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO _fileno(stdout)
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO _fileno(stderr)
+#endif
+#ifdef _MSC_VER
+typedef SSIZE_T ssize_t;
+#define PATH_MAX MAX_PATH
+#ifndef _UCRT
+#define snprintf _snprintf
+#endif
+#endif
 #else
 #include <unistd.h>
 #include <sys/socket.h>

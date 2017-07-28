@@ -5,6 +5,18 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
+#ifndef STDIN_FILENO
+#define STDIN_FILENO _fileno(stdin)
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO _fileno(stdout)
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO _fileno(stderr)
+#endif
+#ifdef _MSC_VER
+typedef SSIZE_T ssize_t;
+#endif
 #else
 #include <unistd.h>
 
