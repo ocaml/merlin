@@ -3,7 +3,7 @@
 -include Makefile.config
 TARGET = ocamlmerlin-server
 
-ifdef ENABLE_COMPILED_EMACS_MODE
+ifeq ($(ENABLE_COMPILED_EMACS_MODE),true)
     TARGET_EMACS = emacs/merlin.elc \
 									 emacs/merlin-iedit.elc \
 									 emacs/merlin-imenu.elc \
