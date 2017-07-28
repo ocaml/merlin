@@ -244,6 +244,7 @@ export MERLIN_STURGEON_PACKAGE=${STURGEON_PACKAGE}
 ## ============================
 
 OS_TYPE=$(ocamlfind c -config | sed -ne "s/os_type: //p" | tr -d '\015')
+CCOMP_TYPE=$(ocamlfind c -config | sed -ne "s/ccomp_type: //p" | tr -d '\015')
 
 # 64-bit Windows also has OS_TYPE = Win32
 if [ "$OS_TYPE" = "Win32" ] ; then
@@ -314,6 +315,7 @@ NATIVE=$NATIVE
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 EXE=$EXE
+CCOMP_TYPE=$CCOMP_TYPE
 $MERLIN_CONFIG_ENV
 END
 

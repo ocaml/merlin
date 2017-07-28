@@ -46,7 +46,7 @@ assert_configured: $(CONFIG_FILES)$(MERLIN_OCAML_VERSION)
 #### C wrapper
 
 ocamlmerlin: src/frontend/ocamlmerlin.c
-	$(CC) -o $@ $^
+	$(CC) $(if $(filter-out msvc,$(CCOMP_TYPE)),-o ,/nologo /Fe)$@ $^ $(if $(filter msvc,$(CCOMP_TYPE)),advapi32.lib)
 
 #### Other rules
 
