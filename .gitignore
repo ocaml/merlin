@@ -17,6 +17,8 @@ ocamlmerlin
 ocamlmerlin.exe
 ocamlmerlin-server
 ocamlmerlin-server.exe
+ocamlmerlin-test
+ocamlmerlin-test.exe
 config.iss
 ._d
 ._ncdi
