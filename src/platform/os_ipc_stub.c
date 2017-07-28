@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <alloca.h>
 #include <sys/socket.h>
 #include <sys/select.h>
 
