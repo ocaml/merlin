@@ -264,11 +264,11 @@ let newline = ('\013'* '\010')
 let blank = [' ' '\009' '\012']
 let lowercase = ['a'-'z' '_']
 let uppercase = ['A'-'Z']
-let identchar = ['A'-'Z' 'a'-'z' '_' '\'' '0'-'9']
+let identchar = ['A'-'Z' 'a'-'z' '_' '\'' '0'-'9' '\128'-'\255']
 let lowercase_latin1 = ['a'-'z' '\223'-'\246' '\248'-'\255' '_']
 let uppercase_latin1 = ['A'-'Z' '\192'-'\214' '\216'-'\222']
-let identchar_latin1 =
-  ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
+let identchar_latin1 = identchar
+  (*['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']*)
 let symbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let symbolcharnopercent =
