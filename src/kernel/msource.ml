@@ -41,7 +41,8 @@ type position = [
 exception Found of int
 
 let find_line line {filename; text} =
-  assert (line > 0);
+  if line <= 0 then
+    (Printf.ksprintf invalid_arg "Msource.find_line: invalid line number %d. Numbering starts from 1" line);
   if line = 1 then 0 else
     let line' = ref line in
     try
