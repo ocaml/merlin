@@ -1735,6 +1735,7 @@ Short cuts:
 (provide 'merlin)
 
 ;; Load these after (provide 'merlin) because they (require 'merlin)
+(require 'merlin-cap)
 (eval-after-load 'company '(require 'merlin-company))
 (eval-after-load 'auto-complete '(require 'merlin-ac))
 (eval-after-load 'iedit '(require 'merlin-iedit))
