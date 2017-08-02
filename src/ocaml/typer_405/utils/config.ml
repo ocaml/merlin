@@ -50,7 +50,7 @@ and cmxa_magic_number =
 and ast_impl_magic_number = "Caml1999M020"
 and ast_intf_magic_number = "Caml1999N018"
 and cmxs_magic_number = "Caml2007D002"
-and cmt_magic_number = "Caml2012T008"
+and cmt_magic_number = "Caml2012T009"
 
 let load_path = ref ([] : string list)
 
