@@ -79,3 +79,7 @@ let print () {Location. loc_start; loc_end; loc_ghost}  =
 
 let print_loc f () {Location. txt; loc} =
   sprintf "%a@%a" f txt print loc
+
+let is_relaxed_location = function
+  | { Location. txt = "merlin.relaxed-location" | "merlin.loc"; _ } -> true
+  | _ -> false

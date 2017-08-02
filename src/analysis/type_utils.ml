@@ -298,11 +298,11 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
 let read_doc_attributes attrs =
   let read_payload =
     let open Parsetree in function
-      | PStr[{ pstr_desc = Pstr_eval(expr, _) }] ->
-        begin match Raw_compat.extract_const_string expr with
-          | Some str -> Some(str, expr.pexp_loc)
-          | None -> None
-        end
+      | PStr[{ pstr_desc = Pstr_eval(
+          ({Parsetree. pexp_desc =
+              Parsetree.Pexp_constant (Parsetree.Pconst_string (str, _)) } as expr), _)
+        }] ->
+        Some(str, expr.pexp_loc)
       | _ -> None
   in
   let rec loop = function

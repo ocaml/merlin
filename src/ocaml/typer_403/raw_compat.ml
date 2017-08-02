@@ -33,14 +33,6 @@ open Misc
 
 let no_label = Asttypes.Nolabel
 
-(* For Extend *)
-
-let extract_const_string = function
-  | {Parsetree. pexp_desc =
-       Parsetree.Pexp_constant (Parsetree.Pconst_string (str, _)) } ->
-    Some str
-  | _ -> None
-
 (* For Browse_misc *)
 
 let signature_of_summary =
@@ -125,3 +117,5 @@ let labels_of_application ~prefix = function
 let texp_function_cases = function
   | Typedtree.Texp_function (_,cs,_) -> cs
   | _ -> assert false
+
+let const_string (s, o) = Asttypes.Const_string (s, o)

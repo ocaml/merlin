@@ -57,7 +57,7 @@ module Predef_types = struct
     [ zero ; n ]
 
   let string_ env ty =
-    let empty = Tast_helper.Pat.constant env ty (Asttypes.Const_string ("", None)) in
+    let empty = Tast_helper.Pat.constant env ty (Raw_compat.const_string ("", None)) in
     let s = Parmatch.omega in
     [ empty ; s ]
 

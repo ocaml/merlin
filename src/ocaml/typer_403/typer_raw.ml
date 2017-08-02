@@ -83,7 +83,7 @@ module Rewrite_loc = struct
     update loc.loc; loc
 
   let rec u_attribute (loc, payload) =
-    let loc = if loc.Location.txt <> "merlin.loc" then u_loc loc else loc in
+    let loc = if Location_aux.is_relaxed_location loc then loc else u_loc loc in
     (loc, u_payload payload)
 
   and u_extension x = u_attribute x

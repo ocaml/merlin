@@ -78,7 +78,9 @@ SOURCES_LIB = \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
 	$(TYPER)/parsing/ast_iterator.mli \
-	$(TYPER)/parsing/ast_iterator.ml \
+	$(TYPER)/parsing/ast_iterator.ml  \
+	src/extend/extend_helper.mli      \
+	src/extend/extend_helper.ml       \
 	$(TYPER)/parsing/builtin_attributes.mli \
 	$(TYPER)/parsing/builtin_attributes.ml \
 	$(TYPER)/parsing/longident.mli    \
@@ -160,8 +162,6 @@ SOURCES_LIB = \
 	$(TYPER)/typing/includecore.mli   \
 	$(TYPER)/typing/includecore.ml    \
 	src/extend/extend_protocol.ml     \
-	src/extend/extend_helper.mli      \
-	src/extend/extend_helper.ml       \
 	src/extend/extend_main.mli        \
 	src/extend/extend_main.ml         \
 	src/extend/extend_driver.mli      \

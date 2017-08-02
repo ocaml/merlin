@@ -1,17 +1,4 @@
 open Parsetree
-open Extend_protocol
-
-(** Default implementation for [Reader_def.print_outcome] using
-    [Oprint] from compiler-libs *)
-let print_outcome_using_oprint ppf = function
-  | Reader.Out_value          x -> !Oprint.out_value ppf x
-  | Reader.Out_type           x -> !Oprint.out_type ppf x
-  | Reader.Out_class_type     x -> !Oprint.out_class_type ppf x
-  | Reader.Out_module_type    x -> !Oprint.out_module_type ppf x
-  | Reader.Out_sig_item       x -> !Oprint.out_sig_item ppf x
-  | Reader.Out_signature      x -> !Oprint.out_signature ppf x
-  | Reader.Out_type_extension x -> !Oprint.out_type_extension ppf x
-  | Reader.Out_phrase         x -> !Oprint.out_phrase ppf x
 
 (** Generate an extension node that will be reported as a syntax error by
     Merlin. *)
@@ -21,7 +8,7 @@ let syntax_error msg loc : extension =
       pstr_loc = Location.none;
       pstr_desc = Pstr_eval ({
           pexp_loc = Location.none;
-          pexp_desc = Pexp_constant (Ast_helper.const_string msg);
+          pexp_desc = Pexp_constant(Parsetree.Pconst_string(msg, None));
           pexp_attributes = [];
         }, []);
     }]
@@ -105,11 +92,11 @@ let extract_syntax_error (id, payload : extension) : string * Location.t =
   let invalid_msg =
       "Warning: extension produced an incorrect syntax-error node" in
    let msg = match payload with
-     | PStr [{ pstr_desc = Pstr_eval (exp, _); }] ->
-       begin match Raw_compat.extract_const_string exp with
-         | Some msg -> msg
-         | _ -> invalid_msg
-       end
+     | PStr [{ pstr_desc = Pstr_eval (
+         {Parsetree. pexp_desc =
+            Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _)) }, _
+       ); }] ->
+       msg
      | _ -> invalid_msg
   in
   msg, id.Location.loc

@@ -180,10 +180,11 @@ let node_attributes = function
 
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
-  let loc = try
-      let s, _ = List.find attributes ~f:(fun (s,_) -> s.Location.txt = "merlin.loc") in
-      s.Location.loc
-    with Not_found -> node_real_loc loc0 node
+  let loc =
+    let pred (loc,_) = Location_aux.is_relaxed_location loc in
+    match List.find attributes ~f:pred with
+    | s, _ -> s.Location.loc
+    | exception Not_found -> node_real_loc loc0 node
   in
   let loc = match node with
     | Expression {exp_extra; _} ->

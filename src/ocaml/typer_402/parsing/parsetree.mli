@@ -14,7 +14,7 @@
 
 open Asttypes
 
-type constant = Asttypes.constant
+type constant = Asttypes.constant =
     Const_int of int
   | Const_char of char
   | Pconst_string of string * string option

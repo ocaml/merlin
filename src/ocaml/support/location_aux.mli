@@ -46,3 +46,5 @@ val prepare_errors : exn list -> Location.error list
 
 val print : unit -> t -> string
 val print_loc : (unit -> 'a -> string) -> unit -> 'a Location.loc -> string
+
+val is_relaxed_location : string Location.loc -> bool

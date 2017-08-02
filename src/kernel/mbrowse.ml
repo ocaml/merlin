@@ -117,7 +117,7 @@ let select_leafs pos root =
         branches := [branch];
       raise Exit
     )
-    else if not (has_attr "merlin.ignore" attrs) then (
+    else if not (has_attr "merlin.hide" attrs) then (
       let has_leaves = fold_node (select_child branch) env node false in
       if not has_leaves then
         branches := branch :: !branches
