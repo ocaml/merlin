@@ -2,7 +2,7 @@ open Asttypes
 open Parsetree
 
 let string_of_cst = function
-  | Const_string(s, _) -> Some s
+  | Pconst_string(s, _) -> Some s
   | _ -> None
 
 let string_of_payload = function

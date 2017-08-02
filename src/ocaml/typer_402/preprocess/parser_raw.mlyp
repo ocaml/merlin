@@ -2052,7 +2052,7 @@ constant :
 | CHAR
     { Const_char $1 }
 | STRING
-    { let (s, d) = $1 in Const_string (s, d) }
+    { let (s, d) = $1 in Pconst_string (s, d) }
 | FLOAT
     { Const_float $1 }
 | INT32

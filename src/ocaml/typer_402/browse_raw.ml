@@ -146,10 +146,11 @@ let node_real_loc loc0 = function
 
 let node_merlin_loc loc0 = function
   | Expression {exp_loc = loc; exp_attributes} ->
-    begin try
-        let s, _ = List.find exp_attributes ~f:(fun (s,_) -> s.Location.txt = "merlin.loc") in
-        s.Location.loc
-      with Not_found -> loc
+    begin
+      let pred (loc,_) = Location_aux.is_relaxed_location loc in
+      match List.find exp_attributes ~f:pred with
+      | s, _ -> s.Location.loc
+      | exception Not_found -> loc
     end
   | node -> node_real_loc loc0 node
 

@@ -331,7 +331,7 @@ let all_idents_cases el =
 let type_constant = function
     Const_int _ -> instance_def Predef.type_int
   | Const_char _ -> instance_def Predef.type_char
-  | Const_string _ -> instance_def Predef.type_string
+  | Pconst_string _ -> instance_def Predef.type_string
   | Const_float _ -> instance_def Predef.type_float
   | Const_int32 _ -> instance_def Predef.type_int32
   | Const_int64 _ -> instance_def Predef.type_int64
@@ -1913,7 +1913,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_attributes = sexp.pexp_attributes;
           exp_env = env }
       end
-  | Pexp_constant(Const_string (str, _) as cst) -> (
+  | Pexp_constant(Pconst_string (str, _) as cst) -> (
     (* Terrible hack for format strings *)
     let ty_exp = expand_head env ty_expected in
     let fmt6_path =
@@ -2929,7 +2929,7 @@ and type_format loc str env =
         mk_exp_loc (Pexp_construct (mk_lid_loc lid, arg)) in
       let mk_cst cst = mk_exp_loc (Pexp_constant cst) in
       let mk_int n = mk_cst (Const_int n)
-      and mk_string str = mk_cst (Const_string (str, None))
+      and mk_string str = mk_cst (Pconst_string (str, None))
       and mk_char chr = mk_cst (Const_char chr) in
       let rec mk_formatting_lit fmting = match fmting with
         | Close_box ->

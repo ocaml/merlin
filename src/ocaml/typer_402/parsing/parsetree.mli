@@ -14,6 +14,15 @@
 
 open Asttypes
 
+type constant = Asttypes.constant
+    Const_int of int
+  | Const_char of char
+  | Pconst_string of string * string option
+  | Const_float of string
+  | Const_int32 of int32
+  | Const_int64 of int64
+  | Const_nativeint of nativeint
+
 (** {2 Extension points} *)
 
 type attribute = string loc * payload

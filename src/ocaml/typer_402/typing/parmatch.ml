@@ -57,7 +57,7 @@ let const_compare x y =
   match x,y with
   | Const_float f1, Const_float f2 ->
       Pervasives.compare (float_of_string f1) (float_of_string f2)
-  | Const_string (s1, _), Const_string (s2, _) ->
+  | Pconst_string (s1, _), Pconst_string (s2, _) ->
       String.compare s1 s2
   | _, _ -> Pervasives.compare x y
 
@@ -141,7 +141,7 @@ let is_cons = function
 let pretty_const c = match c with
 | Const_int i -> Printf.sprintf "%d" i
 | Const_char c -> Printf.sprintf "%C" c
-| Const_string (s, _) -> Printf.sprintf "%S" s
+| Pconst_string (s, _) -> Printf.sprintf "%S" s
 | Const_float f -> Printf.sprintf "%s" f
 | Const_int32 i -> Printf.sprintf "%ldl" i
 | Const_int64 i -> Printf.sprintf "%LdL" i
@@ -872,11 +872,11 @@ let build_other ext env =  match env with
       (function Tpat_constant(Const_nativeint i) -> i | _ -> assert false)
       (function i -> Tpat_constant(Const_nativeint i))
       0n Nativeint.succ p env
-| ({pat_desc=(Tpat_constant (Const_string _))} as p,_) :: _ ->
+| ({pat_desc=(Tpat_constant (Pconst_string _))} as p,_) :: _ ->
     build_other_constant
-      (function Tpat_constant(Const_string (s, _)) -> String.length s
+      (function Tpat_constant(Pconst_string (s, _)) -> String.length s
               | _ -> assert false)
-      (function i -> Tpat_constant(Const_string(String.make i '*', None)))
+      (function i -> Tpat_constant(Pconst_string(String.make i '*', None)))
       0 succ p env
 | ({pat_desc=(Tpat_constant (Const_float _))} as p,_) :: _ ->
     build_other_constant

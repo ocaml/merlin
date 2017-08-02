@@ -37,7 +37,7 @@ let no_label = ""
 
 let extract_const_string = function
   | {Parsetree. pexp_desc =
-       Parsetree.Pexp_constant (Asttypes.Const_string (str, _)) } ->
+       Parsetree.Pexp_constant (Asttypes.Pconst_string (str, _)) } ->
     Some str
   | _ -> None
 

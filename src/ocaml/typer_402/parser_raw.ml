@@ -3789,7 +3789,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.constant) = 
 # 1829 "src/ocaml/typer/preprocess/parser_raw.mly"
-    ( let (s, d) = _1 in Const_string (s, d) )
+    ( let (s, d) = _1 in Pconst_string (s, d) )
 # 3794 "src/ocaml/typer/preprocess/parser_raw.ml"
          in
         {

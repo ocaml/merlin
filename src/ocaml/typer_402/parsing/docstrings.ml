@@ -86,7 +86,7 @@ let docs_attr ds =
   let open Asttypes in
   let open Parsetree in
   let exp =
-    { pexp_desc = Pexp_constant (Const_string(ds.ds_body, None));
+    { pexp_desc = Pexp_constant (Pconst_string(ds.ds_body, None));
       pexp_loc = ds.ds_loc;
       pexp_attributes = []; }
   in
@@ -136,7 +136,7 @@ let text_attr ds =
   let open Asttypes in
   let open Parsetree in
   let exp =
-    { pexp_desc = Pexp_constant (Const_string(ds.ds_body, None));
+    { pexp_desc = Pexp_constant (Pconst_string(ds.ds_body, None));
       pexp_loc = ds.ds_loc;
       pexp_attributes = []; }
   in
