@@ -53,6 +53,13 @@ let rec error_of_extension ext =
   | ({txt; loc}, _) ->
       Location.errorf ~loc "Uninterpreted extension '%s'." txt
 
+let error_of_extension ext =
+  match Extend_helper.classify_extension ext with
+  | `Other -> error_of_extension ext
+  | `Syntax_error ->
+    let txt, loc = Extend_helper.extract_syntax_error ext in
+    Location.error ~loc txt
+
 let rec deprecated_of_attrs = function
   | [] -> None
   | ({txt = "ocaml.deprecated"|"deprecated"; _}, p) :: _ ->
