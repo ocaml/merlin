@@ -4,6 +4,7 @@ Wed Aug  2 15:09:07 CEST 2017
 
 Bug fix after 3.0.1:
 - CMT magic number for 4.05 was wrong
+- handle merlin.focus, merlin.ignore, merlin.loc/merlin.relaxed-loc and merlin.syntax-error
 
 merlin 3.0.1
 ============
