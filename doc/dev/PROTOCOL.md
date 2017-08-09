@@ -251,7 +251,15 @@ The value is a list where each item as the shape:
 'end'   : position,
 'valid' : bool,
 'message' : string,
+'sub' : sub_error list,
 'type'  : ('type'|'parser'|'env'|'warning'|'unkown')
+}
+
+sub_error ::=
+{
+  'start'   : position,
+  'end'     : position,
+  'message' : string
 }
 ```
 
@@ -259,6 +267,7 @@ The value is a list where each item as the shape:
 `type` is an attempt to classify the error.
 `valid` is here mostly for informative purpose. It reflects whether Merlin was expecting such an error to be possible or not, and is useful for debugging purposes.
 `message` is the error description to be shown to the user.
+`sub` is an experimental extension to put more detailed information about type errors (for instance the location of the field that mismatches between an interface and an implementation).
 
 ### `expand-prefix -position <position> -prefix <string> [ -types <bool> ]`
 
