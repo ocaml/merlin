@@ -352,6 +352,7 @@ containing fields file, line and col."
          (filename (if file (cdr file) (buffer-file-name (buffer-base-buffer))))
          (focus-window (or (not open-window) merlin-locate-focus-new-window))
          (do-open (lambda ()
+                    (push-mark)
                     (if open-window
                       (find-file-other-window filename)
                       (find-file filename))
