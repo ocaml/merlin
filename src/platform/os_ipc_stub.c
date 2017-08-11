@@ -3,7 +3,11 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+
+#ifndef __FreeBSD__
 #include <alloca.h>
+#endif
+
 #include <sys/socket.h>
 #include <sys/select.h>
 
