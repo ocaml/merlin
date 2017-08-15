@@ -251,3 +251,30 @@ let node_at tr ?(skip_recovered=false) t pos_cursor =
   | [] -> [get_env t, Browse_raw.Dummy]
   | path when skip_recovered -> select path
   | path -> path
+
+type quick_fix = QFRename of Location.t * (string list)
+
+let maybe_rename_quickfix loc env ident_unb =
+  let ident_info =
+    match ident_unb with
+    | Longident.Lapply _ -> None
+    | Longident.Lident s -> Some (None, s)
+    | Longident.Ldot (r,s) -> Some (Some r, s)
+  in
+  match ident_info with
+  | None -> None
+  | Some (path, short_name) ->
+      let all = Env.fold_values (fun s _path _desc acc -> s::acc) path env [] in
+      let sugg = Misc.spellcheck all short_name in
+      Some (QFRename (loc, sugg))
+
+let get_quickfixes t =
+  let errs = get_errors t in
+  List.filter_map errs ~f:(function
+  | Typetexp.Error (loc, env, Typetexp.Unbound_value id) ->
+      maybe_rename_quickfix loc env id
+  | _ -> None
+  )
+
+
+

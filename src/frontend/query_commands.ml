@@ -504,6 +504,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let lexer_errors  = Mpipeline.reader_lexer_errors pipeline  in
     let parser_errors = Mpipeline.reader_parser_errors pipeline in
     let typer_errors  = Mpipeline.typer_errors pipeline  in
+    let quick_fixes  = Mpipeline.typer_quickfixes pipeline  in
+
     (* When there is a cmi error, we will have a lot of meaningless errors,
        there is no need to report them. *)
     let typer_errors =
@@ -549,14 +551,16 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       if n <> 0 then n else
         Lexing.compare_pos (error_end e1) (error_end e2)
     in
+
     let errors = List.sort_uniq ~cmp
         (lexer_errors @ parser_errors @ typer_errors) in
     (* Filter anything after first parse error *)
     let limit = !first_parser_error in
-    if limit = Lexing.dummy_pos then errors else (
+    let errors = if limit = Lexing.dummy_pos then errors else (
       List.take_while errors
         ~f:(fun err -> Lexing.compare_pos (error_start err) limit <= 0)
-    )
+    ) in
+    (errors, quick_fixes)
 
   | Dump args -> dump pipeline args
 

@@ -193,6 +193,11 @@ let json_of_type_loc (loc,desc,tail) =
         | `Tail_call -> "call")
   ]
 
+let json_of_quickfix = function
+  | Mtyper.QFRename (loc, suggs) ->
+    with_location loc ["suggs", `List (List.map suggs ~f:(fun s -> `String s))]
+  | _ -> `Null
+
 let json_of_error {Location. msg; sub; loc} =
   let msg = String.trim msg in
   let typ =
@@ -312,8 +317,14 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List (json_of_outline outlines)
   | Shape _, shapes ->
     `List (List.map ~f:json_of_shape shapes)
-  | Errors, errors ->
-    `List (List.map ~f:json_of_error errors)
+  | (Errors, (errors,qfs)) ->
+    let errjson = `List (List.map ~f:json_of_error errors) in
+    if qfs = []
+    then errjson
+    else
+      `Assoc  [ "errors", errjson
+              ; "quickfixes", `List (List.map ~f:json_of_quickfix qfs)
+              ]
   | Dump _, json -> json
   | Path_of_source _, str -> `String str
   | List_modules _, strs -> `List (List.map Json.string strs)

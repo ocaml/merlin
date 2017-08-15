@@ -18,6 +18,7 @@ let timed_lazy r x =
 module Typer = struct
   type t = {
     errors : exn list lazy_t;
+    quickfixes: Mtyper.quick_fix list lazy_t;
     result : Mtyper.result;
   }
 end
@@ -70,8 +71,9 @@ let ppx_errors    t = (ppx t).Ppx.errors
 
 let final_config  t = (ppx t).Ppx.config
 
-let typer_result t = (typer t).Typer.result
-let typer_errors t = Lazy.force (typer t).Typer.errors
+let typer_result t     = (typer t).Typer.result
+let typer_errors t     = Lazy.force (typer t).Typer.errors
+let typer_quickfixes t = Lazy.force (typer t).Typer.quickfixes
 
 let process trace
     ?(reader_time=ref 0.0)
@@ -96,7 +98,8 @@ let process trace
       let lazy { Ppx. config; parsetree; errors } = ppx in
       let result = Mtyper.run trace config source parsetree in
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
-      { Typer. errors; result }
+      let quickfixes = timed_lazy error_time (lazy (Mtyper.get_quickfixes result)) in
+      { Typer. errors; result; quickfixes }
     )) in
   { trace; config; source; reader; ppx; typer;
     reader_time; ppx_time; typer_time; error_time }

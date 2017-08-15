@@ -133,7 +133,7 @@ type _ t =
     :  Msource.position
     -> shape list t
   | Errors(* *)
-    :  Location.error list t
+    :  (Location.error list * Mtyper.quick_fix list) t
   | Dump
     :  Std.json list
     -> Std.json t

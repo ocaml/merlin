@@ -23,5 +23,6 @@ val final_config : t -> Mconfig.t
 
 val typer_result : t -> Mtyper.result
 val typer_errors : t -> exn list
+val typer_quickfixes : t -> Mtyper.quick_fix list
 
 val timing_information : t -> (string * float) list

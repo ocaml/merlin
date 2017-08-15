@@ -40,3 +40,8 @@ val get_errors : result -> exn list
  *)
 val node_at : Trace.t ->
   ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
+
+
+type quick_fix = QFRename of Location.t * (string list)
+
+val get_quickfixes : result -> quick_fix list
