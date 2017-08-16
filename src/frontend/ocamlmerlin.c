@@ -89,12 +89,13 @@ static const char *path_socketdir(void)
 
 static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
 {
+  char msg_control[CMSG_SPACE(3 * sizeof(int))];
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
   struct msghdr msg = {
     .msg_iov = &iov, .msg_iovlen = 1,
     .msg_controllen = CMSG_SPACE(3 * sizeof(int)),
   };
-  msg.msg_control = alloca(msg.msg_controllen);
+  msg.msg_control = &msg_control;
   memset(msg.msg_control, 0, msg.msg_controllen);
 
   struct cmsghdr *cm = CMSG_FIRSTHDR(&msg);

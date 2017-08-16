@@ -4,10 +4,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-#ifndef __FreeBSD__
-#include <alloca.h>
-#endif
-
 #include <sys/socket.h>
 #include <sys/select.h>
 
@@ -31,12 +27,13 @@ static unsigned char buffer[65536];
 
 static ssize_t recv_buffer(int fd, int fds[3])
 {
+  char msg_control[CMSG_SPACE(3 * sizeof(int))];
   struct iovec iov = { .iov_base = buffer, .iov_len = sizeof(buffer) };
   struct msghdr msg = {
     .msg_iov = &iov, .msg_iovlen = 1,
     .msg_controllen = CMSG_SPACE(3 * sizeof(int)),
   };
-  msg.msg_control = alloca(msg.msg_controllen);
+  msg.msg_control = &msg_control;
   memset(msg.msg_control, 0, msg.msg_controllen);
 
   ssize_t recvd;
