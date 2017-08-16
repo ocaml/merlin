@@ -258,14 +258,17 @@ let maybe_rename_quickfix loc env ident_unb =
   let ident_info =
     match ident_unb with
     | Longident.Lapply _ -> None
-    | Longident.Lident s -> Some (None, s)
-    | Longident.Ldot (r,s) -> Some (Some r, s)
+    | Longident.Lident s -> Some (None, "", s)
+    | Longident.Ldot (r,s) ->
+        Some (Some r,
+              Longident.flatten r |> String.concat ~sep:"." |> (fun x -> (^) x "."),
+              s)
   in
   match ident_info with
   | None -> None
-  | Some (path, short_name) ->
+  | Some (path, prefix, short_name) ->
       let all = Env.fold_values (fun s _path _desc acc -> s::acc) path env [] in
-      let sugg = Misc.spellcheck all short_name in
+      let sugg = Misc.spellcheck all short_name |> List.map ~f:(fun s -> prefix ^ s) in
       Some (QFRename (loc, sugg))
 
 let get_quickfixes t =
