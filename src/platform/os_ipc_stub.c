@@ -6,13 +6,13 @@
 #include <windows.h>
 #include <io.h>
 #ifndef STDIN_FILENO
-#define STDIN_FILENO _fileno(stdin)
+#define STDIN_FILENO 0
 #endif
 #ifndef STDOUT_FILENO
-#define STDOUT_FILENO _fileno(stdout)
+#define STDOUT_FILENO 1
 #endif
 #ifndef STDERR_FILENO
-#define STDERR_FILENO _fileno(stderr)
+#define STDERR_FILENO 2
 #endif
 #ifdef _MSC_VER
 typedef SSIZE_T ssize_t;
