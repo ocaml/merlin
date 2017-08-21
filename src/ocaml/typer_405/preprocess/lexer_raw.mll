@@ -293,7 +293,14 @@ let hex_float_literal =
   ('.' ['0'-'9' 'A'-'F' 'a'-'f' '_']* )?
   (['p' 'P'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']* )?
 let literal_modifier = ['G'-'Z' 'g'-'z']
-
+(* Cppo-specific regexes *)
+let cppo_directive_name =
+  "define"|"undef"|"if"|"ifdef"|"ifndef"|"else"|"elif"
+  |"endif"|"include"|"warning"|"error"|"ext"|"endext"
+let cppo_directive_body =
+  blank* (blank|identchar|symbolchar|"("|")")*
+    ('\\' newline blank* (blank|identchar|symbolchar|"("|")")*)*
+    (newline|eof)
 
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
 
@@ -433,6 +440,10 @@ rule token state = parse
       { update_loc lexbuf name (int_of_string num) true 0;
         token state lexbuf
       }
+  | "#" cppo_directive_name cppo_directive_body
+      { update_loc lexbuf None 1 false 0;
+        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        token state lexbuf }
   | "#"  { return SHARP }
   | "&"  { return AMPERSAND }
   | "&&" { return AMPERAMPER }
