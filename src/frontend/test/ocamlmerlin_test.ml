@@ -230,6 +230,7 @@ let tests = [
             item dump config;
         )
     in
+    let cwd = Filename.get_temp_dir_name () in
     [
       (* Simple name is not expanded *)
       test_ppx_path "simple_name" ["-ppx"; "test1"] "test1";
@@ -238,12 +239,12 @@ let tests = [
       test_ppx_path "absolute_path" ["-ppx"; "/test2"] "/test2";
 
       (* Relative name is expanded *)
-      test_ppx_path "relative_path" ~cwd:"/tmp"
-        ["-ppx"; "./test3"] "/tmp/test3";
+      test_ppx_path "relative_path" ~cwd
+        ["-ppx"; "./test3"] (Filename.concat cwd "test3");
 
       (* Quoted flags inherit path *)
-      test_ppx_path "quoted_path" ~cwd:"/tmp"
-        ["-flags"; "-ppx ./test4"] "/tmp/test4";
+      test_ppx_path "quoted_path" ~cwd
+        ["-flags"; "-ppx ./test4"] (Filename.concat cwd "test4");
     ]
 
   );

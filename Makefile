@@ -3,7 +3,7 @@
 -include Makefile.config
 TARGET = ocamlmerlin-server
 
-ifdef ENABLE_COMPILED_EMACS_MODE
+ifeq ($(ENABLE_COMPILED_EMACS_MODE),true)
     TARGET_EMACS = emacs/merlin.elc \
 									 emacs/merlin-iedit.elc \
 									 emacs/merlin-imenu.elc \
@@ -30,23 +30,23 @@ endif
 
 #### Default rule
 
-all: $(TARGET) $(TARGET_EMACS) ocamlmerlin
+all: $(TARGET) $(TARGET_EMACS) ocamlmerlin$(EXE)
 
 #### Check configuration
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml/typer
-$(CONFIG_FILES):
+$(CONFIG_FILES)$(MERLIN_OCAML_VERSION):
 	@echo "Please run ./configure"
 	@if [ -d ._d ]; then printf \
 		"WARNING:\n\tThere are some build leftovers.\n\tConsider doing a 'make clean' before continuing.\n"; fi
 	@false
 
-assert_configured: $(CONFIG_FILES)
+assert_configured: $(CONFIG_FILES)$(MERLIN_OCAML_VERSION)
 
 #### C wrapper
 
-ocamlmerlin: src/frontend/ocamlmerlin.c
-	$(CC) -o $@ $^
+ocamlmerlin$(EXE): src/frontend/ocamlmerlin.c
+	$(CC) $(if $(filter-out msvc,$(CCOMP_TYPE)),-o ,/nologo /Fe)$@ $^ $(if $(filter msvc,$(CCOMP_TYPE)),advapi32.lib)
 
 #### Other rules
 
@@ -57,7 +57,7 @@ $(TARGET): assert_configured
 
 test: assert_configured
 	 +$(OCAMLMAKEFILE) PROJECT=test
-	 ./ocamlmerlin-test
+	 ./ocamlmerlin-test$(EXE)
 
 preprocess:
 	$(MAKE) -f Makefile.preprocess
@@ -74,17 +74,17 @@ clean:
 	@rm -f src/ocaml/*/*/*.cmly
 	$(MAKE) preprocessclean
 	@find src/ -name '*.cm*' -delete
-	@rm -f ocamlmerlin ocamlmerlin-test
+	@rm -f ocamlmerlin$(EXE) ocamlmerlin-test$(EXE)
 	+$(OCAMLMAKEFILE) clean
 
 distclean: clean
 	@echo
-	rm -f $(TARGET)
+	rm -f $(TARGET)$(EXE)
 
 preprocessclean:
 	$(MAKE) -f Makefile.preprocess clean
 
-install-binary: $(TARGET) ocamlmerlin
+install-binary: $(TARGET) ocamlmerlin$(EXE)
 	install -d $(BIN_DIR)
 	install $(TARGET)$(EXE) $(BIN_DIR)/ocamlmerlin-server$(EXE)
 	install ocamlmerlin$(EXE) $(BIN_DIR)/ocamlmerlin$(EXE)
@@ -133,7 +133,8 @@ merlin.install:
 	@echo "Manually run 'sh merlin.install.sh' to update merlin.install"
 
 uninstall:
-	rm -rf $(SHARE_DIR)/ocamlmerlin \
-				 $(BIN_DIR)/ocamlmerlin   \
+	rm -rf $(SHARE_DIR)/ocamlmerlin$(EXE) \
+				 $(BIN_DIR)/ocamlmerlin$(EXE)   \
+				 $(BIN_DIR)/ocamlmerlin-server$(EXE)   \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.el \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.elc

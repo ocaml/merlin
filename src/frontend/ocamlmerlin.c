@@ -2,15 +2,39 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#ifdef _WIN32
+/* GetNamedPipeServerProcessId requires Windows Vista+ */
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x600
+#include <windows.h>
+#include <Lmcons.h>
+#include <process.h>
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
+#ifdef _MSC_VER
+typedef SSIZE_T ssize_t;
+#define PATH_MAX MAX_PATH
+#ifndef _UCRT
+#define snprintf _snprintf
+#endif
+#endif
+#else
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <libgen.h>
+#endif
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
 
@@ -85,6 +109,19 @@ static const char *path_socketdir(void)
   return tmpdir;
 }
 
+#ifdef _WIN32
+/** Deal with Windows IPC **/
+
+static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds[3])
+{
+  DWORD dwNumberOfBytesWritten;
+  if (!WriteFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != 3 * sizeof(HANDLE))
+    failwith_perror("sendmsg");
+  if (!WriteFile(hPipe, buffer, len, &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != len)
+    failwith_perror("send");
+}
+
+#else
 /** Deal with UNIX IPC **/
 
 static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
@@ -125,6 +162,7 @@ static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
     sent += sent_;
   }
 }
+#endif
 
 /* Serialize arguments */
 
@@ -163,9 +201,9 @@ static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **
   /* Append env var */
   for (i = 0; envvars[i] != NULL; ++i)
   {
+    const char *v = getenv(envvars[i]);
     append_argument(buffer, len, &j, envvars[i]);
 
-    const char *v = getenv(envvars[i]);
     if (v != NULL)
     {
       j -= 1; /* Overwrite delimiting 0 */
@@ -192,6 +230,19 @@ static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **
   return j;
 }
 
+#ifdef _WIN32
+#define IPC_SOCKET_TYPE HANDLE
+static HANDLE connect_socket(const char *socketname, int fail)
+{
+  HANDLE hPipe;
+  hPipe = CreateFile(socketname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0);
+  if (hPipe == INVALID_HANDLE_VALUE)
+    if (fail) failwith_perror("connect");
+  return hPipe;
+}
+#else
+#define IPC_SOCKET_TYPE int
+#define INVALID_HANDLE_VALUE -1
 static int connect_socket(const char *socketname, int fail)
 {
   int sock = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -220,7 +271,30 @@ static int connect_socket(const char *socketname, int fail)
 
   return sock;
 }
+#endif
 
+#ifdef _WIN32
+static void start_server(const char *socketname, const char* eventname, const char *exec_path)
+{
+  char buf[PATHSZ];
+  PROCESS_INFORMATION pi;
+  STARTUPINFO si;
+  HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, eventname);
+  DWORD dwResult;
+  sprintf(buf, "%s server %s %s", exec_path, socketname, eventname);
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+  /* Note that DETACHED_PROCESS means that the process does not appear in Task Manager
+     but the server can still be stopped with ocamlmerlin server stop-server */
+  if (!CreateProcess(exec_path, buf, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi))
+    failwith_perror("fork");
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+  if (WaitForSingleObject(hEvent, 5000) != WAIT_OBJECT_0)
+    failwith_perror("execlp");
+}
+#else
 static void make_daemon(int sock)
 {
   /* On success: The child process becomes session leader */
@@ -258,7 +332,7 @@ static void make_daemon(int sock)
     exit(EXIT_SUCCESS);
 }
 
-static void start_server(const char *socketname, const char *exec_path)
+static void start_server(const char *socketname, const char* ignored, const char *exec_path)
 {
   int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1)
@@ -305,18 +379,19 @@ static void start_server(const char *socketname, const char *exec_path)
   close(sock);
   wait(NULL);
 }
+#endif
 
-static int connect_and_serve(const char *socket_path, const char *exec_path)
+static IPC_SOCKET_TYPE connect_and_serve(const char *socket_path, const char* event_path, const char *exec_path)
 {
-  int sock = connect_socket(socket_path, 0);
+  IPC_SOCKET_TYPE sock = connect_socket(socket_path, 0);
 
-  if (sock == -1)
+  if (sock == INVALID_HANDLE_VALUE)
   {
-    start_server(socket_path, exec_path);
+    start_server(socket_path, event_path, exec_path);
     sock = connect_socket(socket_path, 1);
   }
 
-  if (sock == -1)
+  if (sock == INVALID_HANDLE_VALUE)
     abort();
 
   return sock;
@@ -327,6 +402,10 @@ static int connect_and_serve(const char *socket_path, const char *exec_path)
 static const char *search_in_path(const char *PATH, const char *argv0, char *merlin_path)
 {
   static char binary_path[PATHSZ];
+#ifdef _WIN32
+  char *result = NULL;
+  DWORD dwResult;
+#endif
 
   if (PATH == NULL || argv0 == NULL) return NULL;
 
@@ -343,10 +422,10 @@ static const char *search_in_path(const char *PATH, const char *argv0, char *mer
 
     // Append filename
     {
+      const char *file = argv0;
       binary_path[i] = '/';
       i += 1;
 
-      const char *file = argv0;
       while (i < PATHSZ-1 && *file)
       {
         binary_path[i] = *file;
@@ -359,7 +438,14 @@ static const char *search_in_path(const char *PATH, const char *argv0, char *mer
     }
 
     // Check path
+#ifdef _WIN32
+    dwResult = GetFullPathName(binary_path, PATHSZ, merlin_path, NULL);
+    if (dwResult && dwResult < PATHSZ)
+      if (GetLongPathName(binary_path, NULL, 0))
+        result = binary_path;
+#else
     char *result = realpath(binary_path, merlin_path);
+#endif
     if (result != NULL)
       return result;
 
@@ -376,13 +462,20 @@ static const char *search_in_path(const char *PATH, const char *argv0, char *mer
 
 static void prune_binary_name(char * buffer) {
   size_t strsz = strlen(buffer);
-  while (strsz > 0 && buffer[strsz-1] != '/')
+  while (strsz > 0 && buffer[strsz-1] != '/' && buffer[strsz-1] != '\\')
     strsz -= 1;
   buffer[strsz] = 0;
 }
 
+#ifdef _WIN32
+#define OCAMLMERLIN_SERVER "ocamlmerlin-server.exe"
+#else
+#define OCAMLMERLIN_SERVER "ocamlmerlin-server"
+#endif
+
 static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0) {
   char argv0_dirname[PATHSZ];
+  size_t strsz;
 
   strcpy(argv0_dirname, argv0);
   prune_binary_name(argv0_dirname);
@@ -392,22 +485,54 @@ static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0) {
     if (search_in_path(getenv("PATH"), argv0, merlin_path) == NULL)
       failwith("cannot resolve path to ocamlmerlin");
   } else {
+#ifdef _WIN32
+    // GetFullPathName does not resolve symbolic links, which realpath does.
+    // @@DRA GetLongPathName ensures that the file exists (better way?!).
+    // Not sure if this matters.
+    DWORD dwResult = GetFullPathName(argv0, PATHSZ, merlin_path, NULL);
+    if (!dwResult || dwResult >= PATHSZ || !GetLongPathName(merlin_path, NULL, 0))
+#else
     if (realpath(argv0, merlin_path) == NULL)
+#endif
       failwith("argv0 does not point to a valid file");
   }
 
   prune_binary_name(merlin_path);
-  size_t strsz = strlen(merlin_path);
+  strsz = strlen(merlin_path);
 
   // Append ocamlmerlin-server
   if (strsz + 19 > PATHSZ)
     failwith("path is too long");
 
-  strcpy(merlin_path + strsz, "ocamlmerlin-server");
+  strcpy(merlin_path + strsz, OCAMLMERLIN_SERVER);
 }
 
+#ifdef _WIN32
+static void compute_socketname(char socketname[PATHSZ], char eventname[PATHSZ], const char merlin_path[PATHSZ])
+#else
 static void compute_socketname(char socketname[PATHSZ], const char merlin_path[PATHSZ])
+#endif
 {
+#ifdef _WIN32
+  CHAR user[UNLEN + 1];
+  DWORD dwBufSize = UNLEN;
+  BY_HANDLE_FILE_INFORMATION info;
+  HANDLE hFile = CreateFile(merlin_path, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  if (hFile == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(hFile, &info))
+    failwith_perror("stat (cannot find ocamlmerlin binary)");
+  CloseHandle(hFile);
+
+  if (!GetUserName(user, &dwBufSize))
+    user[0] = '\0';
+  // @@DRA Need to use Windows API functions to get meaningful values for st_dev and st_ino
+  snprintf(eventname, PATHSZ,
+      "ocamlmerlin_%s_%lx_%llx",
+      user,
+      info.dwVolumeSerialNumber,
+      ((__int64)info.nFileIndexHigh) << 32 | ((__int64)info.nFileIndexLow));
+  snprintf(socketname, PATHSZ,
+      "\\\\.\\pipe\\%s", eventname);
+#else
   struct stat st;
   if (stat(merlin_path, &st) != 0)
     failwith_perror("stat (cannot find ocamlmerlin binary)");
@@ -417,13 +542,15 @@ static void compute_socketname(char socketname[PATHSZ], const char merlin_path[P
       (unsigned long long)getuid(),
       (unsigned long long)st.st_dev,
       (unsigned long long)st.st_ino);
+#endif
 }
 
 /* Main */
 
 static char
   merlin_path[PATHSZ] = "<not computed yet>",
-  socketname[PATHSZ] = "<not computed yet>";
+  socketname[PATHSZ] = "<not computed yet>",
+  eventname[PATHSZ] = "<not computed yet>";
 static unsigned char argbuffer[65536];
 
 static void dumpinfo(void)
@@ -432,7 +559,7 @@ static void dumpinfo(void)
       "merlin path: %s\nsocket path: %s/%s\n", merlin_path, path_socketdir(), socketname);
 }
 
-static void abnormal_termination(int argc, char **argv)
+static void unexpected_termination(int argc, char **argv)
 {
   int sexp = 0;
   int i;
@@ -453,27 +580,64 @@ static void abnormal_termination(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-  compute_merlinpath(merlin_path, argv[0]);
+  char result = 0;
+  int err = 0;
+#ifdef _WIN32
+  HANDLE fds[3];
+  ULONG pid;
+  HANDLE hProcess, hServerProcess;
+  DWORD dwNumberOfBytesRead;
+  CHAR argv0[PATHSZ];
+  GetModuleFileName(NULL, argv0, PATHSZ);
+#else
+  char* argv0 = argv[0];
+#endif
+  compute_merlinpath(merlin_path, argv0);
   if (argc >= 2 && strcmp(argv[1], "server") == 0)
   {
+    IPC_SOCKET_TYPE sock;
+    ssize_t len;
+#ifdef _WIN32
+    compute_socketname(socketname, eventname, merlin_path);
+#else
     compute_socketname(socketname, merlin_path);
+#endif
 
-    int sock = connect_and_serve(socketname, merlin_path);
-    ssize_t len = prepare_args(argbuffer, sizeof(argbuffer), argc-2, argv+2);
+    sock = connect_and_serve(socketname, eventname, merlin_path);
+    len = prepare_args(argbuffer, sizeof(argbuffer), argc-2, argv+2);
+#ifdef _WIN32
+    hProcess = GetCurrentProcess();
+    if (!GetNamedPipeServerProcessId(sock, &pid))
+      failwith_perror("GetNamedPipeServerProcessId");
+    hServerProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
+    if (hServerProcess == INVALID_HANDLE_VALUE)
+      failwith_perror("OpenProcess");
+    if (!DuplicateHandle(hProcess, GetStdHandle(STD_INPUT_HANDLE), hServerProcess, &fds[0], 0, FALSE, DUPLICATE_SAME_ACCESS))
+      failwith_perror("DuplicateHandle(stdin)");
+    if (!DuplicateHandle(hProcess, GetStdHandle(STD_OUTPUT_HANDLE), hServerProcess, &fds[1], 0, FALSE, DUPLICATE_SAME_ACCESS))
+      failwith_perror("DuplicateHandle(stdout)");
+    CloseHandle(GetStdHandle(STD_OUTPUT_HANDLE));
+    if (!DuplicateHandle(hProcess, GetStdHandle(STD_ERROR_HANDLE), hServerProcess, &fds[2], 0, FALSE, DUPLICATE_SAME_ACCESS))
+      failwith_perror("DuplicateHandle(stderr)");
+#else
     int fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
+#endif
     ipc_send(sock, argbuffer, len, fds);
 
-    char result = 0;
-    int err;
+#ifdef _WIN32
+    if (ReadFile(sock, &result, 1, &dwNumberOfBytesRead, NULL) && dwNumberOfBytesRead == 1)
+      err = 1;
+#else
     NO_EINTR(err, read(sock, &result, 1));
+#endif
     if (err == 1)
       exit(result);
 
-    abnormal_termination(argc, argv);
+    unexpected_termination(argc, argv);
   }
   else
   {
-    argv[0] = "ocamlmerlin-server";
+    argv[0] = OCAMLMERLIN_SERVER;
     execvp(merlin_path, argv);
     failwith_perror("execvp(ocamlmerlin-server)");
   }
