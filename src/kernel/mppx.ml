@@ -11,6 +11,24 @@ let change_directory dir =
     false
 
 
+let with_include_dir path f =
+  let saved = !Clflags.include_dirs in
+  let restore () = Clflags.include_dirs := saved in
+  Clflags.include_dirs := path;
+  let result =
+    begin
+      try
+        f ()
+      with
+      | e ->
+         restore ();
+         raise e
+    end
+  in
+  restore ();
+  result
+
+
 let rewrite _trace cfg parsetree =
   let ppx = cfg.ocaml.ppx @ Ppxsetup.command_line cfg.merlin.packages_ppx in
   let prev_dir = Sys.getcwd () in
@@ -19,6 +37,8 @@ let rewrite _trace cfg parsetree =
       ignore (change_directory "/")
   in
   ignore (change_directory cfg.query.directory);
+  (* add include path attribute to the parsetree *)
+  with_include_dir (Mconfig.build_path cfg) @@ fun () ->
   match Pparse.apply_rewriters ~ppx ~tool_name:"merlin" parsetree with
   | parsetree ->
     restore ();
