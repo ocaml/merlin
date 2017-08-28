@@ -969,9 +969,11 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
           (when caml-mode
             (with-demoted-errors "Error when setting up merlin type-buffer: %S"
               (funcall caml-mode)))))
+      (read-only-mode 0)
       (erase-buffer)
       (insert text)
       (goto-char (point-min))
+      (read-only-mode 1)
       ; finally make sure that the type buffer directory is the same as the last
       ; (ml) buffer we were in.
       ; Indeed if people move to that buffer and start looking for a file we
