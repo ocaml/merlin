@@ -1,6 +1,6 @@
 let merlin_timeout =
   try float_of_string (Sys.getenv "MERLIN_TIMEOUT")
-  with _ -> 7200.0
+  with _ -> 600.0
 
 module Server = struct
 
@@ -41,6 +41,7 @@ module Server = struct
 
   let server_accept merlinid server =
     let rec loop total =
+      Mocaml.flush_caches ~older_than:300.0 ();
       let merlinid' = Stat_cache.file_id Sys.executable_name in
       if total > merlin_timeout ||
          not (Stat_cache.file_id_check merlinid merlinid') then
@@ -53,9 +54,7 @@ module Server = struct
     in
     match Os_ipc.server_accept server ~timeout:1.0 with
     | Some _ as result -> result
-    | None ->
-      Mocaml.flush_caches ~older_than:300.0 ();
-      loop 1.0
+    | None -> loop 1.0
 
   let rec loop merlinid server =
     match server_accept merlinid server with
