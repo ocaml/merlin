@@ -139,12 +139,13 @@ let run env = function
               ("failure", `String str)
             | exception exn ->
               let trace = Printexc.get_backtrace () in
+              Logger.log "New_merlin.run" "Command error backtrace" trace;
               match Location.error_of_exn exn with
               | None ->
-                  ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
+                ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
               | Some err ->
                 Location.report_error Format.str_formatter err;
-                ("error", `String (Format.flush_str_formatter () ^ "\n" ^ trace))
+                ("error", `String (Format.flush_str_formatter ()))
           in
           let total_time = Misc.time_spent () -. start_time in
           let timing = Mpipeline.timing_information pipeline in
