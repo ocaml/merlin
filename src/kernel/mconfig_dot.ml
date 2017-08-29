@@ -113,14 +113,14 @@ module Cache = File_cache.Make (struct
   end)
 
 let find fname =
-  if Sys.file_exists fname && not (Sys.is_directory fname) then
+  let is_file fname = Sys.file_exists fname && not (Sys.is_directory fname) in
+  if is_file fname then
     Some fname
   else
     let rec loop dir =
-      let fname = Filename.concat dir ".merlin" in
-      if Sys.file_exists fname && not (Sys.is_directory fname)
-      then Some fname
-      else
+      (* first try dir/.merlin, then dir/_build/.merlin *)
+      try Some (List.find ~f:is_file Filename.([concat dir ".merlin"; concat (concat dir "_build") ".merlin"]))
+      with Not_found ->
         let parent = Filename.dirname dir in
         if parent <> dir
         then loop parent
