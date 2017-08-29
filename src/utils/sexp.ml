@@ -7,6 +7,79 @@ type t =
 
 let nil = Sym "nil"
 
+let hex_char c =
+  if c < 10
+  then Char.unsafe_chr (Char.code '0' + c)
+  else Char.unsafe_chr (Char.code 'A' + c - 10)
+
+let escaped str =
+  let len = String.length str in
+  let extra_chars = ref 0 in
+  for i = 0 to len - 1 do
+    match str.[i] with
+    | '"' -> incr extra_chars
+    | c when Char.code c < 32 || Char.code c > 128 ->
+      extra_chars := !extra_chars + 3
+    | _ -> ()
+  done;
+  let buf = Buffer.create (len + !extra_chars + 2) in
+  Buffer.add_char buf '"';
+  if !extra_chars = 0 then (
+    Buffer.add_string buf str
+  ) else (
+    for i = 0 to len - 1 do
+      match str.[i] with
+      | '"' ->
+        Buffer.add_char buf '\\';
+        Buffer.add_char buf '"'
+      | c when Char.code c < 32 || Char.code c > 128 ->
+        Buffer.add_char buf '\\';
+        Buffer.add_char buf 'x';
+        let c = Char.code c in
+        Buffer.add_char buf (hex_char ((c lsr 4) land 15));
+        Buffer.add_char buf (hex_char (c land 15));
+      | c -> Buffer.add_char buf c
+    done;
+  );
+  Buffer.add_char buf '"';
+  Buffer.contents buf
+
+let unescaped str =
+  match String.index str '\\' with
+  | exception Not_found -> str
+  | _ ->
+    let len = String.length str in
+    let buf = Buffer.create len in
+    let i = ref 0 in
+    while !i < len do
+      match str.[!i] with
+      | '\\' -> (
+          incr i;
+          begin match str.[!i] with
+            | 'n' -> Buffer.add_char buf '\n'
+            | 'r' -> Buffer.add_char buf '\r'
+            | 't' -> Buffer.add_char buf '\t'
+            | 'x' ->
+              let c0 = Char.code str.[!i+1] in
+              let c1 = Char.code str.[!i+2] in
+              Buffer.add_char buf (Char.chr ((c0 * 16) lor c1));
+              i := !i + 2;
+            | '0'..'9' ->
+              let c0 = Char.code str.[!i+1] in
+              let c1 = Char.code str.[!i+2] in
+              let c2 = Char.code str.[!i+3] in
+              Buffer.add_char buf (Char.chr ((c0 * 64) lor (c1 * 8) lor c2));
+              i := !i + 2;
+            | c -> Buffer.add_char buf c
+          end;
+          incr i
+        )
+      | c ->
+        Buffer.add_char buf c;
+        incr i
+    done;
+    Buffer.contents buf
+
 let rec of_list = function
   | [] -> nil
   | a :: tl -> Cons (a, of_list tl)
@@ -17,7 +90,7 @@ let rec tell_sexp tell = function
     tell_sexp tell a;
     tell_cons tell b
   | Sym s    -> tell s
-  | String s -> tell ("\"" ^ String.escaped s ^ "\"")
+  | String s -> tell (escaped s)
   | Int i    -> tell (string_of_int i)
   | Float f  -> tell (string_of_float f)
 
@@ -110,7 +183,7 @@ let read_sexp getch =
         Buffer.add_char buf (getch ());
         aux ()
       | '"' ->
-        String (Scanf.unescaped (Buffer.contents buf)), None
+        String (unescaped (Buffer.contents buf)), None
       | c ->
         Buffer.add_char buf c;
         aux ()
