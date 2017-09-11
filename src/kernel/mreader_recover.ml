@@ -166,7 +166,7 @@ struct
     let rec nth_state env n =
       if n = 0 then
         match Parser.top env with
-        | None -> assert false
+        | None -> -1 (*allow giving up recovery on empty files*)
         | Some (Parser.Element (state, _, _, _)) -> Parser.number state
       else
         match Parser.pop env with
