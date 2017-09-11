@@ -10,6 +10,8 @@ enclosing_types = [] # nothing to see here
 current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
 re_wspaces = re.compile("[\n ]+")
+re_spaces = re.compile(" +")
+re_spaces_around_nl = re.compile(" *\n *")
 
 protocol_version = 3
 
@@ -318,13 +320,17 @@ def command_occurrences(pos):
 ######## VIM FRONTEND
 
 def vim_complete_prepare(str):
-    return re.sub(re_wspaces, " ", str).replace("'", "''")
+    return re.sub(re_wspaces, " ", str).replace("'", "''").strip()
+
+def vim_complete_prepare_preserve_newlines(str):
+    return re.sub(re_spaces_around_nl, "\n", re.sub(re_spaces, " ", str)).replace("'", "''").strip()
 
 def vim_fillentries(entries, vimvar):
     prep = vim_complete_prepare
+    prep_nl = vim_complete_prepare_preserve_newlines
     for prop in entries:
         vim.command("let tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-                (prep(prop['name']),prep(prop['desc']),prep(prop['info']),prep(prop['kind'][:1])))
+                (prep(prop['name']),prep(prop['desc']),prep_nl(prop['info']),prep(prop['kind'][:1])))
         vim.command("call add(%s, tmp)" % vimvar)
 
 # Complete
