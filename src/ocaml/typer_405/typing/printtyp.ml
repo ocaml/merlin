@@ -266,6 +266,7 @@ let rec normalize_type_path ?(cache=false) env p =
         let tyl = List.map repr tyl in
         if List.length params = List.length tyl
         && List.for_all2 (==) params tyl
+        && not (Path.same p p1)
         then normalize_type_path ~cache env p1
         else if cache || List.length params <= List.length tyl
              || not (uniq tyl) then (p, Id)
