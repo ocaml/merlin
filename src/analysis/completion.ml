@@ -414,7 +414,11 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
 
       | `Group (kinds) -> List.concat_map ~f:of_kind kinds
     in
-    of_kind kind
+    try of_kind kind
+    with exn ->
+      Logger.logf "Completion" "get_candidates/of_kind"
+        "Failed with exception: %a" (fun () -> Printexc.to_string) exn;
+      []
   in
   let items = List.sort items ~cmp:(fun (a,_) (b,_) -> compare a b) in
   let items = List.rev_map ~f:snd items in
