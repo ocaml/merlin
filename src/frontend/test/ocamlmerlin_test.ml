@@ -158,6 +158,10 @@ let tests = [
       ~parser:1 (* A bit trickier: the recovery is tempted to put a ->.
                       (unreachable), but the penalty should prevent it.  *)
       "let _ = function _ ->";
+    assert_errors "nothing_to_recover.ml"
+      ~parser:1 (* Issue #713: merlin would error when it cannot recover,
+                   but in some files there really is nothing to recover. *)
+      "let";
   ];
 
   group "ocaml-flags" (
