@@ -1,6 +1,6 @@
 function! merlin_find#OccurrencesSearch(mode)
   MerlinPy vim.command("let [l:start_col, l:current, l:target] = " + merlin.vim_occurrences_search())
-  if l:target == ""
+  if l:target ==# ""
     return
   endif
   let l:search = l:current . "\\|" . l:target
@@ -10,7 +10,7 @@ endfunction
 
 function! merlin_find#IncrementalRename()
   MerlinPy vim.command("let [w:start_rename_col,w:current_target,w:rename_target] = " + merlin.vim_occurrences_search())
-  if w:rename_target == ""
+  if w:rename_target ==# ""
     echoerr "No occurrences found!"
     return
   endif
@@ -26,7 +26,7 @@ function! merlin_find#IncrementalRename()
 endfunction
 
 function! s:IncrementalRenameTerminate()
-  if !exists('w:enclosing_rename') || w:enclosing_rename == -1
+  if !exists('w:enclosing_rename') || w:enclosing_rename ==# -1
     return
   endif
   call matchdelete(w:enclosing_rename)
