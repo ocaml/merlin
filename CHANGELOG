@@ -1,3 +1,17 @@
+merlin 3.0.3
+============
+Mon Oct  2 12:56:23 CEST 2017
+
+The major change Windows support is contributed by David Allsopp.
+
+Other changes are a bunch of fixes:
+- compilation on FreeBSD contributed by Malcolm Matalka
+- improvement to emacs mode contributed by Olivier Andrieu, Christophe
+  Troestler and Steve Purcell
+- improvement to vim mode by Fabian Hemmer and Gregory Nisbet
+- fixes to ppx invocation by Keigo Imai
+- fixes to Merlin s-expr dialect to bring UTF-8 compatibility with Emacs (WIP)
+
 merlin 3.0.2
 ============
 Wed Aug  2 15:09:07 CEST 2017
@@ -5,6 +19,7 @@ Wed Aug  2 15:09:07 CEST 2017
 Bug fix after 3.0.1:
 - CMT magic number for 4.05 was wrong
 - handle merlin.focus, merlin.ignore, merlin.loc/merlin.relaxed-loc and merlin.syntax-error
+- missing include preventing build on some platforms contributed by Bernhard Schommer
 
 merlin 3.0.1
 ============
