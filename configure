@@ -148,11 +148,10 @@ check_package yojson "Install yojson"
 OCAML_VERSION="403"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
 OCAML_VERSION_VAL='`OCaml_4_03_0'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 | `OCaml_4_06_0 ]'
 
 MAGIC_NUMBERS=$(ocamlfind c -config | grep _magic_number | tr -d '\015')
 CMI_NUMBER=$(echo "$MAGIC_NUMBERS" | sed -ne "s/cmi_magic_number: //p")
-CMT_NUMBER=$(echo "$MAGIC_NUMBERS" | sed -ne "s/cmt_magic_number: //p")
 FULL_VERSION=$(ocamlfind c -version | tr -d '\015')
 
 ### Patch certain versions of the typechecker
@@ -189,18 +188,23 @@ case "$CMI_NUMBER" in
     OCAML_VERSION_VAL='`OCaml_4_03_0'
     ;;
   "Caml1999I021")
-    case "$CMT_NUMBER" in
-      "Caml2012T008")
+    case "$FULL_VERSION" in
+      "4.04."*)
         OCAML_VERSION="404"
         OCAML_VERSION_MESSAGE="OCaml 4.04.0"
         OCAML_VERSION_VAL='`OCaml_4_04_0'
         ;;
-      *)
+      "4.05."*)
         OCAML_VERSION="405"
         OCAML_VERSION_MESSAGE="OCaml 4.05.0"
         OCAML_VERSION_VAL='`OCaml_4_05_0'
         ;;
     esac;;
+  "Caml1999I022")
+    OCAML_VERSION="406"
+    OCAML_VERSION_MESSAGE="OCaml 4.06.0"
+    OCAML_VERSION_VAL='`OCaml_4_06_0'
+    ;;
 esac
 
 ## Findlib version check
@@ -208,7 +212,7 @@ esac
 
 if [ "x1.5.1" = "x$(ocamlfind query findlib -format '%v' | tr -d '\015')" ]; then
   printf "\nOld version of findlib detected (1.5.1), patching\n"
-  filter_file src/kernel/dot_merlin.ml \
+  filter_file src/kernel/mconfig_dot.ml \
      sed -e 's/Findlib\.resolve_path ~base:d ~explicit:true/Findlib.resolve_path ~base:d/'
 fi
 
