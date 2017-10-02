@@ -208,7 +208,7 @@ let backup () = !current
 let restore x = current := x
 
 (* Some warnings are not properly implemented in merlin, just disable *)
-let disabled x = (x >= 32 && x <= 39)
+let disabled x = (x >= 32 && x <= 39) || x = 60
 
 let is_active x = let x = number x in not (disabled x) && Bitfield.is_set (!current).active x;;
 let is_error x = let x = number x in not (disabled x) && Bitfield.is_set (!current).error x;;
