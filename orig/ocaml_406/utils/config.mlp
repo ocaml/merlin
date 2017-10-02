@@ -1,0 +1,194 @@
+#2 "utils/config.mlp"
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
+
+(* The main OCaml version string has moved to ../VERSION *)
+let version = Sys.ocaml_version
+
+let standard_library_default = "%%LIBDIR%%"
+
+let standard_library =
+  try
+    Sys.getenv "OCAMLLIB"
+  with Not_found ->
+  try
+    Sys.getenv "CAMLLIB"
+  with Not_found ->
+    standard_library_default
+
+let standard_runtime = "%%BYTERUN%%"
+let ccomp_type = "%%CCOMPTYPE%%"
+let c_compiler = "%%CC%%"
+let c_output_obj = "%%OUTPUTOBJ%%"
+let ocamlc_cflags = "%%OCAMLC_CFLAGS%%"
+let ocamlc_cppflags = "%%OCAMLC_CPPFLAGS%%"
+let ocamlopt_cflags = "%%OCAMLOPT_CFLAGS%%"
+let ocamlopt_cppflags = "%%OCAMLOPT_CPPFLAGS%%"
+let bytecomp_c_libraries = "%%BYTECCLIBS%%"
+let native_c_libraries = "%%NATIVECCLIBS%%"
+let native_pack_linker = "%%PACKLD%%"
+let ranlib = "%%RANLIBCMD%%"
+let ar = "%%ARCMD%%"
+let cc_profile = "%%CC_PROFILE%%"
+let mkdll, mkexe, mkmaindll =
+  (* @@DRA Cygwin - but only if shared libraries are enabled, which we
+     should be able to detect? *)
+  if Sys.os_type = "Win32" then
+    try
+      let flexlink =
+        let flexlink = Sys.getenv "OCAML_FLEXLINK" in
+        let f i =
+          let c = flexlink.[i] in
+          if c = '/' then '\\' else c in
+        (String.init (String.length flexlink) f) ^ " %%FLEXLINK_FLAGS%%" in
+      flexlink,
+      flexlink ^ " -exe%%FLEXLINK_LDFLAGS%%",
+      flexlink ^ " -maindll"
+    with Not_found ->
+      "%%MKDLL%%", "%%MKEXE%%", "%%MKMAINDLL%%"
+  else
+    "%%MKDLL%%", "%%MKEXE%%", "%%MKMAINDLL%%"
+
+let profiling = %%PROFILING%%
+let flambda = %%FLAMBDA%%
+let safe_string = %%SAFE_STRING%%
+let windows_unicode = %%WINDOWS_UNICODE%% != 0
+
+let flat_float_array = %%FLAT_FLOAT_ARRAY%%
+
+let afl_instrument = %%AFL_INSTRUMENT%%
+
+let exec_magic_number = "Caml1999X011"
+and cmi_magic_number = "Caml1999I021"
+and cmo_magic_number = "Caml1999O011"
+and cma_magic_number = "Caml1999A012"
+and cmx_magic_number =
+  if flambda then
+    "Caml1999Y016"
+  else
+    "Caml1999Y015"
+and cmxa_magic_number =
+  if flambda then
+    "Caml1999Z015"
+  else
+    "Caml1999Z014"
+and ast_impl_magic_number = "Caml1999M020"
+and ast_intf_magic_number = "Caml1999N018"
+and cmxs_magic_number = "Caml2007D002"
+and cmt_magic_number = "Caml2012T009"
+
+let load_path = ref ([] : string list)
+
+let interface_suffix = ref ".mli"
+
+let max_tag = 245
+(* This is normally the same as in obj.ml, but we have to define it
+   separately because it can differ when we're in the middle of a
+   bootstrapping phase. *)
+let lazy_tag = 246
+
+let max_young_wosize = 256
+let stack_threshold = 256 (* see byterun/config.h *)
+let stack_safety_margin = 60
+
+let architecture = "%%ARCH%%"
+let model = "%%MODEL%%"
+let system = "%%SYSTEM%%"
+
+let asm = "%%ASM%%"
+let asm_cfi_supported = %%ASM_CFI_SUPPORTED%%
+let with_frame_pointers = %%WITH_FRAME_POINTERS%%
+let spacetime = %%WITH_SPACETIME%%
+let spacetime_call_counts = %%WITH_SPACETIME_CALL_COUNTS%%
+let libunwind_available = %%LIBUNWIND_AVAILABLE%%
+let libunwind_link_flags = "%%LIBUNWIND_LINK_FLAGS%%"
+let profinfo = %%WITH_PROFINFO%%
+let profinfo_width = %%PROFINFO_WIDTH%%
+
+let ext_exe = "%%EXT_EXE%%"
+let ext_obj = "%%EXT_OBJ%%"
+let ext_asm = "%%EXT_ASM%%"
+let ext_lib = "%%EXT_LIB%%"
+let ext_dll = "%%EXT_DLL%%"
+
+let host = "%%HOST%%"
+let target = "%%TARGET%%"
+
+let default_executable_name =
+  match Sys.os_type with
+    "Unix" -> "a.out"
+  | "Win32" | "Cygwin" -> "camlprog.exe"
+  | _ -> "camlprog"
+
+let systhread_supported = %%SYSTHREAD_SUPPORT%%;;
+
+let flexdll_dirs = [%%FLEXDLL_DIR%%];;
+
+let print_config oc =
+  let p name valu = Printf.fprintf oc "%s: %s\n" name valu in
+  let p_int name valu = Printf.fprintf oc "%s: %d\n" name valu in
+  let p_bool name valu = Printf.fprintf oc "%s: %B\n" name valu in
+  p "version" version;
+  p "standard_library_default" standard_library_default;
+  p "standard_library" standard_library;
+  p "standard_runtime" standard_runtime;
+  p "ccomp_type" ccomp_type;
+  p "c_compiler" c_compiler;
+  p "ocamlc_cflags" ocamlc_cflags;
+  p "ocamlopt_cflags" ocamlopt_cflags;
+  p "bytecomp_c_libraries" bytecomp_c_libraries;
+  p "native_c_libraries" native_c_libraries;
+  p "native_pack_linker" native_pack_linker;
+  p "ranlib" ranlib;
+  p "cc_profile" cc_profile;
+  p "architecture" architecture;
+  p "model" model;
+  p_int "int_size" Sys.int_size;
+  p_int "word_size" Sys.word_size;
+  p "system" system;
+  p "asm" asm;
+  p_bool "asm_cfi_supported" asm_cfi_supported;
+  p_bool "with_frame_pointers" with_frame_pointers;
+  p "ext_exe" ext_exe;
+  p "ext_obj" ext_obj;
+  p "ext_asm" ext_asm;
+  p "ext_lib" ext_lib;
+  p "ext_dll" ext_dll;
+  p "os_type" Sys.os_type;
+  p "default_executable_name" default_executable_name;
+  p_bool "systhread_supported" systhread_supported;
+  p "host" host;
+  p "target" target;
+  p_bool "profiling" profiling;
+  p_bool "flambda" flambda;
+  p_bool "spacetime" spacetime;
+  p_bool "safe_string" safe_string;
+  p_bool "flat_float_array" flat_float_array;
+  p_bool "windows_unicode" windows_unicode;
+
+  (* print the magic number *)
+  p "exec_magic_number" exec_magic_number;
+  p "cmi_magic_number" cmi_magic_number;
+  p "cmo_magic_number" cmo_magic_number;
+  p "cma_magic_number" cma_magic_number;
+  p "cmx_magic_number" cmx_magic_number;
+  p "cmxa_magic_number" cmxa_magic_number;
+  p "ast_impl_magic_number" ast_impl_magic_number;
+  p "ast_intf_magic_number" ast_intf_magic_number;
+  p "cmxs_magic_number" cmxs_magic_number;
+  p "cmt_magic_number" cmt_magic_number;
+
+  flush oc;
+;;
