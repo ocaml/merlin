@@ -406,12 +406,17 @@ def vim_loclist(vimvar, ignore_warnings):
             ty = 'e'
             msg = msg[7:]
         lnum = 1
-        lcol = 1
+        col = 1
         if 'start' in error:
             lnum = error['start']['line']
-            lcol = error['start']['col'] + 1
-        vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
-                (bufnr, lnum, lcol, nr, msg, ty))
+            col = error['start']['col'] + 1
+        end_lnum = 1
+        end_col = 1
+        if 'end' in error:
+            end_lnum = error['end']['line']
+            end_col = error['end']['col']
+        vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'end_lnum':%d,'end_col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
+                (bufnr, lnum, col, end_lnum, end_col, nr, msg, ty))
         nr = nr + 1
         vim.command("call add(%s, l:tmp)" % vimvar)
 
