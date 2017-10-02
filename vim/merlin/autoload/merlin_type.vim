@@ -16,7 +16,7 @@ endfunction
 function! merlin_type#HideTypeHistory(force)
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
-  if l:win >= 0 && (a:force || l:cur != l:win)
+  if l:win >=# 0 && (a:force || l:cur !=# l:win)
     exe l:win . "wincmd w"
     close
     exe l:cur . "wincmd w"
@@ -30,11 +30,11 @@ endfunction
 function! merlin_type#ShowTypeHistory()
   call s:CreateTypeHistory()
   let l:win = bufwinnr(g:merlin_type_history)
-  if l:win < 0
+  if l:win <# 0
     let t:merlin_restore_windows = winrestcmd()
     silent execute "bot " . g:merlin_type_history_height . "split"
     execute "buffer" g:merlin_type_history
-  elseif winnr() != l:win
+  elseif winnr() !=# l:win
     exe l:win . "wincmd w"
   endif
   normal! Gzb
@@ -44,7 +44,7 @@ function! merlin_type#ToggleTypeHistory()
   let l:exists = exists("g:merlin_type_history") && bufexists(g:merlin_type_history)
   call s:CreateTypeHistory()
   let l:win = bufwinnr(g:merlin_type_history)
-  if l:win < 0 || !l:exists
+  if l:win <# 0 || !l:exists
     call merlin_type#ShowTypeHistory()
   else
     call merlin_type#HideTypeHistory(1)
@@ -100,7 +100,7 @@ endfunction
 function! merlin_type#Show(type, tail_info)
 
   let l:user_lazyredraw = &lazyredraw
-  if l:user_lazyredraw == 0
+  if l:user_lazyredraw ==# 0
     set lazyredraw
   endif
 
@@ -117,11 +117,11 @@ function! merlin_type#Show(type, tail_info)
 
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
-  if l:win >= 0
+  if l:win >=# 0
     exe l:win . "wincmd w"
     call s:TemporaryResize(l:length)
     normal! Gzb
-  elseif l:length >= g:merlin_type_history_auto_open
+  elseif l:length >=# g:merlin_type_history_auto_open
     call merlin_type#ShowTypeHistory()
     call s:TemporaryResize(l:length)
     let t:merlin_autohide=1
@@ -142,7 +142,7 @@ function! merlin_type#Show(type, tail_info)
   endif
   exe l:cur . "wincmd w"
 
-  if l:user_lazyredraw == 0
+  if l:user_lazyredraw ==# 0
     set nolazyredraw
   endif
 endfunction
@@ -152,10 +152,10 @@ function! s:TemporaryResize(height)
   let t:merlin_type_history_height = winheight(l:win)
   let target_height = max([ g:merlin_type_history_height, a:height ])
   let target_height = min([ target_height, line("$") - 1 ])
-  if t:merlin_type_history_height != target_height
+  if t:merlin_type_history_height !=# target_height
     execute "resize" . target_height
   endif
-  if target_height > g:merlin_type_history_height
+  if target_height ># g:merlin_type_history_height
     augroup MerlinTypeHistory
       au!
       autocmd CursorMoved,InsertEnter * call s:RestoreTypeHistoryHeight()
@@ -169,7 +169,7 @@ function! s:RestoreTypeHistoryHeight()
   endif
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
-  if l:win >= 0 && l:cur != l:win
+  if l:win >=# 0 && l:cur !=# l:win
     execute "normal! " . l:win . "\<c-w>w"
     execute "resize" t:merlin_type_history_height
     normal! Gzb
@@ -191,7 +191,7 @@ function! merlin_type#ShowLines(start, end)
   let prev_group = ' x '     " Something that won't match any syntax group name.
 
   let show = a:end - a:start + 1
-  if &cmdheight < show
+  if &cmdheight <# show
     let g:merlin_previous_cmdheight = &cmdheight
     augroup MerlinCleanupCommandHeight
       au!
@@ -202,8 +202,8 @@ function! merlin_type#ShowLines(start, end)
 
   let shown = 0
   let index = l:start
-  while index <= l:end
-    if shown > 0
+  while index <=# l:end
+    if shown ># 0
       let cmd = cmd . '\n'
     endif
 
@@ -212,28 +212,28 @@ function! merlin_type#ShowLines(start, end)
     let length = strlen(current_line)
     let column = 1
 
-    if length == 0
+    if length ==# 0
       let cmd = cmd . 'echon "'
     endif
 
-    while column <= length "{
+    while column <=# length "{
       let group = synIDattr(synID(index, column, 1), 'name')
-      if group != prev_group
-        if cmd != ''
+      if group !=# prev_group
+        if cmd !=# ''
              let cmd = cmd . '"|'
         endif
-        let cmd = cmd . 'echohl ' . (group == '' ? 'NONE' : group) . '|echon "'
+        let cmd = cmd . 'echohl ' . (group ==# '' ? 'NONE' : group) . '|echon "'
         let prev_group = group
       endif
       let char = strpart(current_line, column - 1, 1)
-      if char == '"' || char == "\\"
+      if char ==# '"' || char ==# "\\"
         let char = '\' . char
       endif
       let cmd = cmd . char
       let column = column + 1
     endwhile "}
 
-    if shown == &cmdheight
+    if shown ==# &cmdheight
          break
     endif
 
