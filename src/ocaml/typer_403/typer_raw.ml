@@ -33,7 +33,7 @@ open Parsetree
 let open_implicit_module m env =
   let open Asttypes in
   let lid = {loc = Location.in_file "command line";
-             txt = Longident.Lident m } in
+             txt = Longident.parse m } in
   match snd (Typemod.type_open_ Override env lid.loc lid) with
   | env -> env
   | exception exn ->

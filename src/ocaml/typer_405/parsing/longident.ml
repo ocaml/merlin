@@ -31,10 +31,9 @@ let last = function
   | Lapply(_, _) -> Misc.fatal_error "Longident.last"
 
 let rec split_at_dots s pos =
-  try
-    let dot = String.index_from s pos '.' in
-    String.sub s pos (dot - pos) :: split_at_dots s (dot + 1)
-  with Not_found ->
+  match String.index_from s pos '.' with
+  | dot -> String.sub s pos (dot - pos) :: split_at_dots s (dot + 1)
+  | exception Not_found ->
     [String.sub s pos (String.length s - pos)]
 
 let parse s =
