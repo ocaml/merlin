@@ -580,7 +580,7 @@ let namespaces = function
   | Type          -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
   | Expr | Patt _ -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
-  | Label         -> [ `Labels ]
+  | Label         -> [ `Labels; `Mod ]
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
 
