@@ -1292,6 +1292,7 @@ loading"
 (defun merlin/locate (&optional ident)
   "Locate the identifier IDENT at point."
   (let ((result (merlin/call "locate"
+                             (when ident (list "-prefix" ident))
                              "-position" (merlin/unmake-point (point))
                              "-look-for" merlin-locate-preference)))
     (unless result
