@@ -66,6 +66,7 @@ let path_to_string (p : path) =
       | (str,`Vals) -> str ^ "[val]"
       | (str,`Modtype) -> str ^ "[Mty]"
       | (str, `Unknown) -> str ^ "[?]"
+      | (str, `Apply) -> str ^ "[functor application]"
     )
   in
   String.concat ~sep:"." p
@@ -161,19 +162,20 @@ let rec pattern_idlocs pat =
   | Tpat_variant (_, Some pat, _) -> pattern_idlocs pat
   | _ -> []
 
-let rec tag_path ~namespace = function
-  | [] -> invalid_arg "Typedtrie.tag_path"
-  | [ x ] -> [ x, namespace ]
-  | x :: xs -> (x, `Mod) :: tag_path ~namespace xs
+let tag_path ~namespace =
+  let rec aux acc ns =
+    let open Path in
+    function
+    | Pident id -> (Ident.name id, ns) :: acc
+    | Pdot (p, str, _) -> aux ((str, ns) :: acc) `Mod p
+    | Papply _ as p -> (Path.name p, `Apply) :: acc
+  in
+  aux [] namespace
 
 let rec build ?(local_buffer=false) ~trie browses =
   let rec node_for_direct_mod namespace = function
-    | `Alias path ->
-      let p = Path_aux.to_string_list path in
-      Alias (tag_path ~namespace p)
-    | `Ident path ->
-      let p = Path_aux.to_string_list path in
-      Alias (tag_path ~namespace:`Modtype p)
+    | `Alias path -> Alias (tag_path ~namespace path)
+    | `Ident path -> Alias (tag_path ~namespace:`Modtype path)
     | `Str s ->
       Internal (build ~local_buffer ~trie:Trie.empty [of_structure s])
     | `Sg s ->
@@ -271,10 +273,10 @@ let rec build ?(local_buffer=false) ~trie browses =
               | `Mod_expr _ -> `Mod
               | `Mod_type _ -> `Modtype
             in
-            let p = tag_path ~namespace (Path_aux.to_string_list path) in
+            let p = tag_path ~namespace path in
             f (Included p)
           | `Ident p ->
-            let p = tag_path ~namespace:`Modtype (Path_aux.to_string_list p) in
+            let p = tag_path ~namespace:`Modtype p in
             f (Included p)
           | `Mod_type _
           | `Mod_expr _ as packed -> helper packed
@@ -405,7 +407,7 @@ let rec follow ?before trie = function
     | Not_found ->
       Resolves_to (path, None)
 
-let dump_namespace fmt namespace =
+let dump_namespace fmt (namespace : namespace) =
   Format.pp_print_string fmt
     (match namespace with
      | `Mod -> "(Mod) "
@@ -415,7 +417,8 @@ let dump_namespace fmt namespace =
      | `Type -> "(typ) "
      | `Vals -> "(val) "
      | `Modtype -> "(Mty) "
-     | `Unknown -> "(?)")
+     | `Unknown -> "(?)"
+     | `Apply -> "(functor application)")
 
 let rec find ~before trie path =
   match

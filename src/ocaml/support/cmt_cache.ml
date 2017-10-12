@@ -37,6 +37,7 @@ type namespace = [
   | `Functor
   | `Labels
   | `Unknown
+  | `Apply
 ]
 type path = (string * namespace) list
 

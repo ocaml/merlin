@@ -43,7 +43,7 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
     [cursor] in this case, so we can't be inside an expression, or a functor, …
 *)
 
-val tag_path : namespace:namespace -> string list -> path
+val tag_path : namespace:namespace -> Path.t -> path
 
 val path_to_string : path -> string
 

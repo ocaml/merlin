@@ -82,7 +82,7 @@ let rec summarize node =
     Some (mk ~children ~location `Type td.typ_id)
 
   | Type_extension te ->
-    let name = String.concat ~sep:"." (Path_aux.to_string_list te.tyext_path) in
+    let name = Path.name te.tyext_path in
     let children =
       List.filter_map (Lazy.force node.t_children) ~f:(fun x ->
         summarize x >>| fun x -> { x with Query_protocol.outline_kind = `Constructor }
