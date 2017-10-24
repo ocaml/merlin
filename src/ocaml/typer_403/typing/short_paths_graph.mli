@@ -1,3 +1,51 @@
+(** [Short_path_graph] is a representation of the environment (as a graph,
+    using [Graph.t]) that is more suitable to answer short path queries.
+
+    The only structures shared with the typechecker are [Ident.t] and [Path.t].
+    [Graph.t] is pure and doesn't hook into the [Env.t].
+    Context has to be rebuilt by outside code using [Graph.add].
+*)
+
+(* Generic definitions *)
+
+module String_map : Map.S with type key = string
+
+module Ident : sig
+
+  type t = Ident.t
+
+  val equal : t -> t -> bool
+
+  val compare : t -> t -> int
+
+  val name : t -> string
+
+  val global : string -> t
+
+end
+
+module Ident_map : Map.S with type key = Ident.t
+
+module Ident_set : Set.S with type elt = Ident.t
+
+module Path : sig
+
+  type t = Path.t =
+    | Pident of Ident.t
+    | Pdot of t * string * int
+    | Papply of t * t
+
+  val equal : t -> t -> bool
+
+  val compare : t -> t -> int
+
+end
+
+module Path_map : Map.S with type key = Path.t
+
+module Path_set : Set.S with type elt = Path.t
+
+(* Subset of the type algebra that is relevant to short path *)
 
 module Desc : sig
 
@@ -5,10 +53,19 @@ module Desc : sig
 
     type t =
       | Fresh
+      (** type t *)
       | Nth of int
+      (** The n'th projection of type parameters.
+          E.g. for n < m, [type ('x_0,'x_1,...,'x_m-1) t = 'x_n]
+          is represented as [Nth n]. *)
       | Subst of Path.t * int list
+      (** An alias to some other type after substitution of type parameters.
+          E.g. [type ('x_0, 'x_1', 'x_2, 'x_3) t = ('x_3, 'x_2) p]
+          is represented as [Subst (p, [3,2])]. *)
       | Alias of Path.t
-
+      (** A direct alias to another type, preserving parameters.
+          E.g [type t = p], [type 'a t = 'a p], ...
+          are represented as [Alias p]. *)
   end
 
   module Class_type : sig
@@ -59,43 +116,6 @@ module Desc : sig
     | Declare_module of Ident.t
 
 end
-
-module String_map : Map.S with type key = string
-
-module Ident : sig
-
-  type t = Ident.t
-
-  val equal : t -> t -> bool
-
-  val compare : t -> t -> int
-
-  val name : t -> string
-
-  val global : string -> t
-
-end
-
-module Ident_map : Map.S with type key = Ident.t
-
-module Ident_set : Set.S with type elt = Ident.t
-
-module Path : sig
-
-  type t = Path.t =
-    | Pident of Ident.t
-    | Pdot of t * string * int
-    | Papply of t * t
-
-  val equal : t -> t -> bool
-
-  val compare : t -> t -> int
-
-end
-
-module Path_map : Map.S with type key = Path.t
-
-module Path_set : Set.S with type elt = Path.t
 
 module Sort : sig
 
