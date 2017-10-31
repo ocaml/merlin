@@ -12,6 +12,10 @@ let hex_char c =
   then Char.unsafe_chr (Char.code '0' + c)
   else Char.unsafe_chr (Char.code 'A' + c - 10)
 
+let is_hex = function
+  | 'A'..'Z' | 'a'..'z' | '0'..'9' -> true
+  | _ -> false
+
 let escaped str =
   let len = String.length str in
   let extra_chars = ref 0 in
@@ -38,6 +42,8 @@ let escaped str =
         let c = Char.code c in
         Buffer.add_char buf (hex_char ((c lsr 4) land 15));
         Buffer.add_char buf (hex_char (c land 15));
+        if (i < len - 1) && is_hex str.[i+1] then
+          (Buffer.add_char buf '\\'; Buffer.add_char buf ' ')
       | c -> Buffer.add_char buf c
     done;
   );
@@ -45,6 +51,13 @@ let escaped str =
   Buffer.contents buf
 
 let unescaped str =
+  (* Unescaped doesn't support unicode escaping and multibyte hex and octal
+     escaping.
+     Unicode escaping: '\uNNNN' or '\U00NNNNNN'
+     Hex/octal escaping looks like '\xNN' or '\NNN'.
+     '\xNNNN' and '\NNNNNN' are ambiguous, but emacs will try to parse them
+     as multibyte
+  *)
   match String.index str '\\' with
   | exception Not_found -> str
   | _ ->
