@@ -163,7 +163,7 @@ case "$CMI_NUMBER" in
     OCAML_VERSION="402"
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.0"
-      filter_file src/ocaml_402/typing/typecore.ml \
+      filter_file src/ocaml/typer_402/typing/typecore.ml \
         grep -v -F '| Scan_next_char 
 | Ignored_scan_next_char 
 | Any_ty 
@@ -171,7 +171,7 @@ case "$CMI_NUMBER" in
       OCAML_VERSION_VAL='`OCaml_4_02_0'
     elif [ "x$FULL_VERSION" = "x4.02.1" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
-      filter_file src/ocaml_402/typing/typecore.ml \
+      filter_file src/ocaml/typer_402/typing/typecore.ml \
         grep -v -F '| Any_ty 
 | Custom '
       OCAML_VERSION_VAL='`OCaml_4_02_1'
