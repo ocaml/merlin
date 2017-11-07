@@ -17,6 +17,7 @@ share: [
   "vim/merlin/ftplugin/ocaml.vim" { "vim/ftplugin/ocaml.vim" }
   "vim/merlin/ftplugin/omlet.vim" { "vim/ftplugin/omlet.vim" }
   "vim/merlin/plugin/merlin.vim" { "vim/plugin/merlin.vim" }
+  "vim/merlin/rplugin/python3/deoplete/sources/deoplete_ocaml.py" { "vim/rplugin/python3/deoplete/sources/deoplete_ocaml.py" }
   "vim/merlin/syntax_checkers/ocaml/merlin.vim" { "vim/syntax_checkers/ocaml/merlin.vim" }
   "vim/merlin/syntax_checkers/omlet/merlin.vim" { "vim/syntax_checkers/omlet/merlin.vim" }
   "vim/merlin/syntax/merlin.vim" { "vim/syntax/merlin.vim" }
