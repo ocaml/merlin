@@ -818,10 +818,10 @@ let apply_lazy ~source ~target mapper =
       Str.attribute (PpxContext.mk fields) :: ast
     with exn ->
       match error_of_exn exn with
-      | Some error ->
+      | Some (`Ok error) ->
           [{pstr_desc = Pstr_extension (extension_of_error error, []);
             pstr_loc  = Location.none}]
-      | None -> raise exn
+      | Some `Already_displayed | None -> raise exn
   in
   let iface ast =
     try
@@ -838,10 +838,10 @@ let apply_lazy ~source ~target mapper =
       Sig.attribute (PpxContext.mk fields) :: ast
     with exn ->
       match error_of_exn exn with
-      | Some error ->
+      | Some (`Ok error) ->
           [{psig_desc = Psig_extension (extension_of_error error, []);
             psig_loc  = Location.none}]
-      | None -> raise exn
+      | Some `Already_displayed | None -> raise exn
   in
   let ast =
     if magic = Config.ast_impl_magic_number

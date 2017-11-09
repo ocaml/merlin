@@ -2,7 +2,7 @@
 (* This generated code requires the following version of MenhirLib: *)
 
 let () =
-  MenhirLib.StaticVersion.require_20170509
+  MenhirLib.StaticVersion.require_20171013
 
 module MenhirBasics = struct
   
@@ -3729,7 +3729,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1825 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int _1 )
 # 3736 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -3758,7 +3758,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1827 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_char _1 )
 # 3765 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -3787,7 +3787,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1829 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( let (s, d) = _1 in Pconst_string (s, d) )
 # 3794 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -3816,7 +3816,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1831 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_float _1 )
 # 3823 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -3845,7 +3845,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1833 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int32 _1 )
 # 3852 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -3874,7 +3874,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1835 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int64 _1 )
 # 3881 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -3903,7 +3903,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1837 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_nativeint _1 )
 # 3910 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -16984,11 +16984,11 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.constant) = Obj.magic _1 in
+        let _1 : (Parsetree.constant) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1840 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( _1 )
 # 16995 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17023,7 +17023,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1842 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int(- _2) )
 # 17030 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17058,7 +17058,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1844 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_float("-" ^ _2) )
 # 17065 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17093,7 +17093,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1846 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int32(Int32.neg _2) )
 # 17100 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17128,7 +17128,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1848 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int64(Int64.neg _2) )
 # 17135 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17163,7 +17163,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1850 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_nativeint(Nativeint.neg _2) )
 # 17170 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17198,7 +17198,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1852 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int _2 )
 # 17205 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17233,7 +17233,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1854 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_float _2 )
 # 17240 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17268,7 +17268,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1856 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int32 _2 )
 # 17275 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17303,7 +17303,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1858 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_int64 _2 )
 # 17310 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -17338,7 +17338,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.constant) = 
+        let _v : (Parsetree.constant) = 
 # 1860 "src/ocaml/typer/preprocess/parser_raw.mly"
     ( Const_nativeint _2 )
 # 17345 "src/ocaml/typer/preprocess/parser_raw.ml"
@@ -18398,7 +18398,7 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.constant) = Obj.magic _1 in
+        let _1 : (Parsetree.constant) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
@@ -19991,7 +19991,7 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.constant) = Obj.magic _1 in
+        let _1 : (Parsetree.constant) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
@@ -20028,9 +20028,9 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : (Asttypes.constant) = Obj.magic _3 in
+        let _3 : (Parsetree.constant) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Asttypes.constant) = Obj.magic _1 in
+        let _1 : (Parsetree.constant) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
@@ -25654,7 +25654,7 @@ module MenhirInterpreter = struct
       | N_simple_core_type_no_attr : (Parsetree.core_type) nonterminal
       | N_simple_core_type2 : (Parsetree.core_type) nonterminal
       | N_simple_core_type : (Parsetree.core_type) nonterminal
-      | N_signed_constant : (Asttypes.constant) nonterminal
+      | N_signed_constant : (Parsetree.constant) nonterminal
       | N_signature_item : (Parsetree.signature_item list) nonterminal
       | N_signature : (Parsetree.signature) nonterminal
       | N_sig_type_extension : (Parsetree.type_extension) nonterminal
@@ -25783,7 +25783,7 @@ module MenhirInterpreter = struct
       | N_constrain : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) nonterminal
       | N_constr_longident : (Longident.t) nonterminal
       | N_constr_ident : (string) nonterminal
-      | N_constant : (Asttypes.constant) nonterminal
+      | N_constant : (Parsetree.constant) nonterminal
       | N_clty_longident : (Longident.t) nonterminal
       | N_class_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
       | N_class_type_declarations : (Parsetree.class_type_declaration list) nonterminal

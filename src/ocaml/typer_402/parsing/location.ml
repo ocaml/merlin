@@ -305,7 +305,7 @@ let error_of_exn exn =
     | [] -> None
     | f :: rest ->
         match f exn with
-        | Some _ as r -> r
+        | Some r -> Some (`Ok r)
         | None -> loop rest
   in
   loop !error_of_exn
@@ -370,9 +370,9 @@ let () =
 
 let rec report_exception_rec n ppf exn =
   try match error_of_exn exn with
-  | Some err ->
+  | Some (`Ok err) ->
       fprintf ppf "@[%a@]@." report_error err
-  | None -> raise exn
+  | Some `Already_displayed | None -> raise exn
   with exn when n > 0 ->
     report_exception_rec (n-1) ppf exn
 

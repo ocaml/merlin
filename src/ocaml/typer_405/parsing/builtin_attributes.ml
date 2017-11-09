@@ -180,6 +180,16 @@ let with_warning_attribute attrs f =
     warning_leave_scope ();
     raise exn
 
+let warning_scope ?ppwarning attrs f =
+  let prev = Warnings.backup () in
+  try
+    warning_attribute attrs;
+    let ret = f () in
+    Warnings.restore prev;
+    ret
+  with exn ->
+    Warnings.restore prev;
+    raise exn
 
 let warn_on_literal_pattern =
   List.exists

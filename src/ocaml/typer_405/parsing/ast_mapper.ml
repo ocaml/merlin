@@ -806,8 +806,8 @@ let ppx_context = PpxContext.make
 
 let ext_of_exn exn =
   match error_of_exn exn with
-  | Some error -> extension_of_error error
-  | None -> raise exn
+  | Some (`Ok error) -> extension_of_error error
+  | Some `Already_displayed | None -> raise exn
 
 
 let apply_lazy ~source ~target mapper =

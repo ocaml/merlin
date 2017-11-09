@@ -53,3 +53,7 @@ val immediate: Parsetree.attributes -> bool
 
 val has_unboxed: Parsetree.attributes -> bool
 val has_boxed: Parsetree.attributes -> bool
+
+val warning_scope:
+  ?ppwarning:bool ->
+  Parsetree.attributes -> (unit -> 'a) -> 'a

@@ -195,3 +195,14 @@ let explicit_arity =
       | ({txt="ocaml.explicit_arity"|"explicit_arity"; _}, _) -> true
       | _ -> false
     )
+
+let warning_scope ?ppwarning attrs f =
+  let prev = Warnings.backup () in
+  try
+    warning_attribute attrs;
+    let ret = f () in
+    Warnings.restore prev;
+    ret
+  with exn ->
+    Warnings.restore prev;
+    raise exn

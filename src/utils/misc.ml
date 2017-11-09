@@ -250,7 +250,7 @@ let string_of_file ic =
 let output_to_file_via_temporary ?(mode = [Open_text]) filename fn =
   let (temp_filename, oc) =
     Filename.open_temp_file
-       ~mode ~perms:0o666 ~temp_dir:(Filename.dirname filename)
+       ~mode (*~perms:0o666*) ~temp_dir:(Filename.dirname filename)
        (Filename.basename filename) ".tmp" in
     (* The 0o666 permissions will be modified by the umask.  It's just
        like what [open_out] and [open_out_bin] do.

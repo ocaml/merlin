@@ -356,7 +356,7 @@ let error_of_exn exn =
     | [] -> None
     | f :: rest ->
         match f exn with
-        | Some _ as r -> r
+        | Some r -> Some (`Ok r)
         | None -> loop rest
   in
   loop !error_of_exn
@@ -424,7 +424,7 @@ external reraise : exn -> 'a = "%reraise"
 
 let rec report_exception_rec n ppf exn =
   try match error_of_exn exn with
-  | Some err ->
+  | Some (`Ok err) ->
       fprintf ppf "@[%a@]@." report_error err
   | None -> reraise exn
   with exn when n > 0 ->

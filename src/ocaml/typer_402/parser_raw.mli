@@ -333,7 +333,7 @@ module MenhirInterpreter : sig
     | N_simple_core_type_no_attr : (Parsetree.core_type) nonterminal
     | N_simple_core_type2 : (Parsetree.core_type) nonterminal
     | N_simple_core_type : (Parsetree.core_type) nonterminal
-    | N_signed_constant : (Asttypes.constant) nonterminal
+    | N_signed_constant : (Parsetree.constant) nonterminal
     | N_signature_item : (Parsetree.signature_item list) nonterminal
     | N_signature : (Parsetree.signature) nonterminal
     | N_sig_type_extension : (Parsetree.type_extension) nonterminal
@@ -450,7 +450,7 @@ module MenhirInterpreter : sig
     | N_constrain : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) nonterminal
     | N_constr_longident : (Longident.t) nonterminal
     | N_constr_ident : (string) nonterminal
-    | N_constant : (Asttypes.constant) nonterminal
+    | N_constant : (Parsetree.constant) nonterminal
     | N_clty_longident : (Longident.t) nonterminal
     | N_class_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
     | N_class_type_declarations : (Parsetree.class_type_declaration list) nonterminal

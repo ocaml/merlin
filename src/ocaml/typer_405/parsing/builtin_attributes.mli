@@ -48,6 +48,9 @@ val emit_external_warnings: Ast_iterator.iterator
 val warn_on_literal_pattern: Parsetree.attributes -> bool
 val explicit_arity: Parsetree.attributes -> bool
 
+val warning_scope:
+  ?ppwarning:bool ->
+  Parsetree.attributes -> (unit -> 'a) -> 'a
 
 val immediate: Parsetree.attributes -> bool
 
