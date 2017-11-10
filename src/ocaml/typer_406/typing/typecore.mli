@@ -127,6 +127,9 @@ type error =
   | Not_an_extension_constructor
   | Literal_overflow of string
   | Unknown_literal of string * char
+  | Illegal_letrec_pat
+  | Illegal_letrec_expr
+  | Illegal_class_expr
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -138,7 +141,8 @@ val report_error: Env.t -> formatter -> error -> unit
 val type_module: (Env.t -> Parsetree.module_expr -> Typedtree.module_expr) ref
 (* Forward declaration, to be filled in by Typemod.type_open *)
 val type_open:
-    (override_flag -> Env.t -> Location.t -> Longident.t loc -> Path.t * Env.t)
+  (?used_slot:bool ref -> override_flag -> Env.t -> Location.t ->
+   Longident.t loc -> Path.t * Env.t)
     ref
 (* Forward declaration, to be filled in by Typeclass.class_structure *)
 val type_object:
@@ -154,5 +158,6 @@ val create_package_type : Location.t -> Env.t ->
 
 val constant: Parsetree.constant -> (Asttypes.constant, error) result
 
-val extract_concrete_record :
-  Env.t -> Types.type_expr -> Path.t * Path.t * Types.label_declaration list
+val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
+val check_recursive_class_bindings :
+  Env.t -> Ident.t list -> Typedtree.class_expr list -> unit

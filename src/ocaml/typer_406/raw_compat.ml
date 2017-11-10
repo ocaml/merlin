@@ -54,7 +54,8 @@ let signature_of_summary =
   | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m))
   | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
   | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
-  | Env_open _ | Env_empty | Env_functor_arg _ | Env_constraints _ -> None
+  | Env_open _ | Env_empty | Env_functor_arg _
+  | Env_constraints _ | Env_copy_types _ -> None
 
 let summary_prev = function
   | Env.Env_empty -> None
@@ -63,7 +64,8 @@ let summary_prev = function
   | Env.Env_module (s,_,_) | Env.Env_modtype (s,_,_)
   | Env.Env_class (s,_,_)  | Env.Env_cltype (s,_,_)
   | Env.Env_functor_arg (s,_)
-  | Env.Env_constraints (s,_) ->
+  | Env.Env_constraints (s,_)
+  | Env.Env_copy_types (s,_) ->
     Some s
 
 (* For Type_utils *)

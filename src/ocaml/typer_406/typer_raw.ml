@@ -114,7 +114,11 @@ module Rewrite_loc = struct
     | Ptyp_tuple ts -> Ptyp_tuple (List.map u_core_type ts)
     | Ptyp_constr (loc, ts) -> Ptyp_constr (u_loc loc, List.map u_core_type ts)
     | Ptyp_object (fields, flag) ->
-      Ptyp_object (List.map (fun (s,a,ct) -> (s, u_attributes a, u_core_type ct)) fields, flag)
+      let object_field = function
+        | Otag (lbl, attr, ct) -> Otag (lbl, u_attributes attr, u_core_type ct)
+        | Oinherit ct -> Oinherit (u_core_type ct)
+      in
+      Ptyp_object (List.map object_field fields, flag)
     | Ptyp_class (loc, ts) -> Ptyp_class (u_loc loc, List.map u_core_type ts)
     | Ptyp_alias (ct, name) -> Ptyp_alias (u_core_type ct, name)
     | Ptyp_variant (fields, flag, label) -> Ptyp_variant (List.map u_row_field fields, flag, label)
@@ -301,6 +305,8 @@ module Rewrite_loc = struct
       Pcty_arrow (lbl, u_core_type ct, u_class_type clt)
     | Pcty_extension ext ->
       Pcty_extension (u_extension ext)
+    | Pcty_open (ovf, loc, cty) ->
+      Pcty_open (ovf, u_loc loc, u_class_type cty)
 
   and u_class_signature {pcsig_self; pcsig_fields} =
     let pcsig_self = u_core_type pcsig_self in
@@ -354,6 +360,8 @@ module Rewrite_loc = struct
       Pcl_let (rf, List.map u_value_binding vbs, u_class_expr ce)
     | Pcl_constraint (ce, ct) -> Pcl_constraint (u_class_expr ce, u_class_type ct)
     | Pcl_extension ext -> Pcl_extension (u_extension ext)
+    | Pcl_open (ovf, loc, ce) ->
+      Pcl_open (ovf, u_loc loc, u_class_expr ce)
 
   and u_class_structure {pcstr_self; pcstr_fields} =
     let pcstr_self = u_pattern pcstr_self in
@@ -458,7 +466,7 @@ module Rewrite_loc = struct
   and u_with_constraint = function
     | Pwith_type (loc, td) -> Pwith_type (u_loc loc, u_type_declaration td)
     | Pwith_module (loc1, loc2) -> Pwith_module (u_loc loc1, u_loc loc2)
-    | Pwith_typesubst td -> Pwith_typesubst (u_type_declaration td)
+    | Pwith_typesubst (loc, td) -> Pwith_typesubst (u_loc loc, u_type_declaration td)
     | Pwith_modsubst (loc1, loc2) -> Pwith_modsubst (u_loc loc1, u_loc loc2)
 
   and u_module_expr {pmod_desc; pmod_loc; pmod_attributes} =

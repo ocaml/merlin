@@ -19,7 +19,7 @@ let absname = ref false
     (* This reference should be in Clflags, but it would create an additional
        dependency and make bootstrapping Camlp4 more difficult. *)
 
-type t = { loc_start: position; loc_end: position; loc_ghost: bool };;
+type t = Warnings.loc = { loc_start: position; loc_end: position; loc_ghost: bool };;
 
 let in_file name =
   let loc = {
@@ -69,8 +69,6 @@ let rhs_loc n = {
 let input_name = ref "_none_"
 let input_lexbuf = ref (None : lexbuf option)
 
-(* Terminal info *)
-
 let num_loc_lines = ref 0 (* number of lines already printed after input *)
 
 let print_updating_num_loc_lines ppf f arg =
@@ -89,34 +87,6 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
-(* Highlight the locations using standout mode. *)
-
-let highlight_terminfo ppf num_lines lb locs =
-  Format.pp_print_flush ppf ();  (* avoid mixing Format and normal output *)
-  (* Char 0 is at offset -lb.lex_abs_pos in lb.lex_buffer. *)
-  let pos0 = -lb.lex_abs_pos in
-  (* Do nothing if the buffer does not contain the whole phrase. *)
-  if pos0 < 0 then raise Exit;
-  (* Count number of lines in phrase *)
-  let lines = ref !num_loc_lines in
-  for i = pos0 to lb.lex_buffer_len - 1 do
-    if Bytes.get lb.lex_buffer i = '\n' then incr lines
-  done;
-  (* If too many lines, give up *)
-  if !lines >= num_lines - 2 then raise Exit;
-  (* Move cursor up that number of lines *)
-  flush stdout;
-  (* Print the input, switching to standout for the location *)
-  let bol = ref false in
-  print_string "# ";
-  for pos = 0 to lb.lex_buffer_len - pos0 - 1 do
-    if !bol then (print_string "  "; bol := false);
-    let c = Bytes.get lb.lex_buffer (pos + pos0) in
-    print_char c;
-    bol := (c = '\n')
-  done;
-  flush stdout
-
 (* Highlight the location by printing it again. *)
 
 let highlight_dumb ppf lb loc =
@@ -134,7 +104,7 @@ let highlight_dumb ppf lb loc =
     end
   done;
   (* Print character location (useful for Emacs) *)
-  Format.fprintf ppf "Characters %i-%i:@."
+  Format.fprintf ppf "@[<v>Characters %i-%i:@,"
                  loc.loc_start.pos_cnum loc.loc_end.pos_cnum;
   (* Print the input, underlining the location *)
   Format.pp_print_string ppf "  ";
@@ -145,7 +115,7 @@ let highlight_dumb ppf lb loc =
     | '\n' ->
       if !line = !line_start && !line = !line_end then begin
         (* loc is on one line: underline location *)
-        Format.fprintf ppf "@.  ";
+        Format.fprintf ppf "@,  ";
         for _i = !pos_at_bol to loc.loc_start.pos_cnum - 1 do
           Format.pp_print_char ppf ' '
         done;
@@ -154,7 +124,7 @@ let highlight_dumb ppf lb loc =
         done
       end;
       if !line >= !line_start && !line <= !line_end then begin
-        Format.fprintf ppf "@.";
+        Format.fprintf ppf "@,";
         if pos < loc.loc_end.pos_cnum then Format.pp_print_string ppf "  "
       end;
       incr line;
@@ -181,20 +151,8 @@ let highlight_dumb ppf lb loc =
       else if !line > !line_start && !line < !line_end then
         (* intermediate line of multiline loc: print whole line *)
         Format.pp_print_char ppf c
-  done
-
-(* Highlight the location using one of the supported modes. *)
-
-let highlight_locations ppf locs =
-  match !input_lexbuf with
-    None -> false
-  | Some lb ->
-    let norepeat =
-      try Sys.getenv "TERM" = "norepeat" with Not_found -> false in
-    if norepeat then false else
-      let loc1 = List.hd locs in
-      try highlight_dumb ppf lb loc1; true
-      with Exit -> false
+  done;
+  Format.fprintf ppf "@]"
 
 (* Print the location in some way or another *)
 
@@ -234,58 +192,56 @@ let get_pos_info pos =
 let print_loc ppf loc =
   let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
-  if file = "//toplevel//" then begin
-    if highlight_locations ppf [loc] then () else
-      fprintf ppf "Characters %i-%i"
-              loc.loc_start.pos_cnum loc.loc_end.pos_cnum
-  end else begin
-    fprintf ppf "%s@{<loc>%a%s%i" msg_file print_filename file msg_line line;
-    if startchar >= 0 then
-      fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar;
-    fprintf ppf "@}"
-  end
+  fprintf ppf "%s@{<loc>%a%s%i" msg_file print_filename file msg_line line;
+  if startchar >= 0 then
+    fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar;
+  fprintf ppf "@}"
 ;;
 
-let print' ppf loc =
-  if loc.loc_start.pos_fname = "//toplevel//"
-  && highlight_locations ppf [loc] then ()
-  else fprintf ppf "@{<loc>%a@}%s@." print_loc loc msg_colon
+let default_printer ppf loc =
+  fprintf ppf "@{<loc>%a@}%s@," print_loc loc msg_colon
 ;;
 
-let print ppf loc = ()
-;;
+let printer = ref default_printer
+let print ppf loc = !printer ppf loc
 
 let error_prefix = "Error"
 let warning_prefix = "Warning"
 
-let print_error_prefix ppf () =
-  fprintf ppf "@{<error>%s@}:" error_prefix;
-  ()
+let print_error_prefix ppf =
+  fprintf ppf "@{<error>%s@}" error_prefix;
 ;;
 
 let print_compact ppf loc =
-  if loc.loc_start.pos_fname = "//toplevel//"
-  && highlight_locations ppf [loc] then ()
-  else begin
-    let (file, line, startchar) = get_pos_info loc.loc_start in
-    let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
-    fprintf ppf "%a:%i" print_filename file line;
-    if startchar >= 0 then fprintf ppf ",%i--%i" startchar endchar
-  end
+  let (file, line, startchar) = get_pos_info loc.loc_start in
+  let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
+  fprintf ppf "%a:%i" print_filename file line;
+  if startchar >= 0 then fprintf ppf ",%i--%i" startchar endchar
 ;;
 
 let print_error ppf loc =
-  print ppf loc;
-  print_error_prefix ppf ()
+  fprintf ppf "%a%t:" print loc print_error_prefix;
 ;;
 
 let print_error_cur_file ppf () = print_error ppf (in_file !input_name);;
 
 let default_warning_printer loc ppf w =
-  if Warnings.is_active w then begin
+  match Warnings.report w with
+  | `Inactive -> ()
+  | `Active { Warnings. number; message; is_error; sub_locs } ->
+    fprintf ppf "@[<v>";
     print ppf loc;
-    fprintf ppf "@{<warning>%s@} %a" warning_prefix Warnings.print w
-  end
+    if is_error
+    then
+      fprintf ppf "%t (%s %d): %s@," print_error_prefix
+           (String.uncapitalize_ascii warning_prefix) number message
+    else fprintf ppf "@{<warning>%s@} %d: %s@," warning_prefix number message;
+    List.iter
+      (fun (loc, msg) ->
+         if loc <> none then fprintf ppf "  %a  %s@," print loc msg
+      )
+      sub_locs;
+    fprintf ppf "@]"
 ;;
 
 let warning_printer = ref default_warning_printer ;;
@@ -296,7 +252,7 @@ let print_warning loc ppf w =
 
 let formatter_for_warnings = ref err_formatter;;
 let prerr_warning_ref = ref (fun loc w -> print_warning loc !formatter_for_warnings w);;
-let prerr_warning loc w = !prerr_warning_ref loc w;;
+let prerr_warning loc w = !prerr_warning_ref loc w
 
 let echo_eof () =
   print_newline ();
@@ -351,33 +307,25 @@ let error_of_exn : (exn -> error option) list ref = ref []
 
 let register_error_of_exn f = error_of_exn := f :: !error_of_exn
 
-let error_of_exn exn =
-  let rec loop = function
-    | [] -> None
-    | f :: rest ->
-        match f exn with
-        | Some _ as r -> r
-        | None -> loop rest
-  in
-  loop !error_of_exn
+exception Already_displayed_error = Warnings.Errors
 
-let rec default_error_reporter ppf ({loc; msg; sub; if_highlight} as err) =
-  let highlighted =
-    if if_highlight <> "" && loc.loc_start.pos_fname = "//toplevel//" then
-      let rec collect_locs locs {loc; sub; _} =
-        List.fold_left collect_locs (loc :: locs) sub
-      in
-      let locs = collect_locs [] err in
-      highlight_locations ppf locs
-    else
-      false
-  in
-  if highlighted then
-    Format.pp_print_string ppf if_highlight
-  else begin
-    fprintf ppf "%a%a %s" print loc print_error_prefix () msg;
-    List.iter (Format.fprintf ppf "@\n@[<2>%a@]" default_error_reporter) sub
-  end
+let error_of_exn exn =
+  match exn with
+  | Already_displayed_error -> Some `Already_displayed
+  | _ ->
+     let rec loop = function
+       | [] -> None
+       | f :: rest ->
+          match f exn with
+          | Some error -> Some (`Ok error)
+          | None -> loop rest
+     in
+     loop !error_of_exn
+
+let rec default_error_reporter ppf {loc; msg; sub; if_highlight} =
+  fprintf ppf "@[<v>%a %s" print_error loc msg;
+  List.iter (Format.fprintf ppf "@,@[<2>%a@]" default_error_reporter) sub;
+  fprintf ppf "@]"
 
 let error_reporter = ref default_error_reporter
 
@@ -391,48 +339,52 @@ let error_of_printer loc print x =
 let error_of_printer_file print x =
   error_of_printer (in_file !input_name) print x
 
-exception Error of error
-
 let () =
   register_error_of_exn
     (function
       | Sys_error msg ->
           Some (errorf ~loc:(in_file !input_name)
                 "I/O error: %s" msg)
-      | Warnings.Errors n ->
-          Some
-            (errorf ~loc:(in_file !input_name)
-             "Some fatal warnings were triggered (%d occurrences)" n)
 
-      (*| Misc.HookExnWrapper {error = e; hook_name;
+      | Misc.HookExnWrapper {error = e; hook_name;
                              hook_info={Misc.sourcefile}} ->
           let sub = match error_of_exn e with
-            | None -> error (Printexc.to_string e)
-            | Some err -> err
+            | None | Some `Already_displayed -> error (Printexc.to_string e)
+            | Some (`Ok err) -> err
           in
           Some
             (errorf ~loc:(in_file sourcefile)
                "In hook %S:" hook_name
-               ~sub:[sub])*)
-      | Error e -> Some e
-      | Misc.Fatal_error (msg, bt) ->
-          Some (errorf "Fatal error: %s.\n%s" msg (Printexc.raw_backtrace_to_string bt))
+               ~sub:[sub])
       | _ -> None
     )
 
 external reraise : exn -> 'a = "%reraise"
 
 let rec report_exception_rec n ppf exn =
-  try match error_of_exn exn with
-  | Some err ->
-      fprintf ppf "@[%a@]@." report_error err
-  | None -> reraise exn
-  with exn when n > 0 ->
-    report_exception_rec (n-1) ppf exn
+  try
+    match error_of_exn exn with
+    | None -> reraise exn
+    | Some `Already_displayed -> ()
+    | Some (`Ok err) -> fprintf ppf "@[%a@]@." report_error err
+  with exn when n > 0 -> report_exception_rec (n-1) ppf exn
 
 let report_exception ppf exn = report_exception_rec 5 ppf exn
+
+
+exception Error of error
+
+let () =
+  register_error_of_exn
+    (function
+      | Error e -> Some e
+      | _ -> None
+    )
 
 let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
   pp_ksprintf
     ~before:print_phanton_error_prefix
     (fun msg -> raise (Error ({loc; msg; sub; if_highlight})))
+
+let deprecated ?(def = none) ?(use = none) loc msg =
+  prerr_warning loc (Warnings.Deprecated (msg, def, use))

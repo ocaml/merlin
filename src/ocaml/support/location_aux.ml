@@ -64,11 +64,13 @@ let extend l1 l2 =
 let prepare_errors exns =
   List.filter_map exns
     ~f:(fun exn ->
-        let err = Location.error_of_exn exn in
-        if err = None then
+        match Location.error_of_exn exn with
+        | None ->
           Logger.logf "Mreader" "errors" "Location.error_of_exn (%a) = None"
             (fun () -> Printexc.to_string) exn;
-        err
+          None
+        | Some `Already_displayed ->  None
+        | Some (`Ok err) -> Some err
       )
 
 let print () {Location. loc_start; loc_end; loc_ghost}  =

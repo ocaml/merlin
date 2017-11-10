@@ -146,11 +146,32 @@ let in_string state = state.string_start_loc != Location.none
 
 (* Escaped chars are interpreted in strings unless they are in comments. *)
 let store_escaped_char state lexbuf c =
-    if in_comment state
-    then Buffer.add_string state.buffer (Lexing.lexeme lexbuf)
-    else Buffer.add_char state.buffer c
+  if in_comment state
+  then Buffer.add_string state.buffer (Lexing.lexeme lexbuf)
+  else Buffer.add_char state.buffer c
+
+let store_escaped_uchar state lexbuf u =
+  if in_comment state
+  then Buffer.add_string state.buffer (Lexing.lexeme lexbuf)
+  else Buffer.add_utf_8_uchar state.buffer u
+
 
 (* To translate escape sequences *)
+
+    let hex_digit_value d = (* assert (d in '0'..'9' 'a'..'f' 'A'..'F') *)
+  let d = Char.code d in
+  if d >= 97 then d - 87 else
+  if d >= 65 then d - 55 else
+  d - 48
+
+let hex_num_value lexbuf ~first ~last =
+  let rec loop acc i = match i > last with
+  | true -> acc
+  | false ->
+      let value = hex_digit_value (Lexing.lexeme_char lexbuf i) in
+      loop (16 * acc + value) (i + 1)
+  in
+  loop 0 first
 
 let char_for_backslash = function
   | 'n' -> '\010'
@@ -177,17 +198,24 @@ let char_for_octal_code lexbuf i =
   Char.chr c
 
 let char_for_hexadecimal_code lexbuf i =
-  let d1 = Char.code (Lexing.lexeme_char lexbuf i) in
-  let val1 = if d1 >= 97 then d1 - 87
-             else if d1 >= 65 then d1 - 55
-             else d1 - 48
+  let byte = hex_num_value lexbuf ~first:i ~last:(i+1) in
+  Char.chr byte
+
+let uchar_for_uchar_escape lexbuf =
+  let err e =
+    raise
+      (Error (Illegal_escape (Lexing.lexeme lexbuf ^ e), Location.curr lexbuf))
   in
-  let d2 = Char.code (Lexing.lexeme_char lexbuf (i+1)) in
-  let val2 = if d2 >= 97 then d2 - 87
-             else if d2 >= 65 then d2 - 55
-             else d2 - 48
-  in
-  Char.chr (val1 * 16 + val2)
+  let len = Lexing.lexeme_end lexbuf - Lexing.lexeme_start lexbuf in
+  let first = 3 (* skip opening \u{ *) in
+  let last = len - 2 (* skip closing } *) in
+  let digit_count = last - first + 1 in
+  match digit_count > 6 with
+  | true -> err ", too many digits, expected 1 to 6 hexadecimal digits"
+  | false ->
+      let cp = hex_num_value lexbuf ~first ~last in
+      if Uchar.is_valid cp then Uchar.unsafe_of_int cp else
+      err (", " ^ Printf.sprintf "%X" cp ^ " is not a Unicode scalar value")
 
 let keyword_or state s default =
   try Hashtbl.find state.keywords s
@@ -223,8 +251,8 @@ let update_loc lexbuf file line absolute chars =
 (* Warn about Latin-1 characters used in idents *)
 
 let warn_latin1 lexbuf =
-  Location.prerr_warning (Location.curr lexbuf)
-    (Warnings.Deprecated "ISO-Latin1 characters in identifiers")
+  Location.deprecated (Location.curr lexbuf)
+    "ISO-Latin1 characters in identifiers"
 ;;
 
 (* Error report *)
@@ -273,8 +301,12 @@ let symbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let symbolcharnopercent =
   ['!' '$' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
+let dotsymbolchar =
+  ['!' '$' '%' '&' '*' '+' '-' '/' ':' '=' '>' '?' '@' '^' '|' '~']
 let decimal_literal =
   ['0'-'9'] ['0'-'9' '_']*
+let hex_digit =
+  ['0'-'9' 'A'-'F' 'a'-'f']
 let hex_literal =
   '0' ['x' 'X'] ['0'-'9' 'A'-'F' 'a'-'f']['0'-'9' 'A'-'F' 'a'-'f' '_']*
 let oct_literal =
@@ -444,6 +476,7 @@ rule token state = parse
   | ","  { return COMMA }
   | "->" { return MINUSGREATER }
   | "."  { return DOT }
+  | "." (dotsymbolchar symbolchar* as s) { return (DOTOP s) }
   | ".." { return DOTDOT }
   | ":"  { return COLON }
   | "::" { return COLONCOLON }
@@ -622,6 +655,9 @@ and string state = parse
         string state lexbuf }
   | '\\' 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F']
       { Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
+        string state lexbuf }
+  | '\\' 'u' '{' hex_digit+ '}'
+      { store_escaped_uchar state lexbuf (uchar_for_uchar_escape lexbuf);
         string state lexbuf }
   | '\\' _
       { if in_comment state

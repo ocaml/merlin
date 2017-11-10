@@ -26,8 +26,6 @@ type attrs = attribute list
 
 val const_string : string -> constant
 
-val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
-
 (** {2 Default locations} *)
 
 val default_loc: loc ref

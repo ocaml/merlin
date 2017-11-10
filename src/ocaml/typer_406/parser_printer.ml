@@ -115,6 +115,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_ELSE) -> "else"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOWNTO) -> "downto"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTTILDE) -> ".~"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTOP) -> "DOTOP"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTLESS) -> ".<"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTDOT) -> ".."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOT) -> "."
@@ -153,7 +154,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_typevar_list) -> "typevar_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_variance) -> "type_variance"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_variable) -> "type_variable"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameters) -> "type_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameter_list) -> "type_parameter_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_parameter) -> "type_parameter"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_type_longident) -> "type_longident"
@@ -275,6 +275,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label) -> "label"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_inherit_field_semi) -> "inherit_field_semi"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_implementation) -> "implementation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ident) -> "ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generalized_constructor_arguments) -> "generalized_constructor_arguments"
@@ -453,6 +454,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_ELSE -> (fun _ -> "else")
   | MenhirInterpreter.T MenhirInterpreter.T_DOWNTO -> (fun _ -> "downto")
   | MenhirInterpreter.T MenhirInterpreter.T_DOTTILDE -> (fun _ -> ".~")
+  | MenhirInterpreter.T MenhirInterpreter.T_DOTOP -> (fun _ -> "DOTOP")
   | MenhirInterpreter.T MenhirInterpreter.T_DOTLESS -> (fun _ -> ".<")
   | MenhirInterpreter.T MenhirInterpreter.T_DOTDOT -> (fun _ -> "..")
   | MenhirInterpreter.T MenhirInterpreter.T_DOT -> (fun _ -> ".")
@@ -491,7 +493,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_typevar_list -> (fun _ -> "typevar_list")
   | MenhirInterpreter.N MenhirInterpreter.N_type_variance -> (fun _ -> "type_variance")
   | MenhirInterpreter.N MenhirInterpreter.N_type_variable -> (fun _ -> "type_variable")
-  | MenhirInterpreter.N MenhirInterpreter.N_type_parameters -> (fun _ -> "type_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_type_parameter_list -> (fun _ -> "type_parameter_list")
   | MenhirInterpreter.N MenhirInterpreter.N_type_parameter -> (fun _ -> "type_parameter")
   | MenhirInterpreter.N MenhirInterpreter.N_type_longident -> (fun _ -> "type_longident")
@@ -613,6 +614,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_label -> (fun _ -> "label")
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")
+  | MenhirInterpreter.N MenhirInterpreter.N_inherit_field_semi -> (fun _ -> "inherit_field_semi")
   | MenhirInterpreter.N MenhirInterpreter.N_implementation -> (fun _ -> "implementation")
   | MenhirInterpreter.N MenhirInterpreter.N_ident -> (fun _ -> "ident")
   | MenhirInterpreter.N MenhirInterpreter.N_generalized_constructor_arguments -> (fun _ -> "generalized_constructor_arguments")
@@ -790,6 +792,7 @@ let print_token = function
   | ELSE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_ELSE) ()
   | DOWNTO -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOWNTO) ()
   | DOTTILDE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTTILDE) ()
+  | DOTOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTOP) v
   | DOTLESS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTLESS) ()
   | DOTDOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTDOT) ()
   | DOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOT) ()
@@ -922,6 +925,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_ELSE -> ELSE
   | MenhirInterpreter.T_DOWNTO -> DOWNTO
   | MenhirInterpreter.T_DOTTILDE -> DOTTILDE
+  | MenhirInterpreter.T_DOTOP -> DOTOP v
   | MenhirInterpreter.T_DOTLESS -> DOTLESS
   | MenhirInterpreter.T_DOTDOT -> DOTDOT
   | MenhirInterpreter.T_DOT -> DOT

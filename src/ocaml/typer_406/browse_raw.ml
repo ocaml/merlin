@@ -353,6 +353,8 @@ and of_class_expr_desc = function
   | Tcl_constraint (ce,cto,_,_,_) ->
     option_fold (fun ct -> app (Class_type ct)) cto **
     app (Class_expr ce)
+  | Tcl_open (_,_,_,_,ce) ->
+    app (Class_expr ce)
 
 and of_class_field_desc = function
   | Tcf_inherit (_,ce,_,_,_) ->
@@ -458,7 +460,7 @@ and of_core_type_desc = function
   | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
     list_fold of_core_type cts
   | Ttyp_object (cts,_) ->
-    list_fold (fun (_,_,ct) -> of_core_type ct) cts
+    list_fold (fun (OTtag (_,_,ct) | OTinherit ct) -> of_core_type ct) cts
   | Ttyp_poly (_,ct) | Ttyp_alias (ct,_) ->
     of_core_type ct
   | Ttyp_variant (rfs,_,_) ->
@@ -473,6 +475,8 @@ and of_class_type_desc = function
     app (Class_signature cs)
   | Tcty_arrow (_,ct,clt) ->
     of_core_type ct ** app (Class_type clt)
+  | Tcty_open (_,_,_,_,ct) ->
+    app (Class_type ct)
 
 and of_class_type_field_desc = function
   | Tctf_inherit ct ->

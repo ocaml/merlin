@@ -43,6 +43,11 @@ val constructor_existentials :
     - the existential variables introduced by the constructor
  *)
 
+
+(* Set the polymorphic variant row_name field *)
+val set_row_name : type_declaration -> Path.t -> unit
+
+
 val label_descrs :
   type_expr -> label_declaration list -> record_representation ->
   Asttypes.private_flag -> (Ident.t * label_description) list

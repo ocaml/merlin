@@ -24,8 +24,6 @@ type str = string loc
 type loc = Location.t
 type attrs = attribute list
 
-let rtag ?(attrs=[]) label bool lst = Rtag (label, attrs, bool, lst)
-
 let const_string s = Pconst_string (s, None)
 
 let default_loc = ref Location.none

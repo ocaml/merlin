@@ -48,8 +48,8 @@ let assert_errors ?with_config
       in
       let fmt_msg exn =
         match Location.error_of_exn exn with
-        | None -> Printexc.to_string exn
-        | Some err -> err.Location.msg
+        | None | Some `Already_displayed -> Printexc.to_string exn
+        | Some (`Ok err) -> err.Location.msg
       in
       let expect ~count str errors =
         let count' = List.length errors in
@@ -488,8 +488,8 @@ and run_test indent = function
            | Failure str -> str
            | exn -> Printexc.to_string exn);
         begin match Location.error_of_exn exn with
-          | None -> ()
-          | Some {Location. msg; loc} ->
+          | None | Some `Already_displayed -> ()
+          | Some (`Ok {Location. msg; loc}) ->
             Printf.eprintf "%sError message:\n%s\n%!" indent msg
         end;
         Printf.eprintf "%sBacktrace:\n%s\n%!" indent bt

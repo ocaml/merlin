@@ -31,16 +31,22 @@ let last = function
   | Lapply(_, _) -> Misc.fatal_error "Longident.last"
 
 let rec split_at_dots s pos =
-  match String.index_from s pos '.' with
-  | dot -> String.sub s pos (dot - pos) :: split_at_dots s (dot + 1)
-  | exception Not_found ->
+  try
+    let dot = String.index_from s pos '.' in
+    String.sub s pos (dot - pos) :: split_at_dots s (dot + 1)
+  with Not_found ->
     [String.sub s pos (String.length s - pos)]
 
+let unflatten l =
+  match l with
+  | [] -> None
+  | hd :: tl -> Some (List.fold_left (fun p s -> Ldot(p, s)) (Lident hd) tl)
+
 let parse s =
-  match split_at_dots s 0 with
-    [] -> Lident ""  (* should not happen, but don't put assert false
-                        so as not to crash the toplevel (see Genprintval) *)
-  | hd :: tl -> List.fold_left (fun p s -> Ldot(p, s)) (Lident hd) tl
+  match unflatten (split_at_dots s 0) with
+  | None -> Lident ""  (* should not happen, but don't put assert false
+                          so as not to crash the toplevel (see Genprintval) *)
+  | Some v -> v
 
 let keep_suffix =
   let rec aux = function

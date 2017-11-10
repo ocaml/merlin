@@ -141,9 +141,9 @@ let run env = function
               let trace = Printexc.get_backtrace () in
               Logger.log "New_merlin.run" "Command error backtrace" trace;
               match Location.error_of_exn exn with
-              | None ->
+              | None | Some `Already_displayed ->
                 ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
-              | Some err ->
+              | Some (`Ok err) ->
                 Location.report_error Format.str_formatter err;
                 ("error", `String (Format.flush_str_formatter ()))
           in

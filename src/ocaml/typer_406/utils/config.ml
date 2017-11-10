@@ -34,23 +34,23 @@ let windows =
 let sf = Printf.sprintf
 
 let exec_magic_number = "Caml1999X011"
-and cmi_magic_number = "Caml1999I021"
-and cmo_magic_number = "Caml1999O011"
-and cma_magic_number = "Caml1999A012"
+and cmi_magic_number = "Caml1999I022"
+and cmo_magic_number = "Caml1999O022"
+and cma_magic_number = "Caml1999A022"
 and cmx_magic_number =
   (*if flambda then
     "Caml1999Y016"
   else*)
-    "Caml1999Y015"
+    "Caml1999Y022"
 and cmxa_magic_number =
   (*if flambda then
     "Caml1999Z015"
   else*)
-    "Caml1999Z014"
-and ast_impl_magic_number = "Caml1999M020"
-and ast_intf_magic_number = "Caml1999N018"
-and cmxs_magic_number = "Caml2007D002"
-and cmt_magic_number = "Caml2012T009"
+    "Caml1999Z022"
+and ast_impl_magic_number = "Caml1999M022"
+and ast_intf_magic_number = "Caml1999N022"
+and cmxs_magic_number = "Caml2007D022"
+and cmt_magic_number = "Caml2012T022"
 
 let load_path = ref ([] : string list)
 
@@ -59,3 +59,4 @@ let interface_suffix = ref ".mli"
 let max_tag = 245
 
 let safe_string = false
+let flat_float_array = false

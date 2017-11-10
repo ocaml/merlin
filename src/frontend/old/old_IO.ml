@@ -326,8 +326,9 @@ let classify_response = function
   | Error error -> ("error", error)
   | Exception exn ->
     begin match Location.error_of_exn exn with
-      | Some error -> ("error", Query_json.json_of_error error)
-      | None -> ("exception", `String (Printexc.to_string exn))
+      | Some (`Ok error) -> ("error", Query_json.json_of_error error)
+      | None | Some `Already_displayed ->
+        ("exception", `String (Printexc.to_string exn))
     end
   | Return (Query cmd, response) ->
     ("return", Query_json.json_of_response cmd response)

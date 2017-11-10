@@ -46,8 +46,8 @@ let rewrite _trace cfg parsetree =
   | exception exn ->
     Logger.logf "Mppx" "rewrite" "failed with %t" (fun () ->
         match Location.error_of_exn exn with
-        | None -> Printexc.to_string exn
-        | Some err -> err.Location.msg
+        | None | Some `Already_displayed -> Printexc.to_string exn
+        | Some (`Ok err) -> err.Location.msg
       );
     Msupport.raise_error exn;
     restore ();

@@ -518,12 +518,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     (* Turn into Location.error, ignore ghost warnings *)
     let filter_error exn =
       match Location.error_of_exn exn with
-      | None -> None
-      | Some (err : Location.error) as result ->
+      | None | Some `Already_displayed -> None
+      | Some (`Ok (err : Location.error)) ->
         if Location.(err.loc.loc_ghost) &&
            (match exn with Msupport.Warning _ -> true | _ -> false)
         then None
-        else result
+        else Some err
     in
     let lexer_errors  = List.filter_map ~f:filter_error lexer_errors in
     let typer_errors  = List.filter_map ~f:filter_error typer_errors in
@@ -534,7 +534,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | exn ->
         let result = filter_error exn in
         begin match result with
-          | None -> ();
+          | None -> ()
           | Some err ->
             if !first_parser_error = Lexing.dummy_pos ||
                Lexing.compare_pos !first_parser_error (error_start err) > 0

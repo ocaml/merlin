@@ -212,8 +212,8 @@ let print_type_with_decl ~verbosity env ppf typ =
 
 let print_exn ppf exn =
   let msg = match Location.error_of_exn exn with
-    | Some {Location. msg} -> msg
-    | None -> Printexc.to_string exn
+    | Some (`Ok {Location. msg}) -> msg
+    | None | Some `Already_displayed -> Printexc.to_string exn
   in
   Format.pp_print_string ppf msg
 

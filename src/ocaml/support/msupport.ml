@@ -141,7 +141,7 @@ let rec get_saved_types_from_attributes = function
 let with_warning_attribute ?warning_attribute f =
   match warning_attribute with
   | None -> f ()
-  | Some attr -> Builtin_attributes.with_warning_attribute attr f
+  | Some attr -> Builtin_attributes.warning_scope attr f
 
 let with_saved_types ?warning_attribute ?save_part f =
   let saved_types = Cmt_format.get_saved_types () in
