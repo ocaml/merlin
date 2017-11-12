@@ -347,7 +347,7 @@ type decision =
   | Select of (int -> action list)
 
 let depth =
-  [|0;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;2;3;2;1;2;1;1;1;1;1;1;1;1;2;1;2;3;4;2;3;2;3;1;2;2;2;2;2;1;1;2;2;2;2;2;1;1;1;2;1;1;1;1;1;1;2;3;4;4;1;1;5;6;1;2;1;1;1;2;3;3;2;3;1;1;1;1;2;3;2;1;1;2;1;2;3;1;1;2;3;4;1;2;3;3;1;1;2;1;1;2;1;2;3;1;2;1;2;1;2;1;1;1;2;1;2;2;1;2;1;2;1;1;1;2;3;2;1;3;4;2;3;1;2;1;3;1;1;2;1;1;3;2;3;1;1;2;3;2;3;4;4;2;3;5;1;2;2;1;2;3;2;3;4;5;3;4;3;4;4;5;6;2;1;1;2;2;1;1;3;4;1;2;3;2;3;3;4;1;1;2;3;2;3;4;5;2;3;4;5;4;2;3;1;2;3;4;4;5;6;4;3;1;2;3;1;1;1;1;1;1;1;2;1;2;3;1;2;3;1;4;3;1;2;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;2;3;1;1;2;3;2;3;2;1;2;1;2;1;1;2;2;1;1;1;1;1;1;2;3;2;3;3;4;5;2;3;2;1;1;1;2;3;3;2;1;1;3;2;2;3;3;4;1;2;2;3;4;2;3;4;5;6;7;8;2;3;1;2;1;2;1;2;1;1;1;2;3;1;2;1;1;1;1;1;1;2;1;2;3;3;4;5;3;4;1;2;1;1;1;2;3;4;5;1;2;1;2;3;4;3;1;2;1;2;3;4;5;6;2;3;4;1;1;1;2;1;2;1;1;1;2;1;2;3;1;2;1;1;2;1;3;1;1;2;1;1;2;3;3;4;2;1;2;3;1;1;1;2;1;2;3;3;4;1;1;2;1;2;1;1;1;1;1;2;1;2;1;2;1;2;3;1;2;1;2;1;1;2;1;2;3;3;4;5;1;2;1;2;3;4;1;2;1;3;1;1;2;3;4;1;2;3;4;1;1;1;2;1;1;2;3;4;1;1;1;1;2;2;3;1;1;2;3;4;5;1;1;2;1;1;1;1;1;2;2;2;3;2;3;1;3;2;3;1;2;1;1;1;2;1;2;1;1;3;3;2;1;1;3;1;1;1;2;3;1;1;2;1;2;3;1;2;2;3;1;2;3;4;1;2;3;1;2;2;3;1;2;3;4;5;4;2;3;5;6;1;3;4;2;3;1;4;4;5;6;7;8;5;6;2;3;4;2;1;2;3;3;5;1;1;2;2;1;2;2;3;4;5;6;2;3;1;2;3;7;1;1;1;2;3;4;1;2;1;2;3;1;2;3;4;2;3;3;4;2;1;1;1;1;2;3;1;4;2;1;1;1;1;2;2;2;3;2;3;1;2;1;3;1;2;4;5;6;3;4;5;1;1;2;3;4;2;3;4;3;2;3;1;2;1;2;1;2;3;4;5;1;2;6;2;3;3;4;5;3;4;2;3;4;5;6;4;2;1;2;3;4;3;2;3;1;1;2;3;4;1;2;3;4;1;2;3;1;2;3;4;5;1;2;6;7;1;2;1;2;1;1;2;1;1;2;3;2;3;4;1;1;2;3;2;3;1;2;1;1;2;3;4;5;1;2;3;4;5;2;3;1;2;3;1;1;2;1;2;2;3;4;1;2;3;5;6;1;1;1;1;2;3;1;2;3;4;1;1;2;3;2;1;1;2;3;2;3;1;2;1;2;5;6;3;2;3;1;1;2;3;4;1;2;3;4;5;1;2;3;1;2;3;4;1;1;1;2;1;2;3;1;2;3;1;3;1;5;4;6;5;6;2;2;3;1;1;2;1;1;2;1;2;2;3;4;5;2;3;4;5;6;7;8;1;1;1;1;1;1;1;1;2;3;2;3;2;3;1;1;1;1;2;2;3;1;2;1;2;1;2;2;3;4;5;6;1;2;1;2;3;3;1;2;1;2;3;4;5;1;2;1;2;3;2;3;2;3;2;1;2;1;2;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;3;2;3;2;3;1;2;3;1;2;3;3;4;5;2;1;2;3;1;4;2;3;5;6;1;3;4;5;6;3;4;2;3;4;5;5;6;3;1;2;3;1;2;3;1;2;3;4;5;1;2;3;3;1;7;3;4;5;6;7;3;4;5;6;7;3;4;5;2;1;2;1;1;2;4;5;3;4;5;3;4;5;3;4;5;5;1;1;6;7;8;9;10;5;6;7;8;4;5;6;7;8;9;10;2;1;2;3;4;1;2;5;4;3;4;3;4;5;2;3;4;2;3;1;3;4;5;6;7;3;3;4;3;2;3;2;2;3;3;2;3;4;2;3;4;5;2;3;4;1;2;1;2;3;4;5;6;7;1;2;2;3;4;5;6;1;2;4;5;2;1;2;3;4;1;2;1;2;1;2;3;4;1;2;3;1;1;2;5;2;3;1;2;4;5;6;7;8;3;4;5;6;7;2;4;5;6;3;4;4;5;6;4;5;6;6;7;8;2;3;3;4;5;3;4;4;5;6;2;3;4;5;6;7;8;2;3;3;4;3;4;5;6;3;4;5;6;5;4;5;6;1;1;2;3;4;5;6;2;3;4;5;6;2;3;4;5;6;7;8;9;10;5;6;7;4;2;3;1;2;3;1;2;1;2;3;1;1;2;3;4;1;2;3;4;1;1;2;1;1;2;1;3;2;2;2;5;2;3;3;4;5;3;1;2;4;5;1;2;3;1;2;1;2;2;2;3;4;2;3;4;5;6;3;4;5;6;7;8;4;5;3;4;5;6;4;3;4;3;2;3;4;5;6;1;2;3;2;2;1;2;3;4;5;6;2;3;3;1;2;1;1;3;4;7;1;1;2;3;4;4;4;4;4;1;2;1;2;1;1;2;3;2;3;4;5;6;4;2;3;2;3;1;2;1;2;3;4;1;2;3;4;1;2;3;1;2;3;4;5;6;7;1;2;1;2;1;2;1;2;3;1;2;3;1;2;1;2;3;4;1;2;4;5;2;2;3;1;2;1;1;2;3;4;1;2;3;4;2;1;1;2;1;2;3;4;1;2;1;0;1;2;1;0;1;2;1;|]
+  [|0;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;2;3;2;1;2;1;1;1;1;1;1;1;1;2;1;2;3;4;2;3;2;3;1;2;2;2;2;2;1;1;2;2;2;2;2;1;1;1;2;1;1;1;1;1;1;2;3;4;4;1;1;5;6;1;2;1;1;1;2;3;3;2;3;1;1;1;1;2;3;2;1;1;2;1;2;3;1;1;2;3;4;1;2;3;3;1;1;2;1;1;2;1;2;3;1;2;1;2;1;2;1;1;1;2;1;2;2;1;2;1;2;1;1;1;2;3;2;1;3;4;2;3;1;2;1;3;1;1;2;1;1;3;2;3;1;1;2;3;2;3;4;4;2;3;5;1;2;2;1;2;3;2;3;4;5;3;4;3;4;4;5;6;2;1;1;2;2;1;1;3;4;1;2;3;2;3;3;4;1;1;2;3;2;3;4;5;2;3;4;5;4;2;3;1;2;3;4;4;5;6;4;3;1;2;3;1;1;1;1;1;1;1;2;1;2;3;1;2;3;1;4;3;1;2;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;2;3;1;1;2;3;2;3;2;1;2;1;2;1;1;2;2;1;1;1;1;1;1;2;3;2;3;3;4;5;2;3;2;1;1;1;2;3;3;2;1;1;3;2;2;3;3;4;1;2;2;3;4;2;3;4;5;6;7;8;2;3;1;2;1;2;1;2;1;1;1;2;3;1;2;1;1;1;1;1;1;2;1;2;3;3;4;5;3;4;1;2;1;1;1;2;3;4;5;1;2;1;2;3;4;3;1;2;1;2;3;4;5;6;2;3;4;1;1;1;2;1;2;1;1;1;2;1;2;3;1;2;1;1;2;1;3;1;1;2;1;1;2;3;3;4;2;1;2;3;1;1;1;2;1;2;3;3;4;1;1;2;1;2;1;1;1;1;1;2;1;2;1;2;1;2;3;1;2;1;2;1;1;2;1;2;3;3;4;5;1;2;1;2;3;4;1;2;1;3;1;1;2;3;4;1;2;3;4;1;1;1;2;1;1;2;3;4;1;1;1;1;2;2;3;1;1;2;3;4;5;1;1;2;1;1;1;1;1;2;2;2;3;2;3;1;3;2;3;1;2;1;1;1;2;1;2;1;1;3;3;2;1;1;3;1;1;1;2;3;1;1;2;1;2;3;1;2;2;3;1;2;3;4;1;2;3;1;2;2;3;1;2;3;4;5;4;2;3;5;6;1;3;4;2;3;1;4;4;5;6;7;8;5;6;2;3;4;2;1;2;3;3;5;1;1;2;2;1;2;2;3;4;5;6;2;3;1;2;3;7;1;1;1;2;3;4;1;2;1;2;3;1;2;3;4;2;3;3;4;2;1;1;1;1;2;3;1;4;2;1;1;1;1;2;2;2;3;2;3;1;2;1;3;1;2;4;5;6;3;4;5;1;1;2;3;4;2;3;4;3;2;3;1;2;1;2;1;2;3;4;5;1;2;6;2;3;3;4;5;3;4;2;3;4;5;6;4;2;1;2;3;4;3;2;3;1;1;2;3;4;1;2;3;4;1;2;3;1;2;3;4;5;1;2;6;7;1;2;1;2;1;1;2;1;1;2;3;2;3;4;1;1;2;3;2;3;1;2;1;1;2;3;4;5;1;2;3;4;5;2;3;1;2;3;1;1;2;1;2;2;3;4;1;2;3;5;6;1;1;1;1;2;3;1;2;3;4;1;1;2;3;2;1;1;2;3;2;3;1;2;1;2;5;6;3;2;3;1;1;2;3;4;1;2;3;4;5;1;2;3;1;2;3;4;1;1;1;2;1;2;3;1;2;3;1;3;1;5;4;6;5;6;2;2;3;1;1;2;1;1;2;1;2;2;3;4;5;2;3;4;5;6;7;8;1;1;1;1;1;1;1;1;2;3;2;3;2;3;1;1;1;1;2;2;3;1;2;1;2;1;2;2;3;4;5;6;1;2;1;2;3;3;1;2;1;2;3;4;5;1;2;1;2;3;2;3;2;3;2;1;2;1;2;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;2;3;3;2;3;2;3;1;2;3;1;2;3;3;4;5;2;1;2;3;1;4;2;3;5;6;1;3;4;5;6;3;4;2;3;4;5;5;6;3;1;2;3;1;2;3;1;2;3;4;5;1;2;3;3;1;7;3;4;5;6;7;3;4;5;6;7;3;4;5;2;1;2;1;1;2;4;5;3;4;5;3;4;5;3;4;5;5;1;1;6;7;8;9;10;5;6;7;8;4;5;6;7;8;9;10;2;1;2;3;4;1;2;5;4;3;4;3;4;5;2;3;4;2;3;1;3;4;5;6;7;3;3;4;3;2;3;2;2;3;3;2;3;4;2;3;4;5;2;3;4;1;2;1;2;3;4;5;6;7;1;2;2;3;4;5;6;1;2;4;5;2;1;2;3;4;1;2;1;2;1;2;3;4;1;2;3;1;1;2;5;2;3;1;2;4;5;6;7;8;3;4;5;6;7;2;4;5;6;3;4;4;5;6;4;5;6;6;7;8;2;3;3;4;5;3;4;4;5;6;2;3;4;5;6;7;8;2;3;3;4;3;4;5;6;3;4;5;6;5;4;5;6;1;1;2;3;4;5;6;2;3;4;5;6;2;3;4;5;6;7;8;9;10;5;6;7;4;2;3;1;2;3;1;2;1;2;3;1;1;2;3;4;1;2;3;4;1;1;2;1;1;2;1;3;2;2;2;5;2;3;3;4;5;3;1;2;4;5;1;2;3;1;2;1;2;2;2;3;4;2;3;4;5;6;3;4;5;6;7;8;4;5;3;4;5;6;4;3;4;3;2;3;4;5;6;1;2;3;2;2;1;2;3;4;5;6;2;3;3;1;2;1;1;3;4;7;1;1;2;3;4;4;4;4;4;4;2;1;2;1;1;2;3;2;3;4;5;6;4;2;3;2;3;1;2;1;2;3;4;1;2;3;4;1;2;3;1;2;3;4;5;6;7;1;2;1;2;1;2;1;2;3;1;2;3;1;2;1;2;3;4;1;2;4;5;2;2;3;1;2;1;1;2;3;4;1;2;3;4;2;1;1;2;1;2;3;4;1;2;1;0;1;2;1;0;1;2;1;|]
 
 let can_pop (type a) : a terminal -> bool = function
   | T_WITH -> true
@@ -487,11 +487,11 @@ let recover =
   let r21 = [R 389] in
   let r22 = [R 521] in
   let r23 = [R 278] in
-  let r24 = [R 647] in
+  let r24 = [R 648] in
   let r25 = S (T T_LIDENT) :: r24 in
   let r26 = [R 526] in
   let r27 = [R 275] in
-  let r28 = [R 648] in
+  let r28 = [R 649] in
   let r29 = S (T T_LIDENT) :: r28 in
   let r30 = S (T T_DOT) :: r29 in
   let r31 = S (T T_UIDENT) :: r27 in
@@ -569,7 +569,7 @@ let recover =
   let r103 = [R 189] in
   let r104 = R 10 :: r103 in
   let r105 = Sub (r102) :: r104 in
-  let r106 = [R 659] in
+  let r106 = [R 660] in
   let r107 = [R 186] in
   let r108 = S (T T_RBRACKET) :: r107 in
   let r109 = Sub (r17) :: r108 in
@@ -617,14 +617,14 @@ let recover =
   let r151 = S (T T_RBRACKET) :: r150 in
   let r152 = [R 394] in
   let r153 = Sub (r61) :: r152 in
-  let r154 = [R 660] in
+  let r154 = [R 661] in
   let r155 = [R 268] in
   let r156 = [R 456] in
   let r157 = [R 466] in
   let r158 = [R 109] in
   let r159 = [R 108] in
   let r160 = [R 366] in
-  let r161 = [R 661] in
+  let r161 = [R 662] in
   let r162 = [R 530] in
   let r163 = [R 383] in
   let r164 = S (N N_pattern) :: r163 in
@@ -663,7 +663,7 @@ let recover =
   let r197 = S (T T_LIDENT) :: r161 in
   let r198 = [R 371] in
   let r199 = S (T T_AMPERAMPER) :: r192 in
-  let r200 = [R 662] in
+  let r200 = [R 663] in
   let r201 = S (T T_RPAREN) :: r200 in
   let r202 = [R 529] in
   let r203 = S (T T_BARRBRACKET) :: r202 in
@@ -707,7 +707,7 @@ let recover =
   let r241 = [R 41] in
   let r242 = S (T T_RPAREN) :: r241 in
   let r243 = S (T T_LIDENT) :: r99 in
-  let r244 = [R 667] in
+  let r244 = [R 668] in
   let r245 = Sub (r3) :: r244 in
   let r246 = S (T T_EQUAL) :: r245 in
   let r247 = Sub (r243) :: r246 in
@@ -715,7 +715,7 @@ let recover =
   let r249 = R 360 :: r248 in
   let r250 = [R 25] in
   let r251 = R 396 :: r250 in
-  let r252 = [R 666] in
+  let r252 = [R 667] in
   let r253 = Sub (r63) :: r252 in
   let r254 = S (T T_COLON) :: r253 in
   let r255 = Sub (r243) :: r254 in
@@ -723,7 +723,7 @@ let recover =
   let r257 = S (T T_RBRACKET) :: r256 in
   let r258 = Sub (r17) :: r257 in
   let r259 = [R 397] in
-  let r260 = [R 665] in
+  let r260 = [R 666] in
   let r261 = Sub (r63) :: r260 in
   let r262 = S (T T_COLON) :: r261 in
   let r263 = [R 119] in
@@ -885,13 +885,13 @@ let recover =
   let r419 = R 396 :: r418 in
   let r420 = Sub (r63) :: r419 in
   let r421 = S (T T_COLON) :: r420 in
-  let r422 = [R 633] in
+  let r422 = [R 634] in
   let r423 = R 396 :: r422 in
   let r424 = R 97 :: r423 in
-  let r425 = R 636 :: r424 in
+  let r425 = R 637 :: r424 in
   let r426 = S (T T_LIDENT) :: r425 in
   let r427 = R 355 :: r426 in
-  let r428 = [R 634] in
+  let r428 = [R 635] in
   let r429 = Sub (r427) :: r428 in
   let r430 = [R 430] in
   let r431 = [R 427] in
@@ -899,15 +899,15 @@ let recover =
   let r433 = S (T T_UNDERSCORE) :: r432 in
   let r434 = [R 352] in
   let r435 = Sub (r433) :: r434 in
-  let r436 = R 656 :: r435 in
+  let r436 = R 657 :: r435 in
   let r437 = [R 353] in
   let r438 = Sub (r436) :: r437 in
   let r439 = [R 357] in
   let r440 = S (T T_RPAREN) :: r439 in
   let r441 = [R 358] in
   let r442 = [R 354] in
-  let r443 = [R 635] in
-  let r444 = [R 645] in
+  let r443 = [R 636] in
+  let r444 = [R 646] in
   let r445 = [R 86] in
   let r446 = S (T T_COLONCOLON) :: r445 in
   let r447 = [R 98] in
@@ -916,7 +916,7 @@ let recover =
   let r450 = Sub (r446) :: r449 in
   let r451 = [R 99] in
   let r452 = Sub (r450) :: r451 in
-  let r453 = [R 640] in
+  let r453 = [R 641] in
   let r454 = [R 85] in
   let r455 = [R 100] in
   let r456 = [R 476] in
@@ -933,7 +933,7 @@ let recover =
   let r467 = [R 207] in
   let r468 = [R 206] in
   let r469 = Sub (r457) :: r468 in
-  let r470 = [R 641] in
+  let r470 = [R 642] in
   let r471 = Sub (r452) :: r470 in
   let r472 = [R 214] in
   let r473 = R 10 :: r472 in
@@ -943,13 +943,13 @@ let recover =
   let r477 = R 313 :: r476 in
   let r478 = [R 215] in
   let r479 = Sub (r477) :: r478 in
-  let r480 = [R 642] in
+  let r480 = [R 643] in
   let r481 = S (T T_RBRACE) :: r480 in
   let r482 = R 350 :: r481 in
-  let r483 = [R 646] in
-  let r484 = [R 643] in
+  let r483 = [R 647] in
+  let r484 = [R 644] in
   let r485 = Sub (r452) :: r484 in
-  let r486 = [R 644] in
+  let r486 = [R 645] in
   let r487 = S (T T_RBRACE) :: r486 in
   let r488 = R 350 :: r487 in
   let r489 = [R 94] in
@@ -997,37 +997,37 @@ let recover =
   let r531 = [R 305] in
   let r532 = S (N N_module_type) :: r531 in
   let r533 = S (T T_MINUSGREATER) :: r532 in
-  let r534 = [R 677] in
+  let r534 = [R 678] in
   let r535 = Sub (r31) :: r534 in
   let r536 = S (T T_COLONEQUAL) :: r535 in
   let r537 = S (T T_UIDENT) :: r536 in
   let r538 = S (T T_MODULE) :: r537 in
-  let r539 = [R 678] in
+  let r539 = [R 679] in
   let r540 = Sub (r538) :: r539 in
   let r541 = [R 306] in
-  let r542 = [R 675] in
+  let r542 = [R 676] in
   let r543 = Sub (r61) :: r542 in
   let r544 = S (T T_COLONEQUAL) :: r543 in
   let r545 = Sub (r243) :: r544 in
-  let r546 = [R 655] in
+  let r546 = [R 656] in
   let r547 = Sub (r43) :: r546 in
   let r548 = S (T T_QUOTE) :: r547 in
-  let r549 = [R 649] in
+  let r549 = [R 650] in
   let r550 = Sub (r548) :: r549 in
-  let r551 = R 656 :: r550 in
-  let r552 = [R 650] in
+  let r551 = R 657 :: r550 in
+  let r552 = [R 651] in
   let r553 = Sub (r551) :: r552 in
-  let r554 = [R 654] in
+  let r554 = [R 655] in
   let r555 = S (T T_RPAREN) :: r554 in
-  let r556 = [R 651] in
-  let r557 = [R 680] in
+  let r556 = [R 652] in
+  let r557 = [R 681] in
   let r558 = S (T T_EQUAL) :: r557 in
-  let r559 = [R 674] in
+  let r559 = [R 675] in
   let r560 = R 97 :: r559 in
   let r561 = Sub (r61) :: r560 in
-  let r562 = [R 676] in
+  let r562 = [R 677] in
   let r563 = Sub (r31) :: r562 in
-  let r564 = [R 679] in
+  let r564 = [R 680] in
   let r565 = [R 434] in
   let r566 = R 396 :: r565 in
   let r567 = [R 437] in
@@ -1073,7 +1073,7 @@ let recover =
   let r607 = S (T T_COLON) :: r606 in
   let r608 = S (T T_LIDENT) :: r607 in
   let r609 = R 73 :: r608 in
-  let r610 = R 672 :: r609 in
+  let r610 = R 673 :: r609 in
   let r611 = [R 17] in
   let r612 = Sub (r610) :: r611 in
   let r613 = [R 440] in
@@ -1083,7 +1083,7 @@ let recover =
   let r617 = S (T T_EQUAL) :: r616 in
   let r618 = S (T T_LIDENT) :: r617 in
   let r619 = R 73 :: r618 in
-  let r620 = R 672 :: r619 in
+  let r620 = R 673 :: r619 in
   let r621 = [R 72] in
   let r622 = Sub (r620) :: r621 in
   let r623 = [R 441] in
@@ -1096,17 +1096,17 @@ let recover =
   let r630 = S (T T_END) :: r629 in
   let r631 = [R 43] in
   let r632 = S (T T_RPAREN) :: r631 in
-  let r633 = [R 671] in
+  let r633 = [R 672] in
   let r634 = Sub (r63) :: r633 in
   let r635 = S (T T_COLON) :: r634 in
   let r636 = Sub (r243) :: r635 in
   let r637 = [R 47] in
   let r638 = R 396 :: r637 in
-  let r639 = [R 669] in
+  let r639 = [R 670] in
   let r640 = Sub (r63) :: r639 in
   let r641 = S (T T_COLON) :: r640 in
   let r642 = Sub (r243) :: r641 in
-  let r643 = [R 670] in
+  let r643 = [R 671] in
   let r644 = Sub (r63) :: r643 in
   let r645 = S (T T_COLON) :: r644 in
   let r646 = Sub (r243) :: r645 in
@@ -1224,220 +1224,218 @@ let recover =
   let r758 = [R 411] in
   let r759 = Sub (r337) :: r758 in
   let r760 = [R 237] in
-  let r761 = [R 664] in
-  let r762 = [R 495] in
-  let r763 = S (T T_RBRACKET) :: r762 in
-  let r764 = Sub (r3) :: r763 in
-  let r765 = [R 171] in
-  let r766 = [R 172] in
-  let r767 = [R 169] in
-  let r768 = [R 125] in
-  let r769 = S (T T_DONE) :: r768 in
-  let r770 = Sub (r3) :: r769 in
-  let r771 = S (T T_DO) :: r770 in
-  let r772 = Sub (r3) :: r771 in
-  let r773 = Sub (r389) :: r772 in
-  let r774 = [R 197] in
-  let r775 = Sub (r366) :: r774 in
-  let r776 = S (T T_RPAREN) :: r775 in
-  let r777 = [R 196] in
-  let r778 = S (N N_pattern) :: r358 in
-  let r779 = [R 266] in
-  let r780 = [R 141] in
-  let r781 = [R 489] in
-  let r782 = [R 507] in
-  let r783 = S (T T_GREATERRBRACE) :: r782 in
-  let r784 = [R 282] in
-  let r785 = S (N N_module_expr) :: r784 in
-  let r786 = S (T T_EQUAL) :: r785 in
-  let r787 = [R 283] in
-  let r788 = [R 256] in
-  let r789 = Sub (r289) :: r788 in
-  let r790 = [R 130] in
-  let r791 = Sub (r3) :: r790 in
-  let r792 = S (T T_IN) :: r791 in
-  let r793 = Sub (r789) :: r792 in
-  let r794 = [R 593] in
-  let r795 = Sub (r3) :: r794 in
-  let r796 = S (T T_EQUAL) :: r795 in
-  let r797 = [R 193] in
-  let r798 = Sub (r796) :: r797 in
-  let r799 = [R 595] in
-  let r800 = Sub (r798) :: r799 in
-  let r801 = S (T T_RPAREN) :: r800 in
-  let r802 = S (T T_LIDENT) :: r801 in
-  let r803 = [R 632] in
-  let r804 = [R 630] in
-  let r805 = Sub (r63) :: r804 in
-  let r806 = [R 631] in
-  let r807 = [R 194] in
-  let r808 = Sub (r3) :: r807 in
-  let r809 = [R 594] in
-  let r810 = [R 261] in
-  let r811 = S (T T_LIDENT) :: r810 in
-  let r812 = [R 251] in
-  let r813 = Sub (r3) :: r812 in
-  let r814 = S (T T_EQUAL) :: r813 in
-  let r815 = Sub (r63) :: r814 in
-  let r816 = S (T T_DOT) :: r815 in
-  let r817 = [R 250] in
-  let r818 = Sub (r3) :: r817 in
-  let r819 = S (T T_EQUAL) :: r818 in
-  let r820 = Sub (r63) :: r819 in
-  let r821 = [R 299] in
-  let r822 = S (T T_RPAREN) :: r821 in
-  let r823 = [R 297] in
-  let r824 = S (T T_RPAREN) :: r823 in
-  let r825 = [R 298] in
-  let r826 = S (T T_RPAREN) :: r825 in
-  let r827 = [R 294] in
-  let r828 = S (T T_RPAREN) :: r827 in
-  let r829 = [R 513] in
-  let r830 = S (T T_RPAREN) :: r829 in
-  let r831 = [R 146] in
-  let r832 = S (T T_RPAREN) :: r831 in
-  let r833 = S (N N_expr) :: r832 in
-  let r834 = S (T T_COMMA) :: r833 in
-  let r835 = S (N N_expr) :: r834 in
-  let r836 = S (T T_LPAREN) :: r835 in
-  let r837 = [R 491] in
-  let r838 = [R 668] in
-  let r839 = Sub (r3) :: r838 in
-  let r840 = [R 272] in
-  let r841 = Sub (r796) :: r840 in
-  let r842 = Sub (r243) :: r841 in
-  let r843 = R 400 :: r842 in
-  let r844 = R 360 :: r843 in
-  let r845 = [R 26] in
-  let r846 = R 396 :: r845 in
-  let r847 = [R 271] in
-  let r848 = Sub (r648) :: r847 in
-  let r849 = S (T T_COLON) :: r848 in
-  let r850 = Sub (r243) :: r849 in
-  let r851 = [R 270] in
-  let r852 = Sub (r648) :: r851 in
-  let r853 = S (T T_COLON) :: r852 in
-  let r854 = [R 273] in
-  let r855 = Sub (r3) :: r854 in
-  let r856 = S (T T_EQUAL) :: r855 in
-  let r857 = [R 274] in
-  let r858 = Sub (r3) :: r857 in
-  let r859 = S (T T_EQUAL) :: r858 in
-  let r860 = Sub (r63) :: r859 in
-  let r861 = S (T T_DOT) :: r860 in
-  let r862 = [R 28] in
-  let r863 = R 396 :: r862 in
-  let r864 = [R 60] in
-  let r865 = Sub (r76) :: r864 in
-  let r866 = [R 18] in
-  let r867 = Sub (r865) :: r866 in
-  let r868 = [R 24] in
-  let r869 = R 396 :: r868 in
-  let r870 = R 368 :: r869 in
-  let r871 = Sub (r867) :: r870 in
-  let r872 = [R 61] in
-  let r873 = S (T T_END) :: r872 in
-  let r874 = [R 63] in
-  let r875 = S (T T_RPAREN) :: r874 in
-  let r876 = [R 21] in
-  let r877 = Sub (r867) :: r876 in
-  let r878 = S (T T_IN) :: r877 in
-  let r879 = Sub (r789) :: r878 in
-  let r880 = [R 59] in
-  let r881 = Sub (r76) :: r880 in
-  let r882 = S (T T_RBRACKET) :: r881 in
-  let r883 = [R 36] in
-  let r884 = Sub (r867) :: r883 in
-  let r885 = S (T T_MINUSGREATER) :: r884 in
-  let r886 = Sub (r363) :: r885 in
-  let r887 = [R 19] in
-  let r888 = [R 62] in
-  let r889 = S (T T_RPAREN) :: r888 in
-  let r890 = [R 367] in
-  let r891 = [R 27] in
-  let r892 = R 396 :: r891 in
-  let r893 = [R 29] in
-  let r894 = [R 499] in
-  let r895 = S (T T_BARRBRACKET) :: r894 in
-  let r896 = [R 121] in
-  let r897 = S (N N_match_cases) :: r896 in
-  let r898 = [R 123] in
-  let r899 = [R 122] in
-  let r900 = [R 603] in
-  let r901 = [R 600] in
-  let r902 = [R 588] in
-  let r903 = Sub (r497) :: r902 in
-  let r904 = [R 592] in
-  let r905 = R 396 :: r904 in
-  let r906 = Sub (r903) :: r905 in
-  let r907 = R 346 :: r906 in
-  let r908 = R 400 :: r907 in
-  let r909 = [R 590] in
-  let r910 = S (T T_FALSE) :: r182 in
-  let r911 = [R 188] in
-  let r912 = R 10 :: r911 in
-  let r913 = Sub (r910) :: r912 in
-  let r914 = [R 624] in
-  let r915 = Sub (r197) :: r761 in
-  let r916 = R 623 :: r1 in
-  let r917 = [R 617] in
-  let r918 = [R 608] in
-  let r919 = R 396 :: r918 in
-  let r920 = Sub (r43) :: r919 in
-  let r921 = [R 280] in
-  let r922 = R 396 :: r921 in
-  let r923 = Sub (r310) :: r922 in
-  let r924 = [R 609] in
-  let r925 = R 396 :: r924 in
-  let r926 = S (T T_UIDENT) :: r923 in
-  let r927 = [R 284] in
-  let r928 = Sub (r926) :: r927 in
-  let r929 = [R 607] in
-  let r930 = [R 285] in
-  let r931 = [R 599] in
-  let r932 = Sub (r289) :: r931 in
-  let r933 = R 407 :: r932 in
-  let r934 = R 183 :: r933 in
-  let r935 = [R 601] in
-  let r936 = Sub (r289) :: r935 in
-  let r937 = R 407 :: r936 in
-  let r938 = R 183 :: r937 in
-  let r939 = [R 613] in
+  let r761 = [R 495] in
+  let r762 = S (T T_RBRACKET) :: r761 in
+  let r763 = Sub (r3) :: r762 in
+  let r764 = [R 171] in
+  let r765 = [R 172] in
+  let r766 = [R 169] in
+  let r767 = [R 125] in
+  let r768 = S (T T_DONE) :: r767 in
+  let r769 = Sub (r3) :: r768 in
+  let r770 = S (T T_DO) :: r769 in
+  let r771 = Sub (r3) :: r770 in
+  let r772 = Sub (r389) :: r771 in
+  let r773 = [R 197] in
+  let r774 = Sub (r366) :: r773 in
+  let r775 = S (T T_RPAREN) :: r774 in
+  let r776 = [R 196] in
+  let r777 = S (N N_pattern) :: r358 in
+  let r778 = [R 266] in
+  let r779 = [R 141] in
+  let r780 = [R 489] in
+  let r781 = [R 507] in
+  let r782 = S (T T_GREATERRBRACE) :: r781 in
+  let r783 = [R 282] in
+  let r784 = S (N N_module_expr) :: r783 in
+  let r785 = S (T T_EQUAL) :: r784 in
+  let r786 = [R 283] in
+  let r787 = [R 256] in
+  let r788 = Sub (r289) :: r787 in
+  let r789 = [R 130] in
+  let r790 = Sub (r3) :: r789 in
+  let r791 = S (T T_IN) :: r790 in
+  let r792 = Sub (r788) :: r791 in
+  let r793 = [R 593] in
+  let r794 = Sub (r3) :: r793 in
+  let r795 = S (T T_EQUAL) :: r794 in
+  let r796 = [R 193] in
+  let r797 = Sub (r795) :: r796 in
+  let r798 = [R 595] in
+  let r799 = Sub (r797) :: r798 in
+  let r800 = S (T T_RPAREN) :: r799 in
+  let r801 = S (T T_LIDENT) :: r800 in
+  let r802 = [R 633] in
+  let r803 = [R 631] in
+  let r804 = Sub (r63) :: r803 in
+  let r805 = [R 632] in
+  let r806 = [R 194] in
+  let r807 = Sub (r3) :: r806 in
+  let r808 = [R 594] in
+  let r809 = [R 261] in
+  let r810 = S (T T_LIDENT) :: r809 in
+  let r811 = [R 251] in
+  let r812 = Sub (r3) :: r811 in
+  let r813 = S (T T_EQUAL) :: r812 in
+  let r814 = Sub (r63) :: r813 in
+  let r815 = S (T T_DOT) :: r814 in
+  let r816 = [R 250] in
+  let r817 = Sub (r3) :: r816 in
+  let r818 = S (T T_EQUAL) :: r817 in
+  let r819 = Sub (r63) :: r818 in
+  let r820 = [R 299] in
+  let r821 = S (T T_RPAREN) :: r820 in
+  let r822 = [R 297] in
+  let r823 = S (T T_RPAREN) :: r822 in
+  let r824 = [R 298] in
+  let r825 = S (T T_RPAREN) :: r824 in
+  let r826 = [R 294] in
+  let r827 = S (T T_RPAREN) :: r826 in
+  let r828 = [R 513] in
+  let r829 = S (T T_RPAREN) :: r828 in
+  let r830 = [R 146] in
+  let r831 = S (T T_RPAREN) :: r830 in
+  let r832 = S (N N_expr) :: r831 in
+  let r833 = S (T T_COMMA) :: r832 in
+  let r834 = S (N N_expr) :: r833 in
+  let r835 = S (T T_LPAREN) :: r834 in
+  let r836 = [R 491] in
+  let r837 = [R 669] in
+  let r838 = Sub (r3) :: r837 in
+  let r839 = [R 272] in
+  let r840 = Sub (r795) :: r839 in
+  let r841 = Sub (r243) :: r840 in
+  let r842 = R 400 :: r841 in
+  let r843 = R 360 :: r842 in
+  let r844 = [R 26] in
+  let r845 = R 396 :: r844 in
+  let r846 = [R 271] in
+  let r847 = Sub (r648) :: r846 in
+  let r848 = S (T T_COLON) :: r847 in
+  let r849 = Sub (r243) :: r848 in
+  let r850 = [R 270] in
+  let r851 = Sub (r648) :: r850 in
+  let r852 = S (T T_COLON) :: r851 in
+  let r853 = [R 273] in
+  let r854 = Sub (r3) :: r853 in
+  let r855 = S (T T_EQUAL) :: r854 in
+  let r856 = [R 274] in
+  let r857 = Sub (r3) :: r856 in
+  let r858 = S (T T_EQUAL) :: r857 in
+  let r859 = Sub (r63) :: r858 in
+  let r860 = S (T T_DOT) :: r859 in
+  let r861 = [R 28] in
+  let r862 = R 396 :: r861 in
+  let r863 = [R 60] in
+  let r864 = Sub (r76) :: r863 in
+  let r865 = [R 18] in
+  let r866 = Sub (r864) :: r865 in
+  let r867 = [R 24] in
+  let r868 = R 396 :: r867 in
+  let r869 = R 368 :: r868 in
+  let r870 = Sub (r866) :: r869 in
+  let r871 = [R 61] in
+  let r872 = S (T T_END) :: r871 in
+  let r873 = [R 63] in
+  let r874 = S (T T_RPAREN) :: r873 in
+  let r875 = [R 21] in
+  let r876 = Sub (r866) :: r875 in
+  let r877 = S (T T_IN) :: r876 in
+  let r878 = Sub (r788) :: r877 in
+  let r879 = [R 59] in
+  let r880 = Sub (r76) :: r879 in
+  let r881 = S (T T_RBRACKET) :: r880 in
+  let r882 = [R 36] in
+  let r883 = Sub (r866) :: r882 in
+  let r884 = S (T T_MINUSGREATER) :: r883 in
+  let r885 = Sub (r363) :: r884 in
+  let r886 = [R 19] in
+  let r887 = [R 62] in
+  let r888 = S (T T_RPAREN) :: r887 in
+  let r889 = [R 367] in
+  let r890 = [R 27] in
+  let r891 = R 396 :: r890 in
+  let r892 = [R 29] in
+  let r893 = [R 499] in
+  let r894 = S (T T_BARRBRACKET) :: r893 in
+  let r895 = [R 121] in
+  let r896 = S (N N_match_cases) :: r895 in
+  let r897 = [R 123] in
+  let r898 = [R 122] in
+  let r899 = [R 603] in
+  let r900 = [R 600] in
+  let r901 = [R 588] in
+  let r902 = Sub (r497) :: r901 in
+  let r903 = [R 592] in
+  let r904 = R 396 :: r903 in
+  let r905 = Sub (r902) :: r904 in
+  let r906 = R 346 :: r905 in
+  let r907 = R 400 :: r906 in
+  let r908 = [R 590] in
+  let r909 = S (T T_FALSE) :: r182 in
+  let r910 = [R 188] in
+  let r911 = R 10 :: r910 in
+  let r912 = Sub (r909) :: r911 in
+  let r913 = [R 624] in
+  let r914 = R 623 :: r1 in
+  let r915 = [R 617] in
+  let r916 = [R 608] in
+  let r917 = R 396 :: r916 in
+  let r918 = Sub (r43) :: r917 in
+  let r919 = [R 280] in
+  let r920 = R 396 :: r919 in
+  let r921 = Sub (r310) :: r920 in
+  let r922 = [R 609] in
+  let r923 = R 396 :: r922 in
+  let r924 = S (T T_UIDENT) :: r921 in
+  let r925 = [R 284] in
+  let r926 = Sub (r924) :: r925 in
+  let r927 = [R 607] in
+  let r928 = [R 285] in
+  let r929 = [R 599] in
+  let r930 = Sub (r289) :: r929 in
+  let r931 = R 407 :: r930 in
+  let r932 = R 183 :: r931 in
+  let r933 = [R 601] in
+  let r934 = Sub (r289) :: r933 in
+  let r935 = R 407 :: r934 in
+  let r936 = R 183 :: r935 in
+  let r937 = [R 613] in
+  let r938 = R 396 :: r937 in
+  let r939 = [R 602] in
   let r940 = R 396 :: r939 in
-  let r941 = [R 602] in
-  let r942 = R 396 :: r941 in
-  let r943 = Sub (r587) :: r942 in
-  let r944 = S (T T_EQUAL) :: r943 in
-  let r945 = Sub (r63) :: r944 in
-  let r946 = S (T T_COLON) :: r945 in
-  let r947 = [R 586] in
-  let r948 = R 396 :: r947 in
-  let r949 = Sub (r497) :: r948 in
-  let r950 = [R 605] in
-  let r951 = [R 587] in
-  let r952 = [R 612] in
-  let r953 = Sub (r622) :: r952 in
-  let r954 = [R 33] in
-  let r955 = Sub (r867) :: r954 in
-  let r956 = S (T T_EQUAL) :: r955 in
-  let r957 = [R 12] in
-  let r958 = R 396 :: r957 in
-  let r959 = Sub (r956) :: r958 in
-  let r960 = S (T T_LIDENT) :: r959 in
-  let r961 = R 73 :: r960 in
-  let r962 = [R 34] in
-  let r963 = Sub (r867) :: r962 in
-  let r964 = S (T T_EQUAL) :: r963 in
-  let r965 = [R 35] in
-  let r966 = R 672 :: r961 in
-  let r967 = [R 13] in
-  let r968 = [R 618] in
-  let r969 = [R 614] in
-  let r970 = [R 597] in
-  let r971 = R 616 :: r970 in
-  let r972 = [R 210] in
-  let r973 = [R 211] in
-  let r974 = [R 369] in
+  let r941 = Sub (r587) :: r940 in
+  let r942 = S (T T_EQUAL) :: r941 in
+  let r943 = Sub (r63) :: r942 in
+  let r944 = S (T T_COLON) :: r943 in
+  let r945 = [R 586] in
+  let r946 = R 396 :: r945 in
+  let r947 = Sub (r497) :: r946 in
+  let r948 = [R 605] in
+  let r949 = [R 587] in
+  let r950 = [R 612] in
+  let r951 = Sub (r622) :: r950 in
+  let r952 = [R 33] in
+  let r953 = Sub (r866) :: r952 in
+  let r954 = S (T T_EQUAL) :: r953 in
+  let r955 = [R 12] in
+  let r956 = R 396 :: r955 in
+  let r957 = Sub (r954) :: r956 in
+  let r958 = S (T T_LIDENT) :: r957 in
+  let r959 = R 73 :: r958 in
+  let r960 = [R 34] in
+  let r961 = Sub (r866) :: r960 in
+  let r962 = S (T T_EQUAL) :: r961 in
+  let r963 = [R 35] in
+  let r964 = R 673 :: r959 in
+  let r965 = [R 13] in
+  let r966 = [R 618] in
+  let r967 = [R 614] in
+  let r968 = [R 597] in
+  let r969 = R 616 :: r968 in
+  let r970 = [R 210] in
+  let r971 = [R 211] in
+  let r972 = [R 369] in
   function
   | 0 | 1457 | 1461 -> Nothing
   | 1456 -> One ([R 0])
@@ -1553,17 +1551,17 @@ let recover =
   | 178 -> One (R 345 :: r133)
   | 156 -> One (R 346 :: r117)
   | 606 -> One (R 346 :: r485)
-  | 1322 -> One (R 346 :: r897)
+  | 1322 -> One (R 346 :: r896)
   | 157 -> One ([R 347])
   | 234 -> One (R 350 :: r155)
   | 273 -> One (R 350 :: r175)
   | 348 -> One (R 350 :: r203)
-  | 1127 -> One (R 350 :: r783)
-  | 1313 -> One (R 350 :: r895)
+  | 1127 -> One (R 350 :: r782)
+  | 1313 -> One (R 350 :: r894)
   | 235 | 274 | 342 | 595 | 1008 | 1019 -> One ([R 351])
   | 622 -> One ([R 356])
   | 641 -> One (R 360 :: r509)
-  | 1269 -> One (R 360 :: r871)
+  | 1269 -> One (R 360 :: r870)
   | 397 -> One ([R 361])
   | 296 -> One ([R 370])
   | 301 -> One ([R 372])
@@ -1573,20 +1571,20 @@ let recover =
   | 404 -> One (R 396 :: r259)
   | 827 -> One (R 396 :: r669)
   | 878 -> One (R 396 :: r689)
-  | 1308 -> One (R 396 :: r893)
-  | 1412 -> One (R 396 :: r951)
-  | 1448 -> One (R 396 :: r969)
-  | 1451 -> One (R 396 :: r971)
+  | 1308 -> One (R 396 :: r892)
+  | 1412 -> One (R 396 :: r949)
+  | 1448 -> One (R 396 :: r967)
+  | 1451 -> One (R 396 :: r969)
   | 752 -> One ([R 399])
-  | 1241 -> One (R 400 :: r850)
+  | 1241 -> One (R 400 :: r849)
   | 604 | 1246 -> One ([R 401])
   | 793 -> One (R 402 :: r653)
   | 796 -> One ([R 403])
   | 794 -> One ([R 404])
   | 797 -> One ([R 405])
   | 795 -> One ([R 406])
-  | 1148 -> One (R 407 :: r793)
-  | 1275 -> One (R 407 :: r879)
+  | 1148 -> One (R 407 :: r792)
+  | 1275 -> One (R 407 :: r878)
   | 433 -> One ([R 408])
   | 167 -> One ([R 413])
   | 994 -> One ([R 418])
@@ -1679,34 +1677,36 @@ let recover =
   | 1447 -> One ([R 610])
   | 1432 -> One ([R 611])
   | 1450 -> One ([R 615])
-  | 1437 -> One (R 616 :: r968)
+  | 1437 -> One (R 616 :: r966)
   | 416 -> One ([R 619])
   | 415 -> One ([R 620])
   | 1368 -> One ([R 625])
   | 1369 -> One ([R 626])
   | 1371 -> One ([R 627])
-  | 1370 -> One ([R 628])
-  | 1367 -> One ([R 629])
-  | 602 -> One ([R 637])
-  | 557 -> One ([R 638])
-  | 613 -> One ([R 639])
-  | 668 -> One (R 652 :: r545)
-  | 690 -> One ([R 653])
-  | 530 -> One ([R 657])
-  | 532 -> One ([R 658])
-  | 509 -> One ([R 663])
-  | 783 -> One (R 672 :: r646)
-  | 760 -> One ([R 673])
-  | 683 -> One ([R 681])
+  | 1372 -> One ([R 628])
+  | 1370 -> One ([R 629])
+  | 1367 -> One ([R 630])
+  | 602 -> One ([R 638])
+  | 557 -> One ([R 639])
+  | 613 -> One ([R 640])
+  | 668 -> One (R 653 :: r545)
+  | 690 -> One ([R 654])
+  | 530 -> One ([R 658])
+  | 532 -> One ([R 659])
+  | 509 -> One ([R 664])
+  | 1040 -> One ([R 665])
+  | 783 -> One (R 673 :: r646)
+  | 760 -> One ([R 674])
+  | 683 -> One ([R 682])
   | 1026 -> One (S (T T_WITH) :: r759)
   | 73 -> One (S (T T_UIDENT) :: r34)
   | 100 -> One (S (T T_UIDENT) :: r41)
-  | 310 -> One (S (T T_UIDENT) :: r74)
+  | 310 | 1373 -> One (S (T T_UIDENT) :: r74)
   | 645 -> One (S (T T_TYPE) :: r512)
   | 650 -> One (S (T T_TYPE) :: r526)
-  | 1158 -> One (S (T T_TYPE) :: r802)
-  | 1376 -> One (S (T T_TYPE) :: r920)
-  | 1416 -> One (S (T T_TYPE) :: r953)
+  | 1158 -> One (S (T T_TYPE) :: r801)
+  | 1376 -> One (S (T T_TYPE) :: r918)
+  | 1416 -> One (S (T T_TYPE) :: r951)
   | 571 -> One (S (T T_STAR) :: r466)
   | 1358 -> One (S (T T_RPAREN) :: r39)
   | 241 -> One (S (T T_RPAREN) :: r156)
@@ -1716,14 +1716,14 @@ let recover =
   | 647 -> One (S (T T_RPAREN) :: r519)
   | 654 -> One (S (T T_RPAREN) :: r527)
   | 656 -> One (S (T T_RPAREN) :: r528)
-  | 1216 -> One (S (T T_RPAREN) :: r836)
-  | 1225 -> One (S (T T_RPAREN) :: r837)
+  | 1216 -> One (S (T T_RPAREN) :: r835)
+  | 1225 -> One (S (T T_RPAREN) :: r836)
   | 159 -> One (S (T T_RBRACKET) :: r118)
   | 204 -> One (S (T T_RBRACKET) :: r143)
   | 1359 -> One (S (T T_RBRACKET) :: r168)
   | 193 -> One (S (T T_QUOTE) :: r140)
   | 628 -> One (S (T T_PLUSEQ) :: r504)
-  | 1348 -> One (S (T T_PLUSEQ) :: r908)
+  | 1348 -> One (S (T T_PLUSEQ) :: r907)
   | 132 -> One (S (T T_MODULE) :: r92)
   | 450 -> One (S (T T_MODULE) :: r316)
   | 576 -> One (S (T T_MINUSGREATER) :: r469)
@@ -1731,8 +1731,8 @@ let recover =
   | 128 -> One (S (T T_LIDENT) :: r86)
   | 491 -> One (S (T T_LIDENT) :: r378)
   | 841 -> One (S (T T_LIDENT) :: r677)
-  | 1094 -> One (S (T T_LIDENT) :: r776)
-  | 1301 -> One (S (T T_LIDENT) :: r890)
+  | 1094 -> One (S (T T_LIDENT) :: r775)
+  | 1301 -> One (S (T T_LIDENT) :: r889)
   | 938 -> One (S (T T_LESSMINUS) :: r721)
   | 77 -> One (S (T T_INT) :: r35)
   | 84 -> One (S (T T_INT) :: r36)
@@ -1741,12 +1741,12 @@ let recover =
   | 147 -> One (S (T T_GREATER) :: r100)
   | 695 -> One (S (T T_EQUAL) :: r563)
   | 1020 -> One (S (T T_EQUAL) :: r755)
-  | 1170 -> One (S (T T_EQUAL) :: r808)
-  | 1236 -> One (S (T T_EQUAL) :: r839)
-  | 1454 -> One (S (T T_EOF) :: r972)
-  | 1458 -> One (S (T T_EOF) :: r973)
-  | 1462 -> One (S (T T_EOF) :: r974)
-  | 1118 -> One (S (T T_END) :: r781)
+  | 1170 -> One (S (T T_EQUAL) :: r807)
+  | 1236 -> One (S (T T_EQUAL) :: r838)
+  | 1454 -> One (S (T T_EOF) :: r970)
+  | 1458 -> One (S (T T_EOF) :: r971)
+  | 1462 -> One (S (T T_EOF) :: r972)
+  | 1118 -> One (S (T T_END) :: r780)
   | 549 -> One (S (T T_DOTDOT) :: r444)
   | 603 -> One (S (T T_DOTDOT) :: r483)
   | 112 -> One (S (T T_DOT) :: r73)
@@ -1755,8 +1755,7 @@ let recover =
   | 226 -> One (S (T T_DOT) :: r153)
   | 801 -> One (S (T T_DOT) :: r655)
   | 812 -> One (S (T T_DOT) :: r662)
-  | 1186 -> One (S (T T_DOT) :: r820)
-  | 1372 -> One (S (T T_DOT) :: r915)
+  | 1186 -> One (S (T T_DOT) :: r819)
   | 149 -> One (S (T T_COLON) :: r105)
   | 521 -> One (S (T T_COLON) :: r415)
   | 648 -> One (S (T T_COLON) :: r523)
@@ -1780,13 +1779,13 @@ let recover =
   | 661 -> One (S (N N_module_type) :: r530)
   | 722 -> One (S (N N_module_type) :: r568)
   | 743 -> One (S (N N_module_type) :: r585)
-  | 1139 -> One (S (N N_module_type) :: r786)
-  | 1208 -> One (S (N N_module_type) :: r828)
-  | 1382 -> One (S (N N_module_type) :: r925)
+  | 1139 -> One (S (N N_module_type) :: r785)
+  | 1208 -> One (S (N N_module_type) :: r827)
+  | 1382 -> One (S (N N_module_type) :: r923)
   | 424 -> One (S (N N_module_expr) :: r274)
   | 428 -> One (S (N N_module_expr) :: r278)
   | 515 -> One (S (N N_module_expr) :: r408)
-  | 1400 -> One (S (N N_module_expr) :: r940)
+  | 1400 -> One (S (N N_module_expr) :: r938)
   | 481 -> One (S (N N_let_pattern) :: r375)
   | 516 -> One (S (N N_functor_args) :: r411)
   | 662 -> One (S (N N_functor_args) :: r533)
@@ -1819,17 +1818,17 @@ let recover =
   | 989 -> One (S (N N_expr) :: r744)
   | 991 -> One (S (N N_expr) :: r745)
   | 1033 -> One (S (N N_expr) :: r760)
-  | 1046 -> One (S (N N_expr) :: r765)
-  | 1051 -> One (S (N N_expr) :: r766)
-  | 1054 -> One (S (N N_expr) :: r767)
-  | 1115 -> One (S (N N_expr) :: r780)
+  | 1046 -> One (S (N N_expr) :: r764)
+  | 1051 -> One (S (N N_expr) :: r765)
+  | 1054 -> One (S (N N_expr) :: r766)
+  | 1115 -> One (S (N N_expr) :: r779)
   | 359 -> One (Sub (r3) :: r210)
   | 448 -> One (Sub (r3) :: r307)
   | 476 -> One (Sub (r3) :: r361)
-  | 1085 -> One (Sub (r3) :: r773)
-  | 1266 -> One (Sub (r3) :: r863)
-  | 1325 -> One (Sub (r3) :: r898)
-  | 1327 -> One (Sub (r3) :: r899)
+  | 1085 -> One (Sub (r3) :: r772)
+  | 1266 -> One (Sub (r3) :: r862)
+  | 1325 -> One (Sub (r3) :: r897)
+  | 1327 -> One (Sub (r3) :: r898)
   | 3 -> One (Sub (r12) :: r14)
   | 55 -> One (Sub (r12) :: r15)
   | 58 -> One (Sub (r12) :: r20)
@@ -1841,12 +1840,12 @@ let recover =
   | 70 -> One (Sub (r31) :: r33)
   | 227 -> One (Sub (r43) :: r154)
   | 536 -> One (Sub (r43) :: r441)
-  | 1365 -> One (Sub (r43) :: r914)
+  | 1365 -> One (Sub (r43) :: r913)
   | 103 -> One (Sub (r47) :: r49)
-  | 1197 -> One (Sub (r47) :: r822)
-  | 1200 -> One (Sub (r47) :: r824)
-  | 1203 -> One (Sub (r47) :: r826)
-  | 1213 -> One (Sub (r47) :: r830)
+  | 1197 -> One (Sub (r47) :: r821)
+  | 1200 -> One (Sub (r47) :: r823)
+  | 1203 -> One (Sub (r47) :: r825)
+  | 1213 -> One (Sub (r47) :: r829)
   | 187 -> One (Sub (r55) :: r137)
   | 131 -> One (Sub (r59) :: r89)
   | 142 -> One (Sub (r59) :: r97)
@@ -1860,8 +1859,8 @@ let recover =
   | 483 -> One (Sub (r63) :: r376)
   | 770 -> One (Sub (r63) :: r632)
   | 934 -> One (Sub (r63) :: r719)
-  | 1164 -> One (Sub (r63) :: r803)
-  | 1168 -> One (Sub (r63) :: r806)
+  | 1164 -> One (Sub (r63) :: r802)
+  | 1168 -> One (Sub (r63) :: r805)
   | 109 -> One (Sub (r70) :: r71)
   | 258 -> One (Sub (r70) :: r160)
   | 119 -> One (Sub (r76) :: r77)
@@ -1879,7 +1878,7 @@ let recover =
   | 330 -> One (Sub (r197) :: r198)
   | 524 -> One (Sub (r197) :: r421)
   | 746 -> One (Sub (r197) :: r593)
-  | 1403 -> One (Sub (r197) :: r946)
+  | 1403 -> One (Sub (r197) :: r944)
   | 331 -> One (Sub (r199) :: r201)
   | 367 -> One (Sub (r224) :: r225)
   | 464 -> One (Sub (r224) :: r342)
@@ -1887,17 +1886,17 @@ let recover =
   | 903 -> One (Sub (r224) :: r692)
   | 916 -> One (Sub (r224) :: r706)
   | 918 -> One (Sub (r224) :: r707)
-  | 1271 -> One (Sub (r235) :: r873)
+  | 1271 -> One (Sub (r235) :: r872)
   | 408 -> One (Sub (r243) :: r262)
   | 912 -> One (Sub (r243) :: r704)
-  | 1247 -> One (Sub (r243) :: r853)
+  | 1247 -> One (Sub (r243) :: r852)
   | 390 -> One (Sub (r249) :: r251)
   | 1002 -> One (Sub (r287) :: r746)
   | 436 -> One (Sub (r296) :: r297)
   | 445 -> One (Sub (r296) :: r303)
   | 437 -> One (Sub (r299) :: r301)
   | 446 -> One (Sub (r299) :: r306)
-  | 1146 -> One (Sub (r310) :: r787)
+  | 1146 -> One (Sub (r310) :: r786)
   | 715 -> One (Sub (r317) :: r566)
   | 451 -> One (Sub (r321) :: r324)
   | 930 -> One (Sub (r326) :: r712)
@@ -1905,13 +1904,13 @@ let recover =
   | 462 -> One (Sub (r339) :: r341)
   | 1025 -> One (Sub (r339) :: r757)
   | 497 -> One (Sub (r366) :: r380)
-  | 1097 -> One (Sub (r366) :: r777)
+  | 1097 -> One (Sub (r366) :: r776)
   | 479 -> One (Sub (r371) :: r372)
   | 545 -> One (Sub (r427) :: r443)
   | 529 -> One (Sub (r429) :: r430)
   | 531 -> One (Sub (r429) :: r431)
-  | 1342 -> One (Sub (r429) :: r900)
-  | 1343 -> One (Sub (r429) :: r901)
+  | 1342 -> One (Sub (r429) :: r899)
+  | 1343 -> One (Sub (r429) :: r900)
   | 541 -> One (Sub (r436) :: r442)
   | 533 -> One (Sub (r438) :: r440)
   | 559 -> One (Sub (r450) :: r455)
@@ -1920,12 +1919,12 @@ let recover =
   | 564 -> One (Sub (r459) :: r460)
   | 858 -> One (Sub (r459) :: r686)
   | 809 -> One (Sub (r461) :: r660)
-  | 1279 -> One (Sub (r461) :: r882)
+  | 1279 -> One (Sub (r461) :: r881)
   | 588 -> One (Sub (r479) :: r482)
   | 607 -> One (Sub (r479) :: r488)
   | 616 -> One (Sub (r492) :: r493)
   | 633 -> One (Sub (r497) :: r505)
-  | 1353 -> One (Sub (r497) :: r909)
+  | 1353 -> One (Sub (r497) :: r908)
   | 646 -> One (Sub (r515) :: r517)
   | 699 -> One (Sub (r538) :: r564)
   | 667 -> One (Sub (r540) :: r541)
@@ -1937,35 +1936,35 @@ let recover =
   | 726 -> One (Sub (r575) :: r576)
   | 755 -> One (Sub (r596) :: r597)
   | 807 -> One (Sub (r601) :: r657)
-  | 1297 -> One (Sub (r603) :: r889)
-  | 1424 -> One (Sub (r603) :: r964)
+  | 1297 -> One (Sub (r603) :: r888)
+  | 1424 -> One (Sub (r603) :: r962)
   | 872 -> One (Sub (r610) :: r687)
   | 759 -> One (Sub (r612) :: r613)
   | 834 -> One (Sub (r620) :: r670)
   | 761 -> One (Sub (r622) :: r623)
   | 769 -> One (Sub (r628) :: r630)
   | 777 -> One (Sub (r636) :: r638)
-  | 1253 -> One (Sub (r648) :: r856)
+  | 1253 -> One (Sub (r648) :: r855)
   | 821 -> One (Sub (r666) :: r668)
-  | 1305 -> One (Sub (r666) :: r892)
+  | 1305 -> One (Sub (r666) :: r891)
   | 846 -> One (Sub (r672) :: r680)
   | 850 -> One (Sub (r672) :: r683)
   | 909 -> One (Sub (r702) :: r703)
   | 914 -> One (Sub (r702) :: r705)
   | 1017 -> One (Sub (r750) :: r753)
-  | 1109 -> One (Sub (r778) :: r779)
-  | 1174 -> One (Sub (r798) :: r809)
-  | 1178 -> One (Sub (r811) :: r816)
-  | 1254 -> One (Sub (r811) :: r861)
-  | 1239 -> One (Sub (r844) :: r846)
-  | 1274 -> One (Sub (r867) :: r875)
-  | 1283 -> One (Sub (r886) :: r887)
-  | 1374 -> One (Sub (r916) :: r917)
-  | 1388 -> One (Sub (r926) :: r930)
-  | 1386 -> One (Sub (r928) :: r929)
-  | 1410 -> One (Sub (r949) :: r950)
-  | 1428 -> One (Sub (r956) :: r965)
-  | 1433 -> One (Sub (r966) :: r967)
+  | 1109 -> One (Sub (r777) :: r778)
+  | 1174 -> One (Sub (r797) :: r808)
+  | 1178 -> One (Sub (r810) :: r815)
+  | 1254 -> One (Sub (r810) :: r860)
+  | 1239 -> One (Sub (r843) :: r845)
+  | 1274 -> One (Sub (r866) :: r874)
+  | 1283 -> One (Sub (r885) :: r886)
+  | 1374 -> One (Sub (r914) :: r915)
+  | 1388 -> One (Sub (r924) :: r928)
+  | 1386 -> One (Sub (r926) :: r927)
+  | 1410 -> One (Sub (r947) :: r948)
+  | 1428 -> One (Sub (r954) :: r963)
+  | 1433 -> One (Sub (r964) :: r965)
   | 1436 -> One (r0)
   | 1 -> One (r1)
   | 993 -> One (r2)
@@ -2630,203 +2629,201 @@ let recover =
   | 1028 -> One (r758)
   | 1027 -> One (r759)
   | 1034 -> One (r760)
-  | 1040 -> One (r761)
-  | 1045 | 1066 -> One (r762)
-  | 1044 | 1065 -> One (r763)
-  | 1043 | 1064 -> One (r764)
-  | 1047 -> One (r765)
-  | 1052 -> One (r766)
-  | 1055 -> One (r767)
-  | 1091 -> One (r768)
-  | 1090 -> One (r769)
-  | 1089 -> One (r770)
-  | 1088 -> One (r771)
-  | 1087 -> One (r772)
-  | 1086 -> One (r773)
-  | 1099 -> One (r774)
-  | 1096 -> One (r775)
-  | 1095 -> One (r776)
-  | 1098 -> One (r777)
-  | 1110 -> One (r779)
-  | 1116 -> One (r780)
-  | 1119 -> One (r781)
-  | 1129 -> One (r782)
-  | 1128 -> One (r783)
-  | 1142 -> One (r784)
-  | 1141 -> One (r785)
-  | 1140 -> One (r786)
-  | 1147 -> One (r787)
-  | 1153 -> One (r788)
-  | 1152 -> One (r790)
-  | 1151 -> One (r791)
-  | 1150 -> One (r792)
-  | 1149 -> One (r793)
-  | 1163 -> One (r794)
-  | 1162 -> One (r795)
-  | 1173 -> One (r797)
-  | 1176 -> One (r799)
-  | 1161 -> One (r800)
-  | 1160 -> One (r801)
-  | 1159 -> One (r802)
-  | 1165 -> One (r803)
-  | 1167 -> One (r804)
-  | 1166 | 1177 -> One (r805)
-  | 1169 -> One (r806)
-  | 1172 -> One (r807)
-  | 1171 -> One (r808)
-  | 1175 -> One (r809)
-  | 1179 -> One (r810)
-  | 1185 -> One (r812)
-  | 1184 -> One (r813)
-  | 1183 -> One (r814)
-  | 1182 -> One (r815)
-  | 1181 -> One (r816)
-  | 1190 -> One (r817)
-  | 1189 -> One (r818)
-  | 1188 -> One (r819)
-  | 1187 -> One (r820)
-  | 1199 -> One (r821)
-  | 1198 -> One (r822)
-  | 1202 -> One (r823)
-  | 1201 -> One (r824)
-  | 1205 -> One (r825)
-  | 1204 -> One (r826)
-  | 1210 -> One (r827)
-  | 1209 -> One (r828)
-  | 1215 -> One (r829)
-  | 1214 -> One (r830)
-  | 1222 -> One (r831)
-  | 1221 -> One (r832)
-  | 1220 -> One (r833)
-  | 1219 -> One (r834)
-  | 1218 -> One (r835)
-  | 1217 -> One (r836)
-  | 1226 -> One (r837)
-  | 1238 -> One (r838)
-  | 1237 -> One (r839)
-  | 1263 -> One (r840)
-  | 1252 -> One (r841)
-  | 1251 -> One (r842)
-  | 1240 -> One (r843)
-  | 1265 -> One (r845)
-  | 1264 -> One (r846)
-  | 1245 -> One (r847)
-  | 1244 -> One (r848)
-  | 1243 -> One (r849)
-  | 1242 -> One (r850)
-  | 1250 -> One (r851)
-  | 1249 -> One (r852)
-  | 1248 -> One (r853)
-  | 1262 -> One (r854)
-  | 1261 -> One (r855)
-  | 1260 -> One (r856)
-  | 1259 -> One (r857)
-  | 1258 -> One (r858)
-  | 1257 -> One (r859)
-  | 1256 -> One (r860)
-  | 1255 -> One (r861)
-  | 1268 -> One (r862)
-  | 1267 -> One (r863)
-  | 1289 -> One (r864)
-  | 1287 -> One (r866)
-  | 1304 -> One (r868)
-  | 1303 -> One (r869)
-  | 1300 -> One (r870)
-  | 1270 -> One (r871)
-  | 1273 -> One (r872)
-  | 1272 -> One (r873)
-  | 1296 -> One (r874)
-  | 1295 -> One (r875)
-  | 1294 -> One (r876)
-  | 1278 -> One (r877)
-  | 1277 -> One (r878)
-  | 1276 -> One (r879)
-  | 1282 -> One (r880)
-  | 1281 -> One (r881)
-  | 1280 -> One (r882)
-  | 1290 -> One (r883)
-  | 1285 -> One (r884)
-  | 1284 -> One (r885)
-  | 1293 -> One (r887)
-  | 1299 -> One (r888)
-  | 1298 -> One (r889)
-  | 1302 -> One (r890)
-  | 1307 -> One (r891)
-  | 1306 -> One (r892)
-  | 1309 -> One (r893)
-  | 1315 -> One (r894)
-  | 1314 -> One (r895)
-  | 1324 -> One (r896)
-  | 1323 -> One (r897)
-  | 1326 -> One (r898)
-  | 1328 -> One (r899)
-  | 1345 -> One (r900)
-  | 1344 -> One (r901)
-  | 1364 -> One (r902)
-  | 1362 -> One (r904)
-  | 1352 -> One (r905)
-  | 1351 -> One (r906)
-  | 1350 -> One (r907)
-  | 1349 -> One (r908)
-  | 1355 -> One (r909)
-  | 1361 -> One (r911)
-  | 1360 -> One (r912)
-  | 1357 -> One (r913)
-  | 1366 -> One (r914)
-  | 1373 -> One (r915)
-  | 1375 -> One (r917)
-  | 1385 -> One (r918)
-  | 1381 -> One (r919)
-  | 1380 -> One (r920)
-  | 1379 -> One (r921)
-  | 1378 -> One (r922)
-  | 1377 -> One (r923)
-  | 1384 -> One (r924)
-  | 1383 -> One (r925)
-  | 1390 -> One (r927)
-  | 1387 -> One (r929)
-  | 1389 -> One (r930)
-  | 1395 | 1441 -> One (r931)
-  | 1394 | 1440 -> One (r932)
-  | 1393 | 1439 -> One (r933)
-  | 1392 | 1438 -> One (r934)
-  | 1399 | 1445 -> One (r935)
-  | 1398 | 1444 -> One (r936)
-  | 1397 | 1443 -> One (r937)
-  | 1396 | 1442 -> One (r938)
-  | 1402 -> One (r939)
-  | 1401 -> One (r940)
-  | 1409 -> One (r941)
-  | 1408 -> One (r942)
-  | 1407 -> One (r943)
-  | 1406 -> One (r944)
-  | 1405 -> One (r945)
-  | 1404 -> One (r946)
-  | 1415 -> One (r947)
-  | 1414 -> One (r948)
-  | 1411 -> One (r950)
-  | 1413 -> One (r951)
-  | 1418 -> One (r952)
-  | 1417 -> One (r953)
-  | 1423 -> One (r954)
-  | 1422 -> One (r955)
-  | 1431 -> One (r957)
-  | 1430 -> One (r958)
-  | 1421 -> One (r959)
-  | 1420 -> One (r960)
-  | 1419 -> One (r961)
-  | 1427 -> One (r962)
-  | 1426 -> One (r963)
-  | 1425 -> One (r964)
-  | 1429 -> One (r965)
-  | 1434 -> One (r967)
-  | 1446 -> One (r968)
-  | 1449 -> One (r969)
-  | 1453 -> One (r970)
-  | 1452 -> One (r971)
-  | 1455 -> One (r972)
-  | 1459 -> One (r973)
-  | 1463 -> One (r974)
+  | 1045 | 1066 -> One (r761)
+  | 1044 | 1065 -> One (r762)
+  | 1043 | 1064 -> One (r763)
+  | 1047 -> One (r764)
+  | 1052 -> One (r765)
+  | 1055 -> One (r766)
+  | 1091 -> One (r767)
+  | 1090 -> One (r768)
+  | 1089 -> One (r769)
+  | 1088 -> One (r770)
+  | 1087 -> One (r771)
+  | 1086 -> One (r772)
+  | 1099 -> One (r773)
+  | 1096 -> One (r774)
+  | 1095 -> One (r775)
+  | 1098 -> One (r776)
+  | 1110 -> One (r778)
+  | 1116 -> One (r779)
+  | 1119 -> One (r780)
+  | 1129 -> One (r781)
+  | 1128 -> One (r782)
+  | 1142 -> One (r783)
+  | 1141 -> One (r784)
+  | 1140 -> One (r785)
+  | 1147 -> One (r786)
+  | 1153 -> One (r787)
+  | 1152 -> One (r789)
+  | 1151 -> One (r790)
+  | 1150 -> One (r791)
+  | 1149 -> One (r792)
+  | 1163 -> One (r793)
+  | 1162 -> One (r794)
+  | 1173 -> One (r796)
+  | 1176 -> One (r798)
+  | 1161 -> One (r799)
+  | 1160 -> One (r800)
+  | 1159 -> One (r801)
+  | 1165 -> One (r802)
+  | 1167 -> One (r803)
+  | 1166 | 1177 -> One (r804)
+  | 1169 -> One (r805)
+  | 1172 -> One (r806)
+  | 1171 -> One (r807)
+  | 1175 -> One (r808)
+  | 1179 -> One (r809)
+  | 1185 -> One (r811)
+  | 1184 -> One (r812)
+  | 1183 -> One (r813)
+  | 1182 -> One (r814)
+  | 1181 -> One (r815)
+  | 1190 -> One (r816)
+  | 1189 -> One (r817)
+  | 1188 -> One (r818)
+  | 1187 -> One (r819)
+  | 1199 -> One (r820)
+  | 1198 -> One (r821)
+  | 1202 -> One (r822)
+  | 1201 -> One (r823)
+  | 1205 -> One (r824)
+  | 1204 -> One (r825)
+  | 1210 -> One (r826)
+  | 1209 -> One (r827)
+  | 1215 -> One (r828)
+  | 1214 -> One (r829)
+  | 1222 -> One (r830)
+  | 1221 -> One (r831)
+  | 1220 -> One (r832)
+  | 1219 -> One (r833)
+  | 1218 -> One (r834)
+  | 1217 -> One (r835)
+  | 1226 -> One (r836)
+  | 1238 -> One (r837)
+  | 1237 -> One (r838)
+  | 1263 -> One (r839)
+  | 1252 -> One (r840)
+  | 1251 -> One (r841)
+  | 1240 -> One (r842)
+  | 1265 -> One (r844)
+  | 1264 -> One (r845)
+  | 1245 -> One (r846)
+  | 1244 -> One (r847)
+  | 1243 -> One (r848)
+  | 1242 -> One (r849)
+  | 1250 -> One (r850)
+  | 1249 -> One (r851)
+  | 1248 -> One (r852)
+  | 1262 -> One (r853)
+  | 1261 -> One (r854)
+  | 1260 -> One (r855)
+  | 1259 -> One (r856)
+  | 1258 -> One (r857)
+  | 1257 -> One (r858)
+  | 1256 -> One (r859)
+  | 1255 -> One (r860)
+  | 1268 -> One (r861)
+  | 1267 -> One (r862)
+  | 1289 -> One (r863)
+  | 1287 -> One (r865)
+  | 1304 -> One (r867)
+  | 1303 -> One (r868)
+  | 1300 -> One (r869)
+  | 1270 -> One (r870)
+  | 1273 -> One (r871)
+  | 1272 -> One (r872)
+  | 1296 -> One (r873)
+  | 1295 -> One (r874)
+  | 1294 -> One (r875)
+  | 1278 -> One (r876)
+  | 1277 -> One (r877)
+  | 1276 -> One (r878)
+  | 1282 -> One (r879)
+  | 1281 -> One (r880)
+  | 1280 -> One (r881)
+  | 1290 -> One (r882)
+  | 1285 -> One (r883)
+  | 1284 -> One (r884)
+  | 1293 -> One (r886)
+  | 1299 -> One (r887)
+  | 1298 -> One (r888)
+  | 1302 -> One (r889)
+  | 1307 -> One (r890)
+  | 1306 -> One (r891)
+  | 1309 -> One (r892)
+  | 1315 -> One (r893)
+  | 1314 -> One (r894)
+  | 1324 -> One (r895)
+  | 1323 -> One (r896)
+  | 1326 -> One (r897)
+  | 1328 -> One (r898)
+  | 1345 -> One (r899)
+  | 1344 -> One (r900)
+  | 1364 -> One (r901)
+  | 1362 -> One (r903)
+  | 1352 -> One (r904)
+  | 1351 -> One (r905)
+  | 1350 -> One (r906)
+  | 1349 -> One (r907)
+  | 1355 -> One (r908)
+  | 1361 -> One (r910)
+  | 1360 -> One (r911)
+  | 1357 -> One (r912)
+  | 1366 -> One (r913)
+  | 1375 -> One (r915)
+  | 1385 -> One (r916)
+  | 1381 -> One (r917)
+  | 1380 -> One (r918)
+  | 1379 -> One (r919)
+  | 1378 -> One (r920)
+  | 1377 -> One (r921)
+  | 1384 -> One (r922)
+  | 1383 -> One (r923)
+  | 1390 -> One (r925)
+  | 1387 -> One (r927)
+  | 1389 -> One (r928)
+  | 1395 | 1441 -> One (r929)
+  | 1394 | 1440 -> One (r930)
+  | 1393 | 1439 -> One (r931)
+  | 1392 | 1438 -> One (r932)
+  | 1399 | 1445 -> One (r933)
+  | 1398 | 1444 -> One (r934)
+  | 1397 | 1443 -> One (r935)
+  | 1396 | 1442 -> One (r936)
+  | 1402 -> One (r937)
+  | 1401 -> One (r938)
+  | 1409 -> One (r939)
+  | 1408 -> One (r940)
+  | 1407 -> One (r941)
+  | 1406 -> One (r942)
+  | 1405 -> One (r943)
+  | 1404 -> One (r944)
+  | 1415 -> One (r945)
+  | 1414 -> One (r946)
+  | 1411 -> One (r948)
+  | 1413 -> One (r949)
+  | 1418 -> One (r950)
+  | 1417 -> One (r951)
+  | 1423 -> One (r952)
+  | 1422 -> One (r953)
+  | 1431 -> One (r955)
+  | 1430 -> One (r956)
+  | 1421 -> One (r957)
+  | 1420 -> One (r958)
+  | 1419 -> One (r959)
+  | 1427 -> One (r960)
+  | 1426 -> One (r961)
+  | 1425 -> One (r962)
+  | 1429 -> One (r963)
+  | 1434 -> One (r965)
+  | 1446 -> One (r966)
+  | 1449 -> One (r967)
+  | 1453 -> One (r968)
+  | 1452 -> One (r969)
+  | 1455 -> One (r970)
+  | 1459 -> One (r971)
+  | 1463 -> One (r972)
   | 927 -> Select (function
     | -1 -> [R 89]
     | _ -> r404)
@@ -2841,7 +2838,7 @@ let recover =
     | _ -> r403)
   | 1356 -> Select (function
     | 1353 -> r496
-    | _ -> S (T T_EQUAL) :: r913)
+    | _ -> S (T T_EQUAL) :: r912)
   | 151 -> Select (function
     | 1177 -> r81
     | _ -> Sub (r43) :: r106)

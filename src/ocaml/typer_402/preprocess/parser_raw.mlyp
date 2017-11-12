@@ -2571,7 +2571,7 @@ let_operator:
 %inline toplevel_payload:
     /* Empty */ { None }
   | STRING      { let (s, d) = $1 in 
-                  Some (Exp.constant (Const_string (s, d) )) }
+                  Some (Exp.constant (Pconst_string (s, d) )) }
   | INT         { Some (Exp.constant (Const_int $1)) }
   | val_longident | mod_longident { Some (Exp.ident (mkloc $1 (rloc $startpos $endpos))) }
   | FALSE       { Some (Exp.construct (mkloc (Longident.Lident "false") (rloc $startpos $endpos)) None) }
