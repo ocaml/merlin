@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name:         "merlin"
-version:      "3.0.3"
+version:      "3.0.4"
 maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
 homepage:     "https://github.com/ocaml/merlin"
@@ -17,7 +17,7 @@ depends: [
   "yojson"
 ]
 
-available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.06" ]
+available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.07" ]
 
 post-messages: [
   "merlin installed.

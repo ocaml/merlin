@@ -1,3 +1,11 @@
+merlin 3.0.4
+============
+Sun Nov 12 10:14:03 CET 2017
+
+Add support for 4.06.
+Use Leo White's short-path for 4.05.
+Various bug fixes (in locate, in emacs serialization).
+
 merlin 3.0.3
 ============
 Mon Oct  2 12:56:23 CEST 2017
