@@ -644,9 +644,9 @@ structure [@recovery []]:
 
 structure_head :
 | toplevel_directives seq_expr post_item_attributes structure_tail
-    { List.rev_append $1 @ mkstrexp $2 $3 :: $4 }
+    { List.rev_append $1 (mkstrexp $2 $3 :: $4) }
 | toplevel_directives structure_tail
-    { List.rev_append $1 @ $2 }
+    { List.rev_append $1 $2 }
 
 structure_tail:
 | (* empty *)
@@ -2587,7 +2587,7 @@ toplevel_directives:
         | None -> PStr []
         | Some exp -> PStr [mkstrexp exp []]
       in
-      mkstr(Pstr_attribute (id,payload)) :: $1
+      [mkstr $startpos $endpos (Pstr_attribute (id,payload))] @ $1
     }
 ;
 
