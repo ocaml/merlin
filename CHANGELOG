@@ -1,3 +1,9 @@
+merlin 3.0.5
+============
+Mon Nov 13 18:30:02 CET 2017
+
+Fix magic numbers for 4.06 (issue #749, reported by @Fourchaux).
+
 merlin 3.0.4
 ============
 Sun Nov 12 10:14:03 CET 2017
