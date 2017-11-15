@@ -958,6 +958,13 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
            (setq count (1+ count)))
     (<= count 8)))
 
+(defvar merlin-types-buffer-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map special-mode-map)
+    (define-key map "g" nil)
+    map)
+  "Keymap for types buffer.")
+
 (defun merlin/display-in-type-buffer (text)
   "Change content of type-buffer."
   (let ((curr-dir default-directory))
@@ -974,6 +981,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
       (insert text)
       (goto-char (point-min))
       (read-only-mode 1)
+      (use-local-map merlin-types-buffer-map)
       ; finally make sure that the type buffer directory is the same as the last
       ; (ml) buffer we were in.
       ; Indeed if people move to that buffer and start looking for a file we
