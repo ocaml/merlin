@@ -6,6 +6,7 @@ bin: [
 share: [
   "vim/merlin/autoload/ctrlp/locate.vim" { "vim/autoload/ctrlp/locate.vim" }
   "vim/merlin/autoload/ctrlp/outline.vim" { "vim/autoload/ctrlp/outline.vim" }
+  "vim/merlin/autoload/neomake/makers/ft/ocaml.vim" { "vim/autoload/neomake/makers/ft/ocaml.vim" }
   "vim/merlin/autoload/merlin_find.vim" { "vim/autoload/merlin_find.vim" }
   "vim/merlin/autoload/merlin.py" { "vim/autoload/merlin.py" }
   "vim/merlin/autoload/merlin_type.vim" { "vim/autoload/merlin_type.vim" }
