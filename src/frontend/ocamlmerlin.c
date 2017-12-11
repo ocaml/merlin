@@ -198,7 +198,13 @@ static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **
   int i = 0;
   ssize_t j = 4;
 
-  /* Append env var */
+  /* First put the current working directory */
+
+  char cwd[PATHSZ];
+  if (!getcwd(cwd, PATHSZ)) cwd[0] = '\0';
+  append_argument(buffer, len, &j, cwd);
+
+  /* Then append env vars */
   for (i = 0; envvars[i] != NULL; ++i)
   {
     const char *v = getenv(envvars[i]);

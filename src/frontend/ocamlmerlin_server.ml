@@ -14,13 +14,25 @@ module Server = struct
       | "" :: args | ([] as args) -> (acc, args)
       | var :: rest -> aux (var :: acc) rest
     in
-    aux [] (Array.to_list argv)
+    let wd, args =
+      match Array.to_list argv with
+      | [] -> "", []
+      | wd :: rest -> wd, rest
+    in
+    let env, args = aux [] args in
+    (wd, env, args)
 
 
   let process_request argv =
     match process_arguments argv with
-    | _, ("stop-server" :: _) -> raise Exit
-    | env, args -> New_merlin.run env args
+    | _, _, ("stop-server" :: _) -> raise Exit
+    | wd, env, args ->
+      begin try Sys.chdir wd
+        with _ ->
+          Logger.logf "Ocamlmerlin_server" "Server.process_request"
+            "cannot change working directory to %S" wd
+      end;
+      New_merlin.run env args
 
   let process_client client =
     let context = client.Os_ipc.context in
