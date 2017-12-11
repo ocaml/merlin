@@ -396,14 +396,15 @@ def vim_loclist(vimvar, ignore_warnings):
     bufnr = vim.current.buffer.number
     nr = 0
     for error in errors:
-        if error['type'] == 'warning' and vim.eval(ignore_warnings) == 'true':
-            continue
-        ty = 'w'
+        ty = 'e'
+        if error['type'] == 'warning':
+            if vim.eval(ignore_warnings) == 'true':
+                continue
+            ty = 'w'
         msg = re.sub(re_wspaces, " ", error['message']).replace("'", "''")
         if msg.startswith("Warning "):
             msg = msg[8:]
         elif msg.startswith("Error: "):
-            ty = 'e'
             msg = msg[7:]
         lnum = 1
         col = 1
