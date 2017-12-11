@@ -203,7 +203,7 @@ let default_printer ppf loc =
 ;;
 
 let printer = ref default_printer
-let print ppf loc = !printer ppf loc
+let print ppf loc = () (*!printer ppf loc*)
 
 let error_prefix = "Error"
 let warning_prefix = "Warning"
