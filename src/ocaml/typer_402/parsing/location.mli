@@ -92,27 +92,28 @@ val absname: bool ref
 
 (* Support for located errors *)
 
+type error_source = Lexer | Parser | Typer | Warning | Other
+
 type error =
   {
     loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
+    source : error_source;
   }
 
 exception Error of error
 
-val error: ?loc:t -> ?sub:error list -> ?if_highlight:string -> string -> error
+val error: ?loc:t -> ?sub:error list -> ?if_highlight:string -> ?source:error_source -> string -> error
 
-val errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string
-            -> ('a, unit, string, error) format4 -> 'a
+val errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string -> ?source:error_source -> ('a, unit, string, error) format4 -> 'a
 
-val raise_errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string
-            -> ('a, unit, string, 'b) format4 -> 'a
+val raise_errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string -> ?source:error_source -> ('a, unit, string, 'b) format4 -> 'a
 
-val error_of_printer: t -> (formatter -> 'a -> unit) -> 'a -> error
+val error_of_printer: t -> ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
 
-val error_of_printer_file: (formatter -> 'a -> unit) -> 'a -> error
+val error_of_printer_file: ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
 
 val error_of_exn: exn -> [`Ok of error | `Already_displayed] option
 

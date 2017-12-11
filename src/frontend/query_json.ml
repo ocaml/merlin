@@ -217,11 +217,14 @@ let json_of_type_loc (loc,desc,tail) =
         | `Tail_call -> "call")
   ]
 
-let json_of_error {Location. msg; sub; loc} =
+let json_of_error {Location. msg; sub; loc; source} =
   let msg = String.trim msg in
-  let typ =
-    if String.is_prefixed ~by:"Warning " msg then
-      "warning" else "error"
+  let typ = match source with
+      | Location.Lexer   -> "lexer"
+      | Location.Parser  -> "parser"
+      | Location.Typer   -> "typer"
+      | Location.Warning -> "warning"
+      | Location.Other   -> "other"
   in
   let of_sub {Location. msg; loc} =
     with_location ~skip_none:true loc ["message", `String (String.trim msg)] in

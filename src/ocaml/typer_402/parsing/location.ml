@@ -282,19 +282,22 @@ let mkloc txt loc = { txt ; loc }
 let mknoloc txt = mkloc txt none
 
 
+type error_source = Lexer | Parser | Typer | Warning | Other
+
 type error =
   {
     loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
+    source : error_source;
   }
 
-let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
-  Printf.ksprintf (fun msg -> {loc; msg; sub; if_highlight})
+let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) fmt =
+  Printf.ksprintf (fun msg -> {loc; msg; sub; if_highlight; source}) fmt
 
-let error ?(loc = none) ?(sub = []) ?(if_highlight = "") msg =
-  {loc; msg; sub; if_highlight}
+let error ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) msg =
+  {loc; msg; sub; if_highlight; source}
 
 let error_of_exn : (exn -> error option) list ref = ref []
 
@@ -336,7 +339,7 @@ let report_error ppf err =
   print_updating_num_loc_lines ppf !error_reporter err
 ;;
 
-let error_of_printer loc print x =
+let error_of_printer loc ?source print x =
   let buf = Buffer.create 64 in
   let ppf = Format.formatter_of_buffer buf in
   pp_print_string ppf "Error: ";
@@ -345,14 +348,14 @@ let error_of_printer loc print x =
   let msg = Buffer.contents buf in
   errorf ~loc "%s" msg
 
-let suberrors_of_printer loc print x =
+let suberrors_of_printer loc ?source print x =
   let subs = ref [] in
   let sub err = subs := err :: !subs in
-  let error = error_of_printer loc (print ~sub) x in
+  let error = error_of_printer loc ?source (print ~sub) x in
   {error with sub = List.rev !subs}
 
-let error_of_printer_file print x =
-  error_of_printer (in_file !input_name) print x
+let error_of_printer_file ?source print x =
+  error_of_printer (in_file !input_name) ?source print x
 
 let () =
   register_error_of_exn
@@ -388,6 +391,6 @@ let () =
       | _ -> None
     )
 
-let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
+let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) =
   Printf.ksprintf
-    (fun msg -> raise (Error ({loc; msg; sub; if_highlight})))
+    (fun msg -> raise (Error ({loc; msg; sub; if_highlight; source})))

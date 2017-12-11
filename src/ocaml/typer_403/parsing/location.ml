@@ -311,12 +311,15 @@ let mkloc txt loc = { txt ; loc }
 let mknoloc txt = mkloc txt none
 
 
+type error_source = Lexer | Parser | Typer | Warning | Other
+
 type error =
   {
     loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
+    source : error_source;
   }
 
 let pp_ksprintf ?before k fmt =
@@ -333,19 +336,19 @@ let pp_ksprintf ?before k fmt =
       k msg)
     ppf fmt
 
-let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") fmt =
+let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) fmt =
   pp_ksprintf
-    (fun msg -> {loc; msg; sub; if_highlight})
+    (fun msg -> {loc; msg; sub; if_highlight; source})
     fmt
 
-let errorf_prefixed ?(loc=none) ?(sub=[]) ?(if_highlight="") fmt =
+let errorf_prefixed ?(loc=none) ?(sub=[]) ?(if_highlight="") ?(source = Typer) fmt =
   pp_ksprintf
     ~before:(fun ppf -> fprintf ppf "%a " print_error_prefix ())
-    (fun msg -> {loc; msg; sub; if_highlight})
+    (fun msg -> {loc; msg; sub; if_highlight; source})
     fmt
 
-let error ?(loc = none) ?(sub = []) ?(if_highlight = "") msg =
-  {loc; msg; sub; if_highlight}
+let error ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) msg =
+  {loc; msg; sub; if_highlight; source}
 
 let error_of_exn : (exn -> error option) list ref = ref []
 
@@ -386,11 +389,11 @@ let report_error ppf err =
   print_updating_num_loc_lines ppf !error_reporter err
 ;;
 
-let error_of_printer loc print x =
-  errorf_prefixed ~loc "%a@?" print x
+let error_of_printer loc ?source print x =
+  errorf_prefixed ~loc ?source "%a@?" print x
 
-let error_of_printer_file print x =
-  error_of_printer (in_file !input_name) print x
+let error_of_printer_file ?source print x =
+  error_of_printer (in_file !input_name) ?source print x
 
 let () =
   register_error_of_exn
@@ -428,5 +431,5 @@ let () =
       | _ -> None
     )
 
-let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
-  pp_ksprintf (fun msg -> raise (Error ({loc; msg; sub; if_highlight})))
+let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) =
+  pp_ksprintf (fun msg -> raise (Error ({loc; msg; sub; if_highlight; source})))
