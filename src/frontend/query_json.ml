@@ -225,6 +225,7 @@ let json_of_error {Location. msg; sub; loc; source} =
       | Location.Typer   -> "typer"
       | Location.Warning -> "warning"
       | Location.Other   -> "other"
+      | Location.Env     -> "env"
   in
   let of_sub {Location. msg; loc} =
     with_location ~skip_none:true loc ["message", `String (String.trim msg)] in

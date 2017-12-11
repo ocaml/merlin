@@ -95,7 +95,7 @@ val absname: bool ref
 
 (* Support for located errors *)
 
-type error_source = Lexer | Parser | Typer | Warning | Other
+type error_source = Lexer | Parser | Typer | Warning | Other | Env
 
 type error =
   {
