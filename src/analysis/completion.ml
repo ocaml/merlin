@@ -164,7 +164,7 @@ let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
     | `Label label_descr ->
       let desc =
         Types.(Tarrow (Raw_compat.no_label,
-                       label_descr.lbl_arg, label_descr.lbl_res, Cok))
+                       label_descr.lbl_res, label_descr.lbl_arg, Cok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Label_decl (ty,label_decl) ->
@@ -589,19 +589,16 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
                 | `Expression e -> e.Typedtree.exp_type
                 | `Pattern p -> p.Typedtree.pat_type
               in
-              let _, _, lbls = Typecore.extract_concrete_record env ty in
-              if lbls = [] then raise Not_found;
-              (ty, lbls)
+              let p, _, decl = Ctype.extract_concrete_typedecl env ty in
+              (ty, p, decl)
             with
             | exception _ -> `Maybe
-            | (ty, lbls) ->
+            | (ty, p, decl) ->
               try
-                let lbls = Datarepr.label_descrs ty lbls
-                    Types.Record_regular Asttypes.Public
-                in
+                let lbls = Datarepr.labels_of_type p decl in
                 let labels = List.map lbls ~f:(fun (_,lbl) ->
                     try
-                      let _, lbl_res, lbl_arg = Ctype.instance_label false lbl in
+                      let _, lbl_arg, lbl_res = Ctype.instance_label false lbl in
                       begin try
                           Ctype.unify_var env ty lbl_res;
                         with _ -> ()
@@ -613,7 +610,11 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
                     with _ -> lbl
                   ) in
                 `Description labels
-              with _ -> `Declaration (ty, lbls)
+              with _ ->
+              match decl.Types.type_kind with
+              | Types.Type_record (lbls, _) ->
+                `Declaration (ty, lbls)
+              | _ -> `Maybe
           end
         | lbls ->
           `Description (Array.to_list lbls)
