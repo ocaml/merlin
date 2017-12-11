@@ -511,7 +511,7 @@ return (LOC1 . LOC2)."
   "Execute a command and parse output: return an sexp on success or throw an error"
   (let ((result (merlin--call-merlin command args)))
     (condition-case err
-        (setq result (car (read-from-string result)))
+        (setq result (car (read-from-string (string-as-multibyte result))))
       (error
         (error "merlin: error %s trying to parse answer: %s"
                err result)))
