@@ -252,7 +252,7 @@ The value is a list where each item as the shape:
 'valid' : bool,
 'message' : string,
 'sub' : sub_error list,
-'type'  : ('type'|'parser'|'env'|'warning'|'unkown')
+'type'  : ('type'|'parser'|'lexer'|'env'|'warning'|'unknown')
 }
 
 sub_error ::=

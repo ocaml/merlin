@@ -224,7 +224,7 @@ let json_of_error {Location. msg; sub; loc; source} =
       | Location.Parser  -> "parser"
       | Location.Typer   -> "typer"
       | Location.Warning -> "warning"
-      | Location.Other   -> "other"
+      | Location.Unknown -> "unknown"
       | Location.Env     -> "env"
   in
   let of_sub {Location. msg; loc} =
