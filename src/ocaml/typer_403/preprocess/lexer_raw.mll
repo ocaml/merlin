@@ -253,7 +253,8 @@ let () =
   Location.register_error_of_exn
     (function
       | Error (err, loc) ->
-        Some (Location.error_of_printer loc report_error err)
+        let source = Location.Lexer in
+        Some (Location.error_of_printer ~source loc report_error err)
       | _ ->
         None
     )

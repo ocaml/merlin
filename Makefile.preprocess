@@ -37,6 +37,8 @@ TARGETS =                    \
 
 all: $(TARGETS)
 
+lexer: $(ILEXER_O) $(LEXER_O)
+
 ## Rules
 
 ### Preprocessors
