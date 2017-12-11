@@ -35,3 +35,7 @@ val find_constr_by_tag:
 val label_descrs :
   type_expr -> label_declaration list -> record_representation ->
   Asttypes.private_flag -> (Ident.t * label_description) list
+
+val labels_of_type:
+  Path.t -> type_declaration ->
+  (Ident.t * label_description) list
