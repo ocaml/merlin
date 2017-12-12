@@ -32,19 +32,10 @@ let escaped str =
     Buffer.add_string buf str
   ) else (
     for i = 0 to len - 1 do
-      match str.[i] with
-      | '"' ->
+      let c = str.[i] in
+      if c = '"' || c = '\\' then
         Buffer.add_char buf '\\';
-        Buffer.add_char buf '"'
-      | c when Char.code c < 32 || Char.code c > 128 ->
-        Buffer.add_char buf '\\';
-        Buffer.add_char buf 'x';
-        let c = Char.code c in
-        Buffer.add_char buf (hex_char ((c lsr 4) land 15));
-        Buffer.add_char buf (hex_char (c land 15));
-        if (i < len - 1) && is_hex str.[i+1] then
-          (Buffer.add_char buf '\\'; Buffer.add_char buf ' ')
-      | c -> Buffer.add_char buf c
+      Buffer.add_char buf c
     done;
   );
   Buffer.add_char buf '"';
