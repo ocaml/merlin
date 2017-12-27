@@ -1417,9 +1417,10 @@ Empty string defaults to jumping to all these."
 
 (defun merlin--document-pos (ident)
   "Document the identifier IDENT at point and return the result."
-  (merlin/call "document"
-               "-position" (merlin/unmake-point (point))
-               (when ident (cons "-identifier" ident))))
+  (string-as-multibyte
+   (merlin/call "document"
+                "-position" (merlin/unmake-point (point))
+                (when ident (cons "-identifier" ident)))))
 
 (defun merlin--document-pure (&optional ident)
   "Document the identifier IDENT at point."
