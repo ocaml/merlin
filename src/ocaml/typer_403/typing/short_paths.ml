@@ -344,7 +344,10 @@ module Todo = struct
 
     type t =
       | Base of Diff.Item.t
-      | Children of Module.t * Path.t
+      | Children of
+          { md : Module.t;
+            path : Path.t;
+            seen : Path_set.t; }
       | Update of
           { id : Ident.t;
             origin : Origin.t; }
@@ -431,11 +434,11 @@ module Todo = struct
              Origin_range_tbl.add rev_deps origin item tbl)
       diff
 
-  let add_children graph rev_deps t height md path =
+  let add_children graph rev_deps t height md path seen =
     let height = Height.succ height in
     let tbl = get_table t height in
     let origin = Module.origin graph md in
-    Origin_range_tbl.add rev_deps origin (Item.Children(md, path)) tbl
+    Origin_range_tbl.add rev_deps origin (Item.Children{md; path; seen}) tbl
 
   let add_next_update rev_deps t height origin id =
     let height = Height.succ height in
@@ -478,25 +481,25 @@ end
 
 module Forward_path_map : sig
 
-  type t
+  type 'a t
 
-  val empty : t
+  val empty : 'a t
 
-  val add : t -> Sort.t -> Path.t -> Path.t -> t
+  val add : 'a t -> Sort.t -> Path.t -> 'a -> 'a t
 
-  val find : t -> Path.t -> Path.t list
+  val find : 'a t -> Path.t -> 'a list
 
-  val rebase : t -> t -> t
+  val rebase : 'a t -> 'a t -> 'a t
 
-  val iter_forwards : (Path.t -> Path.t -> unit) -> t -> Ident.t -> unit
+  val iter_forwards : (Path.t -> 'a -> unit) -> 'a t -> Ident.t -> unit
 
-  val iter_updates : (Path.t -> Path.t -> unit) -> t -> Ident.t -> unit
+  val iter_updates : (Path.t -> 'a -> unit) -> 'a t -> Ident.t -> unit
 
 end = struct
 
-  type t =
-    { new_paths : Path.t list Path_map.t;
-      old_paths : Path.t list Path_map.t;
+  type 'a t =
+    { new_paths : 'a list Path_map.t;
+      old_paths : 'a list Path_map.t;
       updates : Path_set.t Ident_map.t;
       forwards : Path_set.t Ident_map.t; }
 
@@ -526,7 +529,7 @@ end = struct
                  | prev -> prev
                  | exception Not_found -> Path_set.empty
                in
-               Ident_map.add id (Path_set. add path prev) acc)
+               Ident_map.add id (Path_set.add path prev) acc)
             ids updates
     in
     { t with new_paths; updates }
@@ -663,10 +666,10 @@ module Shortest = struct
   module Section = struct
 
     type t =
-      { mutable types : Forward_path_map.t;
-        mutable class_types : Forward_path_map.t;
-        mutable module_types : Forward_path_map.t;
-        mutable modules : Forward_path_map.t; }
+      { mutable types : Path.t Forward_path_map.t;
+        mutable class_types : Path.t Forward_path_map.t;
+        mutable module_types : Path.t Forward_path_map.t;
+        mutable modules : (Path.t * Path_set.t) Forward_path_map.t; }
 
     let create () =
       let types = Forward_path_map.empty in
@@ -979,7 +982,7 @@ module Shortest = struct
 
     let rec get_visible_module graph = function
       | [] -> None
-      | path :: rest ->
+      | (path, _) :: rest ->
           let visible = Graph.is_module_path_visible graph path in
           if visible then Some path
           else get_visible_module graph rest
@@ -1170,6 +1173,18 @@ module Shortest = struct
         sections
     | sections -> sections
 
+  let update_seen t seen =
+    Path_set.fold
+      (fun path acc ->
+         match acc with
+         | None -> None
+         | Some acc ->
+             let md = Graph.find_module t.graph path in
+             let path = Module.path t.graph md in
+             if Path_set.mem path acc then None
+             else Some (Path_set.add path acc))
+      seen (Some Path_set.empty)
+
   let process_type t height path typ =
     let canonical_path = Type.path t.graph typ in
     if not (Path.equal canonical_path path) then begin
@@ -1194,16 +1209,19 @@ module Shortest = struct
       Sections.add_class_type t.graph sections height mty path
     end
 
-  let process_module t height path md =
+  let process_module t height path seen md =
     let canonical_path = Module.path t.graph md in
     if not (Path.equal canonical_path path) then begin
       let origin = Module.origin t.graph md in
       let sections = sections t origin in
-      Sections.add_module t.graph sections height md path;
+      Sections.add_module t.graph sections height md (path, seen);
     end;
-    Todo.add_children t.graph (rev_deps t) t.todos height md path
+    if not (Path_set.mem canonical_path seen) then begin
+      let seen = Path_set.add canonical_path seen in
+      Todo.add_children t.graph (rev_deps t) t.todos height md path seen
+    end
 
-  let process_children t height path md =
+  let process_children t height path seen md =
     let types =
       match Module.types t.graph md with
       | Some types -> types
@@ -1249,7 +1267,7 @@ module Shortest = struct
       (fun name md ->
          if not (Height.hidden_name name) then begin
            let path = Path.Pdot(path, name, 0) in
-           process_module t height path md
+           process_module t height path seen md
          end)
       modules
 
@@ -1279,10 +1297,10 @@ module Shortest = struct
               | Todo.Item.Base (Diff.Item.Module(id, md, _)) ->
                   if not (Height.hidden_ident id) then begin
                     let path = Path.Pident id in
-                    process_module t height path md
+                    process_module t height path Path_set.empty md
                   end
-              | Todo.Item.Children(md, path) ->
-                  process_children t height path md
+              | Todo.Item.Children{md; path; seen} ->
+                  process_children t height path seen md
               | Todo.Item.Update{ id; origin } ->
                   process_update t origin height id
               | Todo.Item.Forward{ id; decl; origin } ->
@@ -1304,9 +1322,12 @@ module Shortest = struct
           ~module_type:(fun canon path ->
             let mty = Graph.find_module_type t.graph canon in
             process_module_type t height path mty)
-          ~module_:(fun canon path ->
+          ~module_:(fun canon (path, seen) ->
             let md = Graph.find_module t.graph canon in
-            process_module t height path md);
+            match update_seen t seen with
+            | None -> ()
+            | Some seen ->
+              process_module t height path seen md);
       in
       if more then begin
         Todo.add_next_update (rev_deps t) t.todos height origin id
@@ -1327,9 +1348,12 @@ module Shortest = struct
           ~module_type:(fun canon path ->
             let mty = Graph.find_module_type t.graph canon in
             process_module_type t height path mty)
-          ~module_:(fun canon path ->
+          ~module_:(fun canon (path, seen) ->
             let md = Graph.find_module t.graph canon in
-            process_module t height path md);
+            match update_seen t seen with
+            | None -> ()
+            | Some seen ->
+              process_module t height path seen md);
       in
       if more then begin
         Todo.add_next_forward (rev_deps t) t.todos height origin id decl
