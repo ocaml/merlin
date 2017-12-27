@@ -147,8 +147,8 @@ let reconstruct_identifier tr config source pos =
     try_with_reader tr config source
       (Mreader_extend.reconstruct_identifier tr pos)
   with
+  | None | Some [] -> Mreader_lexer.reconstruct_identifier source pos
   | Some result -> result
-  | None -> Mreader_lexer.reconstruct_identifier source pos
 
 (* Entry point *)
 

@@ -490,7 +490,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let path = Mreader.reconstruct_identifier tr config source pos in
         let path = Mreader_lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        String.concat ~sep:"." path
+        let path = String.concat ~sep:"." path in
+        Logger.log "locate" "reconstructed identifier" path;
+        path
     in
     if path = "" then `Invalid_context else
     begin match
