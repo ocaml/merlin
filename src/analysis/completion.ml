@@ -513,8 +513,16 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
           (`Label_decl (ty,l)) ~attrs:[]
         :: candidates
     in
-    match (is_label : is_label) with
-    | `No ->
+    let base_completion = match (is_label : is_label) with
+      | `No -> []
+      | `Maybe ->
+        Env.fold_labels add_label_description prefix_path env []
+      | `Description lbls ->
+        List.fold_right ~f:add_label_description lbls ~init:[]
+      | `Declaration (ty,decls) ->
+        List.fold_right ~f:(add_label_declaration ty) decls ~init:[]
+    in
+    if base_completion = [] then
       let order =
         if kinds = [] then
           let kind = classify_node node in
@@ -526,12 +534,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
         get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch @ acc
       in
       List.fold_left ~f:add_completions order ~init:[]
-    | `Maybe ->
-      Env.fold_labels add_label_description prefix_path env []
-    | `Description lbls ->
-      List.fold_right ~f:add_label_description lbls ~init:[]
-    | `Declaration (ty,decls) ->
-      List.fold_right ~f:(add_label_declaration ty) decls ~init:[]
+    else base_completion
   in
   try
     match prefix with
