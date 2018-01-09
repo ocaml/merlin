@@ -208,8 +208,10 @@ def fmtpos(arg):
         col = arg['col']
     elif isinstance(arg, tuple) or isinstance(arg, list):
         (line, col) = arg
+    elif isinstance(arg, str):
+        return arg
     else:
-        raise ValueError("fmtpos takes None, (line,col) or { 'line' : _, 'col' : _ }")
+        raise ValueError("fmtpos takes None, 'line:col', (line,col) or { 'line' : _, 'col' : _ }")
     return "{0}:{1}".format(line, col)
 
 ######## BASIC COMMANDS
