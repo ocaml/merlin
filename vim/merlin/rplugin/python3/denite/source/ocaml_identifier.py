@@ -7,27 +7,26 @@
 import os
 import site
 
-from .base import Base
+from .base import Base as BaseSource
+from ..kind.base import Base as BaseKind
 
-class Source(Base):
+class Source(BaseSource):
 
     def __init__(self, vim):
         super().__init__(vim)
 
         self.vim = vim
         self.name = 'ocaml_identifier'
-        self.kind = 'file'
+        self.kind = Kind(vim)
 
     def on_init(self, context):
-        context['__cursor_pos'] = self.vim.current.window.cursor
+        pos = self.vim.current.window.cursor
+        context['__cursor_pos'] = "{0}:{1}".format(pos[0], pos[1])
 
     def gather_candidates(self, context):
-        # Copied out of `merlin.fmtpos()`, since I don't have access to that module here
-        pos = "{0}:{1}".format(context['__cursor_pos'][0], context['__cursor_pos'][1])
-
         # An even-more-hacky round-trip thru VimScript — see `merlin#ListIdentifiers` in
         # `merlin.vim` — to solve an issue with how Denite exposes Vim's Python interface.
-        identifiers = self.vim.call('merlin#ListIdentifiers', pos)
+        identifiers = self.vim.call('merlin#ListIdentifiers', context['__cursor_pos'])
 
         candidates = []
         for ident in identifiers:
@@ -35,11 +34,30 @@ class Source(Base):
                 candidates.append({
                     'word': ident['name'],
                     'abbr': '▷ %-12s %s : %s' % (ident['kind'], ident['name'], ident['desc']),
+                    'source__identifier': ident['name'],
                 })
+
             else:
                 candidates.append({
                     'word': ident['name'],
                     'abbr': '▷ %-12s %s' % (ident['kind'], ident['name']),
+                    'source__identifier': ident['name'],
                 })
 
         return candidates
+
+
+class Kind(BaseKind):
+
+    def __init__(self, vim):
+        super().__init__(vim)
+
+        self.name = 'ocaml_identifier'
+        self.default_action = 'open'
+        self.persist_actions = []
+
+    # Attempting to use Merlin's split-opening logic and settings, instead of Denite's? I think?
+    def action_open(self, context):
+        target = context['targets'][0]
+        self.vim.command('echom "' + repr(context['source']) + '"')
+        self.vim.call('merlin#Locate', target['source__identifier'], context['source']['__cursor_pos'])

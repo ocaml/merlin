@@ -362,12 +362,14 @@ function! merlin#ListIdentifiers(pos_string)
 endfunction
 
 function! merlin#Locate(...)
-  if (a:0 > 1)
-    echoerr "Locate: to many arguments (expected 0 or 1)"
-  elseif (a:0 == 0) || (a:1 == "")
+  if (a:0 > 2)
+    echoerr "Locate: too many arguments (expected between 0 and 2)"
+  elseif (a:0 ==# 0) || (a:0 ==# 1 && a:1 ==# "")
     MerlinPy merlin.vim_locate_under_cursor()
-  else
+  elseif a:0 ==# 1
     MerlinPy merlin.vim_locate_at_cursor(vim.eval("a:1"))
+  else
+    MerlinPy merlin.command_locate(vim.eval("a:1"), vim.eval("a:2"))
   endif
 endfunction
 
