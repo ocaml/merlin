@@ -351,6 +351,17 @@ function! merlin#Complete(findstart,base)
   "endif
 endfunction
 
+" Utilized to round-trip into `MerlinPy` (which supports the `import vim` of `merlin.py`) from
+" Denite-mode Python (which doesn't).
+"
+" Returns a `List` of candidates.
+function! merlin#ListIdentifiers(pos_string)
+  echom "POS string:" a:pos_string
+  let l:identifiers = []
+  MerlinPy merlin.vim_expand_prefix("", "l:identifiers", vim.eval("a:pos_string"))
+  return l:identifiers
+endfunction
+
 function! merlin#Locate(...)
   if (a:0 > 1)
     echoerr "Locate: to many arguments (expected 0 or 1)"
