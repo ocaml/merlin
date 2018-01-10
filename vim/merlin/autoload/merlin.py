@@ -319,6 +319,23 @@ def command_occurrences(pos):
     except MerlinExc as e:
         try_print_error(e)
 
+def command_expand_prefix(base, pos, kinds=[]):
+    try:
+        kinds = concat_map(lambda kind: ("-kind",kind), kinds)
+        if pos is None:
+            args = ["expand-prefix",
+                    "-position", fmtpos(vim.current.window.cursor),
+                    "-prefix", base] + kinds
+        else:
+            args = ["expand-prefix",
+                    "-position", fmtpos(pos),
+                    "-prefix", base] + kinds
+        l = command2(args)
+        return l['entries']
+
+    except MerlinExc as e:
+        try_print_error(e)
+
 ######## VIM FRONTEND
 
 def vim_complete_prepare(str):
@@ -368,25 +385,27 @@ def vim_complete_cursor(base, suffix, vimvar):
 
 def vim_expand_prefix(base, vimvar, pos=None, kinds=[]):
     vim.command("let %s = []" % vimvar)
-    try:
-        kinds = concat_map(lambda kind: ("-kind",kind), kinds)
-        if pos is None:
-            args = ["expand-prefix",
-                    "-position", fmtpos(vim.current.window.cursor),
-                    "-prefix", base] + kinds
-        else:
-            args = ["expand-prefix",
-                    "-position", fmtpos(pos),
-                    "-prefix", base] + kinds
-        l = command2(args)
-        l = l['entries']
-        l = map(lambda prop: prop['name'], l)
-        l = uniq(sorted(l))
-        for prop in l:
-            name = prop.replace("'", "''")
-            vim.command("call add(%s, '%s')" % (vimvar, name))
-    except MerlinExc as e:
-        try_print_error(e)
+
+    names = command_expand_prefix(base, pos, kinds)
+    names = map(lambda prop: prop['name'], names)
+    names = uniq(sorted(names))
+    for prop in names:
+        name = prop.replace("'", "''")
+        vim.command("call add(%s, '%s')" % (vimvar, name))
+
+# Like `vim_expand_prefix`, but creates an array-of-dicts, including type information
+def vim_expand_prefix_dicts(base, vimvar, pos=None, kinds=[]):
+    vim.command("let %s = []" % vimvar)
+
+    # FIXME: `uniq()` for array-of-dicts?
+    dicts = command_expand_prefix(base, pos, kinds)
+    for prop in dicts:
+        # FIXME: Isn't there a damn escaping-function for this mess!?
+        name = prop['name'].replace("'", "''")
+        kind = prop['kind'].replace("'", "''")
+        desc = prop['desc'].replace("'", "''")
+        add_command = """call add(%s, {'name': '%s', 'kind': '%s', 'desc': '%s'})"""
+        vim.command(add_command % (vimvar, name, kind, desc))
 
 def vim_polarity_search(query, vimvar):
     vim.command("let %s = []" % vimvar)
