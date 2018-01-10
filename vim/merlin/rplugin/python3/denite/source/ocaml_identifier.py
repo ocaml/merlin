@@ -29,7 +29,17 @@ class Source(Base):
         # `merlin.vim` — to solve an issue with how Denite exposes Vim's Python interface.
         identifiers = self.vim.call('merlin#ListIdentifiers', pos)
 
-        return [ {
-            'word': identifier['name'],
-            'abbr': identifier['kind'] + ': ' + identifier['name'],
-        } for identifier in identifiers ]
+        candidates = []
+        for ident in identifiers:
+            if ident['desc']:
+                candidates.append({
+                    'word': ident['name'],
+                    'abbr': '▷ %-12s %s : %s' % (ident['kind'], ident['name'], ident['desc']),
+                })
+            else:
+                candidates.append({
+                    'word': ident['name'],
+                    'abbr': '▷ %-12s %s' % (ident['kind'], ident['name']),
+                })
+
+        return candidates

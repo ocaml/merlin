@@ -319,17 +319,17 @@ def command_occurrences(pos):
     except MerlinExc as e:
         try_print_error(e)
 
-def command_expand_prefix(base, pos, kinds=[]):
+def command_expand_prefix(base, pos, kinds, calculate_types):
     try:
         kinds = concat_map(lambda kind: ("-kind",kind), kinds)
         if pos is None:
-            args = ["expand-prefix",
-                    "-position", fmtpos(vim.current.window.cursor),
-                    "-prefix", base] + kinds
-        else:
-            args = ["expand-prefix",
-                    "-position", fmtpos(pos),
-                    "-prefix", base] + kinds
+            pos = vim.current.window.cursor
+
+        args = ["expand-prefix",
+                "-position", fmtpos(pos),
+                "-prefix", base,
+                "-types", "y" if calculate_types else "n"] + kinds
+
         l = command2(args)
         return l['entries']
 
@@ -383,10 +383,10 @@ def vim_complete_cursor(base, suffix, vimvar):
         try_print_error(e)
         return False
 
-def vim_expand_prefix(base, vimvar, pos=None, kinds=[]):
+def vim_expand_prefix(base, vimvar, pos=None, kinds=[], calculate_types=False):
     vim.command("let %s = []" % vimvar)
 
-    names = command_expand_prefix(base, pos, kinds)
+    names = command_expand_prefix(base, pos, kinds, calculate_types)
     names = map(lambda prop: prop['name'], names)
     names = uniq(sorted(names))
     for prop in names:
@@ -398,7 +398,7 @@ def vim_expand_prefix_dicts(base, vimvar, pos=None, kinds=[]):
     vim.command("let %s = []" % vimvar)
 
     # FIXME: `uniq()` for array-of-dicts?
-    dicts = command_expand_prefix(base, pos, kinds)
+    dicts = command_expand_prefix(base, pos, kinds, True)
     for prop in dicts:
         # FIXME: Isn't there a damn escaping-function for this mess!?
         name = prop['name'].replace("'", "''")
