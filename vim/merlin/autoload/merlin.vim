@@ -135,7 +135,7 @@ endfunction
 
 function! merlin#ExpandTypePrefix(ArgLead, CmdLine, CursorPos)
   let l:compl = []
-  MerlinPy merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl",kinds=["type"])
+  MerlinPy merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl", None, kinds=["type"])
   return l:compl
 endfunction
 

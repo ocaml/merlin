@@ -366,13 +366,18 @@ def vim_complete_cursor(base, suffix, vimvar):
         try_print_error(e)
         return False
 
-def vim_expand_prefix(base, vimvar, kinds=[]):
+def vim_expand_prefix(base, vimvar, pos=None, kinds=[]):
     vim.command("let %s = []" % vimvar)
     try:
         kinds = concat_map(lambda kind: ("-kind",kind), kinds)
-        args = ["expand-prefix",
-                "-position", fmtpos(vim.current.window.cursor),
-                "-prefix", base] + kinds
+        if pos is None:
+            args = ["expand-prefix",
+                    "-position", fmtpos(vim.current.window.cursor),
+                    "-prefix", base] + kinds
+        else:
+            args = ["expand-prefix",
+                    "-position", fmtpos(pos),
+                    "-prefix", base] + kinds
         l = command2(args)
         l = l['entries']
         l = map(lambda prop: prop['name'], l)
