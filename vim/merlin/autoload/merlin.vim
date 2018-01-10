@@ -354,11 +354,10 @@ endfunction
 " Utilized to round-trip into `MerlinPy` (which supports the `import vim` of `merlin.py`) from
 " Denite-mode Python (which doesn't).
 "
-" Returns a `List` of candidates.
+" Returns a `List` of `Dictionary`-candidates.
 function! merlin#ListIdentifiers(pos_string)
-  echom "POS string:" a:pos_string
   let l:identifiers = []
-  MerlinPy merlin.vim_expand_prefix("", "l:identifiers", vim.eval("a:pos_string"))
+  MerlinPy merlin.vim_expand_prefix_dicts("", "l:identifiers", vim.eval("a:pos_string"))
   return l:identifiers
 endfunction
 

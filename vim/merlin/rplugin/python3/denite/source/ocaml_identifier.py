@@ -4,8 +4,6 @@
 # License: MIT license
 # ============================================================================
 
-# Shamelessly cribbed from `denite-rails`, because I can't figure out Python module-importing:
-#    <https://github.com/5t111111/denite-rails/blob/master/rplugin/python3/denite/source/rails.py>
 import os
 import site
 
@@ -15,6 +13,7 @@ class Source(Base):
 
     def __init__(self, vim):
         super().__init__(vim)
+
         self.vim = vim
         self.name = 'ocaml_identifier'
         self.kind = 'file'
@@ -31,5 +30,6 @@ class Source(Base):
         identifiers = self.vim.call('merlin#ListIdentifiers', pos)
 
         return [ {
-            'word': identifier,
+            'word': identifier['name'],
+            'abbr': identifier['kind'] + ': ' + identifier['name'],
         } for identifier in identifiers ]
