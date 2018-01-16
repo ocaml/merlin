@@ -21,9 +21,7 @@ let escaped str =
   let extra_chars = ref 0 in
   for i = 0 to len - 1 do
     match str.[i] with
-    | '"' -> incr extra_chars
-    | c when Char.code c < 32 || Char.code c > 128 ->
-      extra_chars := !extra_chars + 3
+    | '\\' | '"' -> incr extra_chars
     | _ -> ()
   done;
   let buf = Buffer.create (len + !extra_chars + 2) in
