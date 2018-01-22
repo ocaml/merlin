@@ -18,7 +18,7 @@
      (let ((pt (merlin/make-point (alist-get 'start loc))))
        (xref-make (merlin-xref--line pt)
                   (xref-make-buffer-location (current-buffer) pt))))
-   (merlin--occurences)))
+   (merlin--occurrences)))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql merlin-xref)) symbol)
   (let* ((loc (merlin/locate))
