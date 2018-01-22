@@ -1545,11 +1545,13 @@ Empty string defaults to jumping to all these."
            (switch-to-buffer-other-window (merlin--get-occ-buff)))
           (t nil))))
 
+(defun merlin--occurences ()
+  (merlin/call "occurrences" "-identifier-at" (merlin/unmake-point (point))))
+
 (defun merlin-occurrences ()
   "List all occurrences of identifier under cursor in buffer."
   (interactive)
-  (let ((r (merlin/call "occurrences"
-                        "-identifier-at" (merlin/unmake-point (point)))))
+  (let ((r (merlin--occurrences)))
     (when r
       (if (listp r)
           (merlin-occurrences-list r)
