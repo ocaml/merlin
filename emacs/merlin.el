@@ -1553,7 +1553,7 @@ Empty string defaults to jumping to all these."
            (switch-to-buffer-other-window (merlin--get-occ-buff)))
           (t nil))))
 
-(defun merlin--occurences ()
+(defun merlin--occurrences ()
   (merlin/call "occurrences" "-identifier-at" (merlin/unmake-point (point))))
 
 (defun merlin-occurrences ()
