@@ -54,9 +54,9 @@ module Server = struct
   let server_accept merlinid server =
     let rec loop total =
       Mocaml.flush_caches ~older_than:300.0 ();
-      let merlinid' = Stat_cache.file_id Sys.executable_name in
+      let merlinid' = Misc.file_id Sys.executable_name in
       if total > merlin_timeout ||
-         not (Stat_cache.file_id_check merlinid merlinid') then
+         not (Misc.file_id_check merlinid merlinid') then
         None
       else
         let timeout = max 10.0 (min 60.0 (merlin_timeout -. total)) in
@@ -85,7 +85,7 @@ module Server = struct
     | None ->
       Logger.log "server" "cannot setup listener" ""
     | Some server ->
-      loop (Stat_cache.file_id Sys.executable_name) server;
+      loop (Misc.file_id Sys.executable_name) server;
       Os_ipc.server_close server
 end
 
