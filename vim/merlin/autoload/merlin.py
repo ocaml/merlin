@@ -749,6 +749,8 @@ def setup_merlin():
     # This allows merlin idle-job to preload content if nothing else is requested.
     if 'dot_merlins' in result:
         fnames = ','.join(map(lambda fname: '"'+fname+'"', result['dot_merlins']))
+        (enc, dec) = vim_codec()
+        fnames = enc(fnames)
         vim.command('let b:dotmerlin=[{0}]'.format(fnames))
 
 def vim_last_commands():
