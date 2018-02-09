@@ -27,6 +27,7 @@ open Btype
 let state = Local_store.new_bindings ()
 let sref f = Local_store.ref state f
 let srefk k = Local_store.ref state (fun () -> k)
+let can_load_cmis = ref true
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
@@ -529,7 +530,7 @@ let find_pers_struct check name =
   match Hashtbl.find !persistent_structures name with
   | Some ps -> ps
   | None -> raise Not_found
-  | exception Not_found ->
+  | exception Not_found when !can_load_cmis ->
       let filename =
         try
           find_in_path_uncap !load_path (name ^ ".cmi")
@@ -2500,4 +2501,8 @@ let check_state_consistency () =
     "spent %4.02fms in find_in_path_uncap"  !total;
   result
 
-let with_cmis f = f ()
+let without_cmis f x =
+  Std.let_ref can_load_cmis false (fun () -> f x)
+
+let with_cmis f =
+  Std.let_ref can_load_cmis true f

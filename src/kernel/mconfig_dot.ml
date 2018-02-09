@@ -109,7 +109,6 @@ module Cache = File_cache.Make (struct
         raise exn
 
     let cache_name = "Mconfig_dot"
-    let policy = `Stat_fs
   end)
 
 let find fname =

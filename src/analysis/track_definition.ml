@@ -540,8 +540,8 @@ let find_source ~config loc =
                 Especially useful on OSX case-insensitive FS.
                 FIXME: May be able handle symlinks and non-existing files,
                 CHECK *)
-            match Stat_cache.file_id s, Stat_cache.file_id t with
-            | s', t' when Stat_cache.file_id_check s' t' ->
+            match Misc.file_id s, Misc.file_id t with
+            | s', t' when Misc.file_id_check s' t' ->
               0
             | _ -> n
         ) lst

@@ -221,6 +221,9 @@ let wrap_printing_env env f =
   set_printing_env (Env.update_short_paths env);
   try_finally f (fun () -> set_printing_env Env.empty)
 
+let wrap_printing_env env f =
+  Env.without_cmis (wrap_printing_env env) f
+
 type type_result = Short_paths.type_result =
   | Nth of int
   | Path of int list option * Path.t

@@ -252,6 +252,40 @@ let apply_subst_opt nso args =
 let apply_nth n args =
   List.nth args n
 
+let wrap_printing_env env f =
+  Env.without_cmis (wrap_printing_env env) f
+
+let is_unambiguous path env =
+  let l = Env.find_shadowed_types path env in
+  List.exists (Path.same path) l || (* concrete paths are ok *)
+  match l with
+    [] -> true
+  | p :: rem ->
+      (* allow also coherent paths:  *)
+      let normalize p = fst (normalize_type_path ~cache:true env p) in
+      let p' = normalize p in
+      List.for_all (fun p -> Path.same (normalize p) p') rem ||
+      (* also allow repeatedly defining and opening (for toplevel) *)
+      let id = lid_of_path p in
+      List.for_all (fun p -> lid_of_path p = id) rem &&
+      Path.same p (Env.lookup_type id env)
+
+let rec get_best_path r =
+  match !r with
+    Best p' -> p'
+  | Paths [] -> raise Not_found
+  | Paths l ->
+      r := Paths [];
+      List.iter
+        (fun p ->
+          (* Format.eprintf "evaluating %a@." path p; *)
+          match !r with
+            Best p' when path_size p >= path_size p' -> ()
+          | _ -> if is_unambiguous p !printing_env then r := Best p)
+              (* else Format.eprintf "%a ignored as ambiguous@." path p *)
+        l;
+      get_best_path r
+
 let best_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
   then Path(None, p)
@@ -1536,4 +1570,3 @@ let () =
   Env.shorten_module_path := shorten_module_path
 
 let compute_map_for_pers _name = true
-
