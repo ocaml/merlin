@@ -27,6 +27,7 @@ typedef SSIZE_T ssize_t;
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/alloc.h>
+#include <caml/threads.h>
 
 value ml_merlin_unsetenv(value key)
 {
@@ -222,11 +223,14 @@ value ml_merlin_server_accept(value server, value val_timeout)
   int serverfd = Int_val(Field(server, 1));
   int selectres;
   fd_set readset;
+
+  caml_release_runtime_system();
   do {
     FD_ZERO(&readset);
     FD_SET(serverfd, &readset);
     selectres = select(serverfd + 1, &readset, NULL, NULL, &tv);
   } while (selectres == -1 && errno == EINTR);
+  caml_acquire_runtime_system();
 
   int fds[3], clientfd;
 
