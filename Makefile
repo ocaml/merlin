@@ -3,13 +3,15 @@
 -include Makefile.config
 TARGET = ocamlmerlin-server
 
+EMACS_OBJECTS = emacs/merlin.elc \
+							  emacs/merlin-iedit.elc \
+							  emacs/merlin-imenu.elc \
+							  emacs/merlin-ac.elc \
+							  emacs/merlin-cap.elc \
+							  emacs/merlin-company.elc
+
 ifeq ($(ENABLE_COMPILED_EMACS_MODE),true)
-    TARGET_EMACS = emacs/merlin.elc \
-									 emacs/merlin-iedit.elc \
-									 emacs/merlin-imenu.elc \
-									 emacs/merlin-ac.elc \
-									 emacs/merlin-cap.elc \
-									 emacs/merlin-company.elc
+    TARGET_EMACS = $(EMACS_OBJECTS)
 endif
 
 EMACS = emacs
@@ -50,7 +52,7 @@ ocamlmerlin$(EXE): src/frontend/ocamlmerlin.c
 
 #### Other rules
 
-.PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message merlin.install
+.PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message emacs-bytecode merlin.install
 
 $(TARGET): assert_configured
 	 +$(OCAMLMAKEFILE) $@
@@ -65,8 +67,10 @@ preprocess:
 debug: assert_configured
 	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITHOUT_DEBUG= $(TARGET)
 
+emacs-bytecode: $(EMACS_OBJECTS)
+
 %.elc : %.el
-	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
+	-$(EMACS) --batch --eval '(package-initialize)' -L emacs --no-init-file -f batch-byte-compile $<
 
 clean:
 	@rm -f Makefile.config $(CONFIG_FILES)
