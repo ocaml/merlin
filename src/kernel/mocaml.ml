@@ -38,9 +38,13 @@ let with_state state f =
   let state' = !current_state in
   current_state := Some state;
   match Local_store.with_scope state f with
-  | r -> current_state := state'; r
+  | r ->
+    current_state := state';
+    Cmt_format.clear ();
+    r
   | exception exn ->
     current_state := state';
+    Cmt_format.clear ();
     reraise exn
 
 let is_current_state state = match !current_state with
