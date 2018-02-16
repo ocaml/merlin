@@ -32,8 +32,48 @@ open Misc
 open Old_protocol
 module Printtyp = Type_utils.Printtyp
 
+type customization = [
+  | `Ext of [`Enabled | `Disabled] * string
+  | `Flags of string list
+  | `Use of string list
+  | `Path of [`Build | `Source] * [`Add | `Rem] * string list
+]
+
+let customize config =
+  let open Mconfig in
+  function
+  | `Ext (`Enabled, ext) ->
+    let extensions = ext :: config.merlin.extensions in
+    {config with merlin = {config.merlin with extensions}};
+  | `Ext (`Disabled, ext) ->
+    let extensions = List.remove_all ext config.merlin.extensions in
+    {config with merlin = {config.merlin with extensions}};
+  | `Flags flags ->
+    let flags_to_apply = [{flag_cwd = None; flag_list = flags}] in
+    {config with merlin = {config.merlin with flags_to_apply}}
+  | `Use pkgs ->
+    let packages_to_load =
+      List.filter_dup (pkgs @ config.merlin.packages_to_load)
+    in
+    {config with merlin = {config.merlin with packages_to_load}}
+  | `Path (var, action, paths) ->
+    let f l = match action with
+      | `Add -> List.filter_dup (paths @ l)
+      | `Rem -> List.filter l ~f:(fun x -> not (List.mem x ~set:paths))
+    in
+    let merlin = config.merlin in
+    let merlin =
+      match var with
+      | `Build -> {merlin with build_path = f merlin.build_path}
+      | `Source -> {merlin with source_path = f merlin.source_path}
+    in
+    {config with merlin}
+
+
 type buffer = {
-  mutable config : Mconfig.t;
+  path: string option;
+  dot_merlins: string list option;
+  mutable customization : customization list;
   mutable source : Msource.t;
 }
 
@@ -41,27 +81,32 @@ type state = {
   mutable buffer : buffer;
 }
 
-let default_config = ref Mconfig.initial
-
 let normalize_document doc =
   doc.Context.path, doc.Context.dot_merlins
 
 let new_buffer tr (path, dot_merlins) =
   let open Mconfig in
+  { path; dot_merlins; customization = [];
+    source = Msource.make tr Mconfig.initial "" }
+
+let default_config = ref Mconfig.initial
+
+let configure (state : buffer) =
   let config = !default_config in
-  let config = {config with query = match path with
-      | None -> config.query
+  let config = {config with Mconfig.query = match state.path with
+      | None -> config.Mconfig.query
       | Some path -> {
-          config.query with
+          config.Mconfig.query with
+          Mconfig.
           filename = Filename.basename path;
           directory = Misc.canonicalize_filename (Filename.dirname path);
         }
     } in
-  let config = load_dotmerlins config
-      ~filenames:(Option.cons (Option.map ~f:Filename.dirname path)
-                    (Option.value ~default:[] dot_merlins))
+  let config = Mconfig.load_dotmerlins config
+      ~filenames:(Option.cons (Option.map ~f:Filename.dirname state.path)
+                    (Option.value ~default:[] state.dot_merlins))
   in
-  { config; source = Msource.make tr config "" }
+  List.fold_left ~f:customize ~init:config state.customization
 
 let new_state tr document =
   { buffer = new_buffer tr document }
@@ -108,19 +153,10 @@ let print_completion_entries tr config source entries =
   in
   List.rev_map ~f:(Completion.map_entry postprocess) entries
 
-let make_pipeline tr buffer =
-      Mpipeline.make tr buffer.config buffer.source
+let make_pipeline tr config buffer =
+  Mpipeline.make tr config buffer.source
 
-let with_typer tr ?for_completion buffer f =
-  let pipeline = Mpipeline.make tr buffer.config buffer.source in
-  let pipeline = match for_completion with
-    | None -> pipeline
-    | Some pos -> Mpipeline.for_completion pos pipeline
-  in
-  let typer = Mpipeline.typer_result pipeline in
-  Mtyper.with_typer typer @@ fun () -> f pipeline typer
-
-let dispatch_sync tr state (type a) : a sync_command -> a = function
+let dispatch_sync tr config state (type a) : a sync_command -> a = function
   | Idle_job -> false
 
   | Tell (pos_start, pos_end, text) ->
@@ -132,51 +168,44 @@ let dispatch_sync tr state (type a) : a sync_command -> a = function
     Cmi_cache.flush ()
 
   | Flags_set flags ->
-    let open Mconfig in
-    let flags_to_apply = [{flag_cwd = None; flag_list = flags}] in
-    let config = state.config in
-    state.config <- {config with merlin = {config.merlin with flags_to_apply}};
+    state.customization <-
+      (`Flags flags) ::
+      List.filter ~f:(function `Flags _ -> false | _ -> true)
+        state.customization;
     `Ok
 
   | Findlib_use packages ->
-    let open Mconfig in
-    let config = state.config in
-    let packages_to_load =
-      List.filter_dup (packages @ config.merlin.packages_to_load) in
-    state.config <-
-      {config with merlin = {config.merlin with packages_to_load}};
+    state.customization <-
+      (`Use packages) ::
+      List.filter ~f:(function `Use _ -> false | _ -> true)
+        state.customization;
     `Ok
 
   | Extension_set (action,exts) ->
-    let f l = match action with
-      | `Enabled  -> List.filter_dup (exts @ l)
-      | `Disabled -> List.filter l ~f:(fun x -> not (List.mem x ~set:exts))
-    in
-    let open Mconfig in
-    let config = state.config in
-    let extensions = f config.merlin.extensions in
-    state.config <- {config with merlin = {config.merlin with extensions}};
+    state.customization <-
+      List.map (fun ext -> `Ext (action, ext)) exts @
+      List.filter ~f:(function
+          | `Ext (_, ext) when List.mem ext ~set:exts -> false
+          | _ -> true
+        ) state.customization;
     `Ok
 
   | Path (var,action,paths) ->
-    let f l = match action with
-      | `Add -> List.filter_dup (paths @ l)
-      | `Rem -> List.filter l ~f:(fun x -> not (List.mem x ~set:paths))
-    in
-    let open Mconfig in
-    let merlin = state.config.merlin in
-    let merlin =
-      match var with
-      | `Build -> {merlin with build_path = f merlin.build_path}
-      | `Source -> {merlin with source_path = f merlin.source_path}
-    in
-    state.config <- {state.config with merlin}
+    state.customization <-
+      List.filter_map ~f:(function
+          | `Path (var', action', paths') when var = var' ->
+            let paths' = List.filter paths'
+                ~f:(fun path -> not (List.mem path ~set:paths))
+            in
+            if paths' = [] then None else Some (`Path (var', action', paths'))
+          | x -> Some x
+        ) state.customization
 
   | Path_reset ->
-    let open Mconfig in
-    let merlin = state.config.merlin in
-    let merlin = {merlin with build_path = []; source_path = []} in
-    state.config <- {state.config with merlin}
+    state.customization <-
+      List.filter ~f:(function | `Path _ -> false
+          | _ -> true
+        ) state.customization;
 
   | Protocol_version version ->
     begin match version with
@@ -191,13 +220,13 @@ let dispatch_sync tr state (type a) : a sync_command -> a = function
        My_config.version Sys.ocaml_version)
 
   | Flags_get ->
-    let pipeline = make_pipeline tr state in
+    let pipeline = make_pipeline tr config state in
     let config = Mpipeline.final_config pipeline in
     List.concat_map ~f:(fun f -> f.Mconfig.flag_list)
       Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->
-    let pipeline = make_pipeline tr state in
+    let pipeline = make_pipeline tr config state in
     let config = Mpipeline.final_config pipeline in
     (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
 
@@ -222,7 +251,7 @@ let dispatch tr (type a) (context : Context.t) (cmd : a command) =
         Hashtbl.add document_states document state;
         state
   in
-  let config = state.buffer.config in
+  let config = configure state.buffer in
   (* Printer verbosity *)
   let config = match context.printer_verbosity with
     | None -> config
@@ -234,16 +263,15 @@ let dispatch tr (type a) (context : Context.t) (cmd : a command) =
     | Some printer_width ->
       Mconfig.({config with query = {config.query with printer_width}})
   in
-  state.buffer.config <- config;
   (* Printer width *)
   Format.default_width := Option.value ~default:0 context.printer_width;
   (* Actual dispatch *)
   match cmd with
   | Query q ->
-    let pipeline = make_pipeline tr state.buffer in
+    let pipeline = make_pipeline tr config state.buffer in
     Mpipeline.with_reader pipeline @@ fun () ->
     Query_commands.dispatch pipeline q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer tr context in
     state.buffer <- buffer
-  | Sync s -> dispatch_sync tr state.buffer s
+  | Sync s -> dispatch_sync tr config state.buffer s
