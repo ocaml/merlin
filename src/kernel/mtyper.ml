@@ -170,7 +170,7 @@ let run tr config source parsetree =
     | `Cached (state, entry) -> (state, Some entry)
     | `None | `Inconsistent ->
       Mocaml.flush_caches ();
-      (Mocaml.new_state ~unit_name:(Msource.unitname source), None)
+      (Mocaml.new_state ~unit_name:(Mconfig.unitname config), None)
   in
   Mocaml.with_state state @@ fun () ->
   let caught = ref [] in

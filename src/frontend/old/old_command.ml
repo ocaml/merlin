@@ -87,7 +87,7 @@ let normalize_document doc =
 let new_buffer tr (path, dot_merlins) =
   let open Mconfig in
   { path; dot_merlins; customization = [];
-    source = Msource.make tr Mconfig.initial "" }
+    source = Msource.make tr "" }
 
 let default_config = ref Mconfig.initial
 

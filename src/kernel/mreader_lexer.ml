@@ -39,6 +39,7 @@ type item =
 
 type t = {
   keywords: keywords;
+  config: Mconfig.t;
   source: Msource.t;
   items: item list;
 }
@@ -72,23 +73,23 @@ let get_tokens keywords pos text =
     (* Resume *)
     continue items
 
-let initial_position source =
+let initial_position config =
   { Lexing.
-    pos_fname = (Msource.filename source);
+    pos_fname = (Mconfig.filename config);
     pos_lnum = 1;
     pos_bol = 0;
     pos_cnum = 0;
   }
 
-let make warnings keywords source =
+let make warnings keywords config source =
   Msupport.catch_errors warnings (ref []) @@ fun () ->
   let items =
     get_tokens keywords
-    (initial_position source)
+    (initial_position config)
     (Msource.text source)
     []
   in
-  { keywords; items; source }
+  { keywords; items; config; source }
 
 let item_start = function
   | Triple (_,s,_) -> s
@@ -101,7 +102,7 @@ let item_end = function
     l.Location.loc_end
 
 let initial_position t =
-  initial_position t.source
+  initial_position t.config
 
 let rev_filter_map ~f lst =
   let rec aux acc = function
@@ -303,7 +304,7 @@ let reconstruct_identifier_from_tokens tokens pos =
     in
     List.map ~f:fmt (List.filter ~f:before_pos acc)
 
-let reconstruct_identifier source pos =
+let reconstruct_identifier config source pos =
   let rec lex acc lexbuf =
     let token = Lexer_ident.token lexbuf in
     let item = (token, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
@@ -315,7 +316,7 @@ let reconstruct_identifier source pos =
     | _ -> lex (item :: acc) lexbuf
   in
   let lexbuf = Lexing.from_string (Msource.text source) in
-  Location.init lexbuf (Msource.filename source);
+  Location.init lexbuf (Mconfig.filename config);
   let tokens = lex [] lexbuf in
   reconstruct_identifier_from_tokens tokens pos
 
@@ -369,4 +370,3 @@ let identifier_suffix ident =
   match List.last ident with
   | Some x when is_uppercase x -> drop_lowercase [] ident
   | _ -> ident
-

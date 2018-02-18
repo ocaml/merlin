@@ -49,6 +49,9 @@ let get_trace t = t.trace
 let input_config t = t.config
 let input_source t = t.source
 
+let get_lexing_pos t pos =
+  Msource.get_lexing_pos t.trace t.source (Mconfig.filename t.config) pos
+
 let with_reader t f =
   Mreader.with_ambient_reader t.trace t.config t.source f
 

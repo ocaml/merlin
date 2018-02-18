@@ -20,7 +20,7 @@ type result = {
 
 let normal_parse tr ?for_completion config source =
   let kind =
-    let filename = Msource.filename source in
+    let filename = Mconfig.(config.query.filename) in
     let extension =
       match String.rindex filename '.' with
       | exception Not_found -> ""
@@ -35,12 +35,14 @@ let normal_parse tr ?for_completion config source =
   Mocaml.setup_config config;
   let lexer =
     let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
-    Mreader_lexer.make Mconfig.(config.ocaml.warnings) keywords source
+    Mreader_lexer.make Mconfig.(config.ocaml.warnings) keywords config source
   in
   let no_labels_for_completion, lexer = match for_completion with
     | None -> false, lexer
     | Some pos ->
-      let pos = Msource.get_lexing_pos tr source pos in
+      let pos = Msource.get_lexing_pos tr source
+          ~filename:(Mconfig.filename config) pos
+      in
       Mreader_lexer.for_completion lexer pos
   in
   let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
@@ -59,10 +61,10 @@ type outcometree = Extend_protocol.Reader.outcometree
 
 let ambient_reader = ref None
 
-let instantiate_reader tr spec source = match spec with
+let instantiate_reader tr spec config source = match spec with
   | [] -> ((lazy None), ignore)
   | name :: args ->
-    let reader = lazy (Mreader_extend.start tr name args source) in
+    let reader = lazy (Mreader_extend.start tr name args config source) in
     (reader, (fun () ->
        if Lazy.is_val reader then
          match Lazy.force reader with
@@ -88,7 +90,7 @@ let mocaml_printer tr reader ppf otree =
 let with_ambient_reader tr config source f =
   let ambient_reader' = !ambient_reader in
   let reader_spec = get_reader config in
-  let reader, stop = instantiate_reader tr reader_spec source in
+  let reader, stop = instantiate_reader tr reader_spec config source in
   ambient_reader := Some (reader, reader_spec, source);
   Misc.try_finally
     (fun () -> Mocaml.with_printer (mocaml_printer tr reader) f)
@@ -101,7 +103,7 @@ let try_with_reader tr config source f =
     | Some (reader, reader_spec', source')
       when compare reader_spec reader_spec' = 0 &&
            compare source source' = 0 -> reader, ignore
-    | _ -> instantiate_reader tr reader_spec source
+    | _ -> instantiate_reader tr reader_spec config source
   in
   match reader with
   | None -> stop (); None
@@ -147,7 +149,7 @@ let reconstruct_identifier tr config source pos =
     try_with_reader tr config source
       (Mreader_extend.reconstruct_identifier tr pos)
   with
-  | None | Some [] -> Mreader_lexer.reconstruct_identifier source pos
+  | None | Some [] -> Mreader_lexer.reconstruct_identifier config source pos
   | Some result -> result
 
 (* Entry point *)

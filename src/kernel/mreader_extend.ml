@@ -4,6 +4,7 @@ open Extend_protocol.Reader
 type t = {
   name : string;
   args : string list;
+  config : Mconfig.t;
   source : Msource.t;
   driver : Extend_driver.t;
   mutable stopped : bool;
@@ -31,9 +32,9 @@ let stop_finalise t =
     stop Trace.null t
   )
 
-let load_source t source =
+let load_source t config source =
   let buffer = {
-    path  = Msource.filename source;
+    path  = Mconfig.filename config;
     flags = t.args;
     text  = Msource.text source;
   } in
@@ -44,14 +45,14 @@ let load_source t source =
     incorrect_behavior "load_source" t;
     None
 
-let start tr name args source =
+let start tr name args config source =
   let section = "(ext)" ^ name in
   let notify str = Logger.notify section "%s" str in
   let debug str = Logger.log "reader" section str in
   let driver = Extend_driver.run ~notify ~debug name in
-  let process = { name; args; source; driver; stopped = false } in
+  let process = { name; args; config; source; driver; stopped = false } in
   Gc.finalise stop_finalise process;
-  load_source process source
+  load_source process config source
 
 let parsetree = function
   | Signature sg -> `Interface sg
@@ -74,7 +75,9 @@ let parse tr ?for_completion t =
       (match for_completion with
        | None -> Req_parse
        | Some pos ->
-         let pos = Msource.get_lexing_pos tr t.source pos in
+         let pos = Msource.get_lexing_pos tr t.source
+             ~filename:(Mconfig.filename t.config) pos
+         in
          Req_parse_for_completion pos)
   with
   | Res_parse ast ->

@@ -113,3 +113,8 @@ val cmt_path : t -> string list
 
 val global_modules : ?include_current:bool -> t -> string list
 
+(** {1 Accessors for other informations} *)
+
+val filename : t -> string
+
+val unitname : t -> string

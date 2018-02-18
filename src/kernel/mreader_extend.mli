@@ -2,7 +2,7 @@ type t
 
 val stop : Trace.t -> t -> unit
 
-val start : Trace.t -> string -> string list -> Msource.t -> t option
+val start : Trace.t -> string -> string list -> Mconfig.t -> Msource.t -> t option
 
 val parse : Trace.t -> ?for_completion:Msource.position ->
   t ->

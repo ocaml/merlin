@@ -127,7 +127,7 @@ let run env = function
         Stat_cache.with_cache @@ fun () ->
         let tr = (if Mconfig.(config.merlin.trace) then
                     Trace.start () else Trace.null) in
-        let source = Msource.make tr config (Misc.string_of_file stdin) in
+        let source = Msource.make tr (Misc.string_of_file stdin) in
         let pipeline = Mpipeline.make tr config source in
         let json =
           let class_, message =

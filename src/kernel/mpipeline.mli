@@ -7,6 +7,7 @@ val get_trace : t -> Trace.t
 
 val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t
+val get_lexing_pos : t -> [< Msource.position] -> Lexing.position
 
 val with_reader : t -> (unit -> 'a) -> 'a
 val reader_config : t -> Mconfig.t

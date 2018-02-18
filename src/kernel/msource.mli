@@ -6,7 +6,7 @@
 type t
 
 (** Making a content from name and contents. *)
-val make : Trace.t -> Mconfig.t -> string -> t
+val make : Trace.t -> string -> t
 
 (** {1 Position management} *)
 
@@ -21,23 +21,15 @@ val get_offset     : Trace.t -> t -> [< position] -> [> `Offset of int]
 
 val get_logical    : Trace.t -> t -> [< position] -> [> `Logical of int * int]
 
-val get_lexing_pos : Trace.t -> t -> [< position] -> Lexing.position
+val get_lexing_pos : Trace.t -> t -> filename:string -> [< position] -> Lexing.position
+
+(** {1 Managing content} *)
 
 (** Updating content *)
 val substitute : Trace.t -> t -> [< position] -> [< position | `Length of int] -> string -> t
 
-(** {1 Accessing contents} *)
-
-(** Raw filename *)
-val filename : t -> string
-
-(** Unit (ML module) name *)
-val unitname : t -> string
-
 (** Source code of the file *)
 val text : t -> string
-
-(** {1 Dump} *)
 
 val dump : t -> Std.json
 
