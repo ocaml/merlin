@@ -29,18 +29,38 @@ typedef SSIZE_T ssize_t;
 #include <caml/alloc.h>
 #include <caml/threads.h>
 
-value ml_merlin_unsetenv(value key)
+extern char **environ;
+
+CAMLprim value
+ml_merlin_set_environ(value venviron)
 {
-  CAMLparam1(key);
-#ifdef _WIN32
-  SetEnvironmentVariable(String_val(key), NULL);
-#else
-  unsetenv(String_val(key));
-#endif
-  CAMLreturn(Val_unit);
+  static char *buffer = NULL;
+
+  const char *ptr = String_val(venviron);
+  size_t length = caml_string_length(venviron);
+
+  buffer = realloc(buffer, length);
+  memcpy(buffer, ptr, length);
+
+  // clearenv() is not portable
+  environ = NULL;
+
+  size_t i, j;
+
+  for (i = 0, j = 0; i < length; ++i)
+  {
+    if (buffer[i] == '\0')
+    {
+      putenv(&buffer[j]);
+      j = i + 1;
+    }
+  }
+
+  return Val_unit;
 }
 
-#define BUFFER_SIZE 65536
+// Seen in the wild: environment of 40k
+#define BUFFER_SIZE 262144
 static unsigned char buffer[BUFFER_SIZE];
 
 #ifndef _WIN32
@@ -163,7 +183,8 @@ value ml_merlin_server_setup(value path, value strfd)
 value ml_merlin_server_accept(value server, value val_timeout)
 {
   CAMLparam2(server, val_timeout);
-  CAMLlocal4(ret, client, args, context);
+  CAMLlocal3(ret, client, context);
+  CAMLlocal3(wd, env, args);
 
   ssize_t len = -1;
 
@@ -254,15 +275,49 @@ value ml_merlin_server_accept(value server, value val_timeout)
   if (len != -1)
   {
     ssize_t i, j;
-    int argc = 0;
-    for (i = 4; i < len; ++i)
+    int argc;
+    i = 4;
+
+    // Extract working directory
+    wd = caml_copy_string((const char *)&buffer[i]);
+    i += caml_string_length(wd) + 1;
+
+    // Extract environment
+    if (buffer[i] == '\0')
+    {
+      env = caml_alloc_string(0);
+      i += 1;
+    }
+    else
+    {
+      ssize_t env_start = i;
+      i += 1;
+      for (; i < len; ++i)
+      {
+        if (buffer[i-1] == '\0' && buffer[i] == '\0')
+        {
+          i += 1;
+          break;
+        }
+      }
+      env = caml_alloc_string(i - env_start);
+      memcpy(String_val(env), &buffer[env_start], i - env_start);
+    }
+
+    // Extract remaining args
+    ssize_t args_start = i;
+    argc = 0;
+
+    for (i = args_start; i < len; ++i)
+    {
       if (buffer[i] == '\0')
         argc += 1;
+    }
 
     args = caml_alloc(argc, 0);
 
     argc = 0;
-    for (i = 4, j = 4; i < len; ++i)
+    for (i = args_start, j = args_start; i < len; ++i)
     {
       if (buffer[i] == '\0')
       {
@@ -272,9 +327,11 @@ value ml_merlin_server_accept(value server, value val_timeout)
       }
     }
 
-    client = caml_alloc(2, 0); /* (context, args) */
+    client = caml_alloc(4, 0); /* (context, wd, environ, args) */
     Store_field(client, 0, context);
-    Store_field(client, 1, args);
+    Store_field(client, 1, wd);
+    Store_field(client, 2, env);
+    Store_field(client, 3, args);
 
     ret = caml_alloc(1, 0); /* Some client */
     Store_field(ret, 0, client);

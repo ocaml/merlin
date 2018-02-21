@@ -9,30 +9,16 @@ module Server = struct
     | exception (Unix.Unix_error(Unix.EINTR, _, _)) -> protect_eintr f
     | result -> result
 
-  let process_arguments argv =
-    let rec aux acc = function
-      | "" :: args | ([] as args) -> (acc, args)
-      | var :: rest -> aux (var :: acc) rest
-    in
-    let wd, args =
-      match Array.to_list argv with
-      | [] -> "", []
-      | wd :: rest -> wd, rest
-    in
-    let env, args = aux [] args in
-    (wd, env, args)
-
-
-  let process_request argv =
-    match process_arguments argv with
-    | _, _, ("stop-server" :: _) -> raise Exit
-    | wd, env, args ->
+  let process_request {Os_ipc. wd; environ; argv}  =
+    match Array.to_list argv with
+    | "stop-server" :: _ -> raise Exit
+    | args ->
       begin try Sys.chdir wd
         with _ ->
           Logger.logf "Ocamlmerlin_server" "Server.process_request"
             "cannot change working directory to %S" wd
       end;
-      New_merlin.run env args
+      New_merlin.run environ args
 
   let process_client client =
     let context = client.Os_ipc.context in
@@ -41,7 +27,7 @@ module Server = struct
       flush_all ();
       Os_ipc.context_close context ~return_code
     in
-    match process_request client.Os_ipc.argv with
+    match process_request client with
     | code -> close_with code
     | exception Exit ->
       close_with (-1);
@@ -93,7 +79,7 @@ let main () =
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run [] args)
+  | "single" :: args -> exit (New_merlin.run "" args)
   | "old-protocol" :: args -> Old_merlin.run args
   | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->

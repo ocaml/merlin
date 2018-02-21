@@ -3,6 +3,8 @@ type context
 
 type client = {
   context : context;
+  wd      : string;
+  environ : string;
   argv    : string array;
 }
 
@@ -27,8 +29,8 @@ external context_setup : context -> unit =
 external context_close : context -> return_code:int -> unit =
   "ml_merlin_context_close"
 
-(* {1 Environment management}
-   Primitive missing from Unix/Sys. *)
+(* {1 Environment management} *)
 
-external unsetenv : string -> unit =
-  "ml_merlin_unsetenv"
+external merlin_set_environ : string -> unit =
+  "ml_merlin_set_environ"
+(** completely replace the environment *)

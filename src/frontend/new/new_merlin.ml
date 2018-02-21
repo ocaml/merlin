@@ -39,45 +39,7 @@ let commands_help () =
       print_endline doc
     ) New_commands.all_commands
 
-
-let with_env env f =
-  let parseenv var =
-    match String.index var '=' with
-    | pos ->
-      let key = String.sub var 0 pos in
-      let value = String.sub var (pos + 1) (String.length var - pos - 1) in
-      (key, Some value)
-    | exception Not_found -> (var, None)
-  in
-  let getenv key =
-    match Unix.getenv key with
-    | value -> Some value
-    | exception Not_found -> None
-  in
-  let setenv key = function
-    | None -> Os_ipc.unsetenv key
-    | Some value -> Unix.putenv key value
-  in
-  let rec setup = function
-    | [] -> f ()
-    | var :: vs ->
-      let (key, value) = parseenv var in
-      if key = "MERLIN_LOG" then
-        Logger.with_log_file value (fun () -> setup vs)
-      else
-        let value' = getenv key in
-        setenv key value;
-        match setup vs with
-        | exception exn ->
-          setenv key value';
-          Std.reraise exn
-        | result ->
-          setenv key value';
-          result
-  in
-  setup env
-
-let run env = function
+let run = function
   | [] ->
     usage ();
     1
@@ -170,3 +132,14 @@ let run env = function
       | exception exn ->
         prerr_endline ("Exception: " ^ Printexc.to_string exn);
         1
+
+let with_env env f =
+  Os_ipc.merlin_set_environ env;
+  let log = match Sys.getenv "MERLIN_LOG" with
+    | value -> Some value
+    | exception Not_found -> None
+  in
+  Logger.with_log_file log f
+
+let run env args =
+  with_env env (fun () -> run args)
