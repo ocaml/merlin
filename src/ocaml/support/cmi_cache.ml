@@ -38,5 +38,4 @@ include File_cache.Make (struct
     cmi_cache = ref Not_found;
   }
   let cache_name = "Cmi_cache"
-  let policy = `Stat_fs
 end)

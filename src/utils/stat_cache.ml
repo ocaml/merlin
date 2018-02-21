@@ -32,7 +32,7 @@ let cached_file_id filename =
   | Some table ->
     match Hashtbl.find table filename with
     | stats ->
-      Logger.log "dir_cache" "reuse cache" filename;
+      Logger.log "stat_cache" "reuse cache" filename;
       stats
     | exception Not_found ->
       let stats = file_id filename in
