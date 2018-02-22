@@ -85,6 +85,7 @@ SHARE_DIR=/usr/local/share
 VIM_DIR=/usr/local/share/ocamlmerlin/vim
 WITH_BIN_ANNOT=""
 VERSION_STRING=""
+CAML_VERSION=
 EXIT=0
 
 
@@ -121,6 +122,10 @@ while [ -n "$1" ]; do
       shift 1
       VERSION_STRING="$1"
       ;;
+    --force-caml-version)
+      shift 1
+      CAML_VERSION="$1"
+      ;;
     --help|-help|-h)
       usage
       exit 0
@@ -148,7 +153,7 @@ check_package yojson "Install yojson"
 OCAML_VERSION="403"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
 OCAML_VERSION_VAL='`OCaml_4_03_0'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 | `OCaml_4_06_0 ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 | `OCaml_4_06_0 | `OCaml_unknown ]'
 
 MAGIC_NUMBERS=$(ocamlfind c -config | grep _magic_number | tr -d '\015')
 CMI_NUMBER=$(echo "$MAGIC_NUMBERS" | sed -ne "s/cmi_magic_number: //p")
@@ -206,6 +211,12 @@ case "$CMI_NUMBER" in
     OCAML_VERSION_VAL='`OCaml_4_06_0'
     ;;
 esac
+
+if [ -n "$CAML_VERSION" ]; then
+    OCAML_VERSION=$CAML_VERSION
+    OCAML_VERSION_MESSAGE="OCaml \"$CAML_VERSION\" (forced)"
+    OCAML_VERSION_VAL='`OCaml_unknown'
+fi
 
 ## Findlib version check
 ## =====================
