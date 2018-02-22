@@ -168,6 +168,8 @@ SOURCES_LIB = \
 	src/extend/extend_driver.ml       \
 	$(TYPER)/typing/includemod.mli    \
 	$(TYPER)/typing/includemod.ml     \
+	$(TYPER)/typing/printpat.mli      \
+	$(TYPER)/typing/printpat.ml       \
 	$(TYPER)/typing/parmatch.mli      \
 	$(TYPER)/typing/parmatch.ml       \
 	$(TYPER)/typing/stypes.mli        \
@@ -176,6 +178,8 @@ SOURCES_LIB = \
 	$(TYPER)/typing/typetexp.ml       \
 	$(TYPER)/typing/typedecl.mli      \
 	$(TYPER)/typing/typedecl.ml       \
+	$(TYPER)/typing/typeopt.mli       \
+	$(TYPER)/typing/typeopt.ml        \
 	$(TYPER)/typing/typecore.mli      \
 	$(TYPER)/typing/typecore.ml       \
 	$(TYPER)/typing/typeclass.mli     \

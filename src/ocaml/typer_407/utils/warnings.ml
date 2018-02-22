@@ -201,15 +201,15 @@ let letter = function
 
 type state =
   {
-    active: bool array;
-    error: bool array;
+    active: Bitfield.t;
+    error: Bitfield.t;
   }
 
 let current =
   ref
     {
-      active = Array.make (last_warning_number + 1) true;
-      error = Array.make (last_warning_number + 1) false;
+      active = Bitfield.full;
+      error = Bitfield.empty;
     }
 
 let disabled = ref false
@@ -221,8 +221,11 @@ let backup () = !current
 
 let restore x = current := x
 
-let is_active x = not !disabled && (!current).active.(number x);;
-let is_error x = not !disabled && (!current).error.(number x);;
+(* Some warnings are not properly implemented in merlin, just disable *)
+let is_disabled x = (x >= 32 && x <= 39) || x = 60
+
+let is_active x = not !disabled && let x = number x in not (is_disabled x) && Bitfield.is_set (!current).active x;;
+let is_error x = not !disabled && let x = number x in not (is_disabled x) && Bitfield.is_set (!current).error x;;
 
 let mk_lazy f =
   let state = backup () in
@@ -240,9 +243,9 @@ let mk_lazy f =
     )
 
 let parse_opt error active flags s =
-  let set i = flags.(i) <- true in
-  let clear i = flags.(i) <- false in
-  let set_all i = active.(i) <- true; error.(i) <- true in
+  let set i = flags := Bitfield.set i !flags in
+  let clear i = flags := Bitfield.unset i !flags in
+  let set_all i = active := Bitfield.set i !active; error := Bitfield.set i !error in
   let error () = raise (Arg.Bad "Ill-formed list of warnings") in
   let rec get_num n i =
     if i >= String.length s then i, n
@@ -291,10 +294,10 @@ let parse_opt error active flags s =
 ;;
 
 let parse_options errflag s =
-  let error = Array.copy (!current).error in
-  let active = Array.copy (!current).active in
+  let error = ref (!current).error in
+  let active = ref (!current).active in
   parse_opt error active (if errflag then error else active) s;
-  current := {error; active}
+  current := {error = !error; active = !active}
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-32..42-44-45-48-50-60";;
@@ -655,4 +658,32 @@ let help_warnings () =
           (String.concat ", " (List.map string_of_int l))
   done;
   exit 0
+;;
+
+(* merlin *)
+
+let dump ?(verbose=false) () =
+  let open Std in
+  let actives field =
+    let acc = ref [] in
+    for i = 1 to last_warning_number do
+      if Bitfield.is_set field i then (
+        let x =
+          try
+            if verbose then
+              let desc = List.assoc i descriptions in
+              `String (string_of_int i ^ ": " ^ desc)
+            else
+              `Int i
+          with Not_found -> `Int i
+        in
+        acc := x :: !acc
+      )
+    done;
+    List.rev !acc
+  in
+  `Assoc [
+    "actives", `List (actives !current.active);
+    "warn_error", `List (actives !current.error);
+  ]
 ;;

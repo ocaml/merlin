@@ -56,9 +56,6 @@ val run_iter_cont: iter_cont list -> (Path.t * iter_cont) list
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t
 val find_shadowed_types: Path.t -> t -> Path.t list
-val without_cmis: ('a -> 'b) -> 'a -> 'b
-        (* [without_cmis f arg] applies [f] to [arg], but does not
-           allow opening cmis during its execution *)
 
 (* Lookup by paths *)
 
@@ -238,7 +235,7 @@ val is_imported_opaque: string -> bool
 
 (* Direct access to the table of imported compilation units with their CRC *)
 
-val crc_units: Consistbl.t
+(*val crc_units: Consistbl.t*)
 val add_import: string -> unit
 
 (* Summaries -- compact representation of an environment, to be
@@ -340,10 +337,19 @@ val check_value_name: string -> Location.t -> unit
 module Persistent_signature : sig
   type t =
     { filename : string; (** Name of the file containing the signature. *)
-      cmi : Cmi_format.cmi_infos }
+      cmi : Cmi_format.cmi_infos;
+      cmi_cache : exn ref; }
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
       it from memory, for instance to build a self-contained toplevel. *)
   val load : (unit_name:string -> t option) ref
 end
+
+(** merlin: manage internal state *)
+
+val state : Local_store.bindings
+
+val check_state_consistency: unit -> bool
+
+val with_cmis : (unit -> 'a) -> 'a

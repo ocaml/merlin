@@ -48,28 +48,13 @@ let ident ppf id = pp_print_string ppf (ident_name id)
 
 (* Print a path *)
 
-let ident_stdlib = Ident.create_persistent "Stdlib"
 let printing_env = ref Env.empty
+
+let ident_stdlib = Ident.create_persistent "Stdlib"
 let non_shadowed_pervasive = function
-  | Pdot(Pident id, s, _) as path ->
-      Ident.same id ident_stdlib &&
-      (try Path.same path (Env.lookup_type (Lident s) !printing_env)
-       with Not_found -> true)
-  | Pdot(Pdot (Pident id, "Pervasives", _), s, _) as path ->
-      Ident.same id ident_stdlib &&
-      (* Make sure Stdlib.<s> is the same as Stdlib.Pervasives.<s> *)
-      (try
-         let td =
-           Env.find_type (Env.lookup_type (Lident s) !printing_env)
-             !printing_env
-         in
-         match td.type_private, td.type_manifest with
-         | Private, _ | _, None -> false
-         | Public, Some te ->
-           match (Btype.repr te).desc with
-           | Tconstr (path', _, _) -> Path.same path path'
-           | _ -> false
-       with Not_found -> true)
+  | Pdot(Pident id, _, _)
+  | Pdot(Pdot (Pident id, "Pervasives", _), _, _) ->
+      Ident.same id ident_stdlib
   | _ -> false
 
 let find_double_underscore s =
@@ -266,7 +251,7 @@ and raw_type_desc ppf = function
         raw_type_list tl
   | Tvariant row ->
       fprintf ppf
-        "@[<hov1>{@[%s@,%a;@]@ @[%s@,%a;@]@ %s%B;@ %s%B;@ @[<1>%s%t@]}@]"
+        "@[<hov1>{@[%s@,%a;@]@ @[%s@,%a;@]@ %s%b;@ %s%b;@ @[<1>%s%t@]}@]"
         "row_fields="
         (raw_list (fun ppf (l, f) ->
           fprintf ppf "@[%s,@ %a@]" l raw_field f))
@@ -287,7 +272,7 @@ and raw_field ppf = function
     Rpresent None -> fprintf ppf "Rpresent None"
   | Rpresent (Some t) -> fprintf ppf "@[<1>Rpresent(Some@,%a)@]" raw_type t
   | Reither (c,tl,m,e) ->
-      fprintf ppf "@[<hov1>Reither(%B,@,%a,@,%B,@,@[<1>ref%t@])@]" c
+      fprintf ppf "@[<hov1>Reither(%b,@,%a,@,%b,@,@[<1>ref%t@])@]" c
         raw_type_list tl m
         (fun ppf ->
           match !e with None -> fprintf ppf " None"
@@ -315,13 +300,10 @@ let compose l1 = function
   | Nth n  -> Nth (List.nth l1 n)
 
 let apply_subst s1 tyl =
-  if tyl = [] then []
-  (* cf. PR#7543: Typemod.type_package doesn't respect type constructor arity *)
-  else
-    match s1 with
-      Nth n1 -> [List.nth tyl n1]
-    | Map l1 -> List.map (List.nth tyl) l1
-    | Id -> tyl
+  match s1 with
+    Nth n1 -> [List.nth tyl n1]
+  | Map l1 -> List.map (List.nth tyl) l1
+  | Id -> tyl
 
 type best_path = Paths of Path.t list | Best of Path.t
 
@@ -352,6 +334,7 @@ let rec normalize_type_path ?(cache=false) env p =
         let tyl = List.map repr tyl in
         if List.length params = List.length tyl
         && List.for_all2 (==) params tyl
+        && not (Path.same p p1)
         then normalize_type_path ~cache env p1
         else if cache || List.length params <= List.length tyl
              || not (uniq tyl) then (p, Id)
@@ -387,11 +370,8 @@ let same_printing_env env =
   Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
 let set_printing_env env =
-  printing_env := env;
-  if !Clflags.real_paths ||
-     !printing_env == Env.empty ||
-     same_printing_env env then
-    ()
+  printing_env := if !Clflags.real_paths then Env.empty else env;
+  if !printing_env == Env.empty || same_printing_env env then ()
   else begin
     (* printf "Reset printing_map@."; *)
     printing_old := env;
@@ -419,9 +399,6 @@ let set_printing_env env =
 let wrap_printing_env env f =
   set_printing_env env;
   try_finally f (fun () -> set_printing_env Env.empty)
-
-let wrap_printing_env env f =
-  Env.without_cmis (wrap_printing_env env) f
 
 let is_unambiguous path env =
   let l = Env.find_shadowed_types path env in
@@ -478,10 +455,6 @@ let names = ref ([] : (type_expr * string) list)
 let name_counter = ref 0
 let named_vars = ref ([] : string list)
 
-let weak_counter = ref 1
-let weak_var_map = ref TypeMap.empty
-let named_weak_vars = ref StringSet.empty
-
 let reset_names () = names := []; name_counter := 0; named_vars := []
 let add_named_var ty =
   match ty.desc with
@@ -490,11 +463,6 @@ let add_named_var ty =
       named_vars := name :: !named_vars
   | _ -> ()
 
-let name_is_already_used name =
-  List.mem name !named_vars
-  || List.exists (fun (_, name') -> name = name') !names
-  || StringSet.mem name !named_weak_vars
-
 let rec new_name () =
   let name =
     if !name_counter < 26
@@ -502,23 +470,15 @@ let rec new_name () =
     else String.make 1 (Char.chr(97 + !name_counter mod 26)) ^
            string_of_int(!name_counter / 26) in
   incr name_counter;
-  if name_is_already_used name then new_name () else name
+  if List.mem name !named_vars
+  || List.exists (fun (_, name') -> name = name') !names
+  then new_name ()
+  else name
 
-let rec new_weak_name ty () =
-  let name = "weak" ^ string_of_int !weak_counter in
-  incr weak_counter;
-  if name_is_already_used name then new_weak_name ty ()
-  else begin
-      named_weak_vars := StringSet.add name !named_weak_vars;
-      weak_var_map := TypeMap.add ty name !weak_var_map;
-      name
-    end
-
-let name_of_type name_generator t =
+let name_of_type t =
   (* We've already been through repr at this stage, so t is our representative
      of the union-find class. *)
   try List.assq t !names with Not_found ->
-    try TypeMap.find t !weak_var_map with Not_found ->
     let name =
       match t.desc with
         Tvar (Some name) | Tunivar (Some name) ->
@@ -534,13 +494,13 @@ let name_of_type name_generator t =
           !current_name
       | _ ->
           (* No name available, create a new one *)
-          name_generator ()
+          new_name ()
     in
     (* Exception for type declarations *)
     if name <> "_" then names := (t, name) :: !names;
     name
 
-let check_name_of_type t = ignore(name_of_type new_name t)
+let check_name_of_type t = ignore(name_of_type t)
 
 let remove_names tyl =
   let tyl = List.map repr tyl in
@@ -658,17 +618,14 @@ let rec tree_of_typexp sch ty =
   let px = proxy ty in
   if List.mem_assq px !names && not (List.memq px !delayed) then
    let mark = is_non_gen sch ty in
-   let name = name_of_type (if mark then new_weak_name ty else new_name) px in
-   Otyp_var (mark, name) else
+   Otyp_var (mark, name_of_type px) else
 
   let pr_typ () =
     match ty.desc with
     | Tvar _ ->
         (*let lev =
           if is_non_gen sch ty then "/" ^ string_of_int ty.level else "" in*)
-        let non_gen = is_non_gen sch ty in
-        let name_gen = if non_gen then new_weak_name ty else new_name in
-        Otyp_var (non_gen, name_of_type name_gen ty)
+        Otyp_var (is_non_gen sch ty, name_of_type ty)
     | Tarrow(l, ty1, ty2, _) ->
         let pr_arrow l ty1 ty2 =
           let lab =
@@ -689,7 +646,7 @@ let rec tree_of_typexp sch ty =
     | Tconstr(p, tyl, _abbrev) ->
         let p', s = best_type_path p in
         let tyl' = apply_subst s tyl in
-        if is_nth s && not (tyl'=[]) then tree_of_typexp sch (List.hd tyl') else
+        if is_nth s then tree_of_typexp sch (List.hd tyl') else
         Otyp_constr (tree_of_path p', tree_of_typlist sch tyl')
     | Tvariant row ->
         let row = row_repr row in
@@ -748,14 +705,14 @@ let rec tree_of_typexp sch ty =
           (* Make the names delayed, so that the real type is
              printed once when used as proxy *)
           List.iter add_delayed tyl;
-          let tl = List.map (name_of_type new_name) tyl in
+          let tl = List.map name_of_type tyl in
           let tr = Otyp_poly (tl, tree_of_typexp sch ty) in
           (* Forget names when we leave scope *)
           remove_names tyl;
           delayed := old_delayed; tr
         end
     | Tunivar _ ->
-        Otyp_var (false, name_of_type new_name ty)
+        Otyp_var (false, name_of_type ty)
     | Tpackage (p, n, tyl) ->
         let n =
           List.map (fun li -> String.concat "." (Longident.flatten li)) n in
@@ -764,7 +721,7 @@ let rec tree_of_typexp sch ty =
   if List.memq px !delayed then delayed := List.filter ((!=) px) !delayed;
   if is_aliased px && aliasable ty then begin
     check_name_of_type px;
-    Otyp_alias (pr_typ (), name_of_type new_name px) end
+    Otyp_alias (pr_typ (), name_of_type px) end
   else pr_typ ()
 
 and tree_of_row_field sch (l, f) =
@@ -981,7 +938,7 @@ let rec tree_of_type_decl id decl =
         decl.type_private
     | Type_open ->
         tree_of_manifest Otyp_open,
-        decl.type_private
+        Public
   in
   let immediate =
     Builtin_attributes.immediate decl.type_attributes
@@ -1152,7 +1109,7 @@ let rec tree_of_class_type sch params =
       let sty = repr sign.csig_self in
       let self_ty =
         if is_aliased sty then
-          Some (Otyp_var (false, name_of_type new_name (proxy sty)))
+          Some (Otyp_var (false, name_of_type (proxy sty)))
         else None
       in
       let (fields, _) =
@@ -1380,31 +1337,14 @@ let modtype_declaration id ppf decl =
 
 (* For the toplevel: merge with tree_of_signature? *)
 
-(* Refresh weak variable map in the toplevel *)
-let refresh_weak () =
-  let refresh t name (m,s) =
-    if is_non_gen true (repr t) then
-      begin
-        TypeMap.add t name m,
-        StringSet.add name s
-      end
-    else m, s in
-  let m, s =
-    TypeMap.fold refresh !weak_var_map (TypeMap.empty ,StringSet.empty)  in
-  named_weak_vars := s;
-  weak_var_map := m
-
-let print_items showval env x =
-  refresh_weak();
-  let rec print showval env = function
+let rec print_items showval env = function
   | [] -> []
   | item :: rem as items ->
       let (_sg, rem) = filter_rem_sig item rem in
       hide_rec_items items;
       let trees = trees_of_sigitem item in
       List.map (fun d -> (d, showval env item)) trees @
-      print showval env rem in
-  print showval env x
+      print_items showval env rem
 
 (* Print a signature body (used by -i when compiling a .ml) *)
 
@@ -1741,3 +1681,11 @@ let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
            @]"
           txt2 type_path_list tpl
           txt3 (type_path_expansion tp0) tp0')
+
+let shorten_type_path env path = path
+let shorten_module_type_path env path = path
+let shorten_module_path env path = path
+let shorten_class_type_path env path = path
+
+let compute_map_for_pers _name = true
+

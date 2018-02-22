@@ -116,3 +116,7 @@ val restore: state -> unit
 val mk_lazy: (unit -> 'a) -> 'a Lazy.t
     (** Like [Lazy.of_fun], but the function is applied with
         the warning settings at the time [mk_lazy] is called. *)
+
+(* merlin *)
+
+val dump : ?verbose:bool -> unit -> Std.json

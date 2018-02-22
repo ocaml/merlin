@@ -160,9 +160,11 @@ let add_saved_type b = saved_types := b :: !saved_types
 let get_saved_types () = !saved_types
 let set_saved_types l = saved_types := l
 
-let record_value_dependency vd1 vd2 =
+(*let record_value_dependency vd1 vd2 =
   if vd1.Types.val_loc <> vd2.Types.val_loc then
-    value_deps := (vd1, vd2) :: !value_deps
+    value_deps := (vd1, vd2) :: !value_deps*)
+
+let record_value_dependency _vd1 _vd2 = ()
 
 let save_cmt filename modname binary_annots sourcefile initial_env cmi =
   if !Clflags.binary_annotations && not !Clflags.print_types then begin
@@ -179,7 +181,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env cmi =
            cmt_modname = modname;
            cmt_annots = clear_env binary_annots;
            cmt_value_dependencies = !value_deps;
-           cmt_comments = Lexer.comments ();
+           cmt_comments = [];
            cmt_args = Sys.argv;
            cmt_sourcefile = sourcefile;
            cmt_builddir =  Sys.getcwd ();

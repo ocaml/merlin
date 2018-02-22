@@ -59,6 +59,7 @@ val print_error: formatter -> t -> unit
 val print_error_cur_file: formatter -> unit -> unit
 val print_warning: t -> formatter -> Warnings.t -> unit
 val formatter_for_warnings : formatter ref
+val prerr_warning_ref: (t -> Warnings.t -> unit) ref
 val prerr_warning: t -> Warnings.t -> unit
 val echo_eof: unit -> unit
 val reset: unit -> unit
@@ -71,8 +72,6 @@ val warning_printer : (t -> formatter -> Warnings.t -> unit) ref
 
 val default_warning_printer : t -> formatter -> Warnings.t -> unit
 (** Original warning printer for use in hooks. *)
-
-val highlight_locations: formatter -> t list -> bool
 
 val show_code_at_location: formatter -> Lexing.lexbuf -> t -> unit
 
@@ -99,28 +98,31 @@ val absname: bool ref
 
 (** Support for located errors *)
 
+type error_source = Lexer | Parser | Typer | Warning | Unknown | Env
+
 type error =
   {
     loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
+    source : error_source;
   }
 
 exception Already_displayed_error
 exception Error of error
 
-val error: ?loc:t -> ?sub:error list -> ?if_highlight:string -> string -> error
+val error: ?loc:t -> ?sub:error list -> ?if_highlight:string -> ?source:error_source -> string -> error
 
-val errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string
+val errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string -> ?source:error_source
             -> ('a, Format.formatter, unit, error) format4 -> 'a
 
-val raise_errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string
+val raise_errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string -> ?source:error_source
             -> ('a, Format.formatter, unit, 'b) format4 -> 'a
 
-val error_of_printer: t -> (formatter -> 'a -> unit) -> 'a -> error
+val error_of_printer: t -> ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
 
-val error_of_printer_file: (formatter -> 'a -> unit) -> 'a -> error
+val error_of_printer_file: ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
 
 val error_of_exn: exn -> [ `Ok of error | `Already_displayed ] option
 

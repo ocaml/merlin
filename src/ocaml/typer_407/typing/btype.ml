@@ -79,20 +79,25 @@ type change =
   | Ccommu of commutable ref * commutable
   | Cuniv of type_expr option ref * type_expr option
   | Ctypeset of TypeSet.t ref * TypeSet.t
+  | Cfun of (unit -> unit)
 
 type changes =
     Change of change * changes ref
   | Unchanged
   | Invalid
 
-let trail = Weak.create 1
+let state = Local_store.new_bindings ()
+let sref f = Local_store.ref state f
+let srefk k = Local_store.ref state (fun () -> k)
+
+let trail = sref (fun () -> Weak.create 1)
 
 let log_change ch =
-  match Weak.get trail 0 with None -> ()
+  match Weak.get !trail 0 with None -> ()
   | Some r ->
       let r' = ref Unchanged in
       r := Change (ch, r');
-      Weak.set trail 0 (Some r')
+      Weak.set !trail 0 (Some r')
 
 (**** Representative of a type ****)
 
@@ -645,15 +650,20 @@ let undo_change = function
   | Ccommu (r, v) -> r := v
   | Cuniv  (r, v) -> r := v
   | Ctypeset (r, v) -> r := v
+  | Cfun f -> f ()
 
 type snapshot = changes ref * int
-let last_snapshot = ref 0
+let last_snapshot = srefk 0
+let linked_variables = srefk 0
 
 let log_type ty =
   if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))
 let link_type ty ty' =
   log_type ty;
   let desc = ty.desc in
+  (match desc with
+   | Tvar _ -> incr linked_variables
+   | _ -> ());
   ty.desc <- Tlink ty';
   (* Name is a user-supplied name for this unification variable (obtained
    * through a type annotation for instance). *)
@@ -688,10 +698,10 @@ let set_typeset rs s =
 let snapshot () =
   let old = !last_snapshot in
   last_snapshot := !new_id;
-  match Weak.get trail 0 with Some r -> (r, old)
+  match Weak.get !trail 0 with Some r -> (r, old)
   | None ->
       let r = ref Unchanged in
-      Weak.set trail 0 (Some r);
+      Weak.set !trail 0 (Some r);
       (r, old)
 
 let rec rev_log accu = function
@@ -712,7 +722,7 @@ let backtrack (changes, old) =
       List.iter undo_change backlog;
       changes := Unchanged;
       last_snapshot := old;
-      Weak.set trail 0 (Some changes)
+      Weak.set !trail 0 (Some changes)
 
 let rec rev_compress_log log r =
   match !r with
@@ -735,3 +745,14 @@ let undo_compress (changes, _old) =
             ty.desc <- desc; r := !next
         | _ -> ())
         log
+
+let is_valid (changes, _old) =
+  match !changes with
+  | Invalid -> false
+  | _ -> true
+
+let on_backtrack f =
+  log_change (Cfun f)
+
+let linked_variables () =
+  !linked_variables

@@ -59,7 +59,7 @@ let signature_of_summary =
 
 let summary_prev = function
   | Env.Env_empty -> None
-  | Env.Env_open (s,_)     | Env.Env_value (s,_,_)
+  | Env.Env_open (s,_,_)     | Env.Env_value (s,_,_)
   | Env.Env_type (s,_,_)   | Env.Env_extension (s,_,_)
   | Env.Env_module (s,_,_) | Env.Env_modtype (s,_,_)
   | Env.Env_class (s,_,_)  | Env.Env_cltype (s,_,_)

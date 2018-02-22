@@ -19,7 +19,6 @@ open Path
 open Types
 open Asttypes
 open Typedtree
-open Lambda
 
 let scrape_ty env ty =
   let ty = Ctype.expand_head_opt env (Ctype.correct_levels ty) in
@@ -36,27 +35,6 @@ let scrape_ty env ty =
       end
   | _ -> ty
 
-let scrape env ty =
-  (scrape_ty env ty).desc
-
-let is_function_type env ty =
-  match scrape env ty with
-  | Tarrow (_, lhs, rhs, _) -> Some (lhs, rhs)
-  | _ -> None
-
-let is_base_type env ty base_ty_path =
-  match scrape env ty with
-  | Tconstr(p, _, _) -> Path.same p base_ty_path
-  | _ -> false
-
-let maybe_pointer_type env ty =
-  if Ctype.maybe_pointer_type env ty then
-    Pointer
-  else
-    Immediate
-
-let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
-
 type classification =
   | Int
   | Float
@@ -66,7 +44,7 @@ type classification =
 
 let classify env ty =
   let ty = scrape_ty env ty in
-  if maybe_pointer_type env ty = Immediate then Int
+  if not (Ctype.maybe_pointer_type env ty) then Int
   else match ty.desc with
   | Tvar _ | Tunivar _ ->
       Any
@@ -97,86 +75,12 @@ let classify env ty =
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ ->
       assert false
 
-let array_type_kind env ty =
-  match scrape env ty with
-  | Tconstr(p, [elt_ty], _) | Tpoly({desc = Tconstr(p, [elt_ty], _)}, _)
-    when Path.same p Predef.path_array ->
-      begin match classify env elt_ty with
-      | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
-      | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray
-      | Addr | Lazy -> Paddrarray
-      | Int -> Pintarray
-      end
-  | Tconstr(p, [], _) | Tpoly({desc = Tconstr(p, [], _)}, _)
-    when Path.same p Predef.path_floatarray ->
-      Pfloatarray
-  | _ ->
-      (* This can happen with e.g. Obj.field *)
-      Pgenarray
-
-let array_kind exp = array_type_kind exp.exp_env exp.exp_type
-
-let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
-
-let bigarray_decode_type env ty tbl dfl =
-  match scrape env ty with
-  | Tconstr(Pdot(Pident mod_id, type_name, _), [], _)
-    when Ident.name mod_id = "CamlinternalBigarray" ->
-      begin try List.assoc type_name tbl with Not_found -> dfl end
-  | _ ->
-      dfl
-
-let kind_table =
-  ["float32_elt", Pbigarray_float32;
-   "float64_elt", Pbigarray_float64;
-   "int8_signed_elt", Pbigarray_sint8;
-   "int8_unsigned_elt", Pbigarray_uint8;
-   "int16_signed_elt", Pbigarray_sint16;
-   "int16_unsigned_elt", Pbigarray_uint16;
-   "int32_elt", Pbigarray_int32;
-   "int64_elt", Pbigarray_int64;
-   "int_elt", Pbigarray_caml_int;
-   "nativeint_elt", Pbigarray_native_int;
-   "complex32_elt", Pbigarray_complex32;
-   "complex64_elt", Pbigarray_complex64]
-
-let layout_table =
-  ["c_layout", Pbigarray_c_layout;
-   "fortran_layout", Pbigarray_fortran_layout]
-
-let bigarray_type_kind_and_layout env typ =
-  match scrape env typ with
-  | Tconstr(_p, [_caml_type; elt_type; layout_type], _abbrev) ->
-      (bigarray_decode_type env elt_type kind_table Pbigarray_unknown,
-       bigarray_decode_type env layout_type layout_table
-                            Pbigarray_unknown_layout)
-  | _ ->
-      (Pbigarray_unknown, Pbigarray_unknown_layout)
-
-let value_kind env ty =
-  match scrape env ty with
-  | Tconstr(p, _, _) when Path.same p Predef.path_int ->
-      Pintval
-  | Tconstr(p, _, _) when Path.same p Predef.path_char ->
-      Pintval
-  | Tconstr(p, _, _) when Path.same p Predef.path_float ->
-      Pfloatval
-  | Tconstr(p, _, _) when Path.same p Predef.path_int32 ->
-      Pboxedintval Pint32
-  | Tconstr(p, _, _) when Path.same p Predef.path_int64 ->
-      Pboxedintval Pint64
-  | Tconstr(p, _, _) when Path.same p Predef.path_nativeint ->
-      Pboxedintval Pnativeint
-  | _ ->
-      Pgenval
-
-
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.
     if the value can be represented as a float/forward/lazy *)
 let lazy_val_requires_forward env ty =
   match classify env ty with
   | Any | Lazy -> true
-  | Float -> Config.flat_float_array
+  | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false
 
 (** The compilation of the expression [lazy e] depends on the form of e:

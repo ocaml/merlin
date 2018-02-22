@@ -85,11 +85,7 @@ let print ppf i =
   match i.stamp with
   | 0 -> fprintf ppf "%s!" i.name
   | -1 -> fprintf ppf "%s#" i.name
-  | n ->
-    let stampstr =
-      if !Clflags.unique_ids then Printf.sprintf "/%i" n else ""
-    in
-    fprintf ppf "%s%s%s" i.name stampstr (if global i then "g" else "")
+  | n -> fprintf ppf "%s/%i%s" i.name n (if global i then "g" else "")
 
 type 'a tbl =
     Empty
