@@ -118,7 +118,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       let are_types_unifiable typ =
         let snap = Btype.snapshot () in
         let res =
-          try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr typ ; true
+          try Ctype.unify_gadt ~equations_level:0 (ref env) type_expr typ ; true
           with Ctype.Unify _trace -> false
         in
         Btype.backtrack snap ;
