@@ -46,7 +46,7 @@ val protect_refs : ref_and_value list -> (unit -> 'a) -> 'a
     while executing [f]. The previous contents of the references is restored
     even if [f] raises an exception. *)
 
-val exact_file_exists : string -> bool
+val exact_file_exists : dirname:string -> basename:string -> bool
 	(* Like [Sys.file_exists], but takes into account case-insensitive file
 	   systems: return true only if the basename (last component of the
            path) has the correct case. *)

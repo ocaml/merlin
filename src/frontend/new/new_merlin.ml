@@ -86,7 +86,7 @@ let run = function
         in
         (* Start processing query *)
         Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
-        Stat_cache.with_cache @@ fun () ->
+        File_id.with_cache @@ fun () ->
         let tr = (if Mconfig.(config.merlin.trace) then
                     Trace.start () else Trace.null) in
         let source = Msource.make tr (Misc.string_of_file stdin) in

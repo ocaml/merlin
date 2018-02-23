@@ -33,14 +33,14 @@ module Make(Input : sig
 end) = struct
   let section = "File_cache("^Input.cache_name^")"
 
-  let cache : (string, Stat_cache.file_id * float ref * Input.t) Hashtbl.t
+  let cache : (string, File_id.t * float ref * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
   let read filename =
-    let fid = Stat_cache.file_id filename in
+    let fid = File_id.get filename in
     try
       let fid', latest_use, file = Hashtbl.find cache filename in
-      if (Stat_cache.file_id_check fid fid') then
+      if (File_id.check fid fid') then
         Logger.logf section "read" "reusing %S" filename
       else (
         Logger.logf section "read" "%S was updated on disk" filename;
@@ -67,7 +67,7 @@ end) = struct
     in
     let add_invalid filename (fid, latest_use, _) invalids =
       if !latest_use > limit &&
-         Stat_cache.file_id_check (Stat_cache.file_id filename) fid
+         File_id.check (File_id.get filename) fid
       then (
         Logger.logf section "flush" "keeping %S" filename;
         invalids

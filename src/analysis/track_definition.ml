@@ -222,26 +222,27 @@ module Utils = struct
      to choose the appropriate file. *)
   let find_all_in_path_uncap ?(fallback="") path name =
     let has_fallback = fallback <> "" in
-    let files =
-      let acc = ref [] in
-      let uname = String.uncapitalize name in
-      let ufbck = String.uncapitalize fallback in
-      let try_dir dir =
-        let fullname = Filename.concat dir name in
-        let fallback = Filename.concat dir fallback in
-        let ufullname = Filename.concat dir uname in
-        let ufallback = Filename.concat dir ufbck in
-        if Misc.exact_file_exists ufullname then acc := ufullname :: !acc ;
-        if Misc.exact_file_exists fullname then acc := fullname :: !acc ;
-        if has_fallback && Misc.exact_file_exists ufallback then
-          acc := ufallback :: !acc ;
-        if has_fallback && Misc.exact_file_exists fallback then
-          acc := fallback :: !acc ;
-      in
-      List.iter try_dir path;
-      !acc
+    let uname = String.uncapitalize name in
+    let ufbck = String.uncapitalize fallback in
+    let try_file dirname basename acc =
+      if Misc.exact_file_exists ~dirname ~basename
+      then Misc.canonicalize_filename (Filename.concat dirname basename) :: acc
+      else acc
     in
-    List.map files ~f:Misc.canonicalize_filename
+    let try_dir acc dirname =
+      let acc = try_file dirname uname acc in
+      let acc = try_file dirname name acc in
+      let acc =
+        if has_fallback then
+          let acc = try_file dirname ufbck acc in
+          let acc = try_file dirname fallback acc in
+          acc
+        else
+          acc
+      in
+      acc
+    in
+    List.fold_left ~f:try_dir ~init:[] path
 
   let find_all_matches ~config ?(with_fallback=false) file =
     let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
@@ -540,8 +541,8 @@ let find_source ~config loc =
                 Especially useful on OSX case-insensitive FS.
                 FIXME: May be able handle symlinks and non-existing files,
                 CHECK *)
-            match Stat_cache.file_id s, Stat_cache.file_id t with
-            | s', t' when Stat_cache.file_id_check s' t' ->
+            match File_id.get s, File_id.get t with
+            | s', t' when File_id.check s' t' ->
               0
             | _ -> n
         ) lst

@@ -87,18 +87,29 @@ let rec split_path path acc =
 external fs_exact_case : string -> string = "ml_merlin_fs_exact_case"
 
 (* A replacement for sys_file_exists that makes use of stat_cache *)
-module File_exists = File_cache.Make(struct
-    type t = bool
-    let read = Sys.file_exists
-    let cache_name = "File_exists"
-    let policy = `Stat_dir_cache
+module Exists_in_directory = File_cache.Make(struct
+    let cache_name = "Exists_in_directory"
+    type t = string -> bool
+    let read dir =
+      if Sys.file_exists dir &&
+         Sys.is_directory dir
+      then
+        let cache = Hashtbl.create 4 in
+        (fun filename ->
+           match Hashtbl.find cache filename with
+           | x -> x
+           | exception Not_found ->
+             let exists = Sys.file_exists (Filename.concat dir filename) in
+             Hashtbl.add cache filename exists;
+             exists)
+      else (fun _ -> false)
   end)
 
-let exact_file_exists path =
-  File_exists.read path &&
+let exact_file_exists ~dirname ~basename =
+  Exists_in_directory.read dirname basename &&
+  let path = Filename.concat dirname basename in
   let path' = fs_exact_case path in
-  path == path' || Filename.basename path = Filename.basename path'
-
+  path == path' || basename = Filename.basename path'
 
 let canonicalize_filename ?cwd path =
   let parts =
@@ -161,12 +172,15 @@ let find_in_path path name =
   canonicalize_filename
   begin
     if not (Filename.is_implicit name) then
-      if exact_file_exists name then name else raise Not_found
-    else List.find_map path ~f:(fun dir ->
-         let fullname = Filename.concat dir name in
-          if exact_file_exists fullname
-          then Some fullname
-          else None
+      if exact_file_exists
+          ~dirname:(Filename.dirname name)
+          ~basename:(Filename.basename name)
+      then name
+      else raise Not_found
+    else List.find_map path ~f:(fun dirname ->
+        if exact_file_exists ~dirname ~basename:name
+        then Some (Filename.concat dirname name)
+        else None
       )
   end
 
@@ -180,10 +194,12 @@ let find_in_path_rel path name =
     else concat (simplify dir) base
   in
   let rec try_dir = function
-    [] -> raise Not_found
-  | dir::rem ->
-      let fullname = simplify (Filename.concat dir name) in
-      if File_exists.read fullname then fullname else try_dir rem
+    | [] -> raise Not_found
+    | dir::rem ->
+      let dir = simplify dir in
+      if Exists_in_directory.read dir name
+      then Filename.concat dir name
+      else try_dir rem
   in try_dir path
 
 let find_in_path_uncap ?(fallback="") path name =
@@ -191,15 +207,16 @@ let find_in_path_uncap ?(fallback="") path name =
   canonicalize_filename
   begin
     let uname = String.uncapitalize name in
-    let ufbck = String.uncapitalize fallback in
-    List.find_map path ~f:(fun dir ->
-        let fullname = Filename.concat dir name in
-        let ufullname = Filename.concat dir uname in
-        let ufallback = Filename.concat dir ufbck in
-        if exact_file_exists ufullname then Some ufullname
-        else if exact_file_exists fullname then Some fullname
-        else if has_fallback && exact_file_exists ufallback then Some ufallback
-        else if has_fallback && exact_file_exists fallback then Some fallback
+    let ufallback = String.uncapitalize fallback in
+    List.find_map path ~f:(fun dirname ->
+        if exact_file_exists ~dirname ~basename:uname
+        then Some (Filename.concat dirname uname)
+        else if exact_file_exists ~dirname ~basename:name
+        then Some (Filename.concat dirname name)
+        else if has_fallback && exact_file_exists ~dirname ~basename:ufallback
+        then Some (Filename.concat dirname ufallback)
+        else if has_fallback && exact_file_exists ~dirname ~basename:fallback
+        then Some (Filename.concat dirname fallback)
         else None
       )
   end

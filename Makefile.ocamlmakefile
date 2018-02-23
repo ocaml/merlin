@@ -45,8 +45,8 @@ SOURCES_LIB = \
 	src/utils/local_store.mli         \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
-	src/utils/stat_cache.mli          \
-	src/utils/stat_cache.ml           \
+	src/utils/file_id.mli          		\
+	src/utils/file_id.ml           		\
 	src/utils/file_cache.mli          \
 	src/utils/file_cache.ml           \
 	src/utils/misc.mli                \
