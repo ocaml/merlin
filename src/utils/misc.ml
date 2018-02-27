@@ -610,7 +610,9 @@ let unitname filename =
     try String.sub filename ~pos:0 ~len:(String.index filename '.')
     with Not_found -> filename
   in
-  String.capitalize unitname
+  let unitname = String.capitalize unitname in
+  let unitname = if unitname = "B0" then "_B0" else unitname in
+  unitname
 
 (* [modules_in_path ~ext path] lists ocaml modules corresponding to
                     * filenames with extension [ext] in given [path]es.
