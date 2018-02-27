@@ -135,6 +135,7 @@ let run = function
 
 let with_env env f =
   Os_ipc.merlin_set_environ env;
+  Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   let log = match Sys.getenv "MERLIN_LOG" with
     | value -> Some value
     | exception Not_found -> None
