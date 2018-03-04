@@ -58,6 +58,8 @@ class Kind(BaseKind):
 
     # Attempting to use Merlin's split-opening logic and settings, instead of Denite's? I think?
     def action_open(self, context):
+        # XXX: This abandons multiply-selected targets, though ...
         target = context['targets'][0]
         self.vim.command('echom "' + repr(context['source']) + '"')
-        self.vim.call('merlin#Locate', target['source__identifier'], context['source']['__cursor_pos'])
+        self.vim.call('merlin#Locate',
+                      target['source__identifier'], target['source_context']['__cursor_pos'])
