@@ -33,14 +33,15 @@ class Source(BaseSource):
             if ident['desc']:
                 candidates.append({
                     'word': ident['name'],
-                    'abbr': '▷ %-12s %s : %s' % (ident['kind'], ident['name'], ident['desc']),
+                    'abbr': '⁍ {:12} {} : {}'.format(
+                        ident['kind'], ident['name'], ident['desc'].replace('\n', ' ') ),
                     'source__identifier': ident['name'],
                 })
 
             else:
                 candidates.append({
                     'word': ident['name'],
-                    'abbr': '▷ %-12s %s' % (ident['kind'], ident['name']),
+                    'abbr': '⁍ {:12} {}'.format(ident['kind'], ident['name']),
                     'source__identifier': ident['name'],
                 })
 
