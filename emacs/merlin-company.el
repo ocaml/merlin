@@ -90,7 +90,7 @@
          (let* ((bounds (merlin/completion-bounds))
                 (result (merlin/buffer-substring (car bounds) (cdr bounds))))
            (when (and (boundp 'company-candidates-cache)
-                      (or (string-match "\\.$" result)
+                      (or (string-match-p "\\.$" result)
                           (member '("" "") company-candidates-cache)))
              ;; for some reason, company doesn't always clear its cache
              (setq company-candidates-cache nil))

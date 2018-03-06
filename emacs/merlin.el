@@ -466,7 +466,7 @@ return (LOC1 . LOC2)."
         (filename    (buffer-file-name (buffer-base-buffer))))
     ;; Update environment
     (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
-      (let* ((equal-pos (string-match "=" binding))
+      (let* ((equal-pos (string-match-p "=" binding))
              (prefix (if equal-pos
                        (substring binding 0 (1+ equal-pos))
                        binding))
@@ -722,7 +722,7 @@ return (LOC1 . LOC2)."
 
 (defun merlin--error-warning-p (msg)
   "Tell if the message MSG is a warning."
-  (string-match "^Warning" msg))
+  (string-match-p "^Warning" msg))
 
 (defun merlin-error-reset ()
   "Clear error list."
@@ -933,10 +933,11 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
     (skip-chars-backward "a-z0-9A-Z_'.")
     (skip-chars-backward "~?`" (1- (point)))
-    (if (or (looking-at "[~?`]?['a-z_0-9A-Z.]*['a-z_A-Z0-9]")
-            (looking-at "[~?`]"))
-        (cons (point) (match-end 0)) ; returns the bounds
-      nil))) ; no atom at point
+    (save-match-data
+      (if (or (looking-at "[~?`]?['a-z_0-9A-Z.]*['a-z_A-Z0-9]")
+              (looking-at "[~?`]"))
+          (cons (point) (match-end 0)) ; returns the bounds
+        nil)))) ; no atom at point
 
 (put 'ocaml-atom 'bounds-of-thing-at-point
      'bounds-of-ocaml-atom-at-point)
@@ -976,10 +977,11 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (defun merlin--is-short (text)
   (let ((count 0)
         (pos   0))
-    (while (and (<= count 8)
-                (string-match "\n" text pos))
-           (setq pos (match-end 0))
-           (setq count (1+ count)))
+    (save-match-data
+      (while (and (<= count 8)
+                  (string-match "\n" text pos))
+        (setq pos (match-end 0))
+        (setq count (1+ count))))
     (<= count 8)))
 
 (defvar merlin-types-buffer-map
