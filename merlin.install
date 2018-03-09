@@ -35,4 +35,6 @@ share_root: [
   "?emacs/merlin-iedit.elc" {"emacs/site-lisp/merlin-iedit.elc"}
   "emacs/merlin-imenu.el" {"emacs/site-lisp/merlin-imenu.el"}
   "?emacs/merlin-imenu.elc" {"emacs/site-lisp/merlin-imenu.elc"}
+  "emacs/merlin-xref.el" {"emacs/site-lisp/merlin-xref.el"}
+  "?emacs/merlin-xref.elc" {"emacs/site-lisp/merlin-xref.elc"}
 ]
