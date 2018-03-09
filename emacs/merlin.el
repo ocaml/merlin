@@ -874,15 +874,14 @@ prefix of `bar' is `'."
     (cons prefix suffix)))
 
 (defun merlin--completion-prepare-labels (labels suffix)
-  ; Remove non-matching entry, adjusting optional labels if needed
-  (setq labels (delete-if-not (lambda (x)
-                                (let ((name (cdr (assoc 'name x))))
-                                  (or (string-prefix-p suffix name)
-                                      (when (equal (aref name 0) ??)
-                                        (aset name 0 ?~)
-                                        (string-prefix-p suffix name)))))
-                              labels))
-  (mapcar (lambda (x) (append x '((kind . "Label") (info . nil)))) labels))
+  ;; Remove non-matching entry, adjusting optional labels if needed
+  (cl-loop for x in labels
+           for name = (cdr (assoc 'name x))
+           unless (or (string-prefix-p suffix name)
+                      (when (equal (aref name 0) ??)
+                        (aset name 0 ?~)
+                        (string-prefix-p suffix name)))
+           collect (append x '((kind . "Label") (info . nil)))))
 
 (defun merlin/complete (ident)
   "Return the data for completion of IDENT, i.e. a list of tuples of the form
@@ -922,8 +921,8 @@ prefix of `bar' is `'."
     ;; Concat results
     (let ((result (append labels entries)))
       (if expected-ty
-        (mapcar (lambda (x) (append x `((argument_type . ,expected-ty))))
-                result)
+          (cl-loop for x in result
+                   collect (append x `((argument_type . ,expected-ty))))
         result))))
 
 ;; FIXME: merlin shouldn't rely on editor to compute bounds
