@@ -517,9 +517,8 @@ return (LOC1 . LOC2)."
   (let ((result (merlin--call-merlin command args)))
     (condition-case err
         (setq result (car (read-from-string result)))
-      (error
-        (error "merlin: error %s trying to parse answer: %s"
-               err result)))
+      (error "merlin: error %s trying to parse answer: %s"
+             err result))
     (let ((notifications (cdr-safe (assoc 'notifications result)))
           (class (cdr-safe (assoc 'class result)))
           (value (cdr-safe (assoc 'value result))))
