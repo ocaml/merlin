@@ -43,7 +43,8 @@ ml_merlin_set_environ(value venviron)
   memcpy(buffer, ptr, length);
 
   // clearenv() is not portable
-  environ = NULL;
+  if (environ)
+    *environ = NULL;
 
   size_t i, j;
 
