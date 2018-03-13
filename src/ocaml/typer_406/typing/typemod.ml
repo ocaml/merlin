@@ -46,6 +46,8 @@ type error =
   | Recursive_module_require_explicit_type
   | Apply_generative
   | Cannot_scrape_alias of Path.t
+  | Package_type_missing of Path.t * module_type * Longident.t
+  | Package_type_arity of Path.t * module_type * Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -615,7 +617,7 @@ let check_recmod_typedecls env sdecls decls =
 (* Auxiliaries for checking uniqueness of names in signatures and structures *)
 
 module StringSet =
-  Set.Make(struct type t = string let compare (x:t) y = String.compare x y end)
+  Set.Make(struct type t = string let compare = String.compare end)
 
 let check cl loc set_ref name =
   if StringSet.mem name !set_ref
@@ -780,6 +782,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               Typedecl.transl_type_decl env rec_flag sdecls
             with
             | (decls, newenv) ->
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_type (rec_flag, decls)) env loc :: trem,
               map_rec_type_with_row_types ~rec_flag
@@ -839,6 +842,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               }
               in
               let newenv = Env.enter_module_declaration id md env in
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_module {md_id=id; md_name=pmd.pmd_name; md_type=tmty;
                                   md_loc=pmd.pmd_loc;
@@ -858,6 +862,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               transl_recmodule_modtypes env sdecls
             with
             | (decls, newenv) ->
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_recmodule decls) env loc :: trem,
               map_rec (fun rs md ->
@@ -877,6 +882,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               transl_modtype_decl names env pmtd
             with
             | (newenv, mtd, sg) ->
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_modtype mtd) env loc :: trem,
               sg :: rem,
@@ -888,6 +894,7 @@ and transl_signature ?(keep_warnings = false) env sg =
         | Psig_open sod ->
           begin match type_open env sod with
             | (_path, newenv, od) ->
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_open od) env loc :: trem,
               rem, final_env
@@ -914,6 +921,7 @@ and transl_signature ?(keep_warnings = false) env sg =
             with
             | incl, sg ->
               let newenv = Env.add_signature sg env in
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem  in
               mksig (Tsig_include incl) env loc :: trem,
               sg @ rem,
@@ -930,6 +938,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               Typeclass.class_descriptions env cl
             with
             | (classes, newenv) ->
+              let newenv = Env.update_short_paths newenv in
               let (trem, rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_class
                        (List.map (fun decr ->
@@ -957,6 +966,7 @@ and transl_signature ?(keep_warnings = false) env sg =
             Typeclass.class_type_declarations env cl
             with
             | (classes, newenv) ->
+              let newenv = Env.update_short_paths newenv in
               let (trem,rem, final_env) = transl_sig newenv srem in
               mksig (Tsig_class_type
                        (List.map (fun decl -> decl.Typeclass.clsty_info) classes))
@@ -1524,6 +1534,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
           (fun decl -> check_name check_type names decl.ptype_name)
           sdecls;
         let (decls, newenv) = Typedecl.transl_type_decl env rec_flag sdecls in
+        let newenv = Env.update_short_paths newenv in
         Tstr_type (rec_flag, decls),
         map_rec_type_with_row_types ~rec_flag
           (fun rs info -> Sig_type(info.typ_id, info.typ_type, rs))
@@ -1568,6 +1579,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         (*prerr_endline (Ident.unique_toplevel_name id);*)
         Mtype.lower_nongen (Ident.binding_time id - 1) md.md_type;
         let newenv = Env.enter_module_declaration id md env in
+        let newenv = Env.update_short_paths newenv in
         Tstr_module {mb_id=id; mb_name=name; mb_expr=modl;
                      mb_attributes=attrs;  mb_loc=pmb_loc;
                     },
@@ -1602,6 +1614,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
                  {pmd_name=name; pmd_type=smty;
                   pmd_attributes=attrs; pmd_loc=loc}) sbind
             ) in
+        let newenv = Env.update_short_paths newenv in
         let bindings1 =
           List.map2
             (fun {md_id=id; md_type=mty} (name, _, smodl, attrs, loc) ->
@@ -1631,6 +1644,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
             )
             env decls
         in
+        let newenv = Env.update_short_paths newenv in
         let bindings2 =
           check_recmodule_inclusion newenv bindings1 in
         Tstr_recmodule bindings2,
@@ -1647,15 +1661,18 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         let newenv, mtd, sg =
           transl_modtype_decl names env pmtd
         in
+        let newenv = Env.update_short_paths newenv in
         Tstr_modtype mtd, [sg], newenv
     | Pstr_open sod ->
         let (_path, newenv, od) = type_open ~toplevel env sod in
+        let newenv = Env.update_short_paths newenv in
         Tstr_open od, [], newenv
     | Pstr_class cl ->
         List.iter
           (fun {pci_name} -> check_name check_type names pci_name)
           cl;
-        let (classes, new_env) = Typeclass.class_declarations env cl in
+        let (classes, newenv) = Typeclass.class_declarations env cl in
+        let newenv = Env.update_short_paths newenv in
         Tstr_class
           (List.map (fun cls ->
                (cls.Typeclass.cls_info,
@@ -1677,12 +1694,13 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
                Sig_type(cls.cls_obj_id, cls.cls_obj_abbr, rs);
                Sig_type(cls.cls_typesharp_id, cls.cls_abbr, rs)])
              classes []),
-        new_env
+        newenv
     | Pstr_class_type cl ->
         List.iter
           (fun {pci_name} -> check_name check_type names pci_name)
           cl;
-        let (classes, new_env) = Typeclass.class_type_declarations env cl in
+        let (classes, newenv) = Typeclass.class_type_declarations env cl in
+        let newenv = Env.update_short_paths newenv in
         Tstr_class_type
           (List.map (fun cl ->
                (cl.Typeclass.clsty_ty_id,
@@ -1701,7 +1719,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
                  Sig_type(decl.clsty_obj_id, decl.clsty_obj_abbr, rs);
                  Sig_type(decl.clsty_typesharp_id, decl.clsty_abbr, rs)])
              classes []),
-        new_env
+        newenv
     | Pstr_include sincl ->
         let smodl = sincl.pincl_mod in
         let modl =
@@ -1712,7 +1730,8 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         let sg = Subst.signature Subst.identity
             (extract_sig_open env smodl.pmod_loc modl.mod_type) in
         List.iter (check_sig_item names loc) sg;
-        let new_env = Env.add_signature sg env in
+        let newenv = Env.add_signature sg env in
+        let newenv = Env.update_short_paths newenv in
         let incl =
           { incl_mod = modl;
             incl_type = sg;
@@ -1720,7 +1739,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
             incl_loc = sincl.pincl_loc;
           }
         in
-        Tstr_include incl, sg, new_env
+        Tstr_include incl, sg, newenv
     | Pstr_extension (ext, _attrs) ->
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
     | Pstr_attribute x ->
@@ -1836,10 +1855,21 @@ let type_package env m p nl =
   in
   let tl' =
     List.map
-      (fun name -> Btype.newgenty (Tconstr (mkpath mp name,[],ref Mnil)))
-      (* beware of interactions with Printtyp and short-path:
-         mp.name may have an arity > 0, cf. PR#7534 *)
-      nl in
+      (fun name ->
+         let path = mkpath mp name in
+         match Env.find_type path env with
+         | decl -> begin
+             match decl.type_params with
+             | [] -> Btype.newgenty (Tconstr (path, [], ref Mnil))
+             | _ ->
+               raise (Error(m.pmod_loc, env,
+                            Package_type_arity(p, modl.mod_type, name)))
+           end
+         | exception Not_found ->
+             raise (Error(m.pmod_loc, env,
+                          Package_type_missing(p, modl.mod_type, name))))
+      nl
+  in
   (* go back to original level *)
   Ctype.end_def ();
   if nl = [] then
@@ -2108,6 +2138,16 @@ let report_error ppf = function
       fprintf ppf
         "This is an alias for module %a, which is missing"
         path p
+  | Package_type_missing(p, mty, lid) ->
+      fprintf ppf
+        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+        %a@;<1 -2>is not included in@ %a@]@ Type %a is missing.@]"
+        Printtyp.modtype mty path p longident lid
+  | Package_type_arity(p, mty, lid) ->
+      fprintf ppf
+        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+        %a@;<1 -2>is not included in@ %a@]@ Type %a has a different arity.@]"
+        Printtyp.modtype mty path p longident lid
 
 let report_error env ppf err =
   Printtyp.wrap_printing_env env (fun () -> report_error ppf err)

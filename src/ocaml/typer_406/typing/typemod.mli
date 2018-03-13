@@ -77,6 +77,8 @@ type error =
   | Recursive_module_require_explicit_type
   | Apply_generative
   | Cannot_scrape_alias of Path.t
+  | Package_type_missing of Path.t * module_type * Longident.t
+  | Package_type_arity of Path.t * module_type * Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
