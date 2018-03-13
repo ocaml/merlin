@@ -302,7 +302,9 @@ let inheritance self_type env ovf concr_meths warn_vals loc parent =
         Some Fresh ->
           let cname =
             match parent with
-              Cty_constr (p, _, _) -> Path.name p
+              Cty_constr (p, _, _) ->
+                let p = Printtyp.shorten_class_type_path env p in
+                Path.name p
             | _ -> "inherited"
           in
           if not (Concr.is_empty over_meths) then
@@ -1700,16 +1702,16 @@ let type_classes define_class approx kind env cls =
   in
   Ctype.init_def (Ident.current_time ());
   Ctype.begin_class_def ();
-  let (res, env) =
+  let (res, newenv) =
     List.fold_left (initial_env define_class approx) ([], env) cls
   in
-  let (res, env) =
-    List.fold_right (class_infos define_class kind) res ([], env)
+  let (res, newenv) =
+    List.fold_right (class_infos define_class kind) res ([], newenv)
   in
   Ctype.end_def ();
-  let res = List.rev_map (final_decl env define_class) res in
+  let res = List.rev_map (final_decl newenv define_class) res in
   let decls = List.fold_right extract_type_decls res [] in
-  let decls = Typedecl.compute_variance_decls env decls in
+  let decls = Typedecl.compute_variance_decls newenv decls in
   let res = List.map2 merge_type_decls res decls in
   let env = List.fold_left (final_env define_class) env res in
   let res = List.map (check_coercions env) res in

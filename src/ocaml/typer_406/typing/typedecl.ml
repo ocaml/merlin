@@ -1729,6 +1729,7 @@ let check_unboxable env loc ty =
   | Tconstr (p, _, _) ->
     let tydecl = Env.find_type p env in
     if tydecl.type_unboxed.unboxed then
+      let p = Printtyp.shorten_type_path env p in
       Location.prerr_warning loc
         (Warnings.Unboxable_type_in_prim_decl (Path.name p))
   | _ -> ()
