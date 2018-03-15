@@ -639,8 +639,26 @@ type pers_struct =
     ps_filename: string;
     ps_flags: pers_flags list }
 
-let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
+type pers_struct_key =
+  {
+    mutable loaded: bool;
+    mutable cell: pers_struct option;
+  }
+
+let persistent_structures : (string, pers_struct_key) Hashtbl.t ref =
   sref (fun () -> Hashtbl.create 17)
+
+let get_persistent_structure label =
+  try Hashtbl.find !persistent_structures label
+  with Not_found ->
+    let key = { loaded = false; cell = None } in
+    Hashtbl.add !persistent_structures label key;
+    key
+
+let has_persistent_structure label =
+  match Hashtbl.find !persistent_structures label with
+  | exception Not_found -> false
+  | key -> key.loaded
 
 (* Consistency between persistent structures *)
 
@@ -701,7 +719,9 @@ let register_pers_for_short_paths ps =
 
 let save_pers_struct crc ps =
   let modname = ps.ps_name in
-  Hashtbl.add !persistent_structures modname (Some ps);
+  let key = get_persistent_structure modname in
+  key.loaded <- true;
+  key.cell <- Some ps;
   register_pers_for_short_paths ps;
   List.iter
     (function
@@ -727,8 +747,26 @@ module Persistent_signature = struct
     | exception Not_found -> None)
 end
 
+type aliased_dependencies = (string * pers_struct_key) list
+
+let extract_aliased_dependencies deps =
+  List.fold_left
+    (fun acc (name, _digest) -> (name, get_persistent_structure name) :: acc)
+    [] deps
+
+let validate_aliased_dependencies deps =
+  List.for_all
+    (fun (name, key) ->
+      let key' = get_persistent_structure name in
+      key == key' || not (key.loaded || key'.loaded) || (
+        key.loaded && key'.loaded &&
+        match key.cell, key'.cell with
+        | Some x, Some y -> Std.lazy_eq x.ps_sig y.ps_sig
+      )
+    deps
+
 exception Cmi_cache_store of
-    module_components * (*pers_typemap ref*)unit * signature lazy_t
+    module_components * aliased_dependencies * signature lazy_t
 
 let acknowledge_pers_struct check modname
       { Persistent_signature.filename; cmi; cmi_cache } =
@@ -742,7 +780,8 @@ let acknowledge_pers_struct check modname
   in
   let comps, ps_sig =
     match !cmi_cache with
-    | Cmi_cache_store (comps, _, ps_sig) -> comps, ps_sig
+    | Cmi_cache_store (comps, deps, ps_sig)
+      when false && validate_aliased_dependencies deps -> comps, ps_sig
     | _ ->
       let comps =
         !components_of_module' ~deprecated ~loc:Location.none
@@ -751,7 +790,7 @@ let acknowledge_pers_struct check modname
                                (Mty_signature sign)
       in
       let ps_sig = lazy (Subst.signature Subst.identity sign) in
-      cmi_cache := Cmi_cache_store (comps, (), ps_sig);
+      cmi_cache := Cmi_cache_store (comps, extract_aliased_dependencies crcs, ps_sig);
       (comps, ps_sig)
   in
   let ps = { ps_name = name;
@@ -776,7 +815,9 @@ let acknowledge_pers_struct check modname
         | Opaque -> add_imported_opaque modname)
     ps.ps_flags;
   if check then check_consistency ps;
-  Hashtbl.add !persistent_structures modname (Some ps);
+  let key = get_persistent_structure modname in
+  key.loaded <- true;
+  key.cell <- Some ps;
   register_pers_for_short_paths ps;
   ps
 
@@ -788,19 +829,18 @@ let read_pers_struct check modname filename =
 
 let find_pers_struct check name =
   if name = "*predef*" then raise Not_found;
-  match Hashtbl.find !persistent_structures name with
-  | Some ps -> ps
-  | None -> raise Not_found
-  | exception Not_found ->
-      let ps =
-        match !Persistent_signature.load ~unit_name:name with
-        | Some ps -> ps
-        | None ->
-          Hashtbl.add !persistent_structures name None;
-          raise Not_found
-      in
-      add_import name;
-      acknowledge_pers_struct check name ps
+  match get_persistent_structure name with
+  | { loaded = true; cell = Some ps } -> ps
+  | { loaded = true; cell = None } -> raise Not_found
+  | key ->
+    key.loaded <- true;
+    let ps =
+      match !Persistent_signature.load ~unit_name:name with
+      | Some ps -> ps
+      | None -> raise Not_found
+    in
+    add_import name;
+    acknowledge_pers_struct check name ps
 
 (* Emits a warning if there is no valid cmi for name *)
 let check_pers_struct name =
@@ -843,7 +883,7 @@ let find_pers_struct name =
   find_pers_struct true name
 
 let check_pers_struct name =
-  if not (Hashtbl.mem !persistent_structures name) then begin
+  if not (has_persistent_structure name) then begin
     (* PR#6843: record the weak dependency ([add_import]) regardless of
        whether the check succeeds, to help make builds more
        deterministic. *)
@@ -868,7 +908,7 @@ let reset_cache_toplevel () =
   (* Delete 'missing cmi' entries from the cache. *)
   let l =
     Hashtbl.fold
-      (fun name r acc -> if r = None then name :: acc else acc)
+      (fun name key acc -> if key.loaded && key.cell = None then name :: acc else acc)
       !persistent_structures []
   in
   List.iter (Hashtbl.remove !persistent_structures) l;
@@ -1457,7 +1497,7 @@ let rec scrape_alias_for_visit env mty =
   match mty with
   | Mty_alias(_, Pident id)
     when Ident.persistent id
-      && not (Hashtbl.mem !persistent_structures (Ident.name id)) -> false
+      && not (has_persistent_structure (Ident.name id)) -> false
   | Mty_alias(_, path) -> (* PR#6600: find_module may raise Not_found *)
       begin try scrape_alias_for_visit env (find_module path env).md_type
       with Not_found -> false
@@ -1487,8 +1527,9 @@ let iter_env proj1 proj2 f env () =
     in iter_env_cont := (path, cont) :: !iter_env_cont
   in
   Hashtbl.iter
-    (fun s pso ->
-      match pso with None -> ()
+    (fun s key ->
+      match key.cell with
+      | None -> ()
       | Some ps ->
           let id = Pident (Ident.create_persistent s) in
           iter_components id id ps.ps_comps)
@@ -1511,7 +1552,7 @@ let same_types env1 env2 =
 
 let used_persistent () =
   let r = ref Concr.empty in
-  Hashtbl.iter (fun s pso -> if pso != None then r := Concr.add s !r)
+  Hashtbl.iter (fun s pso -> if pso.cell != None then r := Concr.add s !r)
     !persistent_structures;
   !r
 
@@ -2342,11 +2383,11 @@ let fold_modules f lid env acc =
       in
       Hashtbl.fold
         (fun name ps acc ->
-          match ps with
-              None -> acc
-            | Some ps ->
-              f name (Pident(Ident.create_persistent name))
-                     (md (Mty_signature (Lazy.force ps.ps_sig))) acc)
+          match ps.cell with
+          | None -> acc
+          | Some ps ->
+            f name (Pident(Ident.create_persistent name))
+                   (md (Mty_signature (Lazy.force ps.ps_sig))) acc)
         !persistent_structures
         acc
     | Some l ->
@@ -2709,11 +2750,11 @@ let check_state_consistency () =
           with Not_found -> None
         in
         let invalid =
-          match filename, ps with
+          match filename, ps.cell with
           | None, None -> false
           | Some filename, Some ps ->
             begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
-              | Cmi_cache_store (_, _, ps_sig) ->
+              | Cmi_cache_store (_, deps, ps_sig) ->
                 not (Std.lazy_eq ps_sig ps.ps_sig)
               | _ -> true
             end
