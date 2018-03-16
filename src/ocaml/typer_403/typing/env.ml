@@ -473,8 +473,7 @@ let save_pers_struct crc ps =
   Consistbl.set !crc_units modname crc ps.ps_filename;
   add_import modname
 
-exception Cmi_cache_store of
-    module_components * pers_typemap ref * signature lazy_t
+exception Cmi_cache_store of pers_typemap ref * signature lazy_t
 
 let read_pers_struct check modname filename =
   add_import modname;
@@ -487,18 +486,18 @@ let read_pers_struct check modname filename =
     List.fold_left (fun acc -> function Deprecated s -> Some s | _ -> acc) None
       flags
   in
-  let comps, ps_typemap, ps_sig = match !cmi_cache with
-    | Cmi_cache_store (comps, ps_typemap, ps_sig) -> comps, ps_typemap, ps_sig
+  let comps =
+    !components_of_module' ~deprecated empty Subst.identity
+      (Pident(Ident.create_persistent name))
+      (Mty_signature sign)
+  in
+  let ps_typemap, ps_sig = match !cmi_cache with
+    | Cmi_cache_store (ps_typemap, ps_sig) -> ps_typemap, ps_sig
     | _ ->
       let ps_typemap = ref None in
-      let comps =
-        !components_of_module' ~deprecated empty Subst.identity
-          (Pident(Ident.create_persistent name))
-          (Mty_signature sign)
-      in
       let ps_sig = lazy (Subst.signature Subst.identity sign) in
-      cmi_cache := Cmi_cache_store (comps, ps_typemap, ps_sig);
-      comps, ps_typemap, ps_sig
+      cmi_cache := Cmi_cache_store (ps_typemap, ps_sig);
+      ps_typemap, ps_sig
   in
   let ps = { ps_name = name;
              ps_sig = ps_sig;
@@ -2485,7 +2484,7 @@ let check_state_consistency () =
             | None, None -> false
             | Some filename, Some ps ->
               begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
-                | Cmi_cache_store (_, _, ps_sig) ->
+                | Cmi_cache_store (_, ps_sig) ->
                   not (Std.lazy_eq ps_sig ps.ps_sig)
                 | _ -> true
               end

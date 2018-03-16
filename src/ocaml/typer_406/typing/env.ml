@@ -765,8 +765,14 @@ let acknowledge_pers_struct check modname
                            (Pident(Ident.create_persistent name))
                            (Mty_signature sign)
   in
-  let ps_sig = lazy (Subst.signature Subst.identity sign) in
-  cmi_cache := Cmi_cache_store ps_sig;
+  let ps_sig =
+    match !cmi_cache with
+    | Cmi_cache_store ps_sig -> ps_sig
+    | _ ->
+      let ps_sig = lazy (Subst.signature Subst.identity sign) in
+      cmi_cache := Cmi_cache_store ps_sig;
+      ps_sig
+  in
   let ps = { ps_name = name;
              ps_sig = ps_sig;
              ps_comps = comps;
@@ -2728,8 +2734,7 @@ let check_state_consistency () =
           | None, None -> false
           | Some filename, Some ps ->
             begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
-              | Cmi_cache_store ps_sig ->
-                not (Std.lazy_eq ps_sig ps.ps_sig)
+              | Cmi_cache_store ps_sig -> not (Std.lazy_eq ps_sig ps.ps_sig)
               | _ -> true
             end
           | _, _ -> true
