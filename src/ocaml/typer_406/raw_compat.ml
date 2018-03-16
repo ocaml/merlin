@@ -152,3 +152,9 @@ let texp_function_cases = function
   | _ -> assert false
 
 let const_string (s, o) = Asttypes.Const_string (s, o)
+
+let dummy_type_scheme desc =
+  { Types. level = 0 ; id = 0 ; desc }
+
+let ctype_instance env scheme =
+  Ctype.instance env scheme

@@ -35,12 +35,13 @@ let print_constructor c =
   match c.cstr_args with
   | [] ->
     Printtyp.tree_of_type_scheme
-      { level = 0 ; id = 0 ; desc = c.cstr_res.desc; scope = None }
+      (Raw_compat.dummy_type_scheme c.cstr_res.desc)
   | args ->
     let desc = Tarrow (Raw_compat.no_label,
-                       { level = 0; id = 0; desc = Ttuple args; scope = None }, c.cstr_res,Cok)
+                       Raw_compat.dummy_type_scheme (Ttuple args),
+                       c.cstr_res, Cok)
     in
-    Printtyp.tree_of_type_scheme { level = 0 ; id = 0 ; desc ; scope = None }
+    Printtyp.tree_of_type_scheme (Raw_compat.dummy_type_scheme desc)
 
 let summary_at pos sum =
   let rec signature_loc =

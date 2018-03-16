@@ -336,14 +336,14 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
           let c = Btype.linked_variables in
           try
             let c' = c () in
-            Ctype.unify_var env ty (Ctype.instance scheme);
+            Ctype.unify_var env ty (Raw_compat.ctype_instance env scheme);
             c () - c'
           with _ ->
             let arity = arrow_arity (-arity) scheme in
             if arity > 0 then begin
               let c' = c () in
               Btype.backtrack snap;
-              let ty' = Ctype.instance scheme in
+              let ty' = Raw_compat.ctype_instance env scheme in
               let ty' = nth_arrow arity ty' in
               try Ctype.unify_var env ty ty'; arity + c () - c'
               with _ -> 1000
