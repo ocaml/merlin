@@ -56,6 +56,8 @@ The options available for better control are as follow:
 
     --with-version-string <str>     Overwrite the version message printed by
                                     merlin when called with -version or -vnum.
+
+    --force-caml-version <str>      will link ocaml/typer to ocaml/typer_<str>
 END
 }
 
