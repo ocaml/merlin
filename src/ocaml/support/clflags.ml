@@ -8,7 +8,17 @@ let real_paths          = ref true
 let recursive_types     = ref false
 let strict_sequence     = ref false
 let applicative_functors = ref true
-let unsafe_string       = ref true
+
+let unsafe_string =
+  ref (
+    match My_config.ocamlversion with
+    | `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3
+    | `OCaml_4_03_0
+    | `OCaml_4_04_0
+    | `OCaml_4_05_0 -> true
+    | _ -> false (* -safe-string became the new default in 4.06 *)
+  )
+
 let nopervasives        = ref false
 let strict_formats      = ref false
 let open_modules        = ref []
