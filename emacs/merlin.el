@@ -506,7 +506,7 @@ return (LOC1 . LOC2)."
                  args))
     ;; Log last commands
     (setq merlin-debug-last-commands
-          (cons (cons (cons binary args) nil) merlin-debug-last-commands))
+          (cons (cons binary args) merlin-debug-last-commands))
     (let ((cdr (nthcdr 5 merlin-debug-last-commands)))
       (when cdr (setcdr cdr nil)))
     ;; Call merlin process
