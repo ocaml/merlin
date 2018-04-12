@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(library
+ ((name analysis)
+  (wrapped false)
+  (libraries (utils typer kernel))))

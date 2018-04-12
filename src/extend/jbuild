@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+(library
+ ((name extend)
+  (wrapped false)
+  (modules (extend_main extend_protocol extend_driver))
+  (libraries (typer))))

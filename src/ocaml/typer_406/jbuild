@@ -1,0 +1,26 @@
+(jbuild_version 1)
+
+(rule (copy# ../support/cmt_cache.ml cmt_cache.ml))
+(rule (copy# ../support/fake.mli fake.mli))
+(rule (copy# ../support/fake.ml fake.ml))
+
+; only used in kernel
+(rule (copy# ../support/lexer_ident.mli lexer_ident.mli))
+(rule (copy# ../support/lexer_ident.ml lexer_ident.ml))
+
+(library
+ ((name typer_406)
+  (wrapped false)
+  (modules (lexer_raw
+            parser_explain
+            parser_printer
+            parser_raw
+            parser_recover
+            raw_compat
+            tail_analysis
+            tast_helper
+            typer_raw
+            cmt_cache
+            fake
+            lexer_ident))
+  (libraries (typing_406))))

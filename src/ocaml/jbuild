@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(library
+ ((name typer)
+  (wrapped false)
+  (libraries (typer_406))))

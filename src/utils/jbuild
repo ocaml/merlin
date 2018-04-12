@@ -1,0 +1,12 @@
+(jbuild_version 1)
+
+(rule (copy# ../ocaml/typer_406/printf_compat.ml printf_compat.ml))
+
+(library
+ ((name utils)
+  (wrapped false)
+  (libraries (yojson
+              (select sturgeon_stub.ml from
+                      (sturgeon -> ../sturgeon_stub/sturgeon_stub.ml)
+                      (!sturgeon -> ../sturgeon_null/sturgeon_stub.ml))
+              findlib unix str))))

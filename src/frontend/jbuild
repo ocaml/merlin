@@ -1,0 +1,9 @@
+(jbuild_version 1)
+
+(copy_files# new/*.ml*)
+(copy_files# old/*.ml*)
+
+(executable
+ ((name ocamlmerlin_server)
+  (public_name ocamlmerlin-server.exe)
+  (libraries (utils platform kernel config analysis))))
