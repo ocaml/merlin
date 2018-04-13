@@ -15,6 +15,11 @@ ifdef WITH_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
 endif
 
+FINDLIB_PACKAGE=
+ifdef WITH_FINDLIB
+	FINDLIB_PACKAGE=findlib
+endif
+
 ifndef WITHOUT_DEBUG
 	OCAMLFLAGS += -g
 	OCAMLLDFLAGS += -g
@@ -27,6 +32,7 @@ THREADS  = $(MERLIN_NEED_THREADS)
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES_LIB = \
+	src/utils/findlib_stub.ml         \
 	src/config/my_config.ml           \
 	src/platform/platform_misc.c      \
 	src/platform/os_ipc_stub.c        \
@@ -260,16 +266,16 @@ SOURCES_LIB = \
 	src/frontend/query_commands.mli   \
 	src/frontend/query_commands.ml
 
-PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
+PACKS = str $(FINDLIB_PACKAGE) yojson unix $(MERLIN_STURGEON_PACKAGE)
 
 ifeq ($(PROJECT),test)
 	RESULT = ocamlmerlin-test
-	
+
 	SOURCES = $(SOURCES_LIB) \
 	          src/frontend/test/ocamlmerlin_test.ml
 else
 	RESULT = ocamlmerlin-server$(RESULT_SUFFIX)
-	
+
 	SOURCES = $(SOURCES_LIB)                    \
 						src/frontend/old/old_IO.mli       \
 						src/frontend/old/old_IO.ml        \

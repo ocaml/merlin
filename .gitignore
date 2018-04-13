@@ -22,6 +22,7 @@ ocamlmerlin-test.exe
 config.iss
 ._d
 ._ncdi
+src/utils/findlib_stub.ml
 
 # Ignore garbage files from editors
 *.un~

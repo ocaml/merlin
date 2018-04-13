@@ -1,0 +1,12 @@
+exception No_such_package of string * string
+let err pkg = raise (No_such_package (pkg, "no findlib support"))
+let init
+    ?env_ocamlpath:_ ?env_ocamlfind_destdir:_ ?env_ocamlfind_metadir:_
+    ?env_ocamlfind_commands:_ ?env_ocamlfind_ignore_dups_in:_
+    ?env_camllib:_ ?env_ldconf:_ ?config:_ ?toolchain:_ () = ()
+let ocaml_stdlib () = ""
+let package_directory pkg = err pkg
+let resolve_path ?base:_ pkg = err pkg
+let package_property _ pkg _ = err pkg
+let package_deep_ancestors _ = function [] -> [] | pkg :: _ -> err pkg
+let list_packages () = []

@@ -4,7 +4,7 @@
 # ===============
 
 # [check_package $pkg $msg]
-# - succeeds if findlib package $pkg is installed 
+# - succeeds if findlib package $pkg is installed
 # - or sets EXIT=1 and displays $msg
 check_package()
 {
@@ -58,6 +58,8 @@ The options available for better control are as follow:
                                     merlin when called with -version or -vnum.
 
     --force-caml-version <str>      will link ocaml/typer to ocaml/typer_<str>
+
+    --without-findlib       Disable findlib support.
 END
 }
 
@@ -87,6 +89,7 @@ SHARE_DIR=/usr/local/share
 VIM_DIR=/usr/local/share/ocamlmerlin/vim
 WITH_BIN_ANNOT=""
 VERSION_STRING=""
+WITH_FINDLIB=1
 CAML_VERSION=
 EXIT=0
 
@@ -127,6 +130,10 @@ while [ -n "$1" ]; do
     --force-caml-version)
       shift 1
       CAML_VERSION="$1"
+      ;;
+    --without-findlib)
+      shift 1
+      WITH_FINDLIB=""
       ;;
     --help|-help|-h)
       usage
@@ -170,15 +177,15 @@ case "$CMI_NUMBER" in
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.0"
       filter_file src/ocaml/typer_402/typing/typecore.ml \
-        grep -v -F '| Scan_next_char 
-| Ignored_scan_next_char 
-| Any_ty 
+        grep -v -F '| Scan_next_char
+| Ignored_scan_next_char
+| Any_ty
 | Custom '
       OCAML_VERSION_VAL='`OCaml_4_02_0'
     elif [ "x$FULL_VERSION" = "x4.02.1" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
       filter_file src/ocaml/typer_402/typing/typecore.ml \
-        grep -v -F '| Any_ty 
+        grep -v -F '| Any_ty
 | Custom '
       OCAML_VERSION_VAL='`OCaml_4_02_1'
     elif [ "x$FULL_VERSION" = "x4.02.2" ]; then
@@ -225,8 +232,8 @@ fi
 
 if [ "x1.5.1" = "x$(ocamlfind query findlib -format '%v' | tr -d '\015')" ]; then
   printf "\nOld version of findlib detected (1.5.1), patching\n"
-  filter_file src/kernel/mconfig_dot.ml \
-     sed -e 's/Findlib\.resolve_path ~base:d ~explicit:true/Findlib.resolve_path ~base:d/'
+  filter_file src/utils/findlib_stub.ml.ok \
+     sed -e 's/Findlib\.resolve_path ~explicit:true/Findlib.resolve_path/'
 fi
 
 if ocamlfind ocamlopt; then
@@ -234,6 +241,14 @@ if ocamlfind ocamlopt; then
 else
   NATIVE=false
 fi
+
+if [ -z $WITH_FINDLIB ]; then
+    FINDLIB_STUB_VERSION=dummy
+else
+    FINDLIB_STUB_VERSION=ok
+fi
+echo "# 1 \"findlib_stub.ml.$FINDLIB_STUB_VERSION\"" > src/utils/findlib_stub.ml
+cat src/utils/findlib_stub.ml.$FINDLIB_STUB_VERSION >> src/utils/findlib_stub.ml
 
 ## Sturgeon version check
 ## ======================
@@ -253,7 +268,7 @@ else
 fi
 
 MERLIN_CONFIG_ENV="
-export MERLIN_NEED_THREADS=${NEED_THREADS} 
+export MERLIN_NEED_THREADS=${NEED_THREADS}
 export MERLIN_STURGEON_PACKAGE=${STURGEON_PACKAGE}
 "
 
@@ -306,6 +321,7 @@ System config:
   Native code: $NATIVE
   Sturgeon version: $STURGEON_VERSION_MESSAGE
   Need threads: $NEED_THREADS_MESSAGE
+  findlib support: $(if [ -z $WITH_FINDLIB ]; then echo no; else echo yes; fi)
 
 Will install:
   ocamlmerlin binary in: $BIN_DIR
@@ -330,6 +346,7 @@ SHARE_DIR=$SHARE_DIR
 VIM_DIR=$VIM_DIR
 NATIVE=$NATIVE
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
+WITH_FINDLIB=$WITH_FINDLIB
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 export EXE=$EXE
 CCOMP_TYPE=$CCOMP_TYPE
