@@ -268,7 +268,7 @@ let load ~stdlib filenames =
 (* FIXME: Move elsewhere, processing of findlib packages*)
 
 let ppx_of_package ?(predicates=[]) setup pkg =
-  let d = Findlib.package_directory pkg in
+  let d = Findlib_stub.package_directory pkg in
   (* Determine the 'ppx' property: *)
   let in_words ~comma s =
     (* splits s in words separated by commas and/or whitespace *)
@@ -286,9 +286,9 @@ let ppx_of_package ?(predicates=[]) setup pkg =
     in
     split 0 0
   in
-  let resolve_path = Findlib.resolve_path ~base:d ~explicit:true in
+  let resolve_path = Findlib_stub.resolve_path ~base:d in
   let ppx =
-    try Some(resolve_path (Findlib.package_property predicates pkg "ppx"))
+    try Some(resolve_path (Findlib_stub.package_property predicates pkg "ppx"))
     with Not_found -> None
   and ppxopts =
     try
@@ -348,13 +348,13 @@ let set_findlib_path =
         "findlib_conf = %s; findlib_path = %s\n"
         conf
         (String.concat ~sep:path_separator path);
-      Findlib.init ?env_ocamlpath ?config ?toolchain ();
+      Findlib_stub.init ?env_ocamlpath ?config ?toolchain ();
       findlib_cache := key
     end
 
 let standard_library ?conf ?path ?toolchain () =
   set_findlib_path ?conf ?path ?toolchain ();
-  Findlib.ocaml_stdlib ()
+  Findlib_stub.ocaml_stdlib ()
 
 let is_package_optional name =
   let last = String.length name - 1 in
@@ -369,7 +369,7 @@ let path_of_packages ?conf ?path ?toolchain packages =
   let recorded_packages, invalid_packages =
     List.partition packages
       ~f:(fun name ->
-          match Findlib.package_directory (remove_option name) with
+          match Findlib_stub.package_directory (remove_option name) with
           | _ -> true
           | exception _ -> false)
   in
@@ -388,16 +388,16 @@ let path_of_packages ?conf ?path ?toolchain packages =
   in
   let recorded_packages = List.map ~f:remove_option recorded_packages in
   let packages, failures =
-    match Findlib.package_deep_ancestors [] recorded_packages with
+    match Findlib_stub.package_deep_ancestors [] recorded_packages with
     | packages -> packages, failures
     | exception exn ->
       [], (sprintf "Findlib failure: %S" (Printexc.to_string exn) :: failures)
   in
   let packages = List.filter_dup packages in
-  let path = List.map ~f:Findlib.package_directory packages in
+  let path = List.map ~f:Findlib_stub.package_directory packages in
   let ppxs = List.fold_left ~f:ppx_of_package packages ~init:Ppxsetup.empty in
   path, ppxs, failures
 
 let list_packages ?conf ?path ?toolchain () =
   set_findlib_path ?conf ?path ?toolchain ();
-  Fl_package_base.list_packages ()
+  Findlib_stub.list_packages ()

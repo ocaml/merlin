@@ -1,0 +1,8 @@
+exception No_such_package = Findlib.No_such_package
+let init = Findlib.init
+let ocaml_stdlib = Findlib.ocaml_stdlib
+let package_directory = Findlib.package_directory
+let resolve_path = Findlib.resolve_path ~explicit:true
+let package_property = Findlib.package_property
+let package_deep_ancestors = Findlib.package_deep_ancestors
+let list_packages = Fl_package_base.list_packages

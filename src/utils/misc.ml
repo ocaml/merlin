@@ -15,7 +15,7 @@
 
 open Std
 
-let () = Findlib.init ()
+let () = Findlib_stub.init ()
 
 (* Errors *)
 

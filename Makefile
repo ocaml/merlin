@@ -24,7 +24,7 @@ VIM_DIR := $(DESTDIR)$(VIM_DIR)
 #### Invocation of OCamlMakefile
 
 OCAMLMAKEFILE= $(MAKE) -f Makefile.ocamlmakefile \
-							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITHOUT_DEBUG="$(WITHOUT_DEBUG)"
+							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITH_FINDLIB="$(WITH_FINDLIB)" WITHOUT_DEBUG="$(WITHOUT_DEBUG)"
 
 ifdef VERBOSE
 	OCAMLMAKEFILE += REALLY_QUIET=0
@@ -119,7 +119,7 @@ message:
 	@echo "-------------------"
 	@echo "Add $(VIM_DIR) to your runtime path, e.g.:"
 	@echo "  :set rtp+=$(VIM_DIR)"
-	@echo 
+	@echo
 	@echo "Quick setup for EMACS"
 	@echo "-------------------"
 	@echo "Add $(SHARE_DIR)/emacs/site-lisp to your runtime path, e.g.:"
