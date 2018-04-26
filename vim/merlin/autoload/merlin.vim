@@ -536,10 +536,10 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
   if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
-    map  <buffer> <LocalLeader>t :MerlinTypeOf<return>
-    map  <buffer> <LocalLeader>n :MerlinGrowEnclosing<return>
-    map  <buffer> <LocalLeader>p :MerlinShrinkEnclosing<return>
-    vmap <buffer> <LocalLeader>t :MerlinTypeOfSel<return>
+    map  <silent><buffer> <LocalLeader>t :MerlinTypeOf<return>
+    map  <silent><buffer> <LocalLeader>n :MerlinGrowEnclosing<return>
+    map  <silent><buffer> <LocalLeader>p :MerlinShrinkEnclosing<return>
+    vmap <silent><buffer> <LocalLeader>t :MerlinTypeOfSel<return>
   endif
 
   """ Destruct  ----------------------------------------------------------------
