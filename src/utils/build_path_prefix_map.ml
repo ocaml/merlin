@@ -65,8 +65,9 @@ let encode_map map =
   List.map encode_elem map
   |> String.concat ":"
 
+exception Shortcut of error_message
+
 let decode_map str =
-  let exception Shortcut of error_message in
   let decode_or_empty = function
     | "" -> None
     | pair ->
@@ -76,9 +77,8 @@ let decode_map str =
       end
   in
   let pairs = String.split_on_char ':' str in
-  match List.map decode_or_empty pairs with
-  | exception (Shortcut err) -> Error err
-  | map -> Ok map
+  try Ok (List.map decode_or_empty pairs)
+  with Shortcut err -> Error err
 
 let rewrite_opt prefix_map path =
   let is_prefix = function
@@ -88,11 +88,12 @@ let rewrite_opt prefix_map path =
       && String.equal source (String.sub path 0 (String.length source))
   in
   match
-    List.find is_prefix
-      (* read key/value pairs from right to left, as the spec demands *)
-      (List.rev prefix_map)
+    try
+      List.find is_prefix
+        (* read key/value pairs from right to left, as the spec demands *)
+        (List.rev prefix_map)
+    with Not_found -> None
   with
-  | exception Not_found -> None
   | None -> None
   | Some { source; target } ->
       Some (target ^ (String.sub path (String.length source)
