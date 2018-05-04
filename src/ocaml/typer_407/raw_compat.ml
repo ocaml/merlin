@@ -154,7 +154,7 @@ let texp_function_cases = function
 let const_string (s, o) = Asttypes.Const_string (s, o)
 
 let dummy_type_scheme desc =
-  { Types. level = 0 ; id = 0 ; desc }
+  { Types. level = 0 ; id = 0 ; scope = None; desc }
 
-let ctype_instance env scheme =
-  Ctype.instance env scheme
+let ctype_instance _env scheme =
+  Ctype.instance scheme

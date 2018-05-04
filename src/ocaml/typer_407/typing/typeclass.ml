@@ -75,6 +75,7 @@ type error =
   | Mutability_mismatch of string * mutable_flag
   | No_overriding of string * string
   | Duplicate of string * string
+  | Closing_self_type of type_expr
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -236,8 +237,7 @@ let rc node =
 (* Enter a value in the method environment only *)
 let enter_met_env ?check loc lab kind ty val_env met_env par_env =
   let (id, val_env) =
-    Env.enter_value lab {val_type = ty;
-                         val_kind = Val_unbound Val_unbound_instance_variable;
+    Env.enter_value lab {val_type = ty; val_kind = Val_unbound;
                          val_attributes = [];
                          Types.val_loc = loc} val_env
   in
@@ -245,20 +245,18 @@ let enter_met_env ?check loc lab kind ty val_env met_env par_env =
    Env.add_value ?check id {val_type = ty; val_kind = kind;
                             val_attributes = [];
                             Types.val_loc = loc} met_env,
-   Env.add_value id {val_type = ty;
-                     val_kind = Val_unbound Val_unbound_instance_variable;
+   Env.add_value id {val_type = ty; val_kind = Val_unbound;
                      val_attributes = [];
                      Types.val_loc = loc} par_env)
 
 (* Enter an instance variable in the environment *)
 let enter_val cl_num vars inh lab mut virt ty val_env met_env par_env loc =
-  let instance = Ctype.instance val_env in
   let (id, virt) =
     try
       let (id, mut', virt', ty') = Vars.find lab !vars in
       if mut' <> mut then
         raise (Error(loc, val_env, Mutability_mismatch(lab, mut)));
-      Ctype.unify val_env (instance ty) (instance ty');
+      Ctype.unify val_env (Ctype.instance ty) (Ctype.instance ty');
       (if not inh then Some id else None),
       (if virt' = Concrete then virt' else virt)
     with
@@ -783,6 +781,15 @@ and class_field_aux self_loc cl_num self_type meths vars
   | Pcf_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
+(* N.B. the self type of a final object type doesn't contain a dummy method in
+   the beginning.
+   We only explicitely add a dummy method to class definitions (and class (type)
+   declarations)), which are later removed (made absent) by [final_decl].
+
+   If we ever find a dummy method in a final object self type, it means that
+   somehow we've unified the self type of the object with the self type of a not
+   yet finished class.
+   When this happens, we cannot close the object type and must error. *)
 and class_structure cl_num final val_env met_env loc
   { pcstr_self = spat; pcstr_fields = str } =
   (* Environment for substructures *)
@@ -791,11 +798,15 @@ and class_structure cl_num final val_env met_env loc
   (* Location of self. Used for locations of self arguments *)
   let self_loc = {spat.ppat_loc with Location.loc_ghost = true} in
 
-  (* Self type, with a dummy method preventing it from being closed/escaped. *)
-  let self_type = Ctype.newvar () in
-  Ctype.unify val_env
-    (Ctype.filter_method val_env dummy_method Private self_type)
-    (Ctype.newty (Ttuple []));
+  let self_type = Ctype.newobj (Ctype.newvar ()) in
+
+  (* Adding a dummy method to the self type prevents it from being closed /
+     escaping.
+     That isn't needed for objects though. *)
+  if not final then
+    Ctype.unify val_env
+      (Ctype.filter_method val_env dummy_method Private self_type)
+      (Ctype.newty (Ttuple []));
 
   (* Private self is used for private method calls *)
   let private_self = if final then Ctype.newvar () else self_type in
@@ -852,7 +863,10 @@ and class_structure cl_num final val_env met_env loc
   if final then begin
     (* Unify private_self and a copy of self_type. self_type will not
        be modified after this point *)
-    Ctype.close_object self_type;
+    begin try Ctype.close_object self_type
+    with Ctype.Unify [] ->
+      raise(Error(loc, val_env, Closing_self_type self_type))
+    end;
     let mets = virtual_methods {sign with csig_self = self_type} in
     let vals =
       Vars.fold
@@ -863,13 +877,7 @@ and class_structure cl_num final val_env met_env loc
     let self_methods =
       List.fold_right
         (fun (lab,kind,ty) rem ->
-          if lab = dummy_method then
-            (* allow public self and private self to be unified *)
-            match Btype.field_kind_repr kind with
-              Fvar r -> Btype.set_kind r Fabsent; rem
-            | _ -> rem
-          else
-            Ctype.newty(Tfield(lab, Btype.copy_kind kind, ty, rem)))
+           Ctype.newty(Tfield(lab, Btype.copy_kind kind, ty, rem)))
         methods (Ctype.newty Tnil) in
     begin try
       Ctype.unify val_env private_self
@@ -885,7 +893,7 @@ and class_structure cl_num final val_env met_env loc
     (* Generalize the spine of methods accessed through self *)
     Meths.iter (fun _ (_,ty) -> Ctype.generalize_spine ty) ms;
     meths :=
-      Meths.map (fun (id,ty) -> (id, Ctype.generic_instance val_env ty)) ms;
+      Meths.map (fun (id,ty) -> (id, Ctype.generic_instance ty)) ms;
     (* But keep levels correct on the type of self *)
     Meths.iter (fun _ (_,ty) -> Ctype.unify val_env ty (Ctype.newvar ())) ms
   end;
@@ -1010,7 +1018,7 @@ and class_expr_aux cl_num val_env met_env scl =
              {exp_desc =
               Texp_ident(path, mknoloc (Longident.Lident (Ident.name id)), vd);
               exp_loc = Location.none; exp_extra = [];
-              exp_type = Ctype.instance val_env' vd.val_type;
+              exp_type = Ctype.instance vd.val_type;
               exp_attributes = []; (* check *)
               exp_env = val_env'})
           end
@@ -1165,7 +1173,7 @@ and class_expr_aux cl_num val_env met_env scl =
                {exp_desc =
                 Texp_ident(path, mknoloc(Longident.Lident (Ident.name id)),vd);
                 exp_loc = Location.none; exp_extra = [];
-                exp_type = Ctype.instance val_env vd.val_type;
+                exp_type = Ctype.instance vd.val_type;
                 exp_attributes = [];
                 exp_env = val_env;
                }
@@ -1283,7 +1291,8 @@ let temp_abbrev loc env id arity =
        type_private = Public;
        type_manifest = Some ty;
        type_variance = Misc.replicate_list Variance.full arity;
-       type_newtype_level = None;
+       type_is_newtype = false;
+       type_expansion_scope = None;
        type_loc = loc;
        type_attributes = []; (* or keep attrs from the class decl? *)
        type_immediate = false;
@@ -1402,7 +1411,9 @@ let class_infos define_class kind
   begin
     let ty = Ctype.self_type obj_type in
     Ctype.hide_private_methods ty;
-    Ctype.close_object ty;
+    begin try Ctype.close_object ty
+    with Ctype.Unify [] -> raise(Error(cl.pci_loc, env, Closing_self_type ty))
+    end;
     begin try
       List.iter2 (Ctype.unify env) obj_params obj_params'
     with Ctype.Unify _ ->
@@ -1447,7 +1458,7 @@ let class_infos define_class kind
   begin try
     Ctype.unify env
       (constructor_type constr obj_type)
-      (Ctype.instance env constr_type)
+      (Ctype.instance constr_type)
   with Ctype.Unify trace ->
     raise(Error(cl.pci_loc, env,
                 Constructor_type_mismatch (cl.pci_name.txt, trace)))
@@ -1518,7 +1529,7 @@ let class_infos define_class kind
      cty_new =
        begin match cl.pci_virt with
        | Virtual  -> None
-       | Concrete -> Some (Ctype.instance env constr_type)
+       | Concrete -> Some (Ctype.instance constr_type)
        end;
      cty_loc = cl.pci_loc;
      cty_attributes = cl.pci_attributes;
@@ -1531,7 +1542,8 @@ let class_infos define_class kind
      type_private = Public;
      type_manifest = Some obj_ty;
      type_variance = List.map (fun _ -> Variance.full) obj_params;
-     type_newtype_level = None;
+     type_is_newtype = false;
+     type_expansion_scope = None;
      type_loc = cl.pci_loc;
      type_attributes = []; (* or keep attrs from cl? *)
      type_immediate = false;
@@ -1550,7 +1562,8 @@ let class_infos define_class kind
      type_private = Public;
      type_manifest = Some cl_ty;
      type_variance = List.map (fun _ -> Variance.full) cl_params;
-     type_newtype_level = None;
+     type_is_newtype = false;
+     type_expansion_scope = None;
      type_loc = cl.pci_loc;
      type_attributes = []; (* or keep attrs from cl? *)
      type_immediate = false;
@@ -1568,6 +1581,21 @@ let final_decl env define_class
   begin try Ctype.collapse_conj_params env clty.cty_params
   with Ctype.Unify trace ->
     raise(Error(cl.pci_loc, env, Non_collapsable_conjunction (id, clty, trace)))
+  end;
+
+  (* make the dummy method disappear *)
+  begin
+    let self_type = Ctype.self_type clty.cty_type in
+    let methods, _ =
+      Ctype.flatten_fields
+        (Ctype.object_fields (Ctype.expand_head env self_type))
+    in
+    List.iter (fun (lab,kind,_) ->
+      if lab = dummy_method then
+        match Btype.field_kind_repr kind with
+          Fvar r -> Btype.set_kind r Fabsent
+        | _ -> ()
+    ) methods
   end;
 
   List.iter Ctype.generalize clty.cty_params;
@@ -1768,7 +1796,7 @@ let rec unify_parents env ty cl =
       begin try
         let decl = Env.find_class p env in
         let _, body = Ctype.find_cltype_for_path env decl.cty_path in
-        Ctype.unify env ty (Ctype.instance env body)
+        Ctype.unify env ty (Ctype.instance body)
       with
         Not_found -> ()
       | _exn -> assert false
@@ -1976,9 +2004,16 @@ let report_error env ppf = function
   | Duplicate (kind, name) ->
       fprintf ppf "@[The %s `%s'@ has multiple definitions in this object@]"
                     kind name
+  | Closing_self_type self ->
+    fprintf ppf
+      "@[Cannot close type of object literal:@ %a@,\
+       it has been unified with the self type of a class that is not yet@ \
+       completely defined.@]"
+      Printtyp.type_scheme self
 
 let report_error env ppf err =
-  Printtyp.wrap_printing_env env (fun () -> report_error env ppf err)
+  Printtyp.wrap_printing_env
+    env (fun () -> report_error env ppf err)
 
 let () =
   Location.register_error_of_exn

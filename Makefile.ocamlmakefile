@@ -55,6 +55,8 @@ SOURCES_LIB = \
 	src/utils/sexp.ml                 \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
+	src/utils/build_path_prefix_map.mli \
+	src/utils/build_path_prefix_map.ml  \
 	src/ocaml/support/identifiable.mli \
 	src/ocaml/support/identifiable.ml  \
 	src/ocaml/support/natural.mli     \

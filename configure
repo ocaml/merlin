@@ -155,7 +155,7 @@ check_package yojson "Install yojson"
 OCAML_VERSION="403"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
 OCAML_VERSION_VAL='`OCaml_4_03_0'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 | `OCaml_4_06_0 | `OCaml_unknown ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 | `OCaml_4_05_0 | `OCaml_4_06_0 | `OCaml_4_07_0 | `OCaml_unknown ]'
 
 MAGIC_NUMBERS=$(ocamlfind c -config | grep _magic_number | tr -d '\015')
 CMI_NUMBER=$(echo "$MAGIC_NUMBERS" | sed -ne "s/cmi_magic_number: //p")
@@ -211,6 +211,12 @@ case "$CMI_NUMBER" in
     OCAML_VERSION="406"
     OCAML_VERSION_MESSAGE="OCaml 4.06.0"
     OCAML_VERSION_VAL='`OCaml_4_06_0'
+    ;;
+
+  "Caml1999I023")
+    OCAML_VERSION="407"
+    OCAML_VERSION_MESSAGE="OCaml 4.07.0"
+    OCAML_VERSION_VAL='`OCaml_4_07_0'
     ;;
 esac
 

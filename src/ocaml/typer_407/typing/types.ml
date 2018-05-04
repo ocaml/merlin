@@ -22,6 +22,7 @@ open Asttypes
 type type_expr =
   { mutable desc: type_desc;
     mutable level: int;
+    mutable scope: int option;
     id: int }
 
 and type_desc =
@@ -104,11 +105,7 @@ and value_kind =
                                         (* Self *)
   | Val_anc of (string * Ident.t) list * string
                                         (* Ancestor *)
-  | Val_unbound of value_unbound_reason (* Unbound variable *)
-
-and value_unbound_reason =
-  | Val_unbound_instance_variable
-  | Val_unbound_ghost_recursive
+  | Val_unbound                         (* Unbound variable *)
 
 (* Variance *)
 
@@ -149,7 +146,8 @@ type type_declaration =
     type_private: private_flag;
     type_manifest: type_expr option;
     type_variance: Variance.t list;
-    type_newtype_level: (int * int) option;
+    type_is_newtype: bool;
+    type_expansion_scope: int option;
     type_loc: Location.t;
     type_attributes: Parsetree.attributes;
     type_immediate: bool;
