@@ -24,8 +24,6 @@ exception Fatal_error of string * Printexc.raw_backtrace
 let fatal_error msg =
   raise (Fatal_error (msg, Printexc.get_callstack 50))
 
-let fatal_errorf fmt = Format.kasprintf fatal_error fmt
-
 (* Exceptions *)
 
 let try_finally work cleanup =

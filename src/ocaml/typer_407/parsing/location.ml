@@ -175,9 +175,11 @@ let rewrite_absolute_path =
       | encoded_map ->
         match Build_path_prefix_map.decode_map encoded_map with
           | Error err ->
-              Misc.fatal_errorf
-                "Invalid value for the environment variable \
-                 BUILD_PATH_PREFIX_MAP: %s" err
+              Misc.fatal_error (
+                Printf.sprintf
+                  "Invalid value for the environment variable \
+                   BUILD_PATH_PREFIX_MAP: %s" err
+              )
           | Ok map -> map_cache := Some map
     end;
     match !map_cache with
