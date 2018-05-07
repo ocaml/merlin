@@ -76,8 +76,8 @@ let decode_map str =
         | Error err -> raise (Shortcut err)
       end
   in
-  let pairs = String.split_on_char ':' str in
-  try Ok (List.map decode_or_empty pairs)
+  let pairs = Misc.rev_string_split ~on:':' str in
+  try Ok (List.rev_map decode_or_empty pairs)
   with Shortcut err -> Error err
 
 let rewrite_opt prefix_map path =
