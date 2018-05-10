@@ -304,7 +304,24 @@ module Utils = struct
         | File.CMT _ | File.CMTI _ -> !loadpath
 end
 
-type context = Type | Expr | Patt of Types.type_expr | Unknown | Label
+module Context = struct
+  type t =
+    | Expr
+    | Label
+    | Module_type
+    | Patt of Types.type_expr
+    | Type
+    | Unknown
+
+  let to_string = function
+    | Expr -> "expression"
+    | Label -> "record field"
+    | Module_type -> "module type"
+    | Patt _ -> "pattern"
+    | Type -> "type"
+    | Unknown -> "unknown"
+end
+
 exception Context_mismatch
 
 let rec locate ~config ?pos path trie =
@@ -577,8 +594,9 @@ let recover ident =
   | None -> assert false
   | Some loc -> `Found (loc, None)
 
-let namespaces = function
+let namespaces : Context.t -> _ = function
   | Type          -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
+  | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
   | Expr | Patt _ -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
   | Label         -> [ `Labels; `Mod ]
@@ -589,7 +607,7 @@ let tag namespace = Typedtrie.tag_path ~namespace
 
 let get_type_name ctxt =
   match ctxt with
-  | Patt t ->
+  | Context.Patt t ->
     begin match t.Types.desc with
     | Types.Tvar _ | Types.Tarrow _ | Types.Ttuple _ | Types.Tobject _
     | Types.Tfield _ | Types.Tnil | Types.Tlink _ | Types.Tsubst _
@@ -689,6 +707,10 @@ let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
 
 let inspect_pattern ~pos ~parent p =
   let open Typedtree in
+  let open Context in
+  logfmt "inspect_context"
+    (fun fmt -> Format.fprintf fmt "current pattern is: %a"
+                  (Printtyped.pattern 0) p);
   match p.pat_desc with
   | Tpat_any -> None
   | Tpat_var _ ->
@@ -722,7 +744,7 @@ let inspect_pattern ~pos ~parent p =
        Oh well. *)
     Some (Patt p.pat_type)
 
-let inspect_context browse path pos =
+let inspect_context browse path pos : Context.t option =
   match Mbrowse.enclosing pos browse with
   | [] ->
     logf "inspect_context" "no enclosing around: %a" Lexing.print_position pos;
@@ -731,19 +753,17 @@ let inspect_context browse path pos =
     let open Browse_raw in
     let node = Browse_tree.of_browse enclosings in
     let parent = Option.map (Mbrowse.drop_leaf enclosings) ~f:Browse_tree.of_browse in
+    logf "inspect_context" "current node is: %s"
+      (string_of_node node.Browse_tree.t_node);
     match node.Browse_tree.t_node with
-    | Pattern p ->
-      logfmt "inspect_context"
-        (fun fmt -> Format.fprintf fmt "current node is: %a"
-            (Printtyped.pattern 0) p);
-      inspect_pattern ~pos ~parent p
+    | Pattern p -> inspect_pattern ~pos ~parent p
     | Value_description _
     | Type_declaration _
     | Extension_constructor _
     | Module_binding_name _
-    | Module_declaration_name _ as node ->
-      logf "inspect_context" "current node is : %s" (string_of_node node);
+    | Module_declaration_name _ ->
       None
+    | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
     | Expression e ->
       begin match e.Typedtree.exp_desc with
@@ -763,6 +783,7 @@ let from_string ~config ~env ~local_defs ~pos switch path =
     log "from_string" "already at origin, doing nothing" ;
     `At_origin
   | Some ctxt ->
+    logf "inspect_context" "inferred context: %s" (Context.to_string ctxt);
     logf "from_string" "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
     let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
