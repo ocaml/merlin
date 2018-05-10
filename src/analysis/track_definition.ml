@@ -712,26 +712,8 @@ let inspect_pattern ~pos ~parent p =
     (fun fmt -> Format.fprintf fmt "current pattern is: %a"
                   (Printtyped.pattern 0) p);
   match p.pat_desc with
-  | Tpat_any -> None
-  | Tpat_var _ ->
-    Option.bind parent ~f:(fun parent ->
-      match parent.Browse_tree.t_node with
-      | Browse_raw.Pattern { pat_desc = Tpat_record (l, _); _ } ->
-        let lid, _, _ = List.find l ~f:(fun (_,_,pat) -> pat == p) in
-        let open Location in
-        if (Location_aux.compare_pos lid.loc.loc_start p.pat_loc = 0) then
-          (* { ..; pun[n]ed; ... } *)
-          Some Label
-        else (
-          if Location_aux.compare_pos pos p.pat_loc = 0 then
-            (* { ..; foo = b[a]r; ... } *)
-            None
-          else
-            (* { ..; f[o]o = bar; ... } *)
-            Some Label
-        )
-      | _ -> None
-    )
+  | Tpat_any
+  | Tpat_var _ -> None
   | Tpat_alias _ ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the alias. *)
@@ -765,11 +747,11 @@ let inspect_context browse path pos : Context.t option =
       None
     | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
-    | Expression e ->
-      begin match e.Typedtree.exp_desc with
-      | Typedtree.Texp_record _ -> Some Label
-      | _ -> Some Expr
-      end
+    | Record_field _ ->
+      (* if we stopped here, then we're on the label itself, and whether or not
+         punning is happening is not important *)
+      Some Label
+    | Expression _ -> Some Expr
     | _ ->
       Some Unknown
 
