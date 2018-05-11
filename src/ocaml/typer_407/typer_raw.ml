@@ -51,7 +51,7 @@ let fresh_env () =
     if !Clflags.nopervasives then
       initial
     else
-      open_implicit_module "Pervasives" initial in
+      open_implicit_module "Stdlib" initial in
   List.fold_right ~f:open_implicit_module
     !Clflags.open_modules ~init:env
 
