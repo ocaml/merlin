@@ -392,7 +392,12 @@ containing fields file, line and col."
 line and col"
   (goto-char (point-min))
   (forward-line (1- (merlin-lookup 'line data 0)))
-  (forward-char (max 0 (merlin-lookup 'col data 0))))
+  ; caml gives us the byte offset of the column, which doesn't necessarily match
+  ; the character offset, so we can't just use "forward-char"
+  (let* ((bol-offset (position-bytes (point)))
+         (col-offset (max 0 (merlin-lookup 'col data 0)))
+         (target-off (+ bol-offset col-offset)))
+    (goto-char (byte-to-position target-off))))
 
 (defun merlin--point-of-pos (pos)
   "Return the buffer position corresponding to the merlin
