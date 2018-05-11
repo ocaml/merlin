@@ -38,4 +38,4 @@ B src/sturgeon
 B src/utils
 B +threads
 PKG findlib yojson sturgeon inuit
-FLG -short-paths
+FLG -short-paths -w -3
