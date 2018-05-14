@@ -705,7 +705,7 @@ let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | Not_in_env -> `Not_in_env str_ident
 
-let inspect_pattern ~pos ~parent p =
+let inspect_pattern ~pos p =
   let open Typedtree in
   let open Context in
   logfmt "inspect_context"
@@ -734,11 +734,10 @@ let inspect_context browse path pos : Context.t option =
   | enclosings ->
     let open Browse_raw in
     let node = Browse_tree.of_browse enclosings in
-    let parent = Option.map (Mbrowse.drop_leaf enclosings) ~f:Browse_tree.of_browse in
     logf "inspect_context" "current node is: %s"
       (string_of_node node.Browse_tree.t_node);
     match node.Browse_tree.t_node with
-    | Pattern p -> inspect_pattern ~pos ~parent p
+    | Pattern p -> inspect_pattern ~pos p
     | Value_description _
     | Type_declaration _
     | Extension_constructor _
