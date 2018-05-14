@@ -309,6 +309,7 @@ module Context = struct
     | Constructor
     | Expr
     | Label
+    | Module_path
     | Module_type
     | Patt of Types.type_expr
     | Type
@@ -318,6 +319,7 @@ module Context = struct
     | Constructor -> "constructor"
     | Expr -> "expression"
     | Label -> "record field"
+    | Module_path -> "module path"
     | Module_type -> "module type"
     | Patt _ -> "pattern"
     | Type -> "type"
@@ -603,6 +605,7 @@ let namespaces : Context.t -> _ = function
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
   | Label         -> [ `Labels; `Mod ]
   | Constructor   -> [ `Constr; `Mod ]
+  | Module_path   -> [ `Mod ]
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
 
@@ -776,6 +779,7 @@ let inspect_context browse path pos : Context.t option =
     | Module_binding_name _
     | Module_declaration_name _ ->
       None
+    | Open_description _ -> Some Module_path
     | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
     | Record_field _ ->
