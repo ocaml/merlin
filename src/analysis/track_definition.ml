@@ -306,6 +306,7 @@ end
 
 module Context = struct
   type t =
+    | Constructor
     | Expr
     | Label
     | Module_type
@@ -314,6 +315,7 @@ module Context = struct
     | Unknown
 
   let to_string = function
+    | Constructor -> "constructor"
     | Expr -> "expression"
     | Label -> "record field"
     | Module_type -> "module type"
@@ -595,11 +597,12 @@ let recover ident =
   | Some loc -> `Found (loc, None)
 
 let namespaces : Context.t -> _ = function
-  | Type          -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
+  | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
   | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
-  | Expr | Patt _ -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
+  | Expr | Patt _ -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
   | Label         -> [ `Labels; `Mod ]
+  | Constructor   -> [ `Constr; `Mod ]
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
 
@@ -705,6 +708,19 @@ let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | Not_in_env -> `Not_in_env str_ident
 
+(* Distinguish between "Mo[d]ule.Constructor" and "Module.Cons[t]ructor" *)
+let cursor_on_constructor_name ~cursor:pos
+      ~cstr_token:{ Asttypes.loc; txt = lid } cd =
+  match lid with
+  | Longident.Lident _ -> true
+  | _ ->
+    let end_offset = loc.loc_end.pos_cnum in
+    let constr_pos =
+      { loc.loc_end
+        with pos_cnum = end_offset - String.length cd.Types.cstr_name }
+    in
+    Lexing.compare_pos pos constr_pos >= 0
+
 let inspect_pattern ~pos p =
   let open Typedtree in
   let open Context in
@@ -718,6 +734,14 @@ let inspect_pattern ~pos p =
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the alias. *)
     None
+  | Tpat_construct (lid_loc, cd, _) ->
+    (* Assumption: if [Browse.enclosing] stopped on this node and not on the
+       subpattern, then it must mean that the cursor is on the constructor
+       itself.  *)
+    if cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd then
+      Some Constructor
+    else
+      Some (Patt p.pat_type)
   | _ ->
     (* We attach the type here so in the case of disambiguated constructors (or
        record fields) we can fallback on looking up the type (cf. #486).
@@ -725,6 +749,14 @@ let inspect_pattern ~pos p =
        disambiguated in expressions...
        Oh well. *)
     Some (Patt p.pat_type)
+
+let inspect_expression ~pos e : Context.t =
+  match e.Typedtree.exp_desc with
+  | Texp_construct (lid_loc, cd, _)
+    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd ->
+    Constructor
+  | _ ->
+    Expr
 
 let inspect_context browse path pos : Context.t option =
   match Mbrowse.enclosing pos browse with
@@ -750,7 +782,7 @@ let inspect_context browse path pos : Context.t option =
       (* if we stopped here, then we're on the label itself, and whether or not
          punning is happening is not important *)
       Some Label
-    | Expression _ -> Some Expr
+    | Expression e -> Some (inspect_expression ~pos e)
     | _ ->
       Some Unknown
 
