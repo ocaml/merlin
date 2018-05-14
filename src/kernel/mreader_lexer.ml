@@ -310,7 +310,7 @@ let reconstruct_identifier config source pos =
     let item = (token, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
     match token with
     | EOF -> (item :: acc)
-    | EOL when Lexing.compare_pos lexbuf.Lexing.lex_curr_p pos >= 0 ->
+    | EOL when Lexing.compare_pos lexbuf.Lexing.lex_curr_p pos > 0 ->
       (item :: acc)
     | EOL -> lex [] lexbuf
     | _ -> lex (item :: acc) lexbuf
