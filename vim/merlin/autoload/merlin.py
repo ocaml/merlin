@@ -246,6 +246,8 @@ def differs_from_current_file(path):
     buf_path = vim.eval("expand('%:p')")
     return buf_path != path
 
+def vim_fnameescape(s):
+    return vim.eval("fnameescape('%s')" % s.replace("'","''"))
 
 def command_locate(path, pos):
     try:
@@ -266,17 +268,18 @@ def command_locate(path, pos):
             # save the current position in the jump list
             vim.command("normal! m'")
             if "file" in pos_or_err and differs_from_current_file(pos_or_err['file']):
+                fname = vim_fnameescape(pos_or_err['file'])
                 if split_method == "never":
-                    vim.command(":keepjumps e %s" % pos_or_err['file'])
+                    vim.command(":keepjumps e %s" % fname)
                 elif "tab" in split_method:
                     if "always" in split_method:
-                        vim.command(":keepjumps tab split %s" % pos_or_err['file'])
+                        vim.command(":keepjumps tab split %s" % fname)
                     else:
-                        vim.command(":keepjumps tab drop %s" % pos_or_err['file'])
+                        vim.command(":keepjumps tab drop %s" % fname)
                 elif "vertical" in split_method:
-                    vim.command(":keepjumps vsplit %s" % pos_or_err['file'])
+                    vim.command(":keepjumps vsplit %s" % fname)
                 else:
-                    vim.command(":keepjumps split %s" % pos_or_err['file'])
+                    vim.command(":keepjumps split %s" % fname)
             elif "always" in split_method:
                 if "tab" in split_method:
                     vim.command(":tab split")
