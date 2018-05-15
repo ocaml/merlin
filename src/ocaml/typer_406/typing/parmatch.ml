@@ -780,6 +780,8 @@ let complete_constrs p all_tags =
     List.partition (fun cnstr -> cnstr.cstr_arity = 0) others in
   const @ nonconst
 
+let some_other_tag = "<some other tag>"
+
 let build_other_constrs env p =
   match p.pat_desc with
     Tpat_construct (_, {cstr_tag=Cstr_constant _|Cstr_block _}, _) ->
@@ -840,7 +842,7 @@ let build_other ext env = match env with
         [] row.row_fields
     with
       [] ->
-        make_other_pat "AnyExtraTag" true
+        make_other_pat some_other_tag true
     | pat::other_pats ->
         List.fold_left
           (fun p_res pat ->
