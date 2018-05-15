@@ -306,22 +306,25 @@ end
 
 module Context = struct
   type t =
-    | Constructor
+    | Constructor of Path.t option
     | Expr
     | Label
     | Module_path
     | Module_type
-    | Patt of Types.type_expr
+    | Patt
     | Type
     | Unknown
 
   let to_string = function
-    | Constructor -> "constructor"
+    | Constructor None -> "constructor"
+    | Constructor Some path ->
+      Printf.sprintf "constructor of %s"
+        (Path.name path)
     | Expr -> "expression"
     | Label -> "record field"
     | Module_path -> "module path"
     | Module_type -> "module type"
-    | Patt _ -> "pattern"
+    | Patt -> "pattern"
     | Type -> "type"
     | Unknown -> "unknown"
 end
@@ -601,10 +604,10 @@ let recover ident =
 let namespaces : Context.t -> _ = function
   | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
   | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
-  | Expr | Patt _ -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+  | Expr | Patt   -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
   | Label         -> [ `Labels; `Mod ]
-  | Constructor   -> [ `Constr; `Mod ]
+  | Constructor _ -> [ `Constr; `Mod ]
   | Module_path   -> [ `Mod ]
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
@@ -613,14 +616,7 @@ let tag namespace = Typedtrie.tag_path ~namespace
 
 let get_type_name ctxt =
   match ctxt with
-  | Context.Patt t ->
-    begin match t.Types.desc with
-    | Types.Tvar _ | Types.Tarrow _ | Types.Ttuple _ | Types.Tobject _
-    | Types.Tfield _ | Types.Tnil | Types.Tlink _ | Types.Tsubst _
-    | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
-      raise Not_found
-    | Types.Tconstr (path,_,_) -> Longident.parse (Path.name path)
-    end
+  | Context.Constructor Some path -> Longident.parse (Path.name path) (* miam *)
   | _ -> raise Not_found
 
 let rec lookup ctxt ident env =
@@ -724,6 +720,14 @@ let cursor_on_constructor_name ~cursor:pos
     in
     Lexing.compare_pos pos constr_pos >= 0
 
+let path_of_type t =
+  match t.Types.desc with
+  | Types.Tconstr (path,_,_) -> Some path
+  | Types.Tvar _ | Types.Tarrow _ | Types.Ttuple _ | Types.Tobject _
+  | Types.Tfield _ | Types.Tnil | Types.Tlink _ | Types.Tsubst _
+  | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
+    None
+
 let inspect_pattern ~pos p =
   let open Typedtree in
   let open Context in
@@ -742,22 +746,22 @@ let inspect_pattern ~pos p =
        subpattern, then it must mean that the cursor is on the constructor
        itself.  *)
     if cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd then
-      Some Constructor
+      (* We attach the type here so in the case of disambiguated constructors (or
+         record fields) we can fallback on looking up the type (cf. #486).
+         Of course that won't take care of constructors (resp. record fields)
+         disambiguated in expressions...
+         Oh well. *)
+      Some (Constructor (path_of_type cd.cstr_res))
     else
-      Some (Patt p.pat_type)
+      Some Patt
   | _ ->
-    (* We attach the type here so in the case of disambiguated constructors (or
-       record fields) we can fallback on looking up the type (cf. #486).
-       Of course that won't take care of constructors (resp. record fields)
-       disambiguated in expressions...
-       Oh well. *)
-    Some (Patt p.pat_type)
+    Some Patt
 
 let inspect_expression ~pos e : Context.t =
   match e.Typedtree.exp_desc with
   | Texp_construct (lid_loc, cd, _)
     when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd ->
-    Constructor
+    Constructor (path_of_type cd.cstr_res)
   | _ ->
     Expr
 
