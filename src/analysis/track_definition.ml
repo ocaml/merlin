@@ -311,7 +311,7 @@ module Context = struct
         disambiguated constructors we actually directly look for the type
         path (cf. #486, #794). *)
     | Expr
-    | Label
+    | Label of Types.label_description (* Similar to constructors. *)
     | Module_path
     | Module_type
     | Patt
@@ -321,7 +321,7 @@ module Context = struct
   let to_string = function
     | Constructor cd -> Printf.sprintf "constructor %s" cd.cstr_name
     | Expr -> "expression"
-    | Label -> "record field"
+    | Label lbl -> Printf.sprintf "record field %s" lbl.lbl_name
     | Module_path -> "module path"
     | Module_type -> "module type"
     | Patt -> "pattern"
@@ -606,7 +606,7 @@ let namespaces : Context.t -> _ = function
   | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
   | Expr | Patt   -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
-  | Label         -> [ `Labels; `Mod ]
+  | Label _       -> [ `Labels; `Mod ]
   | Constructor _ -> [ `Constr; `Mod ]
   | Module_path   -> [ `Mod ]
 
@@ -648,10 +648,13 @@ let rec lookup (ctxt : Context.t) ident env =
           let path, val_desc = Env.lookup_value ident env in
           raise (Found (path, tag `Vals path, val_desc.Types.val_loc))
         | `Labels ->
-          log "lookup"
-            "lookup in label namespace" ;
-          let label_desc = Env.lookup_label ident env in
-          let path, loc = path_and_loc_from_label label_desc env in
+          log "lookup" "lookup in label namespace" ;
+          let lbl =
+            match ctxt with
+            | Label lbl -> lbl
+            | _ -> Env.lookup_label ident env
+          in
+          let path, loc = path_and_loc_from_label lbl env in
           (* TODO: Use [`Labels] here instead of [`Type] *)
           raise (Found (path, tag `Type path, loc))
       with Not_found -> ()
@@ -779,10 +782,10 @@ let inspect_context browse path pos : Context.t option =
     | Open_description _ -> Some Module_path
     | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
-    | Record_field _ ->
+    | Record_field (_, lbl, _) ->
       (* if we stopped here, then we're on the label itself, and whether or not
          punning is happening is not important *)
-      Some Label
+      Some (Label lbl)
     | Expression e -> Some (inspect_expression ~pos e)
     | _ ->
       Some Unknown
