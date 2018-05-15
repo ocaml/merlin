@@ -729,39 +729,41 @@ let path_of_type t =
   | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
     None
 
-let inspect_pattern ~pos p =
+let inspect_pattern ~pos ~lid p =
   let open Typedtree in
   let open Context in
   logfmt "inspect_context"
     (fun fmt -> Format.fprintf fmt "current pattern is: %a"
                   (Printtyped.pattern 0) p);
   match p.pat_desc with
-  | Tpat_any
-  | Tpat_var _ -> None
-  | Tpat_alias _ ->
+  | Tpat_any when Longident.last lid = "_" -> None
+  | Tpat_var (_, str_loc) when String.equal (Longident.last lid) str_loc.txt ->
+    None
+  | Tpat_alias (_, _, str_loc)
+    when String.equal (Longident.last lid) str_loc.txt ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the alias. *)
     None
-  | Tpat_construct (lid_loc, cd, _) ->
+  | Tpat_construct (lid_loc, cd, _)
+    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
+         && String.equal (Longident.last lid) (Longident.last lid_loc.txt) ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the constructor
        itself.  *)
-    if cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd then
       Some (Constructor cd)
-    else
-      Some Patt
   | _ ->
     Some Patt
 
-let inspect_expression ~pos e : Context.t =
+let inspect_expression ~pos ~lid e : Context.t =
   match e.Typedtree.exp_desc with
   | Texp_construct (lid_loc, cd, _)
-    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd ->
+    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
+         && String.equal (Longident.last lid) (Longident.last lid_loc.txt) ->
     Constructor cd
   | _ ->
     Expr
 
-let inspect_context browse path pos : Context.t option =
+let inspect_context browse lid pos : Context.t option =
   match Mbrowse.enclosing pos browse with
   | [] ->
     logf "inspect_context" "no enclosing around: %a" Lexing.print_position pos;
@@ -772,7 +774,7 @@ let inspect_context browse path pos : Context.t option =
     logf "inspect_context" "current node is: %s"
       (string_of_node node.Browse_tree.t_node);
     match node.Browse_tree.t_node with
-    | Pattern p -> inspect_pattern ~pos p
+    | Pattern p -> inspect_pattern ~pos ~lid p
     | Value_description _
     | Type_declaration _
     | Extension_constructor _
@@ -782,11 +784,12 @@ let inspect_context browse path pos : Context.t option =
     | Open_description _ -> Some Module_path
     | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
-    | Record_field (_, lbl, _) ->
+    | Record_field (_, lbl, _)
+      when String.equal (Longident.last lid) lbl.lbl_name ->
       (* if we stopped here, then we're on the label itself, and whether or not
          punning is happening is not important *)
       Some (Label lbl)
-    | Expression e -> Some (inspect_expression ~pos e)
+    | Expression e -> Some (inspect_expression ~pos ~lid e)
     | _ ->
       Some Unknown
 
@@ -795,7 +798,7 @@ let from_string ~config ~env ~local_defs ~pos switch path =
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [Browse_tree.of_browse browse]) in
   let lid = Longident.parse path in
-  match inspect_context [browse] path pos with
+  match inspect_context [browse] lid pos with
   | None ->
     log "from_string" "already at origin, doing nothing" ;
     `At_origin
@@ -836,8 +839,8 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     match path with
     | `Completion_entry entry -> from_completion_entry ~config ~pos ~lazy_trie entry
     | `User_input path ->
-      let lid    = Longident.parse path in
-      begin match inspect_context [browse] path pos with
+      let lid = Longident.parse path in
+      begin match inspect_context [browse] lid pos with
       | None ->
         `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->
