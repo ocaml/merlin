@@ -737,16 +737,16 @@ let inspect_pattern ~pos ~lid p =
                   (Printtyped.pattern 0) p);
   match p.pat_desc with
   | Tpat_any when Longident.last lid = "_" -> None
-  | Tpat_var (_, str_loc) when String.equal (Longident.last lid) str_loc.txt ->
+  | Tpat_var (_, str_loc) when (Longident.last lid) = str_loc.txt ->
     None
   | Tpat_alias (_, _, str_loc)
-    when String.equal (Longident.last lid) str_loc.txt ->
+    when (Longident.last lid) = str_loc.txt ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the alias. *)
     None
   | Tpat_construct (lid_loc, cd, _)
     when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
-         && String.equal (Longident.last lid) (Longident.last lid_loc.txt) ->
+         && (Longident.last lid) = (Longident.last lid_loc.txt) ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the constructor
        itself.  *)
@@ -758,7 +758,7 @@ let inspect_expression ~pos ~lid e : Context.t =
   match e.Typedtree.exp_desc with
   | Texp_construct (lid_loc, cd, _)
     when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
-         && String.equal (Longident.last lid) (Longident.last lid_loc.txt) ->
+         && (Longident.last lid) = (Longident.last lid_loc.txt) ->
     Constructor cd
   | _ ->
     Expr
@@ -785,7 +785,7 @@ let inspect_context browse lid pos : Context.t option =
     | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
     | Record_field (_, lbl, _)
-      when String.equal (Longident.last lid) lbl.lbl_name ->
+      when (Longident.last lid) = lbl.lbl_name ->
       (* if we stopped here, then we're on the label itself, and whether or not
          punning is happening is not important *)
       Some (Label lbl)
