@@ -85,7 +85,7 @@ fi
 BIN_DIR=/usr/local/bin
 SHARE_DIR=/usr/local/share
 VIM_DIR=/usr/local/share/ocamlmerlin/vim
-WITH_BIN_ANNOT=""
+WITHOUT_BIN_ANNOT=""
 VERSION_STRING=""
 CAML_VERSION=
 EXIT=0
@@ -114,8 +114,8 @@ while [ -n "$1" ]; do
       shift 1
       VIM_DIR="$1"
       ;;
-    --with-bin-annot)
-      WITH_BIN_ANNOT=1
+    --without-bin-annot)
+      WITHOUT_BIN_ANNOT=1
       ;;
     --enable-compiled-emacs-mode)
       ENABLE_COMPILED_EMACS_MODE=true
@@ -335,7 +335,7 @@ BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
 VIM_DIR=$VIM_DIR
 NATIVE=$NATIVE
-WITH_BIN_ANNOT=$WITH_BIN_ANNOT
+WITHOUT_BIN_ANNOT=$WITHOUT_BIN_ANNOT
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 export EXE=$EXE
 CCOMP_TYPE=$CCOMP_TYPE

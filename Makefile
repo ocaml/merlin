@@ -25,7 +25,7 @@ VIM_DIR := $(DESTDIR)$(VIM_DIR)
 #### Invocation of OCamlMakefile
 
 OCAMLMAKEFILE= $(MAKE) -f Makefile.ocamlmakefile \
-							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITHOUT_DEBUG="$(WITHOUT_DEBUG)"
+							 WITHOUT_BIN_ANNOT="$(WITHOUT_BIN_ANNOT)" WITHOUT_DEBUG="$(WITHOUT_DEBUG)"
 
 ifdef VERBOSE
 	OCAMLMAKEFILE += REALLY_QUIET=0
@@ -66,7 +66,7 @@ preprocess:
 	$(MAKE) -f Makefile.preprocess
 
 debug: assert_configured
-	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITHOUT_DEBUG= $(TARGET)
+	+$(OCAMLMAKEFILE) WITHOUT_BIN_ANNOT= WITHOUT_DEBUG= $(TARGET)
 
 emacs-bytecode: $(EMACS_OBJECTS)
 

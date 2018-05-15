@@ -11,7 +11,7 @@ endif
 OCAMLFLAGS += -w -3
 REALLY_QUIET ?= 1
 
-ifdef WITH_BIN_ANNOT
+ifndef WITHOUT_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
 endif
 
