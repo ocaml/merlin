@@ -306,7 +306,10 @@ end
 
 module Context = struct
   type t =
-    | Constructor of Path.t option
+    | Constructor of Types.constructor_description
+      (* We attach the constructor description here so in the case of
+        disambiguated constructors we actually directly look for the type
+        path (cf. #486, #794). *)
     | Expr
     | Label
     | Module_path
@@ -316,10 +319,7 @@ module Context = struct
     | Unknown
 
   let to_string = function
-    | Constructor None -> "constructor"
-    | Constructor Some path ->
-      Printf.sprintf "constructor of %s"
-        (Path.name path)
+    | Constructor cd -> Printf.sprintf "constructor %s" cd.cstr_name
     | Expr -> "expression"
     | Label -> "record field"
     | Module_path -> "module path"
@@ -614,20 +614,19 @@ exception Found of (Path.t * Cmt_cache.path * Location.t)
 
 let tag namespace = Typedtrie.tag_path ~namespace
 
-let get_type_name ctxt =
-  match ctxt with
-  | Context.Constructor Some path -> Longident.parse (Path.name path) (* miam *)
-  | _ -> raise Not_found
-
-let rec lookup ctxt ident env =
+let rec lookup (ctxt : Context.t) ident env =
   try
     List.iter (namespaces ctxt) ~f:(fun namespace ->
       try
         match namespace with
         | `Constr ->
           log "lookup" "lookup in constructor namespace" ;
-          let cstr_desc = Env.lookup_constructor ident env in
-          let path, loc = path_and_loc_of_cstr cstr_desc env in
+          let cd =
+            match ctxt with
+            | Constructor cd -> cd
+            | _ -> Env.lookup_constructor ident env
+          in
+          let path, loc = path_and_loc_of_cstr cd env in
           (* TODO: Use [`Constr] here instead of [`Type] *)
           raise (Found (path, tag `Type path, loc))
         | `Mod ->
@@ -658,8 +657,7 @@ let rec lookup ctxt ident env =
       with Not_found -> ()
     ) ;
     logf "lookup" "   ... not in the environment" ;
-    let id = try get_type_name ctxt with _ -> raise Not_in_env in
-    lookup Type id env
+    raise Not_in_env
   with Found x ->
     x
 
@@ -722,7 +720,7 @@ let cursor_on_constructor_name ~cursor:pos
 
 let path_of_type t =
   match t.Types.desc with
-  | Types.Tconstr (path,_,_) -> Some path
+  | Types.Tconstr (path,_,_) -> Some (Path.name path)
   | Types.Tvar _ | Types.Tarrow _ | Types.Ttuple _ | Types.Tobject _
   | Types.Tfield _ | Types.Tnil | Types.Tlink _ | Types.Tsubst _
   | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
@@ -746,12 +744,7 @@ let inspect_pattern ~pos p =
        subpattern, then it must mean that the cursor is on the constructor
        itself.  *)
     if cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd then
-      (* We attach the type here so in the case of disambiguated constructors (or
-         record fields) we can fallback on looking up the type (cf. #486).
-         Of course that won't take care of constructors (resp. record fields)
-         disambiguated in expressions...
-         Oh well. *)
-      Some (Constructor (path_of_type cd.cstr_res))
+      Some (Constructor cd)
     else
       Some Patt
   | _ ->
@@ -761,7 +754,7 @@ let inspect_expression ~pos e : Context.t =
   match e.Typedtree.exp_desc with
   | Texp_construct (lid_loc, cd, _)
     when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd ->
-    Constructor (path_of_type cd.cstr_res)
+    Constructor cd
   | _ ->
     Expr
 
