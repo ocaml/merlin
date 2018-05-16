@@ -159,16 +159,14 @@ FIXME this should jump to line 11:
     "notifications": []
   }
 
-FIXME this is ignoring the local record def and jumping to the toplevel def:
-
   $ $MERLIN single locate -look-for ml -position 24:3 -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
-        "line": 5,
-        "col": 0
+        "line": 23,
+        "col": 6
       }
     },
     "notifications": []

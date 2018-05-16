@@ -338,8 +338,8 @@ let rec locate ~config ?pos path trie =
   match Typedtrie.find ?before:pos trie path with
   | Typedtrie.Found (loc, doc_opt) -> Some (loc, doc_opt)
   | Typedtrie.Resolves_to (new_path, fallback) ->
-    begin match new_path with
-    | (_, `Mod) :: _ ->
+    begin match Typedtrie.path_head new_path with
+    | (_, `Mod) ->
       logf "locate" "resolves to %s" (Typedtrie.path_to_string new_path);
       Fallback.setopt fallback ;
       from_path ~config new_path
@@ -355,14 +355,14 @@ let rec locate ~config ?pos path trie =
     Fallback.set loc;
     locate ~config ~pos:loc.Location.loc_start new_path trie
 
-and browse_cmts ~config ~root modules =
+and browse_cmts ~config ~root path_opt =
   let open Cmt_format in
   let cached = Cmt_cache.read root in
   logf "browse_cmts" "inspecting %s" root ;
   File_switching.move_to ?digest:cached.Cmt_cache.cmt_infos.cmt_source_digest root ;
-  if cached.Cmt_cache.location_trie <> String.Map.empty then begin
+  if cached.Cmt_cache.location_trie <> Ident.empty then begin
     log "browse_cmts" "cmt already cached";
-    locate ~config modules cached.Cmt_cache.location_trie
+    locate ~config (Option.get path_opt) cached.Cmt_cache.location_trie
   end else
     match
       match cached.Cmt_cache.cmt_infos.cmt_annots with
@@ -376,30 +376,34 @@ and browse_cmts ~config ~root modules =
     with
     | `Not_found -> None
     | `Browse node ->
-      begin match modules with
-      | [] ->
+      begin match path_opt with
+      | None ->
         (* we were looking for a module, we found the right file, we're happy *)
         let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Some (loc, None)
-      | _ ->
+      | Some path ->
         let trie = Typedtrie.of_browses [Browse_tree.of_node node] in
         cached.Cmt_cache.location_trie <- trie ;
-        locate ~config modules trie
+        locate ~config path trie
       end
     | `Pack files ->
-      begin match modules with
-      | (mod_name, `Mod) :: _ ->
-        assert (List.exists files
-                  ~f:(fun s -> Utils.file_path_to_mod_name s = mod_name));
-        log "loadpath" "Saw packed module => erasing loadpath" ;
-        let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
-        erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
-          from_path ~config modules
-        )
-      | _ -> None
-      end
+      Option.bind path_opt ~f:(fun path ->
+        match Typedtrie.path_head path with
+        | id, `Mod ->
+          assert (
+            List.exists files ~f:(fun s ->
+              Utils.file_path_to_mod_name s = Typedtrie.idname id
+            )
+          );
+          log "loadpath" "Saw packed module => erasing loadpath" ;
+          let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
+          erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
+            from_path ~config path
+          )
+        | _ -> None
+      )
 
 (* The following is ugly, and deserves some explanations:
       As can be seen above, when encountering packed modules we override the
@@ -416,13 +420,13 @@ and browse_cmts ~config ~root modules =
 and from_path ~config path =
   log "from_path" (Typedtrie.path_to_string path) ;
   match path with
-  | [ fname, `Mod ] ->
+  | TPident (fname, `Mod) ->
     let save_digest_and_return root =
       let {Cmt_cache. cmt_infos} = Cmt_cache.read root in
       File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
       let fname =
         match cmt_infos.Cmt_format.cmt_sourcefile with
-        | None   -> fname
+        | None   -> Typedtrie.idname fname
         | Some f -> f
       in
       let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
@@ -430,7 +434,10 @@ and from_path ~config path =
       Some (loc, None)
     in
     begin try
-      let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
+      let cmt_file =
+        Utils.find_file ~config ~with_fallback:true
+          (Preferences.cmt (Typedtrie.idname fname))
+      in
       save_digest_and_return cmt_file
     with File.Not_found (File.CMT fname | File.CMTI fname) ->
       restore_loadpath ~config (fun () ->
@@ -449,21 +456,27 @@ and from_path ~config path =
           Some (loc, None)
       )
     end
-  | (fname, `Mod) :: modules ->
-    begin try
-      let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
-      browse_cmts ~config ~root:cmt_file modules
-    with File.Not_found (File.CMT fname | File.CMTI fname) as exn ->
-      restore_loadpath ~config (fun () ->
-        try
-          let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
-          browse_cmts ~config ~root:cmt_file modules
-        with File.Not_found (File.CMT fname | File.CMTI fname) ->
-          logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
-          raise exn
-      )
-    end
-  | _ -> assert false
+  | _ ->
+    match Typedtrie.path_head path with
+    | (fname, `Mod) ->
+      let modules = try Some (Typedtrie.peal_head path) with _ -> None in
+      begin try
+        let cmt_file =
+          Utils.find_file ~config ~with_fallback:true
+            (Preferences.cmt (Typedtrie.idname fname))
+        in
+        browse_cmts ~config ~root:cmt_file modules
+      with File.Not_found (File.CMT fname | File.CMTI fname) as exn ->
+        restore_loadpath ~config (fun () ->
+          try
+            let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
+            browse_cmts ~config ~root:cmt_file modules
+          with File.Not_found (File.CMT fname | File.CMTI fname) ->
+            logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
+            raise exn
+        )
+      end
+    | _ -> assert false
 
 let path_and_loc_of_cstr desc env =
   let open Types in
@@ -612,7 +625,7 @@ let namespaces : Context.t -> _ = function
   | Constructor _ -> [ `Constr; `Mod ]
   | Module_path   -> [ `Mod ]
 
-exception Found of (Path.t * Cmt_cache.path * Location.t)
+exception Found of (Path.t * Cmt_cache.tagged_path * Location.t)
 
 let tag namespace = Typedtrie.tag_path ~namespace
 

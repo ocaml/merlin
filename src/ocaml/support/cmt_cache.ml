@@ -39,14 +39,23 @@ type namespace = [
   | `Unknown
   | `Apply
 ]
-type path = (string * namespace) list
 
-type trie = (Location.t * string option * namespace * node) list String.Map.t
+type maybe_ident =
+  | Id of Ident.t
+  | String of string
+
+type tagged_path =
+  | TPident of maybe_ident * namespace
+  | TPdot of tagged_path * string * namespace
+  | TPapply of tagged_path * tagged_path
+(* type path = (string * namespace) list *)
+
+type trie = (Location.t * string option * namespace * node) list Ident.tbl
  and node =
    | Leaf
    | Internal of trie
-   | Included of path
-   | Alias    of path
+   | Included of tagged_path
+   | Alias    of tagged_path
 
 
 type cmt_item = {
@@ -59,7 +68,7 @@ include File_cache.Make (struct
 
   let read file = {
     cmt_infos = Cmt_format.read_cmt file ;
-    location_trie = String.Map.empty ;
+    location_trie = Ident.empty ;
   }
 
   let cache_name = "Cmt_cache"

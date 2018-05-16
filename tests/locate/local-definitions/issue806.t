@@ -1,4 +1,3 @@
-FIXME
 
   $ $MERLIN single locate -look-for ml -position 5:3 -filename ./issue806.ml < ./issue806.ml
   {
@@ -6,8 +5,8 @@ FIXME
     "value": {
       "file": "tests/locate/local-definitions/issue806.ml",
       "pos": {
-        "line": 1,
-        "col": 0
+        "line": 4,
+        "col": 6
       }
     },
     "notifications": []
