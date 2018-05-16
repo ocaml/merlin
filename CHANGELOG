@@ -23,8 +23,8 @@ variance annotations are available.
 Open refactoring
 ----------------
 
-Two new commands (MerlinRefactorOpen, MerlinRefactorOpenQuality in vim,
-merlin-refactor-open, merlin-refactor-open-quality in Emacs) help cleaning the
+Two new commands (MerlinRefactorOpen, MerlinRefactorOpenQualify in vim,
+merlin-refactor-open, merlin-refactor-open-qualify in Emacs) help cleaning the
 code in the scope of an "open" statement.
 
 When the cursor is on an open statement:
@@ -59,8 +59,8 @@ let times = Unix.times ()
 let f x = x.Unix.tms_stime, x.Unix.tms_utime
 ```
 
-Spelll checking
----------------
+Spell checking
+--------------
 
 A simple spell-checking has been implemented to suggest corrections when
 nothing can be directly completed.
