@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+val log_section : string
+
 val from_string
   :  config:Mconfig.t
   -> env:Env.t

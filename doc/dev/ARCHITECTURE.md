@@ -94,7 +94,7 @@ annotations, printing ...)
 
 `ocamldoc.ml`: get documentation associated to a definition
 
-`typedtrie.ml`: quick lookup of OCaml paths
+`typedtrie.ml`: a trie representation of a compilation unit, allowing quick lookup of OCaml paths
 
 `type_utils.ml`: light wrapper over some functions of OCaml typer
 
@@ -106,7 +106,7 @@ annotations, printing ...)
 
 `outline.ml`: produce an overview of an OCaml module's structure and definitions 
 
-`track_definition.ml`: implement locate feature, i.e. "where is this entity defined?"
+`locate.ml`: implement a jump-to-definition/declaration feature
 
 `jump.ml`: implement convenient nagivation commands
 
