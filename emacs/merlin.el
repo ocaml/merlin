@@ -1635,8 +1635,9 @@ Empty string defaults to jumping to all these."
   (unless merlin-buffer-configuration
     (setq merlin-buffer-configuration (merlin--configuration)))
   (let ((command (merlin-lookup 'command merlin-buffer-configuration)))
-    (unless command (setq command merlin-command))
-    (if (functionp command) (setq command (funcall command)))
+    (unless command
+      (setq command (if (functionp merlin-command) (funcall merlin-command)
+                      merlin-command)))
     (when (equal command 'opam)
       (with-temp-buffer
         (if (eq (call-process-shell-command
