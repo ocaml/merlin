@@ -145,30 +145,31 @@ end
 module File_switching : sig
   val reset : unit -> unit
 
-  val move_to : ?digest:Digest.t -> string -> unit (* raises Can't_move *)
+  val move_to : ?digest:Digest.t -> string -> unit
 
   val where_am_i : unit -> string option
 
   val source_digest : unit -> Digest.t option
 end = struct
   type t = {
-    last_file_visited : string option ;
-    digest : Digest.t option ;
+    last_file_visited : string;
+    digest : Digest.t option ; (* [None] only for packs. *)
   }
 
-  let default = { last_file_visited = None ; digest = None }
+  let last_file_visited t = t.last_file_visited
+  let digest t = t.digest
 
-  let state = ref default
+  let state = ref None
 
-  let reset () = state := default
+  let reset () = state := None
 
   let move_to ?digest file =
     logf "File_switching.move_to" "%s" file;
-    state := { last_file_visited = Some file ; digest }
+    state := Some { last_file_visited = file ; digest }
 
-  let where_am_i () = !state.last_file_visited
+  let where_am_i () = Option.map !state ~f:last_file_visited
 
-  let source_digest () = !state.digest
+  let source_digest () = Option.bind !state ~f:digest
 end
 
 
