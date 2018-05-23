@@ -75,18 +75,86 @@ module Fallback = struct
   let is_set () = !fallback <> None
 end
 
-module File = struct
-  type t =
+module File : sig
+  type t = private
     | ML   of string
+    | MLL  of string
     | MLI  of string
     | CMT  of string
     | CMTI of string
 
-  let name = function ML name | MLI name | CMT name | CMTI name -> name
+  val ml : string -> t
+  val mli : string -> t
+  val cmt : string -> t
+  val cmti : string -> t
 
-  let ext = function
-    | ML _  -> ".ml"  | MLI _  -> ".mli"
-    | CMT _ -> ".cmt" | CMTI _ -> ".cmti"
+  val of_filename : string -> t option
+
+  (* FIXME: don't export this *)
+  exception Not_found of t
+
+  val alternate : t -> t
+
+  val name : t -> string
+
+  val with_ext : ?src_suffix_pair:(string * string) -> t -> string
+
+  val explain_not_found :
+    ?doc_from:string -> string -> t -> [> `File_not_found of string ]
+end = struct
+  type t =
+    | ML   of string
+    | MLL  of string
+    | MLI  of string
+    | CMT  of string
+    | CMTI of string
+
+  let file_path_to_mod_name f =
+    Misc.unitname (Filename.basename f)
+
+  let ml   s = ML   (file_path_to_mod_name s)
+  let mll  s = MLL  (file_path_to_mod_name s)
+  let mli  s = MLI  (file_path_to_mod_name s)
+  let cmt  s = CMT  (file_path_to_mod_name s)
+  let cmti s = CMTI (file_path_to_mod_name s)
+
+  let of_filename fn =
+    match String.split_on_char fn ~sep:'.' with
+    | []
+    | [ _ ] -> None
+    | lst ->
+      let ext = String.lowercase_ascii (Option.get @@ List.last lst) in
+      Some (
+        match ext with
+        | "cmti" -> cmti fn
+        | "cmt"  -> cmt fn
+        | "mll"  -> mll fn
+        | _ -> if Filename.check_suffix ext "i" then mli fn else ml fn
+      )
+
+  let alternate = function
+    | ML  s
+    | MLL s -> MLI s
+    | MLI s -> ML s
+    | CMT s  -> CMTI s
+    | CMTI s -> CMT s
+
+  let name = function
+    | ML name
+    | MLL name
+    | MLI name
+    | CMT name
+    | CMTI name -> name
+
+  let ext src_suffix_pair = function
+    | ML _  -> fst src_suffix_pair
+    | MLI _  -> snd src_suffix_pair
+    | MLL _ -> ".mll"
+    | CMT _ -> ".cmt"
+    | CMTI _ -> ".cmti"
+
+  let with_ext ?(src_suffix_pair=(".ml",".mli")) t =
+    name t ^ ext src_suffix_pair t
 
   exception Not_found of t
 
@@ -95,6 +163,9 @@ module File = struct
       match path with
       | ML file ->
         sprintf "'%s' seems to originate from '%s' whose ML file could not be \
+                 found" str_ident file
+      | MLL file ->
+        sprintf "'%s' seems to originate from '%s' whose MLL file could not be \
                  found" str_ident file
       | MLI file ->
         sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
@@ -115,8 +186,8 @@ end
 module Preferences : sig
   val set : [ `ML | `MLI ] -> unit
 
-  val cmt : string -> File.t
-  val ml  : string -> File.t
+  val src : string -> File.t
+  val build : string -> File.t
 
   val is_preferred : string -> bool
 end = struct
@@ -128,18 +199,14 @@ end = struct
       | `ML -> true
       | _ -> false
 
-  open File
+  let src   file = if !prioritize_impl then File.ml  file else File.mli  file
+  let build file = if !prioritize_impl then File.cmt file else File.cmti file
 
-  let cmt file = if !prioritize_impl then CMT file else CMTI file
-  let ml file = if !prioritize_impl then ML file else MLI file
-
-  let is_preferred filename =
-    if !prioritize_impl then
-      Filename.check_suffix filename "ml" ||
-      Filename.check_suffix filename "ML"
-    else
-      Filename.check_suffix filename "mli" ||
-      Filename.check_suffix filename "MLI"
+  let is_preferred fn =
+    match File.of_filename fn with
+    | Some ML _ -> !prioritize_impl
+    | Some MLI _ -> not !prioritize_impl
+    | _ -> false
 end
 
 module File_switching : sig
@@ -187,34 +254,6 @@ module Utils = struct
     | Longident.Lident _ -> false
     | _ -> true
 
-  let split_extension file =
-    (* First grab basename to guard against directories with dots *)
-    let basename = Filename.basename file in
-    try
-      let last_dot_pos = String.rindex basename '.' in
-      let ext_name = String.sub basename last_dot_pos (String.length basename - last_dot_pos) in
-      let base_without_ext = String.sub basename 0 last_dot_pos in
-      (base_without_ext, Some ext_name)
-    with Not_found -> (file, None)
-
-
-  let synonym_extension file (impl_alias, intf_alias) =
-    match split_extension file with
-      | (without_ext, None) -> without_ext
-      | (without_ext, Some ext) ->
-        if ext = ".ml" then
-          without_ext ^ impl_alias
-        else (
-          if ext = ".mli" then
-            without_ext ^ intf_alias
-          else
-            file
-        )
-
-  let file_path_to_mod_name f =
-    let pref = Misc.chop_extensions f in
-    String.capitalize (Filename.basename pref)
-
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
      This is only used when looking for ml files, not cmts. Indeed for cmts we
@@ -223,10 +262,14 @@ module Utils = struct
      not the case for the "source path" however.
      We therefore get all matching files and use an heuristic at the call site
      to choose the appropriate file. *)
-  let find_all_in_path_uncap ?(fallback="") path name =
-    let has_fallback = fallback <> "" in
+  let find_all_in_path_uncap ?src_suffix_pair ~with_fallback path file =
+    let name = File.with_ext ?src_suffix_pair file in
     let uname = String.uncapitalize name in
-    let ufbck = String.uncapitalize fallback in
+    let fallback, ufallback =
+      let alt = File.alternate file in
+      let fallback = File.with_ext ?src_suffix_pair alt in
+      fallback, String.uncapitalize fallback
+    in
     let try_file dirname basename acc =
       if Misc.exact_file_exists ~dirname ~basename
       then Misc.canonicalize_filename (Filename.concat dirname basename) :: acc
@@ -236,8 +279,8 @@ module Utils = struct
       let acc = try_file dirname uname acc in
       let acc = try_file dirname name acc in
       let acc =
-        if has_fallback then
-          let acc = try_file dirname ufbck acc in
+        if with_fallback then
+          let acc = try_file dirname ufallback acc in
           let acc = try_file dirname fallback acc in
           acc
         else
@@ -248,63 +291,33 @@ module Utils = struct
     List.fold_left ~f:try_dir ~init:[] path
 
   let find_all_matches ~config ?(with_fallback=false) file =
-    let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
-    let fallback =
-      if not with_fallback then "" else
-      match file with
-      | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
-      | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
-      | _ -> assert false
-    in
     let files =
       List.concat_map (fun synonym_pair ->
-        let fallback = synonym_extension fallback synonym_pair in
-        let fname = synonym_extension fname synonym_pair in
-        find_all_in_path_uncap ~fallback (Mconfig.source_path config) fname
+        find_all_in_path_uncap ~src_suffix_pair:synonym_pair ~with_fallback
+          (Mconfig.source_path config) file
       ) Mconfig.(config.merlin.suffixes)
     in
     List.uniq files ~cmp:String.compare
 
   let find_file_with_path ~config ?(with_fallback=false) file path =
-    let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
-    if Misc.unitname fname = Misc.unitname Mconfig.(config.query.filename) then
+    if File.name file = Misc.unitname Mconfig.(config.query.filename) then
       Mconfig.(config.query.filename)
     else
-      let fallback =
-        if not with_fallback then "" else
-          match file with
-          | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
-          | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
-          | File.CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
-          | File.CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
+      let rec attempt_search src_suffix_pair =
+        let fallback = File.with_ext ~src_suffix_pair (File.alternate file) in
+        let fname = File.with_ext ~src_suffix_pair file in
+        try Some (Misc.find_in_path_uncap ~fallback path fname)
+        with Not_found -> None
       in
-      let rec attempt_search synonyms =
-        match synonyms with
-        | [] -> raise Not_found
-        | [synonym_pair] ->
-          (* Upon trying the final [synonym_pair], search failure should raise *)
-          let fallback = synonym_extension fallback synonym_pair in
-          let fname = synonym_extension fname synonym_pair in
-          (
-            try Misc.find_in_path_uncap ~fallback path fname with
-              Not_found -> raise (File.Not_found file)
-          )
-        | synonym_pair :: ((rest1 :: rest2) as rest_synonyms) ->
-          (* If cannot find match, continue searching through [rest_synonyms] *)
-          let fallback = synonym_extension fallback synonym_pair in
-          let fname = synonym_extension fname synonym_pair in
-          (
-            try Misc.find_in_path_uncap ~fallback path fname with
-              Not_found -> attempt_search rest_synonyms
-          )
-      in
-      attempt_search Mconfig.(config.merlin.suffixes)
+      try List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search
+      with Not_found ->
+        raise (File.Not_found file)
 
-  let find_file ~config ?with_fallback file =
+  let find_file ~config ?with_fallback (file : File.t) =
     find_file_with_path ~config ?with_fallback file @@
         match file with
-        | File.ML  _ | File.MLI _  -> Mconfig.source_path config
-        | File.CMT _ | File.CMTI _ -> !loadpath
+        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
+        | CMT _ | CMTI _         -> !loadpath
 end
 
 module Context = struct
@@ -394,7 +407,10 @@ and browse_cmts ~config ~root path_opt =
         | id, `Mod ->
           assert (
             List.exists files ~f:(fun s ->
-              Utils.file_path_to_mod_name s = Typedtrie.idname id
+              match File.of_filename s with
+              | None ->
+                false (* no extension? perhaps we should even assert false. *)
+              | Some f -> File.name f = Typedtrie.idname id
             )
           );
           log "loadpath" "Saw packed module => erasing loadpath" ;
@@ -435,13 +451,13 @@ and from_path ~config path =
     in
     begin match
       Utils.find_file ~config ~with_fallback:true
-        (Preferences.cmt (Typedtrie.idname fname))
+        (Preferences.build (Typedtrie.idname fname))
     with
     | cmt_file -> save_digest_and_return cmt_file
     | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
       restore_loadpath ~config (fun () ->
         match
-          Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname)
+          Utils.find_file ~config ~with_fallback:true (Preferences.build fname)
         with
         | cmt_file -> save_digest_and_return cmt_file
         | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
@@ -462,13 +478,13 @@ and from_path ~config path =
       let modules = try Some (Typedtrie.peal_head path) with _ -> None in
       begin match
         Utils.find_file ~config ~with_fallback:true
-          (Preferences.cmt (Typedtrie.idname fname))
+          (Preferences.build (Typedtrie.idname fname))
       with
       | cmt_file -> browse_cmts ~config ~root:cmt_file modules
       | exception (File.Not_found (File.CMT fname | File.CMTI fname) as exn) ->
         restore_loadpath ~config (fun () ->
           match
-            Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname)
+            Utils.find_file ~config ~with_fallback:true (Preferences.build fname)
           with
           | cmt_file -> browse_cmts ~config ~root:cmt_file modules
           | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
@@ -501,11 +517,11 @@ exception Multiple_matches of string list
 let find_source ~config loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
-  let mod_name = Utils.file_path_to_mod_name fname in
   let file =
-    let extensionless = Misc.chop_extension_if_any fname = fname in
-    if extensionless then Preferences.ml mod_name else
-    if Filename.check_suffix fname "i" then File.MLI mod_name else File.ML mod_name
+    match File.of_filename fname with
+    | Some file -> file
+    | None -> (* no extension? we have to decide. *)
+      Preferences.src fname
   in
   let filename = File.name file in
   let initial_path =
