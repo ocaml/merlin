@@ -433,18 +433,18 @@ and from_path ~config path =
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
       Some (loc, None)
     in
-    begin try
-      let cmt_file =
-        Utils.find_file ~config ~with_fallback:true
-          (Preferences.cmt (Typedtrie.idname fname))
-      in
-      save_digest_and_return cmt_file
-    with File.Not_found (File.CMT fname | File.CMTI fname) ->
+    begin match
+      Utils.find_file ~config ~with_fallback:true
+        (Preferences.cmt (Typedtrie.idname fname))
+    with
+    | cmt_file -> save_digest_and_return cmt_file
+    | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
       restore_loadpath ~config (fun () ->
-        try
-          let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
-          save_digest_and_return cmt_file
-        with File.Not_found (File.CMT fname | File.CMTI fname) ->
+        match
+          Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname)
+        with
+        | cmt_file -> save_digest_and_return cmt_file
+        | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
           (* In that special case, we haven't managed to find any cmt. But we
              only need the cmt for the source digest in contains. Even if we
              don't have that we can blindly look for the source file and hope
@@ -460,18 +460,18 @@ and from_path ~config path =
     match Typedtrie.path_head path with
     | (fname, `Mod) ->
       let modules = try Some (Typedtrie.peal_head path) with _ -> None in
-      begin try
-        let cmt_file =
-          Utils.find_file ~config ~with_fallback:true
-            (Preferences.cmt (Typedtrie.idname fname))
-        in
-        browse_cmts ~config ~root:cmt_file modules
-      with File.Not_found (File.CMT fname | File.CMTI fname) as exn ->
+      begin match
+        Utils.find_file ~config ~with_fallback:true
+          (Preferences.cmt (Typedtrie.idname fname))
+      with
+      | cmt_file -> browse_cmts ~config ~root:cmt_file modules
+      | exception (File.Not_found (File.CMT fname | File.CMTI fname) as exn) ->
         restore_loadpath ~config (fun () ->
-          try
-            let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
-            browse_cmts ~config ~root:cmt_file modules
-          with File.Not_found (File.CMT fname | File.CMTI fname) ->
+          match
+            Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname)
+          with
+          | cmt_file -> browse_cmts ~config ~root:cmt_file modules
+          | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
             logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
             raise exn
         )
@@ -828,13 +828,11 @@ let from_string ~config ~env ~local_defs ~pos switch path =
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found (loc, _) ->
-      try
-        match find_source ~config loc with
-        | None     -> `Found (None, loc.Location.loc_start)
-        | Some src -> `Found (Some src, loc.Location.loc_start)
-      with
-      | File.Not_found ft -> File.explain_not_found path ft
-      | Multiple_matches lst ->
+      match find_source ~config loc with
+      | None     -> `Found (None, loc.Location.loc_start)
+      | Some src -> `Found (Some src, loc.Location.loc_start)
+      | exception File.Not_found ft -> File.explain_not_found path ft
+      | exception Multiple_matches lst ->
         let matches = String.concat lst ~sep:", " in
         `File_not_found (
           sprintf "Several source files in your path have the same name, and \
