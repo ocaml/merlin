@@ -90,9 +90,6 @@ module File : sig
 
   val of_filename : string -> t option
 
-  (* FIXME: don't export this *)
-  exception Not_found of t
-
   val alternate : t -> t
 
   val name : t -> string
@@ -155,8 +152,6 @@ end = struct
 
   let with_ext ?(src_suffix_pair=(".ml",".mli")) t =
     name t ^ ext src_suffix_pair t
-
-  exception Not_found of t
 
   let explain_not_found ?(doc_from="") str_ident path =
     let msg =
@@ -301,7 +296,7 @@ module Utils = struct
 
   let find_file_with_path ~config ?(with_fallback=false) file path =
     if File.name file = Misc.unitname Mconfig.(config.query.filename) then
-      Mconfig.(config.query.filename)
+      Some Mconfig.(config.query.filename)
     else
       let rec attempt_search src_suffix_pair =
         let fallback = File.with_ext ~src_suffix_pair (File.alternate file) in
@@ -309,9 +304,10 @@ module Utils = struct
         try Some (Misc.find_in_path_uncap ~fallback path fname)
         with Not_found -> None
       in
-      try List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search
+      try
+        Some (List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search)
       with Not_found ->
-        raise (File.Not_found file)
+        None
 
   let find_file ~config ?with_fallback (file : File.t) =
     find_file_with_path ~config ?with_fallback file @@
@@ -347,9 +343,14 @@ end
 
 exception Context_mismatch
 
-let rec locate ~config ?pos path trie =
+type locate_result =
+  | Found of Location.t * string option
+  | File_not_found of File.t
+  | Other_error (* FIXME *)
+
+let rec locate ~config ?pos path trie : locate_result =
   match Typedtrie.find ?before:pos trie path with
-  | Typedtrie.Found (loc, doc_opt) -> Some (loc, doc_opt)
+  | Typedtrie.Found (loc, doc_opt) -> Found (loc, doc_opt)
   | Typedtrie.Resolves_to (new_path, fallback) ->
     begin match Typedtrie.path_head new_path with
     | (_, `Mod) ->
@@ -360,7 +361,9 @@ let rec locate ~config ?pos path trie =
       logf "locate" "new path (%s) is not a real path. fallbacking..."
         (Typedtrie.path_to_string new_path);
       logfmt "locate" (fun fmt -> Typedtrie.dump fmt trie);
-      Option.map fallback ~f:(fun x -> x, None)
+      match fallback with
+      | None -> Other_error
+      | Some l -> Found (l, None)
     end
   | Typedtrie.Alias_of (loc, new_path) ->
     logf "locate" "alias of %s" (Typedtrie.path_to_string new_path) ;
@@ -368,7 +371,7 @@ let rec locate ~config ?pos path trie =
     Fallback.set loc;
     locate ~config ~pos:loc.Location.loc_start new_path trie
 
-and browse_cmts ~config ~root path_opt =
+and browse_cmts ~config ~root path_opt : locate_result =
   let open Cmt_format in
   let cached = Cmt_cache.read root in
   logf "browse_cmts" "inspecting %s" root ;
@@ -387,7 +390,7 @@ and browse_cmts ~config ~root path_opt =
         * most of the time so... *)
         `Not_found
     with
-    | `Not_found -> None
+    | `Not_found -> Other_error (* partial cmt *)
     | `Browse node ->
       begin match path_opt with
       | None ->
@@ -395,14 +398,16 @@ and browse_cmts ~config ~root path_opt =
         let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
         (* TODO: retrieve "ocaml.text" floating attributes? *)
-        Some (loc, None)
+        Found (loc, None)
       | Some path ->
         let trie = Typedtrie.of_browses [Browse_tree.of_node node] in
         cached.Cmt_cache.location_trie <- trie ;
         locate ~config path trie
       end
     | `Pack files ->
-      Option.bind path_opt ~f:(fun path ->
+      match path_opt with
+      | None -> Other_error (* Stopping on a pack file?? *)
+      | Some path ->
         match Typedtrie.path_head path with
         | id, `Mod ->
           assert (
@@ -418,8 +423,7 @@ and browse_cmts ~config ~root path_opt =
           erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
             from_path ~config path
           )
-        | _ -> None
-      )
+        | _ -> Other_error (* type error: packs contain only modules. *)
 
 (* The following is ugly, and deserves some explanations:
       As can be seen above, when encountering packed modules we override the
@@ -433,7 +437,7 @@ and browse_cmts ~config ~root path_opt =
       Assuming we are in such a situation, if we do not find something in our
       "erased" loadpath, it could mean that we are looking for a persistent
       unit, and that's why we restore the initial loadpath. *)
-and from_path ~config path =
+and from_path ~config path : locate_result =
   log "from_path" (Typedtrie.path_to_string path) ;
   match path with
   | TPident (fname, `Mod) ->
@@ -447,20 +451,17 @@ and from_path ~config path =
       in
       let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-      Some (loc, None)
+      Found (loc, None)
     in
-    begin match
-      Utils.find_file ~config ~with_fallback:true
-        (Preferences.build (Typedtrie.idname fname))
-    with
-    | cmt_file -> save_digest_and_return cmt_file
-    | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
+    let fname = Typedtrie.idname fname in
+    let file = Preferences.build fname in
+    begin match Utils.find_file ~config ~with_fallback:true file with
+    | Some cmt_file -> save_digest_and_return cmt_file
+    | None ->
       restore_loadpath ~config (fun () ->
-        match
-          Utils.find_file ~config ~with_fallback:true (Preferences.build fname)
-        with
-        | cmt_file -> save_digest_and_return cmt_file
-        | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
+        match Utils.find_file ~config ~with_fallback:true file with
+        | Some cmt_file -> save_digest_and_return cmt_file
+        | None ->
           (* In that special case, we haven't managed to find any cmt. But we
              only need the cmt for the source digest in contains. Even if we
              don't have that we can blindly look for the source file and hope
@@ -469,27 +470,24 @@ and from_path ~config path =
           let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
           let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
           File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
-          Some (loc, None)
+          Found (loc, None)
       )
     end
   | _ ->
     match Typedtrie.path_head path with
     | (fname, `Mod) ->
       let modules = try Some (Typedtrie.peal_head path) with _ -> None in
-      begin match
-        Utils.find_file ~config ~with_fallback:true
-          (Preferences.build (Typedtrie.idname fname))
-      with
-      | cmt_file -> browse_cmts ~config ~root:cmt_file modules
-      | exception (File.Not_found (File.CMT fname | File.CMTI fname) as exn) ->
+      let fname = Typedtrie.idname fname in
+      let file = Preferences.build fname in
+      begin match Utils.find_file ~config ~with_fallback:true file with
+      | Some cmt_file -> browse_cmts ~config ~root:cmt_file modules
+      | None ->
         restore_loadpath ~config (fun () ->
-          match
-            Utils.find_file ~config ~with_fallback:true (Preferences.build fname)
-          with
-          | cmt_file -> browse_cmts ~config ~root:cmt_file modules
-          | exception File.Not_found (File.CMT fname | File.CMTI fname) ->
+          match Utils.find_file ~config ~with_fallback:true file with
+          | Some cmt_file -> browse_cmts ~config ~root:cmt_file modules
+          | None ->
             logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
-            raise exn
+            File_not_found file
         )
       end
     | _ -> assert false
@@ -512,7 +510,11 @@ let path_and_loc_from_label desc env =
   | _ -> assert false
 
 exception Not_in_env
-exception Multiple_matches of string list
+
+type find_source_result =
+  | Found of string
+  | Not_found of File.t
+  | Multiple_matches of string list
 
 let find_source ~config loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
@@ -520,7 +522,8 @@ let find_source ~config loc =
   let file =
     match File.of_filename fname with
     | Some file -> file
-    | None -> (* no extension? we have to decide. *)
+    | None ->
+      (* no extension? we have to decide. *)
       Preferences.src fname
   in
   let filename = File.name file in
@@ -540,13 +543,14 @@ let find_source ~config loc =
     logf "find_source" "failed to find %S in source path (fallback = %b)"
        filename with_fallback ;
     logf "find_source" "looking for %S in %S" (File.name file) dir ;
-    begin try Some (Utils.find_file_with_path ~config ~with_fallback file [dir])
-    with (File.Not_found _ | Not_found) as exn->
+    begin match Utils.find_file_with_path ~config ~with_fallback file [dir] with
+    | Some source -> Found source
+    | None ->
       logf "find_source" "Trying to find %S in %S directly" fname dir;
-      try Some (Misc.find_in_path [dir] fname)
-      with _ -> raise exn
+      try Found (Misc.find_in_path [dir] fname)
+      with _ -> Not_found file
     end
-  | [ x ] -> Some x
+  | [ x ] -> Found x
   | files ->
     logf (sprintf "find_source(%s)" filename)
       "multiple matches in the source path : %s"
@@ -561,7 +565,7 @@ let find_source ~config loc =
         logf "find_source"
           "... trying to use source digest to find the right one" ;
         logf "find_source" "Source digest: %s" (Digest.to_hex digest) ;
-        Some (
+        Found (
           List.find files ~f:(fun f ->
             let fdigest = Digest.file f in
             logf "find_source" "  %s (%s)" f (Digest.to_hex fdigest) ;
@@ -604,8 +608,8 @@ let find_source ~config loc =
       in
       match lst with
       | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
-        raise (Multiple_matches files)
-      | (_, s) :: _ -> Some s
+        Multiple_matches files
+      | (_, s) :: _ -> Found s
       | _ -> assert false
 
 (* Well, that's just another hack.
@@ -613,10 +617,11 @@ let find_source ~config loc =
    Jane Street specific use case where "-o" is used to prefix a unit name by the
    name of the library which contains it. *)
 let find_source ~config loc =
-  try find_source ~config loc
-  with exn ->
+  match find_source ~config loc with
+  | Found _ as result -> result
+  | failure ->
     let fname = loc.Location.loc_start.Lexing.pos_fname in
-    try
+    match
       let i = String.first_double_underscore_end fname in
       let pos = i + 1 in
       let fname = String.sub fname ~pos ~len:(String.length fname - pos) in
@@ -625,7 +630,10 @@ let find_source ~config loc =
         { loc with Location.loc_start = lstart }
       in
       find_source ~config loc
-    with _ -> raise exn
+    with
+    | Found _ as result -> result
+    | _ -> failure
+    | exception _ -> failure
 
 let recover ident =
   match Fallback.get () with
@@ -699,20 +707,20 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   File_switching.reset ();
   Fallback.reset ();
   Preferences.set ml_or_mli;
+  logf "locate"
+    "present in the environment, walking up the typedtree looking for '%s'"
+    (Typedtrie.path_to_string path);
   try
-    logf "locate"
-      "present in the environment, walking up the typedtree looking for '%s'"
-      (Typedtrie.path_to_string path);
     if not (Utils.is_ghost_loc loc) then Fallback.set loc;
     let lazy trie = lazy_trie in
     match locate ~config ~pos path trie with
-    | None when Fallback.is_set () -> recover str_ident
-    | None -> `Not_found (str_ident, File_switching.where_am_i ())
-    | Some (loc, doc) -> `Found (loc, doc)
+    | Found (loc, doc) -> `Found (loc, doc)
+    | Other_error when Fallback.is_set () -> recover str_ident
+    | Other_error -> `Not_found (str_ident, File_switching.where_am_i ())
+    | File_not_found f -> File.explain_not_found str_ident f
   with
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-  | File.Not_found path -> File.explain_not_found str_ident path
 
 (* Only used to retrieve documentation *)
 let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
@@ -845,10 +853,9 @@ let from_string ~config ~env ~local_defs ~pos switch path =
     | `Builtin -> `Builtin path
     | `Found (loc, _) ->
       match find_source ~config loc with
-      | None     -> `Found (None, loc.Location.loc_start)
-      | Some src -> `Found (Some src, loc.Location.loc_start)
-      | exception File.Not_found ft -> File.explain_not_found path ft
-      | exception Multiple_matches lst ->
+      | Found src -> `Found (Some src, loc.Location.loc_start)
+      | Not_found f -> File.explain_not_found path f
+      | Multiple_matches lst ->
         let matches = String.concat lst ~sep:", " in
         `File_not_found (
           sprintf "Several source files in your path have the same name, and \
