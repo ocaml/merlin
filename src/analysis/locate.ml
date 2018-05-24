@@ -408,14 +408,6 @@ and browse_cmts ~config ~root path_opt : locate_result =
       | Some path ->
         match Typedtrie.path_head path with
         | id, `Mod ->
-          assert (
-            List.exists files ~f:(fun s ->
-              match File.of_filename s with
-              | None ->
-                false (* no extension? perhaps we should even assert false. *)
-              | Some f -> File.name f = Typedtrie.idname id
-            )
-          );
           log "loadpath" "Saw packed module => erasing loadpath" ;
           let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
           erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
