@@ -358,12 +358,10 @@ let rec locate ~config ?pos path trie : locate_result =
       Fallback.setopt fallback ;
       from_path ~config new_path
     | _ ->
-      logf "locate" "new path (%s) is not a real path. fallbacking..."
+      logf "locate" "new path (%s) is not a real path"
         (Typedtrie.path_to_string new_path);
-      logfmt "locate" (fun fmt -> Typedtrie.dump fmt trie);
-      match fallback with
-      | None -> Other_error
-      | Some l -> Found (l, None)
+      logfmt "locate (typedtrie dump)" (fun fmt -> Typedtrie.dump fmt trie);
+      Other_error (* incorrect path *)
     end
   | Typedtrie.Alias_of (loc, new_path) ->
     logf "locate" "alias of %s" (Typedtrie.path_to_string new_path) ;
