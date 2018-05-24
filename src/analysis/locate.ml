@@ -380,16 +380,20 @@ and browse_cmts ~config ~root path_opt : locate_result =
   end else
     match
       match cached.Cmt_cache.cmt_infos.cmt_annots with
-      | Interface intf      -> `Browse (Browse_raw.Signature intf)
-      | Implementation impl -> `Browse (Browse_raw.Structure impl)
+      | Interface intf      -> `Browse [Browse_raw.Signature intf]
+      | Implementation impl -> `Browse [Browse_raw.Structure impl]
       | Packed (_, files)   -> `Pack files
-      | _ ->
-        (* We could try to work with partial cmt files, but it'd probably fail
-        * most of the time so... *)
-        `Not_found
+      | Partial_interface parts
+      | Partial_implementation parts ->
+        log "browse_cmt" "working from partial cmt(i)";
+        let env = cached.cmt_infos.cmt_initial_env in
+        let nodes =
+          Array.to_list parts
+          |> List.map ~f:(Mbrowse.node_of_binary_part env)
+        in
+        `Browse nodes
     with
-    | `Not_found -> Other_error (* partial cmt *)
-    | `Browse node ->
+    | `Browse nodes ->
       begin match path_opt with
       | None ->
         (* we were looking for a module, we found the right file, we're happy *)
@@ -398,7 +402,7 @@ and browse_cmts ~config ~root path_opt : locate_result =
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Found (loc, None)
       | Some path ->
-        let trie = Typedtrie.of_browses [Browse_tree.of_node node] in
+        let trie = Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes) in
         cached.Cmt_cache.location_trie <- trie ;
         locate ~config path trie
       end
