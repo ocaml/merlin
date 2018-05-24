@@ -638,68 +638,93 @@ let recover ident =
   | None -> assert false
   | Some loc -> `Found (loc, None)
 
-let namespaces : Context.t -> _ = function
-  | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
-  | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
-  | Expr | Patt   -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
-  | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
-  | Label _       -> [ `Labels; `Mod ]
-  | Constructor _ -> [ `Constr; `Mod ]
-  | Module_path   -> [ `Mod ]
-
-exception Found of (Path.t * Cmt_cache.tagged_path * Location.t)
-
 let tag namespace = Typedtrie.tag_path ~namespace
 
-let rec lookup (ctxt : Context.t) ident env =
-  try
-    List.iter (namespaces ctxt) ~f:(fun namespace ->
-      try
-        match namespace with
-        | `Constr ->
-          log "lookup" "lookup in constructor namespace" ;
-          let cd =
-            match ctxt with
-            | Constructor cd -> cd
-            | _ -> Env.lookup_constructor ident env
-          in
-          let path, loc = path_and_loc_of_cstr cd env in
-          (* TODO: Use [`Constr] here instead of [`Type] *)
-          raise (Found (path, tag `Type path, loc))
-        | `Mod ->
-          log "lookup" "lookup in module namespace" ;
-          let path = Env.lookup_module ~load:true ident env in
-          let md = Env.find_module path env in
-          raise (Found (path, tag `Mod path, md.Types.md_loc))
-        | `Modtype ->
-          log "lookup" "lookup in module type namespace" ;
-          let path, mtd = Env.lookup_modtype ident env in
-          raise (Found (path, tag `Modtype path, mtd.Types.mtd_loc))
-        | `Type ->
-          log "lookup" "lookup in type namespace" ;
-          let path = Env.lookup_type ident env in
-          let typ_decl = Env.find_type path env in
-          raise (Found (path, tag `Type path, typ_decl.Types.type_loc))
-        | `Vals ->
-          log "lookup" "lookup in value namespace" ;
-          let path, val_desc = Env.lookup_value ident env in
-          raise (Found (path, tag `Vals path, val_desc.Types.val_loc))
-        | `Labels ->
-          log "lookup" "lookup in label namespace" ;
-          let lbl =
-            match ctxt with
-            | Label lbl -> lbl
-            | _ -> Env.lookup_label ident env
-          in
-          let path, loc = path_and_loc_from_label lbl env in
-          (* TODO: Use [`Labels] here instead of [`Type] *)
-          raise (Found (path, tag `Type path, loc))
-      with Not_found -> ()
-    ) ;
-    logf "lookup" "   ... not in the environment" ;
-    raise Not_in_env
-  with Found x ->
-    x
+module Env_lookup : sig
+
+  val with_context
+     : Context.t
+    -> Longident.t
+    -> Env.t
+    -> (Path.t * Cmt_cache.tagged_path * Location.t) option
+
+   val label
+     : Longident.t
+     -> Env.t
+    -> (Path.t * Cmt_cache.tagged_path * Location.t) option
+
+end = struct
+
+  let namespaces : Context.t -> _ = function
+    | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
+    | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Expr | Patt   -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+    | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+    | Label _       -> [ `Labels; `Mod ]
+    | Constructor _ -> [ `Constr; `Mod ]
+    | Module_path   -> [ `Mod ]
+
+  exception Found of (Path.t * Cmt_cache.tagged_path * Location.t)
+
+  let with_context (ctxt : Context.t) ident env =
+    try
+      List.iter (namespaces ctxt) ~f:(fun namespace ->
+        try
+          match namespace with
+          | `Constr ->
+            log "lookup" "lookup in constructor namespace" ;
+            let cd =
+              match ctxt with
+              | Constructor cd -> cd
+              | _ -> Env.lookup_constructor ident env
+            in
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, tag `Type path, loc))
+          | `Mod ->
+            log "lookup" "lookup in module namespace" ;
+            let path = Env.lookup_module ~load:true ident env in
+            let md = Env.find_module path env in
+            raise (Found (path, tag `Mod path, md.Types.md_loc))
+          | `Modtype ->
+            log "lookup" "lookup in module type namespace" ;
+            let path, mtd = Env.lookup_modtype ident env in
+            raise (Found (path, tag `Modtype path, mtd.Types.mtd_loc))
+          | `Type ->
+            log "lookup" "lookup in type namespace" ;
+            let path = Env.lookup_type ident env in
+            let typ_decl = Env.find_type path env in
+            raise (Found (path, tag `Type path, typ_decl.Types.type_loc))
+          | `Vals ->
+            log "lookup" "lookup in value namespace" ;
+            let path, val_desc = Env.lookup_value ident env in
+            raise (Found (path, tag `Vals path, val_desc.Types.val_loc))
+          | `Labels ->
+            log "lookup" "lookup in label namespace" ;
+            let lbl =
+              match ctxt with
+              | Label lbl -> lbl
+              | _ -> Env.lookup_label ident env
+            in
+            let path, loc = path_and_loc_from_label lbl env in
+            (* TODO: Use [`Labels] here instead of [`Type] *)
+            raise (Found (path, tag `Type path, loc))
+        with Not_found -> ()
+      ) ;
+      logf "lookup" "   ... not in the environment" ;
+      None
+    with Found x ->
+      Some x
+
+  let label ident env =
+    try
+      let label_desc = Env.lookup_label ident env in
+      let path, loc = path_and_loc_from_label label_desc env in
+      (* TODO: Use [`Labels] here *)
+      Some (path, tag `Type path, loc)
+    with Not_found ->
+      None
+end
 
 let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   File_switching.reset ();
@@ -730,20 +755,18 @@ let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
 let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   let ident, is_label = Longident.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
-  try
-    let path, tagged_path, loc =
-      if not is_label then lookup ctxt ident env else
-      (* If we know it is a record field, we only look for that. *)
-      let label_desc = Env.lookup_label ident env in
-      let path, loc = path_and_loc_from_label label_desc env in
-      (* TODO: Use [`Labels] here *)
-      path, tag `Type path, loc
-    in
-    if Utils.is_builtin_path path then `Builtin else
-    locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
+  match
+    if not is_label then
+      Env_lookup.with_context ctxt ident env
+    else
+      Env_lookup.label ident env
   with
-  | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-  | Not_in_env -> `Not_in_env str_ident
+  | None -> `Not_in_env str_ident
+  | Some (path, tagged_path, loc) ->
+    if Utils.is_builtin_path path then
+      `Builtin
+    else
+      locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
 (* Distinguish between "Mo[d]ule.Constructor" and "Module.Cons[t]ructor" *)
 let cursor_on_constructor_name ~cursor:pos
