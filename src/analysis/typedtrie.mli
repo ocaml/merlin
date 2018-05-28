@@ -26,9 +26,7 @@
 
 )* }}} *)
 
-open Cmt_cache
-
-type t = trie
+type t
 
 val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
 (** Constructs a trie from a list of [BrowseT.t].
@@ -43,28 +41,18 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
     [cursor] in this case, so we can't be inside an expression, or a functor, …
 *)
 
-val tag_path : namespace:namespace -> Path.t -> tagged_path
-
-val path_to_string : tagged_path -> string
-
-val idname : maybe_ident -> string
-
-val peal_head : tagged_path -> tagged_path
-
-val path_head : tagged_path -> maybe_ident * namespace
-
 type result =
   | Found of Location.t * string option
     (** Found at location *)
-  | Alias_of of Location.t * tagged_path
+  | Alias_of of Location.t * Namespaced_path.t
     (** Alias of [path], introduced at [Location.t] *)
-  | Resolves_to of tagged_path * Location.t option
+  | Resolves_to of Namespaced_path.t * Location.t option
     (** Not found in trie, look for [path] in loadpath.
         If the second parameter is [Some] it means we encountered an include or
         module alias at some point, so we can always fallback there if we don't
         find anything in the loadpath. *)
 
-val find : ?before:Lexing.position -> t -> tagged_path -> result
+val find : ?before:Lexing.position -> t -> Namespaced_path.t -> result
 (** [find ?before t path] starts by going down in [t] following branches
     enclosing [before]. Then it will behave as [follow ?before].
     If [follow] returns [Resolves_to (p, _)] it will go back up in the trie, and

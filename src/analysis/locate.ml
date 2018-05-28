@@ -347,11 +347,21 @@ let trie_of_cmt root =
   let open Cmt_format in
   let cached = Cmt_cache.read root in
   logf "browse_cmts" "inspecting %s" root ;
-  if cached.Cmt_cache.location_trie <> Ident.empty then (
-    log "browse_cmts" "trie already cached";
-    `Browsable (cached.cmt_infos.cmt_sourcefile, cached.location_trie)
-  ) else (
-    match
+  begin match cached.Cmt_cache.location_trie with
+  | Some _ -> log "browse_cmts" "trie already cached"
+  | None ->
+    let trie_of_nodes nodes =
+      let digest =
+        (* [None] only for packs. *)
+        Option.get cached.cmt_infos.cmt_source_digest
+      in
+      File_switching.move_to ~digest root;
+      let trie =
+        Some (Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes))
+      in
+      cached.location_trie <- trie
+    in
+    Option.iter ~f:trie_of_nodes (
       match cached.Cmt_cache.cmt_infos.cmt_annots with
       | Packed (_, _)       -> None
       | Interface intf      -> Some [Browse_raw.Signature intf]
@@ -365,18 +375,9 @@ let trie_of_cmt root =
           |> List.map ~f:(Mbrowse.node_of_binary_part env)
         in
         Some nodes
-    with
-    | None -> `Pack cached.cmt_infos.cmt_loadpath
-    | Some nodes ->
-      let digest =
-        (* [None] only for packs *)
-        Option.get cached.cmt_infos.Cmt_format.cmt_source_digest
-      in
-      File_switching.move_to ~digest root;
-      let trie = Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes) in
-      cached.Cmt_cache.location_trie <- trie;
-      `Browsable (cached.cmt_infos.cmt_sourcefile, trie)
-  )
+    )
+  end;
+  cached.cmt_infos, cached.location_trie
 
 type locate_result =
   | Found of Location.t * string option
@@ -387,45 +388,43 @@ let rec locate ~config ?pos path trie : locate_result =
   match Typedtrie.find ?before:pos trie path with
   | Typedtrie.Found (loc, doc_opt) -> Found (loc, doc_opt)
   | Typedtrie.Resolves_to (new_path, fallback) ->
-    begin match Typedtrie.path_head new_path with
+    begin match Namespaced_path.head new_path with
     | (_, `Mod) ->
-      logf "locate" "resolves to %s" (Typedtrie.path_to_string new_path);
+      logf "locate" "resolves to %s" (Namespaced_path.to_string new_path);
       Fallback.setopt fallback ;
       from_path ~config new_path
     | _ ->
       logf "locate" "new path (%s) is not a real path"
-        (Typedtrie.path_to_string new_path);
+        (Namespaced_path.to_string new_path);
       logfmt "locate (typedtrie dump)" (fun fmt -> Typedtrie.dump fmt trie);
       Other_error (* incorrect path *)
     end
   | Typedtrie.Alias_of (loc, new_path) ->
-    logf "locate" "alias of %s" (Typedtrie.path_to_string new_path) ;
+    logf "locate" "alias of %s" (Namespaced_path.to_string new_path) ;
     (* TODO: maybe give the option to NOT follow module aliases? *)
     Fallback.set loc;
     locate ~config ~pos:loc.Location.loc_start new_path trie
 
 and from_path ~config path : locate_result =
-  log "from_path" (Typedtrie.path_to_string path) ;
-  match Typedtrie.path_head path with
+  log "from_path" (Namespaced_path.to_string path) ;
+  match Namespaced_path.head path with
   | fname, `Mod ->
-    let fname = Typedtrie.idname fname in
+    let fname = Namespaced_path.Ident.name fname in
     let file = Preferences.build fname in
     let browse_cmt cmt_file =
-      let rest_of_path =
-        try Some (Typedtrie.peal_head path)
-        with _ -> None
-      in
-      match trie_of_cmt cmt_file, rest_of_path with
-      | `Pack _, None ->
+      let cmt_infos, trie = trie_of_cmt cmt_file in
+      match trie, Namespaced_path.peal_head path with
+      | None, None ->
         Other_error (* Trying to stop on a packed module... *)
-      | `Pack cmt_loadpath, Some path ->
+      | None, Some path ->
         log "from_path" "Saw packed module => erasing loadpath" ;
-        erase_loadpath ~cwd:(Filename.dirname cmt_file) ~new_path:cmt_loadpath
+        erase_loadpath ~cwd:(Filename.dirname cmt_file)
+          ~new_path:cmt_infos.cmt_loadpath
           (fun () -> from_path ~config path)
-      | `Browsable (source_file, _), None ->
+      | Some trie, None ->
         (* We found the module we were looking for, we can stop here. *)
         let pos_fname =
-          match source_file with
+          match cmt_infos.cmt_sourcefile with
           | None   -> fname
           | Some f -> f
         in
@@ -433,7 +432,7 @@ and from_path ~config path : locate_result =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Found (loc, None)
-      | `Browsable (_, trie), Some path ->
+      | Some trie, Some path ->
         locate ~config path trie
     in
     begin match Utils.find_file ~config ~with_fallback:true file with
@@ -610,20 +609,18 @@ let recover ident =
   | None -> assert false
   | Some loc -> `Found (loc, None)
 
-let tag namespace = Typedtrie.tag_path ~namespace
-
 module Env_lookup : sig
 
   val with_context
      : Context.t
     -> Longident.t
     -> Env.t
-    -> (Path.t * Cmt_cache.tagged_path * Location.t) option
+    -> (Path.t * Namespaced_path.t * Location.t) option
 
    val label
      : Longident.t
      -> Env.t
-    -> (Path.t * Cmt_cache.tagged_path * Location.t) option
+    -> (Path.t * Namespaced_path.t * Location.t) option
 
 end = struct
 
@@ -636,7 +633,7 @@ end = struct
     | Constructor _ -> [ `Constr; `Mod ]
     | Module_path   -> [ `Mod ]
 
-  exception Found of (Path.t * Cmt_cache.tagged_path * Location.t)
+  exception Found of (Path.t * Namespaced_path.t * Location.t)
 
   let with_context (ctxt : Context.t) ident env =
     try
@@ -652,25 +649,25 @@ end = struct
             in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, tag `Type path, loc))
+            raise (Found (path, Namespaced_path.of_path `Type path, loc))
           | `Mod ->
             log "lookup" "lookup in module namespace" ;
             let path = Env.lookup_module ~load:true ident env in
             let md = Env.find_module path env in
-            raise (Found (path, tag `Mod path, md.Types.md_loc))
+            raise (Found (path, Namespaced_path.of_path `Mod path, md.Types.md_loc))
           | `Modtype ->
             log "lookup" "lookup in module type namespace" ;
             let path, mtd = Env.lookup_modtype ident env in
-            raise (Found (path, tag `Modtype path, mtd.Types.mtd_loc))
+            raise (Found (path, Namespaced_path.of_path `Modtype path, mtd.Types.mtd_loc))
           | `Type ->
             log "lookup" "lookup in type namespace" ;
             let path = Env.lookup_type ident env in
             let typ_decl = Env.find_type path env in
-            raise (Found (path, tag `Type path, typ_decl.Types.type_loc))
+            raise (Found (path, Namespaced_path.of_path `Type path, typ_decl.Types.type_loc))
           | `Vals ->
             log "lookup" "lookup in value namespace" ;
             let path, val_desc = Env.lookup_value ident env in
-            raise (Found (path, tag `Vals path, val_desc.Types.val_loc))
+            raise (Found (path, Namespaced_path.of_path `Vals path, val_desc.Types.val_loc))
           | `Labels ->
             log "lookup" "lookup in label namespace" ;
             let lbl =
@@ -680,7 +677,7 @@ end = struct
             in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, tag `Type path, loc))
+            raise (Found (path, Namespaced_path.of_path `Type path, loc))
         with Not_found -> ()
       ) ;
       logf "lookup" "   ... not in the environment" ;
@@ -693,7 +690,7 @@ end = struct
       let label_desc = Env.lookup_label ident env in
       let path, loc = path_and_loc_from_label label_desc env in
       (* TODO: Use [`Labels] here *)
-      Some (path, tag `Type path, loc)
+      Some (path, Namespaced_path.of_path `Type path, loc)
     with Not_found ->
       None
 end
@@ -704,7 +701,7 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   Preferences.set ml_or_mli;
   logf "locate"
     "present in the environment, walking up the typedtree looking for '%s'"
-    (Typedtrie.path_to_string path);
+    (Namespaced_path.to_string path);
   try
     if not (Utils.is_ghost_loc loc) then Fallback.set loc;
     let lazy trie = lazy_trie in
@@ -720,7 +717,7 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
 (* Only used to retrieve documentation *)
 let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
   let str_ident = Path.name path in
-  let tagged_path = tag namespace path in
+  let tagged_path = Namespaced_path.of_path namespace path in
   locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
     ~lazy_trie
 

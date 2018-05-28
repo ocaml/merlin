@@ -141,6 +141,8 @@ SOURCES_LIB = \
 	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
+	src/analysis/namespaced_path.mli  \
+	src/analysis/namespaced_path.ml   \
 	src/ocaml/support/cmt_cache.ml    \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \
