@@ -207,7 +207,7 @@ end
 module File_switching : sig
   val reset : unit -> unit
 
-  val move_to : ?digest:Digest.t -> string -> unit
+  val move_to : digest:Digest.t -> string -> unit
 
   val where_am_i : unit -> string option
 
@@ -215,7 +215,7 @@ module File_switching : sig
 end = struct
   type t = {
     last_file_visited : string;
-    digest : Digest.t option ; (* [None] only for packs. *)
+    digest : Digest.t;
   }
 
   let last_file_visited t = t.last_file_visited
@@ -225,13 +225,13 @@ end = struct
 
   let reset () = state := None
 
-  let move_to ?digest file =
+  let move_to ~digest file =
     logf "File_switching.move_to" "%s" file;
     state := Some { last_file_visited = file ; digest }
 
   let where_am_i () = Option.map !state ~f:last_file_visited
 
-  let source_digest () = Option.bind !state ~f:digest
+  let source_digest () = Option.map !state ~f:digest
 end
 
 
@@ -343,6 +343,41 @@ end
 
 exception Context_mismatch
 
+let trie_of_cmt root =
+  let open Cmt_format in
+  let cached = Cmt_cache.read root in
+  logf "browse_cmts" "inspecting %s" root ;
+  if cached.Cmt_cache.location_trie <> Ident.empty then (
+    log "browse_cmts" "trie already cached";
+    `Browsable (cached.cmt_infos.cmt_sourcefile, cached.location_trie)
+  ) else (
+    match
+      match cached.Cmt_cache.cmt_infos.cmt_annots with
+      | Packed (_, _)       -> None
+      | Interface intf      -> Some [Browse_raw.Signature intf]
+      | Implementation impl -> Some [Browse_raw.Structure impl]
+      | Partial_interface parts
+      | Partial_implementation parts ->
+        log "browse_cmt" "working from partial cmt(i)";
+        let env = cached.cmt_infos.cmt_initial_env in
+        let nodes =
+          Array.to_list parts
+          |> List.map ~f:(Mbrowse.node_of_binary_part env)
+        in
+        Some nodes
+    with
+    | None -> `Pack cached.cmt_infos.cmt_loadpath
+    | Some nodes ->
+      let digest =
+        (* [None] only for packs *)
+        Option.get cached.cmt_infos.Cmt_format.cmt_source_digest
+      in
+      File_switching.move_to ~digest root;
+      let trie = Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes) in
+      cached.Cmt_cache.location_trie <- trie;
+      `Browsable (cached.cmt_infos.cmt_sourcefile, trie)
+  )
+
 type locate_result =
   | Found of Location.t * string option
   | File_not_found of File.t
@@ -369,122 +404,63 @@ let rec locate ~config ?pos path trie : locate_result =
     Fallback.set loc;
     locate ~config ~pos:loc.Location.loc_start new_path trie
 
-and browse_cmts ~config ~root path_opt : locate_result =
-  let open Cmt_format in
-  let cached = Cmt_cache.read root in
-  logf "browse_cmts" "inspecting %s" root ;
-  File_switching.move_to ?digest:cached.Cmt_cache.cmt_infos.cmt_source_digest root ;
-  if cached.Cmt_cache.location_trie <> Ident.empty then begin
-    log "browse_cmts" "cmt already cached";
-    locate ~config (Option.get path_opt) cached.Cmt_cache.location_trie
-  end else
-    match
-      match cached.Cmt_cache.cmt_infos.cmt_annots with
-      | Interface intf      -> `Browse [Browse_raw.Signature intf]
-      | Implementation impl -> `Browse [Browse_raw.Structure impl]
-      | Packed (_, files)   -> `Pack files
-      | Partial_interface parts
-      | Partial_implementation parts ->
-        log "browse_cmt" "working from partial cmt(i)";
-        let env = cached.cmt_infos.cmt_initial_env in
-        let nodes =
-          Array.to_list parts
-          |> List.map ~f:(Mbrowse.node_of_binary_part env)
-        in
-        `Browse nodes
-    with
-    | `Browse nodes ->
-      begin match path_opt with
-      | None ->
-        (* we were looking for a module, we found the right file, we're happy *)
-        let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
-        let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
-        (* TODO: retrieve "ocaml.text" floating attributes? *)
-        Found (loc, None)
-      | Some path ->
-        let trie = Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes) in
-        cached.Cmt_cache.location_trie <- trie ;
-        locate ~config path trie
-      end
-    | `Pack files ->
-      match path_opt with
-      | None -> Other_error (* Stopping on a pack file?? *)
-      | Some path ->
-        match Typedtrie.path_head path with
-        | id, `Mod ->
-          log "loadpath" "Saw packed module => erasing loadpath" ;
-          let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
-          erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
-            from_path ~config path
-          )
-        | _ -> Other_error (* type error: packs contain only modules. *)
-
-(* The following is ugly, and deserves some explanations:
-      As can be seen above, when encountering packed modules we override the
-      loadpath by the one used to create the pack.
-      This means that if the cmt files haven't been moved, we have access to
-      the cmt file of every unit included in the pack.
-      However, we might not have access to any other cmt (e.g. if others
-      paths in the loadpath reference only cmis of packs).
-      (Note that if we had access to other cmts, there might be conflicts,
-      and the paths order would matter unless we have reliable digests...)
-      Assuming we are in such a situation, if we do not find something in our
-      "erased" loadpath, it could mean that we are looking for a persistent
-      unit, and that's why we restore the initial loadpath. *)
 and from_path ~config path : locate_result =
   log "from_path" (Typedtrie.path_to_string path) ;
-  match path with
-  | TPident (fname, `Mod) ->
-    let save_digest_and_return root =
-      let {Cmt_cache. cmt_infos} = Cmt_cache.read root in
-      File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
-      let fname =
-        match cmt_infos.Cmt_format.cmt_sourcefile with
-        | None   -> Typedtrie.idname fname
-        | Some f -> f
-      in
-      let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
-      let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-      Found (loc, None)
-    in
+  match Typedtrie.path_head path with
+  | fname, `Mod ->
     let fname = Typedtrie.idname fname in
     let file = Preferences.build fname in
+    let browse_cmt cmt_file =
+      let rest_of_path =
+        try Some (Typedtrie.peal_head path)
+        with _ -> None
+      in
+      match trie_of_cmt cmt_file, rest_of_path with
+      | `Pack _, None ->
+        Other_error (* Trying to stop on a packed module... *)
+      | `Pack cmt_loadpath, Some path ->
+        log "from_path" "Saw packed module => erasing loadpath" ;
+        erase_loadpath ~cwd:(Filename.dirname cmt_file) ~new_path:cmt_loadpath
+          (fun () -> from_path ~config path)
+      | `Browsable (source_file, _), None ->
+        (* We found the module we were looking for, we can stop here. *)
+        let pos_fname =
+          match source_file with
+          | None   -> fname
+          | Some f -> f
+        in
+        let pos = Lexing.make_pos ~pos_fname (1, 0) in
+        let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
+        (* TODO: retrieve "ocaml.text" floating attributes? *)
+        Found (loc, None)
+      | `Browsable (_, trie), Some path ->
+        locate ~config path trie
+    in
     begin match Utils.find_file ~config ~with_fallback:true file with
-    | Some cmt_file -> save_digest_and_return cmt_file
+    | Some cmt_file -> browse_cmt cmt_file
     | None ->
+      (* The following is ugly, and deserves some explanations:
+           As can be seen above, when encountering packed modules we override
+           the loadpath by the one used to create the pack.
+           This means that if the cmt files haven't been moved, we have access
+           to the cmt file of every unit included in the pack.
+           However, we might not have access to any other cmt (e.g. if others
+           paths in the loadpath reference only cmis of packs).
+           (Note that if we had access to other cmts, there might be conflicts,
+           and the paths order would matter unless we have reliable digests...)
+           Assuming we are in such a situation, if we do not find something in
+           our "erased" loadpath, it could mean that we are looking for a
+           persistent unit, and that's why we restore the initial loadpath. *)
       restore_loadpath ~config (fun () ->
         match Utils.find_file ~config ~with_fallback:true file with
-        | Some cmt_file -> save_digest_and_return cmt_file
+        | Some cmt_file -> browse_cmt cmt_file
         | None ->
-          (* In that special case, we haven't managed to find any cmt. But we
-             only need the cmt for the source digest in contains. Even if we
-             don't have that we can blindly look for the source file and hope
-             there are no duplicates. *)
           logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
-          let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
-          let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-          File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
-          Found (loc, None)
+          File_not_found file
       )
     end
-  | _ ->
-    match Typedtrie.path_head path with
-    | (fname, `Mod) ->
-      let modules = try Some (Typedtrie.peal_head path) with _ -> None in
-      let fname = Typedtrie.idname fname in
-      let file = Preferences.build fname in
-      begin match Utils.find_file ~config ~with_fallback:true file with
-      | Some cmt_file -> browse_cmts ~config ~root:cmt_file modules
-      | None ->
-        restore_loadpath ~config (fun () ->
-          match Utils.find_file ~config ~with_fallback:true file with
-          | Some cmt_file -> browse_cmts ~config ~root:cmt_file modules
-          | None ->
-            logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
-            File_not_found file
-        )
-      end
-    | _ -> assert false
+  | _, _ ->
+    Other_error (* type error, [from_path] should only be called on modules *)
 
 let path_and_loc_of_cstr desc env =
   let open Types in
