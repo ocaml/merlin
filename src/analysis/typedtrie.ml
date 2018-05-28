@@ -39,7 +39,7 @@ and elt = {
 }
 and node =
    | Leaf
-   | Internal of t
+   | Internal of t Lazy.t
    | Included of Namespaced_path.t
    | Alias    of Namespaced_path.t
 
@@ -183,9 +183,9 @@ let rec build ?(local_buffer=false) ~trie browses =
     | `Alias path -> Alias (Namespaced_path.of_path ~namespace path)
     | `Ident path -> Alias (Namespaced_path.of_path ~namespace:`Modtype path)
     | `Str s ->
-      Internal (build ~local_buffer ~trie:Trie.empty [of_structure s])
+      Internal (lazy (build ~local_buffer ~trie:Trie.empty [of_structure s]))
     | `Sg s ->
-      Internal (build ~local_buffer ~trie:Trie.empty [of_signature s])
+      Internal (lazy (build ~local_buffer ~trie:Trie.empty [of_signature s]))
     | `Mod_expr me -> node_for_direct_mod `Mod (remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (remove_indir_mty mty)
     | `Functor (id, floc, pack_loc, packed) when local_buffer ->
@@ -193,8 +193,8 @@ let rec build ?(local_buffer=false) ~trie browses =
       let trie =
         begin match node_for_direct_mod `Mod packed with
         | Internal t ->
-          Trie.add id arg_node t
-        | _ -> Trie.singleton id arg_node
+          lazy (Trie.add id arg_node (Lazy.force t))
+        | _ -> Lazy.from_val (Trie.singleton id arg_node)
         end
       in
       Internal trie
@@ -213,7 +213,7 @@ let rec build ?(local_buffer=false) ~trie browses =
           ];
         ]
       in
-      Internal trie
+      Internal (Lazy.from_val trie)
     | `Unpack | `Functor _ -> (* TODO! *)
       Leaf
   in
@@ -310,12 +310,10 @@ let rec build ?(local_buffer=false) ~trie browses =
       | idlocs ->
         List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
           if local_buffer then
-            let children = collect_local_modules Trie.empty t.t_children in
-            let node =
-              if Trie.is_empty children
-              then Leaf
-              else Internal children
+            let children =
+              lazy (collect_local_modules Trie.empty t.t_children)
             in
+            let node = Internal children in
             let elt = { loc = t.t_loc; doc; namespace = `Vals; node } in
             Trie.add_multiple id elt trie
           else
@@ -416,7 +414,7 @@ let rec follow ?before trie path =
       | TPident _ -> Found (l, doc)
       | _ ->
         let xs = Namespaced_path.peal_head_exn path in
-        match follow ?before t xs with
+        match follow ?before (Lazy.force t) xs with
         | Resolves_to (p, None) when Namespaced_path.equal p xs -> Found (l, doc) (* questionable *)
         | Resolves_to (p, x) as checkpoint ->
           begin match follow ~before:l.Location.loc_start trie p with
@@ -437,7 +435,7 @@ let rec find ~before trie path =
       && Lexing.compare_pos loc.Location.loc_end before > 0
     ) trie
   with
-  | Some (_name, { loc; node = Internal subtrie }) ->
+  | Some (_name, { loc; node = Internal (lazy subtrie) }) ->
     begin match find ~before subtrie path with
     | Resolves_to (p, x) as checkpoint ->
       begin match follow ~before:loc.Location.loc_start trie p with
@@ -469,7 +467,10 @@ let rec dump fmt trie =
       Format.fprintf fmt "%a = %s" Location.print_loc loc
         (Namespaced_path.to_string path)
     | Internal t ->
-      Format.fprintf fmt "%a = %a" Location.print_loc loc dump t
+      if Lazy.is_val t then
+        Format.fprintf fmt "%a = %a" Location.print_loc loc dump (Lazy.force t)
+      else
+        Format.fprintf fmt "%a = <lazy>" Location.print_loc loc
   in
   Format.pp_print_string fmt "{\n" ;
   Trie.iter (fun key nodes ->
