@@ -33,7 +33,7 @@ function! merlin_type#ShowTypeHistory()
   if l:win <# 0
     let t:merlin_restore_windows = winrestcmd()
     silent execute "bot " . g:merlin_type_history_height . "split"
-    execute "buffer" g:merlin_type_history
+    silent execute "buffer" g:merlin_type_history
   elseif winnr() !=# l:win
     exe l:win . "wincmd w"
   endif
