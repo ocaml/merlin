@@ -50,7 +50,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
@@ -76,7 +76,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
