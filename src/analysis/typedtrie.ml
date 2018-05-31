@@ -406,48 +406,51 @@ let rec follow ?before trie path =
         Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
     with
     | [] -> Resolves_to (path, None)
-    | {loc; doc; node = Leaf} :: _ ->
-      (* we're not checking whether [xs = []] here, as we wouldn't be able to
-         lookup anything else which would be correct I think.
-         [xs] can be non-nil in this case when [x] is a first class module.
-         ... and perhaps in other situations I am not aware of.  *)
-      Found (loc, doc)
-    | {loc; node = Alias new_prefix} :: _ ->
-      begin match Namespaced_path.peal_head path with
-      | None ->
-        (* FIXME: at this point, we might be deep in the trie, and [path]
-           might only make sense for a few steps, but in the upper nodes it
-           might need to be prefixed.
-           We need to recurse like we do for [Resolves_to] *)
-        Alias_of (loc, new_prefix)
-      | Some path ->
+    | { loc; doc; node; namespace = _ } :: _ ->
+      match node with
+      | Leaf ->
+        (* we're not checking whether [xs = []] here, as we wouldn't be able to
+           lookup anything else which would be correct I think.
+           [xs] can be non-nil in this case when [x] is a first class module.
+           ... and perhaps in other situations I am not aware of.  *)
+        Found (loc, doc)
+      | Alias new_prefix ->
+        begin match Namespaced_path.peal_head path with
+        | None ->
+          (* FIXME: at this point, we might be deep in the trie, and [path]
+             might only make sense for a few steps, but in the upper nodes it
+             might need to be prefixed.
+             We need to recurse like we do for [Resolves_to] *)
+          Alias_of (loc, new_prefix)
+        | Some path ->
+          let new_path = Namespaced_path.rewrite_path ~new_prefix path in
+          begin match follow ~before:loc.Location.loc_start trie new_path with
+          | Resolves_to (p, None) -> Resolves_to (p, Some loc)
+          | otherwise -> otherwise
+          end
+        end
+      | Included new_prefix ->
         let new_path = Namespaced_path.rewrite_path ~new_prefix path in
         begin match follow ~before:loc.Location.loc_start trie new_path with
         | Resolves_to (p, None) -> Resolves_to (p, Some loc)
         | otherwise -> otherwise
         end
-      end
-    | { loc; node = Included new_prefix} :: _ ->
-      let new_path = Namespaced_path.rewrite_path ~new_prefix path in
-      begin match follow ~before:loc.Location.loc_start trie new_path with
-      | Resolves_to (p, None) -> Resolves_to (p, Some loc)
-      | otherwise -> otherwise
-      end
-    | { loc = l; doc; node = Internal t } :: _ ->
-      begin match path with
-      | TPident _ -> Found (l, doc)
-      | _ ->
-        let xs = Namespaced_path.peal_head_exn path in
-        match follow ?before (Lazy.force t) xs with
-        | Resolves_to (p, None) when Namespaced_path.equal p xs -> Found (l, doc) (* questionable *)
-        | Resolves_to (p, x) as checkpoint ->
-          begin match follow ~before:l.Location.loc_start trie p with
-          (* This feels wrong *)
-          | Resolves_to (_, None) -> checkpoint
+      | Internal t ->
+        begin match path with
+        | TPident _ -> Found (loc, doc)
+        | _ ->
+          let xs = Namespaced_path.peal_head_exn path in
+          match follow ?before (Lazy.force t) xs with
+          | Resolves_to (p, None) when Namespaced_path.equal p xs ->
+            Found (loc, doc) (* questionable *)
+          | Resolves_to (p, x) as checkpoint ->
+            begin match follow ~before:loc.Location.loc_start trie p with
+            (* This feels wrong *)
+            | Resolves_to (_, None) -> checkpoint
+            | otherwise -> otherwise
+            end
           | otherwise -> otherwise
-          end
-        | otherwise -> otherwise
-      end
+        end
   with
   | Not_found ->
     Resolves_to (path, None)
