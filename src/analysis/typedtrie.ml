@@ -147,7 +147,6 @@ let extract_doc (attrs : Parsetree.attributes) =
 (* See mli for documentation. *)
 type result =
   | Found of Location.t * string option
-  | Alias_of of Location.t * Namespaced_path.t
   | Resolves_to of Namespaced_path.t * Location.t option
 
 let rec remove_top_indir =
@@ -416,12 +415,7 @@ let rec follow ?before trie path =
         Found (loc, doc)
       | Alias new_prefix ->
         begin match Namespaced_path.peal_head path with
-        | None ->
-          (* FIXME: at this point, we might be deep in the trie, and [path]
-             might only make sense for a few steps, but in the upper nodes it
-             might need to be prefixed.
-             We need to recurse like we do for [Resolves_to] *)
-          Alias_of (loc, new_prefix)
+        | None -> Found (loc, doc)
         | Some path ->
           let new_path = Namespaced_path.rewrite_path ~new_prefix path in
           begin match follow ~before:loc.Location.loc_start trie new_path with

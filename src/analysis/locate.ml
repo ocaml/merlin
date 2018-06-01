@@ -399,11 +399,6 @@ let rec locate ~config ?pos path trie : locate_result =
       logfmt "locate (typedtrie dump)" (fun fmt -> Typedtrie.dump fmt trie);
       Other_error (* incorrect path *)
     end
-  | Typedtrie.Alias_of (loc, new_path) ->
-    logf "locate" "alias of %s" (Namespaced_path.to_string new_path) ;
-    (* TODO: maybe give the option to NOT follow module aliases? *)
-    Fallback.set loc;
-    locate ~config ~pos:loc.Location.loc_start new_path trie
 
 and from_path ~config path : locate_result =
   log "from_path" (Namespaced_path.to_string path) ;

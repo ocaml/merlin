@@ -44,8 +44,6 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
 type result =
   | Found of Location.t * string option
     (** Found at location *)
-  | Alias_of of Location.t * Namespaced_path.t
-    (** Alias of [path], introduced at [Location.t] *)
   | Resolves_to of Namespaced_path.t * Location.t option
     (** Not found in trie, look for [path] in loadpath.
         If the second parameter is [Some] it means we encountered an include or

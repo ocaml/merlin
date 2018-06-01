@@ -26,15 +26,13 @@ Trying them all:
     "notifications": []
   }
 
-In that one we apparently traverse the module type aliasing:
-
   $ $MERLIN single locate -look-for ml -position 9:12 -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
-        "line": 3,
+        "line": 7,
         "col": 0
       }
     },
