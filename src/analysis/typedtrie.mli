@@ -44,18 +44,23 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
 type result =
   | Found of Location.t * string option
     (** Found at location *)
-  | Resolves_to of Namespaced_path.t * Location.t option
-    (** Not found in trie, look for [path] in loadpath.
-        If the second parameter is [Some] it means we encountered an include or
-        module alias at some point, so we can always fallback there if we don't
-        find anything in the loadpath. *)
+  | Resolves_to of Namespaced_path.t
+    (** Not found in trie, look for [path] in loadpath. *)
 
-val find : ?before:Lexing.position -> t -> Namespaced_path.t -> result
+val find
+   : remember_loc:(Location.t -> unit)
+  -> ?before:Lexing.position
+  -> t
+  -> Namespaced_path.t
+  -> result
 (** [find ?before t path] starts by going down in [t] following branches
     enclosing [before]. Then it will behave as [follow ?before].
     If [follow] returns [Resolves_to (p, _)] it will go back up in the trie, and
     will try to [follow] again with [before] set to the the start of the node we
-    just got up from. *)
+    just got up from.
+
+    @param remember_loc is used to capture a trace of the indirections that we
+    traverse. *)
 
 (* For debugging purposes. *)
 val dump : Format.formatter -> t -> unit

@@ -147,7 +147,7 @@ let extract_doc (attrs : Parsetree.attributes) =
 (* See mli for documentation. *)
 type result =
   | Found of Location.t * string option
-  | Resolves_to of Namespaced_path.t * Location.t option
+  | Resolves_to of Namespaced_path.t
 
 let rec remove_top_indir =
   List.concat_map ~f:(fun bt ->
@@ -384,7 +384,7 @@ let rec build ~local_buffer ~trie browses =
 let of_browses ?(local_buffer=false) browses =
   build ~local_buffer ~trie:Trie.empty browses
 
-let rec follow ?before trie path =
+let rec follow ~remember_loc ?before trie path =
   let (x, namespace) = Namespaced_path.head path in
   try
     let lst = Trie.get x trie in
@@ -404,7 +404,7 @@ let rec follow ?before trie path =
         (* We wants the ones closed last to be at the beginning of the list. *)
         Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
     with
-    | [] -> Resolves_to (path, None)
+    | [] -> Resolves_to path
     | { loc; doc; node; namespace = _ } :: _ ->
       match node with
       | Leaf ->
@@ -418,38 +418,31 @@ let rec follow ?before trie path =
         | None -> Found (loc, doc)
         | Some path ->
           let new_path = Namespaced_path.rewrite_path ~new_prefix path in
-          begin match follow ~before:loc.Location.loc_start trie new_path with
-          | Resolves_to (p, None) -> Resolves_to (p, Some loc)
-          | otherwise -> otherwise
-          end
+          remember_loc loc;
+          follow ~remember_loc ~before:loc.Location.loc_start trie new_path
         end
       | Included new_prefix ->
         let new_path = Namespaced_path.rewrite_path ~new_prefix path in
-        begin match follow ~before:loc.Location.loc_start trie new_path with
-        | Resolves_to (p, None) -> Resolves_to (p, Some loc)
-        | otherwise -> otherwise
-        end
+        remember_loc loc;
+        follow ~remember_loc ~before:loc.Location.loc_start trie new_path
       | Internal t ->
         begin match path with
         | TPident _ -> Found (loc, doc)
         | _ ->
           let xs = Namespaced_path.peal_head_exn path in
-          match follow ?before (Lazy.force t) xs with
-          | Resolves_to (p, None) when Namespaced_path.equal p xs ->
-            Found (loc, doc) (* questionable *)
-          | Resolves_to (p, x) as checkpoint ->
-            begin match follow ~before:loc.Location.loc_start trie p with
-            (* This feels wrong *)
-            | Resolves_to (_, None) -> checkpoint
-            | otherwise -> otherwise
-            end
+          match follow ~remember_loc ?before (Lazy.force t) xs with
+          | Resolves_to p ->
+            if Namespaced_path.equal p xs then
+              Found (loc, doc) (* questionable *)
+            else
+              follow ~remember_loc ~before:loc.Location.loc_start trie p
           | otherwise -> otherwise
         end
   with
   | Not_found ->
-    Resolves_to (path, None)
+    Resolves_to path
 
-let rec find ~before trie path =
+let rec find ~remember_loc ~before trie path =
   match
     Trie.find_some (fun _name _stmap { loc; _ } ->
       Lexing.compare_pos loc.Location.loc_start before < 0
@@ -457,24 +450,21 @@ let rec find ~before trie path =
     ) trie
   with
   | Some (_name, _stamp, { Trie.loc; node = Internal (lazy subtrie) }) ->
-    begin match find ~before subtrie path with
-    | Resolves_to (p, x) as checkpoint ->
-      begin match follow ~before:loc.Location.loc_start trie p with
-      | Resolves_to (_, None) -> checkpoint
-      | otherwise -> otherwise
-      end
+    begin match find ~remember_loc ~before subtrie path with
+    | Resolves_to p -> follow ~remember_loc ~before:loc.Location.loc_start trie p
     | otherwise -> otherwise
     end
   | Some (_, _, { loc }) ->
+    (* FIXME: not quite right (i.e. not necessarily a leaf). *)
     Logger.log "locate" "Typedtrie.find"
       "cursor is in a leaf, so we look only before the leaf" ;
-    follow ~before:loc.Location.loc_start trie path
-  | _ -> follow ~before trie path
+    follow ~remember_loc ~before:loc.Location.loc_start trie path
+  | _ -> follow ~remember_loc ~before trie path
 
-let find ?before trie path =
+let find ~remember_loc ?before trie path =
   match before with
-  | None -> follow trie path
-  | Some before -> find ~before trie path
+  | None -> follow ~remember_loc trie path
+  | Some before -> find ~remember_loc ~before trie path
 
 let rec dump fmt trie =
   let open Trie in

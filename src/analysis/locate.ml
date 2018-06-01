@@ -385,13 +385,12 @@ type locate_result =
   | Other_error (* FIXME *)
 
 let rec locate ~config ?pos path trie : locate_result =
-  match Typedtrie.find ?before:pos trie path with
+  match Typedtrie.find ~remember_loc:Fallback.set ?before:pos trie path with
   | Typedtrie.Found (loc, doc_opt) -> Found (loc, doc_opt)
-  | Typedtrie.Resolves_to (new_path, fallback) ->
-    begin match Namespaced_path.head new_path with
-    | (_, `Mod) ->
+  | Typedtrie.Resolves_to new_path ->
+    begin match snd (Namespaced_path.head new_path) with
+    | `Mod ->
       logf "locate" "resolves to %s" (Namespaced_path.to_string new_path);
-      Fallback.setopt fallback ;
       from_path ~config new_path
     | _ ->
       logf "locate" "new path (%s) is not a real path"
