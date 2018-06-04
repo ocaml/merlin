@@ -32,7 +32,7 @@ Trying them all:
     "value": {
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
-        "line": 7,
+        "line": 3,
         "col": 0
       }
     },

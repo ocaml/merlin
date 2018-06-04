@@ -388,29 +388,30 @@ let rec locate ~config ?pos path trie : locate_result =
   match Typedtrie.find ~remember_loc:Fallback.set ?before:pos trie path with
   | Typedtrie.Found (loc, doc_opt) -> Found (loc, doc_opt)
   | Typedtrie.Resolves_to new_path ->
-    begin match snd (Namespaced_path.head new_path) with
-    | `Mod ->
-      logf "locate" "resolves to %s" (Namespaced_path.to_string new_path);
+    begin match Namespaced_path.head_exn new_path with
+    | Ident (_, `Mod) ->
+      logf "locate" "resolves to %s" (Namespaced_path.to_unique_string new_path);
       from_path ~config new_path
     | _ ->
       logf "locate" "new path (%s) is not a real path"
-        (Namespaced_path.to_string new_path);
+        (Namespaced_path.to_unique_string new_path);
       logfmt "locate (typedtrie dump)" (fun fmt -> Typedtrie.dump fmt trie);
       Other_error (* incorrect path *)
     end
 
 and from_path ~config path : locate_result =
-  log "from_path" (Namespaced_path.to_string path) ;
-  match Namespaced_path.head path with
-  | fname, `Mod ->
-    let fname = Namespaced_path.Ident.name fname in
+  log "from_path" (Namespaced_path.to_unique_string path) ;
+  match Namespaced_path.head_exn path with
+  | Ident (fname, `Mod) ->
+    let path = Namespaced_path.peal_head_exn path in
+    let fname = Namespaced_path.Id.name fname in
     let file = Preferences.build fname in
     let browse_cmt cmt_file =
       let cmt_infos, trie = trie_of_cmt cmt_file in
-      match trie, Namespaced_path.peal_head path with
+      match trie, Namespaced_path.head path with
       | None, None ->
         Other_error (* Trying to stop on a packed module... *)
-      | None, Some path ->
+      | None, Some _ ->
         log "from_path" "Saw packed module => erasing loadpath" ;
         erase_loadpath ~cwd:(Filename.dirname cmt_file)
           ~new_path:cmt_infos.cmt_loadpath
@@ -426,7 +427,7 @@ and from_path ~config path : locate_result =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Found (loc, None)
-      | Some trie, Some path ->
+      | Some trie, Some _ ->
         locate ~config path trie
     in
     begin match Utils.find_file ~config ~with_fallback:true file with
@@ -452,7 +453,7 @@ and from_path ~config path : locate_result =
           File_not_found file
       )
     end
-  | _, _ ->
+  | _ ->
     Other_error (* type error, [from_path] should only be called on modules *)
 
 let path_and_loc_of_cstr desc env =
@@ -695,7 +696,7 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   Preferences.set ml_or_mli;
   logf "locate"
     "present in the environment, walking up the typedtree looking for '%s'"
-    (Namespaced_path.to_string path);
+    (Namespaced_path.to_unique_string path);
   try
     if not (Utils.is_ghost_loc loc) then Fallback.set loc;
     let lazy trie = lazy_trie in

@@ -61,7 +61,7 @@ module Trie : sig
 
   val iter : (name:string -> stamp:int -> elt -> unit) -> t -> unit
 
-  val get : Namespaced_path.Ident.t -> t -> elt list
+  val get : Namespaced_path.Id.t -> t -> elt list
 
   val find : (string -> int -> elt -> bool) -> t -> string * int * elt
 
@@ -110,7 +110,7 @@ end = struct
       ) data
     )
 
-  let get (k : Namespaced_path.Ident.t) t =
+  let get (k : Namespaced_path.Id.t) t =
     match k with
     | Id id ->
       [ StampMap.find (Ident.binding_time id)
@@ -370,61 +370,66 @@ let of_browses ?(local_buffer=false) browses =
   build ~local_buffer ~trie:Trie.empty browses
 
 let rec follow ~remember_loc ?before trie path =
-  let (x, namespace) = Namespaced_path.head path in
-  try
-    let lst = Trie.get x trie in
-    let lst =
-      List.filter lst
-        ~f:(fun { Trie.namespace = ns } -> ns = namespace || ns = `Unknown)
-    in
-    let lst =
-      match before with
-      | None -> lst
-      | Some before ->
-        List.filter lst ~f:(fun { Trie.loc } ->
-          Lexing.compare_pos loc.Location.loc_start before < 0)
-    in
-    match
-      List.sort lst ~cmp:(fun { Trie.loc = l1 } { loc = l2 } ->
-        (* We wants the ones closed last to be at the beginning of the list. *)
-        Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
-    with
-    | [] -> Resolves_to path
-    | { loc; doc; node; namespace = _ } :: _ ->
-      match node with
-      | Leaf ->
-        (* we're not checking whether [xs = []] here, as we wouldn't be able to
-           lookup anything else which would be correct I think.
-           [xs] can be non-nil in this case when [x] is a first class module.
-           ... and perhaps in other situations I am not aware of.  *)
-        Found (loc, doc)
-      | Alias new_prefix ->
-        begin match Namespaced_path.peal_head path with
-        | None -> Found (loc, doc)
-        | Some path ->
-          let new_path = Namespaced_path.rewrite_path ~new_prefix path in
+  match Namespaced_path.head_exn path with
+  | Applied_to _ ->
+    (* FIXME: make sure we can never end up here. *)
+    assert false
+  | Ident (x, namespace) ->
+    try
+      let lst = Trie.get x trie in
+      let lst =
+        List.filter lst
+          ~f:(fun { Trie.namespace = ns } -> ns = namespace || ns = `Unknown)
+      in
+      let lst =
+        match before with
+        | None -> lst
+        | Some before ->
+          List.filter lst ~f:(fun { Trie.loc } ->
+            Lexing.compare_pos loc.Location.loc_start before < 0)
+      in
+      match
+        List.sort lst ~cmp:(fun { Trie.loc = l1 } { loc = l2 } ->
+          (* We wants the ones closed last to be at the beginning of the list. *)
+          Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
+      with
+      | [] -> Resolves_to path
+      | { loc; doc; node; namespace = _ } :: _ ->
+        match node with
+        | Leaf ->
+          (* we're not checking whether [xs = []] here, as we wouldn't be able to
+            lookup anything else which would be correct I think.
+            [xs] can be non-nil in this case when [x] is a first class module.
+            ... and perhaps in other situations I am not aware of.  *)
+          Found (loc, doc)
+        | Alias new_prefix ->
+          let path = Namespaced_path.peal_head_exn path in
+          let new_path = Namespaced_path.rewrite_head ~new_prefix path in
           remember_loc loc;
           follow ~remember_loc ~before:loc.Location.loc_start trie new_path
-        end
-      | Included new_prefix ->
-        let new_path = Namespaced_path.rewrite_path ~new_prefix path in
-        remember_loc loc;
-        follow ~remember_loc ~before:loc.Location.loc_start trie new_path
-      | Internal t ->
-        begin match Namespaced_path.peal_head path with
-        | None -> Found (loc, doc)
-        | Some path ->
-          match follow ~remember_loc ?before (Lazy.force t) path with
-          | Resolves_to p ->
-            if Namespaced_path.equal p path then
-              Found (loc, doc) (* questionable *)
-            else
-              follow ~remember_loc ~before:loc.Location.loc_start trie p
-          | Found _ as otherwise -> otherwise
-        end
-  with
-  | Not_found ->
-    Resolves_to path
+        | Included new_prefix ->
+          let new_path =
+            Namespaced_path.rewrite_head ~new_prefix
+              (Namespaced_path.strip_stamps path)
+          in
+          remember_loc loc;
+          follow ~remember_loc ~before:loc.Location.loc_start trie new_path
+        | Internal t ->
+          let path = Namespaced_path.peal_head_exn path in
+          begin match Namespaced_path.head path with
+          | None -> Found (loc, doc)
+          | Some _ ->
+            match follow ~remember_loc ?before (Lazy.force t) path with
+            | Resolves_to p ->
+              if Namespaced_path.equal p path then
+                Found (loc, doc) (* questionable *)
+              else
+                follow ~remember_loc ~before:loc.Location.loc_start trie p
+            | Found _ as otherwise -> otherwise
+          end
+    with
+    | Not_found ->
+      Resolves_to path
 
 let rec find ~remember_loc ~before trie path =
   match
