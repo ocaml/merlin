@@ -209,20 +209,6 @@ let identify_sig_includes item =
     `Included (include_idents incl_type, `Mod_type incl_mod)
   | _ -> `Not_included
 
-let rec pattern_idlocs pat =
-  let open Typedtree in
-  match pat.pat_desc with
-  | Tpat_var (id, _) -> [ id , pat.pat_loc ]
-  | Tpat_alias (p, id, _) -> (id, pat.pat_loc) :: pattern_idlocs p
-  | Tpat_tuple patts
-  | Tpat_array patts
-  | Tpat_construct (_, _, patts) ->
-    List.concat_map patts ~f:pattern_idlocs
-  | Tpat_record (lst, _) ->
-    List.concat_map lst ~f:(fun (_, _, pattern) -> pattern_idlocs pattern)
-  | Tpat_variant (_, Some pat, _) -> pattern_idlocs pat
-  | _ -> []
-
 let rec build ~local_buffer ~trie browses =
   let rec node_for_direct_mod namespace : _ -> Trie.node = function
     | `Alias path -> Alias (Namespaced_path.of_path ~namespace path)
@@ -319,10 +305,9 @@ let rec build ~local_buffer ~trie browses =
       end
     | Value_binding vb ->
       let trie =
-        List.fold_left (pattern_idlocs vb.vb_pat) ~init:trie ~f:(
-          fun trie (id, loc) ->
+        List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc }) ->
             Trie.add id {loc; doc; namespace = `Vals; node = Leaf} trie
-        )
+        ) (Typedtree.pat_bound_idents_with_loc vb.vb_pat)
       in
       if not local_buffer then
         trie
