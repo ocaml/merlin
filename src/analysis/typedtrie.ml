@@ -411,17 +411,16 @@ let rec follow ~remember_loc ?before trie path =
         remember_loc loc;
         follow ~remember_loc ~before:loc.Location.loc_start trie new_path
       | Internal t ->
-        begin match path with
-        | TPident _ -> Found (loc, doc)
-        | _ ->
-          let xs = Namespaced_path.peal_head_exn path in
-          match follow ~remember_loc ?before (Lazy.force t) xs with
+        begin match Namespaced_path.peal_head path with
+        | None -> Found (loc, doc)
+        | Some path ->
+          match follow ~remember_loc ?before (Lazy.force t) path with
           | Resolves_to p ->
-            if Namespaced_path.equal p xs then
+            if Namespaced_path.equal p path then
               Found (loc, doc) (* questionable *)
             else
               follow ~remember_loc ~before:loc.Location.loc_start trie p
-          | otherwise -> otherwise
+          | Found _ as otherwise -> otherwise
         end
   with
   | Not_found ->
@@ -437,7 +436,7 @@ let rec find ~remember_loc ~before trie path =
   | Some (_name, _stamp, { Trie.loc; node = Internal (lazy subtrie) }) ->
     begin match find ~remember_loc ~before subtrie path with
     | Resolves_to p -> follow ~remember_loc ~before:loc.Location.loc_start trie p
-    | otherwise -> otherwise
+    | Found _ as otherwise -> otherwise
     end
   | Some (_, _, { loc }) ->
     (* FIXME: not quite right (i.e. not necessarily a leaf). *)
