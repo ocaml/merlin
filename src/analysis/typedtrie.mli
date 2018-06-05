@@ -58,10 +58,6 @@ type result =
         module alias at some point, so we can always fallback there if we don't
         find anything in the loadpath. *)
 
-val follow : ?before:Lexing.position -> t -> path -> result
-(** [follow ?before t path] will follow [path] in [t], using [before] to
-    select the right branch in presence of shadowing. *)
-
 val find : ?before:Lexing.position -> t -> path -> result
 (** [find ?before t path] starts by going down in [t] following branches
     enclosing [before]. Then it will behave as [follow ?before].
