@@ -41,10 +41,14 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
     [cursor] in this case, so we can't be inside an expression, or a functor, …
 *)
 
+type state
+
+val clean_state : state
+
 type result =
   | Found of Location.t * string option
     (** Found at location *)
-  | Resolves_to of Namespaced_path.t
+  | Resolves_to of Namespaced_path.t * state
     (** Not found in trie, look for [path] in loadpath. *)
 
 val find
@@ -52,6 +56,7 @@ val find
   -> ?before:Lexing.position
   -> t
   -> Namespaced_path.t
+  -> state:state
   -> result
 (** [find ?before t path] starts by going down in [t] following branches
     enclosing [before]. Then it will behave as [follow ?before].

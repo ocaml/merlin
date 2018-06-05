@@ -384,14 +384,14 @@ type locate_result =
   | File_not_found of File.t
   | Other_error (* FIXME *)
 
-let rec locate ~config ?pos path trie : locate_result =
-  match Typedtrie.find ~remember_loc:Fallback.set ?before:pos trie path with
+let rec locate ~config ~state ?pos path trie : locate_result =
+  match Typedtrie.find ~remember_loc:Fallback.set ?before:pos ~state trie path with
   | Typedtrie.Found (loc, doc_opt) -> Found (loc, doc_opt)
-  | Typedtrie.Resolves_to new_path ->
+  | Typedtrie.Resolves_to (new_path, state) ->
     begin match Namespaced_path.head_exn new_path with
     | Ident (_, `Mod) ->
       logf "locate" "resolves to %s" (Namespaced_path.to_unique_string new_path);
-      from_path ~config new_path
+      from_path ~config ~state new_path
     | _ ->
       logf "locate" "new path (%s) is not a real path"
         (Namespaced_path.to_unique_string new_path);
@@ -399,7 +399,7 @@ let rec locate ~config ?pos path trie : locate_result =
       Other_error (* incorrect path *)
     end
 
-and from_path ~config path : locate_result =
+and from_path ~config ~state path : locate_result =
   log "from_path" (Namespaced_path.to_unique_string path) ;
   match Namespaced_path.head_exn path with
   | Ident (fname, `Mod) ->
@@ -415,7 +415,7 @@ and from_path ~config path : locate_result =
         log "from_path" "Saw packed module => erasing loadpath" ;
         erase_loadpath ~cwd:(Filename.dirname cmt_file)
           ~new_path:cmt_infos.cmt_loadpath
-          (fun () -> from_path ~config path)
+          (fun () -> from_path ~state ~config path)
       | Some trie, None ->
         (* We found the module we were looking for, we can stop here. *)
         let pos_fname =
@@ -428,7 +428,7 @@ and from_path ~config path : locate_result =
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Found (loc, None)
       | Some trie, Some _ ->
-        locate ~config path trie
+        locate ~config ~state path trie
     in
     begin match Utils.find_file ~config ~with_fallback:true file with
     | Some cmt_file -> browse_cmt cmt_file
@@ -700,7 +700,7 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   try
     if not (Utils.is_ghost_loc loc) then Fallback.set loc;
     let lazy trie = lazy_trie in
-    match locate ~config ~pos path trie with
+    match locate ~config ~pos ~state:Typedtrie.clean_state path trie with
     | Found (loc, doc) -> `Found (loc, doc)
     | Other_error when Fallback.is_set () -> recover str_ident
     | Other_error -> `Not_found (str_ident, File_switching.where_am_i ())

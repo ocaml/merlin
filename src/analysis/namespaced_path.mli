@@ -45,3 +45,5 @@ val strip_stamps : t -> t
 val of_path : namespace:Namespace.t -> Path.t -> t
 
 val empty : t
+
+val subst_prefix : old_prefix:t -> new_prefix:t -> t -> t option

@@ -36,8 +36,8 @@ Check the argument is substituted for the parameter
     "value": {
       "file": "tests/locate/functors/all_local.ml",
       "pos": {
-        "line": 18,
-        "col": 0
+        "line": 2,
+        "col": 2
       }
     },
     "notifications": []

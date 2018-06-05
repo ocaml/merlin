@@ -124,3 +124,10 @@ let strip_stamps =
   )
 
 let empty = []
+
+let rec subst_prefix ~old_prefix ~new_prefix p =
+  match old_prefix, p with
+  | [], _ -> Some (new_prefix @ p)
+  | op1 :: ops, elt1 :: p when equal_elt op1 elt1 ->
+    subst_prefix ~old_prefix:ops ~new_prefix p
+  | _ -> None
