@@ -43,7 +43,9 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
 
 type state
 
-val clean_state : state
+type context =
+  | Initial of Lexing.position
+  | Resume of state
 
 type result =
   | Found of Location.t * string option
@@ -53,10 +55,9 @@ type result =
 
 val find
    : remember_loc:(Location.t -> unit)
-  -> ?before:Lexing.position
+  -> context:context
   -> t
   -> Namespaced_path.t
-  -> state:state
   -> result
 (** [find ?before t path] starts by going down in [t] following branches
     enclosing [before]. Then it will behave as [follow ?before].

@@ -50,6 +50,17 @@ module Trie : sig
     | Internal of t Lazy.t
     | Included of Namespaced_path.t
     | Alias    of Namespaced_path.t
+    | Functor  of functor_parameter * node
+    | Apply    of functor_application
+
+  and functor_parameter =
+    Ident.t * Location.t * node
+
+  and functor_application =
+    { funct : node
+    ; arg   : node }
+    (* The day where we want to support aliasing of functor arguments then arg
+       should be [elt] instead of [node] *)
 
   val empty : t
 
@@ -76,12 +87,26 @@ end = struct
     ; namespace : Namespaced_path.Namespace.t
     ; node : node }
 
+  (* This sort of merges [Types.module_type] and [Types.signature_item].
+     [Mty_ident] and [Mty_alias] are merged (into [Alias])) because from the
+     point of view of locate there's no difference between them.
+     [Included] is used to remember the origin of things
+     Most of the constructors of [signature_item] are represented by a [Leaf]
+     node. *)
   and node =
     | Leaf
     | Internal of t Lazy.t
     | Included of Namespaced_path.t
     | Alias    of Namespaced_path.t
+    | Functor  of functor_parameter * node
+    | Apply    of functor_application
 
+  and functor_parameter =
+    Ident.t * Location.t * node
+
+  and functor_application =
+    { funct : node
+    ; arg   : node }
 
   let empty = String.Map.empty
 
@@ -165,8 +190,8 @@ let remove_indir_me me =
   match me.Typedtree.mod_desc with
   | Typedtree.Tmod_ident (path, _) -> `Alias path
   | Typedtree.Tmod_structure str -> `Str str
-  | Typedtree.Tmod_functor (param_id, param_name, _param_sig, me) ->
-    `Functor (param_id, param_name.loc, me.Typedtree.mod_loc, `Mod_expr me)
+  | Typedtree.Tmod_functor (param_id, param_name, param_sig, me) ->
+    `Functor (param_id, param_name.loc, param_sig, `Mod_expr me)
   | Typedtree.Tmod_apply (me1, me2, _) -> `Apply (me1, me2)
   | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
   | Typedtree.Tmod_unpack _ -> `Unpack
@@ -176,8 +201,8 @@ let remove_indir_mty mty =
   | Typedtree.Tmty_alias (path, _) -> `Alias path
   | Typedtree.Tmty_ident (path, _) -> `Ident path
   | Typedtree.Tmty_signature sg -> `Sg sg
-  | Typedtree.Tmty_functor (param_id, param_name, _param_sig, mty) ->
-    `Functor (param_id, param_name.loc, mty.Typedtree.mty_loc, `Mod_type mty)
+  | Typedtree.Tmty_functor (param_id, param_name, param_sig, mty) ->
+    `Functor (param_id, param_name.loc, param_sig, `Mod_type mty)
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 
@@ -215,31 +240,20 @@ let rec build ~local_buffer ~trie browses : t =
       Internal (lazy (build ~local_buffer ~trie:Trie.empty [of_signature s]))
     | `Mod_expr me -> node_for_direct_mod `Mod (remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (remove_indir_mty mty)
-    | `Functor (id, floc, pack_loc, packed) when local_buffer ->
-      let arg_node = { Trie.loc = floc; doc = None; namespace; node = Leaf } in
-      let trie =
-        begin match node_for_direct_mod `Mod packed with
-        | Internal t ->
-          lazy (Trie.add id arg_node (Lazy.force t))
-        | _ -> Lazy.from_val (Trie.singleton id arg_node)
-        end
+    | `Functor (param_id, param_loc, param, packed) ->
+      let param_node =
+        match param, local_buffer with
+        | None, _
+        | _, false -> Trie.Leaf
+        | Some mty, true ->
+          node_for_direct_mod `Modtype (remove_indir_mty mty)
       in
-      Internal trie
-    | `Apply (me1, me2) ->
-      let node1 = node_for_direct_mod `Mod (remove_indir_me me1) in
-      let node2 = node_for_direct_mod `Mod (remove_indir_me me2) in
-      let trie  =
-        Trie.of_list
-          [ Ident.create "1",
-            { loc = me1.Typedtree.mod_loc; doc = None; namespace = `Mod
-            ; node = node1 }
-          ; Ident.create "2",
-            { loc = me2.Typedtree.mod_loc; doc = None; namespace = `Mod
-            ; node = node2 }
-          ]
-      in
-      Internal (Lazy.from_val trie)
-    | `Unpack | `Functor _ -> (* TODO! *)
+      Functor ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
+    | `Apply (funct, arg) ->
+      let funct = node_for_direct_mod `Mod (remove_indir_me funct) in
+      let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+      Apply { funct; arg }
+    | `Unpack -> (* TODO! *)
       Leaf
   in
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->
@@ -367,6 +381,15 @@ let of_browses ?(local_buffer=false) browses =
 
 type scopes = (t * Lexing.position option) list
 
+type functor_argument =
+  | Handled of Namespaced_path.t * scopes
+  | Noop (* used for generative functors… and non handled constructions *)
+
+type substitution =
+  { old_prefix : Namespaced_path.t
+  ; new_prefix : Namespaced_path.t
+  ; scopes     : scopes }
+
 (* See mli for documentation. *)
 type result =
   | Found of Location.t * string option
@@ -374,15 +397,8 @@ type result =
 
 and state =
   { substs : substitution list
-  ; functor_arguments : (Namespaced_path.t * scopes) list
+  ; functor_arguments : functor_argument list
   }
-
-and substitution =
-  { old_prefix : Namespaced_path.t
-  ; new_prefix : Namespaced_path.t
-  ; scopes     : scopes }
-
-let clean_state = { substs = []; functor_arguments = [] }
 
 let rec follow ~remember_loc ~state scopes ?before trie path =
   let try_next_scope scopes path =
@@ -421,9 +437,20 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
       | _ -> assert false
   in
   match Namespaced_path.head_exn path with
-  | Applied_to _ ->
-    (* FIXME: make sure we can never end up here. *)
-    assert false
+  | Applied_to path ->
+    (* FIXME: That's wrong. The scope should be the one where the query was
+       emited. Not the point where we finally arrive on the application. *)
+    let functor_argument =
+      let scopes = (trie, before) :: scopes in
+      Handled (path, scopes)
+    in
+    let state =
+      { state with
+        functor_arguments = functor_argument :: state.functor_arguments
+      }
+    in
+    follow ~remember_loc ~state scopes ?before trie
+      (Namespaced_path.peal_head_exn path)
   | Ident (x, namespace) ->
     try
       let lst = Trie.get x trie in
@@ -445,38 +472,86 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
       with
       | [] -> try_next_scope scopes path
       | { loc; doc; node; namespace = _ } :: _ ->
-        match node with
-        | Leaf ->
-          (* we're not checking whether [xs = []] here, as we wouldn't be able to
-            lookup anything else which would be correct I think.
-            [xs] can be non-nil in this case when [x] is a first class module.
-            ... and perhaps in other situations I am not aware of.  *)
-          Found (loc, doc)
-        | Alias new_prefix ->
-          let path = Namespaced_path.peal_head_exn path in
-          let new_path = Namespaced_path.rewrite_head ~new_prefix path in
-          remember_loc loc;
-          follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
-            trie new_path
-        | Included new_prefix ->
-          let new_path =
-            Namespaced_path.rewrite_head ~new_prefix
-              (Namespaced_path.strip_stamps path)
-          in
-          remember_loc loc;
-          follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
-            trie new_path
-        | Internal t ->
-          let path = Namespaced_path.peal_head_exn path in
-          begin match Namespaced_path.head path with
-          | None -> Found (loc, doc)
-          | Some _ ->
-            let scopes = (trie, Some loc.Location.loc_start) :: scopes in
-            follow ~remember_loc ~state ?before scopes (Lazy.force t) path
-          end
+        let rec inspect_node state = function
+          | Trie.Leaf ->
+            (* we're not checking whether [xs = []] here, as we wouldn't be able to
+              lookup anything else which would be correct I think.
+              [xs] can be non-nil in this case when [x] is a first class module.
+              ... and perhaps in other situations I am not aware of.  *)
+            Found (loc, doc)
+          | Alias new_prefix ->
+            let path = Namespaced_path.peal_head_exn path in
+            let new_path = Namespaced_path.rewrite_head ~new_prefix path in
+            remember_loc loc;
+            follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
+              trie new_path
+          | Included new_prefix ->
+            let new_path =
+              Namespaced_path.rewrite_head ~new_prefix
+                (Namespaced_path.strip_stamps path)
+            in
+            remember_loc loc;
+            follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
+              trie new_path
+          | Internal t ->
+            let path = Namespaced_path.peal_head_exn path in
+            begin match Namespaced_path.head path with
+            | None -> Found (loc, doc)
+            | Some _ ->
+              let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+              follow ~remember_loc ~state ?before scopes (Lazy.force t) path
+            end
+          | Functor ((id, _, _), node) ->
+            let state =
+              match state.functor_arguments with
+              | [] ->
+                (* We can never end up inside a functor without having seen an
+                   application first. *)
+                assert false
+              | Noop :: functor_arguments ->
+                { state with functor_arguments }
+              | Handled (new_prefix, scopes) :: functor_arguments ->
+                assert (Ident.name id <> "*"); (* sigh. *)
+                let subst =
+                  { old_prefix =
+                      Namespaced_path.of_path ~namespace:`Mod (Pident id)
+                  ; new_prefix
+                  ; scopes }
+                in
+                { substs = subst :: state.substs; functor_arguments }
+            in
+            inspect_node state node
+          | Apply { funct; arg } ->
+            let functor_argument =
+              match arg with
+              | Leaf -> Noop (* fuck it eh. *)
+              | Internal (lazy trie) ->
+                let scopes =
+                  (trie, None) :: (trie, Some loc.Location.loc_start) :: scopes
+                in
+                Handled (Namespaced_path.empty, scopes)
+              | Included _ -> assert false (* that surely can't happen *)
+              | Alias path ->
+                let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+                Handled (path, scopes)
+              | Functor _ -> assert false (* that definitely can't happen. *)
+              | Apply _ ->
+                (* TODO *)
+                Noop
+            in
+            let state =
+              { state with
+                functor_arguments = functor_argument :: state.functor_arguments
+              }
+            in
+            inspect_node state funct
+        in
+        inspect_node state node
     with
     | Not_found ->
       try_next_scope scopes path
+
+let initial_state = { substs = []; functor_arguments = [] }
 
 let rec find ~remember_loc ~before scopes trie path =
   match
@@ -485,43 +560,75 @@ let rec find ~remember_loc ~before scopes trie path =
       && Lexing.compare_pos loc.Location.loc_end before > 0
     ) trie
   with
-  | Some (_name, _stamp, { Trie.loc; node = Internal (lazy subtrie) }) ->
-    let scopes = (trie, Some loc.Location.loc_start) :: scopes in
-    find ~remember_loc ~before scopes subtrie path
-  | Some (_, _, { loc }) ->
-    (* FIXME: not quite right (i.e. not necessarily a leaf). *)
-    Logger.log "locate" "Typedtrie.find"
-      "cursor is in a leaf, so we look only before the leaf" ;
-    follow ~remember_loc ~before:loc.Location.loc_start scopes trie path
-  | _ -> follow ~remember_loc ~before scopes trie path
+  | None ->
+    follow ~state:initial_state ~remember_loc ~before scopes trie path
+  | Some (_name, _stamp, { Trie.loc; node }) ->
+    let rec inspect_node scopes : Trie.node -> _ = function
+      | Internal (lazy subtrie)  ->
+        let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+        find ~remember_loc ~before scopes subtrie path
+      | Functor ((id, ploc, node), fnode) ->
+        let param =
+          Trie.singleton id { loc = ploc; doc = None; namespace = `Mod; node }
+        in
+        if
+          Lexing.compare_pos ploc.Location.loc_start before < 0
+          && Lexing.compare_pos ploc.Location.loc_end before > 0
+        then
+          let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+          find ~remember_loc ~before scopes param path
+        else
+          let scopes = (param, Some ploc.Location.loc_end) :: scopes in
+          inspect_node scopes fnode
+      | Leaf
+      | Included _
+      | Alias _
+      | Apply _ ->
+        (* FIXME: not quite right (i.e. not necessarily a leaf). *)
+        Logger.log "locate" "Typedtrie.find"
+          "cursor is in a leaf, so we look only before the leaf" ;
+        follow ~state:initial_state ~remember_loc ~before:loc.Location.loc_start
+          scopes trie path
+    in
+    inspect_node scopes node
 
-let find ~remember_loc ?before trie path =
-  match before with
-  | None -> follow ~remember_loc [] trie path
-  | Some before -> find ~remember_loc ~before [] trie path
+type context =
+  | Initial of Lexing.position
+  | Resume of state
+
+let find ~remember_loc ~context trie path =
+  match context with
+  | Initial before -> find ~remember_loc ~before [] trie path
+  | Resume   state -> follow ~remember_loc ~state [] trie path
 
 let rec dump fmt trie =
   let open Trie in
-  let dump_node {loc; namespace; node} =
-    Format.pp_print_string fmt (Namespaced_path.Namespace.to_string namespace);
-    match node with
-    | Leaf -> Location.print_loc fmt loc
+  let rec dump_node fmt = function
+    | Leaf -> ()
     | Included path ->
-      Format.fprintf fmt "%a <%s>" Location.print_loc loc
-        (Namespaced_path.to_string path)
+      Format.fprintf fmt " <%s>" (Namespaced_path.to_string path)
     | Alias path ->
-      Format.fprintf fmt "%a = %s" Location.print_loc loc
-        (Namespaced_path.to_string path)
+      Format.fprintf fmt " = %s" (Namespaced_path.to_string path)
     | Internal t ->
       if Lazy.is_val t then
-        Format.fprintf fmt "%a = %a" Location.print_loc loc dump (Lazy.force t)
+        Format.fprintf fmt " = %a" dump (Lazy.force t)
       else
-        Format.fprintf fmt "%a = <lazy>" Location.print_loc loc
+        Format.fprintf fmt " = <lazy>"
+    | Functor ((id, _, _), node) ->
+      Format.fprintf fmt " %s ->%a" (Ident.name id)
+        dump_node node
+    | Apply { funct; arg } ->
+      Format.fprintf fmt " %a(%a)" dump_node funct dump_node arg
+  in
+  let dump_elt {loc; namespace; node} =
+    Format.pp_print_string fmt (Namespaced_path.Namespace.to_string namespace);
+    Location.print_loc fmt loc;
+    dump_node fmt node
   in
   Format.pp_print_string fmt "{\n" ;
-  Trie.iter (fun ~name ~stamp node ->
+  Trie.iter (fun ~name ~stamp elt ->
     Format.fprintf fmt "%s/%d -> " name stamp ;
-    dump_node node;
+    dump_elt elt;
     Format.pp_print_newline fmt ()
   ) trie;
   Format.pp_print_string fmt "}\n"
