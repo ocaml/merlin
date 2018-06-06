@@ -243,7 +243,7 @@ let fold_variant_constructors ~env ~init ~f =
   let rec aux acc t =
     let t = Ctype.repr t in
     match t.Types.desc with
-    | Types.Tvariant { Types. row_fields; row_more; row_name } ->
+    | Types.Tvariant { Types. row_fields; row_more; _ } ->
       let acc =
         let keep_if_present acc (lbl, row_field) =
           match row_field with
@@ -258,14 +258,6 @@ let fold_variant_constructors ~env ~init ~f =
           | _ -> acc
         in
         List.fold_left ~init:acc row_fields ~f:keep_if_present
-      in
-      let acc =
-        match row_name with
-        | None -> acc
-        | Some (path,te) ->
-          match (Env.find_type path env).Types.type_manifest with
-          | None -> acc
-          | Some te -> aux acc te
       in
       aux acc row_more
     | Types.Tconstr _ ->
