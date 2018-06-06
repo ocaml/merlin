@@ -58,9 +58,13 @@ ocamlmerlin$(EXE): src/frontend/ocamlmerlin.c
 $(TARGET): assert_configured
 	 +$(OCAMLMAKEFILE) $@
 
+# this seems stale
 test: assert_configured
 	 +$(OCAMLMAKEFILE) PROJECT=test
 	 ./ocamlmerlin-test$(EXE)
+
+tests: $(TARGET)
+	@$(MAKE) --no-print-directory -C tests
 
 preprocess:
 	$(MAKE) -f Makefile.preprocess

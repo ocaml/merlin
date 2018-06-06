@@ -1,0 +1,7 @@
+#!/bin/bash
+
+src_dir="$(dirname ${BASH_SOURCE[0]})/.."
+cd "$src_dir"
+src_dir=$(readlink -f $(pwd))
+cd - > /dev/null
+"$src_dir/ocamlmerlin" $@ | jq 'del(.timing)' | sed -e "s:$src_dir/::"

@@ -1,0 +1,18 @@
+DIFF ?= diff
+CRAM = $(shell which cram)
+
+default:
+	@for file in *.t; do \
+	    printf " ... testing '$$file':"; \
+	    env -i MERLIN="$(BASEDIR)/merlin-wrapper" $(CRAM) $$file; \
+	    [ ! -f $$file.corrected ] && echo " => passed" || \
+	    (echo "" && $(DIFF) $$file $$file.corrected) || true ; \
+	done
+
+promote:
+	@for file in *.corrected; do \
+	    mv $$file `basename $$file .corrected`; \
+	done
+
+clean:
+	@rm -f *.corrected
