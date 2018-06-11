@@ -362,11 +362,14 @@ let rec build ~local_buffer ~trie browses : t =
          Because why the hell not. *)
       Trie.add td.typ_id
         { loc = t.t_loc; doc; namespace = `Type; node = Leaf } trie
-    | Type_extension _ ->
-      (* TODO: add constructors and labels as well.
-         Because why the hell not. *)
-(*       Trie.add_multiple (Path.last te.tyext_path) (t.t_loc, doc, `Type, Leaf) trie *)
-      trie
+    | Type_extension te ->
+      List.fold_left ~init:trie ~f:(fun trie ec ->
+        Trie.add ec.ext_id
+          { loc = t.t_loc; doc; namespace = `Type; node = Leaf } trie
+      ) te.tyext_constructors
+    | Extension_constructor ec ->
+      Trie.add ec.ext_id
+        { loc = t.t_loc; doc; namespace = `Type; node = Leaf } trie
     | Case _
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
