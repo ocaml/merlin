@@ -7,4 +7,5 @@ cd - > /dev/null
 "$src_dir/ocamlmerlin" $@ \
     | jq 'del(.timing)' \
     | sed -e "s:$src_dir/::" \
-    | sed -e 's:"/.*/\.opam/[^/]*/\([^"]*\)":"~opam/\1":'
+    | sed -e 's:"/.*/\.opam/[^/]*/\([^"]*\)":"~opam/\1":' \
+    | sed -e 's:\\n:\n:g'
