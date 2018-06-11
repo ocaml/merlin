@@ -1,10 +1,11 @@
 DIFF ?= diff
 CRAM = $(shell which cram)
+OCAMLC = $(shell which ocamlc)
 
 default:
 	@for file in *.t; do \
 	    printf " ... testing '$$file':"; \
-	    env -i MERLIN="$(BASEDIR)/merlin-wrapper" $(CRAM) $$file; \
+	    env -i MERLIN="$(BASEDIR)/merlin-wrapper" OCAMLC="$(OCAMLC)" $(CRAM) $$file; \
 	    [ ! -f $$file.corrected ] && echo " => passed" || \
 	    (echo "" && $(DIFF) $$file $$file.corrected) || true ; \
 	done
@@ -14,5 +15,5 @@ promote:
 	    mv $$file `basename $$file .corrected`; \
 	done
 
-clean:
+clean::
 	@rm -f *.corrected
