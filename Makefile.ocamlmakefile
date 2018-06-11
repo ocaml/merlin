@@ -8,7 +8,7 @@ ifndef OVERRIDE_ENV
 	OCAMLDEP := ocamldep
 endif
 
-OCAMLFLAGS += -w -3
+OCAMLFLAGS += -w -3-40
 REALLY_QUIET ?= 1
 
 ifndef WITHOUT_BIN_ANNOT
