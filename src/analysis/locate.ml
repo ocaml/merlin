@@ -116,11 +116,11 @@ end = struct
   let cmti s = CMTI (file_path_to_mod_name s)
 
   let of_filename fn =
-    match String.split_on_char fn ~sep:'.' with
+    match Misc.rev_string_split ~on:'.' fn with
     | []
     | [ _ ] -> None
-    | lst ->
-      let ext = String.lowercase_ascii (Option.get @@ List.last lst) in
+    | ext :: _ ->
+      let ext = String.lowercase ext in
       Some (
         match ext with
         | "cmti" -> cmti fn
