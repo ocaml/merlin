@@ -13,7 +13,7 @@ build: [
   [make "-j" jobs]
 ]
 
-build-test: ["make" "tests"]
+build-test: [make "tests"]
 
 depends: [
   "ocamlfind" {>= "1.5.2"}
