@@ -1,7 +1,7 @@
 BASEDIR=../..
 
 all: a.cmt a.cmti
-	$(MAKE) default
+	@$(MAKE) default
 
 %.cmti: %.mli
 	ocamlc -c -bin-annot $<
