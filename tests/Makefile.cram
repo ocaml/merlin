@@ -11,7 +11,8 @@ default:
 	done
 
 promote:
-	@for file in *.corrected; do \
+	@for file in $(wildcard *.corrected); do \
+	    echo "  promoting $$file"; \
 	    mv $$file `basename $$file .corrected`; \
 	done
 
