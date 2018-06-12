@@ -702,7 +702,8 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
     let lazy trie = lazy_trie in
     match locate ~config ~context:(Initial pos) path trie with
     | Found (loc, doc) -> `Found (loc, doc)
-    | Other_error when Fallback.is_set () -> recover str_ident
+    | Other_error
+    | File_not_found _ when Fallback.is_set () -> recover str_ident
     | Other_error -> `Not_found (str_ident, File_switching.where_am_i ())
     | File_not_found f -> File.explain_not_found str_ident f
   with

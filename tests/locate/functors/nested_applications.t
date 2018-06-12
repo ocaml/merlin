@@ -3,7 +3,13 @@
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
     "class": "return",
-    "value": "Needed cmt file of module 'X' to locate 'M1.t' but it is not present",
+    "value": {
+      "file": "tests/locate/functors/nested_applications.ml",
+      "pos": {
+        "line": 5,
+        "col": 0
+      }
+    },
     "notifications": []
   }
 
@@ -53,7 +59,13 @@
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
     "class": "return",
-    "value": "Needed cmt file of module 'X' to locate 'M5.t' but it is not present",
+    "value": {
+      "file": "tests/locate/functors/nested_applications.ml",
+      "pos": {
+        "line": 5,
+        "col": 0
+      }
+    },
     "notifications": []
   }
 
