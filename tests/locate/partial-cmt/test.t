@@ -36,7 +36,10 @@ Introduce a type error in a.ml:
   @@ exit 2
   $ test -f a.cmi & test -f a.cmt & test ! -f a.cmti
 
-Jump:
+Try jumping again, note that if the file is the ".mli" one this means that we
+failed to find/read the cmt and we're fallbacking to the location we got from
+the environment (as we explicitely asked locate to jump to the .ml).
+That is: if the file is a.mli then the test is broken:
 
   $ $MERLIN single locate -look-for ml -position 1:11 -filename ./test.ml < ./test.ml
   {
