@@ -805,6 +805,7 @@ let inspect_context browse lid pos : Context.t option =
     | Module_binding_name _
     | Module_declaration_name _ ->
       None
+    | Module_expr _
     | Open_description _ -> Some Module_path
     | Module_type _ -> Some Module_type
     | Core_type _ -> Some Type
