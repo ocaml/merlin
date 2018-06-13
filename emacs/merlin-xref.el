@@ -2,6 +2,9 @@
 (require 'xref)
 (require 'merlin)
 
+;; To enable merlin-xref, add to your tuareg/merlin setup function:
+;; (add-to-list 'xref-backend-functions 'merlin-xref-backend)
+
 ;;;###autoload
 (defun merlin-xref-backend ()
   "Merlin backend for Xref."
@@ -26,7 +29,7 @@
          (pos (alist-get 'pos loc))
          (line (alist-get 'line pos))
          (col (alist-get 'col pos))
-         (desc (merlin-xref--line (merlin/make-point pos))))
+         (desc (merlin-xref--line (merlin/make-point loc))))
     (list (xref-make desc (xref-make-file-location file line col)))))
 
 (cl-defmethod xref-backend-identifier-completion-table ((_backend (eql merlin-xref)))
