@@ -8,7 +8,7 @@ ifndef OVERRIDE_ENV
 	OCAMLDEP := ocamldep
 endif
 
-OCAMLFLAGS += -w -3
+OCAMLFLAGS += -w -3-40
 REALLY_QUIET ?= 1
 
 ifndef WITHOUT_BIN_ANNOT
@@ -141,6 +141,8 @@ SOURCES_LIB = \
 	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
+	src/analysis/namespaced_path.mli  \
+	src/analysis/namespaced_path.ml   \
 	src/ocaml/support/cmt_cache.ml    \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \
@@ -243,8 +245,8 @@ SOURCES_LIB = \
 	src/analysis/typedtrie.mli        \
 	src/analysis/typedtrie.ml         \
 	src/analysis/ocamldoc.ml          \
-	src/analysis/track_definition.mli \
-	src/analysis/track_definition.ml  \
+	src/analysis/locate.mli           \
+	src/analysis/locate.ml            \
 	src/analysis/polarity_search.ml   \
 	src/analysis/expansion.ml         \
 	src/analysis/completion.mli       \

@@ -551,6 +551,8 @@ let rec bound_idents pat =
 let pat_bound_idents pat =
   idents := []; bound_idents pat; let res = !idents in idents := []; res
 
+let pat_bound_idents_with_loc = pat_bound_idents
+
 let rev_let_bound_idents_with_loc bindings =
   idents := [];
   List.iter (fun vb -> bound_idents vb.vb_pat) bindings;

@@ -7,7 +7,7 @@ FIXME: we confuse the module for the constructor and jump to the wrong place
     "value": {
       "file": "tests/locate/functors/from_application.ml",
       "pos": {
-        "line": 9,
+        "line": 5,
         "col": 0
       }
     },

@@ -26,8 +26,6 @@ Trying them all:
     "notifications": []
   }
 
-In that one we apparently traverse the module type aliasing:
-
   $ $MERLIN single locate -look-for ml -position 9:12 -filename ./test.ml < ./test.ml
   {
     "class": "return",
@@ -50,7 +48,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
@@ -76,7 +74,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
@@ -159,16 +157,14 @@ FIXME this should jump to line 11:
     "notifications": []
   }
 
-FIXME this is ignoring the local record def and jumping to the toplevel def:
-
   $ $MERLIN single locate -look-for ml -position 24:3 -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {
       "file": "tests/locate/context-detection/test.ml",
       "pos": {
-        "line": 5,
-        "col": 0
+        "line": 23,
+        "col": 6
       }
     },
     "notifications": []

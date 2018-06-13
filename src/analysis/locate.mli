@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+val log_section : string
+
 val from_string
   :  config:Mconfig.t
   -> env:Env.t
@@ -46,7 +48,8 @@ val get_doc
   -> local_defs:Mtyper.typedtree
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
-  -> [ `User_input of string | `Completion_entry of (Cmt_cache.namespace * Path.t * Location.t) ]
+  -> [ `User_input of string
+     | `Completion_entry of (Namespaced_path.Namespace.t * Path.t * Location.t) ]
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string

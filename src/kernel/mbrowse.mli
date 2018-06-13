@@ -55,6 +55,8 @@ val of_typedtree :
   [ `Implementation of Typedtree.structure
   | `Interface of Typedtree.signature ] -> t
 
+val node_of_binary_part : Env.t -> Cmt_format.binary_part -> node
+
 (** Identify nodes introduced by recovery *)
 val is_recovered_expression : Typedtree.expression -> bool
 val is_recovered : Browse_raw.node -> bool

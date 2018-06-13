@@ -45,10 +45,10 @@ That is: if the file is a.mli then the test is broken:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/partial-cmt/a.mli",
+      "file": "tests/locate/partial-cmt/a.ml",
       "pos": {
         "line": 1,
-        "col": 9
+        "col": 0
       }
     },
     "notifications": []

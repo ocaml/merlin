@@ -6,7 +6,7 @@
       "file": "tests/locate/context-detection/label.ml",
       "pos": {
         "line": 3,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
@@ -19,7 +19,7 @@
       "file": "tests/locate/context-detection/label.ml",
       "pos": {
         "line": 8,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []

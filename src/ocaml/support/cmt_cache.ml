@@ -28,30 +28,10 @@
 
 open Std
 
-type namespace = [
-  | `Vals
-  | `Type
-  | `Constr
-  | `Mod
-  | `Modtype
-  | `Functor
-  | `Labels
-  | `Unknown
-  | `Apply
-]
-type path = (string * namespace) list
-
-type trie = (Location.t * string option * namespace * node) list String.Map.t
- and node =
-   | Leaf
-   | Internal of trie
-   | Included of path
-   | Alias    of path
-
 
 type cmt_item = {
   cmt_infos : Cmt_format.cmt_infos ;
-  mutable location_trie : trie ;
+  mutable location_trie : Typedtrie.t option;
 }
 
 include File_cache.Make (struct
@@ -59,7 +39,7 @@ include File_cache.Make (struct
 
   let read file = {
     cmt_infos = Cmt_format.read_cmt file ;
-    location_trie = String.Map.empty ;
+    location_trie = None;
   }
 
   let cache_name = "Cmt_cache"

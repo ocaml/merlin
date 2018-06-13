@@ -361,8 +361,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       if not with_doc then None else
         let local_defs = Mtyper.get_typedtree typer in
         let config = Mpipeline.final_config pipeline in
-        Some (Track_definition.get_doc ~config ~env ~local_defs
-                 ~comments:(Mpipeline.reader_comments pipeline) ~pos)
+        Some (Locate.get_doc ~config ~env ~local_defs
+                ~comments:(Mpipeline.reader_comments pipeline) ~pos)
     in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
@@ -472,7 +472,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         String.concat ~sep:"." path
     in
     if path = "" then `Invalid_context else
-      Track_definition.get_doc ~config
+      Locate.get_doc ~config
         ~env ~local_defs ~comments ~pos (`User_input path)
 
   | Locate (patho, ml_or_mli, pos) ->
@@ -495,15 +495,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     if path = "" then `Invalid_context else
     begin match
-        Track_definition.from_string
-          ~config:(Mpipeline.final_config pipeline)
-          ~env ~local_defs ~pos ml_or_mli path
+      Locate.from_string
+        ~config:(Mpipeline.final_config pipeline)
+        ~env ~local_defs ~pos ml_or_mli path
     with
     | `Found (file, pos) ->
-      Logger.log "track_definition" "Locate"
-        (Option.value ~default:"<local buffer>" file);
+      Logger.logf Locate.log_section "result"
+        "found: %s" (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)
-    | otherwise -> otherwise
+    | otherwise ->
+      Logger.log Locate.log_section "result" "not found";
+      otherwise
     end
 
   | Jump (target, pos) ->
