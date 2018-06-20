@@ -21,7 +21,7 @@ depends: [
   "cram" {test}
 ]
 
-available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.07" ]
+available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.08" ]
 
 post-messages: [
   "merlin installed.
