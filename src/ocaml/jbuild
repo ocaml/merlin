@@ -1,6 +1,14 @@
+(* -*- tuareg -*- *)
+
+module J = Jbuild_plugin.V1
+;;
+
+Printf.ksprintf J.send {|
 (jbuild_version 1)
 
 (library
  ((name typer)
   (wrapped false)
-  (libraries (typer_406))))
+  (libraries (typer_%s))))
+|} (Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min))
+;;
