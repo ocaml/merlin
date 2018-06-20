@@ -1,7 +1,7 @@
 merlin next
 ==========
 
-  - backend:
+  - backend
     + new "polarity search" feature: provides a Hoogle-like type-based search
       for libraries that are in merlin's scope.
       See https://github.com/ocaml/merlin/blob/master/doc/features.md#polarity-search
@@ -13,14 +13,38 @@ merlin next
     + type-driven record completion: merlin will now make use of type
       information from the context for narrowing and refining completion
       candidates.
-    + support for `#require` directive in a source file, an will treat it as a
+    + support for `#require` directive in a source file, and will treat it as a
       package use
+    + Add support for OCaml 4.07
+    + locate: various minor bugfixes, as well as the following general
+      improvements:
+      - improved context detection
+      - better tracking of namespaces
+      - fixed support for local bindings
+      - fixed support of disambiguated record fields and variant constructors
+      - improved support for functors: merlin will now jump through functor
+        application to the functor definitions and in some cases go back to the
+        argument that was given (if it is simply reexported).
+    + backport fixes of OCaml 4.06.1 to the 4.06 backend
+    + various minor bugfixes
 
-  - editor modes:
-    + emacs:
+  - editor modes
+    + emacs
       - proper handling of multibyte strings (by @Chris00)
       - bind "q" to close type buffer (by @MiloDavis)
-    + vim: fix support for Neomake (by @bobbypriambodo and @statianzo)
+      - make goto-point encoding independent
+      - add reason-mode to the guessed favorite mode list (by @Khady)
+      - sped up some tight loops (by @rgrinberg)
+      - add support for x-ref backend (by @rgrinberg)
+    + vim
+      - fix support for Neomake (by @bobbypriambodo and @statianzo)
+      - fix encoding issues in filepaths (by @Thelyria)
+      - fix handling of enclosing-type cache (by @ELLIOTTCABLE)
+      - add <silent> to prevent flashing when highlighting an enclosing (by @bluddy)
+
+Thanks to the people who contributed to this release: ELLIOTTCABLE, Louis Roché,
+Rudi Grinberg, Yotam Barnoy, Leo White, Daniel Below, Andreas Hauptmann,
+Christophe Troestler, Bobby Priambodo, Milo Davis.
 
 merlin 3.0.5
 ============
