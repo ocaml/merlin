@@ -313,8 +313,8 @@ let text_def pos = [Ptop_def (Str.text (rhs_text pos))]
 let extra_text startpos endpos text items =
   match items with
   | [] ->
-      let post = rhs_post_text pos in
-      let post_extras = rhs_post_extra_text pos in
+      let post = rhs_post_text startpos in
+      let post_extras = rhs_post_extra_text endpos in
       text post @ text post_extras
   | _ :: _ ->
       let pre_extras = rhs_pre_extra_text startpos in
