@@ -1,36 +1,32 @@
 merlin next
 ==========
 
-Polarity search
----------------
+### Polarity search
 
 This command provides Hoogle-like type-based search for libraries that are in
 Merlin scope.
 
 The commands `:MerlinSearch` / `merlin-search` take a search query and return
-the list of identifiers that satisfy this query.
-
+the list of identifiers that satisfy this query.  
 The query language is simply a list of path identifiers prefixed by `+` or `-`,
-e.g. "-int", "-int +string", "-Hashtbl.t +int".
-
-"-" is interpreted as "consuming" and "+" as "producing": "-int +string" looks
-for functions consuming an "int" and producing a "string".
+e.g. `-int`, `-int +string`, `-Hashtbl.t +int`.  
+`-` is interpreted as "consuming" and `+` as "producing": `-int +string` looks
+for functions consuming an `int` and producing a `string`.
 
 The search algorithm uses type variance to filter results. Thus, search will
 proceed inside abstract types, continuation-passing-style, ... as long as
 variance annotations are available.
 
-Open refactoring
-----------------
+### Open refactoring
 
-Two new commands (MerlinRefactorOpen, MerlinRefactorOpenQualify in vim,
-merlin-refactor-open, merlin-refactor-open-qualify in Emacs) help cleaning the
-code in the scope of an "open" statement.
+Two new commands (`:MerlinRefactorOpen`, `:MerlinRefactorOpenQualify` in vim,
+and `merlin-refactor-open`, `merlin-refactor-open-qualify` in Emacs) help
+cleaning the code in the scope of an `open` statement.
 
 When the cursor is on an open statement:
-- MerlinRefactorOpen will remove references to the path of the open that are
+- `:MerlinRefactorOpen` will remove references to the path of the open that are
   made useless
-- MerlinRefactorOpenQualify will always add references to this path
+- `:MerlinRefactorOpenQualify` will always add references to this path
 
 Starting from:
 
@@ -41,7 +37,8 @@ let times = Unix.times ()
 let f x = x.Unix.tms_stime, x.Unix.tms_utime
 ```
 
-Calling `MerlinRefactorOpen` with the cursor on the open statement will produce:
+Calling `:MerlinRefactorOpen` with the cursor on the open statement will
+produce:
 
 ```ocaml
 open Unix
@@ -50,7 +47,7 @@ let times = times ()
 let f x = x.tms_stime, x.tms_utime
 ```
 
-Calling `MerlinRefactorOpenQualify` will restore:
+Calling `:MerlinRefactorOpenQualify` will restore:
 
 ```ocaml
 open Unix
@@ -59,25 +56,21 @@ let times = Unix.times ()
 let f x = x.Unix.tms_stime, x.Unix.tms_utime
 ```
 
-Spell checking
---------------
+### Spell checking
 
 A simple spell-checking has been implemented to suggest corrections when
 nothing can be directly completed.
 
-Type driven record completion
------------------------------
+### Type driven record completion
 
 When completing a record, Merlin will make use of type information from the
 context for narrowing and refining completion candidates.
 
-Support for #require directives
--------------------------------
+### Support for #require directives
 
 Merlin will treat a "#require" directive in a source file as a package use.
 
-Editor modes
-------------
+### Editor modes
 
 - emacs: proper handling of multibyte strings (by @Chris00)
 - emacs: bind "q" to close type buffer (by @MiloDavis)
@@ -219,21 +212,21 @@ merlin 2.5.0
 ============
 Mon Jun 13 22:26:33 CEST 2016
 
-  frontend:
-  - now all commands can take a context, this reduce the amount of state
-    in the command interpreter. Long term goal is to make protocol stateless
-  - merlin now supports customizable "readers": processes responsible for
-    parsing and pretty-printing. Main use-case is Reason, cppo/optcomp support
-    might be added later
-  backend:
-  - drop support for 4.00 / 4.01
-  - support for 4.03 has been added
-  - new implementation of type recovery, should diverge less from upstream
-  - support for 4.02 was reimplemented to use the same design
-  - menhir's fork has been synchronized with upstream, recovery algorithm 
-    is completely new
-  vim: add support for python3, update to new protocol
-  emacs: update to new protocol, bug fixes
+  + frontend:
+    - now all commands can take a context, this reduce the amount of state
+      in the command interpreter. Long term goal is to make protocol stateless
+    - merlin now supports customizable "readers": processes responsible for
+      parsing and pretty-printing. Main use-case is Reason, cppo/optcomp support
+      might be added later
+  + backend:
+    - drop support for 4.00 / 4.01
+    - support for 4.03 has been added
+    - new implementation of type recovery, should diverge less from upstream
+    - support for 4.02 was reimplemented to use the same design
+    - menhir's fork has been synchronized with upstream, recovery algorithm 
+      is completely new
+  + vim: add support for python3, update to new protocol
+  + emacs: update to new protocol, bug fixes
 
 merlin 2.3.1
 ============
@@ -241,19 +234,19 @@ Wed Nov 25 15:01:47 CET 2015
 
 Bug fix release, fix builds under Mac OS X and Windows.
 
-  backend:
+  + backend:
     - improve support for module aliases in completion, locate and short-path
     - change management of flags
     - Cuillère ou Dorade
     - fix grammar for 4.02.3, support attributes on core_types
 
-  emacs & vim: minor fixes
+  + emacs & vim: minor fixes
 
 merlin 2.3
 ==========
 Wed Oct 28 14:32:48 CET 2015
 
-  backend:
+  + backend:
     - locate: fix assert failure on first class modules inclusion
     - outline: add support for classes and object types
     - nonrec: enable by default for OCaml >= 4.02.2
@@ -274,10 +267,10 @@ Wed Oct 28 14:32:48 CET 2015
     - better support for trunk
     - many bugfixes
 
-  documentation:
+  + documentation:
     - update ARCHITECTURE and PROTOCOL documentations
 
-  emacs:
+  + emacs:
     - make use of contextual-commands, non backward compatible protocol change
     - new merlin-set-flags command
     - split into multiple files
@@ -288,7 +281,7 @@ Wed Oct 28 14:32:48 CET 2015
     - usability tweaks, notably on error display and navigation
     - general cleanup and bugfixes
 
-  vim:
+  + vim:
     - expose custom .merlin loading through buffer variable
     - cleanup and bugfixes, notably process liveness check and restart
 
@@ -300,7 +293,7 @@ merlin 2.2
 ==========
 Wed May 20 09:44:55 EDT 2015
 
-  backend:
+  + backend:
     - completion
         + return the type of the expected argument when completing an
           application.
@@ -340,7 +333,7 @@ Wed May 20 09:44:55 EDT 2015
     - typeof: during verbose expansion, also print the type declaration if we
       have a type constructor
 
-  emacs:
+  + emacs:
     - fix bindings of every completion backend
     - bind ocamldoc comments to company (optional)
     - detect race conditions when running synchronous commands
@@ -353,7 +346,7 @@ Wed May 20 09:44:55 EDT 2015
       requested.
     - remove call to merlin from the lighter
 
-  vim:
+  + vim:
     - fix ctrlp binding for locate
     - add (dwim) completion on :TypeOf
     - while completing, candidates documentation can be displayed in the
@@ -369,7 +362,7 @@ Tue Mar  3 12:20:08 UTC 2015
 
   Main new feature is a faster short-path, and also a lot of buxfixes.
 
-  backend:
+  + backend:
     - merge new implementation of short-path
     - infrastructure for doing background computations
     - fix exhaustivity checking of GADTs
@@ -380,15 +373,15 @@ Tue Mar  3 12:20:08 UTC 2015
     - more customizable .merlin loading
     - minor fixes (better error messages, typos, "fake" extensions)
 
-  build system:
+  + build system:
     - allow bytecode builds, support OpenBSD (pull request #364 by madroach)
     - Refuse/Resist... environment variables redefinition
 
-  vim:
+  + vim:
     - fix charset/encoding detection (pull request #352 by rgrinberg)
     - minor fixes and simplification
 
-  emacs:
+  + emacs:
     - better integration with emacs error management and asynchronous handling
     - expose custom .merlin loading in merlin-grouping-function
     - fixes, printf-debugging cleanup
@@ -397,7 +390,7 @@ merlin 2.1.1
 ============
 Wed Jan 28 08:59:20 GMT 2015
 
-  backend:
+  + backend:
     - locate: merlin refused to locate things when it had no context (happens
       when the buffer didn't parse for example) claiming it was at the
       "definition point". Fixed.
@@ -408,11 +401,11 @@ Wed Jan 28 08:59:20 GMT 2015
     - destruct: eliminate "impossible" GADT branches
     - parser: handle '%' as an operator for 4.00 and 4.01 ( #345 )
 
-  fake:
+  + fake:
     - add typerep support
-    - never generate ['_] type variables.
+    - never generate `'_` type variables.
 
-  vim:
+  + vim:
     - show duplicated outlines in CtrlP
     - sort outlines by name length in CtrlP
     - when split method is set to 'tab' *always* open a new tab.
@@ -421,7 +414,7 @@ merlin 2.1
 ===========
 Sun Jan 11 22:20:23 CET 2015
 
-  backend:
+  + backend:
     - add PPX support
     - make use of context before locating (#308, #316, #318).
     - generate match patterns for arbitrary expressions and missing patterns
@@ -437,7 +430,7 @@ Sun Jan 11 22:20:23 CET 2015
       expression level, so the whole match was discarded, now only the pattern
       is)
 
-  emacs:
+  + emacs:
     - don't use fringe in emacs23 (broken)
     - remove obsolete aliases:
         merlin-occurences => merlin-occurrences
@@ -445,10 +438,10 @@ Sun Jan 11 22:20:23 CET 2015
     - disable merlin-mode on type buffer
     - require caml-types (needed for highlighting) (#331).
 
-  misc:
+  + misc:
     - update README (#301).
 
-  vim:
+  + vim:
     - add a type history buffer (#313, #322) -- only available for vim > 7.3.
     - highlight types when displaying them in the command line -- only for vim >
       7.3
@@ -495,7 +488,7 @@ Mon Aug 18 17:08:00 BST 2014
 
 This release also marks the apparition of a proper opam install script.
 
-  backend:
+  + backend:
     - fixes on locate
     - print manifests even when -short-paths is set
     - add an "occurences" command to list every occurence of an identifier ( #156 )
@@ -503,15 +496,15 @@ This release also marks the apparition of a proper opam install script.
     - add CPU time to log files ( #192 )
     - better error reporting from locate ( #190 )
 
-  documentation:
+  + documentation:
     - update vim doc file ( #204 )
     - typo correction in the README by Philippe Wang ( #195 )
 
-  emacs:
+  + emacs:
     - fix most byte compilation warnings, by Geoff Gole ( #209 )
     - numerous fixes
 
-  vim:
+  + vim:
     - add error list independant from syntastic
     - fix completion for vim<=703 (#223)
 
@@ -519,11 +512,11 @@ merlin 1.6
 ==========
 Tue Mar 11 14:33:55 CET 2014
 
-  backend:
+  + backend:
     - small memory leak fix
     - major improvements and bugfixes for locate (i.e. "jump to definition")
 
-  emacs:
+  + emacs:
     - fixed bug preventing merlin restart ( #167 )
     - removed keybindings reserved to users ( #170 )
       the full list is:
@@ -538,20 +531,20 @@ Tue Mar 11 14:33:55 CET 2014
       #158 , with a follow up from Rudy Grinberg #165 )
     - improved efficiency of completion at point
 
-  extensions:
+  + extensions:
     - added support for variantslib ( #132 )
     - updated fieldslib support ( #169 , #185 )
     - fix pa_lwt translation ( #182 )
     - added support for pa_enumerate ( #187 )
 
-  vim:
+  + vim:
     - the split method for locate can now be configured
 
 merlin 1.5
 ==========
 Sat Dec 14 19:45:06 CET 2013
 
-  backend:
+  + backend:
     - better handling of paths (both sources and build)
     - splitted build path into cmi and cmt path.
       New directives "CMI" and "CMT" are now available in .merlin files ("B"
@@ -559,12 +552,12 @@ Sat Dec 14 19:45:06 CET 2013
     - doesn't get confused anymore when the user switch between buffers (the
       state is cleaned)
 
-  emacs:
+  + emacs:
     - adds ability to enable/disable extensions manually
     - adds a command to clear all the errors from a buffer
     - displaying of errors can now be disabled
 
-  extensions
+  + extensions
     - updated bin_prot for version >= 109.45.00
     - bugfix for [with compare] in presence of parametrized types
     - added support for "here" (when activated adds
@@ -572,7 +565,7 @@ Sat Dec 14 19:45:06 CET 2013
     - added support for [assert_lwt]
     - fixed typing of [while_lwt]
 
-  vim:
+  + vim:
     - vim plugin can be installed into a custom directory and has its own
       makefile target (contribution from Vsevolod Velichko)
     - added "ClearEnclosing" command to remove merlin's overlay after a call to
@@ -582,14 +575,14 @@ merlin 1.4.1
 ============
 Thu Sep 26 21:29:56 BST 2013
 
-  documentation:
+  + documentation:
     - updates of the emacs section of the readme by Ronan Lehy.
 
-  emacs:
+  + emacs:
     - bugfix for ac-mode: merlin-ac-prefix wasn't called.
     - better formatting for completion suggestions.
 
-  vim:
+  + vim:
     - bugfix for the "selectPhrase" command, an overflow on 32b plateform was
       causing complete desynchronisation between vim and merlin.
     - better formatting for completion suggestions.
@@ -598,7 +591,7 @@ merlin 1.4.0
 ============
 Tue Sep 24 23:02:04 BST 2013
 
-  backend:
+  + backend:
     - lazy processing of open directives makes merlin much faster
     - simplified buffer management
     - tweak signal handling to improve windows compatibility
@@ -618,11 +611,11 @@ Tue Sep 24 23:02:04 BST 2013
     - new implementation of the main merlin state tracking ast & types
     - better error reporting thanks to a contribution from Ronan Lehy
 
-  documentation:
+  + documentation:
     - started a wiki (https://github.com/def-lkb/merlin/wiki)
     - wrote 'from-scratch' guides to ease setting-up merlin in your editor
 
-  emacs
+  + emacs
     - during completion with auto-complete, you can hit C-c C-l on a candidate
       to jump on its definition
     - made communication with merlin asynchronous (using transfer queues) hence
@@ -648,13 +641,13 @@ merlin 1.3.1
 merlin 1.3
 ==========
 
-  backend:
+  + backend:
     - added a "locate" command to find the definition location of the given
       identifier
       works on the local buffer out of the box and at project level if it the
       build directories contain cmt files
 
-  emacs:
+  + emacs:
     - various bugfixes
     - aesthetic changes for highlighting
     - introduced "semantic movements":
@@ -665,15 +658,15 @@ merlin 1.3
     - asynchronous fetching of types so that long signatures
       won't make emacs hang
 
-  extensions:
+  + extensions:
     - add support for "type nonrec" declaration
     - add support for "with compare" from type-conv
     - add partial support for "with fields" from type-conv
 
-  misc:
+  + misc:
     - added specific support for omake's polling mode
 
-  vim:
+  + vim:
     - ':TypeOf' command now accepts an (optional) argument and tries to type it
       in the current context (i.e. at cursor position)
     - better catching of errors
@@ -681,41 +674,41 @@ merlin 1.3
 merlin 1.2
 ==========
 
-  emacs:
+  + emacs:
     - add ML, MLI and merlin-goto-project-file commands
     - prints the type of completed entry on completion
     - various bugfixes
 
-  extensions:
+  + extensions:
     - merged support for ignoring P4_QUOTATION
     - merged support for js_of_ocaml syntax
     - support top-level lwt binding
     - merged support for oUnit
 
-  misc:
+  + misc:
     - introduced 'REC' flag in .merlin:
         tells merlin to concatenate the current .merlin with the ones present in
         parents directories
     - added specific support for omake's polling mode.
 
-  vim:
+  + vim:
     - bugfix for omnicompletion on versions <= 703
 
 merlin 1.1
 ==========
 
-  emacs:
+  + emacs:
     - Ported the completion to the usual `completion-at-point' system, disabled
       auto-complete-mode-by-default
     - reset now tells merlin about the current buffer name
     - merlin-mode comes with a menu
     - improved documentation of the mode
 
-  backend:
+  + backend:
     - code cleanup
     - method completion
 
-  vim plugin: refactored synchronization code out
+  + vim plugin: refactored synchronization code out
 
 merlin 1.0
 ==========
