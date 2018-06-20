@@ -88,7 +88,7 @@ let lazy_val_requires_forward env ty =
     taken into account when determining whether a recursive binding is safe. *)
 let classify_lazy_argument : Typedtree.expression ->
                              [`Constant_or_function
-                             |`Float
+                             |`Float_that_cannot_be_shortcut
                              |`Identifier of [`Forward_value|`Other]
                              |`Other] =
   fun e -> match e.exp_desc with
@@ -99,7 +99,9 @@ let classify_lazy_argument : Typedtree.expression ->
     | Texp_construct (_, {cstr_arity = 0}, _) ->
        `Constant_or_function
     | Texp_constant(Const_float _) ->
-       `Float
+      (* TODO: handle flat float array, either at configure time or from the
+         .merlin. *)
+       `Constant_or_function
     | Texp_ident _ when lazy_val_requires_forward e.exp_env e.exp_type ->
        `Identifier `Forward_value
     | Texp_ident _ ->

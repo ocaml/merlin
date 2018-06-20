@@ -156,6 +156,9 @@ val rhs_pre_extra_text : int -> text
 (** Fetch additional text following the symbol at the given position *)
 val rhs_post_extra_text : int -> text
 
+(** Fetch text following the symbol at the given position *)
+val rhs_post_text : int -> text
+
 module WithMenhir: sig
 (** Fetch the item documentation for the current symbol. This also
     marks this documentation (for ambiguity warnings). *)
@@ -208,4 +211,7 @@ val rhs_pre_extra_text : Lexing.position -> text
 
 (** Fetch additional text following the symbol at the given position *)
 val rhs_post_extra_text : Lexing.position -> text
+
+(** Fetch text following the symbol at the given position *)
+val rhs_post_text : Lexing.position -> text
 end
