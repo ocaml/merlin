@@ -278,14 +278,6 @@ let tests = [
         (fun locations ->
            assertf (List.length locations = 2) "expected two locations");
 
-      validate_output "locate.ml"
-        "let foo _ = ()\nlet () = foo 4\n"
-        (Query_protocol.Locate (None, `ML, `Offset 26))
-        (function
-          | `Found (Some "locate.ml", pos)
-            when Lexing.split_pos pos = (1, 4) -> ()
-          | _ -> assertf false "Expecting match at position (1, 4)");
-
       assert_errors "invalid_flag.ml" ~config:1
         ~with_config:(fun cfg ->
             let open Mconfig in
