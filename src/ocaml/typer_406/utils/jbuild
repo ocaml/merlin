@@ -1,5 +1,3 @@
-(jbuild_version 1)
-
 (rule (copy# ../../support/identifiable.mli identifiable.mli))
 (rule (copy# ../../support/identifiable.ml identifiable.ml))
 (rule (copy# ../../support/clflags.mli clflags.mli))

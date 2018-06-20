@@ -1,5 +1,3 @@
-(jbuild_version 1)
-
 (install
  ((section share)
   (files ((autoload/ctrlp/locate.vim as vim/autoload/ctrlp/locate.vim)

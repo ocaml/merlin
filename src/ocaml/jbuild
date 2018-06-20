@@ -8,8 +8,6 @@ let ver =
 ;;
 
 Printf.ksprintf J.send {|
-(jbuild_version 1)
-
 (library
  ((name typer)
   (wrapped false)

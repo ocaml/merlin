@@ -1,5 +1,3 @@
-(jbuild_version 1)
-
 (copy_files# new/*.ml*)
 (copy_files# old/*.ml*)
 

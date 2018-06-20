@@ -1,5 +1,3 @@
-(jbuild_version 1)
-
 (rule (copy# ../support/fake.mli fake.mli))
 (rule (copy# ../support/fake.ml fake.ml))
 

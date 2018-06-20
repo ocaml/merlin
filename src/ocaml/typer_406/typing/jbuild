@@ -1,5 +1,3 @@
-(jbuild_version 1)
-
 (rule (copy# ../../support/cmi_cache.ml cmi_cache.ml))
 
 (rule (copy# ../../support/msupport.mli msupport.mli))

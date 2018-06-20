@@ -1,8 +1,7 @@
-(jbuild_version 1)
-
 (library
  ((name config)
   (wrapped false)))
+
 
 ; (with-stdout-to my_config.ml
 ;  (progn
