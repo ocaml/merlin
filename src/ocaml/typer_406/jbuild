@@ -1,6 +1,5 @@
 (jbuild_version 1)
 
-(rule (copy# ../support/cmt_cache.ml cmt_cache.ml))
 (rule (copy# ../support/fake.mli fake.mli))
 (rule (copy# ../support/fake.ml fake.ml))
 
@@ -20,7 +19,6 @@
             tail_analysis
             tast_helper
             typer_raw
-            cmt_cache
             fake
             lexer_ident))
   (libraries (typing_406))))
