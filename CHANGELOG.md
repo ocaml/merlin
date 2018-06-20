@@ -1,80 +1,26 @@
 merlin next
 ==========
 
-### Polarity search
+  - backend:
+    + new "polarity search" feature: provides a Hoogle-like type-based search
+      for libraries that are in merlin's scope.
+      See https://github.com/ocaml/merlin/blob/master/doc/features.md#polarity-search
+    + new "open refactoring" feature: helps cleaning the code in the scope of an
+      open statement.
+      See https://github.com/ocaml/merlin/blob/master/doc/features.md#open-refactoring
+    + spell-checking: a simple spell-checker has been added to suggest
+      corrections when nothing can be directly completed.
+    + type-driven record completion: merlin will now make use of type
+      information from the context for narrowing and refining completion
+      candidates.
+    + support for `#require` directive in a source file, an will treat it as a
+      package use
 
-This command provides Hoogle-like type-based search for libraries that are in
-Merlin scope.
-
-The commands `:MerlinSearch` / `merlin-search` take a search query and return
-the list of identifiers that satisfy this query.  
-The query language is simply a list of path identifiers prefixed by `+` or `-`,
-e.g. `-int`, `-int +string`, `-Hashtbl.t +int`.  
-`-` is interpreted as "consuming" and `+` as "producing": `-int +string` looks
-for functions consuming an `int` and producing a `string`.
-
-The search algorithm uses type variance to filter results. Thus, search will
-proceed inside abstract types, continuation-passing-style, ... as long as
-variance annotations are available.
-
-### Open refactoring
-
-Two new commands (`:MerlinRefactorOpen`, `:MerlinRefactorOpenQualify` in vim,
-and `merlin-refactor-open`, `merlin-refactor-open-qualify` in Emacs) help
-cleaning the code in the scope of an `open` statement.
-
-When the cursor is on an open statement:
-- `:MerlinRefactorOpen` will remove references to the path of the open that are
-  made useless
-- `:MerlinRefactorOpenQualify` will always add references to this path
-
-Starting from:
-
-```ocaml
-open Unix
-
-let times = Unix.times ()
-let f x = x.Unix.tms_stime, x.Unix.tms_utime
-```
-
-Calling `:MerlinRefactorOpen` with the cursor on the open statement will
-produce:
-
-```ocaml
-open Unix
-
-let times = times ()
-let f x = x.tms_stime, x.tms_utime
-```
-
-Calling `:MerlinRefactorOpenQualify` will restore:
-
-```ocaml
-open Unix
-
-let times = Unix.times ()
-let f x = x.Unix.tms_stime, x.Unix.tms_utime
-```
-
-### Spell checking
-
-A simple spell-checking has been implemented to suggest corrections when
-nothing can be directly completed.
-
-### Type driven record completion
-
-When completing a record, Merlin will make use of type information from the
-context for narrowing and refining completion candidates.
-
-### Support for #require directives
-
-Merlin will treat a "#require" directive in a source file as a package use.
-
-### Editor modes
-
-- emacs: proper handling of multibyte strings (by @Chris00)
-- emacs: bind "q" to close type buffer (by @MiloDavis)
-- vim: fix support for Neomake (by @bobbypriambodo and @statianzo)
+  - editor modes:
+    + emacs:
+      - proper handling of multibyte strings (by @Chris00)
+      - bind "q" to close type buffer (by @MiloDavis)
+    + vim: fix support for Neomake (by @bobbypriambodo and @statianzo)
 
 merlin 3.0.5
 ============
