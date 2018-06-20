@@ -22,3 +22,8 @@
             fake
             lexer_ident))
   (libraries (typing_406))))
+
+(library
+ ((name printf_compat_406)
+  (wrapped false)
+  (modules (printf_compat))))

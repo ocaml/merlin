@@ -3,6 +3,10 @@
 module J = Jbuild_plugin.V1
 ;;
 
+let ver =
+  Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+;;
+
 Printf.ksprintf J.send {|
 (jbuild_version 1)
 
@@ -10,5 +14,10 @@ Printf.ksprintf J.send {|
  ((name typer)
   (wrapped false)
   (libraries (typer_%s))))
-|} (Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min))
+
+(library
+ ((name printf_compat)
+  (wrapped false)
+  (libraries (printf_compat_%s))))
+|} ver ver
 ;;
