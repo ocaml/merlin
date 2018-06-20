@@ -1,0 +1,24 @@
+(rule (copy# ../../support/cmi_cache.ml cmi_cache.ml))
+
+(rule (copy# ../../support/msupport.mli msupport.mli))
+(rule (copy# ../../support/msupport.ml msupport.ml))
+
+(rule (copy# ../../support/natural.mli natural.mli))
+(rule (copy# ../../support/natural.ml natural.ml))
+
+(rule (copy# ../../support/tbl.mli tbl.mli))
+(rule (copy# ../../support/tbl.ml tbl.ml))
+
+(rule (copy# ../browse_raw.mli browse_raw.mli))
+(rule (copy# ../browse_raw.ml browse_raw.ml))
+
+(rule (copy# ../saved_parts.mli saved_parts.mli))
+(rule (copy# ../saved_parts.ml saved_parts.ml))
+
+(rule (copy# ../../support/path_aux.ml path_aux.ml))
+
+(library
+ ((name typing_407)
+  (wrapped false)
+  (modules_without_implementation (annot outcometree))
+  (libraries (parsing_407))))

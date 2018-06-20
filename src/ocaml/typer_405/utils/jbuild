@@ -1,0 +1,9 @@
+(rule (copy# ../../support/identifiable.mli identifiable.mli))
+(rule (copy# ../../support/identifiable.ml identifiable.ml))
+(rule (copy# ../../support/clflags.mli clflags.mli))
+(rule (copy# ../../support/clflags.ml clflags.ml))
+
+(library
+ ((name mlutils_405)
+  (wrapped false)
+  (libraries (utils config))))

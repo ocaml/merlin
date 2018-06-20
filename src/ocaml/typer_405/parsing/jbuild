@@ -1,0 +1,10 @@
+(rule (copy# ../../support/location_aux.mli location_aux.mli))
+(rule (copy# ../../support/location_aux.ml location_aux.ml))
+(rule (copy# ../../../extend/extend_helper.ml extend_helper.ml))
+(rule (copy# ../../../extend/extend_helper.mli extend_helper.mli))
+
+(library
+ ((name parsing_405)
+  (wrapped false)
+  (modules_without_implementation (asttypes parsetree))
+  (libraries (mlutils_405))))

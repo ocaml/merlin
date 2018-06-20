@@ -1,0 +1,27 @@
+(rule (copy# ../support/fake.mli fake.mli))
+(rule (copy# ../support/fake.ml fake.ml))
+
+; only used in kernel
+(rule (copy# ../support/lexer_ident.mli lexer_ident.mli))
+(rule (copy# ../support/lexer_ident.ml lexer_ident.ml))
+
+(library
+ ((name typer_407)
+  (wrapped false)
+  (modules (lexer_raw
+            parser_explain
+            parser_printer
+            parser_raw
+            parser_recover
+            raw_compat
+            tail_analysis
+            tast_helper
+            typer_raw
+            fake
+            lexer_ident))
+  (libraries (typing_407))))
+
+(library
+ ((name printf_compat_407)
+  (wrapped false)
+  (modules (printf_compat))))
