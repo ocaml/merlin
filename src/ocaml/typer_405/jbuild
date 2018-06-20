@@ -5,6 +5,12 @@
 (rule (copy# ../support/lexer_ident.mli lexer_ident.mli))
 (rule (copy# ../support/lexer_ident.ml lexer_ident.ml))
 
+(rule (copy# preprocess/lexer_raw.mll lexer_raw.mll))
+
+(ocamllex
+ ((modules (lexer_raw))
+  (mode fallback)))
+
 (library
  ((name typer_405)
   (wrapped false)
