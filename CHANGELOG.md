@@ -1,5 +1,6 @@
-merlin next
-==========
+merlin 3.1.0
+============
+Wed Jun 20 14:05:04 BST 2018
 
   - backend
     + new "polarity search" feature: provides a Hoogle-like type-based search
