@@ -103,67 +103,6 @@ let validate_failure ?with_config filename source query pred =
 
 let tests = [
 
-  group "no-escape" (
-    [
-      (* These tests ensure that all type errors are caught by the kernel,
-         no exception should reach top-level *)
-
-      assert_errors "incorrect_gadt.ml"
-        ~parser:1 ~typer:1
-        "type p = P : 'a -> 'a -> p";
-
-      assert_errors "unkown_constr.ml"
-        ~typer:1
-        "let error : unknown_type_constructor = assert false";
-
-      assert_errors "unkown_constr.mli"
-        ~typer:1
-        "val error : unknown_type_constructor";
-
-      assert_errors "two_constr.ml"
-        ~typer:1
-        "type t = A | A\n";
-
-      assert_errors "two_constr.mli"
-        ~typer:1
-        "type t = A | A\n";
-
-      assert_errors "ml_in_mli.mli"
-        ~parser:1
-        "let x = 4 val x : int";
-
-      assert_errors "mli_in_ml.ml"
-        ~typer:1 (* vals are no allowed in ml files and detected
-                       during semantic analysis *)
-        "val x : int";
-
-      assert_errors "unused_case_after_error.ml"
-        ~typer:1 (* The code should raise a single error (for Bb typo),
-                    but shouldn't report the unused case after *)
-        "type t = A | B | C\n\
-         let f = function A -> 1 | Bb -> 1 | C -> 1";
-    ]
-  );
-
-  group "recovery" [
-    assert_errors "hole_0.ml"
-      (* ?? should be parsed as merlin.hole, and merlin.hole shouldn't be
-         treated as a type error. *)
-      "let () = ??";
-    assert_errors "hole_1.ml"
-      ~parser:1 (* This incomplete expression should generate only a parser
-                      error. The hole is filled with merlin.hole. *)
-      "let _ =";
-    assert_errors "hole_2.ml"
-      ~parser:1 (* A bit trickier: the recovery is tempted to put a ->.
-                      (unreachable), but the penalty should prevent it.  *)
-      "let _ = function _ ->";
-    assert_errors "nothing_to_recover.ml"
-      ~parser:1 (* Issue #713: merlin would error when it cannot recover,
-                   but in some files there really is nothing to recover. *)
-      "let";
-  ];
-
   group "ocaml-flags" (
     let assert_errors ?lexer ?parser ?typer ?(flags=[]) filename source =
       assert_errors ?lexer ?parser ?typer

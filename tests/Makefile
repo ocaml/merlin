@@ -1,4 +1,4 @@
-TESTDIRS = locate
+TESTDIRS = locate no-escape recovery
 
 all:
 	@for dir in $(TESTDIRS); do \
