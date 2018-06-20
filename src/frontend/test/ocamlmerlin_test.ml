@@ -192,57 +192,6 @@ let tests = [
 
   );
 
-  group "destruct" (
-    [
-      (* TODO: test all error cases. *)
-
-      validate_failure "nothing_to_do.ml"
-        "let _ = match (None : unit option) with None -> () | Some () -> ()"
-        (Query_protocol.Case_analysis (`Offset 58, `Offset 60))
-        (function
-          | `Error Destruct.Nothing_to_do -> ()
-          | _  -> assertf false "expected Nothing_to_do exception");
-
-      (* TODO: at some point properly check locations as well. *)
-
-      validate_output "make_exhaustive.ml"
-        "let _ = match (None : unit option) with None -> ()"
-        (Query_protocol.Case_analysis (`Offset 40, `Offset 44))
-        (fun (_loc, s) ->
-           let expected = "\n| Some _ -> (??)" in
-           assertf (s = expected) "expected %S" expected);
-
-      validate_output "refine_pattern.ml"
-        "let _ = match (None : unit option) with None -> ()\n| Some _ -> (??)"
-        (Query_protocol.Case_analysis (`Offset 59, `Offset 60))
-        (fun (_loc, s) ->
-           let expected = "()" in
-           assertf (s = expected) "expected %S" expected);
-
-      validate_output "unpack_module.ml"
-        "module type S = sig end\n\nlet g (x : (module S)) =\n  x"
-        (Query_protocol.Case_analysis (`Offset 52, `Offset 53))
-        (fun (_loc, s) ->
-           let expected = "let module M = (val x) in (??)" in
-           assertf (s = expected) "expected %S" expected);
-
-      validate_output "record_exp.ml"
-        "let f (x : int ref) =\n  x"
-        (Query_protocol.Case_analysis (`Offset 24, `Offset 25))
-        (fun (_loc, s) ->
-           let expected = "match x with | { contents } -> (??)" in
-           assertf (s = expected) "expected %S" expected);
-
-      validate_output "variant_exp.ml"
-        "let f (x : int option) =\n  x"
-        (Query_protocol.Case_analysis (`Offset 27, `Offset 28))
-        (fun (_loc, s) ->
-           let expected = "match x with | None -> (??) | Some _ -> (??)" in
-           assertf (s = expected) "expected %S" expected);
-
-    ]
-  );
-
   group "completion" (
     let assert_entry name result query =
       let open Query_protocol.Compl in
