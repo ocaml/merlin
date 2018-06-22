@@ -568,4 +568,12 @@ The return value has the shape:
     end
   ;
 
+  (* Used only for testing *)
+  command "dump-configuration" ~spec:[] ~default:()
+    ~doc:"Not for the casual user, used for merlin tests"
+    begin fun pipeline () ->
+      Mconfig.dump (Mpipeline.final_config pipeline)
+    end
+  ;
+
 ]
