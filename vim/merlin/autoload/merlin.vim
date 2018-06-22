@@ -635,7 +635,6 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
 
   """ Polarity search
-  command! -buffer -nargs=* MerlinSearch call merlin#Phrase()
   command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=* MerlinSearch call merlin#PolaritySearch(0,<q-args>)
 
   """ debug --------------------------------------------------------------------
