@@ -1,4 +1,4 @@
-TESTDIRS = locate no-escape recovery destruct config
+TESTDIRS = locate no-escape recovery destruct config completion
 
 all:
 	@for dir in $(TESTDIRS); do \
