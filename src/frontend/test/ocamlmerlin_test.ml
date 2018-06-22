@@ -116,36 +116,6 @@ let tests = [
     ]
   );
 
-  group "type-expr" (
-
-    let test_file =
-      "let x = 5\n\
-       let y = 10\n
-       type t = T\n\
-       module M = List\n\
-       module type MT = module type of List\n\
-       let z = ()"
-    in
-    let unbound_pattern = `Start, "\\(Error: \\)?Unbound .*" in
-    let queries = [
-      "lident-value"       , "y"     , [unbound_pattern; `End, "int"];
-      "lident-type"        , "t"     , [unbound_pattern; `End, "type t = T"];
-      "expr"               , "x + y" , [unbound_pattern; `End, "int"];
-      "uident-constructor" , "T"     , [unbound_pattern; `End, "t"];
-      "uident-module"      , "M"     , [unbound_pattern; `End, "(module List)"];
-      "uident-module-type" , "MT"    , [unbound_pattern; `End, "sig\\(.\\|\n\\)*end"];
-      "parse-error"        , "f ("   , [`Start, "FIXME"];
-    ] in
-    let type_expr_match name expr pos re =
-      validate_output name test_file (Query_protocol.Type_expr (expr, pos))
-        (fun str -> assertf (str_match ~re str)
-            "Output didn't match pattern %S: %S" re str)
-    in
-    List.concat_map queries ~f:(fun (name, expr, patterns) ->
-        List.map patterns ~f:(fun (pos, re) ->
-            type_expr_match (name ^ "-" ^ Msource.print_position () pos) expr pos re))
-  );
-
   group "motion" (
     let check_position (l1,c1 as p1) pos =
       let l2,c2 as p2 = Lexing.split_pos pos in
