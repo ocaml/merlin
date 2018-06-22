@@ -635,7 +635,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
 
   """ Polarity search
-  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=* MerlinSearch call merlin#PolaritySearch(0,<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#PolaritySearch(0,<q-args>)
 
   """ debug --------------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
