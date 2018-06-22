@@ -103,58 +103,6 @@ let validate_failure ?with_config filename source query pred =
 
 let tests = [
 
-  group "ocaml-flags" (
-    let assert_errors ?lexer ?parser ?typer ?(flags=[]) filename source =
-      assert_errors ?lexer ?parser ?typer
-        ~with_config:(fun config ->
-            let flags = {
-              Mconfig.
-              flag_cwd = None;
-              flag_list = flags;
-            } in
-            Mconfig.({config with merlin = {config.merlin with
-                                            flags_to_apply = [flags]}}))
-        filename
-        source
-    in
-    [
-
-      (* -unsafe and array desugaring *)
-
-      assert_errors "array_good.ml"
-        "let x = [|0|].(0)";
-
-      assert_errors "array_bad.ml"
-        ~typer:1
-        "module Array = struct end\n\
-         let x = [|0|].(0)";
-
-      assert_errors "array_fake_good.ml"
-        "module Array = struct let get _ _ = () end\n\
-         let x = [|0|].(0)";
-
-      assert_errors ~flags:["-unsafe"] "unsafe_array_good.ml"
-        "let x = [|0|].(0)";
-
-      assert_errors ~flags:["-unsafe"] "unsafe_array_bad.ml"
-        ~typer:1
-        "module Array = struct end\n\
-         let x = [|0|].(0)";
-
-      assert_errors ~flags:["-unsafe"] "unsafe_array_fake_good.ml"
-        "module Array = struct let unsafe_get _ _ = () end\n\
-         let x = [|0|].(0)";
-
-      (* classic and labels *)
-
-      assert_errors "labels_ok_1.ml"
-        "let f ~x = () in f ~x:(); f ()";
-
-      assert_errors ~flags:["-nolabels"] "classic_ko_1.ml"
-        "let f ~x = () in f ~x:(); f ()";
-    ]
-  );
-
   group "completion" (
     let assert_entry name result query =
       let open Query_protocol.Compl in
@@ -189,17 +137,6 @@ let tests = [
         (Query_protocol.Occurrences (`Ident_at (`Offset 5)))
         (fun locations ->
            assertf (List.length locations = 2) "expected two locations");
-
-      assert_errors "invalid_flag.ml" ~config:1
-        ~with_config:(fun cfg ->
-            let open Mconfig in
-            let flags_to_apply = [{
-                flag_cwd = None;
-                flag_list = ["-lalala"]
-              }] in
-            Mconfig.({cfg with merlin = {cfg.merlin with flags_to_apply}}))
-         ""
-      ;
     ]
   );
 
