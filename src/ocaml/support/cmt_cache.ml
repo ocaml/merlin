@@ -31,7 +31,7 @@ open Std
 
 type cmt_item = {
   cmt_infos : Cmt_format.cmt_infos ;
-  mutable location_trie : Typedtrie.t option;
+  mutable location_trie : exn;
 }
 
 include File_cache.Make (struct
@@ -39,7 +39,7 @@ include File_cache.Make (struct
 
   let read file = {
     cmt_infos = Cmt_format.read_cmt file ;
-    location_trie = None;
+    location_trie = Not_found;
   }
 
   let cache_name = "Cmt_cache"

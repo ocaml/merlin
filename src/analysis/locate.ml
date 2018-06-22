@@ -343,13 +343,15 @@ end
 
 exception Context_mismatch
 
+exception Cmt_cache_store of Typedtrie.t
+
 let trie_of_cmt root =
   let open Cmt_format in
   let cached = Cmt_cache.read root in
   logf "browse_cmts" "inspecting %s" root ;
   begin match cached.Cmt_cache.location_trie with
-  | Some _ -> log "browse_cmts" "trie already cached"
-  | None ->
+  | Cmt_cache_store _ -> log "browse_cmts" "trie already cached"
+  | Not_found ->
     let trie_of_nodes nodes =
       let digest =
         (* [None] only for packs. *)
@@ -357,9 +359,9 @@ let trie_of_cmt root =
       in
       File_switching.move_to ~digest root;
       let trie =
-        Some (Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes))
+        Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes)
       in
-      cached.location_trie <- trie
+      cached.location_trie <- Cmt_cache_store trie
     in
     Option.iter ~f:trie_of_nodes (
       match cached.Cmt_cache.cmt_infos.cmt_annots with
@@ -376,6 +378,7 @@ let trie_of_cmt root =
         in
         Some nodes
     )
+  | _ -> assert false
   end;
   cached.cmt_infos, cached.location_trie
 
@@ -409,14 +412,14 @@ and from_path ~config ~context path : locate_result =
     let browse_cmt cmt_file =
       let cmt_infos, trie = trie_of_cmt cmt_file in
       match trie, Namespaced_path.head path with
-      | None, None ->
+      | Not_found, None ->
         Other_error (* Trying to stop on a packed module... *)
-      | None, Some _ ->
+      | Not_found, Some _ ->
         log "from_path" "Saw packed module => erasing loadpath" ;
         erase_loadpath ~cwd:(Filename.dirname cmt_file)
           ~new_path:cmt_infos.cmt_loadpath
           (fun () -> from_path ~context ~config path)
-      | Some trie, None ->
+      | Cmt_cache_store trie, None ->
         (* We found the module we were looking for, we can stop here. *)
         let pos_fname =
           match cmt_infos.cmt_sourcefile with
@@ -427,8 +430,9 @@ and from_path ~config ~context path : locate_result =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Found (loc, None)
-      | Some trie, Some _ ->
+      | Cmt_cache_store trie, Some _ ->
         locate ~config ~context path trie
+      | _, _ -> assert false
     in
     begin match Utils.find_file ~config ~with_fallback:true file with
     | Some cmt_file -> browse_cmt cmt_file
