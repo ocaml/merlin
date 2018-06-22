@@ -34,8 +34,6 @@ SOURCES_LIB = \
 	$(STURGEON)/sturgeon_stub.ml      \
 	src/utils/menhirLib.mli           \
 	src/utils/menhirLib.ml            \
-	$(TYPER)/printf_compat.mli        \
-	$(TYPER)/printf_compat.ml         \
 	src/utils/trace.mli               \
 	src/utils/trace.ml                \
 	src/utils/bitfield.mli            \
