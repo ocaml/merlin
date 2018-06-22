@@ -155,43 +155,6 @@ let tests = [
     ]
   );
 
-  group "path-expansion" (
-    let test_ppx_path name flag_list ?cwd item =
-      test name (fun () ->
-          let open Mconfig in
-          let m = process ~with_config:(fun cfg ->
-              let merlin = {cfg.merlin with
-                            flags_to_apply = [{flag_cwd = cwd; flag_list}]} in
-              {cfg with merlin}
-            ) "relative_path.ml" ""
-          in
-          let config = Mpipeline.reader_config m in
-          let dump () cfg = Json.pretty_to_string (Mconfig.dump cfg) in
-          assertf
-            (List.mem item config.ocaml.ppx)
-            "Expecting %s in config.\nConfig:\n%a"
-            item dump config;
-        )
-    in
-    let cwd = Filename.get_temp_dir_name () in
-    [
-      (* Simple name is not expanded *)
-      test_ppx_path "simple_name" ["-ppx"; "test1"] "test1";
-
-      (* Absolute name is not expanded *)
-      test_ppx_path "absolute_path" ["-ppx"; "/test2"] "/test2";
-
-      (* Relative name is expanded *)
-      test_ppx_path "relative_path" ~cwd
-        ["-ppx"; "./test3"] (Filename.concat cwd "test3");
-
-      (* Quoted flags inherit path *)
-      test_ppx_path "quoted_path" ~cwd
-        ["-flags"; "-ppx ./test4"] (Filename.concat cwd "test4");
-    ]
-
-  );
-
   group "completion" (
     let assert_entry name result query =
       let open Query_protocol.Compl in
