@@ -53,6 +53,9 @@ let raise_error ?(ignore_unify=false) exn =
     end
   | None -> raise exn
 
+let () =
+  Msupport_parsing.msupport_raise_error := raise_error
+
 exception Resume
 
 let resume_raise exn =
