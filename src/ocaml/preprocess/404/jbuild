@@ -1,0 +1,15 @@
+(ocamllex
+ ((modules (lexer_raw))
+  (mode    fallback)))
+
+(rule
+ ((targets (parser_raw.mly))
+  (deps    (parser_raw.mlyp))
+  (mode    fallback)
+  (action
+    (with-stdout-to ${@}
+      (run gcc "-E" "-x" c "-P" ${<})))))
+
+(menhir
+ ((modules (parser_raw))
+  (mode    fallback)))

@@ -1,0 +1,21 @@
+(* -*- tuareg -*- *)
+
+module J = Jbuild_plugin.V1
+;;
+
+let ver =
+  Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+;;
+
+Printf.ksprintf J.send {|
+(copy_files# %s/*.ml{,i})
+
+(ocamllex
+  ((modules (lexer_ident))
+   (mode    fallback)))
+
+(library
+  ((name preprocess)
+   (wrapped false)
+   (libraries (parsing))))
+|} ver

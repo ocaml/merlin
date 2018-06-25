@@ -1,0 +1,4 @@
+(library
+ ((name merlin_extend)
+  (wrapped false)
+  (libraries (parsing typing unix utils))))
