@@ -1,5 +1,0 @@
-(rule (copy# preprocess/lexer_ident.mll lexer_ident.mll))
-
-(ocamllex
- ((modules (lexer_ident))
-  (mode fallback)))

@@ -1,0 +1,13 @@
+(* -*- tuareg -*- *)
+
+module J = Jbuild_plugin.V1
+;;
+
+Printf.ksprintf J.send {|
+(copy_files# %s/*.ml*)
+
+(library
+ ((name printf_compat)
+  (wrapped false)))
+|} (Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min))
+;;

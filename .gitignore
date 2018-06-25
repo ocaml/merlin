@@ -3,7 +3,6 @@ _build
 *.install
 Makefile.config
 src/config/my_config.ml
-src/ocaml/typer
 src/sturgeon
 emacs/merlin.elc
 *.tar.gz
