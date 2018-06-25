@@ -1,0 +1,8 @@
+(library
+ ((name utils)
+  (wrapped false)
+  (libraries (yojson
+              (select sturgeon_stub.ml from
+                      (sturgeon -> ../sturgeon_stub/sturgeon_stub.ml)
+                      (!sturgeon -> ../sturgeon_null/sturgeon_stub.ml))
+              printf_compat findlib unix str))))

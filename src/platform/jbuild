@@ -1,0 +1,4 @@
+(library
+ ((name platform)
+  (wrapped false)
+  (c_names (platform_misc os_ipc_stub))))

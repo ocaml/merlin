@@ -1,0 +1,4 @@
+(library
+ ((name kernel)
+  (wrapped false)
+  (libraries (utils typer extend config))))
