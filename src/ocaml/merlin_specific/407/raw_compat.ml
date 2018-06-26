@@ -29,10 +29,6 @@
 open Std
 open Misc
 
-(* For Fake, Browse, Completion, ... *)
-
-let no_label = Asttypes.Nolabel
-
 (* For Browse_misc *)
 
 let signature_of_summary =

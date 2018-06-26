@@ -37,7 +37,7 @@ let print_constructor c =
     Printtyp.tree_of_type_scheme
       (Raw_compat.dummy_type_scheme c.cstr_res.desc)
   | args ->
-    let desc = Tarrow (Raw_compat.no_label,
+    let desc = Tarrow (Ast_helper.no_label,
                        Raw_compat.dummy_type_scheme (Ttuple args),
                        c.cstr_res, Cok)
     in

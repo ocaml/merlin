@@ -389,3 +389,7 @@ module Cstr:
   sig
     val mk: pattern -> class_field list -> class_structure
   end
+
+(* merlin specific *)
+
+val no_label : label

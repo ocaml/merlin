@@ -483,3 +483,6 @@ module Cstr = struct
     }
 end
 
+(* merlin specific *)
+
+let no_label = ""

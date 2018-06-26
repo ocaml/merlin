@@ -578,3 +578,7 @@ type let_bindings =
     lbs_extension: string Asttypes.loc option;
     lbs_loc: Location.t }
 
+
+(* merlin specific *)
+
+let no_label = Nolabel

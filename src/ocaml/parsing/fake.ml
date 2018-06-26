@@ -44,7 +44,7 @@ let app a b =
     then {b.pexp_loc with Location.loc_ghost = true}
     else b.pexp_loc
   in
-  Ast_helper.Exp.apply ~loc a [Raw_compat.no_label, b]
+  Ast_helper.Exp.apply ~loc a [Ast_helper.no_label, b]
 
 let pat_app f (pat,expr) = pat, app f expr
 
@@ -78,9 +78,9 @@ module Meta = struct
 
   let code loc_start loc_end expr =
     let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
-    Ast_helper.Exp.apply ~loc prim_code [Raw_compat.no_label, expr]
+    Ast_helper.Exp.apply ~loc prim_code [Ast_helper.no_label, expr]
 
   let uncode loc_start loc_end expr =
     let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
-    Ast_helper.Exp.apply ~loc prim_uncode [Raw_compat.no_label, expr]
+    Ast_helper.Exp.apply ~loc prim_uncode [Ast_helper.no_label, expr]
 end

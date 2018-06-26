@@ -456,3 +456,7 @@ type let_bindings =
     lbs_extension: string Asttypes.loc option;
     lbs_loc: Location.t }
 
+
+(* merlin specific *)
+
+val no_label : arg_label
