@@ -10,6 +10,11 @@
     (with-stdout-to ${@}
       (run gcc "-E" "-x" c "-P" ${<})))))
 
-(menhir
- ((modules (parser_raw))
-  (mode    fallback)))
+(rule
+  ((targets (parser_raw.ml parser_raw.mli))
+   (deps    (parser_raw.mly
+             (glob_files ${ROOT}/src/ocaml/parsing/*.cmi)
+             (glob_files ${ROOT}/src/ocaml/utils/*.cmi)))
+   (mode    fallback)
+   (action  (run ${bin:menhir} --infer --inspection --table --cmly
+                 --ocamlc "${OCAMLC} -I ../../parsing -I ../../utils" ${<}))))
