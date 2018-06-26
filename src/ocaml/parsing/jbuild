@@ -10,6 +10,9 @@ let ver =
 Printf.ksprintf J.send {|
 (copy_files# %s/*.ml{,i})
 
+(rule (copy# ../../extend/extend_helper.ml  extend_helper.ml ))
+(rule (copy# ../../extend/extend_helper.mli extend_helper.mli))
+
 (library
   ((name parsing)
    (wrapped false)
