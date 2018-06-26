@@ -1,4 +1,4 @@
-# 15 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 15 "src/ocaml/preprocess/lexer_ident.mll"
  
 open Std
 open Misc
@@ -19,7 +19,7 @@ let update_loc lexbuf file line absolute chars =
     pos_bol = pos.pos_cnum - chars;
   }
 
-# 23 "src/ocaml/support/lexer_ident.ml"
+# 23 "src/ocaml/preprocess/lexer_ident.ml"
 let __ocaml_lex_tables = {
   Lexing.lex_base =
    "\000\000\229\255\230\255\090\000\033\000\070\000\069\000\211\000\
@@ -791,176 +791,176 @@ let rec token lexbuf =
 and __ocaml_lex_token_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 66 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 66 "src/ocaml/preprocess/lexer_ident.mll"
       ( update_loc lexbuf None 1 false 0;
         token lexbuf )
-# 798 "src/ocaml/support/lexer_ident.ml"
+# 798 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 1 ->
-# 69 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 69 "src/ocaml/preprocess/lexer_ident.mll"
       ( token lexbuf )
-# 803 "src/ocaml/support/lexer_ident.ml"
+# 803 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 2 ->
 let
-# 70 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 70 "src/ocaml/preprocess/lexer_ident.mll"
                                    label
-# 809 "src/ocaml/support/lexer_ident.ml"
+# 809 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos (lexbuf.Lexing.lex_curr_pos + -1) in
-# 71 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 71 "src/ocaml/preprocess/lexer_ident.mll"
       ( LABEL label )
-# 813 "src/ocaml/support/lexer_ident.ml"
+# 813 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 3 ->
 let
-# 72 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 72 "src/ocaml/preprocess/lexer_ident.mll"
                                                  label
-# 819 "src/ocaml/support/lexer_ident.ml"
+# 819 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos (lexbuf.Lexing.lex_curr_pos + -1) in
-# 73 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 73 "src/ocaml/preprocess/lexer_ident.mll"
       ( LABEL label )
-# 823 "src/ocaml/support/lexer_ident.ml"
+# 823 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 4 ->
-# 75 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 75 "src/ocaml/preprocess/lexer_ident.mll"
       ( QUESTION )
-# 828 "src/ocaml/support/lexer_ident.ml"
+# 828 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 5 ->
 let
-# 76 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 76 "src/ocaml/preprocess/lexer_ident.mll"
                                    label
-# 834 "src/ocaml/support/lexer_ident.ml"
+# 834 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos (lexbuf.Lexing.lex_curr_pos + -1) in
-# 77 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 77 "src/ocaml/preprocess/lexer_ident.mll"
       ( OPTLABEL label )
-# 838 "src/ocaml/support/lexer_ident.ml"
+# 838 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 6 ->
 let
-# 78 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 78 "src/ocaml/preprocess/lexer_ident.mll"
                                                  label
-# 844 "src/ocaml/support/lexer_ident.ml"
+# 844 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos (lexbuf.Lexing.lex_curr_pos + -1) in
-# 79 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 79 "src/ocaml/preprocess/lexer_ident.mll"
       ( OPTLABEL label )
-# 848 "src/ocaml/support/lexer_ident.ml"
+# 848 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 7 ->
 let
-# 80 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 80 "src/ocaml/preprocess/lexer_ident.mll"
                                ident
-# 854 "src/ocaml/support/lexer_ident.ml"
+# 854 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos lexbuf.Lexing.lex_curr_pos in
-# 81 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 81 "src/ocaml/preprocess/lexer_ident.mll"
     ( LIDENT ident )
-# 858 "src/ocaml/support/lexer_ident.ml"
+# 858 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 8 ->
 let
-# 82 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 82 "src/ocaml/preprocess/lexer_ident.mll"
                                              ident
-# 864 "src/ocaml/support/lexer_ident.ml"
+# 864 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos lexbuf.Lexing.lex_curr_pos in
-# 83 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 83 "src/ocaml/preprocess/lexer_ident.mll"
     ( LIDENT ident )
-# 868 "src/ocaml/support/lexer_ident.ml"
+# 868 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 9 ->
 let
-# 84 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 84 "src/ocaml/preprocess/lexer_ident.mll"
                                ident
-# 874 "src/ocaml/support/lexer_ident.ml"
+# 874 "src/ocaml/preprocess/lexer_ident.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos lexbuf.Lexing.lex_curr_pos in
-# 85 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 85 "src/ocaml/preprocess/lexer_ident.mll"
     ( UIDENT ident )
-# 878 "src/ocaml/support/lexer_ident.ml"
+# 878 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 10 ->
-# 86 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 86 "src/ocaml/preprocess/lexer_ident.mll"
          ( BACKQUOTE )
-# 883 "src/ocaml/support/lexer_ident.ml"
+# 883 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 11 ->
-# 87 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 87 "src/ocaml/preprocess/lexer_ident.mll"
          ( QUOTE )
-# 888 "src/ocaml/support/lexer_ident.ml"
+# 888 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 12 ->
-# 88 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 88 "src/ocaml/preprocess/lexer_ident.mll"
          ( LPAREN )
-# 893 "src/ocaml/support/lexer_ident.ml"
+# 893 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 13 ->
-# 89 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 89 "src/ocaml/preprocess/lexer_ident.mll"
          ( RPAREN )
-# 898 "src/ocaml/support/lexer_ident.ml"
+# 898 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 14 ->
-# 90 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 90 "src/ocaml/preprocess/lexer_ident.mll"
          ( DOT )
-# 903 "src/ocaml/support/lexer_ident.ml"
+# 903 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 15 ->
-# 92 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 92 "src/ocaml/preprocess/lexer_ident.mll"
             ( PREFIXOP(Lexing.lexeme lexbuf) )
-# 908 "src/ocaml/support/lexer_ident.ml"
+# 908 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 16 ->
-# 94 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 94 "src/ocaml/preprocess/lexer_ident.mll"
             ( PREFIXOP(Lexing.lexeme lexbuf) )
-# 913 "src/ocaml/support/lexer_ident.ml"
+# 913 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 17 ->
-# 96 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 96 "src/ocaml/preprocess/lexer_ident.mll"
             ( INFIXOP0(Lexing.lexeme lexbuf) )
-# 918 "src/ocaml/support/lexer_ident.ml"
+# 918 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 18 ->
-# 98 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 98 "src/ocaml/preprocess/lexer_ident.mll"
             ( INFIXOP1(Lexing.lexeme lexbuf) )
-# 923 "src/ocaml/support/lexer_ident.ml"
+# 923 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 19 ->
-# 100 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 100 "src/ocaml/preprocess/lexer_ident.mll"
             ( INFIXOP2(Lexing.lexeme lexbuf) )
-# 928 "src/ocaml/support/lexer_ident.ml"
+# 928 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 20 ->
-# 102 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 102 "src/ocaml/preprocess/lexer_ident.mll"
             ( INFIXOP4(Lexing.lexeme lexbuf) )
-# 933 "src/ocaml/support/lexer_ident.ml"
+# 933 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 21 ->
-# 103 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 103 "src/ocaml/preprocess/lexer_ident.mll"
             ( PERCENT )
-# 938 "src/ocaml/support/lexer_ident.ml"
+# 938 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 22 ->
-# 105 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 105 "src/ocaml/preprocess/lexer_ident.mll"
             ( INFIXOP3(Lexing.lexeme lexbuf) )
-# 943 "src/ocaml/support/lexer_ident.ml"
+# 943 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 23 ->
-# 107 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 107 "src/ocaml/preprocess/lexer_ident.mll"
             ( let s = Lexing.lexeme lexbuf in
               SHARPOP s )
-# 949 "src/ocaml/support/lexer_ident.ml"
+# 949 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 24 ->
-# 109 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 109 "src/ocaml/preprocess/lexer_ident.mll"
         ( EOF )
-# 954 "src/ocaml/support/lexer_ident.ml"
+# 954 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 25 ->
-# 174 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 174 "src/ocaml/preprocess/lexer_ident.mll"
     ( EOL )
-# 959 "src/ocaml/support/lexer_ident.ml"
+# 959 "src/ocaml/preprocess/lexer_ident.ml"
 
   | 26 ->
-# 175 "src/ocaml/support/preprocess/lexer_ident.mll"
+# 175 "src/ocaml/preprocess/lexer_ident.mll"
       ( EOL )
-# 964 "src/ocaml/support/lexer_ident.ml"
+# 964 "src/ocaml/preprocess/lexer_ident.ml"
 
   | __ocaml_lex_state -> lexbuf.Lexing.refill_buff lexbuf;
       __ocaml_lex_token_rec lexbuf __ocaml_lex_state

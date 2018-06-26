@@ -12,7 +12,7 @@ Printf.ksprintf J.send {|
 
 (ocamllex
   ((modules (lexer_ident))
-   (mode    fallback)))
+   (mode    promote)))
 
 (library
   ((name preprocess)
