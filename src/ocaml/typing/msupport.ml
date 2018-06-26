@@ -93,10 +93,6 @@ let rec erroneous_expr_check e =
   | Typedtree.Texp_apply (e',_) -> erroneous_expr_check e'
   | _ -> false
 
-let erroneous_patt_check p =
-  List.exists Browse_raw.(node_attributes (Pattern p))
-    ~f:(fun (str_loc, _) -> str_loc.Location.txt = "merlin.incorrect")
-
 exception Warning of Location.t * string
 
 let prerr_warning loc w =
