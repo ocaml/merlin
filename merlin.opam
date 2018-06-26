@@ -8,14 +8,16 @@ bug-reports:  "https://github.com/ocaml/merlin/issues"
 dev-repo:     "https://github.com/ocaml/merlin.git"
 
 build: [
-  ["./configure" "--prefix" prefix]
-  ["rm" "-rf" "%{prefix}%/share/ocamlmerlin"]
-  [make "-j" jobs]
+  ["jbuilder" "subst"] {pinned}
+  ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 
-build-test: [make "tests"]
+build-test: [
+  ["jbuilder" "runtest" "-p" name "-j" jobs]
+]
 
 depends: [
+  "jbuilder"  {build & >= "1.0+beta20"}
   "ocamlfind" {>= "1.5.2"}
   "yojson"
   "cram" {test}
