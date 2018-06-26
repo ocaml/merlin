@@ -1,6 +1,6 @@
 (ocamllex
  ((modules (lexer_raw))
-  (mode    fallback)))
+  (mode    promote)))
 
 (rule
  ((targets (parser_raw.mly))
