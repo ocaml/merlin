@@ -197,14 +197,14 @@ let keyword_or state s default =
 (* Remove underscores from float literals *)
 
 let remove_underscores s =
-  let l = String.length s in
+  let l = Bytes.length s in
   let rec remove src dst =
     if src >= l then
-      if dst >= l then s else String.sub s 0 dst
+      if dst >= l then s else Bytes.sub s 0 dst
     else
       match s.[src] with
         '_' -> remove (src + 1) dst
-      |  c  -> s.[dst] <- c; remove (src + 1) (dst + 1)
+      |  c  -> Bytes.set s dst c; remove (src + 1) (dst + 1)
   in remove 0 0
 
 (* recover the name from a LABEL or OPTLABEL token *)

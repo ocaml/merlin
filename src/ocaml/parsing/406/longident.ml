@@ -51,12 +51,12 @@ let parse s =
 let keep_suffix =
   let rec aux = function
     | Lident str ->
-      if String.lowercase str <> str then
+      if String.uncapitalize_ascii str <> str then
         Some (Lident str, false)
       else
         None
     | Ldot (t, str) ->
-      if String.lowercase str <> str then
+      if String.uncapitalize_ascii str <> str then
         match aux t with
         | None -> Some (Lident str, true)
         | Some (t, is_label) -> Some (Ldot (t, str), is_label)
