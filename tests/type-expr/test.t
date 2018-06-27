@@ -59,7 +59,7 @@
   $ $MERLIN single type-expression -expression "M" -position end -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "(module M)",
+    "value": "(module List)",
     "notifications": []
   }
 

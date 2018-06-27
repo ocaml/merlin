@@ -19,5 +19,5 @@ But relative names are
   $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx ./test3 | \
   > jq '.value.ocaml.ppx'
   [
-    "tests/config/path-expansion/test3"
+    "tests/config/test3"
   ]

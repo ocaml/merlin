@@ -6,30 +6,6 @@
     "value": {
       "entries": [
         {
-          "name": "Local_store.merge",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
-          "name": "Location.mkloc",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
-          "name": "Location.mknoloc",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
-          "name": "Lexer_raw.make",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
           "name": "ListLabels.map",
           "kind": "Value",
           "desc": "",
@@ -141,30 +117,6 @@ FIXME? there are results in there that I did not really expect, e.g.
     "class": "return",
     "value": {
       "entries": [
-        {
-          "name": "Local_store.merge",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
-          "name": "Location.mkloc",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
-          "name": "Location.mknoloc",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
-        {
-          "name": "Lexer_raw.make",
-          "kind": "Value",
-          "desc": "",
-          "info": ""
-        },
         {
           "name": "ListLabels.map",
           "kind": "Value",
