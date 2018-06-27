@@ -1,0 +1,26 @@
+(alias
+ ((name runtest)
+  (deps (invalid.t))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (nolabels.t))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (unsafe.t))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))

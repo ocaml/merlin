@@ -1,0 +1,35 @@
+(alias
+ ((name runtest)
+  (deps (all_local.t all_local.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (from_application.t from_application.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (missed_shadowing.t missed_shadowing.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (nested_applications.t nested_applications.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))

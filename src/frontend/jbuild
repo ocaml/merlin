@@ -8,7 +8,7 @@
 
 (executable
  ((name ocamlmerlin_server)
-  (public_name ocamlmerlin-server.exe)
+  (public_name ocamlmerlin-server)
   (modules (:standard \ gen_ccflags query_protocol))
   (libraries
     (config
@@ -38,4 +38,4 @@
 
 (install
  ((section bin)
-  (files   (ocamlmerlin.exe))))
+  (files   ((ocamlmerlin.exe as ocamlmerlin)))))
