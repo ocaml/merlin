@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 (* Typechecking for the core language *)
 
 open Misc

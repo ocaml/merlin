@@ -722,7 +722,7 @@ module PpxContext = struct
 
   let restore fields =
     let field name payload =
-      let rec get_string = function
+      let get_string = function
         | { pexp_desc = Pexp_constant (Pconst_string (str, None)) } -> str
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
                              { %s }] string syntax" name

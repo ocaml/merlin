@@ -15,7 +15,6 @@
 
 (* Auxiliaries for type-based optimizations, e.g. array kinds *)
 
-open Path
 open Types
 open Asttypes
 open Typedtree

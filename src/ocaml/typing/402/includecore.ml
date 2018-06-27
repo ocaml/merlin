@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 (* Inclusion checks for the core language *)
 
 open Asttypes

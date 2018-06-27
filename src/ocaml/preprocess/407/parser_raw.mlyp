@@ -13,6 +13,8 @@
 /* The parser definition */
 
 %{
+[@@@ocaml.warning "-9"]
+
 open Location
 open Asttypes
 open Longident
@@ -77,9 +79,6 @@ let ghtyp ~loc d = Typ.mk ~loc:{ loc with Location.loc_ghost = true } d
 let ghloc ~loc d = { txt = d; loc = { loc with Location.loc_ghost = true } }
 let ghstr ~loc d = Str.mk ~loc:{ loc with Location.loc_ghost = true } d
 let ghsig ~loc d = Sig.mk ~loc:{ loc with Location.loc_ghost = true } d
-
-let ghunit ~loc () =
-  ghexp ~loc (Pexp_construct (mknoloc (Lident "()"), None))
 
 let mkinfix ~loc ~oploc arg1 name arg2 =
   mkexp ~loc (Pexp_apply(mkoperator name oploc, [Nolabel, arg1; Nolabel, arg2]))
@@ -165,13 +164,6 @@ let array_function ~loc str name =
 
 let syntax_error loc =
   raise_error (Syntaxerr.Error(Syntaxerr.Other loc))
-
-let unclosed opening_name opening_num closing_name closing_num =
-  raise_error (Syntaxerr.Error(Syntaxerr.Unclosed(rhs_loc opening_num, opening_name,
-                                           rhs_loc closing_num, closing_name)))
-
-let expecting pos nonterm =
-    raise_error  Syntaxerr.(Error(Expecting(rhs_loc pos, nonterm)))
 
 let not_expecting pos nonterm =
     raise_error  Syntaxerr.(Error(Not_expecting(rhs_loc pos, nonterm)))
@@ -308,7 +300,6 @@ let text_str pos = Str.text (rhs_text pos)
 let text_sig pos = Sig.text (rhs_text pos)
 let text_cstr pos = Cf.text (rhs_text pos)
 let text_csig pos = Ctf.text (rhs_text pos)
-let text_def pos = [Ptop_def (Str.text (rhs_text pos))]
 
 let extra_text startpos endpos text items =
   match items with
@@ -325,8 +316,6 @@ let extra_str p1 p2 items = extra_text p1 p2 Str.text items
 let extra_sig p1 p2 items = extra_text p1 p2 Sig.text items
 let extra_cstr p1 p2 items = extra_text p1 p2 Cf.text items
 let extra_csig p1 p2 items = extra_text p1 p2 Ctf.text  items
-let extra_def p1 p2 items =
-  extra_text p1 p2 (fun txt -> [Ptop_def (Str.text txt)]) items
 
 let extra_rhs_core_type ct pos =
   let docs = rhs_info pos in
@@ -487,7 +476,6 @@ let expr_of_lwt_bindings ~loc lbs body =
 ]
 
 %[@recovery.header
-  open Asttypes
   open Parsetree
   open Ast_helper
 
@@ -594,7 +582,6 @@ let expr_of_lwt_bindings ~loc lbs body =
 #define text_sig(p) (text_sig $startpos($ ## p))
 #define text_cstr(p) (text_cstr $startpos($ ## p))
 #define text_csig(p) (text_csig $startpos($ ## p))
-#define text_def(p) (text_def $startpos($ ## p))
 
 #define $merloc(p1,p2) (merloc $endpos($ ## p1) $ ## p2)
 
@@ -824,7 +811,6 @@ The precedences must be listed from low to high.
 %inline extra_sig(symb): symb { extra_sig $startpos $endpos $1 };
 %inline extra_cstr(symb): symb { extra_cstr $startpos $endpos $1 };
 %inline extra_csig(symb): symb { extra_csig $startpos $endpos $1 };
-%inline extra_def(symb): symb { extra_def $startpos $endpos $1 };
 %inline extra_text(symb): symb { extra_text $startpos $endpos $1 };
 
 %inline mkrhs(symb): symb

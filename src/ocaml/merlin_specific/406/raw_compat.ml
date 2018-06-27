@@ -26,8 +26,9 @@
 
 )* }}} *)
 
+[@@@ocaml.warning "-9"] (* yolo *)
+
 open Std
-open Misc
 
 (* For Browse_misc *)
 

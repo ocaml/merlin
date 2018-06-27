@@ -1,4 +1,3 @@
-open Std
 open Typedtree
 
 module Pat = struct

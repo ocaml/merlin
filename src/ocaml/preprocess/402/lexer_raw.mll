@@ -142,7 +142,6 @@ let keywords l = create_hashtable 11 l
 
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
-let in_string state = state.string_start_loc != Location.none
 
 (* To translate escape sequences *)
 
@@ -182,12 +181,12 @@ let char_for_hexadecimal_code lexbuf i =
 let cvt_int_literal s =
   - int_of_string ("-" ^ s)
 let cvt_int32_literal s =
-  Int32.neg (Int32.of_string ("-" ^ String.sub s 0 (String.length s - 1)))
+  Int32.neg (Int32.of_string ("-" ^ String.sub s ~pos:0 ~len:(String.length s - 1)))
 let cvt_int64_literal s =
-  Int64.neg (Int64.of_string ("-" ^ String.sub s 0 (String.length s - 1)))
+  Int64.neg (Int64.of_string ("-" ^ String.sub s ~pos:0 ~len:(String.length s - 1)))
 let cvt_nativeint_literal s =
-  Nativeint.neg (Nativeint.of_string ("-" ^ String.sub s 0
-                                                       (String.length s - 1)))
+  Nativeint.neg (Nativeint.of_string ("-" ^ String.sub s ~pos:0
+                                                       ~len:(String.length s - 1)))
 
 let keyword_or state s default =
   try Hashtbl.find state.keywords s
@@ -211,7 +210,7 @@ let remove_underscores s =
 
 let get_label_name lexbuf =
   let s = Lexing.lexeme lexbuf in
-  let name = String.sub s 1 (String.length s - 2) in
+  let name = String.sub s ~pos:1 ~len:(String.length s - 2) in
   if Hashtbl.mem keyword_table name then
     fail (Keyword_as_label name) (Location.curr lexbuf)
   else
@@ -395,7 +394,7 @@ rule token state = parse
   | "{" lowercase* "|"
       { Buffer.reset state.buffer;
         let delim = Lexing.lexeme lexbuf in
-        let delim = String.sub delim 1 (String.length delim - 2) in
+        let delim = String.sub delim ~pos:1 ~len:(String.length delim - 2) in
         state.string_start_loc <- Location.curr lexbuf;
         quoted_string state delim lexbuf >>= fun () ->
         lexbuf.lex_start_p <- state.string_start_loc.Location.loc_start;
@@ -414,7 +413,7 @@ rule token state = parse
     { return (CHAR (char_for_hexadecimal_code lexbuf 3)) }
   | "'\\" _
       { let l = Lexing.lexeme lexbuf in
-        let esc = String.sub l 1 (String.length l - 1) in
+        let esc = String.sub l ~pos:1 ~len:(String.length l - 1) in
         fail (Illegal_escape esc) (Location.curr lexbuf)
       }
   | "(*"
@@ -573,7 +572,7 @@ and comment state = parse
   | "{" lowercase* "|"
       {
         let delim = Lexing.lexeme lexbuf in
-        let delim = String.sub delim 1 (String.length delim - 2) in
+        let delim = String.sub delim ~pos:1 ~len:(String.length delim - 2) in
         state.string_start_loc <- Location.curr lexbuf;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         (catch (quoted_string state delim lexbuf) (fun e l -> match e with
@@ -686,7 +685,7 @@ and quoted_string state delim = parse
   | "|" lowercase* "}"
       {
         let edelim = Lexing.lexeme lexbuf in
-        let edelim = String.sub edelim 1 (String.length edelim - 2) in
+        let edelim = String.sub edelim ~pos:1 ~len:(String.length edelim - 2) in
         if delim = edelim then return ()
         else (Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
               quoted_string state delim lexbuf)
@@ -710,7 +709,7 @@ and skip_sharp_bang state = parse
 
   let rec token_without_comments state lexbuf =
     token state lexbuf >>= function
-    | COMMENT (s, comment_loc) ->
+    | COMMENT _ ->
       token_without_comments state lexbuf
     | tok -> return tok
 }

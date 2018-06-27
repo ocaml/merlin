@@ -29,7 +29,7 @@ let dump_warnings st =
     (fun () -> Warnings.restore st')
 
 let dump_ocaml x = `Assoc [
-    "include_dirs"         , `List (List.map Json.string x.include_dirs);
+    "include_dirs"         , `List (List.map ~f:Json.string x.include_dirs);
     "no_std_include"       , `Bool x.no_std_include;
     "unsafe"               , `Bool x.unsafe;
     "classic"              , `Bool x.classic;
@@ -41,8 +41,8 @@ let dump_ocaml x = `Assoc [
     "unsafe_string"        , `Bool x.unsafe_string;
     "nopervasives"         , `Bool x.nopervasives;
     "strict_formats"       , `Bool x.strict_formats;
-    "open_modules"         , `List (List.map Json.string x.open_modules);
-    "ppx"                  , `List (List.map Json.string x.ppx);
+    "open_modules"         , `List (List.map ~f:Json.string x.open_modules);
+    "ppx"                  , `List (List.map ~f:Json.string x.ppx);
     "pp"                   , `String x.pp;
     "warnings"             , dump_warnings x.warnings;
   ]
@@ -79,7 +79,7 @@ type findlib = {
 
 let dump_findlib x = `Assoc [
     "conf", Json.option Json.string x.conf;
-    "path", `List (List.map Json.string x.path);
+    "path", `List (List.map ~f:Json.string x.path);
     "toolchain", Json.option Json.string x.toolchain;
   ]
 
@@ -124,37 +124,37 @@ let dump_merlin x =
   let dump_flag_list { flag_cwd; flag_list } =
     `Assoc [
       "cwd", Json.(option string) flag_cwd;
-      "flags", `List (List.map Json.string flag_list);
+      "flags", `List (List.map ~f:Json.string flag_list);
     ]
   in
   `Assoc [
-    "build_path"   , `List (List.map Json.string x.build_path);
-    "source_path"  , `List (List.map Json.string x.source_path);
-    "cmi_path"     , `List (List.map Json.string x.cmi_path);
-    "cmt_path"     , `List (List.map Json.string x.cmt_path);
-    "flags_applied", `List (List.map dump_flag_list x.flags_applied);
-    "extensions"   , `List (List.map Json.string x.extensions);
+    "build_path"   , `List (List.map ~f:Json.string x.build_path);
+    "source_path"  , `List (List.map ~f:Json.string x.source_path);
+    "cmi_path"     , `List (List.map ~f:Json.string x.cmi_path);
+    "cmt_path"     , `List (List.map ~f:Json.string x.cmt_path);
+    "flags_applied", `List (List.map ~f:dump_flag_list x.flags_applied);
+    "extensions"   , `List (List.map ~f:Json.string x.extensions);
     "suffixes"     , `List (
-      List.map (fun (impl,intf) -> `Assoc [
+      List.map ~f:(fun (impl,intf) -> `Assoc [
           "impl", `String impl;
           "intf", `String intf;
         ]) x.suffixes
     );
     "stdlib"       , Json.option Json.string x.stdlib;
-    "reader"       , `List (List.map Json.string x.reader);
+    "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
         | `Sexp -> `String "sexp"
       );
     "log_file"     , Json.option Json.string x.log_file;
     "trace"        , `Bool x.trace;
-    "flags_to_apply"   , `List (List.map dump_flag_list x.flags_to_apply);
-    "packages_to_load" , `List (List.map Json.string x.packages_to_load);
-    "dotmerlin_loaded" , `List (List.map Json.string x.dotmerlin_loaded);
-    "packages_loaded"  , `List (List.map Json.string x.packages_loaded);
-    "packages_path"    , `List (List.map Json.string x.packages_path);
+    "flags_to_apply"   , `List (List.map ~f:dump_flag_list x.flags_to_apply);
+    "packages_to_load" , `List (List.map ~f:Json.string x.packages_to_load);
+    "dotmerlin_loaded" , `List (List.map ~f:Json.string x.dotmerlin_loaded);
+    "packages_loaded"  , `List (List.map ~f:Json.string x.packages_loaded);
+    "packages_path"    , `List (List.map ~f:Json.string x.packages_path);
 
-    "failures"         , `List (List.map Json.string x.failures);
+    "failures"         , `List (List.map ~f:Json.string x.failures);
   ]
 
 type query = {
@@ -270,7 +270,7 @@ let load_dotmerlins ~filenames t =
       if dot.reader = []
       then merlin.reader
       else dot.reader;
-    flags_to_apply = List.map flag_list dot.flags @ merlin.flags_to_apply;
+    flags_to_apply = List.map ~f:flag_list dot.flags @ merlin.flags_to_apply;
     dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
     packages_to_load = dot.packages @ merlin.packages_to_load;
   } in
@@ -659,9 +659,9 @@ let global_flags = [
 ]
 
 let () =
-  List.iter (fun name -> Hashtbl.add arguments_table name Marg.unit_ignore)
+  List.iter ~f:(fun name -> Hashtbl.add arguments_table name Marg.unit_ignore)
     ocaml_ignored_flags;
-  List.iter (fun name -> Hashtbl.add arguments_table name Marg.param_ignore)
+  List.iter ~f:(fun name -> Hashtbl.add arguments_table name Marg.param_ignore)
     ocaml_ignored_parametrized_flags;
   let lens prj upd flag : _ Marg.t = fun args a ->
     let cwd' = match !cwd with
@@ -677,61 +677,31 @@ let () =
     Hashtbl.add arguments_table name (lens prj upd flag)
   in
   List.iter
-    (add (fun x -> x.ocaml) (fun x ocaml -> {x with ocaml}))
+    ~f:(add (fun x -> x.ocaml) (fun x ocaml -> {x with ocaml}))
     ocaml_flags;
   List.iter
-    (add (fun x -> x.findlib) (fun x findlib -> {x with findlib}))
+    ~f:(add (fun x -> x.findlib) (fun x findlib -> {x with findlib}))
     findlib_flags;
   List.iter
-    (add (fun x -> x.merlin) (fun x merlin -> {x with merlin}))
+    ~f:(add (fun x -> x.merlin) (fun x merlin -> {x with merlin}))
     merlin_flags;
   List.iter
-    (add (fun x -> x.query) (fun x query -> {x with query}))
+    ~f:(add (fun x -> x.query) (fun x query -> {x with query}))
     query_flags;
   List.iter
-    (add (fun x -> x) (fun _ x -> x))
+    ~f:(add (fun x -> x) (fun _ x -> x))
     global_flags
 
 let flags_for_completion () =
   List.sort ~cmp:compare (
     "-dot-merlin" :: "-reader" ::
-    List.map (fun (x,_,_) -> x) findlib_flags @
-    List.map (fun (x,_,_) -> x) ocaml_flags
+    List.map ~f:(fun (x,_,_) -> x) findlib_flags @
+    List.map ~f:(fun (x,_,_) -> x) ocaml_flags
   )
-
-let try_parse_argument ~warning args ocaml =
-  match args with
-  | [] -> None
-  | arg :: args ->
-    match Hashtbl.find arguments_table arg with
-    | exception Not_found -> None
-    | action -> match action args ocaml with
-      | result -> Some result
-      | exception (Failure msg) ->
-        warning ("flag " ^ arg ^ " " ^ msg);
-        Some (args, ocaml)
-      | exception exn ->
-        warning ("flag " ^ arg ^ ": error, " ^ Printexc.to_string exn);
-        Some (args, ocaml)
-
-let parse_arguments ~warning =
-  let rec normal_parsing args ocaml =
-    match try_parse_argument ~warning args ocaml with
-    | Some (args, ocaml) -> normal_parsing args ocaml
-    | None -> match args with
-      | _ :: args -> resume_parsing args ocaml
-      | [] -> ocaml
-  and resume_parsing args ocaml =
-    match args with
-    | arg :: args when not (Hashtbl.mem arguments_table arg) ->
-      normal_parsing args ocaml
-    | args -> normal_parsing args ocaml
-  in
-  normal_parsing
 
 let document_arguments oc =
   let print_doc flags =
-    List.iter (fun (name,_flag,doc) -> Printf.fprintf oc "  %s\t%s\n" name doc)
+    List.iter ~f:(fun (name,_flag,doc) -> Printf.fprintf oc "  %s\t%s\n" name doc)
       flags
   in
   output_string oc "Flags affecting Merlin:\n";
@@ -764,7 +734,7 @@ let build_path config = (
   in
   let stdlib = stdlib config in
   let exp_dirs =
-    List.map (Misc.expand_directory stdlib) dirs
+    List.map ~f:(Misc.expand_directory stdlib) dirs
   in
   let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
   let result = config.query.directory :: List.rev_append exp_dirs stdlib in
@@ -789,7 +759,7 @@ let cmt_path config = (
   in
   let stdlib = stdlib config in
   let exp_dirs =
-    List.map (Misc.expand_directory stdlib) dirs
+    List.map ~f:(Misc.expand_directory stdlib) dirs
   in
   let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
   config.query.directory :: List.rev_append exp_dirs stdlib

@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 open Typedtree
 
 module type MapArgument = sig

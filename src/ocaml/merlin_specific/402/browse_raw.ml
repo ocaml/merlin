@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+[@@@ocaml.warning "-9"]
+
 open Std
 
 type constructor_declaration = Typedtree.constructor_declaration
@@ -706,7 +708,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra } =
     | Texp_instvar (_,path,loc)  -> [reloc path loc]
     | Texp_setinstvar (_,path,loc,_) -> [reloc path loc]
     | Texp_override (_,ps) ->
-      List.map (fun (path,loc,_) -> reloc path loc) ps
+      List.map ~f:(fun (path,loc,_) -> reloc path loc) ps
     | Texp_letmodule (id,loc,_,_) -> [reloc (Path.Pident id) loc]
     | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
       [mkloc (Path.Pident id) loc]

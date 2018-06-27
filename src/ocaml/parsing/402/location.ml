@@ -86,34 +86,6 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
-(* Highlight the locations using standout mode. *)
-
-let highlight_terminfo ppf num_lines lb locs =
-  Format.pp_print_flush ppf ();  (* avoid mixing Format and normal output *)
-  (* Char 0 is at offset -lb.lex_abs_pos in lb.lex_buffer. *)
-  let pos0 = -lb.lex_abs_pos in
-  (* Do nothing if the buffer does not contain the whole phrase. *)
-  if pos0 < 0 then raise Exit;
-  (* Count number of lines in phrase *)
-  let lines = ref !num_loc_lines in
-  for i = pos0 to lb.lex_buffer_len - 1 do
-    if Bytes.get lb.lex_buffer i = '\n' then incr lines
-  done;
-  (* If too many lines, give up *)
-  if !lines >= num_lines - 2 then raise Exit;
-  (* Move cursor up that number of lines *)
-  flush stdout;
-  (* Print the input, switching to standout for the location *)
-  let bol = ref false in
-  print_string "# ";
-  for pos = 0 to lb.lex_buffer_len - pos0 - 1 do
-    if !bol then (print_string "  "; bol := false);
-    let c = Bytes.get lb.lex_buffer (pos + pos0) in
-    print_char c;
-    bol := (c = '\n')
-  done;
-  flush stdout
-
 (* Highlight the location by printing it again. *)
 
 let highlight_dumb ppf lb loc =
@@ -220,7 +192,7 @@ let print_filename ppf file =
 let reset () =
   num_loc_lines := 0
 
-let (msg_file, msg_line, msg_chars, msg_to, msg_colon) =
+let (msg_file, msg_line, msg_chars, msg_to, _) =
   ("File \"", "\", line ", ", characters ", "-", ":")
 
 (* return file, line, char from the given position *)
@@ -237,12 +209,7 @@ let print_loc ppf loc =
 ;;
 
 
-let print' ppf loc =
-  if loc.loc_start.pos_fname = "//toplevel//"
-  && highlight_locations ppf [loc] then ()
-  else fprintf ppf "%a%s@." print_loc loc msg_colon
-
-let print ppf loc = ()
+let print _ppf _loc = ()
 ;;
 
 let print_error ppf loc =
@@ -316,7 +283,7 @@ let error_of_exn exn =
 let rec default_error_reporter ppf ({loc; msg; sub; if_highlight} as err) =
   let highlighted =
     if if_highlight <> "" then
-      let rec collect_locs locs {loc; sub; if_highlight; _} =
+      let rec collect_locs locs {loc; sub; _} =
         List.fold_left collect_locs (loc :: locs) sub
       in
       let locs = collect_locs [] err in
@@ -339,7 +306,7 @@ let report_error ppf err =
   print_updating_num_loc_lines ppf !error_reporter err
 ;;
 
-let error_of_printer loc ?source print x =
+let error_of_printer loc ?source:_ print x =
   let buf = Buffer.create 64 in
   let ppf = Format.formatter_of_buffer buf in
   pp_print_string ppf "Error: ";
@@ -347,12 +314,6 @@ let error_of_printer loc ?source print x =
   pp_print_flush ppf ();
   let msg = Buffer.contents buf in
   errorf ~loc "%s" msg
-
-let suberrors_of_printer loc ?source print x =
-  let subs = ref [] in
-  let sub err = subs := err :: !subs in
-  let error = error_of_printer loc ?source (print ~sub) x in
-  {error with sub = List.rev !subs}
 
 let error_of_printer_file ?source print x =
   error_of_printer (in_file !input_name) ?source print x

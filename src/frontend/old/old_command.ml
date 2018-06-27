@@ -27,8 +27,6 @@
 )* }}} *)
 
 open Std
-open Sturgeon_stub
-open Misc
 open Old_protocol
 module Printtyp = Type_utils.Printtyp
 
@@ -85,7 +83,6 @@ let normalize_document doc =
   doc.Context.path, doc.Context.dot_merlins
 
 let new_buffer tr (path, dot_merlins) =
-  let open Mconfig in
   { path; dot_merlins; customization = [];
     source = Msource.make tr "" }
 
@@ -120,38 +117,12 @@ let checkout_buffer =
     with Not_found ->
       let buffer = new_buffer tr document in
       begin match document with
-        | Some path, _ ->
+        | Some _, _ ->
           checkout_buffer_cache :=
             (document, buffer) :: List.take_n cache_size !checkout_buffer_cache
         | None, _ -> ()
       end;
       buffer
-
-let print_completion_entries tr config source entries =
-  let input_ref = ref [] and output_ref = ref [] in
-  let preprocess entry =
-    match Completion.raw_info_printer entry with
-    | `String s -> `String s
-    | `Print t ->
-      let r = ref "" in
-      input_ref := t :: !input_ref;
-      output_ref := r :: !output_ref;
-      `Print r
-    | `Concat (s,t) ->
-      let r = ref "" in
-      input_ref := t :: !input_ref;
-      output_ref := r :: !output_ref;
-      `Concat (s,r)
-  in
-  let entries = List.map ~f:(Completion.map_entry preprocess) entries in
-  let outcomes = Mreader.print_batch_outcome tr config source !input_ref in
-  List.iter2 (:=) !output_ref outcomes;
-  let postprocess = function
-    | `String s -> s
-    | `Print r -> !r
-    | `Concat (s,r) -> s ^ !r
-  in
-  List.rev_map ~f:(Completion.map_entry postprocess) entries
 
 let make_pipeline tr config buffer =
   Mpipeline.make tr config buffer.source
@@ -183,14 +154,14 @@ let dispatch_sync tr config state (type a) : a sync_command -> a = function
 
   | Extension_set (action,exts) ->
     state.customization <-
-      List.map (fun ext -> `Ext (action, ext)) exts @
+      List.map ~f:(fun ext -> `Ext (action, ext)) exts @
       List.filter ~f:(function
           | `Ext (_, ext) when List.mem ext ~set:exts -> false
           | _ -> true
         ) state.customization;
     `Ok
 
-  | Path (var,action,paths) ->
+  | Path (var,_,paths) ->
     state.customization <-
       List.filter_map ~f:(function
           | `Path (var', action', paths') when var = var' ->

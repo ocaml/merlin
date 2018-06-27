@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 (* Recording and dumping (partial) type information *)
 
 (*

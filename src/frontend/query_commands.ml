@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Sturgeon_stub
 open Misc
 open Query_protocol
 module Printtyp = Type_utils.Printtyp
@@ -52,7 +51,7 @@ let print_completion_entries ~with_types tr config source entries =
     let entries = List.rev_map ~f:(Completion.map_entry preprocess) entries in
     let entries = List.rev entries in
     let outcomes = Mreader.print_batch_outcome tr config source !input_ref in
-    List.iter2 (:=) !output_ref outcomes;
+    List.iter2 ~f:(:=) !output_ref outcomes;
     let postprocess = function
       | `String s -> s
       | `Print r -> !r
@@ -132,7 +131,7 @@ let dump pipeline = function
     `List (List.map ~f:aux sg)
 
   | [`String "browse"] ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let structure = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     Browse_misc.dump_browse (snd (Mbrowse.leaf_node structure))
 
@@ -141,7 +140,7 @@ let dump pipeline = function
 
   | [`String "flags"] ->
     let prepare_flags flags =
-      `List (List.map Json.string (List.concat_map flags
+      `List (List.map ~f:Json.string (List.concat_map flags
                                      ~f:(fun f -> f.Mconfig.flag_list))) in
     let user = prepare_flags
         Mconfig.((Mpipeline.input_config pipeline).merlin.flags_to_apply) in
@@ -246,7 +245,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let aux (env, node, tail) =
       let open Browse_raw in
       let ret x = Some (Mbrowse.node_loc node, x, tail) in
-      match node with
+      match[@ocaml.warning "-9"] node with
       | Expression {exp_type = t}
       | Pattern {pat_type = t}
       | Core_type {ctyp_type = t}
@@ -303,7 +302,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               None
         )
     in
-    let normalize ({Location. loc_start; loc_end}, text, _tail) =
+    let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
     let all_items =
       List.merge_cons
@@ -337,7 +336,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         )
 
   | Enclosing pos ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let path = match Mbrowse.enclosing pos [structures] with
@@ -346,7 +345,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
-  | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
+  | Complete_prefix (prefix, pos, _, with_doc, with_types) ->
     for_completion pipeline pos @@ fun tr pipeline typer ->
     let config = Mpipeline.final_config pipeline in
     let verbosity = Mconfig.(config.query.verbosity) in
@@ -468,7 +467,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | None ->
         let path = Mreader_lexer.reconstruct_identifier config source pos in
         let path = Mreader_lexer.identifier_suffix path in
-        let path = List.map ~f:(fun {Location. txt} -> txt) path in
+        let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
         String.concat ~sep:"." path
     in
     if path = "" then `Invalid_context else
@@ -488,7 +487,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | None ->
         let path = Mreader.reconstruct_identifier tr config source pos in
         let path = Mreader_lexer.identifier_suffix path in
-        let path = List.map ~f:(fun {Location. txt} -> txt) path in
+        let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
         let path = String.concat ~sep:"." path in
         Logger.log "locate" "reconstructed identifier" path;
         path
@@ -509,13 +508,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     end
 
   | Jump (target, pos) ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let typedtree = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Jump.get typedtree pos target
 
   | Phrase (target, pos) ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let typedtree = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Mpipeline.get_lexing_pos pipeline (Jump.phrase typedtree pos target)
@@ -541,7 +540,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let nodes =
       List.drop_while nodes
         ~f:(fun (_,t) ->
-          let {Location. loc_start; loc_end} = Mbrowse.node_loc t in
+          let {Location. loc_start; loc_end; _} = Mbrowse.node_loc t in
           Lexing.compare_pos loc_start pos_start > 0 || Lexing.compare_pos loc_end pos_end < 0)
     in
     Logger.logj "destruct" "nodes after" (fun () -> `List (List.map nodes ~f:dump_node));
@@ -556,18 +555,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     end
 
   | Outline ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     Outline.get [Browse_tree.of_browse browse]
 
   | Shape pos ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Outline.shape pos [Browse_tree.of_browse browse]
 
   | Errors ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let verbosity = verbosity pipeline in
     Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
     let lexer_errors  = Mpipeline.reader_lexer_errors pipeline  in
@@ -674,7 +673,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     Mconfig.(config.merlin.source_path)
 
   | Occurrences (`Ident_at pos) ->
-    with_typer pipeline @@ fun tr typer ->
+    with_typer pipeline @@ fun _ typer ->
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let tnode = match Mbrowse.enclosing pos [str] with

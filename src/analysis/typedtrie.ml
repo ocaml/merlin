@@ -68,13 +68,9 @@ module Trie : sig
 
   val singleton : Ident.t -> elt -> t
 
-  val of_list : (Ident.t * elt) list -> t
-
   val iter : (name:string -> stamp:int -> elt -> unit) -> t -> unit
 
   val get : Namespaced_path.Id.t -> t -> elt list
-
-  val find : (string -> int -> elt -> bool) -> t -> string * int * elt
 
   val find_some :
     (string -> int -> elt -> bool) -> t -> (string * int * elt) option
@@ -122,12 +118,6 @@ end = struct
 
   let singleton id node = add id node empty
 
-  let of_list lst =
-    List.fold_left lst ~init:empty
-      ~f:(fun acc (id, node) -> add id node acc)
-
-  let is_empty = String.Map.is_empty
-
   let iter f t =
     String.Map.iter t ~f:(fun ~key:name ~data ->
       StampMap.iter (fun stamp elt ->
@@ -170,7 +160,7 @@ let extract_doc (attrs : Parsetree.attributes) =
   )
 
 
-let rec remove_top_indir =
+let remove_top_indir =
   List.concat_map ~f:(fun bt ->
     match bt.t_node with
     | Signature _
@@ -216,17 +206,17 @@ let sig_item_idns =
   | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
   | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
 
-let include_idents l = List.map sig_item_idns l
+let include_idents l = List.map ~f:sig_item_idns l
 
 let identify_str_includes item =
   match item.Typedtree.str_desc with
-  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
+  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod ; _ } ->
     `Included (include_idents incl_type, `Mod_expr incl_mod)
   | _ -> `Not_included
 
 let identify_sig_includes item =
   match item.Typedtree.sig_desc with
-  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } ->
+  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod ; _ } ->
     `Included (include_idents incl_type, `Mod_type incl_mod)
   | _ -> `Not_included
 
@@ -315,7 +305,7 @@ let rec build ~local_buffer ~trie browses : t =
       end
     | Value_binding vb ->
       let trie =
-        List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc }) ->
+        List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }) ->
             Trie.add id {loc; doc; namespace = `Vals; node = Leaf} trie
         ) (Typedtree.pat_bound_idents_with_loc vb.vb_pat)
       in
@@ -459,17 +449,17 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
       let lst = Trie.get x trie in
       let lst =
         List.filter lst
-          ~f:(fun { Trie.namespace = ns } -> ns = namespace || ns = `Unknown)
+          ~f:(fun { Trie.namespace = ns; _ } -> ns = namespace || ns = `Unknown)
       in
       let lst =
         match before with
         | None -> lst
         | Some before ->
-          List.filter lst ~f:(fun { Trie.loc } ->
+          List.filter lst ~f:(fun { Trie.loc; _ } ->
             Lexing.compare_pos loc.Location.loc_start before < 0)
       in
       match
-        List.sort lst ~cmp:(fun { Trie.loc = l1 } { loc = l2 } ->
+        List.sort lst ~cmp:(fun { Trie.loc = l1; _ } { loc = l2; _ } ->
           (* We wants the ones closed last to be at the beginning of the list. *)
           Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
       with
@@ -565,7 +555,7 @@ let rec find ~remember_loc ~before scopes trie path =
   with
   | None ->
     follow ~state:initial_state ~remember_loc ~before scopes trie path
-  | Some (_name, _stamp, { Trie.loc; node }) ->
+  | Some (_name, _stamp, { Trie.loc; node; _ }) ->
     let rec inspect_node scopes : Trie.node -> _ = function
       | Internal (lazy subtrie)  ->
         let scopes = (trie, Some loc.Location.loc_start) :: scopes in
@@ -623,7 +613,7 @@ let rec dump fmt trie =
     | Apply { funct; arg } ->
       Format.fprintf fmt " %a(%a)" dump_node funct dump_node arg
   in
-  let dump_elt {loc; namespace; node} =
+  let dump_elt {loc; namespace; node; _} =
     Format.pp_print_string fmt (Namespaced_path.Namespace.to_string namespace);
     Location.print_loc fmt loc;
     dump_node fmt node

@@ -22,8 +22,6 @@ module Make
 
        val depth : int array
 
-       val can_pop : 'a Parser.terminal -> bool
-
        val recover : int -> decision
 
        val guide : 'a Parser.symbol -> bool
@@ -56,6 +54,11 @@ struct
   }
 
   module T = struct
+    (* FIXME: this is a bit ugly. We should ask for the type to be exported
+       publicly by MenhirLib. *)
+
+    [@@@ocaml.warning "-37"]
+
     type 'a checkpoint =
       | InputNeeded of 'a Parser.env
       | Shifting of 'a Parser.env * 'a Parser.env * bool
@@ -132,7 +135,7 @@ struct
       begin match xs with
       | [] -> ()
       | x :: xs ->
-          p x; List.iter (fun x -> printf k ", "; p x) xs;
+          p x; List.iter ~f:(fun x -> printf k ", "; p x) xs;
       end;
       printf k "}"
     in
@@ -187,7 +190,7 @@ struct
     let rec aux acc env =
       match Parser.top env with
       | None -> None, acc
-      | Some (Parser.Element (state, v, startp, endp) as elt) ->
+      | Some (Parser.Element (state, _, _startp, endp) as elt) ->
         Dump.element k elt;
         Logger.log "recover" "decide state" (string_of_int (Parser.number state));
         let actions = decide env in
@@ -214,6 +217,8 @@ struct
             if !shifted = None && not (Recovery.nullable n) then
               shifted := Some xsym;
             Logger.log "recover" "eval Shift N" (Dump.symbol xsym);
+            (* FIXME: if this is correct remove the fixme, otherwise use
+               [startp] *)
             let loc = {Location. loc_start = endp; loc_end = endp; loc_ghost = true} in
             let v = Recovery.default_value loc sym in
             Parser.feed sym endp v endp env
@@ -284,21 +289,21 @@ struct
     in
     { popped; shifted; final; candidates = (candidate env) :: candidates }
 
-  let dump {Nav. nav; body} ~wrong:(t,s,e as token) ~rest:tokens env =
+  let dump {Nav. nav; body; _} ~wrong:(t,s,_ as token) ~rest:tokens env =
     if not (is_closed body) then (
       let l, c = Lexing.split_pos s in
       printf body "Unexpected %S at %d:%d, " (Dump.token t) l c;
       link body "see recoveries"
-        (fun _ -> Nav.push nav "Recoveries" @@ fun {Nav. body} ->
+        (fun _ -> Nav.push nav "Recoveries" @@ fun {Nav. body; _} ->
           let r = generate body env in
           let rec aux = function
             | [] -> ()
             | token :: tokens ->
               match attempt body r token with
               | `Fail -> aux tokens
-              | `Accept v ->
+              | `Accept _ ->
                 text body "\nCouldn't resume, generated final AST.\n"
-              | `Ok (checkpoint, recovered_from) ->
+              | `Ok (_, recovered_from) ->
                 printf body "\nResumed with %S from:\n"
                   (let (t,_,_) = token in Dump.token t);
                 Dump.env body recovered_from

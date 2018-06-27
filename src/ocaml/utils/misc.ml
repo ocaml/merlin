@@ -35,9 +35,9 @@ let try_finally work cleanup =
 type ref_and_value = R : 'a ref * 'a -> ref_and_value
 
 let protect_refs =
-  let set_refs l = List.iter (fun (R (r, v)) -> r := v) l in
+  let set_refs l = List.iter ~f:(fun (R (r, v)) -> r := v) l in
   fun refs f ->
-    let backup = List.map (fun (R (r, _)) -> R (r, !r)) refs in
+    let backup = List.map ~f:(fun (R (r, _)) -> R (r, !r)) refs in
     set_refs refs;
     match f () with
     | x           -> set_refs backup; x
@@ -63,8 +63,6 @@ let rec split_last = function
   | hd :: tl ->
       let (lst, last) = split_last tl in
       (hd :: lst, last)
-
-let samelist pred l1 l2 = List.same   ~f:pred l1 l2
 
 (* Options *)
 
@@ -134,7 +132,7 @@ let canonicalize_filename ?cwd path =
 
 let rec expand_glob ~filter acc root = function
   | [] -> root :: acc
-  | Glob.Wildwild :: tl ->
+  | Glob.Wildwild :: _tl -> (* FIXME: why is tl not used? *)
     let rec append acc root =
       let items = try Sys.readdir root with Sys_error _ -> [||] in
       let process acc dir =
@@ -227,14 +225,14 @@ let find_in_path_uncap ?(fallback="") path name =
 let expand_directory alt s =
   if String.length s > 0 && s.[0] = '+'
   then Filename.concat alt
-                       (String.sub s 1 (String.length s - 1))
+                       (String.sub s ~pos:1 ~len:(String.length s - 1))
   else s
 
 (* Hashtable functions *)
 
 let create_hashtable size init =
   let tbl = Hashtbl.create size in
-  List.iter (fun (key, data) -> Hashtbl.add tbl key data) init;
+  List.iter ~f:(fun (key, data) -> Hashtbl.add tbl key data) init;
   tbl
 
 (* File copy *)
@@ -334,7 +332,7 @@ let chop_extensions file =
   let dirname = Filename.dirname file and basename = Filename.basename file in
   try
     let pos = String.index basename '.' in
-    let basename = String.sub basename 0 pos in
+    let basename = String.sub basename ~pos:0 ~len:pos in
     if Filename.is_implicit file && dirname = Filename.current_dir_name then
       basename
     else
@@ -353,12 +351,12 @@ let replace_substring ~before ~after str =
   let rec search acc curr =
     match search_substring before str curr with
       | next ->
-         let prefix = String.sub str curr (next - curr) in
+         let prefix = String.sub str ~pos:curr ~len:(next - curr) in
          search (prefix :: acc) (next + String.length before)
       | exception Not_found ->
-        let suffix = String.sub str curr (String.length str - curr) in
+        let suffix = String.sub str ~pos:curr ~len:(String.length str - curr) in
         List.rev (suffix :: acc)
-  in String.concat after (search [] 0)
+  in String.concat ~sep:after (search [] 0)
 
 
 let rev_split_string cond s =
@@ -370,9 +368,9 @@ let rev_split_string cond s =
         split2 res i (i+1)
     end
   and split2 res i j =
-    if j >= String.length s then String.sub s i (j-i) :: res else begin
+    if j >= String.length s then String.sub s ~pos:i ~len:(j-i) :: res else begin
       if cond s.[j] then
-        split1 (String.sub s i (j-i) :: res) (j+1)
+        split1 (String.sub s ~pos:i ~len:(j-i) :: res) (j+1)
       else
         split2 res i (j+1)
     end
@@ -445,32 +443,6 @@ module LongString = struct
     Array.iter (fun str -> really_input ic str 0 (Bytes.length str)) tbl;
     tbl
 end
-
-
-(* [modules_in_path ~ext path] lists ocaml modules corresponding to
- * filenames with extension [ext] in given [path]es.
- * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
- * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
- * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-let modules_in_path ~ext path =
-  let seen = Hashtbl.create 7 in
-  List.fold_left ~init:[] path
-  ~f:begin fun results dir ->
-    try
-      Array.fold_left
-      begin fun results file ->
-        if Filename.check_suffix file ext
-        then let name = Filename.chop_extension file in
-             (if Hashtbl.mem seen name
-              then results
-              else
-               (Hashtbl.add seen name (); String.capitalize name :: results))
-        else results
-      end results (Sys.readdir dir)
-    with Sys_error _ -> results
-  end
-
-let (~:) = Lazy.from_val
 
 let file_contents filename =
   let ic = open_in filename in
@@ -566,29 +538,14 @@ let did_you_mean ppf get_choices =
   | choices ->
      let rest, last = split_last choices in
      Format.fprintf ppf "@\nHint: Did you mean %s%s%s?@?"
-       (String.concat ", " rest)
+       (String.concat ~sep:", " rest)
        (if rest = [] then "" else " or ")
        last
 
-(* split a string [s] at every char [c], and return the list of sub-strings *)
-let split s c =
-  let len = String.length s in
-  let rec iter pos to_rev =
-    if pos = len then List.rev ("" :: to_rev) else
-      match try
-              Some ( String.index_from s pos c )
-        with Not_found -> None
-      with
-          Some pos2 ->
-            if pos2 = pos then iter (pos+1) ("" :: to_rev) else
-              iter (pos2+1) ((String.sub s pos (pos2-pos)) :: to_rev)
-        | None -> List.rev ( String.sub s pos (len-pos) :: to_rev )
-  in
-  iter 0 []
-
 let cut_at s c =
   let pos = String.index s c in
-  String.sub s 0 pos, String.sub s (pos+1) (String.length s - pos - 1)
+  String.sub s ~pos:0 ~len:pos,
+  String.sub s ~pos:(pos+1) ~len:(String.length s - pos - 1)
 
 let time_spent () =
   let open Unix in
@@ -663,7 +620,7 @@ let fold_hooks list hook_info ast =
        (* when explicit reraise with backtrace will be available,
           it should be used here *)
 
-  ) ~init:ast (List.sort compare list)
+  ) ~init:ast (List.sort ~cmp:compare list)
 
 module type HookSig = sig
   type t

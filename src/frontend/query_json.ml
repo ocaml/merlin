@@ -44,7 +44,7 @@ let dump (type a) : a t -> json =
       `Assoc ["line", `Int line; "column", `Int col]
   in
   let kinds_to_json kind =
-    `List (List.map (function
+    `List (List.map ~f:(function
         | `Constructor  -> `String "constructor"
         | `Labels       -> `String "label"
         | `Modules      -> `String "module"
@@ -145,11 +145,11 @@ let dump (type a) : a t -> json =
     ]
   | Path_of_source paths ->
     mk "path-of-source" [
-      "paths", `List (List.map Json.string paths)
+      "paths", `List (List.map ~f:Json.string paths)
     ]
   | List_modules exts ->
     mk "list-modules" [
-      "extensions", `List (List.map Json.string exts)
+      "extensions", `List (List.map ~f:Json.string exts)
     ]
   | Findlib_list -> mk "findlib-list" []
   | Extension_list status ->
@@ -217,7 +217,7 @@ let json_of_type_loc (loc,desc,tail) =
         | `Tail_call -> "call")
   ]
 
-let json_of_error {Location. msg; sub; loc; source} =
+let json_of_error {Location. msg; sub; loc; source; _} =
   let msg = String.trim msg in
   let typ = match source with
       | Location.Lexer   -> "lexer"
@@ -227,7 +227,7 @@ let json_of_error {Location. msg; sub; loc; source} =
       | Location.Unknown -> "unknown"
       | Location.Env     -> "env"
   in
-  let of_sub {Location. msg; loc} =
+  let of_sub {Location. msg; loc; _} =
     with_location ~skip_none:true loc ["message", `String (String.trim msg)] in
   let content = [
     "type"    , `String typ;
@@ -245,14 +245,14 @@ let json_of_completion {Compl. name; kind; desc; info} =
 
 let json_of_completions {Compl. entries; context } =
   `Assoc [
-    "entries", `List (List.map json_of_completion entries);
+    "entries", `List (List.map ~f:json_of_completion entries);
     "context", (match context with
         | `Unknown -> `Null
         | `Application {Compl. argument_type; labels} ->
           let label (name,ty) = `Assoc ["name", `String name;
                                         "type", `String ty] in
           let a = `Assoc ["argument_type", `String argument_type;
-                          "labels", `List (List.map label labels)] in
+                          "labels", `List (List.map ~f:label labels)] in
           `List [`String "application"; a])
   ]
 
@@ -264,7 +264,7 @@ let rec json_of_outline outline =
       "children", `List (json_of_outline children);
     ]
   in
-  List.map json_of_item outline
+  List.map ~f:json_of_item outline
 
 let rec json_of_shape { shape_loc; shape_sub } =
   with_location shape_loc [
@@ -275,9 +275,9 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
   | Type_enclosing _, results ->
-    `List (List.map json_of_type_loc results)
+    `List (List.map ~f:json_of_type_loc results)
   | Enclosing _, results ->
-    `List (List.map (fun loc -> with_location loc []) results)
+    `List (List.map ~f:(fun loc -> with_location loc []) results)
   | Complete_prefix _, compl ->
     json_of_completions compl
   | Expand_prefix _, compl ->
@@ -333,7 +333,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     end
   | Phrase _, pos ->
     `Assoc ["pos", Lexing.json_of_position pos]
-  | Case_analysis _, ({ Location. loc_start ; loc_end }, str) ->
+  | Case_analysis _, ({ Location. loc_start ; loc_end; _ }, str) ->
     let assoc =
       `Assoc [
         "start", Lexing.json_of_position loc_start  ;
@@ -349,10 +349,10 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List (List.map ~f:json_of_error errors)
   | Dump _, json -> json
   | Path_of_source _, str -> `String str
-  | List_modules _, strs -> `List (List.map Json.string strs)
-  | Findlib_list, strs -> `List (List.map Json.string strs)
-  | Extension_list _, strs -> `List (List.map Json.string strs)
-  | Path_list _, strs -> `List (List.map Json.string strs)
+  | List_modules _, strs -> `List (List.map ~f:Json.string strs)
+  | Findlib_list, strs -> `List (List.map ~f:Json.string strs)
+  | Extension_list _, strs -> `List (List.map ~f:Json.string strs)
+  | Path_list _, strs -> `List (List.map ~f:Json.string strs)
   | Occurrences _, locations ->
     `List (List.map locations
              ~f:(fun loc -> with_location loc []))

@@ -54,7 +54,7 @@ let explain env (unexpected, startp, endp) popped shifted =
   in
   let rec process env = match top env with
     | None -> return None
-    | Some (Element (st, v, startp, endp)) ->
+    | Some (Element (st, _, startp, endp)) ->
       if closing_st st then incr closed;
       begin match opening_st st with
         | None -> ()
@@ -73,7 +73,7 @@ let explain env (unexpected, startp, endp) popped shifted =
   in
   process env
 
-let to_error { item; unclosed; location; popped; shifted; unexpected } =
+let to_error { item; unclosed; location; popped; shifted; unexpected = _ } =
   let inside = match item with
     | None -> ""
     | Some (name, _) -> " inside `" ^ name ^ "'" in

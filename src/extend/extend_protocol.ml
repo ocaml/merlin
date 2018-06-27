@@ -3,27 +3,27 @@ module Reader = struct
   (** Description of a buffer managed by Merlin *)
   type buffer = {
 
+    path : string;
     (** Path of the buffer in the editor.
         The path is absolute if it is backed by a file, although it might not yet
         have been saved in the editor.
         The path is relative if it is a temporary buffer. *)
-    path : string;
 
-    (** Any flag that has been passed to the reader in .merlin file *)
     flags : string list;
+    (** Any flag that has been passed to the reader in .merlin file *)
 
-    (** Content of the buffer *)
     text : string;
+    (** Content of the buffer *)
   }
 
   (** ASTs exchanged with Merlin *)
   type parsetree =
 
-    | (** An implementation, usually coming from a .ml file *)
-      Structure of Parsetree.structure
+    | Structure of Parsetree.structure
+      (** An implementation, usually coming from a .ml file *)
 
-    | (** An interface, usually coming from a .mli file *)
-      Signature of Parsetree.signature
+    | Signature of Parsetree.signature
+      (** An interface, usually coming from a .mli file *)
 
   (** Printing in error messages or completion items *)
   type outcometree =
@@ -48,8 +48,8 @@ module Reader = struct
 
   (** Additional information useful for guiding completion *)
   type complete_info = {
-    (** True if it is appropriate to suggest labels for this completion. *)
     complete_labels : bool;
+    (** True if it is appropriate to suggest labels for this completion. *)
   }
 
   module type V0 = sig

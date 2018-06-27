@@ -214,7 +214,7 @@ module Origin_range_tbl = struct
     in
     let items =
       Age.Map.fold
-        (fun age data acc -> List.rev_append data acc)
+        (fun _age data acc -> List.rev_append data acc)
         t.envs items
     in
     t.envs <- Age.Map.empty;
@@ -229,7 +229,7 @@ module Origin_range_tbl = struct
     in
     let items =
       Age.Map.fold
-        (fun age data acc -> List.rev_append data acc)
+        (fun _age data acc -> List.rev_append data acc)
         matching items
     in
     t.envs <- envs;
@@ -1096,7 +1096,7 @@ module Shortest = struct
   let update (type kind) (t : kind t) =
     match t.kind with
     | Basis _ -> ()
-    | Env ({ revision } as e) ->
+    | Env ({ revision; _ } as e) ->
         let rec loop graph revision =
           let next = History.Revision.next revision in
           match next with
@@ -1474,7 +1474,7 @@ module Shortest = struct
       let base = Height.plus (min_height fst) (min_height snd) in
       match suffix with
       | None -> base
-      | Some { names; height } -> Height.plus base height
+      | Some { names = _; height } -> Height.plus base height
 
     let min_dot parent name =
       let base = min_height parent in

@@ -33,7 +33,7 @@ let commands_help () =
       let args, descs = List.split args in
       print_endline ("### `" ^ String.concat " " (name :: args) ^ "`");
       print_newline ();
-      let print_desc (k,d) = print_endline (Printf.sprintf "% 24s  %s" k d) in
+      let print_desc (k,d) = print_endline (Printf.sprintf "%24s  %s" k d) in
       List.iter print_desc descs;
       print_newline ();
       print_endline doc
@@ -65,7 +65,7 @@ let run = function
       prerr_endline ("Unknown command " ^ query ^ ".\n");
       usage ();
       1
-    | New_commands.Command (_name, doc, spec, command_args, command_action) ->
+    | New_commands.Command (_name, _doc, spec, command_args, command_action) ->
       (* Setup notifications *)
       let notifications = ref [] in
       Logger.with_notifications notifications @@ fun () ->

@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Browse_tree
 open Browse_raw
 
 exception Not_allowed of string
@@ -118,7 +117,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       let are_types_unifiable typ =
         let snap = Btype.snapshot () in
         let res =
-          try Ctype.unify_gadt 0 (ref env) type_expr typ ; true
+          try
+            Ctype.unify_gadt 0 (ref env) type_expr typ [@ocaml.warning "-6"]
+            (* The label was called "newtype_level" up to 4.06 (incl) and became
+               "equation_level" after that. *) ;
+            true
           with Ctype.Unify _trace -> false
         in
         Btype.backtrack snap ;
@@ -197,7 +200,7 @@ let rec get_every_pattern = function
     | Pattern _ ->
       (* We are still in the same branch, going up. *)
       get_every_pattern parents
-    | Expression e ->
+    | Expression _ ->
       (* We are on the right node *)
       let patterns =
         Mbrowse.fold_node (fun env node acc ->
@@ -213,7 +216,7 @@ let rec get_every_pattern = function
         ) Env.empty parent []
       in
       let loc =
-        Mbrowse.fold_node (fun env node acc ->
+        Mbrowse.fold_node (fun _ node acc ->
           let open Location in
           let loc = Mbrowse.node_loc node in
           if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
@@ -367,9 +370,9 @@ let find_branch patterns sub =
       | Tpat_construct (_, _, lst)
       | Tpat_array lst ->
         List.exists lst ~f:(is_sub_patt ~sub)
-      | Tpat_record (subs, flg) ->
+      | Tpat_record (subs, _) ->
         List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p ~sub)
-      | Tpat_or (p1, p2, row) ->
+      | Tpat_or (p1, p2, _) ->
         is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
   in
   let rec aux before = function

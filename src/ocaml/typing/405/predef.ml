@@ -148,8 +148,6 @@ and ident_none = ident_create "None"
 and ident_some = ident_create "Some"
 
 let ident_code = ident_create "code"
-let path_code = Pident ident_code
-let type_code t = newgenty (Tconstr (path_code, [t], ref Mnil))
 
 let common_initial_env add_type add_extension empty_env =
   let decl_bool =

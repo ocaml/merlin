@@ -101,14 +101,6 @@ module EnvLazy : sig
   val force : ('a -> 'b) -> ('a,'b) t -> 'b
   val create : 'a -> ('a,'b) t
   val get_arg : ('a,'b) t -> 'a option
-
-  type ('a,'b) eval =
-    | Done of 'b
-    | Raise of exn
-    | Thunk of 'a
-
-  val is_val : ('a,'b) t -> bool
-  val view : ('a,'b) t ->  ('a,'b) eval
 end  = struct
 
   type ('a,'b) t = ('a,'b) eval ref
@@ -136,11 +128,6 @@ end  = struct
 
   let create x =
     ref (Thunk x)
-
-  let is_val x =
-    match !x with Done _ -> true | _ -> false
-
-  let view x = !x
 end
 
 module PathMap = Map.Make(Path)
@@ -600,7 +587,7 @@ let strengthen =
 
 let shorten_module_path =
   (* to be filled with Printtyp.shorten_module_path *)
-  ref ((fun env path -> assert false) :
+  ref ((fun _ _ -> assert false) :
          t -> Path.t -> Path.t)
 
 let md md_type =

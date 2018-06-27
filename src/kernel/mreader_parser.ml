@@ -67,7 +67,7 @@ module Dump = struct
     if not (is_closed k) then (
       let items = I.items state in
       printf k "LR(1) state %d:\n" (I.number state);
-      List.iter (item k) items
+      List.iter ~f:(item k) items
     )
 
   let element k (I.Element (state, _, startp, endp)) =
@@ -131,10 +131,6 @@ type t = {
   errors: exn list;
   lexer: Mreader_lexer.t;
 }
-
-let default = function
-  | ML  -> `Structure []
-  | MLI -> `Signature []
 
 let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
 
@@ -269,8 +265,6 @@ let make warnings lexer kind =
 let result t = t.tree
 
 let errors t = t.errors
-
-let lexer t = t.lexer
 
 let dump_stack t k tok =
   let find l =

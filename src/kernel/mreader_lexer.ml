@@ -130,17 +130,7 @@ let comments t =
   rev_filter_map t.items
     ~f:(function Comment t -> Some t | _ -> None)
 
-let source t = t.source
-
 open Parser_raw
-
-let is_lparen = function
-  | LPAREN -> Some "("
-  | _ -> None
-
-let is_quote = function
-  | QUOTE -> Some "'"
-  | _ -> None
 
 let is_operator = function
   | PREFIXOP s
@@ -320,7 +310,7 @@ let reconstruct_identifier config source pos =
   let tokens = lex [] lexbuf in
   reconstruct_identifier_from_tokens tokens pos
 
-let is_uppercase {Location. txt = x} =
+let is_uppercase {Location. txt = x; _} =
   x <> "" && Char.is_uppercase x.[0]
 
 let rec drop_lowercase acc = function

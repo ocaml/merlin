@@ -26,9 +26,6 @@
 
 )* }}} *)
 
-open Std
-
-
 type cmt_item = {
   cmt_infos : Cmt_format.cmt_infos ;
   mutable location_trie : exn;

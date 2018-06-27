@@ -61,7 +61,7 @@ let dummy = {
 }
 
 let rec normalize_type_expr env = function
-  | {Types.desc = Types.Tconstr (path,_,_)} ->
+  | {Types.desc = Types.Tconstr (path,_,_); _ } ->
     normalize_type_decl env (Env.find_type path env)
   | _ -> raise Not_found
 
@@ -107,7 +107,7 @@ let all_occurrences path =
   in
   aux []
 
-let all_constructor_occurrences ({t_env = env},d) t =
+let all_constructor_occurrences ({t_env = env; _},d) t =
   let rec aux acc t =
     let acc =
       match Browse_raw.node_is_constructor t.t_node with

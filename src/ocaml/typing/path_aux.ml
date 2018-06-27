@@ -12,7 +12,7 @@ module Ord = struct
     (* must ignore position when comparing paths *)
     if p1 == p2 then 0 else
       match (p1, p2) with
-        (Path.Pdot(p1, s1, pos1), Path.Pdot(p2, s2, pos2)) ->
+        (Path.Pdot(p1, s1, _pos1), Path.Pdot(p2, s2, _pos2)) ->
         let c = compare p1 p2 in
         if c <> 0 then c else String.compare s1 s2
       | (Path.Papply(fun1, arg1), Path.Papply(fun2, arg2)) ->

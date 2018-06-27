@@ -142,7 +142,7 @@ let print_batch_outcome tr config source tree =
   match try_with_reader tr config source
           (Mreader_extend.print_outcomes tr tree) with
   | Some result -> result
-  | None -> List.map default_print_outcome tree
+  | None -> List.map ~f:default_print_outcome tree
 
 let reconstruct_identifier tr config source pos =
   match
@@ -171,10 +171,11 @@ let apply_directives config tree =
   let config = ref config in
   let read_payload =
     let open Parsetree in function
-      | PStr[{ pstr_desc = Pstr_eval(expr, _) }] ->
+      | PStr[{ pstr_desc = Pstr_eval(expr, _) ; _}] ->
         begin match expr with
           | {Parsetree. pexp_desc =
-               Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _)) } ->
+               Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _))
+            ; _ } ->
             Some (msg, expr.pexp_loc)
           | _ -> None
         end

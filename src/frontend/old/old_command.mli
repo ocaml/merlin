@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Sturgeon_stub
-
 val default_config : Mconfig.t ref
 
 val dispatch : Trace.t -> Old_protocol.Context.t -> 'a Old_protocol.command -> 'a

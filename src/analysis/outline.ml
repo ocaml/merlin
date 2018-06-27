@@ -105,7 +105,7 @@ and get_class_elements node =
   match node.t_node with
   | Class_expr _ ->
     List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
-  | Class_structure cs ->
+  | Class_structure _ ->
     List.filter_map (Lazy.force node.t_children) ~f:(fun child ->
       match child.t_node with
       | Class_field cf ->
@@ -113,7 +113,7 @@ and get_class_elements node =
         | Some (str_loc, outline_kind) ->
           Some { Query_protocol.
             outline_name = str_loc.Location.txt;
-            outline_kind = `Value;
+            outline_kind;
             location = str_loc.Location.loc;
             children = []
           }

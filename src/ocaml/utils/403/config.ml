@@ -22,13 +22,6 @@
 (**                                                                   **)
 (***********************************************************************)
 
-let windows =
-  match Sys.os_type with
-  | "Win32" -> true
-  |    _    -> false
-
-let sf = Printf.sprintf
-
 let exec_magic_number = "Caml1999X011"
 and cmi_magic_number = "Caml1999I020"
 and cmo_magic_number = "Caml1999O011"

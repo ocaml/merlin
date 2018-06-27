@@ -234,7 +234,7 @@ let default_printer ppf loc =
 ;;
 
 let printer = ref default_printer
-let print ppf loc = () (* !printer ppf loc*)
+let print _ppf _loc = () (* !printer ppf loc*)
 
 let error_prefix = "Error"
 let warning_prefix = "Warning"
@@ -356,7 +356,7 @@ let error_of_exn exn =
      in
      loop !error_of_exn
 
-let rec default_error_reporter ppf {loc; msg; sub; if_highlight} =
+let rec default_error_reporter ppf {loc; msg; sub; _} =
   fprintf ppf "@[<v>%a %s" print_error loc msg;
   List.iter (Format.fprintf ppf "@,@[<2>%a@]" default_error_reporter) sub;
   fprintf ppf "@]"

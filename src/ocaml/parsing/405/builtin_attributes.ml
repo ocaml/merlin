@@ -180,7 +180,7 @@ let with_warning_attribute attrs f =
     warning_leave_scope ();
     raise exn
 
-let warning_scope ?ppwarning attrs f =
+let warning_scope ?ppwarning:_ attrs f =
   let prev = Warnings.backup () in
   try
     warning_attribute attrs;

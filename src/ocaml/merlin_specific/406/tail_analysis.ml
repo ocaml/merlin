@@ -31,9 +31,12 @@ open Browse_raw
 open Typedtree
 
 let tail_operator = function
-  | {exp_desc = Texp_ident
-         (_,_, {Types.val_kind = Types.Val_prim
-                    {Primitive.prim_name = "%sequand"|"%sequor"}})}
+  | {exp_desc =
+       Texp_ident (_,_, {Types.val_kind =
+                           Types.Val_prim
+                             {Primitive.prim_name = "%sequand"|"%sequor"; _}
+                        ; _})
+    ; _ }
     -> true
   | _ -> false
 
@@ -81,5 +84,5 @@ let entry_points = function
 (* FIXME: what about method call? It should be translated to a Texp_apply,
    but I am not sure *)
 let is_call = function
-  | Expression {exp_desc = Texp_apply _} -> true
+  | Expression {exp_desc = Texp_apply _; _} -> true
   | _ -> false

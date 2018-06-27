@@ -13,6 +13,7 @@ Printf.ksprintf J.send {|
 (library
   ((name typing)
    (wrapped false)
+   (flags (:standard -w -9))
    (modules_without_implementation (annot outcometree))
    (libraries (merlin_utils parsing utils))))
 |} ver

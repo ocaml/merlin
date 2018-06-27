@@ -1,3 +1,4 @@
+[@@@ocaml.warning "-9"] (* yoleo *)
 
 module String_map = Map.Make(String)
 
@@ -254,18 +255,6 @@ module rec Type : sig
 
   val sort : Graph.t -> t -> Sort.t
 
-  type normalized
-
-  val normalize : Graph.t -> t -> normalized
-
-  val unnormalize : normalized -> t
-
-  val raw_origin : normalized -> Origin.t
-
-  val raw_path : normalized -> Path.t
-
-  val raw_sort : normalized -> Sort.t
-
   type resolved =
     | Nth of int
     | Path of int list option * t
@@ -337,8 +326,6 @@ end = struct
     | Declaration { id; _ } -> Sort.Declared (Ident_set.singleton id)
     | Definition { sort; _ } -> sort
 
-  type normalized = t
-
   let rec normalize_loop root t =
     match t with
     | Declaration _ -> t
@@ -356,8 +343,6 @@ end = struct
         match Graph.find_type root (raw_path t) with
         | exception Not_found -> normalize_loop root t
         | t -> normalize_loop root t
-
-  let unnormalize t = t
 
   let origin root t =
     raw_origin (normalize root t)
@@ -408,18 +393,6 @@ and Class_type : sig
   val path : Graph.t -> t -> Path.t
 
   val sort : Graph.t -> t -> Sort.t
-
-  type normalized
-
-  val normalize : Graph.t -> t -> normalized
-
-  val unnormalize : normalized -> t
-
-  val raw_origin : normalized -> Origin.t
-
-  val raw_path : normalized -> Path.t
-
-  val raw_sort : normalized -> Sort.t
 
   type resolved = int list option * t
 
@@ -488,8 +461,6 @@ end = struct
     | Declaration { id; _ } -> Sort.Declared (Ident_set.singleton id)
     | Definition { sort; _ } -> sort
 
-  type normalized = t
-
   let rec normalize_loop root t =
     match t with
     | Declaration _ -> t
@@ -507,8 +478,6 @@ end = struct
         match Graph.find_class_type root (raw_path t) with
         | exception Not_found -> normalize_loop root t
         | t -> normalize_loop root t
-
-  let unnormalize t = t
 
   let origin root t =
     raw_origin (normalize root t)
@@ -555,18 +524,6 @@ and Module_type : sig
   val path : Graph.t -> t -> Path.t
 
   val sort : Graph.t -> t -> Sort.t
-
-  type normalized
-
-  val normalize : Graph.t -> t -> normalized
-
-  val unnormalize : normalized -> t
-
-  val raw_origin : normalized -> Origin.t
-
-  val raw_path : normalized -> Path.t
-
-  val raw_sort : normalized -> Sort.t
 
 end = struct
 
@@ -633,8 +590,6 @@ end = struct
     | Declaration { id; _ } -> Sort.Declared (Ident_set.singleton id)
     | Definition { sort; _ } -> sort
 
-  type normalized = t
-
   let rec normalize_loop root t =
     match t with
     | Declaration _ -> t
@@ -652,8 +607,6 @@ end = struct
         match Graph.find_module_type root (raw_path t) with
         | exception Not_found -> normalize_loop root t
         | t -> normalize_loop root t
-
-  let unnormalize t = t
 
   let origin root t =
     raw_origin (normalize root t)
@@ -1178,7 +1131,7 @@ end = struct
       | Component.Open -> begin
         match String_map.find name names with
         | exception Not_found -> Unambiguous id
-        | Global id' -> Unambiguous id
+        | Global id' -> Unambiguous id'
         | Local id' -> Ambiguous(id, [id'])
         | Unambiguous id' -> Ambiguous(id, [id'])
         | Ambiguous(id', ids) -> Ambiguous(id, id' :: ids)

@@ -66,10 +66,6 @@ module Fallback = struct
     logfmt "Fallback.set" (fun fmt -> Location.print_loc fmt loc);
     fallback := Some loc
 
-  let setopt = function
-    | None -> log "Fallback.setopt" "None"
-    | Some loc -> set loc
-
   let reset () = fallback := None
 
   let is_set () = !fallback <> None
@@ -243,11 +239,7 @@ module Utils = struct
       || List.exists Predef.builtin_values ~f
     | _ -> false
 
-  let is_ghost_loc { Location. loc_ghost } = loc_ghost
-
-  let longident_is_qualified = function
-    | Longident.Lident _ -> false
-    | _ -> true
+  let is_ghost_loc { Location. loc_ghost; _ } = loc_ghost
 
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
@@ -287,7 +279,7 @@ module Utils = struct
 
   let find_all_matches ~config ?(with_fallback=false) file =
     let files =
-      List.concat_map (fun synonym_pair ->
+      List.concat_map ~f:(fun synonym_pair ->
         find_all_in_path_uncap ~src_suffix_pair:synonym_pair ~with_fallback
           (Mconfig.source_path config) file
       ) Mconfig.(config.merlin.suffixes)
@@ -298,10 +290,15 @@ module Utils = struct
     if File.name file = Misc.unitname Mconfig.(config.query.filename) then
       Some Mconfig.(config.query.filename)
     else
-      let rec attempt_search src_suffix_pair =
-        let fallback = File.with_ext ~src_suffix_pair (File.alternate file) in
+      let attempt_search src_suffix_pair =
+        let fallback =
+          if with_fallback then
+            Some (File.with_ext ~src_suffix_pair (File.alternate file))
+          else
+            None
+        in
         let fname = File.with_ext ~src_suffix_pair file in
-        try Some (Misc.find_in_path_uncap ~fallback path fname)
+        try Some (Misc.find_in_path_uncap ?fallback path fname)
         with Not_found -> None
       in
       try
@@ -340,8 +337,6 @@ module Context = struct
     | Type -> "type"
     | Unknown -> "unknown"
 end
-
-exception Context_mismatch
 
 exception Cmt_cache_store of Typedtrie.t
 
@@ -419,7 +414,7 @@ and from_path ~config ~context path : locate_result =
         erase_loadpath ~cwd:(Filename.dirname cmt_file)
           ~new_path:cmt_infos.cmt_loadpath
           (fun () -> from_path ~context ~config path)
-      | Cmt_cache_store trie, None ->
+      | Cmt_cache_store _, None ->
         (* We found the module we were looking for, we can stop here. *)
         let pos_fname =
           match cmt_infos.cmt_sourcefile with
@@ -460,10 +455,10 @@ and from_path ~config ~context path : locate_result =
   | _ ->
     Other_error (* type error, [from_path] should only be called on modules *)
 
-let path_and_loc_of_cstr desc env =
+let path_and_loc_of_cstr desc _ =
   let open Types in
   match desc.cstr_tag with
-  | Cstr_extension (path, loc) -> path, desc.cstr_loc
+  | Cstr_extension (path, _) -> path, desc.cstr_loc
   | _ ->
     match desc.cstr_res.desc with
     | Tconstr (path, _, _) -> path, desc.cstr_loc
@@ -476,8 +471,6 @@ let path_and_loc_from_label desc env =
     let typ_decl = Env.find_type path env in
     path, typ_decl.Types.type_loc
   | _ -> assert false
-
-exception Not_in_env
 
 type find_source_result =
   | Found of string
@@ -575,7 +568,7 @@ let find_source ~config loc =
         ) lst
       in
       match lst with
-      | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
+      | (i1, _) :: (i2, _) :: _ when i1 = i2 ->
         Multiple_matches files
       | (_, s) :: _ -> Found s
       | _ -> assert false
@@ -603,7 +596,7 @@ let find_source ~config loc =
     | _ -> failure
     | exception _ -> failure
 
-let recover ident =
+let recover _ =
   match Fallback.get () with
   | None -> assert false
   | Some loc -> `Found (loc, None)
@@ -648,25 +641,25 @@ end = struct
             in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path `Type path, loc))
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
           | `Mod ->
             log "lookup" "lookup in module namespace" ;
             let path = Env.lookup_module ~load:true ident env in
             let md = Env.find_module path env in
-            raise (Found (path, Namespaced_path.of_path `Mod path, md.Types.md_loc))
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Mod path, md.Types.md_loc))
           | `Modtype ->
             log "lookup" "lookup in module type namespace" ;
             let path, mtd = Env.lookup_modtype ident env in
-            raise (Found (path, Namespaced_path.of_path `Modtype path, mtd.Types.mtd_loc))
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Modtype path, mtd.Types.mtd_loc))
           | `Type ->
             log "lookup" "lookup in type namespace" ;
             let path = Env.lookup_type ident env in
             let typ_decl = Env.find_type path env in
-            raise (Found (path, Namespaced_path.of_path `Type path, typ_decl.Types.type_loc))
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, typ_decl.Types.type_loc))
           | `Vals ->
             log "lookup" "lookup in value namespace" ;
             let path, val_desc = Env.lookup_value ident env in
-            raise (Found (path, Namespaced_path.of_path `Vals path, val_desc.Types.val_loc))
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Vals path, val_desc.Types.val_loc))
           | `Labels ->
             log "lookup" "lookup in label namespace" ;
             let lbl =
@@ -676,7 +669,7 @@ end = struct
             in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path `Type path, loc))
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
         with Not_found -> ()
       ) ;
       logf "lookup" "   ... not in the environment" ;
@@ -689,7 +682,7 @@ end = struct
       let label_desc = Env.lookup_label ident env in
       let path, loc = path_and_loc_from_label label_desc env in
       (* TODO: Use [`Labels] here *)
-      Some (path, Namespaced_path.of_path `Type path, loc)
+      Some (path, Namespaced_path.of_path ~namespace:`Type path, loc)
     with Not_found ->
       None
 end
@@ -717,7 +710,7 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
 (* Only used to retrieve documentation *)
 let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
   let str_ident = Path.name path in
-  let tagged_path = Namespaced_path.of_path namespace path in
+  let tagged_path = Namespaced_path.of_path ~namespace path in
   locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
     ~lazy_trie
 
@@ -749,14 +742,6 @@ let cursor_on_constructor_name ~cursor:pos
         with pos_cnum = end_offset - String.length cd.Types.cstr_name }
     in
     Lexing.compare_pos pos constr_pos >= 0
-
-let path_of_type t =
-  match t.Types.desc with
-  | Types.Tconstr (path,_,_) -> Some (Path.name path)
-  | Types.Tvar _ | Types.Tarrow _ | Types.Ttuple _ | Types.Tobject _
-  | Types.Tfield _ | Types.Tnil | Types.Tlink _ | Types.Tsubst _
-  | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
-    None
 
 let inspect_pattern ~pos ~lid p =
   let open Typedtree in
@@ -875,14 +860,14 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
         from_longident ~config ~pos ~env ~lazy_trie ctxt `MLI lid
       end
   with
-  | `Found (loc, Some doc) ->
+  | `Found (_, Some doc) ->
     `Found doc
   | `Found (loc, None) ->
     let comments =
       match File_switching.where_am_i () with
       | None -> List.rev comments
       | Some cmt_path ->
-        let {Cmt_cache. cmt_infos} = Cmt_cache.read cmt_path in
+        let {Cmt_cache. cmt_infos; _ } = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
     in
     logfmt "get_doc" (fun fmt ->

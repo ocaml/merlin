@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Logger
 
 let latest_version : Old_protocol.protocol_version = `V3
 let current_version = ref `V2
@@ -38,17 +37,8 @@ let default_context =
 
 let invalid_arguments () = failwith "invalid arguments"
 
-exception Failure' = Failure
 open Query_protocol
 open Old_protocol
-
-let with_location ?(skip_none=false) loc assoc =
-  if skip_none && loc = Location.none then
-    `Assoc assoc
-  else
-    `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
-            ("end",   Lexing.json_of_position loc.Location.loc_end) ::
-            assoc)
 
 let pos_of_json = function
   | `String "start" -> `Start
@@ -72,61 +62,7 @@ let optional_string = function
   | _ -> invalid_arguments ()
 
 let string_list l =
-  List.map (function `String s -> s | _ -> invalid_arguments ()) l
-
-let json_of_string_list l =
-  `List (List.map (fun s -> `String s) l)
-
-let json_of_type_loc (loc,str,tail) =
-  with_location loc [
-    "type", `String str;
-    "tail", `String (match tail with
-        | `No -> "no"
-        | `Tail_position -> "position"
-        | `Tail_call -> "call")
-  ]
-
-let string_of_kind = function
-  | `Value       -> "Value"
-  | `Variant     -> "Variant"
-  | `Constructor -> "Constructor"
-  | `Label       -> "Label"
-  | `Module      -> "Module"
-  | `Modtype     -> "Signature"
-  | `Type        -> "Type"
-  | `Method      -> "Method"
-  | `MethodCall  -> "#"
-  | `Exn         -> "Exn"
-  | `Class       -> "Class"
-
-let json_of_completion {Compl. name; kind; desc; info} =
-  `Assoc ["name", `String name;
-          "kind", `String (string_of_kind kind);
-          "desc", `String desc;
-          "info", `String info]
-
-let json_of_completions {Compl. entries; context } =
-  `Assoc [
-    "entries", `List (List.map json_of_completion entries);
-    "context", (match context with
-        | `Unknown -> `Null
-        | `Application {Compl. argument_type; labels} ->
-          let label (name,ty) = `Assoc ["name", `String name;
-                                        "type", `String ty] in
-          let a = `Assoc ["argument_type", `String argument_type;
-                          "labels", `List (List.map label labels)] in
-          `List [`String "application"; a])
-  ]
-
-let rec json_of_outline outline =
-  let json_of_item { outline_name ; outline_kind ; location ; children } =
-    with_location location [
-      "name", `String outline_name;
-      "kind", `String (string_of_kind outline_kind);
-      "children", `List (json_of_outline children);
-    ]
-  in
-  List.map json_of_item outline
+  List.map ~f:(function `String s -> s | _ -> invalid_arguments ()) l
 
 let source_or_build = function
   | "source" -> `Source
@@ -145,11 +81,6 @@ let auto_ml_or_mli = function
 let add_or_remove = function
   | "add"    -> `Add
   | "remove" -> `Rem
-  | _ -> invalid_arguments ()
-
-let load_or_find = function
-  | "load" -> `File
-  | "find" -> `Find
   | _ -> invalid_arguments ()
 
 let with_failures failures assoc = match failures with
@@ -305,7 +236,7 @@ let json_of_sync_command (type a) (command : a sync_command) (response : a) : js
   | Checkout _, () -> `Bool true
   | Refresh, () -> `Bool true
   | Flags_get, flags ->
-    `List (List.map Json.string flags)
+    `List (List.map ~f:Json.string flags)
   | Flags_set _, failures ->
     `Assoc (with_failures failures ["result", `Bool true])
   | Findlib_use _, failures ->
@@ -320,11 +251,11 @@ let json_of_sync_command (type a) (command : a sync_command) (response : a) : js
             "merlin",  `String version
            ]
   | Project_get, (strs, fails) ->
-    `Assoc (with_failures fails ["result", `List (List.map Json.string strs)])
+    `Assoc (with_failures fails ["result", `List (List.map ~f:Json.string strs)])
   | Idle_job, b -> `Bool b
 
 let classify_response = function
-  | Failure s | Exception (Failure' s) -> ("failure", `String s)
+  | Failure s | Exception (Failure s) -> ("failure", `String s)
   | Error error -> ("error", error)
   | Exception exn ->
     begin match Location.error_of_exn exn with
@@ -347,7 +278,7 @@ let json_of_response_v3 ~notifications response =
     "class", `String class_;
     "value", value;
     "notifications",
-    `List (List.map (fun (sec,msg) ->
+    `List (List.map ~f:(fun (sec,msg) ->
         `Assoc ["section", `String sec; "message", `String msg])
         notifications);
   ]
@@ -418,7 +349,7 @@ let make_sexp ?on_read ~input ~output () =
         Unix.close fd
   end;
   let input' = Sexp.of_file_descr ?on_read input in
-  let input' () = Option.map Sexp.to_json (input' ()) in
+  let input' () = Option.map ~f:Sexp.to_json (input' ()) in
   let buf = Buffer.create 8192 in
   let output json =
     let sexp = Sexp.of_json json in

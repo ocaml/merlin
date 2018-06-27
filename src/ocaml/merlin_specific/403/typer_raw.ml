@@ -93,7 +93,7 @@ module Rewrite_loc = struct
   and u_extension x = u_attribute x
 
   and u_attributes l =
-    List.map u_attribute l
+    List.map ~f:u_attribute l
 
   and u_payload = function
     | PStr str -> PStr (u_structure str)
@@ -111,23 +111,23 @@ module Rewrite_loc = struct
   and u_core_type_desc = function
     | Ptyp_any | Ptyp_var _ as desc -> desc
     | Ptyp_arrow (l, t1, t2) -> Ptyp_arrow (l, u_core_type t1, u_core_type t2)
-    | Ptyp_tuple ts -> Ptyp_tuple (List.map u_core_type ts)
-    | Ptyp_constr (loc, ts) -> Ptyp_constr (u_loc loc, List.map u_core_type ts)
+    | Ptyp_tuple ts -> Ptyp_tuple (List.map ~f:u_core_type ts)
+    | Ptyp_constr (loc, ts) -> Ptyp_constr (u_loc loc, List.map ~f:u_core_type ts)
     | Ptyp_object (fields, flag) ->
-      Ptyp_object (List.map (fun (s,a,ct) -> (s, u_attributes a, u_core_type ct)) fields, flag)
-    | Ptyp_class (loc, ts) -> Ptyp_class (u_loc loc, List.map u_core_type ts)
+      Ptyp_object (List.map ~f:(fun (s,a,ct) -> (s, u_attributes a, u_core_type ct)) fields, flag)
+    | Ptyp_class (loc, ts) -> Ptyp_class (u_loc loc, List.map ~f:u_core_type ts)
     | Ptyp_alias (ct, name) -> Ptyp_alias (u_core_type ct, name)
-    | Ptyp_variant (fields, flag, label) -> Ptyp_variant (List.map u_row_field fields, flag, label)
+    | Ptyp_variant (fields, flag, label) -> Ptyp_variant (List.map ~f:u_row_field fields, flag, label)
     | Ptyp_poly (ss,ct) -> Ptyp_poly (ss, u_core_type ct)
     | Ptyp_package pt -> Ptyp_package (u_package_type pt)
     | Ptyp_extension ext -> Ptyp_extension (u_extension ext)
 
   and u_package_type (loc, cts) =
-    (u_loc loc, List.map (fun (l,ct) -> u_loc l, u_core_type ct) cts)
+    (u_loc loc, List.map ~f:(fun (l,ct) -> u_loc l, u_core_type ct) cts)
 
   and u_row_field = function
     | Rtag (l,attrs,has_const,cts) ->
-      Rtag (l, u_attributes attrs, has_const, List.map u_core_type cts)
+      Rtag (l, u_attributes attrs, has_const, List.map ~f:u_core_type cts)
     | Rinherit ct -> Rinherit (u_core_type ct)
 
   and u_pattern {ppat_desc; ppat_loc; ppat_attributes} =
@@ -141,11 +141,11 @@ module Rewrite_loc = struct
     | Ppat_any | Ppat_constant _ | Ppat_interval _ as p -> p
     | Ppat_var l -> Ppat_var (u_loc l)
     | Ppat_alias (p, l) -> Ppat_alias (u_pattern p, u_loc l)
-    | Ppat_tuple ps -> Ppat_tuple (List.map u_pattern ps)
+    | Ppat_tuple ps -> Ppat_tuple (List.map ~f:u_pattern ps)
     | Ppat_construct (loc, po) -> Ppat_construct (u_loc loc, u_option u_pattern po)
     | Ppat_variant (lbl, po) -> Ppat_variant (lbl, u_option u_pattern po)
-    | Ppat_record (fields, flag) -> Ppat_record (List.map (fun (l,p) -> (u_loc l, u_pattern p)) fields, flag)
-    | Ppat_array ps -> Ppat_array (List.map u_pattern ps)
+    | Ppat_record (fields, flag) -> Ppat_record (List.map ~f:(fun (l,p) -> (u_loc l, u_pattern p)) fields, flag)
+    | Ppat_array ps -> Ppat_array (List.map ~f:u_pattern ps)
     | Ppat_or (p1, p2) -> Ppat_or (u_pattern p1, u_pattern p2)
     | Ppat_constraint (p, ct) -> Ppat_constraint (u_pattern p, u_core_type ct)
     | Ppat_type loc -> Ppat_type (u_loc loc)
@@ -165,25 +165,25 @@ module Rewrite_loc = struct
     | Pexp_ident loc -> Pexp_ident (u_loc loc)
     | Pexp_constant _ as e -> e
     | Pexp_let (flag, vs, e) ->
-      Pexp_let (flag, List.map u_value_binding vs, u_expression e)
+      Pexp_let (flag, List.map ~f:u_value_binding vs, u_expression e)
     | Pexp_function cs ->
-      Pexp_function (List.map u_case cs)
+      Pexp_function (List.map ~f:u_case cs)
     | Pexp_fun (lbl, eo, pattern, expr) ->
       Pexp_fun (lbl, u_option u_expression eo, u_pattern pattern, u_expression expr)
     | Pexp_apply (e, les) ->
-      Pexp_apply (u_expression e, List.map (fun (l,e) -> (l, u_expression e)) les)
-    | Pexp_match (e, cs) -> Pexp_match (u_expression e, List.map u_case cs)
-    | Pexp_try (e, cs) -> Pexp_try (u_expression e, List.map u_case cs)
-    | Pexp_tuple es -> Pexp_tuple (List.map u_expression es)
+      Pexp_apply (u_expression e, List.map ~f:(fun (l,e) -> (l, u_expression e)) les)
+    | Pexp_match (e, cs) -> Pexp_match (u_expression e, List.map ~f:u_case cs)
+    | Pexp_try (e, cs) -> Pexp_try (u_expression e, List.map ~f:u_case cs)
+    | Pexp_tuple es -> Pexp_tuple (List.map ~f:u_expression es)
     | Pexp_construct (loc, eo) ->
       Pexp_construct (u_loc loc, u_option u_expression eo)
     | Pexp_variant (lbl, eo) ->
       Pexp_variant (lbl, u_option u_expression eo)
     | Pexp_record (les, eo) ->
-      Pexp_record (List.map (fun (loc,e) -> (u_loc loc, u_expression e)) les, u_option u_expression eo)
+      Pexp_record (List.map ~f:(fun (loc,e) -> (u_loc loc, u_expression e)) les, u_option u_expression eo)
     | Pexp_field (e, loc) -> Pexp_field (u_expression e, u_loc loc)
     | Pexp_setfield (e1, loc, e2) -> Pexp_setfield (u_expression e1, u_loc loc, u_expression e2)
-    | Pexp_array es -> Pexp_array (List.map u_expression es)
+    | Pexp_array es -> Pexp_array (List.map ~f:u_expression es)
     | Pexp_ifthenelse (e1,e2,e3) -> Pexp_ifthenelse (u_expression e1, u_expression e2, u_option u_expression e3)
     | Pexp_sequence (e1, e2) -> Pexp_sequence (u_expression e1, u_expression e2)
     | Pexp_while (e1, e2) -> Pexp_while (u_expression e1, u_expression e2)
@@ -193,7 +193,7 @@ module Rewrite_loc = struct
     | Pexp_send (e, s) -> Pexp_send (u_expression e, s)
     | Pexp_new loc -> Pexp_new (u_loc loc)
     | Pexp_setinstvar (s, e) -> Pexp_setinstvar (u_loc s, u_expression e)
-    | Pexp_override es -> Pexp_override (List.map (fun (loc,e) -> (u_loc loc, u_expression e)) es)
+    | Pexp_override es -> Pexp_override (List.map ~f:(fun (loc,e) -> (u_loc loc, u_expression e)) es)
     | Pexp_letmodule (s, me, e) -> Pexp_letmodule (u_loc s, u_module_expr me, u_expression e)
     | Pexp_assert e -> Pexp_assert (u_expression e)
     | Pexp_lazy e -> Pexp_lazy (u_expression e)
@@ -223,8 +223,8 @@ module Rewrite_loc = struct
                         ptype_private; ptype_manifest; ptype_attributes; ptype_loc} =
     enter ();
     let ptype_name = u_loc ptype_name
-    and ptype_params = List.map (fun (ct,v) -> (u_core_type ct, v)) ptype_params
-    and ptype_cstrs = List.map (fun (ct1,ct2,l) ->
+    and ptype_params = List.map ~f:(fun (ct,v) -> (u_core_type ct, v)) ptype_params
+    and ptype_cstrs = List.map ~f:(fun (ct1,ct2,l) ->
         update l; (u_core_type ct1, u_core_type ct2, l)) ptype_cstrs
     and ptype_kind = u_type_kind ptype_kind
     and ptype_manifest = u_option u_core_type ptype_manifest
@@ -236,8 +236,8 @@ module Rewrite_loc = struct
 
   and u_type_kind = function
     | Ptype_abstract | Ptype_open as k -> k
-    | Ptype_variant cstrs -> Ptype_variant (List.map u_constructor_declaration cstrs)
-    | Ptype_record lbls -> Ptype_record (List.map u_label_declaration lbls)
+    | Ptype_variant cstrs -> Ptype_variant (List.map ~f:u_constructor_declaration cstrs)
+    | Ptype_record lbls -> Ptype_record (List.map ~f:u_label_declaration lbls)
 
   and u_label_declaration {pld_name; pld_mutable; pld_type; pld_loc; pld_attributes} =
     enter ();
@@ -257,13 +257,13 @@ module Rewrite_loc = struct
     {pcd_name; pcd_args; pcd_res; pcd_loc; pcd_attributes}
 
   and u_constructor_arguments = function
-    | Pcstr_tuple cts -> Pcstr_tuple (List.map u_core_type cts)
-    | Pcstr_record lbls -> Pcstr_record (List.map u_label_declaration lbls)
+    | Pcstr_tuple cts -> Pcstr_tuple (List.map ~f:u_core_type cts)
+    | Pcstr_record lbls -> Pcstr_record (List.map ~f:u_label_declaration lbls)
 
   and u_type_extension {ptyext_path; ptyext_params; ptyext_constructors; ptyext_private; ptyext_attributes} =
     let ptyext_path = u_loc ptyext_path in
-    let ptyext_params = List.map (fun (ct,v) -> (u_core_type ct, v)) ptyext_params in
-    let ptyext_constructors = List.map u_extension_constructor ptyext_constructors in
+    let ptyext_params = List.map ~f:(fun (ct,v) -> (u_core_type ct, v)) ptyext_params in
+    let ptyext_constructors = List.map ~f:u_extension_constructor ptyext_constructors in
     let ptyext_attributes = u_attributes ptyext_attributes in
     {ptyext_path; ptyext_params; ptyext_constructors; ptyext_private; ptyext_attributes}
 
@@ -293,7 +293,7 @@ module Rewrite_loc = struct
 
   and u_class_type_desc = function
     | Pcty_constr (loc, cts) ->
-      Pcty_constr (u_loc loc, List.map u_core_type cts)
+      Pcty_constr (u_loc loc, List.map ~f:u_core_type cts)
     | Pcty_signature cs -> Pcty_signature (u_class_signature cs)
     | Pcty_arrow (lbl, ct, clt) ->
       Pcty_arrow (lbl, u_core_type ct, u_class_type clt)
@@ -302,7 +302,7 @@ module Rewrite_loc = struct
 
   and u_class_signature {pcsig_self; pcsig_fields} =
     let pcsig_self = u_core_type pcsig_self in
-    let pcsig_fields = List.map u_class_type_field pcsig_fields in
+    let pcsig_fields = List.map ~f:u_class_type_field pcsig_fields in
     {pcsig_self; pcsig_fields}
 
   and u_class_type_field {pctf_desc; pctf_loc; pctf_attributes} =
@@ -323,7 +323,7 @@ module Rewrite_loc = struct
   and u_class_infos : 'a 'b. ('a -> 'b) -> 'a class_infos -> 'b class_infos =
     fun u_a {pci_virt; pci_params; pci_name; pci_expr; pci_loc; pci_attributes} ->
     enter ();
-    let pci_params = List.map (fun (ct,v) -> (u_core_type ct, v)) pci_params in
+    let pci_params = List.map ~f:(fun (ct,v) -> (u_core_type ct, v)) pci_params in
     let pci_name = u_loc pci_name in
     let pci_expr = u_a pci_expr in
     let pci_attributes = u_attributes pci_attributes in
@@ -342,20 +342,20 @@ module Rewrite_loc = struct
     {pcl_desc; pcl_loc; pcl_attributes}
 
   and u_class_expr_desc = function
-    | Pcl_constr (loc, cts) -> Pcl_constr (u_loc loc, List.map u_core_type cts)
+    | Pcl_constr (loc, cts) -> Pcl_constr (u_loc loc, List.map ~f:u_core_type cts)
     | Pcl_structure cs -> Pcl_structure (u_class_structure cs)
     | Pcl_fun (lbl, eo, p, ce) ->
       Pcl_fun (lbl, u_option u_expression eo, u_pattern p, u_class_expr ce)
     | Pcl_apply (ce, les) ->
-      Pcl_apply (u_class_expr ce, List.map (fun (l,e) -> (l, u_expression e)) les)
+      Pcl_apply (u_class_expr ce, List.map ~f:(fun (l,e) -> (l, u_expression e)) les)
     | Pcl_let (rf, vbs, ce) ->
-      Pcl_let (rf, List.map u_value_binding vbs, u_class_expr ce)
+      Pcl_let (rf, List.map ~f:u_value_binding vbs, u_class_expr ce)
     | Pcl_constraint (ce, ct) -> Pcl_constraint (u_class_expr ce, u_class_type ct)
     | Pcl_extension ext -> Pcl_extension (u_extension ext)
 
   and u_class_structure {pcstr_self; pcstr_fields} =
     let pcstr_self = u_pattern pcstr_self in
-    let pcstr_fields = List.map u_class_field pcstr_fields in
+    let pcstr_fields = List.map ~f:u_class_field pcstr_fields in
     {pcstr_self; pcstr_fields}
 
   and u_class_field {pcf_desc; pcf_loc; pcf_attributes} =
@@ -391,12 +391,12 @@ module Rewrite_loc = struct
     | Pmty_ident loc -> Pmty_ident (u_loc loc)
     | Pmty_signature sg -> Pmty_signature (u_signature sg)
     | Pmty_functor (loc, mto, mt) -> Pmty_functor (u_loc loc, u_option u_module_type mto, u_module_type mt)
-    | Pmty_with (mt, wts) -> Pmty_with (u_module_type mt, List.map u_with_constraint wts)
+    | Pmty_with (mt, wts) -> Pmty_with (u_module_type mt, List.map ~f:u_with_constraint wts)
     | Pmty_typeof me -> Pmty_typeof (u_module_expr me)
     | Pmty_extension ext -> Pmty_extension (u_extension ext)
     | Pmty_alias loc -> Pmty_alias (u_loc loc)
 
-  and u_signature l = List.map u_signature_item l
+  and u_signature l = List.map ~f:u_signature_item l
 
   and u_signature_item {psig_desc; psig_loc} =
     enter ();
@@ -406,16 +406,16 @@ module Rewrite_loc = struct
 
   and u_signature_item_desc = function
     | Psig_value vd -> Psig_value (u_value_description vd)
-    | Psig_type (fl, tds) -> Psig_type (fl, List.map u_type_declaration tds)
+    | Psig_type (fl, tds) -> Psig_type (fl, List.map ~f:u_type_declaration tds)
     | Psig_typext text -> Psig_typext (u_type_extension text)
     | Psig_exception ec -> Psig_exception (u_extension_constructor ec)
     | Psig_module md -> Psig_module (u_module_declaration md)
-    | Psig_recmodule mds -> Psig_recmodule (List.map u_module_declaration mds)
+    | Psig_recmodule mds -> Psig_recmodule (List.map ~f:u_module_declaration mds)
     | Psig_modtype mtd -> Psig_modtype (u_module_type_declaration mtd)
     | Psig_open od -> Psig_open (u_open_description od)
     | Psig_include id -> Psig_include (u_include_description id)
-    | Psig_class cds -> Psig_class (List.map u_class_description cds)
-    | Psig_class_type cts -> Psig_class_type (List.map u_class_type_declaration cts)
+    | Psig_class cds -> Psig_class (List.map ~f:u_class_description cds)
+    | Psig_class_type cts -> Psig_class_type (List.map ~f:u_class_type_declaration cts)
     | Psig_attribute attr -> Psig_attribute (u_attribute attr)
     | Psig_extension (ext, attrs) -> Psig_extension (u_extension ext, u_attributes attrs)
 
@@ -478,7 +478,7 @@ module Rewrite_loc = struct
     | Pmod_unpack e -> Pmod_unpack (u_expression e)
     | Pmod_extension ext -> Pmod_extension (u_extension ext)
 
-  and u_structure l = List.map u_structure_item l
+  and u_structure l = List.map ~f:u_structure_item l
 
   and u_structure_item {pstr_desc; pstr_loc} =
     enter ();
@@ -488,17 +488,17 @@ module Rewrite_loc = struct
 
   and u_structure_item_desc = function
     | Pstr_eval (expr, attrs) -> Pstr_eval (u_expression expr, u_attributes attrs)
-    | Pstr_value (fl, vbs) -> Pstr_value (fl, List.map u_value_binding vbs)
+    | Pstr_value (fl, vbs) -> Pstr_value (fl, List.map ~f:u_value_binding vbs)
     | Pstr_primitive vd -> Pstr_primitive (u_value_description vd)
-    | Pstr_type (fl, tds) -> Pstr_type (fl, List.map u_type_declaration tds)
+    | Pstr_type (fl, tds) -> Pstr_type (fl, List.map ~f:u_type_declaration tds)
     | Pstr_typext text -> Pstr_typext (u_type_extension text)
     | Pstr_exception ext -> Pstr_exception (u_extension_constructor ext)
     | Pstr_module mb -> Pstr_module (u_module_binding mb)
-    | Pstr_recmodule mbs -> Pstr_recmodule (List.map u_module_binding mbs)
+    | Pstr_recmodule mbs -> Pstr_recmodule (List.map ~f:u_module_binding mbs)
     | Pstr_modtype mtd -> Pstr_modtype (u_module_type_declaration mtd)
     | Pstr_open od -> Pstr_open (u_open_description od)
-    | Pstr_class cds -> Pstr_class (List.map u_class_declaration cds)
-    | Pstr_class_type ctds -> Pstr_class_type (List.map u_class_type_declaration ctds)
+    | Pstr_class cds -> Pstr_class (List.map ~f:u_class_declaration cds)
+    | Pstr_class_type ctds -> Pstr_class_type (List.map ~f:u_class_type_declaration ctds)
     | Pstr_include id -> Pstr_include (u_include_declaration id)
     | Pstr_attribute attr -> Pstr_attribute (u_attribute attr)
     | Pstr_extension (ext, attrs) -> Pstr_extension (u_extension ext, u_attributes attrs)

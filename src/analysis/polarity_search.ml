@@ -41,7 +41,7 @@ let match_query env query t =
       remove cost pos (normalize_path env path);
       begin match Env.find_type path env with
       | exception Not_found -> ()
-      | { Types.type_variance } ->
+      | { Types.type_variance; _ } ->
         List.iter2 type_variance params ~f:(fun var arg ->
           if Types.Variance.mem Types.Variance.Inj var then (
             if Types.Variance.mem Types.Variance.Pos var then

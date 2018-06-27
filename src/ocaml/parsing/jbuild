@@ -16,6 +16,7 @@ Printf.ksprintf J.send {|
 (library
   ((name parsing)
    (wrapped false)
+   (flags (:standard -w -9))
    (modules_without_implementation (asttypes parsetree))
    (libraries (merlin_utils utils))))
 |} ver

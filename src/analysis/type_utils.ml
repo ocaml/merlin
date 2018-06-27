@@ -82,7 +82,7 @@ module Printtyp = struct
             let desc = match ty''.desc with
               | Tvariant row ->
                 Tvariant {row with row_name = None}
-              | Tobject (ty, name) ->
+              | Tobject (ty, _) ->
                 Tobject (ty, ref None)
               | desc -> desc
             in
@@ -212,7 +212,7 @@ let print_type_with_decl ~verbosity env ppf typ =
 
 let print_exn ppf exn =
   let msg = match Location.error_of_exn exn with
-    | Some (`Ok {Location. msg}) -> msg
+    | Some (`Ok {Location. msg; _}) -> msg
     | None | Some `Already_displayed -> Printexc.to_string exn
   in
   Format.pp_print_string ppf msg
@@ -300,14 +300,14 @@ let read_doc_attributes attrs =
     let open Parsetree in function
       | PStr[{ pstr_desc = Pstr_eval(
           ({Parsetree. pexp_desc =
-              Parsetree.Pexp_constant (Parsetree.Pconst_string (str, _)) } as expr), _)
-        }] ->
+              Parsetree.Pexp_constant (Parsetree.Pconst_string (str, _)) ; _} as expr), _)
+        ; _ }] ->
         Some(str, expr.pexp_loc)
       | _ -> None
   in
   let rec loop = function
     | ({Location.txt =
-          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
+          ("doc" | "ocaml.doc"); loc = _}, payload) :: _ ->
       read_payload payload
     | _ :: rest -> loop rest
     | [] -> None

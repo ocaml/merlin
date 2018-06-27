@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 (*
 TODO:
  - 2012/05/10: Follow camlp4 way of building map and iter using classes

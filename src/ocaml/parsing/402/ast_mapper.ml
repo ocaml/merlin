@@ -18,7 +18,6 @@
 *)
 
 
-open Asttypes
 open Parsetree
 open Ast_helper
 open Location
@@ -605,7 +604,7 @@ let default_mapper =
 
 
 
-    location = (fun this l -> l);
+    location = (fun _ l -> l);
 
     extension = (fun this (s, e) -> (map_loc this s, this.payload this e));
     attribute = (fun this (s, e) -> (map_loc this s, this.payload this e));

@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+[@@@ocaml.warning "-6-27-32"]
+
 (* typetexp.ml,v 1.34.4.9 2002/01/07 08:39:16 garrigue Exp *)
 
 (* Typechecking of type expressions for the core language *)

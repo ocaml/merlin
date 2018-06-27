@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+[@@@ocaml.warning "-27"]
+
 (* Typechecking for the core language *)
 
 open Misc
@@ -31,8 +33,6 @@ let merlin_recovery_attributes attrs =
   match attrs with
   | [] -> attrs'
   | attrs -> attrs' @ attrs
-
-let raise_error = Msupport.raise_error
 
 type error =
     Polymorphic_label of Longident.t

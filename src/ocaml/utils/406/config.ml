@@ -26,13 +26,6 @@
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
-let windows =
-  match Sys.os_type with
-  | "Win32" -> true
-  |    _    -> false
-
-let sf = Printf.sprintf
-
 let flambda = false
 
 let exec_magic_number = "Caml1999X011"

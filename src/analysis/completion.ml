@@ -29,7 +29,6 @@
 
 open Std
 
-open Browse_tree
 open Browse_raw
 
 open Extend_protocol.Reader
@@ -93,8 +92,8 @@ let rec methods_of_type env ?(acc=[]) type_expr =
     methods_of_type env ~acc:((name,ty) :: acc) rest
   | Tconstr (path, _, _) -> begin
       match lookup_env Env.find_type path env with
-      | None | Some { type_manifest = None } -> acc
-      | Some { type_manifest = Some type_expr } ->
+      | None | Some { type_manifest = None; _ } -> acc
+      | Some { type_manifest = Some type_expr; _ } ->
         methods_of_type env ~acc type_expr
     end
   | _ -> acc
@@ -232,7 +231,7 @@ let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
 let item_for_global_module name = {name; kind = `Module; desc = `None; info = `None}
 
 let fold_types f id env acc =
-  Env.fold_types (fun s p (decl,descr) acc -> f s p decl acc) id env acc
+  Env.fold_types (fun s p (decl,_) acc -> f s p decl acc) id env acc
 
 let fold_constructors f id env acc =
   Env.fold_constructors
@@ -320,7 +319,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
          Note that if no type is expected (context was not inferred), 0 will be
          returned. *)
       match target_type with
-      | None -> fun scheme -> 0
+      | None -> fun _ -> 0
       | Some ty ->
         let arity = arrow_arity 0 ty in
         fun scheme ->
@@ -365,7 +364,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         in
         result
       | `Values ->
-        let type_check {Types. val_type} = type_check val_type in
+        let type_check {Types. val_type; _} = type_check val_type in
         Env.fold_values (fun name path v candidates ->
           if not (validate `Lident `Value name) then candidates else
           let priority = if is_internal name then 0 else type_check v in
@@ -376,7 +375,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         ) prefix_path env []
 
       | `Constructor ->
-        let type_check {Types. cstr_res} = type_check cstr_res in
+        let type_check {Types. cstr_res; _} = type_check cstr_res in
         fold_constructors (fun name v candidates ->
           if not @@ validate `Lident `Cons name then candidates else
           let priority = if is_internal name then 0 else type_check v in
@@ -411,14 +410,14 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         ) prefix_path env []
 
       | `Labels ->
-        Env.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
+        Env.fold_labels (fun ({Types.lbl_name = name; _} as l) candidates ->
           if not (validate `Lident `Label name) then candidates else
             make_weighted_candidate ~exact:(name = prefix) name (`Label l)
               ~attrs:(lbl_attributes l)
             :: candidates
         ) prefix_path env []
     in
-    let rec of_kind_group = function
+    let of_kind_group = function
       | #Query_protocol.Compl.kind as k -> of_kind k
       | `Group kinds -> List.concat_map ~f:of_kind kinds
     in
@@ -455,7 +454,7 @@ let complete_methods ~env ~prefix obj =
     try ignore (String.index name ' ' : int); false
     with Not_found -> true
   in
-  let methods = List.filter has_prefix (methods_of_type env t) in
+  let methods = List.filter ~f:has_prefix (methods_of_type env t) in
   List.map methods ~f:(fun (name,ty) ->
     let info = `None (* TODO: get documentation. *) in
     { name; kind = `MethodCall; desc = `Type_scheme ty; info }
@@ -493,12 +492,12 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
        else name <> "_")
       && valid tag name
     in
-    let add_label_description ({Types.lbl_name = name} as l) candidates =
+    let add_label_description ({Types.lbl_name = name; _} as l) candidates =
       if not (valid `Label name) then candidates else
         make_candidate ?get_doc ~exact:(name = prefix) name (`Label l) ~attrs:[]
         :: candidates
     in
-    let add_label_declaration ty ({Types.ld_id = name} as l) candidates =
+    let add_label_declaration ty ({Types.ld_id = name; _} as l) candidates =
       let name = Ident.name name in
       if not (valid `Label name) then candidates else
         make_candidate ?get_doc ~exact:(name = prefix) name
@@ -559,8 +558,8 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
   | (env, node) :: branch ->
     match node with
     | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
-    | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record _ ; pat_type = t }
-    | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; exp_type = t } ->
+    | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record _ ; pat_type = t ; _ }
+    | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; exp_type = t ; _ } ->
       let is_label =
         try match t.Types.desc with
           | Types.Tconstr (p, _, _) ->
@@ -574,7 +573,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
       complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
         (env,node) branch
-    | Record_field (parent, lbl, loc) ->
+    | Record_field (parent, lbl, _) ->
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
       let snap = Btype.snapshot () in
       let is_label = match lbl.Types.lbl_all with
@@ -620,7 +619,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
       in
       Btype.backtrack snap;
       result
-    | x ->
+    | _ ->
       let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
       complete_prefix ?get_doc ?target_type ?kinds ~prefix buffer
         ~is_label:(if is_label then `Maybe else `No)
@@ -667,15 +666,14 @@ let application_context ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
       match snd (List.hd path) with
-      | Expression { exp_type = ty }
-      | Pattern { pat_type = ty } -> Some ty
+      | Expression { exp_type = ty ; _ }
+      | Pattern    { pat_type = ty ; _ } -> Some ty
       | _ -> None
     )
   in
   let context = match path with
     | (_, Expression earg) ::
-      (_, Expression ({ exp_desc = Texp_apply (efun, _);
-                        exp_type = app_type; exp_env } as app)) :: _
+      (_, Expression ({ exp_desc = Texp_apply (efun, _); _ } as app)) :: _
       when earg != efun ->
       (* Type variables shared accross arguments should all be
          printed with the same name.
@@ -701,7 +699,7 @@ let application_context ~prefix path =
       in
       let labels = Raw_compat.labels_of_application ~prefix app in
       `Application { argument_type = pr earg.exp_type;
-                     labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
+                     labels = List.map ~f:(fun (lbl,ty) -> lbl, pr ty) labels;
                    }
     | _ -> `Unknown
   in

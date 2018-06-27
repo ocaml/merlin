@@ -39,7 +39,7 @@ let monitor_errors () =
 let raise_error ?(ignore_unify=false) exn =
   !monitor_errors' := true;
   match !errors with
-  | Some (l,h) ->
+  | Some (l,_) ->
     begin match exn with
       | Ctype.Unify _ when ignore_unify -> ()
       | Ctype.Unify _ | Failure _ ->
@@ -77,12 +77,12 @@ let uncatch_errors f =
 
 let erroneous_type_register te =
   match !errors with
-  | Some (l,h) -> Btype.TypeHash.replace h te ()
+  | Some (_,h) -> Btype.TypeHash.replace h te ()
   | None -> ()
 
 let erroneous_type_check te =
   match !errors with
-  | Some (l,h) -> Btype.TypeHash.mem h te
+  | Some (_,h) -> Btype.TypeHash.mem h te
   | _ -> false
 
 let rec erroneous_expr_check e =
@@ -127,11 +127,13 @@ let flush_saved_types () =
 
 let rec get_saved_types_from_attributes = function
   | [] -> []
-  | (attr, str) :: tl
+  | (attr, str) :: _
     when attr = Saved_parts.attribute ->
     let open Parsetree in
     begin match str with
-      | PStr({pstr_desc = Pstr_eval({pexp_desc = Pexp_constant key},_)}::_) ->
+    | PStr({pstr_desc =
+              Pstr_eval ({pexp_desc = Pexp_constant key; _ } ,_)
+           ; _ } :: _) ->
         Saved_parts.find key
       | _ -> []
     end

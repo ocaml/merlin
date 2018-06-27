@@ -21,10 +21,6 @@ val constructor_descrs:
   private_flag -> (Ident.t * constructor_description) list
 val extension_descr:
   Path.t -> extension_constructor -> constructor_description
-val label_descrs:
-  type_expr -> label_declaration list ->
-    record_representation -> private_flag ->
-    (Ident.t * label_description) list
 
 exception Constr_not_found
 

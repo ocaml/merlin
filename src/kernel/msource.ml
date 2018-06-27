@@ -9,7 +9,7 @@ let dump t = `Assoc [
     "text"     , `String t.text;
   ]
 
-let dump_short t = `Assoc [
+let dump_short _ = `Assoc [
     "text"     , `String "...";
   ]
 
@@ -178,9 +178,9 @@ let substitute tr t starting ending text =
   if ending < starting then
     invalid_arg "Source.substitute: ending < starting";
   let text =
-    String.sub t.text 0 starting ^
+    String.sub t.text ~pos:0 ~len:starting ^
     text ^
-    String.sub t.text ending (len - ending)
+    String.sub t.text ~pos:ending ~len:(len - ending)
   in
   {text}
 

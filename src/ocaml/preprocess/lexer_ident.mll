@@ -14,7 +14,6 @@
 
 {
 open Std
-open Misc
 open Lexing
 open Parser_raw
 

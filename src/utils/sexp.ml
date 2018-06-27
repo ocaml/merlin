@@ -7,15 +7,6 @@ type t =
 
 let nil = Sym "nil"
 
-let hex_char c =
-  if c < 10
-  then Char.unsafe_chr (Char.code '0' + c)
-  else Char.unsafe_chr (Char.code 'A' + c - 10)
-
-let is_hex = function
-  | 'A'..'Z' | 'a'..'z' | '0'..'9' -> true
-  | _ -> false
-
 let escaped str =
   let len = String.length str in
   let extra_chars = ref 0 in

@@ -164,7 +164,7 @@ let run tr config source parsetree =
                       | `Interface _ -> "Interface _")
     parsetree
     ~return:print_result
-  @@ fun tr ->
+  @@ fun _ ->
   Mocaml.setup_config config;
   let state, cached = match pop_cache config with
     | `Cached (state, entry) -> (state, Some entry)
@@ -195,7 +195,7 @@ let run tr config source parsetree =
 let with_typer t f =
   Mocaml.with_state t.state f
 
-let get_env ?pos t =
+let get_env ?pos:_ t =
   assert (Mocaml.is_current_state t.state);
   Option.value ~default:t.initial_env (
     match t.typedtree with
@@ -243,7 +243,7 @@ let node_at tr ?(skip_recovered=false) t pos_cursor =
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node
        is introduced, so the node to check for recovery is the second one. *)
-    | (_,node) :: ((_,node') :: _ as ancestors)
+    | (_,_) :: ((_,node') :: _ as ancestors)
       when Mbrowse.is_recovered node' -> select ancestors
     | l -> l
   in

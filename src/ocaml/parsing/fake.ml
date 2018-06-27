@@ -27,16 +27,6 @@
 )* }}} *)
 
 open Parsetree
-open Std
-
-let default_loc = function
-  | None -> Location.none
-  | Some loc -> loc
-
-let mkoptloc opt x =
-  match opt with
-  | None -> Location.mknoloc x
-  | Some l -> Location.mkloc x l
 
 let app a b =
   let loc =
@@ -57,8 +47,6 @@ let prim ?(ghost=true) prim =
     else {ident with loc = {ident.loc with loc_ghost = false}}
   in
   Ast_helper.Exp.ident ~loc:ident.loc ident
-
-let any_val' = prim "Any.val'"
 
 (* Lwt extension *)
 module Lwt = struct

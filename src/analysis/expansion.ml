@@ -91,7 +91,7 @@ let spell_index s1 =
 let spell_match index str = index str
 
 let filter path ts =
-  let path = List.map spell_index path in
+  let path = List.map ~f:spell_index path in
   let rec aux_ts ts = function
     | [] -> []
     | p0 :: ps -> List.filter_map ~f:(aux_t p0 ps) ts
@@ -131,6 +131,6 @@ let get_lidents ts path =
     | components ->
       let ts = filter components ts in
       let lidents = to_lidents (List.length components - 1) ts in
-      List.map (fun x -> Some x) lidents
+      List.map ~f:(fun x -> Some x) lidents
   in
   lidents, last

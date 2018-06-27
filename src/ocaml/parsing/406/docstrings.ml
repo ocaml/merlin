@@ -147,7 +147,7 @@ let text_attr ds =
     (text_loc, PStr [item])
 
 let add_text_attrs dsl attrs =
-  let fdsl = List.filter (function {ds_body=""} -> false| _ ->true) dsl in
+  let fdsl = List.filter (function {ds_body="";_} -> false| _ ->true) dsl in
   (List.map text_attr fdsl) @ attrs
 
 (* Find the first non-info docstring in a list, attach it and return it *)

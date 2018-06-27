@@ -28,7 +28,6 @@
 
 open Std
 open Option.Infix
-open Browse_tree
 
 let print_constructor c =
   let open Types in
@@ -94,7 +93,6 @@ let summary_at pos sum =
   aux sum
 
 let signature_of_env ?(ignore_extensions=true) env =
-  let open Types in
   let sg = ref [] in
   let append item = sg := item :: !sg in
   let rec aux = function
@@ -103,7 +101,7 @@ let signature_of_env ?(ignore_extensions=true) env =
     | summary ->
       let open Raw_compat in
       Option.iter ~f:append (signature_of_summary summary);
-      Option.iter aux (summary_prev summary)
+      Option.iter ~f:aux (summary_prev summary)
   in
   aux (Env.summary env);
   Typemod.simplify_signature (!sg)

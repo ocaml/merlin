@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 (* Inclusion checks for the module language *)
 
 open Misc

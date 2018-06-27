@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 (* Detection of partial matches and unused match cases. *)
 
 open Misc

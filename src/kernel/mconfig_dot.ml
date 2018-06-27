@@ -195,7 +195,7 @@ let parse_suffix str =
     if String.get first 0 != '.' || String.get second 0 != '.' then []
     else [(first, second)]
 
-let prepend_config ~stdlib {path; directives} config =
+let prepend_config ~stdlib {path; directives; _} config =
   let cwd = Filename.dirname path in
   let expand config path acc =
     let filter name =
@@ -277,12 +277,12 @@ let ppx_of_package ?(predicates=[]) setup pkg =
       if j < l then
         match s.[j] with
         | (' '|'\t'|'\n'|'\r'|',' as c) when c <> ',' || comma ->
-          if i<j then (String.sub s i (j-i)) :: (split (j+1) (j+1))
+          if i<j then (String.sub s ~pos:i ~len:(j-i)) :: (split (j+1) (j+1))
           else split (j+1) (j+1)
         |	_ ->
           split i (j+1)
       else
-      if i<j then [ String.sub s i (j-i) ] else []
+      if i<j then [ String.sub s ~pos:i ~len:(j-i) ] else []
     in
     split 0 0
   in
@@ -292,13 +292,12 @@ let ppx_of_package ?(predicates=[]) setup pkg =
     with Not_found -> None
   and ppxopts =
     try
-      List.map
-        (fun opt ->
-           match in_words ~comma:true opt with
-           | pkg :: opts ->
-             pkg, List.map resolve_path opts
-           | _ -> assert false)
-        (in_words ~comma:false
+      List.map ~f:(fun opt ->
+        match in_words ~comma:true opt with
+        | pkg :: opts ->
+          pkg, List.map ~f:resolve_path opts
+        | _ -> assert false
+      ) (in_words ~comma:false
            (Findlib.package_property predicates pkg "ppxopt"))
     with Not_found -> []
   in
@@ -312,7 +311,7 @@ let ppx_of_package ?(predicates=[]) setup pkg =
     | lst ->
       Logger.logj ".merlin" "ppx options" @@ fun () ->
       let f (ppx,opts) =
-        `List [`String ppx; `List (List.map (fun s -> `String s) opts)]
+        `List [`String ppx; `List (List.map ~f:(fun s -> `String s) opts)]
       in
       `List (List.map ~f lst)
   end;
@@ -362,7 +361,10 @@ let is_package_optional name =
 
 let remove_option name =
   let last = String.length name - 1 in
-  if last >= 0 && name.[last] = '?' then String.sub name 0 last else name
+  if last >= 0 && name.[last] = '?' then
+    String.sub name ~pos:0 ~len:last
+  else
+    name
 
 let path_of_packages ?conf ?path ?toolchain packages =
   set_findlib_path ?conf ?path ?toolchain ();

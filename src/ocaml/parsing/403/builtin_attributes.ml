@@ -196,7 +196,7 @@ let explicit_arity =
       | _ -> false
     )
 
-let warning_scope ?ppwarning attrs f =
+let warning_scope ?ppwarning:_ attrs f =
   let prev = Warnings.backup () in
   try
     warning_attribute attrs;

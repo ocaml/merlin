@@ -30,7 +30,6 @@
 open Std
 
 open Typedtree
-open Browse_tree
 open Browse_raw
 
 let is_node_fun = function
@@ -66,32 +65,32 @@ let fun_pred = fun all ->
       assert (is_node_pattern node2);
       normalize_fun (node3 :: tail)
     (* fun let something *)
-    | node1 :: node2 :: tail when is_node_let node2 ->
+    | node1 :: node2 :: _ when is_node_let node2 ->
       assert (is_node_fun node1);
       node2
-    | node :: tail ->
+    | node :: _ ->
       assert (is_node_fun node);
       node
     | _ ->
       assert false
   in
   match all with
-  | node :: tail when is_node_fun node -> Some (normalize_fun all)
+  | node :: _ when is_node_fun node -> Some (normalize_fun all)
   | _ -> None
 ;;
 
 let let_pred = function
-  | node :: tail when is_node_let node -> Some node
+  | node :: _ when is_node_let node -> Some node
   | _ -> None
 ;;
 
 let module_pred = function
-  | (Module_binding _ as node) :: tail -> Some node
+  | (Module_binding _ as node) :: _ -> Some node
   | _ -> None
 ;;
 
 let match_pred = function
-  | (Expression { exp_desc = Texp_match _ } as node) :: tail -> Some node
+  | (Expression { exp_desc = Texp_match _ ; _ } as node) :: _ -> Some node
   | _ -> None
 ;;
 
@@ -147,7 +146,7 @@ let get typed_tree pos target =
     let preds =
       List.map targets ~f:(fun target ->
         match List.find_some all_preds ~f:(fun (name, _) -> name = target) with
-        | Some (name, f) -> f
+        | Some (_, f) -> f
         | None -> raise (No_predicate target)
       )
     in

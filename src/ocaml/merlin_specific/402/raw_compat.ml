@@ -26,8 +26,9 @@
 
 )* }}} *)
 
+[@@@ocaml.warning "-9"] (* yolo *)
+
 open Std
-open Misc
 
 (* For Browse_misc *)
 
@@ -72,7 +73,7 @@ let dest_tstr_eval str =
 (* For Completion *)
 
 let fold_types f id env acc =
-  Env.fold_types (fun s p (decl,descr) acc -> f s p decl acc) id env acc
+  Env.fold_types (fun s p (decl,_) acc -> f s p decl acc) id env acc
 
 let fold_constructors f id env acc =
   Env.fold_constructors
@@ -105,7 +106,7 @@ let labels_of_application =
       | None -> false
     in
     let unapplied_label (label,_) =
-      label <> "" && not (List.exists (is_application_of label) args)
+      label <> "" && not (List.exists ~f:(is_application_of label) args)
     in
     List.map (List.filter labels ~f:unapplied_label) ~f:(fun (label, ty) ->
         if label.[0] <> '?' then

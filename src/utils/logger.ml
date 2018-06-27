@@ -27,15 +27,11 @@
 )* }}} *)
 
 open Std
-open Sturgeon_stub
 
 type title = string
 type section = string
 
 let time = ref 0.0
-
-let reset_time () =
-  time := Sys.time ()
 
 let delta_time () =
   Sys.time () -. !time

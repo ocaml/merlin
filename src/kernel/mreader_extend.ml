@@ -45,7 +45,7 @@ let load_source t config source =
     incorrect_behavior "load_source" t;
     None
 
-let start tr name args config source =
+let start _ name args config source =
   let section = "(ext)" ^ name in
   let notify str = Logger.notify section "%s" str in
   let debug str = Logger.log "reader" section str in
@@ -92,7 +92,7 @@ let reconstruct_identifier tr pos t =
   Trace.enter tr "Mreader_extend.reconstruct_identifier %a %a"
     Lexing.print_position pos print t
     ~return:(Option.print (List.print (Location_aux.print_loc String.print)))
-  @@ fun tr ->
+  @@ fun _ ->
   match Extend_driver.reader t.driver (Req_get_ident_at pos) with
   | Res_get_ident_at ident -> Some ident
   | _ ->
@@ -131,7 +131,7 @@ let clean_tree =
 let print_pretty tr tree t =
   Trace.enter tr "Mreader_extend.print_pretty TODO %a" print t
     ~return:(Option.print String.print)
-  @@ fun tr ->
+  @@ fun _ ->
   let tree = clean_tree tree in
   match Extend_driver.reader t.driver (Req_pretty_print tree) with
   | Res_pretty_print str -> Some str
@@ -141,7 +141,7 @@ let print_pretty tr tree t =
 
 let print_outcomes tr ts t =
   Trace.enter tr "Mreader_extend.print_outcomes TODO %a" print t
-    ~return:(Option.print (List.print String.print)) @@ fun tr ->
+    ~return:(Option.print (List.print String.print)) @@ fun _ ->
   match ts with
   | [] -> Some []
   | ts -> match Extend_driver.reader t.driver (Req_print_outcome ts) with
@@ -152,7 +152,7 @@ let print_outcomes tr ts t =
 
 let print_outcome tr o t =
   Trace.enter tr "Mreader_extend.print_outcome TODO %a" print t
-    ~return:(Option.print String.print) @@ fun tr ->
+    ~return:(Option.print String.print) @@ fun _ ->
   match Extend_driver.reader t.driver (Req_print_outcome [o]) with
   | Res_print_outcome [o] -> Some o
   | _ ->

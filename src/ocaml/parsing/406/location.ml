@@ -87,73 +87,6 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
-(* Highlight the location by printing it again. *)
-
-let highlight_dumb ppf lb loc =
-  (* Char 0 is at offset -lb.lex_abs_pos in lb.lex_buffer. *)
-  let pos0 = -lb.lex_abs_pos in
-  (* Do nothing if the buffer does not contain the whole phrase. *)
-  if pos0 < 0 then raise Exit;
-  let end_pos = lb.lex_buffer_len - pos0 - 1 in
-  (* Determine line numbers for the start and end points *)
-  let line_start = ref 0 and line_end = ref 0 in
-  for pos = 0 to end_pos do
-    if Bytes.get lb.lex_buffer (pos + pos0) = '\n' then begin
-      if loc.loc_start.pos_cnum > pos then incr line_start;
-      if loc.loc_end.pos_cnum   > pos then incr line_end;
-    end
-  done;
-  (* Print character location (useful for Emacs) *)
-  Format.fprintf ppf "@[<v>Characters %i-%i:@,"
-                 loc.loc_start.pos_cnum loc.loc_end.pos_cnum;
-  (* Print the input, underlining the location *)
-  Format.pp_print_string ppf "  ";
-  let line = ref 0 in
-  let pos_at_bol = ref 0 in
-  for pos = 0 to end_pos do
-    match Bytes.get lb.lex_buffer (pos + pos0) with
-    | '\n' ->
-      if !line = !line_start && !line = !line_end then begin
-        (* loc is on one line: underline location *)
-        Format.fprintf ppf "@,  ";
-        for _i = !pos_at_bol to loc.loc_start.pos_cnum - 1 do
-          Format.pp_print_char ppf ' '
-        done;
-        for _i = loc.loc_start.pos_cnum to loc.loc_end.pos_cnum - 1 do
-          Format.pp_print_char ppf '^'
-        done
-      end;
-      if !line >= !line_start && !line <= !line_end then begin
-        Format.fprintf ppf "@,";
-        if pos < loc.loc_end.pos_cnum then Format.pp_print_string ppf "  "
-      end;
-      incr line;
-      pos_at_bol := pos + 1
-    | '\r' -> () (* discard *)
-    | c ->
-      if !line = !line_start && !line = !line_end then
-        (* loc is on one line: print whole line *)
-        Format.pp_print_char ppf c
-      else if !line = !line_start then
-        (* first line of multiline loc:
-           print a dot for each char before loc_start *)
-        if pos < loc.loc_start.pos_cnum then
-          Format.pp_print_char ppf '.'
-        else
-          Format.pp_print_char ppf c
-      else if !line = !line_end then
-        (* last line of multiline loc: print a dot for each char
-           after loc_end, even whitespaces *)
-        if pos < loc.loc_end.pos_cnum then
-          Format.pp_print_char ppf c
-        else
-          Format.pp_print_char ppf '.'
-      else if !line > !line_start && !line < !line_end then
-        (* intermediate line of multiline loc: print whole line *)
-        Format.pp_print_char ppf c
-  done;
-  Format.fprintf ppf "@]"
-
 (* Print the location in some way or another *)
 
 open Format
@@ -203,7 +136,7 @@ let default_printer ppf loc =
 ;;
 
 let printer = ref default_printer
-let print ppf loc = () (*!printer ppf loc*)
+let print _ppf _loc = () (*!printer ppf loc*)
 
 let error_prefix = "Error"
 let warning_prefix = "Warning"
@@ -325,7 +258,7 @@ let error_of_exn exn =
      in
      loop !error_of_exn
 
-let rec default_error_reporter ppf {loc; msg; sub; if_highlight} =
+let rec default_error_reporter ppf {loc; msg; sub; _} =
   fprintf ppf "@[<v>%a %s" print_error loc msg;
   List.iter (Format.fprintf ppf "@,@[<2>%a@]" default_error_reporter) sub;
   fprintf ppf "@]"

@@ -38,4 +38,4 @@ module Widget = struct
 
 end
 
-let create_cursor Shell ~name = Cursor
+let create_cursor Shell ~name:_ = Cursor

@@ -161,7 +161,7 @@ let enclosing pos roots =
   | [] -> []
   | root -> best_node pos (select_leafs pos root)
 
-let deepest_before trace pos roots =
+let deepest_before _ pos roots =
   match enclosing pos roots with
   | [] -> []
   | root ->
@@ -180,7 +180,7 @@ let deepest_before trace pos roots =
       in
       match fold_node select_candidate env0 node0 None with
       | None -> path
-      | Some (env,loc,node) ->
+      | Some (env, _,node) ->
         aux ((env,node) :: path)
     in
     (aux root)
@@ -212,16 +212,17 @@ let optional_label_sugar = function
     Some e
   | _ -> None
 
-let rec is_recovered_expression = function
+let rec is_recovered_expression e =
+  match e.Typedtree.exp_desc with
   | (* Recovery on arbitrary expressions *)
-    { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
+    Texp_tuple [_] ->
     true
   | (* Recovery on unbound identifier *)
-    { Typedtree.exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) }
+    Texp_ident (Path.Pident id, _, _)
     when Ident.name id = "*type-error*" ->
     true
   | (* Recovery on desugared optional label application *)
-    { Typedtree.exp_desc = (Typedtree.Texp_construct _ as cstr) }
+    Texp_construct _ as cstr
     when is_recovered_Texp_construct cstr ->
     true
   | _ -> false

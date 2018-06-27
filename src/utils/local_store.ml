@@ -25,13 +25,13 @@ let restore l = List.iter ~f:(fun (V(r,v)) -> r := v) l
 
 let with_scope scope f =
   let backup = List.rev_map ~f:(fun (Slot {ref;_}) -> V (ref,!ref)) scope in
-  List.iter (fun (Slot {ref;value}) -> ref := value) scope;
+  List.iter ~f:(fun (Slot {ref;value}) -> ref := value) scope;
   match f () with
   | x ->
-    List.iter (fun (Slot s) -> s.value <- !(s.ref)) scope;
+    List.iter ~f:(fun (Slot s) -> s.value <- !(s.ref)) scope;
     restore backup;
     x
   | exception exn ->
-    List.iter (fun (Slot s) -> s.value <- !(s.ref)) scope;
+    List.iter ~f:(fun (Slot s) -> s.value <- !(s.ref)) scope;
     restore backup;
     reraise exn

@@ -183,7 +183,7 @@ module List = struct
   let take_n n l = take_n [] n l
 
   let rec drop_n n = function
-    | x :: xs when n > 0 -> drop_n (n - 1) xs
+    | _ :: xs when n > 0 -> drop_n (n - 1) xs
     | xs -> xs
 
   let rec split_n acc n = function
@@ -198,7 +198,7 @@ module List = struct
 
   let rec unfold ~f a = match f a with
     | None -> []
-    | Some a -> a :: unfold f a
+    | Some a -> a :: unfold ~f a
 
   let rec rev_unfold acc ~f a = match f a with
     | None -> acc
@@ -232,8 +232,8 @@ module List = struct
     let rec filter_map ~f = function
       | Nil -> Nil
       | Cons (a, tl) -> match f a with
-        | None -> filter_map f (Lazy.force tl)
-        | Some a' -> Cons (a', lazy (filter_map f (Lazy.force tl)))
+        | None -> filter_map ~f (Lazy.force tl)
+        | Some a' -> Cons (a', lazy (filter_map ~f (Lazy.force tl)))
   end
 
   let rec last = function
@@ -360,7 +360,7 @@ module String = struct
        with Not_found -> false)
 
   (* Drop characters from beginning of string *)
-  let drop n s = sub s n (length s - n)
+  let drop n s = sub s ~pos:n ~len:(length s - n)
 
   module Set = struct
     include MoreLabels.Set.Make (struct type t = string let compare = compare end)
@@ -370,7 +370,8 @@ module String = struct
 
   module Map = struct
     include MoreLabels.Map.Make (struct type t = string let compare = compare end)
-    let of_list l = List.fold_left ~f:(fun m (k,v) -> add k v m) l ~init:empty
+    let of_list l =
+      List.fold_left ~f:(fun m (k,v) -> add ~key:k ~data:v m) l ~init:empty
     let to_list m = fold ~f:(fun ~key ~data xs -> (key,data) :: xs) m ~init:[]
 
     let keys   m = fold ~f:(fun ~key ~data:_ xs -> key  :: xs) m ~init:[]
@@ -382,7 +383,7 @@ module String = struct
         with Not_found -> []
       in
       let data = data :: current in
-      add key data t
+      add ~key ~data t
   end
 
   let mem c s =
@@ -512,7 +513,7 @@ module Lexing = struct
       in
       if count <= 0 then 0
       else begin
-          String.blit !source !pos buf 0 count;
+          String.blit ~src:!source ~src_pos:!pos ~dst:buf ~dst_pos:0 ~len:count;
           pos := !pos + count;
           (match empty with None -> () | Some r -> r := !pos >= !len);
           count

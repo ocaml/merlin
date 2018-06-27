@@ -25,9 +25,6 @@ open Parsetree
 let prefix_symbols  = [ '!'; '?'; '~' ] ;;
 let infix_symbols = [ '='; '<'; '>'; '@'; '^'; '|'; '&'; '+'; '-'; '*'; '/';
                       '$'; '%' ]
-let operator_chars = [ '!'; '$'; '%'; '&'; '*'; '+'; '-'; '.'; '/';
-                       ':'; '<'; '='; '>'; '?'; '@'; '^'; '|'; '~' ]
-let numeric_chars  = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]
 
 (* type fixity = Infix| Prefix  *)
 
@@ -341,7 +338,7 @@ class printer  ()= object(self:'self)
     else match x.ppat_desc with
     | Ppat_alias (p, s) -> pp f "@[<2>%a@;as@;%a@]"
           self#pattern p protect_ident s.txt (* RA*)
-    | Ppat_or (p1, p2) -> (* *)
+    | Ppat_or _ -> (* *)
         pp f "@[<hov0>%a@]" (self#list ~sep:"@\n|@ " self#pattern)
            (list_of_pattern [] x)
     | _ -> self#pattern1 f x

@@ -27,6 +27,4 @@
 
 )* }}} *)
 
-open Sturgeon_stub
-
 val dispatch : Mpipeline.t -> 'a Query_protocol.t -> 'a

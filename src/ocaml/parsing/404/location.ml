@@ -89,34 +89,6 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
-(* Highlight the locations using standout mode. *)
-
-let highlight_terminfo ppf num_lines lb locs =
-  Format.pp_print_flush ppf ();  (* avoid mixing Format and normal output *)
-  (* Char 0 is at offset -lb.lex_abs_pos in lb.lex_buffer. *)
-  let pos0 = -lb.lex_abs_pos in
-  (* Do nothing if the buffer does not contain the whole phrase. *)
-  if pos0 < 0 then raise Exit;
-  (* Count number of lines in phrase *)
-  let lines = ref !num_loc_lines in
-  for i = pos0 to lb.lex_buffer_len - 1 do
-    if Bytes.get lb.lex_buffer i = '\n' then incr lines
-  done;
-  (* If too many lines, give up *)
-  if !lines >= num_lines - 2 then raise Exit;
-  (* Move cursor up that number of lines *)
-  flush stdout;
-  (* Print the input, switching to standout for the location *)
-  let bol = ref false in
-  print_string "# ";
-  for pos = 0 to lb.lex_buffer_len - pos0 - 1 do
-    if !bol then (print_string "  "; bol := false);
-    let c = Bytes.get lb.lex_buffer (pos + pos0) in
-    print_char c;
-    bol := (c = '\n')
-  done;
-  flush stdout
-
 (* Highlight the location by printing it again. *)
 
 let highlight_dumb ppf lb loc =
@@ -223,7 +195,7 @@ let print_filename ppf file =
 let reset () =
   num_loc_lines := 0
 
-let (msg_file, msg_line, msg_chars, msg_to, msg_colon) =
+let (msg_file, msg_line, msg_chars, msg_to, _msg_colon) =
   ("File \"", "\", line ", ", characters ", "-", ":")
 
 (* return file, line, char from the given position *)
@@ -246,13 +218,7 @@ let print_loc ppf loc =
   end
 ;;
 
-let print' ppf loc =
-  if loc.loc_start.pos_fname = "//toplevel//"
-  && highlight_locations ppf [loc] then ()
-  else fprintf ppf "@{<loc>%a@}%s@." print_loc loc msg_colon
-;;
-
-let print ppf loc = ()
+let print _ppf _loc = ()
 ;;
 
 let error_prefix = "Error"

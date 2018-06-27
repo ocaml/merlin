@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+[@@@ocaml.warning "-27-32"]
+
 open Longident
 open Asttypes
 open Parsetree

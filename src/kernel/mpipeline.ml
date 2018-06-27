@@ -50,7 +50,8 @@ let input_config t = t.config
 let input_source t = t.source
 
 let get_lexing_pos t pos =
-  Msource.get_lexing_pos t.trace t.source (Mconfig.filename t.config) pos
+  Msource.get_lexing_pos t.trace t.source ~filename:(Mconfig.filename t.config)
+    pos
 
 let with_reader t f =
   Mreader.with_ambient_reader t.trace t.config t.source f
@@ -91,14 +92,14 @@ let process trace
       result, config
     )) in
   let ppx = timed_lazy ppx_time (lazy (
-      let lazy ({Mreader.parsetree}, config) = reader in
+      let lazy ({Mreader.parsetree; _}, config) = reader in
       let caught = ref [] in
       Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
       let config, parsetree = Mppx.rewrite trace config parsetree in
       { Ppx. config; parsetree; errors = !caught }
     )) in
   let typer = timed_lazy typer_time (lazy (
-      let lazy { Ppx. config; parsetree; errors } = ppx in
+      let lazy { Ppx. config; parsetree; _ } = ppx in
       let result = Mtyper.run trace config source parsetree in
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
       { Typer. errors; result }
@@ -110,7 +111,7 @@ let make tr config source =
   process tr (Mconfig.normalize tr config) source
 
 let for_completion position
-    {trace; config; source; reader_time; ppx_time; typer_time; error_time} =
+    {trace; config; source; reader_time; ppx_time; typer_time; error_time; _} =
   process trace config source
     ~reader_time ~ppx_time ~typer_time ~error_time ~for_completion:position
 

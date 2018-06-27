@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Parsetree
-
 (* Assuming an expression (or other constructs occuring inside expressions,
    like cases of a match statement) is in tail-position, returns all
    sub-expression that will be evaluated in tail-position too *)

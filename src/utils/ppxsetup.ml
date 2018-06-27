@@ -38,7 +38,7 @@ type t = {
 let empty = { ppxs = []; ppxopts = StringMap.empty }
 
 let add_ppx ppx t =
-  if List.mem ppx t.ppxs
+  if List.mem ppx ~set:t.ppxs
   then t
   else {t with ppxs = ppx :: t.ppxs}
 
@@ -57,7 +57,7 @@ let add_ppxopts ppx opts t =
 
 let union ta tb =
   { ppxs = List.filter_dup (ta.ppxs @ tb.ppxs);
-    ppxopts = StringMap.merge (fun k a b -> match a, b with
+    ppxopts = StringMap.merge (fun _ a b -> match a, b with
         | v, None | None, v -> v
         | Some a, Some b -> Some (List.filter_dup (a @ b)))
         ta.ppxopts tb.ppxopts
@@ -71,7 +71,7 @@ let command_line t =
         with Not_found -> []
       in
       let opts = List.concat (List.rev opts) in
-      String.concat " " (ppx :: opts) :: ppxs)
+      String.concat ~sep:" " (ppx :: opts) :: ppxs)
     t.ppxs ~init:[]
 
 let dump t =

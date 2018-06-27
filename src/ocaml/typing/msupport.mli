@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Std
-
 (** Raise an error that can be caught: normal flow is resumed if a
     [catch_errors] handler was installed. *)
 val raise_error: ?ignore_unify:bool -> exn -> unit
