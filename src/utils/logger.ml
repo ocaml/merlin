@@ -41,13 +41,20 @@ let destination = ref None
 let output_section oc section title =
   Printf.fprintf oc "# %2.2f %s - %s\n" (delta_time ()) section title
 
+let log_flush () =
+  match !destination with
+  | None -> ()
+  | Some oc -> flush oc
+
 let log section title msg =
   match !destination with
   | None -> ()
   | Some oc ->
     output_section oc section title;
-    output_string oc msg;
-    output_char oc '\n'
+    if msg <> "" then (
+      output_string oc msg;
+      output_char oc '\n';
+    )
 
 let logf section title =
   Printf.ksprintf (log section title)
@@ -90,6 +97,7 @@ let with_log_file file f =
   match file with
   | None -> f ()
   | Some file ->
+    log_flush ();
     let destination', release = match file with
       | "" -> (None, ignore)
       | "-" -> (Some stderr, ignore)
@@ -105,6 +113,7 @@ let with_log_file file f =
     let destination0 = !destination in
     destination := destination';
     let release () =
+      log_flush ();
       destination := destination0;
       release ()
     in
