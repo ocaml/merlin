@@ -109,9 +109,30 @@ let exact_file_exists ~dirname ~basename =
   let path' = fs_exact_case path in
   path == path' || basename = Filename.basename path'
 
+let homedir =
+  let dir =
+    lazy (
+      try
+        let dir = (Unix.getpwuid (Unix.getuid ())).Unix.pw_dir in
+        fun () -> dir
+      with exn ->
+      try
+        let dir = Sys.getenv "HOME" in
+        fun () -> dir
+      with _ ->
+        let exn = Printexc.to_string exn in
+        fun () ->
+          Logger.log "Misc" "exception getting homedir" exn;
+          "/"
+    )
+  in
+  fun () -> Lazy.force dir ()
+
 let canonicalize_filename ?cwd path =
   let parts =
     match split_path path [] with
+    | dot :: "~" :: rest when dot = Filename.current_dir_name ->
+      homedir () :: rest
     | dot :: rest when dot = Filename.current_dir_name ->
       split_path (match cwd with None -> Sys.getcwd () | Some c -> c) rest
     | parts -> parts
