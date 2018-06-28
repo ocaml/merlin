@@ -4,7 +4,7 @@ let post_flags_f = Sys.argv.(3)
 
 let pre_flags, post_flags =
   if Str.string_match (Str.regexp "msvc") ccomp_type 0 then
-    "/nologo /Fe", "advapi32.lib"
+    "/Fe", "advapi32.lib"
   else
     "-o", ""
 

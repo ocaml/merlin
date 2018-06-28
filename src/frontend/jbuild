@@ -34,7 +34,7 @@
 (rule
  ((targets (ocamlmerlin.exe))
   (deps    (ocamlmerlin.c pre-flags post-flags))
-  (action  (run ${CC} ${read-lines:pre-flags}"${@}" ${<} ${read-lines:post-flags}))))
+  (action  (run ${CC} "${read-lines:pre-flags}${@}" ${<} ${read-lines:post-flags}))))
 
 (install
  ((section bin)
