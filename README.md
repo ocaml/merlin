@@ -24,23 +24,21 @@ Manually building and installing Merlin
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.02.3, ocamlfind, yojson.
+Dependencies: ocaml >= 4.02.3, ocamlfind, yojson, dune.
 
 ```shell
-./configure
- make
+jbuilder build
 ```
-
-The configure script will check that all the dependencies are met, and will allow you to choose where to install Merlin.
 
 Installation
 ------------
 
 If you haven't encountered any errors in the previous step, just run:
 
-    $ make install 
+    $ jbuilder install
 
-Installation directory is determined by the prefix selected by `configure`. It defaults to `/usr/local`.
+You can pass an explicit prefix to jbuilder, using `--prefix`. It defaults to
+your current opam switch.
 
 Editor setup
 ============
@@ -50,9 +48,8 @@ To setup Emacs and Vim, you need to instruct them to run the appropriate script 
 In the rest of the document, \<SHARE\_DIR\> refers to the directory where Merlin data files are installed.
 
 It will usually be:  
-- "/usr/local/share" if you used manual configuration Merlin  
-- "\<prefix\>/share" if you explicitly specified a prefix when configuring Merlin  
-- printed by the command `opam config var share`, if you used opam
+- printed by the command `opam config var share`, if you used opam  
+- "\<prefix\>/share" if you explicitly specified a prefix when configuring Merlin
 
 ### Vim setup
 
@@ -230,6 +227,7 @@ Contributors:
 * [Markus Mottl](https://github.com/mmottl)
 * [Milo Davis](https://github.com/MiloDavis)
 * [Nick Borden](https://github.com/hcwndbyw)
+* [Nicolás Ojeda Bar](https://github.com/nojb)
 * [Olivier Andrieu](https://github.com/oandrieu)
 * [Philipp Haselwarter](https://github.com/haselwarter)
 * [Pierre Chambart](https://github.com/chambart)
