@@ -90,9 +90,6 @@ type flag_list = {
   flag_list : string list;
 }
 
-let flag_list ?(cwd=(!cwd)) flag_list =
-  { flag_cwd = cwd; flag_list }
-
 type merlin = {
   build_path  : string list;
   source_path : string list;
@@ -281,7 +278,10 @@ let load_dotmerlins ~filenames t =
       if dot.reader = []
       then merlin.reader
       else dot.reader;
-    flags_to_apply = List.map ~f:flag_list dot.flags @ merlin.flags_to_apply;
+    flags_to_apply =
+      List.map
+        ~f:(fun (cwd, flag_list) -> {flag_cwd = Some cwd; flag_list}) dot.flags
+      @ merlin.flags_to_apply;
     dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
     packages_to_load = dot.packages @ merlin.packages_to_load;
   } in
@@ -380,8 +380,10 @@ let merlin_flags = [
   (
     "-flags",
     Marg.param "string" (fun flags merlin ->
-        {merlin with flags_to_apply = flag_list (Shell.split_command flags) ::
-                                      merlin.flags_to_apply}),
+        let flags =
+          { flag_cwd = None;  flag_list = Shell.split_command flags }
+        in
+        {merlin with flags_to_apply = flags :: merlin.flags_to_apply}),
     "<quoted flags> Unescape argument and interpret it as more flags"
   );
   (

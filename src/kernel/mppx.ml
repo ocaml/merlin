@@ -6,7 +6,7 @@ let change_directory dir =
   | () -> true
   | exception exn ->
     Logger.logf "Mppx" "changing directory"
-      "chang_directory %S failed with %t" dir
+      "change_directory %S failed with %t" dir
       (fun () -> Printexc.to_string exn);
     false
 
