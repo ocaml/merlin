@@ -14,8 +14,6 @@ type error =
   | CannotRun of string
   | WrongMagic of string
 
-exception Error of error
-
 (* Note: some of the functions here should go to Ast_mapper instead,
    which would encapsulate the "binary AST" protocol. *)
 
@@ -28,44 +26,66 @@ let write_ast magic ast =
   close_out oc;
   fn
 
-let null = match Sys.os_type with "Win32" -> " NUL" | _ -> "/dev/null"
+let report_error = function
+  | CannotRun cmd ->
+    Logger.logf "Pparse" "report_error"
+      "Error while running external preprocessor. Command line: %s" cmd
+  | WrongMagic cmd ->
+    Logger.logf "Pparse" "report_error"
+      "External preprocessor does not produce a valid file. Command line: %s" cmd
 
 let ppx_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s %s 1>%s 2>%s"
-    cmd (Filename.quote fn_in) (Filename.quote fn_out) null null
+  Printf.sprintf "%s %s %s 1>&2"
+    cmd (Filename.quote fn_in) (Filename.quote fn_out)
 
 let pp_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s 1>%s"
     cmd (Filename.quote fn_in) (Filename.quote fn_out)
 
-let apply_rewriter magic fn_in ppx =
+let apply_rewriter magic (fn_in, failures) ppx =
+  Logger.log "Pparse" "apply_rewriter" ppx;
+  Logger.log_flush ();
   let fn_out = Filename.temp_file "camlppx" "" in
   let comm = ppx_commandline ppx fn_in fn_out in
-  let ok = Sys.command comm = 0 in
-  if ok then
-    Misc.remove_file fn_in
-  else begin
-    try
-      Sys.rename fn_in
-        (Filename.concat (Filename.get_temp_dir_name ()) "camlppx.lastfail")
-    with _ -> ()
-  end;
-  if not ok then begin
+  let failure =
+    let ok = Sys.command comm = 0 in
+    if not ok then Some (CannotRun comm)
+    else if not (Sys.file_exists fn_out) then
+      Some (WrongMagic comm)
+    else
+      (* check magic before passing to the next ppx *)
+      let ic = open_in_bin fn_out in
+      let buffer =
+        try really_input_string ic (String.length magic)
+        with End_of_file -> ""
+      in
+      close_in ic;
+      if buffer <> magic then
+        Some (WrongMagic comm)
+      else
+        None
+  in
+  match failure with
+  | Some err ->
     Misc.remove_file fn_out;
-    raise (Error (CannotRun comm));
-  end;
-  if not (Sys.file_exists fn_out) then
-    raise (Error (WrongMagic comm));
-  (* check magic before passing to the next ppx *)
-  let ic = open_in_bin fn_out in
-  let buffer =
-    try really_input_string ic (String.length magic) with End_of_file -> "" in
-  close_in ic;
-  if buffer <> magic then begin
-    Misc.remove_file fn_out;
-    raise (Error (WrongMagic comm));
-  end;
-  fn_out
+    let fallback =
+      let fallback =
+        Filename.concat (Filename.get_temp_dir_name ())
+          ("camlppx.lastfail" ^ string_of_int failures)
+      in
+      match Sys.rename fn_in fallback with
+      | () -> fallback
+      | exception exn ->
+        Logger.logf "Pparse" "apply_rewriter"
+          "exception while renaming ast: %a"
+          (fun () -> Printexc.to_string) exn;
+        fn_in
+    in
+    report_error (CannotRun comm);
+    (fallback, failures + 1)
+  | None ->
+    Misc.remove_file fn_in;
+    (fn_out, failures)
 
 let read_ast magic fn =
   let ic = open_in_bin fn in
@@ -83,9 +103,12 @@ let read_ast magic fn =
     raise exn
 
 let rewrite magic ast ppxs =
-  read_ast magic
-    (List.fold_left (apply_rewriter magic) (write_ast magic ast)
-       (List.rev ppxs))
+  let fn_out, _ =
+    List.fold_left
+      (apply_rewriter magic) (write_ast magic ast, 0) (List.rev ppxs)
+  in
+  read_ast magic fn_out
+
 
 let apply_rewriters_str ~ppx ?(restore = true) ~tool_name ast =
   match ppx with
@@ -124,7 +147,7 @@ let read_ast magic fn =
     Misc.remove_file fn;
     raise exn
 
-let apply_pp ~filename ~source ~pp =
+(*let apply_pp ~filename ~source ~pp =
   let fn_in = Filename.temp_file "merlinpp" (Filename.basename filename) in
   begin
     let oc = open_out_bin fn_in in
@@ -152,19 +175,4 @@ let apply_pp ~filename ~source ~pp =
     `Interface (read_ast Config.ast_intf_magic_number fn_out
                 : Parsetree.signature)
   else
-    Misc.fatal_error "OCaml and preprocessor have incompatible versions"
-
-let report_error ppf = function
-  | CannotRun cmd ->
-    Format.fprintf ppf "Error while running external preprocessor@.\
-                 Command line: %s@." cmd
-  | WrongMagic cmd ->
-    Format.fprintf ppf "External preprocessor does not produce a valid file@.\
-                 Command line: %s@." cmd
-
-let () =
-  Location.register_error_of_exn
-    (function
-      | Error err -> Some (Location.error_of_printer_file report_error err)
-      | _ -> None
-    )
+    Misc.fatal_error "OCaml and preprocessor have incompatible versions"*)
