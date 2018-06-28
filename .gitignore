@@ -2,12 +2,11 @@ _build
 .merlin
 jbuild-workspace
 *.install
-Makefile.config
 *.tar.gz
 *.pyc
-config.iss
-._d
-._ncdi
+
+ocamlmerlin
+ocamlmerlin-server
 
 # Ignore garbage files from editors
 *.un~
