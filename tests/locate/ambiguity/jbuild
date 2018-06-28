@@ -6,3 +6,12 @@
       (setenv MERLIN ${exe:../../merlin-wrapper}
         (run ${bin:cram} ${<}))
       (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (not-in-env.t))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
