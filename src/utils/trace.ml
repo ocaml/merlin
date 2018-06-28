@@ -1,9 +1,10 @@
 (*open Sturgeon_stub*)
 
 let ikfprintf =
-  let open Printf in
-  let open Printf_compat in
-  ikfprintf
+  let open CamlinternalFormatBasics in
+  let open CamlinternalFormat in
+  fun k oc (Format (fmt, _)) ->
+    make_printf (fun oc _ -> k oc) oc End_of_acc fmt
 
 (*let destination = ref null*)
 

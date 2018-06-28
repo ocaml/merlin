@@ -1,0 +1,17 @@
+(alias
+  ((name runtime-deps-of-test)
+   (deps (a.ml a.mli b.mli b.ml))
+   (action
+     (progn
+       (run ${OCAMLC} -c -bin-annot a.mli a.ml)
+       (run ${OCAMLC} -c -bin-annot b.mli b.ml)))))
+
+(alias
+ ((name runtest)
+  (deps (test.t
+         (alias runtime-deps-of-test)))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))

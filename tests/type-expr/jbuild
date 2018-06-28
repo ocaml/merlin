@@ -1,0 +1,8 @@
+(alias
+ ((name runtest)
+  (deps (test.t test.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))

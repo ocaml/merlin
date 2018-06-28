@@ -1,0 +1,8 @@
+(alias
+ ((name runtest)
+  (deps (expansion.t))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))

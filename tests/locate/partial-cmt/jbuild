@@ -1,0 +1,9 @@
+(alias
+ ((name runtest)
+  (deps (test.t test.ml a.ml a.mli))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+      (setenv OCAMLC ${OCAMLC}
+        (run ${bin:cram} ${<})))
+      (diff? ${<} ${<}.corrected)))))

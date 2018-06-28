@@ -416,6 +416,16 @@ module String = struct
     if r0 = 0 && rl = l then str else sub str ~pos:r0 ~len:(rl - r0)
 
   let print () s = Printf.sprintf "%S" s
+
+  (* FIXME: Remove once we drop support for 4.02 and replace the calls by their
+     [_ascii] version. *)
+  [@@@ocaml.warning "-3"]
+
+  let capitalize = capitalize
+  let uncapitalize = uncapitalize
+
+  let lowercase = lowercase
+  let uppercase = uppercase
 end
 
 let sprintf = Printf.sprintf
@@ -548,6 +558,11 @@ module Lexing = struct
 end
 
 module Char = struct
+
+  (* FIXME: Remove once we drop support for 4.02 and replace the calls to
+     [uppercase] and [lowercase] by their [_ascii] version. *)
+  [@@@ocaml.warning "-3"]
+
   include Char
   let is_lowercase c = lowercase c = c
   let is_uppercase c = uppercase c = c

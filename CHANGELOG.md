@@ -1,3 +1,8 @@
+git version
+===========
+
+Switched to jbuilder (thanks to @nojb).
+
 merlin 3.1.0
 ============
 Wed Jun 20 14:05:04 BST 2018

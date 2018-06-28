@@ -1,0 +1,53 @@
+(alias
+ ((name runtest)
+  (deps (environment_on_open.t environment_on_open.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (field.t field.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (from_a_pattern.t from_a_pattern.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (label.t label.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (mod_constr.t mod_constr.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))
+
+(alias
+ ((name runtest)
+  (deps (test.t test.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+        (run ${bin:cram} ${<}))
+      (diff? ${<} ${<}.corrected)))))

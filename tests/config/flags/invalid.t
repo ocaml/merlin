@@ -2,9 +2,7 @@
   {
     "class": "return",
     "value": {
-      "dot_merlins": [
-        ".merlin"
-      ],
+      "dot_merlins": [],
       "failures": [
         "unknown flag -lalala"
       ]

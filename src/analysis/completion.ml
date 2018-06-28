@@ -163,13 +163,13 @@ let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
     | `Cons c  -> (`Constructor, `Constructor c)
     | `Label label_descr ->
       let desc =
-        Types.(Tarrow (Raw_compat.no_label,
+        Types.(Tarrow (Ast_helper.no_label,
                        label_descr.lbl_res, label_descr.lbl_arg, Cok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Label_decl (ty,label_decl) ->
       let desc =
-        Types.(Tarrow (Raw_compat.no_label,
+        Types.(Tarrow (Ast_helper.no_label,
                        ty, label_decl.ld_type, Cok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
