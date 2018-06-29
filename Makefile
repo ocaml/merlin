@@ -1,7 +1,7 @@
+all: build ocamlmerlin ocamlmerlin-server
+
 dev:
 	jbuilder build --dev -j16
-
-all: build ocamlmerlin ocamlmerlin-server
 
 build:
 	jbuilder build
