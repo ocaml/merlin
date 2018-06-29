@@ -75,9 +75,9 @@ let run = function
         let config, command_args =
           let fails = ref [] in
           let config, command_args =
-            Marg.parse_all ~warning:(fun fail -> fails := fail :: !fails)
-              Mconfig.arguments_table (List.map snd spec)
-              raw_args Mconfig.initial command_args
+            Mconfig.parse_arguments
+              ~wd:(Sys.getcwd ()) ~warning:(fun w -> fails := w :: !fails)
+              (List.map snd spec) raw_args Mconfig.initial command_args
           in
           let config =
             Mconfig.({config with merlin = {config.merlin with failures = !fails}})
