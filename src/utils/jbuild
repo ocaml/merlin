@@ -20,7 +20,7 @@
   (wrapped false)
   (libraries (str
               (select sturgeon_stub.ml from
-                      (sturgeon -> ../sturgeon_stub/sturgeon_stub.ml)
+                      (sturgeon threads -> ../sturgeon_stub/sturgeon_stub.ml)
                       (!sturgeon -> ../sturgeon_null/sturgeon_stub.ml))
               yojson
               unix))
