@@ -18,9 +18,7 @@ Printf.ksprintf J.send {|
     (copy  %s/parser_raw.ml.staged     parser_raw.ml)
     (copy  %s/parser_raw.mli.staged    parser_raw.mli)))
 
-(ocamllex
-  ((modules (lexer_ident))
-   (mode    promote)))
+(ocamllex ((modules (lexer_ident))))
 
 (library
   ((name preprocess)
