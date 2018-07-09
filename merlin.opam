@@ -20,7 +20,7 @@ depends: [
   "jbuilder"  {build & >= "1.0+beta20"}
   "ocamlfind" {>= "1.5.2"}
   "yojson"
-  "cram" {test}
+  "craml" {test}
 ]
 
 available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.08" ]
