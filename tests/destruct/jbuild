@@ -4,5 +4,5 @@
   (action
     (progn
       (setenv MERLIN ${path:../merlin-wrapper}
-        (run ${bin:cram} ${<}))
+        (run ${bin:craml} ${<}))
       (diff? ${<} ${<}.corrected)))))

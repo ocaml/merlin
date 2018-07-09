@@ -3,8 +3,6 @@ sudo: true
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script: bash -ex .travis-opam.sh
 env:
-  global:
-  - PINS="cram.dev:https://github.com/realworldocaml/ocaml-cram.git"
   matrix:
   - OCAML_VERSION=4.02
   - OCAML_VERSION=4.03
