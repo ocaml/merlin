@@ -430,6 +430,29 @@ return (LOC1 . LOC2)."
 ;; PROCESS MANAGEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun merlin/callback-parse-result (result)
+  "For use by the callback: retrieve the actual result of the merlin call, or reraise the error"
+  (cond ((listp result) (car result))
+        ((stringp result) (error result))
+        (t (error (format "merlin: unexpected callback result: %s" result)))))
+
+(defun merlin--parse-call-result (result)
+  "Parse the result string of a merlin call"
+  (condition-case err
+      (let ((result (car (read-from-string result))))
+        (let ((notifications (cdr-safe (assoc 'notifications result)))
+              (class (cdr-safe (assoc 'class result)))
+              (value (cdr-safe (assoc 'value result))))
+          (dolist (notification notifications)
+            (message "(merlin) %s" notification))
+          (cond ((string-equal class "return") (list value)) ; wrap in cons cell
+                ((string-equal class "failure")
+                 (format "merlin-mode failure: %s" value))
+                ((string-equal class "error")
+                 (format "merlin: %s" value))
+                (t (format "unknown answer: %S:%S" class value)))))
+    (error (format "merlin: error %s trying to parse answer: %s" err result))))
+
 (defun merlin--call-process (path args)
   "Some workarounds for piping buffer content to a process"
   (merlin-debug "# calling binary: %S with arguments: %S.\n" path args)
@@ -453,6 +476,46 @@ return (LOC1 . LOC2)."
             (insert-file-contents tmp)
             (delete-file tmp))))
       result)))
+
+(defun merlin--async-process-sentinel (callback process event)
+  "Sentinel for handling asynchronous merlin calls. Bind callback using apply-partially before use."
+  (when (not (process-live-p process))
+    (with-current-buffer (process-buffer process)
+      (let ((result (buffer-string)))
+        (kill-buffer)
+        (merlin-debug "# stdout\n%s" result)
+        (let ((tmp (process-get process :stderr)))
+          (when tmp
+            (with-demoted-errors "Error when trying to read merlin log: %S"
+              (with-current-buffer merlin-log-buffer-name
+                (goto-char (point-max))
+                (insert "# stderr\n")
+                (insert-file-contents tmp)
+                (delete-file tmp)))))
+        (when (not (string-equal event "deleted\n"))
+          (funcall callback (merlin--parse-call-result result)))))))
+
+(defun merlin--call-process-async (callback path args)
+  "Version of merlin--call-process using asynchronous process. Returns process object."
+  (merlin-debug "# async-calling binary: %S with arguments: %S.\n" path args)
+  (let ((ib  (current-buffer))
+        (tmp (when merlin-debug (make-temp-file "merlin")))
+        (wd  (expand-file-name default-directory))
+        (ob  (generate-new-buffer "merlin"))
+        result)
+    (with-current-buffer ib
+      (let* ((default-directory wd)
+             (process (make-process
+                       :name "merlin"
+                       :command (cons path args)
+                       :buffer ob
+                       :stderr tmp
+                       :sentinel (apply-partially #'merlin--async-process-sentinel
+                                                  callback)
+                       :noquery t)))
+        (process-put process :stderr tmp) ; hack to retrieve process stderr later
+        (process-send-region process (point-min) (point-max))
+        (process-send-eof process)))))
 
 (defun merlin--call-merlin (command &rest args)
   "Invoke merlin binary with the proper setup to execute the command passed as argument (lookup appropriate binary, setup logging, pass global settings)"
@@ -515,22 +578,18 @@ return (LOC1 . LOC2)."
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
   (let ((result (merlin--call-merlin command args)))
-    (condition-case err
-        (setq result (car (read-from-string result)))
-      (error
-        (error "merlin: error %s trying to parse answer: %s"
-               err result)))
-    (let ((notifications (cdr-safe (assoc 'notifications result)))
-          (class (cdr-safe (assoc 'class result)))
-          (value (cdr-safe (assoc 'value result))))
-      (dolist (notification notifications)
-        (message "(merlin) %s" notification))
-      (cond ((string-equal class "return") value)
-            ((string-equal class "failure")
-             (error "merlin-mode failure: %s" value))
-            ((string-equal class "error")
-             (error "merlin: %s" value))
-            (t (error "unknown answer: %S:%S" class value))))))
+    (merlin/callback-parse-result (merlin--parse-call-result result)))
+
+(defun merlin/call-async (callback command &rest args)
+  "Execute a merlin command asynchronously, returning the process object.
+
+When the command finishes without being deleted, executes the callback with parsed output as single argument
+- if it is a success, argument is a cons cell with the sexp-result as car
+- if failure, argument is a single string as an error message
+- see merlin--callback-parse-result for convenience"
+  (cl-letf (((symbol-function #'merlin--call-process)
+             (apply-partially #'merlin--call-process-async callback)))
+    (merlin--call-merlin command args)))
 
 (defun merlin-stop-server ()
   "Shutdown merlin server."
