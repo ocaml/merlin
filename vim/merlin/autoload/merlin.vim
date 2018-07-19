@@ -11,7 +11,7 @@ elseif has('python')
   let g:merlin_python_version = 2
   command! -nargs=1 MerlinPy python <args>
 else
-  echo "Error: Required vim compiled with +python or +python3"
+  echoerr "Error: Required vim compiled with +python or +python3"
   finish
 endif
 
