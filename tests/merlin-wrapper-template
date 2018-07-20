@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 src_dir="$(dirname ${BASH_SOURCE[0]})/.."
 cd "$src_dir"
@@ -8,4 +8,5 @@ $(dirname ${BASH_SOURCE[0]})/%%OCAMLMERLIN_PATH%% $@ \
     | jq 'del(.timing)' \
     | sed -e "s:$src_dir/::" \
     | sed -e 's:"/.*/\.opam/[^/]*/\([^"]*\)":"~opam/\1":' \
-    | sed -e 's:\\n:\n:g'
+    | sed -e 's:\\n:\
+:g'
