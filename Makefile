@@ -14,4 +14,7 @@ ocamlmerlin ocamlmerlin-server: _build/install/default/bin/$@
 clean:
 	jbuilder clean
 
-.PHONY: all build dev ocamlmerlin ocamlmerlin-server clean
+test:
+	jbuilder runtest
+
+.PHONY: all build dev ocamlmerlin ocamlmerlin-server clean test
