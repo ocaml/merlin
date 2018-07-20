@@ -6,10 +6,8 @@ dev:
 build:
 	jbuilder build
 
-_build/install/default/bin/ocamlmerlin _build/install/default/bin/ocamlmerlin-server: build
-
-ocamlmerlin ocamlmerlin-server: _build/install/default/bin/$@
-	cp -f _build/install/default/bin/$@ ./$@
+ocamlmerlin ocamlmerlin-server:
+	ln -s _build/install/default/bin/$@ ./$@
 
 clean:
 	jbuilder clean
@@ -17,4 +15,4 @@ clean:
 test:
 	jbuilder runtest
 
-.PHONY: all build dev ocamlmerlin ocamlmerlin-server clean test
+.PHONY: all build dev clean test

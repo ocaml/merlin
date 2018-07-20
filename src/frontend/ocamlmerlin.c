@@ -463,12 +463,17 @@ static void prune_binary_name(char * buffer) {
 }
 
 #ifdef _WIN32
-#define OCAMLMERLIN_SERVER "ocamlmerlin-server.exe"
+static const char ocamlmerlin_server[] = "ocamlmerlin-server.exe";
 #else
-#define OCAMLMERLIN_SERVER "ocamlmerlin-server"
+static char ocamlmerlin_server[] = "ocamlmerlin-server";
 #endif
 
-static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0) {
+#ifdef _WIN32
+static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0)
+#else
+static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0, struct stat *st)
+#endif
+{
   char argv0_dirname[PATHSZ];
   size_t strsz;
 
@@ -496,16 +501,26 @@ static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0) {
   strsz = strlen(merlin_path);
 
   // Append ocamlmerlin-server
-  if (strsz + 19 > PATHSZ)
+  if (strsz + sizeof(ocamlmerlin_server) + 8 > PATHSZ)
     failwith("path is too long");
 
-  strcpy(merlin_path + strsz, OCAMLMERLIN_SERVER);
+  strcpy(merlin_path + strsz, ocamlmerlin_server);
+
+  if (stat(merlin_path, st) != 0)
+  {
+    strcpy(merlin_path + strsz, "ocamlmerlin_server.exe");
+    if (stat(merlin_path, st) != 0)
+    {
+      strcpy(merlin_path + strsz, ocamlmerlin_server);
+      failwith_perror("stat(ocamlmerlin-server, also tried ocamlmerlin_server.exe)");
+    }
+  }
 }
 
 #ifdef _WIN32
 static void compute_socketname(char socketname[PATHSZ], char eventname[PATHSZ], const char merlin_path[PATHSZ])
 #else
-static void compute_socketname(char socketname[PATHSZ], const char merlin_path[PATHSZ])
+static void compute_socketname(char socketname[PATHSZ], struct stat *st)
 #endif
 {
 #ifdef _WIN32
@@ -528,15 +543,11 @@ static void compute_socketname(char socketname[PATHSZ], const char merlin_path[P
   snprintf(socketname, PATHSZ,
       "\\\\.\\pipe\\%s", eventname);
 #else
-  struct stat st;
-  if (stat(merlin_path, &st) != 0)
-    failwith_perror("stat (cannot find ocamlmerlin binary)");
-
   snprintf(socketname, PATHSZ,
       "ocamlmerlin_%llu_%llu_%llu.socket",
       (unsigned long long)getuid(),
-      (unsigned long long)st.st_dev,
-      (unsigned long long)st.st_ino);
+      (unsigned long long)st->st_dev,
+      (unsigned long long)st->st_ino);
 #endif
 }
 
@@ -584,10 +595,11 @@ int main(int argc, char **argv)
   DWORD dwNumberOfBytesRead;
   CHAR argv0[PATHSZ];
   GetModuleFileName(NULL, argv0, PATHSZ);
-#else
-  char* argv0 = argv[0];
-#endif
   compute_merlinpath(merlin_path, argv0);
+#else
+  struct stat st;
+  compute_merlinpath(merlin_path, argv[0], &st);
+#endif
   if (argc >= 2 && strcmp(argv[1], "server") == 0)
   {
     IPC_SOCKET_TYPE sock;
@@ -595,7 +607,7 @@ int main(int argc, char **argv)
 #ifdef _WIN32
     compute_socketname(socketname, eventname, merlin_path);
 #else
-    compute_socketname(socketname, merlin_path);
+    compute_socketname(socketname, &st);
 #endif
 
     sock = connect_and_serve(socketname, eventname, merlin_path);
@@ -632,7 +644,7 @@ int main(int argc, char **argv)
   }
   else
   {
-    argv[0] = OCAMLMERLIN_SERVER;
+    argv[0] = ocamlmerlin_server;
     execvp(merlin_path, argv);
     failwith_perror("execvp(ocamlmerlin-server)");
   }
