@@ -2,7 +2,7 @@
 
 src_dir="$(dirname ${BASH_SOURCE[0]})/.."
 cd "$src_dir"
-src_dir=$(readlink -f $(pwd))
+src_dir=$(realpath -e $(pwd))
 cd - > /dev/null
 $(dirname ${BASH_SOURCE[0]})/%%OCAMLMERLIN_PATH%% $@ \
     | jq 'del(.timing)' \
