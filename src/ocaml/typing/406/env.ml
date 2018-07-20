@@ -1838,7 +1838,7 @@ and check_usage loc id warn tbl =
     let key = (name, loc) in
     if Hashtbl.mem tbl key then ()
     else let used = ref false in
-    Hashtbl.add tbl key (fun () -> used := true);
+    backtracking_add tbl key (fun () -> used := true);
     if not (name = "" || name.[0] = '_' || name.[0] = '#')
     then
       !add_delayed_check_forward
@@ -1883,7 +1883,7 @@ and store_type ~check ~predef id info env =
         let k = (ty, loc, c) in
         if not (Hashtbl.mem !used_constructors k) then
           let used = constructor_usages () in
-          Hashtbl.add !used_constructors k (add_constructor_usage used);
+          backtracking_add !used_constructors k (add_constructor_usage used);
           if not (ty = "" || ty.[0] = '_')
           then !add_delayed_check_forward
               (fun () ->

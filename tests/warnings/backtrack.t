@@ -57,7 +57,22 @@ environment in different queries, some warnings will be reported only once.
   > EOF
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 6
+        },
+        "end": {
+          "line": 1,
+          "col": 7
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Warning 27: unused variable x."
+      }
+    ],
     "notifications": []
   }
 
