@@ -15,4 +15,7 @@ clean:
 test:
 	jbuilder runtest
 
-.PHONY: all build dev clean test
+promote:
+	jbuilder promote
+
+.PHONY: all build dev clean test promote
