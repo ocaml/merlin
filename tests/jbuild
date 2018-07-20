@@ -4,7 +4,7 @@
   (action
     (progn
       (with-stdout-to ${@}
-        (run sed -e "s#%%OCAMLMERLIN_PATH%%#${bin:ocamlmerlin-server}#"
+        (run sed -e "s#%%OCAMLMERLIN_PATH%%#${bin:ocamlmerlin}#"
              merlin-wrapper-template))
       (bash "chmod +x ${@}")))))
 
