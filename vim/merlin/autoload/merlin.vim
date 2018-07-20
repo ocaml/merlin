@@ -74,7 +74,7 @@ if !exists('g:merlin_debug')
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
-MerlinPy import sys, vim
+silent! MerlinPy import sys, vim
 MerlinPy if not vim.eval("s:current_dir") in sys.path:
 \    sys.path.append(vim.eval("s:current_dir"))
 
