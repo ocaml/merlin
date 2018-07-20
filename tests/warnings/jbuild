@@ -1,0 +1,8 @@
+(alias
+ ((name runtest)
+  (deps (backtrack.t))
+  (action
+    (progn
+      (setenv MERLIN ${path:../merlin-wrapper}
+        (run ${bin:craml} ${<}))
+      (diff? ${<} ${<}.corrected)))))
