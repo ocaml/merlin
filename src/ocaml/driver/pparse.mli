@@ -20,5 +20,4 @@ val apply_rewriters_sig: ppx:string with_workdir list -> ?restore:bool -> tool_n
 
 val apply_rewriters: ppx:string with_workdir list -> ?restore:bool -> tool_name:string -> Mreader.parsetree -> Mreader.parsetree
 
-(*val apply_pp : filename:string -> source:string -> pp:string ->
-  [> `Interface of Parsetree.signature | `Implementation of Parsetree.structure ]*)
+val apply_pp : workdir:string -> filename:string -> source:string -> pp:string -> string

@@ -5,6 +5,8 @@ val for_completion : Msource.position -> t -> t
 
 val get_trace : t -> Trace.t
 
+val raw_source : t -> Msource.t
+
 val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t
 val get_lexing_pos : t -> [< Msource.position] -> Lexing.position
