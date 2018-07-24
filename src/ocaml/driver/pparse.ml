@@ -138,28 +138,19 @@ let apply_rewriters ~ppx ?restore ~tool_name = function
   | `Implementation ast ->
     `Implementation (apply_rewriters_str ~ppx ?restore ~tool_name ast)
 
-(*
-let read_ast magic fn =
-  let ic = open_in_bin fn in
-  try
-    let buffer = really_input_string ic (String.length magic) in
-    assert(buffer = magic); (* already checked by apply_rewriter *)
-    Location.input_name := input_value ic;
-    let ast = input_value ic in
-    close_in ic;
-    Misc.remove_file fn;
-    ast
-  with exn ->
-    close_in ic;
-    Misc.remove_file fn;
-    raise exn
-
 let pp_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s 1>%s"
     cmd (Filename.quote fn_in) (Filename.quote fn_out)
 
-let apply_pp ~filename ~source ~pp =
+let apply_pp ~workdir ~filename ~source ~pp =
   let fn_in = Filename.temp_file "merlinpp" (Filename.basename filename) in
+  begin
+    try Sys.chdir workdir
+    with exn ->
+      Logger.logf "Pparse" "apply_pp"
+        "cannot change directory %S: %t"
+        workdir (fun () -> Printexc.to_string exn)
+  end;
   begin
     let oc = open_out_bin fn_in in
     output_string oc source;
@@ -168,22 +159,21 @@ let apply_pp ~filename ~source ~pp =
   let fn_out = fn_in ^ ".out" in
   let comm = pp_commandline pp fn_in fn_out in
   let ok = Sys.command comm = 0 in
+  Misc.remove_file fn_in;
   if not ok then begin
     Misc.remove_file fn_out;
-    raise (Error (CannotRun comm));
-  end;
-  if not (Sys.file_exists fn_out) then
-    raise (Error (WrongMagic comm));
-  Misc.remove_file fn_in;
-  let ic = open_in_bin fn_out in
-  let buffer = really_input_string ic
-      (String.length Config.ast_impl_magic_number) in
-  close_in ic;
-  if buffer = Config.ast_impl_magic_number then
-    `Implementation (read_ast Config.ast_impl_magic_number fn_out
-                : Parsetree.structure)
-  else if buffer = Config.ast_intf_magic_number then
-    `Interface (read_ast Config.ast_intf_magic_number fn_out
-                : Parsetree.signature)
+    Error (CannotRun comm)
+  end else if not (Sys.file_exists fn_out) then
+    Error (WrongMagic comm)
   else
-    Misc.fatal_error "OCaml and preprocessor have incompatible versions"*)
+    let ic = open_in fn_out in
+    let result = Misc.string_of_file ic in
+    close_in ic;
+    Ok result
+
+let apply_pp ~workdir ~filename ~source ~pp =
+  match apply_pp ~workdir ~filename ~source ~pp with
+  | Ok result -> result
+  | Error err ->
+    report_error err;
+    source
