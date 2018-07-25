@@ -495,25 +495,30 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               follow ~remember_loc ~state ?before scopes (Lazy.force t) path
             end
           | Functor ((id, _, _), node) ->
-            let state =
-              match state.functor_arguments with
-              | [] ->
-                (* We can never end up inside a functor without having seen an
-                   application first. *)
-                assert false
-              | Noop :: functor_arguments ->
-                { state with functor_arguments }
-              | Handled (new_prefix, scopes) :: functor_arguments ->
-                assert (Ident.name id <> "*"); (* sigh. *)
-                let subst =
-                  { old_prefix =
-                      Namespaced_path.of_path ~namespace:`Mod (Pident id)
-                  ; new_prefix
-                  ; scopes }
-                in
-                { substs = subst :: state.substs; functor_arguments }
-            in
-            inspect_node state node
+            let path = Namespaced_path.peal_head_exn path in
+            begin match Namespaced_path.head path with
+            | None -> Found (loc, doc)
+            | _ ->
+              let state =
+                match state.functor_arguments with
+                | [] ->
+                  (* We can never end up inside a functor without having seen an
+                    application first. *)
+                  assert false
+                | Noop :: functor_arguments ->
+                  { state with functor_arguments }
+                | Handled (new_prefix, scopes) :: functor_arguments ->
+                  assert (Ident.name id <> "*"); (* sigh. *)
+                  let subst =
+                    { old_prefix =
+                        Namespaced_path.of_path ~namespace:`Mod (Pident id)
+                    ; new_prefix
+                    ; scopes }
+                  in
+                  { substs = subst :: state.substs; functor_arguments }
+              in
+              inspect_node state node
+            end
           | Apply { funct; arg } ->
             let functor_argument =
               match arg with
