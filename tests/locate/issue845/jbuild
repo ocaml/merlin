@@ -1,0 +1,11 @@
+(alias
+ ((name runtest)
+  (deps (test.t local_map.mli local_map.ml))
+  (action
+    (progn
+      (setenv MERLIN ${exe:../../merlin-wrapper}
+      (setenv OCAMLC ${OCAMLC}
+        (run ${bin:craml} ${<})))
+      (diff? ${<} ${<}.corrected)))))
+
+
