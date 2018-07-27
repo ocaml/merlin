@@ -345,7 +345,14 @@ let trie_of_cmt root =
   let cached = Cmt_cache.read root in
   logf "browse_cmts" "inspecting %s" root ;
   begin match cached.Cmt_cache.location_trie with
-  | Cmt_cache_store _ -> log "browse_cmts" "trie already cached"
+  | Cmt_cache_store _ ->
+    let digest =
+      (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
+         pack. *)
+      Option.get cached.cmt_infos.cmt_source_digest
+    in
+    File_switching.move_to ~digest root;
+    log "browse_cmts" "trie already cached"
   | Not_found ->
     let trie_of_nodes nodes =
       let digest =
