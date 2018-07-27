@@ -25,7 +25,13 @@ the structure, but the stamp will have changed:
   $ $MERLIN single locate -look-for-mli -position 10:17 -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "didn't manage to find t",
+    "value": {
+      "file": "tests/locate/includes/foo.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
     "notifications": []
   }
 
