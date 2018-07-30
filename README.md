@@ -27,7 +27,7 @@ Compilation
 Dependencies: ocaml >= 4.02.3, ocamlfind, yojson, dune.
 
 ```shell
-jbuilder build
+dune build
 ```
 
 Installation
@@ -35,9 +35,9 @@ Installation
 
 If you haven't encountered any errors in the previous step, just run:
 
-    $ jbuilder install
+    $ dune install
 
-You can pass an explicit prefix to jbuilder, using `--prefix`. It defaults to
+You can pass an explicit prefix to dune, using `--prefix`. It defaults to
 your current opam switch.
 
 Editor setup

@@ -1,7 +1,7 @@
 git version
 ===========
 
-Switched to jbuilder (thanks to @nojb).
+Switched to dune (thanks to @nojb).
 
 merlin 3.1.0
 ============
