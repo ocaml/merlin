@@ -1,0 +1,8 @@
+(rule (copy# ../ocaml/driver/pparse.ml  pparse.ml ))
+(rule (copy# ../ocaml/driver/pparse.mli pparse.mli))
+
+(library
+ (name merlin_kernel)
+ (wrapped false)
+ (libraries config merlin_extend merlin_specific merlin_utils parsing
+            preprocess typing utils))

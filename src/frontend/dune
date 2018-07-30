@@ -1,0 +1,33 @@
+(copy_files# new/*.ml{,i})
+(copy_files# old/*.ml{,i})
+
+(library
+ (name      query_protocol)
+ (modules   query_protocol)
+ (libraries merlin_kernel merlin_utils parsing))
+
+(executable
+ (name ocamlmerlin_server)
+ (public_name ocamlmerlin-server)
+ (modules (:standard \ gen_ccflags query_protocol))
+ (libraries config merlin_analysis merlin_kernel merlin_utils os_ipc 
+            parsing query_protocol typing utils))
+
+(executable
+ (name      gen_ccflags)
+ (modules   gen_ccflags)
+ (libraries str))
+
+(rule
+ (targets pre-flags post-flags)
+ (deps    gen_ccflags.exe)
+ (action  (run %{deps} "%{ocaml-config:ccomp_type}" %{targets})))
+
+(rule
+ (targets ocamlmerlin.exe)
+ (deps    (:c ocamlmerlin.c) pre-flags post-flags)
+ (action  (run %{cc} "%{read-lines:pre-flags}%{targets}" %{c} %{read-lines:post-flags})))
+
+(install
+ (section bin)
+ (files   (ocamlmerlin.exe as ocamlmerlin)))

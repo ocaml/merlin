@@ -1,0 +1,17 @@
+(alias
+ (name runtest)
+ (deps (:t rebinding.t) rebinding.ml)
+ (action
+   (progn
+     (setenv MERLIN %{exe:../../merlin-wrapper}
+       (run %{bin:craml} %{t}))
+     (diff? %{t} %{t}.corrected))))
+
+(alias
+ (name runtest)
+ (deps (:t not-in-env.t))
+ (action
+   (progn
+     (setenv MERLIN %{exe:../../merlin-wrapper}
+       (run %{bin:craml} %{t}))
+     (diff? %{t} %{t}.corrected))))

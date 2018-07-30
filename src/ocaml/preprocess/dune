@@ -1,0 +1,27 @@
+(* -*- tuareg -*- *)
+
+module J = Jbuild_plugin.V1
+;;
+
+let ver =
+  Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+;;
+
+Printf.ksprintf J.send {|
+(rule
+  (progn
+    (copy# %s/parser_explain.ml.staged parser_explain.ml)
+    (copy# %s/parser_printer.ml.staged parser_printer.ml)
+    (copy# %s/parser_recover.ml.staged parser_recover.ml)
+    (copy  %s/lexer_raw.ml.staged      lexer_raw.ml)
+    (copy  %s/lexer_raw.mli            lexer_raw.mli)
+    (copy  %s/parser_raw.ml.staged     parser_raw.ml)
+    (copy  %s/parser_raw.mli.staged    parser_raw.mli)))
+
+(ocamllex (modules lexer_ident))
+
+(library
+  (name preprocess)
+  (wrapped false)
+  (libraries parsing))
+|} ver ver ver ver ver ver ver

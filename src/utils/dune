@@ -1,0 +1,25 @@
+(rule (copy# ../platform/platform_misc.c platform_misc.c))
+
+(rule
+  (targets menhirLib.ml.fresh menhirLib.mli.fresh)
+  (action
+    (progn
+      (copy %{lib:menhirLib:menhirLib.ml}  menhirLib.ml.fresh)
+      (copy %{lib:menhirLib:menhirLib.mli} menhirLib.mli.fresh))))
+
+(alias
+  (name   preprocess)
+  (action (diff menhirLib.ml menhirLib.ml.fresh)))
+
+(alias
+  (name   preprocess)
+  (action (diff menhirLib.mli menhirLib.mli.fresh)))
+
+(library
+ (name merlin_utils)
+ (wrapped false)
+ (libraries str yojson unix
+            (select sturgeon_stub.ml from
+                    (sturgeon threads -> ../sturgeon_stub/sturgeon_stub.ml)
+                    (!sturgeon -> ../sturgeon_null/sturgeon_stub.ml)))
+ (c_names platform_misc))

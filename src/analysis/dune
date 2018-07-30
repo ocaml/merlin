@@ -1,0 +1,4 @@
+(library
+ (name merlin_analysis)
+ (wrapped false)
+ (libraries config merlin_kernel merlin_utils parsing preprocess query_protocol typing utils))

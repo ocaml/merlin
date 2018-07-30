@@ -1,3 +1,0 @@
-(executable
- ((name gen_explain)
-  (libraries (unix menhirSdk))))

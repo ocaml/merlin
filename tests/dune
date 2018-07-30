@@ -1,0 +1,13 @@
+(rule
+ (targets merlin-wrapper)
+ (deps    merlin-wrapper-template)
+ (action
+   (progn
+     (with-stdout-to %{targets}
+       (run sed -e "s#%%OCAMLMERLIN_PATH%%#%{bin:ocamlmerlin}#"
+            merlin-wrapper-template))
+     (bash "chmod +x %{targets}"))))
+
+(alias
+  (name runtest)
+  (deps merlin-wrapper))

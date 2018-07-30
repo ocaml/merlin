@@ -1,0 +1,62 @@
+(ocamllex
+ (modules lexer_raw))
+
+(rule
+ (targets parser_raw.mly)
+ (deps    parser_raw.mlyp)
+ (action
+   (with-stdout-to %{targets}
+     (run gcc "-E" "-x" c "-P" %{deps}))))
+
+(rule
+  (targets parser_raw.ml parser_raw.mli parser_raw.cmly)
+  (deps    parser_raw.mly
+            (glob_files %{workspace_root}/src/ocaml/parsing/*.cmi)
+            (glob_files %{workspace_root}/src/ocaml/utils/*.cmi))
+  (action  (run %{bin:menhir} --infer --inspection --table --cmly
+                --ocamlc "%{ocamlc} -I ../../parsing -I ../../utils" %{deps})))
+
+(rule
+  (targets parser_recover.ml)
+  (deps    parser_raw.cmly)
+  (action
+    (with-stdout-to %{targets}
+       (run %{exe:../recover/gen_recover.exe} %{deps}))))
+
+(rule
+  (targets parser_explain.ml)
+  (deps    parser_raw.cmly)
+  (action
+    (with-stdout-to %{targets}
+       (run %{exe:../explain/gen_explain.exe} %{deps}))))
+
+(rule
+  (targets parser_printer.ml)
+  (deps    parser_raw.cmly)
+  (action
+    (with-stdout-to %{targets}
+       (run %{exe:../printer/gen_printer.exe} %{deps}))))
+
+(alias
+  (name   preprocess)
+  (action (diff parser_raw.ml.staged parser_raw.ml)))
+
+(alias
+  (name   preprocess)
+  (action (diff parser_raw.mli.staged parser_raw.mli)))
+
+(alias
+  (name   preprocess)
+  (action (diff parser_explain.ml.staged parser_explain.ml)))
+
+(alias
+  (name   preprocess)
+  (action (diff parser_printer.ml.staged parser_printer.ml)))
+
+(alias
+  (name   preprocess)
+  (action (diff parser_recover.ml.staged parser_recover.ml)))
+
+(alias
+  (name   preprocess)
+  (action (diff lexer_raw.ml.staged lexer_raw.ml)))

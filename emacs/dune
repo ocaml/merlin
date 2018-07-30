@@ -1,0 +1,8 @@
+(install
+ (section share_root)
+ (files (merlin-ac.el as emacs/site-lisp/merlin-ac.el)
+        (merlin-cap.el as emacs/site-lisp/merlin-cap.el)
+        (merlin-company.el as emacs/site-lisp/merlin-company.el)
+        (merlin-iedit.el as emacs/site-lisp/merlin-iedit.el)
+        (merlin-imenu.el as emacs/site-lisp/merlin-imenu.el)
+        (merlin.el as emacs/site-lisp/merlin.el)))

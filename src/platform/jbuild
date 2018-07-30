@@ -1,3 +1,0 @@
-(library
- ((name os_ipc)
-  (c_names (os_ipc_stub))))
