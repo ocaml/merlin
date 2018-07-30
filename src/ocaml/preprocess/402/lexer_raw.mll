@@ -219,11 +219,12 @@ let get_label_name lexbuf =
 
 (* Update the current location with file name and line number. *)
 
-let update_loc lexbuf file line absolute chars =
+let update_loc lexbuf _file line absolute chars =
   let pos = lexbuf.lex_curr_p in
-  let new_file = match file with
-                 | None -> pos.pos_fname
-                 | Some s -> s
+  let new_file = pos.pos_fname
+    (*match file with
+      | None -> pos.pos_fname
+      | Some s -> s*)
   in
   lexbuf.lex_curr_p <- { pos with
     pos_fname = new_file;
