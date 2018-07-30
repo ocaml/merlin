@@ -215,11 +215,12 @@ let get_label_name lexbuf =
 
 (* Update the current location with file name and line number. *)
 
-let update_loc lexbuf file line absolute chars =
+let update_loc lexbuf _file line absolute chars =
   let pos = lexbuf.lex_curr_p in
-  let new_file = match file with
-                 | None -> pos.pos_fname
-                 | Some s -> s
+  let new_file = pos.pos_fname
+    (*match file with
+      | None -> pos.pos_fname
+      | Some s -> s*)
   in
   lexbuf.lex_curr_p <- { pos with
     pos_fname = new_file;
@@ -268,11 +269,11 @@ let () =
     )
 
 
-# 272 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 273 "src/ocaml/preprocess/406/lexer_raw.ml"
 let __ocaml_lex_refill : (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a) =
-# 324 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 325 "src/ocaml/preprocess/406/lexer_raw.mll"
        (fun k lexbuf -> Refill (fun () -> k lexbuf))
-# 276 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 277 "src/ocaml/preprocess/406/lexer_raw.ml"
 let __ocaml_lex_tables = {
   Lexing.lex_base =
    "\000\000\160\255\161\255\224\000\003\001\038\001\073\001\108\001\
@@ -1977,7 +1978,7 @@ let rec token state lexbuf =
 and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
   match Lexing.new_engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 327 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 328 "src/ocaml/preprocess/406/lexer_raw.mll"
                  (
       match state.preprocessor with
       | None ->
@@ -1986,94 +1987,94 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
       | Some _ ->
         update_loc lexbuf None 1 false 0;
         token state lexbuf )
-# 1990 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 1991 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 1 ->
-# 336 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 337 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 1 false 0;
         match state.preprocessor with
         | None -> token state lexbuf
         | Some _ -> return EOL
       )
-# 1999 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2000 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 2 ->
-# 342 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 343 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( token state lexbuf )
-# 2004 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2005 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 3 ->
-# 344 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 345 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return DOTLESS )
-# 2009 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2010 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 4 ->
-# 346 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 347 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return (keyword_or state (Lexing.lexeme lexbuf) (INFIXOP0 ">.")) )
-# 2014 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2015 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 5 ->
-# 348 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 349 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return (keyword_or state (Lexing.lexeme lexbuf) DOTTILDE) )
-# 2019 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2020 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 6 ->
-# 350 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 351 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return UNDERSCORE )
-# 2024 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2025 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 7 ->
-# 352 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 353 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return TILDE )
-# 2029 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2030 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 8 ->
-# 354 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 355 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( lABEL (get_label_name lexbuf) )
-# 2034 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2035 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 9 ->
-# 356 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 357 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( warn_latin1 lexbuf; lABEL (get_label_name lexbuf) )
-# 2039 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2040 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 10 ->
-# 358 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 359 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return QUESTION )
-# 2044 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2045 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 11 ->
-# 360 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 361 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return QUESTIONQUESTION )
-# 2049 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2050 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 12 ->
-# 362 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 363 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( oPTLABEL (get_label_name lexbuf) )
-# 2054 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2055 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 13 ->
-# 364 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 365 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( warn_latin1 lexbuf; oPTLABEL (get_label_name lexbuf) )
-# 2059 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2060 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 14 ->
-# 366 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 367 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( let s = Lexing.lexeme lexbuf in
       return (try Hashtbl.find state.keywords s
               with Not_found ->
               try Hashtbl.find keyword_table s
               with Not_found ->
                 LIDENT s) )
-# 2069 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2070 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 15 ->
-# 373 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 374 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( warn_latin1 lexbuf; return (LIDENT (Lexing.lexeme lexbuf)) )
-# 2074 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2075 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 16 ->
-# 375 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 376 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( (* Capitalized keywords for OUnit *)
       let s = Lexing.lexeme lexbuf in
       return (try Hashtbl.find state.keywords s
@@ -2081,60 +2082,60 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
               try Hashtbl.find keyword_table s
               with Not_found ->
                 UIDENT s) )
-# 2085 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2086 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 17 ->
-# 383 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 384 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( warn_latin1 lexbuf; return (UIDENT (Lexing.lexeme lexbuf)) )
-# 2090 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2091 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 18 ->
-# 384 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 385 "src/ocaml/preprocess/406/lexer_raw.mll"
                 ( return (INT (Lexing.lexeme lexbuf, None)) )
-# 2095 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2096 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 19 ->
 let
-# 385 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 386 "src/ocaml/preprocess/406/lexer_raw.mll"
                     lit
-# 2101 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2102 "src/ocaml/preprocess/406/lexer_raw.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos (lexbuf.Lexing.lex_curr_pos + -1)
 and
-# 385 "src/ocaml/preprocess/406/lexer_raw.mll"
-                                              modif
-# 2106 "src/ocaml/preprocess/406/lexer_raw.ml"
-= Lexing.sub_lexeme_char lexbuf (lexbuf.Lexing.lex_curr_pos + -1) in
 # 386 "src/ocaml/preprocess/406/lexer_raw.mll"
+                                              modif
+# 2107 "src/ocaml/preprocess/406/lexer_raw.ml"
+= Lexing.sub_lexeme_char lexbuf (lexbuf.Lexing.lex_curr_pos + -1) in
+# 387 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (INT (lit, Some modif)) )
-# 2110 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2111 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 20 ->
-# 388 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 389 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (FLOAT (Lexing.lexeme lexbuf, None)) )
-# 2115 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2116 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 21 ->
 let
-# 389 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 390 "src/ocaml/preprocess/406/lexer_raw.mll"
                                             lit
-# 2121 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2122 "src/ocaml/preprocess/406/lexer_raw.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_start_pos (lexbuf.Lexing.lex_curr_pos + -1)
 and
-# 389 "src/ocaml/preprocess/406/lexer_raw.mll"
-                                                                      modif
-# 2126 "src/ocaml/preprocess/406/lexer_raw.ml"
-= Lexing.sub_lexeme_char lexbuf (lexbuf.Lexing.lex_curr_pos + -1) in
 # 390 "src/ocaml/preprocess/406/lexer_raw.mll"
+                                                                      modif
+# 2127 "src/ocaml/preprocess/406/lexer_raw.ml"
+= Lexing.sub_lexeme_char lexbuf (lexbuf.Lexing.lex_curr_pos + -1) in
+# 391 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (FLOAT (lit, Some modif)) )
-# 2130 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2131 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 22 ->
-# 392 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 393 "src/ocaml/preprocess/406/lexer_raw.mll"
      ( fail (Invalid_literal (Lexing.lexeme lexbuf)) (Location.curr lexbuf) )
-# 2135 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2136 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 23 ->
-# 394 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 395 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.reset state.buffer;
         state.string_start_loc <- Location.curr lexbuf;
         string state lexbuf >>= fun () ->
@@ -2142,10 +2143,10 @@ and
         state.string_start_loc <- Location.none;
         return (STRING (Buffer.contents state.buffer, None))
       )
-# 2146 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2147 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 24 ->
-# 402 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 403 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.reset state.buffer;
         let delim = Lexing.lexeme lexbuf in
         let delim = String.sub delim ~pos:1 ~len:(String.length delim - 2) in
@@ -2154,49 +2155,49 @@ and
         lexbuf.lex_start_p <- state.string_start_loc.Location.loc_start;
         state.string_start_loc <- Location.none;
         return (STRING (Buffer.contents state.buffer, Some delim)) )
-# 2158 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2159 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 25 ->
-# 411 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 412 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( update_loc lexbuf None 1 false 1;
       return (CHAR (Lexing.lexeme_char lexbuf 1)) )
-# 2164 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2165 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 26 ->
-# 414 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 415 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (CHAR (Lexing.lexeme_char lexbuf 1)) )
-# 2169 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2170 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 27 ->
-# 416 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 417 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (CHAR (char_for_backslash (Lexing.lexeme_char lexbuf 2))) )
-# 2174 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2175 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 28 ->
-# 418 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 419 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (CHAR(char_for_octal_code lexbuf 3)) )
-# 2179 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2180 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 29 ->
-# 420 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 421 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( char_for_decimal_code state lexbuf 2 >>= fun c -> return (CHAR c) )
-# 2184 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2185 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 30 ->
-# 422 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 423 "src/ocaml/preprocess/406/lexer_raw.mll"
     ( return (CHAR (char_for_hexadecimal_code lexbuf 3)) )
-# 2189 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2190 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 31 ->
-# 424 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 425 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( let l = Lexing.lexeme lexbuf in
         let esc = String.sub l ~pos:1 ~len:(String.length l - 1) in
         fail (Illegal_escape esc) (Location.curr lexbuf)
       )
-# 2197 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2198 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 32 ->
-# 429 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 430 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( let start_loc = Location.curr lexbuf in
         state.comment_start_loc <- [start_loc];
         Buffer.reset state.buffer;
@@ -2206,10 +2207,10 @@ and
         return (COMMENT (s, { start_loc with
                               Location.loc_end = end_loc.Location.loc_end }))
       )
-# 2210 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2211 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 33 ->
-# 439 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 440 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( let loc = Location.curr lexbuf in
         Location.prerr_warning loc Warnings.Comment_start;
         state.comment_start_loc <- [loc];
@@ -2219,10 +2220,10 @@ and
         Buffer.reset state.buffer;
         return (COMMENT (s, { loc with Location.loc_end = end_loc.Location.loc_end }))
       )
-# 2223 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2224 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 34 ->
-# 449 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 450 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( let loc = Location.curr lexbuf in
         Location.prerr_warning loc Warnings.Comment_not_end;
         lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - 1;
@@ -2230,336 +2231,336 @@ and
         lexbuf.lex_curr_p <- { curpos with pos_cnum = curpos.pos_cnum - 1 };
         return STAR
       )
-# 2234 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2235 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 35 ->
 let
-# 456 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 457 "src/ocaml/preprocess/406/lexer_raw.mll"
                                    num
-# 2240 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2241 "src/ocaml/preprocess/406/lexer_raw.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_mem.(0) lexbuf.Lexing.lex_mem.(1)
 and
-# 457 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 458 "src/ocaml/preprocess/406/lexer_raw.mll"
                                             name
-# 2245 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2246 "src/ocaml/preprocess/406/lexer_raw.ml"
 = Lexing.sub_lexeme_opt lexbuf lexbuf.Lexing.lex_mem.(3) lexbuf.Lexing.lex_mem.(2) in
-# 459 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 460 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf name (int_of_string num) true 0;
         token state lexbuf
       )
-# 2251 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2252 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 36 ->
-# 462 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 463 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return SHARP )
-# 2256 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2257 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 37 ->
-# 463 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 464 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return AMPERSAND )
-# 2261 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2262 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 38 ->
-# 464 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 465 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return AMPERAMPER )
-# 2266 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2267 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 39 ->
-# 465 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 466 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return BACKQUOTE )
-# 2271 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2272 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 40 ->
-# 466 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 467 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return QUOTE )
-# 2276 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2277 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 41 ->
-# 467 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 468 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LPAREN )
-# 2281 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2282 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 42 ->
-# 468 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 469 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return RPAREN )
-# 2286 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2287 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 43 ->
-# 469 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 470 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return STAR )
-# 2291 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2292 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 44 ->
-# 470 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 471 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return COMMA )
-# 2296 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2297 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 45 ->
-# 471 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 472 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return MINUSGREATER )
-# 2301 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2302 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 46 ->
-# 472 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 473 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return DOT )
-# 2306 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2307 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 47 ->
 let
-# 473 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 474 "src/ocaml/preprocess/406/lexer_raw.mll"
                                       s
-# 2312 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2313 "src/ocaml/preprocess/406/lexer_raw.ml"
 = Lexing.sub_lexeme lexbuf (lexbuf.Lexing.lex_start_pos + 1) lexbuf.Lexing.lex_curr_pos in
-# 473 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 474 "src/ocaml/preprocess/406/lexer_raw.mll"
                                          ( return (DOTOP s) )
-# 2316 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2317 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 48 ->
-# 474 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 475 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return DOTDOT )
-# 2321 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2322 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 49 ->
-# 475 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 476 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return COLON )
-# 2326 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2327 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 50 ->
-# 476 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 477 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return COLONCOLON )
-# 2331 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2332 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 51 ->
-# 477 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 478 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return COLONEQUAL )
-# 2336 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2337 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 52 ->
-# 478 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 479 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return COLONGREATER )
-# 2341 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2342 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 53 ->
-# 479 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 480 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return SEMI )
-# 2346 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2347 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 54 ->
-# 480 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 481 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return SEMISEMI )
-# 2351 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2352 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 55 ->
-# 481 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 482 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LESS )
-# 2356 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2357 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 56 ->
-# 482 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 483 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LESSMINUS )
-# 2361 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2362 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 57 ->
-# 483 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 484 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return EQUAL )
-# 2366 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2367 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 58 ->
-# 484 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 485 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACKET )
-# 2371 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2372 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 59 ->
-# 485 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 486 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACKETBAR )
-# 2376 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2377 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 60 ->
-# 486 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 487 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACKETLESS )
-# 2381 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2382 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 61 ->
-# 487 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 488 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACKETGREATER )
-# 2386 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2387 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 62 ->
-# 488 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 489 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return RBRACKET )
-# 2391 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2392 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 63 ->
-# 489 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 490 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACE )
-# 2396 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2397 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 64 ->
-# 490 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 491 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACELESS )
-# 2401 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2402 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 65 ->
-# 491 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 492 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return BAR )
-# 2406 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2407 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 66 ->
-# 492 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 493 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return BARBAR )
-# 2411 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2412 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 67 ->
-# 493 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 494 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return BARRBRACKET )
-# 2416 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2417 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 68 ->
-# 494 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 495 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return GREATER )
-# 2421 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2422 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 69 ->
-# 495 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 496 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return GREATERRBRACKET )
-# 2426 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2427 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 70 ->
-# 496 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 497 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return RBRACE )
-# 2431 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2432 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 71 ->
-# 497 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 498 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return GREATERRBRACE )
-# 2436 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2437 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 72 ->
-# 498 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 499 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACKETAT )
-# 2441 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2442 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 73 ->
-# 499 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 500 "src/ocaml/preprocess/406/lexer_raw.mll"
            ( return LBRACKETATAT )
-# 2446 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2447 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 74 ->
-# 500 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 501 "src/ocaml/preprocess/406/lexer_raw.mll"
            ( return LBRACKETATATAT )
-# 2451 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2452 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 75 ->
-# 501 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 502 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return LBRACKETPERCENT )
-# 2456 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2457 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 76 ->
-# 502 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 503 "src/ocaml/preprocess/406/lexer_raw.mll"
           ( return LBRACKETPERCENTPERCENT )
-# 2461 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2462 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 77 ->
-# 503 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 504 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return BANG )
-# 2466 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2467 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 78 ->
-# 504 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 505 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return (INFIXOP0 "!=") )
-# 2471 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2472 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 79 ->
-# 505 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 506 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return PLUS )
-# 2476 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2477 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 80 ->
-# 506 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 507 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return PLUSDOT )
-# 2481 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2482 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 81 ->
-# 507 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 508 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return PLUSEQ )
-# 2486 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2487 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 82 ->
-# 508 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 509 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return MINUS )
-# 2491 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2492 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 83 ->
-# 509 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 510 "src/ocaml/preprocess/406/lexer_raw.mll"
          ( return MINUSDOT )
-# 2496 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2497 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 84 ->
-# 512 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 513 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (PREFIXOP(Lexing.lexeme lexbuf)) )
-# 2501 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2502 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 85 ->
-# 514 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 515 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (PREFIXOP(Lexing.lexeme lexbuf)) )
-# 2506 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2507 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 86 ->
-# 516 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 517 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (keyword_or state (Lexing.lexeme lexbuf)
                        (INFIXOP0(Lexing.lexeme lexbuf))) )
-# 2512 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2513 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 87 ->
-# 519 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 520 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (INFIXOP1(Lexing.lexeme lexbuf)) )
-# 2517 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2518 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 88 ->
-# 521 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 522 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (INFIXOP2(Lexing.lexeme lexbuf)) )
-# 2522 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2523 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 89 ->
-# 523 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 524 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (INFIXOP4(Lexing.lexeme lexbuf)) )
-# 2527 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2528 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 90 ->
-# 524 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 525 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return PERCENT )
-# 2532 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2533 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 91 ->
-# 526 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 527 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( return (INFIXOP3(Lexing.lexeme lexbuf)) )
-# 2537 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2538 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 92 ->
-# 528 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 529 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( let s = Lexing.lexeme lexbuf in
               return (try Hashtbl.find state.keywords s
                       with Not_found -> SHARPOP s) )
-# 2544 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2545 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 93 ->
-# 533 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 534 "src/ocaml/preprocess/406/lexer_raw.mll"
             ( let s = Lexing.lexeme lexbuf in
               return (try Hashtbl.find state.keywords s
                       with Not_found -> SHARPOP s) )
-# 2551 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2552 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 94 ->
-# 536 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 537 "src/ocaml/preprocess/406/lexer_raw.mll"
         ( return EOF )
-# 2556 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2557 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 95 ->
-# 539 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 540 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( fail (Illegal_character (Lexing.lexeme_char lexbuf 0))
               (Location.curr lexbuf)
       )
-# 2563 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2564 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf;
@@ -2570,15 +2571,15 @@ and comment state lexbuf =
 and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 545 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 546 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( state.comment_start_loc <- (Location.curr lexbuf) :: state.comment_start_loc;
       Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
       comment state lexbuf
     )
-# 2579 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2580 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 1 ->
-# 550 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 551 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( match state.comment_start_loc with
         | [] -> assert false
         | [_] -> state.comment_start_loc <- []; return (Location.curr lexbuf)
@@ -2586,10 +2587,10 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
                   Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
                   comment state lexbuf
        )
-# 2590 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2591 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 2 ->
-# 558 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 559 "src/ocaml/preprocess/406/lexer_raw.mll"
       (
         state.string_start_loc <- Location.curr lexbuf;
         Buffer.add_char state.buffer '\"';
@@ -2612,10 +2613,10 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
       state.buffer <- buffer;
       Buffer.add_char state.buffer '\"';
       comment state lexbuf )
-# 2616 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2617 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 3 ->
-# 581 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 582 "src/ocaml/preprocess/406/lexer_raw.mll"
       (
         let delim = Lexing.lexeme lexbuf in
         let delim = String.sub delim ~pos:1 ~len:(String.length delim - 2) in
@@ -2638,43 +2639,43 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
         Buffer.add_string state.buffer delim;
         Buffer.add_char state.buffer '}';
         comment state lexbuf )
-# 2642 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2643 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 4 ->
-# 605 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 606 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2647 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2648 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 5 ->
-# 607 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 608 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 1 false 1;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       )
-# 2655 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2656 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 6 ->
-# 612 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 613 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2660 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2661 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 7 ->
-# 614 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 615 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2665 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2666 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 8 ->
-# 616 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 617 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2670 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2671 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 9 ->
-# 618 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 619 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2675 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2676 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 10 ->
-# 620 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 621 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( match state.comment_start_loc with
         | [] -> assert false
         | loc :: _ ->
@@ -2682,20 +2683,20 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
           state.comment_start_loc <- [];
           fail (Unterminated_comment start) loc
       )
-# 2686 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2687 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 11 ->
-# 628 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 629 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 1 false 0;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       )
-# 2694 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2695 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 12 ->
-# 633 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 634 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2699 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2700 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf;
@@ -2706,50 +2707,50 @@ and string state lexbuf =
 and __ocaml_lex_string_rec state lexbuf __ocaml_lex_state =
   match Lexing.new_engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 637 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 638 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( return () )
-# 2712 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2713 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 1 ->
 let
-# 638 "src/ocaml/preprocess/406/lexer_raw.mll"
-                                  space
-# 2718 "src/ocaml/preprocess/406/lexer_raw.ml"
-= Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_mem.(0) lexbuf.Lexing.lex_curr_pos in
 # 639 "src/ocaml/preprocess/406/lexer_raw.mll"
+                                  space
+# 2719 "src/ocaml/preprocess/406/lexer_raw.ml"
+= Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_mem.(0) lexbuf.Lexing.lex_curr_pos in
+# 640 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 1 false (String.length space);
         string state lexbuf
       )
-# 2724 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2725 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 2 ->
-# 643 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 644 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_char state.buffer
           (char_for_backslash (Lexing.lexeme_char lexbuf 1));
         string state lexbuf )
-# 2731 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2732 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 3 ->
-# 647 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 648 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( char_for_decimal_code state lexbuf 1 >>= fun c ->
         Buffer.add_char state.buffer c;
         string state lexbuf )
-# 2738 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2739 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 4 ->
-# 651 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 652 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
         string state lexbuf )
-# 2744 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2745 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 5 ->
-# 654 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 655 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( store_escaped_uchar state lexbuf (uchar_for_uchar_escape lexbuf);
         string state lexbuf )
-# 2750 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2751 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 6 ->
-# 657 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 658 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( if in_comment state
         then string state lexbuf
         else begin
@@ -2764,30 +2765,30 @@ let
           string state lexbuf
         end
       )
-# 2768 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2769 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 7 ->
-# 672 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 673 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( if not (in_comment state) then
           Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
         update_loc lexbuf None 1 false 0;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         string state lexbuf
       )
-# 2778 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2779 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 8 ->
-# 679 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 680 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         fail Unterminated_string loc )
-# 2785 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2786 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 9 ->
-# 683 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 684 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         string state lexbuf )
-# 2791 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2792 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf;
@@ -2798,22 +2799,22 @@ and quoted_string state delim lexbuf =
 and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 688 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 689 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 1 false 0;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         quoted_string state delim lexbuf
       )
-# 2807 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2808 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 1 ->
-# 693 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 694 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         fail Unterminated_string loc )
-# 2814 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2815 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 2 ->
-# 697 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 698 "src/ocaml/preprocess/406/lexer_raw.mll"
       (
         let edelim = Lexing.lexeme lexbuf in
         let edelim = String.sub edelim ~pos:1 ~len:(String.length edelim - 2) in
@@ -2821,13 +2822,13 @@ and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
         else (Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
               quoted_string state delim lexbuf)
       )
-# 2825 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2826 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 3 ->
-# 705 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 706 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         quoted_string state delim lexbuf )
-# 2831 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2832 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf;
@@ -2838,19 +2839,19 @@ and skip_sharp_bang state lexbuf =
 and __ocaml_lex_skip_sharp_bang_rec state lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 710 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 711 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 3 false 0; token state lexbuf )
-# 2844 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2845 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 1 ->
-# 712 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 713 "src/ocaml/preprocess/406/lexer_raw.mll"
       ( update_loc lexbuf None 1 false 0; token state lexbuf )
-# 2849 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2850 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | 2 ->
-# 713 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 714 "src/ocaml/preprocess/406/lexer_raw.mll"
        ( token state lexbuf )
-# 2854 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2855 "src/ocaml/preprocess/406/lexer_raw.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf;
@@ -2858,7 +2859,7 @@ and __ocaml_lex_skip_sharp_bang_rec state lexbuf __ocaml_lex_state =
 
 ;;
 
-# 715 "src/ocaml/preprocess/406/lexer_raw.mll"
+# 716 "src/ocaml/preprocess/406/lexer_raw.mll"
  
   type comment = string * Location.t
 
@@ -2871,4 +2872,4 @@ and __ocaml_lex_skip_sharp_bang_rec state lexbuf __ocaml_lex_state =
       token_without_comments state lexbuf
     | tok -> return tok
 
-# 2875 "src/ocaml/preprocess/406/lexer_raw.ml"
+# 2876 "src/ocaml/preprocess/406/lexer_raw.ml"
