@@ -15,6 +15,9 @@ clean:
 test:
 	dune runtest
 
+preprocess:
+	dune build @preprocess
+
 promote:
 	dune promote
 
