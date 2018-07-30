@@ -73,7 +73,7 @@ case $MODE in
             appveyor DownloadFile "https://github.com/mjambon/cppo/archive/v1.5.0.tar.gz" -FileName cppo-1.5.0.tar.gz
             appveyor DownloadFile "https://github.com/mjambon/easy-format/archive/v1.2.0.tar.gz" -FileName easy-format-1.2.0.tar.gz
             appveyor DownloadFile "http://download.camlcity.org/download/findlib-1.7.3.tar.gz" -FileName findlib-1.7.3.tar.gz
-            appveyor DownloadFile "https://github.com/janestreet/jbuilder/archive/1.0+beta11.tar.gz" -FileName jbuilder-1.0-beta11.tar.gz
+            appveyor DownloadFile "https://github.com/ocaml/dune/releases/download/1.0.1/dune-1.0.1.tbz" -FileName dune-1.0.1.tbz
             appveyor DownloadFile "https://github.com/ocaml/ocamlbuild/archive/0.11.0.tar.gz" -FileName ocamlbuild-0.11.0.tar.gz
             appveyor DownloadFile "https://github.com/mjambon/yojson/archive/v1.4.0.tar.gz" -FileName yojson-1.4.0.tar.gz
             cp $APPVEYOR_BUILD_FOLDER/appveyor/*.patch $APPVEYOR_BUILD_FOLDER/../src/
@@ -130,7 +130,7 @@ case $MODE in
           # Not yet upstreamed
           sed -i -e 's/\.a/$(LIB_SUFFIX)/g' src/findlib/Makefile
           cd ..
-          tar -xzf $APPVEYOR_BUILD_FOLDER/../src/jbuilder-1.0-beta11.tar.gz
+          tar -xzf $APPVEYOR_BUILD_FOLDER/../src/dune-1.0.1.tbz
           tar -xzf $APPVEYOR_BUILD_FOLDER/../src/easy-format-1.2.0.tar.gz
           cd easy-format-1.2.0
           # Upstreaming not required: master has been converted to jbuilder
@@ -166,8 +166,8 @@ case $MODE in
           fi
           cd ../findlib-1.7.3
           quietly_log "./configure && make all opt && make install"
-          cd ../jbuilder-1.0-beta11
-          quietly_log "ocaml bootstrap.ml && ./boot.exe && cp _build/default/bin/main.exe $PREFIX/bin/jbuilder.exe"
+          cd ../dune-1.0.1
+          quietly_log "ocaml bootstrap.ml && ./boot.exe && cp _build/default/bin/main.exe $PREFIX/bin/dune.exe"
           cd ../easy-format-1.2.0
           quietly_log "make && make install"
           cd ../biniou-1.2.0
