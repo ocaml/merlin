@@ -578,7 +578,7 @@ return (LOC1 . LOC2)."
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
   (let ((result (merlin--call-merlin command args)))
-    (merlin/callback-parse-result (merlin--parse-call-result result)))
+    (merlin/callback-parse-result (merlin--parse-call-result result))))
 
 (defun merlin/call-async (callback command &rest args)
   "Execute a merlin command asynchronously, returning the process object.
@@ -586,7 +586,7 @@ return (LOC1 . LOC2)."
 When the command finishes without being deleted, executes the callback with parsed output as single argument
 - if it is a success, argument is a cons cell with the sexp-result as car
 - if failure, argument is a single string as an error message
-- see merlin--callback-parse-result for convenience"
+- see merlin/callback-parse-result for convenience"
   (cl-letf (((symbol-function #'merlin--call-process)
              (apply-partially #'merlin--call-process-async callback)))
     (merlin--call-merlin command args)))
