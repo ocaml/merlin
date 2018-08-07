@@ -118,6 +118,8 @@ type merlin = {
 
   failures    : string list;
 
+  assocsuffixes : (string * string) list
+
 }
 
 let dump_merlin x =
@@ -155,6 +157,12 @@ let dump_merlin x =
     "packages_path"    , `List (List.map ~f:Json.string x.packages_path);
 
     "failures"         , `List (List.map ~f:Json.string x.failures);
+    "assoc_suffixes"   , `List (
+      List.map ~f:(fun (suffix,reader) -> `Assoc [
+          "impl", `String suffix;
+          "intf", `String reader;
+        ]) x.assocsuffixes
+    )
   ]
 
 type query = {
@@ -327,6 +335,31 @@ let merlin_flags = [
     Marg.param "command" (fun reader merlin ->
         {merlin with reader = Shell.split_command reader }),
     "<command> Use <command> as a merlin reader"
+  );
+  (
+    "-assocsuffix",
+    Marg.param "suffix:reader"
+      (fun assocpair merlin ->
+         let splitList = String.split_on_char ~sep:':' assocpair in 
+         match splitList with
+         | [suffix;reader] ->  
+              {merlin with 
+               assocsuffixes = (suffix,reader)::merlin.assocsuffixes}
+         | _ -> merlin 
+      ),
+    "Associate suffix with reader"
+  );
+  (
+    "-addsuffix",
+    Marg.param "implementation Suffix, interface Suffix" 
+    (fun suffixPair merlin ->
+      let splitList = String.split_on_char ~sep:','  suffixPair in 
+      match splitList with
+      | [impl;intf] ->
+        {merlin with suffixes = (impl,intf)::merlin.suffixes}
+      | _ -> merlin  
+    ),
+    "Add a suffix implementation,interface pair"
   );
   (
     "-extension",
@@ -623,6 +656,7 @@ let initial = {
     packages_ppx  = Ppxsetup.empty;
 
     failures = [];
+    assocsuffixes = [];
   };
   query = {
     filename = "*buffer*";
