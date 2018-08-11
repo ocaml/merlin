@@ -86,7 +86,7 @@
     (interactive (list 'interactive))
     (when merlin-mode
       (case command
-        (interactive (company-begin-backend 'company-my-backend))
+        (interactive (company-begin-backend 'merlin-company-backend))
         (prefix
          (let* ((bounds (merlin/completion-bounds))
                 (result (merlin/buffer-substring (car bounds) (cdr bounds))))
