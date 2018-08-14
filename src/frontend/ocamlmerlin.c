@@ -186,7 +186,11 @@ static void append_argument(unsigned char *buffer, size_t len, ssize_t *pos, con
   *pos = j;
 }
 
+#ifdef _WIN32
+extern __declspec(dllimport) char **environ;
+#else
 extern char **environ;
+#endif
 
 static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **argv)
 {
