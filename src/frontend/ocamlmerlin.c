@@ -35,6 +35,7 @@ typedef SSIZE_T ssize_t;
 #endif
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
 
@@ -186,7 +187,11 @@ static void append_argument(unsigned char *buffer, size_t len, ssize_t *pos, con
   *pos = j;
 }
 
+#ifdef _WIN32
+extern __declspec(dllimport) char **environ;
+#else
 extern char **environ;
+#endif
 
 static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **argv)
 {
@@ -463,16 +468,12 @@ static void prune_binary_name(char * buffer) {
 }
 
 #ifdef _WIN32
-static const char ocamlmerlin_server[] = "ocamlmerlin-server.exe";
+static char ocamlmerlin_server[] = "ocamlmerlin-server.exe";
 #else
 static char ocamlmerlin_server[] = "ocamlmerlin-server";
 #endif
 
-#ifdef _WIN32
-static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0)
-#else
 static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0, struct stat *st)
-#endif
 {
   char argv0_dirname[PATHSZ];
   size_t strsz;
@@ -588,6 +589,7 @@ int main(int argc, char **argv)
 {
   char result = 0;
   int err = 0;
+  struct stat st;
 #ifdef _WIN32
   HANDLE fds[3];
   ULONG pid;
@@ -595,9 +597,8 @@ int main(int argc, char **argv)
   DWORD dwNumberOfBytesRead;
   CHAR argv0[PATHSZ];
   GetModuleFileName(NULL, argv0, PATHSZ);
-  compute_merlinpath(merlin_path, argv0);
+  compute_merlinpath(merlin_path, argv0, &st);
 #else
-  struct stat st;
   compute_merlinpath(merlin_path, argv[0], &st);
 #endif
   if (argc >= 2 && strcmp(argv[1], "server") == 0)
