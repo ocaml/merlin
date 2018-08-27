@@ -29,7 +29,7 @@ let version = Sys.ocaml_version
 let flambda = false
 
 let exec_magic_number = "Caml1999X023"
-and cmi_magic_number = "Caml1999I023"
+and cmi_magic_number = "Caml1999I024"
 and cmo_magic_number = "Caml1999O023"
 and cma_magic_number = "Caml1999A023"
 and cmx_magic_number =

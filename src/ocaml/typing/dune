@@ -4,7 +4,12 @@ module J = Jbuild_plugin.V1
 ;;
 
 let ver =
-  Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+  try
+    match List.assoc "cmi_magic_number" J.ocamlc_config with
+    | "Caml1999I023" -> "407_0"
+    | _ -> raise Not_found
+  with Not_found ->
+    Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
 ;;
 
 Printf.ksprintf J.send {|
