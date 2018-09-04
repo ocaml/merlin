@@ -118,7 +118,7 @@ type merlin = {
 
   failures    : string list;
 
-  assocsuffixes : (string * string) list
+  extension_to_reader : (string * string) list
 
 }
 
@@ -159,9 +159,9 @@ let dump_merlin x =
     "failures"         , `List (List.map ~f:Json.string x.failures);
     "assoc_suffixes"   , `List (
       List.map ~f:(fun (suffix,reader) -> `Assoc [
-          "impl", `String suffix;
-          "intf", `String reader;
-        ]) x.assocsuffixes
+          "extension", `String suffix;
+          "reader", `String reader;
+        ]) x.extension_to_reader
     )
   ]
 
@@ -344,7 +344,7 @@ let merlin_flags = [
          match splitList with
          | [suffix;reader] ->  
               {merlin with 
-               assocsuffixes = (suffix,reader)::merlin.assocsuffixes}
+               extension_to_reader = (suffix,reader)::merlin.extension_to_reader}
          | _ -> merlin 
       ),
     "Associate suffix with reader"
@@ -656,7 +656,7 @@ let initial = {
     packages_ppx  = Ppxsetup.empty;
 
     failures = [];
-    assocsuffixes = [];
+    extension_to_reader = [(".re","reason");".rei","reason"];
   };
   query = {
     filename = "*buffer*";

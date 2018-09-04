@@ -79,9 +79,7 @@ let main () =
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run 
-    (String.concat "" (Array.to_list (Array.map (fun s -> s ^ "\000") (Unix.environment ())))) 
-    args)
+  | "single" :: args -> exit (New_merlin.run "" args)
   | "old-protocol" :: args -> Old_merlin.run args
   | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->
