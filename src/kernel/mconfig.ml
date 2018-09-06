@@ -656,7 +656,7 @@ let initial = {
     packages_ppx  = Ppxsetup.empty;
 
     failures = [];
-    extension_to_reader = [(".re","reason");".rei","reason"];
+    extension_to_reader = [(".re","reason");(".rei","reason")];
   };
   query = {
     filename = "*buffer*";

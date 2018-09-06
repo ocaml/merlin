@@ -80,7 +80,7 @@ let get_reader config =
   in  
   match Mconfig.(config.merlin.reader) with
   (* if a reader flag exists then this is explicitly used disregarding suffix association *)
-  | [] -> find_reader Mconfig.(config.merlin.assocsuffixes)
+  | [] -> find_reader Mconfig.(config.merlin.extension_to_reader)
   | x -> x
 
 let mocaml_printer tr reader ppf otree =

@@ -65,7 +65,7 @@ type merlin = {
   packages_ppx  : Ppxsetup.t;
 
   failures    : string list;
-  assocsuffixes : (string * string) list
+  extension_to_reader : (string * string) list
 }
 
 val dump_merlin : merlin -> json
