@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 src_dir="$(dirname ${BASH_SOURCE[0]})/.."
 cd "$src_dir"
