@@ -17,7 +17,7 @@ build-test: [
 ]
 
 depends: [
-  "dune"  {build}
+  "dune"  {build & >= "1.1.0"}
   "ocamlfind" {>= "1.5.2"}
   "yojson"
   "craml" {test}
