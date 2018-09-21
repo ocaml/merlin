@@ -43,6 +43,7 @@ type config = {
   reader       : string list;
   findlib_path : string list;
   findlib_toolchain : string option;
+  exclude_query_dir : bool;
 }
 
 (** Load one or more .merlin file *)

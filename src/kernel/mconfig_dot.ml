@@ -43,6 +43,7 @@ type directive = [
   | `READER of string list
   | `FINDLIB_PATH of string
   | `FINDLIB_TOOLCHAIN of string
+  | `EXCLUDE_QUERY_DIR
 ]
 
 type file = {
@@ -93,6 +94,8 @@ module Cache = File_cache.Make (struct
             tell (`FINDLIB_PATH (String.drop 13 line))
           else if String.is_prefixed ~by:"FINDLIB_TOOLCHAIN " line then
             tell (`FINDLIB_TOOLCHAIN (String.drop 18 line))
+          else if String.is_prefixed ~by:"EXCLUDE_QUERY_DIR" line then
+            tell `EXCLUDE_QUERY_DIR
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -160,6 +163,7 @@ type config = {
   reader       : string list;
   findlib_path : string list;
   findlib_toolchain : string option;
+  exclude_query_dir : bool;
 }
 
 let empty_config = {
@@ -177,6 +181,7 @@ let empty_config = {
   reader       = [];
   findlib_path = [];
   findlib_toolchain = None;
+  exclude_query_dir = false;
 }
 
 let white_regexp = Str.regexp "[ \t]+"
@@ -232,6 +237,8 @@ let prepend_config ~stdlib {path; directives; _} config =
       { config with findlib_path = canon_path :: config.findlib_path }
     | `FINDLIB_TOOLCHAIN path ->
       {config with findlib_toolchain = Some path}
+    | `EXCLUDE_QUERY_DIR ->
+      {config with exclude_query_dir = true}
   ) directives
 
 let postprocess_config config =
@@ -251,6 +258,7 @@ let postprocess_config config =
     findlib     = config.findlib;
     reader      = config.reader;
     findlib_toolchain = config.findlib_toolchain;
+    exclude_query_dir = config.exclude_query_dir;
   }
 
 
