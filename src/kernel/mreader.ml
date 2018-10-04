@@ -72,10 +72,15 @@ let instantiate_reader tr spec config source = match spec with
          | Some reader -> Mreader_extend.stop tr reader))
 
 let get_reader config =
+  let rec find_reader assocsuffixes =
+    match assocsuffixes with
+    | [] -> []
+    | (suffix,reader)::t -> 
+      if Filename.check_suffix Mconfig.(config.query.filename) suffix then [reader] else find_reader t
+  in  
   match Mconfig.(config.merlin.reader) with
-  | [] when Filename.check_suffix Mconfig.(config.query.filename) ".re"
-         || Filename.check_suffix Mconfig.(config.query.filename) ".rei"
-      -> ["reason"]
+  (* if a reader flag exists then this is explicitly used disregarding suffix association *)
+  | [] -> find_reader Mconfig.(config.merlin.extension_to_reader)
   | x -> x
 
 let mocaml_printer tr reader ppf otree =
