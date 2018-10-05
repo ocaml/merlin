@@ -10,11 +10,11 @@
 
 (rule
   (targets parser_raw.ml parser_raw.mli parser_raw.cmly)
-  (deps    parser_raw.mly
-            (glob_files %{workspace_root}/src/ocaml/parsing/*.cmi)
-            (glob_files %{workspace_root}/src/ocaml/utils/*.cmi))
+  (deps    (:p parser_raw.mly)
+           (glob_files %{project_root}/src/ocaml/parsing/.parsing.objs/*.cmi)
+           (glob_files %{project_root}/src/ocaml/utils/.utils.objs/*.cmi))
   (action  (run %{bin:menhir} --infer --inspection --table --cmly
-                --ocamlc "%{ocamlc} -I ../../parsing -I ../../utils" %{deps})))
+                --ocamlc "%{ocamlc} -I ../../parsing/.parsing.objs -I ../../utils/.utils.objs" %{p})))
 
 (rule
   (targets parser_recover.ml)
