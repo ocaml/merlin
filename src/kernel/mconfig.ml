@@ -342,25 +342,23 @@ let merlin_flags = [
   (
     "-assocsuffix",
     Marg.param "suffix:reader"
-      (fun assocpair merlin ->
-         let splitList = String.split_on_char ~sep:':' assocpair in 
-         match splitList with
-         | [suffix;reader] ->  
-              {merlin with 
+      (fun assoc_pair merlin ->
+         match Misc.rev_string_split ~on:':' assoc_pair with
+         | [reader;suffix] ->
+              {merlin with
                extension_to_reader = (suffix,reader)::merlin.extension_to_reader}
-         | _ -> merlin 
+         | _ -> merlin
       ),
     "Associate suffix with reader"
   );
   (
     "-addsuffix",
-    Marg.param "implementation Suffix, interface Suffix" 
-    (fun suffixPair merlin ->
-      let splitList = String.split_on_char ~sep:','  suffixPair in 
-      match splitList with
-      | [impl;intf] ->
+    Marg.param "implementation Suffix, interface Suffix"
+    (fun suffix_pair merlin ->
+      match Misc.rev_string_split ~on:':' suffix_pair with
+      | [intf;impl] ->
         {merlin with suffixes = (impl,intf)::merlin.suffixes}
-      | _ -> merlin  
+      | _ -> merlin
     ),
     "Add a suffix implementation,interface pair"
   );
