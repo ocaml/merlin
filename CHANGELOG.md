@@ -1,7 +1,11 @@
-git version
-===========
+merlin 3.2.0
+============
+Mon Oct  8 10:41:24 BST 2018
 
-Switched to dune (thanks to @nojb).
+Switched build to dune (thanks to @nojb).
+Added support for 4.07.1
+Various bugfixes in the backend and in the editor modes.
+
 
 merlin 3.1.0
 ============
