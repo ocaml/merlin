@@ -1,0 +1,8 @@
+(alias
+ (name runtest)
+ (deps simple-pp.sh simple-pp.t)
+ (action
+   (progn
+     (setenv MERLIN %{exe:../merlin-wrapper}
+       (run %{bin:craml} simple-pp.t))
+     (diff? simple-pp.t simple-pp.t.corrected))))
