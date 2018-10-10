@@ -5,4 +5,5 @@
         (merlin-company.el as emacs/site-lisp/merlin-company.el)
         (merlin-iedit.el as emacs/site-lisp/merlin-iedit.el)
         (merlin-imenu.el as emacs/site-lisp/merlin-imenu.el)
+        (merlin-xref.el as emacs/site-lisp/merlin-xref.el)
         (merlin.el as emacs/site-lisp/merlin.el)))
