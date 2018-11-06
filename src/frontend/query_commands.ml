@@ -171,7 +171,7 @@ let reconstruct_identifier tr pipeline pos = function
   | None ->
     let path = Mreader.reconstruct_identifier tr
         (Mpipeline.input_config pipeline)
-        (Mpipeline.input_source pipeline)
+        (Mpipeline.raw_source pipeline)
         pos
     in
     let path = Mreader_lexer.identifier_suffix path in
@@ -455,7 +455,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
   | Document (patho, pos) ->
     with_typer pipeline @@ fun tr typer ->
     let local_defs = Mtyper.get_typedtree typer in
-    let source = Mpipeline.input_source pipeline in
     let config = Mpipeline.final_config pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let comments = Mpipeline.reader_comments pipeline in
@@ -464,7 +463,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       match patho with
       | Some p -> p
       | None ->
-        let path = Mreader_lexer.reconstruct_identifier config source pos in
+        let path = reconstruct_identifier tr pipeline pos None in
         let path = Mreader_lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
         String.concat ~sep:"." path
@@ -476,15 +475,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
   | Locate (patho, ml_or_mli, pos) ->
     with_typer pipeline @@ fun tr typer ->
     let local_defs = Mtyper.get_typedtree typer in
-    let config = Mpipeline.input_config pipeline in
-    let source = Mpipeline.input_source pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at tr typer pos) in
     let path =
       match patho with
       | Some p -> p
       | None ->
-        let path = Mreader.reconstruct_identifier tr config source pos in
+        let path = reconstruct_identifier tr pipeline pos None in
         let path = Mreader_lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
         let path = String.concat ~sep:"." path in
