@@ -48,6 +48,7 @@ type directive = [
 
 type file = {
   recurse    : bool;
+  includes   : string list;
   path       : string;
   directives : directive list;
 }
@@ -58,6 +59,7 @@ module Cache = File_cache.Make (struct
       let ic = open_in path in
       let acc = ref [] in
       let recurse = ref false in
+      let includes = ref [] in
       let tell l = acc := l :: !acc in
       try
         let rec aux () =
@@ -82,6 +84,8 @@ module Cache = File_cache.Make (struct
             tell (`FLG (String.drop 4 line))
           else if String.is_prefixed ~by:"REC" line then
             recurse := true
+          else if String.is_prefixed ~by:". " line then
+            includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
@@ -106,7 +110,8 @@ module Cache = File_cache.Make (struct
       with
       | End_of_file ->
         close_in_noerr ic;
-        {recurse = !recurse; path; directives = List.rev !acc}
+        let recurse = !recurse and includes = !includes in
+        {recurse; includes; path; directives = List.rev !acc}
       | exn ->
         close_in_noerr ic;
         raise exn
@@ -130,23 +135,35 @@ let find fname =
     in
     loop fname
 
-let rec directives_of_file fname =
-  match find fname with
-  | None -> []
-  | Some fname ->
-    let file = Cache.read fname in
-    file ::
-    if file.recurse then
-      let path = file.path in
-      let dir =
-        let dir = Filename.dirname path in
-        if Filename.basename path <> ".merlin"
-        then dir else Filename.dirname dir
+let directives_of_files filenames =
+  let marked = Hashtbl.create 7 in
+  let rec process acc = function
+    | x :: rest when Hashtbl.mem marked x ->
+      process acc rest
+    | x :: rest ->
+      Hashtbl.add marked x ();
+      let file = Cache.read x in
+      let dir = Filename.dirname file.path in
+      let rest =
+        List.map ~f:(canonicalize_filename ~cwd:dir) file.includes @ rest
       in
-      if dir <> path then
-        directives_of_file dir
-      else []
-    else []
+      let rest =
+        if file.recurse then (
+          let dir =
+            if Filename.basename file.path <> ".merlin"
+            then dir else Filename.dirname dir
+          in
+          if dir <> file.path then
+            match find dir with
+            | Some fname -> fname :: rest
+            | None -> rest
+          else rest
+        ) else rest
+      in
+      process (file :: acc) rest
+    | [] -> List.rev acc
+  in
+  process [] filenames
 
 type config = {
   dot_merlins  : string list;
@@ -155,7 +172,7 @@ type config = {
   cmi_path     : string list;
   cmt_path     : string list;
   packages     : string list;
-  flags        : string list list;
+  flags        : string list with_workdir list;
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
@@ -225,7 +242,8 @@ let prepend_config ~stdlib {path; directives; _} config =
     | `SUFFIX suffix ->
       {config with suffixes = (parse_suffix suffix) @ config.suffixes}
     | `FLG flags ->
-      {config with flags = Shell.split_command flags :: config.flags}
+      let flags = {workdir = cwd; workval = Shell.split_command flags} in
+      {config with flags = flags :: config.flags}
     | `STDLIB path ->
       {config with stdlib = Some (canonicalize_filename ~cwd path)}
     | `FINDLIB path ->
@@ -264,12 +282,11 @@ let postprocess_config config =
 
 let load ~stdlib filenames =
   let filenames = List.map ~f:canonicalize_filename filenames in
-  let directives = List.map ~f:directives_of_file filenames in
+  let filenames = List.filter_map ~f:find filenames in
+  let directives = directives_of_files filenames in
   let config =
     List.fold_left directives ~init:empty_config
-      ~f:(fun config subfiles ->
-          List.fold_left subfiles ~init:config
-            ~f:(fun config file -> prepend_config ~stdlib file config))
+      ~f:(fun config file -> prepend_config ~stdlib file config)
   in
   postprocess_config config
 

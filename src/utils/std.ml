@@ -36,8 +36,12 @@ module Json = struct
     | None -> `Null
     | Some x -> f x
 
+  let list f x =
+    `List (List.map f x)
+
   let print f () x =
     pretty_to_string (f x)
+
 end
 
 type json =
@@ -758,3 +762,16 @@ let file_contents filename =
     raise exn
 
 external reraise : exn -> 'a = "%reraise"
+
+type 'a with_workdir = {
+  workdir : string;
+  workval : 'a;
+}
+(** Some value that must be interpreted with respect to a specific work
+    directory. (e.g. for resolving relative paths or executing sub-commands *)
+
+let dump_with_workdir f x : json =
+  `Assoc [
+    "workdir", `String x.workdir;
+    "workval", f x.workval;
+  ]

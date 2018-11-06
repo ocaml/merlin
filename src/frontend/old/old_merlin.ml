@@ -116,9 +116,9 @@ let setup_system () =
 
 let setup_merlin args =
   let config, protocol =
-    Marg.parse_all ~warning:prerr_endline
-      Mconfig.arguments_table ocamlmerlin_args
-      args Mconfig.initial `Json
+    Mconfig.parse_arguments
+      ~wd:(Sys.getcwd ()) ~warning:prerr_endline ocamlmerlin_args args
+      Mconfig.initial `Json
   in
   Old_command.default_config := config;
   let protocol = match protocol with

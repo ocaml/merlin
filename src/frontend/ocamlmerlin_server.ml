@@ -12,13 +12,7 @@ module Server = struct
   let process_request {Os_ipc. wd; environ; argv; context = _}  =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit
-    | args ->
-      begin try Sys.chdir wd
-        with _ ->
-          Logger.logf "Ocamlmerlin_server" "Server.process_request"
-            "cannot change working directory to %S" wd
-      end;
-      New_merlin.run environ args
+    | args -> New_merlin.run environ (Some wd) args
 
   let process_client client =
     let context = client.Os_ipc.context in
@@ -79,7 +73,7 @@ let main () =
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run "" args)
+  | "single" :: args -> exit (New_merlin.run "" None args)
   | "old-protocol" :: args -> Old_merlin.run args
   | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->

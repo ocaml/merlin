@@ -17,8 +17,8 @@ type ocaml = {
   nopervasives         : bool;
   strict_formats       : bool;
   open_modules         : string list;
-  ppx                  : string list;
-  pp                   : string;
+  ppx                  : string with_workdir list;
+  pp                   : string with_workdir option;
   warnings             : Warnings.state;
 }
 
@@ -36,11 +36,6 @@ val dump_findlib : findlib -> json
 
 (** {1 Merlin high-level settings} *)
 
-type flag_list = {
-  flag_cwd : string option;
-  flag_list : string list;
-}
-
 type merlin = {
   build_path  : string list;
   source_path : string list;
@@ -56,10 +51,10 @@ type merlin = {
 
   exclude_query_dir : bool;
 
-  flags_to_apply    : flag_list list;
+  flags_to_apply    : string list with_workdir list;
   packages_to_load  : string list;
 
-  flags_applied    : flag_list list;
+  flags_applied    : string list with_workdir list;
   dotmerlin_loaded : string list;
   packages_loaded  : string list;
 
@@ -100,7 +95,10 @@ val normalize : Trace.t -> t -> t
 
 val is_normalized : t -> bool
 
-val arguments_table : t Marg.table
+val parse_arguments :
+  wd:string ->
+  warning:(string -> unit) -> 'a Marg.spec list -> string list ->
+  t -> 'a -> t * 'a
 
 val flags_for_completion : unit -> string list
 

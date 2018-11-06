@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 (** Load and cache dot-merlin files **)
 
 type config = {
@@ -35,7 +37,7 @@ type config = {
   cmi_path     : string list;
   cmt_path     : string list;
   packages     : string list;
-  flags        : string list list;
+  flags        : string list with_workdir list;
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;

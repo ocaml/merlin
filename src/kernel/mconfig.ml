@@ -17,8 +17,8 @@ type ocaml = {
   nopervasives         : bool;
   strict_formats       : bool;
   open_modules         : string list;
-  ppx                  : string list;
-  pp                   : string;
+  ppx                  : string with_workdir list;
+  pp                   : string with_workdir option;
   warnings             : Warnings.state;
 }
 
@@ -41,9 +41,9 @@ let dump_ocaml x = `Assoc [
     "unsafe_string"        , `Bool x.unsafe_string;
     "nopervasives"         , `Bool x.nopervasives;
     "strict_formats"       , `Bool x.strict_formats;
-    "open_modules"         , `List (List.map ~f:Json.string x.open_modules);
-    "ppx"                  , `List (List.map ~f:Json.string x.ppx);
-    "pp"                   , `String x.pp;
+    "open_modules"         , Json.list Json.string x.open_modules;
+    "ppx"                  , Json.list (dump_with_workdir Json.string) x.ppx;
+    "pp"                   , Json.option (dump_with_workdir Json.string) x.pp;
     "warnings"             , dump_warnings x.warnings;
   ]
 
@@ -51,8 +51,9 @@ let dump_ocaml x = `Assoc [
 
 let cwd = ref None
 
-let resolve_relative_path ?cwd:path f =
-  let_ref cwd path f
+let unsafe_get_cwd () = match !cwd with
+  | None -> assert false
+  | Some cwd -> cwd
 
 let canonicalize_filename path =
   Misc.canonicalize_filename ?cwd:!cwd path
@@ -60,14 +61,9 @@ let canonicalize_filename path =
 let marg_path f =
   Marg.param "path" (fun path acc -> f (canonicalize_filename path) acc)
 
-let marg_exec_path f =
-  Marg.param "path" (fun path acc ->
-      (* Don't canonicalize if relative path can be resolved by looking up
-         PATH. *)
-      if Filename.basename path = path then
-        f path acc
-      else
-        f (canonicalize_filename path) acc)
+let marg_commandline f =
+  Marg.param "command"
+    (fun workval acc -> f {workdir = unsafe_get_cwd (); workval} acc)
 
 (** {1 Findlib configuration} *)
 
@@ -85,14 +81,6 @@ let dump_findlib x = `Assoc [
 
 (** {1 Merlin high-level settings} *)
 
-type flag_list = {
-  flag_cwd : string option;
-  flag_list : string list;
-}
-
-let flag_list ?(cwd=(!cwd)) flag_list =
-  { flag_cwd = cwd; flag_list }
-
 type merlin = {
   build_path  : string list;
   source_path : string list;
@@ -108,10 +96,10 @@ type merlin = {
 
   exclude_query_dir : bool;
 
-  flags_to_apply    : flag_list list;
+  flags_to_apply    : string list with_workdir list;
   packages_to_load  : string list;
 
-  flags_applied    : flag_list list;
+  flags_applied    : string list with_workdir list;
   dotmerlin_loaded : string list;
   packages_loaded  : string list;
 
@@ -125,11 +113,8 @@ type merlin = {
 }
 
 let dump_merlin x =
-  let dump_flag_list { flag_cwd; flag_list } =
-    `Assoc [
-      "cwd", Json.(option string) flag_cwd;
-      "flags", `List (List.map ~f:Json.string flag_list);
-    ]
+  let dump_flag_list flags =
+    dump_with_workdir (Json.list Json.string) flags
   in
   `Assoc [
     "build_path"   , `List (List.map ~f:Json.string x.build_path);
@@ -243,10 +228,10 @@ let normalize_step t =
     in
     let failures = ref [] in
     let warning failure = failures := failure :: !failures in
-    let t = List.fold_left ~f:(fun t {flag_cwd; flag_list} ->
-        fst (resolve_relative_path ?cwd:flag_cwd
-               (Marg.parse_all ~warning arguments_table [] flag_list t))
-      ) ~init:t flagss
+    let t = List.fold_left ~f:(fun t {workdir; workval} -> fst (
+        let_ref cwd (Some workdir)
+          (Marg.parse_all ~warning arguments_table [] workval t)
+      )) ~init:t flagss
     in
     {t with merlin = {t.merlin with failures = !failures @ t.merlin.failures}}
   else
@@ -281,7 +266,7 @@ let load_dotmerlins ~filenames t =
       if dot.reader = []
       then merlin.reader
       else dot.reader;
-    flags_to_apply = List.map ~f:flag_list dot.flags @ merlin.flags_to_apply;
+    flags_to_apply = dot.flags @ merlin.flags_to_apply;
     dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
     packages_to_load = dot.packages @ merlin.packages_to_load;
   } in
@@ -380,8 +365,10 @@ let merlin_flags = [
   (
     "-flags",
     Marg.param "string" (fun flags merlin ->
-        {merlin with flags_to_apply = flag_list (Shell.split_command flags) ::
-                                      merlin.flags_to_apply}),
+        let flags =
+          { workdir = unsafe_get_cwd (); workval = Shell.split_command flags }
+        in
+        {merlin with flags_to_apply = flags :: merlin.flags_to_apply}),
     "<quoted flags> Unescape argument and interpret it as more flags"
   );
   (
@@ -574,13 +561,13 @@ let ocaml_flags = [
   );
   (
     "-ppx",
-    marg_exec_path (fun command ocaml ->
+    marg_commandline (fun command ocaml ->
         {ocaml with ppx = command :: ocaml.ppx}),
     "<command> Pipe abstract syntax trees through preprocessor <command>"
   );
   (
     "-pp",
-    marg_exec_path (fun pp ocaml -> {ocaml with pp}),
+    marg_commandline (fun pp ocaml -> {ocaml with pp = Some pp}),
     "<command> Pipe sources through preprocessor <command>"
   );
   ( "-w",
@@ -626,7 +613,7 @@ let initial = {
     strict_formats       = false;
     open_modules         = [];
     ppx                  = [];
-    pp                   = "";
+    pp                   = None;
     warnings             = Warnings.backup ();
   };
   findlib = {
@@ -668,6 +655,10 @@ let initial = {
     printer_width = 0;
   }
 }
+
+let parse_arguments ~wd ~warning local_spec args t local =
+  let_ref cwd (Some wd) @@ fun () ->
+  Marg.parse_all ~warning arguments_table local_spec args t local
 
 let global_flags = [
   (

@@ -75,9 +75,9 @@ let run = function
         let config, command_args =
           let fails = ref [] in
           let config, command_args =
-            Marg.parse_all ~warning:(fun fail -> fails := fail :: !fails)
-              Mconfig.arguments_table (List.map snd spec)
-              raw_args Mconfig.initial command_args
+            Mconfig.parse_arguments
+              ~wd:(Sys.getcwd ()) ~warning:(fun w -> fails := w :: !fails)
+              (List.map snd spec) raw_args Mconfig.initial command_args
           in
           let config =
             Mconfig.({config with merlin = {config.merlin with failures = !fails}})
@@ -133,14 +133,19 @@ let run = function
         prerr_endline ("Exception: " ^ Printexc.to_string exn);
         1
 
-let with_env env f =
+let run env wd args =
   Os_ipc.merlin_set_environ env;
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
+  let wd_msg = match wd with
+    | None -> "No working directory specified"
+    | Some wd ->
+      try Sys.chdir wd; Printf.sprintf "changed directory to %S" wd
+      with _ -> Printf.sprintf "cannot change working directory to %S" wd
+  in
   let log = match Sys.getenv "MERLIN_LOG" with
     | value -> Some value
     | exception Not_found -> None
   in
-  Logger.with_log_file log f
-
-let run env args =
-  with_env env (fun () -> run args)
+  Logger.with_log_file log @@ fun () ->
+  Logger.log "Ocamlmerlin_server" "Server.process_request" wd_msg;
+  run args

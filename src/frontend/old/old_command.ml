@@ -47,7 +47,7 @@ let customize config =
     let extensions = List.remove_all ext config.merlin.extensions in
     {config with merlin = {config.merlin with extensions}};
   | `Flags flags ->
-    let flags_to_apply = [{flag_cwd = None; flag_list = flags}] in
+    let flags_to_apply = [{workdir = config.query.directory; workval = flags}] in
     {config with merlin = {config.merlin with flags_to_apply}}
   | `Use pkgs ->
     let packages_to_load =
@@ -193,7 +193,7 @@ let dispatch_sync tr config state (type a) : a sync_command -> a = function
   | Flags_get ->
     let pipeline = make_pipeline tr config state in
     let config = Mpipeline.final_config pipeline in
-    List.concat_map ~f:(fun f -> f.Mconfig.flag_list)
+    List.concat_map ~f:(fun f -> f.workval)
       Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->

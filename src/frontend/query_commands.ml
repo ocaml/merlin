@@ -140,8 +140,7 @@ let dump pipeline = function
 
   | [`String "flags"] ->
     let prepare_flags flags =
-      `List (List.map ~f:Json.string (List.concat_map flags
-                                     ~f:(fun f -> f.Mconfig.flag_list))) in
+      Json.list Json.string (List.concat_map flags ~f:(fun f -> f.workval)) in
     let user = prepare_flags
         Mconfig.((Mpipeline.input_config pipeline).merlin.flags_to_apply) in
     let applied = prepare_flags
