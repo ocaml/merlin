@@ -196,31 +196,12 @@ let stdlib =
     | Some stdlib -> stdlib
     | None -> match env with
       | Some stdlib -> stdlib
-      | None ->
-        Mconfig_dot.standard_library
-          ?conf:config.findlib.conf
-          ~path:config.findlib.path
-          ?toolchain:config.findlib.toolchain ()
+      | None -> Mconfig_dot.standard_library ()
 
 let normalize_step t =
-  let merlin = t.merlin and findlib = t.findlib in
-  let open Mconfig_dot in
+  let merlin = t.merlin in
   if merlin.packages_to_load <> [] then
-    let path, ppx, failures = path_of_packages
-        ?conf:findlib.conf
-        ~path:findlib.path
-        ?toolchain:findlib.toolchain
-        merlin.packages_to_load
-    in
-    { t with merlin =
-               { merlin with
-                 packages_to_load = [];
-                 packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
-                 packages_path = path @ merlin.packages_path;
-                 packages_ppx  = Ppxsetup.union ppx merlin.packages_ppx;
-                 failures = failures @ merlin.failures
-               }
-    }
+    { t with merlin = { merlin with packages_to_load = [] } }
   else if merlin.flags_to_apply <> [] then
     let flagss = merlin.flags_to_apply in
     let t = {t with merlin = { merlin with

@@ -51,11 +51,4 @@ type config = {
 (** Load one or more .merlin file *)
 val load : stdlib:string -> string list -> config
 
-val standard_library : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string
-
-val path_of_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> string list ->
-  (string list (* packages *) *
-   Ppxsetup.t *
-   string list (* failures *))
-
-val list_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string list
+val standard_library : unit -> string

@@ -91,7 +91,6 @@ let with_failures failures assoc = match failures with
         fun (pkgs, flgs, exts) (str,exn) ->
           let str = "\"" ^ str ^ "\"" in
           match exn with
-          | Fl_package_base.No_such_package _ -> str :: pkgs, flgs, exts
           | Arg.Bad _ -> pkgs, str :: flgs, exts
           | Extension.Unknown -> pkgs, flgs, str :: exts
           | e -> (str ^ " (" ^ Printexc.to_string e ^ ")") :: pkgs, flgs, exts
