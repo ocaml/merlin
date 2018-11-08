@@ -142,6 +142,9 @@ let pp_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s 1>%s"
     cmd (Filename.quote fn_in) (Filename.quote fn_out)
 
+(* FIXME: remove this once we drop support for 4.02 *)
+type ('a, 'b) res = Ok of 'a | Error of 'b
+
 let apply_pp ~workdir ~filename ~source ~pp =
   let fn_in = Filename.temp_file "merlinpp" (Filename.basename filename) in
   begin
