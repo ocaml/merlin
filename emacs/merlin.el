@@ -1720,6 +1720,7 @@ Empty string defaults to jumping to all these."
   (let ((configuration (merlin--configuration)))
     (when configuration (setq merlin-buffer-configuration configuration)))
   (add-to-list 'after-change-functions 'merlin--on-edit)
+  (merlin-error-check)
   ;; TODO: Sanity check for selected merlin version
   (unless merlin--idle-timer
     (setq merlin--idle-timer
