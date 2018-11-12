@@ -1,8 +1,5 @@
 all: build ocamlmerlin ocamlmerlin-server
 
-dev:
-	dune build --dev -j16
-
 build:
 	dune build
 
