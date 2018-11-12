@@ -23,6 +23,14 @@ depends: [
   "craml" {test}
 ]
 
+depopts: [
+  "sturgeon"
+]
+
+conflicts: [
+  "sturgon" {< "0.4.2"}
+]
+
 available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.08" ]
 
 post-messages: [

@@ -20,6 +20,6 @@
  (wrapped false)
  (libraries str yojson unix
             (select sturgeon_stub.ml from
-                    (sturgeon threads -> ../sturgeon_stub/sturgeon_stub.ml)
-                    (!sturgeon -> ../sturgeon_null/sturgeon_stub.ml)))
+                    (sturgeon.recipes_server threads -> ../sturgeon_stub/sturgeon_stub.ml)
+                    (!sturgeon.recipes_server -> ../sturgeon_null/sturgeon_stub.ml)))
  (c_names platform_misc))
