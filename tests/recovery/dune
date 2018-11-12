@@ -1,6 +1,11 @@
 (alias
  (name runtest)
  (deps test.t)
+ ;; FIXME: make recovery more stable, in particular: on line 86, versions <=4.04
+ ;; seem to produce a better error message
+ ;; Otherwise 4.02 consistently produces potentially nicer but definitely more
+ ;; verbose syntax error messages, and we could make it stop doing that.
+ (enabled_if (>= %{ocaml_version} 4.04.0))
  (action
    (progn
      (setenv MERLIN %{exe:../merlin-wrapper}
