@@ -302,14 +302,14 @@ let pp_ksprintf ?before k fmt =
       k msg)
     ppf fmt
 
+(* Shift the formatter's offset by the length of the error prefix, which
+   is always added by the compiler after the message has been formatted *)
+let print_phanton_error_prefix ppf =
+  Format.pp_print_as ppf (String.length error_prefix + 2 (* ": " *)) ""
+
 let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) fmt =
   pp_ksprintf
-    (fun msg -> {loc; msg; sub; if_highlight; source})
-    fmt
-
-let errorf_prefixed ?(loc=none) ?(sub=[]) ?(if_highlight="") ?(source = Typer) fmt =
-  pp_ksprintf
-    ~before:(fun ppf -> fprintf ppf "%a " print_error_prefix ())
+    ~before:print_phanton_error_prefix
     (fun msg -> {loc; msg; sub; if_highlight; source})
     fmt
 
@@ -344,8 +344,7 @@ let rec default_error_reporter ppf ({loc; msg; sub; if_highlight} as err) =
   if highlighted then
     Format.pp_print_string ppf if_highlight
   else begin
-    print ppf loc;
-    Format.pp_print_string ppf msg;
+    fprintf ppf "%a%a %s" print loc print_error_prefix () msg;
     List.iter (Format.fprintf ppf "@\n@[<2>%a@]" default_error_reporter) sub
   end
 
@@ -356,23 +355,38 @@ let report_error ppf err =
 ;;
 
 let error_of_printer loc ?source print x =
-  errorf_prefixed ~loc ?source "%a@?" print x
+  errorf ~loc ?source "%a@?" print x
 
 let error_of_printer_file ?source print x =
   error_of_printer (in_file !input_name) ?source print x
+
+exception Error of error
 
 let () =
   register_error_of_exn
     (function
       | Sys_error msg ->
-          Some (errorf_prefixed ~loc:(in_file !input_name)
+          Some (errorf ~loc:(in_file !input_name)
                 "I/O error: %s" msg)
       | Warnings.Errors n ->
           Some
-            (errorf_prefixed ~loc:(in_file !input_name)
+            (errorf ~loc:(in_file !input_name)
              "Some fatal warnings were triggered (%d occurrences)" n)
-      | _ ->
-          None
+
+      (*| Misc.HookExnWrapper {error = e; hook_name;
+                             hook_info={Misc.sourcefile}} ->
+          let sub = match error_of_exn e with
+            | None -> error (Printexc.to_string e)
+            | Some err -> err
+          in
+          Some
+            (errorf ~loc:(in_file sourcefile)
+               "In hook %S:" hook_name
+               ~sub:[sub])*)
+      | Error e -> Some e
+      | Misc.Fatal_error (msg, bt) ->
+          Some (errorf "Fatal error: %s.\n%s" msg (Printexc.raw_backtrace_to_string bt))
+      | _ -> None
     )
 
 external reraise : exn -> 'a = "%reraise"
@@ -387,15 +401,7 @@ let rec report_exception_rec n ppf exn =
 
 let report_exception ppf exn = report_exception_rec 5 ppf exn
 
-
-exception Error of error
-
-let () =
-  register_error_of_exn
-    (function
-      | Error e -> Some e
-      | _ -> None
-    )
-
 let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) =
-  pp_ksprintf (fun msg -> raise (Error ({loc; msg; sub; if_highlight; source})))
+  pp_ksprintf
+    ~before:print_phanton_error_prefix
+    (fun msg -> raise (Error ({loc; msg; sub; if_highlight; source})))
