@@ -27,7 +27,7 @@ module Make
        val nullable : 'a Parser.nonterminal -> bool
      end)
     (Dump : sig
-       val symbol  : Parser.xsymbol -> string
+       val symbol  : unit -> Parser.xsymbol -> string
      end) :
 sig
 

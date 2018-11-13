@@ -79,3 +79,5 @@ val node :
   Browse_raw.node list -> Location.t * string
 (** [node ~env parents current_node] returns a location indicating which
     portion of the buffer must be replaced and the string to replace it with. *)
+
+val log : 'a Logger.printf

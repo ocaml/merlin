@@ -1,6 +1,8 @@
 (* Merlin representation of a textual source code *)
 open Std
 
+let {Logger. log} = Logger.for_section "Msource"
+
 type t = {
   text: string;
 }
@@ -30,7 +32,9 @@ exception Found of int
 
 let find_line line {text} =
   if line <= 0 then
-    (Printf.ksprintf invalid_arg "Msource.find_line: invalid line number %d. Numbering starts from 1" line);
+    Printf.ksprintf invalid_arg
+      "Msource.find_line: invalid line number %d. \
+       Numbering starts from 1" line;
   if line = 1 then 0 else
     let line' = ref line in
     try
@@ -41,8 +45,8 @@ let find_line line {text} =
             raise (Found i);
         end
       done;
-      Logger.logf "source" "find_line"
-        "line %d out of bounds (max = %d)" line (line - !line');
+      log ~title:"find_line" "line %d out of bounds (max = %d)"
+        line (line - !line');
       String.length text
     with Found n ->
       n + 1
@@ -54,16 +58,14 @@ let find_offset ({text} as t) line col =
     try
       for i = offset to min (offset + col) (String.length text) - 1 do
         if text.[i] = '\n' then begin
-          Logger.logf "source" "find_offset"
+          log ~title:"find_offset"
             "%d:%d out of line bounds, line %d only has %d columns"
             line col line (i - offset);
           raise (Found i)
         end
       done;
       if (offset + col) > (String.length text) then begin
-        Logger.logf "source" "find_offset"
-          "%d:%d out of file bounds"
-          line col
+        log ~title:"find_offset" "%d:%d out of file bounds" line col
       end;
       offset + col
     with Found off -> off
@@ -75,9 +77,8 @@ let get_offset t = function
     if x <= String.length t.text then
       (`Offset x)
     else begin
-      Logger.logf "source" "get_offset"
-        "offset %d out of bounds (size is %d)"
-        x (String.length t.text);
+      log ~title:"get_offset"
+        "offset %d out of bounds (size is %d)" x (String.length t.text);
       (`Offset (String.length t.text))
     end
   | `End ->
@@ -92,8 +93,7 @@ let get_logical {text} = function
     let len = String.length text in
     let offset = match r with
       | `Offset x when x > len ->
-        Logger.logf "source" "get_logical"
-          "offset %d out of bounds (size is %d)" x len;
+        log ~title:"get_logical" "offset %d out of bounds (size is %d)" x len;
         len
       | `Offset x ->
         assert (x >= 0);
@@ -129,9 +129,8 @@ let substitute t starting ending text =
       if starting + l <= len then
         `Offset (starting + l)
       else begin
-        Logger.logf "source" "substitute"
-          "offset %d + length %d out of bounds (size is %d)"
-          starting l len;
+        log ~title:"substitute"
+          "offset %d + length %d out of bounds (size is %d)" starting l len;
         `Offset len
       end
     | #position as p -> get_offset t p

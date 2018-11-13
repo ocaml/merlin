@@ -2497,7 +2497,7 @@ let check_state_consistency () =
       true
     with Not_found -> false
   in
-  Logger.logf "Env" "check_state_consistency"
+  Logger.log ~section:"Env" ~title:"check_state_consistency"
     "spent %4.02fms in find_in_path_uncap"  !total;
   result
 

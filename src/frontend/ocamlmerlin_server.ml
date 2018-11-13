@@ -27,8 +27,8 @@ module Server = struct
       close_with (-1);
       raise Exit
     | exception exn ->
-      Logger.log "server" "process failed"
-        (Printexc.to_string exn);
+      Logger.log ~section:"server" ~title:"process failed" "%a"
+        Logger.exn exn;
       close_with (-1)
 
   let server_accept merlinid server =
@@ -63,7 +63,7 @@ module Server = struct
   let start socket_path socket_fd =
     match Os_ipc.server_setup socket_path socket_fd with
     | None ->
-      Logger.log "server" "cannot setup listener" ""
+      Logger.log ~section:"server" ~title:"cannot setup listener" ""
     | Some server ->
       loop (File_id.get Sys.executable_name) server;
       Os_ipc.server_close server

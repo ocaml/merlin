@@ -278,12 +278,12 @@ let json_of_response_v3 ~notifications response =
     "class", `String class_;
     "value", value;
     "notifications",
-    `List (List.map ~f:(fun (sec,msg) ->
-        `Assoc ["section", `String sec; "message", `String msg])
+    `List (List.map ~f:(fun { Logger.section; msg } ->
+        `Assoc ["section", `String section; "message", `String msg])
         notifications);
   ]
 
-let json_of_response ~notifications response =
+let json_of_response notifications response =
   match !current_version with
   | `V2 -> json_of_response_v2 response
   | `V3 -> json_of_response_v3 ~notifications response

@@ -26,7 +26,8 @@ let normal_parse ?for_completion config source =
       | exception Not_found -> ""
       | pos -> String.sub ~pos ~len:(String.length filename - pos) filename
     in
-    Logger.logf "reader" "run" "extension(%S) = %S" filename extension;
+    Logger.log ~section:"Mreader" ~title:"run"
+      "extension(%S) = %S" filename extension;
     if List.exists ~f:(fun (_impl,intf) -> intf = extension)
         Mconfig.(config.merlin.suffixes)
     then Mreader_parser.MLI

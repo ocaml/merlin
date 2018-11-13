@@ -2,6 +2,8 @@ open Std
 
 (** {1 OCaml commandline parsing} *)
 
+let {Logger. log} = Logger.for_section "Mconfig"
+
 type ocaml = {
   include_dirs         : string list;
   no_std_include       : bool;
@@ -241,9 +243,11 @@ let is_normalized t =
   merlin.packages_to_load = []
 
 let rec normalize t =
-  if is_normalized t then
-    (Logger.logj "Mconfig" "normalize" (fun () -> dump t); t)
-  else normalize (normalize_step t)
+  if is_normalized t then (
+    log ~title:"normalize" "%a" Logger.json (fun () -> dump t);
+    t
+  ) else
+    normalize (normalize_step t)
 
 let load_dotmerlins ~filenames t =
   let open Mconfig_dot in
@@ -763,10 +767,10 @@ let build_path config = (
     then dirs
     else config.query.directory :: dirs
   in
-  Logger.logf "Mconfig" "build_path" "%d items in path, %t after deduplication"
-    (List.length result)
-    (fun () -> string_of_int (List.length (List.filter_dup result)));
-  result
+  let result' = List.filter_dup result in
+  log ~title:"build_path" "%d items in path, %d after deduplication"
+    (List.length result) (List.length result');
+  result'
 )
 
 let cmt_path config = (

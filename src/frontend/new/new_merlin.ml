@@ -99,7 +99,8 @@ let run = function
               ("failure", `String str)
             | exception exn ->
               let trace = Printexc.get_backtrace () in
-              Logger.log "New_merlin.run" "Command error backtrace" trace;
+              Logger.log ~section:"New_merlin.run"
+                ~title:"Command error backtrace" "%s" trace;
               match Location.error_of_exn exn with
               | None | Some `Already_displayed ->
                 ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
@@ -113,7 +114,9 @@ let run = function
             List.fold_left (fun acc (_, k) -> k +. acc) 0.0 timing in
           let timing = ("total", total_time) ::
                        ("query", (total_time -. pipeline_time)) :: timing in
-          let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
+          let notify { Logger.section; msg } =
+            `String (Printf.sprintf "%s: %s" section msg)
+          in
           `Assoc [
             "class", `String class_; "value", message;
             "notifications", `List (List.rev_map notify !notifications);
@@ -145,5 +148,6 @@ let run env wd args =
     | exception Not_found -> None
   in
   Logger.with_log_file log @@ fun () ->
-  Logger.log "Ocamlmerlin_server" "Server.process_request" wd_msg;
+  Logger.log ~section:"Ocamlmerlin_server" ~title:"Server.process_request"
+    "%s" wd_msg;
   run args

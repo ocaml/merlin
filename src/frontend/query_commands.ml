@@ -483,7 +483,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let path = Mreader_lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
         let path = String.concat ~sep:"." path in
-        Logger.log "locate" "reconstructed identifier" path;
+        Locate.log ~title:"reconstructed identifier" "%s" path;
         path
     in
     if path = "" then `Invalid_context else
@@ -493,11 +493,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         ~env ~local_defs ~pos ml_or_mli path
     with
     | `Found (file, pos) ->
-      Logger.logf Locate.log_section "result"
+      Locate.log ~title:"result"
         "found: %s" (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)
     | otherwise ->
-      Logger.log Locate.log_section "result" "not found";
+      Locate.log ~title:"result" "not found";
       otherwise
     end
 
@@ -530,14 +530,16 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
          `Int l2; `Int c2;
        ]
     in
-    Logger.logj "destruct" "nodes before" (fun () -> `List (List.map nodes ~f:dump_node));
+    Destruct.log ~title:"nodes before" "%a"
+      Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     let nodes =
       List.drop_while nodes
         ~f:(fun (_,t) ->
           let {Location. loc_start; loc_end; _} = Mbrowse.node_loc t in
           Lexing.compare_pos loc_start pos_start > 0 || Lexing.compare_pos loc_end pos_end < 0)
     in
-    Logger.logj "destruct" "nodes after" (fun () -> `List (List.map nodes ~f:dump_node));
+    Destruct.log ~title:"nodes after" "%a"
+      Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     begin match nodes with
       | [] -> failwith "No node at given range"
       | (env,node) :: parents ->
@@ -679,18 +681,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let ident_occurrence () =
       let paths = Browse_raw.node_paths tnode.Browse_tree.t_node in
       let under_cursor p = Location_aux.compare_pos pos (get_loc p) = 0 in
-      Logger.logj "occurrences" "Occurrences paths" (fun () ->
-          let dump_path ({Location.txt; loc} as p) =
-            let ppf, to_string = Format.to_string () in
-            Printtyp.path ppf txt;
-            `Assoc [
-              "start", Lexing.json_of_position loc.Location.loc_start;
-              "end", Lexing.json_of_position loc.Location.loc_end;
-              "under_cursor", `Bool (under_cursor p);
-              "path", `String (to_string ())
-            ]
-          in
-          `List (List.map ~f:dump_path paths));
+      Logger.log ~section:"occurrences" ~title:"Occurrences paths" "%a"
+        Logger.json (fun () ->
+            let dump_path ({Location.txt; loc} as p) =
+              let ppf, to_string = Format.to_string () in
+              Printtyp.path ppf txt;
+              `Assoc [
+                "start", Lexing.json_of_position loc.Location.loc_start;
+                "end", Lexing.json_of_position loc.Location.loc_end;
+                "under_cursor", `Bool (under_cursor p);
+                "path", `String (to_string ())
+              ]
+            in
+            `List (List.map ~f:dump_path paths));
       match List.filter paths ~f:under_cursor with
       | [] -> []
       | (path :: _) ->

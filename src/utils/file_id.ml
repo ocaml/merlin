@@ -31,7 +31,7 @@ let get filename =
   | Some table ->
     match Hashtbl.find table filename with
     | stats ->
-      Logger.log "stat_cache" "reuse cache" filename;
+      Logger.log ~section:"stat_cache" ~title:"reuse cache" "%s" filename;
       stats
     | exception Not_found ->
       let stats = get filename in

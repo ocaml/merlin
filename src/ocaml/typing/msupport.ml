@@ -43,12 +43,12 @@ let raise_error ?(ignore_unify=false) exn =
     begin match exn with
       | Ctype.Unify _ when ignore_unify -> ()
       | Ctype.Unify _ | Failure _ ->
-        Logger.logfmt "Typing_aux.raise_error"
-          (Printexc.exn_slot_name exn)
-          (fun fmt ->
-             Printexc.record_backtrace true;
-             Format.pp_print_string  fmt (Printexc.get_backtrace ())
-          )
+        Logger.log ~section:"Typing_aux.raise_error"
+          ~title:(Printexc.exn_slot_name exn) "%a"
+          Logger.fmt (fun fmt ->
+              Printexc.record_backtrace true;
+              Format.pp_print_string  fmt (Printexc.get_backtrace ())
+            )
       | exn -> l := exn :: !l
     end
   | None -> raise exn

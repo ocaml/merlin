@@ -36,7 +36,7 @@ type kind =
   (*| MLL | MLY*)
 
 module Dump = struct
-  let symbol = Parser_printer.print_symbol
+  let symbol () = Parser_printer.print_symbol
 end
 
 module R = Mreader_recover.Make

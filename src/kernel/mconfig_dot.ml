@@ -29,6 +29,8 @@
 open Std
 open Misc
 
+let {Logger. log} = Logger.for_section "Mconfig_dot"
+
 type directive = [
   | `B of string
   | `S of string
@@ -103,7 +105,8 @@ module Cache = File_cache.Make (struct
           else if String.is_prefixed ~by:"#" line then
             ()
           else
-            Logger.notify ".merlin" "%s: unexpected directive \"%s\"" path line;
+            Logger.notify ~section:".merlin"
+              "%s: unexpected directive \"%s\"" path line;
           aux ()
         in
         aux ()
@@ -328,13 +331,12 @@ let ppx_of_package ?(predicates=[]) setup pkg =
   in
   begin match ppx with
     | None -> ()
-    | Some ppx ->
-      Logger.log ".merlin" "ppx" ppx
+    | Some ppx -> log ~title:"ppx" "%s" ppx
   end;
   begin match ppxopts with
     | [] -> ()
     | lst ->
-      Logger.logj ".merlin" "ppx options" @@ fun () ->
+      log ~title:"ppx options" "%a" Logger.json @@ fun () ->
       let f (ppx,opts) =
         `List [`String ppx; `List (List.map ~f:(fun s -> `String s) opts)]
       in
@@ -368,10 +370,8 @@ let set_findlib_path =
         | "" -> None
         | s -> Some s
       in
-      Logger.logf "Mconfig_dot" "set_findlib_path"
-        "findlib_conf = %s; findlib_path = %s\n"
-        conf
-        (String.concat ~sep:path_separator path);
+      log ~title:"set_findlib_path" "findlib_conf = %s; findlib_path = %s\n"
+        conf (String.concat ~sep:path_separator path);
       Findlib.init ?env_ocamlpath ?config ?toolchain ();
       findlib_cache := key
     end
@@ -402,13 +402,13 @@ let path_of_packages ?conf ?path ?toolchain packages =
   in
   let failures =
     match
-      List.filter_map invalid_packages
-        ~f:(fun pkg ->
-            if is_package_optional pkg then
-              (Logger.logf "Mconfig_dot" "path_of_packages"
-                 "Uninstalled package %S" pkg;
-               None)
-            else Some pkg)
+      List.filter_map invalid_packages ~f:(fun pkg ->
+        if is_package_optional pkg then (
+          log ~title:"path_of_packages" "Uninstalled package %S" pkg;
+          None
+        ) else
+          Some pkg
+      )
     with
     | [] -> []
     | xs -> ["Failed to load packages: " ^ String.concat ~sep:"," xs]

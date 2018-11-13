@@ -26,7 +26,7 @@
 
 )* }}} *)
 
-val log_section : string
+val log : 'a Logger.printf
 
 val from_string
   :  config:Mconfig.t

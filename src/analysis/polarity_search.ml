@@ -130,7 +130,7 @@ let execute_query query env dirs =
     | children ->
       List.fold_left ~f:recurse ~init:(direct (Some dir) acc) children
     | exception Not_found ->
-      Logger.notify "polarity-search" "%S not found"
+      Logger.notify ~section:"polarity-search" "%S not found"
         (String.concat ~sep:"." (Longident.flatten dir));
       acc
   in
