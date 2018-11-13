@@ -61,6 +61,11 @@ module Hashtbl = struct
     with Not_found -> None
 
   let elements tbl = Hashtbl.fold (fun _key elt acc -> elt :: acc) tbl []
+
+  let forall table f =
+    match Hashtbl.iter (fun k v -> if not (f k v) then raise Exit) table with
+    | () -> true
+    | exception Exit -> false
 end
 
 module List = struct
