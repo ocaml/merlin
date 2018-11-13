@@ -2687,17 +2687,16 @@ let () =
 
 let check_state_consistency () =
   Std.Hashtbl.forall !persistent_structures @@ fun name ps ->
-  let filename =
-    try Some (find_in_path_uncap !load_path (name ^ ".cmi"))
-    with Not_found -> None
-  in
-  match filename, ps with
-  | None, None -> false
-  | Some filename, Some ps ->
-    begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
-      | Cmi_cache_store ps_sig -> not (Std.lazy_eq ps_sig ps.ps_sig)
-      | _ -> true
+  match ps with
+  | None ->
+    begin match find_in_path_uncap !load_path (name ^ ".cmi") with
+      | _ -> false
+      | exception Not_found -> true
     end
-  | _, _ -> true
+  | Some cell ->
+    begin match !(Cmi_cache.(read cell.ps_filename).Cmi_cache.cmi_cache) with
+      | Cmi_cache_store ps_sig -> Std.lazy_eq ps_sig cell.ps_sig
+      | _ -> false
+    end
 
 let with_cmis f = f ()
