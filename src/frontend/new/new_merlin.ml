@@ -87,10 +87,8 @@ let run = function
         (* Start processing query *)
         Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
         File_id.with_cache @@ fun () ->
-        let tr = (if Mconfig.(config.merlin.trace) then
-                    Trace.start () else Trace.null) in
-        let source = Msource.make tr (Misc.string_of_file stdin) in
-        let pipeline = Mpipeline.make tr config source in
+        let source = Msource.make (Misc.string_of_file stdin) in
+        let pipeline = Mpipeline.make config source in
         let json =
           let class_, message =
             Printexc.record_backtrace true;

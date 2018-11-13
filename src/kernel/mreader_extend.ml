@@ -13,23 +13,21 @@ type t = {
 let print () t = t.name
 
 let incorrect_behavior fn t =
-  Logger.logf "mreader_extend" fn
-    "Extension %S has incorrect behavior" t.name
+  Logger.logf "Mreader_extend" fn "Extension %S has incorrect behavior" t.name
 
-let stop tr t =
+let stop t =
   if t.stopped then
-    Trace.message tr "Mreader_extend.stop %a: already closed" print t
+    Logger.logf "Mreader_extend" "stop" "%a: already closed" print t
   else (
-    Trace.enter tr "Mreader_extend.stop %a" print t
-      ~return:(fun () () -> "()") @@ fun _tr ->
+    Logger.logf "Mreader_extend" "stop" "%a" print t;
     t.stopped <- true;
     Extend_driver.stop t.driver
   )
 
 let stop_finalise t =
   if not t.stopped then (
-    Logger.log "mreader_extend" "leaked process" t.name;
-    stop Trace.null t
+    Logger.logf "Mreader_extend" "stop_finalise" "leaked process %s" t.name;
+    stop t
   )
 
 let load_source t config source =
@@ -45,10 +43,10 @@ let load_source t config source =
     incorrect_behavior "load_source" t;
     None
 
-let start _ name args config source =
+let start name args config source =
   let section = "(ext)" ^ name in
   let notify str = Logger.notify section "%s" str in
-  let debug str = Logger.log "reader" section str in
+  let debug str = Logger.log "Mreader_extend" section str in
   let driver = Extend_driver.run ~notify ~debug name in
   let process = { name; args; config; source; driver; stopped = false } in
   Gc.finalise stop_finalise process;
@@ -58,24 +56,18 @@ let parsetree = function
   | Signature sg -> `Interface sg
   | Structure str -> `Implementation str
 
-let parse tr ?for_completion t =
-  Trace.enter tr "Mreader_extend.parse ?for_completion:%a %a"
+let parse ?for_completion t =
+  Logger.logf "Mreader_extend" "parse"
+    "parse ?for_completion:%a %a"
     (Option.print Msource.print_position) for_completion
-    print t
-    ~return:(Option.print (fun () (`No_labels b, str) ->
-        "(`No_labels " ^ string_of_bool b ^ ", " ^
-        ( match str with
-          | `Implementation _ -> "`Implementation _"
-          | `Interface _ -> "`Interface _" ) ^
-        ")"))
-  @@ fun tr ->
+    print t;
   assert (not t.stopped);
   match
     Extend_driver.reader t.driver
       (match for_completion with
        | None -> Req_parse
        | Some pos ->
-         let pos = Msource.get_lexing_pos tr t.source
+         let pos = Msource.get_lexing_pos t.source
              ~filename:(Mconfig.filename t.config) pos
          in
          Req_parse_for_completion pos)
@@ -88,11 +80,10 @@ let parse tr ?for_completion t =
     incorrect_behavior "parse" t;
     None
 
-let reconstruct_identifier tr pos t =
-  Trace.enter tr "Mreader_extend.reconstruct_identifier %a %a"
-    Lexing.print_position pos print t
-    ~return:(Option.print (List.print (Location_aux.print_loc String.print)))
-  @@ fun _ ->
+let reconstruct_identifier pos t =
+  Logger.logf "Mreader_extend" "reconstruct_identifier"
+    "Mreader_extend.reconstruct_identifier %a %a"
+    Lexing.print_position pos print t;
   match Extend_driver.reader t.driver (Req_get_ident_at pos) with
   | Res_get_ident_at ident -> Some ident
   | _ ->
@@ -128,10 +119,9 @@ let clean_tree =
     Pretty_toplevel_phrase (Parsetree.Ptop_def x)
   | Pretty_toplevel_phrase (Parsetree.Ptop_dir _) as tree -> tree
 
-let print_pretty tr tree t =
-  Trace.enter tr "Mreader_extend.print_pretty TODO %a" print t
-    ~return:(Option.print String.print)
-  @@ fun _ ->
+let print_pretty tree t =
+  Logger.logf "Mreader_extend" "print_pretty"
+    "print_pretty TODO %a" print t;
   let tree = clean_tree tree in
   match Extend_driver.reader t.driver (Req_pretty_print tree) with
   | Res_pretty_print str -> Some str
@@ -139,9 +129,9 @@ let print_pretty tr tree t =
     incorrect_behavior "pretty_print" t;
     None
 
-let print_outcomes tr ts t =
-  Trace.enter tr "Mreader_extend.print_outcomes TODO %a" print t
-    ~return:(Option.print (List.print String.print)) @@ fun _ ->
+let print_outcomes ts t =
+  Logger.logf "Mreader_extend" "print_outcomes"
+    "print_outcomes TODO %a" print t;
   match ts with
   | [] -> Some []
   | ts -> match Extend_driver.reader t.driver (Req_print_outcome ts) with
@@ -150,9 +140,9 @@ let print_outcomes tr ts t =
       incorrect_behavior "print_batch_outcome" t;
       None
 
-let print_outcome tr o t =
-  Trace.enter tr "Mreader_extend.print_outcome TODO %a" print t
-    ~return:(Option.print String.print) @@ fun _ ->
+let print_outcome o t =
+  Logger.logf "Mreader_extend" "print_outcome"
+    "print_outcome TODO %a" print t;
   match Extend_driver.reader t.driver (Req_print_outcome [o]) with
   | Res_print_outcome [o] -> Some o
   | _ ->

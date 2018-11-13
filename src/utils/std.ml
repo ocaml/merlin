@@ -643,7 +643,6 @@ module Obj = struct
       with Not_found -> false
 end
 
-let trace = Trace.enter
 let fprintf = Format.fprintf
 
 let lazy_eq a b =

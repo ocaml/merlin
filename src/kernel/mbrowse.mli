@@ -44,7 +44,7 @@ val drop_leaf : t -> t option
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
-val deepest_before : Trace.t -> Lexing.position -> t list -> t
+val deepest_before : Lexing.position -> t list -> t
 
 val enclosing : Lexing.position -> t list -> t
 

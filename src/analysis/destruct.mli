@@ -74,7 +74,7 @@ exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
 
-val node : Trace.t ->
+val node :
   Mconfig.t -> Msource.t -> Browse_raw.node ->
   Browse_raw.node list -> Location.t * string
 (** [node ~env parents current_node] returns a location indicating which

@@ -92,7 +92,6 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
-  trace       : bool;
 
   exclude_query_dir : bool;
 
@@ -136,7 +135,6 @@ let dump_merlin x =
         | `Sexp -> `String "sexp"
       );
     "log_file"     , Json.option Json.string x.log_file;
-    "trace"        , `Bool x.trace;
     "flags_to_apply"   , `List (List.map ~f:dump_flag_list x.flags_to_apply);
     "packages_to_load" , `List (List.map ~f:Json.string x.packages_to_load);
     "dotmerlin_loaded" , `List (List.map ~f:Json.string x.dotmerlin_loaded);
@@ -242,10 +240,10 @@ let is_normalized t =
   merlin.flags_to_apply = [] &&
   merlin.packages_to_load = []
 
-let rec normalize trace t =
+let rec normalize t =
   if is_normalized t then
     (Logger.logj "Mconfig" "normalize" (fun () -> dump t); t)
-  else normalize trace (normalize_step t)
+  else normalize (normalize_step t)
 
 let load_dotmerlins ~filenames t =
   let open Mconfig_dot in
@@ -275,7 +273,7 @@ let load_dotmerlins ~filenames t =
     path = dot.findlib_path @ t.findlib.path;
     toolchain = Option.plus dot.findlib_toolchain t.findlib.toolchain;
   } in
-  normalize Trace.null { t with merlin; findlib }
+  normalize { t with merlin; findlib }
 
 let findlib_flags = [
   (
@@ -385,11 +383,6 @@ let merlin_flags = [
     "-log-file",
     Marg.param "file" (fun file merlin -> {merlin with log_file = Some file}),
     "<file> Log messages to specified file ('' for disabling, '-' for stderr)"
-  );
-  (
-    "-trace",
-    Marg.bool (fun trace merlin -> {merlin with trace}),
-    "<bool> Output a trace of the execution on stderr"
   );
   (
     "-ocamllib-path",
@@ -632,7 +625,6 @@ let initial = {
     reader      = [];
     protocol    = `Json;
     log_file    = None;
-    trace       = false;
 
     exclude_query_dir = false;
 

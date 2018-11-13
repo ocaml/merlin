@@ -87,14 +87,10 @@ let signal sg behavior =
 let rec merlin_loop input output =
   let notifications = ref [] in
   Logger.with_notifications notifications @@ fun () ->
-  let tr = Trace.null in
   match
-    Trace.enter tr "Merlin main loop"
-      ~return:(fun () -> sprintf "continue = %b")
-    @@ fun tr ->
     match input () with
     | Some (Old_protocol.Request (context, request)) ->
-      let answer = Old_command.dispatch tr context request in
+      let answer = Old_command.dispatch context request in
       output ~notifications:(List.rev !notifications)
         (Old_protocol.Return (request, answer));
       true

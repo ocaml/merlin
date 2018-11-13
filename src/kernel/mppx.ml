@@ -29,7 +29,7 @@ let with_include_dir path f =
   result
 
 
-let rewrite _trace cfg parsetree =
+let rewrite cfg parsetree =
   let ppx = cfg.ocaml.ppx @
             List.map
               (fun ppx -> {Std. workdir = cfg.query.directory; workval = ppx })

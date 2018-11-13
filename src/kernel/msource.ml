@@ -9,20 +9,13 @@ let dump t = `Assoc [
     "text"     , `String t.text;
   ]
 
-let dump_short _ = `Assoc [
-    "text"     , `String "...";
-  ]
-
 let print_position () = function
   | `Start -> "start"
   | `Offset o -> string_of_int o
   | `Logical (l,c) -> string_of_int l ^ ":" ^ string_of_int c
   | `End -> "end"
 
-let make tr text =
-  Trace.enter tr "Msource.make %S" text
-    ~return:(Json.print dump)
-  @@ fun _tr -> {text}
+let make text = {text}
 
 (* Position management *)
 
@@ -127,41 +120,9 @@ let get_lexing_pos t ~filename pos =
     pos_cnum = o;
   }
 
-let get_offset tr t pos =
-  Trace.enter tr "Msource.get_offset %a %a"
-    (Json.print dump_short) t
-    print_position pos
-    ~return:(fun()->function (`Offset o) -> string_of_int o |_->"")
-  @@ fun _tr -> get_offset t pos
-
-let get_logical tr t pos =
-  Trace.enter tr "Msource.get_logical %a %a"
-    (Json.print dump_short) t
-    print_position pos
-    ~return:(fun()->function (`Logical (l,c)) -> sprintf "%d:%d" l c |_->"")
-  @@ fun _tr -> get_logical t pos
-
-let get_lexing_pos tr t ~filename pos =
-  Trace.enter tr "Msource.lexing_pos %a ~filename:%s %a"
-    (Json.print dump_short) t
-    filename
-    print_position pos
-    ~return:Lexing.print_position
-  @@ fun _tr -> get_lexing_pos t ~filename pos
-
-let substitute tr t starting ending text =
-  Trace.enter tr "Msource.substitute %a %a %a %S"
-    (Json.print dump_short) t
-    print_position starting
-    (fun () -> function
-       | #position as p -> print_position () p
-       | `Length n -> "length " ^ string_of_int n
-    ) ending
-    text
-    ~return:(Json.print dump_short)
-  @@ fun tr ->
+let substitute t starting ending text =
   let len = String.length t.text in
-  let `Offset starting = get_offset tr t starting in
+  let `Offset starting = get_offset t starting in
   let `Offset ending = match ending with
     | `End -> `Offset len
     | `Length l ->
@@ -173,7 +134,7 @@ let substitute tr t starting ending text =
           starting l len;
         `Offset len
       end
-    | #position as p -> get_offset tr t p
+    | #position as p -> get_offset t p
   in
   if ending < starting then
     invalid_arg "Source.substitute: ending < starting";

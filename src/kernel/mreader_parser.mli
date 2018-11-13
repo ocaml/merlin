@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Sturgeon_stub
-
 type kind =
   | ML
   | MLI
@@ -45,5 +43,3 @@ type tree = [
 val result : t -> tree
 
 val errors : t -> exn list
-
-val dump_stack : t -> cursor -> Mreader_lexer.triple -> unit
