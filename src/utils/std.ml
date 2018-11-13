@@ -451,38 +451,6 @@ module Format = struct
     ppf, contents
 end
 
-module Either = struct
-  type ('a,'b) t = L of 'a | R of 'b
-
-  let elim f g = function
-    | L a -> f a
-    | R b -> g b
-
-  let try' f =
-    try R (f ())
-    with exn -> L exn
-
-  let get = function
-    | L exn -> raise exn
-    | R v -> v
-
-  (* Remove ? *)
-  let join = function
-    | R (R _ as r) -> r
-    | R (L _ as e) -> e
-    | L _ as e -> e
-
-  let split =
-    let rec aux l1 l2 = function
-      | L a :: l -> aux (a :: l1) l2 l
-      | R b :: l -> aux l1 (b :: l2) l
-      | [] -> List.rev l1, List.rev l2
-    in
-    fun l -> aux [] [] l
-end
-type ('a, 'b) either = ('a, 'b) Either.t
-type 'a or_exn = (exn, 'a) Either.t
-
 module Lexing = struct
 
   type position = Lexing.position = {
@@ -623,24 +591,6 @@ end = struct
     | Wildwild -> true
     | Regexp re -> Str.string_match re str 0
     | Exact s -> s = str
-end
-
-module Obj = struct
-  include Obj
-  let unfolded_physical_equality a b =
-    let a, b = Obj.repr a, Obj.repr b in
-    if Obj.is_int a || Obj.is_int b then
-      a == b
-    else
-      let sa, sb = Obj.size a, Obj.size b in
-      sa = sb &&
-      try
-        for i = 0 to sa - 1 do
-          if not (Obj.field a i == Obj.field b i) then
-            raise Not_found
-        done;
-        true
-      with Not_found -> false
 end
 
 let fprintf = Format.fprintf
