@@ -431,6 +431,20 @@ module String = struct
 
   let lowercase = lowercase
   let uppercase = uppercase
+
+  let split_on_char_ c s =
+    match String.index s c with
+    | exception Not_found -> [s]
+    | p ->
+      let rec loop i =
+        match String.index_from s i c with
+        | exception Not_found -> [String.sub s i (String.length s - i)]
+        | j ->
+          let s0 = String.sub s i (j - i) in
+          s0 :: loop (j + 1)
+      in
+      let s0 = String.sub s 0 p in
+      s0 :: loop (p + 1)
 end
 
 let sprintf = Printf.sprintf

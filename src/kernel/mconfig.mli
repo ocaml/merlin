@@ -47,6 +47,7 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
+  log_sections: string list;
 
   exclude_query_dir : bool;
 

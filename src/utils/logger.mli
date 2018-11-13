@@ -51,7 +51,7 @@ type notification = {
 
 val notify : section:string -> ('b, unit, string, unit) format4 -> 'b
 val with_notifications : notification list ref -> (unit -> 'a) -> 'a
-val with_log_file : string option -> (unit -> 'a) -> 'a
+val with_log_file : string option -> ?sections:string list -> (unit -> 'a) -> 'a
 
 type 'a printf = title:string -> ('a, unit, string, unit) format4 -> 'a
 type logger = { log : 'a. 'a printf }

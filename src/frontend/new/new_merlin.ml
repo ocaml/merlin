@@ -85,7 +85,8 @@ let run = function
           config, command_args
         in
         (* Start processing query *)
-        Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
+        Logger.with_log_file Mconfig.(config.merlin.log_file)
+          ~sections:Mconfig.(config.merlin.log_sections) @@ fun () ->
         File_id.with_cache @@ fun () ->
         let source = Msource.make (Misc.string_of_file stdin) in
         let pipeline = Mpipeline.make config source in
@@ -143,11 +144,13 @@ let run env wd args =
       try Sys.chdir wd; Printf.sprintf "changed directory to %S" wd
       with _ -> Printf.sprintf "cannot change working directory to %S" wd
   in
-  let log = match Sys.getenv "MERLIN_LOG" with
-    | value -> Some value
-    | exception Not_found -> None
+  let log, sections =
+    match Std.String.split_on_char_ ',' (Sys.getenv "MERLIN_LOG") with
+    | (value :: sections) -> (Some value, sections)
+    | [] -> (None, [])
+    | exception Not_found -> (None, [])
   in
-  Logger.with_log_file log @@ fun () ->
+  Logger.with_log_file log ~sections @@ fun () ->
   Logger.log ~section:"Ocamlmerlin_server" ~title:"Server.process_request"
     "%s" wd_msg;
   run args

@@ -34,6 +34,12 @@ let delta_time () =
   Sys.time () -. !time
 
 let destination = ref None
+let selected_sections = ref None
+
+let is_section_enabled section =
+  match !selected_sections with
+  | None -> true
+  | Some sections -> Hashtbl.mem sections section
 
 let output_section oc section title =
   Printf.fprintf oc "# %2.2f %s - %s\n" (delta_time ()) section title
@@ -50,7 +56,7 @@ let ifprintf oc (CamlinternalFormatBasics.Format (fmt, _)) =
 
 let log ~section ~title fmt =
   match !destination with
-  | Some oc ->
+  | Some oc when is_section_enabled section ->
     Printf.ksprintf (fun str ->
         output_section oc section title;
         if str <> "" then (
@@ -59,7 +65,7 @@ let log ~section ~title fmt =
             output_char oc '\n'
         )
       ) fmt
-  | None ->
+  | None | Some _ ->
     ifprintf () fmt
 
 let fmt_buffer = Buffer.create 128
@@ -104,9 +110,23 @@ let notify ~section =
 let with_notifications r f =
   let_ref notifications (Some r) f
 
-let with_log_file file f =
+let with_sections sections f =
+  let sections = match sections with
+    | [] -> None
+    | sections ->
+      let table = Hashtbl.create (List.length sections) in
+      List.iter sections ~f:(fun section -> Hashtbl.replace table section ());
+      Some table
+  in
+  let sections0 = !selected_sections in
+  selected_sections := sections;
+  match f () with
+  | result -> selected_sections := sections0; result
+  | exception exn -> selected_sections := sections0; reraise exn
+
+let with_log_file file ?(sections=[]) f =
   match file with
-  | None -> f ()
+  | None -> with_sections sections f
   | Some file ->
     log_flush ();
     let destination', release = match file with
@@ -128,7 +148,7 @@ let with_log_file file f =
       destination := destination0;
       release ()
     in
-    match f () with
+    match with_sections sections f with
     | v -> release (); v
     | exception exn -> release (); reraise exn
 

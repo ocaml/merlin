@@ -94,6 +94,7 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
+  log_sections : string list;
 
   exclude_query_dir : bool;
 
@@ -137,6 +138,7 @@ let dump_merlin x =
         | `Sexp -> `String "sexp"
       );
     "log_file"     , Json.option Json.string x.log_file;
+    "log_sections" , Json.list Json.string x.log_sections;
     "flags_to_apply"   , `List (List.map ~f:dump_flag_list x.flags_to_apply);
     "packages_to_load" , `List (List.map ~f:Json.string x.packages_to_load);
     "dotmerlin_loaded" , `List (List.map ~f:Json.string x.dotmerlin_loaded);
@@ -389,6 +391,13 @@ let merlin_flags = [
     "<file> Log messages to specified file ('' for disabling, '-' for stderr)"
   );
   (
+    "-log-section",
+    Marg.param "file" (fun section merlin ->
+        let sections = String.split_on_char_ ',' section in
+        {merlin with log_sections = sections @ merlin.log_sections}),
+    "<section,...> Only log specific sections (separated by comma)"
+  );
+  (
     "-ocamllib-path",
     marg_path (fun path merlin -> {merlin with stdlib = Some path}),
     "<path> Change path of ocaml standard library"
@@ -629,6 +638,7 @@ let initial = {
     reader      = [];
     protocol    = `Json;
     log_file    = None;
+    log_sections = [];
 
     exclude_query_dir = false;
 
