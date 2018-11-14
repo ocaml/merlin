@@ -97,7 +97,7 @@ The wiki also contains pages for:
 - [Spacemacs](https://github.com/ocaml/merlin/wiki/spacemacs-from-scratch)
 
 External contributors have implemented modes for more editors:  
-* [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)  
+* [Visual Studio Code](https://github.com/reasonml-editor/vscode-reasonml)  
 * [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)  
 * [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)  
 * [nuclide for Atom](https://nuclide.io/) includes Merlin support
