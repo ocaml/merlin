@@ -437,7 +437,6 @@ static const char *search_in_path(const char *PATH, const char *argv0, char *mer
       }
 
       binary_path[i] = 0;
-      i += 1;
     }
 
     // Check path
