@@ -98,7 +98,7 @@ static void failwith(const char *msg)
     if (!getcwd(previous_cwd, PATHSZ)) previous_cwd[0] = '\0';
 
 #define END_PROTECTCWD \
-    if (previous_cwd[0] != '\0') chdir(previous_cwd); }
+    if (previous_cwd[0] != '\0') { if(chdir(previous_cwd)==0) failwith_perror("chdir");} }
 
 static const char *path_socketdir(void)
 {
@@ -254,7 +254,8 @@ static int connect_socket(const char *socketname, int fail)
     struct sockaddr_un address;
     int address_len;
 
-    chdir(path_socketdir());
+    if(chdir(path_socketdir()) != 0)
+       failwith_perror("chdir");
     address.sun_family = AF_UNIX;
     snprintf(address.sun_path, 104, "./%s", socketname);
     address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
@@ -344,7 +345,8 @@ static void start_server(const char *socketname, const char* ignored, const char
     struct sockaddr_un address;
     int address_len;
 
-    chdir(path_socketdir());
+    if (chdir(path_socketdir()) != 0)
+      failwith_perror("chdir");
     address.sun_family = AF_UNIX;
     snprintf(address.sun_path, 104, "./%s", socketname);
     address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
