@@ -2698,6 +2698,7 @@ let check_state_consistency () =
     begin match !(Cmi_cache.(read cell.ps_filename).Cmi_cache.cmi_cache) with
       | Cmi_cache_store ps_sig -> Std.lazy_eq ps_sig cell.ps_sig
       | _ -> false
+      | exception Not_found -> false
     end
 
 let with_cmis f = f ()
