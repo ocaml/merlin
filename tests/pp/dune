@@ -1,5 +1,5 @@
 (alias
- (name runtest)
+ (name runtest-disabled)
  (deps simple-pp.sh simple-pp.t)
  (action
    (progn
