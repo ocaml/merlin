@@ -78,11 +78,9 @@
     "notifications": []
   }
 
-FIXME: Should return a parse error?
-
   $ $MERLIN single type-expression -expression "f (" -position start -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "Unbound value f",
+    "value": "Parser_raw.MenhirBasics.Error",
     "notifications": []
   }

@@ -1,10 +1,12 @@
 language: c
 sudo: true
+dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script: bash -ex .travis-opam.sh
 env:
   matrix:
   - OCAML_VERSION=4.02
+    TESTS=false
   - OCAML_VERSION=4.03
   - OCAML_VERSION=4.04
   - OCAML_VERSION=4.05

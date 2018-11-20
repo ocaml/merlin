@@ -1,6 +1,6 @@
 (alias
  (name runtest)
- (deps (:t test.t) test.ml a.ml a.mli)
+ (deps (:t test.t) test.ml)
  (action
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}

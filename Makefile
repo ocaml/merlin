@@ -10,7 +10,7 @@ clean:
 	dune clean
 
 test:
-	dune runtest
+	dune runtest --force
 
 preprocess:
 	dune build @preprocess
