@@ -9,7 +9,7 @@
 if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 let g:merlin_ignore_warnings = "false"
 
-let s:c.merlin_home = expand('<sfile>:h:h:h:h')
+let s:c.merlin_home = expand('<sfile>:h:h:h:h:h')
 
 " Highlight the expression which type is given
 hi def link EnclosingExpr IncSearch

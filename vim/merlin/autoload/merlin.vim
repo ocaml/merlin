@@ -678,7 +678,7 @@ endfunction
 
 function! merlin#FindBinary()
   if !has_key(s:c, 'ocamlmerlin_path') && has_key(s:c, 'merlin_home')
-    let s:choices = filter(map(['ocamlmerlin','ocamlmerlin.native'], 's:c.merlin_home."/".v:val'), 'filereadable(v:val)')
+    let s:choices = filter(map(['ocamlmerlin','ocamlmerlin.native'], 's:c.merlin_home."/bin/".v:val'), 'filereadable(v:val)')
     if len(s:choices) > 0
       let s:c.ocamlmerlin_path =  s:choices[0]
     elseif executable('ocamlmerlin')
