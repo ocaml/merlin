@@ -579,7 +579,8 @@ let modules_in_path ~ext path =
   List.fold_left ~init:[] path
     ~f:begin fun results dir ->
       try
-        let entries = Array.sort String.compare (Sys.readdir dir) in
+        let entries = Sys.readdir dir in
+        Array.sort String.compare entries;
         Array.fold_left
           begin fun results file ->
             if Filename.check_suffix file ext
