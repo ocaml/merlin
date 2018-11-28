@@ -174,9 +174,27 @@ function! merlin#Flags(...)
   let b:merlin_flags = a:000
 endfunction
 
+function! merlin#LogBuffer() abort
+  let l:filename = ":merlin-log:"
+  let l:buffer = bufnr(l:filename)
+
+  if l:buffer == -1
+    let l:buffer = bufnr(l:filename, v:true)
+
+    " Set up the buffer
+    call setbufvar(l:buffer, "&buftype", "nofile")
+    call setbufvar(l:buffer, "&bufhidden", "hide")
+    " 1 is 'noswapfile'
+    call setbufvar(l:buffer, "&swapfile", 0)
+  endif
+
+  return l:buffer
+endfunction
+
 function! merlin#DebugEnable()
   let g:merlin_debug=1
-  split :merlin-log:
+  split
+  execute "buffer " . merlin#LogBuffer()
 endfunction
 
 function! merlin#DebugDisable()
