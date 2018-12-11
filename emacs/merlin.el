@@ -397,36 +397,46 @@ containing fields file, line and col."
 ;; Position management
 
 (defun merlin--goto-point (data)
-  "Go to the point indicated by `DATA' which must be an assoc list with fields
-line and col"
-  (goto-char (point-min))
-  (forward-line (1- (merlin-lookup 'line data 0)))
-  ; caml gives us the byte offset of the column, which doesn't necessarily match
-  ; the character offset, so we can't just use "forward-char"
-  (let* ((bol-offset (position-bytes (point)))
-         (col-offset (max 0 (merlin-lookup 'col data 0)))
-         (target-off (+ bol-offset col-offset)))
-    (goto-char (byte-to-position target-off))))
+  "Go to the point indicated by DATA which must be an assoc list with fields
+line and col. If narrowing is in effect, widen if DATA is outside the visible region."
+  (let ((line-num (merlin-lookup 'line data 0))
+        (col-byte-offset (merlin-lookup 'col data 0))
+        (target-pos (merlin--point-of-pos data)))
+    ;; If our target position is outside the narrowed region, we'll
+    ;; have to widen.
+    (when (or (< target-pos (point-min))
+              (> target-pos (point-max)))
+      (widen))
+    (goto-char target-pos)))
 
-(defun merlin--point-of-pos (pos)
-  "Return the buffer position corresponding to the merlin
-position POS."
-  (save-excursion
-    (merlin--goto-point pos)
-    (point)))
+(defun merlin--point-of-pos (data)
+  "Transform DATA (a remote merlin position) into a point.
+DATA must be an assoc list with fields line and col."
+  (let ((line-num (merlin-lookup 'line data 0))
+        (col-byte-offset (merlin-lookup 'col data 0)))
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (forward-line (1- line-num))
+        ;; Find the target position, converting the byte position to a
+        ;; character offset.
+        (let* ((bol-offset (position-bytes (point)))
+               (col-offset (max 0 col-byte-offset))
+               (target-off (+ bol-offset col-offset)))
+          (byte-to-position target-off))))))
 
 (defun merlin/make-point (data)
   "Transform DATA (a remote merlin position) into a point."
-  (save-excursion
-    (merlin--goto-point data)
-    (point)))
+  (merlin--point-of-pos data))
 
 (defun merlin/unmake-point (point)
   "Destruct POINT to line / col."
   (save-excursion
-    (goto-char point)
-    (beginning-of-line)
-    (format "%d:%d" (line-number-at-pos) (- point (point)))))
+   (save-restriction
+     (widen)
+     (goto-char point)
+     (format "%d:%d" (line-number-at-pos) (current-column)))))
 
 (defun merlin--make-bounds (data)
   "From a remote merlin object DATA {\"start\": LOC1; \"end\": LOC2},
@@ -449,9 +459,11 @@ return (LOC1 . LOC2)."
     (with-temp-buffer
       (let ((ob (current-buffer)))
         (with-current-buffer ib
-          (let ((default-directory wd))
-            (apply 'call-process-region (point-min) (point-max) path nil
-                   (list ob tmp) nil args))))
+          (save-restriction
+            (widen)
+            (let ((default-directory wd))
+              (apply 'call-process-region (point-min) (point-max) path nil
+                     (list ob tmp) nil args)))))
       (setq result (buffer-string))
       (merlin-debug "# stdout\n%s" result)
       (when tmp
@@ -973,11 +985,10 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 ;; POLARITY SEARCH ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--search (query &optional point)
-  (unless point (setq point (point)))
+(defun merlin--search (query)
   (merlin/call "search-by-polarity"
                "-query" query
-               "-position" (merlin/unmake-point point)))
+               "-position" (merlin/unmake-point (point))))
 
 (defun merlin-search (query)
   (interactive "sSearch pattern: ")
@@ -1499,7 +1510,7 @@ Empty string defaults to jumping to all these."
         (occ-buff (merlin--get-occ-buff))
         (positions
          (mapcar (lambda (pos)
-                   (merlin--goto-point (assoc 'start pos))
+                   (merlin--point-of-pos (assoc 'start pos))
                    (cons (cons 'marker (point-marker)) pos))
                  lst)))
     (with-current-buffer occ-buff
@@ -1522,11 +1533,9 @@ Empty string defaults to jumping to all these."
                  (end (assoc 'end pos))
                  (line (cdr (assoc 'line start)))
                  (start-buf-pos (with-current-buffer src-buff
-                                  (merlin--goto-point start)
-                                  (point)))
+                                  (merlin--point-of-pos start)))
                  (end-buf-pos (with-current-buffer src-buff
-                                (merlin--goto-point end)
-                                (point)))
+                                (merlin--point-of-pos end)))
                  (prefix-length 8)
                  (start-offset (+ prefix-length
                                   (cdr (assoc 'col start))))
