@@ -735,10 +735,6 @@ return (LOC1 . LOC2)."
   (setq merlin-erroneous-buffer nil)
   (remove-overlays nil nil 'merlin-kind 'error))
 
-(defun merlin--overlay (overlay)
-  "Returns non-nil if OVERLAY is managed by merlin."
-  (if overlay (overlay-get overlay 'merlin-kind) nil))
-
 (defun merlin--overlay-pending-error (overlay)
   "Returns non-nil if OVERLAY is about a pending error."
   (if overlay (overlay-get overlay 'merlin-pending-error) nil))
