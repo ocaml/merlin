@@ -1184,7 +1184,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                  'merlin--type-enclosing-reset))))
 
 (defun merlin-type-enclosing ()
-  "Print the type of the expression under point (or of the region, if it exists)."
+  "Print the type of the expression under point (or of the region, if it exists).
+If called repeatedly, increase the verbosity of the type shown."
   (interactive)
   (if (region-active-p)
       (merlin--type-region)
