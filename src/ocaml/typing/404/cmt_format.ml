@@ -129,7 +129,7 @@ let read filename =
         in
         Some cmi, cmt
       else
-        raise(Cmi_format.Error(Cmi_format.Not_an_interface filename))
+        raise Magic_numbers.Cmi.(Error(Not_an_interface filename))
     in
     close_in ic;
 (*    Printf.fprintf stderr "Cmt_format.read done\n%!"; *)
@@ -146,7 +146,7 @@ let read_cmt filename =
 let read_cmi filename =
   match read filename with
       None, _ ->
-        raise (Cmi_format.Error (Cmi_format.Not_an_interface filename))
+        raise Magic_numbers.Cmi.(Error (Not_an_interface filename))
     | Some cmi, _ -> cmi
 
 let saved_types = ref []

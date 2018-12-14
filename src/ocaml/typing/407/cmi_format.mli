@@ -35,15 +35,4 @@ val input_cmi : in_channel -> cmi_infos
 (* read a cmi from a filename, checking the magic *)
 val read_cmi : string -> cmi_infos
 
-(* Error report *)
-
-type error =
-    Not_an_interface of string
-  | Wrong_version_interface of string * string
-  | Corrupted_interface of string
-
-exception Error of error
-
-open Format
-
-val report_error: formatter -> error -> unit
+(* Error report moved to {!Magic_numbers.Cmi} *)

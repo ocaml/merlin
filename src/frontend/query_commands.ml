@@ -571,7 +571,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     (* When there is a cmi error, we will have a lot of meaningless errors,
        there is no need to report them. *)
     let typer_errors =
-      let cmi_error = function Cmi_format.Error _ -> true | _ -> false in
+      let cmi_error = function Magic_numbers.Cmi.Error _ -> true | _ -> false in
       match List.find typer_errors ~f:cmi_error with
       | e -> [e]
       | exception Not_found -> typer_errors
