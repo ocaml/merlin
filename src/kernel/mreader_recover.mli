@@ -1,5 +1,3 @@
-open Sturgeon_stub
-
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
     (Recovery : sig
@@ -29,11 +27,7 @@ module Make
        val nullable : 'a Parser.nonterminal -> bool
      end)
     (Dump : sig
-       val token   : Parser.token -> string
-       val element : cursor -> Parser.element -> unit
-       val item    : cursor -> Parser.item -> unit
-       val env     : cursor -> _ Parser.env -> unit
-       val symbol  : Parser.xsymbol -> string
+       val symbol  : unit -> Parser.xsymbol -> string
      end) :
 sig
 
@@ -51,17 +45,12 @@ sig
     candidates: 'a candidate list;
   }
 
-  val attempt : cursor -> 'a candidates ->
+  val attempt : 'a candidates ->
     Parser.token * Lexing.position * Lexing.position ->
     [> `Accept of 'a
     | `Fail
     | `Ok of 'a Parser.checkpoint * 'a Parser.env ]
 
-  val generate : cursor -> 'a Parser.env -> 'a candidates
-
-  val dump : flag Widget.Nav.frame ->
-    wrong:(Parser.token * Lexing.position * Lexing.position) ->
-    rest:(Parser.token * Lexing.position * Lexing.position) list ->
-    'a Parser.env -> unit
+  val generate : 'a Parser.env -> 'a candidates
 
 end

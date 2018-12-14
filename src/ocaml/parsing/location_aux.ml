@@ -66,7 +66,8 @@ let prepare_errors exns =
     ~f:(fun exn ->
         match Location.error_of_exn exn with
         | None ->
-          Logger.logf "Mreader" "errors" "Location.error_of_exn (%a) = None"
+          Logger.log ~section:"Mreader" ~title:"errors"
+            "Location.error_of_exn (%a) = None"
             (fun () -> Printexc.to_string) exn;
           None
         | Some `Already_displayed ->  None

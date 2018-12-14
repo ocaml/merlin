@@ -423,8 +423,8 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
     in
     try of_kind_group kind
     with exn ->
-      Logger.logf "Completion" "get_candidates/of_kind"
-        "Failed with exception: %a" (fun () -> Printexc.to_string) exn;
+      Logger.log ~section:"Completion" ~title:"get_candidates/of_kind"
+        "Failed with exception: %a" Logger.exn exn;
       []
   in
   let items = List.sort items ~cmp:(fun (a,_) (b,_) -> compare a b) in

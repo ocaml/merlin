@@ -28,15 +28,18 @@
 
 open Std
 
-type title = string
-type section = string
-
 let time = ref 0.0
 
 let delta_time () =
   Sys.time () -. !time
 
 let destination = ref None
+let selected_sections = ref None
+
+let is_section_enabled section =
+  match !selected_sections with
+  | None -> true
+  | Some sections -> Hashtbl.mem sections section
 
 let output_section oc section title =
   Printf.fprintf oc "# %2.2f %s - %s\n" (delta_time ()) section title
@@ -46,56 +49,84 @@ let log_flush () =
   | None -> ()
   | Some oc -> flush oc
 
-let log section title msg =
+(* [Printf.ifprintf] doesn't have the right type before ocaml/ocaml#201, and
+   [make_iprintf] doesn't exist before ocaml/ocaml#267 *)
+let ifprintf oc (CamlinternalFormatBasics.Format (fmt, _)) =
+  CamlinternalFormat.make_printf (fun _ _ -> ()) oc End_of_acc fmt
+
+let log ~section ~title fmt =
   match !destination with
-  | None -> ()
-  | Some oc ->
-    output_section oc section title;
-    if msg <> "" then (
-      output_string oc msg;
-      output_char oc '\n';
-    )
+  | Some oc when is_section_enabled section ->
+    Printf.ksprintf (fun str ->
+        output_section oc section title;
+        if str <> "" then (
+          output_string oc str;
+          if str.[String.length str - 1] <> '\n' then
+            output_char oc '\n'
+        )
+      ) fmt
+  | None | Some _ ->
+    ifprintf () fmt
 
-let logf section title =
-  Printf.ksprintf (log section title)
+let fmt_buffer = Buffer.create 128
+let fmt_handle = Format.formatter_of_buffer fmt_buffer
 
-let logfmt section title f =
-  match !destination with
-  | None -> ()
-  | Some oc ->
-    output_section oc section title;
-    let ppf = Format.formatter_of_out_channel oc in
-    f ppf;
-    Format.pp_print_flush ppf ();
-    output_char oc '\n'
+let fmt () f =
+  Buffer.reset fmt_buffer;
+  begin match f fmt_handle with
+  | () -> ()
+  | exception exn ->
+    Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn);
+  end;
+  Format.pp_print_flush fmt_handle ();
+  let msg = Buffer.contents fmt_buffer in
+  Buffer.reset fmt_buffer;
+  msg
 
-let logj section title f =
-  match !destination with
-  | None -> ()
-  | Some oc ->
-    output_section oc section title;
-    Json.pretty_to_channel oc (f ());
-    output_char oc '\n'
+let json () f =
+  match f () with
+  | json -> Json.pretty_to_string json
+  | exception exn ->
+    Printf.sprintf "Exception: %s" (Printexc.to_string exn)
 
-let notifications
-  : (section * string) list ref option ref
-  = ref None
+let exn () exn = Printexc.to_string exn
 
-let notify section =
+type notification = {
+  section: string;
+  msg: string;
+}
+
+let notifications : notification list ref option ref = ref None
+
+let notify ~section =
   let tell msg =
-    log section "notify" msg;
+    log ~section ~title:"notify" "%s" msg;
     match !notifications with
     | None -> ()
-    | Some r -> r := (section, msg) :: !r
+    | Some r -> r := {section; msg} :: !r
   in
   Printf.ksprintf tell
 
 let with_notifications r f =
   let_ref notifications (Some r) f
 
-let with_log_file file f =
+let with_sections sections f =
+  let sections = match sections with
+    | [] -> None
+    | sections ->
+      let table = Hashtbl.create (List.length sections) in
+      List.iter sections ~f:(fun section -> Hashtbl.replace table section ());
+      Some table
+  in
+  let sections0 = !selected_sections in
+  selected_sections := sections;
+  match f () with
+  | result -> selected_sections := sections0; result
+  | exception exn -> selected_sections := sections0; reraise exn
+
+let with_log_file file ?(sections=[]) f =
   match file with
-  | None -> f ()
+  | None -> with_sections sections f
   | Some file ->
     log_flush ();
     let destination', release = match file with
@@ -117,6 +148,10 @@ let with_log_file file f =
       destination := destination0;
       release ()
     in
-    match f () with
+    match with_sections sections f with
     | v -> release (); v
     | exception exn -> release (); reraise exn
+
+type 'a printf = title:string -> ('a, unit, string, unit) format4 -> 'a
+type logger = { log : 'a. 'a printf }
+let for_section section = { log = (fun ~title fmt -> log ~section ~title fmt) }

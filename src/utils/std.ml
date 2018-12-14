@@ -431,6 +431,20 @@ module String = struct
 
   let lowercase = lowercase
   let uppercase = uppercase
+
+  let split_on_char_ c s =
+    match String.index s c with
+    | exception Not_found -> [s]
+    | p ->
+      let rec loop i =
+        match String.index_from s i c with
+        | exception Not_found -> [String.sub s i (String.length s - i)]
+        | j ->
+          let s0 = String.sub s i (j - i) in
+          s0 :: loop (j + 1)
+      in
+      let s0 = String.sub s 0 p in
+      s0 :: loop (p + 1)
 end
 
 let sprintf = Printf.sprintf
@@ -450,38 +464,6 @@ module Format = struct
     pp_set_margin ppf width;
     ppf, contents
 end
-
-module Either = struct
-  type ('a,'b) t = L of 'a | R of 'b
-
-  let elim f g = function
-    | L a -> f a
-    | R b -> g b
-
-  let try' f =
-    try R (f ())
-    with exn -> L exn
-
-  let get = function
-    | L exn -> raise exn
-    | R v -> v
-
-  (* Remove ? *)
-  let join = function
-    | R (R _ as r) -> r
-    | R (L _ as e) -> e
-    | L _ as e -> e
-
-  let split =
-    let rec aux l1 l2 = function
-      | L a :: l -> aux (a :: l1) l2 l
-      | R b :: l -> aux l1 (b :: l2) l
-      | [] -> List.rev l1, List.rev l2
-    in
-    fun l -> aux [] [] l
-end
-type ('a, 'b) either = ('a, 'b) Either.t
-type 'a or_exn = (exn, 'a) Either.t
 
 module Lexing = struct
 
@@ -625,25 +607,6 @@ end = struct
     | Exact s -> s = str
 end
 
-module Obj = struct
-  include Obj
-  let unfolded_physical_equality a b =
-    let a, b = Obj.repr a, Obj.repr b in
-    if Obj.is_int a || Obj.is_int b then
-      a == b
-    else
-      let sa, sb = Obj.size a, Obj.size b in
-      sa = sb &&
-      try
-        for i = 0 to sa - 1 do
-          if not (Obj.field a i == Obj.field b i) then
-            raise Not_found
-        done;
-        true
-      with Not_found -> false
-end
-
-let trace = Trace.enter
 let fprintf = Format.fprintf
 
 let lazy_eq a b =

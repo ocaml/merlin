@@ -161,7 +161,7 @@ let enclosing pos roots =
   | [] -> []
   | root -> best_node pos (select_leafs pos root)
 
-let deepest_before _ pos roots =
+let deepest_before pos roots =
   match enclosing pos roots with
   | [] -> []
   | root ->

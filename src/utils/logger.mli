@@ -35,15 +35,24 @@
   *
   **)
 
-type title = string
-type section = string
+val log
+  : section:string -> title:string -> ('b, unit, string, unit) format4 -> 'b
 
-val log    : section -> title -> string -> unit
-val logf   : section -> title -> ('b, unit, string, unit) format4 -> 'b
-val logfmt : section -> title -> (Format.formatter -> unit) -> unit
-val logj   : section -> title -> (unit -> Std.json) -> unit
+val fmt  : unit -> (Format.formatter -> unit) -> string
+val json : unit -> (unit -> Std.json) -> string
+val exn  : unit -> exn -> string
+
 val log_flush : unit -> unit
 
-val notify : section -> ('b, unit, string, unit) format4 -> 'b
-val with_notifications : (section * string) list ref -> (unit -> 'a) -> 'a
-val with_log_file : string option -> (unit -> 'a) -> 'a
+type notification = {
+  section: string;
+  msg: string;
+}
+
+val notify : section:string -> ('b, unit, string, unit) format4 -> 'b
+val with_notifications : notification list ref -> (unit -> 'a) -> 'a
+val with_log_file : string option -> ?sections:string list -> (unit -> 'a) -> 'a
+
+type 'a printf = title:string -> ('a, unit, string, unit) format4 -> 'a
+type logger = { log : 'a. 'a printf }
+val for_section : string -> logger

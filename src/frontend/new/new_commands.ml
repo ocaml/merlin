@@ -59,11 +59,13 @@ let rec find_command name = function
     else find_command name xs
 
 let run pipeline query =
-  Logger.logj "New_commands.run" "query" (fun () -> Query_json.dump query);
+  Logger.log ~section:"New_commands.run" ~title:"query" "%a"
+    Logger.json (fun () -> Query_json.dump query);
   Mpipeline.with_reader pipeline @@ fun () ->
   let result = Query_commands.dispatch pipeline query in
   let json = Query_json.json_of_response query result in
-  Logger.logj "New_commands.run" "result" (fun () -> json);
+  Logger.log ~section:"New_commands.run" ~title:"result" "%a"
+    Logger.json (fun () -> json);
   json
 
 let all_commands = [

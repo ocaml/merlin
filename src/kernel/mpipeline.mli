@@ -1,9 +1,7 @@
 type t
 
-val make : Trace.t -> Mconfig.t -> Msource.t -> t
+val make : Mconfig.t -> Msource.t -> t
 val for_completion : Msource.position -> t -> t
-
-val get_trace : t -> Trace.t
 
 val raw_source : t -> Msource.t
 

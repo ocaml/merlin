@@ -33,6 +33,8 @@ exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
 
+let {Logger. log} = Logger.for_section "destruct"
+
 let () =
   Location.register_error_of_exn (function
     | Not_allowed s  -> Some (Location.error ("Destruct not allowed on " ^ s))
@@ -131,7 +133,8 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         if cstr_descr.cstr_generalized &&
            not (are_types_unifiable cstr_descr.cstr_res)
         then (
-          Logger.logfmt "destruct" "gen_pattersn" (fun fmt ->
+          log ~title:"gen_patterns" "%a"
+            Logger.fmt (fun fmt ->
               Format.fprintf fmt
                 "Eliminating '%s' branch, its return type is not\
                 \ compatible with the expected type (%a)"
@@ -382,7 +385,7 @@ let find_branch patterns sub =
   in
   aux [] patterns
 
-let node tr config source node parents =
+let node config source node parents =
   let open Extend_protocol.Reader in
   let loc = Mbrowse.node_loc node in
   match node with
@@ -405,7 +408,7 @@ let node tr config source node parents =
         needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
       )
     in
-    let str = Mreader.print_pretty tr
+    let str = Mreader.print_pretty
         config source (Pretty_expression result) in
     let str = if needs_parentheses then "(" ^ str ^ ")" else str in
     loc, str
@@ -413,9 +416,8 @@ let node tr config source node parents =
     let last_case_loc, patterns = get_every_pattern parents in
     List.iter patterns ~f:(fun p ->
       let p = filter_pat_attr (Untypeast.untype_pattern p) in
-      Logger.logf "destruct" "EXISTING" "%t"
-        (fun () -> Mreader.print_pretty tr
-            config source (Pretty_pattern p))
+      log ~title:"EXISTING" "%t"
+        (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
@@ -427,7 +429,7 @@ let node tr config source node parents =
         let open Location in
         { last_case_loc with loc_start = last_case_loc.loc_end }
       in
-      let str = Mreader.print_pretty tr
+      let str = Mreader.print_pretty
            config source (Pretty_case_list [ case ]) in
       loc, str
     | None ->
@@ -439,7 +441,7 @@ let node tr config source node parents =
         (* If only one pattern is generated, then we're only refining the
            current pattern, not generating new branches. *)
         let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
-        let str = Mreader.print_pretty tr
+        let str = Mreader.print_pretty
             config source (Pretty_pattern ppat) in
         patt.Typedtree.pat_loc, str
       | sub_patterns ->
@@ -477,7 +479,7 @@ let node tr config source node parents =
             )
           in
           let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
-          let str = Mreader.print_pretty tr
+          let str = Mreader.print_pretty
               config source (Pretty_pattern ppat) in
           top_patt.Typedtree.pat_loc, str
       end

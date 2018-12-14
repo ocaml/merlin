@@ -85,12 +85,11 @@ let run = function
           config, command_args
         in
         (* Start processing query *)
-        Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
+        Logger.with_log_file Mconfig.(config.merlin.log_file)
+          ~sections:Mconfig.(config.merlin.log_sections) @@ fun () ->
         File_id.with_cache @@ fun () ->
-        let tr = (if Mconfig.(config.merlin.trace) then
-                    Trace.start () else Trace.null) in
-        let source = Msource.make tr (Misc.string_of_file stdin) in
-        let pipeline = Mpipeline.make tr config source in
+        let source = Msource.make (Misc.string_of_file stdin) in
+        let pipeline = Mpipeline.make config source in
         let json =
           let class_, message =
             Printexc.record_backtrace true;
@@ -101,7 +100,8 @@ let run = function
               ("failure", `String str)
             | exception exn ->
               let trace = Printexc.get_backtrace () in
-              Logger.log "New_merlin.run" "Command error backtrace" trace;
+              Logger.log ~section:"New_merlin.run"
+                ~title:"Command error backtrace" "%s" trace;
               match Location.error_of_exn exn with
               | None | Some `Already_displayed ->
                 ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
@@ -115,7 +115,9 @@ let run = function
             List.fold_left (fun acc (_, k) -> k +. acc) 0.0 timing in
           let timing = ("total", total_time) ::
                        ("query", (total_time -. pipeline_time)) :: timing in
-          let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
+          let notify { Logger.section; msg } =
+            `String (Printf.sprintf "%s: %s" section msg)
+          in
           `Assoc [
             "class", `String class_; "value", message;
             "notifications", `List (List.rev_map notify !notifications);
@@ -142,10 +144,13 @@ let run env wd args =
       try Sys.chdir wd; Printf.sprintf "changed directory to %S" wd
       with _ -> Printf.sprintf "cannot change working directory to %S" wd
   in
-  let log = match Sys.getenv "MERLIN_LOG" with
-    | value -> Some value
-    | exception Not_found -> None
+  let log, sections =
+    match Std.String.split_on_char_ ',' (Sys.getenv "MERLIN_LOG") with
+    | (value :: sections) -> (Some value, sections)
+    | [] -> (None, [])
+    | exception Not_found -> (None, [])
   in
-  Logger.with_log_file log @@ fun () ->
-  Logger.log "Ocamlmerlin_server" "Server.process_request" wd_msg;
+  Logger.with_log_file log ~sections @@ fun () ->
+  Logger.log ~section:"Ocamlmerlin_server" ~title:"Server.process_request"
+    "%s" wd_msg;
   run args

@@ -82,9 +82,9 @@ type state = {
 let normalize_document doc =
   doc.Context.path, doc.Context.dot_merlins
 
-let new_buffer tr (path, dot_merlins) =
+let new_buffer (path, dot_merlins) =
   { path; dot_merlins; customization = [];
-    source = Msource.make tr "" }
+    source = Msource.make "" }
 
 let default_config = ref Mconfig.initial
 
@@ -105,17 +105,17 @@ let configure (state : buffer) =
   in
   List.fold_left ~f:customize ~init:config state.customization
 
-let new_state tr document =
-  { buffer = new_buffer tr document }
+let new_state document =
+  { buffer = new_buffer document }
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
   let cache_size = 8 in
-  fun tr document ->
+  fun document ->
     let document = normalize_document document in
     try List.assoc document !checkout_buffer_cache
     with Not_found ->
-      let buffer = new_buffer tr document in
+      let buffer = new_buffer document in
       begin match document with
         | Some _, _ ->
           checkout_buffer_cache :=
@@ -124,14 +124,14 @@ let checkout_buffer =
       end;
       buffer
 
-let make_pipeline tr config buffer =
-  Mpipeline.make tr config buffer.source
+let make_pipeline config buffer =
+  Mpipeline.make config buffer.source
 
-let dispatch_sync tr config state (type a) : a sync_command -> a = function
+let dispatch_sync config state (type a) : a sync_command -> a = function
   | Idle_job -> false
 
   | Tell (pos_start, pos_end, text) ->
-    let source = Msource.substitute tr state.source pos_start pos_end text in
+    let source = Msource.substitute state.source pos_start pos_end text in
     state.source <- source
 
   | Refresh ->
@@ -191,25 +191,25 @@ let dispatch_sync tr config state (type a) : a sync_command -> a = function
        My_config.version Sys.ocaml_version)
 
   | Flags_get ->
-    let pipeline = make_pipeline tr config state in
+    let pipeline = make_pipeline config state in
     let config = Mpipeline.final_config pipeline in
     List.concat_map ~f:(fun f -> f.workval)
       Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->
-    let pipeline = make_pipeline tr config state in
+    let pipeline = make_pipeline config state in
     let config = Mpipeline.final_config pipeline in
     (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
 
   | Checkout _ -> failwith "invalid arguments"
 
-let default_state = lazy (new_state Trace.null (None, None))
+let default_state = lazy (new_state (None, None))
 
 let document_states
   : (string option * string list option, state) Hashtbl.t
   = Hashtbl.create 7
 
-let dispatch tr (type a) (context : Context.t) (cmd : a command) =
+let dispatch (type a) (context : Context.t) (cmd : a command) =
   let open Context in
   (* Document selection *)
   let state = match context.document with
@@ -218,7 +218,7 @@ let dispatch tr (type a) (context : Context.t) (cmd : a command) =
       let document = normalize_document document in
       try Hashtbl.find document_states document
       with Not_found ->
-        let state = new_state tr document in
+        let state = new_state document in
         Hashtbl.add document_states document state;
         state
   in
@@ -239,10 +239,10 @@ let dispatch tr (type a) (context : Context.t) (cmd : a command) =
   (* Actual dispatch *)
   match cmd with
   | Query q ->
-    let pipeline = make_pipeline tr config state.buffer in
+    let pipeline = make_pipeline config state.buffer in
     Mpipeline.with_reader pipeline @@ fun () ->
     Query_commands.dispatch pipeline q
   | Sync (Checkout context) when state == Lazy.force default_state ->
-    let buffer = checkout_buffer tr context in
+    let buffer = checkout_buffer context in
     state.buffer <- buffer
-  | Sync s -> dispatch_sync tr config state.buffer s
+  | Sync s -> dispatch_sync config state.buffer s

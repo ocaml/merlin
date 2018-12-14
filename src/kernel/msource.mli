@@ -6,7 +6,7 @@
 type t
 
 (** Making a content from name and contents. *)
-val make : Trace.t -> string -> t
+val make : string -> t
 
 (** {1 Position management} *)
 
@@ -17,16 +17,16 @@ type position = [
   | `End
 ]
 
-val get_offset     : Trace.t -> t -> [< position] -> [> `Offset of int]
+val get_offset     : t -> [< position] -> [> `Offset of int]
 
-val get_logical    : Trace.t -> t -> [< position] -> [> `Logical of int * int]
+val get_logical    : t -> [< position] -> [> `Logical of int * int]
 
-val get_lexing_pos : Trace.t -> t -> filename:string -> [< position] -> Lexing.position
+val get_lexing_pos : t -> filename:string -> [< position] -> Lexing.position
 
 (** {1 Managing content} *)
 
 (** Updating content *)
-val substitute : Trace.t -> t -> [< position] -> [< position | `Length of int] -> string -> t
+val substitute : t -> [< position] -> [< position | `Length of int] -> string -> t
 
 (** Source code of the file *)
 val text : t -> string

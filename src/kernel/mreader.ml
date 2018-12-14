@@ -18,7 +18,7 @@ type result = {
 
 (* Normal entry point *)
 
-let normal_parse tr ?for_completion config source =
+let normal_parse ?for_completion config source =
   let kind =
     let filename = Mconfig.(config.query.filename) in
     let extension =
@@ -26,7 +26,8 @@ let normal_parse tr ?for_completion config source =
       | exception Not_found -> ""
       | pos -> String.sub ~pos ~len:(String.length filename - pos) filename
     in
-    Logger.logf "reader" "run" "extension(%S) = %S" filename extension;
+    Logger.log ~section:"Mreader" ~title:"run"
+      "extension(%S) = %S" filename extension;
     if List.exists ~f:(fun (_impl,intf) -> intf = extension)
         Mconfig.(config.merlin.suffixes)
     then Mreader_parser.MLI
@@ -40,7 +41,7 @@ let normal_parse tr ?for_completion config source =
   let no_labels_for_completion, lexer = match for_completion with
     | None -> false, lexer
     | Some pos ->
-      let pos = Msource.get_lexing_pos tr source
+      let pos = Msource.get_lexing_pos source
           ~filename:(Mconfig.filename config) pos
       in
       Mreader_lexer.for_completion lexer pos
@@ -61,63 +62,63 @@ type outcometree = Extend_protocol.Reader.outcometree
 
 let ambient_reader = ref None
 
-let instantiate_reader tr spec config source = match spec with
+let instantiate_reader spec config source = match spec with
   | [] -> ((lazy None), ignore)
   | name :: args ->
-    let reader = lazy (Mreader_extend.start tr name args config source) in
+    let reader = lazy (Mreader_extend.start name args config source) in
     (reader, (fun () ->
        if Lazy.is_val reader then
          match Lazy.force reader with
          | None -> ()
-         | Some reader -> Mreader_extend.stop tr reader))
+         | Some reader -> Mreader_extend.stop reader))
 
 let get_reader config =
   let rec find_reader assocsuffixes =
     match assocsuffixes with
     | [] -> []
-    | (suffix,reader)::t -> 
+    | (suffix,reader)::t ->
       if Filename.check_suffix Mconfig.(config.query.filename) suffix then [reader] else find_reader t
-  in  
+  in
   match Mconfig.(config.merlin.reader) with
   (* if a reader flag exists then this is explicitly used disregarding suffix association *)
   | [] -> find_reader Mconfig.(config.merlin.extension_to_reader)
   | x -> x
 
-let mocaml_printer tr reader ppf otree =
+let mocaml_printer reader ppf otree =
   let str = match reader with
-    | lazy (Some reader) -> Mreader_extend.print_outcome tr otree reader
+    | lazy (Some reader) -> Mreader_extend.print_outcome otree reader
     | _ -> None
   in
   match str with
   | Some str -> Format.pp_print_string ppf str
   | None -> Mocaml.default_printer ppf otree
 
-let with_ambient_reader tr config source f =
+let with_ambient_reader config source f =
   let ambient_reader' = !ambient_reader in
   let reader_spec = get_reader config in
-  let reader, stop = instantiate_reader tr reader_spec config source in
+  let reader, stop = instantiate_reader reader_spec config source in
   ambient_reader := Some (reader, reader_spec, source);
   Misc.try_finally
-    (fun () -> Mocaml.with_printer (mocaml_printer tr reader) f)
+    (fun () -> Mocaml.with_printer (mocaml_printer reader) f)
     (fun () -> ambient_reader := ambient_reader'; stop ())
 
-let try_with_reader tr config source f =
+let try_with_reader config source f =
   let reader_spec = get_reader config in
   let lazy reader, stop =
     match !ambient_reader with
     | Some (reader, reader_spec', source')
       when compare reader_spec reader_spec' = 0 &&
            compare source source' = 0 -> reader, ignore
-    | _ -> instantiate_reader tr reader_spec config source
+    | _ -> instantiate_reader reader_spec config source
   in
   match reader with
   | None -> stop (); None
   | Some reader ->
     Misc.try_finally (fun () -> f reader) stop
 
-let print_pretty tr config source tree =
-  match try_with_reader tr config source
-          (Mreader_extend.print_pretty tr tree) with
+let print_pretty config source tree =
+  match try_with_reader config source
+          (Mreader_extend.print_pretty tree) with
   | Some result -> result
   | None ->
     let ppf, to_string = Std.Format.to_string () in
@@ -137,38 +138,38 @@ let default_print_outcome tree =
   Mocaml.default_printer Format.str_formatter tree;
   Format.flush_str_formatter ()
 
-let print_outcome tr config source tree =
-  match try_with_reader tr config source
-          (Mreader_extend.print_outcome tr tree) with
+let print_outcome config source tree =
+  match try_with_reader config source
+          (Mreader_extend.print_outcome tree) with
   | Some result -> result
   | None -> default_print_outcome tree
 
-let print_batch_outcome tr config source tree =
-  match try_with_reader tr config source
-          (Mreader_extend.print_outcomes tr tree) with
+let print_batch_outcome config source tree =
+  match try_with_reader config source
+          (Mreader_extend.print_outcomes tree) with
   | Some result -> result
   | None -> List.map ~f:default_print_outcome tree
 
-let reconstruct_identifier tr config source pos =
+let reconstruct_identifier config source pos =
   match
-    try_with_reader tr config source
-      (Mreader_extend.reconstruct_identifier tr pos)
+    try_with_reader config source
+      (Mreader_extend.reconstruct_identifier pos)
   with
   | None | Some [] -> Mreader_lexer.reconstruct_identifier config source pos
   | Some result -> result
 
 (* Entry point *)
 
-let parse tr ?for_completion config source =
+let parse ?for_completion config source =
   match
-    try_with_reader tr config source
-      (Mreader_extend.parse tr ?for_completion)
+    try_with_reader config source
+      (Mreader_extend.parse ?for_completion)
   with
   | Some (`No_labels no_labels_for_completion, parsetree) ->
     let (lexer_errors, parser_errors, comments) = ([], [], []) in
     { config; lexer_errors; parser_errors; comments; parsetree;
       no_labels_for_completion; }
-  | None -> normal_parse tr ?for_completion config source
+  | None -> normal_parse ?for_completion config source
 
 (* Update config after parse *)
 

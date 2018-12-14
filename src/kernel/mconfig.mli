@@ -47,7 +47,7 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
-  trace       : bool;
+  log_sections: string list;
 
   exclude_query_dir : bool;
 
@@ -91,7 +91,7 @@ val dump : t -> json
 
 val load_dotmerlins : filenames:string list -> t -> t
 
-val normalize : Trace.t -> t -> t
+val normalize : t -> t
 
 val is_normalized : t -> bool
 

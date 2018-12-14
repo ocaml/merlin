@@ -1,5 +1,7 @@
 open Std
 
+let {Logger. log} = Logger.for_section "Mtyper"
+
 type ('p,'t) item = {
   parsetree_item: 'p;
   typedtree_items: 't list * Types.signature_item list;
@@ -34,29 +36,28 @@ let cache_key config =
   Mconfig.(config.query.directory, config.query.filename, config.ocaml)
 
 let pop_cache config =
+  let title = "pop_cache" in
   let key = cache_key config in
   match List.assoc key !cache with
   | (state, result) ->
     cache := List.remove_assoc key !cache;
-    Logger.log "Mtyper" "pop_cache"
-      "found entry for this configuration";
+    log ~title "found entry for this configuration";
     if Mocaml.with_state state Env.check_state_consistency then (
-      Logger.log "Mtyper" "pop_cache" "consistent state, reusing";
+      log ~title "consistent state, reusing";
       `Cached (state, result)
     )
     else (
-      Logger.log "Mtyper" "pop_cache" "inconsistent state, dropping";
+      log ~title "inconsistent state, dropping";
       `Inconsistent
     )
-  | exception Not_found ->
-    Logger.log "Mtyper" "pop_cache" "nothing cached for this configuration";
-    `None
+  | exception Not_found -> (
+      log ~title "nothing cached for this configuration";
+      `None
+    )
 
 let push_cache config state t =
   let t = (t.initial_env, t.initial_snapshot, t.typedtree) in
   cache := List.take_n 5 ((cache_key config, (state, t)) :: !cache)
-
-let print_result () _ = "<Mtyper.result>"
 
 let compatible_prefix result_items tree_items =
   let rec aux acc = function
@@ -65,8 +66,8 @@ let compatible_prefix result_items tree_items =
         && compare ritem.parsetree_item pitem = 0 ->
       aux (ritem :: acc) (ritems, pitems)
     | (_, pitems) ->
-      Logger.logf "Mtyper" "compatible_prefix"
-        "reusing %d items, %d new items to type" (List.length acc) (List.length pitems);
+      log ~title:"compatible_prefix" "reusing %d items, %d new items to type"
+        (List.length acc) (List.length pitems);
       acc, pitems
   in
   aux [] (result_items, tree_items)
@@ -155,16 +156,7 @@ let type_interface config caught cached parsetree =
   let suffix = type_signature caught env' parsetree in
   env0, snap0, List.rev_append prefix suffix
 
-let run tr config source parsetree =
-  Trace.enter tr
-    "Mtyper.run %a %a %a"
-    (Json.print Mconfig.dump) config
-    (Json.print Msource.dump) source
-    (fun () -> function `Implementation _ -> "Implementation _"
-                      | `Interface _ -> "Interface _")
-    parsetree
-    ~return:print_result
-  @@ fun _ ->
+let run config parsetree =
   Mocaml.setup_config config;
   let state, cached = match pop_cache config with
     | `Cached (state, entry) -> (state, Some entry)
@@ -233,11 +225,7 @@ let get_typedtree t =
     let sig_items, sig_type = split_items l in
     `Interface {Typedtree. sig_items; sig_type; sig_final_env = get_env t}
 
-let node_at tr ?(skip_recovered=false) t pos_cursor =
-  Trace.enter tr "Mtyper.node_at %a %a"
-    print_result t Lexing.print_position pos_cursor
-    ~return:Mbrowse.print
-  @@ fun tr ->
+let node_at ?(skip_recovered=false) t pos_cursor =
   assert (Mocaml.is_current_state t.state);
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   let rec select = function
@@ -247,7 +235,7 @@ let node_at tr ?(skip_recovered=false) t pos_cursor =
       when Mbrowse.is_recovered node' -> select ancestors
     | l -> l
   in
-  match Mbrowse.deepest_before tr pos_cursor [node] with
+  match Mbrowse.deepest_before pos_cursor [node] with
   | [] -> [get_env t, Browse_raw.Dummy]
   | path when skip_recovered -> select path
   | path -> path

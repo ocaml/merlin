@@ -1,13 +1,14 @@
 open Mconfig
 
+let {Logger. log} = Logger.for_section "Mppx"
+
 let change_directory dir =
-  Logger.log "Mppx" "changing_directory" dir;
+  log ~title:"changing_directory" "%s" dir;
   match Sys.chdir dir with
   | () -> true
   | exception exn ->
-    Logger.logf "Mppx" "changing directory"
-      "change_directory %S failed with %t" dir
-      (fun () -> Printexc.to_string exn);
+    log ~title:"changing directory"
+      "change_directory %S failed with %a" dir Logger.exn exn;
     false
 
 
@@ -29,7 +30,7 @@ let with_include_dir path f =
   result
 
 
-let rewrite _trace cfg parsetree =
+let rewrite cfg parsetree =
   let ppx = cfg.ocaml.ppx @
             List.map
               (fun ppx -> {Std. workdir = cfg.query.directory; workval = ppx })
@@ -47,10 +48,10 @@ let rewrite _trace cfg parsetree =
     restore ();
     cfg, parsetree
   | exception exn ->
-    Logger.logf "Mppx" "rewrite" "failed with %t" (fun () ->
-        match Location.error_of_exn exn with
-        | None | Some `Already_displayed -> Printexc.to_string exn
-        | Some (`Ok err) -> err.Location.msg
+    log ~title:"rewrite" "failed with %t"
+      (fun () -> match Location.error_of_exn exn with
+         | None | Some `Already_displayed -> Printexc.to_string exn
+         | Some (`Ok err) -> err.Location.msg
       );
     Msupport.raise_error exn;
     restore ();

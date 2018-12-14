@@ -87,21 +87,19 @@ let signal sg behavior =
 let rec merlin_loop input output =
   let notifications = ref [] in
   Logger.with_notifications notifications @@ fun () ->
-  let tr = Trace.null in
   match
-    Trace.enter tr "Merlin main loop"
-      ~return:(fun () -> sprintf "continue = %b")
-    @@ fun tr ->
     match input () with
     | Some (Old_protocol.Request (context, request)) ->
-      let answer = Old_command.dispatch tr context request in
+      let answer = Old_command.dispatch context request in
       output ~notifications:(List.rev !notifications)
         (Old_protocol.Return (request, answer));
       true
     | None -> false
   with
   | exception exn ->
-    let trace = ("backtrace", Printexc.get_backtrace ()) in
+    let trace =
+      { Logger.section = "backtrace"; msg = Printexc.get_backtrace () }
+    in
     output ~notifications:(trace :: List.rev !notifications)
       (Old_protocol.Exception exn);
     merlin_loop input output
@@ -129,12 +127,14 @@ let setup_merlin args =
   let input () = match input () with
     | None -> None
     | Some json ->
-      Logger.logj "frontend" "input" (fun () -> json);
+      Logger.log ~section:"frontend" ~title:"input" "%a"
+        Logger.json (fun () -> json);
       Some (Old_IO.request_of_json json)
   in
   let output ~notifications x =
-    let json = Old_IO.json_of_response ~notifications x in
-    Logger.logj "frontend" "output" (fun () -> json);
+    let json = Old_IO.json_of_response notifications x in
+    Logger.log ~section:"frontend" ~title:"output" "%a"
+      Logger.json (fun () -> json);
     output json
   in
   (input, output)

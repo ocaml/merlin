@@ -376,8 +376,8 @@ let rec build ~local_buffer ~trie browses : t =
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
     | ignored_node ->
-      Logger.log "typedtrie" "ignored node"
-        (string_of_node ignored_node);
+      Logger.log ~section:"typedtrie" ~title:"ignored node" "%t"
+        (fun () -> string_of_node ignored_node);
       trie
   )
 
@@ -600,7 +600,7 @@ let rec find ~remember_loc ~before scopes trie path =
       | Alias _
       | Apply _ ->
         (* FIXME: not quite right (i.e. not necessarily a leaf). *)
-        Logger.log "locate" "Typedtrie.find"
+        Logger.log ~section:"locate" ~title:"Typedtrie.find"
           "cursor is in a leaf, so we look only before the leaf" ;
         follow ~state:initial_state ~remember_loc ~before:loc.Location.loc_start
           scopes trie path

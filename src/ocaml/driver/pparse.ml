@@ -12,6 +12,8 @@
 
 open Std
 
+let {Logger. log} = Logger.for_section "Pparse"
+
 type error =
   | CannotRun of string
   | WrongMagic of string
@@ -30,10 +32,10 @@ let write_ast magic ast =
 
 let report_error = function
   | CannotRun cmd ->
-    Logger.logf "Pparse" "report_error"
+    log ~title:"report_error"
       "Error while running external preprocessor. Command line: %s" cmd
   | WrongMagic cmd ->
-    Logger.logf "Pparse" "report_error"
+    log ~title:"report_error"
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
 let ppx_commandline cmd fn_in fn_out =
@@ -41,16 +43,14 @@ let ppx_commandline cmd fn_in fn_out =
     cmd (Filename.quote fn_in) (Filename.quote fn_out)
 
 let apply_rewriter magic ppx (fn_in, failures) =
-  Logger.logf "Pparse" "apply_rewriter"
-    "running %S from directory %S" ppx.workval ppx.workdir;
+  let title = "apply_rewriter" in
+  log ~title "running %S from directory %S" ppx.workval ppx.workdir;
   Logger.log_flush ();
   let fn_out = Filename.temp_file "camlppx" "" in
   begin
     try Sys.chdir ppx.workdir
     with exn ->
-      Logger.logf "Pparse" "apply_rewriter"
-        "cannot change directory %S: %t"
-        ppx.workdir (fun () -> Printexc.to_string exn)
+      log ~title "cannot change directory %S: %a" ppx.workdir Logger.exn exn
   end;
   let comm = ppx_commandline ppx.workval fn_in fn_out in
   let failure =
@@ -82,9 +82,8 @@ let apply_rewriter magic ppx (fn_in, failures) =
       match Sys.rename fn_in fallback with
       | () -> fallback
       | exception exn ->
-        Logger.logf "Pparse" "apply_rewriter"
-          "exception while renaming ast: %a"
-          (fun () -> Printexc.to_string) exn;
+        log ~title "exception while renaming ast: %a"
+          Logger.exn exn;
         fn_in
     in
     report_error err;
@@ -150,9 +149,8 @@ let apply_pp ~workdir ~filename ~source ~pp =
   begin
     try Sys.chdir workdir
     with exn ->
-      Logger.logf "Pparse" "apply_pp"
-        "cannot change directory %S: %t"
-        workdir (fun () -> Printexc.to_string exn)
+      log ~title:"apply_pp" "cannot change directory %S: %a"
+        workdir Logger.exn exn
   end;
   begin
     let oc = open_out_bin fn_in in
