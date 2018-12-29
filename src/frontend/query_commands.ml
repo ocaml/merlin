@@ -672,9 +672,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     with_typer pipeline @@ fun typer ->
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let tnode = match Mbrowse.enclosing pos [str] with
-      | [] -> Browse_tree.dummy
-      | t -> Browse_tree.of_browse t
+    let tnode =
+      let should_ignore_tnode = function
+        | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
+        | _ -> false
+      in
+      let rec find = function
+        | [] -> Browse_tree.dummy
+        | (env, node)::rest ->
+          if should_ignore_tnode node
+          then find rest
+          else Browse_tree.of_node ~env node
+      in
+      find (Mbrowse.enclosing pos [str])
     in
     let str = Browse_tree.of_browse str in
     let get_loc {Location.txt = _; loc} = loc in

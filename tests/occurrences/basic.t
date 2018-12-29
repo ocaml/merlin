@@ -43,7 +43,38 @@ Test getting occurrences of a function arg annotated with a type:
   $ $MERLIN single occurrences -identifier-at 4:19 -filename ./basic.ml < ./basic.ml
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 19
+        },
+        "end": {
+          "line": 4,
+          "col": 23
+        }
+      },
+      {
+        "start": {
+          "line": 5,
+          "col": 2
+        },
+        "end": {
+          "line": 5,
+          "col": 6
+        }
+      },
+      {
+        "start": {
+          "line": 5,
+          "col": 9
+        },
+        "end": {
+          "line": 5,
+          "col": 13
+        }
+      }
+    ],
     "notifications": []
   }
 
