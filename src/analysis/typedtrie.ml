@@ -58,6 +58,7 @@ module Trie : sig
   and include_ =
     | Named of Namespaced_path.t
     | Items of t Lazy.t
+    | Application of functor_application
 
   and functor_parameter =
     Ident.t * Location.t * node
@@ -103,9 +104,10 @@ end = struct
     | Functor  of functor_parameter * node
     | Apply    of functor_application
 
-  and include_ =
+  and include_ = (* simply a subset of node. *)
     | Named of Namespaced_path.t
     | Items of t Lazy.t
+    | Application of functor_application
 
   and functor_parameter =
     Ident.t * Location.t * node
@@ -306,8 +308,11 @@ let rec build ~local_buffer ~trie browses : t =
           | `Functor _ ->
             (* You can't include a functor, you can only include "structures". *)
             assert false
-          | `Unpack
-          | `Apply _ -> f Leaf
+          | `Unpack -> f Leaf
+          | `Apply (funct, arg) ->
+            let funct = node_for_direct_mod `Mod (remove_indir_me funct) in
+            let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+            f (Included (Application { funct; arg }))
           | `Str str ->
             let str = lazy (build ~local_buffer ~trie [of_structure str]) in
             f (Included (Items str))
@@ -481,6 +486,22 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
       with
       | [] -> try_next_scope scopes path
       | { loc; doc; node; namespace = _ } :: _ ->
+        let inspect_functor_arg : Trie.node -> _ = function
+          | Leaf -> Noop (* fuck it eh. *)
+          | Internal (lazy trie) ->
+            let scopes =
+              (trie, None) :: (trie, Some loc.Location.loc_start) :: scopes
+            in
+            Handled (Namespaced_path.empty, scopes)
+          | Included _ -> assert false (* that surely can't happen *)
+          | Alias path ->
+            let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+            Handled (path, scopes)
+          | Functor _ -> assert false (* that definitely can't happen. *)
+          | Apply _ ->
+            (* TODO *)
+            Noop
+        in
         let rec inspect_node state = function
           | Trie.Leaf ->
             (* we're not checking whether [xs = []] here, as we wouldn't be able to
@@ -499,18 +520,39 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
             follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
               trie new_path
           | Included include_ ->
-            let trie, new_path, before =
-              let stampless = Namespaced_path.strip_stamps path in
-              match include_ with
-              | Named new_prefix ->
-                trie,
-                Namespaced_path.rewrite_head ~new_prefix stampless,
-                Some loc.Location.loc_start
-              | Items t ->
-                Lazy.force t, stampless, None
-            in
             remember_loc loc;
-            follow ~remember_loc ~state ?before scopes trie new_path
+            let stampless = Namespaced_path.strip_stamps path in
+            begin match include_ with
+            | Named new_prefix ->
+              let path = Namespaced_path.rewrite_head ~new_prefix stampless in
+              log ~title:"include" "resolves to %s"
+                (Namespaced_path.to_unique_string path);
+              follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
+                trie path
+            | Items t ->
+              follow ~remember_loc ~state scopes (Lazy.force t) stampless
+            | Application { funct; arg } ->
+              log ~title:"include" "functor application";
+              let functor_argument = inspect_functor_arg arg in
+              let state =
+                { state with
+                  functor_arguments =
+                    functor_argument :: state.functor_arguments }
+              in
+              match funct with
+              | Leaf -> (* Unpack? *) Resolves_to (path, state)
+              | Internal _
+              | Included _
+              | Functor _ -> assert false (* can't happen. *)
+              | Alias new_prefix ->
+                let path = Namespaced_path.rewrite_head ~new_prefix stampless in
+                log ~title:"include" "resolves to %s"
+                  (Namespaced_path.to_unique_string path);
+                follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
+                  trie path
+              | Apply _ -> (* TODO. *)
+                Resolves_to (path, state)
+            end
           | Internal t ->
             let path = Namespaced_path.peal_head_exn path in
             begin match Namespaced_path.head path with
@@ -546,23 +588,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
             end
           | Apply { funct; arg } ->
             log ~title:"functor application" "";
-            let functor_argument =
-              match arg with
-              | Leaf -> Noop (* fuck it eh. *)
-              | Internal (lazy trie) ->
-                let scopes =
-                  (trie, None) :: (trie, Some loc.Location.loc_start) :: scopes
-                in
-                Handled (Namespaced_path.empty, scopes)
-              | Included _ -> assert false (* that surely can't happen *)
-              | Alias path ->
-                let scopes = (trie, Some loc.Location.loc_start) :: scopes in
-                Handled (path, scopes)
-              | Functor _ -> assert false (* that definitely can't happen. *)
-              | Apply _ ->
-                (* TODO *)
-                Noop
-            in
+            let functor_argument = inspect_functor_arg arg in
             let state =
               { state with
                 functor_arguments = functor_argument :: state.functor_arguments
@@ -642,6 +668,7 @@ let rec dump fmt trie =
     | Functor ((id, _, _), node) ->
       Format.fprintf fmt " %s ->%a" (Ident.name id)
         dump_node node
+    | Included Application { funct; arg }
     | Apply { funct; arg } ->
       Format.fprintf fmt " %a(%a)" dump_node funct dump_node arg
   in
