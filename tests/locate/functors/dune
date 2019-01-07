@@ -18,6 +18,15 @@
 
 (alias
  (name runtest)
+ (deps (:t included.t) included.ml)
+ (action
+   (progn
+     (setenv MERLIN %{exe:../../merlin-wrapper}
+       (run %{bin:craml} %{t}))
+     (diff? %{t} %{t}.corrected))))
+
+(alias
+ (name runtest)
  (deps (:t missed_shadowing.t) missed_shadowing.ml)
  (action
    (progn
