@@ -30,6 +30,8 @@ open Std
 open Browse_tree
 open Browse_raw
 
+let {Logger. log} = Logger.for_section "typedtrie"
+
 (* That's probably overkill, using a list would probably be just fine *)
 module StampMap = Map.Make(struct
     type t = int
@@ -376,7 +378,7 @@ let rec build ~local_buffer ~trie browses : t =
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
     | ignored_node ->
-      Logger.log ~section:"typedtrie" ~title:"ignored node" "%t"
+      log ~title:"build" "ignored node: %t"
         (fun () -> string_of_node ignored_node);
       trie
   )
@@ -454,8 +456,10 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
         functor_arguments = functor_argument :: state.functor_arguments
       }
     in
-    follow ~remember_loc ~state scopes ?before trie
-      (Namespaced_path.peal_head_exn path)
+    let new_path = Namespaced_path.peal_head_exn path in
+    log ~title:"applicative path" "%s"
+      (Namespaced_path.to_unique_string new_path);
+    follow ~remember_loc ~state scopes ?before trie new_path
   | Ident (x, namespace) ->
     try
       let lst = Trie.get x trie in
@@ -485,6 +489,10 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               ... and perhaps in other situations I am not aware of.  *)
             Found (loc, doc)
           | Alias new_prefix ->
+            log ~title:"aliased" "%s%s= %s"
+              (Namespaced_path.Id.name x)
+              (Namespaced_path.Namespace.to_string namespace)
+              (Namespaced_path.to_unique_string new_prefix);
             let path = Namespaced_path.peal_head_exn path in
             let new_path = Namespaced_path.rewrite_head ~new_prefix path in
             remember_loc loc;
@@ -537,6 +545,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               inspect_node state node
             end
           | Apply { funct; arg } ->
+            log ~title:"functor application" "";
             let functor_argument =
               match arg with
               | Leaf -> Noop (* fuck it eh. *)
