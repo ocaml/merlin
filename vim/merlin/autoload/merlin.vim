@@ -695,10 +695,11 @@ function! merlin#GotoDotMerlin()
 endfunction
 
 function! merlin#FindBinary()
-  if !has_key(s:c, 'ocamlmerlin_path') && has_key(s:c, 'merlin_home')
-    let s:choices = filter(map(['ocamlmerlin','ocamlmerlin.native'], 's:c.merlin_home."/bin/".v:val'), 'filereadable(v:val)')
-    if len(s:choices) > 0
-      let s:c.ocamlmerlin_path =  s:choices[0]
+  if !has_key(s:c, 'ocamlmerlin_path') && has_key(s:c, 'merlin_home') && has_key(s:c, 'merlin_parent')
+    let s:choices = map(['ocamlmerlin','ocamlmerlin.native'], 's:c.merlin_parent."/bin/".v:val') + map(['ocamlmerlin','ocamlmerlin.native'], 's:c.merlin_home."/".v:val')
+    let s:available_choices = filter(s:choices, 'filereadable(v:val)')
+    if len(s:available_choices) > 0
+      let s:c.ocamlmerlin_path =  s:available_choices[0]
     elseif executable('ocamlmerlin')
       let s:c.ocamlmerlin_path = 'ocamlmerlin'
     else
