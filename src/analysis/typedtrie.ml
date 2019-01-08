@@ -39,6 +39,8 @@ module StampMap = Map.Make(struct
   end)
 
 module Trie : sig
+  [@@@ocaml.warning "-30"]
+
   type t
 
   and elt =
@@ -88,6 +90,8 @@ module Trie : sig
   val find_some :
     (string -> int -> elt -> bool) -> t -> (string * int * elt) option
 end = struct
+  [@@@ocaml.warning "-30"]
+
   type t = elt StampMap.t String.Map.t
 
   and elt =
@@ -172,7 +176,7 @@ end = struct
   let find_some f t =
     try Some (find f t)
     with Not_found -> None
-end [@@ocaml.warning "-30"]
+end
 
 type t = Trie.t
 
