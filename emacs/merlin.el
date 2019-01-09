@@ -882,10 +882,10 @@ prefix of `bar' is `'."
   ;; Remove non-matching entry, adjusting optional labels if needed
   (cl-loop for x in labels
            for name = (cdr (assoc 'name x))
-           unless (or (string-prefix-p prefix name)
-                      (when (equal (aref name 0) ??)
-                        (aset name 0 ?~)
-                        (string-prefix-p prefix name)))
+           when (or (string-prefix-p prefix name)
+                    (when (equal (aref name 0) ??)
+                      (aset name 0 ?~)
+                      (string-prefix-p prefix name)))
            collect (append x '((kind . "Label") (info . nil)))))
 
 (defun merlin/complete (ident)
