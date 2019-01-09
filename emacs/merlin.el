@@ -924,7 +924,15 @@ prefix of `bar' is `'."
       (setq-local merlin--dwimed t)
       (setq prefix ""))
     ;; Concat results
-    (let ((result (append labels entries)))
+    (let ((result
+           (if (and (not (string-empty-p ident))
+                    (or (equal (aref ident 0) ?~)
+                        (equal (aref ident 0) ??))
+                    labels)
+               ;; If the user is trying to autocomplete a label, don't present
+               ;; non-label completions.
+               labels
+             (append labels entries))))
       (if expected-ty
           (cl-loop for x in result
                    collect (append x `((argument_type . ,expected-ty))))
