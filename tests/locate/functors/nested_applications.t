@@ -34,8 +34,8 @@
     "value": {
       "file": "tests/locate/functors/nested_applications.ml",
       "pos": {
-        "line": 21,
-        "col": 54
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
@@ -48,8 +48,8 @@
     "value": {
       "file": "tests/locate/functors/nested_applications.ml",
       "pos": {
-        "line": 2,
-        "col": 2
+        "line": 21,
+        "col": 54
       }
     },
     "notifications": []

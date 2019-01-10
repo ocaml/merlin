@@ -1,4 +1,3 @@
-FIXME
 
   $ $MERLIN single locate -look-for ml -position 22:15 \
   > -filename ./included.ml < ./included.ml
@@ -7,8 +6,8 @@ FIXME
     "value": {
       "file": "tests/locate/functors/included.ml",
       "pos": {
-        "line": 19,
-        "col": 2
+        "line": 14,
+        "col": 6
       }
     },
     "notifications": []

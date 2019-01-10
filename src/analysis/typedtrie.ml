@@ -30,6 +30,8 @@ open Std
 open Browse_tree
 open Browse_raw
 
+let {Logger. log} = Logger.for_section "typedtrie"
+
 (* That's probably overkill, using a list would probably be just fine *)
 module StampMap = Map.Make(struct
     type t = int
@@ -37,6 +39,8 @@ module StampMap = Map.Make(struct
   end)
 
 module Trie : sig
+  [@@@ocaml.warning "-30"]
+
   type t
 
   and elt =
@@ -56,15 +60,22 @@ module Trie : sig
   and include_ =
     | Named of Namespaced_path.t
     | Items of t Lazy.t
+    | Apply of functor_application
 
   and functor_parameter =
     Ident.t * Location.t * node
 
   and functor_application =
-    { funct : node
+    { funct : functor_
     ; arg   : node }
     (* The day where we want to support aliasing of functor arguments then arg
        should be [elt] instead of [node] *)
+
+  and functor_ =
+    | Apply of functor_application
+    | Funct of functor_parameter * node
+    | Named of Namespaced_path.t
+    | Unpack
 
   val empty : t
 
@@ -79,6 +90,8 @@ module Trie : sig
   val find_some :
     (string -> int -> elt -> bool) -> t -> (string * int * elt) option
 end = struct
+  [@@@ocaml.warning "-30"]
+
   type t = elt StampMap.t String.Map.t
 
   and elt =
@@ -101,16 +114,23 @@ end = struct
     | Functor  of functor_parameter * node
     | Apply    of functor_application
 
-  and include_ =
+  and include_ = (* simply a subset of node. *)
     | Named of Namespaced_path.t
     | Items of t Lazy.t
+    | Apply of functor_application
 
   and functor_parameter =
     Ident.t * Location.t * node
 
   and functor_application =
-    { funct : node
+    { funct : functor_
     ; arg   : node }
+
+  and functor_ =
+    | Apply of functor_application
+    | Funct of functor_parameter * node
+    | Named of Namespaced_path.t
+    | Unpack
 
   let empty = String.Map.empty
 
@@ -248,11 +268,32 @@ let rec build ~local_buffer ~trie browses : t =
       in
       Functor ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
     | `Apply (funct, arg) ->
-      let funct = node_for_direct_mod `Mod (remove_indir_me funct) in
+      let funct = functor_ (remove_indir_me funct) in
       let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
       Apply { funct; arg }
     | `Unpack -> (* TODO! *)
       Leaf
+  and functor_ : _ -> Trie.functor_ = function
+    | `Alias path
+    | `Ident path -> Named (Namespaced_path.of_path ~namespace:`Mod path)
+    | `Str _
+    | `Sg _ -> assert false
+    | `Mod_expr me -> functor_ (remove_indir_me me)
+    | `Mod_type _ -> assert false
+    | `Functor (param_id, param_loc, param, packed) ->
+      let param_node =
+        match param, local_buffer with
+        | None, _
+        | _, false -> Trie.Leaf
+        | Some mty, true ->
+          node_for_direct_mod `Modtype (remove_indir_mty mty)
+      in
+      Funct ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
+    | `Apply (funct, arg) ->
+      let funct = functor_ (remove_indir_me funct) in
+      let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+      Apply { funct; arg }
+    | `Unpack -> Unpack
   in
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->
     let open Typedtree in
@@ -304,8 +345,11 @@ let rec build ~local_buffer ~trie browses : t =
           | `Functor _ ->
             (* You can't include a functor, you can only include "structures". *)
             assert false
-          | `Unpack
-          | `Apply _ -> f Leaf
+          | `Unpack -> f Leaf
+          | `Apply (funct, arg) ->
+            let funct = functor_ (remove_indir_me funct) in
+            let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+            f (Included (Apply { funct; arg }))
           | `Str str ->
             let str = lazy (build ~local_buffer ~trie [of_structure str]) in
             f (Included (Items str))
@@ -376,7 +420,7 @@ let rec build ~local_buffer ~trie browses : t =
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
     | ignored_node ->
-      Logger.log ~section:"typedtrie" ~title:"ignored node" "%t"
+      log ~title:"build" "ignored node: %t"
         (fun () -> string_of_node ignored_node);
       trie
   )
@@ -454,8 +498,10 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
         functor_arguments = functor_argument :: state.functor_arguments
       }
     in
-    follow ~remember_loc ~state scopes ?before trie
-      (Namespaced_path.peal_head_exn path)
+    let new_path = Namespaced_path.peal_head_exn path in
+    log ~title:"applicative path" "%s"
+      (Namespaced_path.to_unique_string new_path);
+    follow ~remember_loc ~state scopes ?before trie new_path
   | Ident (x, namespace) ->
     try
       let lst = Trie.get x trie in
@@ -477,6 +523,47 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
       with
       | [] -> try_next_scope scopes path
       | { loc; doc; node; namespace = _ } :: _ ->
+        let inspect_functor_arg : Trie.node -> _ = function
+          | Leaf -> Noop (* fuck it eh. *)
+          | Internal (lazy trie) ->
+            let scopes =
+              (trie, None) :: (trie, Some loc.Location.loc_start) :: scopes
+            in
+            Handled (Namespaced_path.empty, scopes)
+          | Included _ -> assert false (* that surely can't happen *)
+          | Alias path ->
+            let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+            Handled (path, scopes)
+          | Functor _ ->
+            (* TODO *)
+            log ~title:"inspect_functor_arg"
+              "NOT HANDLED: functor given as functor argument";
+            Noop
+          | Apply _ ->
+            (* TODO *)
+            Noop
+        in
+        let rec inspect_functor path state : Trie.functor_ -> _ = function
+          | Named new_prefix ->
+            let path = Namespaced_path.rewrite_head ~new_prefix path in
+            log ~title:"inspect_functor" "resolves to %s"
+              (Namespaced_path.to_unique_string path);
+            follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
+              trie path
+          | Unpack ->
+            log ~title:"inspect_functor" "Unpack";
+            Found (loc, doc)
+          | Funct _ -> assert false (* TODO *)
+          | Apply { funct; arg } ->
+            log ~title:"inspect_functor" "functor application";
+            let functor_argument = inspect_functor_arg arg in
+            let state =
+              { state with
+                functor_arguments = functor_argument :: state.functor_arguments
+              }
+            in
+            inspect_functor path state funct
+        in
         let rec inspect_node state = function
           | Trie.Leaf ->
             (* we're not checking whether [xs = []] here, as we wouldn't be able to
@@ -485,24 +572,37 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               ... and perhaps in other situations I am not aware of.  *)
             Found (loc, doc)
           | Alias new_prefix ->
+            log ~title:"aliased" "%s%s= %s"
+              (Namespaced_path.Id.name x)
+              (Namespaced_path.Namespace.to_string namespace)
+              (Namespaced_path.to_unique_string new_prefix);
             let path = Namespaced_path.peal_head_exn path in
             let new_path = Namespaced_path.rewrite_head ~new_prefix path in
             remember_loc loc;
             follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
               trie new_path
           | Included include_ ->
-            let trie, new_path, before =
-              let stampless = Namespaced_path.strip_stamps path in
-              match include_ with
-              | Named new_prefix ->
-                trie,
-                Namespaced_path.rewrite_head ~new_prefix stampless,
-                Some loc.Location.loc_start
-              | Items t ->
-                Lazy.force t, stampless, None
-            in
             remember_loc loc;
-            follow ~remember_loc ~state ?before scopes trie new_path
+            let stampless = Namespaced_path.strip_stamps path in
+            begin match include_ with
+            | Named new_prefix ->
+              let path = Namespaced_path.rewrite_head ~new_prefix stampless in
+              log ~title:"include" "resolves to %s"
+                (Namespaced_path.to_unique_string path);
+              follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
+                trie path
+            | Items t ->
+              follow ~remember_loc ~state scopes (Lazy.force t) stampless
+            | Apply { funct; arg } ->
+              log ~title:"include" "functor application";
+              let functor_argument = inspect_functor_arg arg in
+              let state =
+                { state with
+                  functor_arguments =
+                    functor_argument :: state.functor_arguments }
+              in
+              inspect_functor stampless state funct
+            end
           | Internal t ->
             let path = Namespaced_path.peal_head_exn path in
             begin match Namespaced_path.head path with
@@ -512,6 +612,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               follow ~remember_loc ~state ?before scopes (Lazy.force t) path
             end
           | Functor ((id, _, _), node) ->
+            log ~title:"node" "functor";
             let path = Namespaced_path.peal_head_exn path in
             begin match Namespaced_path.head path with
             | None -> Found (loc, doc)
@@ -537,29 +638,14 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               inspect_node state node
             end
           | Apply { funct; arg } ->
-            let functor_argument =
-              match arg with
-              | Leaf -> Noop (* fuck it eh. *)
-              | Internal (lazy trie) ->
-                let scopes =
-                  (trie, None) :: (trie, Some loc.Location.loc_start) :: scopes
-                in
-                Handled (Namespaced_path.empty, scopes)
-              | Included _ -> assert false (* that surely can't happen *)
-              | Alias path ->
-                let scopes = (trie, Some loc.Location.loc_start) :: scopes in
-                Handled (path, scopes)
-              | Functor _ -> assert false (* that definitely can't happen. *)
-              | Apply _ ->
-                (* TODO *)
-                Noop
-            in
+            log ~title:"functor application" "";
+            let functor_argument = inspect_functor_arg arg in
             let state =
               { state with
                 functor_arguments = functor_argument :: state.functor_arguments
               }
             in
-            inspect_node state funct
+            inspect_functor (Namespaced_path.peal_head_exn path) state funct
         in
         inspect_node state node
     with
@@ -600,8 +686,7 @@ let rec find ~remember_loc ~before scopes trie path =
       | Alias _
       | Apply _ ->
         (* FIXME: not quite right (i.e. not necessarily a leaf). *)
-        Logger.log ~section:"locate" ~title:"Typedtrie.find"
-          "cursor is in a leaf, so we look only before the leaf" ;
+        log ~title:"find" "cursor in a leaf, so we look only before the leaf";
         follow ~state:initial_state ~remember_loc ~before:loc.Location.loc_start
           scopes trie path
     in
@@ -633,8 +718,19 @@ let rec dump fmt trie =
     | Functor ((id, _, _), node) ->
       Format.fprintf fmt " %s ->%a" (Ident.name id)
         dump_node node
+    | Included Apply { funct; arg }
     | Apply { funct; arg } ->
-      Format.fprintf fmt " %a(%a)" dump_node funct dump_node arg
+      Format.fprintf fmt " %a(%a)" dump_functor funct dump_node arg
+  and dump_functor fmt = function
+    | Apply { funct; arg } ->
+      Format.fprintf fmt " %a(%a)" dump_functor funct dump_node arg
+    | Funct ((id, _, _), node) ->
+      Format.fprintf fmt " %s ->%a" (Ident.name id)
+        dump_node node
+    | Named path ->
+      Format.fprintf fmt " = %s" (Namespaced_path.to_string path)
+    | Unpack ->
+      Format.fprintf fmt " !unpack!"
   in
   let dump_elt {loc; namespace; node; _} =
     Format.pp_print_string fmt (Namespaced_path.Namespace.to_string namespace);
