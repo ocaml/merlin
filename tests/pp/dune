@@ -1,6 +1,6 @@
 (alias
- (name runtest-disabled)
- (deps simple-pp.sh simple-pp.t)
+ (name runtest)
+ (deps simple-pp.t)
  (action
    (progn
      (setenv MERLIN %{exe:../merlin-wrapper}
