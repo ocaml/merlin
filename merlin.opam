@@ -20,7 +20,7 @@ depends: [
   "dune"  {build & >= "1.1.0"}
   "ocamlfind" {>= "1.5.2"}
   "yojson"
-  "craml" {test}
+  "mdx" {test & >= "1.2.0"}
 ]
 
 available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.08" ]

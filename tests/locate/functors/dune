@@ -4,7 +4,7 @@
  (action
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}
-       (run %{bin:craml} %{t}))
+       (run %{bin:mdx} test %{t}))
      (diff? %{t} %{t}.corrected))))
 
 (alias
@@ -13,7 +13,7 @@
  (action
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}
-       (run %{bin:craml} %{t}))
+       (run %{bin:mdx} test %{t}))
      (diff? %{t} %{t}.corrected))))
 
 (alias
@@ -22,7 +22,7 @@
  (action
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}
-       (run %{bin:craml} %{t}))
+       (run %{bin:mdx} test %{t}))
      (diff? %{t} %{t}.corrected))))
 
 (alias
@@ -31,7 +31,7 @@
  (action
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}
-       (run %{bin:craml} %{t}))
+       (run %{bin:mdx} test %{t}))
      (diff? %{t} %{t}.corrected))))
 
 (alias
@@ -40,5 +40,5 @@
  (action
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}
-       (run %{bin:craml} %{t}))
+       (run %{bin:mdx} test %{t}))
      (diff? %{t} %{t}.corrected))))

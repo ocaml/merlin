@@ -9,7 +9,7 @@ ocamlmerlin ocamlmerlin-server:
 clean:
 	dune clean
 
-test:
+test: build
 	dune runtest --force
 
 preprocess:
