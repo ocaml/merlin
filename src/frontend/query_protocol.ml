@@ -77,6 +77,7 @@ and item = {
     | `Class
     | `Method
   ];
+  outline_type : string option ;
   location : Location_aux.t ;
   children : outline ;
 }

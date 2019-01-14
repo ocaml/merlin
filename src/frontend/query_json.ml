@@ -257,10 +257,13 @@ let json_of_completions {Compl. entries; context } =
   ]
 
 let rec json_of_outline outline =
-  let json_of_item { outline_name ; outline_kind ; location ; children } =
+  let json_of_item { outline_name ; outline_kind ; outline_type; location ; children } =
     with_location location [
       "name", `String outline_name;
       "kind", `String (string_of_completion_kind outline_kind);
+      "type", (match outline_type with
+        | None -> `Null
+        | Some typ -> `String typ);
       "children", `List (json_of_outline children);
     ]
   in

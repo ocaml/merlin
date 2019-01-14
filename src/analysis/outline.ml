@@ -39,8 +39,8 @@ let id_of_patt = function
   | { pat_desc = Tpat_var (id, _) ; _ } -> Some id
   | _ -> None
 
-let mk ?(children=[]) ~location outline_kind id =
-  { Query_protocol.  outline_kind; location; children;
+let mk ?(children=[]) ~location outline_kind outline_type id =
+  { Query_protocol.  outline_kind; outline_type; location; children;
     outline_name = Ident.name id }
 
 let get_class_field_desc_infos = function
@@ -51,19 +51,30 @@ let get_class_field_desc_infos = function
 let rec summarize node =
   let location = node.t_loc in
   match node.t_node with
-  | Value_binding vb      -> id_of_patt vb.vb_pat >>| mk `Value ~location
-  | Value_description vd  -> Some (mk `Value ~location vd.val_id)
+  | Value_binding vb      ->
+    begin match id_of_patt vb.vb_pat with
+    | None -> None
+    | Some ident ->
+      let outline_type =
+        let ppf, to_string = Format.to_string () in
+        Type_utils.print_type_with_decl ~verbosity:0 node.t_env ppf vb.vb_pat.pat_type;
+        Some (to_string ())
+      in
+      Some (mk ~location `Value outline_type ident)
+    end
+  | Value_description vd  ->
+    Some (mk ~location `Value None vd.val_id)
 
   | Module_declaration md ->
     let children = get_mod_children node in
-    Some (mk ~children ~location `Module md.md_id)
+    Some (mk ~children ~location `Module None md.md_id)
   | Module_binding mb     ->
     let children = get_mod_children node in
-    Some (mk ~children ~location `Module mb.mb_id)
+    Some (mk ~children ~location `Module None mb.mb_id)
 
   | Module_type_declaration mtd ->
     let children = get_mod_children node in
-    Some (mk ~children ~location `Modtype mtd.mtd_id)
+    Some (mk ~children ~location `Modtype None mtd.mtd_id)
 
   | Type_declaration td ->
     let children =
@@ -72,14 +83,14 @@ let rec summarize node =
         | Type_kind _ ->
           List.map (Lazy.force child.t_children) ~f:(fun x ->
             match x.t_node with
-            | Constructor_declaration c -> mk `Constructor c.cd_id ~location:c.cd_loc
-            | Label_declaration ld      -> mk `Label ld.ld_id ~location:ld.ld_loc
+            | Constructor_declaration c -> mk `Constructor None c.cd_id ~location:c.cd_loc
+            | Label_declaration ld      -> mk `Label None ld.ld_id ~location:ld.ld_loc
             | _ -> assert false (* ! *)
           )
         | _ -> []
       )
     in
-    Some (mk ~children ~location `Type td.typ_id)
+    Some (mk ~children ~location `Type None td.typ_id)
 
   | Type_extension te ->
     let name = Path.name te.tyext_path in
@@ -88,16 +99,16 @@ let rec summarize node =
         summarize x >>| fun x -> { x with Query_protocol.outline_kind = `Constructor }
       )
     in
-    Some { Query_protocol. outline_name = name; outline_kind = `Type; location; children }
+    Some { Query_protocol. outline_name = name; outline_kind = `Type; outline_type = None; location; children }
 
   | Extension_constructor ec ->
-    Some (mk ~location `Exn ec.ext_id )
+    Some (mk ~location `Exn None ec.ext_id )
 
   | Class_declaration cd ->
     let children =
       List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
     in
-    Some (mk ~children ~location `Class cd.ci_id_class_type)
+    Some (mk ~children ~location `Class None cd.ci_id_class_type)
 
   | _ -> None
 
@@ -114,6 +125,7 @@ and get_class_elements node =
           Some { Query_protocol.
             outline_name = str_loc.Location.txt;
             outline_kind;
+            outline_type = None;
             location = str_loc.Location.loc;
             children = []
           }
