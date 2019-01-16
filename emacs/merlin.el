@@ -1733,19 +1733,21 @@ Empty string defaults to jumping to all these."
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
-  (let (messages)
+  (let (messages
+        (num-errors (length merlin-erroneous-buffer)))
     (when merlin-report-errors-in-lighter
       (cond ((not merlin--project-cache) nil)
             ((cdr-safe merlin--project-cache)
-             (add-to-list 'messages "check config!"))
+             (push "check config!" messages))
             ((not (car-safe merlin--project-cache))
-             (add-to-list 'messages "no .merlin"))))
-    (when merlin-erroneous-buffer
-      (add-to-list 'messages "errors in buffer"))
+             (push "no .merlin" messages))))
+    (unless (zerop num-errors)
+      (push (format "%d error%s" num-errors (if (> num-errors 1) "s" ""))
+            messages))
     (when (and merlin-show-instance-in-lighter
                (merlin-lookup 'name merlin-buffer-configuration))
-      (add-to-list 'messages
-                   (merlin-lookup 'name merlin-buffer-configuration)))
+      (push (merlin-lookup 'name merlin-buffer-configuration)
+            messages))
     (if messages
         (concat " Merlin (" (mapconcat 'identity messages ",") ")")
       " Merlin")))
