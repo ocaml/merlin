@@ -1,4 +1,5 @@
 (install
+ (package merlin)
  (section share)
  (files (autoload/ctrlp/locate.vim as vim/autoload/ctrlp/locate.vim)
         (autoload/ctrlp/outline.vim as vim/autoload/ctrlp/outline.vim)

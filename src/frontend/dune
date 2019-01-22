@@ -8,6 +8,7 @@
 
 (executable
  (name ocamlmerlin_server)
+ (package merlin)
  (public_name ocamlmerlin-server)
  (modules (:standard \ gen_ccflags query_protocol))
  (libraries config merlin_analysis merlin_kernel merlin_utils os_ipc 
@@ -29,5 +30,6 @@
  (action  (run %{cc} "%{read-lines:pre-flags}%{targets}" %{c} %{read-lines:post-flags})))
 
 (install
+ (package merlin)
  (section bin)
  (files   (ocamlmerlin.exe as ocamlmerlin)))
