@@ -84,7 +84,7 @@ module Packet = struct
 end
 
 let read rpc =
-  let open Std.Result.Infix in
+  let open Utils.Result.Infix in
 
   let read_content rpc =
     Thread.wait_read rpc.fd;
@@ -232,7 +232,7 @@ module Message = struct
     | Client_notification : Client_notification.t -> t
 
   let parse packet =
-    let open Std.Result.Infix in
+    let open Utils.Result.Infix in
     match packet.Packet.id with
     | Some id ->
       begin match packet.method_ with
@@ -306,7 +306,7 @@ type 'state handler = {
 }
 
 let start init_state handler ic oc =
-  let open Std.Result.Infix in
+  let open Utils.Result.Infix in
 
   let read_message rpc =
     read rpc >>= fun packet ->

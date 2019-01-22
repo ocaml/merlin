@@ -124,7 +124,7 @@ end = struct
   let get store uri =
     match get_opt store uri with
     | Some doc -> Ok doc
-    | None -> Std.Result.errorf "no document found with uri: %a" Lsp.Uri.pp uri
+    | None -> Lsp.Utils.Result.errorf "no document found with uri: %a" Lsp.Uri.pp uri
 end
 
 let logical_of_position (position : Lsp.Protocol.position) =
@@ -187,7 +187,7 @@ let on_request :
   -> (Document_store.t * resp, string) result
   = fun _rpc store client_capabilities req ->
 
-  let open Std.Result.Infix in
+  let open Lsp.Utils.Result.Infix in
 
   match req with
 
@@ -436,7 +436,7 @@ let on_request :
   | Lsp.Rpc.Request.UnknownRequest _ -> errorf "got unknown request"
 
 let on_notification rpc store (notification : Lsp.Rpc.Client_notification.t) =
-  let open Std.Result.Infix in
+  let open Lsp.Utils.Result.Infix in
 
   match notification with
 
