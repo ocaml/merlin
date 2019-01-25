@@ -445,6 +445,51 @@ module String = struct
       in
       let s0 = String.sub s 0 p in
       s0 :: loop (p + 1)
+
+  let chop_prefix ~prefix text =
+    let tlen = String.length text in
+    let plen = String.length prefix in
+    if tlen >= plen then
+      try
+        for i = 0 to plen - 1 do
+          if prefix.[i] <> text.[i] then raise Not_found
+        done;
+        Some (String.sub text plen (tlen - plen))
+      with Not_found -> None
+    else
+      None
+
+  let next_occurrence ~pattern text from =
+    let plen = String.length pattern in
+    let last = String.length text - plen in
+    let i = ref from and j = ref 0 in
+    while !i <= last && !j < plen do
+      if text.[!i + !j] <> pattern.[!j]
+      then (incr i; j := 0)
+      else incr j
+    done;
+    if !j < plen then
+      raise Not_found
+    else
+      !i
+
+  let replace_all ~pattern ~with_ text =
+    if pattern = "" then text else
+      match next_occurrence ~pattern text 0 with
+      | exception Not_found -> text
+      | j0 ->
+        let buffer = Buffer.create (String.length text) in
+        let rec aux i j =
+          Buffer.add_substring buffer text i (j - i);
+          Buffer.add_string buffer with_;
+          let i' = j + String.length pattern in
+          match next_occurrence ~pattern text i' with
+          | exception Not_found ->
+            Buffer.add_substring buffer text i' (String.length text - i')
+          | j' -> aux i' j'
+        in
+        aux 0 j0;
+        Buffer.contents buffer
 end
 
 let sprintf = Printf.sprintf
