@@ -1,4 +1,5 @@
 (install
+ (package merlin)
  (section share_root)
  (files (merlin-ac.el as emacs/site-lisp/merlin-ac.el)
         (merlin-cap.el as emacs/site-lisp/merlin-cap.el)

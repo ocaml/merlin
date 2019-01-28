@@ -1,9 +1,9 @@
-all: build ocamlmerlin ocamlmerlin-server
+all: build ocamlmerlin ocamlmerlin-server ocamlmerlin-lsp
 
 build:
 	dune build
 
-ocamlmerlin ocamlmerlin-server:
+ocamlmerlin ocamlmerlin-server ocamlmerlin-lsp:
 	ln -s _build/install/default/bin/$@ ./$@
 
 clean:
