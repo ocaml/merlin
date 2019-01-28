@@ -194,6 +194,7 @@ Main collaborators:
 
 Contributors:
 * [Andrew Noyes](https://github.com/atn34)
+* [Andrey Popp](https://github.com/andreypopp)
 * [Anil Madhavapeddy](https://github.com/avsm)
 * [Anton Bachin](https://github.com/aantron)
 * [Armaël Guéneau](https://github.com/Armael)
@@ -201,6 +202,7 @@ Contributors:
 * [Benjamin San Souci](https://github.com/bsansouci)
 * [Bernhard Schommer](https://github.com/bschommer)
 * [Bobby Priambodo](https://github.com/bobbypriambodo)
+* [Bryan Phelps](https://github.com/bryphe)
 * [Chris Konstad](https://github.com/chriskonstad)
 * [Christopher Reichert](https://github.com/creichert)
 * [Christophe Troestler](https://github.com/Chris00)

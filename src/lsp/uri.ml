@@ -7,13 +7,13 @@ let to_path (uri : t) =
     | false -> "file://"
   in
   let path =
-    match Stringext.chop_prefix ~prefix:proto uri with
+    match Std.String.chop_prefix ~prefix:proto uri with
     | Some path -> path
     | None -> uri in
   path
-  |> Stringext.replace_all ~pattern:"\\" ~with_:"/"
-  |> Stringext.replace_all ~pattern:"%3A" ~with_:":"
-  |> Stringext.replace_all ~pattern:"%5C" ~with_:"/"
+  |> Std.String.replace_all ~pattern:"\\" ~with_:"/"
+  |> Std.String.replace_all ~pattern:"%3A" ~with_:":"
+  |> Std.String.replace_all ~pattern:"%5C" ~with_:"/"
 
 let of_path (path : string) =
   let proto = match Sys.win32 with
@@ -22,8 +22,8 @@ let of_path (path : string) =
   in
   let path =
     path
-    |> Stringext.replace_all ~pattern:"\\" ~with_:"/"
-    |> Stringext.replace_all ~pattern:":" ~with_:"%3A"
+    |> Std.String.replace_all ~pattern:"\\" ~with_:"/"
+    |> Std.String.replace_all ~pattern:":" ~with_:"%3A"
   in
   proto ^ path
 

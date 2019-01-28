@@ -59,7 +59,7 @@ end = struct
   }
 
   let normalize_line_endings text =
-    let text = Stringext.replace_all ~pattern:"\r\n" ~with_:"\n" text in
+    let text = Std.String.replace_all ~pattern:"\r\n" ~with_:"\n" text in
     text
 
   let uri doc = Lsp.Text_document.documentUri doc.tdoc

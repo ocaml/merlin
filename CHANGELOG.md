@@ -1,3 +1,9 @@
+next version
+============
+
+Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan Phelps
+(@bryphe).
+
 merlin 3.2.2
 ============
 Tue Oct  9 11:25:12 BST 2018
