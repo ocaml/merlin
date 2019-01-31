@@ -72,7 +72,14 @@ end = struct
     let path = Misc.canonicalize_filename path in
     let filename = Filename.basename path in
     let directory = Filename.dirname path in
-    let t = {config with query = {query with filename; directory}} in
+    let t = {
+      config with query = {
+        query with
+        verbosity = 1;
+        filename;
+        directory;
+      }
+    } in
     Mconfig.load_dotmerlins t ~filenames:[
       let base = "." ^ filename ^ ".merlin" in
       Filename.concat directory base
