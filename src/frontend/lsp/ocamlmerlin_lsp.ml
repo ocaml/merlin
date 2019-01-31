@@ -366,6 +366,11 @@ let on_request :
     return (store, locs)
 
   | Lsp.Rpc.Request.TextDocumentCompletion {textDocument = {uri;}; position; context = _;} ->
+    (* per LSP it requests completion with position after the prefix *)
+    let position = {
+      position with
+      Lsp.Protocol.character = position.character - 1;
+    } in
     let position = logical_of_position position in
 
     let make_string chars =
