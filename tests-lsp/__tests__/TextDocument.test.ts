@@ -338,7 +338,7 @@ String.
         "textDocument/completion",
         {
           textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
-          position: Types.Position.create(0, 6)
+          position: Types.Position.create(0, 7)
         }
       );
       let items = result.items.map(item => item.label);
