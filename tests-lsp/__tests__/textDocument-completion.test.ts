@@ -104,4 +104,34 @@ describe("textDocument/completion", () => {
       "t"
     ]);
   });
+
+  it("can start completion at arbitrary position (after the dot)", async () => {
+    openDocument(outdent`
+      Strin.func
+    `);
+
+    let result = await queryCompletion(Types.Position.create(0, 5));
+    expect(result).toMatchObject({
+      isIncomplete: false,
+      items: [
+        { label: "StringLabels" },
+        { label: "String" }
+      ]
+    });
+  });
+
+  it("can start completion at arbitrary position", async () => {
+    openDocument(outdent`
+      StringLabels
+    `);
+
+    let result = await queryCompletion(Types.Position.create(0, 6));
+    expect(result).toMatchObject({
+      isIncomplete: false,
+      items: [
+        { label: "StringLabels" },
+        { label: "String" }
+      ]
+    });
+  });
 });
