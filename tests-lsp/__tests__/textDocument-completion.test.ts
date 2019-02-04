@@ -1,3 +1,4 @@
+import outdent from "outdent";
 import * as LanguageServer from "./../src/LanguageServer";
 
 import * as Protocol from "vscode-languageserver-protocol";
@@ -6,9 +7,9 @@ import * as Types from "vscode-languageserver-types";
 describe("textDocument/completion", () => {
   it("completes identifier at top level", async () => {
     let languageServer = await LanguageServer.startAndInitialize();
-    let source = `
-Strin
-      `.trim();
+    let source = outdent`
+      Strin
+    `;
     await languageServer.sendNotification("textDocument/didOpen", {
       textDocument: Types.TextDocumentItem.create(
         "file:///test.ml",
@@ -20,7 +21,7 @@ Strin
 
     let result = await languageServer.sendRequest("textDocument/completion", {
       textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
-      position: Types.Position.create(0, 4)
+      position: Types.Position.create(0, 5)
     });
     expect(result).toMatchObject({
       isIncomplete: false,
@@ -34,9 +35,9 @@ Strin
 
   it("completes identifier at top level", async () => {
     let languageServer = await LanguageServer.startAndInitialize();
-    let source = `
-String.
-      `.trim();
+    let source = outdent`
+      String.
+    `;
     await languageServer.sendNotification("textDocument/didOpen", {
       textDocument: Types.TextDocumentItem.create(
         "file:///test.ml",

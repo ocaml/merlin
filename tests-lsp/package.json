@@ -18,5 +18,8 @@
     "vscode-jsonrpc": "^4.0.0",
     "vscode-languageserver-protocol": "^3.13.0",
     "vscode-languageserver-types": "^3.13.0"
+  },
+  "dependencies": {
+    "outdent": "^0.7.0"
   }
 }
