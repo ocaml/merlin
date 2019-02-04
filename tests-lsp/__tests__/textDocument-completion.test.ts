@@ -5,11 +5,9 @@ import * as Protocol from "vscode-languageserver-protocol";
 import * as Types from "vscode-languageserver-types";
 
 describe("textDocument/completion", () => {
-  it("completes identifier at top level", async () => {
-    let languageServer = await LanguageServer.startAndInitialize();
-    let source = outdent`
-      Strin
-    `;
+  let languageServer = null;
+
+  async function openDocument(source) {
     await languageServer.sendNotification("textDocument/didOpen", {
       textDocument: Types.TextDocumentItem.create(
         "file:///test.ml",
@@ -18,11 +16,31 @@ describe("textDocument/completion", () => {
         source
       )
     });
+  }
 
-    let result = await languageServer.sendRequest("textDocument/completion", {
+  async function queryCompletion(position) {
+    return await languageServer.sendRequest("textDocument/completion", {
       textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
-      position: Types.Position.create(0, 5)
+      position
     });
+  }
+
+  beforeEach(async () => {
+    languageServer = await LanguageServer.startAndInitialize();
+  });
+
+  afterEach(async () => {
+    await LanguageServer.exit(languageServer);
+    languageServer = null;
+  });
+
+  it("completes identifier at top level", async () => {
+    await openDocument(outdent`
+      Strin
+    `);
+
+    let result = await queryCompletion(Types.Position.create(0, 5));
+
     expect(result).toMatchObject({
       isIncomplete: false,
       items: [
@@ -30,30 +48,14 @@ describe("textDocument/completion", () => {
         { label: "String", detail: "" }
       ]
     });
-    await LanguageServer.exit(languageServer);
   });
 
   it("completes identifier at top level", async () => {
-    let languageServer = await LanguageServer.startAndInitialize();
-    let source = outdent`
+    openDocument(outdent`
       String.
-    `;
-    await languageServer.sendNotification("textDocument/didOpen", {
-      textDocument: Types.TextDocumentItem.create(
-        "file:///test.ml",
-        "txt",
-        0,
-        source
-      )
-    });
+    `);
 
-    let result: any = await languageServer.sendRequest(
-      "textDocument/completion",
-      {
-        textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
-        position: Types.Position.create(0, 7)
-      }
-    );
+    let result: any = await queryCompletion(Types.Position.create(0, 7));
     let items = result.items.map(item => item.label);
     expect(items).toMatchObject([
       "blit",
@@ -101,6 +103,5 @@ describe("textDocument/completion", () => {
       "uppercase_ascii",
       "t"
     ]);
-    await LanguageServer.exit(languageServer);
   });
 });
