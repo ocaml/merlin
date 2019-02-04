@@ -493,27 +493,19 @@ let reset_cache_toplevel () =
   Hashtbl.clear !prefixed_sg
 
 let check_state_consistency () =
-  try
-    Hashtbl.iter (fun name ps ->
-        let filename =
-          try Some (find_in_path_uncap !load_path (name ^ ".cmi"))
-          with Not_found -> None
-        in
-        let invalid =
-          match filename, ps with
-          | None, None -> false
-          | Some filename, Some ps ->
-            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
-              | Cmi_cache_store (_, ps_sig) ->
-                not (Std.lazy_eq ps_sig ps.ps_sig)
-              | _ -> true
-            end
-          | _, _       -> true
-        in
-        if invalid then raise Not_found
-      ) !persistent_structures;
-    true
-  with Not_found -> false
+  Std.Hashtbl.forall !persistent_structures @@ fun name ps ->
+  match ps with
+  | None ->
+    begin match find_in_path_uncap !load_path (name ^ ".cmi") with
+      | _ -> false
+      | exception Not_found -> true
+    end
+  | Some cell ->
+    begin match !(Cmi_cache.(read cell.ps_filename).Cmi_cache.cmi_cache) with
+      | Cmi_cache_store (_, ps_sig) -> Std.lazy_eq ps_sig cell.ps_sig
+      | _ -> false
+      | exception Not_found -> false
+    end
 
 let set_unit_name name =
   current_unit := name
