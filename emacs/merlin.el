@@ -70,6 +70,15 @@
   "Report absence of .merlin or errors in .merlin in the lighter."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-client-log-function nil
+  "The function takes four arguments:
+   - the path to the merlin binary
+   - the name of the command
+   - the total time spent in the server (or -1 if that information is not available)
+   - the resulting state (\"return\", \"failure\" or \"interrupted\")
+Its return value is ignored."
+  :group 'merlin :type 'symbol)
+
 (defcustom merlin-configuration-function nil
   "The function takes no argument and returns the configuration for the current
 buffer, in a form suitable for `merlin-buffer-configuration'."
@@ -512,17 +521,29 @@ return (LOC1 . LOC2)."
     ;; Call merlin process
     (setcdr (car merlin-debug-last-commands) (merlin--call-process binary args))))
 
+(defun merlin-client-logger (binary cmd timing result)
+  (when merlin-client-log-function
+    (funcall merlin-client-log-function binary cmd timing result)))
+
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
   (let ((result (merlin--call-merlin command args)))
     (condition-case err
         (setq result (car (read-from-string result)))
       (error
+        (merlin-client-logger
+          (merlin-command) command -1 "failure")
         (error "merlin: error %s trying to parse answer: %s"
-               err result)))
-    (let ((notifications (cdr-safe (assoc 'notifications result)))
-          (class (cdr-safe (assoc 'class result)))
-          (value (cdr-safe (assoc 'value result))))
+               err result))
+      (quit
+        (merlin-client-logger
+          (merlin-command) command -1 "interrupted")))
+    (let* ((notifications (cdr-safe (assoc 'notifications result)))
+           (timing (cdr-safe (assoc 'timing result)))
+           (total (cdr-safe (assoc 'total timing)))
+           (class (cdr-safe (assoc 'class result)))
+           (value (cdr-safe (assoc 'value result))))
+      (merlin-client-logger (merlin-command) command total class)
       (dolist (notification notifications)
         (message "(merlin) %s" notification))
       (cond ((string-equal class "return") value)
