@@ -1,8 +1,34 @@
 next version
 ============
 
-Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan Phelps
-(@bryphe).
+  - backend
+    + interpret `-pp` flag
+    + backtrack warnings in all versions, not just 4.06
+    + silence C compiler warnings (by David Allsopp)
+    + remove sturgeon support
+    + allow to select sections to log
+    + better error message on ocaml version mismatch
+    + locate through included functor application
+    + tweaked caching policy
+    + fix environment when a file disappears
+
+  - editors modes
+    + Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan
+      Phelps (@bryphe).
+
+    + emacs
+      - fix merlin-xref.el install (by Emilio Jesus Gallego Arias)
+      - keep labels matching the prefix the user has typed rather than dropping them
+        (by Mitchell Plamann)
+      - remove unused `merlin--overlay` function (by Wilfred Hughes)
+      - show the number of errors in the modline (by Wilfred Hughes)
+      - call a logger on the client side if one is defined
+
+    + vim
+      - better FindBinary
+      - make the log buffer a scratch buffer (by Tom Johnson)
+      - execute buffer switching silently (by Fabian)
+      - restore view after updating merlin type buffer (by Fabian)
 
 merlin 3.2.2
 ============
@@ -116,7 +142,7 @@ merlin 3.0.1
 Wed Jul 26 18:25:23 CEST 2017
 
 Bug fix release after 3.0.0 major release:
-- portability fixes by David Allsop in configure script and vim mode 
+- portability fixes by David Allsop in configure script and vim mode
   (tough Windows support is not ready yet)
 - preliminary support for findlib toolchains with FINDLIB_TOOLCHAIN .merlin
   directive
@@ -221,7 +247,7 @@ Mon Jun 13 22:26:33 CEST 2016
     - support for 4.03 has been added
     - new implementation of type recovery, should diverge less from upstream
     - support for 4.02 was reimplemented to use the same design
-    - menhir's fork has been synchronized with upstream, recovery algorithm 
+    - menhir's fork has been synchronized with upstream, recovery algorithm
       is completely new
   + vim: add support for python3, update to new protocol
   + emacs: update to new protocol, bug fixes
