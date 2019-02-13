@@ -62,6 +62,8 @@ let is_Tunivar = function {desc=Tunivar _} -> true | _ -> false
 let is_Tconstr = function {desc=Tconstr _} -> true | _ -> false
 
 let dummy_method = "*dummy method*"
+let unbound_class = Path.Pident (Ident.create "*undef*")
+
 let default_mty = function
     Some mty -> mty
   | None -> Mty_signature []

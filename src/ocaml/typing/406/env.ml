@@ -1699,8 +1699,11 @@ let short_paths_type_open path decls old =
   if !Clflags.real_paths then old
   else Type_open(path, decls) :: old
 
+let is_dummy_class decl =
+  Path.same decl.clty_path Btype.unbound_class
+
 let short_paths_class_type id decl old =
-  if !Clflags.real_paths then old
+  if !Clflags.real_paths || is_dummy_class decl then old
   else Class_type(id, decl) :: old
 
 let short_paths_class_type_open path decls old =
