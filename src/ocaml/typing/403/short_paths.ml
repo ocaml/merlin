@@ -300,43 +300,7 @@ module Origin_range_tbl = struct
 
 end
 
-module Height = struct
-
-  include Natural.Make_no_zero()
-
-  let hidden_name name =
-    if name <> "" && name.[0] = '_' then true
-    else
-      try
-        for i = 1 to String.length name - 2 do
-          if name.[i] = '_' && name.[i + 1] = '_' then
-            raise Exit
-        done;
-        false
-      with Exit -> true
-
-  let hidden_ident id =
-    if !Clflags.unsafe_string && Ident.equal id Predef.ident_bytes then true
-    else hidden_name (Ident.name id)
-
-  let measure_name name =
-    if hidden_name name then maximum
-    else one
-
-  let measure_ident id =
-    if hidden_ident id then maximum
-    else one
-
-  let rec measure_path = function
-    | Path.Pident id ->
-        measure_ident id
-    | Path.Pdot(p, name, _) ->
-        if hidden_name name then maximum
-        else succ (measure_path p)
-    | Path.Papply(p1, p2) ->
-        plus (measure_path p1) (measure_path p2)
-
-end
+module Height = Natural.Make_no_zero()
 
 module Todo = struct
 
@@ -1121,8 +1085,9 @@ module Shortest = struct
     { kind; graph; sections; todos }
 
   let local_or_open conc =
-    if conc then Component.Local
-    else Component.Open
+    match conc with
+    | Desc.Local -> Component.Local
+    | Desc.Open -> Component.Open
 
   let env parent desc =
     update parent;
@@ -1132,14 +1097,14 @@ module Shortest = struct
       List.map
         (fun desc ->
            match desc with
-           | Desc.Type(id, desc, conc) ->
-               Component.Type(origin, id, desc, local_or_open conc)
-           | Desc.Class_type(id, desc, conc) ->
-               Component.Class_type(origin, id, desc, local_or_open conc)
-           | Desc.Module_type(id, desc, conc) ->
-               Component.Module_type(origin, id, desc, local_or_open conc)
-           | Desc.Module(id, desc, conc) ->
-               Component.Module(origin, id, desc, local_or_open conc)
+           | Desc.Type(id, desc, conc, dpr) ->
+               Component.Type(origin, id, desc, local_or_open conc, dpr)
+           | Desc.Class_type(id, desc, conc, dpr) ->
+               Component.Class_type(origin, id, desc, local_or_open conc, dpr)
+           | Desc.Module_type(id, desc, conc, dpr) ->
+               Component.Module_type(origin, id, desc, local_or_open conc, dpr)
+           | Desc.Module(id, desc, conc, dpr) ->
+               Component.Module(origin, id, desc, local_or_open conc, dpr)
            | Desc.Declare_type id ->
                Component.Declare_type(origin, id)
            | Desc.Declare_class_type id ->
@@ -1244,28 +1209,28 @@ module Shortest = struct
     in
     String_map.iter
       (fun name typ ->
-         if not (Height.hidden_name name) then begin
+         if not (Type.hidden typ) then begin
            let path = Path.Pdot(path, name, 0) in
            process_type t height path typ
          end)
       types;
     String_map.iter
-      (fun name mty ->
-         if not (Height.hidden_name name) then begin
+      (fun name clty ->
+         if not (Class_type.hidden clty) then begin
            let path = Path.Pdot(path, name, 0) in
-           process_class_type t height path mty
+           process_class_type t height path clty
          end)
       class_types;
     String_map.iter
       (fun name mty ->
-         if not (Height.hidden_name name) then begin
+         if not (Module_type.hidden mty) then begin
            let path = Path.Pdot(path, name, 0) in
            process_module_type t height path mty
          end)
       module_types;
     String_map.iter
       (fun name md ->
-         if not (Height.hidden_name name) then begin
+         if not (Module.hidden md) then begin
            let path = Path.Pdot(path, name, 0) in
            process_module t height path seen md
          end)
@@ -1280,22 +1245,22 @@ module Shortest = struct
           List.iter
             (function
               | Todo.Item.Base (Diff.Item.Type(id, typ, _)) ->
-                  if not (Height.hidden_ident id) then begin
+                  if not (Type.hidden typ) then begin
                     let path = Path.Pident id in
                     process_type t height path typ
                   end
-              | Todo.Item.Base (Diff.Item.Class_type(id, mty, _)) ->
-                  if not (Height.hidden_ident id) then begin
+              | Todo.Item.Base (Diff.Item.Class_type(id, clty, _)) ->
+                  if not (Class_type.hidden clty) then begin
                     let path = Path.Pident id in
-                    process_class_type t height path mty
+                    process_class_type t height path clty
                   end
               | Todo.Item.Base (Diff.Item.Module_type(id, mty, _)) ->
-                  if not (Height.hidden_ident id) then begin
+                  if not (Module_type.hidden mty) then begin
                     let path = Path.Pident id in
                     process_module_type t height path mty
                   end
               | Todo.Item.Base (Diff.Item.Module(id, md, _)) ->
-                  if not (Height.hidden_ident id) then begin
+                  if not (Module.hidden md) then begin
                     let path = Path.Pident id in
                     process_module t height path Path_set.empty md
                   end
@@ -1413,10 +1378,6 @@ module Shortest = struct
       | Module_type : Module_type.t kind
       | Module : Module.t kind
 
-    type suffix =
-      { names : string list;
-        height : Height.t; }
-
     type name =
       { name : string;
         height : Height.t; }
@@ -1450,7 +1411,6 @@ module Shortest = struct
             max: Height.t;
             func : Module.t t;
             arg : Module.t t;
-            suffix : suffix option;
             func_first : bool;
             searched : bool;
             finished : bool; }
@@ -1459,6 +1419,16 @@ module Shortest = struct
       | Ident { min; _ } -> min
       | Dot { min; _ } -> min
       | Application { min; _ } -> min
+
+    let max_height = function
+      | Ident { max; _ } -> max
+      | Dot { max; _ } -> max
+      | Application { max; _ } -> max
+
+    let search_origin = function
+      | Ident { origin; _ } -> origin
+      | Dot { origin; _ } -> origin
+      | Application { origin; _ } -> origin
 
     let finished = function
       | Ident { finished; _ } -> finished
@@ -1470,163 +1440,99 @@ module Shortest = struct
       | Dot { best; _ } -> best
       | Application { best; _ } -> best
 
-    let min_application fst snd suffix =
-      let base = Height.plus (min_height fst) (min_height snd) in
-      match suffix with
-      | None -> base
-      | Some { names=_; height } -> Height.plus base height
+    let min_application fst snd =
+      Height.plus (min_height fst) (min_height snd)
+
+    let max_application fst snd =
+      Height.plus (max_height fst) (max_height snd)
 
     let min_dot parent name =
       let base = min_height parent in
       Height.plus base name.height
 
-    let path_application fst snd suffix =
-      let base = Path.Papply(best fst, best snd) in
-      match suffix with
-      | None -> base
-      | Some { names; _ } ->
-          List.fold_left
-            (fun acc name -> Path.Pdot(acc, name, 0))
-            base names
+    let path_application fst snd =
+      Path.Papply(best fst, best snd)
 
     let path_dot parent name =
-      let base = best parent in
-      Path.Pdot(base, name.name, 0)
+      Path.Pdot(best parent, name.name, 0)
 
-    let create (type k) shortest (kind : k kind) (node : k) =
-      let rec loop :
-        type k. k kind -> k -> Origin.t -> Path.t ->
-          Height.t -> string list -> Path.t -> k t =
-        fun kind node origin best max suffix path ->
+    let is_visible_ident (type k) graph (kind : k kind) id =
+      match kind with
+      | Type -> Graph.is_type_ident_visible graph id
+      | Class_type -> Graph.is_class_type_ident_visible graph id
+      | Module_type -> Graph.is_module_type_ident_visible graph id
+      | Module -> Graph.is_module_ident_visible graph id
+
+    let create (type k) shortest (kind : k kind) canonical_path =
+      let rec loop : type k. k kind -> Path.t -> k t =
+        fun kind path ->
+          let graph = shortest.graph in
+          let (node : k), origin, hidden =
+            match kind with
+            | Type ->
+                let node = Graph.find_type graph path in
+                let origin = Type.origin graph node in
+                let hidden = Type.hidden node in
+                node, origin, hidden
+            | Class_type ->
+                let node = Graph.find_class_type graph path in
+                let origin = Class_type.origin graph node in
+                let hidden = Class_type.hidden node in
+                node, origin, hidden
+            | Module_type ->
+                let node = Graph.find_module_type graph path in
+                let origin = Module_type.origin graph node in
+                let hidden = Module_type.hidden node in
+                node, origin, hidden
+            | Module ->
+                let node = Graph.find_module graph path in
+                let origin = Module.origin graph node in
+                let hidden = Module.hidden node in
+                node, origin, hidden
+          in
+          let best = path in
           match path with
-          | Path.Pident _ ->
+          | Path.Pident id ->
+              let max =
+                if is_visible_ident graph kind id && not hidden then
+                  Height.one
+                else
+                  Height.maximum
+              in
               let min = Height.one in
               let finished = false in
-              Ident
-                { kind; node; origin; best; min; max; finished; }
+              Ident { kind; node; origin; best; min; max; finished }
           | Path.Pdot(parent, name, _) ->
-              let graph = shortest.graph in
-              let parent_md = Graph.find_module graph parent in
-              let parent_max = Height.measure_path parent in
-              let parent_origin = Module.origin graph parent_md in
-              let parent =
-                loop Module parent_md parent_origin
-                  parent parent_max [] parent
-              in
+              let parent = loop Module parent in
               let finished = false in
-              let name =
-                let height = Height.measure_name name in
-                { name; height }
+              let name_height =
+                if not hidden then Height.one
+                else Height.maximum
               in
+              let name = { name; height = name_height } in
               let searched = false in
+              let max = Height.plus (max_height parent) name_height in
               let min = Height.one in
               Dot
                 { kind; node; origin; best; min; max;
                   parent; name; searched; finished }
           | Path.Papply(func, arg) ->
-              let graph = shortest.graph in
-              let func_md = Graph.find_module graph func in
-              let func_max = Height.measure_path func in
-              let func_origin = Module.origin graph func_md in
-              let func =
-                loop Module func_md func_origin func func_max [] func
-              in
-              let arg_md = Graph.find_module graph arg in
-              let arg_max = Height.measure_path arg in
-              let arg_origin = Module.origin graph arg_md in
-              let arg =
-                loop Module arg_md arg_origin arg arg_max [] arg
-              in
+              let func = loop Module func in
+              let arg = loop Module arg in
               let func_first =
-                Rev_deps.before (rev_deps shortest) arg_origin func_origin
+                Rev_deps.before (rev_deps shortest)
+                  (search_origin arg) (search_origin func)
               in
               let finished = false in
-              let suffix =
-                match suffix with
-                | [] -> None
-                | fst :: rest ->
-                  let names = suffix in
-                  let height =
-                    List.fold_left
-                      (fun acc name ->
-                         Height.plus acc (Height.measure_name name))
-                      (Height.measure_name fst) rest
-                  in
-                  Some { names; height }
-              in
-              let searched, min =
-                match kind with
-                | Type ->
-                    let searched = false in
-                    let min = Height.one in
-                    searched, min
-                | Class_type ->
-                    let searched = false in
-                    let min = Height.one in
-                    searched, min
-                | Module_type ->
-                    let searched = false in
-                    let min = Height.one in
-                    searched, min
-                | Module ->
-                    (* There are no module aliases containing extended paths *)
-                    let searched = true in
-                    let min = min_application func arg suffix in
-                    searched, min
-              in
+              (* There are no module aliases containing extended paths *)
+              let searched = true in
+              let max = max_application func arg in
+              let min = min_application func arg in
               Application
                 { kind; node; origin; best; min; max;
-                  func; arg; suffix; func_first; searched; finished }
+                  func; arg; func_first; searched; finished }
       in
-      let graph = shortest.graph in
-      let canonical_path, origin, max =
-        match kind with
-        | Type ->
-            let canonical_path = Type.path graph node in
-            let origin = Type.origin graph node in
-            let max =
-              let visible =
-                Graph.is_type_path_visible graph canonical_path
-              in
-              if visible then Height.measure_path canonical_path
-              else Height.maximum
-            in
-            canonical_path, origin, max
-        | Class_type ->
-            let canonical_path = Class_type.path graph node in
-            let origin = Class_type.origin graph node in
-            let max =
-              let visible =
-                Graph.is_class_type_path_visible graph canonical_path
-              in
-              if visible then Height.measure_path canonical_path
-              else Height.maximum
-            in
-            canonical_path, origin, max
-        | Module_type ->
-            let canonical_path = Module_type.path graph node in
-            let origin = Module_type.origin graph node in
-            let max =
-              let visible =
-                Graph.is_module_type_path_visible graph canonical_path
-              in
-              if visible then Height.measure_path canonical_path
-              else Height.maximum
-            in
-            canonical_path, origin, max
-        | Module ->
-            let canonical_path = Module.path graph node in
-            let origin = Module.origin graph node in
-            let max =
-              let visible =
-                Graph.is_module_path_visible graph canonical_path
-              in
-              if visible then Height.measure_path canonical_path
-              else Height.maximum
-            in
-            canonical_path, origin, max
-      in
-      loop kind node origin canonical_path max [] canonical_path
+      loop kind canonical_path
 
     let find (type k) shortest origin height (kind : k kind) (node : k) =
       let sections = force shortest origin height in
@@ -1710,15 +1616,13 @@ module Shortest = struct
                 in
                 let fst, snd =
                   let should_try_app =
-                    Height.equal
-                      (min_application fst snd r.suffix) r.min
+                    Height.equal (min_application fst snd) r.min
                   in
                   if not should_try_app then fst, snd
                   else begin
                     let fst = step shortest fst in
                     let should_try_app =
-                      Height.equal
-                        (min_application fst snd r.suffix) r.min
+                      Height.equal (min_application fst snd) r.min
                     in
                     if not should_try_app then fst, snd
                     else fst, step shortest snd
@@ -1730,11 +1634,10 @@ module Shortest = struct
                 in
                 let found =
                   finished func && finished arg
-                  && Height.equal
-                       (min_application fst snd r.suffix) r.min
+                  && Height.equal (min_application fst snd) r.min
                 in
                 if found then begin
-                  let best = path_application func arg r.suffix in
+                  let best = path_application func arg in
                   let max = r.min in
                   let finished = true in
                   Application
@@ -1743,7 +1646,7 @@ module Shortest = struct
                   let finished =
                     searched
                     && Height.less_than_or_equal
-                         r.max (min_application fst snd r.suffix)
+                         r.max (min_application fst snd)
                   in
                   let min = if finished then r.max else Height.succ r.min in
                   Application
@@ -1778,7 +1681,8 @@ module Shortest = struct
     match Type.resolve t.graph typ with
     | Type.Nth n -> Nth n
     | Type.Path(subst, typ) ->
-      let search = Search.create t Search.Type typ in
+      let canonical_path = Type.path t.graph typ in
+      let search = Search.create t Search.Type canonical_path in
       let path = Search.perform t search in
       Path(subst, path)
 
@@ -1793,33 +1697,38 @@ module Shortest = struct
   let find_type_simple t path =
     update t;
     let typ = Graph.find_type t.graph path in
-    let search = Search.create t Search.Type typ in
+    let canonical_path = Type.path t.graph typ in
+    let search = Search.create t Search.Type canonical_path in
     Search.perform t search
 
   let find_class_type t path =
     update t;
     let clty = Graph.find_class_type t.graph path in
     let subst, clty = Class_type.resolve t.graph clty in
-    let search = Search.create t Search.Class_type clty in
+    let canonical_path = Class_type.path t.graph clty in
+    let search = Search.create t Search.Class_type canonical_path in
     let path = Search.perform t search in
     (subst, path)
 
   let find_class_type_simple t path =
     update t;
     let clty = Graph.find_class_type t.graph path in
-    let search = Search.create t Search.Class_type clty in
+    let canonical_path = Class_type.path t.graph clty in
+    let search = Search.create t Search.Class_type canonical_path in
     Search.perform t search
 
   let find_module_type t path =
     update t;
     let mty = Graph.find_module_type t.graph path in
-    let search = Search.create t Search.Module_type mty in
+    let canonical_path = Module_type.path t.graph mty in
+    let search = Search.create t Search.Module_type canonical_path in
     Search.perform t search
 
   let find_module t path =
     update t;
     let md = Graph.find_module t.graph path in
-    let search = Search.create t Search.Module md in
+    let canonical_path = Module.path t.graph md in
+    let search = Search.create t Search.Module canonical_path in
     Search.perform t search
 
 end
@@ -1832,7 +1741,8 @@ module Basis = struct
     { name : string;
       depends : string list;
       alias_depends : string list;
-      desc : Desc.Module.t; }
+      desc : Desc.Module.t;
+      deprecated : Desc.deprecated; }
 
   type t =
     { mutable next_dep : Dependency.t;
@@ -1879,11 +1789,11 @@ module Basis = struct
   let update_shortest t additions loads =
     let components =
       List.map
-        (fun { name; desc; _ } ->
+        (fun { name; desc; deprecated; _ } ->
            let index = String_map.find name t.assignment in
            let origin = Origin.Dependency index in
            let id = Ident.global name in
-           Component.Module(origin, id, desc, Component.Global))
+           Component.Module(origin, id, desc, Component.Global, deprecated))
         loads
     in
     let components =
@@ -1927,8 +1837,9 @@ module Basis = struct
   let add t name =
     t.pending_additions <- String_set.add name t.pending_additions
 
-  let load t name depends alias_depends desc =
-    t.pending_loads <- { name; depends; alias_depends; desc } :: t.pending_loads
+  let load t name depends alias_depends desc deprecated =
+    let load = { name; depends; alias_depends; desc; deprecated } in
+    t.pending_loads <- load :: t.pending_loads
 
 end
 
