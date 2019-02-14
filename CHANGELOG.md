@@ -11,6 +11,7 @@ next version
     + locate through included functor application
     + tweaked caching policy
     + fix environment when a file disappears
+    + fix -short-paths handling of classes and class types (by Leo White)
 
   - editors modes
     + Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan
