@@ -479,8 +479,7 @@ and short_paths_addition =
   | Type_open of Path.t * (type_declaration * type_descriptions) comp_tbl
   | Class_type_open of Path.t * class_type_declaration comp_tbl
   | Module_type_open of Path.t * modtype_declaration comp_tbl
-  | Module_open of
-      Path.t * (Subst.t * module_declaration, module_declaration) EnvLazy.t comp_tbl
+  | Module_open of Path.t * module_components comp_tbl
 
 let copy_local ~from env =
   { env with
@@ -669,11 +668,25 @@ let register_pers_for_short_paths ps =
       ([], []) ps.ps_crcs
   in
   let path = Pident (Ident.create_persistent ps.ps_name) in
-  let desc =
-    Short_paths.Desc.Module.(Fresh
-      (Signature (lazy (!short_paths_module_components_desc' empty path ps.ps_comps))))
+  let components =
+    lazy (!short_paths_module_components_desc' empty path ps.ps_comps)
   in
-  Short_paths.Basis.load !short_paths_basis ps.ps_name deps alias_deps desc
+  let desc =
+    Short_paths.Desc.Module.(Fresh (Signature components))
+  in
+  let is_deprecated =
+    List.exists
+      (function
+        | Deprecated _ -> true
+        | _ -> false)
+      ps.ps_flags
+  in
+  let deprecated =
+    if is_deprecated then Short_paths.Desc.Deprecated
+    else Short_paths.Desc.Not_deprecated
+  in
+  Short_paths.Basis.load !short_paths_basis ps.ps_name
+    deps alias_deps desc deprecated
 
 (* Reading persistent structures from .cmi files *)
 
@@ -1661,9 +1674,9 @@ let short_paths_module id decl comps old =
   if !Clflags.real_paths then old
   else Module(id, decl, comps) :: old
 
-let short_paths_module_open path decls old =
+let short_paths_module_open path comps old =
   if !Clflags.real_paths then old
-  else Module_open(path, decls) :: old
+  else Module_open(path, comps) :: old
 
 (* Compute structure descriptions *)
 
@@ -2104,13 +2117,13 @@ let add_components ?filter_modules slot root env0 comps =
     add_cltypes (fun x -> `Class_type x)
       comps.comp_cltypes env0.cltypes additions
   in
-  let components =
-    filter_and_add add (fun x -> `Component x)
-      comps.comp_components env0.components
+  let components, additions =
+    filter_and_add add_modules (fun x -> `Component x)
+      comps.comp_components env0.components additions
   in
-  let modules, additions =
-    filter_and_add add_modules (fun x -> `Module x)
-      comps.comp_modules env0.modules additions
+  let modules =
+    filter_and_add add (fun x -> `Module x)
+      comps.comp_modules env0.modules
   in
 
   { env0 with
@@ -2437,6 +2450,15 @@ let short_paths_module_type_desc mty =
   | Some (Mty_signature _ | Mty_functor _) -> Fresh
   | Some (Mty_alias _) -> assert false
 
+let deprecated_of_string_opt stro =
+  match stro with
+  | None -> Short_paths.Desc.Not_deprecated
+  | Some _ -> Short_paths.Desc.Deprecated
+
+let deprecated_of_attributes attrs =
+  deprecated_of_string_opt
+    (Builtin_attributes.deprecated_of_attrs attrs)
+
 let rec short_paths_module_desc env mpath mty comp =
   let open Short_paths.Desc.Module in
   match mty with
@@ -2465,7 +2487,8 @@ and short_paths_module_components_desc env mpath comp =
         Tbl.fold
           (fun name ((decl, _), _) acc ->
              let desc = short_paths_type_desc decl in
-             let item = Short_paths.Desc.Module.Type(name, desc) in
+             let depr = deprecated_of_attributes decl.type_attributes in
+             let item = Short_paths.Desc.Module.Type(name, desc, depr) in
              item :: acc)
           c.comp_types []
       in
@@ -2473,7 +2496,8 @@ and short_paths_module_components_desc env mpath comp =
         Tbl.fold
           (fun name (clty, _) acc ->
              let desc = short_paths_class_type_desc clty in
-             let item = Short_paths.Desc.Module.Class_type(name, desc) in
+             let depr = deprecated_of_attributes clty.clty_attributes in
+             let item = Short_paths.Desc.Module.Class_type(name, desc, depr) in
              item :: acc)
           c.comp_cltypes comps
       in
@@ -2481,7 +2505,8 @@ and short_paths_module_components_desc env mpath comp =
         Tbl.fold
           (fun name (mtd, _) acc ->
              let desc = short_paths_module_type_desc mtd.mtd_type in
-             let item = Short_paths.Desc.Module.Module_type(name, desc) in
+             let depr = deprecated_of_attributes mtd.mtd_attributes in
+             let item = Short_paths.Desc.Module.Module_type(name, desc, depr) in
              item :: acc)
           c.comp_modtypes comps
       in
@@ -2496,7 +2521,8 @@ and short_paths_module_components_desc env mpath comp =
              let mty = EnvLazy.force subst_modtype_maker data in
              let mpath = Pdot(mpath, name, 0) in
              let desc = short_paths_module_desc env mpath mty.md_type comps in
-             let item = Short_paths.Desc.Module.Module(name, desc) in
+             let depr = deprecated_of_string_opt comps.deprecated in
+             let item = Short_paths.Desc.Module.Module(name, desc, depr) in
              item :: acc)
           c.comp_modules comps
       in
@@ -2528,47 +2554,65 @@ let short_paths_additions_desc env additions =
        match add with
        | Type(id, decl) ->
            let desc = short_paths_type_desc decl in
-           Short_paths.Desc.Type(id, desc, true) :: acc
+           let source = Short_paths.Desc.Local in
+           let depr = deprecated_of_attributes decl.type_attributes in
+           Short_paths.Desc.Type(id, desc, source, depr) :: acc
        | Class_type(id, clty) ->
            let desc = short_paths_class_type_desc clty in
-           Short_paths.Desc.Class_type(id, desc, true) :: acc
+           let source = Short_paths.Desc.Local in
+           let depr = deprecated_of_attributes clty.clty_attributes in
+           Short_paths.Desc.Class_type(id, desc, source, depr) :: acc
        | Module_type(id, mtd) ->
            let desc = short_paths_module_type_desc mtd.mtd_type in
-           Short_paths.Desc.Module_type(id, desc, true) :: acc
+           let source = Short_paths.Desc.Local in
+           let depr = deprecated_of_attributes mtd.mtd_attributes in
+           Short_paths.Desc.Module_type(id, desc, source, depr) :: acc
        | Module(id, md, comps) ->
-           let desc = short_paths_module_desc env (Pident id) md.md_type comps in
-           Short_paths.Desc.Module(id, desc, true) :: acc
+           let desc =
+             short_paths_module_desc env (Pident id) md.md_type comps
+           in
+           let source = Short_paths.Desc.Local in
+           let depr = deprecated_of_string_opt comps.deprecated in
+           Short_paths.Desc.Module(id, desc, source, depr) :: acc
        | Type_open(root, decls) ->
            Tbl.fold
-             (fun name (_, pos) acc ->
+             (fun name ((decl, _), pos) acc ->
                 let id = Ident.create name in
                 let path = Pdot(root, name, pos) in
                 let desc = Short_paths.Desc.Type.Alias path in
-                Short_paths.Desc.Type(id, desc, false) :: acc)
+                let source = Short_paths.Desc.Open in
+                let depr = deprecated_of_attributes decl.type_attributes in
+                Short_paths.Desc.Type(id, desc, source, depr) :: acc)
              decls acc
        | Class_type_open(root, decls) ->
            Tbl.fold
-             (fun name (_, pos) acc ->
+             (fun name (clty, pos) acc ->
                 let id = Ident.create name in
                 let path = Pdot(root, name, pos) in
                 let desc = Short_paths.Desc.Class_type.Alias path in
-                Short_paths.Desc.Class_type(id, desc, false) :: acc)
+                let source = Short_paths.Desc.Open in
+                let depr = deprecated_of_attributes clty.clty_attributes in
+                Short_paths.Desc.Class_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_type_open(root, decls) ->
            Tbl.fold
-             (fun name (_, pos) acc ->
+             (fun name (mtd, pos) acc ->
                 let id = Ident.create name in
                 let path = Pdot(root, name, pos) in
                 let desc = Short_paths.Desc.Module_type.Alias path in
-                Short_paths.Desc.Module_type(id, desc, false) :: acc)
+                let source = Short_paths.Desc.Open in
+                let depr = deprecated_of_attributes mtd.mtd_attributes in
+                Short_paths.Desc.Module_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_open(root, decls) ->
            Tbl.fold
-             (fun name (_, pos) acc ->
+             (fun name (comps, pos) acc ->
                 let id = Ident.create name in
                 let path = Pdot(root, name, pos) in
                 let desc = Short_paths.Desc.Module.Alias path in
-                Short_paths.Desc.Module(id, desc, false) :: acc)
+                let source = Short_paths.Desc.Open in
+                let depr = deprecated_of_string_opt comps.deprecated in
+                Short_paths.Desc.Module(id, desc, source, depr) :: acc)
              decls acc)
     [] additions
 

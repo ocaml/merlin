@@ -78,6 +78,10 @@ module Path_set = Set.Make(Path)
 
 module Desc = struct
 
+  type deprecated =
+    | Deprecated
+    | Not_deprecated
+
   module Type = struct
 
     type t =
@@ -108,10 +112,10 @@ module Desc = struct
   module Module = struct
 
     type component =
-      | Type of string * Type.t
-      | Class_type of string * Class_type.t
-      | Module_type of string * Module_type.t
-      | Module of string * t
+      | Type of string * Type.t * deprecated
+      | Class_type of string * Class_type.t * deprecated
+      | Module_type of string * Module_type.t * deprecated
+      | Module of string * t * deprecated
 
     and components = component list
 
@@ -125,11 +129,15 @@ module Desc = struct
 
   end
 
+  type source =
+    | Local
+    | Open
+
   type t =
-    | Type of Ident.t * Type.t * bool
-    | Class_type of Ident.t * Class_type.t * bool
-    | Module_type of Ident.t * Module_type.t * bool
-    | Module of Ident.t * Module.t * bool
+    | Type of Ident.t * Type.t * source * deprecated
+    | Class_type of Ident.t * Class_type.t * source * deprecated
+    | Module_type of Ident.t * Module_type.t * source * deprecated
+    | Module of Ident.t * Module.t * source * deprecated
     | Declare_type of Ident.t
     | Declare_class_type of Ident.t
     | Declare_module_type of Ident.t
@@ -232,15 +240,39 @@ module Origin = struct
 
 end
 
-(* CR lwhite: Should probably short-circuit indirections if they are to
-    canonical entries older than the indirection. *)
+let hidden_name name =
+  if name <> "" && name.[0] = '_' then true
+  else
+    try
+      for i = 1 to String.length name - 2 do
+        if name.[i] = '_' && name.[i + 1] = '_' then
+          raise Exit
+      done;
+      false
+    with Exit -> true
+
+let hidden_ident id =
+  if !Clflags.unsafe_string && Ident.equal id Predef.ident_bytes then true
+  else hidden_name (Ident.name id)
+
+let hidden_definition deprecated name =
+  match deprecated with
+  | Desc.Deprecated -> true
+  | Desc.Not_deprecated -> hidden_name name
+
+let hidden_base_definition deprecated id =
+  match deprecated with
+  | Desc.Deprecated -> true
+  | Desc.Not_deprecated -> hidden_ident id
+
 module rec Type : sig
 
   type t
 
-  val base : Origin.t -> Ident.t -> Desc.Type.t option -> t
+  val base : Origin.t -> Ident.t -> Desc.Type.t option -> Desc.deprecated -> t
 
-  val child : Module.normalized -> string -> Desc.Type.t option -> t
+  val child :
+    Module.normalized -> string -> Desc.Type.t option -> Desc.deprecated -> t
 
   val declare : Origin.t -> Ident.t -> t
 
@@ -249,6 +281,8 @@ module rec Type : sig
   val origin : Graph.t -> t -> Origin.t
 
   val path : Graph.t -> t -> Path.t
+
+  val hidden : t -> bool
 
   val sort : Graph.t -> t -> Sort.t
 
@@ -263,7 +297,7 @@ end = struct
   open Desc.Type
 
   type definition =
-    | Indirection of Path.t
+    | Alias of Path.t
     | Defined
     | Nth of int
     | Subst of Path.t * int list
@@ -272,10 +306,12 @@ end = struct
   type t =
     | Declaration of
         { origin : Origin.t;
-          id : Ident.t; }
+          id : Ident.t;
+          hidden : bool; }
     | Definition of
         { origin : Origin.t;
           path : Path.t;
+          hidden : bool;
           sort : Sort.t;
           definition : definition; }
 
@@ -285,28 +321,36 @@ end = struct
     | Some Fresh -> Defined
     | Some (Nth n) -> Nth n
     | Some (Subst(p, ns)) -> Subst(p, ns)
-    | Some (Alias alias) -> Indirection alias
+    | Some (Alias alias) -> Alias alias
 
-  let base origin id desc =
+  let base origin id desc deprecated =
     let path = Path.Pident id in
+    let hidden = hidden_base_definition deprecated id in
     let sort = Sort.Defined in
     let definition = definition_of_desc desc in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc =
+  let child md name desc deprecated =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot(Module.raw_path md, name, 0) in
+    let hidden = hidden_definition deprecated name in
     let definition = definition_of_desc desc in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
   let declare origin id =
-    Declaration { origin; id }
+    let hidden = hidden_ident id in
+    Declaration { origin; id; hidden }
 
   let declaration t =
     match t with
     | Definition _ -> None
     | Declaration { origin; _} -> Some origin
+
+  let hidden t =
+    match t with
+    | Definition { hidden; _ } -> hidden
+    | Declaration { hidden; _ } -> hidden
 
   let raw_origin t =
     match t with
@@ -327,7 +371,7 @@ end = struct
     match t with
     | Declaration _ -> t
     | Definition { definition = Defined | Unknown | Nth _ | Subst _ } -> t
-    | Definition ({ definition = Indirection alias } as r) -> begin
+    | Definition ({ definition = Alias alias } as r) -> begin
         match Graph.find_type root alias with
         | exception Not_found -> Definition { r with definition = Unknown }
         | aliased -> normalize_loop root aliased
@@ -369,7 +413,7 @@ end = struct
         | exception Not_found -> Path(None, t)
         | aliased -> subst ns (resolve root aliased)
       end
-    | Definition { definition = Indirection _ } -> assert false
+    | Definition { definition = Alias _ } -> assert false
 
 end
 
@@ -377,9 +421,12 @@ and Class_type : sig
 
   type t
 
-  val base : Origin.t -> Ident.t -> Desc.Class_type.t option -> t
+  val base :
+    Origin.t -> Ident.t -> Desc.Class_type.t option -> Desc.deprecated -> t
 
-  val child : Module.normalized -> string -> Desc.Class_type.t option -> t
+  val child :
+    Module.normalized -> string ->
+    Desc.Class_type.t option -> Desc.deprecated -> t
 
   val declare : Origin.t -> Ident.t -> t
 
@@ -388,6 +435,8 @@ and Class_type : sig
   val origin : Graph.t -> t -> Origin.t
 
   val path : Graph.t -> t -> Path.t
+
+  val hidden : t -> bool
 
   val sort : Graph.t -> t -> Sort.t
 
@@ -400,7 +449,7 @@ end = struct
   open Desc.Class_type
 
   type definition =
-    | Indirection of Path.t
+    | Alias of Path.t
     | Defined
     | Subst of Path.t * int list
     | Unknown
@@ -408,10 +457,12 @@ end = struct
   type t =
     | Declaration of
         { origin : Origin.t;
-          id : Ident.t; }
+          id : Ident.t;
+          hidden : bool; }
     | Definition of
         { origin : Origin.t;
           path : Path.t;
+          hidden : bool;
           sort : Sort.t;
           definition : definition; }
 
@@ -420,28 +471,36 @@ end = struct
     | None -> Unknown
     | Some Fresh -> Defined
     | Some (Subst(p, ns)) -> Subst(p, ns)
-    | Some (Alias alias) -> Indirection alias
+    | Some (Alias alias) -> Alias alias
 
-  let base origin id desc =
+  let base origin id desc deprecated =
     let path = Path.Pident id in
+    let hidden = hidden_base_definition deprecated id in
     let sort = Sort.Defined in
     let definition = definition_of_desc desc in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc =
+  let child md name desc deprecated =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot(Module.raw_path md, name, 0) in
+    let hidden = hidden_definition deprecated name in
     let definition = definition_of_desc desc in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
   let declare origin id =
-    Declaration { origin; id }
+    let hidden = hidden_ident id in
+    Declaration { origin; id; hidden }
 
   let declaration t =
     match t with
     | Definition _ -> None
     | Declaration { origin; _} -> Some origin
+
+  let hidden t =
+    match t with
+    | Definition { hidden; _ } -> hidden
+    | Declaration { hidden; _ } -> hidden
 
   let raw_origin t =
     match t with
@@ -462,7 +521,7 @@ end = struct
     match t with
     | Declaration _ -> t
     | Definition { definition = Defined | Unknown | Subst _ } -> t
-    | Definition ({ definition = Indirection alias } as r) -> begin
+    | Definition ({ definition = Alias alias } as r) -> begin
         match Graph.find_class_type root alias with
         | exception Not_found -> Definition { r with definition = Unknown }
         | aliased -> normalize_loop root aliased
@@ -500,7 +559,7 @@ end = struct
         | exception Not_found -> (None, t)
         | aliased -> subst ns (resolve root aliased)
       end
-    | Definition { definition = Indirection _ } -> assert false
+    | Definition { definition = Alias _ } -> assert false
 
 end
 
@@ -508,9 +567,12 @@ and Module_type : sig
 
   type t
 
-  val base : Origin.t -> Ident.t -> Desc.Module_type.t option -> t
+  val base :
+    Origin.t -> Ident.t -> Desc.Module_type.t option -> Desc.deprecated -> t
 
-  val child : Module.normalized -> string -> Desc.Module_type.t option -> t
+  val child :
+    Module.normalized -> string ->
+    Desc.Module_type.t option -> Desc.deprecated -> t
 
   val declare : Origin.t -> Ident.t -> t
 
@@ -520,6 +582,8 @@ and Module_type : sig
 
   val path : Graph.t -> t -> Path.t
 
+  val hidden : t -> bool
+
   val sort : Graph.t -> t -> Sort.t
 
 end = struct
@@ -527,50 +591,60 @@ end = struct
   open Desc.Module_type
 
   type definition =
-    | Indirection of Path.t
+    | Alias of Path.t
     | Defined
     | Unknown
 
   type t =
     | Declaration of
         { origin : Origin.t;
-          id : Ident.t; }
+          id : Ident.t;
+          hidden : bool; }
     | Definition of
         { origin : Origin.t;
           path : Path.t;
+          hidden : bool;
           sort : Sort.t;
           definition : definition; }
 
-  let base origin id desc =
+  let base origin id desc deprecated =
     let path = Path.Pident id in
+    let hidden = hidden_base_definition deprecated id in
     let sort = Sort.Defined in
     let definition =
       match desc with
       | None -> Unknown
       | Some Fresh -> Defined
-      | Some (Alias alias) -> Indirection alias
+      | Some (Alias alias) -> Alias alias
     in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc =
+  let child md name desc deprecated =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot (Module.raw_path md, name, 0) in
+    let hidden = hidden_definition deprecated name in
     let definition =
       match desc with
       | None -> Unknown
       | Some Fresh -> Defined
-      | Some (Alias alias) -> Indirection alias
+      | Some (Alias alias) -> Alias alias
     in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
   let declare origin id =
-    Declaration { origin; id }
+    let hidden = hidden_ident id in
+    Declaration { origin; id; hidden }
 
   let declaration t =
     match t with
     | Definition _ -> None
     | Declaration { origin; _} -> Some origin
+
+  let hidden t =
+    match t with
+    | Definition { hidden; _ } -> hidden
+    | Declaration { hidden; _ } -> hidden
 
   let raw_origin t =
     match t with
@@ -591,7 +665,7 @@ end = struct
     match t with
     | Declaration _ -> t
     | Definition { definition = Defined | Unknown } -> t
-    | Definition ({ definition = Indirection alias } as r) -> begin
+    | Definition ({ definition = Alias alias } as r) -> begin
         match Graph.find_module_type root alias with
         | exception Not_found -> Definition { r with definition = Unknown }
         | aliased -> normalize_loop root aliased
@@ -622,9 +696,11 @@ and Module : sig
 
   type normalized
 
-  val base : Origin.t -> Ident.t -> Desc.Module.t option -> t
+  val base :
+    Origin.t -> Ident.t -> Desc.Module.t option -> Desc.deprecated -> t
 
-  val child : normalized -> string -> Desc.Module.t option -> t
+  val child :
+    normalized -> string -> Desc.Module.t option -> Desc.deprecated -> t
 
   val application : normalized -> t -> Desc.Module.t option -> t
 
@@ -635,6 +711,8 @@ and Module : sig
   val origin : Graph.t -> t -> Origin.t
 
   val path : Graph.t -> t -> Path.t
+
+  val hidden : t -> bool
 
   val sort : Graph.t -> t -> Sort.t
 
@@ -679,7 +757,7 @@ end = struct
           modules : t String_map.t; }
 
   and definition =
-    | Indirection of Path.t
+    | Alias of Path.t
     | Signature of
         { mutable components : components }
     | Functor of
@@ -690,15 +768,18 @@ end = struct
   and t =
     | Declaration of
         { origin : Origin.t;
-          id : Ident.t; }
+          id : Ident.t;
+          hidden : bool; }
     | Definition of
         { origin : Origin.t;
           path : Path.t;
+          hidden : bool;
           sort : Sort.t;
           definition : definition; }
 
-  let base origin id desc =
+  let base origin id desc deprecated =
     let path = Path.Pident id in
+    let hidden = hidden_base_definition deprecated id in
     let sort = Sort.Defined in
     let definition =
       match desc with
@@ -710,14 +791,15 @@ end = struct
           let applications = Path_map.empty in
           Functor { apply; applications }
       | Some (Alias alias) ->
-          Indirection alias
+          Alias alias
     in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
-  let child md name desc =
+  let child md name desc deprecated =
     let origin = Module.raw_origin md in
     let sort = Module.raw_sort md in
     let path = Path.Pdot(Module.raw_path md, name, 0) in
+    let hidden = hidden_definition deprecated name in
     let definition =
       match desc with
       | None -> Unknown
@@ -728,9 +810,9 @@ end = struct
           let applications = Path_map.empty in
           Functor { apply; applications }
       | Some (Alias alias) ->
-          Indirection alias
+          Alias alias
     in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
   let application func arg desc =
     let func_origin = Module.raw_origin func in
@@ -742,6 +824,7 @@ end = struct
     let func_path = Module.raw_path func in
     let arg_path = Module.raw_path arg in
     let path = Path.Papply(func_path, arg_path) in
+    let hidden = false in
     let definition =
       match desc with
       | None -> Unknown
@@ -752,17 +835,23 @@ end = struct
           let applications = Path_map.empty in
           Functor { apply; applications }
       | Some (Alias alias) ->
-          Indirection alias
+          Alias alias
     in
-    Definition { origin; path; sort; definition }
+    Definition { origin; path; hidden; sort; definition }
 
   let declare origin id =
-    Declaration { origin; id }
+    let hidden = hidden_ident id in
+    Declaration { origin; id; hidden }
 
   let declaration t =
     match t with
     | Definition _ -> None
     | Declaration { origin; _} -> Some origin
+
+  let hidden t =
+    match t with
+    | Definition { hidden; _ } -> hidden
+    | Declaration { hidden; _ } -> hidden
 
   let raw_origin t =
     match t with
@@ -785,7 +874,7 @@ end = struct
     match t with
     | Declaration _ -> t
     | Definition { definition = Signature _ | Functor _ | Unknown } -> t
-    | Definition ({ definition = Indirection alias } as r) -> begin
+    | Definition ({ definition = Alias alias } as r) -> begin
         match Graph.find_module root alias with
         | exception Not_found -> Definition { r with definition = Unknown }
         | aliased -> normalize_loop root aliased
@@ -818,27 +907,27 @@ end = struct
   let force root t =
     let t = Module.normalize root t in
     match definition t with
-    | Indirection _ -> assert false
+    | Alias _ -> assert false
     | Unknown
     | Functor _
     | Signature { components = Forced _ } -> t
     | Signature ({ components = Unforced components; _} as r) -> begin
         let rec loop types class_types module_types modules = function
           | [] -> Forced { types; class_types; module_types; modules }
-          | Type(name, desc) :: rest ->
-              let typ = Type.child t name (Some desc) in
+          | Type(name, desc, dpr) :: rest ->
+              let typ = Type.child t name (Some desc) dpr in
               let types = String_map.add name typ types in
               loop types class_types module_types modules rest
-          | Class_type(name, desc) :: rest ->
-              let clty = Class_type.child t name (Some desc) in
+          | Class_type(name, desc, dpr) :: rest ->
+              let clty = Class_type.child t name (Some desc) dpr in
               let class_types = String_map.add name clty class_types in
               loop types class_types module_types modules rest
-          | Module_type(name, desc) :: rest ->
-              let mty = Module_type.child t name (Some desc) in
+          | Module_type(name, desc, dpr) :: rest ->
+              let mty = Module_type.child t name (Some desc) dpr in
               let module_types = String_map.add name mty module_types in
               loop types class_types module_types modules rest
-          | Module(name, desc) :: rest ->
-              let md = Module.child t name (Some desc) in
+          | Module(name, desc, dpr) :: rest ->
+              let md = Module.child t name (Some desc) dpr in
               let modules = String_map.add name md modules in
               loop types class_types module_types modules rest
         in
@@ -851,7 +940,7 @@ end = struct
   let types root t =
     let t = force root t in
     match definition t with
-    | Indirection _ | Signature { components = Unforced _ } ->
+    | Alias _ | Signature { components = Unforced _ } ->
         assert false
     | Unknown | Functor _ ->
         None
@@ -861,7 +950,7 @@ end = struct
   let class_types root t =
     let t = force root t in
     match definition t with
-    | Indirection _ | Signature { components = Unforced _ } ->
+    | Alias _ | Signature { components = Unforced _ } ->
         assert false
     | Unknown | Functor _ ->
         None
@@ -871,7 +960,7 @@ end = struct
   let module_types root t =
     let t = force root t in
     match definition t with
-    | Indirection _ | Signature { components = Unforced _ } ->
+    | Alias _ | Signature { components = Unforced _ } ->
         assert false
     | Unknown | Functor _ ->
         None
@@ -881,7 +970,7 @@ end = struct
   let modules root t =
     let t = force root t in
     match definition t with
-    | Indirection _ | Signature { components = Unforced _ } ->
+    | Alias _ | Signature { components = Unforced _ } ->
         assert false
     | Unknown | Functor _ ->
         None
@@ -891,11 +980,11 @@ end = struct
   let find_type root t name =
     let t = force root t in
     match definition t with
-    | Indirection _
+    | Alias _
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Type.child t name None
+        Type.child t name None Not_deprecated
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { types; _ }; _ } ->
@@ -904,11 +993,11 @@ end = struct
   let find_class_type root t name =
     let t = force root t in
     match definition t with
-    | Indirection _
+    | Alias _
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Class_type.child t name None
+        Class_type.child t name None Not_deprecated
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { class_types; _ }; _ } ->
@@ -917,11 +1006,11 @@ end = struct
   let find_module_type root t name =
     let t = force root t in
     match definition t with
-    | Indirection _
+    | Alias _
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Module_type.child t name None
+        Module_type.child t name None Not_deprecated
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { module_types; _ }; _ } ->
@@ -930,11 +1019,11 @@ end = struct
   let find_module root t name =
     let t = force root t in
     match definition t with
-    | Indirection _
+    | Alias _
     | Signature { components = Unforced _ } ->
         assert false
     | Unknown ->
-        Module.child t name None
+        Module.child t name None Not_deprecated
     | Functor _ ->
         raise Not_found
     | Signature { components = Forced { modules; _ }; _ } ->
@@ -943,7 +1032,7 @@ end = struct
   let find_application root t path =
     let t = Module.normalize root t in
     match definition t with
-    | Indirection _ -> assert false
+    | Alias _ -> assert false
     | Signature _ -> raise Not_found
     | Unknown ->
         let arg = Graph.find_module root path in
@@ -1022,10 +1111,14 @@ and Component : sig
     | Open
 
   type t =
-    | Type of Origin.t * Ident.t * Desc.Type.t * source
-    | Class_type of Origin.t * Ident.t * Desc.Class_type.t * source
-    | Module_type of Origin.t * Ident.t * Desc.Module_type.t * source
-    | Module of Origin.t * Ident.t * Desc.Module.t * source
+    | Type of
+        Origin.t * Ident.t * Desc.Type.t * source * Desc.deprecated
+    | Class_type of
+        Origin.t * Ident.t * Desc.Class_type.t * source * Desc.deprecated
+    | Module_type of
+        Origin.t * Ident.t * Desc.Module_type.t * source * Desc.deprecated
+    | Module of
+        Origin.t * Ident.t * Desc.Module.t * source * Desc.deprecated
     | Declare_type of Origin.t * Ident.t
     | Declare_class_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
@@ -1058,6 +1151,14 @@ and Graph : sig
   val is_module_type_path_visible : t -> Path.t -> bool
 
   val is_module_path_visible : t -> Path.t -> bool
+
+  val is_type_ident_visible : t -> Ident.t -> bool
+
+  val is_class_type_ident_visible : t -> Ident.t -> bool
+
+  val is_module_type_ident_visible : t -> Ident.t -> bool
+
+  val is_module_ident_visible : t -> Ident.t -> bool
 
 end = struct
 
@@ -1146,36 +1247,36 @@ end = struct
   let add t descs =
     let rec loop acc diff declarations = function
       | [] -> loop_declarations acc diff declarations
-      | Component.Type(origin, id, desc, source) :: rest ->
+      | Component.Type(origin, id, desc, source, dpr) :: rest ->
           let prev = previous_type acc id in
-          let typ = Type.base origin id (Some desc) in
+          let typ = Type.base origin id (Some desc) dpr in
           let types = Ident_map.add id typ acc.types in
           let type_names = add_name source id acc.type_names in
           let item = Diff.Item.Type(id, typ, prev) in
           let diff = item :: diff in
           let acc = { acc with types; type_names } in
           loop acc diff declarations rest
-      | Component.Class_type(origin,id, desc, source) :: rest ->
+      | Component.Class_type(origin,id, desc, source, dpr) :: rest ->
           let prev = previous_class_type acc id in
-          let clty = Class_type.base origin id (Some desc) in
+          let clty = Class_type.base origin id (Some desc) dpr in
           let class_types = Ident_map.add id clty acc.class_types in
           let class_type_names = add_name source id acc.class_type_names in
           let item = Diff.Item.Class_type(id, clty, prev) in
           let diff = item :: diff in
           let acc = { acc with class_types; class_type_names } in
           loop acc diff declarations rest
-      | Component.Module_type(origin,id, desc, source) :: rest ->
+      | Component.Module_type(origin,id, desc, source, dpr) :: rest ->
           let prev = previous_module_type acc id in
-          let mty = Module_type.base origin id (Some desc) in
+          let mty = Module_type.base origin id (Some desc) dpr in
           let module_types = Ident_map.add id mty acc.module_types in
           let module_type_names = add_name source id acc.module_type_names in
           let item = Diff.Item.Module_type(id, mty, prev) in
           let diff = item :: diff in
           let acc = { acc with module_types; module_type_names } in
           loop acc diff declarations rest
-      | Component.Module(origin,id, desc, source) :: rest ->
+      | Component.Module(origin,id, desc, source, dpr) :: rest ->
           let prev = previous_module acc id in
-          let md = Module.base origin id (Some desc) in
+          let md = Module.base origin id (Some desc) dpr in
           let modules = Ident_map.add id md acc.modules in
           let module_names = add_name source id acc.module_names in
           let item = Diff.Item.Module(id, md, prev) in
@@ -1346,88 +1447,92 @@ end = struct
     | exception Not_found -> Path.Pident id
     | md -> Module.path t md
 
-  let rec is_module_path_visible t = function
-    | Path.Pident id -> begin
-        let name = Ident.name id in
-        match String_map.find name t.module_names with
-        | exception Not_found -> false
-        | Local id' -> Ident.equal id id'
-        | Global id' -> Ident.equal id id'
-        | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', ids) ->
-          if not (Ident.equal id id') then false
-          else begin
-            let paths = List.map (canonical_module_path t) ids in
-            let path = canonical_module_path t id in
-            List.for_all (Path.equal path) paths
-          end
+  let is_module_ident_visible t id =
+    let name = Ident.name id in
+    match String_map.find name t.module_names with
+    | exception Not_found -> false
+    | Local id' -> Ident.equal id id'
+    | Global id' -> Ident.equal id id'
+    | Unambiguous id' -> Ident.equal id id'
+    | Ambiguous(id', ids) ->
+      if not (Ident.equal id id') then false
+      else begin
+        let paths = List.map (canonical_module_path t) ids in
+        let path = canonical_module_path t id in
+        List.for_all (Path.equal path) paths
       end
+
+  let rec is_module_path_visible t = function
+    | Path.Pident id -> is_module_ident_visible t id
     | Path.Pdot(path, _, _) ->
         is_module_path_visible t path
     | Path.Papply(path1, path2) ->
         is_module_path_visible t path1
         && is_module_path_visible t path2
 
-  let is_type_path_visible t = function
-    | Path.Pident id -> begin
-        let name = Ident.name id in
-        match String_map.find name t.type_names with
-        | exception Not_found -> false
-        | Local id' -> Ident.equal id id'
-        | Global id' -> Ident.equal id id'
-        | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', ids) ->
-          if not (Ident.equal id id') then false
-          else begin
-            let paths = List.map (canonical_type_path t) ids in
-            let path = canonical_type_path t id in
-            List.for_all (Path.equal path) paths
-          end
+  let is_type_ident_visible t id =
+    let name = Ident.name id in
+    match String_map.find name t.type_names with
+    | exception Not_found -> false
+    | Local id' -> Ident.equal id id'
+    | Global id' -> Ident.equal id id'
+    | Unambiguous id' -> Ident.equal id id'
+    | Ambiguous(id', ids) ->
+      if not (Ident.equal id id') then false
+      else begin
+        let paths = List.map (canonical_type_path t) ids in
+        let path = canonical_type_path t id in
+        List.for_all (Path.equal path) paths
       end
+
+  let is_type_path_visible t = function
+    | Path.Pident id -> is_type_ident_visible t id
     | Path.Pdot(path, _, _) -> is_module_path_visible t path
     | Path.Papply _ ->
         failwith
           "Short_paths_graph.Graph.is_type_path_visible: \
            invalid type path"
 
-  let is_class_type_path_visible t = function
-    | Path.Pident id -> begin
-        let name = Ident.name id in
-        match String_map.find name t.class_type_names with
-        | exception Not_found -> false
-        | Local id' -> Ident.equal id id'
-        | Global id' -> Ident.equal id id'
-        | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', ids) ->
-          if not (Ident.equal id id') then false
-          else begin
-            let paths = List.map (canonical_class_type_path t) ids in
-            let path = canonical_class_type_path t id in
-            List.for_all (Path.equal path) paths
-          end
+  let is_class_type_ident_visible t id =
+    let name = Ident.name id in
+    match String_map.find name t.class_type_names with
+    | exception Not_found -> false
+    | Local id' -> Ident.equal id id'
+    | Global id' -> Ident.equal id id'
+    | Unambiguous id' -> Ident.equal id id'
+    | Ambiguous(id', ids) ->
+      if not (Ident.equal id id') then false
+      else begin
+        let paths = List.map (canonical_class_type_path t) ids in
+        let path = canonical_class_type_path t id in
+        List.for_all (Path.equal path) paths
       end
+
+  let is_class_type_path_visible t = function
+    | Path.Pident id -> is_class_type_ident_visible t id
     | Path.Pdot(path, _, _) -> is_module_path_visible t path
     | Path.Papply _ ->
         failwith
           "Short_paths_graph.Graph.is_class_type_path_visible: \
            invalid class type path"
 
-  let is_module_type_path_visible t = function
-    | Path.Pident id -> begin
-        let name = Ident.name id in
-        match String_map.find name t.module_type_names with
-        | exception Not_found -> false
-        | Local id' -> Ident.equal id id'
-        | Global id' -> Ident.equal id id'
-        | Unambiguous id' -> Ident.equal id id'
-        | Ambiguous(id', ids) ->
-          if not (Ident.equal id id') then false
-          else begin
-            let paths = List.map (canonical_module_type_path t) ids in
-            let path = canonical_module_type_path t id in
-            List.for_all (Path.equal path) paths
-          end
+  let is_module_type_ident_visible t id =
+    let name = Ident.name id in
+    match String_map.find name t.module_type_names with
+    | exception Not_found -> false
+    | Local id' -> Ident.equal id id'
+    | Global id' -> Ident.equal id id'
+    | Unambiguous id' -> Ident.equal id id'
+    | Ambiguous(id', ids) ->
+      if not (Ident.equal id id') then false
+      else begin
+        let paths = List.map (canonical_module_type_path t) ids in
+        let path = canonical_module_type_path t id in
+        List.for_all (Path.equal path) paths
       end
+
+  let is_module_type_path_visible t = function
+    | Path.Pident id -> is_module_type_ident_visible t id
     | Path.Pdot(path, _, _) -> is_module_path_visible t path
     | Path.Papply _ ->
         failwith

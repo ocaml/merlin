@@ -49,6 +49,10 @@ module Path_set : Set.S with type elt = Path.t
 
 module Desc : sig
 
+  type deprecated =
+    | Deprecated
+    | Not_deprecated
+
   module Type : sig
 
     type t =
@@ -88,10 +92,10 @@ module Desc : sig
   module Module : sig
 
     type component =
-      | Type of string * Type.t
-      | Class_type of string * Class_type.t
-      | Module_type of string * Module_type.t
-      | Module of string * t
+      | Type of string * Type.t * deprecated
+      | Class_type of string * Class_type.t * deprecated
+      | Module_type of string * Module_type.t * deprecated
+      | Module of string * t * deprecated
 
     and components = component list
 
@@ -105,11 +109,15 @@ module Desc : sig
 
   end
 
+  type source =
+    | Local
+    | Open
+
   type t =
-    | Type of Ident.t * Type.t * bool
-    | Class_type of Ident.t * Class_type.t * bool
-    | Module_type of Ident.t * Module_type.t * bool
-    | Module of Ident.t * Module.t * bool
+    | Type of Ident.t * Type.t * source * deprecated
+    | Class_type of Ident.t * Class_type.t * source * deprecated
+    | Module_type of Ident.t * Module_type.t * source * deprecated
+    | Module of Ident.t * Module.t * source * deprecated
     | Declare_type of Ident.t
     | Declare_class_type of Ident.t
     | Declare_module_type of Ident.t
@@ -152,6 +160,8 @@ module Type : sig
 
   val path : graph -> t -> Path.t
 
+  val hidden : t -> bool
+
   val sort : graph -> t -> Sort.t
 
   type resolved =
@@ -170,6 +180,8 @@ module Class_type : sig
 
   val path : graph -> t -> Path.t
 
+  val hidden : t -> bool
+
   val sort : graph -> t -> Sort.t
 
   type resolved = int list option * t
@@ -186,6 +198,8 @@ module Module_type : sig
 
   val path : graph -> t -> Path.t
 
+  val hidden : t -> bool
+
   val sort : graph -> t -> Sort.t
 
 end
@@ -197,6 +211,8 @@ module Module : sig
   val origin : graph -> t -> Origin.t
 
   val path : graph -> t -> Path.t
+
+  val hidden : t -> bool
 
   val sort : graph -> t -> Sort.t
 
@@ -240,10 +256,14 @@ module Component : sig
     | Open
 
   type t =
-    | Type of Origin.t * Ident.t * Desc.Type.t * source
-    | Class_type of Origin.t * Ident.t * Desc.Class_type.t * source
-    | Module_type of Origin.t * Ident.t * Desc.Module_type.t * source
-    | Module of Origin.t * Ident.t * Desc.Module.t * source
+    | Type of
+        Origin.t * Ident.t * Desc.Type.t * source * Desc.deprecated
+    | Class_type of
+        Origin.t * Ident.t * Desc.Class_type.t * source * Desc.deprecated
+    | Module_type of
+        Origin.t * Ident.t * Desc.Module_type.t * source * Desc.deprecated
+    | Module of
+        Origin.t * Ident.t * Desc.Module.t * source * Desc.deprecated
     | Declare_type of Origin.t * Ident.t
     | Declare_class_type of Origin.t * Ident.t
     | Declare_module_type of Origin.t * Ident.t
@@ -276,5 +296,13 @@ module Graph : sig
   val is_module_type_path_visible : t -> Path.t -> bool
 
   val is_module_path_visible : t -> Path.t -> bool
+
+  val is_type_ident_visible : t -> Ident.t -> bool
+
+  val is_class_type_ident_visible : t -> Ident.t -> bool
+
+  val is_module_type_ident_visible : t -> Ident.t -> bool
+
+  val is_module_ident_visible : t -> Ident.t -> bool
 
 end

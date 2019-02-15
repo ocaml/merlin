@@ -118,6 +118,21 @@
         "sub": [],
         "valid": true,
         "message": "Warning 16: this optional argument cannot be erased."
+      },
+      {
+        "start": {
+          "line": 63,
+          "col": 25
+        },
+        "end": {
+          "line": 63,
+          "col": 26
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This expression has type t = M.t
+         but an expression was expected of type unit"
       }
     ],
     "notifications": []
@@ -243,6 +258,21 @@
         "sub": [],
         "valid": true,
         "message": "Warning 16: this optional argument cannot be erased."
+      },
+      {
+        "start": {
+          "line": 63,
+          "col": 25
+        },
+        "end": {
+          "line": 63,
+          "col": 26
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This expression has type N.O.t but an expression was expected of type
+           unit"
       }
     ],
     "notifications": []
