@@ -40,3 +40,26 @@ class test ?a =
 object
   method b = ()
 end
+
+(* *** Don't select deprecated paths *** *)
+
+include struct
+  [@@@warning "-3"]
+
+  module M = struct
+    type t = T
+    [@@deprecated "bad"]
+  end
+
+  type t = M.t
+  [@@deprecated "bad"]
+
+  module N = struct
+    module O = struct
+      type t = M.t
+    end
+  end
+
+  let f (x : t) : unit = x
+
+end
