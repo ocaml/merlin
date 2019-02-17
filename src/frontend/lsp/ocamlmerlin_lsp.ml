@@ -72,7 +72,14 @@ end = struct
     let path = Misc.canonicalize_filename path in
     let filename = Filename.basename path in
     let directory = Filename.dirname path in
-    let t = {config with query = {query with filename; directory}} in
+    let t = {
+      config with query = {
+        query with
+        verbosity = 1;
+        filename;
+        directory;
+      }
+    } in
     Mconfig.load_dotmerlins t ~filenames:[
       let base = "." ^ filename ^ ".merlin" in
       Filename.concat directory base
@@ -359,6 +366,11 @@ let on_request :
     return (store, locs)
 
   | Lsp.Rpc.Request.TextDocumentCompletion {textDocument = {uri;}; position; context = _;} ->
+    (* per LSP it requests completion with position after the prefix *)
+    let position = {
+      position with
+      Lsp.Protocol.character = position.character - 1;
+    } in
     let position = logical_of_position position in
 
     let make_string chars =
