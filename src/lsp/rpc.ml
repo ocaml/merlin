@@ -119,11 +119,13 @@ let read rpc =
 module Response = struct
   type response = {
     id : int;
+    jsonrpc: string;
     result : Yojson.Safe.json;
   } [@@deriving yojson]
 
   type response_error = {
     id : int;
+    jsonrpc: string;
     error : error;
   } [@@deriving yojson]
 
@@ -137,10 +139,10 @@ module Response = struct
     | Response_error of response_error
 
   let make id result =
-    Response {id; result;}
+    Response {id; result; jsonrpc="2.0"}
 
   let make_error id code message =
-    Response_error {id; error = {code; message;}}
+    Response_error {id; error = {code; message;}; jsonrpc="2.0"}
 
   let to_yojson = function
     | Response v -> response_to_yojson v
@@ -168,7 +170,7 @@ end
 let send_notification rpc notif =
   let method_ = Server_notification.method_ notif in
   let params = Server_notification.params_to_yojson notif in
-  let response = `Assoc [("method", (`String method_)); ("params", params)] in
+  let response = `Assoc [("jsonrpc", (`String "2.0")); ("method", (`String method_)); ("params", params)] in
   send rpc response
 
 module Client_notification = struct
