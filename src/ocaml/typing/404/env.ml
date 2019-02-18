@@ -1478,8 +1478,10 @@ let short_paths_type predef id path decl old =
     addition :: old
   end
 
+let unbound_class = Path.Pident (Ident.create "*undef*")
+
 let is_dummy_class decl =
-  Path.same decl.clty_path Btype.unbound_class
+  Path.same decl.clty_path unbound_class
 
 let short_paths_class_type id path decl old =
   if !Clflags.real_paths || is_dummy_class decl then old

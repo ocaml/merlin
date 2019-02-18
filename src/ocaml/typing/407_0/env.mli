@@ -348,6 +348,10 @@ module Persistent_signature : sig
   val load : (unit_name:string -> t option) ref
 end
 
+(** dummy class path **)
+
+val unbound_class: Path.t
+
 (** merlin: manage internal state *)
 
 val state : Local_store.bindings

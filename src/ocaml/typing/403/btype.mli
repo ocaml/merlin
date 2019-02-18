@@ -47,7 +47,6 @@ val newmarkedgenvar: unit -> type_expr
 val is_Tvar: type_expr -> bool
 val is_Tunivar: type_expr -> bool
 val dummy_method: label
-val unbound_class: Path.t
 val default_mty: module_type option -> module_type
 
 val repr: type_expr -> type_expr
