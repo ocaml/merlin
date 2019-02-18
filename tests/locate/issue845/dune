@@ -5,5 +5,5 @@
    (progn
      (setenv MERLIN %{exe:../../merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
-       (run %{bin:mdx} test %{t})))
+       (run %{bin:mdx} test --syntax=cram %{t})))
      (diff? %{t} %{t}.corrected))))

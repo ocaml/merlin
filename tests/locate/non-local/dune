@@ -6,5 +6,5 @@
      (run %{ocamlc} -c -bin-annot a.mli a.ml)
      (run %{ocamlc} -c -bin-annot b.mli b.ml)
      (setenv MERLIN %{exe:../../merlin-wrapper}
-       (run %{bin:mdx} test %{t}))
+       (run %{bin:mdx} test --syntax=cram %{t}))
      (diff? %{t} %{t}.corrected))))
