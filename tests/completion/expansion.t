@@ -99,10 +99,7 @@
     }
   ]
 
-FIXME? there are results in there that I did not really expect, e.g.
-"Local_store", "Lexer_raw", etc.
-
-  $ $MERLIN single expand-prefix -position 1:13 -prefix L.m \
+  $ $MERLIN single expand-prefix -position 1:13 -prefix Lsi.m \
   > -filename expansion.ml < expansion2.ml | jq ".value.entries | sort_by(.name)"
   [
     {
