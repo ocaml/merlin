@@ -4,6 +4,8 @@ dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script: bash -ex .travis-opam.sh
 env:
+  global:
+  - PINS="mdx.dev:https://github.com/realworldocaml/mdx.git"
   matrix:
   - OCAML_VERSION=4.02
     PACKAGE=merlin

@@ -579,8 +579,6 @@ let modules_in_path ~ext path =
   List.fold_left ~init:[] path
     ~f:begin fun results dir ->
       try
-        let entries = Sys.readdir dir in
-        Array.sort String.compare entries;
         Array.fold_left
           begin fun results file ->
             if Filename.check_suffix file ext
@@ -590,7 +588,7 @@ let modules_in_path ~ext path =
                else
                  (Hashtbl.add seen name (); String.capitalize name :: results))
             else results
-          end results entries
+          end results (Sys.readdir dir)
       with Sys_error _ -> results
     end
 

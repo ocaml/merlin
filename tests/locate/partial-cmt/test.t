@@ -33,7 +33,7 @@ Introduce a type error in a.ml:
   File "a.ml", line 2, characters 9-10:
   Error: This expression has type int but an expression was expected of type
            unit
---> exit 2
+  [2]
   $ test -f a.cmi & test -f a.cmt & test ! -f a.cmti
 
 Try jumping again, note that if the file is the ".mli" one this means that we
