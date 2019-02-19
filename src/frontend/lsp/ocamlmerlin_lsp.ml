@@ -342,7 +342,9 @@ let on_request :
       match
         Locate.from_string
           ~config:(Mpipeline.final_config pipeline)
-          ~env ~local_defs ~pos `MLI (Path.name path)
+          ~env ~local_defs ~pos ~namespaces:[`Type] `MLI
+          (* FIXME: instead of converting to a string, pass it directly. *)
+          (Path.name path)
       with
       | exception Env.Error _ -> None
       | `Found (path, lex_position) ->
@@ -359,6 +361,7 @@ let on_request :
       | `Builtin _
       | `File_not_found _
       | `Invalid_context
+      | `Missing_labels_namespace
       | `Not_found _
       | `Not_in_env _ -> None
     )

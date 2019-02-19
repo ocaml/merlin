@@ -713,11 +713,6 @@ module Env_lookup : sig
     -> Env.t
     -> (Path.t * Namespaced_path.t * Location.t) option
 
-   val label
-     : Longident.t
-     -> Env.t
-    -> (Path.t * Namespaced_path.t * Location.t) option
-
 end = struct
 
   exception Found of (Path.t * Namespaced_path.t * Location.t)
@@ -775,15 +770,6 @@ end = struct
       None
     with Found x ->
       Some x
-
-  let label ident env =
-    try
-      let label_desc = Env.lookup_label ident env in
-      let path, loc = path_and_loc_from_label label_desc env in
-      (* TODO: Use [`Labels] here *)
-      Some (path, Namespaced_path.of_path ~namespace:`Type path, loc)
-    with Not_found ->
-      None
 end
 
 let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
@@ -813,15 +799,9 @@ let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
   locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
     ~lazy_trie
 
-let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
-  let ident, is_label = Longident.keep_suffix lid in
+let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
-  match
-    if not is_label then
-      Env_lookup.in_namespaces (Namespace.from_context ctxt) ident env
-    else
-      Env_lookup.label ident env
-  with
+  match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
   | Some (path, tagged_path, loc) ->
     if Utils.is_builtin_path path then
@@ -829,23 +809,47 @@ let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
     else
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
-let from_string ~config ~env ~local_defs ~pos switch path =
+let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   let browse = Mbrowse.of_typedtree local_defs in
-  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
-                          [Browse_tree.of_browse browse]) in
+  let lazy_trie =
+    lazy (Typedtrie.of_browses ~local_buffer:true
+            [Browse_tree.of_browse browse])
+  in
   let lid = Longident.parse path in
-  match Context.inspect_browse_tree [browse] lid pos with
-  | None ->
-    log ~title:"from_string" "already at origin, doing nothing" ;
-    `At_origin
-  | Some ctxt ->
-    log ~title:"inspect_context" "inferred context: %s" (Context.to_string ctxt);
-    log ~title:"from_string" "looking for the source of '%s' (prioritizing %s files)"
-      path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
+  let ident, is_label = Longident.keep_suffix lid in
+  match
+    match namespaces with
+    | Some nss ->
+      if not is_label || List.mem `Labels ~set:nss then (
+        log ~title:"from_string" "restricting namespaces to labels";
+        Ok [ `Labels ]
+      ) else (
+        log ~title:"from_string"
+          "input is clearly a label, but the given namespaces don't cover that";
+        Error `Missing_labels_namespace
+      )
+    | None ->
+      match Context.inspect_browse_tree [browse] lid pos, is_label with
+      | None, _ ->
+        log ~title:"from_string" "already at origin, doing nothing" ;
+        Error `At_origin
+      | Some (Label _ as ctxt), true
+      | Some ctxt, false ->
+        log ~title:"from_string"
+          "inferred context: %s" (Context.to_string ctxt);
+        Ok (Namespace.from_context ctxt)
+      | _, true ->
+        log ~title:"from_string"
+          "dropping inferred context, it is not precise enough";
+        Ok [ `Labels ]
+  with
+  | Error e -> e
+  | Ok nss ->
+    log ~title:"from_string"
+      "looking for the source of '%s' (prioritizing %s files)"
+      path (match switch with `ML -> ".ml" | `MLI -> ".mli");
     let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
-    match
-      from_longident ~config ~pos ~env ~lazy_trie ctxt switch lid
-    with
+    match from_longident ~config ~pos ~env ~lazy_trie nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found (loc, _) ->
@@ -877,8 +881,9 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       | None ->
         `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->
+        let nss = Namespace.from_context ctxt in
         log ~title:"get_doc" "looking for the doc of '%s'" path ;
-        from_longident ~config ~pos ~env ~lazy_trie ctxt `MLI lid
+        from_longident ~config ~pos ~env ~lazy_trie nss `MLI lid
       end
   with
   | `Found (_, Some doc) ->
