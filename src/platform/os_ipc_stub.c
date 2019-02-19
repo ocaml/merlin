@@ -124,6 +124,11 @@ static ssize_t recv_buffer(int fd, int fds[3])
 
   struct cmsghdr *cm = CMSG_FIRSTHDR(&msg);
 
+  if (cm == NULL)
+  {
+    perror("recvmsg");
+    return -1;
+  }
   int *fds0 = (int*)CMSG_DATA(cm);
   int nfds = (cm->cmsg_len - CMSG_LEN(0)) / sizeof(int);
 
