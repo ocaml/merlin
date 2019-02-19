@@ -4,7 +4,7 @@ next version
   - backend
     + interpret `-pp` flag
     + backtrack warnings in all versions, not just 4.06
-    + silence C compiler warnings (by David Allsopp)
+    + silence C compiler warnings (by David Allsopp and Bernhard Schommer)
     + remove sturgeon support
     + allow to select sections to log
     + better error message on ocaml version mismatch
@@ -20,8 +20,8 @@ next version
 
     + emacs
       - fix merlin-xref.el install (by Emilio Jesus Gallego Arias)
-      - keep labels matching the prefix the user has typed rather than dropping them
-        (by Mitchell Plamann)
+      - keep labels matching the prefix the user has typed rather than
+        dropping them (by Mitchell Plamann)
       - remove unused `merlin--overlay` function (by Wilfred Hughes)
       - show the number of errors in the modline (by Wilfred Hughes)
       - call a logger on the client side if one is defined
@@ -31,6 +31,9 @@ next version
       - make the log buffer a scratch buffer (by Tom Johnson)
       - execute buffer switching silently (by Fabian)
       - restore view after updating merlin type buffer (by Fabian)
+
+ - testsuite
+   + Switched to mdx with cram syntax.
 
 merlin 3.2.2
 ============
