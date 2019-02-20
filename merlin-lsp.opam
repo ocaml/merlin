@@ -21,7 +21,6 @@ depends: [
   "ocamlfind" {>= "1.5.2"}
   "yojson"
   "ppx_deriving_yojson"
-  "stringext"
   "mdx" {test & >= "1.2.0"}
 ]
 
