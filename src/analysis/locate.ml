@@ -822,29 +822,29 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     | Some nss ->
       if not is_label || List.mem `Labels ~set:nss then (
         log ~title:"from_string" "restricting namespaces to labels";
-        Ok [ `Labels ]
+        `Ok [ `Labels ]
       ) else (
         log ~title:"from_string"
           "input is clearly a label, but the given namespaces don't cover that";
-        Error `Missing_labels_namespace
+        `Error `Missing_labels_namespace
       )
     | None ->
       match Context.inspect_browse_tree [browse] lid pos, is_label with
       | None, _ ->
         log ~title:"from_string" "already at origin, doing nothing" ;
-        Error `At_origin
+        `Error `At_origin
       | Some (Label _ as ctxt), true
       | Some ctxt, false ->
         log ~title:"from_string"
           "inferred context: %s" (Context.to_string ctxt);
-        Ok (Namespace.from_context ctxt)
+        `Ok (Namespace.from_context ctxt)
       | _, true ->
         log ~title:"from_string"
           "dropping inferred context, it is not precise enough";
-        Ok [ `Labels ]
+        `Ok [ `Labels ]
   with
-  | Error e -> e
-  | Ok nss ->
+  | `Error e -> e
+  | `Ok nss ->
     log ~title:"from_string"
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
