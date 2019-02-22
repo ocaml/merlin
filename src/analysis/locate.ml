@@ -333,6 +333,83 @@ module Context = struct
     | Patt -> "pattern"
     | Type -> "type"
     | Unknown -> "unknown"
+
+  (* Distinguish between "Mo[d]ule.Constructor" and "Module.Cons[t]ructor" *)
+  let cursor_on_constructor_name ~cursor:pos
+        ~cstr_token:{ Asttypes.loc; txt = lid } cd =
+    match lid with
+    | Longident.Lident _ -> true
+    | _ ->
+      let end_offset = loc.loc_end.pos_cnum in
+      let constr_pos =
+        { loc.loc_end
+          with pos_cnum = end_offset - String.length cd.Types.cstr_name }
+      in
+      Lexing.compare_pos pos constr_pos >= 0
+
+  let inspect_pattern ~pos ~lid p =
+    let open Typedtree in
+    log ~title:"inspect_context" "%a" Logger.fmt
+      (fun fmt -> Format.fprintf fmt "current pattern is: %a"
+                    (Printtyped.pattern 0) p);
+    match p.pat_desc with
+    | Tpat_any when Longident.last lid = "_" -> None
+    | Tpat_var (_, str_loc) when (Longident.last lid) = str_loc.txt ->
+      None
+    | Tpat_alias (_, _, str_loc)
+      when (Longident.last lid) = str_loc.txt ->
+      (* Assumption: if [Browse.enclosing] stopped on this node and not on the
+        subpattern, then it must mean that the cursor is on the alias. *)
+      None
+    | Tpat_construct (lid_loc, cd, _)
+      when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
+          && (Longident.last lid) = (Longident.last lid_loc.txt) ->
+      (* Assumption: if [Browse.enclosing] stopped on this node and not on the
+        subpattern, then it must mean that the cursor is on the constructor
+        itself.  *)
+        Some (Constructor cd)
+    | _ ->
+      Some Patt
+
+  let inspect_expression ~pos ~lid e : t =
+    match e.Typedtree.exp_desc with
+    | Texp_construct (lid_loc, cd, _)
+      when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
+          && (Longident.last lid) = (Longident.last lid_loc.txt) ->
+      Constructor cd
+    | _ ->
+      Expr
+
+  let inspect_browse_tree browse lid pos : t option =
+    match Mbrowse.enclosing pos browse with
+    | [] ->
+      log ~title:"inspect_context"
+        "no enclosing around: %a" Lexing.print_position pos;
+      Some Unknown
+    | enclosings ->
+      let open Browse_raw in
+      let node = Browse_tree.of_browse enclosings in
+      log ~title:"inspect_context" "current node is: %s"
+        (string_of_node node.Browse_tree.t_node);
+      match node.Browse_tree.t_node with
+      | Pattern p -> inspect_pattern ~pos ~lid p
+      | Value_description _
+      | Type_declaration _
+      | Extension_constructor _
+      | Module_binding_name _
+      | Module_declaration_name _ ->
+        None
+      | Module_expr _
+      | Open_description _ -> Some Module_path
+      | Module_type _ -> Some Module_type
+      | Core_type _ -> Some Type
+      | Record_field (_, lbl, _) when (Longident.last lid) = lbl.lbl_name ->
+        (* if we stopped here, then we're on the label itself, and whether or
+           not punning is happening is not important *)
+        Some (Label lbl)
+      | Expression e -> Some (inspect_expression ~pos ~lid e)
+      | _ ->
+        Some Unknown
 end
 
 exception Cmt_cache_store of Typedtrie.t
@@ -606,10 +683,32 @@ let recover _ =
   | None -> assert false
   | Some loc -> `Found (loc, None)
 
+module Namespace = struct
+  type under_type = [ `Constr | `Labels ]
+
+  type t = (* TODO: share with [Namespaced_path.Namespace.t] *)
+    [ `Type | `Mod | `Modtype | `Vals | under_type ]
+
+  type inferred =
+    [ t
+    | `This_label of Types.label_description
+    | `This_cstr of Types.constructor_description ]
+
+  let from_context : Context.t -> inferred list = function
+    | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
+    | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Expr          -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+    | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
+    | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+    | Label lbl     -> [ `This_label lbl ]
+    | Constructor c -> [ `This_cstr c ]
+    | Module_path   -> [ `Mod ]
+end
+
 module Env_lookup : sig
 
-  val with_context
-     : Context.t
+  val in_namespaces
+     : Namespace.inferred list
     -> Longident.t
     -> Env.t
     -> (Path.t * Namespaced_path.t * Location.t) option
@@ -621,29 +720,22 @@ module Env_lookup : sig
 
 end = struct
 
-  let namespaces : Context.t -> _ = function
-    | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
-    | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
-    | Expr | Patt   -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
-    | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
-    | Label _       -> [ `Labels; `Mod ]
-    | Constructor _ -> [ `Constr; `Mod ]
-    | Module_path   -> [ `Mod ]
-
   exception Found of (Path.t * Namespaced_path.t * Location.t)
 
-  let with_context (ctxt : Context.t) ident env =
+  let in_namespaces (nss : Namespace.inferred list) ident env =
     try
-      List.iter (namespaces ctxt) ~f:(fun namespace ->
+      List.iter nss ~f:(fun namespace ->
         try
           match namespace with
+          | `This_cstr cd ->
+            log ~title:"lookup"
+              "got constructor, fetching path and loc in type namespace";
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
           | `Constr ->
             log ~title:"lookup" "lookup in constructor namespace" ;
-            let cd =
-              match ctxt with
-              | Constructor cd -> cd
-              | _ -> Env.lookup_constructor ident env
-            in
+            let cd = Env.lookup_constructor ident env in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
@@ -665,13 +757,15 @@ end = struct
             log ~title:"lookup" "lookup in value namespace" ;
             let path, val_desc = Env.lookup_value ident env in
             raise (Found (path, Namespaced_path.of_path ~namespace:`Vals path, val_desc.Types.val_loc))
+          | `This_label lbl ->
+            log ~title:"lookup"
+              "got label, fetching path and loc in type namespace";
+            let path, loc = path_and_loc_from_label lbl env in
+            (* TODO: Use [`Labels] here instead of [`Type] *)
+            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace" ;
-            let lbl =
-              match ctxt with
-              | Label lbl -> lbl
-              | _ -> Env.lookup_label ident env
-            in
+            let lbl = Env.lookup_label ident env in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
@@ -724,7 +818,7 @@ let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match
     if not is_label then
-      Env_lookup.with_context ctxt ident env
+      Env_lookup.in_namespaces (Namespace.from_context ctxt) ident env
     else
       Env_lookup.label ident env
   with
@@ -735,90 +829,12 @@ let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
     else
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
-(* Distinguish between "Mo[d]ule.Constructor" and "Module.Cons[t]ructor" *)
-let cursor_on_constructor_name ~cursor:pos
-      ~cstr_token:{ Asttypes.loc; txt = lid } cd =
-  match lid with
-  | Longident.Lident _ -> true
-  | _ ->
-    let end_offset = loc.loc_end.pos_cnum in
-    let constr_pos =
-      { loc.loc_end
-        with pos_cnum = end_offset - String.length cd.Types.cstr_name }
-    in
-    Lexing.compare_pos pos constr_pos >= 0
-
-let inspect_pattern ~pos ~lid p =
-  let open Typedtree in
-  let open Context in
-  log ~title:"inspect_context" "%a" Logger.fmt
-    (fun fmt -> Format.fprintf fmt "current pattern is: %a"
-                  (Printtyped.pattern 0) p);
-  match p.pat_desc with
-  | Tpat_any when Longident.last lid = "_" -> None
-  | Tpat_var (_, str_loc) when (Longident.last lid) = str_loc.txt ->
-    None
-  | Tpat_alias (_, _, str_loc)
-    when (Longident.last lid) = str_loc.txt ->
-    (* Assumption: if [Browse.enclosing] stopped on this node and not on the
-       subpattern, then it must mean that the cursor is on the alias. *)
-    None
-  | Tpat_construct (lid_loc, cd, _)
-    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
-         && (Longident.last lid) = (Longident.last lid_loc.txt) ->
-    (* Assumption: if [Browse.enclosing] stopped on this node and not on the
-       subpattern, then it must mean that the cursor is on the constructor
-       itself.  *)
-      Some (Constructor cd)
-  | _ ->
-    Some Patt
-
-let inspect_expression ~pos ~lid e : Context.t =
-  match e.Typedtree.exp_desc with
-  | Texp_construct (lid_loc, cd, _)
-    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
-         && (Longident.last lid) = (Longident.last lid_loc.txt) ->
-    Constructor cd
-  | _ ->
-    Expr
-
-let inspect_context browse lid pos : Context.t option =
-  match Mbrowse.enclosing pos browse with
-  | [] ->
-    log ~title:"inspect_context" "no enclosing around: %a" Lexing.print_position pos;
-    Some Unknown
-  | enclosings ->
-    let open Browse_raw in
-    let node = Browse_tree.of_browse enclosings in
-    log ~title:"inspect_context" "current node is: %s"
-      (string_of_node node.Browse_tree.t_node);
-    match node.Browse_tree.t_node with
-    | Pattern p -> inspect_pattern ~pos ~lid p
-    | Value_description _
-    | Type_declaration _
-    | Extension_constructor _
-    | Module_binding_name _
-    | Module_declaration_name _ ->
-      None
-    | Module_expr _
-    | Open_description _ -> Some Module_path
-    | Module_type _ -> Some Module_type
-    | Core_type _ -> Some Type
-    | Record_field (_, lbl, _)
-      when (Longident.last lid) = lbl.lbl_name ->
-      (* if we stopped here, then we're on the label itself, and whether or not
-         punning is happening is not important *)
-      Some (Label lbl)
-    | Expression e -> Some (inspect_expression ~pos ~lid e)
-    | _ ->
-      Some Unknown
-
 let from_string ~config ~env ~local_defs ~pos switch path =
   let browse = Mbrowse.of_typedtree local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [Browse_tree.of_browse browse]) in
   let lid = Longident.parse path in
-  match inspect_context [browse] lid pos with
+  match Context.inspect_browse_tree [browse] lid pos with
   | None ->
     log ~title:"from_string" "already at origin, doing nothing" ;
     `At_origin
@@ -857,7 +873,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     | `Completion_entry entry -> from_completion_entry ~config ~pos ~lazy_trie entry
     | `User_input path ->
       let lid = Longident.parse path in
-      begin match inspect_context [browse] lid pos with
+      begin match Context.inspect_browse_tree [browse] lid pos with
       | None ->
         `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->
