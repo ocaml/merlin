@@ -62,6 +62,7 @@ export const startAndInitialize = async (opts?: cp.SpawnOptions) => {
 export const exit = async languageServer => {
   let ret = new Promise((resolve, reject) => {
     languageServer.onClose(() => {
+      languageServer.dispose();
       resolve();
     });
   });
