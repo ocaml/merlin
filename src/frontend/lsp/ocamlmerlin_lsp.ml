@@ -18,7 +18,7 @@ let initializeInfo: Lsp.Protocol.Initialize.result = {
       resolveProvider = false;
       triggerCharacters = ["."];
     };
-    referencesProvider = false;
+    referencesProvider = true;
     documentHighlightProvider = false;
     documentSymbolProvider = true;
     workspaceSymbolProvider = false;
@@ -238,6 +238,20 @@ let on_request :
       } in
       return (store, Some resp)
     end
+
+  | Lsp.Rpc.Request.FindReferences {textDocument = {uri;}; position; context = _} ->
+    Document_store.get store uri >>= fun doc ->
+    let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
+    let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
+    let lsp_locs = List.map (fun loc ->
+      let range = {
+        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+        end_ = position_of_lexical_position loc.loc_end;
+      } in
+      (* using original uri because merlin is looking only in local file *)
+      {Lsp.Protocol.Location. uri; range;}
+     ) locs in
+    return (store, lsp_locs)
 
   | Lsp.Rpc.Request.DocumentSymbol {textDocument = {uri;}} ->
     Document_store.get store uri >>= fun doc ->
