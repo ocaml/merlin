@@ -2,7 +2,16 @@ language: c
 sudo: true
 dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
-script: bash -ex .travis-opam.sh
+script: |
+  bash -ex .travis-opam.sh
+  # Run LSP test suite
+  if [ "$TESTS_LSP" = "true" ]; then
+    opam config exec -- make build ocamlmerlin-lsp
+    sudo apt-get install -y nodejs
+    cd tests-lsp/
+    npm install
+    npm run test
+  fi
 env:
   global:
   - PINS="mdx.dev:https://github.com/realworldocaml/mdx.git"
@@ -20,5 +29,9 @@ env:
     PACKAGE=merlin
   - OCAML_VERSION=4.07
     PACKAGE=merlin
+  - OCAML_VERSION=4.07
+    PACKAGE=merlin-lsp
+    TESTS_LSP=true
+    TESTS=false
 os:
   - linux
