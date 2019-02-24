@@ -5,7 +5,7 @@
 module Server_notification : sig
   open Protocol
 
-  type t = 
+  type t =
     | PublishDiagnostics of PublishDiagnostics.publishDiagnosticsParams
 end
 
@@ -32,6 +32,7 @@ module Request : sig
     | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
+    | FindReferences : FindReferences.params -> FindReferences.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 end
 
