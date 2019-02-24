@@ -239,7 +239,7 @@ let on_request :
       return (store, Some resp)
     end
 
-  | Lsp.Rpc.Request.FindReferences {textDocument = {uri;}; position; context = _} ->
+  | Lsp.Rpc.Request.References {textDocument = {uri;}; position; context = _} ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in

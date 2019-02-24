@@ -154,7 +154,7 @@ let send_response rpc (response : Response.t) =
   send rpc json
 
 module Server_notification = struct
-  open Protocol
+  open Protocol 
 
   type t =
     | PublishDiagnostics of PublishDiagnostics.params
@@ -196,7 +196,7 @@ module Request = struct
     | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
-    | FindReferences : FindReferences.params -> FindReferences.result t
+    | References : References.params -> References.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 
   let request_result_to_response (type a) id (req : a t) (result : a) =
@@ -223,8 +223,8 @@ module Request = struct
     | DebugTextDocumentGet _, result ->
       let json = DebugTextDocumentGet.result_to_yojson result in
       Some (Response.make id json)
-    | FindReferences _, result ->
-      let json = FindReferences.result_to_yojson result in
+    | References _, result ->
+      let json = References.result_to_yojson result in
       Some (Response.make id json)
     | UnknownRequest _, _resp -> None
 end
@@ -263,8 +263,8 @@ module Message = struct
         TypeDefinition.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentTypeDefinition params))
       | "textDocument/references" ->
-        FindReferences.params_of_yojson packet.params >>= fun params ->
-        Ok (Request (id, FindReferences params))
+        References.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, References params))
       | "debug/echo" ->
         DebugEcho.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, DebugEcho params))

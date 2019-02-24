@@ -612,8 +612,8 @@ module TypeDefinition = struct
   and result = Location.t list  (* wire: either a single one or an array *)
 end
 
-(* Find References request, method="textDocument/references" *)
-module FindReferences = struct
+(* References request, method="textDocument/references" *)
+module References = struct
   type params = {
     textDocument: TextDocumentIdentifier.t;  (* the text document *)
     position: position;  (* the position inside the text document *)
