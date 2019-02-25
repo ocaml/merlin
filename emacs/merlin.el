@@ -1674,7 +1674,8 @@ Empty string defaults to jumping to all these."
          (with-temp-buffer
            (if (eq (call-process-shell-command
                     "opam config var bin" nil (current-buffer) nil) 0)
-               (progn
+               (let ((bin-path
+                      (replace-regexp-in-string "\n$" "" (buffer-string))))
                  ;; the opam bin dir needs to be on the path, so if merlin
                  ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
                  ;; correct version is used rather than the version that
@@ -1682,11 +1683,8 @@ Empty string defaults to jumping to all these."
 
                  ;; this was originally done via `opam exec' but that doesnt
                  ;; work for opam 1, and added a performance hit
-                 (setq merlin-opam-bin-path
-                       (list (concat "PATH=" (string-trim (buffer-string)))))
-                 (concat
-                  (replace-regexp-in-string "\n$" "" (buffer-string))
-                  "/ocamlmerlin"))
+                 (setq merlin-opam-bin-path (list (concat "PATH=" bin-path)))
+                 (concat bin-path "/ocamlmerlin"))
 
              ;; best effort if opam is not available, lookup for the binary in
              ;; the existing env
