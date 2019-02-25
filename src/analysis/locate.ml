@@ -820,7 +820,9 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   match
     match namespaces with
     | Some nss ->
-      if not is_label || List.mem `Labels ~set:nss then (
+      if not is_label
+      then `Ok (nss :> Namespace.inferred list)
+      else if List.mem `Labels ~set:nss then (
         log ~title:"from_string" "restricting namespaces to labels";
         `Ok [ `Labels ]
       ) else (
