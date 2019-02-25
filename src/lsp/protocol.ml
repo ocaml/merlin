@@ -612,6 +612,21 @@ module TypeDefinition = struct
   and result = Location.t list  (* wire: either a single one or an array *)
 end
 
+(* References request, method="textDocument/references" *)
+module References = struct
+  type params = {
+    textDocument: TextDocumentIdentifier.t;  (* the text document *)
+    position: position;  (* the position inside the text document *)
+    context: referenceContext;
+  } [@@deriving yojson { strict = false }]
+
+  and referenceContext = {
+    includeDeclaration: bool;
+  }
+
+  and result = Location.t list (* wire: either a single one or an array *)
+end
+
 (* Represents information about programming constructs like variables etc. *)
 module SymbolInformation = struct
 
