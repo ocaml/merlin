@@ -8,20 +8,52 @@ let ver =
 ;;
 
 Printf.ksprintf J.send {|
-(rule
-  (progn
-    (copy# %s/parser_explain.ml.staged parser_explain.ml)
-    (copy# %s/parser_printer.ml.staged parser_printer.ml)
-    (copy# %s/parser_recover.ml.staged parser_recover.ml)
-    (copy  %s/lexer_raw.ml.staged      lexer_raw.ml)
-    (copy  %s/lexer_raw.mli            lexer_raw.mli)
-    (copy  %s/parser_raw.ml.staged     parser_raw.ml)
-    (copy  %s/parser_raw.mli.staged    parser_raw.mli)))
+; We support too many versions of OCaml to handle the following properly:
+;
+;     Error (warning 3): deprecated: Stdlib.String.capitalize
+;
+(env
+ (dev     (flags (:standard -w -3)))
+ (release (flags (:standard -w -3))))
 
-(ocamllex (modules lexer_ident))
+(copy_files# %s/*.ml{,l,yp})
+
+(ocamllex lexer_ident lexer_raw)
+
+(rule
+ (targets parser_raw.mly)
+ (deps    parser_raw.mlyp)
+ (action
+   (with-stdout-to %%{targets}
+     (run gcc "-E" "-x" c "-P" %%{deps}))))
+
+(menhir
+ (modules parser_raw)
+ (flags :standard --inspection --table --cmly))
+
+(rule
+  (targets parser_recover.ml)
+  (deps    parser_raw.cmly)
+  (action
+    (with-stdout-to %%{targets}
+       (run %%{exe:./recover/gen_recover.exe} %%{deps}))))
+
+(rule
+  (targets parser_explain.ml)
+  (deps    parser_raw.cmly)
+  (action
+    (with-stdout-to %%{targets}
+       (run %%{exe:./explain/gen_explain.exe} %%{deps}))))
+
+(rule
+  (targets parser_printer.ml)
+  (deps    parser_raw.cmly)
+  (action
+    (with-stdout-to %%{targets}
+       (run %%{exe:./printer/gen_printer.exe} %%{deps}))))
 
 (library
   (name preprocess)
   (wrapped false)
-  (libraries parsing))
-|} ver ver ver ver ver ver ver
+  (libraries parsing menhirLib))
+|} ver

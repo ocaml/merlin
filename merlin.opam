@@ -18,6 +18,7 @@ build-test: [
 depends: [
   "dune"  {build & >= "1.1.0"}
   "ocamlfind" {>= "1.5.2"}
+  "menhir" {>= "20181006"}
   "yojson"
   "mdx" {test & >= "1.2.0"}
 ]
