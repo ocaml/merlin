@@ -13,6 +13,7 @@ next version
     + fix environment when a file disappears
     + fix -short-paths handling of classes and class types (by Leo White)
     + don't select deprecated paths in -short-paths (by Leo White)
+    + return type info in outline query (by Andrey Popp)
 
   - editors modes
     + Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan
