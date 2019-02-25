@@ -1685,7 +1685,9 @@ Empty string defaults to jumping to all these."
                             "/ocamlmerlin"))
 
                        ;; best effort if opam is not available, lookup for the binary in the existing env
-                       "ocamlmerlin")))))
+                       (progn
+                         (message "merlin-command: opam config failed (%S)" (buffer-string))
+                         "ocamlmerlin"))))))
 
       ;; cache command in merlin-buffer configuration to avoid having to shell
       ;; out to `opam` each time.
