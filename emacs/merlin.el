@@ -1665,29 +1665,35 @@ Empty string defaults to jumping to all these."
 
   (let ((command (merlin-lookup 'command merlin-buffer-configuration)))
     (unless command
-      (setq command
-            (cond ((functionp merlin-command) (funcall merlin-command))
-                  ((stringp merlin-command) merlin-command)
-                  ((equal merlin-command 'opam)
-                   (with-temp-buffer
-                     (if (eq (call-process-shell-command "opam config var bin" nil (current-buffer) nil) 0)
-                         (progn
-                           ;; the opam bin dir needs to be on the path, so if merlin
-                           ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
-                           ;; correct version is used rather than the version that
-                           ;; happens to be on the path
+      (setq
+       command
+       (cond
+        ((functionp merlin-command) (funcall merlin-command))
+        ((stringp merlin-command) merlin-command)
+        ((equal merlin-command 'opam)
+         (with-temp-buffer
+           (if (eq (call-process-shell-command
+                    "opam config var bin" nil (current-buffer) nil) 0)
+               (progn
+                 ;; the opam bin dir needs to be on the path, so if merlin
+                 ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
+                 ;; correct version is used rather than the version that
+                 ;; happens to be on the path
 
-                           ;; this was originally done via `opam exec' but that doesnt
-                           ;; work for opam 1, and added a performance hit
-                           (setq merlin-opam-bin-path (list (concat "PATH=" (string-trim (buffer-string)))))
-                           (concat
-                            (replace-regexp-in-string "\n$" "" (buffer-string))
-                            "/ocamlmerlin"))
+                 ;; this was originally done via `opam exec' but that doesnt
+                 ;; work for opam 1, and added a performance hit
+                 (setq merlin-opam-bin-path
+                       (list (concat "PATH=" (string-trim (buffer-string)))))
+                 (concat
+                  (replace-regexp-in-string "\n$" "" (buffer-string))
+                  "/ocamlmerlin"))
 
-                       ;; best effort if opam is not available, lookup for the binary in the existing env
-                       (progn
-                         (message "merlin-command: opam config failed (%S)" (buffer-string))
-                         "ocamlmerlin"))))))
+             ;; best effort if opam is not available, lookup for the binary in
+             ;; the existing env
+             (progn
+               (message "merlin-command: opam config failed (%S)"
+                        (buffer-string))
+               "ocamlmerlin"))))))
 
       ;; cache command in merlin-buffer configuration to avoid having to shell
       ;; out to `opam` each time.
