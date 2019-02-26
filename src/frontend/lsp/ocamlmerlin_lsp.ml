@@ -237,7 +237,7 @@ let on_request :
       in
       let resp = {
         Lsp.Protocol.Hover.
-        contents = [MarkedString contents];
+        contents = [MarkedCode { language = "OCaml"; value = contents } ];
         range = None;
       } in
       return (store, Some resp)
