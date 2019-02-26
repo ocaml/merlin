@@ -19,9 +19,15 @@ describe("textDocument/completion", () => {
   }
 
   async function queryCompletion(position) {
-    return await languageServer.sendRequest("textDocument/completion", {
+    let result = await languageServer.sendRequest("textDocument/completion", {
       textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
       position
+    });
+    return result.items.map(item => {
+      return {
+        label: item.label,
+        sortText: item.sortText
+      };
     });
   }
 
@@ -39,10 +45,11 @@ describe("textDocument/completion", () => {
       Strin.func
     `);
 
-    let result = await queryCompletion(Types.Position.create(0, 5));
-    let items = result.items.map(item => item.label);
-    items.sort();
-    expect(items).toMatchObject(["String", "StringLabels"]);
+    let items = await queryCompletion(Types.Position.create(0, 5));
+    expect(items).toMatchObject([
+      { label: "String", sortText: "0000" },
+      { label: "StringLabels", sortText: "0001" }
+    ]);
   });
 
   it("can start completion at arbitrary position", async () => {
@@ -50,10 +57,11 @@ describe("textDocument/completion", () => {
       StringLabels
     `);
 
-    let result = await queryCompletion(Types.Position.create(0, 6));
-    let items = result.items.map(item => item.label);
-    items.sort();
-    expect(items).toMatchObject(["String", "StringLabels"]);
+    let items = await queryCompletion(Types.Position.create(0, 6));
+    expect(items).toMatchObject([
+      { label: "String", sortText: "0000" },
+      { label: "StringLabels", sortText: "0001" }
+    ]);
   });
 
   it("completes identifier at top level", async () => {
@@ -65,10 +73,10 @@ describe("textDocument/completion", () => {
         some
     `);
 
-    let result: any = await queryCompletion(Types.Position.create(4, 6));
-    let items = result.items.map(item => item.label);
-    items.sort();
-    expect(items).toMatchObject(["somenum", "somestring"]);
+    let items = await queryCompletion(Types.Position.create(4, 6));
+    expect(items).toMatchObject([
+      { label: "somestring", sortText: "0000" },
+      { label: "somenum", sortText: "0001" }
+    ]);
   });
-
 });

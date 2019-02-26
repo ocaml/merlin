@@ -445,7 +445,7 @@ let on_request :
     in
     let completions = Query_commands.dispatch (Document.pipeline doc) command in
     let items =
-      let f (entry : Query_protocol.Compl.entry) =
+      let f i (entry : Query_protocol.Compl.entry) =
         {
           Lsp.Protocol.Completion.
           label = entry.name;
@@ -454,13 +454,15 @@ let on_request :
           inlineDetail = None;
           itemType = None;
           documentation = None;
-          sortText = None;
+          (* Without this field the client is not forced to respect the order
+             provided by merlin. *)
+          sortText = Some (Printf.sprintf "%04d" i);
           filterText = None;
           insertText = None;
           insertTextFormat = None;
         }
       in
-      List.map f completions.Query_protocol.Compl.entries
+      List.mapi f completions.Query_protocol.Compl.entries
     in
     let resp = {Lsp.Protocol.Completion. isIncomplete = false; items;} in
     return (store, resp)
