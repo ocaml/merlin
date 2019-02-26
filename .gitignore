@@ -4,6 +4,7 @@ jbuild-workspace
 *.install
 *.tar.gz
 *.pyc
+*.cmly
 
 ocamlmerlin
 ocamlmerlin-server
