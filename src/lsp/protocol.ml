@@ -21,6 +21,13 @@ type range = {
   end_: position [@key "end"];
 } [@@deriving yojson { strict = false }]
 
+module Command = struct
+  type t = {
+    title : string;
+    command : string;
+  } [@@deriving yojson]
+end
+
 module MarkedString = struct
 
   type code = {
@@ -566,7 +573,7 @@ module Initialize = struct
   (* } *)
 
   and codeLensOptions = {
-    codelens_resolveProvider: bool;  (* wire "resolveProvider" *)
+    codelens_resolveProvider: bool [@key "resolveProvider"];  (* wire "resolveProvider" *)
   }
 
   and documentOnTypeFormattingOptions = {
@@ -733,6 +740,19 @@ module DocumentSymbol = struct
 
   and documentSymbolParams = {
     textDocument: TextDocumentIdentifier.t;
+  }
+end
+
+module CodeLens = struct
+  type params = {
+    textDocument: TextDocumentIdentifier.t;
+  } [@@deriving yojson]
+
+  and result = item list
+
+  and item = {
+    range: range;
+    command: Command.t option;
   }
 end
 

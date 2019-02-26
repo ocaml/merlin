@@ -23,7 +23,9 @@ let initializeInfo: Lsp.Protocol.Initialize.result = {
     documentSymbolProvider = true;
     workspaceSymbolProvider = false;
     codeActionProvider = false;
-    codeLensProvider = None;
+    codeLensProvider = Some {
+      codelens_resolveProvider = false;
+    };
     documentFormattingProvider = false;
     documentRangeFormattingProvider = false;
     documentOnTypeFormattingProvider = None;
@@ -254,6 +256,39 @@ let on_request :
       {Lsp.Protocol.Location. uri; range;}
      ) locs in
     return (store, lsp_locs)
+
+  | Lsp.Rpc.Request.TextDocumentCodeLens {textDocument = {uri;}} ->
+    Document_store.get store uri >>= fun doc ->
+    let command = Query_protocol.Outline in
+    let outline = Query_commands.dispatch (Document.pipeline doc) command in
+    let symbol_infos =
+      let rec symbol_info_of_outline_item item =
+        let children =
+          Std.List.concat_map
+            item.Query_protocol.children
+            ~f:symbol_info_of_outline_item
+        in
+        match item.Query_protocol.outline_type with
+        | None -> children
+        | Some typ ->
+          let loc = item.Query_protocol.location in
+          let info = {
+            Lsp.Protocol.CodeLens.
+            range = {
+              start_ = position_of_lexical_position loc.loc_start;
+              end_ = position_of_lexical_position loc.loc_end;
+            };
+            command = Some {
+              Lsp.Protocol.Command.
+              title = typ;
+              command = "";
+            };
+          } in
+          info::children
+      in
+      Std.List.concat_map ~f:symbol_info_of_outline_item outline
+    in
+    return (store, symbol_infos)
 
   | Lsp.Rpc.Request.DocumentSymbol {textDocument = {uri;}} ->
     Document_store.get store uri >>= fun doc ->
