@@ -127,7 +127,9 @@ end = struct
 
   let make () = Hashtbl.create 50
   let put store doc = Hashtbl.replace store (Document.uri doc) doc
-  let get_opt store uri = Hashtbl.find_opt store uri
+  let get_opt store uri =
+    try Some (Hashtbl.find store uri)
+    with Not_found -> None
   let get store uri =
     match get_opt store uri with
     | Some doc -> Ok doc
@@ -356,7 +358,9 @@ let on_request :
       match
         Locate.from_string
           ~config:(Mpipeline.final_config pipeline)
-          ~env ~local_defs ~pos `MLI (Path.name path)
+          ~env ~local_defs ~pos ~namespaces:[`Type] `MLI
+          (* FIXME: instead of converting to a string, pass it directly. *)
+          (Path.name path)
       with
       | exception Env.Error _ -> None
       | `Found (path, lex_position) ->
@@ -373,6 +377,7 @@ let on_request :
       | `Builtin _
       | `File_not_found _
       | `Invalid_context
+      | `Missing_labels_namespace
       | `Not_found _
       | `Not_in_env _ -> None
     )
