@@ -226,18 +226,28 @@ let on_request :
     begin match Query_commands.dispatch (Document.pipeline doc) command with
     | [] -> return (store, None)
     | (_loc, `Index _, _is_tail) :: _rest -> return (store, None)
-    | (_loc, `String contents, _is_tail) :: _rest ->
+    | (_loc, `String value, _is_tail) :: _rest ->
       let contents =
-        if
+        let supports_markdown =
           List.mem
             Lsp.Protocol.MarkupKind.Markdown
             client_capabilities.textDocument.hover.contentFormat
-        then "```\n" ^ contents ^ "\n```"
-        else contents
+        in
+        if supports_markdown
+        then {
+          Lsp.Protocol.MarkupContent.
+          value = "```ocaml\n" ^ value ^ "\n```";
+          kind = Lsp.Protocol.MarkupKind.Markdown;
+        }
+        else {
+          Lsp.Protocol.MarkupContent.
+          value;
+          kind = Lsp.Protocol.MarkupKind.Plaintext;
+        }
       in
       let resp = {
         Lsp.Protocol.Hover.
-        contents = [MarkedCode { language = "OCaml"; value = contents } ];
+        contents;
         range = None;
       } in
       return (store, Some resp)
