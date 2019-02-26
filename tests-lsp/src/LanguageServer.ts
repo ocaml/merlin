@@ -40,10 +40,12 @@ export const start = (opts?: cp.SpawnOptions) => {
   return connection as LanguageServer;
 };
 
-export const startAndInitialize = async (opts?: cp.SpawnOptions) => {
-  let languageServer = start(opts);
+export const startAndInitialize = async (
+  capabilities?: Partial<Protocol.ClientCapabilities>
+) => {
+  let languageServer = start();
 
-  let capabilities: Protocol.ClientCapabilities = {};
+  capabilities = capabilities || {};
 
   let initializeParameters: Protocol.InitializeParams = {
     processId: process.pid,
