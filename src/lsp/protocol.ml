@@ -239,6 +239,13 @@ module Completion = struct
     | Color (* 16 *)
     | File (* 17 *)
     | Reference (* 18 *)
+    | Folder (* 19 *)
+    | EnumMember (* 20 *)
+    | Constant (* 21 *)
+    | Struct (* 22 *)
+    | Event (* 23 *)
+    | Operator (* 24 *)
+    | TypeParameter (* 25 *)
 
   (** Once we get better PPX support we can use [@@deriving enum].
     Keep in sync with completionItemKind_of_int_opt. *)
@@ -261,6 +268,13 @@ module Completion = struct
     | Color -> 16
     | File -> 17
     | Reference -> 18
+    | Folder -> 19
+    | EnumMember -> 20
+    | Constant -> 21
+    | Struct -> 22
+    | Event -> 23
+    | Operator -> 24
+    | TypeParameter -> 25
 
   let completionItemKind_to_yojson v =
     `Int (int_of_completionItemKind v)
@@ -286,6 +300,13 @@ module Completion = struct
     | 16 -> Some Color
     | 17 -> Some File
     | 18 -> Some Reference
+    | 19 -> Some Folder
+    | 20 -> Some EnumMember
+    | 21 -> Some Constant
+    | 22 -> Some Struct
+    | 23 -> Some Event
+    | 24 -> Some Operator
+    | 25 -> Some TypeParameter
     | _ -> None
 
   let completionItemKind_of_yojson = function
