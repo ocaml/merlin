@@ -215,36 +215,39 @@ let on_request :
     return (store, params)
 
   | Lsp.Rpc.Request.TextDocumentHover {textDocument = {uri;}; position;} ->
-    Document_store.get store uri >>= fun doc ->
-    let command =
-      Query_protocol.Type_enclosing (
-        None,
-        logical_of_position position,
-        None
-      )
+    let query_type doc pos =
+      let command = Query_protocol.Type_enclosing (None, pos, None) in
+      match Query_commands.dispatch (Document.pipeline doc) command with
+      | []
+      | (_, `Index _, _) :: _ -> None
+      | (_, `String value, _) :: _ -> Some value
     in
-    begin match Query_commands.dispatch (Document.pipeline doc) command with
-    | [] -> return (store, None)
-    | (_loc, `Index _, _is_tail) :: _rest -> return (store, None)
-    | (_loc, `String value, _is_tail) :: _rest ->
-      let contents =
-        let supports_markdown =
-          List.mem
-            Lsp.Protocol.MarkupKind.Markdown
-            client_capabilities.textDocument.hover.contentFormat
-        in
-        if supports_markdown
-        then {
-          Lsp.Protocol.MarkupContent.
-          value = "```ocaml\n" ^ value ^ "\n```";
-          kind = Lsp.Protocol.MarkupKind.Markdown;
-        }
-        else {
-          Lsp.Protocol.MarkupContent.
-          value;
-          kind = Lsp.Protocol.MarkupKind.Plaintext;
-        }
+
+    let format_contents ~as_markdown typ =
+      if as_markdown
+      then {
+        Lsp.Protocol.MarkupContent.
+        value = Printf.sprintf "```ocaml\n%s\n```" typ;
+        kind = Lsp.Protocol.MarkupKind.Markdown;
+      }
+      else {
+        Lsp.Protocol.MarkupContent.
+        value = typ;
+        kind = Lsp.Protocol.MarkupKind.Plaintext;
+      }
+    in
+
+    Document_store.get store uri >>= fun doc ->
+    let pos = logical_of_position position in
+    begin match query_type doc pos with
+    | None -> return (store, None)
+    | Some typ ->
+      let as_markdown =
+        List.mem
+          Lsp.Protocol.MarkupKind.Markdown
+          client_capabilities.textDocument.hover.contentFormat
       in
+      let contents = format_contents ~as_markdown typ in
       let resp = {
         Lsp.Protocol.Hover.
         contents;
