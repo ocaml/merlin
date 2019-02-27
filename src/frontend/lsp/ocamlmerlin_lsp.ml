@@ -446,13 +446,23 @@ let on_request :
     let completions = Query_commands.dispatch (Document.pipeline doc) command in
     let items =
       let f i (entry : Query_protocol.Compl.entry) =
+        let kind: Lsp.Protocol.Completion.completionItemKind option =
+          match entry.kind with
+          | `Value -> Some Value
+          | `Constructor -> Some Constructor
+          | `Variant -> None
+          | `Label -> Some Property
+          | `Module |`Modtype -> Some Module
+          | `Type -> Some TypeParameter
+          | `MethodCall -> Some Method
+        in
         {
           Lsp.Protocol.Completion.
           label = entry.name;
-          kind = None;
+          kind;
           detail = Some entry.info;
           inlineDetail = None;
-          itemType = None;
+          itemType = Some entry.desc;
           documentation = None;
           (* Without this field the client is not forced to respect the order
              provided by merlin. *)
