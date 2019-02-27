@@ -73,6 +73,16 @@ let verbosity pipeline =
   Mconfig.((Mpipeline.final_config pipeline).query.verbosity)
 
 let dump pipeline = function
+  | [`String "ppx-parsetree"] ->
+    let ppf, to_string = Format.to_string () in
+    begin match Mpipeline.ppx_parsetree pipeline with
+      | `Interface s -> Pprintast.signature ppf s
+      | `Implementation s -> Pprintast.structure ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
+    `String (to_string ())
+
   | [`String "parsetree"] ->
     let ppf, to_string = Format.to_string () in
     begin match Mpipeline.reader_parsetree pipeline with
@@ -86,6 +96,16 @@ let dump pipeline = function
   | [`String "printast"] ->
     let ppf, to_string = Format.to_string () in
     begin match Mpipeline.reader_parsetree pipeline with
+      | `Interface s -> Printast.interface ppf s
+      | `Implementation s -> Printast.implementation ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
+    `String (to_string ())
+
+  | [`String "ppx-printast"] ->
+    let ppf, to_string = Format.to_string () in
+    begin match Mpipeline.ppx_parsetree pipeline with
       | `Interface s -> Printast.interface ppf s
       | `Implementation s -> Printast.implementation ppf s
     end;
