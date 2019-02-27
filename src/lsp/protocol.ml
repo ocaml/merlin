@@ -670,14 +670,14 @@ module SymbolInformation = struct
     | Number  (* 16 *)
     | Boolean  (* 17 *)
     | Array  (* 18 *)
-    |	Object (* 19 *)
-    |	Key (* 20 *)
-    |	Null (* 21 *)
-    |	EnumMember (* 22 *)
-    |	Struct (* 23 *)
-    |	Event (* 24 *)
-    |	Operator (* 25 *)
-    |	TypeParameter (* 26 *)
+    | Object (* 19 *)
+    | Key (* 20 *)
+    | Null (* 21 *)
+    | EnumMember (* 22 *)
+    | Struct (* 23 *)
+    | Event (* 24 *)
+    | Operator (* 25 *)
+    | TypeParameter (* 26 *)
 
   let symbolKind_to_yojson = function
     | File -> `Int 1
@@ -698,14 +698,14 @@ module SymbolInformation = struct
     | Number -> `Int 16
     | Boolean -> `Int 17
     | Array -> `Int 18
-    |	Object -> `Int 19
-    |	Key -> `Int 20
-    |	Null -> `Int 21
-    |	EnumMember -> `Int 22
-    |	Struct -> `Int 23
-    |	Event -> `Int 24
-    |	Operator -> `Int 25
-    |	TypeParameter -> `Int 16
+    | Object -> `Int 19
+    | Key -> `Int 20
+    | Null -> `Int 21
+    | EnumMember -> `Int 22
+    | Struct -> `Int 23
+    | Event -> `Int 24
+    | Operator -> `Int 25
+    | TypeParameter -> `Int 26
 
   let symbolKind_of_yojson = function
     | `Int 1 -> Ok File
@@ -726,14 +726,14 @@ module SymbolInformation = struct
     | `Int 16 -> Ok Number
     | `Int 17 -> Ok Boolean
     | `Int 18 -> Ok Array
-    |	`Int 19 -> Ok Object
-    |	`Int 20 -> Ok Key
-    |	`Int 21 -> Ok Null
-    |	`Int 22 -> Ok EnumMember
-    |	`Int 23 -> Ok Struct
-    |	`Int 24 -> Ok Event
-    |	`Int 25 -> Ok Operator
-    |	`Int 26 -> Ok TypeParameter
+    | `Int 19 -> Ok Object
+    | `Int 20 -> Ok Key
+    | `Int 21 -> Ok Null
+    | `Int 22 -> Ok EnumMember
+    | `Int 23 -> Ok Struct
+    | `Int 24 -> Ok Event
+    | `Int 25 -> Ok Operator
+    | `Int 26 -> Ok TypeParameter
     | _ -> Error "invalid SymbolKind"
 
   type t = {
