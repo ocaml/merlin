@@ -150,7 +150,7 @@ end
   special attention. Usually a document highlight is visualized by changing
   the background color of its range.
 *)
-module Highlight = struct
+module DocumentHighlight = struct
 
   (** The highlight kind, default is DocumentHighlightKind.Text. *)
   type kind =
@@ -687,14 +687,10 @@ module References = struct
 end
 
 (* DocumentHighlight request, method="textDocument/documentHighlight" *)
-module DocumentHighlight = struct
+module TextDocumentHighlight = struct
   type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
 
-  and referenceContext = {
-    includeDeclaration: bool;
-  }
-
-  and result = Highlight.t list (* wire: either a single one or an array *)
+  and result = DocumentHighlight.t list (* wire: either a single one or an array *)
 end
 
 (* Represents information about programming constructs like variables etc. *)

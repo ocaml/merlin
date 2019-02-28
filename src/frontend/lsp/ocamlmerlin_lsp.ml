@@ -243,7 +243,7 @@ let on_request :
       return (store, Some resp)
     end
 
-  | Lsp.Rpc.Request.References {textDocument = {uri;}; position; context = _} ->
+  | Lsp.Rpc.Request.TextDocumentReferences {textDocument = {uri;}; position; context = _} ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
@@ -290,7 +290,7 @@ let on_request :
     in
     return (store, symbol_infos)
 
-  | Lsp.Rpc.Request.DocumentHighlight {textDocument = {uri;}; position; } ->
+  | Lsp.Rpc.Request.TextDocumentHighlight {textDocument = {uri;}; position; } ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
@@ -301,7 +301,7 @@ let on_request :
       } in
       (* using the default kind as we are lacking info
          to make a difference between assignment and usage. *)
-      {Lsp.Protocol.Highlight. kind = Some Text; range;}
+      {Lsp.Protocol.DocumentHighlight. kind = Some Text; range;}
      ) locs in
     return (store, lsp_locs)
 
