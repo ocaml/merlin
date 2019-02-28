@@ -145,6 +145,37 @@ module TextDocumentPositionParams = struct
   } [@@deriving yojson { strict = false }]
 end
 
+(**
+  A document highlight is a range inside a text document which deserves
+  special attention. Usually a document highlight is visualized by changing
+  the background color of its range.
+*)
+module DocumentHighlight = struct
+
+  (** The highlight kind, default is DocumentHighlightKind.Text. *)
+  type kind =
+    | Text (* 1: A textual occurrence. *)
+    | Read (* 2: Read-access of a symbol, like reading a variable. *)
+    | Write (* 3: Write-access of a symbol, like writing a variable. *)
+
+  let kind_to_yojson = function
+    | Text -> `Int 1
+    | Read -> `Int 2
+    | Write -> `Int 3
+
+  let kind_of_yojson = function
+    | `Int 1 -> Ok Text
+    | `Int 2 -> Ok Read
+    | `Int 3 -> Ok Write
+    | _ -> Error "expected int between 1 and 3"
+
+  type t = {
+    range: range;
+    kind: kind option;
+  } [@@deriving yojson { strict = false }]
+
+end
+
 (* PublishDiagnostics notification, method="textDocument/PublishDiagnostics" *)
 module PublishDiagnostics = struct
   type diagnosticCode =
@@ -653,6 +684,13 @@ module References = struct
   }
 
   and result = Location.t list (* wire: either a single one or an array *)
+end
+
+(* DocumentHighlight request, method="textDocument/documentHighlight" *)
+module TextDocumentHighlight = struct
+  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+
+  and result = DocumentHighlight.t list (* wire: either a single one or an array *)
 end
 
 (* Represents information about programming constructs like variables etc. *)

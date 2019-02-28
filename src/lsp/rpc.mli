@@ -33,7 +33,8 @@ module Request : sig
     | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
-    | References : References.params -> References.result t
+    | TextDocumentReferences : References.params -> References.result t
+    | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 end
 

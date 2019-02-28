@@ -197,7 +197,8 @@ module Request = struct
     | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
-    | References : References.params -> References.result t
+    | TextDocumentReferences : References.params -> References.result t
+    | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 
   let request_result_to_response (type a) id (req : a t) (result : a) =
@@ -227,8 +228,11 @@ module Request = struct
     | DebugTextDocumentGet _, result ->
       let json = DebugTextDocumentGet.result_to_yojson result in
       Some (Response.make id json)
-    | References _, result ->
+    | TextDocumentReferences _, result ->
       let json = References.result_to_yojson result in
+      Some (Response.make id json)
+    | TextDocumentHighlight _, result ->
+      let json = TextDocumentHighlight.result_to_yojson result in
       Some (Response.make id json)
     | UnknownRequest _, _resp -> None
 end
@@ -268,10 +272,13 @@ module Message = struct
         Ok (Request (id, TextDocumentTypeDefinition params))
       | "textDocument/references" ->
         References.params_of_yojson packet.params >>= fun params ->
-        Ok (Request (id, References params))
+        Ok (Request (id, TextDocumentReferences params))
       | "textDocument/codeLens" ->
         CodeLens.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentCodeLens params))
+      | "textDocument/documentHighlight" ->
+        TextDocumentHighlight.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, TextDocumentHighlight params))
       | "debug/echo" ->
         DebugEcho.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, DebugEcho params))
