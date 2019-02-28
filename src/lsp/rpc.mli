@@ -29,6 +29,7 @@ module Request : sig
     | TextDocumentDefinition : Definition.params -> Definition.result t
     | TextDocumentTypeDefinition : TypeDefinition.params -> TypeDefinition.result t
     | TextDocumentCompletion : Completion.params -> Completion.result t
+    | TextDocumentCodeLens : CodeLens.params -> CodeLens.result t
     | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
