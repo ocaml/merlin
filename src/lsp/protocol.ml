@@ -28,34 +28,6 @@ module Command = struct
   } [@@deriving yojson]
 end
 
-module MarkedString = struct
-
-  type code = {
-    language : string;
-    value : string;
-  } [@@deriving yojson { strict = false }]
-
-  (* markedString can be used to render human readable text. It is either a
-   * markdown string or a code-block that provides a language and a code snippet.
-   * Note that markdown strings will be sanitized by the client - including
-   * escaping html *)
-  type t =
-    | MarkedString of string
-    | MarkedCode of code
-
-  let to_yojson = function
-    | MarkedString v -> `String v
-    | MarkedCode code -> code_to_yojson code
-
-  let of_yojson = function
-    | `String v -> Ok (MarkedString v)
-    | json ->
-      begin match code_of_yojson json with
-      | Ok code -> Ok (MarkedCode code)
-      | Error err -> Error err
-      end
-end
-
 module MarkupKind = struct
   type t =
     | Plaintext
@@ -70,6 +42,13 @@ module MarkupKind = struct
     | `String "markdown" -> Ok Markdown
     | `String _ -> Ok Plaintext
     | _ -> Error "invalid contentFormat"
+end
+
+module MarkupContent = struct
+  type t = {
+    value: string;
+    kind: MarkupKind.t;
+  } [@@deriving yojson { strict = false }]
 end
 
 module Location = struct
@@ -422,12 +401,14 @@ end
 
 (* Hover request, method="textDocument/hover" *)
 module Hover = struct
-  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+  type params =
+    TextDocumentPositionParams.t
+    [@@deriving yojson { strict = false }]
 
   and result = hoverResult option [@default None]
 
   and hoverResult = {
-    contents: MarkedString.t list; (* wire: either a single one or an array *)
+    contents: MarkupContent.t;
     range: range option [@default None];
   }
 end

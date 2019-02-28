@@ -268,26 +268,4 @@ describe("TextDocument", () => {
       await LanguageServer.exit(languageServer);
     });
   });
-
-  describe("hover", () => {
-    it("rerurns the type of the identifier at position", async () => {
-      let languageServer = await LanguageServer.startAndInitialize();
-      await languageServer.sendNotification("textDocument/didOpen", {
-        textDocument: Types.TextDocumentItem.create(
-          "file:///test.ml",
-          "txt",
-          0,
-          "let x = 1\n"
-        )
-      });
-
-      let result = await languageServer.sendRequest("textDocument/hover", {
-        textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
-        position: Types.Position.create(0, 4)
-      });
-
-      expect(result).toMatchObject({ contents: ["int"] });
-      await LanguageServer.exit(languageServer);
-    });
-  });
 });
