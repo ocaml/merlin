@@ -495,10 +495,10 @@ let on_request :
           Lsp.Protocol.Completion.
           label = entry.name;
           kind;
-          detail = Some entry.info;
+          detail = Some entry.desc;
           inlineDetail = None;
           itemType = Some entry.desc;
-          documentation = None;
+          documentation = Some entry.info;
           (* Without this field the client is not forced to respect the order
              provided by merlin. *)
           sortText = Some (Printf.sprintf "%04d" i);
