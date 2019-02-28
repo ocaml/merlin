@@ -34,6 +34,7 @@ module Request : sig
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | References : References.params -> References.result t
+    | DocumentHighlight : DocumentHighlight.params -> DocumentHighlight.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 end
 

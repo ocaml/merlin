@@ -19,7 +19,7 @@ let initializeInfo: Lsp.Protocol.Initialize.result = {
       triggerCharacters = ["."];
     };
     referencesProvider = true;
-    documentHighlightProvider = false;
+    documentHighlightProvider = true;
     documentSymbolProvider = true;
     workspaceSymbolProvider = false;
     codeActionProvider = false;
@@ -289,6 +289,21 @@ let on_request :
       Std.List.concat_map ~f:symbol_info_of_outline_item outline
     in
     return (store, symbol_infos)
+
+  | Lsp.Rpc.Request.DocumentHighlight {textDocument = {uri;}; position; } ->
+    Document_store.get store uri >>= fun doc ->
+    let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
+    let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
+    let lsp_locs = List.map (fun loc ->
+      let range = {
+        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+        end_ = position_of_lexical_position loc.loc_end;
+      } in
+      (* using the default kind as we are lacking info
+         to make a difference between assignment and usage. *)
+      {Lsp.Protocol.Highlight. kind = Some Text; range;}
+     ) locs in
+    return (store, lsp_locs)
 
   | Lsp.Rpc.Request.DocumentSymbol {textDocument = {uri;}} ->
     Document_store.get store uri >>= fun doc ->
