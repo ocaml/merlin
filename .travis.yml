@@ -13,8 +13,6 @@ script: |
     npm run test
   fi
 env:
-  global:
-  - PINS="mdx.dev:https://github.com/realworldocaml/mdx.git"
   matrix:
   - OCAML_VERSION=4.02
     PACKAGE=merlin
