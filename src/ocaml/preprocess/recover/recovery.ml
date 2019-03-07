@@ -1,7 +1,6 @@
 open MenhirSdk
 open Cmly_api
 open Utils
-open Synthesis
 
 module type S = sig
   module G : GRAMMAR
@@ -22,22 +21,25 @@ module Make (G : GRAMMAR)
 
   type recovery = lr1 -> int * (lr1 option * item list) list
 
+(*
   let item_to_string (st, prod, p) =
     Printf.sprintf "(#%d, p%d, %d)" (Lr1.to_int st) (Production.to_int prod) p
+*)
 
   type trace = Trace of float * item list
 
   module Trace = struct
     type t = trace
-    let min (Trace (c1, _) as tr1) (Trace (c2, _) as tr2) =
-      arg_min_float (fun (Trace (c,_)) -> c) tr1 tr2
+    let min = arg_min_float (fun (Trace (c,_)) -> c)
 
     let cat (Trace (c1, tr1)) (Trace (c2, tr2)) =
       Trace (c1 +. c2, tr1 @ tr2)
 
+(*
     let to_string (Trace (c1, tr)) =
       Printf.sprintf "Trace (%f, %s)"
         c1 (list_fmt item_to_string tr)
+*)
   end
 
   module State = struct
@@ -63,10 +65,12 @@ module Make (G : GRAMMAR)
           let x' = merge_level x1 x2 in
           x' :: merge l1 l2
 
+(*
     let reduction_to_string (n, tr) =
       Printf.sprintf "(%s, %s)" (Nonterminal.name n) (Trace.to_string tr)
 
     let to_string (t : t) = list_fmt (list_fmt reduction_to_string) t
+*)
   end
 
   let synthesize =
@@ -152,7 +156,7 @@ module Make (G : GRAMMAR)
     (* Walk this prefix *)
     let traces =
       let acc = ref [init st] in
-      for i = 1 to pos - 1 do
+      for _i = 1 to pos - 1 do
         acc := List.concat (List.map expand !acc)
       done;
       !acc
@@ -175,7 +179,7 @@ module Make (G : GRAMMAR)
       | [] -> (* Initial state *)
           assert (snd trace = []); []
       | states ->
-          let select_expansion ((st, sts), trace') =
+          let select_expansion ((st, _sts), trace') =
             if trace' = [] then
               (* Reached stack bottom *)
               (None, select_trace (snd trace))
@@ -193,5 +197,5 @@ module Make (G : GRAMMAR)
 
   let recover = Lr1.tabulate recover
 
-  let report ppf = ()
+  let report _ppf = ()
 end
