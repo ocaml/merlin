@@ -1,5 +1,4 @@
 open MenhirSdk
-open Cmly_api
 open Printf
 
 module G = Cmly_read.Read(struct let filename = Sys.argv.(1) end)

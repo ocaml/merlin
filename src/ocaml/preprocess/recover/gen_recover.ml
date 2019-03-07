@@ -1,5 +1,4 @@
 open MenhirSdk
-open Cmly_api
 
 let name = ref ""
 let verbose = ref false
