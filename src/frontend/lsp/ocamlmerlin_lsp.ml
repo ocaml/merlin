@@ -29,7 +29,7 @@ let initializeInfo: Lsp.Protocol.Initialize.result = {
     documentFormattingProvider = false;
     documentRangeFormattingProvider = false;
     documentOnTypeFormattingProvider = None;
-    renameProvider = false;
+    renameProvider = true;
     documentLinkProvider = None;
     executeCommandProvider = None;
     typeCoverageProvider = false;
@@ -539,6 +539,9 @@ let on_request :
     in
     let resp = {Lsp.Protocol.Completion. isIncomplete = false; items;} in
     return (store, resp)
+
+  | Lsp.Rpc.Request.TextDocumentRename { textDocument; position; newName } ->
+    errorf "got rename request"
   | Lsp.Rpc.Request.UnknownRequest _ -> errorf "got unknown request"
 
 let on_notification rpc store (notification : Lsp.Rpc.Client_notification.t) =
