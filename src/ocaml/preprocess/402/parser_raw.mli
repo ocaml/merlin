@@ -296,12 +296,11 @@ module MenhirInterpreter : sig
     | N_with_constraints : (Parsetree.with_constraint list) nonterminal
     | N_with_constraint : (Parsetree.with_constraint list) nonterminal
     | N_virtual_flag : (Asttypes.virtual_flag) nonterminal
-    | N_value_type : (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
-  Parsetree.core_type) nonterminal
-    | N_value : (string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal
+    | N_value_type : (bytes * Asttypes.mutable_flag * Asttypes.virtual_flag * Parsetree.core_type) nonterminal
+    | N_value : (bytes Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal
     | N_val_longident : (Longident.t) nonterminal
-    | N_val_ident : (string) nonterminal
-    | N_typevar_list : (Asttypes.label list) nonterminal
+    | N_val_ident : (bytes) nonterminal
+    | N_typevar_list : (bytes list) nonterminal
     | N_type_variance : (Asttypes.variance) nonterminal
     | N_type_variable : (Parsetree.core_type) nonterminal
     | N_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
@@ -314,7 +313,7 @@ module MenhirInterpreter : sig
     | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal
     | N_toplevel_directives : (Parsetree.structure_item list) nonterminal
     | N_tag_field : (Parsetree.row_field) nonterminal
-    | N_subtractive : (string) nonterminal
+    | N_subtractive : (bytes) nonterminal
     | N_structure_tail : (Parsetree.structure) nonterminal
     | N_structure_item : (Parsetree.structure_item list) nonterminal
     | N_structure_head : (Parsetree.structure) nonterminal
@@ -323,17 +322,17 @@ module MenhirInterpreter : sig
     | N_str_type_extension : (Parsetree.type_extension) nonterminal
     | N_str_extension_constructors : (Parsetree.extension_constructor list) nonterminal
     | N_str_exception_declaration : (Parsetree.extension_constructor) nonterminal
-    | N_single_attr_id : (string) nonterminal
+    | N_single_attr_id : (bytes) nonterminal
     | N_simple_pattern_not_ident : (Parsetree.pattern) nonterminal
     | N_simple_pattern : (Parsetree.pattern) nonterminal
-    | N_simple_labeled_expr_list : ((Asttypes.label * Parsetree.expression) list) nonterminal
+    | N_simple_labeled_expr_list : ((bytes * Parsetree.expression) list) nonterminal
     | N_simple_expr : (Parsetree.expression) nonterminal
     | N_simple_core_type_or_tuple_no_attr : (Parsetree.core_type) nonterminal
     | N_simple_core_type_or_tuple : (Parsetree.core_type) nonterminal
     | N_simple_core_type_no_attr : (Parsetree.core_type) nonterminal
     | N_simple_core_type2 : (Parsetree.core_type) nonterminal
     | N_simple_core_type : (Parsetree.core_type) nonterminal
-    | N_signed_constant : (Parsetree.constant) nonterminal
+    | N_signed_constant : (Asttypes.constant) nonterminal
     | N_signature_item : (Parsetree.signature_item list) nonterminal
     | N_signature : (Parsetree.signature) nonterminal
     | N_sig_type_extension : (Parsetree.type_extension) nonterminal
@@ -343,12 +342,12 @@ module MenhirInterpreter : sig
     | N_row_field_list : (Parsetree.row_field list) nonterminal
     | N_row_field : (Parsetree.row_field) nonterminal
     | N_record_expr : (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal
+  (Longident.t Location.loc * Parsetree.expression) list) nonterminal
     | N_rec_module_declarations : (Parsetree.module_declaration list) nonterminal
     | N_rec_flag : (Asttypes.rec_flag) nonterminal
     | N_private_virtual_flags : (Asttypes.private_flag * Asttypes.virtual_flag) nonterminal
     | N_private_flag : (Asttypes.private_flag) nonterminal
-    | N_primitive_declaration : (string list) nonterminal
+    | N_primitive_declaration : (bytes list) nonterminal
     | N_post_item_attributes : (Ast_helper.attrs) nonterminal
     | N_post_item_attribute : (Parsetree.attribute) nonterminal
     | N_poly_type_no_attr : (Parsetree.core_type) nonterminal
@@ -359,9 +358,9 @@ module MenhirInterpreter : sig
     | N_pattern_comma_list : (Parsetree.pattern list) nonterminal
     | N_pattern : (Parsetree.pattern) nonterminal
     | N_parse_expression : (Parsetree.expression) nonterminal
-    | N_parent_binder : (string option) nonterminal
-    | N_package_type_cstrs : ((Longident.t Asttypes.loc * Parsetree.core_type) list) nonterminal
-    | N_package_type_cstr : (Longident.t Asttypes.loc * Parsetree.core_type) nonterminal
+    | N_parent_binder : (bytes option) nonterminal
+    | N_package_type_cstrs : ((Longident.t Location.loc * Parsetree.core_type) list) nonterminal
+    | N_package_type_cstr : (Longident.t Location.loc * Parsetree.core_type) nonterminal
     | N_package_type : (Parsetree.package_type) nonterminal
     | N_override_flag : (Asttypes.override_flag) nonterminal
     | N_optional_type_variable : (Parsetree.core_type) nonterminal
@@ -372,11 +371,11 @@ module MenhirInterpreter : sig
     | N_opt_default : (Parsetree.expression option) nonterminal
     | N_opt_bar : (unit) nonterminal
     | N_opt_ampersand : (bool) nonterminal
-    | N_operator : (string) nonterminal
+    | N_operator : (bytes) nonterminal
     | N_open_statement : (Parsetree.open_description) nonterminal
-    | N_newtype : (string) nonterminal
-    | N_name_tag_list : (Asttypes.label list) nonterminal
-    | N_name_tag : (Asttypes.label) nonterminal
+    | N_newtype : (bytes) nonterminal
+    | N_name_tag_list : (bytes list) nonterminal
+    | N_name_tag : (bytes) nonterminal
     | N_mutable_flag : (Asttypes.mutable_flag) nonterminal
     | N_mty_longident : (Longident.t) nonterminal
     | N_module_type : (Parsetree.module_type) nonterminal
@@ -388,52 +387,52 @@ module MenhirInterpreter : sig
     | N_module_binding : (Parsetree.module_binding) nonterminal
     | N_mod_longident : (Longident.t) nonterminal
     | N_mod_ext_longident : (Longident.t) nonterminal
-    | N_method_ : (string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind) nonterminal
-    | N_meth_list : ((string * Parsetree.attributes * Parsetree.core_type) list *
+    | N_method_ : (bytes Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) nonterminal
+    | N_meth_list : ((bytes * Parsetree.attributes * Parsetree.core_type) list *
   Asttypes.closed_flag) nonterminal
     | N_match_cases : (Parsetree.case list) nonterminal
     | N_match_case : (Parsetree.case) nonterminal
-    | N_lident_list : (string list) nonterminal
+    | N_lident_list : (bytes list) nonterminal
     | N_let_pattern : (Parsetree.pattern) nonterminal
     | N_let_operator : (Parsetree.expression) nonterminal
     | N_let_bindings_no_attrs : (Parsetree.value_binding list) nonterminal
     | N_let_bindings : (Parsetree.value_binding list) nonterminal
     | N_let_binding_ : (Parsetree.pattern * Parsetree.expression) nonterminal
     | N_let_binding : (Parsetree.value_binding) nonterminal
-    | N_lbl_pattern_list : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal
-    | N_lbl_pattern : (Longident.t Asttypes.loc * Parsetree.pattern) nonterminal
-    | N_lbl_expr_list : ((Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal
-    | N_lbl_expr : (Longident.t Asttypes.loc * Parsetree.expression) nonterminal
-    | N_labeled_simple_pattern : (Asttypes.label * Parsetree.expression option * Parsetree.pattern) nonterminal
-    | N_labeled_simple_expr : (Asttypes.label * Parsetree.expression) nonterminal
-    | N_label_var : (Asttypes.label * Parsetree.pattern) nonterminal
+    | N_lbl_pattern_list : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal
+    | N_lbl_pattern : (Longident.t Location.loc * Parsetree.pattern) nonterminal
+    | N_lbl_expr_list : ((Longident.t Location.loc * Parsetree.expression) list) nonterminal
+    | N_lbl_expr : (Longident.t Location.loc * Parsetree.expression) nonterminal
+    | N_labeled_simple_pattern : (bytes * Parsetree.expression option * Parsetree.pattern) nonterminal
+    | N_labeled_simple_expr : (bytes * Parsetree.expression) nonterminal
+    | N_label_var : (bytes * Parsetree.pattern) nonterminal
     | N_label_longident : (Longident.t) nonterminal
-    | N_label_let_pattern : (Asttypes.label * Parsetree.pattern) nonterminal
-    | N_label_ident : (Asttypes.label * Parsetree.expression) nonterminal
-    | N_label_expr : (Asttypes.label * Parsetree.expression) nonterminal
+    | N_label_let_pattern : (bytes * Parsetree.pattern) nonterminal
+    | N_label_ident : (bytes * Parsetree.expression) nonterminal
+    | N_label_expr : (bytes * Parsetree.expression) nonterminal
     | N_label_declarations : (Parsetree.label_declaration list) nonterminal
     | N_label_declaration : (Parsetree.label_declaration) nonterminal
-    | N_label : (string) nonterminal
+    | N_label : (bytes) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
     | N_implementation : (Parsetree.structure) nonterminal
-    | N_ident : (Asttypes.label) nonterminal
+    | N_ident : (bytes) nonterminal
     | N_generalized_constructor_arguments : (Parsetree.core_type list * Parsetree.core_type option) nonterminal
-    | N_functor_args : ((string Asttypes.loc * Parsetree.module_type option) list) nonterminal
-    | N_functor_arg_name : (string) nonterminal
-    | N_functor_arg : (string Asttypes.loc * Parsetree.module_type option) nonterminal
+    | N_functor_args : ((bytes Location.loc * Parsetree.module_type option) list) nonterminal
+    | N_functor_arg_name : (bytes) nonterminal
+    | N_functor_arg : (bytes Location.loc * Parsetree.module_type option) nonterminal
     | N_fun_def : (Parsetree.expression) nonterminal
     | N_fun_binding : (Parsetree.expression) nonterminal
     | N_floating_attribute : (Parsetree.attribute) nonterminal
-    | N_field_expr_list : ((string Asttypes.loc * Parsetree.expression) list) nonterminal
-    | N_field : (string * Parsetree.attributes * Parsetree.core_type) nonterminal
+    | N_field_expr_list : ((bytes Location.loc * Parsetree.expression) list) nonterminal
+    | N_field : (bytes * Parsetree.attributes * Parsetree.core_type) nonterminal
     | N_extension_constructor_rebind : (Parsetree.extension_constructor) nonterminal
     | N_extension_constructor_declaration : (Parsetree.extension_constructor) nonterminal
     | N_extension : (Parsetree.extension) nonterminal
-    | N_ext_attributes : (string Asttypes.loc option * Parsetree.attributes) nonterminal
+    | N_ext_attributes : (bytes Location.loc option * Parsetree.attributes) nonterminal
     | N_expr_semi_list : (Parsetree.expression list) nonterminal
-    | N_expr_open : (Asttypes.override_flag * Longident.t Asttypes.loc *
-  (string Asttypes.loc option * Parsetree.attributes)) nonterminal
+    | N_expr_open : (Asttypes.override_flag * Longident.t Location.loc *
+  (bytes Location.loc option * Parsetree.attributes)) nonterminal
     | N_expr_comma_list : (Parsetree.expression list) nonterminal
     | N_expr : (Parsetree.expression) nonterminal
     | N_direction_flag : (Asttypes.direction_flag) nonterminal
@@ -445,12 +444,12 @@ module MenhirInterpreter : sig
     | N_core_type : (Parsetree.core_type) nonterminal
     | N_constructor_declarations : (Parsetree.constructor_declaration list) nonterminal
     | N_constructor_declaration : (Parsetree.constructor_declaration) nonterminal
-    | N_constraints : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) nonterminal
+    | N_constraints : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
     | N_constrain_field : (Parsetree.core_type * Parsetree.core_type) nonterminal
-    | N_constrain : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) nonterminal
+    | N_constrain : (Parsetree.core_type * Parsetree.core_type * Location.t) nonterminal
     | N_constr_longident : (Longident.t) nonterminal
-    | N_constr_ident : (string) nonterminal
-    | N_constant : (Parsetree.constant) nonterminal
+    | N_constr_ident : (bytes) nonterminal
+    | N_constant : (Asttypes.constant) nonterminal
     | N_clty_longident : (Longident.t) nonterminal
     | N_class_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
     | N_class_type_declarations : (Parsetree.class_type_declaration list) nonterminal
@@ -476,9 +475,9 @@ module MenhirInterpreter : sig
     | N_class_declaration : (Parsetree.class_declaration list) nonterminal
     | N_attributes : (Parsetree.attributes) nonterminal
     | N_attribute : (Parsetree.attribute) nonterminal
-    | N_attr_id : (string Asttypes.loc) nonterminal
+    | N_attr_id : (bytes Location.loc) nonterminal
     | N_amper_type_list : (Parsetree.core_type list) nonterminal
-    | N_additive : (string) nonterminal
+    | N_additive : (bytes) nonterminal
   
   (* The inspection API. *)
   

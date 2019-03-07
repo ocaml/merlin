@@ -2,7 +2,7 @@
 (* This generated code requires the following version of MenhirLib: *)
 
 let () =
-  MenhirLib.StaticVersion.require_20171013
+  MenhirLib.StaticVersion.require_20181006
 
 module MenhirBasics = struct
   
@@ -17,9 +17,9 @@ module MenhirBasics = struct
     | VAL
     | UNDERSCORE
     | UIDENT of (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 23 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23 "parser_raw.ml"
   )
     | TYPE
     | TRY_LWT
@@ -30,16 +30,16 @@ module MenhirBasics = struct
     | THEN
     | STRUCT
     | STRING of (
-# 506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 505 "parser_raw.mly"
        (string * string option)
-# 36 "src/ocaml/preprocess/406/parser_raw.ml"
+# 36 "parser_raw.ml"
   )
     | STAR
     | SIG
     | SHARPOP of (
-# 503 "src/ocaml/preprocess/406/parser_raw.mly"
+# 502 "parser_raw.mly"
        (string)
-# 43 "src/ocaml/preprocess/406/parser_raw.ml"
+# 43 "parser_raw.ml"
   )
     | SHARP
     | SEMISEMI
@@ -53,9 +53,9 @@ module MenhirBasics = struct
     | QUESTION
     | PRIVATE
     | PREFIXOP of (
-# 491 "src/ocaml/preprocess/406/parser_raw.mly"
+# 490 "parser_raw.mly"
        (string)
-# 59 "src/ocaml/preprocess/406/parser_raw.ml"
+# 59 "parser_raw.ml"
   )
     | PLUSEQ
     | PLUSDOT
@@ -63,9 +63,9 @@ module MenhirBasics = struct
     | PERCENT
     | OR
     | OPTLABEL of (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 69 "src/ocaml/preprocess/406/parser_raw.ml"
+# 69 "parser_raw.ml"
   )
     | OPEN
     | OF
@@ -82,9 +82,9 @@ module MenhirBasics = struct
     | MATCH
     | LPAREN
     | LIDENT of (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 88 "src/ocaml/preprocess/406/parser_raw.ml"
+# 88 "parser_raw.ml"
   )
     | LET_LWT
     | LET
@@ -103,41 +103,41 @@ module MenhirBasics = struct
     | LBRACE
     | LAZY
     | LABEL of (
-# 455 "src/ocaml/preprocess/406/parser_raw.mly"
+# 454 "parser_raw.mly"
        (string)
-# 109 "src/ocaml/preprocess/406/parser_raw.ml"
+# 109 "parser_raw.ml"
   )
     | INT of (
-# 453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 452 "parser_raw.mly"
        (string * char option)
-# 114 "src/ocaml/preprocess/406/parser_raw.ml"
+# 114 "parser_raw.ml"
   )
     | INITIALIZER
     | INHERIT
     | INFIXOP4 of (
-# 449 "src/ocaml/preprocess/406/parser_raw.mly"
+# 448 "parser_raw.mly"
        (string)
-# 121 "src/ocaml/preprocess/406/parser_raw.ml"
+# 121 "parser_raw.ml"
   )
     | INFIXOP3 of (
-# 448 "src/ocaml/preprocess/406/parser_raw.mly"
+# 447 "parser_raw.mly"
        (string)
-# 126 "src/ocaml/preprocess/406/parser_raw.ml"
+# 126 "parser_raw.ml"
   )
     | INFIXOP2 of (
-# 447 "src/ocaml/preprocess/406/parser_raw.mly"
+# 446 "parser_raw.mly"
        (string)
-# 131 "src/ocaml/preprocess/406/parser_raw.ml"
+# 131 "parser_raw.ml"
   )
     | INFIXOP1 of (
-# 446 "src/ocaml/preprocess/406/parser_raw.mly"
+# 445 "parser_raw.mly"
        (string)
-# 136 "src/ocaml/preprocess/406/parser_raw.ml"
+# 136 "parser_raw.ml"
   )
     | INFIXOP0 of (
-# 445 "src/ocaml/preprocess/406/parser_raw.mly"
+# 444 "parser_raw.mly"
        (string)
-# 141 "src/ocaml/preprocess/406/parser_raw.ml"
+# 141 "parser_raw.ml"
   )
     | INCLUDE
     | IN
@@ -152,9 +152,9 @@ module MenhirBasics = struct
     | FOR_LWT
     | FOR
     | FLOAT of (
-# 433 "src/ocaml/preprocess/406/parser_raw.mly"
+# 432 "parser_raw.mly"
        (string * char option)
-# 158 "src/ocaml/preprocess/406/parser_raw.ml"
+# 158 "parser_raw.ml"
   )
     | FINALLY_LWT
     | FALSE
@@ -168,25 +168,25 @@ module MenhirBasics = struct
     | DOWNTO
     | DOTTILDE
     | DOTOP of (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 174 "src/ocaml/preprocess/406/parser_raw.ml"
+# 174 "parser_raw.ml"
   )
     | DOTLESS
     | DOTDOT
     | DOT
     | DONE
     | DOCSTRING of (
-# 522 "src/ocaml/preprocess/406/parser_raw.mly"
+# 521 "parser_raw.mly"
        (Docstrings.docstring)
-# 183 "src/ocaml/preprocess/406/parser_raw.ml"
+# 183 "parser_raw.ml"
   )
     | DO
     | CONSTRAINT
     | COMMENT of (
-# 521 "src/ocaml/preprocess/406/parser_raw.mly"
+# 520 "parser_raw.mly"
        (string * Location.t)
-# 190 "src/ocaml/preprocess/406/parser_raw.ml"
+# 190 "parser_raw.ml"
   )
     | COMMA
     | COLONGREATER
@@ -195,9 +195,9 @@ module MenhirBasics = struct
     | COLON
     | CLASS
     | CHAR of (
-# 413 "src/ocaml/preprocess/406/parser_raw.mly"
+# 412 "parser_raw.mly"
        (char)
-# 201 "src/ocaml/preprocess/406/parser_raw.ml"
+# 201 "parser_raw.ml"
   )
     | BEGIN
     | BARRBRACKET
@@ -218,7 +218,7 @@ include MenhirBasics
 let _eRR =
   MenhirBasics.Error
 
-# 1 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1 "parser_raw.mly"
   
 [@@@ocaml.warning "-9"]
 open Location
@@ -597,7 +597,7 @@ let expr_of_lwt_bindings ~loc lbs body =
     (mkexp_attrs ~loc (Pexp_let(lbs.lbs_rec, List.rev bindings, body))
        (lbs.lbs_extension, []))
 
-# 601 "src/ocaml/preprocess/406/parser_raw.ml"
+# 601 "parser_raw.ml"
 
 module Tables = struct
   
@@ -1164,9 +1164,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2409 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2408 "parser_raw.mly"
          ( "+" )
-# 1170 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1170 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1189,9 +1189,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2410 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2409 "parser_raw.mly"
             ( "+." )
-# 1195 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1195 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1214,9 +1214,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type list) = 
-# 2184 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2183 "parser_raw.mly"
                       ( [_1] )
-# 1220 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1220 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1251,9 +1251,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type list) = 
-# 2185 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2184 "parser_raw.mly"
                                                 ( _3 :: _1 )
-# 1257 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1257 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1304,9 +1304,9 @@ module Tables = struct
         let _7 : (Parsetree.attributes) = Obj.magic _7 in
         let _6 : (Parsetree.class_expr) = Obj.magic _6 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 1310 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1310 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.virtual_flag) = Obj.magic _3 in
@@ -1322,7 +1322,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1331,18 +1331,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 1335 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1335 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 917 "src/ocaml/preprocess/406/parser_raw.mly"
+# 916 "parser_raw.mly"
       ( Ci.mk _5 _6 ~virt:_3 ~params:_4
          ~attrs:(_2@_7) ~loc:(((make_loc _symbolstartpos _endpos)))
          ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 1346 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1346 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1399,9 +1399,9 @@ module Tables = struct
         let _7 : (Parsetree.class_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 1405 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1405 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.virtual_flag) = Obj.magic _3 in
@@ -1417,7 +1417,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1426,18 +1426,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 1430 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1430 "parser_raw.ml"
           
         in
         let _endpos = _endpos__8_ in
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1143 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1142 "parser_raw.mly"
       ( Ci.mk _5 _7 ~virt:_3 ~params:_4
               ~attrs:(_2@_8) ~loc:(((make_loc _symbolstartpos _endpos)))
               ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 1441 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1441 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1494,9 +1494,9 @@ module Tables = struct
         let _7 : (Parsetree.class_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 1500 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1500 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.virtual_flag) = Obj.magic _3 in
@@ -1512,7 +1512,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1521,18 +1521,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 1525 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1525 "parser_raw.ml"
           
         in
         let _endpos = _endpos__8_ in
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1164 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1163 "parser_raw.mly"
       ( Ci.mk _5 _7 ~virt:_3 ~params:_4
          ~attrs:(_2@_8) ~loc:(((make_loc _symbolstartpos _endpos)))
          ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 1536 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1536 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1575,9 +1575,9 @@ module Tables = struct
         let _v : (Ast_helper.let_binding) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1563 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1562 "parser_raw.mly"
       ( (mklb ~loc:(make_loc _symbolstartpos _endpos)) false _3 (_2@_4) )
-# 1581 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1581 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1618,9 +1618,9 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.module_expr) = Obj.magic _4 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 1624 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1624 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
@@ -1634,7 +1634,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1643,17 +1643,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 1647 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1647 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 762 "src/ocaml/preprocess/406/parser_raw.mly"
+# 761 "parser_raw.mly"
       ( Mb.mk _3 _4 ~attrs:(_2@_5) ~loc:(((make_loc _symbolstartpos _endpos)))
                ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 1657 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1657 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1700,9 +1700,9 @@ module Tables = struct
         let _5 : (Parsetree.module_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 1706 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1706 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
@@ -1716,7 +1716,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1725,17 +1725,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 1729 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1729 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 885 "src/ocaml/preprocess/406/parser_raw.mly"
+# 884 "parser_raw.mly"
       ( Md.mk _3 _5 ~attrs:(_2@_6) ~loc:(((make_loc _symbolstartpos _endpos)))
               ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 1739 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1739 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1784,12 +1784,12 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _7 : (Parsetree.attributes) = Obj.magic _7 in
-        let _6 : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) = Obj.magic _6 in
+        let _6 : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = Obj.magic _6 in
         let _5 : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = Obj.magic _5 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 1793 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1793 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _3 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
@@ -1804,7 +1804,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1813,19 +1813,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 1817 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1817 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1841 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1840 "parser_raw.mly"
       ( let (kind, priv, manifest) = _5 in
           Type.mk _4 ~params:_3 ~cstrs:(List.rev _6)
             ~kind ~priv ?manifest ~attrs:(_2@_7) ~loc:(((make_loc _symbolstartpos _endpos)))
             ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 1829 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1829 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1847,12 +1847,12 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (string Asttypes.loc) = let _endpos = _endpos__1_ in
+        let _v : (string Location.loc) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2466 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2465 "parser_raw.mly"
                    ( mkloc _1 ((make_loc _symbolstartpos _endpos)) )
-# 1856 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1856 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1880,18 +1880,18 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : (string Asttypes.loc) = Obj.magic _3 in
+        let _3 : (string Location.loc) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : (string Asttypes.loc) = let _endpos = _endpos__3_ in
+        let _v : (string Location.loc) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2467 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2466 "parser_raw.mly"
                                ( mkloc (_1 ^ "." ^ _3.txt) ((make_loc _symbolstartpos _endpos)))
-# 1895 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1895 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1926,15 +1926,15 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.payload) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc) = Obj.magic _2 in
+        let _2 : (string Location.loc) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.attribute) = 
-# 2470 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2469 "parser_raw.mly"
                                       ( (_2, _3) )
-# 1938 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1938 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1950,9 +1950,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.attributes) = 
-# 2483 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2482 "parser_raw.mly"
                ( [] )
-# 1956 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1956 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -1981,9 +1981,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.attributes) = 
-# 2484 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2483 "parser_raw.mly"
                          ( _1 :: _2 )
-# 1987 "src/ocaml/preprocess/406/parser_raw.ml"
+# 1987 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2030,7 +2030,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2039,19 +2039,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2043 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2043 "parser_raw.ml"
           
         in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1919 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1918 "parser_raw.mly"
       (
        let args,res = _3 in
        Type.constructor _2 ~args ?res ~attrs:_4
          ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos))
       )
-# 2055 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2055 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2098,7 +2098,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2107,17 +2107,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2111 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2111 "parser_raw.ml"
           
         in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2026 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2025 "parser_raw.mly"
       ( let args, res = _3 in
         Te.decl _2 ~args ?res ~attrs:_4
            ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
-# 2121 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2121 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2170,7 +2170,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2179,7 +2179,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2183 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2183 "parser_raw.ml"
           
         in
         let _2 =
@@ -2189,7 +2189,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2198,16 +2198,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2202 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2202 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2037 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2036 "parser_raw.mly"
       ( Te.rebind _2 _4 ~attrs:_5
           ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
-# 2211 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2211 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2258,25 +2258,25 @@ module Tables = struct
         let _7 : (Parsetree.attributes) = Obj.magic _7 in
         let _6 : (Parsetree.class_expr) = Obj.magic _6 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 2264 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2264 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.virtual_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : (Parsetree.class_declaration * string Asttypes.loc option) = let _5 =
+        let _v : (Parsetree.class_declaration * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2285,18 +2285,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2289 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2289 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 909 "src/ocaml/preprocess/406/parser_raw.mly"
+# 908 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Ci.mk _5 _6 ~virt:_3 ~params:_4 ~attrs:(attrs@_7)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 2300 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2300 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2314,14 +2314,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Parsetree.class_declaration list * string Asttypes.loc option) = 
-# 902 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.class_declaration list * string Location.loc option) = 
+# 901 "parser_raw.mly"
       ( let (body, ext) = _1 in ([body], ext) )
-# 2325 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2325 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2345,14 +2345,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.class_declaration) = Obj.magic _2 in
-        let _1 : (Parsetree.class_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Parsetree.class_declaration list * string Asttypes.loc option) = 
-# 904 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.class_declaration list * string Location.loc option) = 
+# 903 "parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
-# 2356 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2356 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2409,25 +2409,25 @@ module Tables = struct
         let _7 : (Parsetree.class_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 2415 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2415 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.virtual_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__8_ in
-        let _v : (Parsetree.class_description * string Asttypes.loc option) = let _5 =
+        let _v : (Parsetree.class_description * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2436,18 +2436,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2440 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2440 "parser_raw.ml"
           
         in
         let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1135 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1134 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Ci.mk _5 _7 ~virt:_3 ~params:_4 ~attrs:(attrs@_8)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
      , ext )
-# 2451 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2451 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2465,14 +2465,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Parsetree.class_description list * string Asttypes.loc option) = 
-# 1128 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.class_description list * string Location.loc option) = 
+# 1127 "parser_raw.mly"
       ( let (body, ext) = _1 in ([body],ext) )
-# 2476 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2476 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2496,14 +2496,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.class_description) = Obj.magic _2 in
-        let _1 : (Parsetree.class_description list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_description list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Parsetree.class_description list * string Asttypes.loc option) = 
-# 1130 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.class_description list * string Location.loc option) = 
+# 1129 "parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
-# 2507 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2507 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2526,9 +2526,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_expr) = 
-# 941 "src/ocaml/preprocess/406/parser_raw.mly"
+# 940 "parser_raw.mly"
       ( _1 )
-# 2532 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2532 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2563,9 +2563,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.class_expr) = 
-# 943 "src/ocaml/preprocess/406/parser_raw.mly"
+# 942 "parser_raw.mly"
       ( wrap_class_attrs _3 _2 )
-# 2569 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2569 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2596,9 +2596,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 945 "src/ocaml/preprocess/406/parser_raw.mly"
+# 944 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_apply(_1, List.rev _2)) )
-# 2602 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2602 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2635,9 +2635,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 947 "src/ocaml/preprocess/406/parser_raw.mly"
+# 946 "parser_raw.mly"
       ( (class_of_let_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 _3 )
-# 2641 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2641 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2702,7 +2702,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2711,15 +2711,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 2715 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2715 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 949 "src/ocaml/preprocess/406/parser_raw.mly"
+# 948 "parser_raw.mly"
       ( wrap_class_attrs ((mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_open(_3, _5, _7))) _4 )
-# 2723 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2723 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2748,9 +2748,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_expr) = 
-# 951 "src/ocaml/preprocess/406/parser_raw.mly"
+# 950 "parser_raw.mly"
       ( Cl.attr _1 _2 )
-# 2754 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2754 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2775,9 +2775,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 953 "src/ocaml/preprocess/406/parser_raw.mly"
+# 952 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_extension _1) )
-# 2781 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2781 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2821,7 +2821,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _6 : (Parsetree.attributes) = Obj.magic _6 in
-        let _5 : (string Asttypes.loc option) = Obj.magic _5 in
+        let _5 : (string Location.loc option) = Obj.magic _5 in
         let _4 : (Parsetree.class_expr) = Obj.magic _4 in
         let _3 : (Parsetree.attributes) = Obj.magic _3 in
         let _2 : (Asttypes.override_flag) = Obj.magic _2 in
@@ -2832,9 +2832,9 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 993 "src/ocaml/preprocess/406/parser_raw.mly"
+# 992 "parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_inherit (_2, _4, _5)) ~attrs:(_3@_6) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 2838 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2838 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2863,8 +2863,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.attributes) = Obj.magic _3 in
-        let _2 : ((Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-   Parsetree.class_field_kind) *
+        let _2 : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -2873,10 +2872,10 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 995 "src/ocaml/preprocess/406/parser_raw.mly"
+# 994 "parser_raw.mly"
       ( let v, attrs = _2 in
         (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_val v) ~attrs:(attrs@_3) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 2880 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2879 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2905,8 +2904,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.attributes) = Obj.magic _3 in
-        let _2 : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+        let _2 : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -2915,10 +2913,10 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 998 "src/ocaml/preprocess/406/parser_raw.mly"
+# 997 "parser_raw.mly"
       ( let meth, attrs = _2 in
         (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_method meth) ~attrs:(attrs@_3) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 2922 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2920 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -2961,9 +2959,9 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1001 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1000 "parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_constraint _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 2967 "src/ocaml/preprocess/406/parser_raw.ml"
+# 2965 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3006,9 +3004,9 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1003 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1002 "parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_initializer _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 3012 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3010 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3039,9 +3037,9 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1005 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1004 "parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_extension _1) ~attrs:_2 ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 3045 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3043 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3066,10 +3064,10 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1007 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1006 "parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_attribute _1) )
-# 3073 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3071 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3085,9 +3083,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_field list) = 
-# 986 "src/ocaml/preprocess/406/parser_raw.mly"
+# 985 "parser_raw.mly"
       ( [] )
-# 3091 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3089 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3116,9 +3114,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_field list) = 
-# 988 "src/ocaml/preprocess/406/parser_raw.mly"
+# 987 "parser_raw.mly"
       ( _2 :: ((text_cstr _startpos__2_)) @ _1 )
-# 3122 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3120 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3147,9 +3145,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_expr) = 
-# 923 "src/ocaml/preprocess/406/parser_raw.mly"
+# 922 "parser_raw.mly"
       ( _2 )
-# 3153 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3151 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3192,9 +3190,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 925 "src/ocaml/preprocess/406/parser_raw.mly"
+# 924 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constraint(_4, _2)) )
-# 3198 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3196 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3225,9 +3223,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 927 "src/ocaml/preprocess/406/parser_raw.mly"
+# 926 "parser_raw.mly"
       ( let (l,o,p) = _1 in (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_fun(l, o, p, _2)) )
-# 3231 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3229 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3264,9 +3262,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 935 "src/ocaml/preprocess/406/parser_raw.mly"
+# 934 "parser_raw.mly"
       ( let (l,o,p) = _1 in (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_fun(l, o, p, _3)) )
-# 3270 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3268 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3297,9 +3295,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 937 "src/ocaml/preprocess/406/parser_raw.mly"
+# 936 "parser_raw.mly"
       ( let (l,o,p) = _1 in (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_fun(l, o, p, _2)) )
-# 3303 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3301 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3318,17 +3316,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 3324 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3322 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2334 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2333 "parser_raw.mly"
            ( Lident _1 )
-# 3332 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3330 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3357,9 +3355,9 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 3363 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3361 "parser_raw.ml"
         ) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
@@ -3367,9 +3365,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2335 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2334 "parser_raw.mly"
                              ( Ldot(_1, _3) )
-# 3373 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3371 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3406,9 +3404,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 979 "src/ocaml/preprocess/406/parser_raw.mly"
+# 978 "parser_raw.mly"
       ( (reloc_pat ~loc:(make_loc _symbolstartpos _endpos)) _2 )
-# 3412 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3410 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3457,9 +3455,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 981 "src/ocaml/preprocess/406/parser_raw.mly"
+# 980 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_2, _4)) )
-# 3463 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3461 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3477,9 +3475,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__0_ in
         let _symbolstartpos = _endpos in
         
-# 983 "src/ocaml/preprocess/406/parser_raw.mly"
+# 982 "parser_raw.mly"
       ( (ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_any) )
-# 3483 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3481 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3514,9 +3512,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type) = 
-# 1085 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1084 "parser_raw.mly"
       ( _2 )
-# 3520 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3518 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3534,9 +3532,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__0_ in
         let _symbolstartpos = _endpos in
         
-# 1087 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1086 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
-# 3540 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3538 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3571,15 +3569,15 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 586 "src/ocaml/preprocess/406/parser_raw.mly"
+# 585 "parser_raw.mly"
                                ( extra_csig _startpos _endpos _1 )
-# 3577 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3575 "parser_raw.ml"
           
         in
         
-# 1081 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1080 "parser_raw.mly"
       ( Csig.mk _1 (List.rev _2) )
-# 3583 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3581 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3622,9 +3620,9 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1095 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1094 "parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_inherit _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 3628 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3626 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3658,8 +3656,8 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _4 : (Parsetree.attributes) = Obj.magic _4 in
-        let _3 : (Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-  Asttypes.virtual_flag * Parsetree.core_type) = Obj.magic _3 in
+        let _3 : (string Location.loc * Asttypes.mutable_flag * Asttypes.virtual_flag *
+  Parsetree.core_type) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -3668,9 +3666,9 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1097 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1096 "parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_val _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 3674 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3672 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3721,7 +3719,7 @@ module Tables = struct
         let _7 : (Parsetree.attributes) = Obj.magic _7 in
         let _6 : (Parsetree.core_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _3 : (Asttypes.private_flag * Asttypes.virtual_flag) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
@@ -3735,7 +3733,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -3744,18 +3742,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 3748 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3746 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1100 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1099 "parser_raw.mly"
       (
        let (p, v) = _3 in
        (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_method (_4, p, v, _6)) ~attrs:(_2@_7) ~docs:((symbol_docs _symbolstartpos _endpos))
       )
-# 3759 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3757 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3798,9 +3796,9 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1105 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1104 "parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_constraint _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 3804 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3802 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3831,9 +3829,9 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1107 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1106 "parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_extension _1) ~attrs:_2 ~docs:((symbol_docs _symbolstartpos _endpos)) )
-# 3837 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3835 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3858,10 +3856,10 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1109 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1108 "parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mkctf ~loc:(make_loc _symbolstartpos _endpos))(Pctf_attribute _1) )
-# 3865 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3863 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3877,9 +3875,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_type_field list) = 
-# 1090 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1089 "parser_raw.mly"
                                                 ( [] )
-# 3883 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3881 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3908,9 +3906,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_type_field list) = 
-# 1091 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1090 "parser_raw.mly"
                                    ( _2 :: ((text_csig _startpos__2_)) @ _1 )
-# 3914 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3912 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3953,9 +3951,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1065 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1064 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_constr (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), List.rev _2)) )
-# 3959 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3957 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -3984,7 +3982,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -3993,7 +3991,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 3997 "src/ocaml/preprocess/406/parser_raw.ml"
+# 3995 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -4001,9 +3999,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1067 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1066 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_constr (_1, [])) )
-# 4007 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4005 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4046,9 +4044,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1069 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1068 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pcty_signature _3) )
-# 4052 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4050 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4077,9 +4075,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_type) = 
-# 1073 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1072 "parser_raw.mly"
       ( Cty.attr _1 _2 )
-# 4083 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4081 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4104,9 +4102,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1075 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1074 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_extension _1) )
-# 4110 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4108 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4171,7 +4169,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -4180,15 +4178,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 4184 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4182 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1077 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1076 "parser_raw.mly"
       ( wrap_class_type_attrs ((mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_open(_3, _5, _7))) _4 )
-# 4192 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4190 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4231,9 +4229,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 957 "src/ocaml/preprocess/406/parser_raw.mly"
+# 956 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constr(mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), List.rev _2)) )
-# 4237 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4235 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4262,7 +4260,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -4271,7 +4269,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 4275 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4273 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -4279,9 +4277,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 959 "src/ocaml/preprocess/406/parser_raw.mly"
+# 958 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constr(_1, [])) )
-# 4285 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4283 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4324,9 +4322,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 961 "src/ocaml/preprocess/406/parser_raw.mly"
+# 960 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pcl_structure(_3)) )
-# 4330 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4328 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4375,9 +4373,9 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 965 "src/ocaml/preprocess/406/parser_raw.mly"
+# 964 "parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constraint(_2, _4)) )
-# 4381 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4379 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4412,9 +4410,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.class_expr) = 
-# 969 "src/ocaml/preprocess/406/parser_raw.mly"
+# 968 "parser_raw.mly"
       ( _2 )
-# 4418 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4416 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4449,15 +4447,15 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 585 "src/ocaml/preprocess/406/parser_raw.mly"
+# 584 "parser_raw.mly"
                                ( extra_cstr _startpos _endpos _1 )
-# 4455 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4453 "parser_raw.ml"
           
         in
         
-# 975 "src/ocaml/preprocess/406/parser_raw.mly"
+# 974 "parser_raw.mly"
        ( Cstr.mk _1 (List.rev _2) )
-# 4461 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4459 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4480,9 +4478,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_type) = 
-# 1052 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1051 "parser_raw.mly"
       ( _1 )
-# 4486 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4484 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4530,9 +4528,9 @@ module Tables = struct
         let _4 : (Parsetree.core_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 4536 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4534 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -4541,9 +4539,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1055 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1054 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Optional _2 , _4, _6)) )
-# 4547 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4545 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4580,9 +4578,9 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.core_type) = Obj.magic _2 in
         let _1 : (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 4586 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4584 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -4590,9 +4588,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1057 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1056 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Optional _1, _2, _4)) )
-# 4596 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4594 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4635,9 +4633,9 @@ module Tables = struct
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 4641 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4639 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -4645,9 +4643,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1059 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1058 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Labelled _1, _3, _5)) )
-# 4651 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4649 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4684,9 +4682,9 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1061 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1060 "parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Nolabel, _1, _3)) )
-# 4690 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4688 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4748,26 +4746,26 @@ module Tables = struct
         let _8 : (Parsetree.class_type) = Obj.magic _8 in
         let _7 : unit = Obj.magic _7 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 4754 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4752 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _5 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _5 in
         let _4 : (Asttypes.virtual_flag) = Obj.magic _4 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__9_ in
-        let _v : (Parsetree.class_type_declaration * string Asttypes.loc option) = let _6 =
+        let _v : (Parsetree.class_type_declaration * string Location.loc option) = let _6 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -4776,18 +4774,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 4780 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4778 "parser_raw.ml"
           
         in
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1156 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1155 "parser_raw.mly"
       ( let (ext, attrs) = _3 in
         Ci.mk _6 _8 ~virt:_4 ~params:_5 ~attrs:(attrs@_9)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext)
-# 4791 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4789 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4805,14 +4803,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_type_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_type_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Parsetree.class_type_declaration list * string Asttypes.loc option) = 
-# 1149 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.class_type_declaration list * string Location.loc option) = 
+# 1148 "parser_raw.mly"
       ( let (body, ext) = _1 in ([body],ext) )
-# 4816 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4814 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4836,14 +4834,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.class_type_declaration) = Obj.magic _2 in
-        let _1 : (Parsetree.class_type_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_type_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Parsetree.class_type_declaration list * string Asttypes.loc option) = 
-# 1151 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.class_type_declaration list * string Location.loc option) = 
+# 1150 "parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
-# 4847 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4845 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4859,9 +4857,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 930 "src/ocaml/preprocess/406/parser_raw.mly"
+# 929 "parser_raw.mly"
                                                 ( [] )
-# 4865 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4863 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4896,9 +4894,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 931 "src/ocaml/preprocess/406/parser_raw.mly"
+# 930 "parser_raw.mly"
                                           ( List.rev _2 )
-# 4902 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4900 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4917,17 +4915,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 4923 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4921 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2330 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2329 "parser_raw.mly"
            ( Lident _1 )
-# 4931 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4929 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4956,9 +4954,9 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 4962 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4960 "parser_raw.ml"
         ) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
@@ -4966,9 +4964,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2331 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2330 "parser_raw.mly"
                                  ( Ldot(_1, _3) )
-# 4972 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4970 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4987,17 +4985,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 452 "parser_raw.mly"
        (string * char option)
-# 4993 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4991 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2233 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2232 "parser_raw.mly"
         ( let (n, m) = _1 in Pconst_integer (n, m) )
-# 5001 "src/ocaml/preprocess/406/parser_raw.ml"
+# 4999 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5016,17 +5014,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 413 "src/ocaml/preprocess/406/parser_raw.mly"
+# 412 "parser_raw.mly"
        (char)
-# 5022 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5020 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2234 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2233 "parser_raw.mly"
          ( Pconst_char _1 )
-# 5030 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5028 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5045,17 +5043,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 505 "parser_raw.mly"
        (string * string option)
-# 5051 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5049 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2235 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2234 "parser_raw.mly"
            ( let (s, d) = _1 in Pconst_string (s, d) )
-# 5059 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5057 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5074,17 +5072,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 433 "src/ocaml/preprocess/406/parser_raw.mly"
+# 432 "parser_raw.mly"
        (string * char option)
-# 5080 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5078 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2236 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2235 "parser_raw.mly"
           ( let (f, m) = _1 in Pconst_float (f, m) )
-# 5088 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5086 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5103,17 +5101,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 5109 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5107 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2288 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2287 "parser_raw.mly"
            ( _1 )
-# 5117 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5115 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5142,9 +5140,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string) = 
-# 2289 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2288 "parser_raw.mly"
                       ( "[]" )
-# 5148 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5146 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5173,9 +5171,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string) = 
-# 2290 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2289 "parser_raw.mly"
                   ( "()" )
-# 5179 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5177 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5210,9 +5208,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2291 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2290 "parser_raw.mly"
                              ( "::" )
-# 5216 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5214 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5235,9 +5233,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2292 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2291 "parser_raw.mly"
           ( "false" )
-# 5241 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5239 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5260,9 +5258,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2293 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2292 "parser_raw.mly"
          ( "true" )
-# 5266 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5264 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5285,9 +5283,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2300 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2299 "parser_raw.mly"
                                   ( _1 )
-# 5291 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5289 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5334,9 +5332,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Longident.t) = 
-# 2301 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2300 "parser_raw.mly"
                                                ( Ldot(_1,"::") )
-# 5340 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5338 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5365,9 +5363,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Longident.t) = 
-# 2302 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2301 "parser_raw.mly"
                       ( Lident "[]" )
-# 5371 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5369 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5396,9 +5394,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Longident.t) = 
-# 2303 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2302 "parser_raw.mly"
                   ( Lident "()" )
-# 5402 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5400 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5433,9 +5431,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2304 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2303 "parser_raw.mly"
                              ( Lident "::" )
-# 5439 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5437 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5458,9 +5456,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2305 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2304 "parser_raw.mly"
           ( Lident "false" )
-# 5464 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5462 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5483,9 +5481,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2306 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2305 "parser_raw.mly"
          ( Lident "true" )
-# 5489 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5487 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5519,12 +5517,12 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) = let _endpos = _endpos__3_ in
+        let _v : (Parsetree.core_type * Parsetree.core_type * Location.t) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1121 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1120 "parser_raw.mly"
                                   ( _1, _3, (make_loc _symbolstartpos _endpos) )
-# 5528 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5526 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5559,9 +5557,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type * Parsetree.core_type) = 
-# 1124 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1123 "parser_raw.mly"
                                   ( _1, _3 )
-# 5565 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5563 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5589,16 +5587,16 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) = Obj.magic _3 in
+        let _3 : (Parsetree.core_type * Parsetree.core_type * Location.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) = Obj.magic _1 in
+        let _1 : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) = 
-# 1847 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = 
+# 1846 "parser_raw.mly"
                                          ( _3 :: _1 )
-# 5602 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5600 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5613,10 +5611,10 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
-        let _v : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) = 
-# 1848 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = 
+# 1847 "parser_raw.mly"
         ( [] )
-# 5620 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5618 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5639,9 +5637,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constructor_arguments) = 
-# 1957 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1956 "parser_raw.mly"
                    ( Pcstr_tuple (List.rev _1) )
-# 5645 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5643 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5676,9 +5674,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.constructor_arguments) = 
-# 1958 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1957 "parser_raw.mly"
                                      ( Pcstr_record _2 )
-# 5682 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5680 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5719,7 +5717,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -5728,20 +5726,20 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 5732 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5730 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1911 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1910 "parser_raw.mly"
       (
        let args,res = _2 in
        Type.constructor _1 ~args ?res ~attrs:_3
          ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos))
       )
-# 5745 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5743 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5764,9 +5762,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constructor_declaration list) = 
-# 1905 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1904 "parser_raw.mly"
                             ( [_1] )
-# 5770 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5768 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5789,9 +5787,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constructor_declaration list) = 
-# 1906 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1905 "parser_raw.mly"
                                 ( [_1] )
-# 5795 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5793 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5820,9 +5818,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constructor_declaration list) = 
-# 1907 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1906 "parser_raw.mly"
                                                          ( _2 :: _1 )
-# 5826 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5824 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5845,9 +5843,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2088 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2087 "parser_raw.mly"
       ( _1 )
-# 5851 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5849 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5876,9 +5874,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type) = 
-# 2090 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2089 "parser_raw.mly"
       ( Typ.attr _1 _2 )
-# 5882 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5880 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5901,9 +5899,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2100 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2099 "parser_raw.mly"
       ( _1 )
-# 5907 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5905 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -5951,9 +5949,9 @@ module Tables = struct
         let _4 : (Parsetree.core_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 5957 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5955 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -5962,10 +5960,10 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2102 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2101 "parser_raw.mly"
       ( let param = (extra_rhs_core_type _4 _endpos__4_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Optional _2, param, _6)) )
-# 5969 "src/ocaml/preprocess/406/parser_raw.ml"
+# 5967 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6002,9 +6000,9 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.core_type) = Obj.magic _2 in
         let _1 : (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 6008 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6006 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6012,10 +6010,10 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2105 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2104 "parser_raw.mly"
       ( let param = (extra_rhs_core_type _2 _endpos__2_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Optional _1, param, _4)) )
-# 6019 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6017 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6058,9 +6056,9 @@ module Tables = struct
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 6064 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6062 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6068,10 +6066,10 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2108 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2107 "parser_raw.mly"
       ( let param = (extra_rhs_core_type _3 _endpos__3_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Labelled _1, param, _5)) )
-# 6075 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6073 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6108,10 +6106,10 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2111 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2110 "parser_raw.mly"
       ( let param = (extra_rhs_core_type _1 _endpos__1_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Nolabel, param, _3)) )
-# 6115 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6113 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6134,9 +6132,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type list) = 
-# 2197 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2196 "parser_raw.mly"
               ( [_1] )
-# 6140 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6138 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6171,9 +6169,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type list) = 
-# 2198 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2197 "parser_raw.mly"
                                          ( _3 :: _1 )
-# 6177 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6175 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6196,9 +6194,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type list) = 
-# 2201 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2200 "parser_raw.mly"
                      ( [_1] )
-# 6202 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6200 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6233,9 +6231,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type list) = 
-# 2202 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2201 "parser_raw.mly"
                                          ( _3 :: _1 )
-# 6239 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6237 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6258,9 +6256,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2094 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2093 "parser_raw.mly"
       ( _1 )
-# 6264 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6262 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6293,7 +6291,7 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _4 : (Asttypes.label) = Obj.magic _4 in
+        let _4 : (string) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Parsetree.core_type) = Obj.magic _1 in
@@ -6303,9 +6301,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2096 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2095 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_alias(_1, _4)) )
-# 6309 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6307 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6328,9 +6326,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.direction_flag) = 
-# 2370 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2369 "parser_raw.mly"
        ( Upto )
-# 6334 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6332 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6353,9 +6351,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.direction_flag) = 
-# 2371 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2370 "parser_raw.mly"
            ( Downto )
-# 6359 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6357 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6392,9 +6390,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2525 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2524 "parser_raw.mly"
     ( (expr_of_lwt_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 (merloc _endpos__2_ _3) )
-# 6398 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6396 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6441,7 +6439,7 @@ module Tables = struct
         let _5 : (unit) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6449,11 +6447,11 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2527 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2526 "parser_raw.mly"
     ( let expr = (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
           (Pexp_match(Fake.app Fake.Lwt.un_lwt _3, List.rev _6)) _2 in
       Fake.app Fake.Lwt.in_lwt expr )
-# 6457 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6455 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6482,7 +6480,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6490,9 +6488,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2531 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2530 "parser_raw.mly"
     ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) (Fake.app Fake.Lwt.in_lwt _3) )
-# 6496 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6494 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6539,7 +6537,7 @@ module Tables = struct
         let _5 : (unit) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6547,10 +6545,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2533 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2532 "parser_raw.mly"
     ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
         (Pexp_try(Fake.app Fake.Lwt.in_lwt _3, List.rev _6)) _2 )
-# 6554 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6552 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6591,15 +6589,15 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.expression) = 
-# 2536 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2535 "parser_raw.mly"
     ( Fake.app (Fake.app Fake.Lwt.finally_ _3) _5 )
-# 6603 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6601 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6658,7 +6656,7 @@ module Tables = struct
         let _5 : (unit) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6666,11 +6664,11 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2538 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2537 "parser_raw.mly"
     ( let expr = (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
         (Pexp_try (Fake.app Fake.Lwt.in_lwt _3, List.rev _6)) _2 in
       Fake.app (Fake.app Fake.Lwt.finally_ expr) _8 )
-# 6674 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6672 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6717,7 +6715,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6725,10 +6723,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2542 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2541 "parser_raw.mly"
   ( let expr = Pexp_while (_3, Fake.(app Lwt.un_lwt _5)) in
     Fake.(app Lwt.to_lwt ((mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) expr _2)) )
-# 6732 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6730 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6799,7 +6797,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6807,10 +6805,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__10_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2545 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2544 "parser_raw.mly"
     ( let expr = Pexp_for (_3, _5, _7, _6, Fake.(app Lwt.un_lwt _9)) in
       Fake.(app Lwt.to_lwt ((mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) expr _2)) )
-# 6814 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6812 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6869,7 +6867,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -6877,13 +6875,13 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2548 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2547 "parser_raw.mly"
     ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
           (Pexp_let (Nonrecursive, [Vb.mk _3 (Fake.(app Lwt.un_stream _5))],
              Fake.(app Lwt.unit_lwt _7)))
           _2
     )
-# 6887 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6885 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6906,9 +6904,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = 
-# 1220 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1219 "parser_raw.mly"
       ( _1 )
-# 6912 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6910 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6939,9 +6937,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1222 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1221 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply(_1, List.rev _2)) )
-# 6945 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6943 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -6978,9 +6976,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1224 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1223 "parser_raw.mly"
       ( (expr_of_let_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 (merloc _endpos__2_ _3) )
-# 6984 "src/ocaml/preprocess/406/parser_raw.ml"
+# 6982 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7032,11 +7030,11 @@ module Tables = struct
         let _6 : unit = Obj.magic _6 in
         let _5 : (Parsetree.module_expr) = Obj.magic _5 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 7038 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7036 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -7049,7 +7047,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -7058,15 +7056,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 7062 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7060 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1226 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1225 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_letmodule(_4, _5, (merloc _endpos__6_ _7))) _3 )
-# 7070 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7068 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7112,7 +7110,7 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (Parsetree.extension_constructor) = Obj.magic _4 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -7121,9 +7119,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1228 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1227 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_letexception(_4, _6)) _3 )
-# 7127 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7125 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7174,7 +7172,7 @@ module Tables = struct
         let _7 : (Parsetree.expression) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _10 : (Longident.t) = Obj.magic _10 in
-        let _4 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _4 in
+        let _4 : (string Location.loc option * Parsetree.attributes) = Obj.magic _4 in
         let _3 : (Asttypes.override_flag) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
@@ -7188,7 +7186,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -7197,15 +7195,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 7201 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7199 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1230 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1229 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_open(_3, _5, (merloc _endpos__6_ _7))) _4 )
-# 7209 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7207 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7240,7 +7238,7 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : (Parsetree.case list) = Obj.magic _4 in
         let _3 : (unit) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7248,9 +7246,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1232 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1231 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_function(List.rev _4)) _2 )
-# 7254 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7252 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7285,7 +7283,7 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7293,10 +7291,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1234 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1233 "parser_raw.mly"
       ( let (l,o,p) = _3 in
         (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_fun(l, o, p, _4)) _2 )
-# 7300 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7298 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7346,10 +7344,10 @@ module Tables = struct
         } = _menhir_stack in
         let _7 : (Parsetree.expression) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
-        let _5 : (string Asttypes.loc list) = Obj.magic _5 in
+        let _5 : (string Location.loc list) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7357,9 +7355,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1237 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1236 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) ((mk_newtypes ~loc:(make_loc _symbolstartpos _endpos)) _5 _7).pexp_desc _2 )
-# 7363 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7361 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7406,7 +7404,7 @@ module Tables = struct
         let _5 : (unit) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7414,9 +7412,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1239 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1238 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_match(_3, List.rev _6)) _2 )
-# 7420 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7418 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7463,7 +7461,7 @@ module Tables = struct
         let _5 : (unit) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7471,9 +7469,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1241 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1240 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_try(_3, List.rev _6)) _2 )
-# 7477 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7475 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7498,9 +7496,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1245 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1244 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_tuple(List.rev _1)) )
-# 7504 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7502 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7535,7 +7533,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -7544,16 +7542,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 7548 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7546 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1247 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1246 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct(_1, Some _2)) )
-# 7557 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7555 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7577,16 +7575,16 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
-        let _1 : (Asttypes.label) = Obj.magic _1 in
+        let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1249 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1248 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_variant(_1, Some _2)) )
-# 7590 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7588 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7639,7 +7637,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7647,9 +7645,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1251 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1250 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ifthenelse(_3, (merloc _endpos__4_ _5), Some (merloc _endpos__6_ _7))) _2 )
-# 7653 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7651 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7690,7 +7688,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7698,9 +7696,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1253 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1252 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_ifthenelse(_3, (merloc _endpos__4_ _5), None)) _2 )
-# 7704 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7702 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7747,7 +7745,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7755,9 +7753,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1255 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1254 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_while(_3, (merloc _endpos__4_ _5))) _2 )
-# 7761 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7759 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7828,7 +7826,7 @@ module Tables = struct
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -7836,9 +7834,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__10_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1258 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1257 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))(Pexp_for(_3, (merloc _endpos__4_ _5), (merloc _endpos__6_ _7), _6, (merloc _endpos__8_ _9))) _2 )
-# 7842 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7840 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7875,9 +7873,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1260 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1259 "parser_raw.mly"
       ( mkexp_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_tuple[_1;(merloc _endpos__2_ _3)])) ((make_loc _symbolstartpos _endpos)) )
-# 7881 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7879 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7907,9 +7905,9 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 445 "src/ocaml/preprocess/406/parser_raw.mly"
+# 444 "parser_raw.mly"
        (string)
-# 7913 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7911 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -7918,9 +7916,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1262 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1261 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
-# 7924 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7922 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7950,9 +7948,9 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 446 "src/ocaml/preprocess/406/parser_raw.mly"
+# 445 "parser_raw.mly"
        (string)
-# 7956 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7954 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -7961,9 +7959,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1264 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1263 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
-# 7967 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7965 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -7993,9 +7991,9 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 447 "src/ocaml/preprocess/406/parser_raw.mly"
+# 446 "parser_raw.mly"
        (string)
-# 7999 "src/ocaml/preprocess/406/parser_raw.ml"
+# 7997 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -8004,9 +8002,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1266 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1265 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
-# 8010 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8008 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8036,9 +8034,9 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 448 "src/ocaml/preprocess/406/parser_raw.mly"
+# 447 "parser_raw.mly"
        (string)
-# 8042 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8040 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -8047,9 +8045,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1268 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1267 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
-# 8053 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8051 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8079,9 +8077,9 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 449 "src/ocaml/preprocess/406/parser_raw.mly"
+# 448 "parser_raw.mly"
        (string)
-# 8085 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8083 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -8090,9 +8088,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1270 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1269 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
-# 8096 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8094 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8129,9 +8127,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1272 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1271 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "+" _3 )
-# 8135 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8133 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8168,9 +8166,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1274 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1273 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "+." _3 )
-# 8174 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8172 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8207,9 +8205,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1276 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1275 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "+=" _3 )
-# 8213 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8211 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8246,9 +8244,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1278 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1277 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "-" _3 )
-# 8252 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8250 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8285,9 +8283,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1280 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1279 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "-." _3 )
-# 8291 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8289 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8324,9 +8322,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1282 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1281 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "*" _3 )
-# 8330 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8328 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8363,9 +8361,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1284 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1283 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "%" _3 )
-# 8369 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8367 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8402,9 +8400,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1286 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1285 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "=" _3 )
-# 8408 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8406 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8441,9 +8439,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1288 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1287 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "<" _3 )
-# 8447 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8445 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8480,9 +8478,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1290 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1289 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 ">" _3 )
-# 8486 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8484 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8519,9 +8517,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1292 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1291 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "or" _3 )
-# 8525 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8523 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8558,9 +8556,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1294 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1293 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "||" _3 )
-# 8564 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8562 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8597,9 +8595,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1296 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1295 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "&" _3 )
-# 8603 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8601 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8636,9 +8634,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1298 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1297 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "&&" _3 )
-# 8642 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8640 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8675,9 +8673,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1300 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1299 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 ":=" _3 )
-# 8681 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8679 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8708,9 +8706,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1302 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1301 "parser_raw.mly"
       ( (mkuminus ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__1_ _endpos__1_)) _1 _2 )
-# 8714 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8712 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8741,9 +8739,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1304 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1303 "parser_raw.mly"
       ( (mkuplus ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__1_ _endpos__1_)) _1 _2 )
-# 8747 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8745 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8796,7 +8794,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -8805,15 +8803,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 8809 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8807 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1306 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1305 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_setfield(_1, _3, _5)) )
-# 8817 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8815 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8874,10 +8872,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1308 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1307 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "Array" "set")),
                          [Nolabel,_1; Nolabel,_4; Nolabel,_7])) )
-# 8881 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8879 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8938,10 +8936,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1311 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1310 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "String" "set")),
                          [Nolabel,_1; Nolabel,_4; Nolabel,_7])) )
-# 8945 "src/ocaml/preprocess/406/parser_raw.ml"
+# 8943 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9002,9 +9000,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1314 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1313 "parser_raw.mly"
       ( (bigarray_set ~loc:(make_loc _symbolstartpos _endpos)) _1 _4 _7 )
-# 9008 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9006 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9058,9 +9056,9 @@ module Tables = struct
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 9064 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9062 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -9069,10 +9067,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1316 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1315 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Lident ("." ^ _2 ^ "[]<-")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id , [Nolabel, _1; Nolabel, _4; Nolabel, _7]) )
-# 9076 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9074 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9126,9 +9124,9 @@ module Tables = struct
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 9132 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9130 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -9137,10 +9135,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1319 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1318 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Lident ("." ^ _2 ^ "()<-")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id , [Nolabel, _1; Nolabel, _4; Nolabel, _7]) )
-# 9144 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9142 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9194,9 +9192,9 @@ module Tables = struct
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 9200 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9198 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -9205,10 +9203,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1322 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1321 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Lident ("." ^ _2 ^ "{}<-")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id , [Nolabel, _1; Nolabel, _4; Nolabel, _7]) )
-# 9212 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9210 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9272,9 +9270,9 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 9278 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9276 "parser_raw.ml"
         ) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -9285,10 +9283,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1325 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1324 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Ldot(_3,"." ^ _4 ^ "[]<-")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id , [Nolabel, _1; Nolabel, _6; Nolabel, _9]) )
-# 9292 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9290 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9352,9 +9350,9 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 9358 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9356 "parser_raw.ml"
         ) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -9365,10 +9363,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1328 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1327 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Ldot(_3, "." ^ _4 ^ "()<-")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id , [Nolabel, _1; Nolabel, _6; Nolabel, _9]) )
-# 9372 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9370 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9432,9 +9430,9 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 9438 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9436 "parser_raw.ml"
         ) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -9445,10 +9443,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1331 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1330 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Ldot(_3, "." ^ _4 ^ "{}<-")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id , [Nolabel, _1; Nolabel, _6; Nolabel, _9]) )
-# 9452 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9450 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9478,7 +9476,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__3_ in
@@ -9489,7 +9487,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9498,16 +9496,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 9502 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9500 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1334 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1333 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_setinstvar(_1, _3)) )
-# 9511 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9509 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9536,7 +9534,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -9544,9 +9542,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1336 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1335 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_assert _3) _2 )
-# 9550 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9548 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9575,7 +9573,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -9583,9 +9581,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1338 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1337 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_lazy _3) _2 )
-# 9589 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9587 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9620,7 +9618,7 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.class_structure) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -9628,9 +9626,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1340 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1339 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_object _3) _2 )
-# 9634 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9632 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9659,9 +9657,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1344 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1343 "parser_raw.mly"
       ( Exp.attr _1 _2 )
-# 9665 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9663 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9696,9 +9694,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression list) = 
-# 1606 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1605 "parser_raw.mly"
                                ( _3 :: _1 )
-# 9702 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9700 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9733,9 +9731,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression list) = 
-# 1607 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1606 "parser_raw.mly"
                     ( [_3; _1] )
-# 9739 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9737 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9758,9 +9756,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression list) = 
-# 1635 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1634 "parser_raw.mly"
          ( [_1] )
-# 9764 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9762 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9795,9 +9793,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression list) = 
-# 1636 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1635 "parser_raw.mly"
                              ( _3 :: _1 )
-# 9801 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9799 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9812,10 +9810,10 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
-        let _v : (string Asttypes.loc option * Parsetree.attributes) = 
-# 2487 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string Location.loc option * Parsetree.attributes) = 
+# 2486 "parser_raw.mly"
                  ( None, [] )
-# 9819 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9817 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9843,10 +9841,10 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (string Asttypes.loc option * Parsetree.attributes) = 
-# 2488 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string Location.loc option * Parsetree.attributes) = 
+# 2487 "parser_raw.mly"
                          ( None, _1 :: _2 )
-# 9850 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9848 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9875,15 +9873,15 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.attributes) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc) = Obj.magic _2 in
+        let _2 : (string Location.loc) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : (string Asttypes.loc option * Parsetree.attributes) = 
-# 2489 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string Location.loc option * Parsetree.attributes) = 
+# 2488 "parser_raw.mly"
                                ( Some _2, _3 )
-# 9887 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9885 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9918,15 +9916,15 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.payload) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc) = Obj.magic _2 in
+        let _2 : (string Location.loc) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.extension) = 
-# 2492 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2491 "parser_raw.mly"
                                            ( (_2, _3) )
-# 9930 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9928 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -9967,7 +9965,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9976,18 +9974,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 9980 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9978 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2020 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2019 "parser_raw.mly"
       ( let args, res = _2 in
         Te.decl _1 ~args ?res ~attrs:_3
           ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
-# 9991 "src/ocaml/preprocess/406/parser_raw.ml"
+# 9989 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10034,7 +10032,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10043,7 +10041,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10047 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10045 "parser_raw.ml"
           
         in
         let _1 =
@@ -10053,7 +10051,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10062,17 +10060,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10066 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10064 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2032 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2031 "parser_raw.mly"
       ( Te.rebind _1 _3 ~attrs:_4
           ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
-# 10076 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10074 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10108,7 +10106,7 @@ module Tables = struct
         let _4 : (Parsetree.attributes) = Obj.magic _4 in
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__4_ in
@@ -10119,7 +10117,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10128,14 +10126,14 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10132 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10130 "parser_raw.ml"
           
         in
         let _endpos = _endpos__4_ in
         
-# 2215 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2214 "parser_raw.mly"
     ( Otag (_1, add_info_attrs ((symbol_info _endpos)) _4, _3) )
-# 10139 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10137 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10165,18 +10163,18 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__3_ in
-        let _v : (Asttypes.label Asttypes.loc * Parsetree.expression) = let _1 =
+        let _v : (string Location.loc * Parsetree.expression) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10185,13 +10183,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10189 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10187 "parser_raw.ml"
           
         in
         
-# 1630 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1629 "parser_raw.mly"
       ( (_1, _3) )
-# 10195 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10193 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10209,18 +10207,18 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__10_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__10_ in
-        let _v : (Asttypes.label Asttypes.loc * Parsetree.expression) = let _1 =
+        let _v : (string Location.loc * Parsetree.expression) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10229,7 +10227,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10233 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10231 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -10237,9 +10235,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1632 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1631 "parser_raw.mly"
       ( (_1, (exp_of_label ~loc:(make_loc _symbolstartpos _endpos) (Lident _1.Location.txt) (make_loc _startpos__1_ _endpos__1_))) )
-# 10243 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10241 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10263,14 +10261,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (unit) = Obj.magic _2 in
-        let _1 : (Asttypes.label Asttypes.loc * Parsetree.expression) = Obj.magic _1 in
+        let _1 : (string Location.loc * Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : ((Asttypes.label Asttypes.loc * Parsetree.expression) list) = 
-# 1625 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((string Location.loc * Parsetree.expression) list) = 
+# 1624 "parser_raw.mly"
                         ( [_1] )
-# 10274 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10272 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10298,16 +10296,16 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : ((Asttypes.label Asttypes.loc * Parsetree.expression) list) = Obj.magic _3 in
+        let _3 : ((string Location.loc * Parsetree.expression) list) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Asttypes.label Asttypes.loc * Parsetree.expression) = Obj.magic _1 in
+        let _1 : (string Location.loc * Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : ((Asttypes.label Asttypes.loc * Parsetree.expression) list) = 
-# 1626 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((string Location.loc * Parsetree.expression) list) = 
+# 1625 "parser_raw.mly"
                                     ( _1 :: _3 )
-# 10311 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10309 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10355,7 +10353,7 @@ module Tables = struct
         let _4 : (Parsetree.attributes) = Obj.magic _4 in
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__6_ in
@@ -10366,7 +10364,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10375,19 +10373,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10379 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10377 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         
-# 2219 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2218 "parser_raw.mly"
     ( let info =
         match (rhs_info _endpos__4_) with
         | Some _ as info_before_semi -> info_before_semi
         | None -> (symbol_info _endpos)
       in
       Otag (_1, add_info_attrs info (_4 @ _6), _3) )
-# 10391 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10389 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10422,15 +10420,15 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.payload) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc) = Obj.magic _2 in
+        let _2 : (string Location.loc) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.attribute) = 
-# 2476 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2475 "parser_raw.mly"
                                           ( (_2, _3) )
-# 10434 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10432 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10453,9 +10451,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = 
-# 1567 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1566 "parser_raw.mly"
       ( _1 )
-# 10459 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10457 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10492,9 +10490,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1569 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1568 "parser_raw.mly"
       ( (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _3 _1 )
-# 10498 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10496 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10523,9 +10521,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1594 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1593 "parser_raw.mly"
       ( (merloc _endpos__1_ _2) )
-# 10529 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10527 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10568,9 +10566,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1596 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1595 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_constraint ((merloc _endpos__3_ _4), _2)) )
-# 10574 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10572 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10601,12 +10599,12 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1598 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1597 "parser_raw.mly"
       (
        let (l,o,p) = _1 in
        (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_fun(l, o, p, _2))
       )
-# 10610 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10608 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10646,7 +10644,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _3 : (string Asttypes.loc list) = Obj.magic _3 in
+        let _3 : (string Location.loc list) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -10655,9 +10653,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1603 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1602 "parser_raw.mly"
       ( (mk_newtypes ~loc:(make_loc _symbolstartpos _endpos)) _3 _5 )
-# 10661 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10659 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10685,10 +10683,10 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (string Asttypes.loc * Parsetree.module_type option) = 
-# 615 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string Location.loc * Parsetree.module_type option) = 
+# 614 "parser_raw.mly"
       ( (mkrhs "*" (make_loc _startpos__2_ _endpos__2_)), None )
-# 10692 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10690 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10734,14 +10732,14 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : (string Asttypes.loc * Parsetree.module_type option) = let _2 =
+        let _v : (string Location.loc * Parsetree.module_type option) = let _2 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10750,13 +10748,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 10754 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10752 "parser_raw.ml"
           
         in
         
-# 617 "src/ocaml/preprocess/406/parser_raw.mly"
+# 616 "parser_raw.mly"
       ( _2, Some _4 )
-# 10760 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10758 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10775,17 +10773,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 10781 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10779 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 620 "src/ocaml/preprocess/406/parser_raw.mly"
+# 619 "parser_raw.mly"
            ( _1 )
-# 10789 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10787 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10808,9 +10806,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 621 "src/ocaml/preprocess/406/parser_raw.mly"
+# 620 "parser_raw.mly"
                ( "_" )
-# 10814 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10812 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10833,15 +10831,15 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (string Asttypes.loc * Parsetree.module_type option) = Obj.magic _2 in
-        let _1 : ((string Asttypes.loc * Parsetree.module_type option) list) = Obj.magic _1 in
+        let _2 : (string Location.loc * Parsetree.module_type option) = Obj.magic _2 in
+        let _1 : ((string Location.loc * Parsetree.module_type option) list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : ((string Asttypes.loc * Parsetree.module_type option) list) = 
-# 625 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((string Location.loc * Parsetree.module_type option) list) = 
+# 624 "parser_raw.mly"
       ( _2 :: _1 )
-# 10845 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10843 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10859,14 +10857,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (string Asttypes.loc * Parsetree.module_type option) = Obj.magic _1 in
+        let _1 : (string Location.loc * Parsetree.module_type option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : ((string Asttypes.loc * Parsetree.module_type option) list) = 
-# 627 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((string Location.loc * Parsetree.module_type option) list) = 
+# 626 "parser_raw.mly"
       ( [ _1 ] )
-# 10870 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10868 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10882,9 +10880,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 1949 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1948 "parser_raw.mly"
                                   ( (Pcstr_tuple [],None) )
-# 10888 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10886 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10913,9 +10911,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 1950 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1949 "parser_raw.mly"
                              ( (_2,None) )
-# 10919 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10917 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10956,9 +10954,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 1952 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1951 "parser_raw.mly"
                                   ( (_2,Some _4) )
-# 10962 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10960 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -10987,9 +10985,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 1954 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1953 "parser_raw.mly"
                                   ( (Pcstr_tuple [],Some _2) )
-# 10993 "src/ocaml/preprocess/406/parser_raw.ml"
+# 10991 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11008,17 +11006,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 11014 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11012 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.label) = 
-# 2246 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string) = 
+# 2245 "parser_raw.mly"
            ( _1 )
-# 11022 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11020 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11037,17 +11035,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 11043 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11041 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.label) = 
-# 2247 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string) = 
+# 2246 "parser_raw.mly"
            ( _1 )
-# 11051 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11049 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11076,9 +11074,9 @@ module Tables = struct
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__2_ in
         let _v : (
-# 577 "src/ocaml/preprocess/406/parser_raw.mly"
+# 576 "parser_raw.mly"
       (Parsetree.structure)
-# 11082 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11080 "parser_raw.ml"
         ) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
@@ -11086,15 +11084,15 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 583 "src/ocaml/preprocess/406/parser_raw.mly"
+# 582 "parser_raw.mly"
                               ( extra_str _startpos _endpos _1 )
-# 11092 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11090 "parser_raw.ml"
           
         in
         
-# 599 "src/ocaml/preprocess/406/parser_raw.mly"
+# 598 "parser_raw.mly"
                              ( _1 )
-# 11098 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11096 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11123,9 +11121,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.object_field) = 
-# 2227 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2226 "parser_raw.mly"
                         ( Oinherit _1 )
-# 11129 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11127 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11154,9 +11152,9 @@ module Tables = struct
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__2_ in
         let _v : (
-# 579 "src/ocaml/preprocess/406/parser_raw.mly"
+# 578 "parser_raw.mly"
       (Parsetree.signature)
-# 11160 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11158 "parser_raw.ml"
         ) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
@@ -11164,15 +11162,15 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 584 "src/ocaml/preprocess/406/parser_raw.mly"
+# 583 "parser_raw.mly"
                               ( extra_sig _startpos _endpos _1 )
-# 11170 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11168 "parser_raw.ml"
           
         in
         
-# 602 "src/ocaml/preprocess/406/parser_raw.mly"
+# 601 "parser_raw.mly"
                              ( _1 )
-# 11176 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11174 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11207,15 +11205,15 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.payload) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc) = Obj.magic _2 in
+        let _2 : (string Location.loc) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.extension) = 
-# 2495 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2494 "parser_raw.mly"
                                                   ( (_2, _3) )
-# 11219 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11217 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11234,17 +11232,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 11240 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11238 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.label) = 
-# 2230 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string) = 
+# 2229 "parser_raw.mly"
            ( _1 )
-# 11248 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11246 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11285,7 +11283,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.core_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _1 : (Asttypes.mutable_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -11297,7 +11295,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -11306,22 +11304,22 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 11310 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11308 "parser_raw.ml"
           
         in
         let _startpos__2_ = _startpos__10_ in
         let _endpos = _endpos__5_ in
-        let _symbolstartpos = if Pervasives.(!=) _startpos__1_ _endpos__1_ then
+        let _symbolstartpos = if _startpos__1_ != _endpos__1_ then
           _startpos__1_
         else
           _startpos__2_ in
         
-# 1967 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1966 "parser_raw.mly"
       (
        Type.field _2 _4 ~mut:_1 ~attrs:_5
          ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos))
       )
-# 11325 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11323 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11374,7 +11372,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.core_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _1 : (Asttypes.mutable_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -11386,7 +11384,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -11395,17 +11393,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 11399 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11397 "parser_raw.ml"
           
         in
         let _startpos__2_ = _startpos__10_ in
         let _endpos = _endpos__7_ in
-        let _symbolstartpos = if Pervasives.(!=) _startpos__1_ _endpos__1_ then
+        let _symbolstartpos = if _startpos__1_ != _endpos__1_ then
           _startpos__1_
         else
           _startpos__2_ in
         
-# 1974 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1973 "parser_raw.mly"
       (
        let info =
          match (rhs_info _endpos__5_) with
@@ -11415,7 +11413,7 @@ module Tables = struct
        Type.field _2 _4 ~mut:_1 ~attrs:(_5 @ _7)
          ~loc:(((make_loc _symbolstartpos _endpos))) ~info
       )
-# 11419 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11417 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11438,9 +11436,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.label_declaration list) = 
-# 1961 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1960 "parser_raw.mly"
                       ( [_1] )
-# 11444 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11442 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11463,9 +11461,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.label_declaration list) = 
-# 1962 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1961 "parser_raw.mly"
                            ( [_1] )
-# 11469 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11467 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11494,9 +11492,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.label_declaration list) = 
-# 1963 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1962 "parser_raw.mly"
                                               ( _1 :: _2 )
-# 11500 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11498 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11521,17 +11519,17 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
         let _1 : (
-# 455 "src/ocaml/preprocess/406/parser_raw.mly"
+# 454 "parser_raw.mly"
        (string)
-# 11527 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11525 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1512 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1511 "parser_raw.mly"
       ( (Labelled _1, _2) )
-# 11535 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11533 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11560,9 +11558,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1513 "parser_raw.mly"
       ( (Labelled (fst _2), snd _2) )
-# 11566 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11564 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11591,9 +11589,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1516 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1515 "parser_raw.mly"
       ( (Optional (fst _2), snd _2) )
-# 11597 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11595 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11618,17 +11616,17 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
         let _1 : (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 11624 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11622 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1518 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1517 "parser_raw.mly"
       ( (Optional _1, _2) )
-# 11632 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11630 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11647,9 +11645,9 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 11653 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11651 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -11657,9 +11655,9 @@ module Tables = struct
         let _v : (string * Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1521 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1520 "parser_raw.mly"
            ( (_1, (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((mkrhs (Lident _1) (make_loc _startpos__1_ _endpos__1_))))) )
-# 11663 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11661 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11682,9 +11680,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string * Parsetree.pattern) = 
-# 1205 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1204 "parser_raw.mly"
       ( _1 )
-# 11688 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11686 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11721,9 +11719,9 @@ module Tables = struct
         let _v : (string * Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1207 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1206 "parser_raw.mly"
       ( let (lab, pat) = _1 in (lab, (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(pat, _3))) )
-# 11727 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11725 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11742,17 +11740,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 11748 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11746 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2309 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2308 "parser_raw.mly"
            ( Lident _1 )
-# 11756 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11754 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11781,9 +11779,9 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 11787 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11785 "parser_raw.ml"
         ) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
@@ -11791,9 +11789,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2310 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2309 "parser_raw.mly"
                              ( Ldot(_1, _3) )
-# 11797 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11795 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11812,9 +11810,9 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 11818 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11816 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
@@ -11826,7 +11824,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -11835,7 +11833,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 11839 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11837 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -11843,9 +11841,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1210 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1209 "parser_raw.mly"
                   ( (_1.Location.txt, (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_var _1)) )
-# 11849 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11847 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11868,9 +11866,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1505 "parser_raw.mly"
       ( (Nolabel, _1) )
-# 11874 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11872 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11893,9 +11891,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1508 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1507 "parser_raw.mly"
       ( _1 )
-# 11899 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11897 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11942,9 +11940,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1179 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1178 "parser_raw.mly"
       ( (Optional (fst _3), _4, snd _3) )
-# 11948 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11946 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -11973,9 +11971,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1181 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1180 "parser_raw.mly"
       ( (Optional (fst _2), None, snd _2) )
-# 11979 "src/ocaml/preprocess/406/parser_raw.ml"
+# 11977 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12018,17 +12016,17 @@ module Tables = struct
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 12024 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12022 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1183 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1182 "parser_raw.mly"
       ( (Optional _1, _4, _3) )
-# 12032 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12030 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12053,17 +12051,17 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.pattern) = Obj.magic _2 in
         let _1 : (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 12059 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12057 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1185 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1184 "parser_raw.mly"
       ( (Optional _1, None, _2) )
-# 12067 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12065 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12104,9 +12102,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1187 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1186 "parser_raw.mly"
       ( (Labelled (fst _3), None, snd _3) )
-# 12110 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12108 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12135,9 +12133,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1189 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1188 "parser_raw.mly"
       ( (Labelled (fst _2), None, snd _2) )
-# 12141 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12139 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12162,17 +12160,17 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.pattern) = Obj.magic _2 in
         let _1 : (
-# 455 "src/ocaml/preprocess/406/parser_raw.mly"
+# 454 "parser_raw.mly"
        (string)
-# 12168 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12166 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1191 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1190 "parser_raw.mly"
       ( (Labelled _1, None, _2) )
-# 12176 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12174 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12195,9 +12193,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1193 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1192 "parser_raw.mly"
       ( (Nolabel, None, _1) )
-# 12201 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12199 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12237,14 +12235,14 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__4_ in
-        let _v : (Longident.t Asttypes.loc * Parsetree.expression) = let _1 =
+        let _v : (Longident.t Location.loc * Parsetree.expression) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12253,16 +12251,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 12257 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12255 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1620 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1619 "parser_raw.mly"
       ( (_1, (mkexp_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) _4 _2) )
-# 12266 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12264 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12290,14 +12288,14 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__2_ in
-        let _v : (Longident.t Asttypes.loc * Parsetree.expression) = let _1 =
+        let _v : (Longident.t Location.loc * Parsetree.expression) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12306,7 +12304,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 12310 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12308 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -12314,9 +12312,9 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1622 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1621 "parser_raw.mly"
       ( (_1, (mkexp_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) ((exp_of_label ~loc:(make_loc _symbolstartpos _endpos) _1.Location.txt (make_loc _startpos__1_ _endpos__1_))) _2) )
-# 12320 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12318 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12334,14 +12332,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.expression) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.expression) list) = 
-# 1614 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.expression) list) = 
+# 1613 "parser_raw.mly"
               ( [_1] )
-# 12345 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12343 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12369,16 +12367,16 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : ((Longident.t Asttypes.loc * Parsetree.expression) list) = Obj.magic _3 in
+        let _3 : ((Longident.t Location.loc * Parsetree.expression) list) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.expression) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.expression) list) = 
-# 1615 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.expression) list) = 
+# 1614 "parser_raw.mly"
                                 ( _1 :: _3 )
-# 12382 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12380 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12402,14 +12400,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.expression) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.expression) list) = 
-# 1616 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.expression) list) = 
+# 1615 "parser_raw.mly"
                   ( [_1] )
-# 12413 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12411 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12449,14 +12447,14 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__4_ in
-        let _v : (Longident.t Asttypes.loc * Parsetree.pattern) = let _1 =
+        let _v : (Longident.t Location.loc * Parsetree.pattern) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12465,16 +12463,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 12469 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12467 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1793 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1792 "parser_raw.mly"
       ( (_1, (mkpat_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) _4 _2) )
-# 12478 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12476 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12502,14 +12500,14 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__2_ in
-        let _v : (Longident.t Asttypes.loc * Parsetree.pattern) = let _1 =
+        let _v : (Longident.t Location.loc * Parsetree.pattern) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12518,7 +12516,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 12522 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12520 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -12526,9 +12524,9 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1795 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1794 "parser_raw.mly"
       ( (_1, (mkpat_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) ((pat_of_label ~loc:(make_loc _symbolstartpos _endpos) _1.Location.txt (make_loc _startpos__1_ _endpos__1_))) _2) )
-# 12532 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12530 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12546,14 +12544,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.pattern) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.pattern) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1785 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
+# 1784 "parser_raw.mly"
                 ( [_1], Closed )
-# 12557 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12555 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12577,14 +12575,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.pattern) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.pattern) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1786 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
+# 1785 "parser_raw.mly"
                      ( [_1], Closed )
-# 12588 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12586 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12620,14 +12618,14 @@ module Tables = struct
         let _4 : (unit) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.pattern) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.pattern) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1787 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
+# 1786 "parser_raw.mly"
                                          ( [_1], Open )
-# 12631 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12629 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12655,16 +12653,16 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) = Obj.magic _3 in
+        let _3 : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Longident.t Asttypes.loc * Parsetree.pattern) = Obj.magic _1 in
+        let _1 : (Longident.t Location.loc * Parsetree.pattern) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1789 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
+# 1788 "parser_raw.mly"
       ( let (fields, closed) = _3 in _1 :: fields, closed )
-# 12668 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12666 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12705,7 +12703,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.pattern * Parsetree.expression) = Obj.magic _4 in
         let _3 : (Asttypes.rec_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -12713,10 +12711,10 @@ module Tables = struct
         let _v : (Ast_helper.let_bindings) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1558 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1557 "parser_raw.mly"
       ( let (ext, attr) = _2 in
         (mklbs ~loc:(make_loc _symbolstartpos _endpos)) ext _3 ((mklb ~loc:(make_loc _symbolstartpos _endpos)) true _4 (attr@_5)) )
-# 12720 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12718 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12745,9 +12743,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern * Parsetree.expression) = 
-# 1529 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1528 "parser_raw.mly"
       ( ((mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)), _2) )
-# 12751 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12749 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12790,7 +12788,7 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1531 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1530 "parser_raw.mly"
       ( let v = (mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)) in (* PR#7344 *)
         let t =
           match _2 with
@@ -12800,7 +12798,7 @@ module Tables = struct
         in
         ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(v, (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly([],t)))),
          (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _4 _2) )
-# 12804 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12802 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12852,7 +12850,7 @@ module Tables = struct
         let _6 : unit = Obj.magic _6 in
         let _5 : (Parsetree.core_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _3 : (Asttypes.label Asttypes.loc list) = Obj.magic _3 in
+        let _3 : (string Location.loc list) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -12861,11 +12859,11 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1541 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1540 "parser_raw.mly"
       ( ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint((mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)),
                                (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly(List.rev _3,_5)))),
          _7) )
-# 12869 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12867 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12922,7 +12920,7 @@ module Tables = struct
         let _7 : unit = Obj.magic _7 in
         let _6 : (Parsetree.core_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
-        let _4 : (string Asttypes.loc list) = Obj.magic _4 in
+        let _4 : (string Location.loc list) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (string) = Obj.magic _1 in
@@ -12932,10 +12930,10 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1545 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1544 "parser_raw.mly"
       ( let exp, poly = (wrap_type_annotation ~loc:(make_loc _symbolstartpos _endpos)) _4 _6 _8 in
         ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint((mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)), poly)), exp) )
-# 12939 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12937 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -12970,9 +12968,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern * Parsetree.expression) = 
-# 1548 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1547 "parser_raw.mly"
       ( (_1, _3) )
-# 12976 "src/ocaml/preprocess/406/parser_raw.ml"
+# 12974 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13021,9 +13019,9 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1550 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1549 "parser_raw.mly"
       ( ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_1, _3)), _5) )
-# 13027 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13025 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13046,9 +13044,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Ast_helper.let_bindings) = 
-# 1553 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1552 "parser_raw.mly"
                 ( _1 )
-# 13052 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13050 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13077,9 +13075,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Ast_helper.let_bindings) = 
-# 1554 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1553 "parser_raw.mly"
                                  ( addlb _1 _2 )
-# 13083 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13081 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13120,7 +13118,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -13129,17 +13127,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 13133 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13131 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1945 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1944 "parser_raw.mly"
       ( let args, res = _2 in
         Te.decl _1 ~args ?res ~attrs:_3 ~loc:(((make_loc _symbolstartpos _endpos))) )
-# 13143 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13141 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13162,9 +13160,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1214 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1213 "parser_raw.mly"
       ( _1 )
-# 13168 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13166 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13201,9 +13199,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1216 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1215 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_1, _3)) )
-# 13207 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13205 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13222,21 +13220,21 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 13228 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13226 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__10_ in
-        let _v : (string Asttypes.loc list) = let _1 =
+        let _v : (string Location.loc list) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -13245,13 +13243,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 13249 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13247 "parser_raw.ml"
           
         in
         
-# 1524 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1523 "parser_raw.mly"
                   ( [_1] )
-# 13255 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13253 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13274,23 +13272,23 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (string Asttypes.loc list) = Obj.magic _2 in
+        let _2 : (string Location.loc list) = Obj.magic _2 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 13282 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13280 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__2_ in
-        let _v : (string Asttypes.loc list) = let _1 =
+        let _v : (string Location.loc list) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -13299,13 +13297,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 13303 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13301 "parser_raw.ml"
           
         in
         
-# 1525 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1524 "parser_raw.mly"
                               ( _1 :: _2 )
-# 13309 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13307 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13346,7 +13344,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.pattern * Parsetree.expression) = Obj.magic _4 in
         let _3 : (Asttypes.rec_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -13354,10 +13352,10 @@ module Tables = struct
         let _v : (Ast_helper.let_bindings) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2516 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2515 "parser_raw.mly"
       ( let (ext, attr) = _2 in
         (mklbs ~loc:(make_loc _symbolstartpos _endpos)) ext _3 ((mklb ~loc:(make_loc _symbolstartpos _endpos)) true _4 (attr@_5)) )
-# 13361 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13359 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13380,9 +13378,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Ast_helper.let_bindings) = 
-# 2520 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2519 "parser_raw.mly"
                 ( _1 )
-# 13386 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13384 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13411,9 +13409,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Ast_helper.let_bindings) = 
-# 2521 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2520 "parser_raw.mly"
                                  ( addlb _1 _2 )
-# 13417 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13415 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13448,9 +13446,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.case) = 
-# 1585 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1584 "parser_raw.mly"
       ( Exp.case _1 (merloc _endpos__2_ _3) )
-# 13454 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13452 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13497,9 +13495,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.case) = 
-# 1587 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1586 "parser_raw.mly"
       ( Exp.case _1 ~guard:(merloc _endpos__2_ _3) (merloc _endpos__4_ _5) )
-# 13503 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13501 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13534,10 +13532,10 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.case) = 
-# 1589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1588 "parser_raw.mly"
       ( Exp.case _1 (merloc _endpos__2_
                        (Exp.unreachable ~loc:((make_loc _startpos__3_ _endpos__3_)) ())) )
-# 13541 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13539 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13560,9 +13558,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.case list) = 
-# 1580 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1579 "parser_raw.mly"
                ( [_1] )
-# 13566 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13564 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13597,9 +13595,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.case list) = 
-# 1581 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1580 "parser_raw.mly"
                                ( _3 :: _1 )
-# 13603 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13601 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13628,9 +13626,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2205 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2204 "parser_raw.mly"
                          ( let (f, c) = _2 in (_1 :: f, c) )
-# 13634 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13632 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13659,9 +13657,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2206 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2205 "parser_raw.mly"
                                  ( let (f, c) = _2 in (_1 :: f, c) )
-# 13665 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13663 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13684,9 +13682,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2207 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2206 "parser_raw.mly"
                ( [_1], Closed )
-# 13690 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13688 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13709,9 +13707,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2208 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2207 "parser_raw.mly"
           ( [_1], Closed )
-# 13715 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13713 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13734,9 +13732,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2209 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2208 "parser_raw.mly"
                        ( [_1], Closed )
-# 13740 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13738 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13759,9 +13757,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2210 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2209 "parser_raw.mly"
                      ( [Oinherit _1], Closed )
-# 13765 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13763 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13784,9 +13782,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.object_field list * Asttypes.closed_flag) = 
-# 2211 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2210 "parser_raw.mly"
            ( [], Open )
-# 13790 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13788 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13836,7 +13834,7 @@ module Tables = struct
         } = _menhir_stack in
         let _7 : (Parsetree.core_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
-        let _5 : (Asttypes.label) = Obj.magic _5 in
+        let _5 : (string) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
@@ -13844,13 +13842,12 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = 
-# 1033 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1032 "parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (mkloc _5 ((make_loc _startpos__5_ _endpos__5_)), Private, Cfk_virtual _7), _2 )
-# 13854 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13851 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13900,7 +13897,7 @@ module Tables = struct
         } = _menhir_stack in
         let _7 : (Parsetree.core_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
-        let _5 : (Asttypes.label) = Obj.magic _5 in
+        let _5 : (string) = Obj.magic _5 in
         let _4 : (Asttypes.private_flag) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
@@ -13908,13 +13905,12 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = 
-# 1036 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1035 "parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (mkloc _5 ((make_loc _startpos__5_ _endpos__5_)), _4, Cfk_virtual _7), _2 )
-# 13918 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13914 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -13953,31 +13949,30 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _5 : (Parsetree.expression) = Obj.magic _5 in
-        let _4 : (Asttypes.label) = Obj.magic _4 in
+        let _4 : (string) = Obj.magic _4 in
         let _3 : (Asttypes.private_flag) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : (Asttypes.override_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = let _endpos = _endpos__5_ in
-        let _symbolstartpos = if Pervasives.(!=) _startpos__1_ _endpos__1_ then
+        let _symbolstartpos = if _startpos__1_ != _endpos__1_ then
           _startpos__1_
         else
-          if Pervasives.(!=) _startpos__2_ _endpos__2_ then
+          if _startpos__2_ != _endpos__2_ then
             _startpos__2_
           else
-            if Pervasives.(!=) _startpos__3_ _endpos__3_ then
+            if _startpos__3_ != _endpos__3_ then
               _startpos__3_
             else
               _startpos__4_ in
         
-# 1039 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1038 "parser_raw.mly"
       ( (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), _3,
          Cfk_concrete (_1, (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_poly (_5, None)))), _2 )
-# 13981 "src/ocaml/preprocess/406/parser_raw.ml"
+# 13976 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14034,31 +14029,30 @@ module Tables = struct
         let _7 : unit = Obj.magic _7 in
         let _6 : (Parsetree.core_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
-        let _4 : (Asttypes.label) = Obj.magic _4 in
+        let _4 : (string) = Obj.magic _4 in
         let _3 : (Asttypes.private_flag) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : (Asttypes.override_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__8_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = let _endpos = _endpos__8_ in
-        let _symbolstartpos = if Pervasives.(!=) _startpos__1_ _endpos__1_ then
+        let _symbolstartpos = if _startpos__1_ != _endpos__1_ then
           _startpos__1_
         else
-          if Pervasives.(!=) _startpos__2_ _endpos__2_ then
+          if _startpos__2_ != _endpos__2_ then
             _startpos__2_
           else
-            if Pervasives.(!=) _startpos__3_ _endpos__3_ then
+            if _startpos__3_ != _endpos__3_ then
               _startpos__3_
             else
               _startpos__4_ in
         
-# 1042 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1041 "parser_raw.mly"
       ( (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), _3,
         Cfk_concrete (_1, (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_poly(_8, Some _6)))), _2 )
-# 14062 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14056 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14130,35 +14124,34 @@ module Tables = struct
         let _10 : unit = Obj.magic _10 in
         let _9 : (Parsetree.core_type) = Obj.magic _9 in
         let _8 : unit = Obj.magic _8 in
-        let _7 : (string Asttypes.loc list) = Obj.magic _7 in
+        let _7 : (string Location.loc list) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
-        let _4 : (Asttypes.label) = Obj.magic _4 in
+        let _4 : (string) = Obj.magic _4 in
         let _3 : (Asttypes.private_flag) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : (Asttypes.override_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__11_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = let _endpos = _endpos__11_ in
-        let _symbolstartpos = if Pervasives.(!=) _startpos__1_ _endpos__1_ then
+        let _symbolstartpos = if _startpos__1_ != _endpos__1_ then
           _startpos__1_
         else
-          if Pervasives.(!=) _startpos__2_ _endpos__2_ then
+          if _startpos__2_ != _endpos__2_ then
             _startpos__2_
           else
-            if Pervasives.(!=) _startpos__3_ _endpos__3_ then
+            if _startpos__3_ != _endpos__3_ then
               _startpos__3_
             else
               _startpos__4_ in
         
-# 1046 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1045 "parser_raw.mly"
       ( let exp, poly = (wrap_type_annotation ~loc:(make_loc _symbolstartpos _endpos)) _7 _9 _11 in
         (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), _3,
          Cfk_concrete (_1, (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_poly(exp, Some poly)))), _2 )
-# 14162 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14155 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14177,17 +14170,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14183 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14176 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2321 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2320 "parser_raw.mly"
            ( Lident _1 )
-# 14191 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14184 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14216,9 +14209,9 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14222 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14215 "parser_raw.ml"
         ) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
@@ -14226,9 +14219,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2322 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2321 "parser_raw.mly"
                                  ( Ldot(_1, _3) )
-# 14232 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14225 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14269,9 +14262,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Longident.t) = 
-# 2323 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2322 "parser_raw.mly"
                                                       ( lapply _1 _3 )
-# 14275 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14268 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14290,17 +14283,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14296 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14289 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2317 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2316 "parser_raw.mly"
            ( Lident _1 )
-# 14304 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14297 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14329,9 +14322,9 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14335 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14328 "parser_raw.ml"
         ) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
@@ -14339,9 +14332,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2318 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2317 "parser_raw.mly"
                              ( Ldot(_1, _3) )
-# 14345 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14338 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14388,23 +14381,23 @@ module Tables = struct
         let _11 : (Longident.t) = Obj.magic _11 in
         let _4 : unit = Obj.magic _4 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14394 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14387 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__6_ in
-        let _v : (Parsetree.module_declaration * string Asttypes.loc option) = let _5 =
+        let _v : (Parsetree.module_declaration * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__11_ in
           let _startpos__1_ = _startpos__11_ in
           let _1 = _11 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14413,7 +14406,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 14417 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14410 "parser_raw.ml"
           
         in
         let _3 =
@@ -14423,7 +14416,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14432,19 +14425,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 14436 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14429 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 864 "src/ocaml/preprocess/406/parser_raw.mly"
+# 863 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Md.mk _3
           (Mty.alias ~loc:_5.Location.loc _5) ~attrs:(attrs@_6)
              ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 14448 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14441 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14485,23 +14478,23 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.module_expr) = Obj.magic _4 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14491 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14484 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : (Parsetree.module_binding * string Asttypes.loc option) = let _3 =
+        let _v : (Parsetree.module_binding * string Location.loc option) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14510,18 +14503,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 14514 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14507 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 743 "src/ocaml/preprocess/406/parser_raw.mly"
+# 742 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Mb.mk _3 _4 ~attrs:(attrs@_5)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 14525 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14518 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14550,9 +14543,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_expr) = 
-# 735 "src/ocaml/preprocess/406/parser_raw.mly"
+# 734 "parser_raw.mly"
       ( _2 )
-# 14556 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14549 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14595,9 +14588,9 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 737 "src/ocaml/preprocess/406/parser_raw.mly"
+# 736 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_constraint(_4, _2)) )
-# 14601 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14594 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14621,16 +14614,16 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.module_expr) = Obj.magic _2 in
-        let _1 : (string Asttypes.loc * Parsetree.module_type option) = Obj.magic _1 in
+        let _1 : (string Location.loc * Parsetree.module_type option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 739 "src/ocaml/preprocess/406/parser_raw.mly"
+# 738 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_functor(fst _1, snd _1, _2)) )
-# 14634 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14627 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14671,23 +14664,23 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.module_type) = Obj.magic _4 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14677 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14670 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : (Parsetree.module_declaration * string Asttypes.loc option) = let _3 =
+        let _v : (Parsetree.module_declaration * string Location.loc option) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14696,18 +14689,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 14700 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14693 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 857 "src/ocaml/preprocess/406/parser_raw.mly"
+# 856 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Md.mk _3 _4 ~attrs:(attrs@_5)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 14711 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14704 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14736,9 +14729,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_type) = 
-# 849 "src/ocaml/preprocess/406/parser_raw.mly"
+# 848 "parser_raw.mly"
       ( _2 )
-# 14742 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14735 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14786,9 +14779,9 @@ module Tables = struct
         let _4 : (Parsetree.module_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 14792 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14785 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -14801,7 +14794,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14810,15 +14803,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 14814 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14807 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 851 "src/ocaml/preprocess/406/parser_raw.mly"
+# 850 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor(_2, Some _4, _6)) )
-# 14822 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14815 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14855,9 +14848,9 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 853 "src/ocaml/preprocess/406/parser_raw.mly"
+# 852 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor((mkrhs "*" (make_loc _startpos__1_ _endpos__1_)), None, _3)) )
-# 14861 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14854 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14886,7 +14879,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14895,7 +14888,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 14899 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14892 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -14903,9 +14896,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 631 "src/ocaml/preprocess/406/parser_raw.mly"
+# 630 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_ident _1) )
-# 14909 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14902 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -14952,17 +14945,17 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 583 "src/ocaml/preprocess/406/parser_raw.mly"
+# 582 "parser_raw.mly"
                               ( extra_str _startpos _endpos _1 )
-# 14958 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14951 "parser_raw.ml"
           
         in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 633 "src/ocaml/preprocess/406/parser_raw.mly"
+# 632 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pmod_structure(_3)) )
-# 14966 "src/ocaml/preprocess/406/parser_raw.ml"
+# 14959 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15002,7 +14995,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.module_expr) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _3 : ((string Asttypes.loc * Parsetree.module_type option) list) = Obj.magic _3 in
+        let _3 : ((string Location.loc * Parsetree.module_type option) list) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -15011,13 +15004,13 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 637 "src/ocaml/preprocess/406/parser_raw.mly"
+# 636 "parser_raw.mly"
       ( let modexp =
           List.fold_left
             (fun acc (n, t) -> (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_functor(n, t, acc)))
             _5 _3
         in wrap_mod_attrs modexp _2 )
-# 15021 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15014 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15048,9 +15041,9 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 643 "src/ocaml/preprocess/406/parser_raw.mly"
+# 642 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_apply(_1, _2)) )
-# 15054 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15047 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15087,9 +15080,9 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 645 "src/ocaml/preprocess/406/parser_raw.mly"
+# 644 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_apply(_1, (mkmod ~loc:(make_loc _symbolstartpos _endpos)) (Pmod_structure []))) )
-# 15093 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15086 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15112,9 +15105,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.module_expr) = 
-# 647 "src/ocaml/preprocess/406/parser_raw.mly"
+# 646 "parser_raw.mly"
       ( _1 )
-# 15118 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15111 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15143,9 +15136,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_expr) = 
-# 649 "src/ocaml/preprocess/406/parser_raw.mly"
+# 648 "parser_raw.mly"
       ( Mod.attr _1 _2 )
-# 15149 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15142 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15170,9 +15163,9 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 651 "src/ocaml/preprocess/406/parser_raw.mly"
+# 650 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_extension _1) )
-# 15176 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15169 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15201,7 +15194,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -15210,7 +15203,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 15214 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15207 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -15218,9 +15211,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 767 "src/ocaml/preprocess/406/parser_raw.mly"
+# 766 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_ident _1) )
-# 15224 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15217 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15267,17 +15260,17 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 584 "src/ocaml/preprocess/406/parser_raw.mly"
+# 583 "parser_raw.mly"
                               ( extra_sig _startpos _endpos _1 )
-# 15273 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15266 "parser_raw.ml"
           
         in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 769 "src/ocaml/preprocess/406/parser_raw.mly"
+# 768 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pmty_signature _3) )
-# 15281 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15274 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15317,7 +15310,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.module_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _3 : ((string Asttypes.loc * Parsetree.module_type option) list) = Obj.magic _3 in
+        let _3 : ((string Location.loc * Parsetree.module_type option) list) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -15326,13 +15319,13 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 774 "src/ocaml/preprocess/406/parser_raw.mly"
+# 773 "parser_raw.mly"
       ( let mty =
           List.fold_left
             (fun acc (n, t) -> (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor(n, t, acc)))
             _5 _3
         in wrap_mty_attrs mty _2 )
-# 15336 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15329 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15369,9 +15362,9 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 781 "src/ocaml/preprocess/406/parser_raw.mly"
+# 780 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor(mknoloc "_", Some _1, _3)) )
-# 15375 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15368 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15408,9 +15401,9 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 783 "src/ocaml/preprocess/406/parser_raw.mly"
+# 782 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_with(_1, List.rev _3)) )
-# 15414 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15407 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15459,9 +15452,9 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 785 "src/ocaml/preprocess/406/parser_raw.mly"
+# 784 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_4 (Pmty_typeof _5) )
-# 15465 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15458 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15496,9 +15489,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.module_type) = 
-# 787 "src/ocaml/preprocess/406/parser_raw.mly"
+# 786 "parser_raw.mly"
       ( _2 )
-# 15502 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15495 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15523,9 +15516,9 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 791 "src/ocaml/preprocess/406/parser_raw.mly"
+# 790 "parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_extension _1) )
-# 15529 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15522 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15554,9 +15547,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_type) = 
-# 793 "src/ocaml/preprocess/406/parser_raw.mly"
+# 792 "parser_raw.mly"
       ( Mty.attr _1 _2 )
-# 15560 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15553 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15601,21 +15594,21 @@ module Tables = struct
         } = _menhir_stack in
         let _6 : (Parsetree.attributes) = Obj.magic _6 in
         let _5 : (Parsetree.module_type option) = Obj.magic _5 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _10 : (string) = Obj.magic _10 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__6_ in
-        let _v : (Parsetree.module_type_declaration * string Asttypes.loc option) = let _4 =
+        let _v : (Parsetree.module_type_declaration * string Location.loc option) = let _4 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -15624,18 +15617,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 15628 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15621 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 895 "src/ocaml/preprocess/406/parser_raw.mly"
+# 894 "parser_raw.mly"
       ( let (ext, attrs) = _3 in
         Mtd.mk _4 ?typ:_5 ~attrs:(attrs@_6)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 15639 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15632 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15651,9 +15644,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.module_type option) = 
-# 889 "src/ocaml/preprocess/406/parser_raw.mly"
+# 888 "parser_raw.mly"
                               ( None )
-# 15657 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15650 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15682,9 +15675,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_type option) = 
-# 890 "src/ocaml/preprocess/406/parser_raw.mly"
+# 889 "parser_raw.mly"
                       ( Some _2 )
-# 15688 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15681 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15702,14 +15695,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.label) = Obj.magic _1 in
+        let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2326 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2325 "parser_raw.mly"
           ( Lident _1 )
-# 15713 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15706 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15737,16 +15730,16 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : (Asttypes.label) = Obj.magic _3 in
+        let _3 : (string) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2327 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2326 "parser_raw.mly"
                                 ( Ldot(_1, _3) )
-# 15750 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15743 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15762,9 +15755,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.mutable_flag) = 
-# 2378 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2377 "parser_raw.mly"
                                                 ( Immutable )
-# 15768 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15761 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15787,9 +15780,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.mutable_flag) = 
-# 2379 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2378 "parser_raw.mly"
             ( Mutable )
-# 15793 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15786 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15812,15 +15805,15 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.label) = 
-# 2359 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string) = 
+# 2358 "parser_raw.mly"
                     ( _2 )
-# 15824 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15817 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15838,14 +15831,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.label) = Obj.magic _1 in
+        let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Asttypes.label list) = 
-# 2188 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string list) = 
+# 2187 "parser_raw.mly"
              ( [_1] )
-# 15849 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15842 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15868,15 +15861,15 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
-        let _1 : (Asttypes.label list) = Obj.magic _1 in
+        let _2 : (string) = Obj.magic _2 in
+        let _1 : (string list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Asttypes.label list) = 
-# 2189 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string list) = 
+# 2188 "parser_raw.mly"
                            ( _2 :: _1 )
-# 15880 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15873 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15892,9 +15885,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.rec_flag) = 
-# 2366 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2365 "parser_raw.mly"
                                                 ( Recursive )
-# 15898 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15891 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15917,9 +15910,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.rec_flag) = 
-# 2367 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2366 "parser_raw.mly"
            ( Nonrecursive )
-# 15923 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15916 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -15959,20 +15952,20 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _10 : (Longident.t) = Obj.magic _10 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : (Asttypes.override_flag) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : (Parsetree.open_description * string Asttypes.loc option) = let _4 =
+        let _v : (Parsetree.open_description * string Location.loc option) = let _4 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -15981,18 +15974,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 15985 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15978 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 835 "src/ocaml/preprocess/406/parser_raw.mly"
+# 834 "parser_raw.mly"
       ( let (ext, attrs) = _3 in
         Opn.mk _4 ~override:_2 ~attrs:(attrs@_5)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 15996 "src/ocaml/preprocess/406/parser_raw.ml"
+# 15989 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16011,17 +16004,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 491 "src/ocaml/preprocess/406/parser_raw.mly"
+# 490 "parser_raw.mly"
        (string)
-# 16017 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16010 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2257 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2256 "parser_raw.mly"
              ( _1 )
-# 16025 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16018 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16040,17 +16033,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 445 "src/ocaml/preprocess/406/parser_raw.mly"
+# 444 "parser_raw.mly"
        (string)
-# 16046 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16039 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2258 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2257 "parser_raw.mly"
              ( _1 )
-# 16054 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16047 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16069,17 +16062,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 446 "src/ocaml/preprocess/406/parser_raw.mly"
+# 445 "parser_raw.mly"
        (string)
-# 16075 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16068 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2259 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2258 "parser_raw.mly"
              ( _1 )
-# 16083 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16076 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16098,17 +16091,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 447 "src/ocaml/preprocess/406/parser_raw.mly"
+# 446 "parser_raw.mly"
        (string)
-# 16104 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16097 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2260 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2259 "parser_raw.mly"
              ( _1 )
-# 16112 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16105 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16127,17 +16120,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 448 "src/ocaml/preprocess/406/parser_raw.mly"
+# 447 "parser_raw.mly"
        (string)
-# 16133 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16126 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2261 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2260 "parser_raw.mly"
              ( _1 )
-# 16141 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16134 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16156,17 +16149,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 449 "src/ocaml/preprocess/406/parser_raw.mly"
+# 448 "parser_raw.mly"
        (string)
-# 16162 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16155 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2262 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2261 "parser_raw.mly"
              ( _1 )
-# 16170 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16163 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16197,17 +16190,17 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 16203 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16196 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2263 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2262 "parser_raw.mly"
                         ( "."^ _1 ^"()" )
-# 16211 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16204 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16244,17 +16237,17 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 16250 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16243 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (string) = 
-# 2264 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2263 "parser_raw.mly"
                                   ( "."^ _1 ^ "()<-" )
-# 16258 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16251 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16285,17 +16278,17 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 16291 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16284 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2265 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2264 "parser_raw.mly"
                             ( "."^ _1 ^"[]" )
-# 16299 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16292 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16332,17 +16325,17 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 16338 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16331 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (string) = 
-# 2266 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2265 "parser_raw.mly"
                                       ( "."^ _1 ^ "[]<-" )
-# 16346 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16339 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16373,17 +16366,17 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 16379 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16372 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2267 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2266 "parser_raw.mly"
                         ( "."^ _1 ^"{}" )
-# 16387 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16380 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16420,17 +16413,17 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 16426 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16419 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (string) = 
-# 2268 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2267 "parser_raw.mly"
                                   ( "."^ _1 ^ "{}<-" )
-# 16434 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16427 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16449,17 +16442,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 503 "src/ocaml/preprocess/406/parser_raw.mly"
+# 502 "parser_raw.mly"
        (string)
-# 16455 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16448 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2269 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2268 "parser_raw.mly"
             ( _1 )
-# 16463 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16456 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16482,9 +16475,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2270 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2269 "parser_raw.mly"
          ( "!" )
-# 16488 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16481 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16507,9 +16500,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2271 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2270 "parser_raw.mly"
          ( "+" )
-# 16513 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16506 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16532,9 +16525,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2272 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2271 "parser_raw.mly"
             ( "+." )
-# 16538 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16531 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16557,9 +16550,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2273 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2272 "parser_raw.mly"
           ( "-" )
-# 16563 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16556 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16582,9 +16575,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2274 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2273 "parser_raw.mly"
              ( "-." )
-# 16588 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16581 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16607,9 +16600,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2275 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2274 "parser_raw.mly"
          ( "*" )
-# 16613 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16606 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16632,9 +16625,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2276 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2275 "parser_raw.mly"
           ( "=" )
-# 16638 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16631 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16657,9 +16650,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2277 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2276 "parser_raw.mly"
          ( "<" )
-# 16663 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16656 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16682,9 +16675,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2278 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2277 "parser_raw.mly"
             ( ">" )
-# 16688 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16681 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16707,9 +16700,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2279 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2278 "parser_raw.mly"
        ( "or" )
-# 16713 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16706 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16732,9 +16725,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2280 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2279 "parser_raw.mly"
            ( "||" )
-# 16738 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16731 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16757,9 +16750,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2281 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2280 "parser_raw.mly"
               ( "&" )
-# 16763 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16756 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16782,9 +16775,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2282 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2281 "parser_raw.mly"
                ( "&&" )
-# 16788 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16781 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16807,9 +16800,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2283 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2282 "parser_raw.mly"
                ( ":=" )
-# 16813 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16806 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16832,9 +16825,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2284 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2283 "parser_raw.mly"
            ( "+=" )
-# 16838 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16831 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16857,9 +16850,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2285 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2284 "parser_raw.mly"
             ( "%" )
-# 16863 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16856 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16882,9 +16875,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (bool) = 
-# 2180 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2179 "parser_raw.mly"
               ( true )
-# 16888 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16881 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16900,9 +16893,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (bool) = 
-# 2181 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2180 "parser_raw.mly"
     ( false )
-# 16906 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16899 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16918,9 +16911,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (unit) = 
-# 2397 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2396 "parser_raw.mly"
                                                 ( () )
-# 16924 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16917 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16943,9 +16936,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (unit) = 
-# 2398 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2397 "parser_raw.mly"
         ( () )
-# 16949 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16942 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16961,9 +16954,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.expression option) = 
-# 1200 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1199 "parser_raw.mly"
                                         ( None )
-# 16967 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16960 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16992,9 +16985,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression option) = 
-# 1201 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1200 "parser_raw.mly"
                    ( Some _2 )
-# 16998 "src/ocaml/preprocess/406/parser_raw.ml"
+# 16991 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17023,9 +17016,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type option) = 
-# 1798 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1797 "parser_raw.mly"
                     ( Some _2 )
-# 17029 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17022 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17041,9 +17034,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.core_type option) = 
-# 1799 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1798 "parser_raw.mly"
     ( None )
-# 17047 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17040 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17059,9 +17052,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (unit) = 
-# 2401 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2400 "parser_raw.mly"
     ( () )
-# 17065 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17058 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17084,9 +17077,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (unit) = 
-# 2402 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2401 "parser_raw.mly"
          ( () )
-# 17090 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17083 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17109,9 +17102,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type option * Parsetree.core_type option) option) = 
-# 1646 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1645 "parser_raw.mly"
                     ( Some _1 )
-# 17115 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17108 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17127,9 +17120,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type option * Parsetree.core_type option) option) = 
-# 1647 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1646 "parser_raw.mly"
     ( None )
-# 17133 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17126 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17158,9 +17151,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type * Asttypes.variance) = 
-# 1879 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1878 "parser_raw.mly"
                                          ( _2, _1 )
-# 17164 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17157 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17183,9 +17176,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1882 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1881 "parser_raw.mly"
                             ( [_1] )
-# 17189 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17182 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17220,9 +17213,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1883 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1882 "parser_raw.mly"
                                                                ( _3 :: _1 )
-# 17226 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17219 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17238,9 +17231,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1874 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1873 "parser_raw.mly"
                                                 ( [] )
-# 17244 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17237 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17263,9 +17256,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1875 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1874 "parser_raw.mly"
                             ( [_1] )
-# 17269 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17262 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17300,9 +17293,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1876 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1875 "parser_raw.mly"
                                                ( List.rev _2 )
-# 17306 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17299 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17325,7 +17318,7 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -17333,9 +17326,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1886 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1885 "parser_raw.mly"
                 ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_var _2) )
-# 17339 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17332 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17360,9 +17353,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1887 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1886 "parser_raw.mly"
                ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
-# 17366 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17359 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17378,9 +17371,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.override_flag) = 
-# 2393 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2392 "parser_raw.mly"
                                                 ( Fresh )
-# 17384 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17377 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17403,9 +17396,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.override_flag) = 
-# 2394 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2393 "parser_raw.mly"
          ( Override )
-# 17409 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17402 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17428,9 +17421,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.package_type) = 
-# 2163 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2162 "parser_raw.mly"
                 ( package_type_of_module_type _1 )
-# 17434 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17427 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17479,9 +17472,9 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 655 "src/ocaml/preprocess/406/parser_raw.mly"
+# 654 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_constraint(_2, _4)) )
-# 17485 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17478 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17516,9 +17509,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.module_expr) = 
-# 659 "src/ocaml/preprocess/406/parser_raw.mly"
+# 658 "parser_raw.mly"
       ( _2 )
-# 17522 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17515 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17567,9 +17560,9 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 663 "src/ocaml/preprocess/406/parser_raw.mly"
+# 662 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack _4) )
-# 17573 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17566 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17630,10 +17623,10 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 665 "src/ocaml/preprocess/406/parser_raw.mly"
+# 664 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack(
               (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_constraint(_4, (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6))))) )
-# 17637 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17630 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17706,11 +17699,11 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 668 "src/ocaml/preprocess/406/parser_raw.mly"
+# 667 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack(
               (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_coerce(_4, Some((ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6)),
                                     (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _8))))) )
-# 17714 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17707 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17771,10 +17764,10 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 672 "src/ocaml/preprocess/406/parser_raw.mly"
+# 671 "parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack(
               (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_coerce(_4, None, (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6))))) )
-# 17778 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17771 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17798,22 +17791,22 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 17804 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17797 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__10_ in
-        let _v : (string Asttypes.loc option) = let _2 =
+        let _v : (string Location.loc option) = let _2 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -17822,13 +17815,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 17826 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17819 "parser_raw.ml"
           
         in
         
-# 1012 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1011 "parser_raw.mly"
           ( Some _2 )
-# 17832 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17825 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17843,10 +17836,10 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
-        let _v : (string Asttypes.loc option) = 
-# 1014 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (string Location.loc option) = 
+# 1013 "parser_raw.mly"
           ( None )
-# 17850 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17843 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17875,13 +17868,13 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (
-# 581 "src/ocaml/preprocess/406/parser_raw.mly"
+# 580 "parser_raw.mly"
       (Parsetree.expression)
-# 17881 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17874 "parser_raw.ml"
         ) = 
-# 608 "src/ocaml/preprocess/406/parser_raw.mly"
+# 607 "parser_raw.mly"
                  ( _1 )
-# 17885 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17878 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17922,7 +17915,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -17931,16 +17924,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 17935 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17928 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1651 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1650 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_alias(_1, _3)) )
-# 17944 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17937 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -17965,9 +17958,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1655 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1654 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple(List.rev _1)) )
-# 17971 "src/ocaml/preprocess/406/parser_raw.ml"
+# 17964 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18004,9 +17997,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1657 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1656 "parser_raw.mly"
       ( mkpat_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple[_1;_3])) ((make_loc _symbolstartpos _endpos)) )
-# 18010 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18003 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18043,9 +18036,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1661 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1660 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_or(_1, _3)) )
-# 18049 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18042 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18074,7 +18067,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -18082,9 +18075,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1665 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1664 "parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ppat_exception _3) _2 )
-# 18088 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18081 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18113,9 +18106,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern) = 
-# 1667 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1666 "parser_raw.mly"
       ( Pat.attr _1 _2 )
-# 18119 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18112 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18138,9 +18131,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1668 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1667 "parser_raw.mly"
                 ( _1 )
-# 18144 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18137 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18175,9 +18168,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1771 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1770 "parser_raw.mly"
                                      ( _3 :: _1 )
-# 18181 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18174 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18212,9 +18205,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1772 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1771 "parser_raw.mly"
                           ( [_3; _1] )
-# 18218 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18211 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18237,9 +18230,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1691 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1690 "parser_raw.mly"
       ( _1 )
-# 18243 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18236 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18274,7 +18267,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -18283,16 +18276,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 18287 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18280 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1693 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1692 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_construct(_1, Some _2)) )
-# 18296 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18289 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18316,16 +18309,16 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.pattern) = Obj.magic _2 in
-        let _1 : (Asttypes.label) = Obj.magic _1 in
+        let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1695 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1694 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_variant(_1, Some _2)) )
-# 18329 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18322 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18354,7 +18347,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -18362,9 +18355,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1697 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1696 "parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ppat_lazy _3) _2)
-# 18368 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18361 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18405,7 +18398,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -18414,16 +18407,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 18418 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18411 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1672 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1671 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_alias(_1, _3)) )
-# 18427 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18420 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18448,9 +18441,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1676 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1675 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple(List.rev _1)) )
-# 18454 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18447 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18487,9 +18480,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1678 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1677 "parser_raw.mly"
       ( mkpat_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple[_1;_3])) ((make_loc _symbolstartpos _endpos)) )
-# 18493 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18486 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18526,9 +18519,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1682 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1681 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_or(_1, _3)) )
-# 18532 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18525 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18557,9 +18550,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern) = 
-# 1686 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1685 "parser_raw.mly"
       ( Pat.attr _1 _2 )
-# 18563 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18556 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18582,9 +18575,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1687 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1686 "parser_raw.mly"
                 ( _1 )
-# 18588 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18581 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18619,9 +18612,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1780 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1779 "parser_raw.mly"
                                             ( _3 :: _1 )
-# 18625 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18618 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18656,9 +18649,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1781 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1780 "parser_raw.mly"
                                  ( [_3; _1] )
-# 18662 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18655 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18681,9 +18674,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern list) = 
-# 1776 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1775 "parser_raw.mly"
             ( [_1] )
-# 18687 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18680 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18718,9 +18711,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1777 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1776 "parser_raw.mly"
                                    ( _3 :: _1 )
-# 18724 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18717 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18739,9 +18732,9 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 18745 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18738 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
@@ -18753,7 +18746,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -18762,7 +18755,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 18766 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18759 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -18770,9 +18763,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1196 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1195 "parser_raw.mly"
                   ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_var _1) )
-# 18776 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18769 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18797,9 +18790,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1197 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1196 "parser_raw.mly"
                ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) Ppat_any )
-# 18803 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18796 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18822,9 +18815,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.payload) = 
-# 2498 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2497 "parser_raw.mly"
               ( PStr _1 )
-# 18828 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18821 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18853,9 +18846,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.payload) = 
-# 2499 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2498 "parser_raw.mly"
                     ( PSig _2 )
-# 18859 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18852 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18884,9 +18877,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.payload) = 
-# 2500 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2499 "parser_raw.mly"
                     ( PTyp _2 )
-# 18890 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18883 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18915,9 +18908,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.payload) = 
-# 2501 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2500 "parser_raw.mly"
                      ( PPat (_2, None) )
-# 18921 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18914 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18958,9 +18951,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.payload) = 
-# 2502 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2501 "parser_raw.mly"
                                    ( PPat (_2, Some _4) )
-# 18964 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18957 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -18983,9 +18976,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2076 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2075 "parser_raw.mly"
           ( _1 )
-# 18989 "src/ocaml/preprocess/406/parser_raw.ml"
+# 18982 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19015,16 +19008,16 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Asttypes.label Asttypes.loc list) = Obj.magic _1 in
+        let _1 : (string Location.loc list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2078 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2077 "parser_raw.mly"
           ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly(List.rev _1, _3)) )
-# 19028 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19021 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19047,9 +19040,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2082 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2081 "parser_raw.mly"
           ( _1 )
-# 19053 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19046 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19079,16 +19072,16 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Asttypes.label Asttypes.loc list) = Obj.magic _1 in
+        let _1 : (string Location.loc list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2084 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2083 "parser_raw.mly"
           ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly(List.rev _1, _3)) )
-# 19092 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19085 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19123,15 +19116,15 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.payload) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc) = Obj.magic _2 in
+        let _2 : (string Location.loc) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.attribute) = 
-# 2473 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2472 "parser_raw.mly"
                                         ( (_2, _3) )
-# 19135 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19128 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19147,9 +19140,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.attributes) = 
-# 2479 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2478 "parser_raw.mly"
                  ( [] )
-# 19153 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19146 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19178,9 +19171,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.attributes) = 
-# 2480 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2479 "parser_raw.mly"
                                              ( _1 :: _2 )
-# 19184 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19177 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19239,19 +19232,19 @@ module Tables = struct
         let _5 : (Parsetree.core_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _10 : (string) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__8_ in
-        let _v : (Parsetree.value_description * string Asttypes.loc option) = let _3 =
+        let _v : (Parsetree.value_description * string Location.loc option) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -19260,18 +19253,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 19264 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19257 "parser_raw.ml"
           
         in
         let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1815 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1814 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Val.mk _3 _5 ~prim:_7 ~attrs:(attrs@_8)
                ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 19275 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19268 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19290,17 +19283,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 505 "parser_raw.mly"
        (string * string option)
-# 19296 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19289 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string list) = 
-# 1809 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1808 "parser_raw.mly"
            ( [fst _1] )
-# 19304 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19297 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19325,17 +19318,17 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (string list) = Obj.magic _2 in
         let _1 : (
-# 506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 505 "parser_raw.mly"
        (string * string option)
-# 19331 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19324 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string list) = 
-# 1810 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1809 "parser_raw.mly"
                                       ( fst _1 :: _2 )
-# 19339 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19332 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19351,9 +19344,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.private_flag) = 
-# 2374 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2373 "parser_raw.mly"
                                                 ( Public )
-# 19357 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19350 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19376,9 +19369,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag) = 
-# 2375 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2374 "parser_raw.mly"
             ( Private )
-# 19382 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19375 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19394,9 +19387,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2386 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2385 "parser_raw.mly"
                  ( Public, Concrete )
-# 19400 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19393 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19419,9 +19412,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2387 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2386 "parser_raw.mly"
             ( Private, Concrete )
-# 19425 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19418 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19444,9 +19437,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2388 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2387 "parser_raw.mly"
             ( Public, Virtual )
-# 19450 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19443 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19475,9 +19468,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2389 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2388 "parser_raw.mly"
                     ( Private, Virtual )
-# 19481 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19474 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19506,9 +19499,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2390 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2389 "parser_raw.mly"
                     ( Private, Virtual )
-# 19512 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19505 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19524,9 +19517,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.rec_flag) = 
-# 2362 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2361 "parser_raw.mly"
                                                 ( Nonrecursive )
-# 19530 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19523 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19549,9 +19542,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.rec_flag) = 
-# 2363 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2362 "parser_raw.mly"
         ( Recursive )
-# 19555 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19548 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19597,24 +19590,24 @@ module Tables = struct
         let _6 : (Parsetree.attributes) = Obj.magic _6 in
         let _5 : (Parsetree.module_expr) = Obj.magic _5 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 19603 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19596 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _3 : unit = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__6_ in
-        let _v : (Parsetree.module_binding * string Asttypes.loc option) = let _4 =
+        let _v : (Parsetree.module_binding * string Location.loc option) = let _4 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -19623,18 +19616,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 19627 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19620 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 755 "src/ocaml/preprocess/406/parser_raw.mly"
+# 754 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Mb.mk _4 _5 ~attrs:(attrs@_6)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 19638 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19631 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19652,14 +19645,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_binding * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_binding * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Parsetree.module_binding list * string Asttypes.loc option) = 
-# 749 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.module_binding list * string Location.loc option) = 
+# 748 "parser_raw.mly"
                        ( let (b, ext) = _1 in ([b], ext) )
-# 19663 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19656 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19683,14 +19676,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.module_binding) = Obj.magic _2 in
-        let _1 : (Parsetree.module_binding list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_binding list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Parsetree.module_binding list * string Asttypes.loc option) = 
-# 751 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.module_binding list * string Location.loc option) = 
+# 750 "parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
-# 19694 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19687 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19742,24 +19735,24 @@ module Tables = struct
         let _6 : (Parsetree.module_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 19748 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19741 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _3 : unit = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : (Parsetree.module_declaration * string Asttypes.loc option) = let _4 =
+        let _v : (Parsetree.module_declaration * string Location.loc option) = let _4 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -19768,18 +19761,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 19772 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19765 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 878 "src/ocaml/preprocess/406/parser_raw.mly"
+# 877 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Md.mk _4 _6 ~attrs:(attrs@_7)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 19783 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19776 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19797,14 +19790,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Parsetree.module_declaration list * string Asttypes.loc option) = 
-# 872 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.module_declaration list * string Location.loc option) = 
+# 871 "parser_raw.mly"
       ( let (body, ext) = _1 in ([body], ext) )
-# 19808 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19801 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19828,14 +19821,14 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.module_declaration) = Obj.magic _2 in
-        let _1 : (Parsetree.module_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Parsetree.module_declaration list * string Asttypes.loc option) = 
-# 874 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.module_declaration list * string Location.loc option) = 
+# 873 "parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
-# 19839 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19832 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19863,17 +19856,17 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _3 : ((Longident.t Asttypes.loc * Parsetree.expression) list) = Obj.magic _3 in
+        let _3 : ((Longident.t Location.loc * Parsetree.expression) list) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list) = 
-# 1610 "src/ocaml/preprocess/406/parser_raw.mly"
+  (Longident.t Location.loc * Parsetree.expression) list) = 
+# 1609 "parser_raw.mly"
                                    ( (Some _1, _3) )
-# 19877 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19870 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19891,15 +19884,15 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : ((Longident.t Asttypes.loc * Parsetree.expression) list) = Obj.magic _1 in
+        let _1 : ((Longident.t Location.loc * Parsetree.expression) list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list) = 
-# 1611 "src/ocaml/preprocess/406/parser_raw.mly"
+  (Longident.t Location.loc * Parsetree.expression) list) = 
+# 1610 "parser_raw.mly"
                   ( (None, _1) )
-# 19903 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19896 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19922,9 +19915,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.row_field) = 
-# 2170 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2169 "parser_raw.mly"
               ( _1 )
-# 19928 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19921 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19947,9 +19940,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.row_field) = 
-# 2171 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2170 "parser_raw.mly"
                      ( Rinherit _1 )
-# 19953 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19946 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -19972,9 +19965,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.row_field list) = 
-# 2166 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2165 "parser_raw.mly"
               ( [_1] )
-# 19978 "src/ocaml/preprocess/406/parser_raw.ml"
+# 19971 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20009,9 +20002,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.row_field list) = 
-# 2167 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2166 "parser_raw.mly"
                                  ( _3 :: _1 )
-# 20015 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20008 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20034,9 +20027,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = 
-# 1169 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1168 "parser_raw.mly"
                           ( _1 )
-# 20040 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20033 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20065,9 +20058,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1170 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1169 "parser_raw.mly"
               ( _1 )
-# 20071 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20064 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20104,9 +20097,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1171 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1170 "parser_raw.mly"
                        ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_sequence(_1, _3)) )
-# 20110 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20103 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20145,7 +20138,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _5 : (Parsetree.expression) = Obj.magic _5 in
-        let _4 : (string Asttypes.loc) = Obj.magic _4 in
+        let _4 : (string Location.loc) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
@@ -20155,11 +20148,11 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1173 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1172 "parser_raw.mly"
       ( let seq = (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_sequence (_1, _5)) in
         let payload = PStr [mkstrexp seq []] in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_extension (_4, payload)) )
-# 20163 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20156 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20206,19 +20199,19 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.constructor_arguments * Parsetree.core_type option) = Obj.magic _4 in
         let _10 : (string) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__6_ in
-        let _v : (Parsetree.extension_constructor * string Asttypes.loc option) = let _3 =
+        let _v : (Parsetree.extension_constructor * string Location.loc option) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -20227,19 +20220,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 20231 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20224 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1937 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1936 "parser_raw.mly"
       ( let args, res = _4 in
         let (ext,attrs) = _2 in
           Te.decl _3 ~args ?res ~attrs:(attrs @ _5 @ _6)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
         , ext )
-# 20243 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20236 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20262,9 +20255,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2013 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2012 "parser_raw.mly"
                                       ( [_1] )
-# 20268 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20261 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20287,9 +20280,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2014 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2013 "parser_raw.mly"
                                           ( [_1] )
-# 20293 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20286 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20318,9 +20311,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2016 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2015 "parser_raw.mly"
       ( _2 :: _1 )
-# 20324 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20317 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20355,20 +20348,20 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : (Parsetree.attributes) = Obj.magic _4 in
         let _3 : (Parsetree.module_type) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
-        let _v : (Parsetree.include_description * string Asttypes.loc option) = let _endpos = _endpos__4_ in
+        let _v : (Parsetree.include_description * string Location.loc option) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 842 "src/ocaml/preprocess/406/parser_raw.mly"
+# 841 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Incl.mk _3 ~attrs:(attrs@_4)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 20372 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20365 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20433,19 +20426,19 @@ module Tables = struct
         let _10 : (Longident.t) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.rec_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__9_ in
-        let _v : (Parsetree.type_extension * string Asttypes.loc option) = let _5 =
+        let _v : (Parsetree.type_extension * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -20454,19 +20447,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 20458 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20451 "parser_raw.ml"
           
         in
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1996 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1995 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         if _3 <> Recursive then (not_expecting (make_loc _startpos__3_ _endpos__3_) "nonrec flag");
         Te.mk _5 (List.rev _8) ~params:_4 ~priv:_7
           ~attrs:(attrs @ _9) ~docs:((symbol_docs _symbolstartpos _endpos))
         , ext )
-# 20470 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20463 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20482,9 +20475,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.signature) = 
-# 796 "src/ocaml/preprocess/406/parser_raw.mly"
+# 795 "parser_raw.mly"
                          ( [] )
-# 20488 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20481 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20513,9 +20506,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.signature) = 
-# 797 "src/ocaml/preprocess/406/parser_raw.mly"
+# 796 "parser_raw.mly"
                        ( ((text_sig _startpos__1_)) @ _2 )
-# 20519 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20512 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20544,9 +20537,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.signature) = 
-# 798 "src/ocaml/preprocess/406/parser_raw.mly"
+# 797 "parser_raw.mly"
                              ( ((text_sig _startpos__1_)) @ _1 :: _2 )
-# 20550 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20543 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20564,16 +20557,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.value_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.value_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 802 "src/ocaml/preprocess/406/parser_raw.mly"
+# 801 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_value body) ext )
-# 20577 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20570 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20591,16 +20584,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.value_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.value_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 804 "src/ocaml/preprocess/406/parser_raw.mly"
+# 803 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_value body) ext )
-# 20604 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20597 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20619,16 +20612,16 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (Asttypes.rec_flag * Parsetree.type_declaration list *
-  string Asttypes.loc option) = Obj.magic _1 in
+  string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 806 "src/ocaml/preprocess/406/parser_raw.mly"
+# 805 "parser_raw.mly"
       ( let (nr, l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_type (nr, List.rev l)) ext )
-# 20632 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20625 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20646,16 +20639,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.type_extension * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.type_extension * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 808 "src/ocaml/preprocess/406/parser_raw.mly"
+# 807 "parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_typext l) ext )
-# 20659 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20652 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20673,16 +20666,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.extension_constructor * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.extension_constructor * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 810 "src/ocaml/preprocess/406/parser_raw.mly"
+# 809 "parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_exception l) ext )
-# 20686 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20679 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20700,16 +20693,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 812 "src/ocaml/preprocess/406/parser_raw.mly"
+# 811 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_module body) ext )
-# 20713 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20706 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20727,16 +20720,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 814 "src/ocaml/preprocess/406/parser_raw.mly"
+# 813 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_module body) ext )
-# 20740 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20733 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20754,16 +20747,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 816 "src/ocaml/preprocess/406/parser_raw.mly"
+# 815 "parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_recmodule (List.rev l)) ext )
-# 20767 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20760 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20781,16 +20774,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_type_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_type_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 818 "src/ocaml/preprocess/406/parser_raw.mly"
+# 817 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_modtype body) ext )
-# 20794 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20787 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20808,16 +20801,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.open_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.open_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 820 "src/ocaml/preprocess/406/parser_raw.mly"
+# 819 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_open body) ext )
-# 20821 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20814 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20835,16 +20828,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.include_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.include_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 822 "src/ocaml/preprocess/406/parser_raw.mly"
+# 821 "parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_include body) ext )
-# 20848 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20841 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20862,16 +20855,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_description list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_description list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 824 "src/ocaml/preprocess/406/parser_raw.mly"
+# 823 "parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_class (List.rev l)) ext )
-# 20875 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20868 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20889,16 +20882,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_type_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_type_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 826 "src/ocaml/preprocess/406/parser_raw.mly"
+# 825 "parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_class_type (List.rev l)) ext )
-# 20902 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20895 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20929,9 +20922,9 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 828 "src/ocaml/preprocess/406/parser_raw.mly"
+# 827 "parser_raw.mly"
       ( (mksig ~loc:(make_loc _symbolstartpos _endpos))(Psig_extension (_1, (add_docs_attrs ((symbol_docs _symbolstartpos _endpos)) _2))) )
-# 20935 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20928 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20956,10 +20949,10 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 830 "src/ocaml/preprocess/406/parser_raw.mly"
+# 829 "parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mksig ~loc:(make_loc _symbolstartpos _endpos))(Psig_attribute _1) )
-# 20963 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20956 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -20982,9 +20975,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2239 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2238 "parser_raw.mly"
              ( _1 )
-# 20988 "src/ocaml/preprocess/406/parser_raw.ml"
+# 20981 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21008,18 +21001,18 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 452 "parser_raw.mly"
        (string * char option)
-# 21014 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21007 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2240 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2239 "parser_raw.mly"
               ( let (n, m) = _2 in Pconst_integer("-" ^ n, m) )
-# 21023 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21016 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21043,18 +21036,18 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 433 "src/ocaml/preprocess/406/parser_raw.mly"
+# 432 "parser_raw.mly"
        (string * char option)
-# 21049 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21042 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2241 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2240 "parser_raw.mly"
                 ( let (f, m) = _2 in Pconst_float("-" ^ f, m) )
-# 21058 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21051 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21078,18 +21071,18 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 452 "parser_raw.mly"
        (string * char option)
-# 21084 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21077 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2242 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2241 "parser_raw.mly"
              ( let (n, m) = _2 in Pconst_integer (n, m) )
-# 21093 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21086 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21113,18 +21106,18 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 433 "src/ocaml/preprocess/406/parser_raw.mly"
+# 432 "parser_raw.mly"
        (string * char option)
-# 21119 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21112 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2243 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2242 "parser_raw.mly"
                ( let (f, m) = _2 in Pconst_float(f, m) )
-# 21128 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21121 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21147,9 +21140,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2116 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2115 "parser_raw.mly"
       ( _1 )
-# 21153 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21146 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21186,11 +21179,11 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2118 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2117 "parser_raw.mly"
       ( match _2 with [sty] -> sty | _ ->
         raise_error (Syntaxerr.Error(Syntaxerr.Other (make_loc _symbolstartpos _endpos)));
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
-# 21194 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21187 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21213,7 +21206,7 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -21221,9 +21214,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2124 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2123 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_var _2) )
-# 21227 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21220 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21248,9 +21241,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2126 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2125 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
-# 21254 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21247 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21279,7 +21272,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21288,7 +21281,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 21292 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21285 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -21296,9 +21289,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2128 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2127 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_constr(_1, [])) )
-# 21302 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21295 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21333,7 +21326,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21342,16 +21335,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 21346 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21339 "parser_raw.ml"
           
         in
         let _endpos__2_ = _endpos__10_ in
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2130 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2129 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_constr(_2, [_1])) )
-# 21355 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21348 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21398,7 +21391,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21407,16 +21400,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 21411 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21404 "parser_raw.ml"
           
         in
         let _endpos__4_ = _endpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2132 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2131 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_constr(_4, List.rev _2)) )
-# 21420 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21413 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21453,9 +21446,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2134 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2133 "parser_raw.mly"
       ( let (f, c) = _2 in (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_object (f, c)) )
-# 21459 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21452 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21486,9 +21479,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2136 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2135 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_object ([], Closed)) )
-# 21492 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21485 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21523,7 +21516,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21532,16 +21525,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 21536 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21529 "parser_raw.ml"
           
         in
         let _endpos__2_ = _endpos__10_ in
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2138 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2137 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_class(_2, [])) )
-# 21545 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21538 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21582,7 +21575,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21591,16 +21584,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 21595 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21588 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2140 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2139 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_class(_3, [_1])) )
-# 21604 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21597 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21653,7 +21646,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21662,16 +21655,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 21666 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21659 "parser_raw.ml"
           
         in
         let _endpos__5_ = _endpos__10_ in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2142 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2141 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_class(_5, List.rev _2)) )
-# 21675 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21668 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21708,9 +21701,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2144 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2143 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant([_2], Closed, None)) )
-# 21714 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21707 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21753,9 +21746,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2146 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2145 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Closed, None)) )
-# 21759 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21752 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21804,9 +21797,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2148 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2147 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(_2 :: List.rev _4, Closed, None)) )
-# 21810 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21803 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21849,9 +21842,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2150 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2149 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Open, None)) )
-# 21855 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21848 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21882,9 +21875,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2152 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2151 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant([], Open, None)) )
-# 21888 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21881 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21927,9 +21920,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2154 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2153 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Closed, Some [])) )
-# 21933 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21926 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -21973,7 +21966,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _6 : unit = Obj.magic _6 in
-        let _5 : (Asttypes.label list) = Obj.magic _5 in
+        let _5 : (string list) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.row_field list) = Obj.magic _3 in
         let _2 : (unit) = Obj.magic _2 in
@@ -21984,9 +21977,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2156 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2155 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Closed, Some (List.rev _5))) )
-# 21990 "src/ocaml/preprocess/406/parser_raw.ml"
+# 21983 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22026,7 +22019,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : unit = Obj.magic _5 in
         let _4 : (Parsetree.package_type) = Obj.magic _4 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -22035,9 +22028,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2158 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2157 "parser_raw.mly"
       ( (mktyp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_package _4) _3 )
-# 22041 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22034 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22062,9 +22055,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2160 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2159 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_extension _1) )
-# 22068 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22061 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22087,9 +22080,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2192 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2191 "parser_raw.mly"
                      ( _1 )
-# 22093 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22086 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22126,9 +22119,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2194 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2193 "parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_tuple(_1 :: List.rev _3)) )
-# 22132 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22125 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22157,7 +22150,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : unit = Obj.magic _3 in
-        let _2 : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) = Obj.magic _2 in
+        let _2 : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -22165,9 +22158,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1757 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1756 "parser_raw.mly"
     ( let (fields, closed) = _2 in (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_record(fields, closed)) )
-# 22171 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22164 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22210,9 +22203,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1761 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1760 "parser_raw.mly"
     ( (reloc_pat ~loc:(make_loc _symbolstartpos _endpos)) (mktailpat ((make_loc _startpos__4_ _endpos__4_)) (List.rev _2)) )
-# 22216 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22209 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22255,9 +22248,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1765 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1764 "parser_raw.mly"
     ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_array(List.rev _2)) )
-# 22261 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22254 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22288,9 +22281,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1767 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1766 "parser_raw.mly"
     ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_array []) )
-# 22294 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22287 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22327,9 +22320,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _startpos = _startpos__1_ in
         
-# 2506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2505 "parser_raw.mly"
     ( Fake.Meta.code _startpos _endpos _2 )
-# 22333 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22326 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22360,9 +22353,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _startpos = _startpos__1_ in
         
-# 2508 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2507 "parser_raw.mly"
     ( Fake.Meta.uncode _startpos _endpos _2 )
-# 22366 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22359 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22391,7 +22384,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22400,7 +22393,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 22404 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22397 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -22408,9 +22401,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1350 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1349 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident _1) )
-# 22414 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22407 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22435,9 +22428,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1352 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1351 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_constant _1) )
-# 22441 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22434 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22466,7 +22459,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22475,7 +22468,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 22479 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22472 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -22483,9 +22476,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1354 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1353 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct(_1, None)) )
-# 22489 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22482 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22503,16 +22496,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.label) = Obj.magic _1 in
+        let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1356 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1355 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_variant(_1, None)) )
-# 22516 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22509 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22549,9 +22542,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1358 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1357 "parser_raw.mly"
       ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) _2 )
-# 22555 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22548 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22586,7 +22579,7 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -22594,9 +22587,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1362 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1361 "parser_raw.mly"
       ( (wrap_exp_attrs ~loc:(make_loc _symbolstartpos _endpos)) ((reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) _3) _2 (* check location *) )
-# 22600 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22593 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22625,7 +22618,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : unit = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -22633,10 +22626,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1364 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1363 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_construct (mkloc (Lident "()") ((make_loc _symbolstartpos _endpos)),
                                None)) _2 )
-# 22640 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22633 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22679,9 +22672,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1369 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1368 "parser_raw.mly"
       ( (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _2 _3 )
-# 22685 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22678 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22722,7 +22715,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22731,16 +22724,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 22735 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22728 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1371 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1370 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_field(_1, _3)) )
-# 22744 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22737 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22793,7 +22786,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22802,16 +22795,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 22806 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22799 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1373 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1372 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, _4)) )
-# 22815 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22808 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22858,7 +22851,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22867,7 +22860,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 22871 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22864 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -22875,10 +22868,10 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1375 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1374 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1,
                         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct((mkrhs (Lident "()") (make_loc _startpos__1_ _endpos__1_)), None)))) )
-# 22882 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22875 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22927,10 +22920,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1380 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1379 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "Array" "get")),
                          [Nolabel,_1; Nolabel,_4])) )
-# 22934 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22927 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22979,10 +22972,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1385 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1384 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "String" "get")),
                          [Nolabel,_1; Nolabel,_4])) )
-# 22986 "src/ocaml/preprocess/406/parser_raw.ml"
+# 22979 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23024,9 +23017,9 @@ module Tables = struct
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 23030 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23023 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -23035,10 +23028,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1390 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1389 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Lident ("." ^ _2 ^ "[]")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id, [Nolabel, _1; Nolabel, _4]) )
-# 23042 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23035 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23080,9 +23073,9 @@ module Tables = struct
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 23086 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23079 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -23091,10 +23084,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1395 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1394 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Lident ("." ^ _2 ^ "()")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id, [Nolabel, _1; Nolabel, _4]) )
-# 23098 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23091 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23136,9 +23129,9 @@ module Tables = struct
         let _4 : (Parsetree.expression) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 23142 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23135 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -23147,10 +23140,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1400 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1399 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Lident ("." ^ _2 ^ "{}")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id, [Nolabel, _1; Nolabel, _4]) )
-# 23154 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23147 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23202,9 +23195,9 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 23208 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23201 "parser_raw.ml"
         ) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -23215,10 +23208,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1405 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1404 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Ldot(_3, "." ^ _4 ^ "[]")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id, [Nolabel, _1; Nolabel, _6]) )
-# 23222 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23215 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23270,9 +23263,9 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 23276 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23269 "parser_raw.ml"
         ) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -23283,10 +23276,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1410 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1409 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Ldot(_3, "." ^ _4 ^ "()")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id, [Nolabel, _1; Nolabel, _6]) )
-# 23290 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23283 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23338,9 +23331,9 @@ module Tables = struct
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 23344 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23337 "parser_raw.ml"
         ) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -23351,10 +23344,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1415 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1414 "parser_raw.mly"
       ( let id = (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_ident( (ghloc ~loc:(make_loc _symbolstartpos _endpos)) @@ Ldot(_3, "." ^ _4 ^ "{}")) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) @@ Pexp_apply(id, [Nolabel, _1; Nolabel, _6]) )
-# 23358 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23351 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23403,9 +23396,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1420 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1419 "parser_raw.mly"
       ( (bigarray_get ~loc:(make_loc _symbolstartpos _endpos)) _1 _4 )
-# 23409 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23402 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23435,7 +23428,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list) = Obj.magic _2 in
+  (Longident.t Location.loc * Parsetree.expression) list) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -23443,9 +23436,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1424 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1423 "parser_raw.mly"
       ( let (exten, fields) = _2 in (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_record(fields, exten)) )
-# 23449 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23442 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23485,7 +23478,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : unit = Obj.magic _5 in
         let _4 : (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list) = Obj.magic _4 in
+  (Longident.t Location.loc * Parsetree.expression) list) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _10 : (Longident.t) = Obj.magic _10 in
@@ -23499,7 +23492,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23508,18 +23501,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 23512 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23505 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1428 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1427 "parser_raw.mly"
       ( let (exten, fields) = _4 in
         let rec_exp = (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_record(fields, exten)) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, rec_exp)) )
-# 23523 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23516 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23562,9 +23555,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1434 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1433 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_array(List.rev _2)) )
-# 23568 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23561 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23595,9 +23588,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1438 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1437 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_array []) )
-# 23601 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23594 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23656,7 +23649,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23665,16 +23658,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 23669 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23662 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1440 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1439 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_array(List.rev _4)))) )
-# 23678 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23671 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23721,7 +23714,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23730,16 +23723,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 23734 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23727 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1442 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1441 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_array []))) )
-# 23743 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23736 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23782,9 +23775,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1446 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1445 "parser_raw.mly"
       ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) (mktailexp ((make_loc _startpos__4_ _endpos__4_)) (List.rev _2)) )
-# 23788 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23781 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23843,7 +23836,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23852,17 +23845,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 23856 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23849 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1449 "parser_raw.mly"
       ( let list_exp = (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) (mktailexp ((make_loc _startpos__6_ _endpos__6_)) (List.rev _4)) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, list_exp)) )
-# 23866 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23859 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23909,7 +23902,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23918,7 +23911,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 23922 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23915 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -23926,10 +23919,10 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1452 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1,
                         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct((mkrhs (Lident "[]") (make_loc _startpos__1_ _endpos__1_)), None)))) )
-# 23933 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23926 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23954,9 +23947,9 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
         let _1 : (
-# 491 "src/ocaml/preprocess/406/parser_raw.mly"
+# 490 "parser_raw.mly"
        (string)
-# 23960 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23953 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -23964,9 +23957,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1458 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1457 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((mkoperator _1 (make_loc _startpos__1_ _endpos__1_)), [Nolabel,_2])) )
-# 23970 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23963 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -23997,9 +23990,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1460 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1459 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((mkoperator "!" (make_loc _startpos__1_ _endpos__1_)), [Nolabel,_2])) )
-# 24003 "src/ocaml/preprocess/406/parser_raw.ml"
+# 23996 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24028,7 +24021,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : (Longident.t) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -24040,7 +24033,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24049,16 +24042,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24053 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24046 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1462 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1461 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_new _3) _2 )
-# 24062 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24055 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24087,7 +24080,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : unit = Obj.magic _3 in
-        let _2 : ((Asttypes.label Asttypes.loc * Parsetree.expression) list) = Obj.magic _2 in
+        let _2 : ((string Location.loc * Parsetree.expression) list) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -24095,9 +24088,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1464 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1463 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_override _2) )
-# 24101 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24094 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24128,9 +24121,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1467 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_override []))
-# 24134 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24127 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24169,7 +24162,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _5 : unit = Obj.magic _5 in
-        let _4 : ((Asttypes.label Asttypes.loc * Parsetree.expression) list) = Obj.magic _4 in
+        let _4 : ((string Location.loc * Parsetree.expression) list) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _10 : (Longident.t) = Obj.magic _10 in
@@ -24183,7 +24176,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24192,16 +24185,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24196 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24189 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1470 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1469 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_override _4))))
-# 24205 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24198 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24229,7 +24222,7 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -24242,7 +24235,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24251,16 +24244,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24255 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24248 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1474 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1473 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_send(_1, _3)) )
-# 24264 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24257 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24290,9 +24283,9 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 503 "src/ocaml/preprocess/406/parser_raw.mly"
+# 502 "parser_raw.mly"
        (string)
-# 24296 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24289 "parser_raw.ml"
         ) = Obj.magic _2 in
         let _1 : (Parsetree.expression) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -24301,9 +24294,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1476 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1475 "parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
-# 24307 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24300 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24343,7 +24336,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : unit = Obj.magic _5 in
         let _4 : (Parsetree.module_expr) = Obj.magic _4 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -24352,9 +24345,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1478 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1477 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_pack _4) _3 )
-# 24358 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24351 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24406,7 +24399,7 @@ module Tables = struct
         let _6 : (Parsetree.package_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _4 : (Parsetree.module_expr) = Obj.magic _4 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -24415,11 +24408,11 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1480 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1479 "parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_constraint ((ghexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_pack _4),
                                       (ghtyp ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_package _6)))
                     _3 )
-# 24423 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24416 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24481,7 +24474,7 @@ module Tables = struct
         let _8 : (Parsetree.package_type) = Obj.magic _8 in
         let _7 : unit = Obj.magic _7 in
         let _6 : (Parsetree.module_expr) = Obj.magic _6 in
-        let _5 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _5 in
+        let _5 : (string Location.loc option * Parsetree.attributes) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
@@ -24496,7 +24489,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24505,19 +24498,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24509 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24502 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1486 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1485 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_open(Fresh, _1,
         (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_constraint ((ghexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_pack _6),
                                 (ghtyp ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_package _8)))
                     _5 )) )
-# 24521 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24514 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24542,9 +24535,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1493 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1492 "parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_extension _1) )
-# 24548 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24541 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24569,10 +24562,10 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1495 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1494 "parser_raw.mly"
       ( let id = mkloc "merlin.hole" ((make_loc _symbolstartpos _endpos)) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_extension (id, PStr [])) )
-# 24576 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24569 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24595,9 +24588,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Asttypes.arg_label * Parsetree.expression) list) = 
-# 1500 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1499 "parser_raw.mly"
       ( [_1] )
-# 24601 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24594 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24626,9 +24619,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : ((Asttypes.arg_label * Parsetree.expression) list) = 
-# 1502 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1501 "parser_raw.mly"
       ( _2 :: _1 )
-# 24632 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24625 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24657,7 +24650,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24666,7 +24659,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24670 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24663 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -24674,9 +24667,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1701 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1700 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_var _1) )
-# 24680 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24673 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24699,9 +24692,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1702 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1701 "parser_raw.mly"
                              ( _1 )
-# 24705 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24698 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24726,9 +24719,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1706 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1705 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_any) )
-# 24732 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24725 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24753,9 +24746,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1708 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1707 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constant _1) )
-# 24759 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24752 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24792,9 +24785,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1710 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1709 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_interval (_1, _3)) )
-# 24798 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24791 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24823,7 +24816,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24832,7 +24825,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24836 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24829 "parser_raw.ml"
           
         in
         let _endpos__1_ = _endpos__10_ in
@@ -24840,9 +24833,9 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1712 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1711 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_construct(_1, None)) )
-# 24846 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24839 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24860,16 +24853,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.label) = Obj.magic _1 in
+        let _1 : (string) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1714 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1713 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_variant(_1, None)) )
-# 24873 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24866 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24904,7 +24897,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24913,16 +24906,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 24917 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24910 "parser_raw.ml"
           
         in
         let _endpos__2_ = _endpos__10_ in
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1716 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1715 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_type _2) )
-# 24926 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24919 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24945,9 +24938,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1718 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1717 "parser_raw.mly"
       ( _1 )
-# 24951 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24944 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -24988,7 +24981,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24997,16 +24990,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 25001 "src/ocaml/preprocess/406/parser_raw.ml"
+# 24994 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1720 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1719 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open(_1, _3) )
-# 25010 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25003 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25053,7 +25046,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -25062,17 +25055,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 25066 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25059 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1722 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1721 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open(_1, (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@
                Ppat_construct ((mkrhs (Lident "[]") (make_loc _startpos__4_ _endpos__4_)), None)) )
-# 25076 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25069 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25119,7 +25112,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -25128,17 +25121,17 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 25132 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25125 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1725 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1724 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open(_1, (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@
                  Ppat_construct ((mkrhs (Lident "()") (make_loc _startpos__4_ _endpos__4_)), None) ) )
-# 25142 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25135 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25191,7 +25184,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -25200,16 +25193,16 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 25204 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25197 "parser_raw.ml"
           
         in
         let _startpos__1_ = _startpos__10_ in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1728 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1727 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open (_1, _4) )
-# 25213 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25206 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25246,9 +25239,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1734 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1733 "parser_raw.mly"
       ( (reloc_pat ~loc:(make_loc _symbolstartpos _endpos)) _2 )
-# 25252 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25245 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25297,9 +25290,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1738 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1737 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_2, _4)) )
-# 25303 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25296 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25339,11 +25332,11 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : unit = Obj.magic _5 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 25345 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25338 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -25356,7 +25349,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -25365,15 +25358,15 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 25369 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25362 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1744 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1743 "parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ppat_unpack _4) _3 )
-# 25377 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25370 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25425,11 +25418,11 @@ module Tables = struct
         let _6 : (Parsetree.package_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _10 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 25431 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25424 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
+        let _3 : (string Location.loc option * Parsetree.attributes) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -25442,7 +25435,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -25451,18 +25444,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 25455 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25448 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1746 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1745 "parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos))
           (Ppat_constraint((mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_unpack _4),
                            (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6)))
           _3 )
-# 25466 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25459 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25487,9 +25480,9 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1753 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1752 "parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_extension _1) )
-# 25493 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25486 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25508,17 +25501,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 25514 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25507 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2413 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2412 "parser_raw.mly"
            ( _1 )
-# 25522 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25515 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25537,17 +25530,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 25543 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25536 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2414 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2413 "parser_raw.mly"
            ( _1 )
-# 25551 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25544 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25570,9 +25563,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2415 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2414 "parser_raw.mly"
         ( "and" )
-# 25576 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25569 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25595,9 +25588,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2416 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2415 "parser_raw.mly"
        ( "as" )
-# 25601 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25594 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25620,9 +25613,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2417 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2416 "parser_raw.mly"
            ( "assert" )
-# 25626 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25619 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25645,9 +25638,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2418 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2417 "parser_raw.mly"
           ( "begin" )
-# 25651 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25644 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25670,9 +25663,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2419 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2418 "parser_raw.mly"
           ( "class" )
-# 25676 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25669 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25695,9 +25688,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2420 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2419 "parser_raw.mly"
                ( "constraint" )
-# 25701 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25694 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25720,9 +25713,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2421 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2420 "parser_raw.mly"
        ( "do" )
-# 25726 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25719 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25745,9 +25738,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2422 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2421 "parser_raw.mly"
          ( "done" )
-# 25751 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25744 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25770,9 +25763,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2423 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2422 "parser_raw.mly"
            ( "downto" )
-# 25776 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25769 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25795,9 +25788,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2424 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2423 "parser_raw.mly"
          ( "else" )
-# 25801 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25794 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25820,9 +25813,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2425 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2424 "parser_raw.mly"
         ( "end" )
-# 25826 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25819 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25845,9 +25838,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2426 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2425 "parser_raw.mly"
               ( "exception" )
-# 25851 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25844 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25870,9 +25863,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2427 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2426 "parser_raw.mly"
              ( "external" )
-# 25876 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25869 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25895,9 +25888,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2428 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2427 "parser_raw.mly"
           ( "false" )
-# 25901 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25894 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25920,9 +25913,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2429 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2428 "parser_raw.mly"
         ( "for" )
-# 25926 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25919 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25945,9 +25938,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2430 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2429 "parser_raw.mly"
         ( "fun" )
-# 25951 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25944 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25970,9 +25963,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2431 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2430 "parser_raw.mly"
              ( "function" )
-# 25976 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25969 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -25995,9 +25988,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2432 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2431 "parser_raw.mly"
             ( "functor" )
-# 26001 "src/ocaml/preprocess/406/parser_raw.ml"
+# 25994 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26020,9 +26013,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2433 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2432 "parser_raw.mly"
        ( "if" )
-# 26026 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26019 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26045,9 +26038,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2434 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2433 "parser_raw.mly"
        ( "in" )
-# 26051 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26044 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26070,9 +26063,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2435 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2434 "parser_raw.mly"
             ( "include" )
-# 26076 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26069 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26095,9 +26088,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2436 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2435 "parser_raw.mly"
             ( "inherit" )
-# 26101 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26094 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26120,9 +26113,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2437 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2436 "parser_raw.mly"
                 ( "initializer" )
-# 26126 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26119 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26145,9 +26138,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2438 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2437 "parser_raw.mly"
          ( "lazy" )
-# 26151 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26144 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26170,9 +26163,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2439 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2438 "parser_raw.mly"
         ( "let" )
-# 26176 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26169 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26195,9 +26188,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2440 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2439 "parser_raw.mly"
           ( "match" )
-# 26201 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26194 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26220,9 +26213,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2441 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2440 "parser_raw.mly"
            ( "method" )
-# 26226 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26219 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26245,9 +26238,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2442 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2441 "parser_raw.mly"
            ( "module" )
-# 26251 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26244 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26270,9 +26263,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2443 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2442 "parser_raw.mly"
             ( "mutable" )
-# 26276 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26269 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26295,9 +26288,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2444 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2443 "parser_raw.mly"
         ( "new" )
-# 26301 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26294 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26320,9 +26313,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2445 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2444 "parser_raw.mly"
            ( "nonrec" )
-# 26326 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26319 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26345,9 +26338,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2446 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2445 "parser_raw.mly"
            ( "object" )
-# 26351 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26344 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26370,9 +26363,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2447 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2446 "parser_raw.mly"
        ( "of" )
-# 26376 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26369 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26395,9 +26388,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2448 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2447 "parser_raw.mly"
          ( "open" )
-# 26401 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26394 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26420,9 +26413,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2449 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2448 "parser_raw.mly"
        ( "or" )
-# 26426 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26419 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26445,9 +26438,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2449 "parser_raw.mly"
             ( "private" )
-# 26451 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26444 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26470,9 +26463,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2451 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2450 "parser_raw.mly"
         ( "rec" )
-# 26476 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26469 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26495,9 +26488,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2452 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2451 "parser_raw.mly"
         ( "sig" )
-# 26501 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26494 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26520,9 +26513,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2452 "parser_raw.mly"
            ( "struct" )
-# 26526 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26519 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26545,9 +26538,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2454 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2453 "parser_raw.mly"
          ( "then" )
-# 26551 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26544 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26570,9 +26563,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2455 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2454 "parser_raw.mly"
        ( "to" )
-# 26576 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26569 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26595,9 +26588,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2456 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2455 "parser_raw.mly"
          ( "true" )
-# 26601 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26594 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26620,9 +26613,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2457 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2456 "parser_raw.mly"
         ( "try" )
-# 26626 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26619 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26645,9 +26638,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2458 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2457 "parser_raw.mly"
          ( "type" )
-# 26651 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26644 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26670,9 +26663,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2459 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2458 "parser_raw.mly"
         ( "val" )
-# 26676 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26669 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26695,9 +26688,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2460 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2459 "parser_raw.mly"
             ( "virtual" )
-# 26701 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26694 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26720,9 +26713,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2461 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2460 "parser_raw.mly"
          ( "when" )
-# 26726 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26719 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26745,9 +26738,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2462 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2461 "parser_raw.mly"
           ( "while" )
-# 26751 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26744 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26770,9 +26763,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2463 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2462 "parser_raw.mly"
          ( "with" )
-# 26776 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26769 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26790,14 +26783,14 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.extension_constructor * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.extension_constructor * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
-        let _v : (Parsetree.extension_constructor * string Asttypes.loc option) = 
-# 1926 "src/ocaml/preprocess/406/parser_raw.mly"
+        let _v : (Parsetree.extension_constructor * string Location.loc option) = 
+# 1925 "parser_raw.mly"
                               ( _1 )
-# 26801 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26794 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26850,19 +26843,19 @@ module Tables = struct
         let _11 : (Longident.t) = Obj.magic _11 in
         let _4 : unit = Obj.magic _4 in
         let _10 : (string) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : (Parsetree.extension_constructor * string Asttypes.loc option) = let _5 =
+        let _v : (Parsetree.extension_constructor * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__11_ in
           let _startpos__1_ = _startpos__11_ in
           let _1 = _11 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -26871,7 +26864,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 26875 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26868 "parser_raw.ml"
           
         in
         let _3 =
@@ -26881,7 +26874,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -26890,18 +26883,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 26894 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26887 "parser_raw.ml"
           
         in
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1929 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1928 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Te.rebind _3 _5 ~attrs:(attrs @ _6 @ _7)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
         , ext )
-# 26905 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26898 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26924,9 +26917,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2003 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2002 "parser_raw.mly"
                                       ( [_1] )
-# 26930 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26923 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26949,9 +26942,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2004 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2003 "parser_raw.mly"
                                           ( [_1] )
-# 26955 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26948 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26974,9 +26967,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2005 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2004 "parser_raw.mly"
                                  ( [_1] )
-# 26980 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26973 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -26999,9 +26992,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2006 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2005 "parser_raw.mly"
                                      ( [_1] )
-# 27005 "src/ocaml/preprocess/406/parser_raw.ml"
+# 26998 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27030,9 +27023,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2008 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2007 "parser_raw.mly"
       ( _2 :: _1 )
-# 27036 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27029 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27061,9 +27054,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2010 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2009 "parser_raw.mly"
       ( _2 :: _1 )
-# 27067 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27060 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27098,20 +27091,20 @@ module Tables = struct
         } = _menhir_stack in
         let _4 : (Parsetree.attributes) = Obj.magic _4 in
         let _3 : (Parsetree.module_expr) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
-        let _v : (Parsetree.include_declaration * string Asttypes.loc option) = let _endpos = _endpos__4_ in
+        let _v : (Parsetree.include_declaration * string Location.loc option) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 728 "src/ocaml/preprocess/406/parser_raw.mly"
+# 727 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Incl.mk _3 ~attrs:(attrs@_4)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 27115 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27108 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27176,19 +27169,19 @@ module Tables = struct
         let _10 : (Longident.t) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.rec_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__9_ in
-        let _v : (Parsetree.type_extension * string Asttypes.loc option) = let _5 =
+        let _v : (Parsetree.type_extension * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -27197,19 +27190,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 27201 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27194 "parser_raw.ml"
           
         in
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1987 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1986 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         if _3 <> Recursive then (not_expecting (make_loc _startpos__3_ _endpos__3_) "nonrec flag");
         Te.mk _5 (List.rev _8) ~params:_4 ~priv:_7
           ~attrs:(attrs@_9) ~docs:((symbol_docs _symbolstartpos _endpos))
         , ext )
-# 27213 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27206 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27238,9 +27231,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1573 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1572 "parser_raw.mly"
       ( _2 )
-# 27244 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27237 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27271,9 +27264,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1575 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1574 "parser_raw.mly"
       ( let (l, o, p) = _1 in (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_fun(l, o, p, _2)) )
-# 27277 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27270 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27313,7 +27306,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _3 : (string Asttypes.loc list) = Obj.magic _3 in
+        let _3 : (string Location.loc list) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
@@ -27322,9 +27315,9 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1577 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1576 "parser_raw.mly"
       ( (mk_newtypes ~loc:(make_loc _symbolstartpos _endpos)) _3 _5 )
-# 27328 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27321 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27359,10 +27352,10 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.structure) = 
-# 683 "src/ocaml/preprocess/406/parser_raw.mly"
+# 682 "parser_raw.mly"
       ( (mark_rhs_docs _startpos__1_ _endpos__2_);
         ((text_str _startpos__1_)) @ mkstrexp _1 _2 :: _3 )
-# 27366 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27359 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27391,9 +27384,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure) = 
-# 685 "src/ocaml/preprocess/406/parser_raw.mly"
+# 684 "parser_raw.mly"
                                  ( _1 :: _2 )
-# 27397 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27390 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27416,9 +27409,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure) = 
-# 686 "src/ocaml/preprocess/406/parser_raw.mly"
+# 685 "parser_raw.mly"
                    ( _1 )
-# 27422 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27415 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27443,9 +27436,9 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2513 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2512 "parser_raw.mly"
     ( (val_of_lwt_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 )
-# 27449 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27442 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27470,9 +27463,9 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 695 "src/ocaml/preprocess/406/parser_raw.mly"
+# 694 "parser_raw.mly"
       ( (val_of_let_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 )
-# 27476 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27469 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27490,16 +27483,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.value_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.value_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 697 "src/ocaml/preprocess/406/parser_raw.mly"
+# 696 "parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_primitive body) ext )
-# 27503 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27496 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27517,16 +27510,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.value_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.value_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 699 "src/ocaml/preprocess/406/parser_raw.mly"
+# 698 "parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_primitive body) ext )
-# 27530 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27523 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27545,16 +27538,16 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (Asttypes.rec_flag * Parsetree.type_declaration list *
-  string Asttypes.loc option) = Obj.magic _1 in
+  string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 701 "src/ocaml/preprocess/406/parser_raw.mly"
+# 700 "parser_raw.mly"
       ( let (nr, l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_type (nr, List.rev l)) ext )
-# 27558 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27551 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27572,16 +27565,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.type_extension * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.type_extension * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 703 "src/ocaml/preprocess/406/parser_raw.mly"
+# 702 "parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_typext l) ext )
-# 27585 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27578 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27599,16 +27592,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.extension_constructor * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.extension_constructor * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 705 "src/ocaml/preprocess/406/parser_raw.mly"
+# 704 "parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_exception l) ext )
-# 27612 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27605 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27626,16 +27619,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_binding * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_binding * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 707 "src/ocaml/preprocess/406/parser_raw.mly"
+# 706 "parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_module body) ext )
-# 27639 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27632 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27653,16 +27646,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_binding list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_binding list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 709 "src/ocaml/preprocess/406/parser_raw.mly"
+# 708 "parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_recmodule(List.rev l)) ext )
-# 27666 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27659 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27680,16 +27673,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.module_type_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.module_type_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 711 "src/ocaml/preprocess/406/parser_raw.mly"
+# 710 "parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_modtype body) ext )
-# 27693 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27686 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27707,16 +27700,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.open_description * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.open_description * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 713 "src/ocaml/preprocess/406/parser_raw.mly"
+# 712 "parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_open body) ext )
-# 27720 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27713 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27734,16 +27727,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 715 "src/ocaml/preprocess/406/parser_raw.mly"
+# 714 "parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_class (List.rev l)) ext )
-# 27747 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27740 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27761,16 +27754,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.class_type_declaration list * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.class_type_declaration list * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 717 "src/ocaml/preprocess/406/parser_raw.mly"
+# 716 "parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_class_type (List.rev l)) ext )
-# 27774 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27767 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27788,16 +27781,16 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Parsetree.include_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Parsetree.include_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 719 "src/ocaml/preprocess/406/parser_raw.mly"
+# 718 "parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_include body) ext )
-# 27801 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27794 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27828,9 +27821,9 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 721 "src/ocaml/preprocess/406/parser_raw.mly"
+# 720 "parser_raw.mly"
       ( (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_extension (_1, (add_docs_attrs ((symbol_docs _symbolstartpos _endpos)) _2))) )
-# 27834 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27827 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27855,10 +27848,10 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 723 "src/ocaml/preprocess/406/parser_raw.mly"
+# 722 "parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute _1) )
-# 27862 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27855 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27874,9 +27867,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.structure) = 
-# 689 "src/ocaml/preprocess/406/parser_raw.mly"
+# 688 "parser_raw.mly"
                          ( [] )
-# 27880 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27873 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27905,9 +27898,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure) = 
-# 690 "src/ocaml/preprocess/406/parser_raw.mly"
+# 689 "parser_raw.mly"
                        ( ((text_str _startpos__1_)) @ _2 )
-# 27911 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27904 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27936,9 +27929,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure) = 
-# 691 "src/ocaml/preprocess/406/parser_raw.mly"
+# 690 "parser_raw.mly"
                                   ( ((text_str _startpos__1_)) @ _1 :: _2 )
-# 27942 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27935 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27961,9 +27954,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2405 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2404 "parser_raw.mly"
           ( "-" )
-# 27967 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27960 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -27986,9 +27979,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2406 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2405 "parser_raw.mly"
              ( "-." )
-# 27992 "src/ocaml/preprocess/406/parser_raw.ml"
+# 27985 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28030,7 +28023,7 @@ module Tables = struct
         let _4 : (Parsetree.core_type list) = Obj.magic _4 in
         let _3 : (bool) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__5_ in
@@ -28041,7 +28034,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -28050,14 +28043,14 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 28054 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28047 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         
-# 2175 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2174 "parser_raw.mly"
       ( Rtag (_1, add_info_attrs ((symbol_info _endpos)) _5, _3, List.rev _4) )
-# 28061 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28054 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28081,7 +28074,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__2_ in
@@ -28092,7 +28085,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -28101,14 +28094,14 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 28105 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28098 "parser_raw.ml"
           
         in
         let _endpos = _endpos__2_ in
         
-# 2177 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2176 "parser_raw.mly"
       ( Rtag (_1, add_info_attrs ((symbol_info _endpos)) _2, true, []) )
-# 28112 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28105 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28131,23 +28124,23 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure_item) = let _3 =
           
-# 2338 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2337 "parser_raw.mly"
                 ( None )
-# 28144 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28137 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__2_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28156,7 +28149,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28160 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28153 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28185,11 +28178,11 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : (
-# 506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 505 "parser_raw.mly"
        (string * string option)
-# 28191 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28184 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -28197,17 +28190,17 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _3 =
           let _1 = _10 in
           
-# 2339 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2338 "parser_raw.mly"
            ( let (s, d) = _1 in
                   Some (Exp.constant (Pconst_string (s, d) )) )
-# 28204 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28197 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28216,7 +28209,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28220 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28213 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28245,11 +28238,11 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : (
-# 453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 452 "parser_raw.mly"
        (string * char option)
-# 28251 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28244 "parser_raw.ml"
         ) = Obj.magic _10 in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -28257,17 +28250,17 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _3 =
           let _1 = _10 in
           
-# 2341 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2340 "parser_raw.mly"
         ( let (n, m) = _1 in
                   Some (Exp.constant (Pconst_integer (n, m))) )
-# 28264 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28257 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28276,7 +28269,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28280 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28273 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28305,7 +28298,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : (Longident.t) = Obj.magic _10 in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -28317,16 +28310,16 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2343 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2342 "parser_raw.mly"
                                   ( Some (Exp.ident (mkloc _1 ((make_loc _symbolstartpos _endpos)))) )
-# 28323 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28316 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28335,7 +28328,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28339 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28332 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28364,7 +28357,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : (Longident.t) = Obj.magic _10 in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -28376,16 +28369,16 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2343 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2342 "parser_raw.mly"
                                   ( Some (Exp.ident (mkloc _1 ((make_loc _symbolstartpos _endpos)))) )
-# 28382 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28375 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28394,7 +28387,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28398 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28391 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28423,7 +28416,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : unit = Obj.magic _10 in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -28435,16 +28428,16 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2344 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2343 "parser_raw.mly"
           ( Some (Exp.construct (mkloc (Longident.Lident "false") ((make_loc _symbolstartpos _endpos))) None) )
-# 28441 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28434 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28453,7 +28446,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28457 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28450 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28482,7 +28475,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _10 : unit = Obj.magic _10 in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -28494,16 +28487,16 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2345 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2344 "parser_raw.mly"
          ( Some (Exp.construct (mkloc (Longident.Lident "true") ((make_loc _symbolstartpos _endpos))) None) )
-# 28500 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28493 "parser_raw.ml"
           
         in
         let _endpos__3_ = _endpos__10_ in
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2349 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2348 "parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28512,7 +28505,7 @@ module Tables = struct
       in
       (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute (id,payload))
     )
-# 28516 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28509 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28541,9 +28534,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type option * Parsetree.core_type option) = 
-# 1639 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1638 "parser_raw.mly"
                     ( (Some _2, None) )
-# 28547 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28540 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28584,9 +28577,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.core_type option * Parsetree.core_type option) = 
-# 1640 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1639 "parser_raw.mly"
                                            ( (Some _2, Some _4) )
-# 28590 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28583 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28615,9 +28608,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type option * Parsetree.core_type option) = 
-# 1641 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1640 "parser_raw.mly"
                            ( (None, Some _2) )
-# 28621 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28614 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28671,28 +28664,28 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _8 : (Parsetree.attributes) = Obj.magic _8 in
-        let _7 : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) = Obj.magic _7 in
+        let _7 : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = Obj.magic _7 in
         let _6 : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = Obj.magic _6 in
         let _10 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 28680 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28673 "parser_raw.ml"
         ) = Obj.magic _10 in
         let _4 : ((Parsetree.core_type * Asttypes.variance) list) = Obj.magic _4 in
         let _3 : (Asttypes.rec_flag) = Obj.magic _3 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__8_ in
-        let _v : (Asttypes.rec_flag * Parsetree.type_declaration * string Asttypes.loc option) = let _5 =
+        let _v : (Asttypes.rec_flag * Parsetree.type_declaration * string Location.loc option) = let _5 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -28701,13 +28694,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 28705 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28698 "parser_raw.ml"
           
         in
         let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1829 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1828 "parser_raw.mly"
       ( let (kind, priv, manifest) = _6 in
         let (ext, attrs) = _2 in
         let ty =
@@ -28716,7 +28709,7 @@ module Tables = struct
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
         in
           (_3, ty, ext) )
-# 28720 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28713 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28734,15 +28727,15 @@ module Tables = struct
           MenhirLib.EngineTypes.endp = _endpos__1_;
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
-        let _1 : (Asttypes.rec_flag * Parsetree.type_declaration * string Asttypes.loc option) = Obj.magic _1 in
+        let _1 : (Asttypes.rec_flag * Parsetree.type_declaration * string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.rec_flag * Parsetree.type_declaration list *
-  string Asttypes.loc option) = 
-# 1822 "src/ocaml/preprocess/406/parser_raw.mly"
+  string Location.loc option) = 
+# 1821 "parser_raw.mly"
       ( let (nonrec_flag, ty, ext) = _1 in (nonrec_flag, [ty], ext) )
-# 28746 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28739 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28767,15 +28760,15 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.type_declaration) = Obj.magic _2 in
         let _1 : (Asttypes.rec_flag * Parsetree.type_declaration list *
-  string Asttypes.loc option) = Obj.magic _1 in
+  string Location.loc option) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.rec_flag * Parsetree.type_declaration list *
-  string Asttypes.loc option) = 
-# 1824 "src/ocaml/preprocess/406/parser_raw.mly"
+  string Location.loc option) = 
+# 1823 "parser_raw.mly"
       ( let (nonrec_flag, tys, ext) = _1 in (nonrec_flag, _2 :: tys, ext) )
-# 28779 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28772 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28791,9 +28784,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1851 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1850 "parser_raw.mly"
       ( (Ptype_abstract, Public, None) )
-# 28797 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28790 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28822,9 +28815,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1853 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1852 "parser_raw.mly"
       ( (Ptype_abstract, Public, Some _2) )
-# 28828 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28821 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28859,9 +28852,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1855 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1854 "parser_raw.mly"
       ( (Ptype_abstract, Private, Some _3) )
-# 28865 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28858 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28890,9 +28883,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1857 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1856 "parser_raw.mly"
       ( (Ptype_variant(List.rev _2), Public, None) )
-# 28896 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28889 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28927,9 +28920,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1859 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1858 "parser_raw.mly"
       ( (Ptype_variant(List.rev _3), Private, None) )
-# 28933 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28926 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28958,9 +28951,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1861 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1860 "parser_raw.mly"
       ( (Ptype_open, Public, None) )
-# 28964 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28957 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -28995,9 +28988,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1863 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1862 "parser_raw.mly"
       ( (Ptype_open, Private, None) )
-# 29001 "src/ocaml/preprocess/406/parser_raw.ml"
+# 28994 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29044,9 +29037,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1865 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1864 "parser_raw.mly"
       ( (Ptype_record _4, _2, None) )
-# 29050 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29043 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29093,9 +29086,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1867 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1866 "parser_raw.mly"
       ( (Ptype_variant(List.rev _5), _4, Some _2) )
-# 29099 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29092 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29142,9 +29135,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1869 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1868 "parser_raw.mly"
       ( (Ptype_open, _4, Some _2) )
-# 29148 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29141 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29203,9 +29196,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1871 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1870 "parser_raw.mly"
       ( (Ptype_record _6, _4, Some _2) )
-# 29209 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29202 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29224,17 +29217,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 29230 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29223 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2313 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2312 "parser_raw.mly"
            ( Lident _1 )
-# 29238 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29231 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29263,9 +29256,9 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 29269 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29262 "parser_raw.ml"
         ) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Longident.t) = Obj.magic _1 in
@@ -29273,9 +29266,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2314 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2313 "parser_raw.mly"
                                  ( Ldot(_1, _3) )
-# 29279 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29272 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29304,9 +29297,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type * Asttypes.variance) = 
-# 1890 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1889 "parser_raw.mly"
                                 ( _2, _1 )
-# 29310 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29303 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29329,9 +29322,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1901 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1900 "parser_raw.mly"
                    ( [_1] )
-# 29335 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29328 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29366,9 +29359,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1902 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1901 "parser_raw.mly"
                                              ( _3 :: _1 )
-# 29372 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29365 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29391,7 +29384,7 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _2 : (Asttypes.label) = Obj.magic _2 in
+        let _2 : (string) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
@@ -29399,9 +29392,9 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1898 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1897 "parser_raw.mly"
                 ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_var _2) )
-# 29405 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29398 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29417,9 +29410,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.variance) = 
-# 1893 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1892 "parser_raw.mly"
                                                 ( Invariant )
-# 29423 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29416 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29442,9 +29435,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.variance) = 
-# 1894 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1893 "parser_raw.mly"
          ( Covariant )
-# 29448 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29441 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29467,9 +29460,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.variance) = 
-# 1895 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1894 "parser_raw.mly"
           ( Contravariant )
-# 29473 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29466 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29492,19 +29485,19 @@ module Tables = struct
             MenhirLib.EngineTypes.next = _menhir_stack;
           };
         } = _menhir_stack in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__10_ in
-        let _v : (Asttypes.label Asttypes.loc list) = let _2 =
+        let _v : (string Location.loc list) = let _2 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29513,13 +29506,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 29517 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29510 "parser_raw.ml"
           
         in
         
-# 2071 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2070 "parser_raw.mly"
                            ( [_2] )
-# 29523 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29516 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29547,20 +29540,20 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _2 : unit = Obj.magic _2 in
-        let _1 : (Asttypes.label Asttypes.loc list) = Obj.magic _1 in
+        let _1 : (string Location.loc list) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__10_ in
-        let _v : (Asttypes.label Asttypes.loc list) = let _3 =
+        let _v : (string Location.loc list) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29569,13 +29562,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 29573 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29566 "parser_raw.ml"
           
         in
         
-# 2072 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2071 "parser_raw.mly"
                                         ( _3 :: _1 )
-# 29579 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29572 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29594,17 +29587,17 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 29600 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29593 "parser_raw.ml"
         ) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2250 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2249 "parser_raw.mly"
            ( _1 )
-# 29608 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29601 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29639,9 +29632,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2251 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2250 "parser_raw.mly"
                            ( _2 )
-# 29645 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29638 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29664,9 +29657,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2296 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2295 "parser_raw.mly"
               ( Lident _1 )
-# 29670 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29663 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29701,9 +29694,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2297 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2296 "parser_raw.mly"
                                 ( Ldot(_1, _3) )
-# 29707 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29700 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29753,7 +29746,7 @@ module Tables = struct
         } = _menhir_stack in
         let _7 : (Parsetree.core_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
-        let _5 : (Asttypes.label) = Obj.magic _5 in
+        let _5 : (string) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
@@ -29761,13 +29754,12 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = 
-# 1018 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1017 "parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (mkloc _5 ((make_loc _startpos__5_ _endpos__5_)), Mutable, Cfk_virtual _7), _2 )
-# 29771 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29763 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29817,7 +29809,7 @@ module Tables = struct
         } = _menhir_stack in
         let _7 : (Parsetree.core_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _4 : (Asttypes.mutable_flag) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
@@ -29825,8 +29817,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = let _5 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
@@ -29834,7 +29825,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29843,14 +29834,14 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 29847 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29838 "parser_raw.ml"
           
         in
         
-# 1021 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1020 "parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (_5, _4, Cfk_virtual _7), _2 )
-# 29854 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29845 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29895,15 +29886,14 @@ module Tables = struct
         } = _menhir_stack in
         let _6 : (Parsetree.expression) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _3 : (Asttypes.mutable_flag) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : (Asttypes.override_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__6_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = let _4 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
@@ -29911,7 +29901,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29920,13 +29910,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 29924 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29914 "parser_raw.ml"
           
         in
         
-# 1024 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1023 "parser_raw.mly"
       ( (_4, _3, Cfk_concrete (_1, _6)), _2 )
-# 29930 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29920 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -29977,15 +29967,14 @@ module Tables = struct
         let _7 : (Parsetree.expression) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _5 : (Parsetree.core_type option * Parsetree.core_type option) = Obj.magic _5 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _3 : (Asttypes.mutable_flag) = Obj.magic _3 in
         let _2 : (Parsetree.attributes) = Obj.magic _2 in
         let _1 : (Asttypes.override_flag) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
-        let _v : ((Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-   Parsetree.class_field_kind) *
+        let _v : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = let _4 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
@@ -29993,7 +29982,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30002,28 +29991,28 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30006 "src/ocaml/preprocess/406/parser_raw.ml"
+# 29995 "parser_raw.ml"
           
         in
         let _startpos__4_ = _startpos__10_ in
         let _endpos = _endpos__7_ in
-        let _symbolstartpos = if Pervasives.(!=) _startpos__1_ _endpos__1_ then
+        let _symbolstartpos = if _startpos__1_ != _endpos__1_ then
           _startpos__1_
         else
-          if Pervasives.(!=) _startpos__2_ _endpos__2_ then
+          if _startpos__2_ != _endpos__2_ then
             _startpos__2_
           else
-            if Pervasives.(!=) _startpos__3_ _endpos__3_ then
+            if _startpos__3_ != _endpos__3_ then
               _startpos__3_
             else
               _startpos__4_ in
         
-# 1026 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1025 "parser_raw.mly"
       (
        let e = (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _7 _5 in
        (_4, _3, Cfk_concrete (_1, e)), _2
       )
-# 30027 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30016 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30070,19 +30059,19 @@ module Tables = struct
         let _5 : (Parsetree.core_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _10 : (string) = Obj.magic _10 in
-        let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
+        let _2 : (string Location.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__6_ in
-        let _v : (Parsetree.value_description * string Asttypes.loc option) = let _3 =
+        let _v : (Parsetree.value_description * string Location.loc option) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30091,18 +30080,18 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30095 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30084 "parser_raw.ml"
           
         in
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1803 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1802 "parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Val.mk _3 _5 ~attrs:(attrs@_6)
                ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
       , ext )
-# 30106 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30095 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30142,21 +30131,21 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.core_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _2 : (Asttypes.mutable_flag) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : (Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-  Asttypes.virtual_flag * Parsetree.core_type) = let _3 =
+        let _v : (string Location.loc * Asttypes.mutable_flag * Asttypes.virtual_flag *
+  Parsetree.core_type) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30165,13 +30154,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30169 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30158 "parser_raw.ml"
           
         in
         
-# 1114 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1113 "parser_raw.mly"
       ( _3, _2, Virtual, _5 )
-# 30175 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30164 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30211,21 +30200,21 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : (Parsetree.core_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _2 : (Asttypes.virtual_flag) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
-        let _v : (Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-  Asttypes.virtual_flag * Parsetree.core_type) = let _3 =
+        let _v : (string Location.loc * Asttypes.mutable_flag * Asttypes.virtual_flag *
+  Parsetree.core_type) = let _3 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30234,13 +30223,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30238 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30227 "parser_raw.ml"
           
         in
         
-# 1116 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1115 "parser_raw.mly"
       ( _3, Mutable, _2, _5 )
-# 30244 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30233 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30270,19 +30259,19 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
-        let _10 : (Asttypes.label) = Obj.magic _10 in
+        let _10 : (string) = Obj.magic _10 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__10_ in
         let _endpos = _endpos__3_ in
-        let _v : (Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-  Asttypes.virtual_flag * Parsetree.core_type) = let _1 =
+        let _v : (string Location.loc * Asttypes.mutable_flag * Asttypes.virtual_flag *
+  Parsetree.core_type) = let _1 =
           let _endpos__1_ = _endpos__10_ in
           let _startpos__1_ = _startpos__10_ in
           let _1 = _10 in
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30291,13 +30280,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30295 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30284 "parser_raw.ml"
           
         in
         
-# 1118 "src/ocaml/preprocess/406/parser_raw.mly"
+# 1117 "parser_raw.mly"
       ( _1, Immutable, Concrete, _3 )
-# 30301 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30290 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30313,9 +30302,9 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.virtual_flag) = 
-# 2382 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2381 "parser_raw.mly"
                                                 ( Concrete )
-# 30319 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30308 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30338,9 +30327,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.virtual_flag) = 
-# 2383 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2382 "parser_raw.mly"
             ( Virtual )
-# 30344 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30333 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30383,7 +30372,7 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let _6 : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) = Obj.magic _6 in
+        let _6 : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = Obj.magic _6 in
         let _5 : (Parsetree.core_type) = Obj.magic _5 in
         let _4 : (Asttypes.private_flag) = Obj.magic _4 in
         let _3 : (Longident.t) = Obj.magic _3 in
@@ -30395,7 +30384,7 @@ module Tables = struct
         let _v : (Parsetree.with_constraint) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2047 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2046 "parser_raw.mly"
       ( Pwith_type
           ((mkrhs _3 (make_loc _startpos__3_ _endpos__3_)),
            (Type.mk ((mkrhs (Longident.last _3) (make_loc _startpos__3_ _endpos__3_)))
@@ -30404,7 +30393,7 @@ module Tables = struct
               ~manifest:_5
               ~priv:_4
               ~loc:((make_loc _symbolstartpos _endpos)))) )
-# 30408 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30397 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30457,7 +30446,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30466,19 +30455,19 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30470 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30459 "parser_raw.ml"
           
         in
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2056 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2055 "parser_raw.mly"
       ( Pwith_typesubst
           (_3, Type.mk {_3 with txt = Longident.last _3.txt}
              ~params:_2
              ~manifest:_5
              ~loc:((make_loc _symbolstartpos _endpos))) )
-# 30482 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30471 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30525,7 +30514,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30534,7 +30523,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30538 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30527 "parser_raw.ml"
           
         in
         let _2 =
@@ -30544,7 +30533,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30553,13 +30542,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30557 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30546 "parser_raw.ml"
           
         in
         
-# 2062 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2061 "parser_raw.mly"
       ( Pwith_module (_2, _4) )
-# 30563 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30552 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30606,7 +30595,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30615,7 +30604,7 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30619 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30608 "parser_raw.ml"
           
         in
         let _2 =
@@ -30625,7 +30614,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 589 "src/ocaml/preprocess/406/parser_raw.mly"
+# 588 "parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30634,13 +30623,13 @@ module Tables = struct
          I do not know if mkrhs is ever used in a situation where $startpos
          and $symbolpos do not coincide. *)
       mkrhs _1 (make_loc _startpos _endpos) )
-# 30638 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30627 "parser_raw.ml"
           
         in
         
-# 2064 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2063 "parser_raw.mly"
       ( Pwith_modsubst (_2, _4) )
-# 30644 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30633 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30663,9 +30652,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.with_constraint list) = 
-# 2041 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2040 "parser_raw.mly"
                     ( [_1] )
-# 30669 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30658 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30700,9 +30689,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.with_constraint list) = 
-# 2042 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2041 "parser_raw.mly"
                                          ( _3 :: _1 )
-# 30706 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30695 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30725,9 +30714,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag) = 
-# 2067 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2066 "parser_raw.mly"
           ( Public )
-# 30731 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30720 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30756,9 +30745,9 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.private_flag) = 
-# 2068 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2067 "parser_raw.mly"
                   ( Private )
-# 30762 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30751 "parser_raw.ml"
          in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -30794,9 +30783,9 @@ module MenhirInterpreter = struct
       | T_VAL : unit terminal
       | T_UNDERSCORE : unit terminal
       | T_UIDENT : (
-# 514 "src/ocaml/preprocess/406/parser_raw.mly"
+# 513 "parser_raw.mly"
        (string)
-# 30800 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30789 "parser_raw.ml"
     ) terminal
       | T_TYPE : unit terminal
       | T_TRY_LWT : unit terminal
@@ -30807,16 +30796,16 @@ module MenhirInterpreter = struct
       | T_THEN : unit terminal
       | T_STRUCT : unit terminal
       | T_STRING : (
-# 506 "src/ocaml/preprocess/406/parser_raw.mly"
+# 505 "parser_raw.mly"
        (string * string option)
-# 30813 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30802 "parser_raw.ml"
     ) terminal
       | T_STAR : unit terminal
       | T_SIG : unit terminal
       | T_SHARPOP : (
-# 503 "src/ocaml/preprocess/406/parser_raw.mly"
+# 502 "parser_raw.mly"
        (string)
-# 30820 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30809 "parser_raw.ml"
     ) terminal
       | T_SHARP : unit terminal
       | T_SEMISEMI : unit terminal
@@ -30830,9 +30819,9 @@ module MenhirInterpreter = struct
       | T_QUESTION : unit terminal
       | T_PRIVATE : unit terminal
       | T_PREFIXOP : (
-# 491 "src/ocaml/preprocess/406/parser_raw.mly"
+# 490 "parser_raw.mly"
        (string)
-# 30836 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30825 "parser_raw.ml"
     ) terminal
       | T_PLUSEQ : unit terminal
       | T_PLUSDOT : unit terminal
@@ -30840,9 +30829,9 @@ module MenhirInterpreter = struct
       | T_PERCENT : unit terminal
       | T_OR : unit terminal
       | T_OPTLABEL : (
-# 485 "src/ocaml/preprocess/406/parser_raw.mly"
+# 484 "parser_raw.mly"
        (string)
-# 30846 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30835 "parser_raw.ml"
     ) terminal
       | T_OPEN : unit terminal
       | T_OF : unit terminal
@@ -30859,9 +30848,9 @@ module MenhirInterpreter = struct
       | T_MATCH : unit terminal
       | T_LPAREN : unit terminal
       | T_LIDENT : (
-# 468 "src/ocaml/preprocess/406/parser_raw.mly"
+# 467 "parser_raw.mly"
        (string)
-# 30865 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30854 "parser_raw.ml"
     ) terminal
       | T_LET_LWT : unit terminal
       | T_LET : unit terminal
@@ -30880,41 +30869,41 @@ module MenhirInterpreter = struct
       | T_LBRACE : unit terminal
       | T_LAZY : unit terminal
       | T_LABEL : (
-# 455 "src/ocaml/preprocess/406/parser_raw.mly"
+# 454 "parser_raw.mly"
        (string)
-# 30886 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30875 "parser_raw.ml"
     ) terminal
       | T_INT : (
-# 453 "src/ocaml/preprocess/406/parser_raw.mly"
+# 452 "parser_raw.mly"
        (string * char option)
-# 30891 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30880 "parser_raw.ml"
     ) terminal
       | T_INITIALIZER : unit terminal
       | T_INHERIT : unit terminal
       | T_INFIXOP4 : (
-# 449 "src/ocaml/preprocess/406/parser_raw.mly"
+# 448 "parser_raw.mly"
        (string)
-# 30898 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30887 "parser_raw.ml"
     ) terminal
       | T_INFIXOP3 : (
-# 448 "src/ocaml/preprocess/406/parser_raw.mly"
+# 447 "parser_raw.mly"
        (string)
-# 30903 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30892 "parser_raw.ml"
     ) terminal
       | T_INFIXOP2 : (
-# 447 "src/ocaml/preprocess/406/parser_raw.mly"
+# 446 "parser_raw.mly"
        (string)
-# 30908 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30897 "parser_raw.ml"
     ) terminal
       | T_INFIXOP1 : (
-# 446 "src/ocaml/preprocess/406/parser_raw.mly"
+# 445 "parser_raw.mly"
        (string)
-# 30913 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30902 "parser_raw.ml"
     ) terminal
       | T_INFIXOP0 : (
-# 445 "src/ocaml/preprocess/406/parser_raw.mly"
+# 444 "parser_raw.mly"
        (string)
-# 30918 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30907 "parser_raw.ml"
     ) terminal
       | T_INCLUDE : unit terminal
       | T_IN : unit terminal
@@ -30929,9 +30918,9 @@ module MenhirInterpreter = struct
       | T_FOR_LWT : unit terminal
       | T_FOR : unit terminal
       | T_FLOAT : (
-# 433 "src/ocaml/preprocess/406/parser_raw.mly"
+# 432 "parser_raw.mly"
        (string * char option)
-# 30935 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30924 "parser_raw.ml"
     ) terminal
       | T_FINALLY_LWT : unit terminal
       | T_FALSE : unit terminal
@@ -30945,25 +30934,25 @@ module MenhirInterpreter = struct
       | T_DOWNTO : unit terminal
       | T_DOTTILDE : unit terminal
       | T_DOTOP : (
-# 450 "src/ocaml/preprocess/406/parser_raw.mly"
+# 449 "parser_raw.mly"
        (string)
-# 30951 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30940 "parser_raw.ml"
     ) terminal
       | T_DOTLESS : unit terminal
       | T_DOTDOT : unit terminal
       | T_DOT : unit terminal
       | T_DONE : unit terminal
       | T_DOCSTRING : (
-# 522 "src/ocaml/preprocess/406/parser_raw.mly"
+# 521 "parser_raw.mly"
        (Docstrings.docstring)
-# 30960 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30949 "parser_raw.ml"
     ) terminal
       | T_DO : unit terminal
       | T_CONSTRAINT : unit terminal
       | T_COMMENT : (
-# 521 "src/ocaml/preprocess/406/parser_raw.mly"
+# 520 "parser_raw.mly"
        (string * Location.t)
-# 30967 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30956 "parser_raw.ml"
     ) terminal
       | T_COMMA : unit terminal
       | T_COLONGREATER : unit terminal
@@ -30972,9 +30961,9 @@ module MenhirInterpreter = struct
       | T_COLON : unit terminal
       | T_CLASS : unit terminal
       | T_CHAR : (
-# 413 "src/ocaml/preprocess/406/parser_raw.mly"
+# 412 "parser_raw.mly"
        (char)
-# 30978 "src/ocaml/preprocess/406/parser_raw.ml"
+# 30967 "parser_raw.ml"
     ) terminal
       | T_BEGIN : unit terminal
       | T_BARRBRACKET : unit terminal
@@ -30993,15 +30982,14 @@ module MenhirInterpreter = struct
       | N_with_constraints : (Parsetree.with_constraint list) nonterminal
       | N_with_constraint : (Parsetree.with_constraint) nonterminal
       | N_virtual_flag : (Asttypes.virtual_flag) nonterminal
-      | N_value_type : (Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-  Asttypes.virtual_flag * Parsetree.core_type) nonterminal
-      | N_value_description : (Parsetree.value_description * string Asttypes.loc option) nonterminal
-      | N_value : ((Asttypes.label Asttypes.loc * Asttypes.mutable_flag *
-   Parsetree.class_field_kind) *
+      | N_value_type : (string Location.loc * Asttypes.mutable_flag * Asttypes.virtual_flag *
+  Parsetree.core_type) nonterminal
+      | N_value_description : (Parsetree.value_description * string Location.loc option) nonterminal
+      | N_value : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) nonterminal
       | N_val_longident : (Longident.t) nonterminal
       | N_val_ident : (string) nonterminal
-      | N_typevar_list : (Asttypes.label Asttypes.loc list) nonterminal
+      | N_typevar_list : (string Location.loc list) nonterminal
       | N_type_variance : (Asttypes.variance) nonterminal
       | N_type_variable : (Parsetree.core_type) nonterminal
       | N_type_parameter_list : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
@@ -31009,8 +30997,8 @@ module MenhirInterpreter = struct
       | N_type_longident : (Longident.t) nonterminal
       | N_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
       | N_type_declarations : (Asttypes.rec_flag * Parsetree.type_declaration list *
-  string Asttypes.loc option) nonterminal
-      | N_type_declaration : (Asttypes.rec_flag * Parsetree.type_declaration * string Asttypes.loc option) nonterminal
+  string Location.loc option) nonterminal
+      | N_type_declaration : (Asttypes.rec_flag * Parsetree.type_declaration * string Location.loc option) nonterminal
       | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal
       | N_toplevel_directive : (Parsetree.structure_item) nonterminal
       | N_tag_field : (Parsetree.row_field) nonterminal
@@ -31019,10 +31007,10 @@ module MenhirInterpreter = struct
       | N_structure_item : (Parsetree.structure_item) nonterminal
       | N_structure : (Parsetree.structure) nonterminal
       | N_strict_binding : (Parsetree.expression) nonterminal
-      | N_str_type_extension : (Parsetree.type_extension * string Asttypes.loc option) nonterminal
-      | N_str_include_statement : (Parsetree.include_declaration * string Asttypes.loc option) nonterminal
+      | N_str_type_extension : (Parsetree.type_extension * string Location.loc option) nonterminal
+      | N_str_include_statement : (Parsetree.include_declaration * string Location.loc option) nonterminal
       | N_str_extension_constructors : (Parsetree.extension_constructor list) nonterminal
-      | N_str_exception_declaration : (Parsetree.extension_constructor * string Asttypes.loc option) nonterminal
+      | N_str_exception_declaration : (Parsetree.extension_constructor * string Location.loc option) nonterminal
       | N_single_attr_id : (string) nonterminal
       | N_simple_pattern_not_ident : (Parsetree.pattern) nonterminal
       | N_simple_pattern : (Parsetree.pattern) nonterminal
@@ -31035,24 +31023,24 @@ module MenhirInterpreter = struct
       | N_signed_constant : (Parsetree.constant) nonterminal
       | N_signature_item : (Parsetree.signature_item) nonterminal
       | N_signature : (Parsetree.signature) nonterminal
-      | N_sig_type_extension : (Parsetree.type_extension * string Asttypes.loc option) nonterminal
-      | N_sig_include_statement : (Parsetree.include_description * string Asttypes.loc option) nonterminal
+      | N_sig_type_extension : (Parsetree.type_extension * string Location.loc option) nonterminal
+      | N_sig_include_statement : (Parsetree.include_description * string Location.loc option) nonterminal
       | N_sig_extension_constructors : (Parsetree.extension_constructor list) nonterminal
-      | N_sig_exception_declaration : (Parsetree.extension_constructor * string Asttypes.loc option) nonterminal
+      | N_sig_exception_declaration : (Parsetree.extension_constructor * string Location.loc option) nonterminal
       | N_seq_expr : (Parsetree.expression) nonterminal
       | N_row_field_list : (Parsetree.row_field list) nonterminal
       | N_row_field : (Parsetree.row_field) nonterminal
       | N_record_expr : (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal
-      | N_rec_module_declarations : (Parsetree.module_declaration list * string Asttypes.loc option) nonterminal
-      | N_rec_module_declaration : (Parsetree.module_declaration * string Asttypes.loc option) nonterminal
-      | N_rec_module_bindings : (Parsetree.module_binding list * string Asttypes.loc option) nonterminal
-      | N_rec_module_binding : (Parsetree.module_binding * string Asttypes.loc option) nonterminal
+  (Longident.t Location.loc * Parsetree.expression) list) nonterminal
+      | N_rec_module_declarations : (Parsetree.module_declaration list * string Location.loc option) nonterminal
+      | N_rec_module_declaration : (Parsetree.module_declaration * string Location.loc option) nonterminal
+      | N_rec_module_bindings : (Parsetree.module_binding list * string Location.loc option) nonterminal
+      | N_rec_module_binding : (Parsetree.module_binding * string Location.loc option) nonterminal
       | N_rec_flag : (Asttypes.rec_flag) nonterminal
       | N_private_virtual_flags : (Asttypes.private_flag * Asttypes.virtual_flag) nonterminal
       | N_private_flag : (Asttypes.private_flag) nonterminal
       | N_primitive_declaration_body : (string list) nonterminal
-      | N_primitive_declaration : (Parsetree.value_description * string Asttypes.loc option) nonterminal
+      | N_primitive_declaration : (Parsetree.value_description * string Location.loc option) nonterminal
       | N_post_item_attributes : (Parsetree.attributes) nonterminal
       | N_post_item_attribute : (Parsetree.attribute) nonterminal
       | N_poly_type_no_attr : (Parsetree.core_type) nonterminal
@@ -31066,11 +31054,11 @@ module MenhirInterpreter = struct
       | N_pattern_comma_list : (Parsetree.pattern list) nonterminal
       | N_pattern : (Parsetree.pattern) nonterminal
       | N_parse_expression : (
-# 581 "src/ocaml/preprocess/406/parser_raw.mly"
+# 580 "parser_raw.mly"
       (Parsetree.expression)
-# 31072 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31060 "parser_raw.ml"
     ) nonterminal
-      | N_parent_binder : (string Asttypes.loc option) nonterminal
+      | N_parent_binder : (string Location.loc option) nonterminal
       | N_paren_module_expr : (Parsetree.module_expr) nonterminal
       | N_package_type : (Parsetree.package_type) nonterminal
       | N_override_flag : (Asttypes.override_flag) nonterminal
@@ -31085,41 +31073,40 @@ module MenhirInterpreter = struct
       | N_opt_bar : (unit) nonterminal
       | N_opt_ampersand : (bool) nonterminal
       | N_operator : (string) nonterminal
-      | N_open_statement : (Parsetree.open_description * string Asttypes.loc option) nonterminal
+      | N_open_statement : (Parsetree.open_description * string Location.loc option) nonterminal
       | N_nonrec_flag : (Asttypes.rec_flag) nonterminal
-      | N_name_tag_list : (Asttypes.label list) nonterminal
-      | N_name_tag : (Asttypes.label) nonterminal
+      | N_name_tag_list : (string list) nonterminal
+      | N_name_tag : (string) nonterminal
       | N_mutable_flag : (Asttypes.mutable_flag) nonterminal
       | N_mty_longident : (Longident.t) nonterminal
       | N_module_type_declaration_body : (Parsetree.module_type option) nonterminal
-      | N_module_type_declaration : (Parsetree.module_type_declaration * string Asttypes.loc option) nonterminal
+      | N_module_type_declaration : (Parsetree.module_type_declaration * string Location.loc option) nonterminal
       | N_module_type : (Parsetree.module_type) nonterminal
       | N_module_expr : (Parsetree.module_expr) nonterminal
       | N_module_declaration_body : (Parsetree.module_type) nonterminal
-      | N_module_declaration : (Parsetree.module_declaration * string Asttypes.loc option) nonterminal
+      | N_module_declaration : (Parsetree.module_declaration * string Location.loc option) nonterminal
       | N_module_binding_body : (Parsetree.module_expr) nonterminal
-      | N_module_binding : (Parsetree.module_binding * string Asttypes.loc option) nonterminal
-      | N_module_alias : (Parsetree.module_declaration * string Asttypes.loc option) nonterminal
+      | N_module_binding : (Parsetree.module_binding * string Location.loc option) nonterminal
+      | N_module_alias : (Parsetree.module_declaration * string Location.loc option) nonterminal
       | N_mod_longident : (Longident.t) nonterminal
       | N_mod_ext_longident : (Longident.t) nonterminal
-      | N_method_ : ((Asttypes.label Asttypes.loc * Asttypes.private_flag *
-   Parsetree.class_field_kind) *
+      | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) nonterminal
       | N_meth_list : (Parsetree.object_field list * Asttypes.closed_flag) nonterminal
       | N_match_cases : (Parsetree.case list) nonterminal
       | N_match_case : (Parsetree.case) nonterminal
       | N_lwt_bindings : (Ast_helper.let_bindings) nonterminal
       | N_lwt_binding : (Ast_helper.let_bindings) nonterminal
-      | N_lident_list : (string Asttypes.loc list) nonterminal
+      | N_lident_list : (string Location.loc list) nonterminal
       | N_let_pattern : (Parsetree.pattern) nonterminal
       | N_let_exception_declaration : (Parsetree.extension_constructor) nonterminal
       | N_let_bindings : (Ast_helper.let_bindings) nonterminal
       | N_let_binding_body : (Parsetree.pattern * Parsetree.expression) nonterminal
       | N_let_binding : (Ast_helper.let_bindings) nonterminal
-      | N_lbl_pattern_list : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal
-      | N_lbl_pattern : (Longident.t Asttypes.loc * Parsetree.pattern) nonterminal
-      | N_lbl_expr_list : ((Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal
-      | N_lbl_expr : (Longident.t Asttypes.loc * Parsetree.expression) nonterminal
+      | N_lbl_pattern_list : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal
+      | N_lbl_pattern : (Longident.t Location.loc * Parsetree.pattern) nonterminal
+      | N_lbl_expr_list : ((Longident.t Location.loc * Parsetree.expression) list) nonterminal
+      | N_lbl_expr : (Longident.t Location.loc * Parsetree.expression) nonterminal
       | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
       | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
       | N_label_var : (string * Parsetree.pattern) nonterminal
@@ -31130,35 +31117,35 @@ module MenhirInterpreter = struct
       | N_label_declarations : (Parsetree.label_declaration list) nonterminal
       | N_label_declaration_semi : (Parsetree.label_declaration) nonterminal
       | N_label_declaration : (Parsetree.label_declaration) nonterminal
-      | N_label : (Asttypes.label) nonterminal
+      | N_label : (string) nonterminal
       | N_item_extension : (Parsetree.extension) nonterminal
       | N_interface : (
-# 579 "src/ocaml/preprocess/406/parser_raw.mly"
+# 578 "parser_raw.mly"
       (Parsetree.signature)
-# 31139 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31126 "parser_raw.ml"
     ) nonterminal
       | N_inherit_field_semi : (Parsetree.object_field) nonterminal
       | N_implementation : (
-# 577 "src/ocaml/preprocess/406/parser_raw.mly"
+# 576 "parser_raw.mly"
       (Parsetree.structure)
-# 31145 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31132 "parser_raw.ml"
     ) nonterminal
-      | N_ident : (Asttypes.label) nonterminal
+      | N_ident : (string) nonterminal
       | N_generalized_constructor_arguments : (Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
-      | N_functor_args : ((string Asttypes.loc * Parsetree.module_type option) list) nonterminal
+      | N_functor_args : ((string Location.loc * Parsetree.module_type option) list) nonterminal
       | N_functor_arg_name : (string) nonterminal
-      | N_functor_arg : (string Asttypes.loc * Parsetree.module_type option) nonterminal
+      | N_functor_arg : (string Location.loc * Parsetree.module_type option) nonterminal
       | N_fun_def : (Parsetree.expression) nonterminal
       | N_fun_binding : (Parsetree.expression) nonterminal
       | N_floating_attribute : (Parsetree.attribute) nonterminal
       | N_field_semi : (Parsetree.object_field) nonterminal
-      | N_field_expr_list : ((Asttypes.label Asttypes.loc * Parsetree.expression) list) nonterminal
-      | N_field_expr : (Asttypes.label Asttypes.loc * Parsetree.expression) nonterminal
+      | N_field_expr_list : ((string Location.loc * Parsetree.expression) list) nonterminal
+      | N_field_expr : (string Location.loc * Parsetree.expression) nonterminal
       | N_field : (Parsetree.object_field) nonterminal
       | N_extension_constructor_rebind : (Parsetree.extension_constructor) nonterminal
       | N_extension_constructor_declaration : (Parsetree.extension_constructor) nonterminal
       | N_extension : (Parsetree.extension) nonterminal
-      | N_ext_attributes : (string Asttypes.loc option * Parsetree.attributes) nonterminal
+      | N_ext_attributes : (string Location.loc option * Parsetree.attributes) nonterminal
       | N_expr_semi_list : (Parsetree.expression list) nonterminal
       | N_expr_comma_list : (Parsetree.expression list) nonterminal
       | N_expr : (Parsetree.expression) nonterminal
@@ -31171,16 +31158,16 @@ module MenhirInterpreter = struct
       | N_constructor_declarations : (Parsetree.constructor_declaration list) nonterminal
       | N_constructor_declaration : (Parsetree.constructor_declaration) nonterminal
       | N_constructor_arguments : (Parsetree.constructor_arguments) nonterminal
-      | N_constraints : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) nonterminal
+      | N_constraints : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
       | N_constrain_field : (Parsetree.core_type * Parsetree.core_type) nonterminal
-      | N_constrain : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) nonterminal
+      | N_constrain : (Parsetree.core_type * Parsetree.core_type * Location.t) nonterminal
       | N_constr_longident : (Longident.t) nonterminal
       | N_constr_ident : (string) nonterminal
       | N_constant : (Parsetree.constant) nonterminal
       | N_clty_longident : (Longident.t) nonterminal
       | N_class_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
-      | N_class_type_declarations : (Parsetree.class_type_declaration list * string Asttypes.loc option) nonterminal
-      | N_class_type_declaration : (Parsetree.class_type_declaration * string Asttypes.loc option) nonterminal
+      | N_class_type_declarations : (Parsetree.class_type_declaration list * string Location.loc option) nonterminal
+      | N_class_type_declaration : (Parsetree.class_type_declaration * string Location.loc option) nonterminal
       | N_class_type : (Parsetree.class_type) nonterminal
       | N_class_structure : (Parsetree.class_structure) nonterminal
       | N_class_simple_expr : (Parsetree.class_expr) nonterminal
@@ -31196,16 +31183,16 @@ module MenhirInterpreter = struct
       | N_class_fields : (Parsetree.class_field list) nonterminal
       | N_class_field : (Parsetree.class_field) nonterminal
       | N_class_expr : (Parsetree.class_expr) nonterminal
-      | N_class_descriptions : (Parsetree.class_description list * string Asttypes.loc option) nonterminal
-      | N_class_description : (Parsetree.class_description * string Asttypes.loc option) nonterminal
-      | N_class_declarations : (Parsetree.class_declaration list * string Asttypes.loc option) nonterminal
-      | N_class_declaration : (Parsetree.class_declaration * string Asttypes.loc option) nonterminal
+      | N_class_descriptions : (Parsetree.class_description list * string Location.loc option) nonterminal
+      | N_class_description : (Parsetree.class_description * string Location.loc option) nonterminal
+      | N_class_declarations : (Parsetree.class_declaration list * string Location.loc option) nonterminal
+      | N_class_declaration : (Parsetree.class_declaration * string Location.loc option) nonterminal
       | N_bar_extension_constructor_rebind : (Parsetree.extension_constructor) nonterminal
       | N_bar_extension_constructor_declaration : (Parsetree.extension_constructor) nonterminal
       | N_bar_constructor_declaration : (Parsetree.constructor_declaration) nonterminal
       | N_attributes : (Parsetree.attributes) nonterminal
       | N_attribute : (Parsetree.attribute) nonterminal
-      | N_attr_id : (string Asttypes.loc) nonterminal
+      | N_attr_id : (string Location.loc) nonterminal
       | N_and_type_declaration : (Parsetree.type_declaration) nonterminal
       | N_and_module_declaration : (Parsetree.module_declaration) nonterminal
       | N_and_module_binding : (Parsetree.module_binding) nonterminal
@@ -31939,25 +31926,25 @@ end
 let parse_expression =
   fun lexer lexbuf ->
     (Obj.magic (MenhirInterpreter.entry 1620 lexer lexbuf) : (
-# 581 "src/ocaml/preprocess/406/parser_raw.mly"
+# 580 "parser_raw.mly"
       (Parsetree.expression)
-# 31945 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31932 "parser_raw.ml"
     ))
 
 and interface =
   fun lexer lexbuf ->
     (Obj.magic (MenhirInterpreter.entry 1616 lexer lexbuf) : (
-# 579 "src/ocaml/preprocess/406/parser_raw.mly"
+# 578 "parser_raw.mly"
       (Parsetree.signature)
-# 31953 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31940 "parser_raw.ml"
     ))
 
 and implementation =
   fun lexer lexbuf ->
     (Obj.magic (MenhirInterpreter.entry 0 lexer lexbuf) : (
-# 577 "src/ocaml/preprocess/406/parser_raw.mly"
+# 576 "parser_raw.mly"
       (Parsetree.structure)
-# 31961 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31948 "parser_raw.ml"
     ))
 
 module Incremental = struct
@@ -31965,36 +31952,35 @@ module Incremental = struct
   let parse_expression =
     fun initial_position ->
       (Obj.magic (MenhirInterpreter.start 1620 initial_position) : (
-# 581 "src/ocaml/preprocess/406/parser_raw.mly"
+# 580 "parser_raw.mly"
       (Parsetree.expression)
-# 31971 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31958 "parser_raw.ml"
       ) MenhirInterpreter.checkpoint)
   
   and interface =
     fun initial_position ->
       (Obj.magic (MenhirInterpreter.start 1616 initial_position) : (
-# 579 "src/ocaml/preprocess/406/parser_raw.mly"
+# 578 "parser_raw.mly"
       (Parsetree.signature)
-# 31979 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31966 "parser_raw.ml"
       ) MenhirInterpreter.checkpoint)
   
   and implementation =
     fun initial_position ->
       (Obj.magic (MenhirInterpreter.start 0 initial_position) : (
-# 577 "src/ocaml/preprocess/406/parser_raw.mly"
+# 576 "parser_raw.mly"
       (Parsetree.structure)
-# 31987 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31974 "parser_raw.ml"
       ) MenhirInterpreter.checkpoint)
   
 end
 
-# 2554 "src/ocaml/preprocess/406/parser_raw.mly"
+# 2553 "parser_raw.mly"
   
 
-# 31995 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31982 "parser_raw.ml"
 
-# 219 "/home/trefis/.opam/4.06.1/lib/menhir/standard.mly"
+# 269 "/usr/local/home/trefis/opam2/4.06.1/lib/menhir/standard.mly"
   
 
-
-# 32001 "src/ocaml/preprocess/406/parser_raw.ml"
+# 31987 "parser_raw.ml"
