@@ -74,6 +74,7 @@ let run = function
       (* Parse commandline *)
       match begin
         let start_time = Misc.time_spent () in
+        let start_clock = Unix.gettimeofday () *. 1000. in
         let config, command_args =
           let fails = ref [] in
           let config, command_args =
@@ -111,10 +112,12 @@ let run = function
                 ("error", `String (Format.flush_str_formatter ()))
           in
           let total_time = Misc.time_spent () -. start_time in
+          let total_clock = Unix.gettimeofday () *. 1000. -. start_clock in
           let timing = Mpipeline.timing_information pipeline in
           let pipeline_time =
             List.fold_left (fun acc (_, k) -> k +. acc) 0.0 timing in
-          let timing = ("total", total_time) ::
+          let timing = ("clock", total_clock) ::
+                       ("total", total_time) ::
                        ("query", (total_time -. pipeline_time)) :: timing in
           let notify { Logger.section; msg } =
             `String (Printf.sprintf "%s: %s" section msg)
