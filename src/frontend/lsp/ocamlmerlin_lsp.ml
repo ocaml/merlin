@@ -50,6 +50,7 @@ module Document : sig
   val uri : t -> Lsp.Protocol.documentUri
   val source : t -> Msource.t
   val pipeline : t -> Mpipeline.t
+  val version : t -> int
 
   val update_text : ?version:int -> Lsp.Protocol.DidChange.textDocumentContentChangeEvent -> t -> t
 end = struct
@@ -67,6 +68,7 @@ end = struct
   let uri doc = Lsp.Text_document.documentUri doc.tdoc
   let source doc = Lazy.force doc.source
   let pipeline doc = Lazy.force doc.pipeline
+  let version doc = Lsp.Text_document.version doc.tdoc
 
   let make_config path =
     let config = Mconfig.initial in
@@ -540,8 +542,44 @@ let on_request :
     let resp = {Lsp.Protocol.Completion. isIncomplete = false; items;} in
     return (store, resp)
 
-  | Lsp.Rpc.Request.TextDocumentRename { textDocument; position; newName } ->
-    errorf "got rename request"
+  | Lsp.Rpc.Request.TextDocumentRename { textDocument = { uri }; position; newName } ->
+    Document_store.get store uri >>= fun doc ->
+    let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
+    let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
+    let version = Document.version doc in
+    let edits = List.map (fun loc ->
+      let range =
+        {
+          Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+          end_ = position_of_lexical_position loc.loc_end;
+        }
+      in
+      {Lsp.Protocol.TextEdit. newText = newName; range;}
+    ) locs
+    in
+    let documentChanges =
+      let textDocument = {
+        Lsp.Protocol.VersionedTextDocumentIdentifier.
+        uri;
+        version;
+      }
+      in
+      let edits = {
+        Lsp.Protocol.TextDocumentEdit.
+        edits;
+        textDocument;
+      }
+      in
+      Lsp.Protocol.WorkspaceEdit.Edits [edits]
+    in
+    (* TODO: the capabilities of the client must be checked *)
+    let workspace_edits = {
+      Lsp.Protocol.WorkspaceEdit.
+      changes = None;
+      documentChanges = Some documentChanges;
+    }
+    in
+    return (store, workspace_edits)
   | Lsp.Rpc.Request.UnknownRequest _ -> errorf "got unknown request"
 
 let on_notification rpc store (notification : Lsp.Rpc.Client_notification.t) =
