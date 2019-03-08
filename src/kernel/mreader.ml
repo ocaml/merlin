@@ -100,7 +100,7 @@ let with_ambient_reader config source f =
   ambient_reader := Some (reader, reader_spec, source);
   Misc.try_finally
     (fun () -> Mocaml.with_printer (mocaml_printer reader) f)
-    (fun () -> ambient_reader := ambient_reader'; stop ())
+    ~always:(fun () -> ambient_reader := ambient_reader'; stop ())
 
 let try_with_reader config source f =
   let reader_spec = get_reader config in
@@ -114,7 +114,7 @@ let try_with_reader config source f =
   match reader with
   | None -> stop (); None
   | Some reader ->
-    Misc.try_finally (fun () -> f reader) stop
+    Misc.try_finally (fun () -> f reader) ~always:stop
 
 let print_pretty config source tree =
   match try_with_reader config source
@@ -187,7 +187,8 @@ let apply_directives config tree =
         end
       | _ -> None
   in
-  let attribute _ ({Location. txt = name; _}, payload) =
+  let attribute _ attr =
+    let ({Location. txt = name; _}, payload) = Ast_helper.Attr.as_tuple attr in
     match name with
     | "merlin.directive.require" ->
       begin match read_payload payload with

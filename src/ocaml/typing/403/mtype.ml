@@ -17,6 +17,16 @@
 
 (* Operations on module types *)
 
+
+module P = struct
+  type t = Path.t
+  let compare p1 p2 =
+    if Path.same p1 p2 then 0 else compare p1 p2
+end
+module PathSet = Set.Make (P)
+module PathMap = Map.Make (P)
+module IdentSet = Set.Make (Ident)
+
 open Asttypes
 open Path
 open Types
@@ -295,15 +305,6 @@ let contains_type env mty =
 
 
 (* Remove module aliases from a signature *)
-
-module P = struct
-  type t = Path.t
-  let compare p1 p2 =
-    if Path.same p1 p2 then 0 else compare p1 p2
-end
-module PathSet = Set.Make (P)
-module PathMap = Map.Make (P)
-module IdentSet = Set.Make (Ident)
 
 let rec get_prefixes = function
     Pident _ -> PathSet.empty

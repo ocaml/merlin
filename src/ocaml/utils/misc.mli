@@ -18,7 +18,12 @@
 val fatal_error: string -> 'a
 exception Fatal_error of string * Printexc.raw_backtrace
 
-val try_finally : (unit -> 'a) -> (unit -> unit) -> 'a;;
+val try_finally
+   : ?always:(unit -> unit)
+  -> ?exceptionally:(unit -> unit)
+  -> (unit -> 'a)
+  -> 'a
+;;
 
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
         (* [map_end f l t] is [map f l @ t], just more efficient. *)

@@ -18,7 +18,7 @@
 open Types
 
 module PathMap : Map.S with type key = Path.t
-                        and type 'a t = 'a Map.Make(Path).t
+                        and type 'a t = 'a Path.Map.t
 
 type summary =
     Env_empty
@@ -340,3 +340,7 @@ val state : Local_store.bindings
 val check_state_consistency: unit -> bool
 
 val with_cmis : (unit -> 'a) -> 'a
+
+(* helper for merlin *)
+
+val add_merlin_extension_module: Ident.t -> module_type -> t -> t

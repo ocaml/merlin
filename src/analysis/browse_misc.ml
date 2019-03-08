@@ -41,72 +41,24 @@ let print_constructor c =
     in
     Printtyp.tree_of_type_scheme (Raw_compat.dummy_type_scheme desc)
 
-let summary_at pos sum =
-  let rec signature_loc =
-    let open Types in
-    let union_loc_opt a b = match a,b with
-      | None, None -> None
-      | l, None | None, l -> l
-      | Some a, Some b -> Some (Location_aux.union a b)
-    in
-    let rec mod_loc = function
-      | Mty_ident _ -> None
-      | Mty_functor (_,m1,m2) ->
-        begin match m1 with
-          | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
-          | None -> mod_loc m2
-        end
-      | Mty_signature s ->
-        let rec find_first = function
-          | x :: xs -> (match signature_loc x with
-              | (Some _ as v) -> v
-              | None -> find_first xs)
-          | [] -> None
-        in
-        let a = find_first s and b = find_first (List.rev s) in
-        union_loc_opt a b
-      | _ -> None
-    in function
-      | Sig_value (_,v)    -> Some v.val_loc
-      | Sig_type (_,t,_)   -> Some t.type_loc
-      | Sig_typext (_,e,_) -> Some e.ext_loc
-      | Sig_module (_,m,_) -> mod_loc m.Types.md_type
-      | Sig_modtype (_,m) ->
-        begin match m.Types.mtd_type with
-          | Some m -> mod_loc m
-          | None -> None
-        end
-      | Sig_class (_,_,_)
-      | Sig_class_type (_,_,_) -> None
-  in
-  let cmp = Location_aux.compare_pos pos in
-  let rec aux sum =
-    match Raw_compat.signature_of_summary sum >>= signature_loc with
-    | None -> Raw_compat.summary_prev sum >>= aux
-    | Some loc ->
-      match cmp loc with
-      | x when x < 0 -> None
-      | 0 -> Some sum
-      | _ -> Raw_compat.summary_prev sum >>= aux
-  in
-  aux sum
-
 let signature_of_env ?(ignore_extensions=true) env =
   let sg = ref [] in
   let append item = sg := item :: !sg in
-  let rec aux = function
-    | Env.Env_module (_,i,_)
-      when ignore_extensions && i = Extension.ident -> ()
-    | summary ->
-      let open Raw_compat in
+  let rec aux summary =
+    let open Raw_compat in
+    match summary_module_ident_opt summary with
+    | Some i when ignore_extensions && i = Extension.ident -> ()
+    | _ ->
       Option.iter ~f:append (signature_of_summary summary);
       Option.iter ~f:aux (summary_prev summary)
   in
   aux (Env.summary env);
-  Typemod.simplify_signature (!sg)
+  (* Since 4.08 one can't simply call [simplify]. *)
+  (* Typemod.simplify_signature *) (!sg)
 
 let dump_browse node =
-  let attr ({Location . txt; loc},payload) =
+  let attr attr =
+    let ({Location . txt; loc},payload) = Ast_helper.Attr.as_tuple attr in
     `Assoc [
       "start"    , Lexing.json_of_position loc.Location.loc_start;
       "end"      , Lexing.json_of_position loc.Location.loc_end;

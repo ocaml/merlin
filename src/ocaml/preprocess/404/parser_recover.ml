@@ -33,7 +33,7 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_STRING -> ("", None)
     | MenhirInterpreter.T MenhirInterpreter.T_STAR -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SIG -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_SHARPOP -> ""
+    | MenhirInterpreter.T MenhirInterpreter.T_HASHOP -> ""
     | MenhirInterpreter.T MenhirInterpreter.T_SHARP -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SEMI -> ()

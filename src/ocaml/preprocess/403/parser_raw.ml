@@ -36,7 +36,7 @@ module MenhirBasics = struct
   )
     | STAR
     | SIG
-    | SHARPOP of (
+    | HASHOP of (
 # 545 "parser_raw.mly"
        (string)
 # 43 "parser_raw.ml"
@@ -861,7 +861,7 @@ module Tables = struct
           22
       | SHARP ->
           21
-      | SHARPOP _ ->
+      | HASHOP _ ->
           20
       | SIG ->
           19
@@ -1124,7 +1124,7 @@ module Tables = struct
           Obj.repr ()
       | SHARP ->
           Obj.repr ()
-      | SHARPOP _v ->
+      | HASHOP _v ->
           Obj.repr _v
       | SIG ->
           Obj.repr ()
@@ -28473,7 +28473,7 @@ module MenhirInterpreter = struct
     ) terminal
       | T_STAR : unit terminal
       | T_SIG : unit terminal
-      | T_SHARPOP : (
+      | T_HASHOP : (
 # 545 "parser_raw.mly"
        (string)
 # 28480 "parser_raw.ml"
@@ -28920,7 +28920,7 @@ module MenhirInterpreter = struct
         | 19 ->
             X (T T_SIG)
         | 20 ->
-            X (T T_SHARPOP)
+            X (T T_HASHOP)
         | 21 ->
             X (T T_SHARP)
         | 22 ->

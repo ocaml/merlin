@@ -106,6 +106,10 @@ type error =
     source : error_source;
   }
 
+val loc_of_report : error -> t
+val print_main : formatter -> error -> unit
+val print_sub_msg : formatter -> error -> unit
+
 exception Error of error
 
 val print_error_prefix: formatter -> unit -> unit

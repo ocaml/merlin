@@ -449,13 +449,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let paths =
           Browse_tree.all_occurrences_of_prefix ~strict_prefix:true path node in
         let paths = List.concat_map ~f:snd paths in
-        let rec path_to_string acc = function
-          | Path.Pident ident ->
+        let rec path_to_string acc p =
+          match Path.Nopos.view p with
+          | Pident ident ->
             String.concat ~sep:"." (Ident.name ident :: acc)
-          | Path.Pdot (path', s, _) when
+          | Pdot (path', s) when
               mode = `Unqualify && Path.same path path' ->
             String.concat ~sep:"." (s :: acc)
-          | Path.Pdot (path', s, _) ->
+          | Pdot (path', s) ->
             path_to_string (s :: acc) path'
           | _ -> raise Not_found
         in
@@ -601,15 +602,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | e -> [e]
       | exception Not_found -> typer_errors
     in
-    let error_loc (e : Location.error) = e.Location.loc in
-    let error_start e = (error_loc e).Location.loc_start in
-    let error_end e = (error_loc e).Location.loc_end in
+    let error_start e = (Location.loc_of_report e).Location.loc_start in
+    let error_end e = (Location.loc_of_report e).Location.loc_end in
     (* Turn into Location.error, ignore ghost warnings *)
     let filter_error exn =
       match Location.error_of_exn exn with
       | None | Some `Already_displayed -> None
       | Some (`Ok (err : Location.error)) ->
-        if Location.(err.loc.loc_ghost) &&
+        if (Location.loc_of_report err).loc_ghost &&
            (match exn with Msupport.Warning _ -> true | _ -> false)
         then None
         else Some err

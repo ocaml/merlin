@@ -42,6 +42,7 @@ val global: t -> bool
 val is_predef_exn: t -> bool
 
 val binding_time: t -> int
+val stamp: t -> int
 val current_time: unit -> int
 val set_current_time: int -> unit
 val reinit: unit -> unit

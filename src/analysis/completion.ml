@@ -142,6 +142,7 @@ let classify_node = function
   | Module_declaration_name  _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
   | Open_description _ -> `Module
+  | Open_declaration _ -> `Module
   | Include_declaration _ -> `Module
   | Include_description _ -> `Module
 
@@ -152,7 +153,7 @@ let map_entry f entry =
 
 let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
   let ident = match path with
-    | Some path -> Ident.create (Path.last path)
+    | Some path -> Ident.create_persistent (* FIXME *) (Path.last path)
     | None -> Extension.ident
   in
   let kind, text =
@@ -289,7 +290,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
        - if these are also equal, then we just use classic string ordering on
          the candidate name. *)
     let time =
-      try Ident.binding_time (Path.head (Option.get path))
+      try Path.scope (Option.get path)
       with _ -> 0
     in
     let item = make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty in

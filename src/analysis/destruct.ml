@@ -104,7 +104,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
     | constructors, _ ->
       let prefix =
         let path = Printtyp.shorten_type_path env path in
-        match Path_aux.to_string_list path with
+        match Path.to_string_list path with
         | [] -> assert false
         | p :: ps ->
           fun name ->
@@ -244,7 +244,10 @@ let is_package ty =
 
 let filter_attr =
   let default = Ast_mapper.default_mapper in
-  let keep ({Location.txt;_},_) = not (String.is_prefixed ~by:"merlin." txt) in
+  let keep attr =
+    let ({Location.txt;_},_) = Ast_helper.Attr.as_tuple attr in
+    not (String.is_prefixed ~by:"merlin." txt)
+  in
   let attributes mapper attrs =
     default.Ast_mapper.attributes mapper (List.filter ~f:keep attrs)
   in
@@ -331,7 +334,7 @@ let rec qualify_constructors f pat =
           begin match (Btype.repr pat.pat_type).Types.desc with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
-            begin match Path_aux.to_string_list path with
+            begin match Path.to_string_list path with
             | [] -> assert false
             | p :: ps ->
               let open Longident in

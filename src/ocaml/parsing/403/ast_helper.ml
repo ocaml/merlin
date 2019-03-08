@@ -518,3 +518,13 @@ type let_bindings =
 (* merlin specific *)
 
 let no_label = Nolabel
+
+(* backported from 4.08 *)
+
+(** {1 Attributes} *)
+
+module Attr = struct
+  let mk ?loc:_ str payload = str, payload
+
+  let as_tuple attr = attr
+end

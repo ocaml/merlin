@@ -146,15 +146,15 @@ end  = struct
 end
 
 type aliasmap = {
-  am_typ: Path.t list Path_aux.Map.t;
-  am_mod: Path.t list Path_aux.Map.t;
-  am_open: Path_aux.Set.t;
+  am_typ: Path.t list Path.Map.t;
+  am_mod: Path.t list Path.Map.t;
+  am_open: Path.Set.t;
 }
 
 let aliasmap_empty = {
-  am_typ = Path_aux.Map.empty;
-  am_mod = Path_aux.Map.empty;
-  am_open = Path_aux.Set.empty;
+  am_typ = Path.Map.empty;
+  am_mod = Path.Map.empty;
+  am_open = Path.Set.empty;
 }
 
 type summary =
@@ -352,7 +352,7 @@ let current_unit = srefk ""
 
 (* Persistent structure descriptions *)
 type pers_typemap =
-  (Path.t list Path_aux.Map.t * Path.t list Path_aux.Map.t) option
+  (Path.t list Path.Map.t * Path.t list Path.Map.t) option
 
 type pers_struct =
   { ps_name: string;
@@ -371,8 +371,7 @@ let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
 
 let crc_units = sref Consistbl.create
 
-module StringSet =
-  Set.Make(struct type t = string let compare = String.compare end)
+module StringSet = Std.String.Set
 
 let imported_units = ref StringSet.empty
 
@@ -2002,3 +2001,7 @@ let () =
     )
 
 let with_cmis f = f ()
+
+(* helper for merlin *)
+
+let add_merlin_extension_module id mty env = add_module id mty env

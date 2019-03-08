@@ -32,7 +32,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRING) -> "STRING"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STAR) -> "*"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SIG) -> "sig"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SHARPOP) -> "#<op>"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) -> "#<op>"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SHARP) -> "#"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) -> ";;"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMI) -> ";"
@@ -369,7 +369,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_STRING -> (string_of_STRING)
   | MenhirInterpreter.T MenhirInterpreter.T_STAR -> (fun _ -> "*")
   | MenhirInterpreter.T MenhirInterpreter.T_SIG -> (fun _ -> "sig")
-  | MenhirInterpreter.T MenhirInterpreter.T_SHARPOP -> (Printf.sprintf "SHARPOP(%S)")
+  | MenhirInterpreter.T MenhirInterpreter.T_HASHOP -> (Printf.sprintf "HASHOP(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_SHARP -> (fun _ -> "#")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> (fun _ -> ";;")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMI -> (fun _ -> ";")
@@ -705,7 +705,7 @@ let print_token = function
   | STRING v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRING) v
   | STAR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STAR) ()
   | SIG -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SIG) ()
-  | SHARPOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SHARPOP) v
+  | HASHOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) v
   | SHARP -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SHARP) ()
   | SEMISEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) ()
   | SEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMI) ()
@@ -837,7 +837,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_STRING -> STRING v
   | MenhirInterpreter.T_STAR -> STAR
   | MenhirInterpreter.T_SIG -> SIG
-  | MenhirInterpreter.T_SHARPOP -> SHARPOP v
+  | MenhirInterpreter.T_HASHOP -> HASHOP v
   | MenhirInterpreter.T_SHARP -> SHARP
   | MenhirInterpreter.T_SEMISEMI -> SEMISEMI
   | MenhirInterpreter.T_SEMI -> SEMI

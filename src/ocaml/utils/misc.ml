@@ -26,10 +26,24 @@ let fatal_error msg =
 
 (* Exceptions *)
 
-let try_finally work cleanup =
-  let result = (try work () with e -> cleanup (); raise e) in
-  cleanup ();
-  result
+let try_finally ?(always=fun () -> ()) ?(exceptionally=fun () -> ()) work =
+  match work () with
+    | result ->
+      begin match always () with
+        | () -> result
+        | exception always_exn ->
+          exceptionally ();
+          raise always_exn
+      end
+    | exception work_exn ->
+      begin match always () with
+        | () ->
+          exceptionally ();
+          raise work_exn
+        | exception always_exn ->
+          exceptionally ();
+          raise always_exn 
+      end
 ;;
 
 type ref_and_value = R : 'a ref * 'a -> ref_and_value

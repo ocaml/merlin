@@ -63,6 +63,10 @@ let summary_prev = function
   | Env.Env_constraints (s,_) ->
     Some s
 
+let summary_module_ident_opt = function
+  | Env.Env_module (_,i,_) -> Some i
+  | _ -> None
+
 (* For Type_utils *)
 
 let dest_tstr_eval str =
@@ -153,3 +157,8 @@ let dummy_type_scheme desc =
 
 let ctype_instance env scheme =
   Ctype.instance env scheme
+
+let si_modtype_opt : Types.signature_item -> Types.module_type option = function
+  | Sig_modtype (_, m) -> m.mtd_type
+  | Sig_module (_, m, _) -> Some m.md_type
+  | _ -> None

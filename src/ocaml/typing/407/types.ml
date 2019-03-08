@@ -348,3 +348,15 @@ type label_description =
     lbl_loc: Location.t;
     lbl_attributes: Parsetree.attributes;
    }
+
+(* Backported from 4.08 *)
+
+let signature_item_id = function
+  | Sig_value (id, _)
+  | Sig_type (id, _, _)
+  | Sig_typext (id, _, _)
+  | Sig_module (id, _, _)
+  | Sig_modtype (id, _)
+  | Sig_class (id, _, _)
+  | Sig_class_type (id, _, _)
+    -> id

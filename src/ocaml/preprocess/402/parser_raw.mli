@@ -21,7 +21,7 @@ type token =
   | STRING of (string * string option)
   | STAR
   | SIG
-  | SHARPOP of (string)
+  | HASHOP of (string)
   | SHARP
   | SEMISEMI
   | SEMI
@@ -176,7 +176,7 @@ module MenhirInterpreter : sig
     | T_STRING : (string * string option) terminal
     | T_STAR : unit terminal
     | T_SIG : unit terminal
-    | T_SHARPOP : (string) terminal
+    | T_HASHOP : (string) terminal
     | T_SHARP : unit terminal
     | T_SEMISEMI : unit terminal
     | T_SEMI : unit terminal

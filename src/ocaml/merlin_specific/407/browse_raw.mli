@@ -88,6 +88,7 @@ type node =
   | Include_description      of include_description
   | Include_declaration      of include_declaration
   | Open_description         of open_description
+  | Open_declaration         of open_description
 
   | Method_call              of expression * meth * Location.t
   | Record_field             of [ `Expression of expression | `Pattern of pattern ] *

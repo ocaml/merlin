@@ -93,7 +93,8 @@ let reconstruct_identifier pos t =
 let attr_cleaner =
   let open Ast_mapper in
   let attributes mapper attrs =
-    let not_merlin_attribute (name,_) =
+    let not_merlin_attribute attr =
+      let (name,_) = Ast_helper.Attr.as_tuple attr in
       not (String.is_prefixed ~by:"merlin." name.Location.txt) in
     let attrs = List.filter ~f:not_merlin_attribute attrs in
     default_mapper.attributes mapper attrs

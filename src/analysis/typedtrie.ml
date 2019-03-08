@@ -138,11 +138,11 @@ end = struct
     let key = Ident.name id in
     match String.Map.find key t with
     | exception Not_found ->
-      String.Map.add ~key ~data:(StampMap.singleton (Ident.binding_time id) elt) t
+      String.Map.add ~key ~data:(StampMap.singleton (Ident.stamp id) elt) t
     | stamp_map ->
       (* no replace? :'( *)
       String.Map.add (String.Map.remove key t) ~key
-        ~data:(StampMap.add (Ident.binding_time id) elt stamp_map)
+        ~data:(StampMap.add (Ident.stamp id) elt stamp_map)
 
   let singleton id node = add id node empty
 
@@ -156,7 +156,7 @@ end = struct
   let get (k : Namespaced_path.Id.t) t =
     match k with
     | Id id ->
-      [ StampMap.find (Ident.binding_time id)
+      [ StampMap.find (Ident.stamp id)
           (String.Map.find (Ident.name id) t) ]
     | String s ->
       List.map (StampMap.bindings (String.Map.find s t)) ~f:snd
@@ -224,15 +224,19 @@ let remove_indir_mty mty =
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 
-let sig_item_idns =
-  let open Types in function
-  | Sig_value (id, _) -> id, `Vals
-  | Sig_type (id, _, _) -> id, `Type
-  | Sig_typext (id, _, _) -> id, `Type
-  | Sig_module (id, _, _) -> id, `Mod
-  | Sig_modtype (id, _) -> id, `Modtype
-  | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
-  | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
+let sig_item_idns item =
+  let open Types in
+  let ns =
+    match item with
+    | Sig_value _ -> `Vals
+    | Sig_type _ -> `Type
+    | Sig_typext _ -> `Type
+    | Sig_module _ -> `Mod
+    | Sig_modtype _ -> `Modtype
+    | Sig_class _ -> `Vals (* that's just silly *)
+    | Sig_class_type _ -> `Type (* :_D *)
+  in
+  signature_item_id item, ns
 
 let include_idents l = List.map ~f:sig_item_idns l
 
@@ -368,7 +372,7 @@ let rec build ~local_buffer ~trie browses : t =
       if not local_buffer then
         trie
       else (
-        let id = Ident.create "?" in
+        let id = Ident.create_persistent (* Bullshit. *) "?" in
         let intern =
           lazy (build ~local_buffer ~trie:Trie.empty (Lazy.force t.t_children))
         in

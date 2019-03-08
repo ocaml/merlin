@@ -100,3 +100,38 @@ let rec compare p1 p2 =
   | ((Pident _ | Pdot _), (Pdot _ | Papply _)) -> -1
   | ((Pdot _ | Papply _), (Pident _ | Pdot _)) -> 1
 
+
+(* Backported from 4.08 *)
+
+module T = struct
+  type nonrec t = t
+  let compare = compare
+end
+
+module Map = Map.Make (T)
+module Set = Set.Make (T)
+
+(* Added for merlin *)
+
+let to_string_list p =
+  let rec aux acc = function
+  | Pident id -> Ident.name id :: acc
+  | Pdot (p, str, _) -> aux (str :: acc) p
+  | _ -> assert false
+  in
+  aux [] p
+
+
+module Nopos = struct
+  type nopos =
+    | Pident of Ident.t
+    | Pdot of t * string
+    | Papply of t * t
+
+  let view : t -> nopos = function
+    | Pident id -> Pident id
+    | Pdot (t, s, _) -> Pdot (t, s)
+    | Papply (p1, p2) -> Papply (p1, p2)
+end
+
+let scope = binding_time
