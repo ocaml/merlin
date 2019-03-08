@@ -221,22 +221,7 @@ module WorkspaceEdit = struct
     in
     `Assoc changes
 
-  let changes_of_yojson _json = assert false
-
-  (** (TextDocumentEdit | CreateFile | RenameFile | DeleteFile) *)
-  type resource_operation = [ `Unimplemented ]
-
-  type documentChanges =
-    | Edits of TextDocumentEdit.t list
-    | ResourceOperations of resource_operation list
-
-  let documentChanges_to_yojson = function
-    | ResourceOperations _ -> failwith "ResourceOperations are not supported yet"
-    | Edits edits ->
-      let edits = List.map TextDocumentEdit.to_yojson edits in
-      `List edits
-
-  let documentChanges_of_yojson _json = assert false
+  type documentChanges = TextDocumentEdit.t list [@@deriving to_yojson]
 
   (**
      Depending on the client capability [workspace.workspaceEdit.resourceOperations] document changes
@@ -253,7 +238,7 @@ module WorkspaceEdit = struct
   type t = {
     changes: changes option;
     documentChanges: documentChanges option;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving to_yojson { strict = false }]
 
   let empty = {
     changes = None;
@@ -280,7 +265,7 @@ module WorkspaceEdit = struct
           textDocument;
         }
         in
-        Some (Edits [edits])
+        Some [edits]
       in
       { empty with documentChanges }
 end
@@ -937,7 +922,7 @@ module Rename = struct
                         appropriate message set. *)
   } [@@deriving yojson]
 
-  and result = WorkspaceEdit.t
+  type result = WorkspaceEdit.t [@@deriving to_yojson]
 end
 
 module DebugEcho = struct
