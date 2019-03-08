@@ -26,16 +26,14 @@ describe("textDocument/rename", () => {
     });
   }
 
-  beforeEach(async () => {
-    languageServer = await LanguageServer.startAndInitialize();
-  });
-
   afterEach(async () => {
     await LanguageServer.exit(languageServer);
     languageServer = null;
   });
 
-  it("rename value in a file", async () => {
+  it("rename value in a file without documentChanges capability", async () => {
+    languageServer = await LanguageServer.startAndInitialize({workspace: {workspaceEdit: {documentChanges: false}}});
+
     await openDocument(outdent`
       let num = 42
       let num = num + 13
@@ -44,45 +42,90 @@ describe("textDocument/rename", () => {
 
     let result = await query(Types.Position.create(0, 4));
 
-    expect(result).toMatchObject(
-      {
-        "documentChanges": [
+    expect(result).toMatchObject({
+      "documentChanges": null,
+      "changes": {
+        "file:///test.ml": [
           {
-            "textDocument": {
-              "version": 0,
-              "uri": "file:///test.ml"
-            },
-            "edits": [
-              {
-                "range": {
-                  "start": {
-                    "line": 0,
-                    "character": 4
-                  },
-                  "end": {
-                    "line": 0,
-                    "character": 7
-                  }
-                },
-                "newText": "new_num"
+            "range": {
+              "start": {
+                "line": 0,
+                "character": 4
               },
-              {
-                "range": {
-                  "start": {
-                    "line": 1,
-                    "character": 10
-                  },
-                  "end": {
-                    "line": 1,
-                    "character": 13
-                  }
-                },
-                "newText": "new_num"
+              "end": {
+                "line": 0,
+                "character": 7
               }
-            ]
+            },
+            "newText": "new_num"
+          },
+          {
+            "range": {
+              "start": {
+                "line": 1,
+                "character": 10
+              },
+              "end": {
+                "line": 1,
+                "character": 13
+              }
+            },
+            "newText": "new_num"
           }
-        ],
-        "changes": null
-      });
+        ]
+      }
+    });
+  });
+
+  it("rename value in a file with documentChanges capability", async () => {
+    languageServer = await LanguageServer.startAndInitialize({workspace: {workspaceEdit: {documentChanges: true}}});
+
+    await openDocument(outdent`
+      let num = 42
+      let num = num + 13
+      let num2 = num
+    `);
+
+    let result = await query(Types.Position.create(0, 4));
+
+    expect(result).toMatchObject({
+      "documentChanges": [
+        {
+          "textDocument": {
+            "version": 0,
+            "uri": "file:///test.ml"
+          },
+          "edits": [
+            {
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 4
+                },
+                "end": {
+                  "line": 0,
+                  "character": 7
+                }
+              },
+              "newText": "new_num"
+            },
+            {
+              "range": {
+                "start": {
+                  "line": 1,
+                  "character": 10
+                },
+                "end": {
+                  "line": 1,
+                  "character": 13
+                }
+              },
+              "newText": "new_num"
+            }
+          ]
+        }
+      ],
+      "changes": null
+    });
   });
 });

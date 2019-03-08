@@ -258,6 +258,35 @@ module WorkspaceEdit = struct
     changes: changes option;
     documentChanges: documentChanges option;
   } [@@deriving yojson { strict = false }]
+
+  let empty = {
+    changes = None;
+    documentChanges = None;
+  }
+
+  (** Create a {!type:t} based on the capabilites of the client. *)
+  let make ~documentChanges ~uri ~version ~edits =
+    match documentChanges with
+    | false ->
+      let changes = Some [ uri, edits ] in
+      { empty with changes }
+    | true ->
+      let documentChanges =
+        let textDocument = {
+          VersionedTextDocumentIdentifier.
+          uri;
+          version;
+        }
+        in
+        let edits = {
+          TextDocumentEdit.
+          edits;
+          textDocument;
+        }
+        in
+        Some (Edits [edits])
+      in
+      { empty with documentChanges }
 end
 
 (* PublishDiagnostics notification, method="textDocument/PublishDiagnostics" *)

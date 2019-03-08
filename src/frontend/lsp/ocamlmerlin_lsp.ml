@@ -557,27 +557,9 @@ let on_request :
       {Lsp.Protocol.TextEdit. newText = newName; range;}
     ) locs
     in
-    let documentChanges =
-      let textDocument = {
-        Lsp.Protocol.VersionedTextDocumentIdentifier.
-        uri;
-        version;
-      }
-      in
-      let edits = {
-        Lsp.Protocol.TextDocumentEdit.
-        edits;
-        textDocument;
-      }
-      in
-      Lsp.Protocol.WorkspaceEdit.Edits [edits]
-    in
-    (* TODO: the capabilities of the client must be checked *)
-    let workspace_edits = {
-      Lsp.Protocol.WorkspaceEdit.
-      changes = None;
-      documentChanges = Some documentChanges;
-    }
+    let workspace_edits =
+      let documentChanges = client_capabilities.workspace.workspaceEdit.documentChanges in
+      Lsp.Protocol.WorkspaceEdit.make ~documentChanges ~uri ~version ~edits
     in
     return (store, workspace_edits)
   | Lsp.Rpc.Request.UnknownRequest _ -> errorf "got unknown request"
