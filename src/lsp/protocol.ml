@@ -214,11 +214,7 @@ module WorkspaceEdit = struct
   let changes_to_yojson changes =
     let changes =
       List.map (fun (uri, edits) ->
-        let uri =
-          match documentUri_to_yojson uri with
-          | `String uri -> uri
-          | _ -> failwith "uri must be a string in workspace edit"
-        in
+        let uri = Uri.to_string uri in
         let edits = `List (List.map TextEdit.to_yojson edits) in
         uri, edits
       ) changes

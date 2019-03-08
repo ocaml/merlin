@@ -1,5 +1,7 @@
 type t = string [@@deriving yojson { strict = false }]
 
+let to_string uri = uri
+
 let to_path (uri : t) =
   let proto =
     match Sys.win32 with
