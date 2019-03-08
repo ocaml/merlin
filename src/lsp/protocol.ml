@@ -225,7 +225,7 @@ module WorkspaceEdit = struct
     in
     `Assoc changes
 
-  let changes_of_yojson json = assert false
+  let changes_of_yojson _json = assert false
 
   (** (TextDocumentEdit | CreateFile | RenameFile | DeleteFile) *)
   type resource_operation = [ `Unimplemented ]
@@ -240,7 +240,7 @@ module WorkspaceEdit = struct
       let edits = List.map TextDocumentEdit.to_yojson edits in
       `List edits
 
-  let documentChanges_of_yojson json = assert false
+  let documentChanges_of_yojson _json = assert false
 
   (**
      Depending on the client capability [workspace.workspaceEdit.resourceOperations] document changes
