@@ -1,6 +1,7 @@
 _build
 .merlin
 jbuild-workspace
+dune-workspace
 *.install
 *.tar.gz
 *.pyc
