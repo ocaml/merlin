@@ -133,9 +133,9 @@ module DocumentHighlight = struct
 
   (** The highlight kind, default is DocumentHighlightKind.Text. *)
   type kind =
-    | Text (* 1: A textual occurrence. *)
-    | Read (* 2: Read-access of a symbol, like reading a variable. *)
-    | Write (* 3: Write-access of a symbol, like writing a variable. *)
+    | Text (** 1: A textual occurrence. *)
+    | Read (** 2: Read-access of a symbol, like reading a variable. *)
+    | Write (** 3: Write-access of a symbol, like writing a variable. *)
 
   let kind_to_yojson = function
     | Text -> `Int 1
@@ -153,6 +153,124 @@ module DocumentHighlight = struct
     kind: kind option;
   } [@@deriving yojson { strict = false }]
 
+end
+
+(**
+   Complex text manipulations are described with an array of
+   TextEdit's, representing a single change to the document.
+
+   All text edits ranges refer to positions in the original
+   document. Text edits ranges must never overlap, that means no part of
+   the original document must be manipulated by more than one
+   edit. However, it is possible that multiple edits have the same start
+   position: multiple inserts, or any number of inserts followed by a
+   single remove or replace edit. If multiple inserts have the same
+   position, the order in the array defines the order in which the
+   inserted strings appear in the resulting text.
+*)
+module TextEdit = struct
+  type t = {
+    (** The range of the text document to be manipulated. To insert text into
+        a document create a range where start === end. *)
+    range: range;
+    (** The string to be inserted. For delete operations use an empty string. *)
+    newText: string;
+  } [@@deriving yojson { strict = false }]
+end
+
+
+(**
+   Describes textual changes on a single text document. The text
+   document is referred to as a VersionedTextDocumentIdentifier to
+   allow clients to check the text document version before an edit is
+   applied. A TextDocumentEdit describes all changes on a version Si
+   and after they are applied move the document to version Si+1. So
+   the creator of a TextDocumentEdit doesn't need to sort the array or
+   do any kind of ordering. However the edits must be non overlapping.
+*)
+module TextDocumentEdit = struct
+  type t = {
+    textDocument: VersionedTextDocumentIdentifier.t; (** The text document to change. *)
+    edits: TextEdit.t list; (** The edits to be applied. *)
+  } [@@deriving yojson { strict = false }]
+end
+
+(**
+   A workspace edit represents changes to many resources managed in
+   the workspace. The edit should either provide [changes] or
+   [documentChanges]. If the client can handle versioned document edits
+   and if [documentChanges] are present, the latter are preferred over
+   [changes].
+*)
+module WorkspaceEdit = struct
+
+  (** Holds changes to existing resources.
+
+      The json representation is an object with URIs as keys and edits
+      as values.
+  *)
+  type changes = (documentUri * TextEdit.t list) list
+
+  let changes_to_yojson changes =
+    let changes =
+      List.map (fun (uri, edits) ->
+        let uri = Uri.to_string uri in
+        let edits = `List (List.map TextEdit.to_yojson edits) in
+        uri, edits
+      ) changes
+    in
+    `Assoc changes
+
+  type documentChanges = TextDocumentEdit.t list [@@deriving to_yojson]
+
+  (**
+     Depending on the client capability
+     [workspace.workspaceEdit.resourceOperations] document changes are either an
+     array of [TextDocumentEdit]s to express changes to n different text
+     documents where each text document edit addresses a specific version of a
+     text document. Or it can contain above [TextDocumentEdit]s mixed with
+     create, rename and delete file / folder operations.
+
+     Whether a client supports versioned document edits is expressed via
+     [workspace.workspaceEdit.documentChanges] client capability.
+
+     If a client neither supports [documentChanges] nor
+     [workspace.workspaceEdit.resourceOperations] then only plain [TextEdit]s
+     using the [changes] property are supported.
+  *)
+  type t = {
+    changes: changes option;
+    documentChanges: documentChanges option;
+  } [@@deriving to_yojson { strict = false }]
+
+  let empty = {
+    changes = None;
+    documentChanges = None;
+  }
+
+  (** Create a {!type:t} based on the capabilites of the client. *)
+  let make ~documentChanges ~uri ~version ~edits =
+    match documentChanges with
+    | false ->
+      let changes = Some [ uri, edits ] in
+      { empty with changes }
+    | true ->
+      let documentChanges =
+        let textDocument = {
+          VersionedTextDocumentIdentifier.
+          uri;
+          version;
+        }
+        in
+        let edits = {
+          TextDocumentEdit.
+          edits;
+          textDocument;
+        }
+        in
+        Some [edits]
+      in
+      { empty with documentChanges }
 end
 
 (* PublishDiagnostics notification, method="textDocument/PublishDiagnostics" *)
@@ -794,6 +912,20 @@ module CodeLens = struct
     range: range;
     command: Command.t option;
   }
+end
+
+(** Rename symbol request, metho="textDocument/rename" *)
+module Rename = struct
+ type params = {
+   textDocument: TextDocumentIdentifier.t; (** The document to rename. *)
+   position: position; (** The position at which this request was sent. *)
+   newName: string; (** The new name of the symbol. If the given name
+                        is not valid the request must return a
+                        [ResponseError](#ResponseError) with an
+                        appropriate message set. *)
+  } [@@deriving yojson]
+
+  type result = WorkspaceEdit.t [@@deriving to_yojson]
 end
 
 module DebugEcho = struct

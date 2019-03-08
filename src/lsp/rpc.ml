@@ -194,6 +194,7 @@ module Request = struct
     | TextDocumentTypeDefinition : TypeDefinition.params -> TypeDefinition.result t
     | TextDocumentCompletion : Completion.params -> Completion.result t
     | TextDocumentCodeLens : CodeLens.params -> CodeLens.result t
+    | TextDocumentRename : Rename.params -> Rename.result t
     | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
@@ -218,6 +219,9 @@ module Request = struct
       Some (Response.make id json)
     | TextDocumentCodeLens _, result ->
       let json = CodeLens.result_to_yojson result in
+      Some (Response.make id json)
+    | TextDocumentRename _, result ->
+      let json = Rename.result_to_yojson result in
       Some (Response.make id json)
     | DocumentSymbol _, result ->
       let json = DocumentSymbol.result_to_yojson result in
@@ -276,6 +280,9 @@ module Message = struct
       | "textDocument/codeLens" ->
         CodeLens.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentCodeLens params))
+      | "textDocument/rename" ->
+        Rename.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, TextDocumentRename params))
       | "textDocument/documentHighlight" ->
         TextDocumentHighlight.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentHighlight params))
