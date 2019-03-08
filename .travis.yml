@@ -6,7 +6,7 @@ script: |
   bash -ex .travis-opam.sh
   # Run LSP test suite
   if [ "$TESTS_LSP" = "true" ]; then
-    opam config exec -- make build ocamlmerlin-lsp
+    opam config exec -- make release ocamlmerlin-lsp
     sudo apt-get install -y nodejs
     cd tests-lsp/
     npm install
