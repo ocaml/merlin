@@ -80,6 +80,11 @@
                " (successive calls will expand aliases)"))
       (t default))))
 
+(defun merlin-company--in-string-or-comment-p ()
+  "Return non-nil if START is in a comment or string."
+  (let ((state (syntax-ppss)))
+    (or (nth 3 state) (nth 4 state))))
+
 ;; Public functions
 ;;;###autoload
 (defun merlin-company-backend (command &optional arg &rest ignored)
@@ -109,14 +114,15 @@
                      (linum (cdr (assoc 'line (assoc 'pos data)))))
                  (cons filename linum))))))
         (candidates
-         (let ((prefix (merlin/completion-prefix arg)))
-           (cl-loop for x in (merlin/complete arg)
-                    collect
-                    (propertize (merlin/completion-entry-text prefix x)
-                                'merlin-compl-type
-                                (merlin/completion-entry-short-description x)
-                                'merlin-arg-type (cdr (assoc 'argument_type x))
-                                'merlin-compl-doc (cdr (assoc 'info x))))))
+         (unless (merlin-company--in-string-or-comment-p)
+          (let ((prefix (merlin/completion-prefix arg)))
+            (cl-loop for x in (merlin/complete arg)
+                     collect
+                     (propertize (merlin/completion-entry-text prefix x)
+                                 'merlin-compl-type
+                                 (merlin/completion-entry-short-description x)
+                                 'merlin-arg-type (cdr (assoc 'argument_type x))
+                                 'merlin-compl-doc (cdr (assoc 'info x)))))))
         (post-completion
          (let ((minibuffer-message-timeout nil))
            (minibuffer-message "%s : %s" arg (merlin-company--get-candidate-type arg))))
