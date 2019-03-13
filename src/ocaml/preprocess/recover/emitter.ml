@@ -22,7 +22,6 @@ module Codeconsing (S : Synthesis.S) (R : Recovery.S with module G = S.G) : sig
 end = struct
 
   open S
-  open G
 
   type fixed = A of fixed paction list
 
@@ -71,7 +70,7 @@ end = struct
       | Var (A v) -> Var (A (get v))
       | x -> x
     in
-    Hashtbl.iter (fun k v -> v := get !v) normalized_actions;
+    Hashtbl.iter (fun _k v -> v := get !v) normalized_actions;
     (* Return counter *)
     (fun v -> try !(fst (Hashtbl.find table v)) with Not_found -> 0)
 

@@ -6,11 +6,12 @@ script: |
   bash -ex .travis-opam.sh
   # Run LSP test suite
   if [ "$TESTS_LSP" = "true" ]; then
-    opam config exec -- make build ocamlmerlin-lsp
-    sudo apt-get install -y nodejs
+    set -e
+    opam config exec -- dune build -p merlin-lsp
     cd tests-lsp/
     npm install
     npm run test
+    set +e
   fi
 env:
   matrix:

@@ -1,5 +1,4 @@
 open MenhirSdk
-open Utils
 
 module type S = sig
   module G : Cmly_api.GRAMMAR

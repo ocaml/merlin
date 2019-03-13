@@ -8,7 +8,16 @@ import * as Rpc from "vscode-jsonrpc";
 
 let serverBin =
   os.platform() === "win32" ? "ocamlmerlin-lsp.exe" : "ocamlmerlin-lsp";
-let serverPath = path.join(__dirname, "..", "..", serverBin);
+let serverPath = path.join(
+  __dirname,
+  "..",
+  "..",
+  "_build",
+  "install",
+  "default",
+  "bin",
+  serverBin
+);
 
 export type LanguageServer = Rpc.MessageConnection;
 

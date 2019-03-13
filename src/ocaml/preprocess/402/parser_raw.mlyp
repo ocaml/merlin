@@ -308,13 +308,6 @@ let let_operator startpos endpos op bindings cont =
 %}
 
 %[@printer.header
-  let string_of_INT = function
-    | (s, None) -> Printf.sprintf "INT(%s)" s
-    | (s, Some c) -> Printf.sprintf "INT(%s%c)" s c
-
-  let string_of_FLOAT = function
-    | (s, None) -> Printf.sprintf "FLOAT(%s)" s
-    | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
 
   let string_of_STRING = function
     | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
@@ -322,7 +315,6 @@ let let_operator startpos endpos op bindings cont =
 ]
 
 %[@recovery.header
-  open Asttypes
   open Parsetree
   open Ast_helper
 
@@ -2579,7 +2571,7 @@ toplevel_directives:
         | None -> PStr []
         | Some exp -> PStr [mkstrexp exp []]
       in
-      [mkstr $startpos $endpos (Pstr_attribute (id,payload))] @ $1
+      mkstr $startpos $endpos (Pstr_attribute (id,payload)) @ $1
     }
 ;
 
