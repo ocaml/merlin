@@ -27,15 +27,19 @@ Compilation
 Dependencies: ocaml >= 4.02.3, ocamlfind, yojson, dune.
 
 ```shell
-dune build
+dune build -p merlin
 ```
+
+Note: if you want to work on merlin, you'll want to avoid the `-p merlin`, to
+build in dev mode, with some extra warnings enabled. In that case you'll also
+need an extra dependency: menhir.
 
 Installation
 ------------
 
 If you haven't encountered any errors in the previous step, just run:
 
-    $ dune install
+    $ dune install -p merlin
 
 You can pass an explicit prefix to dune, using `--prefix`. It defaults to
 your current opam switch.
