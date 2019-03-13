@@ -25,19 +25,19 @@ module Make (G : Cmly_api.GRAMMAR) : S with module G = G = struct
       0. (prj attrs)
 
   let cost_of_symbol =
-    let measure ~default prj attrs =
-      if List.exists (Attribute.has_label "recovery") (prj attrs) then
-        cost_of_attributes prj attrs
-      else default
+    let measure ~has_default prj attrs =
+      if List.exists (Attribute.has_label "recovery") (prj attrs) || has_default
+      then cost_of_attributes prj attrs
+      else infinity
     in
     let ft = Terminal.tabulate
         (fun t ->
            if Terminal.typ t = None
-           then measure ~default:0.0 Terminal.attributes t
-           else measure ~default:infinity Terminal.attributes t)
+           then measure ~has_default:true Terminal.attributes t
+           else measure ~has_default:false Terminal.attributes t)
     in
     let fn =
-      Nonterminal.tabulate (measure ~default:infinity Nonterminal.attributes)
+      Nonterminal.tabulate (measure ~has_default:false Nonterminal.attributes)
     in
     function
     | T t -> ft t
