@@ -2159,7 +2159,7 @@ let recover =
   | 86 -> One (r44)
   | 1587 -> One (r45)
   | 1586 -> One (r46)
-  | 88 | 619 | 951 -> One (r47)
+  | 88 | 514 | 619 | 951 -> One (r47)
   | 1577 -> One (r48)
   | 1576 -> One (r49)
   | 90 -> One (r50)
@@ -3084,9 +3084,6 @@ let recover =
   | 355 -> Select (function
     | 373 -> r247
     | _ -> Sub (r221) :: r253)
-  | 514 -> Select (function
-    | -1 -> r47
-    | _ -> r200)
   | 255 -> Select (function
     | 1072 -> r82
     | _ -> r183)

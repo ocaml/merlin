@@ -2098,7 +2098,7 @@ let recover =
   | 247 -> One (r158)
   | 248 -> One (r159)
   | 259 -> One (r160)
-  | 262 | 463 | 1039 -> One (r161)
+  | 262 | 430 | 463 | 1039 -> One (r161)
   | 347 -> One (r162)
   | 346 -> One (r163)
   | 345 -> One (r165)
@@ -2844,7 +2844,4 @@ let recover =
   | 152 -> Select (function
     | 1177 -> r80
     | _ -> r106)
-  | 430 -> Select (function
-    | -1 -> r161
-    | _ -> r99)
   | _ -> raise Not_found
