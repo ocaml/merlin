@@ -606,9 +606,21 @@ module Initialize = struct
     contentFormat = [Plaintext];
   }
 
+  type documentSymbol = {
+    hierarchicalDocumentSymbolSupport : bool [@default false];
+  } [@@deriving yojson { strict = false }]
+
+  let documentSymbol_empty = {
+    hierarchicalDocumentSymbolSupport = false;
+  }
+
   type textDocumentClientCapabilities = {
     synchronization: synchronization [@default synchronization_empty];
-    completion: completion [@default completion_empty];  (* textDocument/completion *)
+    (** textDocument/completion *)
+    completion: completion [@default completion_empty];
+    (** textDocument/documentSymbol *)
+    documentSymbol: documentSymbol [@default documentSymbol_empty];
+    (** textDocument/hover *)
     hover: hover [@default hover_empty];
     (* omitted: dynamic-registration fields *)
   } [@@deriving yojson { strict = false }]
@@ -617,6 +629,7 @@ module Initialize = struct
     completion = completion_empty;
     synchronization = synchronization_empty;
     hover = hover_empty;
+    documentSymbol = documentSymbol_empty;
   }
 
   type workspaceEdit = {
@@ -792,10 +805,9 @@ module TextDocumentHighlight = struct
   and result = DocumentHighlight.t list (* wire: either a single one or an array *)
 end
 
-(* Represents information about programming constructs like variables etc. *)
-module SymbolInformation = struct
+module SymbolKind = struct
 
-  type symbolKind =
+  type t =
     | File  (* 1 *)
     | Module  (* 2 *)
     | Namespace  (* 3 *)
@@ -823,7 +835,7 @@ module SymbolInformation = struct
     | Operator (* 25 *)
     | TypeParameter (* 26 *)
 
-  let symbolKind_to_yojson = function
+  let to_yojson = function
     | File -> `Int 1
     | Module -> `Int 2
     | Namespace -> `Int 3
@@ -851,7 +863,7 @@ module SymbolInformation = struct
     | Operator -> `Int 25
     | TypeParameter -> `Int 26
 
-  let symbolKind_of_yojson = function
+  let of_yojson = function
     | `Int 1 -> Ok File
     | `Int 2 -> Ok Module
     | `Int 3 -> Ok Namespace
@@ -880,25 +892,82 @@ module SymbolInformation = struct
     | `Int 26 -> Ok TypeParameter
     | _ -> Error "invalid SymbolKind"
 
-  type t = {
-    name : string;
-    kind : symbolKind;
-    deprecated : bool [@default false];
-    location : Location.t;  (* the span of the symbol including its contents *)
-    containerName : string option [@default None];  (* the symbol containing this symbol *)
-  } [@@deriving yojson]
+end
 
+module SymbolInformation = struct
+ type t = {
+    name : string;
+    kind : SymbolKind.t;
+    deprecated : bool [@default false];
+    (* the span of the symbol including its contents *)
+    location : Location.t;
+    (* the symbol containing this symbol *)
+    containerName : string option [@default None];
+  } [@@deriving yojson]
+end
+
+module DocumentSymbol = struct
+
+  type t = {
+    (**
+     * The name of this symbol. Will be displayed in the user interface and
+     * therefore must not be an empty string or a string only consisting of
+     * white spaces.
+     *)
+    name : string;
+
+    (**
+     * More detail for this symbol, e.g the signature of a function.
+     *)
+    detail: string option;
+
+    (**
+     * The kind of this symbol.
+     *)
+    kind: SymbolKind.t;
+
+    (**
+     * Indicates if this symbol is deprecated.
+     *)
+    deprecated : bool;
+
+    (**
+     * The range enclosing this symbol not including leading/trailing whitespace
+     * but everything else like comments. This information is typically used to
+     * determine if the clients cursor is inside the symbol to reveal in the
+     * symbol in the UI.
+     *)
+    range : range;
+
+    (**
+     * The range that should be selected and revealed when this symbol is being
+     * picked, e.g the name of a function.  Must be contained by the `range`.
+     *)
+    selectionRange : range;
+
+    (**
+     * Children of this symbol, e.g. properties of a class.
+     *)
+    children: t list;
+  } [@@deriving yojson]
 end
 
 (* Document Symbols request, method="textDocument/documentSymbols" *)
-module DocumentSymbol = struct
-  type params = documentSymbolParams [@@deriving yojson]
-
-  and result = SymbolInformation.t list
-
-  and documentSymbolParams = {
+module TextDocumentDocumentSymbol = struct
+  type params = {
     textDocument: TextDocumentIdentifier.t;
-  }
+  } [@@deriving yojson]
+
+  type result =
+    | DocumentSymbol of DocumentSymbol.t list
+    | SymbolInformation of SymbolInformation.t list
+
+  let result_to_yojson = function
+    | DocumentSymbol symbols ->
+      `List (Std.List.map symbols ~f:DocumentSymbol.to_yojson)
+    | SymbolInformation symbols ->
+      `List (Std.List.map symbols ~f:SymbolInformation.to_yojson)
+
 end
 
 module CodeLens = struct

@@ -321,51 +321,80 @@ let on_request :
     return (store, lsp_locs)
 
   | Lsp.Rpc.Request.DocumentSymbol {textDocument = {uri;}} ->
+    let module DocumentSymbol = Lsp.Protocol.DocumentSymbol in
+    let module SymbolKind = Lsp.Protocol.SymbolKind in
+
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Outline in
     let outline = Query_commands.dispatch (Document.pipeline doc) command in
-    let module SymbolInformation = Lsp.Protocol.SymbolInformation in
-    let symbol_infos =
-      let rec symbol_info_of_outline_item ?containerName item =
-        let kind =
-          match item.Query_protocol.outline_kind with
-          | `Value -> SymbolInformation.Function
-          | `Constructor -> SymbolInformation.Constructor
-          | `Label -> SymbolInformation.Property
-          | `Module -> SymbolInformation.Module
-          | `Modtype -> SymbolInformation.Module
-          | `Type -> SymbolInformation.String
-          | `Exn -> SymbolInformation.Constructor
-          | `Class -> SymbolInformation.Class
-          | `Method -> SymbolInformation.Method
-        in
-        let location = {
-          Lsp.Protocol.Location.
-          uri;
-          range = {
-            Lsp.Protocol.
-            start_ = position_of_lexical_position item.location.loc_start;
-            end_ = position_of_lexical_position item.location.loc_end;
-          }
-        } in
-        let info = {
-          Lsp.Protocol.SymbolInformation.
-          name = item.Query_protocol.outline_name;
-          kind;
-          deprecated = false;
-          location;
-          containerName;
-        } in
-        let children =
-          Std.List.concat_map
-            item.children
-            ~f:(symbol_info_of_outline_item ~containerName:info.name)
-        in
-        info::children
-      in
-      Std.List.concat_map ~f:symbol_info_of_outline_item outline
+
+    let kind item =
+      match item.Query_protocol.outline_kind with
+      | `Value -> SymbolKind.Function
+      | `Constructor -> SymbolKind.Constructor
+      | `Label -> SymbolKind.Property
+      | `Module -> SymbolKind.Module
+      | `Modtype -> SymbolKind.Module
+      | `Type -> SymbolKind.String
+      | `Exn -> SymbolKind.Constructor
+      | `Class -> SymbolKind.Class
+      | `Method -> SymbolKind.Method
     in
-    return (store, symbol_infos)
+
+    let range item = {
+      Lsp.Protocol.
+      start_ = position_of_lexical_position item.Query_protocol.location.loc_start;
+      end_ = position_of_lexical_position item.location.loc_end;
+    } in
+
+    let rec symbol item =
+      let children = Std.List.map item.Query_protocol.children ~f:symbol in
+      let range = range item in
+      {
+        Lsp.Protocol.DocumentSymbol.
+        name = item.Query_protocol.outline_name;
+        detail = item.Query_protocol.outline_type;
+        kind = kind item;
+        deprecated = false;
+        range = range;
+        selectionRange = range;
+        children;
+      }
+    in
+
+    let rec symbol_info ?containerName item =
+      let location = {
+        Lsp.Protocol.Location.
+        uri;
+        range = range item;
+      } in
+      let info = {
+        Lsp.Protocol.SymbolInformation.
+        name = item.Query_protocol.outline_name;
+        kind = kind item;
+        deprecated = false;
+        location;
+        containerName;
+      } in
+      let children =
+        Std.List.concat_map
+          item.children
+          ~f:(symbol_info ~containerName:info.name)
+      in
+      info::children
+    in
+
+    let symbols =
+      let caps = client_capabilities.textDocument.documentSymbol in
+      match caps.hierarchicalDocumentSymbolSupport with
+      | true ->
+        let symbols = Std.List.map outline ~f:symbol in
+        Lsp.Protocol.TextDocumentDocumentSymbol.DocumentSymbol symbols
+      | false ->
+        let symbols = Std.List.concat_map ~f:symbol_info outline in
+        Lsp.Protocol.TextDocumentDocumentSymbol.SymbolInformation symbols
+    in
+    return (store, symbols)
 
   | Lsp.Rpc.Request.TextDocumentDefinition {textDocument = {uri;}; position;} ->
     Document_store.get store uri >>= fun doc ->

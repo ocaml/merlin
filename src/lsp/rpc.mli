@@ -31,7 +31,7 @@ module Request : sig
     | TextDocumentCompletion : Completion.params -> Completion.result t
     | TextDocumentCodeLens : CodeLens.params -> CodeLens.result t
     | TextDocumentRename : Rename.params -> Rename.result t
-    | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
+    | DocumentSymbol : TextDocumentDocumentSymbol.params -> TextDocumentDocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | TextDocumentReferences : References.params -> References.result t
