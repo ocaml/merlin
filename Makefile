@@ -3,6 +3,9 @@ all: build ocamlmerlin ocamlmerlin-server ocamlmerlin-lsp
 build:
 	dune build
 
+workspace:
+	dune build --workspace=dune-workspace.template
+
 ocamlmerlin ocamlmerlin-server ocamlmerlin-lsp:
 	ln -s _build/install/default/bin/$@ ./$@
 
