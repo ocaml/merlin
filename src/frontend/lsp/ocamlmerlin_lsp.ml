@@ -222,7 +222,7 @@ let on_request :
       match Query_commands.dispatch (Document.pipeline doc) command with
       | []
       | (_, `Index _, _) :: _ -> None
-      | (_, `String value, _) :: _ -> Some value
+      | (location, `String value, _) :: _ -> Some (location, value)
     in
 
     let format_contents ~as_markdown typ =
@@ -243,17 +243,22 @@ let on_request :
     let pos = logical_of_position position in
     begin match query_type doc pos with
     | None -> return (store, None)
-    | Some typ ->
+    | Some (loc, typ) ->
       let as_markdown =
         List.mem
           Lsp.Protocol.MarkupKind.Markdown
           client_capabilities.textDocument.hover.contentFormat
       in
       let contents = format_contents ~as_markdown typ in
+      let range = Some {
+        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+        end_ = position_of_lexical_position loc.loc_end;
+      }
+      in
       let resp = {
         Lsp.Protocol.Hover.
         contents;
-        range = None;
+        range;
       } in
       return (store, Some resp)
     end
