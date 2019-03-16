@@ -27,7 +27,8 @@ describe("textDocument/hover", () => {
     });
 
     expect(result).toMatchObject({
-      contents: { kind: "plaintext", value: "int" }
+      contents: { kind: "plaintext", value: "int" },
+      range: {end: {character: 5, line: 0}, start: {character: 4, line: 0}},
     });
   });
 
@@ -55,7 +56,8 @@ describe("textDocument/hover", () => {
     });
 
     expect(result).toMatchObject({
-      contents: { kind: "markdown", value: "```ocaml\nint\n```" }
+      contents: { kind: "markdown", value: "```ocaml\nint\n```" },
+      range: {end: {character: 5, line: 0}, start: {character: 4, line: 0}},
     });
   });
 });
