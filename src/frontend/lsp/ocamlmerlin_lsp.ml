@@ -324,10 +324,6 @@ let on_request :
     let module DocumentSymbol = Lsp.Protocol.DocumentSymbol in
     let module SymbolKind = Lsp.Protocol.SymbolKind in
 
-    Document_store.get store uri >>= fun doc ->
-    let command = Query_protocol.Outline in
-    let outline = Query_commands.dispatch (Document.pipeline doc) command in
-
     let kind item =
       match item.Query_protocol.outline_kind with
       | `Value -> SymbolKind.Function
@@ -384,6 +380,9 @@ let on_request :
       info::children
     in
 
+    Document_store.get store uri >>= fun doc ->
+    let command = Query_protocol.Outline in
+    let outline = Query_commands.dispatch (Document.pipeline doc) command in
     let symbols =
       let caps = client_capabilities.textDocument.documentSymbol in
       match caps.hierarchicalDocumentSymbolSupport with
