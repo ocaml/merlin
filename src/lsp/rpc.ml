@@ -195,7 +195,7 @@ module Request = struct
     | TextDocumentCompletion : Completion.params -> Completion.result t
     | TextDocumentCodeLens : CodeLens.params -> CodeLens.result t
     | TextDocumentRename : Rename.params -> Rename.result t
-    | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
+    | DocumentSymbol : TextDocumentDocumentSymbol.params -> TextDocumentDocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | TextDocumentReferences : References.params -> References.result t
@@ -224,7 +224,7 @@ module Request = struct
       let json = Rename.result_to_yojson result in
       Some (Response.make id json)
     | DocumentSymbol _, result ->
-      let json = DocumentSymbol.result_to_yojson result in
+      let json = TextDocumentDocumentSymbol.result_to_yojson result in
       Some (Response.make id json)
     | DebugEcho _, result ->
       let json = DebugEcho.result_to_yojson result in
@@ -263,7 +263,7 @@ module Message = struct
         Completion.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentCompletion params))
       | "textDocument/documentSymbol" ->
-        DocumentSymbol.params_of_yojson packet.params >>= fun params ->
+        TextDocumentDocumentSymbol.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, DocumentSymbol params))
       | "textDocument/hover" ->
         Hover.params_of_yojson packet.params >>= fun params ->
