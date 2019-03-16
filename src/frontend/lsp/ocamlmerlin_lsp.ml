@@ -225,16 +225,24 @@ let on_request :
       | (location, `String value, _) :: _ -> Some (location, value)
     in
 
-    let format_contents ~as_markdown typ =
+    let query_doc doc pos =
+      let command = Query_protocol.Document (None, pos) in
+      match Query_commands.dispatch (Document.pipeline doc) command with
+      | `Found s | `Builtin s -> Some s
+      | _ -> None
+    in
+
+    let format_contents ~as_markdown ~typ ~doc =
+      let doc = match doc with None -> "" | Some s -> Printf.sprintf "\n(** %s *)" s in
       if as_markdown
       then {
         Lsp.Protocol.MarkupContent.
-        value = Printf.sprintf "```ocaml\n%s\n```" typ;
+        value = Printf.sprintf "```ocaml\n%s%s\n```" typ doc;
         kind = Lsp.Protocol.MarkupKind.Markdown;
       }
       else {
         Lsp.Protocol.MarkupContent.
-        value = typ;
+        value = Printf.sprintf "%s%s" doc typ;
         kind = Lsp.Protocol.MarkupKind.Plaintext;
       }
     in
@@ -244,17 +252,17 @@ let on_request :
     begin match query_type doc pos with
     | None -> return (store, None)
     | Some (loc, typ) ->
+      let doc = query_doc doc pos in
       let as_markdown =
         List.mem
           Lsp.Protocol.MarkupKind.Markdown
           client_capabilities.textDocument.hover.contentFormat
       in
-      let contents = format_contents ~as_markdown typ in
+      let contents = format_contents ~as_markdown ~typ ~doc in
       let range = Some {
         Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
         end_ = position_of_lexical_position loc.loc_end;
-      }
-      in
+      } in
       let resp = {
         Lsp.Protocol.Hover.
         contents;

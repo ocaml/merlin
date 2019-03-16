@@ -60,4 +60,34 @@ describe("textDocument/hover", () => {
       range: {end: {character: 5, line: 0}, start: {character: 4, line: 0}},
     });
   });
+
+  it("returns type inferred under cursor with documentation", async () => {
+    languageServer = await LanguageServer.startAndInitialize({
+      textDocument: {
+        hover: {
+          dynamicRegistration: true,
+          contentFormat: ["markdown", "plaintext"]
+        }
+      }
+    });
+    await languageServer.sendNotification("textDocument/didOpen", {
+      textDocument: Types.TextDocumentItem.create(
+        "file:///test.ml",
+        "txt",
+        0,
+        "(** This function has a nice documentation *)\nlet id x = x\n"
+      )
+    });
+
+    let result = await languageServer.sendRequest("textDocument/hover", {
+      textDocument: Types.TextDocumentIdentifier.create("file:///test.ml"),
+      position: Types.Position.create(1, 4)
+    });
+
+    expect(result).toMatchObject({
+      contents: {
+        kind: "markdown",
+        value: "```ocaml\n'a -> 'a\n(** This function has a nice documentation *)\n```" }
+    });
+  });
 });
