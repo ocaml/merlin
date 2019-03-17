@@ -205,4 +205,80 @@ describe("textDocument/completion", () => {
       }
     ]);
   });
+
+  it("completes with invalid prefix is buggy, it gives suggestions for LL instead of L", async () => {
+    openDocument(outdent`
+      let f = L.
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 10));
+    let items_top5 = items.slice(0, 5);
+    expect(items_top5).toMatchObject([
+      {
+        label: "ListLabels.append",
+        sortText: "0000",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 10 }
+          },
+          newText: "ListLabels.append"
+        }
+      },
+      {
+        label: "ListLabels.assoc",
+        sortText: "0001",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 10 }
+          },
+          newText: "ListLabels.assoc"
+        }
+      },
+      {
+        label: "ListLabels.assoc_opt",
+        sortText: "0002",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 10 }
+          },
+          newText: "ListLabels.assoc_opt"
+        }
+      },
+      {
+        label: "ListLabels.assq",
+        sortText: "0003",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 10 }
+          },
+          newText: "ListLabels.assq"
+        }
+      },
+      {
+        label: "ListLabels.assq_opt",
+        sortText: "0004",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 10 }
+          },
+          newText: "ListLabels.assq_opt"
+        }
+      },
+    ]);
+  });
+
+  it("completes with invalid prefix is buggy", async () => {
+    openDocument(outdent`
+      let f = LL.
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 11));
+    expect(items).toMatchObject([]);
+  });
+
 });
