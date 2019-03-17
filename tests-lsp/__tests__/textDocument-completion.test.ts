@@ -26,7 +26,8 @@ describe("textDocument/completion", () => {
     return result.items.map(item => {
       return {
         label: item.label,
-        sortText: item.sortText
+        sortText: item.sortText,
+        textEdit: item.textEdit,
       };
     });
   }
@@ -88,6 +89,26 @@ describe("textDocument/completion", () => {
     expect(items).toMatchObject([
       { label: "somestring", sortText: "0000" },
       { label: "somenum", sortText: "0001" }
+    ]);
+  });
+
+  it("completes without prefix", async () => {
+    openDocument(outdent`
+      let somenum = 42
+      let somestring = "hello"
+
+      let plus_42 (x:int) (y:int) =
+        somenum + 
+    `);
+
+    let items = await queryCompletion(Types.Position.create(4, 12));
+    let items_top5 = items.slice(0, 5);
+    expect(items_top5).toMatchObject([
+      { label: "y", sortText: "0000", textEdit: undefined },
+      { label: "x", sortText: "0001", textEdit: undefined },
+      { label: "somenum", sortText: "0002", textEdit: undefined },
+      { label: "max_int", sortText: "0003", textEdit: undefined },
+      { label: "min_int", sortText: "0004", textEdit: undefined },
     ]);
   });
 });
