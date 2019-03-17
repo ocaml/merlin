@@ -491,6 +491,7 @@ let on_request :
     return (store, locs)
 
   | Lsp.Rpc.Request.TextDocumentCompletion {textDocument = {uri;}; position; context = _;} ->
+    let lsp_position = position in
     let position = logical_of_position position in
 
     let make_string chars =
@@ -511,11 +512,13 @@ let on_request :
           then find prefix (i - 1)
           else
             let ch = text.[i] in
+            (* The characters for an infix function are missing *)
             match ch with
             | 'a'..'z'
             | 'A'..'Z'
             | '0'..'9'
             | '.'
+            | '\''
             | '_' -> find (ch::prefix) (i - 1)
             | _ -> make_string prefix
         in
@@ -524,13 +527,58 @@ let on_request :
         find [] (index - 1)
     in
 
-    Document_store.get store uri >>= fun doc ->
-    let prefix = prefix_of_position (Document.source doc) position in
-    log ~title:"debug" "completion prefix: |%s|" prefix;
-    let command =
-      Query_protocol.Complete_prefix (
-        prefix,
-        position,
+    let range_prefix prefix =
+      let start_ =
+        let len = String.length prefix in
+        let character = lsp_position.character - len in
+        { lsp_position with character }
+      in
+      { Lsp.Protocol.
+        start_;
+        end_ = lsp_position;
+      }
+    in
+
+    let item prefix index (entry : Query_protocol.Compl.entry) =
+      let kind: Lsp.Protocol.Completion.completionItemKind option =
+        match entry.kind with
+        | `Value -> Some Value
+        | `Constructor -> Some Constructor
+        | `Variant -> None
+        | `Label -> Some Property
+        | `Module |`Modtype -> Some Module
+        | `Type -> Some TypeParameter
+        | `MethodCall -> Some Method
+      in
+      let textEdit =
+        match prefix with
+        | `Keep -> None
+        | `Replace range -> Some {
+          Lsp.Protocol.TextEdit.
+          range;
+          newText = entry.name;
+        }
+      in
+      {
+        Lsp.Protocol.Completion.
+        label = entry.name;
+        kind;
+        detail = Some entry.desc;
+        inlineDetail = None;
+        itemType = Some entry.desc;
+        documentation = Some entry.info;
+        (* Without this field the client is not forced to
+           respect the order provided by merlin. *)
+        sortText = Some (Printf.sprintf "%04d" index);
+        filterText = None;
+        insertText = None;
+        insertTextFormat = None;
+        textEdit;
+        additionalTextEdits = [];
+      }
+    in
+
+    let completion_kinds =
         [
           `Constructor;
           `Labels;
@@ -539,41 +587,41 @@ let on_request :
           `Types;
           `Values;
           `Variants;
-        ],
+        ]
+    in
+
+    Document_store.get store uri >>= fun doc ->
+    let prefix = prefix_of_position (Document.source doc) position in
+    log ~title:"debug" "completion prefix: |%s|" prefix;
+    let complete =
+      Query_protocol.Complete_prefix (
+        prefix,
+        position,
+        completion_kinds,
         true,
         true
       )
     in
-    let completions = Query_commands.dispatch (Document.pipeline doc) command in
+    let expand =
+      Query_protocol.Expand_prefix (
+        prefix,
+        position,
+        completion_kinds,
+        true
+      )
+    in
+    let completions = Query_commands.dispatch (Document.pipeline doc) complete in
     let items =
-      let f i (entry : Query_protocol.Compl.entry) =
-        let kind: Lsp.Protocol.Completion.completionItemKind option =
-          match entry.kind with
-          | `Value -> Some Value
-          | `Constructor -> Some Constructor
-          | `Variant -> None
-          | `Label -> Some Property
-          | `Module |`Modtype -> Some Module
-          | `Type -> Some TypeParameter
-          | `MethodCall -> Some Method
+      match completions with
+      | { Query_protocol.Compl. entries = []; context = _ } ->
+        log ~title:"debug" "no entries with default completion, trying expand";
+        let { Query_protocol.Compl. entries; context = _} =
+          Query_commands.dispatch (Document.pipeline doc) expand
         in
-        {
-          Lsp.Protocol.Completion.
-          label = entry.name;
-          kind;
-          detail = Some entry.desc;
-          inlineDetail = None;
-          itemType = Some entry.desc;
-          documentation = Some entry.info;
-          (* Without this field the client is not forced to respect the order
-             provided by merlin. *)
-          sortText = Some (Printf.sprintf "%04d" i);
-          filterText = None;
-          insertText = None;
-          insertTextFormat = None;
-        }
-      in
-      List.mapi f completions.Query_protocol.Compl.entries
+        let range = range_prefix prefix in
+        List.mapi (item (`Replace range)) entries
+      | { entries; context = _ } ->
+        List.mapi (item `Keep) entries
     in
     let resp = {Lsp.Protocol.Completion. isIncomplete = false; items;} in
     return (store, resp)

@@ -129,4 +129,80 @@ describe("textDocument/completion", () => {
       { label: "min_int", sortText: "0004", textEdit: undefined },
     ]);
   });
+
+  it("completes with invalid prefix", async () => {
+    openDocument(outdent`
+      let f = Li.ma
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 13));
+    expect(items).toMatchObject([
+      {
+        label: "ListLabels.map",
+        sortText: "0000",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 13 }
+          },
+          newText: "ListLabels.map"
+        }
+      },
+      {
+        label: "ListLabels.map2",
+        sortText: "0001",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 13 }
+          },
+          newText: "ListLabels.map2"
+        }
+      },
+      {
+        label: "ListLabels.mapi",
+        sortText: "0002",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 13 }
+          },
+          newText: "ListLabels.mapi"
+        }
+      },
+      {
+        label: "List.map",
+        sortText: "0003",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 13 }
+          },
+          newText: "List.map"
+        }
+      },
+      {
+        label: "List.map2",
+        sortText: "0004",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 13 }
+          },
+          newText: "List.map2"
+        }
+      },
+      {
+        label: "List.mapi",
+        sortText: "0005",
+        textEdit: {
+          range: {
+            start: { "line": 0, "character": 8 },
+            end: { "line": 0, "character": 13 }
+          },
+          newText: "List.mapi"
+        }
+      }
+    ]);
+  });
 });
