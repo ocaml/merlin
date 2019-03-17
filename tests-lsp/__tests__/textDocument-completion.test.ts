@@ -41,7 +41,7 @@ describe("textDocument/completion", () => {
     languageServer = null;
   });
 
-  it("can start completion at arbitrary position (after the dot)", async () => {
+  it("can start completion at arbitrary position (before the dot)", async () => {
     openDocument(outdent`
       Strin.func
     `);
@@ -89,6 +89,24 @@ describe("textDocument/completion", () => {
     expect(items).toMatchObject([
       { label: "somestring", sortText: "0000" },
       { label: "somenum", sortText: "0001" }
+    ]);
+  });
+
+  it("completes from a module", async () => {
+    openDocument(outdent`
+      let f = List.m
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 14));
+    expect(items).toMatchObject([
+      { label: "map", sortText: "0000" },
+      { label: "map2", sortText: "0001" },
+      { label: "mapi", sortText: "0002" },
+      { label: "mem", sortText: "0003" },
+      { label: "mem_assoc", sortText: "0004" },
+      { label: "mem_assq", sortText: "0005" },
+      { label: "memq", sortText: "0006" },
+      { label: "merge", sortText: "0007" },
     ]);
   });
 
