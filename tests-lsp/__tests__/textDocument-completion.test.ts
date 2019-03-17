@@ -110,6 +110,22 @@ describe("textDocument/completion", () => {
     ]);
   });
 
+  it("completes a module name", async () => {
+    openDocument(outdent`
+      let f = L
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 9));
+    let items_top5 = items.slice(0, 5);
+    expect(items_top5).toMatchObject([
+      { label: "LargeFile", sortText: "0000" },
+      { label: "Lazy", sortText: "0001" },
+      { label: "Lexing", sortText: "0002" },
+      { label: "List", sortText: "0003" },
+      { label: "ListLabels", sortText: "0004" },
+    ]);
+  });
+
   it("completes without prefix", async () => {
     openDocument(outdent`
       let somenum = 42
