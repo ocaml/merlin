@@ -297,4 +297,20 @@ describe("textDocument/completion", () => {
     expect(items).toMatchObject([]);
   });
 
+  it("completes labels", async () => {
+    openDocument(outdent`
+      let f = ListLabels.map 
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 23));
+    let items_top5 = items.slice(0, 5)
+    expect(items_top5).toMatchObject([
+      {label: "~f", sortText: "0000", textEdit: undefined},
+      {label: "::", sortText: "0001", textEdit: undefined},
+      {label: "[]", sortText: "0002", textEdit: undefined},
+      {label: "!", sortText: "0003", textEdit: undefined},
+      {label: "exit", sortText: "0004", textEdit: undefined}
+    ]);
+  });
+
 });

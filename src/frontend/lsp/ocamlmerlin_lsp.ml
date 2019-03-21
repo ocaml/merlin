@@ -539,7 +539,12 @@ let on_request :
       }
     in
 
-    let item prefix index (entry : Query_protocol.Compl.entry) =
+    let item index entry =
+      let prefix, (entry: Query_protocol.Compl.entry) =
+        match entry with
+        | `Keep entry -> `Keep, entry
+        | `Replace (range, entry) -> `Replace range, entry
+      in
       let kind: Lsp.Protocol.Completion.completionItemKind option =
         match entry.kind with
         | `Value -> Some Value
@@ -610,19 +615,36 @@ let on_request :
         true
       )
     in
+
     let completions = Query_commands.dispatch (Document.pipeline doc) complete in
-    let items =
+    let labels =
       match completions with
-      | { Query_protocol.Compl. entries = []; context = _ } ->
-        log ~title:"debug" "no entries with default completion, trying expand";
+      | { Query_protocol.Compl. entries = _; context = `Unknown } -> []
+      | { Query_protocol.Compl. entries = _; context = `Application context } ->
+        let { Query_protocol.Compl. labels; argument_type = _ } = context in
+        List.map (fun (name, typ) ->
+          `Keep {
+            Query_protocol.Compl.
+            name;
+            kind = `Label;
+            desc = typ;
+            info = "";
+          }
+        ) labels
+    in
+    let items =
+      match completions, labels with
+      | { Query_protocol.Compl. entries = []; context = _ }, [] ->
         let { Query_protocol.Compl. entries; context = _} =
           Query_commands.dispatch (Document.pipeline doc) expand
         in
         let range = range_prefix prefix in
-        List.mapi (item (`Replace range)) entries
-      | { entries; context = _ } ->
-        List.mapi (item `Keep) entries
+        List.map (fun entry -> (`Replace (range, entry))) entries
+      | { entries; context = _ }, _labels ->
+        List.map (fun entry -> `Keep entry) entries
     in
+    let all = List.concat [labels; items] in
+    let items = List.mapi item all in
     let resp = {Lsp.Protocol.Completion. isIncomplete = false; items;} in
     return (store, resp)
 
