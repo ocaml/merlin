@@ -64,6 +64,17 @@ describe("textDocument/completion", () => {
     ]);
   });
 
+  it("can start completion at arbitrary position 2", async () => {
+    openDocument(outdent`
+      StringLabels
+    `);
+
+    let items = await queryCompletion(Types.Position.create(0, 7));
+    expect(items).toMatchObject([
+      { label: "StringLabels", sortText: "0000" }
+    ]);
+  });
+
   it("completes identifier at top level", async () => {
     openDocument(outdent`
       let somenum = 42

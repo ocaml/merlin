@@ -92,9 +92,7 @@ describe("textDocument/hover", () => {
     });
   });
 
-  // This type highlights an issue with conversion of positions
-  // from LSP to merlin. The position is shifted to the right by 1.
-  it("returns wrong type when cursor is between values", async () => {
+  it("returns good type when cursor is between values", async () => {
     languageServer = await LanguageServer.startAndInitialize({
       textDocument: {
         hover: {
@@ -125,11 +123,11 @@ describe("textDocument/hover", () => {
     expect(result).toMatchObject({
       contents: {
         kind: "markdown",
-        value: "```ocaml\nfloat\n```"
+        value: "```ocaml\nint\n```"
       },
       range: {
-        start: {"character": 14, "line": 3},
-        end: {"character": 15, "line": 3},
+        start: {"character": 12, "line": 3},
+        end: {"character": 13, "line": 3},
       }
     });
   });
