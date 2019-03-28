@@ -1,4 +1,6 @@
-type t = string [@@deriving yojson { strict = false }]
+open Protocol_conv_json
+
+type t = string [@@deriving protocol ~driver:(module Json)]
 
 let to_string uri = uri
 

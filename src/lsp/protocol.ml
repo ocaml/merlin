@@ -7,55 +7,48 @@
  *
  *)
 
-type documentUri = Uri.t [@@deriving yojson]
+open Protocol_conv_json
 
-type zero_based_int = int [@@deriving yojson]
+type documentUri = Uri.t [@@deriving protocol ~driver:(module Json)]
+
+type zero_based_int = int [@@deriving protocol ~driver:(module Json)]
 
 type position = {
   line: zero_based_int;
   character: zero_based_int;
-} [@@deriving yojson { strict = false }]
+} [@@deriving protocol ~driver:(module Json)]
 
 type range = {
   start_: position [@key "start"];
   end_: position [@key "end"];
-} [@@deriving yojson { strict = false }]
+} [@@deriving protocol ~driver:(module Json)]
 
 module Command = struct
   type t = {
     title : string;
     command : string;
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 module MarkupKind = struct
   type t =
     | Plaintext
     | Markdown
-
-  let to_yojson = function
-    | Plaintext -> `String "plaintext"
-    | Markdown -> `String "markdown"
-
-  let of_yojson = function
-    | `String "plaintext" -> Ok Plaintext
-    | `String "markdown" -> Ok Markdown
-    | `String _ -> Ok Plaintext
-    | _ -> Error "invalid contentFormat"
+      [@@deriving protocol ~driver:(module Json)]
 end
 
 module MarkupContent = struct
   type t = {
     value: string;
     kind: MarkupKind.t;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 module Location = struct
   type t = {
     uri: Uri.t;
     range : range;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 module DefinitionLocation = struct
@@ -63,14 +56,14 @@ module DefinitionLocation = struct
     uri: Uri.t;
     range : range;
     title: string option [@default None];
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (* Text documents are identified using a URI. *)
 module TextDocumentIdentifier = struct
   type t = {
     uri: documentUri;  (* the text document's URI *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (* An identifier to denote a specific version of a text document. *)
@@ -78,7 +71,7 @@ module VersionedTextDocumentIdentifier = struct
   type t = {
     uri: documentUri;  (* the text document's URI *)
     version: int;  (* the version number of this document *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (* An item to transfer a text document from the client to the server. The
@@ -89,12 +82,12 @@ module TextDocumentItem = struct
     languageId: string;  (* the text document's language identifier *)
     version: int;  (* the version of the document *)
     text: string;  (* the content of the opened text document *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (* DidOpenTextDocument notification, method="textDocument/didOpen" *)
 module DidOpen = struct
-  type params = didOpenTextDocumentParams [@@deriving yojson { strict = false }]
+  type params = didOpenTextDocumentParams [@@deriving protocol ~driver:(module Json)]
 
   and didOpenTextDocumentParams = {
     textDocument: TextDocumentItem.t;  (* the document that was opened *)
@@ -103,7 +96,7 @@ end
 
 (* DidChangeTextDocument notification, method="textDocument/didChange" *)
 module DidChange = struct
-  type params = didChangeTextDocumentParams [@@deriving yojson { strict = true }]
+  type params = didChangeTextDocumentParams [@@deriving protocol ~driver:(module Json)]
 
   and didChangeTextDocumentParams = {
     textDocument: VersionedTextDocumentIdentifier.t;
@@ -121,7 +114,7 @@ module TextDocumentPositionParams = struct
   type t = {
     textDocument: TextDocumentIdentifier.t;  (* the text document *)
     position: position;  (* the position inside the text document *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (**
@@ -137,21 +130,21 @@ module DocumentHighlight = struct
     | Read (** 2: Read-access of a symbol, like reading a variable. *)
     | Write (** 3: Write-access of a symbol, like writing a variable. *)
 
-  let kind_to_yojson = function
+  let kind_to_json = function
     | Text -> `Int 1
     | Read -> `Int 2
     | Write -> `Int 3
 
-  let kind_of_yojson = function
-    | `Int 1 -> Ok Text
-    | `Int 2 -> Ok Read
-    | `Int 3 -> Ok Write
-    | _ -> Error "expected int between 1 and 3"
+  let kind_of_json = function
+    | `Int 1 -> Text
+    | `Int 2 -> Read
+    | `Int 3 -> Write
+    | _ -> invalid_arg "unable to read the kind"
 
   type t = {
     range: range;
     kind: kind option;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
 end
 
@@ -175,7 +168,7 @@ module TextEdit = struct
     range: range;
     (** The string to be inserted. For delete operations use an empty string. *)
     newText: string;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 
@@ -192,7 +185,7 @@ module TextDocumentEdit = struct
   type t = {
     textDocument: VersionedTextDocumentIdentifier.t; (** The text document to change. *)
     edits: TextEdit.t list; (** The edits to be applied. *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (**
@@ -211,17 +204,17 @@ module WorkspaceEdit = struct
   *)
   type changes = (documentUri * TextEdit.t list) list
 
-  let changes_to_yojson changes =
+  let changes_to_json changes =
     let changes =
       List.map (fun (uri, edits) ->
         let uri = Uri.to_string uri in
-        let edits = `List (List.map TextEdit.to_yojson edits) in
+        let edits = `List (List.map TextEdit.to_json edits) in
         uri, edits
       ) changes
     in
     `Assoc changes
 
-  type documentChanges = TextDocumentEdit.t list [@@deriving to_yojson]
+  type documentChanges = TextDocumentEdit.t list [@@deriving to_protocol ~driver:(module Json)]
 
   (**
      Depending on the client capability
@@ -241,7 +234,7 @@ module WorkspaceEdit = struct
   type t = {
     changes: changes option;
     documentChanges: documentChanges option;
-  } [@@deriving to_yojson { strict = false }]
+  } [@@deriving to_protocol ~driver:(module Json)]
 
   let empty = {
     changes = None;
@@ -280,16 +273,16 @@ module PublishDiagnostics = struct
     | StringCode of string
     | NoCode
 
-  let diagnosticCode_to_yojson = function
+  let diagnosticCode_to_json = function
     | IntCode v -> `Int v
     | StringCode v -> `String v
     | NoCode -> `Null
 
-  let diagnosticCode_of_yojson = function
-    | `Int v -> Ok (IntCode v)
-    | `String v -> Ok (StringCode v)
-    | `Null -> Ok NoCode
-    | _ -> Error "invalid diagnostic.code"
+  let diagnosticCode_of_json = function
+    | `Int v -> (IntCode v)
+    | `String v -> (StringCode v)
+    | `Null -> NoCode
+    | _ -> invalid_arg "invalid diagnostic.code"
 
   type diagnosticSeverity =
     | Error (* 1 *)
@@ -297,20 +290,20 @@ module PublishDiagnostics = struct
     | Information (* 3 *)
     | Hint (* 4 *)
 
-  let diagnosticSeverity_to_yojson = function
+  let diagnosticSeverity_to_json = function
     | Error -> `Int 1
     | Warning -> `Int 2
     | Information -> `Int 3
     | Hint -> `Int 4
 
-  let diagnosticSeverity_of_yojson = function
-    | `Int 1 -> Ok Error
-    | `Int 2 -> Ok Warning
-    | `Int 3 -> Ok Information
-    | `Int 4 -> Ok Hint
-    | _ -> Error "expected int"
+  let diagnosticSeverity_of_json = function
+    | `Int 1 -> Error
+    | `Int 2 -> Warning
+    | `Int 3 -> Information
+    | `Int 4 -> Hint
+    | _ -> invalid_arg "expected int"
 
-  type params = publishDiagnosticsParams [@@deriving yojson { strict = false }]
+  type params = publishDiagnosticsParams [@@deriving protocol ~driver:(module Json)]
 
   and publishDiagnosticsParams = {
     uri: documentUri;
@@ -344,16 +337,16 @@ module Completion = struct
     | TriggerCharacter (* 2 *)
     | TriggerForIncompleteCompletions (* 3 *)
 
-  let completionTriggerKind_to_yojson = function
+  let completionTriggerKind_to_json = function
     | Invoked -> `Int 1
     | TriggerCharacter -> `Int 2
     | TriggerForIncompleteCompletions -> `Int 3
 
-  let completionTriggerKind_of_yojson = function
-    | `Int 1 -> Ok Invoked
-    | `Int 2 -> Ok TriggerCharacter
-    | `Int 3 -> Ok TriggerForIncompleteCompletions
-    | _ -> Error "invalid completion.triggerKind"
+  let completionTriggerKind_of_json = function
+    | `Int 1 -> Invoked
+    | `Int 2 -> TriggerCharacter
+    | `Int 3 -> TriggerForIncompleteCompletions
+    | _ -> invalid_arg "invalid completion.triggerKind"
 
   type completionItemKind =
     | Text (* 1 *)
@@ -411,7 +404,7 @@ module Completion = struct
     | Operator -> 24
     | TypeParameter -> 25
 
-  let completionItemKind_to_yojson v =
+  let completionItemKind_to_json v =
     `Int (int_of_completionItemKind v)
 
   (** Once we get better PPX support we can use [@@deriving enum].
@@ -444,13 +437,13 @@ module Completion = struct
     | 25 -> Some TypeParameter
     | _ -> None
 
-  let completionItemKind_of_yojson = function
+  let completionItemKind_of_json = function
     | `Int v ->
       begin match completionItemKind_of_int_opt v with
-      | Some v -> Ok v
-      | None -> Error "invalid completion.kind"
+      | Some v -> v
+      | None -> invalid_arg "invalid completion.kind"
       end
-    | _ -> Error "invalid completion.kind: expected an integer"
+    | _ -> invalid_arg "invalid completion.kind: expected an integer"
 
     (** Keep this in sync with `int_of_completionItemKind`. *)
   type insertTextFormat =
@@ -463,7 +456,7 @@ module Completion = struct
     | PlainText -> 1
     | SnippetFormat -> 2
 
-  let insertTextFormat_to_yojson v =
+  let insertTextFormat_to_json v =
     `Int (int_of_insertFormat v)
 
   (** Once we get better PPX support we can use [@@deriving enum].
@@ -473,15 +466,15 @@ module Completion = struct
     | 2 -> Some SnippetFormat
     | _ -> None
 
-  let insertTextFormat_of_yojson = function
+  let insertTextFormat_of_json = function
     | `Int v ->
       begin match insertFormat_of_int_opt v with
-      | Some v -> Ok v
-      | None -> Error "invalid completion.kind"
+      | Some v -> v
+      | None -> invalid_arg "invalid completion.kind"
       end
-    | _ -> Error "invalid completion.kind: expected an integer"
+    | _ -> invalid_arg "invalid completion.kind: expected an integer"
 
-  type params = completionParams [@@deriving yojson { strict = false }]
+  type params = completionParams [@@deriving protocol ~driver:(module Json)]
 
   and completionParams = {
     textDocument: TextDocumentIdentifier.t;  (* the text document *)
@@ -521,7 +514,7 @@ end
 module Hover = struct
   type params =
     TextDocumentPositionParams.t
-    [@@deriving yojson { strict = false }]
+    [@@deriving protocol ~driver:(module Json)]
 
   and result = hoverResult option [@default None]
 
@@ -535,36 +528,26 @@ end
 module Initialize = struct
 
   type trace =
-    | Off
-    | Messages
-    | Verbose
-
-  let trace_to_yojson = function
-    | Off -> `String "off"
-    | Messages -> `String "messages"
-    | Verbose -> `String "verbose"
-
-  let trace_of_yojson = function
-    | `String "off" -> Ok Off
-    | `String "messages" -> Ok Messages
-    | `String "verbose" -> Ok Verbose
-    | _ -> Error "invalid trace"
+    | Off [@name "off"]
+    | Messages [@name "messages"]
+    | Verbose [@name "verbose"]
+    [@@deriving protocol ~driver:(module Json)]
 
   type textDocumentSyncKind =
     | NoSync (* 0 *)  (* docs should not be synced at all. Wire "None" *)
     | FullSync (* 1 *)  (* synced by always sending full content. Wire "Full" *)
     | IncrementalSync (* 2 *)  (* full only on open. Wire "Incremental" *)
 
-  let textDocumentSyncKind_to_yojson = function
+  let textDocumentSyncKind_to_json = function
     | NoSync -> `Int 0
     | FullSync -> `Int 1
     | IncrementalSync -> `Int 2
 
-  let textDocumentSyncKind_of_yojson = function
-    | `Int 0 -> Ok NoSync
-    | `Int 1 -> Ok FullSync
-    | `Int 2 -> Ok IncrementalSync
-    | _ -> Error "invalid textDocumentSyncKind"
+  let textDocumentSyncKind_of_json = function
+    | `Int 0 -> NoSync
+    | `Int 1 -> FullSync
+    | `Int 2 -> IncrementalSync
+    | _ -> invalid_arg "invalid textDocumentSyncKind"
 
   (* synchronization capabilities say what messages the client is capable
    * of sending, should be be so asked by the server.
@@ -574,7 +557,7 @@ module Initialize = struct
     willSave: bool;  (* client can send textDocument/willSave *)
     willSaveWaitUntil: bool;  (* textDoc.../willSaveWaitUntil *)
     didSave: bool;  (* textDocument/didSave *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let synchronization_empty = {
     willSave = true;
@@ -584,7 +567,7 @@ module Initialize = struct
 
   type completionItem = {
     snippetSupport: bool;  (* client can do snippets as insert text *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let completionItem_empty = {
     snippetSupport = false;
@@ -592,7 +575,7 @@ module Initialize = struct
 
   type completion = {
     completionItem: completionItem [@default completionItem_empty];
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let completion_empty = {
     completionItem = completionItem_empty;
@@ -600,7 +583,7 @@ module Initialize = struct
 
   type hover = {
     contentFormat: MarkupKind.t list [@default [Plaintext]];
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let hover_empty = {
     contentFormat = [Plaintext];
@@ -608,7 +591,7 @@ module Initialize = struct
 
   type documentSymbol = {
     hierarchicalDocumentSymbolSupport : bool [@default false];
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let documentSymbol_empty = {
     hierarchicalDocumentSymbolSupport = false;
@@ -623,7 +606,7 @@ module Initialize = struct
     (** textDocument/hover *)
     hover: hover [@default hover_empty];
     (* omitted: dynamic-registration fields *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let textDocumentClientCapabilities_empty = {
     completion = completion_empty;
@@ -634,7 +617,7 @@ module Initialize = struct
 
   type workspaceEdit = {
     documentChanges: bool;  (* client supports versioned doc changes *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let workspaceEdit_empty = {
     documentChanges = false;
@@ -644,7 +627,7 @@ module Initialize = struct
     applyEdit: bool [@default false];  (* client supports appling batch edits *)
     workspaceEdit: workspaceEdit [@default workspaceEdit_empty];
     (* omitted: dynamic-registration fields *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let workspaceClientCapabilities_empty = {
     applyEdit = false;
@@ -655,7 +638,7 @@ module Initialize = struct
     status: bool;  (* Nuclide-specific: client supports window/showStatusRequest *)
     progress: bool;  (* Nuclide-specific: client supports window/progress *)
     actionRequired: bool;  (* Nuclide-specific: client supports window/actionRequired *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let windowClientCapabilities_empty = {
     status = true;
@@ -665,7 +648,7 @@ module Initialize = struct
 
   type telemetryClientCapabilities = {
     connectionStatus: bool;  (* Nuclide-specific: client supports telemetry/connectionStatus *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let telemetryClientCapabilities_empty = {
     connectionStatus = true;
@@ -677,7 +660,7 @@ module Initialize = struct
     window: windowClientCapabilities [@default windowClientCapabilities_empty];
     telemetry: telemetryClientCapabilities [@default telemetryClientCapabilities_empty];
     (* omitted: experimental *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   let client_capabilities_empty = {
     workspace = workspaceClientCapabilities_empty;
@@ -692,7 +675,7 @@ module Initialize = struct
     rootUri: documentUri option [@default None];  (* the root URI of the workspace *)
     client_capabilities: client_capabilities [@key "capabilities"] [@default client_capabilities_empty];
     trace: trace [@default Off];  (* the initial trace setting, default="off" *)
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   and result = {
     server_capabilities: server_capabilities [@key "capabilities"];
@@ -771,14 +754,14 @@ end
 
 (* Goto Definition request, method="textDocument/definition" *)
 module Definition = struct
-  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+  type params = TextDocumentPositionParams.t [@@deriving protocol ~driver:(module Json)]
 
   and result = DefinitionLocation.t list  (* wire: either a single one or an array *)
 end
 
 (* Goto Type Definition request, method="textDocument/typeDefinition" *)
 module TypeDefinition = struct
-  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+  type params = TextDocumentPositionParams.t [@@deriving protocol ~driver:(module Json)]
 
   and result = Location.t list  (* wire: either a single one or an array *)
 end
@@ -789,7 +772,7 @@ module References = struct
     textDocument: TextDocumentIdentifier.t;  (* the text document *)
     position: position;  (* the position inside the text document *)
     context: referenceContext;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   and referenceContext = {
     includeDeclaration: bool;
@@ -800,7 +783,7 @@ end
 
 (* DocumentHighlight request, method="textDocument/documentHighlight" *)
 module TextDocumentHighlight = struct
-  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+  type params = TextDocumentPositionParams.t [@@deriving protocol ~driver:(module Json)]
 
   and result = DocumentHighlight.t list (* wire: either a single one or an array *)
 end
@@ -835,7 +818,7 @@ module SymbolKind = struct
     | Operator (* 25 *)
     | TypeParameter (* 26 *)
 
-  let to_yojson = function
+  let to_json = function
     | File -> `Int 1
     | Module -> `Int 2
     | Namespace -> `Int 3
@@ -863,34 +846,34 @@ module SymbolKind = struct
     | Operator -> `Int 25
     | TypeParameter -> `Int 26
 
-  let of_yojson = function
-    | `Int 1 -> Ok File
-    | `Int 2 -> Ok Module
-    | `Int 3 -> Ok Namespace
-    | `Int 4 -> Ok Package
-    | `Int 5 -> Ok Class
-    | `Int 6 -> Ok Method
-    | `Int 7 -> Ok Property
-    | `Int 8 -> Ok Field
-    | `Int 9 -> Ok Constructor
-    | `Int 10 -> Ok Enum
-    | `Int 11 -> Ok Interface
-    | `Int 12 -> Ok Function
-    | `Int 13 -> Ok Variable
-    | `Int 14 -> Ok Constant
-    | `Int 15 -> Ok String
-    | `Int 16 -> Ok Number
-    | `Int 17 -> Ok Boolean
-    | `Int 18 -> Ok Array
-    | `Int 19 -> Ok Object
-    | `Int 20 -> Ok Key
-    | `Int 21 -> Ok Null
-    | `Int 22 -> Ok EnumMember
-    | `Int 23 -> Ok Struct
-    | `Int 24 -> Ok Event
-    | `Int 25 -> Ok Operator
-    | `Int 26 -> Ok TypeParameter
-    | _ -> Error "invalid SymbolKind"
+  let of_json = function
+    | `Int 1 -> File
+    | `Int 2 -> Module
+    | `Int 3 -> Namespace
+    | `Int 4 -> Package
+    | `Int 5 -> Class
+    | `Int 6 -> Method
+    | `Int 7 -> Property
+    | `Int 8 -> Field
+    | `Int 9 -> Constructor
+    | `Int 10 -> Enum
+    | `Int 11 -> Interface
+    | `Int 12 -> Function
+    | `Int 13 -> Variable
+    | `Int 14 -> Constant
+    | `Int 15 -> String
+    | `Int 16 -> Number
+    | `Int 17 -> Boolean
+    | `Int 18 -> Array
+    | `Int 19 -> Object
+    | `Int 20 -> Key
+    | `Int 21 -> Null
+    | `Int 22 -> EnumMember
+    | `Int 23 -> Struct
+    | `Int 24 -> Event
+    | `Int 25 -> Operator
+    | `Int 26 -> TypeParameter
+    | _ -> invalid_arg "invalid SymbolKind"
 
 end
 
@@ -903,7 +886,7 @@ module SymbolInformation = struct
     location : Location.t;
     (* the symbol containing this symbol *)
     containerName : string option [@default None];
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 module DocumentSymbol = struct
@@ -949,31 +932,31 @@ module DocumentSymbol = struct
      * Children of this symbol, e.g. properties of a class.
      *)
     children: t list;
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 (* Document Symbols request, method="textDocument/documentSymbols" *)
 module TextDocumentDocumentSymbol = struct
   type params = {
     textDocument: TextDocumentIdentifier.t;
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 
   type result =
     | DocumentSymbol of DocumentSymbol.t list
     | SymbolInformation of SymbolInformation.t list
 
-  let result_to_yojson = function
+  let result_to_json = function
     | DocumentSymbol symbols ->
-      `List (Std.List.map symbols ~f:DocumentSymbol.to_yojson)
+      `List (Std.List.map symbols ~f:DocumentSymbol.to_json)
     | SymbolInformation symbols ->
-      `List (Std.List.map symbols ~f:SymbolInformation.to_yojson)
+      `List (Std.List.map symbols ~f:SymbolInformation.to_json)
 
 end
 
 module CodeLens = struct
   type params = {
     textDocument: TextDocumentIdentifier.t;
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 
   and result = item list
 
@@ -992,25 +975,25 @@ module Rename = struct
                         is not valid the request must return a
                         [ResponseError](#ResponseError) with an
                         appropriate message set. *)
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 
-  type result = WorkspaceEdit.t [@@deriving to_yojson]
+  type result = WorkspaceEdit.t [@@deriving to_protocol ~driver:(module Json)]
 end
 
 module DebugEcho = struct
   type params = {
     message: string;
-  } [@@deriving yojson { strict = false }]
+  } [@@deriving protocol ~driver:(module Json)]
 
   and result = params
 end
 
 module DebugTextDocumentGet = struct
-  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+  type params = TextDocumentPositionParams.t [@@deriving protocol ~driver:(module Json)]
 
   type result = string option [@default None]
 
-  let result_to_yojson = function
+  let result_to_json = function
     | Some s -> `String s
     | None -> `Null
 end

@@ -1,6 +1,6 @@
 (library
   (name lsp)
-  (libraries merlin_utils yojson ppx_deriving_yojson.runtime threads)
-  (preprocess (pps ppx_deriving_yojson)))
+  (libraries merlin_utils yojson ppx_protocol_conv_json threads)
+  (preprocess (pps ppx_protocol_conv)))
 
 (ocamllex (modules text_document_text))

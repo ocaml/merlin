@@ -1,3 +1,5 @@
+open Protocol_conv_json
+
 type t = {
   ic : in_channel;
   oc : out_channel;
@@ -79,8 +81,8 @@ module Packet = struct
   type t = {
     id: int option [@default None];
     method_: string [@key "method"];
-    params: Yojson.Safe.json;
-  } [@@deriving yojson { strict = false }]
+    params: Json.t;
+  } [@@deriving protocol ~driver:(module Json)]
 end
 
 let read rpc =
@@ -114,20 +116,22 @@ let read rpc =
       errorf "error parsing json: %s" msg
   in
 
-  read_content rpc >>= parse_json >>= Packet.of_yojson
+  read_content rpc >>= parse_json >>= (fun j ->
+    try Ok (Packet.of_json j) with _exn -> Error "oups"
+  )
 
 module Response = struct
   type response = {
     id : int;
     jsonrpc: string;
-    result : Yojson.Safe.json;
-  } [@@deriving yojson]
+    result : Json.t;
+  } [@@deriving protocol ~driver:(module Json)]
 
   type response_error = {
     id : int;
     jsonrpc: string;
     error : error;
-  } [@@deriving yojson]
+  } [@@deriving protocol ~driver:(module Json)]
 
   and error = {
     code : int;
@@ -144,17 +148,17 @@ module Response = struct
   let make_error id code message =
     Response_error {id; error = {code; message;}; jsonrpc="2.0"}
 
-  let to_yojson = function
-    | Response v -> response_to_yojson v
-    | Response_error v -> response_error_to_yojson v
+  let to_json = function
+    | Response v -> response_to_json v
+    | Response_error v -> response_error_to_json v
 end
 
 let send_response rpc (response : Response.t) =
-  let json = Response.to_yojson response in
+  let json = Response.to_json response in
   send rpc json
 
 module Server_notification = struct
-  open Protocol 
+  open Protocol
 
   type t =
     | PublishDiagnostics of PublishDiagnostics.params
@@ -162,14 +166,14 @@ module Server_notification = struct
   let method_ = function
     | PublishDiagnostics _ -> "textDocument/publishDiagnostics"
 
-  let params_to_yojson = function
-    | PublishDiagnostics params -> PublishDiagnostics.params_to_yojson params
+  let params_to_json = function
+    | PublishDiagnostics params -> PublishDiagnostics.params_to_json params
 
 end
 
 let send_notification rpc notif =
   let method_ = Server_notification.method_ notif in
-  let params = Server_notification.params_to_yojson notif in
+  let params = Server_notification.params_to_json notif in
   let response = `Assoc [("jsonrpc", (`String "2.0")); ("method", (`String method_)); ("params", params)] in
   send rpc response
 
@@ -181,7 +185,7 @@ module Client_notification = struct
     | TextDocumentDidChange of DidChange.params
     | Initialized
     | Exit
-    | UnknownNotification of string * Yojson.Safe.json
+    | UnknownNotification of string * Yojson.Safe.t
 end
 
 module Request = struct
@@ -200,43 +204,43 @@ module Request = struct
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | TextDocumentReferences : References.params -> References.result t
     | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
-    | UnknownRequest : string * Yojson.Safe.json -> unit t
+    | UnknownRequest : string * Yojson.Safe.t -> unit t
 
   let request_result_to_response (type a) id (req : a t) (result : a) =
     match req, result with
     | Shutdown, _resp -> None
     | TextDocumentHover _, result ->
-      let json = Hover.result_to_yojson result in
+      let json = Hover.result_to_json result in
       Some (Response.make id json)
     | TextDocumentDefinition _, result ->
-      let json = Definition.result_to_yojson result in
+      let json = Definition.result_to_json result in
       Some (Response.make id json)
     | TextDocumentTypeDefinition _, result ->
-      let json = TypeDefinition.result_to_yojson result in
+      let json = TypeDefinition.result_to_json result in
       Some (Response.make id json)
     | TextDocumentCompletion _, result ->
-      let json = Completion.result_to_yojson result in
+      let json = Completion.result_to_json result in
       Some (Response.make id json)
     | TextDocumentCodeLens _, result ->
-      let json = CodeLens.result_to_yojson result in
+      let json = CodeLens.result_to_json result in
       Some (Response.make id json)
     | TextDocumentRename _, result ->
-      let json = Rename.result_to_yojson result in
+      let json = Rename.result_to_json result in
       Some (Response.make id json)
     | DocumentSymbol _, result ->
-      let json = TextDocumentDocumentSymbol.result_to_yojson result in
+      let json = TextDocumentDocumentSymbol.result_to_json result in
       Some (Response.make id json)
     | DebugEcho _, result ->
-      let json = DebugEcho.result_to_yojson result in
+      let json = DebugEcho.result_to_json result in
       Some (Response.make id json)
     | DebugTextDocumentGet _, result ->
-      let json = DebugTextDocumentGet.result_to_yojson result in
+      let json = DebugTextDocumentGet.result_to_json result in
       Some (Response.make id json)
     | TextDocumentReferences _, result ->
-      let json = References.result_to_yojson result in
+      let json = References.result_to_json result in
       Some (Response.make id json)
     | TextDocumentHighlight _, result ->
-      let json = TextDocumentHighlight.result_to_yojson result in
+      let json = TextDocumentHighlight.result_to_json result in
       Some (Response.make id json)
     | UnknownRequest _, _resp -> None
 end
@@ -250,47 +254,48 @@ module Message = struct
     | Client_notification : Client_notification.t -> t
 
   let parse packet =
-    let open Utils.Result.Infix in
+    (* let open Utils.Result.Infix in *)
+    let (>>=) v f = f v in
     match packet.Packet.id with
     | Some id ->
       begin match packet.method_ with
       | "initialize" ->
-        Protocol.Initialize.params_of_yojson packet.params >>= fun params ->
+        Protocol.Initialize.params_of_json packet.params >>= fun params ->
         Ok (Initialize (id, params))
       | "shutdown" ->
         Ok (Request (id, Shutdown))
       | "textDocument/completion" ->
-        Completion.params_of_yojson packet.params >>= fun params ->
+        Completion.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentCompletion params))
       | "textDocument/documentSymbol" ->
-        TextDocumentDocumentSymbol.params_of_yojson packet.params >>= fun params ->
+        TextDocumentDocumentSymbol.params_of_json packet.params >>= fun params ->
         Ok (Request (id, DocumentSymbol params))
       | "textDocument/hover" ->
-        Hover.params_of_yojson packet.params >>= fun params ->
+        Hover.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentHover params))
       | "textDocument/definition" ->
-        Definition.params_of_yojson packet.params >>= fun params ->
+        Definition.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentDefinition params))
       | "textDocument/typeDefinition" ->
-        TypeDefinition.params_of_yojson packet.params >>= fun params ->
+        TypeDefinition.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentTypeDefinition params))
       | "textDocument/references" ->
-        References.params_of_yojson packet.params >>= fun params ->
+        References.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentReferences params))
       | "textDocument/codeLens" ->
-        CodeLens.params_of_yojson packet.params >>= fun params ->
+        CodeLens.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentCodeLens params))
       | "textDocument/rename" ->
-        Rename.params_of_yojson packet.params >>= fun params ->
+        Rename.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentRename params))
       | "textDocument/documentHighlight" ->
-        TextDocumentHighlight.params_of_yojson packet.params >>= fun params ->
+        TextDocumentHighlight.params_of_json packet.params >>= fun params ->
         Ok (Request (id, TextDocumentHighlight params))
       | "debug/echo" ->
-        DebugEcho.params_of_yojson packet.params >>= fun params ->
+        DebugEcho.params_of_json packet.params >>= fun params ->
         Ok (Request (id, DebugEcho params))
       | "debug/textDocument/get" ->
-        DebugTextDocumentGet.params_of_yojson packet.params >>= fun params ->
+        DebugTextDocumentGet.params_of_json packet.params >>= fun params ->
         Ok (Request (id, DebugTextDocumentGet params))
       | name ->
         Ok (Request (id, UnknownRequest (name, packet.params)))
@@ -298,10 +303,10 @@ module Message = struct
     | None ->
       begin match packet.method_ with
       | "textDocument/didOpen" ->
-        DidOpen.params_of_yojson packet.params >>= fun params ->
+        DidOpen.params_of_json packet.params >>= fun params ->
         Ok (Client_notification (TextDocumentDidOpen params))
       | "textDocument/didChange" ->
-        DidChange.params_of_yojson packet.params >>= fun params ->
+        DidChange.params_of_json packet.params >>= fun params ->
         Ok (Client_notification (TextDocumentDidChange params))
       | "exit" ->
         Ok (Client_notification Exit)
@@ -364,7 +369,7 @@ let start init_state handler ic oc =
           read_message rpc >>= function
           | Message.Initialize (id, params) ->
             handler.on_initialize rpc state params >>= fun (next_state, result) ->
-            let json = Protocol.Initialize.result_to_yojson result in
+            let json = Protocol.Initialize.result_to_json result in
             let response = Response.make id json in
             rpc.state <- Initialized params.client_capabilities;
             send_response rpc response;
