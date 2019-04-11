@@ -511,7 +511,8 @@ module Completion = struct
     filterText: string option [@default None];  (* used for filtering; if absent, uses label *)
     insertText: string option [@default None];  (* used for inserting; if absent, uses label *)
     insertTextFormat: insertTextFormat option [@default None];
-    (* textEdits: TextEdit.t list;  (1* wire: split into hd and tl *1) *)
+    textEdit: TextEdit.t option [@default None];
+    additionalTextEdits: TextEdit.t list [@default []];
     (* command: Command.t option [@default None];  (1* if present, is executed after completion *1) *)
     (* data: Hh_json.json option [@default None]; *)
   }
