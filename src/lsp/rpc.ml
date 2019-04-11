@@ -253,15 +253,28 @@ module Message = struct
     | Request : int * 'result Request.t -> t
     | Client_notification : Client_notification.t -> t
 
+  let parse_result f v =
+    try Ok (f v) with _exn -> Utils.Result.errorf "unable to parse value"
+
   let parse packet =
     (* let open Utils.Result.Infix in *)
-    let (>>=) v f = f v in
+    let (>>=) v f =
+      try
+        f v
+      with _exn ->
+        log ~title:"debug" "an error in the bind function";
+        Utils.Result.errorf "oups"
+    in
     match packet.Packet.id with
     | Some id ->
       begin match packet.method_ with
       | "initialize" ->
-        Protocol.Initialize.params_of_json packet.params >>= fun params ->
-        Ok (Initialize (id, params))
+         let open Utils.Result.Infix in
+         log ~title:"debug" "initializing workspace";
+         let parse = parse_result Protocol.Initialize.params_of_json in
+         parse packet.params >>= fun params ->
+         log ~title:"debug" "initialization done";
+         Ok (Initialize (id, params))
       | "shutdown" ->
         Ok (Request (id, Shutdown))
       | "textDocument/completion" ->
@@ -341,6 +354,8 @@ type 'state handler = {
 }
 
 let start init_state handler ic oc =
+  log ~title:"debug" "start rpc";
+
   let open Utils.Result.Infix in
 
   let read_message rpc =
@@ -368,6 +383,7 @@ let start init_state handler ic oc =
         handle_message state (fun () ->
           read_message rpc >>= function
           | Message.Initialize (id, params) ->
+             log ~title:"debug" "about to run the handler";
             handler.on_initialize rpc state params >>= fun (next_state, result) ->
             let json = Protocol.Initialize.result_to_json result in
             let response = Response.make id json in
