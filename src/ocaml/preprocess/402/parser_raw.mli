@@ -21,7 +21,6 @@ type token =
   | STRING of (string * string option)
   | STAR
   | SIG
-  | HASHOP of (string)
   | SHARP
   | SEMISEMI
   | SEMI
@@ -87,6 +86,7 @@ type token =
   | INCLUDE
   | IN
   | IF
+  | HASHOP of (string)
   | GREATERRBRACKET
   | GREATERRBRACE
   | GREATERDOT
@@ -176,7 +176,6 @@ module MenhirInterpreter : sig
     | T_STRING : (string * string option) terminal
     | T_STAR : unit terminal
     | T_SIG : unit terminal
-    | T_HASHOP : (string) terminal
     | T_SHARP : unit terminal
     | T_SEMISEMI : unit terminal
     | T_SEMI : unit terminal
@@ -242,6 +241,7 @@ module MenhirInterpreter : sig
     | T_INCLUDE : unit terminal
     | T_IN : unit terminal
     | T_IF : unit terminal
+    | T_HASHOP : (string) terminal
     | T_GREATERRBRACKET : unit terminal
     | T_GREATERRBRACE : unit terminal
     | T_GREATERDOT : unit terminal

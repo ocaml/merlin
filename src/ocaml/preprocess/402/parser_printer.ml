@@ -26,7 +26,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRING) -> "<string>"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STAR) -> "*"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SIG) -> "sig"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) -> "#."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SHARP) -> "#"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) -> ";;"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMI) -> ";"
@@ -92,6 +91,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_INCLUDE) -> "include"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_IN) -> "in"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_IF) -> "if"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) -> "#."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) -> ">]"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE) -> ">}"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERDOT) -> ">."
@@ -343,7 +343,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_STRING -> (string_of_STRING)
   | MenhirInterpreter.T MenhirInterpreter.T_STAR -> (fun _ -> "*")
   | MenhirInterpreter.T MenhirInterpreter.T_SIG -> (fun _ -> "sig")
-  | MenhirInterpreter.T MenhirInterpreter.T_HASHOP -> (Printf.sprintf "HASHOP(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_SHARP -> (fun _ -> "#")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> (fun _ -> ";;")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMI -> (fun _ -> ";")
@@ -409,6 +408,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_INCLUDE -> (fun _ -> "include")
   | MenhirInterpreter.T MenhirInterpreter.T_IN -> (fun _ -> "in")
   | MenhirInterpreter.T MenhirInterpreter.T_IF -> (fun _ -> "if")
+  | MenhirInterpreter.T MenhirInterpreter.T_HASHOP -> (Printf.sprintf "HASHOP(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET -> (fun _ -> ">]")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE -> (fun _ -> ">}")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERDOT -> (fun _ -> ">.")
@@ -659,7 +659,6 @@ let print_token = function
   | STRING v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRING) v
   | STAR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STAR) ()
   | SIG -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SIG) ()
-  | HASHOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) v
   | SHARP -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SHARP) ()
   | SEMISEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) ()
   | SEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMI) ()
@@ -725,6 +724,7 @@ let print_token = function
   | INCLUDE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_INCLUDE) ()
   | IN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_IN) ()
   | IF -> print_value (MenhirInterpreter.T MenhirInterpreter.T_IF) ()
+  | HASHOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASHOP) v
   | GREATERRBRACKET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) ()
   | GREATERRBRACE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE) ()
   | GREATERDOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERDOT) ()
@@ -794,7 +794,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_STRING -> STRING v
   | MenhirInterpreter.T_STAR -> STAR
   | MenhirInterpreter.T_SIG -> SIG
-  | MenhirInterpreter.T_HASHOP -> HASHOP v
   | MenhirInterpreter.T_SHARP -> SHARP
   | MenhirInterpreter.T_SEMISEMI -> SEMISEMI
   | MenhirInterpreter.T_SEMI -> SEMI
@@ -860,6 +859,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_INCLUDE -> INCLUDE
   | MenhirInterpreter.T_IN -> IN
   | MenhirInterpreter.T_IF -> IF
+  | MenhirInterpreter.T_HASHOP -> HASHOP v
   | MenhirInterpreter.T_GREATERRBRACKET -> GREATERRBRACKET
   | MenhirInterpreter.T_GREATERRBRACE -> GREATERRBRACE
   | MenhirInterpreter.T_GREATERDOT -> GREATERDOT

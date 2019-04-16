@@ -2,7 +2,7 @@ open Parser_raw
 let named_item_at = function
   | 2 -> "while_lwt"
   | 58 -> "attribute"
-  | 153 -> "extension"
+  | 152 -> "extension"
   | 360 -> "while"
   | 362 -> "try_lwt"
   | 364 -> "try"
