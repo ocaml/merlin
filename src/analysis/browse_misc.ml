@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Option.Infix
 
 let print_constructor c =
   let open Types in
