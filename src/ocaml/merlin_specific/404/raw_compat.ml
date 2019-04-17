@@ -162,3 +162,38 @@ let si_modtype_opt : Types.signature_item -> Types.module_type option = function
   | Sig_modtype (_, m) -> m.mtd_type
   | Sig_module (_, m, _) -> Some m.md_type
   | _ -> None
+
+module Pattern = struct
+  open Asttypes
+
+  type pattern = Typedtree.pattern
+
+  type desc_view =
+    | Tpat_any
+    | Tpat_var of Ident.t * string loc
+    | Tpat_alias of pattern * Ident.t * string loc
+    | Tpat_constant of constant
+    | Tpat_tuple of pattern list
+    | Tpat_construct of
+        Longident.t loc * Types.constructor_description * pattern list
+    | Tpat_variant of label * pattern option * Types.row_desc ref
+    | Tpat_record of
+        (Longident.t loc * Types.label_description * pattern) list *
+        closed_flag
+    | Tpat_array of pattern list
+    | Tpat_or of pattern * pattern * Types.row_desc option
+    | Tpat_lazy of pattern
+    | Tpat_exception of pattern
+
+  let view p = Obj.magic p.Typedtree.pat_desc (* ben quoi ? c'est vrai *)
+
+  exception Not_supported
+
+  let update_desc_exn p desc_view =
+    let pat_desc : Typedtree.pattern_desc =
+      match desc_view with
+      | Tpat_exception _ -> raise Not_supported
+      | _ -> Obj.magic desc_view (* yolo. *)
+    in
+    { p with Typedtree. pat_desc }
+end

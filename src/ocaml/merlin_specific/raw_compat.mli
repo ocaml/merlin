@@ -47,6 +47,37 @@ val const_string : string * string option -> Asttypes.constant
 
 val dummy_type_scheme : Types.type_desc -> Types.type_expr
 
-val ctype_instance : 'a -> Types.type_expr -> Types.type_expr
+val ctype_instance : Env.t -> Types.type_expr -> Types.type_expr
 
 val si_modtype_opt : Types.signature_item -> Types.module_type option
+
+module Pattern : sig
+  open Asttypes
+
+  type pattern = Typedtree.pattern
+
+  type desc_view =
+    | Tpat_any
+    | Tpat_var of Ident.t * string loc
+    | Tpat_alias of pattern * Ident.t * string loc
+    | Tpat_constant of constant
+    | Tpat_tuple of pattern list
+    | Tpat_construct of
+        Longident.t loc * Types.constructor_description * pattern list
+    | Tpat_variant of label * pattern option * Types.row_desc ref
+    | Tpat_record of
+        (Longident.t loc * Types.label_description * pattern) list *
+        closed_flag
+    | Tpat_array of pattern list
+    | Tpat_or of pattern * pattern * Types.row_desc option
+    | Tpat_lazy of pattern
+    | Tpat_exception of pattern
+
+  val view : pattern -> desc_view
+
+  exception Not_supported
+
+  val update_desc_exn : pattern -> desc_view -> pattern
+  (** will raise [Not_supported] if the desc doesn't exist in that version of
+      OCaml. *)
+end
