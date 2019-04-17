@@ -75,7 +75,7 @@ type node =
   | Include_description      of include_description
   | Include_declaration      of include_declaration
   | Open_description         of open_description
-  | Open_declaration         of open_description
+  | Open_declaration         of open_declaration
 
   | Method_call              of expression * meth * Location.t
   | Record_field             of [`Expression of expression | `Pattern of pattern]
@@ -141,7 +141,6 @@ let node_real_loc loc0 = function
   | Include_description     {incl_loc = loc}
   | Include_declaration     {incl_loc = loc}
   | Open_description        {open_loc = loc}
-  | Open_declaration        {open_loc = loc}
     -> loc
   | Module_binding_name          {mb_name = loc}
   | Module_declaration_name      {md_name = loc}
@@ -150,7 +149,7 @@ let node_real_loc loc0 = function
   | Structure _ | Signature _ | Case _ | Class_structure _ | Type_extension _
   | Class_field_kind _ | Module_type_constraint _ | With_constraint _
   | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
-  | Dummy
+  | Dummy | Open_declaration _
     -> loc0
 
 let node_attributes = function
