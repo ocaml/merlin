@@ -10,11 +10,10 @@
 open Protocol_conv_json
 module Json = Json.Make(
   struct
-    let field_name str = str
-    let singleton_constr_as_string = false
+    include Ppx_protocol_driver.Default_parameters
     let omit_default_values = true
-  end)
-
+  end : Ppx_protocol_driver.Parameters)
+              
 type documentUri = Uri.t [@@deriving protocol ~driver:(module Json)]
 
 type zero_based_int = int [@@deriving protocol ~driver:(module Json)]
@@ -141,7 +140,7 @@ module DocumentHighlight = struct
     | Read -> `Int 2
     | Write -> `Int 3
 
-  let kind_of_json = function
+  let kind_of_json_exn = function
     | `Int 1 -> Text
     | `Int 2 -> Read
     | `Int 3 -> Write
@@ -284,7 +283,7 @@ module PublishDiagnostics = struct
     | StringCode v -> `String v
     | NoCode -> `Null
 
-  let diagnosticCode_of_json = function
+  let diagnosticCode_of_json_exn = function
     | `Int v -> (IntCode v)
     | `String v -> (StringCode v)
     | `Null -> NoCode
@@ -302,7 +301,7 @@ module PublishDiagnostics = struct
     | Information -> `Int 3
     | Hint -> `Int 4
 
-  let diagnosticSeverity_of_json = function
+  let diagnosticSeverity_of_json_exn = function
     | `Int 1 -> Error
     | `Int 2 -> Warning
     | `Int 3 -> Information
@@ -348,7 +347,7 @@ module Completion = struct
     | TriggerCharacter -> `Int 2
     | TriggerForIncompleteCompletions -> `Int 3
 
-  let completionTriggerKind_of_json = function
+  let completionTriggerKind_of_json_exn = function
     | `Int 1 -> Invoked
     | `Int 2 -> TriggerCharacter
     | `Int 3 -> TriggerForIncompleteCompletions
@@ -443,7 +442,7 @@ module Completion = struct
     | 25 -> Some TypeParameter
     | _ -> None
 
-  let completionItemKind_of_json = function
+  let completionItemKind_of_json_exn = function
     | `Int v ->
       begin match completionItemKind_of_int_opt v with
       | Some v -> v
@@ -472,7 +471,7 @@ module Completion = struct
     | 2 -> Some SnippetFormat
     | _ -> None
 
-  let insertTextFormat_of_json = function
+  let insertTextFormat_of_json_exn = function
     | `Int v ->
       begin match insertFormat_of_int_opt v with
       | Some v -> v
@@ -549,7 +548,7 @@ module Initialize = struct
     | FullSync -> `Int 1
     | IncrementalSync -> `Int 2
 
-  let textDocumentSyncKind_of_json = function
+  let textDocumentSyncKind_of_json_exn = function
     | `Int 0 -> NoSync
     | `Int 1 -> FullSync
     | `Int 2 -> IncrementalSync
@@ -681,7 +680,7 @@ module Initialize = struct
     rootUri: documentUri option [@default None];  (* the root URI of the workspace *)
     client_capabilities: client_capabilities [@key "capabilities"];
     trace: trace [@default Off];  (* the initial trace setting, default="off" *)
-  } [@@deriving_inline protocol ~driver:(module Json)]
+  } [@@deriving protocol ~driver:(module Json)]
 
   and result = {
     server_capabilities: server_capabilities [@key "capabilities"];
@@ -756,503 +755,7 @@ module Initialize = struct
   and saveOptions = {
     includeText: bool;  (* the client should include content on save *)
     }
- 
-let _ = fun (_ : params) -> ()
-let _ = fun (_ : result) -> ()
-let _ = fun (_ : errorData) -> ()
-let _ = fun (_ : server_capabilities) -> ()
-let _ = fun (_ : completionOptions) -> ()
-let _ = fun (_ : codeLensOptions) -> ()
-let _ = fun (_ : documentOnTypeFormattingOptions) -> ()
-let _ = fun (_ : documentLinkOptions) -> ()
-let _ = fun (_ : executeCommandOptions) -> ()
-let _ = fun (_ : textDocumentSyncOptions) -> ()
-let _ = fun (_ : saveOptions) -> ()
-let rec params_to_json t =
-  (fun { processId; rootPath; rootUri; client_capabilities; trace } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("processId", processId,
-               ((fun t -> Json.of_option t) (fun t -> Json.of_int t)),
-               (Some None)),
-              (Cons
-                 (("rootPath", rootPath,
-                    ((fun t -> Json.of_option t) (fun t -> Json.of_string t)),
-                    (Some None)),
-                   (Cons
-                      (("rootUri", rootUri,
-                         ((fun t -> Json.of_option t) documentUri_to_json),
-                         (Some None)),
-                        (Cons
-                           (("capabilities", client_capabilities,
-                              client_capabilities_to_json, None),
-                             (Cons
-                                (("trace", trace, trace_to_json, (Some Off)),
-                                  Nil))))))))))) t[@@ocaml.warning "-39"]
-and result_to_json t =
-  (fun { server_capabilities } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("capabilities", server_capabilities,
-               server_capabilities_to_json, None), Nil))) t[@@ocaml.warning
-                                                             "-39"]
-and errorData_to_json t =
-  (fun { retry } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons (("retry", retry, (fun t -> Json.of_bool t), None), Nil))) t
-[@@ocaml.warning "-39"]
-and server_capabilities_to_json t =
-  (fun
-     { textDocumentSync; hoverProvider; completionProvider;
-       definitionProvider; typeDefinitionProvider; referencesProvider;
-       documentHighlightProvider; documentSymbolProvider;
-       workspaceSymbolProvider; codeActionProvider; codeLensProvider;
-       documentFormattingProvider; documentRangeFormattingProvider;
-       documentOnTypeFormattingProvider; renameProvider;
-       documentLinkProvider; executeCommandProvider; typeCoverageProvider;
-       rageProvider }
-     ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("textDocumentSync", textDocumentSync,
-               textDocumentSyncOptions_to_json, None),
-              (Cons
-                 (("hoverProvider", hoverProvider, (fun t -> Json.of_bool t),
-                    None),
-                   (Cons
-                      (("completionProvider", completionProvider,
-                         ((fun t -> Json.of_option t)
-                            completionOptions_to_json), (Some None)),
-                        (Cons
-                           (("definitionProvider", definitionProvider,
-                              (fun t -> Json.of_bool t), None),
-                             (Cons
-                                (("typeDefinitionProvider",
-                                   typeDefinitionProvider,
-                                   (fun t -> Json.of_bool t), None),
-                                  (Cons
-                                     (("referencesProvider",
-                                        referencesProvider,
-                                        (fun t -> Json.of_bool t), None),
-                                       (Cons
-                                          (("documentHighlightProvider",
-                                             documentHighlightProvider,
-                                             (fun t -> Json.of_bool t), None),
-                                            (Cons
-                                               (("documentSymbolProvider",
-                                                  documentSymbolProvider,
-                                                  (fun t -> Json.of_bool t),
-                                                  None),
-                                                 (Cons
-                                                    (("workspaceSymbolProvider",
-                                                       workspaceSymbolProvider,
-                                                       (fun t ->
-                                                          Json.of_bool t),
-                                                       None),
-                                                      (Cons
-                                                         (("codeActionProvider",
-                                                            codeActionProvider,
-                                                            (fun t ->
-                                                               Json.of_bool t),
-                                                            None),
-                                                           (Cons
-                                                              (("codeLensProvider",
-                                                                 codeLensProvider,
-                                                                 ((fun t ->
-                                                                    Json.of_option
-                                                                    t)
-                                                                    codeLensOptions_to_json),
-                                                                 (Some None)),
-                                                                (Cons
-                                                                   (("documentFormattingProvider",
-                                                                    documentFormattingProvider,
-                                                                    (fun t ->
-                                                                    Json.of_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("documentRangeFormattingProvider",
-                                                                    documentRangeFormattingProvider,
-                                                                    (fun t ->
-                                                                    Json.of_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("documentOnTypeFormattingProvider",
-                                                                    documentOnTypeFormattingProvider,
-                                                                    ((fun t
-                                                                    ->
-                                                                    Json.of_option
-                                                                    t)
-                                                                    documentOnTypeFormattingOptions_to_json),
-                                                                    (Some
-                                                                    None)),
-                                                                    (Cons
-                                                                    (("renameProvider",
-                                                                    renameProvider,
-                                                                    (fun t ->
-                                                                    Json.of_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("documentLinkProvider",
-                                                                    documentLinkProvider,
-                                                                    ((fun t
-                                                                    ->
-                                                                    Json.of_option
-                                                                    t)
-                                                                    documentLinkOptions_to_json),
-                                                                    (Some
-                                                                    None)),
-                                                                    (Cons
-                                                                    (("executeCommandProvider",
-                                                                    executeCommandProvider,
-                                                                    ((fun t
-                                                                    ->
-                                                                    Json.of_option
-                                                                    t)
-                                                                    executeCommandOptions_to_json),
-                                                                    (Some
-                                                                    None)),
-                                                                    (Cons
-                                                                    (("typeCoverageProvider",
-                                                                    typeCoverageProvider,
-                                                                    (fun t ->
-                                                                    Json.of_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("rageProvider",
-                                                                    rageProvider,
-                                                                    (fun t ->
-                                                                    Json.of_bool
-                                                                    t), None),
-                                                                    Nil)))))))))))))))))))))))))))))))))))))))
-    t[@@ocaml.warning "-39"]
-and completionOptions_to_json t =
-  (fun { resolveProvider; triggerCharacters } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("resolveProvider", resolveProvider, (fun t -> Json.of_bool t),
-               None),
-              (Cons
-                 (("triggerCharacters", triggerCharacters,
-                    ((fun t -> Json.of_list t) (fun t -> Json.of_string t)),
-                    None), Nil))))) t[@@ocaml.warning "-39"]
-and codeLensOptions_to_json t =
-  (fun { codelens_resolveProvider } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("resolveProvider", codelens_resolveProvider,
-               (fun t -> Json.of_bool t), None), Nil))) t[@@ocaml.warning
-                                                           "-39"]
-and documentOnTypeFormattingOptions_to_json t =
-  (fun { firstTriggerCharacter; moreTriggerCharacter } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("firstTriggerCharacter", firstTriggerCharacter,
-               (fun t -> Json.of_string t), None),
-              (Cons
-                 (("moreTriggerCharacter", moreTriggerCharacter,
-                    ((fun t -> Json.of_list t) (fun t -> Json.of_string t)),
-                    None), Nil))))) t[@@ocaml.warning "-39"]
-and documentLinkOptions_to_json t =
-  (fun { doclink_resolveProvider } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("doclink_resolveProvider", doclink_resolveProvider,
-               (fun t -> Json.of_bool t), None), Nil))) t[@@ocaml.warning
-                                                           "-39"]
-and executeCommandOptions_to_json t =
-  (fun { commands } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("commands", commands,
-               ((fun t -> Json.of_list t) (fun t -> Json.of_string t)), None),
-              Nil))) t[@@ocaml.warning "-39"]
-and textDocumentSyncOptions_to_json t =
-  (fun { openClose; change; willSave; willSaveWaitUntil; didSave } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("openClose", openClose, (fun t -> Json.of_bool t), None),
-              (Cons
-                 (("change", change, textDocumentSyncKind_to_json, None),
-                   (Cons
-                      (("willSave", willSave, (fun t -> Json.of_bool t),
-                         None),
-                        (Cons
-                           (("willSaveWaitUntil", willSaveWaitUntil,
-                              (fun t -> Json.of_bool t), None),
-                             (Cons
-                                (("didSave", didSave,
-                                   ((fun t -> Json.of_option t)
-                                      saveOptions_to_json), (Some None)),
-                                  Nil))))))))))) t[@@ocaml.warning "-39"]
-and saveOptions_to_json t =
-  (fun { includeText } ->
-     (fun t -> Json.of_record t)
-       (let open! Protocol_conv.Runtime.Record_in in
-          Cons
-            (("includeText", includeText, (fun t -> Json.of_bool t), None),
-              Nil))) t[@@ocaml.warning "-39"]
-let _ = params_to_json
-and _ = result_to_json
-and _ = errorData_to_json
-and _ = server_capabilities_to_json
-and _ = completionOptions_to_json
-and _ = codeLensOptions_to_json
-and _ = documentOnTypeFormattingOptions_to_json
-and _ = documentLinkOptions_to_json
-and _ = executeCommandOptions_to_json
-and _ = textDocumentSyncOptions_to_json
-and _ = saveOptions_to_json
-let rec params_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("processId",
-            ((fun t -> Json.to_option t) (fun t -> Json.to_int t)),
-            (Some None)),
-           (Cons
-              (("rootPath",
-                 ((fun t -> Json.to_option t) (fun t -> Json.to_string t)),
-                 (Some None)),
-                (Cons
-                   (("rootUri",
-                      ((fun t -> Json.to_option t) documentUri_of_json),
-                      (Some None)),
-                     (Cons
-                        (("capabilities", client_capabilities_of_json, None),
-                          (Cons (("trace", trace_of_json, (Some Off)), Nil))))))))) in
-   let constructor processId rootPath rootUri client_capabilities trace =
-     { processId; rootPath; rootUri; client_capabilities; trace } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and result_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons (("capabilities", server_capabilities_of_json, None), Nil) in
-   let constructor server_capabilities = { server_capabilities } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and errorData_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons (("retry", (fun t -> Json.to_bool t), None), Nil) in
-   let constructor retry = { retry } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and server_capabilities_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("textDocumentSync", textDocumentSyncOptions_of_json, None),
-           (Cons
-              (("hoverProvider", (fun t -> Json.to_bool t), None),
-                (Cons
-                   (("completionProvider",
-                      ((fun t -> Json.to_option t) completionOptions_of_json),
-                      (Some None)),
-                     (Cons
-                        (("definitionProvider", (fun t -> Json.to_bool t),
-                           None),
-                          (Cons
-                             (("typeDefinitionProvider",
-                                (fun t -> Json.to_bool t), None),
-                               (Cons
-                                  (("referencesProvider",
-                                     (fun t -> Json.to_bool t), None),
-                                    (Cons
-                                       (("documentHighlightProvider",
-                                          (fun t -> Json.to_bool t), None),
-                                         (Cons
-                                            (("documentSymbolProvider",
-                                               (fun t -> Json.to_bool t),
-                                               None),
-                                              (Cons
-                                                 (("workspaceSymbolProvider",
-                                                    (fun t -> Json.to_bool t),
-                                                    None),
-                                                   (Cons
-                                                      (("codeActionProvider",
-                                                         (fun t ->
-                                                            Json.to_bool t),
-                                                         None),
-                                                        (Cons
-                                                           (("codeLensProvider",
-                                                              ((fun t ->
-                                                                  Json.to_option
-                                                                    t)
-                                                                 codeLensOptions_of_json),
-                                                              (Some None)),
-                                                             (Cons
-                                                                (("documentFormattingProvider",
-                                                                   (fun t ->
-                                                                    Json.to_bool
-                                                                    t), None),
-                                                                  (Cons
-                                                                    (("documentRangeFormattingProvider",
-                                                                    (fun t ->
-                                                                    Json.to_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("documentOnTypeFormattingProvider",
-                                                                    ((fun t
-                                                                    ->
-                                                                    Json.to_option
-                                                                    t)
-                                                                    documentOnTypeFormattingOptions_of_json),
-                                                                    (Some
-                                                                    None)),
-                                                                    (Cons
-                                                                    (("renameProvider",
-                                                                    (fun t ->
-                                                                    Json.to_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("documentLinkProvider",
-                                                                    ((fun t
-                                                                    ->
-                                                                    Json.to_option
-                                                                    t)
-                                                                    documentLinkOptions_of_json),
-                                                                    (Some
-                                                                    None)),
-                                                                    (Cons
-                                                                    (("executeCommandProvider",
-                                                                    ((fun t
-                                                                    ->
-                                                                    Json.to_option
-                                                                    t)
-                                                                    executeCommandOptions_of_json),
-                                                                    (Some
-                                                                    None)),
-                                                                    (Cons
-                                                                    (("typeCoverageProvider",
-                                                                    (fun t ->
-                                                                    Json.to_bool
-                                                                    t), None),
-                                                                    (Cons
-                                                                    (("rageProvider",
-                                                                    (fun t ->
-                                                                    Json.to_bool
-                                                                    t), None),
-                                                                    Nil))))))))))))))))))))))))))))))))))))) in
-   let constructor textDocumentSync hoverProvider completionProvider
-     definitionProvider typeDefinitionProvider referencesProvider
-     documentHighlightProvider documentSymbolProvider workspaceSymbolProvider
-     codeActionProvider codeLensProvider documentFormattingProvider
-     documentRangeFormattingProvider documentOnTypeFormattingProvider
-     renameProvider documentLinkProvider executeCommandProvider
-     typeCoverageProvider rageProvider =
-     {
-       textDocumentSync;
-       hoverProvider;
-       completionProvider;
-       definitionProvider;
-       typeDefinitionProvider;
-       referencesProvider;
-       documentHighlightProvider;
-       documentSymbolProvider;
-       workspaceSymbolProvider;
-       codeActionProvider;
-       codeLensProvider;
-       documentFormattingProvider;
-       documentRangeFormattingProvider;
-       documentOnTypeFormattingProvider;
-       renameProvider;
-       documentLinkProvider;
-       executeCommandProvider;
-       typeCoverageProvider;
-       rageProvider
-     } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and completionOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("resolveProvider", (fun t -> Json.to_bool t), None),
-           (Cons
-              (("triggerCharacters",
-                 ((fun t -> Json.to_list t) (fun t -> Json.to_string t)),
-                 None), Nil))) in
-   let constructor resolveProvider triggerCharacters =
-     { resolveProvider; triggerCharacters } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and codeLensOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons (("resolveProvider", (fun t -> Json.to_bool t), None), Nil) in
-   let constructor codelens_resolveProvider = { codelens_resolveProvider } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and documentOnTypeFormattingOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("firstTriggerCharacter", (fun t -> Json.to_string t), None),
-           (Cons
-              (("moreTriggerCharacter",
-                 ((fun t -> Json.to_list t) (fun t -> Json.to_string t)),
-                 None), Nil))) in
-   let constructor firstTriggerCharacter moreTriggerCharacter =
-     { firstTriggerCharacter; moreTriggerCharacter } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and documentLinkOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("doclink_resolveProvider", (fun t -> Json.to_bool t), None), Nil) in
-   let constructor doclink_resolveProvider = { doclink_resolveProvider } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and executeCommandOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("commands",
-            ((fun t -> Json.to_list t) (fun t -> Json.to_string t)), None),
-           Nil) in
-   let constructor commands = { commands } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and textDocumentSyncOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons
-         (("openClose", (fun t -> Json.to_bool t), None),
-           (Cons
-              (("change", textDocumentSyncKind_of_json, None),
-                (Cons
-                   (("willSave", (fun t -> Json.to_bool t), None),
-                     (Cons
-                        (("willSaveWaitUntil", (fun t -> Json.to_bool t),
-                           None),
-                          (Cons
-                             (("didSave",
-                                ((fun t -> Json.to_option t)
-                                   saveOptions_of_json), (Some None)), Nil))))))))) in
-   let constructor openClose change willSave willSaveWaitUntil didSave =
-     { openClose; change; willSave; willSaveWaitUntil; didSave } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-and saveOptions_of_json t =
-  (let of_funcs =
-     let open Protocol_conv.Runtime.Record_in in
-       Cons (("includeText", (fun t -> Json.to_bool t), None), Nil) in
-   let constructor includeText = { includeText } in
-   (fun t -> Json.to_record t) of_funcs constructor) t[@@ocaml.warning "-39"]
-let _ = params_of_json
-and _ = result_of_json
-and _ = errorData_of_json
-and _ = server_capabilities_of_json
-and _ = completionOptions_of_json
-and _ = codeLensOptions_of_json
-and _ = documentOnTypeFormattingOptions_of_json
-and _ = documentLinkOptions_of_json
-and _ = executeCommandOptions_of_json
-and _ = textDocumentSyncOptions_of_json
-and _ = saveOptions_of_json
-          [@@@end]
+
 let params_of_json t =
   let {Logger. log} = Logger.for_section "lsp" in
   log ~title:"debug" "so much fun";
@@ -1360,7 +863,7 @@ module SymbolKind = struct
     | Operator -> `Int 25
     | TypeParameter -> `Int 26
 
-  let of_json = function
+  let of_json_exn = function
     | `Int 1 -> File
     | `Int 2 -> Module
     | `Int 3 -> Namespace

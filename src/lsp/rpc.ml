@@ -77,6 +77,11 @@ module Headers = struct
     loop initial
 end
 
+module Json = struct
+  include Json
+  let of_json_exn = of_json
+end
+               
 module Packet = struct
   type t = {
     id: int option [@default None];
@@ -117,7 +122,7 @@ let read rpc =
   in
 
   read_content rpc >>= parse_json >>= (fun j ->
-    try Ok (Packet.of_json j) with _exn -> Error "oups"
+    try Ok (Packet.of_json_exn j) with _exn -> Error "oups"
   )
 
 module Response = struct
@@ -253,26 +258,24 @@ module Message = struct
     | Request : int * 'result Request.t -> t
     | Client_notification : Client_notification.t -> t
 
-  let parse_result f v =
-    try Ok (f v) with _exn -> Utils.Result.errorf "unable to parse value"
+  (* let parse_result f v = *)
+  (*   try Ok (f v) with _exn -> Utils.Result.errorf "unable to parse value" *)
 
   let parse packet =
-    (* let open Utils.Result.Infix in *)
-    let (>>=) v f =
-      try
-        f v
-      with _exn ->
-        log ~title:"debug" "an error in the bind function";
-        Utils.Result.errorf "oups"
-    in
+    let open Utils.Result.Infix in
+    (* let (>>=) v f = *)
+    (*   try *)
+    (*     f v *)
+    (*   with _exn -> *)
+    (*     log ~title:"debug" "an error in the bind function"; *)
+    (*     Utils.Result.errorf "oups" *)
+    (* in *)
     match packet.Packet.id with
     | Some id ->
       begin match packet.method_ with
       | "initialize" ->
-         let open Utils.Result.Infix in
          log ~title:"debug" "initializing workspace";
-         let parse = parse_result Protocol.Initialize.params_of_json in
-         parse packet.params >>= fun params ->
+         Protocol.Initialize.params_of_json packet.params >>= fun params ->
          log ~title:"debug" "initialization done";
          Ok (Initialize (id, params))
       | "shutdown" ->
@@ -360,7 +363,9 @@ let start init_state handler ic oc =
 
   let read_message rpc =
     read rpc >>= fun packet ->
-    Message.parse packet
+    match Message.parse packet with
+    | Error _ -> Error "foo"
+    | Ok ok -> Ok ok
   in
 
   let handle_message prev_state f =
