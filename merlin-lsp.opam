@@ -19,3 +19,5 @@ depends: [
   "ppx_deriving_yojson"
   "mdx" {with-test & >= "1.3.0"}
 ]
+synopsis:
+  "LSP frontend for Merlin"
