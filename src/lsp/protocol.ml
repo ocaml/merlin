@@ -572,9 +572,9 @@ module Initialize = struct
    * We use the "can_" prefix for OCaml naming reasons; it's absent in LSP *)
 
   type synchronization = {
-    willSave: bool;  (* client can send textDocument/willSave *)
-    willSaveWaitUntil: bool;  (* textDoc.../willSaveWaitUntil *)
-    didSave: bool;  (* textDocument/didSave *)
+    willSave: bool [@default false];  (* client can send textDocument/willSave *)
+    willSaveWaitUntil: bool [@default false];  (* textDoc.../willSaveWaitUntil *)
+    didSave: bool [@default false];  (* textDocument/didSave *)
   } [@@deriving yojson { strict = false }]
 
   let synchronization_empty = {
@@ -584,7 +584,7 @@ module Initialize = struct
   }
 
   type completionItem = {
-    snippetSupport: bool;  (* client can do snippets as insert text *)
+    snippetSupport: bool [@default false];  (* client can do snippets as insert text *)
   } [@@deriving yojson { strict = false }]
 
   let completionItem_empty = {
@@ -634,7 +634,8 @@ module Initialize = struct
   }
 
   type workspaceEdit = {
-    documentChanges: bool;  (* client supports versioned doc changes *)
+    (** client supports versioned doc changes *)
+    documentChanges: bool [@default false];
   } [@@deriving yojson { strict = false }]
 
   let workspaceEdit_empty = {
@@ -642,9 +643,10 @@ module Initialize = struct
   }
 
   type workspaceClientCapabilities = {
-    applyEdit: bool [@default false];  (* client supports appling batch edits *)
+    (** client supports appling batch edits *)
+    applyEdit: bool [@default false];
     workspaceEdit: workspaceEdit [@default workspaceEdit_empty];
-    (* omitted: dynamic-registration fields *)
+    (** omitted: dynamic-registration fields *)
   } [@@deriving yojson { strict = false }]
 
   let workspaceClientCapabilities_empty = {
@@ -653,9 +655,12 @@ module Initialize = struct
   }
 
   type windowClientCapabilities = {
-    status: bool;  (* Nuclide-specific: client supports window/showStatusRequest *)
-    progress: bool;  (* Nuclide-specific: client supports window/progress *)
-    actionRequired: bool;  (* Nuclide-specific: client supports window/actionRequired *)
+    (* Nuclide-specific: client supports window/showStatusRequest *)
+    status: bool [@default false];
+    (* Nuclide-specific: client supports window/progress *)
+    progress: bool [@default false];
+    (* Nuclide-specific: client supports window/actionRequired *)
+    actionRequired: bool [@default false];
   } [@@deriving yojson { strict = false }]
 
   let windowClientCapabilities_empty = {
@@ -665,7 +670,8 @@ module Initialize = struct
   }
 
   type telemetryClientCapabilities = {
-    connectionStatus: bool;  (* Nuclide-specific: client supports telemetry/connectionStatus *)
+    (* Nuclide-specific: client supports telemetry/connectionStatus *)
+    connectionStatus: bool [@default false];
   } [@@deriving yojson { strict = false }]
 
   let telemetryClientCapabilities_empty = {
