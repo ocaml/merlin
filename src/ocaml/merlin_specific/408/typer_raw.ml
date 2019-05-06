@@ -55,7 +55,6 @@ let fresh_env () =
   List.fold_right ~f:open_implicit_module
     !Clflags.open_modules ~init:env
 
-
 module Rewrite_loc = struct
   let queue = ref []
 

@@ -662,6 +662,12 @@ let find_same_module id tbl =
     when Ident.persistent id && not (Ident.name id = !current_unit) ->
       Persistent
 
+let find_name_module ~mark s tbl =
+  match IdTbl.find_name ~mark s tbl with
+  | x -> x
+  | exception Not_found when s <> !current_unit ->
+      Pident (Ident.create_persistent s), Persistent
+
 (* Persistent structure descriptions *)
 
 type pers_struct =
@@ -1341,37 +1347,31 @@ and lookup_module_descr ?loc ~mark lid env =
 and lookup_module ~load ?loc ~mark lid env : Path.t =
   match lid with
     Lident s ->
-      begin match IdTbl.find_name ~mark s env.modules with
-      | exception Not_found when !Clflags.transparent_modules && not load ->
-          check_pers_struct s
-            ~loc:(Option.value loc ~default:Location.none);
-          Path.Pident (Ident.create_persistent s)
-      | p, data ->
-          begin match data with
-          | Value (data, _) ->
-              let {md_loc; md_attributes; md_type} =
-                EnvLazy.force subst_modtype_maker data
-              in
-              if mark then mark_module_used s md_loc;
-              begin match md_type with
-              | Mty_ident (Path.Pident id) when Ident.name id = "#recmod#" ->
-                  (* see #5965 *)
-                  raise Recmodule
-              | _ -> ()
-              end;
-              report_alerts ?loc p
-                (Builtin_attributes.alerts_of_attrs md_attributes)
-          | Persistent ->
-              if !Clflags.transparent_modules && not load then
-                check_pers_struct s
-                  ~loc:(Option.value loc ~default:Location.none)
-              else begin
-                let ps = find_pers_struct s in
-                report_alerts ?loc p ps.ps_comps.alerts
-              end
-          end;
-          p
-      end
+        let (p, data) = find_name_module ~mark s env.modules in
+        begin match data with
+        | Value (data, _) ->
+            let {md_loc; md_attributes; md_type} =
+              EnvLazy.force subst_modtype_maker data
+            in
+            if mark then mark_module_used s md_loc;
+            begin match md_type with
+            | Mty_ident (Path.Pident id) when Ident.name id = "#recmod#" ->
+                (* see #5965 *)
+                raise Recmodule
+            | _ -> ()
+            end;
+            report_alerts ?loc p
+              (Builtin_attributes.alerts_of_attrs md_attributes)
+        | Persistent ->
+            if !Clflags.transparent_modules && not load then
+              check_pers_struct s
+                ~loc:(Option.value loc ~default:Location.none)
+            else begin
+              let ps = find_pers_struct s in
+              report_alerts ?loc p ps.ps_comps.alerts
+            end
+        end;
+        p
   | Ldot(l, s) ->
       let (p, descr) = lookup_module_descr ?loc ~mark l env in
       begin match get_components descr with
