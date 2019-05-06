@@ -69,8 +69,9 @@
     "value": "Unbound constructor MT",
     "notifications": []
   }
+
   $ $MERLIN single type-expression -expression "MT" -position end -filename test.ml < test.ml | \
-  > grep -v "^ *val "
+  > grep -v "^ *\(val\|type\) "
   {
     "class": "return",
     "value": "sig
@@ -78,9 +79,11 @@
     "notifications": []
   }
 
-  $ $MERLIN single type-expression -expression "f (" -position start -filename test.ml < test.ml
+  $ $MERLIN single type-expression -expression "f (" -position start \
+  > -filename test.ml < test.ml | \
+  > sed 's/\("value": \)".*\.Error.*",/\1<syntax error>,/'
   {
     "class": "return",
-    "value": "Parser_raw.MenhirBasics.Error",
+    "value": <syntax error>,
     "notifications": []
   }
