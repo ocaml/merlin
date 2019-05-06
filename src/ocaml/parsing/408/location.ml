@@ -590,7 +590,7 @@ let error_style () =
                                  *)
 
 let batch_mode_printer : report_printer =
-  let pp_loc _self _report ppf loc =
+  let pp_loc _self _report _ppf _loc =
     (*
     let tag = match report.kind with
       | Report_warning_as_error _
@@ -599,9 +599,7 @@ let batch_mode_printer : report_printer =
       | Report_warning _
       | Report_alert _ -> "warning"
     in
-    *)
-    let highlight _ppf _loc = ()
-                              (*
+    let highlight ppf loc =
       match error_style () with
       | Misc.Error_style.Contextual ->
           if is_quotable_loc loc then
@@ -610,9 +608,10 @@ let batch_mode_printer : report_printer =
               tag [loc]
       | Misc.Error_style.Short ->
           ()
-                                 *)
     in
     Format.fprintf ppf "@[<v>%a:@ %a@]" print_loc loc highlight loc
+    *)
+    ()
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
