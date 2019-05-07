@@ -400,7 +400,7 @@ let let_operator startpos endpos op bindings cont =
 %token LBRACKETPERCENT [@symbol "[%"]
 %token LBRACKETPERCENTPERCENT [@symbol "[%%"]
 %token LESS [@symbol "<"]
-%token LESSMINUS [@symbol "<-"]
+%token LESSMINUS [@symbol "<-"] [@cost 2]
 %token LET [@symbol "let"]
 %token <string> LIDENT [@cost 2] [@recovery "_"][@printer Printf.sprintf "LIDENT(%S)"] [@symbol "<ident>"]
 %token LPAREN [@symbol ")"]

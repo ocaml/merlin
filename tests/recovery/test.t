@@ -88,3 +88,17 @@ FIXME: the syntax error message is off the mark.
     ],
     "notifications": []
   }
+
+  $ echo "let test x = match x with | None -> exit 1 | Some pkg -> pkg end" | \
+  > $MERLIN single dump -what parsetree -filename "lessminus.ml" | \
+  > sed 's/ $//g'
+  {
+    "class": "return",
+    "value": "let test x =
+    match x with
+    | None -> ((exit 1)[@merlin.loc ])
+    | Some pkg -> ((pkg)[@merlin.loc ])
+  
+  ",
+    "notifications": []
+  }
