@@ -153,7 +153,14 @@ let map_entry f entry =
 
 let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
   let ident = match path with
-    | Some path -> Ident.create_persistent (* FIXME *) (Path.last path)
+    | Some path ->
+      (* this is not correct: the ident is not persistent, the printing of some
+         polymorphic variant type could (perhaps) be incorrect because of this
+         (though I haven't tried to add a test). But it would be incorrect with
+         any ident with synthesize at this point anyway.
+         And create_persistent is the only function which is available on all
+         the versions of ocaml we support. *)
+      Ident.create_persistent (Path.last path)
     | None -> Extension.ident
   in
   let kind, text =
