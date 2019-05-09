@@ -8,4 +8,14 @@ Do the thing:
 
   $ echo "let () = Bar.the_function ()" | \
   > $MERLIN single locate -look-for ml -position 1:15 -filename ./example.ml
-  runs forever...
+  {
+    "class": "return",
+    "value": {
+      "file": "tests/locate/looping-substitution/test.ml",
+      "pos": {
+        "line": 5,
+        "col": 4
+      }
+    },
+    "notifications": []
+  }

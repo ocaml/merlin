@@ -450,12 +450,6 @@ and state =
   }
 
 let rec follow ~remember_loc ~state scopes ?before trie path =
-  let try_next_scope scopes path =
-    match scopes with
-    | [] -> Resolves_to (path, state) (* no englobing scope, give up *)
-    | (trie, before) :: scopes ->
-      follow ~remember_loc ~state scopes ?before trie path
-  in
   let trie, before, path, scopes, state =
     let rec try_substing_once path = function
       | [] -> None
@@ -484,6 +478,12 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
       | path, (trie, before) :: scopes, substs ->
         trie, before, path, scopes, { state with substs }
       | _ -> assert false
+  in
+  let try_next_scope () =
+    match scopes with
+    | [] -> Resolves_to (path, state) (* no englobing scope, give up *)
+    | (trie, before) :: scopes ->
+      follow ~remember_loc ~state scopes ?before trie path
   in
   match Namespaced_path.head_exn path with
   | Applied_to path ->
@@ -521,7 +521,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
           (* We wants the ones closed last to be at the beginning of the list. *)
           Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
       with
-      | [] -> try_next_scope scopes path
+      | [] -> try_next_scope ()
       | { loc; doc; node; namespace = _ } :: _ ->
         let inspect_functor_arg : Trie.node -> _ = function
           | Leaf -> Noop (* fuck it eh. *)
@@ -650,7 +650,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
         inspect_node state node
     with
     | Not_found ->
-      try_next_scope scopes path
+      try_next_scope ()
 
 let initial_state = { substs = []; functor_arguments = [] }
 
