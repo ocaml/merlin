@@ -569,8 +569,9 @@ The return value has the shape:
   (* Used only for testing *)
   command "dump"
     ~spec:[
-      arg "-what" "<parsetree|printast|env|fullenv|browse|tokens|flags\
-                   |warnings|exn|paths> Information to dump ()"
+      arg "-what" "<source|parsetree|ppxed-source|ppxed-parsetree|env|fullenv\
+                   |browse|tokens|flags|warnings|exn|paths> \
+                   Information to dump ()"
         (Marg.param "string" (fun what _ -> what));
     ]
     ~default:""
