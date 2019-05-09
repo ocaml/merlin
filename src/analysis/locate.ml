@@ -236,8 +236,6 @@ module Utils = struct
       || List.exists Predef.builtin_values ~f
     | _ -> false
 
-  let is_ghost_loc { Location. loc_ghost; _ } = loc_ghost
-
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
      This is only used when looking for ml files, not cmts. Indeed for cmts we
@@ -772,7 +770,7 @@ end = struct
       Some x
 end
 
-let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
+let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident =
   File_switching.reset ();
   Fallback.reset ();
   Preferences.set ml_or_mli;
@@ -780,7 +778,6 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
     "present in the environment, walking up the typedtree looking for '%s'"
     (Namespaced_path.to_unique_string path);
   try
-    if not (Utils.is_ghost_loc loc) then Fallback.set loc;
     let lazy trie = lazy_trie in
     match locate ~config ~context:(Initial pos) path trie with
     | Found (loc, doc) -> `Found (loc, doc)
@@ -793,21 +790,21 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
 
 (* Only used to retrieve documentation *)
-let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
+let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, _) =
   let str_ident = Path.name path in
   let tagged_path = Namespaced_path.of_path ~namespace path in
-  locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
+  locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident
     ~lazy_trie
 
 let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
-  | Some (path, tagged_path, loc) ->
+  | Some (path, tagged_path, _) ->
     if Utils.is_builtin_path path then
       `Builtin
     else
-      locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
+      locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   let browse = Mbrowse.of_typedtree local_defs in
