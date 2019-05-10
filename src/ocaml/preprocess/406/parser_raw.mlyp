@@ -684,7 +684,7 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token SEMI [@symbol ";"]
 %token SEMISEMI [@symbol ";;"]
 %token SHARP [@symbol "#"]
-%token <string> SHARPOP [@cost 2] [@recovery ""][@printer Printf.sprintf "SHARPOP(%S)"] [@symbol "#<op>"]
+%token <string> HASHOP [@cost 2] [@recovery ""][@printer Printf.sprintf "HASHOP(%S)"] [@symbol "#<op>"]
 %token SIG [@symbol "sig"]
 %token STAR [@symbol "*"]
 %token <string * string option> STRING [@cost 1] [@recovery ("", None)][@printer string_of_STRING]
@@ -776,7 +776,7 @@ The precedences must be listed from low to high.
 %left     prec_escape
 %nonassoc below_SHARP
 %nonassoc SHARP                         /* simple_expr/toplevel_directive */
-%left     SHARPOP
+%left     HASHOP
 %nonassoc below_DOT
 %nonassoc DOT DOTOP
 /* Finally, the first tokens of simple_expr are above everything else. */
@@ -1722,7 +1722,7 @@ let_pattern [@recovery default_pattern ()]:
       { unclosed("{<", 3, ">}", 5) }*)
   | simple_expr SHARP mkrhs(label)
       { mkexp(Pexp_send($1, $3)) }
-  | simple_expr SHARPOP simple_expr
+  | simple_expr HASHOP simple_expr
       { mkinfix $1 $2 $3 }
   | LPAREN MODULE ext_attributes module_expr RPAREN
       { mkexp_attrs (Pexp_pack $4) $3 }
@@ -2565,7 +2565,7 @@ operator:
   | DOTOP LBRACKET RBRACKET LESSMINUS           { "."^ $1 ^ "[]<-" }
   | DOTOP LBRACE RBRACE                         { "."^ $1 ^"{}" }
   | DOTOP LBRACE RBRACE LESSMINUS               { "."^ $1 ^ "{}<-" }
-  | SHARPOP                                     { $1 }
+  | HASHOP                                     { $1 }
   | BANG                                        { "!" }
   | PLUS                                        { "+" }
   | PLUSDOT                                     { "+." }

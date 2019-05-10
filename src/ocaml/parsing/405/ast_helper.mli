@@ -460,3 +460,11 @@ type let_bindings =
 (* merlin specific *)
 
 val no_label : arg_label
+(* backported from 4.08 *)
+
+(** {1 Attributes} *)
+module Attr : sig
+  val mk: ?loc:loc -> str -> payload -> attribute
+
+  val as_tuple : attribute -> str * payload
+end

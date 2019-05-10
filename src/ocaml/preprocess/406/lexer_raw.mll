@@ -528,12 +528,12 @@ rule token state = parse
   | '#' (symbolchar | '#') +
             { let s = Lexing.lexeme lexbuf in
               return (try Hashtbl.find state.keywords s
-                      with Not_found -> SHARPOP s) }
+                      with Not_found -> HASHOP s) }
   (* Old style js_of_ocaml support is implemented by generating a custom token *)
   | '#' (symbolchar | '#') +
             { let s = Lexing.lexeme lexbuf in
               return (try Hashtbl.find state.keywords s
-                      with Not_found -> SHARPOP s) }
+                      with Not_found -> HASHOP s) }
   | eof { return EOF }
 
   | _

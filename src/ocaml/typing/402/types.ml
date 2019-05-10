@@ -305,3 +305,15 @@ and ext_status =
     Text_first                     (* first constructor of an extension *)
   | Text_next                      (* not first constructor of an extension *)
   | Text_exception                 (* an exception *)
+
+(* Backported from 4.08 *)
+
+let signature_item_id = function
+  | Sig_value (id, _)
+  | Sig_type (id, _, _)
+  | Sig_typext (id, _, _)
+  | Sig_module (id, _, _)
+  | Sig_modtype (id, _)
+  | Sig_class (id, _, _)
+  | Sig_class_type (id, _, _)
+    -> id

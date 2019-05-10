@@ -295,3 +295,7 @@ and ext_status =
     Text_first                     (* first constructor in an extension *)
   | Text_next                      (* not first constructor in an extension *)
   | Text_exception
+
+(* Backported from 4.08 *)
+
+val signature_item_id : signature_item -> Ident.t

@@ -389,8 +389,8 @@ let current_unit = srefk ""
 
 (* Persistent structure descriptions *)
 
-type pers_typemap = (Path.t list Path_aux.Map.t
-                     * Path.t list Path_aux.Map.t) option
+type pers_typemap = (Path.t list Path.Map.t
+                     * Path.t list Path.Map.t) option
 
 type pers_struct = {
   ps_name: string;
@@ -2536,3 +2536,7 @@ let check_state_consistency () =
     end
 
 let with_cmis f = f ()
+
+(* helper for merlin *)
+
+let add_merlin_extension_module id mty env = add_module id mty env

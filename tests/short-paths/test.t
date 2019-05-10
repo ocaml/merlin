@@ -15,7 +15,7 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type: class b : 'a -> a
-         The method x has type 'a where 'a is unbound"
+  The method x has type 'a where 'a is unbound"
       },
       {
         "start": {
@@ -44,8 +44,8 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type:
-           class test : ?a:'a -> object method b : 'b end
-         The method b has type 'b where 'b is unbound"
+    class test : ?a:'a -> object method b : 'b end
+  The method b has type 'b where 'b is unbound"
       },
       {
         "start": {
@@ -88,8 +88,8 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type:
-           class test : 'a -> object method b : 'b end
-         The method b has type 'b where 'b is unbound"
+    class test : 'a -> object method b : 'b end
+  The method b has type 'b where 'b is unbound"
       },
       {
         "start": {
@@ -131,8 +131,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type t = M.t
-         but an expression was expected of type unit"
+        "message": "This expression has type t = M.t but an expression was expected of type unit"
       }
     ],
     "notifications": []
@@ -155,7 +154,7 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type: class b : 'a -> a
-         The method x has type 'a where 'a is unbound"
+  The method x has type 'a where 'a is unbound"
       },
       {
         "start": {
@@ -184,8 +183,8 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type:
-           class test : ?a:'a -> object method b : 'b end
-         The method b has type 'b where 'b is unbound"
+    class test : ?a:'a -> object method b : 'b end
+  The method b has type 'b where 'b is unbound"
       },
       {
         "start": {
@@ -228,8 +227,8 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type:
-           class test : 'a -> object method b : 'b end
-         The method b has type 'b where 'b is unbound"
+    class test : 'a -> object method b : 'b end
+  The method b has type 'b where 'b is unbound"
       },
       {
         "start": {
@@ -271,8 +270,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type N.O.t but an expression was expected of type
-           unit"
+        "message": "This expression has type N.O.t but an expression was expected of type unit"
       }
     ],
     "notifications": []

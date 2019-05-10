@@ -43,7 +43,7 @@ type set = string list
 
 (* Private definitions are put in a fake module named "_" with the following
  * ident. Use it to test or find private definitions. *)
-let ident = Ident.create "_"
+let ident = Ident.create_persistent "_"
 
 (** Definition of each extension *)
 let ext_lwt = {
@@ -158,6 +158,7 @@ let type_sig env sg =
   let sg = Typemod.transl_signature env sg in
   sg.Typedtree.sig_type
 
+(*
 let add_hidden_signature env sign =
   let add_item env comp =
     match comp with
@@ -170,6 +171,7 @@ let add_hidden_signature env sign =
     | Types.Sig_class_type(id, decl, _) -> Env.add_cltype (Ident.hide id) decl env
   in
   List.fold_left ~f:add_item ~init:env sign
+*)
 
 let register exts env =
   (* Log errors ? *)
@@ -187,7 +189,6 @@ let register exts env =
     try_type prv, try_type pub
   in
   let fakes, tops = List.split (List.map ~f:process_ext exts) in
-  let env = add_hidden_signature env (List.concat tops) in
-  let env = Env.add_module ident (Types.Mty_signature
-                                    (List.concat fakes)) env in
-  env
+  let env = Env.add_signature (List.concat tops) env in
+  Env.add_merlin_extension_module ident
+    (Types.Mty_signature (List.concat fakes)) env

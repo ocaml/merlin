@@ -49,10 +49,7 @@ let log_flush () =
   | None -> ()
   | Some oc -> flush oc
 
-(* [Printf.ifprintf] doesn't have the right type before ocaml/ocaml#201, and
-   [make_iprintf] doesn't exist before ocaml/ocaml#267 *)
-let ifprintf oc (CamlinternalFormatBasics.Format (fmt, _)) =
-  CamlinternalFormat.make_printf (fun _ _ -> ()) oc End_of_acc fmt
+open Logger_helper
 
 let log ~section ~title fmt =
   match !destination with

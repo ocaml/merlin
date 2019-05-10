@@ -130,7 +130,7 @@ end  = struct
     ref (Thunk x)
 end
 
-module PathMap = Map.Make(Path)
+module PathMap = Path.Map
 
 type summary =
     Env_empty
@@ -2751,3 +2751,7 @@ let check_state_consistency () =
     end
 
 let with_cmis f = f ()
+
+(* helper for merlin *)
+
+let add_merlin_extension_module id mty env = add_module id mty env

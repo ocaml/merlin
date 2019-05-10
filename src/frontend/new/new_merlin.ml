@@ -108,7 +108,7 @@ let run = function
               | None | Some `Already_displayed ->
                 ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
               | Some (`Ok err) ->
-                Location.report_error Format.str_formatter err;
+                Location.print_main Format.str_formatter err;
                 ("error", `String (Format.flush_str_formatter ()))
           in
           let total_time = Misc.time_spent () -. start_time in

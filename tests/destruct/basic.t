@@ -8,7 +8,7 @@ TODO: test all error cases
   > EOF
   {
     "class": "error",
-    "value": "Error: Nothing to do",
+    "value": "Nothing to do",
     "notifications": []
   }
 

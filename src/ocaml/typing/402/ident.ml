@@ -53,6 +53,7 @@ let same i1 i2 = i1 = i2
        else i2.stamp = 0 && i1.name = i2.name *)
 
 let binding_time i = i.stamp
+let stamp i = i.stamp
 
 let current_time() = !currentstamp
 let set_current_time t = currentstamp := max !currentstamp t

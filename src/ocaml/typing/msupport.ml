@@ -68,7 +68,7 @@ let catch_errors warnings caught f =
   Warnings.restore warnings;
   errors := (Some (caught,Btype.TypeHash.create 3));
   Misc.try_finally f
-    (fun () ->
+    ~always:(fun () ->
        errors := errors';
        Warnings.restore warnings')
 
@@ -117,27 +117,26 @@ let flush_saved_types () =
   | [] -> []
   | parts ->
     Cmt_format.set_saved_types [];
-    let open Parsetree in
-    let loc = Location.none in
-    let pexp_desc = Pexp_constant (Saved_parts.store parts) in
-    let pexp = { pexp_desc; pexp_loc = loc; pexp_attributes = [] } in
-    let pstr_desc = Pstr_eval (pexp, []) in
-    let pstr = { pstr_desc; pstr_loc = loc } in
-    [Saved_parts.attribute, Parsetree.(PStr [pstr])]
+    let open Ast_helper in
+    let pexp = Exp.constant (Saved_parts.store parts) in
+    let pstr = Str.eval pexp in
+    [Attr.mk (Saved_parts.attribute) (Parsetree.PStr [pstr])]
 
 let rec get_saved_types_from_attributes = function
   | [] -> []
-  | (attr, str) :: _
-    when attr = Saved_parts.attribute ->
-    let open Parsetree in
-    begin match str with
-    | PStr({pstr_desc =
-              Pstr_eval ({pexp_desc = Pexp_constant key; _ } ,_)
-           ; _ } :: _) ->
-        Saved_parts.find key
-      | _ -> []
-    end
-  | _ :: tl -> get_saved_types_from_attributes tl
+  | attr :: attrs ->
+    let (attr, str) = Ast_helper.Attr.as_tuple attr in
+    if attr = Saved_parts.attribute then
+      let open Parsetree in
+      begin match str with
+      | PStr({pstr_desc =
+                Pstr_eval ({pexp_desc = Pexp_constant key; _ } ,_)
+            ; _ } :: _) ->
+          Saved_parts.find key
+        | _ -> []
+      end
+    else
+      get_saved_types_from_attributes attrs
 
 let with_warning_attribute ?warning_attribute f =
   match warning_attribute with

@@ -434,7 +434,7 @@ let let_operator startpos endpos op bindings cont =
 %token SEMI [@symbol ";"]
 %token SEMISEMI [@symbol ";;"]
 %token SHARP [@symbol "#"]
-%token <string> SHARPOP [@cost 2] [@recovery ""][@printer Printf.sprintf "SHARPOP(%S)"] [@symbol "#."]
+%token <string> HASHOP [@cost 2] [@recovery ""][@printer Printf.sprintf "HASHOP(%S)"] [@symbol "#."]
 %token SIG [@symbol "sig"]
 %token STAR [@symbol "*"]
 %token <string * string option> STRING [@cost 1] [@recovery ("", None)][@printer string_of_STRING] [@symbol "<string>"]
@@ -528,7 +528,7 @@ The precedences must be listed from low to high.
 %left     prec_escape
 %nonassoc below_SHARP
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
-%left     SHARPOP
+%left     HASHOP
 %nonassoc below_DOT
 %nonassoc DOT
 
@@ -1299,7 +1299,7 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_override(List.rev $4)))) }
 | simple_expr SHARP [@shift_token (1,LIDENT "")] label
     { mkexp $startpos $endpos (Pexp_send($1, $3)) }
-| simple_expr SHARPOP [@shift_token (1,LIDENT "")] simple_expr
+| simple_expr HASHOP [@shift_token (1,LIDENT "")] simple_expr
     { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
 | LPAREN [@unclosed "("] MODULE module_expr RPAREN [@close]
     { mkexp $startpos $endpos  (Pexp_pack $3) }
@@ -2103,7 +2103,7 @@ operator :
     { $1 }
 | LETOP
     { $1 }
-| SHARPOP
+| HASHOP
     { $1 }
 | BANG
     { "!" }

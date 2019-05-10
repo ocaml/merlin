@@ -221,7 +221,7 @@ let set_printing_env env =
 
 let wrap_printing_env env f =
   set_printing_env (Env.update_short_paths env);
-  try_finally f (fun () -> set_printing_env Env.empty)
+  try_finally f ~always:(fun () -> set_printing_env Env.empty)
 
 type type_result = Short_paths.type_result =
   | Nth of int

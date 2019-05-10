@@ -487,3 +487,7 @@ type label_description =
     lbl_loc: Location.t;
     lbl_attributes: Parsetree.attributes;
   }
+
+(* Backported from 4.08 *)
+
+val signature_item_id : signature_item -> Ident.t

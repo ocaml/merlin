@@ -24,7 +24,7 @@ type type_replacement =
   | Path of Path.t
   | Type_function of { params : type_expr list; body : type_expr }
 
-module PathMap = Map.Make(Path)
+module PathMap = Path.Map
 
 type t =
   { types: type_replacement PathMap.t;

@@ -19,7 +19,7 @@ should reach top-level
         "sub": [],
         "valid": true,
         "message": "The type constructor p expects 0 argument(s),
-         but is here applied to 1 argument(s)"
+  but is here applied to 1 argument(s)"
       },
       {
         "start": {
@@ -205,7 +205,7 @@ unused case after
         "sub": [],
         "valid": true,
         "message": "This variant pattern is expected to have type t
-         The constructor Bb does not belong to type t"
+  The constructor Bb does not belong to type t"
       }
     ],
     "notifications": []

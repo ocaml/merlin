@@ -29,7 +29,7 @@ Remove the cmt:
 Introduce a type error in a.ml:
 
   $ echo "let () = 3" >> a.ml
-  $ $OCAMLC -c -bin-annot a.ml
+  $ env OCAML_ERROR_STYLE=short $OCAMLC -c -bin-annot a.ml
   File "a.ml", line 2, characters 9-10:
   Error: This expression has type int but an expression was expected of type
            unit

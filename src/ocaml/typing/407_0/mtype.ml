@@ -359,8 +359,8 @@ let contains_type env mty =
 
 (* Remove module aliases from a signature *)
 
-module PathSet = Set.Make (Path)
-module PathMap = Map.Make (Path)
+module PathSet = Path.Set
+module PathMap = Path.Map
 
 let rec get_prefixes = function
     Pident _ -> PathSet.empty

@@ -217,21 +217,31 @@ let json_of_type_loc (loc,desc,tail) =
         | `Tail_call -> "call")
   ]
 
-let json_of_error {Location. msg; sub; loc; source; _} =
-  let msg = String.trim msg in
-  let typ = match source with
-      | Location.Lexer   -> "lexer"
-      | Location.Parser  -> "parser"
-      | Location.Typer   -> "typer"
-      | Location.Warning -> "warning"
-      | Location.Unknown -> "unknown"
-      | Location.Env     -> "env"
+let json_of_error (error : Location.error) =
+  let typ =
+    match error.source with
+    | Location.Lexer   -> "lexer"
+    | Location.Parser  -> "parser"
+    | Location.Typer   -> "typer"
+    | Location.Warning -> "warning"
+    | Location.Unknown -> "unknown"
+    | Location.Env     -> "env"
   in
-  let of_sub {Location. msg; loc; _} =
-    with_location ~skip_none:true loc ["message", `String (String.trim msg)] in
+  let of_sub loc sub =
+    let msg =
+      Location.print_sub_msg Format.str_formatter sub;
+      String.trim (Format.flush_str_formatter ())
+    in
+    with_location ~skip_none:true loc ["message", `String msg]
+  in
+  let loc = Location.loc_of_report error in
+  let msg =
+    Location.print_main Format.str_formatter error;
+    String.trim (Format.flush_str_formatter ())
+  in
   let content = [
     "type"    , `String typ;
-    "sub"     , `List (List.map ~f:of_sub sub);
+    "sub"     , `List (List.map ~f:(of_sub loc) error.sub);
     "valid"   , `Bool true;
     "message" , `String msg;
   ] in

@@ -104,7 +104,7 @@ rule token = parse
             { INFIXOP3(Lexing.lexeme lexbuf) }
   | '#' (symbolchar | '#') +
             { let s = Lexing.lexeme lexbuf in
-              SHARPOP s }
+              HASHOP s }
   | eof { EOF }
   | int_literal
   | float_literal

@@ -24,6 +24,7 @@ val same: t -> t -> bool
 val compare: t -> t -> int
 val isfree: Ident.t -> t -> bool
 val binding_time: t -> int
+val scope: t -> int
 
 val nopos: int
 
@@ -43,3 +44,21 @@ type typath =
 
 val constructor_typath: t -> typath
 val is_constructor_typath: t -> bool
+
+(* Backported from 4.08 *)
+
+module Map : Map.S with type key = t
+module Set : Set.S with type elt = t
+
+(* Added for merlin *)
+
+val to_string_list : t -> string list
+
+module Nopos : sig
+  type nopos = private
+    | Pident of Ident.t
+    | Pdot of t * string
+    | Papply of t * t
+
+  val view : t -> nopos
+end
