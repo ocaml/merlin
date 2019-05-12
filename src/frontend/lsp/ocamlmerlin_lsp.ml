@@ -56,9 +56,9 @@ module Document : sig
 end = struct
   type t = {
     tdoc : Lsp.Text_document.t;
-    source : Msource.t Lazy.t;
-    pipeline : Mpipeline.t Lazy.t;
-    config : Mconfig.t Lazy.t;
+    source : Msource.t;
+    pipeline : Mpipeline.t;
+    config : Mconfig.t;
   }
 
   let normalize_line_endings text =
@@ -66,58 +66,46 @@ end = struct
     text
 
   let uri doc = Lsp.Text_document.documentUri doc.tdoc
-  let source doc = Lazy.force doc.source
-  let pipeline doc = Lazy.force doc.pipeline
+  let source doc = doc.source
+  let pipeline doc = doc.pipeline
   let version doc = Lsp.Text_document.version doc.tdoc
 
-  let make_config path =
-    let config = Mconfig.initial in
-    let query = config.query in
+  let make_config uri =
+    let path = Lsp.Uri.to_path uri in
+    let mconfig = Mconfig.initial in
     let path = Misc.canonicalize_filename path in
     let filename = Filename.basename path in
     let directory = Filename.dirname path in
-    let t = {
-      config with query = {
-        query with
+    let mconfig = {
+      mconfig with query = {
+        mconfig.query with
         verbosity = 1;
         filename;
         directory;
       }
     } in
-    Mconfig.load_dotmerlins t ~filenames:[
+    Mconfig.load_dotmerlins mconfig ~filenames:[
       let base = "." ^ filename ^ ".merlin" in
       Filename.concat directory base
     ]
 
   let make ?(version=0) ~uri ~text () =
     let tdoc = Lsp.Text_document.make ~version uri text in
-    let path = Lsp.Uri.to_path uri in
     (* we can do that b/c all text positions in LSP are line/col *)
     let text = normalize_line_endings text in
-    let source = lazy (Msource.make text) in
-    let config = lazy (make_config path) in
-    let pipeline = lazy (
-      let config = Lazy.force config in
-      let source = Lazy.force source in
-      Mpipeline.make config source)
-    in
+    let config = make_config uri in
+    let source = Msource.make text in
+    let pipeline = Mpipeline.make config source in
     {tdoc; source; config; pipeline;}
 
   let update_text ?version change doc =
     let tdoc = Lsp.Text_document.apply_content_change ?version change doc.tdoc in
     let text = Lsp.Text_document.text tdoc in
     log ~title:"debug" "TEXT\n%s" text;
-    let source = lazy (Msource.make text) in
-    let pipeline = lazy (
-      let config = Lazy.force doc.config in
-      let source = Lazy.force source in
-      Mpipeline.make config source)
-    in
-    {
-      tdoc;
-      config = doc.config;
-      source; pipeline;
-    }
+    let config = make_config (Lsp.Text_document.documentUri tdoc) in
+    let source = Msource.make text in
+    let pipeline = Mpipeline.make config source in
+    {tdoc; config; source; pipeline;}
 end
 
 module Document_store : sig
@@ -672,22 +660,18 @@ let on_request :
 
 let on_notification rpc store (notification : Lsp.Rpc.Client_notification.t) =
   let open Lsp.Utils.Result.Infix in
-
   match notification with
 
   | TextDocumentDidOpen params ->
-    let notifications = ref [] in
-    Logger.with_notifications notifications @@ fun () ->
-      File_id.with_cache @@ fun () ->
-        let doc =
-          Document.make
-            ~uri:params.textDocument.uri
-            ~text:params.textDocument.text
-            ()
-        in
-        Document_store.put store doc;
-        send_diagnostics rpc doc;
-        Ok store
+    let doc =
+      Document.make
+        ~uri:params.textDocument.uri
+        ~text:params.textDocument.text
+        ()
+    in
+    Document_store.put store doc;
+    send_diagnostics rpc doc;
+    Ok store
 
   | TextDocumentDidChange {textDocument = {uri; version;}; contentChanges;}  ->
     Document_store.get store uri >>= fun prev_doc ->
@@ -712,7 +696,30 @@ let on_notification rpc store (notification : Lsp.Rpc.Client_notification.t) =
     Ok store
 
 let start () =
-  Lsp.Rpc.start (Document_store.make ()) {on_initialize; on_request; on_notification;} stdin stdout;
+  let docs = Document_store.make () in
+  let prepare_and_run f =
+    (* TODO: what to do with merlin notifications? *)
+    let _notifications = ref [] in
+    Logger.with_notifications (ref []) @@ fun () ->
+    File_id.with_cache @@ f
+  in
+  let on_initialize rpc state params =
+    prepare_and_run @@ fun () ->
+    on_initialize rpc state params
+  in
+  let on_notification rpc state notif =
+    prepare_and_run @@ fun () ->
+    on_notification rpc state notif
+  in
+  let on_request rpc state caps req =
+    prepare_and_run @@ fun () ->
+    on_request rpc state caps req
+  in
+  Lsp.Rpc.start
+    docs
+    {on_initialize; on_request; on_notification;}
+    stdin
+    stdout;
   log ~title:"info" "exiting"
 
 let main () =
