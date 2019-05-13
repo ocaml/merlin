@@ -552,7 +552,7 @@ return (LOC1 . LOC2)."
           (merlin-command) command -1 "interrupted")))
     (let* ((notifications (cdr-safe (assoc 'notifications result)))
            (timing (cdr-safe (assoc 'timing result)))
-           (total (cdr-safe (assoc 'total timing)))
+           (total (cdr-safe (assoc 'cpu timing)))
            (class (cdr-safe (assoc 'class result)))
            (value (cdr-safe (assoc 'value result))))
       (merlin-client-logger (merlin-command) command total class)
