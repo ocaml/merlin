@@ -632,8 +632,14 @@ let on_request :
         List.map (fun entry -> `Keep entry) entries
     in
     let all = List.concat [labels; items] in
-    let items = List.mapi item all in
-    let resp = {Lsp.Protocol.Completion. isIncomplete = false; items;} in
+    (* max_results represents the maximum number of completion items
+     * that we send to the client. If we send too many results, clients
+     * might choke on parsing and processing. *)
+    let max_results = 100 in
+    let is_incomplete = List.length all > max_results in
+    let trimmed = if is_incomplete then Std.List.take_n max_results all else all in
+    let items = List.mapi item trimmed in
+    let resp = {Lsp.Protocol.Completion. isIncomplete = is_incomplete; items;} in
     return (store, resp)
 
   | Lsp.Rpc.Request.TextDocumentRename { textDocument = { uri }; position; newName } ->
