@@ -233,6 +233,8 @@ The association list can contain the following optional keys:
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar merlin-opam-bin-path nil)
+
 ;; If user did not specify its merlin-favourite-caml-mode, try to guess it from
 ;; the buffer being edited
 (defvar merlin-guessed-favorite-caml-mode nil)
@@ -1705,7 +1707,7 @@ Empty string defaults to jumping to all these."
       ;; cache command in merlin-buffer configuration to avoid having to shell
       ;; out to `opam` each time.
       (push (cons 'command command) merlin-buffer-configuration)
-      (when (boundp 'merlin-opam-bin-path)
+      (when merlin-opam-bin-path
         (push (cons 'env merlin-opam-bin-path) merlin-buffer-configuration)))
 
     command))
