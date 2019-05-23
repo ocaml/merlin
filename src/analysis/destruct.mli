@@ -43,7 +43,7 @@
           [let module M = (val e) in (??)]
 
       - a pattern context:
-          Here two differents behaviors can be observed:
+          Here two different behaviors can be observed:
           + if your matching is not exhaustive, it will be made exhaustive.
           + if your matching is exhaustive, it will refine the subpattern under
             the cursor if possible (i.e. if your cursor is on a variable or _ ).
@@ -54,7 +54,7 @@
 
     Final remarks:
       - Destruct will refuse to work on expression (resp. patterns) with a
-        functionnal or polymorphic type.
+        functional or polymorphic type.
 
       - Constructors of variant types will be prefixed by their path (if
         necessary) but record labels will not.

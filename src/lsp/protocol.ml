@@ -248,7 +248,7 @@ module WorkspaceEdit = struct
     documentChanges = None;
   }
 
-  (** Create a {!type:t} based on the capabilites of the client. *)
+  (** Create a {!type:t} based on the capabilities of the client. *)
   let make ~documentChanges ~uri ~version ~edits =
     match documentChanges with
     | false ->
@@ -643,7 +643,7 @@ module Initialize = struct
   }
 
   type workspaceClientCapabilities = {
-    (** client supports appling batch edits *)
+    (** client supports applying batch edits *)
     applyEdit: bool [@default false];
     workspaceEdit: workspaceEdit [@default workspaceEdit_empty];
     (** omitted: dynamic-registration fields *)

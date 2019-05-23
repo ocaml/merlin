@@ -499,7 +499,7 @@ give, but here are some key points (from an user perspective):
   - locate now works on MLI files
   - automatic reloading of .merlin files (when they are update or created), it
     is no longer necessary to restart merlin
-  - introduced a small refactoring command: rename, who renames all occurences
+  - introduced a small refactoring command: rename, who renames all occurrences
     of an identifier. See: http://yawdp.com/~def/rename.webm
 
 
@@ -521,7 +521,7 @@ This release also marks the apparition of a proper opam install script.
   + backend:
     - fixes on locate
     - print manifests even when -short-paths is set
-    - add an "occurences" command to list every occurence of an identifier ( #156 )
+    - add an "occurrences" command to list every occurrence of an identifier ( #156 )
     - new "version" command ( #180 )
     - add CPU time to log files ( #192 )
     - better error reporting from locate ( #190 )
@@ -535,7 +535,7 @@ This release also marks the apparition of a proper opam install script.
     - numerous fixes
 
   + vim:
-    - add error list independant from syntastic
+    - add error list independent from syntastic
     - fix completion for vim<=703 (#223)
 
 merlin 1.6
@@ -576,7 +576,7 @@ Sat Dec 14 19:45:06 CET 2013
 
   + backend:
     - better handling of paths (both sources and build)
-    - splitted build path into cmi and cmt path.
+    - split build path into cmi and cmt path.
       New directives "CMI" and "CMT" are now available in .merlin files ("B"
       still works as previously)
     - doesn't get confused anymore when the user switch between buffers (the

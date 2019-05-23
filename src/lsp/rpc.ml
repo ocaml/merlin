@@ -347,7 +347,7 @@ let start init_state handler ic oc =
     let start = Unix.gettimeofday () in
     let next_state = f () in
     let ellapsed = (Unix.gettimeofday () -. start) /. 1000.0 in
-    log ~title:"debug" "time ellapsed processing message: %fs" ellapsed;
+    log ~title:"debug" "time elapsed processing message: %fs" ellapsed;
     match next_state with
     | Ok next_state -> next_state
     | Error msg ->

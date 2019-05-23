@@ -174,10 +174,10 @@ let is_operator = function
         21|   in head acc
         22| }
 
-   Now for the explainations:
+   Now for the explanations:
      line 0-3:  if we're on a dot, skip it and move to the right
 
-     line 5,6:  if we're on an operator not preceeded by an opening parenthesis,
+     line 5,6:  if we're on an operator not preceded by an opening parenthesis,
                 just return that.
 
      line 7:    if we're on a type variable, don't return anything.
@@ -188,7 +188,7 @@ let is_operator = function
 
      line 8-22: two step approach:
        - line 9-15:  retrieve the identifier
-                     OR retrieve the parenthesed operator and move before the
+                     OR retrieve the parenthesized operator and move before the
                         opening parenthesis
 
        - line 16-21: retrieve the "path" prefix of the identifier/operator we

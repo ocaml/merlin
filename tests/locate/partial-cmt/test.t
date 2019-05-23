@@ -38,7 +38,7 @@ Introduce a type error in a.ml:
 
 Try jumping again, note that if the file is the ".mli" one this means that we
 failed to find/read the cmt and we're fallbacking to the location we got from
-the environment (as we explicitely asked locate to jump to the .ml).
+the environment (as we explicitly asked locate to jump to the .ml).
 That is: if the file is a.mli then the test is broken:
 
   $ $MERLIN single locate -look-for ml -position 1:11 -filename ./test.ml < ./test.ml
