@@ -273,7 +273,11 @@ let rec build ~local_buffer ~trie browses : t =
       Functor ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
     | `Apply (funct, arg) ->
       let funct = functor_ (remove_indir_me funct) in
-      let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+      let arg =
+        match remove_indir_me arg with
+        | `Str { str_items = []; _ } -> Trie.Leaf
+        | otherwise -> node_for_direct_mod `Mod otherwise
+      in
       Apply { funct; arg }
     | `Unpack -> (* TODO! *)
       Leaf
