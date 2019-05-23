@@ -125,7 +125,7 @@ Entries is the list of possible completion. Each entry is made of:
 - a name, the text that should be put in the buffer if selected
 - a kind, one of `'value'`, `'variant'`, `'constructor'`, `'label'`, `'module'`, `'signature'`, `'type'`, `'method'`, `'#'` (for method calls), `'exn'`, `'class'`
 - a description, most of the time a type or a definition line, to be put next to the name in completion box
-- optional informations which might not fit in the completion box, like signatures for modules or documentation string."
+- optional information which might not fit in the completion box, like signatures for modules or documentation string."
     ~default:("",`None,[],false,true)
     begin fun buffer (txt,pos,kinds,doc,typ) ->
       match pos with

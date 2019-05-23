@@ -496,7 +496,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
   match Namespaced_path.head_exn path with
   | Applied_to path ->
     (* FIXME: That's wrong. The scope should be the one where the query was
-       emited. Not the point where we finally arrive on the application. *)
+       emitted. Not the point where we finally arrive on the application. *)
     let functor_argument =
       let scopes = (trie, before) :: scopes in
       Handled (path, scopes)

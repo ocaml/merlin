@@ -47,7 +47,7 @@ Responses are always of the form `[kind,payload]` where `payload` depends on the
 
 `"error"` when something wrong prevented Merlin from answering: invalid files (for instance wrong OCaml version), missing packages, etc.  `payload` is a string describing the error, user should be notified to fix the environment.
 
-`"exception"` when something unexpected happened.  Merlin should be fixed, please report the error.  `payload` is an arbitraty json value.
+`"exception"` when something unexpected happened.  Merlin should be fixed, please report the error.  `payload` is an arbitrary json value.
 
     
 ## Synchronization
@@ -227,7 +227,7 @@ Entries is the list of possible completion. Each entry is made of:
 - a name, the text that should be put in the buffer if selected
 - a kind, one of `"value"`, `"variant"`, `"constructor"`, `"label"`, `"module"`, `"signature"`, `"type"`, `"method"`, `"#"` (for method calls), `"exn"`, `"class"`
 - a description, most of the time a type or a definition line, to be put next to the name in completion box
-- optional informations which might not fit in the completion box, like signatures for modules or documentation string.
+- optional information which might not fit in the completion box, like signatures for modules or documentation string.
 
 
 ```javascript
@@ -306,7 +306,7 @@ The value is a list where each item as the shape:
   "end"   : position,
   "valid" : bool,
   "message" : string,
-  "type"  : ("type"|"parser"|"env"|"warning"|"unkown")
+  "type"  : ("type"|"parser"|"env"|"warning"|"unknown")
 }
 ```
 
@@ -336,7 +336,7 @@ It returns a `cursor state` object describind the state of the checked out buffe
 ```
 
 Switch to "default" buffer for "ml", "mli".
-It will be in the state you left it last time it was used, unless Merlin decided to garbage collect because of memory pressure (any buffer left in background is either untouched or resetted because of collection).
+It will be in the state you left it last time it was used, unless Merlin decided to garbage collect because of memory pressure (any buffer left in background is either untouched or reset because of collection).
 
 
 ```javascript

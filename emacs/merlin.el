@@ -1066,7 +1066,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
     ))
 
 (defun merlin--type-display (bounds type &optional quiet)
-  "Display the type TYPE of the expression occuring at BOUNDS.
+  "Display the type TYPE of the expression occurring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (unless quiet (message "<no information>"))
@@ -1300,7 +1300,7 @@ strictly within, or nil if there is no such element."
 
 (defun merlin--project-get ()
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
-.merlins file loaded and a list of error messages, if any error occured during
+.merlins file loaded and a list of error messages, if any error occurred during
 loading"
   (let ((ret (merlin/call "check-configuration")))
     (setq merlin--project-cache
@@ -1691,7 +1691,7 @@ Empty string defaults to jumping to all these."
                  ;; correct version is used rather than the version that
                  ;; happens to be on the path
 
-                 ;; this was originally done via `opam exec' but that doesnt
+                 ;; this was originally done via `opam exec' but that does not
                  ;; work for opam 1, and added a performance hit
                  (setq merlin-opam-bin-path (list (concat "PATH=" bin-path)))
                  (concat bin-path "/ocamlmerlin"))

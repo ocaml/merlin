@@ -285,7 +285,7 @@ Specifies whether merlin should skip setting default keybindings.
 <
                                                         *'merlin_split_method'*
 Default: "horizontal".
-Specifies how to the layout should be adusted to display the result of a
+Specifies how the layout should be adjusted to display the result of a
 locate query (the target file and line).
 Possible values are:
 >

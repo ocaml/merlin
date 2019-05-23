@@ -682,7 +682,7 @@ def enclosing_type_text(record):
 
     # The server has an undocumented functionality where it still returns *all*
     # enclosing nodes when the `type-enclosing` command is passed `-index` (this
-    # is contrary to the documentation of the protocol); with only the reqested
+    # is contrary to the documentation of the protocol); with only the requested
     # element having an actual type-string attached. The remaining elements do
     # not have their type calculated (which *is* in line with the protocol
     # documentation); and instead simply have their *index in the response*

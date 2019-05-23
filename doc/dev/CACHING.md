@@ -18,7 +18,7 @@ Using `File_id.with_cache (fun () -> <body>)`, the results of calls to
 # Caching file contents, the `File_cache` functor
 
 The `File_cache` functor caches the contents of a computation based on a
-filename for as long as the file dont't change (as determined by `File_id`).
+filename for as long as the file don't change (as determined by `File_id`).
 
 For instance `Cmi_format.read` loads a cmi file from the disk. The OCaml
 compiler calls it directly as a cmi is not supposed to change while the

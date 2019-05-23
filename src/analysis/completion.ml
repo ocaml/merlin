@@ -683,10 +683,10 @@ let application_context ~prefix path =
     | (_, Expression earg) ::
       (_, Expression ({ exp_desc = Texp_apply (efun, _); _ } as app)) :: _
       when earg != efun ->
-      (* Type variables shared accross arguments should all be
+      (* Type variables shared across arguments should all be
          printed with the same name.
          [Printtyp.type_scheme] ensure that a name is unique within a given
-         type, but not accross different invocations.
+         type, but not across different invocations.
          [reset] followed by calls to [mark_loops] and [type_sch] provide
          that *)
       Printtyp.reset ();

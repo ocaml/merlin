@@ -812,7 +812,7 @@ let global_modules ?(include_current=false) config = (
     | filename -> List.remove (Misc.unitname filename) modules
 )
 
-(** {1 Accessors for other informations} *)
+(** {1 Accessors for other information} *)
 
 let filename t = t.query.filename
 
