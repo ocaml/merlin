@@ -1,40 +1,40 @@
 next version
 ============
 
-  - backend
-    + interpret `-pp` flag
-    + backtrack warnings in all versions, not just 4.06
-    + silence C compiler warnings (by David Allsopp and Bernhard Schommer)
-    + remove sturgeon support
-    + allow to select sections to log
-    + better error message on ocaml version mismatch
-    + locate through included functor application
-    + tweaked caching policy
-    + fix environment when a file disappears
-    + fix -short-paths handling of classes and class types (by Leo White)
-    + don't select deprecated paths in -short-paths (by Leo White)
-    + return type info in outline query (by Andrey Popp)
+  + backend
+    - interpret `-pp` flag
+    - backtrack warnings in all versions, not just 4.06
+    - silence C compiler warnings (by David Allsopp and Bernhard Schommer)
+    - remove sturgeon support
+    - allow to select sections to log
+    - better error message on ocaml version mismatch
+    - locate through included functor application
+    - tweaked caching policy
+    - fix environment when a file disappears
+    - fix -short-paths handling of classes and class types (by Leo White)
+    - don't select deprecated paths in -short-paths (by Leo White)
+    - return type info in outline query (by Andrey Popp)
 
-  - editors modes
-    + Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan
+  + editors modes
+    - Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan
       Phelps (@bryphe).
 
-    + emacs
-      - fix merlin-xref.el install (by Emilio Jesus Gallego Arias)
-      - keep labels matching the prefix the user has typed rather than
+    - emacs
+      + fix merlin-xref.el install (by Emilio Jesus Gallego Arias)
+      + keep labels matching the prefix the user has typed rather than
         dropping them (by Mitchell Plamann)
-      - remove unused `merlin--overlay` function (by Wilfred Hughes)
-      - show the number of errors in the modline (by Wilfred Hughes)
-      - call a logger on the client side if one is defined
+      + remove unused `merlin--overlay` function (by Wilfred Hughes)
+      + show the number of errors in the modline (by Wilfred Hughes)
+      + call a logger on the client side if one is defined
 
-    + vim
-      - better FindBinary
-      - make the log buffer a scratch buffer (by Tom Johnson)
-      - execute buffer switching silently (by Fabian)
-      - restore view after updating merlin type buffer (by Fabian)
+    - vim
+      + better FindBinary
+      + make the log buffer a scratch buffer (by Tom Johnson)
+      + execute buffer switching silently (by Fabian)
+      + restore view after updating merlin type buffer (by Fabian)
 
- - testsuite
-   + Switched to mdx with cram syntax.
+  + testsuite
+    - Switched to mdx with cram syntax.
 
 merlin 3.2.2
 ============
@@ -61,46 +61,46 @@ merlin 3.1.0
 ============
 Wed Jun 20 14:05:04 BST 2018
 
-  - backend
-    + new "polarity search" feature: provides a Hoogle-like type-based search
+  + backend
+    - new "polarity search" feature: provides a Hoogle-like type-based search
       for libraries that are in merlin's scope.
       See https://github.com/ocaml/merlin/blob/master/doc/features.md#polarity-search
-    + new "open refactoring" feature: helps cleaning the code in the scope of an
+    - new "open refactoring" feature: helps cleaning the code in the scope of an
       open statement.
       See https://github.com/ocaml/merlin/blob/master/doc/features.md#open-refactoring
-    + spell-checking: a simple spell-checker has been added to suggest
+    - spell-checking: a simple spell-checker has been added to suggest
       corrections when nothing can be directly completed.
-    + type-driven record completion: merlin will now make use of type
+    - type-driven record completion: merlin will now make use of type
       information from the context for narrowing and refining completion
       candidates.
-    + support for `#require` directive in a source file, and will treat it as a
+    - support for `#require` directive in a source file, and will treat it as a
       package use
-    + Add support for OCaml 4.07
-    + locate: various minor bugfixes, as well as the following general
+    - Add support for OCaml 4.07
+    - locate: various minor bugfixes, as well as the following general
       improvements:
-      - improved context detection
-      - better tracking of namespaces
-      - fixed support for local bindings
-      - fixed support of disambiguated record fields and variant constructors
-      - improved support for functors: merlin will now jump through functor
+      + improved context detection
+      + better tracking of namespaces
+      + fixed support for local bindings
+      + fixed support of disambiguated record fields and variant constructors
+      + improved support for functors: merlin will now jump through functor
         application to the functor definitions and in some cases go back to the
         argument that was given (if it is simply reexported).
-    + backport fixes of OCaml 4.06.1 to the 4.06 backend
-    + various minor bugfixes
+    - backport fixes of OCaml 4.06.1 to the 4.06 backend
+    - various minor bugfixes
 
-  - editor modes
-    + emacs
-      - proper handling of multibyte strings (by @Chris00)
-      - bind "q" to close type buffer (by @MiloDavis)
-      - make goto-point encoding independent
-      - add reason-mode to the guessed favorite mode list (by @Khady)
-      - sped up some tight loops (by @rgrinberg)
-      - add support for x-ref backend (by @rgrinberg)
-    + vim
-      - fix support for Neomake (by @bobbypriambodo and @statianzo)
-      - fix encoding issues in filepaths (by @Thelyria)
-      - fix handling of enclosing-type cache (by @ELLIOTTCABLE)
-      - add <silent> to prevent flashing when highlighting an enclosing (by @bluddy)
+  + editor modes
+    - emacs
+      + proper handling of multibyte strings (by @Chris00)
+      + bind "q" to close type buffer (by @MiloDavis)
+      + make goto-point encoding independent
+      + add reason-mode to the guessed favorite mode list (by @Khady)
+      + sped up some tight loops (by @rgrinberg)
+      + add support for x-ref backend (by @rgrinberg)
+    - vim
+      + fix support for Neomake (by @bobbypriambodo and @statianzo)
+      + fix encoding issues in filepaths (by @Thelyria)
+      + fix handling of enclosing-type cache (by @ELLIOTTCABLE)
+      + add <silent> to prevent flashing when highlighting an enclosing (by @bluddy)
 
 Thanks to the people who contributed to this release: ELLIOTTCABLE, Louis Roché,
 Rudi Grinberg, Yotam Barnoy, Leo White, Daniel Below, Andreas Hauptmann,
