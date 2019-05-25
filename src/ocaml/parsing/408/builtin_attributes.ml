@@ -71,7 +71,7 @@ let error_of_extension ext =
   | `Other -> error_of_extension ext
   | `Syntax_error ->
     let txt, loc = Extend_helper.extract_syntax_error ext in
-    Location.error ~loc txt
+    Location.error ~source:Location.Parser ~loc txt
 
 let kind_and_message = function
   | PStr[
