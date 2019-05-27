@@ -111,7 +111,11 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
   let rec aux acc t =
     let acc =
       match Browse_raw.node_is_constructor t.t_node with
-      | Some d' when same_constructor env d d'.Location.txt ->
+      | Some d' when (
+          (* Don't try this at home kids. *)
+          try same_constructor env d d'.Location.txt
+          with Not_found -> same_constructor t.t_env d d'.Location.txt
+        ) ->
         {d' with Location.txt = t} :: acc
       | _ -> acc
     in
