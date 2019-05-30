@@ -160,13 +160,7 @@ FIXME this should jump to line 11:
   $ $MERLIN single locate -look-for ml -position 24:3 -filename ./test.ml < ./test.ml
   {
     "class": "return",
-    "value": {
-      "file": "tests/locate/context-detection/test.ml",
-      "pos": {
-        "line": 23,
-        "col": 6
-      }
-    },
+    "value": "didn't manage to find a",
     "notifications": []
   }
 

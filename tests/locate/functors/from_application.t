@@ -19,13 +19,7 @@ Jump from inside the functor application to inside the functor application:
   $ $MERLIN single locate -look-for ml -position 18:16 -filename ./from_application.ml < ./from_application.ml
   {
     "class": "return",
-    "value": {
-      "file": "tests/locate/functors/from_application.ml",
-      "pos": {
-        "line": 14,
-        "col": 4
-      }
-    },
+    "value": "didn't manage to find indir",
     "notifications": []
   }
 
