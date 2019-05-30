@@ -427,6 +427,10 @@ let rec build ~local_buffer ~trie browses : t =
     | Case _
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
+    | Pattern p when local_buffer ->
+      List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }) ->
+          Trie.add id {loc; doc; namespace = `Vals; node = Leaf} trie
+      ) (Typedtree.pat_bound_idents_with_loc p)
     | ignored_node ->
       log ~title:"build" "ignored node: %t"
         (fun () -> string_of_node ignored_node);
