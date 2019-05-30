@@ -376,7 +376,7 @@ let rec build ~local_buffer ~trie browses : t =
       if not local_buffer then
         trie
       else (
-        let id = Ident.create_persistent (* Bullshit. *) "?" in
+        let id = Ident.create_local "?" in
         let intern =
           lazy (build ~local_buffer ~trie:Trie.empty (Lazy.force t.t_children))
         in

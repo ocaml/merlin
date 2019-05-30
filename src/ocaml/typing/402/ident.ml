@@ -25,6 +25,8 @@ let create s =
   incr currentstamp;
   { name = s; stamp = !currentstamp; flags = 0 }
 
+let create_local = create
+
 let create_predef_exn s =
   incr currentstamp;
   { name = s; stamp = !currentstamp; flags = predef_exn_flag }
