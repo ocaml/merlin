@@ -26,6 +26,7 @@ include Identifiable.S with type t := t
 
 
 val create: string -> t
+val create_local: string -> t (* Added by merlin, for compat with >=4.08 *)
 val create_persistent: string -> t
 val create_predef_exn: string -> t
 val rename: t -> t
