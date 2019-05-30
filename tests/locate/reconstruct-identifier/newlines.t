@@ -4,7 +4,13 @@ We need to be careful about newlines in Lexer_ident:
   > -filename ./newline_in_quotes.ml < ./newline_in_quotes.ml
   {
     "class": "return",
-    "value": "Not in environment 'Foo_bar_lol'",
+    "value": {
+      "file": "tests/locate/reconstruct-identifier/newline_in_quotes.ml",
+      "pos": {
+        "line": 1,
+        "col": 4
+      }
+    },
     "notifications": []
   }
 
@@ -12,6 +18,12 @@ We need to be careful about newlines in Lexer_ident:
   > -filename ./escaped_newline.ml < ./escaped_newline.ml
   {
     "class": "return",
-    "value": "Not in environment 'Foo_bar_lol'",
+    "value": {
+      "file": "tests/locate/reconstruct-identifier/escaped_newline.ml",
+      "pos": {
+        "line": 1,
+        "col": 4
+      }
+    },
     "notifications": []
   }
