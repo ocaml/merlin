@@ -615,9 +615,21 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         else Some err
     in
     let lexer_errors  = List.filter_map ~f:filter_error lexer_errors in
-    let typer_errors  = List.filter_map ~f:filter_error typer_errors in
+    (* Ast can contain syntax error *)
+    let first_syntax_error = ref Lexing.dummy_pos in
+    let filter_typer_error exn =
+      let result = filter_error exn in
+      begin match result with
+        | Some ({Location. source = Location.Parser; _} as err)
+          when !first_syntax_error = Lexing.dummy_pos ||
+               Lexing.compare_pos !first_syntax_error (error_start err) > 0 ->
+          first_syntax_error := error_start err;
+        | _ -> ()
+      end;
+      result
+    in
+    let typer_errors  = List.filter_map ~f:filter_typer_error typer_errors in
     (* Track first parsing error *)
-    let first_parser_error = ref Lexing.dummy_pos in
     let filter_parser_error = function
       | Msupport.Warning _ as exn -> filter_error exn
       | exn ->
@@ -625,9 +637,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         begin match result with
           | None -> ()
           | Some err ->
-            if !first_parser_error = Lexing.dummy_pos ||
-               Lexing.compare_pos !first_parser_error (error_start err) > 0
-            then first_parser_error := error_start err;
+            if !first_syntax_error = Lexing.dummy_pos ||
+               Lexing.compare_pos !first_syntax_error (error_start err) > 0
+            then first_syntax_error := error_start err;
         end;
         result
     in
@@ -641,7 +653,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let errors = List.sort_uniq ~cmp
         (lexer_errors @ parser_errors @ typer_errors) in
     (* Filter anything after first parse error *)
-    let limit = !first_parser_error in
+    let limit = !first_syntax_error in
     if limit = Lexing.dummy_pos then errors else (
       List.take_while errors
         ~f:(fun err -> Lexing.compare_pos (error_start err) limit <= 0)
