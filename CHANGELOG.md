@@ -1,5 +1,6 @@
-next version
+merlin 3.3.0
 ============
+Fri May 31 11:09:08 BST 2019
 
   + backend
     - interpret `-pp` flag
@@ -8,17 +9,22 @@ next version
     - remove sturgeon support
     - allow to select sections to log
     - better error message on ocaml version mismatch
-    - locate through included functor application
+    - locate:
+      + handle functors and functor applications
+      + do not use the location coming from the environment
     - tweaked caching policy
     - fix environment when a file disappears
     - fix -short-paths handling of classes and class types (by Leo White)
     - don't select deprecated paths in -short-paths (by Leo White)
     - return type info in outline query (by Andrey Popp)
+    - properly handle new lines in the lexer
+    - better tracking of errors reported by the parser and by preprocessors
+    - add support for OCaml 4.08
+    - tweaked the recovery strategy in presence of syntax errors
+    - timing information in replies now includes wall clock time.
+    - dump command can new dump the parsetree post preprocessing
 
   + editors modes
-    - Add support for lsp, contributed by Andrey Popp (@andreypopp) and Bryan
-      Phelps (@bryphe).
-
     - emacs
       + fix merlin-xref.el install (by Emilio Jesus Gallego Arias)
       + keep labels matching the prefix the user has typed rather than
@@ -26,6 +32,9 @@ next version
       + remove unused `merlin--overlay` function (by Wilfred Hughes)
       + show the number of errors in the modline (by Wilfred Hughes)
       + call a logger on the client side if one is defined
+      + allow user to disable completion inside comments and strings
+      + show errors and types even when buffer is narrowed (by Wilfred Hughes)
+      + make sure PATH is updated when merlin-command is 'opam
 
     - vim
       + better FindBinary
@@ -35,6 +44,9 @@ next version
 
   + testsuite
     - Switched to mdx with cram syntax.
+
+Special thanks to Rudi Grinberg for helping us in reviewing and merging
+pull-requests.
 
 merlin 3.2.2
 ============
