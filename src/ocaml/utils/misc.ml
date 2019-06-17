@@ -15,7 +15,14 @@
 
 open Std
 
-let () = Findlib.init ()
+let () =
+  try Findlib.init ()
+  with exn ->
+    let message = match exn with
+      | Failure message -> message
+      | exn -> Printexc.to_string exn
+    in
+    prerr_endline ("Error during findlib initialization: " ^ message)
 
 (* Errors *)
 
@@ -42,7 +49,7 @@ let try_finally ?(always=fun () -> ()) ?(exceptionally=fun () -> ()) work =
           raise work_exn
         | exception always_exn ->
           exceptionally ();
-          raise always_exn 
+          raise always_exn
       end
 ;;
 
