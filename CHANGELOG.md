@@ -1,3 +1,10 @@
+merlin 3.3.1
+============
+Mon Jun 17 17:13:33 CEST 2019
+
+  + backend
+    - catch findlib initialization failures and keep going on
+
 merlin 3.3.0
 ============
 Fri May 31 11:09:08 BST 2019
