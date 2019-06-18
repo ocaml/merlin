@@ -14,6 +14,7 @@
         (ftplugin/merlin.vim as vim/ftplugin/merlin.vim)
         (ftplugin/ocaml.vim as vim/ftplugin/ocaml.vim)
         (ftplugin/omlet.vim as vim/ftplugin/omlet.vim)
+        (ftplugin/reason.vim as vim/ftplugin/reason.vim)
         (plugin/merlin.vim as vim/plugin/merlin.vim)
         (syntax_checkers/ocaml/merlin.vim as vim/syntax_checkers/ocaml/merlin.vim)
         (syntax_checkers/omlet/merlin.vim as vim/syntax_checkers/omlet/merlin.vim)
