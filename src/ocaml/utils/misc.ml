@@ -22,7 +22,15 @@ let () =
       | Failure message -> message
       | exn -> Printexc.to_string exn
     in
-    prerr_endline ("Error during findlib initialization: " ^ message)
+    prerr_endline ("Error during findlib initialization: " ^ message);
+    (* This is a quick and dirty workaround to get Merlin to work even when
+       findlib directory has been removed.
+       The long term plan is to get rid of findlib inside Merlin. *)
+    begin match Sys.getenv "OCAMLFIND_CONF" with
+      | exception Not_found ->
+        Unix.putenv "OCAMLFIND_CONF" "/dev/null"
+      | _ -> ()
+    end
 
 (* Errors *)
 
