@@ -439,7 +439,8 @@ DATA must be an assoc list with fields line and col."
      (widen)
      (goto-char point)
      (format "%d:%d" (line-number-at-pos)
-                     (- (point) (line-beginning-position))))))
+             (- (position-bytes (point))
+                (position-bytes (line-beginning-position)))))))
 
 (defun merlin--make-bounds (data)
   "From a remote merlin object DATA {\"start\": LOC1; \"end\": LOC2},
