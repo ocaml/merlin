@@ -1,3 +1,16 @@
+merlin 3.3.2
+============
+Tue Jun 25 11:02:09 CEST 2019
+
+  + backend
+    - fallback to "/dev/null" configuration for findlib
+  + editor modes
+    - emacs
+      + fix position computation in presence of tabs or multi-byte characters
+      + log arguments in "merlin-debug-last-commands"
+    - vim
+      + install reason.vim file
+
 merlin 3.3.1
 ============
 Mon Jun 17 17:13:33 CEST 2019
