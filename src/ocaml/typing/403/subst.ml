@@ -25,11 +25,12 @@ type t =
     modules: (Ident.t, Path.t) Tbl.t;
     modtypes: (Ident.t, module_type) Tbl.t;
     for_saving: bool;
-    nongen_level: int }
+    nongen_level: int;
+    make_loc_ghost: bool }
 
 let identity =
   { types = Tbl.empty; modules = Tbl.empty; modtypes = Tbl.empty;
-    for_saving = false; nongen_level = generic_level }
+    for_saving = false; nongen_level = generic_level; make_loc_ghost = false }
 
 let add_type id p s = { s with types = Tbl.add id p s.types }
 
@@ -41,8 +42,12 @@ let for_saving s = { s with for_saving = true }
 
 let set_nongen_level s lev = { s with nongen_level = lev }
 
+let make_loc_ghost s = { s with make_loc_ghost = true }
+
 let loc s x =
-  if s.for_saving && not !Clflags.keep_locs then Location.none else x
+  if s.for_saving && not !Clflags.keep_locs then Location.none
+  else if s.make_loc_ghost then { x with loc_ghost = true }
+  else x
 
 let remove_loc =
   let open Ast_mapper in
@@ -338,7 +343,10 @@ let extension_constructor s ext =
       ext_ret_type = may_map (typexp s) ext.ext_ret_type;
       ext_private = ext.ext_private;
       ext_attributes = attrs s ext.ext_attributes;
-      ext_loc = if s.for_saving then Location.none else ext.ext_loc; }
+      ext_loc =
+        if s.for_saving then Location.none
+        else if s.make_loc_ghost then { ext.ext_loc with loc_ghost = true }
+        else ext.ext_loc; }
   in
     cleanup_types ();
     ext
@@ -435,4 +443,5 @@ let compose s1 s2 =
     modules = merge_tbls (module_path s2) s1.modules s2.modules;
     modtypes = merge_tbls (modtype s2) s1.modtypes s2.modtypes;
     for_saving = s1.for_saving || s2.for_saving;
-    nongen_level = min s1.nongen_level s2.nongen_level }
+    nongen_level = min s1.nongen_level s2.nongen_level;
+    make_loc_ghost = s1.make_loc_ghost || s2.make_loc_ghost }

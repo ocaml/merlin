@@ -759,9 +759,10 @@ let acknowledge_pers_struct check modname
     List.fold_left (fun acc -> function Deprecated s -> Some s | _ -> acc) None
       flags
   in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let comps =
     !components_of_module' ~deprecated ~loc:Location.none
-      empty Subst.identity
+      empty id_subst
                            (Pident(Ident.create_persistent name))
                            (Mty_signature sign)
   in
@@ -769,7 +770,7 @@ let acknowledge_pers_struct check modname
     match !cmi_cache with
     | Cmi_cache_store ps_sig -> ps_sig
     | _ ->
-      let ps_sig = lazy (Subst.signature Subst.identity sign) in
+      let ps_sig = lazy (Subst.signature id_subst sign) in
       cmi_cache := Cmi_cache_store ps_sig;
       ps_sig
   in

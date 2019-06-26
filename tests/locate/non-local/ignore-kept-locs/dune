@@ -1,0 +1,9 @@
+(alias
+ (name runtest)
+ (deps (:t test.t) a.ml b.ml)
+ (action
+   (progn
+     (run %{ocamlc} -c -bin-annot -keep-locs a.ml)
+     (setenv MERLIN %{exe:../../../merlin-wrapper}
+       (run %{bin:mdx} test --syntax=cram %{t}))
+     (diff? %{t} %{t}.corrected))))

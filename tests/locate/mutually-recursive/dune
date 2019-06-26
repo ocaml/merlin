@@ -1,0 +1,8 @@
+(alias
+ (name runtest)
+ (deps (:t issue973.t) issue973.ml)
+ (action
+   (progn
+     (setenv MERLIN %{exe:../../merlin-wrapper}
+       (run %{bin:mdx} test --syntax=cram %{t}))
+     (diff? %{t} %{t}.corrected))))

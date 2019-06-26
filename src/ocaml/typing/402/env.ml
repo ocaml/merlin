@@ -413,8 +413,9 @@ let read_pers_struct modname filename =
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
   let flags = cmi.cmi_flags in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let comps =
-    !components_of_module' empty Subst.identity
+    !components_of_module' empty id_subst
       (Pident(Ident.create_persistent name))
       (Mty_signature sign)
   in
@@ -422,7 +423,7 @@ let read_pers_struct modname filename =
     | Cmi_cache_store (ps_typemap, ps_sig) -> ps_typemap, ps_sig
     | _ ->
       let ps_typemap = ref None in
-      let ps_sig = lazy (Subst.signature Subst.identity sign) in
+      let ps_sig = lazy (Subst.signature id_subst sign) in
       cmi_cache := Cmi_cache_store (ps_typemap, ps_sig);
       ps_typemap, ps_sig
   in
