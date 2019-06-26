@@ -809,16 +809,17 @@ let acknowledge_pers_struct check modname
   let id = Ident.create_persistent name in
   let path = Pident id in
   let addr = EnvLazy.create_forced (Aident id) in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let comps =
       !components_of_module' ~alerts ~loc:Location.none
-        empty (Some Subst.identity) Subst.identity path addr
+        empty (Some id_subst) id_subst path addr
         (Mty_signature sign)
   in
   let ps_sig =
     match !cmi_cache with
     | Cmi_cache_store ps_sig -> ps_sig
     | _ ->
-      let ps_sig = lazy (Subst.signature Make_local Subst.identity sign) in
+      let ps_sig = lazy (Subst.signature Make_local id_subst sign) in
       cmi_cache := Cmi_cache_store ps_sig;
       ps_sig
   in

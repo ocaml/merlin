@@ -502,8 +502,9 @@ let read_pers_struct check modname filename =
     List.fold_left (fun acc -> function Deprecated s -> Some s | _ -> acc) None
       flags
   in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let comps =
-    !components_of_module' ~deprecated empty Subst.identity
+    !components_of_module' ~deprecated empty id_subst
       (Pident(Ident.create_persistent name))
       (Mty_signature sign)
   in
@@ -511,7 +512,7 @@ let read_pers_struct check modname filename =
     | Cmi_cache_store (ps_typemap, ps_sig) -> ps_typemap, ps_sig
     | _ ->
       let ps_typemap = ref None in
-      let ps_sig = lazy (Subst.signature Subst.identity sign) in
+      let ps_sig = lazy (Subst.signature id_subst sign) in
       cmi_cache := Cmi_cache_store (ps_typemap, ps_sig);
       ps_typemap, ps_sig
   in
