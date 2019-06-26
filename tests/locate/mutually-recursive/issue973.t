@@ -13,11 +13,17 @@ Searching foo from bar works:
     "notifications": []
   }
 
-But bar from foo doesn't:
+And so does bar from foo:
 
   $ $MERLIN single locate -look-for ml -position 2:7 -filename ./issue973.ml < ./issue973.ml
   {
     "class": "return",
-    "value": "didn't manage to find bar",
+    "value": {
+      "file": "tests/locate/mutually-recursive/issue973.ml",
+      "pos": {
+        "line": 4,
+        "col": 4
+      }
+    },
     "notifications": []
   }

@@ -15,7 +15,7 @@ Make sure that we do not use locations coming from the cmi:
   }
 
   $ grep -A1 Fallback log | grep -v Fallback
-  [1]
+  File "a.ml", line 1, characters 4-9
 
   $ rm log
 
@@ -37,6 +37,7 @@ The fallback here is ok, it points to the local buffer (to the include line
 actually), not to a.ml
 
   $ grep -A1 Fallback log | grep -v Fallback
+  File "a.ml", line 1, characters 4-9
   File "b.ml", line 3, characters 0-9
 
   $ rm log
