@@ -3513,5 +3513,5 @@ module MakeEngineTable (T : TableFormat.TABLES) = struct
 end
 end
 module StaticVersion = struct
-let require_20181006 = ()
+let require_20190620 = ()
 end

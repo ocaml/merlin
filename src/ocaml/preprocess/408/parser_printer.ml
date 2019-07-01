@@ -3,9 +3,11 @@ open Parser_raw
   let string_of_INT = function
     | (s, None) -> Printf.sprintf "INT(%s)" s
     | (s, Some c) -> Printf.sprintf "INT(%s%c)" s c
+
   let string_of_FLOAT = function
     | (s, None) -> Printf.sprintf "FLOAT(%s)" s
     | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
+
   let string_of_STRING = function
     | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
     | s, None -> Printf.sprintf "STRING(%S)" s
@@ -253,7 +255,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_mod_ext_longident) -> "mod_ext_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_method_) -> "method_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_meth_list) -> "meth_list"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_match_cases) -> "match_cases"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_match_case) -> "match_case"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_bindings) -> "lwt_bindings"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_binding) -> "lwt_binding"
@@ -578,7 +579,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_mod_ext_longident -> (fun _ -> "mod_ext_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_method_ -> (fun _ -> "method_")
   | MenhirInterpreter.N MenhirInterpreter.N_meth_list -> (fun _ -> "meth_list")
-  | MenhirInterpreter.N MenhirInterpreter.N_match_cases -> (fun _ -> "match_cases")
   | MenhirInterpreter.N MenhirInterpreter.N_match_case -> (fun _ -> "match_case")
   | MenhirInterpreter.N MenhirInterpreter.N_lwt_bindings -> (fun _ -> "lwt_bindings")
   | MenhirInterpreter.N MenhirInterpreter.N_lwt_binding -> (fun _ -> "lwt_binding")

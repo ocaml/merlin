@@ -1,10 +1,26 @@
 (* -*- tuareg -*- *)
 
 module J = Jbuild_plugin.V1
-;;
 
 let ver =
   Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+
+let need_cpp = 
+  match ver with
+  | "402" | "403" | "404" | "405" | "406" | "407" -> true
+  | _ -> false
+
+let mly_pattern, mly_rule = 
+  if need_cpp then
+    ("*.mlyp",
+     "(rule\n\
+       (targets parser_raw.mly)\n\
+       (deps    parser_raw.mlyp)\n\
+       (action\n\
+         (with-stdout-to %{targets}\n\
+           (run gcc -E -x c -P %{deps}))))")
+  else 
+    ("*.mly", "")
 ;;
 
 Printf.ksprintf J.send {|
@@ -16,8 +32,11 @@ Printf.ksprintf J.send {|
  (dev     (flags :standard -w -3))
  (release (flags :standard -w -3)))
 
-(copy_files# %s/*.{mll,mlyp})
+(copy_files# %s/*.mll)
+(copy_files %s/%s)
 (copy_files# %s/lexer_raw.mli)
+
+%s
 
 (rule
  (targets
@@ -38,13 +57,6 @@ Printf.ksprintf J.send {|
   (name preprocess)
   (wrapped false)
   (libraries parsing))
-
-(rule
- (targets parser_raw.mly)
- (deps    parser_raw.mlyp)
- (action
-   (with-stdout-to %%{targets}
-     (run gcc "-E" "-x" c "-P" %%{deps}))))
 
 (menhir
  (modules parser_raw)
@@ -74,4 +86,4 @@ Printf.ksprintf J.send {|
   (action
     (with-stdout-to %%{targets}
        (run %%{exe:./printer/gen_printer.exe} %%{deps}))))
-|} ver ver ver ver ver ver ver ver ver ver ver
+|} ver ver mly_pattern ver mly_rule ver ver ver ver ver ver ver ver ver
