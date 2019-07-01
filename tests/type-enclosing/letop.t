@@ -82,13 +82,13 @@ Various parts of the letop:
     {
       "start": {
         "line": 4,
-        "col": 2
+        "col": 13
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 29
       },
-      "type": "('a -> 'b) -> 'a option -> 'b option",
+      "type": "('a, 'b) Hashtbl.t -> 'a -> 'b option",
       "tail": "no"
     }
   ]
@@ -99,25 +99,25 @@ Various parts of the letop:
     {
       "start": {
         "line": 4,
-        "col": 2
+        "col": 30
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 33
       },
-      "type": "('a -> 'b) -> 'a option -> 'b option",
+      "type": "('a, 'b) Hashtbl.t",
       "tail": "no"
     },
     {
       "start": {
-        "line": 3,
-        "col": 17
+        "line": 4,
+        "col": 30
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 33
       },
-      "type": "'a -> ('b -> 'c) -> 'b option -> 'c option",
+      "type": "('a, 'b) Hashtbl.t",
       "tail": "no"
     }
   ]
@@ -128,25 +128,25 @@ Various parts of the letop:
     {
       "start": {
         "line": 4,
-        "col": 2
+        "col": 34
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 37
       },
-      "type": "('a -> 'b) -> 'a option -> 'b option",
+      "type": "'a",
       "tail": "no"
     },
     {
       "start": {
-        "line": 3,
-        "col": 17
+        "line": 4,
+        "col": 34
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 37
       },
-      "type": "'a -> ('b -> 'c) -> 'b option -> 'c option",
+      "type": "'a",
       "tail": "no"
     }
   ]

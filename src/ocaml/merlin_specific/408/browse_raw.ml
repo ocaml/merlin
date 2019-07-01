@@ -253,6 +253,9 @@ let of_constructor_arguments = function
   | Cstr_tuple cts -> list_fold of_core_type cts
   | Cstr_record lbls -> list_fold of_label_declaration lbls
 
+let of_bop { bop_op_path = _; bop_op_val = _; bop_exp; _ } =
+  of_expression bop_exp
+
 let of_pat_extra (pat,_,_) = match pat with
   | Tpat_constraint ct -> of_core_type ct
   | Tpat_type _ | Tpat_unpack | Tpat_open _ -> id_fold
@@ -348,7 +351,10 @@ let of_expression_desc loc = function
     of_module_expr me
   | Texp_unreachable | Texp_extension_constructor _ ->
     id_fold
-  | Texp_letop { body; _ } -> of_case body
+  | Texp_letop { let_; ands; body; _ } ->
+    of_bop let_ **
+    list_fold of_bop ands **
+    of_case body
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
 
