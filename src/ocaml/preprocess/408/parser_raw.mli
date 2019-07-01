@@ -412,7 +412,6 @@ module MenhirInterpreter : sig
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) nonterminal
     | N_meth_list : (Parsetree.object_field list * Asttypes.closed_flag) nonterminal
-    | N_match_cases : (Parsetree.case list) nonterminal
     | N_match_case : (Parsetree.case) nonterminal
     | N_lwt_bindings : (Ast_helper.let_bindings) nonterminal
     | N_lwt_binding : (Ast_helper.let_bindings) nonterminal
