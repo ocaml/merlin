@@ -20,17 +20,19 @@ env:
     TESTS=false
   - OCAML_VERSION=4.03
     PACKAGE=merlin
-  - OCAML_VERSION=4.04
-    PACKAGE=merlin
-  - OCAML_VERSION=4.05
-    PACKAGE=merlin
-  - OCAML_VERSION=4.06
-    PACKAGE=merlin
+  # - OCAML_VERSION=4.04
+  #   PACKAGE=merlin
+  # - OCAML_VERSION=4.05
+  #   PACKAGE=merlin
+  # - OCAML_VERSION=4.06
+  #   PACKAGE=merlin
   - OCAML_VERSION=4.07
     PACKAGE=merlin
   - OCAML_VERSION=4.07
     PACKAGE=merlin-lsp
     TESTS_LSP=true
     TESTS=false
+  - OCAML_VERSION=4.08
+    PACKAGE=merlin
 os:
   - linux
