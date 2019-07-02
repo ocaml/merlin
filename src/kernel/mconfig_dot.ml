@@ -223,8 +223,10 @@ let parse_suffix str =
 let prepend_config ~stdlib {path; directives; _} config =
   let cwd = Filename.dirname path in
   let expand config path acc =
-    let filter name =
-      try Sys.is_directory name
+    let filter path =
+      let name = Filename.basename path in
+      name <> "" && name.[0] <> '.' &&
+      try Sys.is_directory path
       with _ -> false
     in
     let path =
