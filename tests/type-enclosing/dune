@@ -1,0 +1,9 @@
+(alias
+ (name runtest)
+ (deps (:t letop.t) letop.ml)
+ (enabled_if (>= %{ocaml_version} 4.08.0))
+ (action
+   (progn
+     (setenv MERLIN %{exe:../merlin-wrapper}
+       (run %{bin:mdx} test --syntax=cram %{t}))
+     (diff? %{t} %{t}.corrected))))
