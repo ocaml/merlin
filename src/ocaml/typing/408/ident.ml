@@ -351,3 +351,10 @@ include Identifiable.Make (struct
   let equal = same
 end)
 let equal = original_equal
+
+let rename_no_exn = function
+  | Local { name; stamp = _ }
+  | Scoped { name; stamp = _; scope = _ } ->
+      incr currentstamp;
+      Local { name; stamp = !currentstamp }
+  | id -> id

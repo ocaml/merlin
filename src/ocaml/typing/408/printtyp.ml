@@ -1385,7 +1385,7 @@ let dummy =
   }
 
 let hide ids env = List.fold_right
-    (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
+    (fun id -> Env.add_type ~check:false (Ident.rename_no_exn id) dummy)
     ids env
 
 let hide_rec_items = function
