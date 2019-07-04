@@ -151,7 +151,7 @@ open Query_protocol.Compl
 let map_entry f entry =
   {entry with desc = f entry.desc; info = f entry.info}
 
-let make_candidate ?get_doc ~attrs ~exact ?prefix_path name ?loc ?path ty =
+let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
   let ident = match path with
     | Some path ->
       (* this is not correct: the ident is not persistent, the printing of some
@@ -284,6 +284,8 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
   let lbl_attributes l = l.Types.lbl_attributes in
   let mtd_attributes t = t.Types.mtd_attributes in
   let md_attributes t = t.Types.md_attributes in
+  let make_candidate ~attrs ~exact name ?loc ?path ty =
+    make_candidate ~get_doc ~prefix_path ~attrs ~exact name ?loc ?path ty in
   let make_weighted_candidate ?(priority=0) ~attrs ~exact name ?loc ?path ty =
     (* Just like [make_candidate] but associates some metadata to the candidate.
        The candidates are later sorted using these metadata.
@@ -300,7 +302,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
       try Path.scope (Option.get path)
       with _ -> 0
     in
-    let item = make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty in
+    let item = make_candidate ~attrs ~exact name ?loc ?path ty in
     (- priority, - time, name), item
   in
   let is_internal name = name = "" || name.[0] = '_' in
@@ -482,6 +484,8 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
     then false
     else (Hashtbl.add seen n (); true)
   in
+  let make_candidate ~attrs ~exact name ?loc ?path ty =
+    make_candidate ~get_doc ~attrs ~exact name ?loc ?path ty in
   let find ?prefix_path ~is_label prefix =
     let valid tag name =
       try
@@ -502,13 +506,14 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
     in
     let add_label_description ({Types.lbl_name = name; _} as l) candidates =
       if not (valid `Label name) then candidates else
-        make_candidate ?get_doc ~exact:(name = prefix) name (`Label l) ~attrs:[]
+        make_candidate ~prefix_path ~exact:(name = prefix) name
+          (`Label l) ~attrs:[]
         :: candidates
     in
     let add_label_declaration ty ({Types.ld_id = name; _} as l) candidates =
       let name = Ident.name name in
       if not (valid `Label name) then candidates else
-        make_candidate ?get_doc ~exact:(name = prefix) name
+        make_candidate ~prefix_path ~exact:(name = prefix) name
           (`Label_decl (ty,l)) ~attrs:[]
         :: candidates
     in
@@ -548,7 +553,8 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
           if name = prefix && uniq (`Mod, name) then
             try
               let path, md, attrs = Type_utils.lookup_module (Longident.Lident name) env in
-              make_candidate ?get_doc ~exact:true name ~path (`Mod md) ~attrs
+              make_candidate ~prefix_path:(Some prefix) ~exact:true ~path name
+                 (`Mod md) ~attrs
               :: candidates
             with Not_found ->
               default :: candidates

@@ -30,17 +30,19 @@ let rec print_ident ppf =
   | Oide_apply (id1, id2) ->
       fprintf ppf "%a(%a)" print_ident id1 print_ident id2
 
-let parenthesized_ident name =
-  (List.mem name ["or"; "mod"; "land"; "lor"; "lxor"; "lsl"; "lsr"; "asr"])
-  ||
-  (match name.[0] with
-      'a'..'z' | 'A'..'Z' | '\223'..'\246' | '\248'..'\255' | '_' ->
-        false
-    | _ -> true)
+let parenthesized_ident = function
+  | "or" | "mod" | "land" | "lor" | "lxor" | "lsl" | "lsr" | "asr" -> true
+  | "[]" | "()" -> false
+  | name ->
+    match name.[0] with
+    | 'a'..'z' | 'A'..'Z' | '\223'..'\246' | '\248'..'\255' | '_' -> false
+    | _ -> true
 
 let value_ident ppf name =
   if parenthesized_ident name then
-    fprintf ppf "( %s )" name
+    if name <> "" && (name.[0] = '*' || name.[String.length name - 1] = '*')
+    then fprintf ppf "( %s )" name
+    else fprintf ppf "(%s)" name
   else
     pp_print_string ppf name
 
@@ -538,17 +540,20 @@ and print_out_constr ppf (name, tyl,ret_type_opt) =
   | None ->
       begin match tyl with
       | [] ->
-          pp_print_string ppf name
+          value_ident ppf name
       | _ ->
-          fprintf ppf "@[<2>%s of@ %a@]" name
+          fprintf ppf "@[<2>%a of@ %a@]"
+            value_ident name
             (print_typlist print_simple_out_type " *") tyl
       end
   | Some ret_type ->
       begin match tyl with
       | [] ->
-          fprintf ppf "@[<2>%s :@ %a@]" name print_simple_out_type  ret_type
+        fprintf ppf "@[<2>%a :@ %a@]"
+            value_ident name print_simple_out_type  ret_type
       | _ ->
-          fprintf ppf "@[<2>%s :@ %a -> %a@]" name
+        fprintf ppf "@[<2>%a :@ %a -> %a@]"
+            value_ident name
             (print_typlist print_simple_out_type " *")
             tyl print_simple_out_type ret_type
       end

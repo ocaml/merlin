@@ -6,3 +6,12 @@
      (setenv MERLIN %{exe:../merlin-wrapper}
        (run %{bin:mdx} test --syntax=cram %{t}))
      (diff? %{t} %{t}.corrected))))
+
+(alias
+ (name runtest)
+ (deps (:t parenthesize.t) parenthesize.ml)
+ (action
+   (progn
+     (setenv MERLIN %{exe:../merlin-wrapper}
+       (run %{bin:mdx} test --syntax=cram %{t}))
+     (diff? %{t} %{t}.corrected))))
