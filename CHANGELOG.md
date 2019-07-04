@@ -1,15 +1,26 @@
 merlin 3.3.2
 ============
-Tue Jun 25 11:02:09 CEST 2019
+Tue Jul  9 17:34:42 CEST 2019
 
   + backend
+    - `**` globbing in .merlin won't look into hidden directories
+      (starting with a '.') (by Daniel Bünzl, #990)
     - fallback to "/dev/null" configuration for findlib
+    - better 4.08 support:
+      + support for letop (let+, and+, ...) (#986)
+      + fix parsing recovery for 4.08 constructions (#987)
+      + catch an exception raised by 4.08 Printtyp trying to rename a
+        persistent identifier (#991)
+    - locate: treat local locations differently from external locations (coming
+      from a cmi), this fixes "jump to definition" on mutually recursive
+      bindings (#984)
+    - when completing an infix operator in a sub-module, wrap with () (#992)
   + editor modes
     - emacs
-      + fix position computation in presence of tabs or multi-byte characters
-      + log arguments in "merlin-debug-last-commands"
+      + fix position computation in presence of tabs or multi-byte characters (#981)
+      + log arguments in "merlin-debug-last-commands" (#981)
     - vim
-      + install reason.vim file
+      + install reason.vim file (by Hezekiah M. Carty, #974)
 
 merlin 3.3.1
 ============
