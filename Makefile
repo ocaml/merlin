@@ -12,8 +12,9 @@ ocamlmerlin ocamlmerlin-server ocamlmerlin-lsp:
 clean:
 	dune clean
 
-test: build
-	dune runtest --force
+test:
+	dune build --workspace=dune-workspace.test merlin.install
+	dune runtest --workspace=dune-workspace.test --force
 
 preprocess:
 	dune build @preprocess
