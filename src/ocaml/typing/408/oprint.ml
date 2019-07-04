@@ -55,9 +55,10 @@ let all_ident_chars s =
   let len = String.length s in
   loop s len 0
 
-let parenthesized_ident name =
-  (List.mem name ["or"; "mod"; "land"; "lor"; "lxor"; "lsl"; "lsr"; "asr"])
-  || not (all_ident_chars name)
+let parenthesized_ident = function
+  | "or" | "mod" | "land" | "lor" | "lxor" | "lsl" | "lsr" | "asr" -> true
+  | "[]" | "()" -> false
+  | name -> not (all_ident_chars name)
 
 let value_ident ppf name =
   if parenthesized_ident name then

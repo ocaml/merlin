@@ -30,13 +30,13 @@ let rec print_ident ppf =
   | Oide_apply (id1, id2) ->
       fprintf ppf "%a(%a)" print_ident id1 print_ident id2
 
-let parenthesized_ident name =
-  (List.mem name ["or"; "mod"; "land"; "lor"; "lxor"; "lsl"; "lsr"; "asr"])
-  ||
-  (match name.[0] with
-      'a'..'z' | 'A'..'Z' | '\223'..'\246' | '\248'..'\255' | '_' ->
-        false
-    | _ -> true)
+let parenthesized_ident = function
+  | "or" | "mod" | "land" | "lor" | "lxor" | "lsl" | "lsr" | "asr" -> true
+  | "[]" | "()" -> false
+  | name ->
+    match name.[0] with
+    | 'a'..'z' | 'A'..'Z' | '\223'..'\246' | '\248'..'\255' | '_' -> false
+    | _ -> true
 
 let value_ident ppf name =
   if parenthesized_ident name then
