@@ -3,11 +3,9 @@ open Parser_raw
   let string_of_INT = function
     | (s, None) -> Printf.sprintf "INT(%s)" s
     | (s, Some c) -> Printf.sprintf "INT(%s%c)" s c
-
   let string_of_FLOAT = function
     | (s, None) -> Printf.sprintf "FLOAT(%s)" s
     | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
-
   let string_of_STRING = function
     | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
     | s, None -> Printf.sprintf "STRING(%S)" s
