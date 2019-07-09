@@ -41,10 +41,7 @@ type config = {
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
-  findlib      : string option;
   reader       : string list;
-  findlib_path : string list;
-  findlib_toolchain : string option;
   exclude_query_dir : bool;
 }
 

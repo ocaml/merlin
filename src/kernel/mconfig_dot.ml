@@ -38,11 +38,8 @@ type directive = [
   | `EXT of string list
   | `FLG of string
   | `STDLIB of string
-  | `FINDLIB of string
   | `SUFFIX of string
   | `READER of string list
-  | `FINDLIB_PATH of string
-  | `FINDLIB_TOOLCHAIN of string
   | `EXCLUDE_QUERY_DIR
 ]
 
@@ -88,16 +85,10 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
-          else if String.is_prefixed ~by:"FINDLIB " line then
-            tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
             tell (`SUFFIX (String.drop 7 line))
           else if String.is_prefixed ~by:"READER " line then
             tell (`READER (List.rev (rev_split_words (String.drop 7 line))))
-          else if String.is_prefixed ~by:"FINDLIB_PATH " line then
-            tell (`FINDLIB_PATH (String.drop 13 line))
-          else if String.is_prefixed ~by:"FINDLIB_TOOLCHAIN " line then
-            tell (`FINDLIB_TOOLCHAIN (String.drop 18 line))
           else if String.is_prefixed ~by:"EXCLUDE_QUERY_DIR" line then
             tell `EXCLUDE_QUERY_DIR
           else if String.is_prefixed ~by:"#" line then
@@ -177,10 +168,7 @@ type config = {
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
-  findlib      : string option;
   reader       : string list;
-  findlib_path : string list;
-  findlib_toolchain : string option;
   exclude_query_dir : bool;
 }
 
@@ -195,10 +183,7 @@ let empty_config = {
   suffixes     = [];
   flags        = [];
   stdlib       = None;
-  findlib      = None;
   reader       = [];
-  findlib_path = [];
-  findlib_toolchain = None;
   exclude_query_dir = false;
 }
 
@@ -249,15 +234,8 @@ let prepend_config ~stdlib {path; directives; _} config =
       {config with flags = flags :: config.flags}
     | `STDLIB path ->
       {config with stdlib = Some (canonicalize_filename ~cwd path)}
-    | `FINDLIB path ->
-      {config with findlib = Some (canonicalize_filename ~cwd path)}
     | `READER reader ->
       {config with reader}
-    | `FINDLIB_PATH path ->
-      let canon_path = canonicalize_filename ~cwd path in
-      { config with findlib_path = canon_path :: config.findlib_path }
-    | `FINDLIB_TOOLCHAIN path ->
-      {config with findlib_toolchain = Some path}
     | `EXCLUDE_QUERY_DIR ->
       {config with exclude_query_dir = true}
   ) directives
@@ -274,11 +252,8 @@ let postprocess_config config =
     extensions   = clean config.extensions;
     suffixes     = clean config.suffixes;
     flags        = clean config.flags;
-    findlib_path = clean config.findlib_path;
     stdlib      = config.stdlib;
-    findlib     = config.findlib;
     reader      = config.reader;
-    findlib_toolchain = config.findlib_toolchain;
     exclude_query_dir = config.exclude_query_dir;
   }
 

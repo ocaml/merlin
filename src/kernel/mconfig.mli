@@ -24,16 +24,6 @@ type ocaml = {
 
 val dump_ocaml : ocaml -> json
 
-(** {1 Findlib configuration} *)
-
-type findlib = {
-  conf : string option;
-  path : string list;
-  toolchain : string option;
-}
-
-val dump_findlib : findlib -> json
-
 (** {1 Merlin high-level settings} *)
 
 type merlin = {
@@ -80,7 +70,6 @@ type query = {
 
 type t = {
   ocaml   : ocaml;
-  findlib : findlib;
   merlin  : merlin;
   query   : query;
 }
