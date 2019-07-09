@@ -505,11 +505,9 @@ let expr_of_lwt_bindings ~loc lbs body =
   let string_of_INT = function
     | (s, None) -> Printf.sprintf "INT(%s)" s
     | (s, Some c) -> Printf.sprintf "INT(%s%c)" s c
-
   let string_of_FLOAT = function
     | (s, None) -> Printf.sprintf "FLOAT(%s)" s
     | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
-
   let string_of_STRING = function
     | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
     | s, None -> Printf.sprintf "STRING(%S)" s
@@ -518,15 +516,11 @@ let expr_of_lwt_bindings ~loc lbs body =
 %[@recovery.header
   open Parsetree
   open Ast_helper
-
   let default_loc = ref Location.none
-
   let default_expr () =
     let id = Location.mkloc "merlin.hole" !default_loc in
     Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
-
   let default_pattern () = Pat.any ~loc:!default_loc ()
-
   let default_module_expr () = Mod.structure ~loc:!default_loc[]
   let default_module_type () = Mty.signature ~loc:!default_loc[]
 ]

@@ -308,7 +308,6 @@ let let_operator startpos endpos op bindings cont =
 %}
 
 %[@printer.header
-
   let string_of_STRING = function
     | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
     | s, None -> Printf.sprintf "STRING(%S)" s
@@ -317,15 +316,11 @@ let let_operator startpos endpos op bindings cont =
 %[@recovery.header
   open Parsetree
   open Ast_helper
-
   let default_loc = ref Location.none
-
   let default_expr () =
     let id = Location.mkloc "merlin.hole" !default_loc in
     Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
-
   let default_pattern () = Pat.any ~loc:!default_loc ()
-
   let default_module_expr () = Mod.structure ~loc:!default_loc[]
   let default_module_type () = Mty.signature ~loc:!default_loc[]
 ]
