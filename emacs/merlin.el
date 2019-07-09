@@ -92,7 +92,8 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
   "The path to merlin in your installation."
   :group 'merlin :type '(choice (file :tag "Filename (default binary is \"ocamlmerlin\")")
                                 (function :tag "Function returning path to the binary")
-                                (const :tag "Use current opam switch" opam)))
+                                (const :tag "Use current opam switch" opam)
+                                (const :tag "Use esy" esy)))
 
 (defcustom merlin-completion-with-doc nil
   "If non-nil, tries to retrieve ocamldoc comments associated with each completion candidate"
@@ -1687,6 +1688,7 @@ Empty string defaults to jumping to all these."
        (cond
         ((functionp merlin-command) `(,(funcall merlin-command)))
         ((stringp merlin-command) `(,merlin-command))
+        ((equal merlin-command 'esy) '("esy" "exec-command" "ocamlmerlin"))
         ((equal merlin-command 'opam)
          (with-temp-buffer
            (if (eq (call-process-shell-command
