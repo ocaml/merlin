@@ -1,3 +1,17 @@
+/***********************************************************************/
+/*                                                                     */
+/*                                OCaml                                */
+/*                                                                     */
+/*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         */
+/*                                                                     */
+/*  Copyright 1996 Institut National de Recherche en Informatique et   */
+/*  en Automatique.  All rights reserved.  This file is distributed    */
+/*  under the terms of the Q Public License version 1.0.               */
+/*                                                                     */
+/***********************************************************************/
+
+/* The parser definition */
+
 %{
 [@@@ocaml.warning "-9"]
 
@@ -14,18 +28,18 @@ let gloc loc_start loc_end =
 let mkloc =
   Location.mkloc
 
-let mktyp startpos endpos d   = Typ.mk ~loc:(rloc startpos endpos) d
-let mkpat startpos endpos d   = Pat.mk ~loc:(rloc startpos endpos) d
-let mkexp startpos endpos d   = Exp.mk ~loc:(rloc startpos endpos) d
-let mkmty startpos endpos d   = Mty.mk ~loc:(rloc startpos endpos) d
-let mksig startpos endpos d   = [Sig.mk ~loc:(rloc startpos endpos) d]
-let mkmod startpos endpos d   = Mod.mk ~loc:(rloc startpos endpos) d
-let mkstr startpos endpos d   = [Str.mk ~loc:(rloc startpos endpos) d]
-let ghstr startpos endpos d   = [Str.mk ~loc:(gloc startpos endpos) d]
-let mkclass startpos endpos d = Cl.mk  ~loc:(rloc startpos endpos) d
-let mkcty startpos endpos d   = Cty.mk ~loc:(rloc startpos endpos) d
+let mktyp startpos endpos d = Typ.mk ~loc:(rloc startpos endpos) d
+let mkpat startpos endpos d = Pat.mk ~loc:(rloc startpos endpos) d
+let mkexp startpos endpos d = Exp.mk ~loc:(rloc startpos endpos) d
+let mkmty startpos endpos d = Mty.mk ~loc:(rloc startpos endpos) d
+let mksig startpos endpos d = [Sig.mk ~loc:(rloc startpos endpos) d]
+let mkmod startpos endpos d = Mod.mk ~loc:(rloc startpos endpos) d
+let mkstr startpos endpos d = [Str.mk ~loc:(rloc startpos endpos) d]
+let ghstr startpos endpos d = [Str.mk ~loc:(gloc startpos endpos) d]
+let mkclass startpos endpos d = Cl.mk ~loc:(rloc startpos endpos) d
+let mkcty startpos endpos d = Cty.mk ~loc:(rloc startpos endpos) d
 let mkctf startpos endpos ?attrs d = Ctf.mk ~loc:(rloc startpos endpos) ?attrs d
-let mkcf  startpos endpos ?attrs d = [Cf.mk  ~loc:(rloc startpos endpos) ?attrs d]
+let mkcf startpos endpos ?attrs d = [Cf.mk ~loc:(rloc startpos endpos) ?attrs d]
 
 let mkrhs startpos endpos rhs = mkloc rhs (rloc startpos endpos)
 let mkoption d =
@@ -206,7 +220,7 @@ let bigarray_set (startpos,endpos) (startop,endop) arr arg newval =
                         "", newval]))
 
 let lapply startpos endpos p1 p2 =
-  if not !Clflags.applicative_functors then 
+  if not !Clflags.applicative_functors then
     raise_error Syntaxerr.(Error(Applicative_path(rloc startpos endpos)));
   Lapply(p1, p2)
 
@@ -254,7 +268,7 @@ let varify_constructors var_names t =
           Ptyp_extension (s, arg)
     in
     {t with ptyp_desc = desc}
-  and loop_row_field  =
+  and loop_row_field =
     function
       | Rtag(label,attrs,flag,lst) ->
           Rtag(label,attrs,flag,List.map loop lst)
@@ -293,9 +307,9 @@ let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 let let_operator startpos endpos op bindings cont =
   let pat, expr =
     match bindings with
-    | []   -> assert false
-    | [x]  -> (x.pvb_pat,x.pvb_expr)
-    | l    ->
+    | [] -> assert false
+    | [x] -> (x.pvb_pat,x.pvb_expr)
+    | l ->
       let pats, exprs =
         List.fold_right
           (fun {pvb_pat=p;pvb_expr=e} (ps,es) -> (p::ps,e::es)) l ([],[]) in
@@ -330,7 +344,7 @@ let let_operator startpos endpos op bindings cont =
   let default_module_type () = Mty.signature ~loc:!default_loc[]
 ]
 
-#define $merloc(p1,p2) (merloc $endpos($ ## p1) $ ## p2)
+
 
 (* Tokens *)
 
@@ -471,8 +485,8 @@ let let_operator startpos endpos op bindings cont =
 
 (* Precedences and associativities.
 
-Tokens and rules have precedences.  A reduce/reduce conflict is resolved
-in favor of the first rule (in source file order).  A shift/reduce conflict
+Tokens and rules have precedences. A reduce/reduce conflict is resolved
+in favor of the first rule (in source file order). A shift/reduce conflict
 is resolved by comparing the precedence and associativity of the token to
 be shifted with those of the rule to be reduced.
 
@@ -484,8 +498,8 @@ if the token is left-associative, the parser will reduce; if
 right-associative, the parser will shift; if non-associative,
 the parser will declare a syntax error.
 
-We will only use associativities with operators of the kind  x * x -> x
-for example, in the rules of the form    expr: expr BINOP expr
+We will only use associativities with operators of the kind x * x -> x
+for example, in the rules of the form expr: expr BINOP expr
 in all other cases, we define two precedences if needed to resolve
 conflicts.
 
@@ -494,41 +508,41 @@ The precedences must be listed from low to high.
 
 %nonassoc IN
 %nonassoc below_SEMI
-%nonassoc SEMI                          (* below EQUAL ({lbl=...; lbl=...}) *)
-%nonassoc LET LET_LWT                   (* above SEMI ( ...; let ... in ...) *)
+%nonassoc SEMI (* below EQUAL ({lbl=...; lbl=...}) *)
+%nonassoc LET LET_LWT (* above SEMI ( ...; let ... in ...) *)
 %nonassoc LETOP
 %nonassoc below_WITH
-%nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
+%nonassoc FUNCTION WITH (* below BAR (match ... with ...) *)
 %nonassoc FINALLY_LWT
-%nonassoc AND             (* above WITH (module rec A: SIG with ... and ...) *)
-%nonassoc THEN                          (* below ELSE (if ... then ...) *)
-%nonassoc ELSE                          (* (if ... then ... else ...) *)
-%nonassoc LESSMINUS                     (* below COLONEQUAL (lbl <- x := e) *)
-%right    COLONEQUAL                    (* expr (e := e := e) *)
+%nonassoc AND (* above WITH (module rec A: SIG with ... and ...) *)
+%nonassoc THEN (* below ELSE (if ... then ...) *)
+%nonassoc ELSE (* (if ... then ... else ...) *)
+%nonassoc LESSMINUS (* below COLONEQUAL (lbl <- x := e) *)
+%right COLONEQUAL (* expr (e := e := e) *)
 %nonassoc AS
-%left     BAR                           (* pattern (p|p|p) *)
+%left BAR (* pattern (p|p|p) *)
 %nonassoc below_COMMA
-%left     COMMA                         (* expr/expr_comma_list (e,e,e) *)
-%right    MINUSGREATER                  (* core_type2 (t -> t -> t) *)
-%right    OR BARBAR                     (* expr (e || e || e) *)
-%right    AMPERSAND AMPERAMPER          (* expr (e && e && e) *)
+%left COMMA (* expr/expr_comma_list (e,e,e) *)
+%right MINUSGREATER (* core_type2 (t -> t -> t) *)
+%right OR BARBAR (* expr (e || e || e) *)
+%right AMPERSAND AMPERAMPER (* expr (e && e && e) *)
 %nonassoc below_EQUAL
-%left     INFIXOP0 EQUAL LESS GREATER   (* expr (e OP e OP e) *)
-%right    INFIXOP1                      (* expr (e OP e OP e) *)
+%left INFIXOP0 EQUAL LESS GREATER (* expr (e OP e OP e) *)
+%right INFIXOP1 (* expr (e OP e OP e) *)
 %nonassoc below_LBRACKETAT
 %nonassoc LBRACKETAT
 %nonassoc LBRACKETATAT
-%right    COLONCOLON                    (* expr (e :: e :: e) *)
-%left     INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT PLUSEQ (* expr (e OP e OP e) *)
-%left     INFIXOP3 STAR PERCENT         (* expr (e OP e OP e) *)
-%right    INFIXOP4                      (* expr (e OP e OP e) *)
+%right COLONCOLON (* expr (e :: e :: e) *)
+%left INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT PLUSEQ (* expr (e OP e OP e) *)
+%left INFIXOP3 STAR PERCENT (* expr (e OP e OP e) *)
+%right INFIXOP4 (* expr (e OP e OP e) *)
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
-%nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
-%nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
-%left     prec_escape
+%nonassoc prec_constant_constructor (* cf. simple_expr (C versus C x) *)
+%nonassoc prec_constr_appl (* above AS BAR COLONCOLON COMMA *)
+%left prec_escape
 %nonassoc below_SHARP
-%nonassoc SHARP                         (* simple_expr/toplevel_directive *)
-%left     HASHOP
+%nonassoc SHARP (* simple_expr/toplevel_directive *)
+%left HASHOP
 %nonassoc below_DOT
 %nonassoc DOT
 
@@ -590,7 +604,7 @@ functor_args [@recovery []]:
 | functor_arg
     { [ $1 ] }
 
-module_expr  [@recovery default_module_expr ()]:
+module_expr [@recovery default_module_expr ()]:
 | mod_longident
     { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | STRUCT [@unclosed "struct"] structure END [@close]
@@ -726,7 +740,7 @@ module_type [@recovery default_module_type ()]:
 | MODULE TYPE OF module_expr %prec below_LBRACKETAT
     { mkmty $startpos $endpos (Pmty_typeof $4) }
 (*| LPAREN [@unclosed "("] MODULE mod_longident RPAREN [@close]
-    { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos($3) $endpos($3) $3)) }*)
+    { mkmty $startpos $endpos (Pmty_alias (mkrhs $startpos($3) $endpos($3) $3)) }*)
 | LPAREN [@unclosed "("] module_type RPAREN [@close]
     { $2 }
 | extension
@@ -991,16 +1005,16 @@ class_sig_fields:
 
 class_sig_field:
 | INHERIT class_signature attrs = post_item_attributes
-    { mkctf $startpos $endpos  (Pctf_inherit $2) ~attrs }
+    { mkctf $startpos $endpos (Pctf_inherit $2) ~attrs }
 | VAL value_type attrs = post_item_attributes
-    { mkctf $startpos $endpos  (Pctf_val $2) ~attrs }
+    { mkctf $startpos $endpos (Pctf_val $2) ~attrs }
 | METHOD private_virtual_flags label COLON poly_type attrs = post_item_attributes
     {
       let (p, v) = $2 in
-      mkctf $startpos $endpos  (Pctf_method ($3, p, v, $5)) ~attrs
+      mkctf $startpos $endpos (Pctf_method ($3, p, v, $5)) ~attrs
     }
 | CONSTRAINT constrain_field attrs = post_item_attributes
-    { mkctf $startpos $endpos  (Pctf_constraint $2) ~attrs }
+    { mkctf $startpos $endpos (Pctf_constraint $2) ~attrs }
 | item_extension attrs = post_item_attributes
     { mkctf $startpos $endpos (Pctf_extension $1) ~attrs }
 | floating_attribute
@@ -1082,7 +1096,7 @@ pattern_var:
 | LIDENT
     { mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1)) }
 | UNDERSCORE
-    { mkpat $startpos $endpos  Ppat_any }
+    { mkpat $startpos $endpos Ppat_any }
 
 opt_default:
 | (* empty *)
@@ -1112,13 +1126,13 @@ let_pattern [@recovery default_pattern ()]:
 | simple_expr simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
 | LET [@item "let"] ext_attributes rec_flag let_bindings_no_attrs IN seq_expr
-    { mkexp_attrs $startpos $endpos (Pexp_let($3, List.rev $4, $merloc(5,6))) $2 }
+    { mkexp_attrs $startpos $endpos (Pexp_let($3, List.rev $4, (merloc $endpos($5) $6))) $2 }
 | LET MODULE [@item "let module"]
   ext_attributes UIDENT module_binding_body IN seq_expr
-    { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos($4) $endpos($4) $4, $5, $merloc(6,7))) $3 }
+    { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos($4) $endpos($4) $4, $5, (merloc $endpos($6) $7))) $3 }
 | LET OPEN [@item "let open"] expr_open IN seq_expr
    { let (flag,id,ext) = $3 in
-      mkexp_attrs $startpos $endpos (Pexp_open(flag, id, $merloc(4,5))) ext }
+      mkexp_attrs $startpos $endpos (Pexp_open(flag, id, (merloc $endpos($4) $5))) ext }
 | FUNCTION [@item "function"]
   ext_attributes opt_bar match_cases
     { mkexp_attrs $startpos $endpos (Pexp_function(List.rev $4)) $2 }
@@ -1145,18 +1159,18 @@ let_pattern [@recovery default_pattern ()]:
   ext_attributes seq_expr
   THEN [@item "then clause"] expr
   ELSE [@item "else clause"] expr
-    { mkexp_attrs $startpos $endpos (Pexp_ifthenelse($3, $merloc(4,5), Some $merloc(6,7))) $2 }
+    { mkexp_attrs $startpos $endpos (Pexp_ifthenelse($3, (merloc $endpos($4) $5), Some (merloc $endpos($6) $7))) $2 }
 | IF [@item "if"]
   ext_attributes seq_expr
   THEN [@item "then clause"] expr
-    { mkexp_attrs $startpos $endpos (Pexp_ifthenelse($3, $merloc(4,5), None)) $2 }
+    { mkexp_attrs $startpos $endpos (Pexp_ifthenelse($3, (merloc $endpos($4) $5), None)) $2 }
 | WHILE [@item "while"]
   ext_attributes seq_expr DO [@item "while body"] seq_expr DONE
-    { mkexp_attrs $startpos $endpos (Pexp_while($3, $merloc(4,5))) $2 }
+    { mkexp_attrs $startpos $endpos (Pexp_while($3, (merloc $endpos($4) $5))) $2 }
 | FOR [@item "for"]
   ext_attributes pattern EQUAL seq_expr direction_flag seq_expr
   DO [@item "for body"] seq_expr DONE
-    { mkexp_attrs $startpos $endpos (Pexp_for($3, $merloc(4,5), $merloc(6,7), $6, $merloc(8,9))) $2 }
+    { mkexp_attrs $startpos $endpos (Pexp_for($3, (merloc $endpos($4) $5), (merloc $endpos($6) $7), $6, (merloc $endpos($8) $9))) $2 }
 | expr COLONCOLON expr
     { mkexp_cons (rloc $startpos($2) $endpos($2)) (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (rloc $startpos $endpos) }
 | LPAREN COLONCOLON RPAREN LPAREN expr COMMA expr RPAREN
@@ -1270,14 +1284,14 @@ simple_expr:
     { bigarray_get ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) $1 $4 }
 | LBRACE [@unclosed "{"] record_expr RBRACE [@close]
     { let (exten, fields) = $2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
-| mod_longident DOT LBRACE [@unclosed "{"]  record_expr RBRACE [@close]
+| mod_longident DOT LBRACE [@unclosed "{"] record_expr RBRACE [@close]
     { let (exten, fields) = $4 in
         let rec_exp = mkexp $startpos $endpos (Pexp_record(fields, exten)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, rec_exp)) }
 | LBRACKETBAR [@unclosed "[|"] expr_semi_list opt_semi BARRBRACKET [@close]
-    { mkexp $startpos $endpos  (Pexp_array(List.rev $2)) }
+    { mkexp $startpos $endpos (Pexp_array(List.rev $2)) }
 | LBRACKETBAR BARRBRACKET
-    { mkexp $startpos $endpos  (Pexp_array []) }
+    { mkexp $startpos $endpos (Pexp_array []) }
 | mod_longident DOT LBRACKETBAR [@unclosed "[|"] expr_semi_list opt_semi BARRBRACKET [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_array(List.rev $4)))) }
 | LBRACKET [@unclosed "["] expr_semi_list opt_semi RBRACKET [@close]
@@ -1292,9 +1306,9 @@ simple_expr:
 | NEW ext_attributes class_longident
     { mkexp_attrs $startpos $endpos (Pexp_new(mkrhs $startpos($3) $endpos($3) $3)) $2 }
 | LBRACELESS [@unclosed "{<"] field_expr_list opt_semi GREATERRBRACE
-    { mkexp $startpos $endpos  (Pexp_override(List.rev $2)) }
+    { mkexp $startpos $endpos (Pexp_override(List.rev $2)) }
 | LBRACELESS GREATERRBRACE
-    { mkexp $startpos $endpos  (Pexp_override [])}
+    { mkexp $startpos $endpos (Pexp_override [])}
 | mod_longident DOT LBRACELESS [@unclosed "{<"] field_expr_list opt_semi GREATERRBRACE [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_override(List.rev $4)))) }
 | simple_expr SHARP [@shift_token (1,LIDENT "")] label
@@ -1302,16 +1316,16 @@ simple_expr:
 | simple_expr HASHOP [@shift_token (1,LIDENT "")] simple_expr
     { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
 | LPAREN [@unclosed "("] MODULE module_expr RPAREN [@close]
-    { mkexp $startpos $endpos  (Pexp_pack $3) }
+    { mkexp $startpos $endpos (Pexp_pack $3) }
 | LPAREN [@unclosed "("] MODULE module_expr COLON package_type RPAREN [@close]
-    { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack $3),
+    { mkexp $startpos $endpos (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack $3),
                                 ghtyp $startpos $endpos (Ptyp_package $5))) }
 | mod_longident DOT LPAREN [@unclosed "("] MODULE module_expr COLON package_type RPAREN [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1,
         mkexp $startpos $endpos (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack $5),
                                 ghtyp $startpos $endpos (Ptyp_package $7))))) }
 | extension
-    { mkexp $startpos $endpos  (Pexp_extension $1) }
+    { mkexp $startpos $endpos (Pexp_extension $1) }
 | QUESTIONQUESTION
     { let id = mkloc "merlin.hole" (rloc $startpos $endpos) in
       mkexp $startpos $endpos (Pexp_extension (id, PStr [])) }
@@ -1404,16 +1418,16 @@ match_cases [@recovery []]:
 match_case:
 | pattern [@item "pattern"]
   MINUSGREATER [@item "match action"] seq_expr
-    { Exp.case $1 $merloc(2,3) }
+    { Exp.case $1 (merloc $endpos($2) $3) }
 | pattern [@item "pattern"]
   WHEN [@item "when guard"] seq_expr
   MINUSGREATER [@item "match action"] seq_expr
-    { Exp.case $1 ~guard:$merloc(2,3) $merloc(4,5) }
+    { Exp.case $1 ~guard:(merloc $endpos($2) $3) (merloc $endpos($4) $5) }
 
 fun_def:
 | MINUSGREATER seq_expr
 (* Cf #5939: we used to accept (fun p when e0 -> e) *)
-    { $merloc(1,2) }
+    { (merloc $endpos($1) $2) }
 | labeled_simple_pattern fun_def
     {
        let (l,o,p) = $1 in
@@ -1928,7 +1942,7 @@ simple_core_type2 :
 | LPAREN MODULE package_type RPAREN
     { mktyp $startpos $endpos (Ptyp_package $3) }
 | extension
-    { mktyp $startpos $endpos  (Ptyp_extension $1) }
+    { mktyp $startpos $endpos (Ptyp_extension $1) }
 
 package_type :
 | mty_longident
@@ -2141,12 +2155,12 @@ operator :
 constr_ident:
 | UIDENT
     { $1 }
-(*  | LBRACKET RBRACKET                           { "[]" } *)
+(* | LBRACKET RBRACKET { "[]" } *)
 | LPAREN RPAREN
     { "()" }
 | COLONCOLON
     { "::" }
-(*  | LPAREN COLONCOLON RPAREN                    { "::" } *)
+(* | LPAREN COLONCOLON RPAREN { "::" } *)
 | FALSE
     { "false" }
 | TRUE
@@ -2496,7 +2510,7 @@ expr_open :
 %public expr:
 | LET_LWT [@item "lwt"]
   ext_attributes rec_flag let_bindings IN [@shift 2] seq_expr
-    { let expr = Pexp_let($3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) $4, $merloc(5,6)) in
+    { let expr = Pexp_let($3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) $4, (merloc $endpos($5) $6)) in
       Fake.app Fake.Lwt.in_lwt (mkexp_attrs $startpos $endpos expr $2) }
 | MATCH_LWT [@item "match_lwt"]
   ext_attributes seq_expr WITH opt_bar match_cases
@@ -2553,20 +2567,20 @@ let_operator:
 
 (* Toplevel directives *)
 %inline toplevel_payload:
-    /* Empty */ { None }
-  | STRING      { let (s, d) = $1 in 
+                { None }
+  | STRING { let (s, d) = $1 in
                   Some (Exp.constant (Pconst_string (s, d) )) }
-  | INT         { Some (Exp.constant (Const_int $1)) }
+  | INT { Some (Exp.constant (Const_int $1)) }
   | val_longident | mod_longident { Some (Exp.ident (mkloc $1 (rloc $startpos $endpos))) }
-  | FALSE       { Some (Exp.construct (mkloc (Longident.Lident "false") (rloc $startpos $endpos)) None) }
-  | TRUE        { Some (Exp.construct (mkloc (Longident.Lident "true") (rloc $startpos $endpos)) None) }
+  | FALSE { Some (Exp.construct (mkloc (Longident.Lident "false") (rloc $startpos $endpos)) None) }
+  | TRUE { Some (Exp.construct (mkloc (Longident.Lident "true") (rloc $startpos $endpos)) None) }
 ;
 
 toplevel_directives:
     (* empty *) { [] }
   | toplevel_directives SHARP ident toplevel_payload
     { let id = mkloc ("merlin.directive." ^ $3) (rloc $startpos($3) $endpos($3)) in
-      let payload = 
+      let payload =
         match $4 with
         | None -> PStr []
         | Some exp -> PStr [mkstrexp exp []]
