@@ -17,7 +17,7 @@ module MenhirBasics = struct
     | VAL
     | UNDERSCORE
     | UIDENT of (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 23 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -30,7 +30,7 @@ module MenhirBasics = struct
     | THEN
     | STRUCT
     | STRING of (
-# 576 "src/ocaml/preprocess/parser_raw.mly"
+# 590 "src/ocaml/preprocess/parser_raw.mly"
        (string * string option)
 # 36 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -48,7 +48,7 @@ module MenhirBasics = struct
     | QUESTION
     | PRIVATE
     | PREFIXOP of (
-# 561 "src/ocaml/preprocess/parser_raw.mly"
+# 575 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 54 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -58,7 +58,7 @@ module MenhirBasics = struct
     | PERCENT
     | OR
     | OPTLABEL of (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 64 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -77,7 +77,7 @@ module MenhirBasics = struct
     | MATCH
     | LPAREN
     | LIDENT of (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 83 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -98,39 +98,39 @@ module MenhirBasics = struct
     | LBRACE
     | LAZY
     | LABEL of (
-# 524 "src/ocaml/preprocess/parser_raw.mly"
+# 538 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 104 "src/ocaml/preprocess/parser_raw.ml"
   )
     | INT of (
-# 522 "src/ocaml/preprocess/parser_raw.mly"
+# 536 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 109 "src/ocaml/preprocess/parser_raw.ml"
   )
     | INITIALIZER
     | INHERIT
     | INFIXOP4 of (
-# 519 "src/ocaml/preprocess/parser_raw.mly"
+# 533 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 116 "src/ocaml/preprocess/parser_raw.ml"
   )
     | INFIXOP3 of (
-# 518 "src/ocaml/preprocess/parser_raw.mly"
+# 532 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 121 "src/ocaml/preprocess/parser_raw.ml"
   )
     | INFIXOP2 of (
-# 517 "src/ocaml/preprocess/parser_raw.mly"
+# 531 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 126 "src/ocaml/preprocess/parser_raw.ml"
   )
     | INFIXOP1 of (
-# 516 "src/ocaml/preprocess/parser_raw.mly"
+# 530 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 131 "src/ocaml/preprocess/parser_raw.ml"
   )
     | INFIXOP0 of (
-# 515 "src/ocaml/preprocess/parser_raw.mly"
+# 529 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 136 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -138,7 +138,7 @@ module MenhirBasics = struct
     | IN
     | IF
     | HASHOP of (
-# 573 "src/ocaml/preprocess/parser_raw.mly"
+# 587 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 144 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -152,7 +152,7 @@ module MenhirBasics = struct
     | FOR_LWT
     | FOR
     | FLOAT of (
-# 502 "src/ocaml/preprocess/parser_raw.mly"
+# 516 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 158 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -172,14 +172,14 @@ module MenhirBasics = struct
     | DOT
     | DONE
     | DOCSTRING of (
-# 592 "src/ocaml/preprocess/parser_raw.mly"
+# 606 "src/ocaml/preprocess/parser_raw.mly"
        (Docstrings.docstring)
 # 178 "src/ocaml/preprocess/parser_raw.ml"
   )
     | DO
     | CONSTRAINT
     | COMMENT of (
-# 591 "src/ocaml/preprocess/parser_raw.mly"
+# 605 "src/ocaml/preprocess/parser_raw.mly"
        (string * Location.t)
 # 185 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -190,7 +190,7 @@ module MenhirBasics = struct
     | COLON
     | CLASS
     | CHAR of (
-# 482 "src/ocaml/preprocess/parser_raw.mly"
+# 496 "src/ocaml/preprocess/parser_raw.mly"
        (char)
 # 196 "src/ocaml/preprocess/parser_raw.ml"
   )
@@ -213,7 +213,7 @@ include MenhirBasics
 let _eRR =
   MenhirBasics.Error
 
-# 1 "src/ocaml/preprocess/parser_raw.mly"
+# 15 "src/ocaml/preprocess/parser_raw.mly"
   
 [@@@ocaml.warning "-9"]
 
@@ -1217,7 +1217,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2511 "src/ocaml/preprocess/parser_raw.mly"
+# 2525 "src/ocaml/preprocess/parser_raw.mly"
          ( "+" )
 # 1223 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -1242,7 +1242,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2512 "src/ocaml/preprocess/parser_raw.mly"
+# 2526 "src/ocaml/preprocess/parser_raw.mly"
             ( "+." )
 # 1248 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -1267,7 +1267,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type list) = 
-# 2283 "src/ocaml/preprocess/parser_raw.mly"
+# 2297 "src/ocaml/preprocess/parser_raw.mly"
                       ( [_1] )
 # 1273 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -1306,7 +1306,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type list) = 
-# 2284 "src/ocaml/preprocess/parser_raw.mly"
+# 2298 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( _3 :: _1 )
 # 1312 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -1365,7 +1365,7 @@ module Tables = struct
         let _7 : (Parsetree.attributes) = Obj.magic _7 in
         let _6 : (Parsetree.class_expr) = Obj.magic _6 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 1371 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -1381,7 +1381,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1398,7 +1398,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1020 "src/ocaml/preprocess/parser_raw.mly"
+# 1034 "src/ocaml/preprocess/parser_raw.mly"
       ( Ci.mk _5 _6 ~virt:_3 ~params:_4
          ~attrs:(_2@_7) ~loc:(((make_loc _symbolstartpos _endpos)))
          ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
@@ -1466,7 +1466,7 @@ module Tables = struct
         let _7 : (Parsetree.class_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 1472 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -1482,7 +1482,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1499,7 +1499,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1248 "src/ocaml/preprocess/parser_raw.mly"
+# 1262 "src/ocaml/preprocess/parser_raw.mly"
       ( Ci.mk _5 _7 ~virt:_3 ~params:_4
               ~attrs:(_2@_8) ~loc:(((make_loc _symbolstartpos _endpos)))
               ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
@@ -1567,7 +1567,7 @@ module Tables = struct
         let _7 : (Parsetree.class_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 1573 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -1583,7 +1583,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1600,7 +1600,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1269 "src/ocaml/preprocess/parser_raw.mly"
+# 1283 "src/ocaml/preprocess/parser_raw.mly"
       ( Ci.mk _5 _7 ~virt:_3 ~params:_4
          ~attrs:(_2@_8) ~loc:(((make_loc _symbolstartpos _endpos)))
          ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
@@ -1650,7 +1650,7 @@ module Tables = struct
         let _v : (Ast_helper.let_binding) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1615 "src/ocaml/preprocess/parser_raw.mly"
+# 1629 "src/ocaml/preprocess/parser_raw.mly"
       ( (mklb ~loc:(make_loc _symbolstartpos _endpos)) false _3 (_2@_4) )
 # 1656 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -1697,7 +1697,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.module_expr) = Obj.magic _4 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 1703 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -1711,7 +1711,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1728,7 +1728,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 858 "src/ocaml/preprocess/parser_raw.mly"
+# 872 "src/ocaml/preprocess/parser_raw.mly"
       ( Mb.mk _3 _4 ~attrs:(_2@_5) ~loc:(((make_loc _symbolstartpos _endpos)))
                ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 1735 "src/ocaml/preprocess/parser_raw.ml"
@@ -1783,7 +1783,7 @@ module Tables = struct
         let _5 : (Parsetree.module_type) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 1789 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -1797,7 +1797,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1814,7 +1814,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 986 "src/ocaml/preprocess/parser_raw.mly"
+# 1000 "src/ocaml/preprocess/parser_raw.mly"
       ( Md.mk _3 _5 ~attrs:(_2@_6) ~loc:(((make_loc _symbolstartpos _endpos)))
               ~text:((symbol_text _startpos)) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 1821 "src/ocaml/preprocess/parser_raw.ml"
@@ -1875,7 +1875,7 @@ module Tables = struct
         let _6 : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = Obj.magic _6 in
         let _5 : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = Obj.magic _5 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 1881 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -1890,7 +1890,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -1907,7 +1907,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1913 "src/ocaml/preprocess/parser_raw.mly"
+# 1927 "src/ocaml/preprocess/parser_raw.mly"
       ( let (kind, priv, manifest) = _5 in
           Type.mk _4 ~params:_3 ~cstrs:(List.rev _6)
             ~kind ~priv ?manifest ~attrs:(_2@_7) ~loc:(((make_loc _symbolstartpos _endpos)))
@@ -1937,7 +1937,7 @@ module Tables = struct
         let _v : (string Location.loc) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2573 "src/ocaml/preprocess/parser_raw.mly"
+# 2587 "src/ocaml/preprocess/parser_raw.mly"
                    ( mkloc _1 ((make_loc _symbolstartpos _endpos)) )
 # 1943 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -1978,7 +1978,7 @@ module Tables = struct
         let _v : (string Location.loc) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2574 "src/ocaml/preprocess/parser_raw.mly"
+# 2588 "src/ocaml/preprocess/parser_raw.mly"
                                ( mkloc (_1 ^ "." ^ _3.txt) ((make_loc _symbolstartpos _endpos)))
 # 1984 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2024,7 +2024,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.attribute) = 
-# 2577 "src/ocaml/preprocess/parser_raw.mly"
+# 2591 "src/ocaml/preprocess/parser_raw.mly"
                                       ( (_2, _3) )
 # 2030 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2042,7 +2042,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.attributes) = 
-# 2590 "src/ocaml/preprocess/parser_raw.mly"
+# 2604 "src/ocaml/preprocess/parser_raw.mly"
                ( [] )
 # 2048 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2074,7 +2074,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.attributes) = 
-# 2591 "src/ocaml/preprocess/parser_raw.mly"
+# 2605 "src/ocaml/preprocess/parser_raw.mly"
                          ( _1 :: _2 )
 # 2080 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2124,7 +2124,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2140,7 +2140,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1997 "src/ocaml/preprocess/parser_raw.mly"
+# 2011 "src/ocaml/preprocess/parser_raw.mly"
       (
        let args,res = _3 in
        Type.constructor _2 ~args ?res ~attrs:_4
@@ -2194,7 +2194,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2210,7 +2210,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2108 "src/ocaml/preprocess/parser_raw.mly"
+# 2122 "src/ocaml/preprocess/parser_raw.mly"
       ( let args, res = _3 in
         Te.decl _2 ~args ?res ~attrs:_4
            ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
@@ -2269,7 +2269,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2287,7 +2287,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2303,7 +2303,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2119 "src/ocaml/preprocess/parser_raw.mly"
+# 2133 "src/ocaml/preprocess/parser_raw.mly"
       ( Te.rebind _2 _4 ~attrs:_5
           ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
 # 2310 "src/ocaml/preprocess/parser_raw.ml"
@@ -2363,7 +2363,7 @@ module Tables = struct
         let _7 : (Parsetree.attributes) = Obj.magic _7 in
         let _6 : (Parsetree.class_expr) = Obj.magic _6 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 2369 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -2379,7 +2379,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2395,7 +2395,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1012 "src/ocaml/preprocess/parser_raw.mly"
+# 1026 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Ci.mk _5 _6 ~virt:_3 ~params:_4 ~attrs:(attrs@_7)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -2423,7 +2423,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_declaration list * string Location.loc option) = 
-# 1005 "src/ocaml/preprocess/parser_raw.mly"
+# 1019 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in ([body], ext) )
 # 2429 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2455,7 +2455,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_declaration list * string Location.loc option) = 
-# 1007 "src/ocaml/preprocess/parser_raw.mly"
+# 1021 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
 # 2461 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2521,7 +2521,7 @@ module Tables = struct
         let _7 : (Parsetree.class_type) = Obj.magic _7 in
         let _6 : unit = Obj.magic _6 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 2527 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -2537,7 +2537,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -2553,7 +2553,7 @@ module Tables = struct
         let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1240 "src/ocaml/preprocess/parser_raw.mly"
+# 1254 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Ci.mk _5 _7 ~virt:_3 ~params:_4 ~attrs:(attrs@_8)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -2581,7 +2581,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_description list * string Location.loc option) = 
-# 1233 "src/ocaml/preprocess/parser_raw.mly"
+# 1247 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in ([body],ext) )
 # 2587 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2613,7 +2613,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_description list * string Location.loc option) = 
-# 1235 "src/ocaml/preprocess/parser_raw.mly"
+# 1249 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
 # 2619 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2638,7 +2638,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_expr) = 
-# 1044 "src/ocaml/preprocess/parser_raw.mly"
+# 1058 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 2644 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2677,7 +2677,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.class_expr) = 
-# 1046 "src/ocaml/preprocess/parser_raw.mly"
+# 1060 "src/ocaml/preprocess/parser_raw.mly"
       ( wrap_class_attrs _3 _2 )
 # 2683 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2711,7 +2711,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1048 "src/ocaml/preprocess/parser_raw.mly"
+# 1062 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_apply(_1, List.rev _2)) )
 # 2717 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2752,7 +2752,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1050 "src/ocaml/preprocess/parser_raw.mly"
+# 1064 "src/ocaml/preprocess/parser_raw.mly"
       ( (class_of_let_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 _3 )
 # 2758 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2784,7 +2784,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_expr) = 
-# 1052 "src/ocaml/preprocess/parser_raw.mly"
+# 1066 "src/ocaml/preprocess/parser_raw.mly"
       ( Cl.attr _1 _2 )
 # 2790 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2811,7 +2811,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1054 "src/ocaml/preprocess/parser_raw.mly"
+# 1068 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_extension _1) )
 # 2817 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2873,7 +2873,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1095 "src/ocaml/preprocess/parser_raw.mly"
+# 1109 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_inherit (_2, _4, _5)) ~attrs:(_3@_6) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 2879 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -2915,7 +2915,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1097 "src/ocaml/preprocess/parser_raw.mly"
+# 1111 "src/ocaml/preprocess/parser_raw.mly"
       ( let v, attrs = _2 in
         (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_val v) ~attrs:(attrs@_3) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 2922 "src/ocaml/preprocess/parser_raw.ml"
@@ -2958,7 +2958,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1100 "src/ocaml/preprocess/parser_raw.mly"
+# 1114 "src/ocaml/preprocess/parser_raw.mly"
       ( let meth, attrs = _2 in
         (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_method meth) ~attrs:(attrs@_3) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 2965 "src/ocaml/preprocess/parser_raw.ml"
@@ -3007,7 +3007,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1103 "src/ocaml/preprocess/parser_raw.mly"
+# 1117 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_constraint _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3013 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3055,7 +3055,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1105 "src/ocaml/preprocess/parser_raw.mly"
+# 1119 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_initializer _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3061 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3089,7 +3089,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1107 "src/ocaml/preprocess/parser_raw.mly"
+# 1121 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_extension _1) ~attrs:_2 ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3095 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3116,7 +3116,7 @@ module Tables = struct
         let _v : (Parsetree.class_field) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1109 "src/ocaml/preprocess/parser_raw.mly"
+# 1123 "src/ocaml/preprocess/parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mkcf ~loc:(make_loc _symbolstartpos _endpos)) (Pcf_attribute _1) )
 # 3123 "src/ocaml/preprocess/parser_raw.ml"
@@ -3135,7 +3135,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_field list) = 
-# 1088 "src/ocaml/preprocess/parser_raw.mly"
+# 1102 "src/ocaml/preprocess/parser_raw.mly"
       ( [] )
 # 3141 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3167,7 +3167,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_field list) = 
-# 1090 "src/ocaml/preprocess/parser_raw.mly"
+# 1104 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 :: ((text_cstr _startpos__2_)) @ _1 )
 # 3173 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3199,7 +3199,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_expr) = 
-# 1026 "src/ocaml/preprocess/parser_raw.mly"
+# 1040 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 3205 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3247,7 +3247,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1028 "src/ocaml/preprocess/parser_raw.mly"
+# 1042 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constraint(_4, _2)) )
 # 3253 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3281,7 +3281,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1030 "src/ocaml/preprocess/parser_raw.mly"
+# 1044 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l,o,p) = _1 in (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_fun(l, o, p, _2)) )
 # 3287 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3322,7 +3322,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1038 "src/ocaml/preprocess/parser_raw.mly"
+# 1052 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l,o,p) = _1 in (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_fun(l, o, p, _3)) )
 # 3328 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3356,7 +3356,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1040 "src/ocaml/preprocess/parser_raw.mly"
+# 1054 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l,o,p) = _1 in (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_fun(l, o, p, _2)) )
 # 3362 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3377,7 +3377,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 3383 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -3385,7 +3385,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2429 "src/ocaml/preprocess/parser_raw.mly"
+# 2443 "src/ocaml/preprocess/parser_raw.mly"
            ( Lident _1 )
 # 3391 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3418,7 +3418,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 3424 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _3 in
@@ -3428,7 +3428,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2430 "src/ocaml/preprocess/parser_raw.mly"
+# 2444 "src/ocaml/preprocess/parser_raw.mly"
                              ( Ldot(_1, _3) )
 # 3434 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3469,7 +3469,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1080 "src/ocaml/preprocess/parser_raw.mly"
+# 1094 "src/ocaml/preprocess/parser_raw.mly"
       ( (reloc_pat ~loc:(make_loc _symbolstartpos _endpos)) _2 )
 # 3475 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3524,7 +3524,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1082 "src/ocaml/preprocess/parser_raw.mly"
+# 1096 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_2, _4)) )
 # 3530 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3544,7 +3544,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__0_ in
         let _symbolstartpos = _endpos in
         
-# 1084 "src/ocaml/preprocess/parser_raw.mly"
+# 1098 "src/ocaml/preprocess/parser_raw.mly"
       ( (ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_any) )
 # 3550 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3583,7 +3583,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type) = 
-# 1190 "src/ocaml/preprocess/parser_raw.mly"
+# 1204 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 3589 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3603,7 +3603,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__0_ in
         let _symbolstartpos = _endpos in
         
-# 1192 "src/ocaml/preprocess/parser_raw.mly"
+# 1206 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
 # 3609 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3639,13 +3639,13 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 669 "src/ocaml/preprocess/parser_raw.mly"
+# 683 "src/ocaml/preprocess/parser_raw.mly"
                                ( extra_csig _startpos _endpos _1 )
 # 3645 "src/ocaml/preprocess/parser_raw.ml"
           
         in
         
-# 1186 "src/ocaml/preprocess/parser_raw.mly"
+# 1200 "src/ocaml/preprocess/parser_raw.mly"
       ( Csig.mk _1 (List.rev _2) )
 # 3651 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3693,7 +3693,7 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1200 "src/ocaml/preprocess/parser_raw.mly"
+# 1214 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_inherit _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3699 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3742,7 +3742,7 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1202 "src/ocaml/preprocess/parser_raw.mly"
+# 1216 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_val _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3748 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3813,7 +3813,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -3829,7 +3829,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1205 "src/ocaml/preprocess/parser_raw.mly"
+# 1219 "src/ocaml/preprocess/parser_raw.mly"
       (
        let (p, v) = _3 in
        (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_method (_4, p, v, _6)) ~attrs:(_2@_7) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -3880,7 +3880,7 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1210 "src/ocaml/preprocess/parser_raw.mly"
+# 1224 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_constraint _3) ~attrs:(_2@_4) ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3886 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3914,7 +3914,7 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1212 "src/ocaml/preprocess/parser_raw.mly"
+# 1226 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkctf ~loc:(make_loc _symbolstartpos _endpos)) (Pctf_extension _1) ~attrs:_2 ~docs:((symbol_docs _symbolstartpos _endpos)) )
 # 3920 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3941,7 +3941,7 @@ module Tables = struct
         let _v : (Parsetree.class_type_field) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1214 "src/ocaml/preprocess/parser_raw.mly"
+# 1228 "src/ocaml/preprocess/parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mkctf ~loc:(make_loc _symbolstartpos _endpos))(Pctf_attribute _1) )
 # 3948 "src/ocaml/preprocess/parser_raw.ml"
@@ -3960,7 +3960,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_type_field list) = 
-# 1195 "src/ocaml/preprocess/parser_raw.mly"
+# 1209 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( [] )
 # 3966 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -3992,7 +3992,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_type_field list) = 
-# 1196 "src/ocaml/preprocess/parser_raw.mly"
+# 1210 "src/ocaml/preprocess/parser_raw.mly"
                                    ( _2 :: ((text_csig _startpos__2_)) @ _1 )
 # 3998 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4040,7 +4040,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1172 "src/ocaml/preprocess/parser_raw.mly"
+# 1186 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_constr (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), List.rev _2)) )
 # 4046 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4068,7 +4068,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -4084,7 +4084,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1174 "src/ocaml/preprocess/parser_raw.mly"
+# 1188 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_constr (_1, [])) )
 # 4090 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4132,7 +4132,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1176 "src/ocaml/preprocess/parser_raw.mly"
+# 1190 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pcty_signature _3) )
 # 4138 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4164,7 +4164,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_type) = 
-# 1180 "src/ocaml/preprocess/parser_raw.mly"
+# 1194 "src/ocaml/preprocess/parser_raw.mly"
       ( Cty.attr _1 _2 )
 # 4170 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4191,7 +4191,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1182 "src/ocaml/preprocess/parser_raw.mly"
+# 1196 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_extension _1) )
 # 4197 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4239,7 +4239,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1058 "src/ocaml/preprocess/parser_raw.mly"
+# 1072 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constr(mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), List.rev _2)) )
 # 4245 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4267,7 +4267,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -4283,7 +4283,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1060 "src/ocaml/preprocess/parser_raw.mly"
+# 1074 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constr(_1, [])) )
 # 4289 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4331,7 +4331,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1062 "src/ocaml/preprocess/parser_raw.mly"
+# 1076 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pcl_structure(_3)) )
 # 4337 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4386,7 +4386,7 @@ module Tables = struct
         let _v : (Parsetree.class_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1066 "src/ocaml/preprocess/parser_raw.mly"
+# 1080 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkclass ~loc:(make_loc _symbolstartpos _endpos))(Pcl_constraint(_2, _4)) )
 # 4392 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4425,7 +4425,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.class_expr) = 
-# 1070 "src/ocaml/preprocess/parser_raw.mly"
+# 1084 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 4431 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4461,13 +4461,13 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 668 "src/ocaml/preprocess/parser_raw.mly"
+# 682 "src/ocaml/preprocess/parser_raw.mly"
                                ( extra_cstr _startpos _endpos _1 )
 # 4467 "src/ocaml/preprocess/parser_raw.ml"
           
         in
         
-# 1076 "src/ocaml/preprocess/parser_raw.mly"
+# 1090 "src/ocaml/preprocess/parser_raw.mly"
        ( Cstr.mk _1 (List.rev _2) )
 # 4473 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4492,7 +4492,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_type) = 
-# 1159 "src/ocaml/preprocess/parser_raw.mly"
+# 1173 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 4498 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4547,7 +4547,7 @@ module Tables = struct
         let _4 : (Parsetree.core_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 4553 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -4558,7 +4558,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1162 "src/ocaml/preprocess/parser_raw.mly"
+# 1176 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Optional _2 , _4, _6)) )
 # 4564 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4600,7 +4600,7 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.core_type) = Obj.magic _2 in
         let _1 : (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 4606 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -4610,7 +4610,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1164 "src/ocaml/preprocess/parser_raw.mly"
+# 1178 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Optional _1, _2, _4)) )
 # 4616 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4659,7 +4659,7 @@ module Tables = struct
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 4665 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -4669,7 +4669,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1166 "src/ocaml/preprocess/parser_raw.mly"
+# 1180 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Labelled _1, _3, _5)) )
 # 4675 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4710,7 +4710,7 @@ module Tables = struct
         let _v : (Parsetree.class_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1168 "src/ocaml/preprocess/parser_raw.mly"
+# 1182 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkcty ~loc:(make_loc _symbolstartpos _endpos))(Pcty_arrow(Nolabel, _1, _3)) )
 # 4716 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4782,7 +4782,7 @@ module Tables = struct
         let _8 : (Parsetree.class_type) = Obj.magic _8 in
         let _7 : unit = Obj.magic _7 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 4788 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -4799,7 +4799,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -4815,7 +4815,7 @@ module Tables = struct
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1261 "src/ocaml/preprocess/parser_raw.mly"
+# 1275 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _3 in
         Ci.mk _6 _8 ~virt:_4 ~params:_5 ~attrs:(attrs@_9)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -4843,7 +4843,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.class_type_declaration list * string Location.loc option) = 
-# 1254 "src/ocaml/preprocess/parser_raw.mly"
+# 1268 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in ([body],ext) )
 # 4849 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4875,7 +4875,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.class_type_declaration list * string Location.loc option) = 
-# 1256 "src/ocaml/preprocess/parser_raw.mly"
+# 1270 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
 # 4881 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4893,7 +4893,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1033 "src/ocaml/preprocess/parser_raw.mly"
+# 1047 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( [] )
 # 4899 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4932,7 +4932,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1034 "src/ocaml/preprocess/parser_raw.mly"
+# 1048 "src/ocaml/preprocess/parser_raw.mly"
                                           ( List.rev _2 )
 # 4938 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4953,7 +4953,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 4959 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -4961,7 +4961,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2425 "src/ocaml/preprocess/parser_raw.mly"
+# 2439 "src/ocaml/preprocess/parser_raw.mly"
            ( Lident _1 )
 # 4967 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -4994,7 +4994,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 5000 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _3 in
@@ -5004,7 +5004,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2426 "src/ocaml/preprocess/parser_raw.mly"
+# 2440 "src/ocaml/preprocess/parser_raw.mly"
                                  ( Ldot(_1, _3) )
 # 5010 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5025,7 +5025,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 522 "src/ocaml/preprocess/parser_raw.mly"
+# 536 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 5031 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -5033,7 +5033,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2331 "src/ocaml/preprocess/parser_raw.mly"
+# 2345 "src/ocaml/preprocess/parser_raw.mly"
         ( let (n, m) = _1 in Pconst_integer (n, m) )
 # 5039 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5054,7 +5054,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 482 "src/ocaml/preprocess/parser_raw.mly"
+# 496 "src/ocaml/preprocess/parser_raw.mly"
        (char)
 # 5060 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -5062,7 +5062,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2332 "src/ocaml/preprocess/parser_raw.mly"
+# 2346 "src/ocaml/preprocess/parser_raw.mly"
          ( Pconst_char _1 )
 # 5068 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5083,7 +5083,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 576 "src/ocaml/preprocess/parser_raw.mly"
+# 590 "src/ocaml/preprocess/parser_raw.mly"
        (string * string option)
 # 5089 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -5091,7 +5091,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2333 "src/ocaml/preprocess/parser_raw.mly"
+# 2347 "src/ocaml/preprocess/parser_raw.mly"
            ( let (s, d) = _1 in Pconst_string (s, d) )
 # 5097 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5112,7 +5112,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 502 "src/ocaml/preprocess/parser_raw.mly"
+# 516 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 5118 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -5120,7 +5120,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2334 "src/ocaml/preprocess/parser_raw.mly"
+# 2348 "src/ocaml/preprocess/parser_raw.mly"
           ( let (f, m) = _1 in Pconst_float (f, m) )
 # 5126 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5141,7 +5141,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 5147 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -5149,7 +5149,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2383 "src/ocaml/preprocess/parser_raw.mly"
+# 2397 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 5155 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5181,7 +5181,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string) = 
-# 2384 "src/ocaml/preprocess/parser_raw.mly"
+# 2398 "src/ocaml/preprocess/parser_raw.mly"
                       ( "[]" )
 # 5187 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5213,7 +5213,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string) = 
-# 2385 "src/ocaml/preprocess/parser_raw.mly"
+# 2399 "src/ocaml/preprocess/parser_raw.mly"
                   ( "()" )
 # 5219 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5252,7 +5252,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2387 "src/ocaml/preprocess/parser_raw.mly"
+# 2401 "src/ocaml/preprocess/parser_raw.mly"
                              ( "::" )
 # 5258 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5277,7 +5277,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2388 "src/ocaml/preprocess/parser_raw.mly"
+# 2402 "src/ocaml/preprocess/parser_raw.mly"
           ( "false" )
 # 5283 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5302,7 +5302,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2389 "src/ocaml/preprocess/parser_raw.mly"
+# 2403 "src/ocaml/preprocess/parser_raw.mly"
          ( "true" )
 # 5308 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5327,7 +5327,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2397 "src/ocaml/preprocess/parser_raw.mly"
+# 2411 "src/ocaml/preprocess/parser_raw.mly"
                                   ( _1 )
 # 5333 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5359,7 +5359,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Longident.t) = 
-# 2398 "src/ocaml/preprocess/parser_raw.mly"
+# 2412 "src/ocaml/preprocess/parser_raw.mly"
                       ( Lident "[]" )
 # 5365 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5391,7 +5391,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Longident.t) = 
-# 2399 "src/ocaml/preprocess/parser_raw.mly"
+# 2413 "src/ocaml/preprocess/parser_raw.mly"
                   ( Lident "()" )
 # 5397 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5416,7 +5416,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2400 "src/ocaml/preprocess/parser_raw.mly"
+# 2414 "src/ocaml/preprocess/parser_raw.mly"
           ( Lident "false" )
 # 5422 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5441,7 +5441,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2401 "src/ocaml/preprocess/parser_raw.mly"
+# 2415 "src/ocaml/preprocess/parser_raw.mly"
          ( Lident "true" )
 # 5447 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5482,7 +5482,7 @@ module Tables = struct
         let _v : (Parsetree.core_type * Parsetree.core_type * Location.t) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1226 "src/ocaml/preprocess/parser_raw.mly"
+# 1240 "src/ocaml/preprocess/parser_raw.mly"
                                   ( _1, _3, (make_loc _symbolstartpos _endpos) )
 # 5488 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5521,7 +5521,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type * Parsetree.core_type) = 
-# 1229 "src/ocaml/preprocess/parser_raw.mly"
+# 1243 "src/ocaml/preprocess/parser_raw.mly"
                                   ( _1, _3 )
 # 5527 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5560,7 +5560,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = 
-# 1919 "src/ocaml/preprocess/parser_raw.mly"
+# 1933 "src/ocaml/preprocess/parser_raw.mly"
                                          ( _3 :: _1 )
 # 5566 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5578,7 +5578,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = 
-# 1920 "src/ocaml/preprocess/parser_raw.mly"
+# 1934 "src/ocaml/preprocess/parser_raw.mly"
         ( [] )
 # 5584 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5603,7 +5603,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constructor_arguments) = 
-# 2036 "src/ocaml/preprocess/parser_raw.mly"
+# 2050 "src/ocaml/preprocess/parser_raw.mly"
                    ( Pcstr_tuple (List.rev _1) )
 # 5609 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5642,7 +5642,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.constructor_arguments) = 
-# 2037 "src/ocaml/preprocess/parser_raw.mly"
+# 2051 "src/ocaml/preprocess/parser_raw.mly"
                                      ( Pcstr_record _2 )
 # 5648 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5684,7 +5684,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -5700,7 +5700,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1989 "src/ocaml/preprocess/parser_raw.mly"
+# 2003 "src/ocaml/preprocess/parser_raw.mly"
       (
        let args,res = _2 in
        Type.constructor _1 ~args ?res ~attrs:_3
@@ -5729,7 +5729,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constructor_declaration list) = 
-# 1983 "src/ocaml/preprocess/parser_raw.mly"
+# 1997 "src/ocaml/preprocess/parser_raw.mly"
                             ( [_1] )
 # 5735 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5754,7 +5754,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constructor_declaration list) = 
-# 1984 "src/ocaml/preprocess/parser_raw.mly"
+# 1998 "src/ocaml/preprocess/parser_raw.mly"
                                 ( [_1] )
 # 5760 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5786,7 +5786,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constructor_declaration list) = 
-# 1985 "src/ocaml/preprocess/parser_raw.mly"
+# 1999 "src/ocaml/preprocess/parser_raw.mly"
                                                          ( _2 :: _1 )
 # 5792 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5811,7 +5811,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2181 "src/ocaml/preprocess/parser_raw.mly"
+# 2195 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 5817 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5843,7 +5843,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type) = 
-# 2183 "src/ocaml/preprocess/parser_raw.mly"
+# 2197 "src/ocaml/preprocess/parser_raw.mly"
       ( Typ.attr _1 _2 )
 # 5849 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5868,7 +5868,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2193 "src/ocaml/preprocess/parser_raw.mly"
+# 2207 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 5874 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -5923,7 +5923,7 @@ module Tables = struct
         let _4 : (Parsetree.core_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _2 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 5929 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -5934,7 +5934,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2195 "src/ocaml/preprocess/parser_raw.mly"
+# 2209 "src/ocaml/preprocess/parser_raw.mly"
       ( let param = (extra_rhs_core_type _4 _endpos__4_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Optional _2, param, _6)) )
 # 5941 "src/ocaml/preprocess/parser_raw.ml"
@@ -5977,7 +5977,7 @@ module Tables = struct
         let _3 : unit = Obj.magic _3 in
         let _2 : (Parsetree.core_type) = Obj.magic _2 in
         let _1 : (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 5983 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -5987,7 +5987,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2198 "src/ocaml/preprocess/parser_raw.mly"
+# 2212 "src/ocaml/preprocess/parser_raw.mly"
       ( let param = (extra_rhs_core_type _2 _endpos__2_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Optional _1, param, _4)) )
 # 5994 "src/ocaml/preprocess/parser_raw.ml"
@@ -6037,7 +6037,7 @@ module Tables = struct
         let _3 : (Parsetree.core_type) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 6043 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -6047,7 +6047,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2201 "src/ocaml/preprocess/parser_raw.mly"
+# 2215 "src/ocaml/preprocess/parser_raw.mly"
       ( let param = (extra_rhs_core_type _3 _endpos__3_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Labelled _1, param, _5)) )
 # 6054 "src/ocaml/preprocess/parser_raw.ml"
@@ -6089,7 +6089,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2204 "src/ocaml/preprocess/parser_raw.mly"
+# 2218 "src/ocaml/preprocess/parser_raw.mly"
       ( let param = (extra_rhs_core_type _1 _endpos__1_) in
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_arrow(Nolabel, param, _3)) )
 # 6096 "src/ocaml/preprocess/parser_raw.ml"
@@ -6115,7 +6115,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type list) = 
-# 2296 "src/ocaml/preprocess/parser_raw.mly"
+# 2310 "src/ocaml/preprocess/parser_raw.mly"
               ( [_1] )
 # 6121 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6154,7 +6154,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type list) = 
-# 2297 "src/ocaml/preprocess/parser_raw.mly"
+# 2311 "src/ocaml/preprocess/parser_raw.mly"
                                          ( _3 :: _1 )
 # 6160 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6179,7 +6179,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type list) = 
-# 2300 "src/ocaml/preprocess/parser_raw.mly"
+# 2314 "src/ocaml/preprocess/parser_raw.mly"
                      ( [_1] )
 # 6185 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6218,7 +6218,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.core_type list) = 
-# 2301 "src/ocaml/preprocess/parser_raw.mly"
+# 2315 "src/ocaml/preprocess/parser_raw.mly"
                                          ( _3 :: _1 )
 # 6224 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6243,7 +6243,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2187 "src/ocaml/preprocess/parser_raw.mly"
+# 2201 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 6249 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6291,7 +6291,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2189 "src/ocaml/preprocess/parser_raw.mly"
+# 2203 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_alias(_1, _4)) )
 # 6297 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6316,7 +6316,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.direction_flag) = 
-# 2472 "src/ocaml/preprocess/parser_raw.mly"
+# 2486 "src/ocaml/preprocess/parser_raw.mly"
        ( Upto )
 # 6322 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6341,7 +6341,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.direction_flag) = 
-# 2473 "src/ocaml/preprocess/parser_raw.mly"
+# 2487 "src/ocaml/preprocess/parser_raw.mly"
            ( Downto )
 # 6347 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6382,7 +6382,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2636 "src/ocaml/preprocess/parser_raw.mly"
+# 2650 "src/ocaml/preprocess/parser_raw.mly"
     ( (expr_of_lwt_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 (merloc _endpos__2_ _3) )
 # 6388 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6444,7 +6444,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2638 "src/ocaml/preprocess/parser_raw.mly"
+# 2652 "src/ocaml/preprocess/parser_raw.mly"
     ( let expr = (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
           (Pexp_match(Fake.app Fake.Lwt.un_lwt _3, List.rev _6)) _2 in
       Fake.app Fake.Lwt.in_lwt expr )
@@ -6487,7 +6487,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2642 "src/ocaml/preprocess/parser_raw.mly"
+# 2656 "src/ocaml/preprocess/parser_raw.mly"
     ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) (Fake.app Fake.Lwt.in_lwt _3) )
 # 6493 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6549,7 +6549,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2644 "src/ocaml/preprocess/parser_raw.mly"
+# 2658 "src/ocaml/preprocess/parser_raw.mly"
     ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
         (Pexp_try(Fake.app Fake.Lwt.in_lwt _3, List.rev _6)) _2 )
 # 6556 "src/ocaml/preprocess/parser_raw.ml"
@@ -6603,7 +6603,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.expression) = 
-# 2647 "src/ocaml/preprocess/parser_raw.mly"
+# 2661 "src/ocaml/preprocess/parser_raw.mly"
     ( Fake.app (Fake.app Fake.Lwt.finally_ _3) _5 )
 # 6609 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6679,7 +6679,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2649 "src/ocaml/preprocess/parser_raw.mly"
+# 2663 "src/ocaml/preprocess/parser_raw.mly"
     ( let expr = (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
         (Pexp_try (Fake.app Fake.Lwt.in_lwt _3, List.rev _6)) _2 in
       Fake.app (Fake.app Fake.Lwt.finally_ expr) _8 )
@@ -6743,7 +6743,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2653 "src/ocaml/preprocess/parser_raw.mly"
+# 2667 "src/ocaml/preprocess/parser_raw.mly"
   ( let expr = Pexp_while (_3, Fake.(app Lwt.un_lwt _5)) in
     Fake.(app Lwt.to_lwt ((mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) expr _2)) )
 # 6750 "src/ocaml/preprocess/parser_raw.ml"
@@ -6834,7 +6834,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__10_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2656 "src/ocaml/preprocess/parser_raw.mly"
+# 2670 "src/ocaml/preprocess/parser_raw.mly"
     ( let expr = Pexp_for (_3, _5, _7, _6, Fake.(app Lwt.un_lwt _9)) in
       Fake.(app Lwt.to_lwt ((mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) expr _2)) )
 # 6841 "src/ocaml/preprocess/parser_raw.ml"
@@ -6911,7 +6911,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2659 "src/ocaml/preprocess/parser_raw.mly"
+# 2673 "src/ocaml/preprocess/parser_raw.mly"
     ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))
           (Pexp_let (Nonrecursive, [Vb.mk _3 (Fake.(app Lwt.un_stream _5))],
              Fake.(app Lwt.unit_lwt _7)))
@@ -6940,7 +6940,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = 
-# 1328 "src/ocaml/preprocess/parser_raw.mly"
+# 1342 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 6946 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -6974,7 +6974,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1330 "src/ocaml/preprocess/parser_raw.mly"
+# 1344 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply(_1, List.rev _2)) )
 # 6980 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7015,7 +7015,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1332 "src/ocaml/preprocess/parser_raw.mly"
+# 1346 "src/ocaml/preprocess/parser_raw.mly"
       ( (expr_of_let_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 (merloc _endpos__2_ _3) )
 # 7021 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7075,7 +7075,7 @@ module Tables = struct
         let _6 : unit = Obj.magic _6 in
         let _5 : (Parsetree.module_expr) = Obj.magic _5 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 7081 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -7090,7 +7090,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -7106,7 +7106,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1334 "src/ocaml/preprocess/parser_raw.mly"
+# 1348 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_letmodule(_4, _5, (merloc _endpos__6_ _7))) _3 )
 # 7112 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7168,7 +7168,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1336 "src/ocaml/preprocess/parser_raw.mly"
+# 1350 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_letexception(_4, _6)) _3 )
 # 7174 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7239,7 +7239,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -7255,7 +7255,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1338 "src/ocaml/preprocess/parser_raw.mly"
+# 1352 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_open(_3, _5, (merloc _endpos__6_ _7))) _4 )
 # 7261 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7303,7 +7303,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1340 "src/ocaml/preprocess/parser_raw.mly"
+# 1354 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_function(List.rev _4)) _2 )
 # 7309 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7351,7 +7351,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1342 "src/ocaml/preprocess/parser_raw.mly"
+# 1356 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l,o,p) = _3 in
         (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_fun(l, o, p, _4)) _2 )
 # 7358 "src/ocaml/preprocess/parser_raw.ml"
@@ -7421,7 +7421,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1345 "src/ocaml/preprocess/parser_raw.mly"
+# 1359 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) ((mk_newtypes ~loc:(make_loc _symbolstartpos _endpos)) _5 _7).pexp_desc _2 )
 # 7427 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7483,7 +7483,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1347 "src/ocaml/preprocess/parser_raw.mly"
+# 1361 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_match(_3, List.rev _6)) _2 )
 # 7489 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7545,7 +7545,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1349 "src/ocaml/preprocess/parser_raw.mly"
+# 1363 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_try(_3, List.rev _6)) _2 )
 # 7551 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7572,7 +7572,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1353 "src/ocaml/preprocess/parser_raw.mly"
+# 1367 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_tuple(List.rev _1)) )
 # 7578 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7607,7 +7607,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -7623,7 +7623,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1355 "src/ocaml/preprocess/parser_raw.mly"
+# 1369 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct(_1, Some _2)) )
 # 7629 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7657,7 +7657,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1357 "src/ocaml/preprocess/parser_raw.mly"
+# 1371 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_variant(_1, Some _2)) )
 # 7663 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7726,7 +7726,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1359 "src/ocaml/preprocess/parser_raw.mly"
+# 1373 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ifthenelse(_3, (merloc _endpos__4_ _5), Some (merloc _endpos__6_ _7))) _2 )
 # 7732 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7781,7 +7781,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1361 "src/ocaml/preprocess/parser_raw.mly"
+# 1375 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_ifthenelse(_3, (merloc _endpos__4_ _5), None)) _2 )
 # 7787 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7843,7 +7843,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1363 "src/ocaml/preprocess/parser_raw.mly"
+# 1377 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_while(_3, (merloc _endpos__4_ _5))) _2 )
 # 7849 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7933,7 +7933,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__10_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1366 "src/ocaml/preprocess/parser_raw.mly"
+# 1380 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos))(Pexp_for(_3, (merloc _endpos__4_ _5), (merloc _endpos__6_ _7), _6, (merloc _endpos__8_ _9))) _2 )
 # 7939 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -7974,7 +7974,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1368 "src/ocaml/preprocess/parser_raw.mly"
+# 1382 "src/ocaml/preprocess/parser_raw.mly"
       ( mkexp_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_tuple[_1;(merloc _endpos__2_ _3)])) ((make_loc _symbolstartpos _endpos)) )
 # 7980 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8050,7 +8050,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1370 "src/ocaml/preprocess/parser_raw.mly"
+# 1384 "src/ocaml/preprocess/parser_raw.mly"
       ( mkexp_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_tuple[_5;_7])) ((make_loc _symbolstartpos _endpos)) )
 # 8056 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8084,7 +8084,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 515 "src/ocaml/preprocess/parser_raw.mly"
+# 529 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 8090 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -8095,7 +8095,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1372 "src/ocaml/preprocess/parser_raw.mly"
+# 1386 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
 # 8101 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8129,7 +8129,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 516 "src/ocaml/preprocess/parser_raw.mly"
+# 530 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 8135 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -8140,7 +8140,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1374 "src/ocaml/preprocess/parser_raw.mly"
+# 1388 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
 # 8146 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8174,7 +8174,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 517 "src/ocaml/preprocess/parser_raw.mly"
+# 531 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 8180 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -8185,7 +8185,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1376 "src/ocaml/preprocess/parser_raw.mly"
+# 1390 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
 # 8191 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8219,7 +8219,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 518 "src/ocaml/preprocess/parser_raw.mly"
+# 532 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 8225 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -8230,7 +8230,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1378 "src/ocaml/preprocess/parser_raw.mly"
+# 1392 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
 # 8236 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8264,7 +8264,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 519 "src/ocaml/preprocess/parser_raw.mly"
+# 533 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 8270 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -8275,7 +8275,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1380 "src/ocaml/preprocess/parser_raw.mly"
+# 1394 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
 # 8281 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8316,7 +8316,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1382 "src/ocaml/preprocess/parser_raw.mly"
+# 1396 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "+" _3 )
 # 8322 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8357,7 +8357,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1384 "src/ocaml/preprocess/parser_raw.mly"
+# 1398 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "+." _3 )
 # 8363 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8398,7 +8398,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1386 "src/ocaml/preprocess/parser_raw.mly"
+# 1400 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "+=" _3 )
 # 8404 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8439,7 +8439,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1388 "src/ocaml/preprocess/parser_raw.mly"
+# 1402 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "-" _3 )
 # 8445 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8480,7 +8480,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1390 "src/ocaml/preprocess/parser_raw.mly"
+# 1404 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "-." _3 )
 # 8486 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8521,7 +8521,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1392 "src/ocaml/preprocess/parser_raw.mly"
+# 1406 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "*" _3 )
 # 8527 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8562,7 +8562,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1394 "src/ocaml/preprocess/parser_raw.mly"
+# 1408 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "%" _3 )
 # 8568 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8603,7 +8603,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1396 "src/ocaml/preprocess/parser_raw.mly"
+# 1410 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "=" _3 )
 # 8609 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8644,7 +8644,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1398 "src/ocaml/preprocess/parser_raw.mly"
+# 1412 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "<" _3 )
 # 8650 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8685,7 +8685,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1400 "src/ocaml/preprocess/parser_raw.mly"
+# 1414 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 ">" _3 )
 # 8691 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8726,7 +8726,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1402 "src/ocaml/preprocess/parser_raw.mly"
+# 1416 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "or" _3 )
 # 8732 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8767,7 +8767,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1404 "src/ocaml/preprocess/parser_raw.mly"
+# 1418 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "||" _3 )
 # 8773 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8808,7 +8808,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1406 "src/ocaml/preprocess/parser_raw.mly"
+# 1420 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "&" _3 )
 # 8814 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8849,7 +8849,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1408 "src/ocaml/preprocess/parser_raw.mly"
+# 1422 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 "&&" _3 )
 # 8855 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8890,7 +8890,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1410 "src/ocaml/preprocess/parser_raw.mly"
+# 1424 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 ":=" _3 )
 # 8896 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8924,7 +8924,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1412 "src/ocaml/preprocess/parser_raw.mly"
+# 1426 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkuminus ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__1_ _endpos__1_)) _1 _2 )
 # 8930 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -8958,7 +8958,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1414 "src/ocaml/preprocess/parser_raw.mly"
+# 1428 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkuplus ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__1_ _endpos__1_)) _1 _2 )
 # 8964 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9015,7 +9015,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9031,7 +9031,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1416 "src/ocaml/preprocess/parser_raw.mly"
+# 1430 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_setfield(_1, _3, _5)) )
 # 9037 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9100,7 +9100,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1418 "src/ocaml/preprocess/parser_raw.mly"
+# 1432 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "Array" "set")),
                          [Nolabel,_1; Nolabel,_4; Nolabel,_7])) )
 # 9107 "src/ocaml/preprocess/parser_raw.ml"
@@ -9170,7 +9170,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1421 "src/ocaml/preprocess/parser_raw.mly"
+# 1435 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "String" "set")),
                          [Nolabel,_1; Nolabel,_4; Nolabel,_7])) )
 # 9177 "src/ocaml/preprocess/parser_raw.ml"
@@ -9240,7 +9240,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1424 "src/ocaml/preprocess/parser_raw.mly"
+# 1438 "src/ocaml/preprocess/parser_raw.mly"
       ( (bigarray_set ~loc:(make_loc _symbolstartpos _endpos)) _1 _4 _7 )
 # 9246 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9282,7 +9282,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9298,7 +9298,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1426 "src/ocaml/preprocess/parser_raw.mly"
+# 1440 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_setinstvar(_1, _3)) )
 # 9304 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9339,7 +9339,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1428 "src/ocaml/preprocess/parser_raw.mly"
+# 1442 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_assert _3) _2 )
 # 9345 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9380,7 +9380,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1430 "src/ocaml/preprocess/parser_raw.mly"
+# 1444 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_lazy _3) _2 )
 # 9386 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9428,7 +9428,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1432 "src/ocaml/preprocess/parser_raw.mly"
+# 1446 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_object _3) _2 )
 # 9434 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9460,7 +9460,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1436 "src/ocaml/preprocess/parser_raw.mly"
+# 1450 "src/ocaml/preprocess/parser_raw.mly"
       ( Exp.attr _1 _2 )
 # 9466 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9499,7 +9499,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression list) = 
-# 1659 "src/ocaml/preprocess/parser_raw.mly"
+# 1673 "src/ocaml/preprocess/parser_raw.mly"
                                ( _3 :: _1 )
 # 9505 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9538,7 +9538,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression list) = 
-# 1660 "src/ocaml/preprocess/parser_raw.mly"
+# 1674 "src/ocaml/preprocess/parser_raw.mly"
                     ( [_3; _1] )
 # 9544 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9563,7 +9563,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression list) = 
-# 1688 "src/ocaml/preprocess/parser_raw.mly"
+# 1702 "src/ocaml/preprocess/parser_raw.mly"
          ( [_1] )
 # 9569 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9602,7 +9602,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression list) = 
-# 1689 "src/ocaml/preprocess/parser_raw.mly"
+# 1703 "src/ocaml/preprocess/parser_raw.mly"
                              ( _3 :: _1 )
 # 9608 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9620,7 +9620,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (string Location.loc option * Parsetree.attributes) = 
-# 2594 "src/ocaml/preprocess/parser_raw.mly"
+# 2608 "src/ocaml/preprocess/parser_raw.mly"
                  ( None, [] )
 # 9626 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9652,7 +9652,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string Location.loc option * Parsetree.attributes) = 
-# 2595 "src/ocaml/preprocess/parser_raw.mly"
+# 2609 "src/ocaml/preprocess/parser_raw.mly"
                          ( None, _1 :: _2 )
 # 9658 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9691,7 +9691,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string Location.loc option * Parsetree.attributes) = 
-# 2596 "src/ocaml/preprocess/parser_raw.mly"
+# 2610 "src/ocaml/preprocess/parser_raw.mly"
                                ( Some _2, _3 )
 # 9697 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9737,7 +9737,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.extension) = 
-# 2599 "src/ocaml/preprocess/parser_raw.mly"
+# 2613 "src/ocaml/preprocess/parser_raw.mly"
                                            ( (_2, _3) )
 # 9743 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9779,7 +9779,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9795,7 +9795,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2102 "src/ocaml/preprocess/parser_raw.mly"
+# 2116 "src/ocaml/preprocess/parser_raw.mly"
       ( let args, res = _2 in
         Te.decl _1 ~args ?res ~attrs:_3
           ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
@@ -9847,7 +9847,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9864,7 +9864,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9880,7 +9880,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2114 "src/ocaml/preprocess/parser_raw.mly"
+# 2128 "src/ocaml/preprocess/parser_raw.mly"
       ( Te.rebind _1 _3 ~attrs:_4
           ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos)) )
 # 9887 "src/ocaml/preprocess/parser_raw.ml"
@@ -9930,7 +9930,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -9945,7 +9945,7 @@ module Tables = struct
         in
         let _endpos = _endpos__4_ in
         
-# 2311 "src/ocaml/preprocess/parser_raw.mly"
+# 2325 "src/ocaml/preprocess/parser_raw.mly"
     ( (_1, add_info_attrs ((symbol_info _endpos)) _4, _3) )
 # 9951 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -9987,7 +9987,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10001,7 +10001,7 @@ module Tables = struct
           
         in
         
-# 1683 "src/ocaml/preprocess/parser_raw.mly"
+# 1697 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, _3) )
 # 10007 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10029,7 +10029,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10045,7 +10045,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1685 "src/ocaml/preprocess/parser_raw.mly"
+# 1699 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, (exp_of_label ~loc:(make_loc _symbolstartpos _endpos) (Lident _1.Location.txt) (make_loc _startpos__1_ _endpos__1_))) )
 # 10051 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10077,7 +10077,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : ((string Location.loc * Parsetree.expression) list) = 
-# 1678 "src/ocaml/preprocess/parser_raw.mly"
+# 1692 "src/ocaml/preprocess/parser_raw.mly"
                         ( [_1] )
 # 10083 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10116,7 +10116,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((string Location.loc * Parsetree.expression) list) = 
-# 1679 "src/ocaml/preprocess/parser_raw.mly"
+# 1693 "src/ocaml/preprocess/parser_raw.mly"
                                     ( _1 :: _3 )
 # 10122 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10179,7 +10179,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10194,7 +10194,7 @@ module Tables = struct
         in
         let _endpos = _endpos__6_ in
         
-# 2316 "src/ocaml/preprocess/parser_raw.mly"
+# 2330 "src/ocaml/preprocess/parser_raw.mly"
     ( let info =
         match (rhs_info _endpos__4_) with
         | Some _ as info_before_semi -> info_before_semi
@@ -10245,7 +10245,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.attribute) = 
-# 2583 "src/ocaml/preprocess/parser_raw.mly"
+# 2597 "src/ocaml/preprocess/parser_raw.mly"
                                           ( (_2, _3) )
 # 10251 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10270,7 +10270,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = 
-# 1619 "src/ocaml/preprocess/parser_raw.mly"
+# 1633 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 10276 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10311,7 +10311,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1621 "src/ocaml/preprocess/parser_raw.mly"
+# 1635 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _3 _1 )
 # 10317 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10343,7 +10343,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1646 "src/ocaml/preprocess/parser_raw.mly"
+# 1660 "src/ocaml/preprocess/parser_raw.mly"
       ( (merloc _endpos__1_ _2) )
 # 10349 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10391,7 +10391,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1648 "src/ocaml/preprocess/parser_raw.mly"
+# 1662 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_constraint ((merloc _endpos__3_ _4), _2)) )
 # 10397 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10425,7 +10425,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1651 "src/ocaml/preprocess/parser_raw.mly"
+# 1665 "src/ocaml/preprocess/parser_raw.mly"
       (
        let (l,o,p) = _1 in
        (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_fun(l, o, p, _2))
@@ -10483,7 +10483,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1656 "src/ocaml/preprocess/parser_raw.mly"
+# 1670 "src/ocaml/preprocess/parser_raw.mly"
       ( (mk_newtypes ~loc:(make_loc _symbolstartpos _endpos)) _3 _5 )
 # 10489 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10515,7 +10515,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string Location.loc * Parsetree.module_type option) = 
-# 706 "src/ocaml/preprocess/parser_raw.mly"
+# 720 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkrhs "*" (make_loc _startpos__2_ _endpos__2_)), None )
 # 10521 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10572,7 +10572,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -10586,7 +10586,7 @@ module Tables = struct
           
         in
         
-# 708 "src/ocaml/preprocess/parser_raw.mly"
+# 722 "src/ocaml/preprocess/parser_raw.mly"
       ( _2, Some _4 )
 # 10592 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10607,7 +10607,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 10613 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -10615,7 +10615,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 712 "src/ocaml/preprocess/parser_raw.mly"
+# 726 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 10621 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10640,7 +10640,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 713 "src/ocaml/preprocess/parser_raw.mly"
+# 727 "src/ocaml/preprocess/parser_raw.mly"
                ( "_" )
 # 10646 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10672,7 +10672,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : ((string Location.loc * Parsetree.module_type option) list) = 
-# 718 "src/ocaml/preprocess/parser_raw.mly"
+# 732 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 :: _1 )
 # 10678 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10697,7 +10697,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((string Location.loc * Parsetree.module_type option) list) = 
-# 720 "src/ocaml/preprocess/parser_raw.mly"
+# 734 "src/ocaml/preprocess/parser_raw.mly"
       ( [ _1 ] )
 # 10703 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10715,7 +10715,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 2027 "src/ocaml/preprocess/parser_raw.mly"
+# 2041 "src/ocaml/preprocess/parser_raw.mly"
                                   ( (Pcstr_tuple [],None) )
 # 10721 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10747,7 +10747,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 2028 "src/ocaml/preprocess/parser_raw.mly"
+# 2042 "src/ocaml/preprocess/parser_raw.mly"
                              ( (_2,None) )
 # 10753 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10793,7 +10793,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 2030 "src/ocaml/preprocess/parser_raw.mly"
+# 2044 "src/ocaml/preprocess/parser_raw.mly"
                                   ( (_2,Some _4) )
 # 10799 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10825,7 +10825,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constructor_arguments * Parsetree.core_type option) = 
-# 2032 "src/ocaml/preprocess/parser_raw.mly"
+# 2046 "src/ocaml/preprocess/parser_raw.mly"
                                   ( (Pcstr_tuple [],Some _2) )
 # 10831 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10846,7 +10846,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 10852 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -10854,7 +10854,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2347 "src/ocaml/preprocess/parser_raw.mly"
+# 2361 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 10860 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10875,7 +10875,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 10881 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -10883,7 +10883,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2348 "src/ocaml/preprocess/parser_raw.mly"
+# 2362 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 10889 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10915,20 +10915,20 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (
-# 655 "src/ocaml/preprocess/parser_raw.mly"
+# 669 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.structure)
 # 10921 "src/ocaml/preprocess/parser_raw.ml"
         ) = let _1 =
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 666 "src/ocaml/preprocess/parser_raw.mly"
+# 680 "src/ocaml/preprocess/parser_raw.mly"
                               ( extra_str _startpos _endpos _1 )
 # 10928 "src/ocaml/preprocess/parser_raw.ml"
           
         in
         
-# 687 "src/ocaml/preprocess/parser_raw.mly"
+# 701 "src/ocaml/preprocess/parser_raw.mly"
                              ( _1 )
 # 10934 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -10960,20 +10960,20 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (
-# 657 "src/ocaml/preprocess/parser_raw.mly"
+# 671 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.signature)
 # 10966 "src/ocaml/preprocess/parser_raw.ml"
         ) = let _1 =
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 667 "src/ocaml/preprocess/parser_raw.mly"
+# 681 "src/ocaml/preprocess/parser_raw.mly"
                               ( extra_sig _startpos _endpos _1 )
 # 10973 "src/ocaml/preprocess/parser_raw.ml"
           
         in
         
-# 690 "src/ocaml/preprocess/parser_raw.mly"
+# 704 "src/ocaml/preprocess/parser_raw.mly"
                              ( _1 )
 # 10979 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11019,7 +11019,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.extension) = 
-# 2602 "src/ocaml/preprocess/parser_raw.mly"
+# 2616 "src/ocaml/preprocess/parser_raw.mly"
                                                   ( (_2, _3) )
 # 11025 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11040,7 +11040,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11046 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11048,7 +11048,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2325 "src/ocaml/preprocess/parser_raw.mly"
+# 2339 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 11054 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11105,7 +11105,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -11125,7 +11125,7 @@ module Tables = struct
         else
           _startpos__2_ in
         
-# 2046 "src/ocaml/preprocess/parser_raw.mly"
+# 2060 "src/ocaml/preprocess/parser_raw.mly"
       (
        Type.field _2 _4 ~mut:_1 ~attrs:_5
          ~loc:(((make_loc _symbolstartpos _endpos))) ~info:((symbol_info _endpos))
@@ -11199,7 +11199,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -11219,7 +11219,7 @@ module Tables = struct
         else
           _startpos__2_ in
         
-# 2053 "src/ocaml/preprocess/parser_raw.mly"
+# 2067 "src/ocaml/preprocess/parser_raw.mly"
       (
        let info =
          match (rhs_info _endpos__5_) with
@@ -11252,7 +11252,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.label_declaration list) = 
-# 2040 "src/ocaml/preprocess/parser_raw.mly"
+# 2054 "src/ocaml/preprocess/parser_raw.mly"
                       ( [_1] )
 # 11258 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11277,7 +11277,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.label_declaration list) = 
-# 2041 "src/ocaml/preprocess/parser_raw.mly"
+# 2055 "src/ocaml/preprocess/parser_raw.mly"
                            ( [_1] )
 # 11283 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11309,7 +11309,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.label_declaration list) = 
-# 2042 "src/ocaml/preprocess/parser_raw.mly"
+# 2056 "src/ocaml/preprocess/parser_raw.mly"
                                               ( _1 :: _2 )
 # 11315 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11337,7 +11337,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
         let _1 : (
-# 524 "src/ocaml/preprocess/parser_raw.mly"
+# 538 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11343 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11345,7 +11345,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1574 "src/ocaml/preprocess/parser_raw.mly"
+# 1588 "src/ocaml/preprocess/parser_raw.mly"
       ( (Labelled _1, _2) )
 # 11351 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11377,7 +11377,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1576 "src/ocaml/preprocess/parser_raw.mly"
+# 1590 "src/ocaml/preprocess/parser_raw.mly"
       ( (Labelled (fst _2), snd _2) )
 # 11383 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11409,7 +11409,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1578 "src/ocaml/preprocess/parser_raw.mly"
+# 1592 "src/ocaml/preprocess/parser_raw.mly"
       ( (Optional (fst _2), snd _2) )
 # 11415 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11437,7 +11437,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
         let _1 : (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11443 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11445,7 +11445,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1580 "src/ocaml/preprocess/parser_raw.mly"
+# 1594 "src/ocaml/preprocess/parser_raw.mly"
       ( (Optional _1, _2) )
 # 11451 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11466,7 +11466,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11472 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11476,7 +11476,7 @@ module Tables = struct
         let _v : (string * Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1583 "src/ocaml/preprocess/parser_raw.mly"
+# 1597 "src/ocaml/preprocess/parser_raw.mly"
            ( (_1, (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((mkrhs (Lident _1) (make_loc _startpos__1_ _endpos__1_))))) )
 # 11482 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11501,7 +11501,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string * Parsetree.pattern) = 
-# 1313 "src/ocaml/preprocess/parser_raw.mly"
+# 1327 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 11507 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11542,7 +11542,7 @@ module Tables = struct
         let _v : (string * Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1315 "src/ocaml/preprocess/parser_raw.mly"
+# 1329 "src/ocaml/preprocess/parser_raw.mly"
       ( let (lab, pat) = _1 in (lab, (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(pat, _3))) )
 # 11548 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11563,7 +11563,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11569 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11571,7 +11571,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2404 "src/ocaml/preprocess/parser_raw.mly"
+# 2418 "src/ocaml/preprocess/parser_raw.mly"
            ( Lident _1 )
 # 11577 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11604,7 +11604,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11610 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _3 in
@@ -11614,7 +11614,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2405 "src/ocaml/preprocess/parser_raw.mly"
+# 2419 "src/ocaml/preprocess/parser_raw.mly"
                              ( Ldot(_1, _3) )
 # 11620 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11635,7 +11635,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11641 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11646,7 +11646,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -11662,7 +11662,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1318 "src/ocaml/preprocess/parser_raw.mly"
+# 1332 "src/ocaml/preprocess/parser_raw.mly"
                   ( (_1.Location.txt, (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_var _1)) )
 # 11668 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11687,7 +11687,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1568 "src/ocaml/preprocess/parser_raw.mly"
+# 1582 "src/ocaml/preprocess/parser_raw.mly"
       ( (Nolabel, _1) )
 # 11693 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11712,7 +11712,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.arg_label * Parsetree.expression) = 
-# 1570 "src/ocaml/preprocess/parser_raw.mly"
+# 1584 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 11718 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11765,7 +11765,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1287 "src/ocaml/preprocess/parser_raw.mly"
+# 1301 "src/ocaml/preprocess/parser_raw.mly"
       ( (Optional (fst _3), _4, snd _3) )
 # 11771 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11797,7 +11797,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1289 "src/ocaml/preprocess/parser_raw.mly"
+# 1303 "src/ocaml/preprocess/parser_raw.mly"
       ( (Optional (fst _2), None, snd _2) )
 # 11803 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11846,7 +11846,7 @@ module Tables = struct
         let _3 : (Parsetree.pattern) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11852 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11854,7 +11854,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1291 "src/ocaml/preprocess/parser_raw.mly"
+# 1305 "src/ocaml/preprocess/parser_raw.mly"
       ( (Optional _1, _4, _3) )
 # 11860 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11882,7 +11882,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.pattern) = Obj.magic _2 in
         let _1 : (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 11888 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -11890,7 +11890,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1293 "src/ocaml/preprocess/parser_raw.mly"
+# 1307 "src/ocaml/preprocess/parser_raw.mly"
       ( (Optional _1, None, _2) )
 # 11896 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11936,7 +11936,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1295 "src/ocaml/preprocess/parser_raw.mly"
+# 1309 "src/ocaml/preprocess/parser_raw.mly"
       ( (Labelled (fst _3), None, snd _3) )
 # 11942 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11968,7 +11968,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1297 "src/ocaml/preprocess/parser_raw.mly"
+# 1311 "src/ocaml/preprocess/parser_raw.mly"
       ( (Labelled (fst _2), None, snd _2) )
 # 11974 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -11996,7 +11996,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.pattern) = Obj.magic _2 in
         let _1 : (
-# 524 "src/ocaml/preprocess/parser_raw.mly"
+# 538 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 12002 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -12004,7 +12004,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1299 "src/ocaml/preprocess/parser_raw.mly"
+# 1313 "src/ocaml/preprocess/parser_raw.mly"
       ( (Labelled _1, None, _2) )
 # 12010 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12029,7 +12029,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) = 
-# 1301 "src/ocaml/preprocess/parser_raw.mly"
+# 1315 "src/ocaml/preprocess/parser_raw.mly"
       ( (Nolabel, None, _1) )
 # 12035 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12078,7 +12078,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12094,7 +12094,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1673 "src/ocaml/preprocess/parser_raw.mly"
+# 1687 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, (mkexp_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) _4 _2) )
 # 12100 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12129,7 +12129,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12145,7 +12145,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1675 "src/ocaml/preprocess/parser_raw.mly"
+# 1689 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, (mkexp_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) ((exp_of_label ~loc:(make_loc _symbolstartpos _endpos) _1.Location.txt (make_loc _startpos__1_ _endpos__1_))) _2) )
 # 12151 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12170,7 +12170,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Longident.t Location.loc * Parsetree.expression) list) = 
-# 1667 "src/ocaml/preprocess/parser_raw.mly"
+# 1681 "src/ocaml/preprocess/parser_raw.mly"
               ( [_1] )
 # 12176 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12209,7 +12209,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Longident.t Location.loc * Parsetree.expression) list) = 
-# 1668 "src/ocaml/preprocess/parser_raw.mly"
+# 1682 "src/ocaml/preprocess/parser_raw.mly"
                                 ( _1 :: _3 )
 # 12215 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12241,7 +12241,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : ((Longident.t Location.loc * Parsetree.expression) list) = 
-# 1669 "src/ocaml/preprocess/parser_raw.mly"
+# 1683 "src/ocaml/preprocess/parser_raw.mly"
                   ( [_1] )
 # 12247 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12290,7 +12290,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12306,7 +12306,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1855 "src/ocaml/preprocess/parser_raw.mly"
+# 1869 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, (mkpat_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) _4 _2) )
 # 12312 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12341,7 +12341,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12357,7 +12357,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1857 "src/ocaml/preprocess/parser_raw.mly"
+# 1871 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, (mkpat_opt_constraint ~loc:(make_loc _symbolstartpos _endpos)) ((pat_of_label ~loc:(make_loc _symbolstartpos _endpos) _1.Location.txt (make_loc _startpos__1_ _endpos__1_))) _2) )
 # 12363 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12382,7 +12382,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1847 "src/ocaml/preprocess/parser_raw.mly"
+# 1861 "src/ocaml/preprocess/parser_raw.mly"
                 ( [_1], Closed )
 # 12388 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12414,7 +12414,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1848 "src/ocaml/preprocess/parser_raw.mly"
+# 1862 "src/ocaml/preprocess/parser_raw.mly"
                      ( [_1], Closed )
 # 12420 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12460,7 +12460,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1849 "src/ocaml/preprocess/parser_raw.mly"
+# 1863 "src/ocaml/preprocess/parser_raw.mly"
                                          ( [_1], Open )
 # 12466 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12499,7 +12499,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Longident.t Location.loc * Parsetree.pattern) list * Asttypes.closed_flag) = 
-# 1851 "src/ocaml/preprocess/parser_raw.mly"
+# 1865 "src/ocaml/preprocess/parser_raw.mly"
       ( let (fields, closed) = _3 in _1 :: fields, closed )
 # 12505 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12554,7 +12554,7 @@ module Tables = struct
         let _v : (Ast_helper.let_bindings) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1610 "src/ocaml/preprocess/parser_raw.mly"
+# 1624 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attr) = _2 in
         (mklbs ~loc:(make_loc _symbolstartpos _endpos)) ext _3 ((mklb ~loc:(make_loc _symbolstartpos _endpos)) true _4 (attr@_5)) )
 # 12561 "src/ocaml/preprocess/parser_raw.ml"
@@ -12587,7 +12587,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern * Parsetree.expression) = 
-# 1591 "src/ocaml/preprocess/parser_raw.mly"
+# 1605 "src/ocaml/preprocess/parser_raw.mly"
       ( ((mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)), _2) )
 # 12593 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12656,7 +12656,7 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1593 "src/ocaml/preprocess/parser_raw.mly"
+# 1607 "src/ocaml/preprocess/parser_raw.mly"
       ( ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint((mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)),
                                (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly(List.rev _3,_5)))),
          _7) )
@@ -12734,7 +12734,7 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1597 "src/ocaml/preprocess/parser_raw.mly"
+# 1611 "src/ocaml/preprocess/parser_raw.mly"
       ( let exp, poly = (wrap_type_annotation ~loc:(make_loc _symbolstartpos _endpos)) _4 _6 _8 in
         ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint((mkpatvar _1 (make_loc _startpos__1_ _endpos__1_)), poly)), exp) )
 # 12741 "src/ocaml/preprocess/parser_raw.ml"
@@ -12774,7 +12774,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern * Parsetree.expression) = 
-# 1600 "src/ocaml/preprocess/parser_raw.mly"
+# 1614 "src/ocaml/preprocess/parser_raw.mly"
       ( (_1, _3) )
 # 12780 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12829,7 +12829,7 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1602 "src/ocaml/preprocess/parser_raw.mly"
+# 1616 "src/ocaml/preprocess/parser_raw.mly"
       ( ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_1, _3)), _5) )
 # 12835 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12854,7 +12854,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Ast_helper.let_bindings) = 
-# 1605 "src/ocaml/preprocess/parser_raw.mly"
+# 1619 "src/ocaml/preprocess/parser_raw.mly"
                 ( _1 )
 # 12860 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12886,7 +12886,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Ast_helper.let_bindings) = 
-# 1606 "src/ocaml/preprocess/parser_raw.mly"
+# 1620 "src/ocaml/preprocess/parser_raw.mly"
                                  ( addlb _1 _2 )
 # 12892 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -12928,7 +12928,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -12944,7 +12944,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2023 "src/ocaml/preprocess/parser_raw.mly"
+# 2037 "src/ocaml/preprocess/parser_raw.mly"
       ( let args, res = _2 in
         Te.decl _1 ~args ?res ~attrs:_3 ~loc:(((make_loc _symbolstartpos _endpos))) )
 # 12951 "src/ocaml/preprocess/parser_raw.ml"
@@ -12970,7 +12970,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1322 "src/ocaml/preprocess/parser_raw.mly"
+# 1336 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 12976 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13011,7 +13011,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1324 "src/ocaml/preprocess/parser_raw.mly"
+# 1338 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_1, _3)) )
 # 13017 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13032,7 +13032,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 13038 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -13043,7 +13043,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -13057,7 +13057,7 @@ module Tables = struct
           
         in
         
-# 1586 "src/ocaml/preprocess/parser_raw.mly"
+# 1600 "src/ocaml/preprocess/parser_raw.mly"
                   ( [_1] )
 # 13063 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13085,7 +13085,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (string Location.loc list) = Obj.magic _2 in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 13091 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -13096,7 +13096,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -13110,7 +13110,7 @@ module Tables = struct
           
         in
         
-# 1587 "src/ocaml/preprocess/parser_raw.mly"
+# 1601 "src/ocaml/preprocess/parser_raw.mly"
                               ( _1 :: _2 )
 # 13116 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13165,7 +13165,7 @@ module Tables = struct
         let _v : (Ast_helper.let_bindings) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2626 "src/ocaml/preprocess/parser_raw.mly"
+# 2640 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attr) = _2 in
         (mklbs ~loc:(make_loc _symbolstartpos _endpos)) ext _3 ((mklb ~loc:(make_loc _symbolstartpos _endpos)) true _4 (attr@_5)) )
 # 13172 "src/ocaml/preprocess/parser_raw.ml"
@@ -13191,7 +13191,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Ast_helper.let_bindings) = 
-# 2630 "src/ocaml/preprocess/parser_raw.mly"
+# 2644 "src/ocaml/preprocess/parser_raw.mly"
                 ( _1 )
 # 13197 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13223,7 +13223,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Ast_helper.let_bindings) = 
-# 2631 "src/ocaml/preprocess/parser_raw.mly"
+# 2645 "src/ocaml/preprocess/parser_raw.mly"
                                  ( addlb _1 _2 )
 # 13229 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13262,7 +13262,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.case) = 
-# 1637 "src/ocaml/preprocess/parser_raw.mly"
+# 1651 "src/ocaml/preprocess/parser_raw.mly"
       ( Exp.case _1 (merloc _endpos__2_ _3) )
 # 13268 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13315,7 +13315,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.case) = 
-# 1639 "src/ocaml/preprocess/parser_raw.mly"
+# 1653 "src/ocaml/preprocess/parser_raw.mly"
       ( Exp.case _1 ~guard:(merloc _endpos__2_ _3) (merloc _endpos__4_ _5) )
 # 13321 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13354,7 +13354,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.case) = 
-# 1641 "src/ocaml/preprocess/parser_raw.mly"
+# 1655 "src/ocaml/preprocess/parser_raw.mly"
       ( Exp.case _1 (merloc _endpos__2_
                        (Exp.unreachable ~loc:((make_loc _startpos__3_ _endpos__3_)) ())) )
 # 13361 "src/ocaml/preprocess/parser_raw.ml"
@@ -13380,7 +13380,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.case list) = 
-# 1632 "src/ocaml/preprocess/parser_raw.mly"
+# 1646 "src/ocaml/preprocess/parser_raw.mly"
                ( [_1] )
 # 13386 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13419,7 +13419,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.case list) = 
-# 1633 "src/ocaml/preprocess/parser_raw.mly"
+# 1647 "src/ocaml/preprocess/parser_raw.mly"
                                ( _3 :: _1 )
 # 13425 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13453,7 +13453,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _v : ((string Location.loc * Parsetree.attributes * Parsetree.core_type) list *
   Asttypes.closed_flag) = 
-# 2304 "src/ocaml/preprocess/parser_raw.mly"
+# 2318 "src/ocaml/preprocess/parser_raw.mly"
                          ( let (f, c) = _2 in (_1 :: f, c) )
 # 13459 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13479,7 +13479,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _v : ((string Location.loc * Parsetree.attributes * Parsetree.core_type) list *
   Asttypes.closed_flag) = 
-# 2305 "src/ocaml/preprocess/parser_raw.mly"
+# 2319 "src/ocaml/preprocess/parser_raw.mly"
                ( [_1], Closed )
 # 13485 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13505,7 +13505,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _v : ((string Location.loc * Parsetree.attributes * Parsetree.core_type) list *
   Asttypes.closed_flag) = 
-# 2306 "src/ocaml/preprocess/parser_raw.mly"
+# 2320 "src/ocaml/preprocess/parser_raw.mly"
           ( [_1], Closed )
 # 13511 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13531,7 +13531,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _v : ((string Location.loc * Parsetree.attributes * Parsetree.core_type) list *
   Asttypes.closed_flag) = 
-# 2307 "src/ocaml/preprocess/parser_raw.mly"
+# 2321 "src/ocaml/preprocess/parser_raw.mly"
            ( [], Open )
 # 13537 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13599,7 +13599,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = 
-# 1137 "src/ocaml/preprocess/parser_raw.mly"
+# 1151 "src/ocaml/preprocess/parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (mkloc _5 ((make_loc _startpos__5_ _endpos__5_)), Private, Cfk_virtual _7), _2 )
 # 13606 "src/ocaml/preprocess/parser_raw.ml"
@@ -13668,7 +13668,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _v : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = 
-# 1140 "src/ocaml/preprocess/parser_raw.mly"
+# 1154 "src/ocaml/preprocess/parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (mkloc _5 ((make_loc _startpos__5_ _endpos__5_)), _4, Cfk_virtual _7), _2 )
 # 13675 "src/ocaml/preprocess/parser_raw.ml"
@@ -13734,7 +13734,7 @@ module Tables = struct
             else
               _startpos__4_ in
         
-# 1143 "src/ocaml/preprocess/parser_raw.mly"
+# 1157 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), _3,
          Cfk_concrete (_1, (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_poly (_5, None)))), _2 )
 # 13741 "src/ocaml/preprocess/parser_raw.ml"
@@ -13821,7 +13821,7 @@ module Tables = struct
             else
               _startpos__4_ in
         
-# 1146 "src/ocaml/preprocess/parser_raw.mly"
+# 1160 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), _3,
         Cfk_concrete (_1, (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_poly(_8, Some _6)))), _2 )
 # 13828 "src/ocaml/preprocess/parser_raw.ml"
@@ -13929,7 +13929,7 @@ module Tables = struct
             else
               _startpos__4_ in
         
-# 1150 "src/ocaml/preprocess/parser_raw.mly"
+# 1164 "src/ocaml/preprocess/parser_raw.mly"
       ( let exp, poly = (wrap_type_annotation ~loc:(make_loc _symbolstartpos _endpos)) _7 _9 _11 in
         (mkloc _4 ((make_loc _startpos__4_ _endpos__4_)), _3,
          Cfk_concrete (_1, (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_poly(exp, Some poly)))), _2 )
@@ -13952,7 +13952,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 13958 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -13960,7 +13960,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2416 "src/ocaml/preprocess/parser_raw.mly"
+# 2430 "src/ocaml/preprocess/parser_raw.mly"
            ( Lident _1 )
 # 13966 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -13993,7 +13993,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 13999 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _3 in
@@ -14003,7 +14003,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2417 "src/ocaml/preprocess/parser_raw.mly"
+# 2431 "src/ocaml/preprocess/parser_raw.mly"
                                  ( Ldot(_1, _3) )
 # 14009 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14049,7 +14049,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Longident.t) = 
-# 2418 "src/ocaml/preprocess/parser_raw.mly"
+# 2432 "src/ocaml/preprocess/parser_raw.mly"
                                                       ( lapply _1 _3 )
 # 14055 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14070,7 +14070,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 14076 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -14078,7 +14078,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2412 "src/ocaml/preprocess/parser_raw.mly"
+# 2426 "src/ocaml/preprocess/parser_raw.mly"
            ( Lident _1 )
 # 14084 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14111,7 +14111,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 14117 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _3 in
@@ -14121,7 +14121,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2413 "src/ocaml/preprocess/parser_raw.mly"
+# 2427 "src/ocaml/preprocess/parser_raw.mly"
                              ( Ldot(_1, _3) )
 # 14127 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14175,7 +14175,7 @@ module Tables = struct
         let _1_inlined2 : (Longident.t) = Obj.magic _1_inlined2 in
         let _4 : unit = Obj.magic _4 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 14181 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -14189,7 +14189,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14207,7 +14207,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14223,7 +14223,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 965 "src/ocaml/preprocess/parser_raw.mly"
+# 979 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Md.mk _3
           (Mty.alias ~loc:_5.Location.loc _5) ~attrs:(attrs@_6)
@@ -14274,7 +14274,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.module_expr) = Obj.magic _4 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 14280 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -14288,7 +14288,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14304,7 +14304,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 839 "src/ocaml/preprocess/parser_raw.mly"
+# 853 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Mb.mk _3 _4 ~attrs:(attrs@_5)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -14339,7 +14339,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_expr) = 
-# 831 "src/ocaml/preprocess/parser_raw.mly"
+# 845 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 14345 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14387,7 +14387,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 833 "src/ocaml/preprocess/parser_raw.mly"
+# 847 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_constraint(_4, _2)) )
 # 14393 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14421,7 +14421,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 835 "src/ocaml/preprocess/parser_raw.mly"
+# 849 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_functor(fst _1, snd _1, _2)) )
 # 14427 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14468,7 +14468,7 @@ module Tables = struct
         let _5 : (Parsetree.attributes) = Obj.magic _5 in
         let _4 : (Parsetree.module_type) = Obj.magic _4 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 14474 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -14482,7 +14482,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14498,7 +14498,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 958 "src/ocaml/preprocess/parser_raw.mly"
+# 972 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Md.mk _3 _4 ~attrs:(attrs@_5)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -14533,7 +14533,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_type) = 
-# 950 "src/ocaml/preprocess/parser_raw.mly"
+# 964 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 14539 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14588,7 +14588,7 @@ module Tables = struct
         let _4 : (Parsetree.module_type) = Obj.magic _4 in
         let _3 : unit = Obj.magic _3 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 14594 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -14601,7 +14601,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14617,7 +14617,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 952 "src/ocaml/preprocess/parser_raw.mly"
+# 966 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor(_2, Some _4, _6)) )
 # 14623 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14658,7 +14658,7 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 954 "src/ocaml/preprocess/parser_raw.mly"
+# 968 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor((mkrhs "*" (make_loc _startpos__1_ _endpos__1_)), None, _3)) )
 # 14664 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14686,7 +14686,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -14702,7 +14702,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 725 "src/ocaml/preprocess/parser_raw.mly"
+# 739 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_ident _1) )
 # 14708 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14752,7 +14752,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 666 "src/ocaml/preprocess/parser_raw.mly"
+# 680 "src/ocaml/preprocess/parser_raw.mly"
                               ( extra_str _startpos _endpos _1 )
 # 14758 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -14760,7 +14760,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 727 "src/ocaml/preprocess/parser_raw.mly"
+# 741 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pmod_structure(_3)) )
 # 14766 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14815,7 +14815,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 731 "src/ocaml/preprocess/parser_raw.mly"
+# 745 "src/ocaml/preprocess/parser_raw.mly"
       ( let modexp =
           List.fold_left
             (fun acc (n, t) -> (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_functor(n, t, acc)))
@@ -14853,7 +14853,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 737 "src/ocaml/preprocess/parser_raw.mly"
+# 751 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_apply(_1, _2)) )
 # 14859 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14894,7 +14894,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 739 "src/ocaml/preprocess/parser_raw.mly"
+# 753 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_apply(_1, (mkmod ~loc:(make_loc _symbolstartpos _endpos)) (Pmod_structure []))) )
 # 14900 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14919,7 +14919,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.module_expr) = 
-# 741 "src/ocaml/preprocess/parser_raw.mly"
+# 755 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 14925 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14951,7 +14951,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_expr) = 
-# 743 "src/ocaml/preprocess/parser_raw.mly"
+# 757 "src/ocaml/preprocess/parser_raw.mly"
       ( Mod.attr _1 _2 )
 # 14957 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -14978,7 +14978,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 745 "src/ocaml/preprocess/parser_raw.mly"
+# 759 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_extension _1) )
 # 14984 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15006,7 +15006,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -15022,7 +15022,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 866 "src/ocaml/preprocess/parser_raw.mly"
+# 880 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_ident _1) )
 # 15028 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15072,7 +15072,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 667 "src/ocaml/preprocess/parser_raw.mly"
+# 681 "src/ocaml/preprocess/parser_raw.mly"
                               ( extra_sig _startpos _endpos _1 )
 # 15078 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -15080,7 +15080,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 868 "src/ocaml/preprocess/parser_raw.mly"
+# 882 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_2 (Pmty_signature _3) )
 # 15086 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15135,7 +15135,7 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 873 "src/ocaml/preprocess/parser_raw.mly"
+# 887 "src/ocaml/preprocess/parser_raw.mly"
       ( let mty =
           List.fold_left
             (fun acc (n, t) -> (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor(n, t, acc)))
@@ -15180,7 +15180,7 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 880 "src/ocaml/preprocess/parser_raw.mly"
+# 894 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_functor(mknoloc "_", Some _1, _3)) )
 # 15186 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15221,7 +15221,7 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 882 "src/ocaml/preprocess/parser_raw.mly"
+# 896 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_with(_1, List.rev _3)) )
 # 15227 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15276,7 +15276,7 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 884 "src/ocaml/preprocess/parser_raw.mly"
+# 898 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_4 (Pmty_typeof _5) )
 # 15282 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15315,7 +15315,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.module_type) = 
-# 888 "src/ocaml/preprocess/parser_raw.mly"
+# 902 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 15321 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15342,7 +15342,7 @@ module Tables = struct
         let _v : (Parsetree.module_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 892 "src/ocaml/preprocess/parser_raw.mly"
+# 906 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmty ~loc:(make_loc _symbolstartpos _endpos))(Pmty_extension _1) )
 # 15348 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15374,7 +15374,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_type) = 
-# 894 "src/ocaml/preprocess/parser_raw.mly"
+# 908 "src/ocaml/preprocess/parser_raw.mly"
       ( Mty.attr _1 _2 )
 # 15380 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15438,7 +15438,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -15454,7 +15454,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 996 "src/ocaml/preprocess/parser_raw.mly"
+# 1010 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _3 in
         Mtd.mk _4 ?typ:_5 ~attrs:(attrs@_6)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -15475,7 +15475,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.module_type option) = 
-# 990 "src/ocaml/preprocess/parser_raw.mly"
+# 1004 "src/ocaml/preprocess/parser_raw.mly"
                               ( None )
 # 15481 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15507,7 +15507,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_type option) = 
-# 991 "src/ocaml/preprocess/parser_raw.mly"
+# 1005 "src/ocaml/preprocess/parser_raw.mly"
                       ( Some _2 )
 # 15513 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15532,7 +15532,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2421 "src/ocaml/preprocess/parser_raw.mly"
+# 2435 "src/ocaml/preprocess/parser_raw.mly"
           ( Lident _1 )
 # 15538 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15571,7 +15571,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2422 "src/ocaml/preprocess/parser_raw.mly"
+# 2436 "src/ocaml/preprocess/parser_raw.mly"
                                 ( Ldot(_1, _3) )
 # 15577 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15589,7 +15589,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.mutable_flag) = 
-# 2480 "src/ocaml/preprocess/parser_raw.mly"
+# 2494 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Immutable )
 # 15595 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15614,7 +15614,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.mutable_flag) = 
-# 2481 "src/ocaml/preprocess/parser_raw.mly"
+# 2495 "src/ocaml/preprocess/parser_raw.mly"
             ( Mutable )
 # 15620 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15646,7 +15646,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string) = 
-# 2461 "src/ocaml/preprocess/parser_raw.mly"
+# 2475 "src/ocaml/preprocess/parser_raw.mly"
                     ( _2 )
 # 15652 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15671,7 +15671,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string list) = 
-# 2287 "src/ocaml/preprocess/parser_raw.mly"
+# 2301 "src/ocaml/preprocess/parser_raw.mly"
              ( [_1] )
 # 15677 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15703,7 +15703,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string list) = 
-# 2288 "src/ocaml/preprocess/parser_raw.mly"
+# 2302 "src/ocaml/preprocess/parser_raw.mly"
                            ( _2 :: _1 )
 # 15709 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15721,7 +15721,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.rec_flag) = 
-# 2468 "src/ocaml/preprocess/parser_raw.mly"
+# 2482 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Recursive )
 # 15727 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15746,7 +15746,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.rec_flag) = 
-# 2469 "src/ocaml/preprocess/parser_raw.mly"
+# 2483 "src/ocaml/preprocess/parser_raw.mly"
            ( Nonrecursive )
 # 15752 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15803,7 +15803,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -15819,7 +15819,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 936 "src/ocaml/preprocess/parser_raw.mly"
+# 950 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _3 in
         Opn.mk _4 ~override:_2 ~attrs:(attrs@_5)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -15843,7 +15843,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 561 "src/ocaml/preprocess/parser_raw.mly"
+# 575 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 15849 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -15851,7 +15851,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2358 "src/ocaml/preprocess/parser_raw.mly"
+# 2372 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 15857 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15872,7 +15872,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 515 "src/ocaml/preprocess/parser_raw.mly"
+# 529 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 15878 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -15880,7 +15880,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2359 "src/ocaml/preprocess/parser_raw.mly"
+# 2373 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 15886 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15901,7 +15901,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 516 "src/ocaml/preprocess/parser_raw.mly"
+# 530 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 15907 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -15909,7 +15909,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2360 "src/ocaml/preprocess/parser_raw.mly"
+# 2374 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 15915 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15930,7 +15930,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 517 "src/ocaml/preprocess/parser_raw.mly"
+# 531 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 15936 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -15938,7 +15938,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2361 "src/ocaml/preprocess/parser_raw.mly"
+# 2375 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 15944 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15959,7 +15959,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 518 "src/ocaml/preprocess/parser_raw.mly"
+# 532 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 15965 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -15967,7 +15967,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2362 "src/ocaml/preprocess/parser_raw.mly"
+# 2376 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 15973 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -15988,7 +15988,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 519 "src/ocaml/preprocess/parser_raw.mly"
+# 533 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 15994 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -15996,7 +15996,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2363 "src/ocaml/preprocess/parser_raw.mly"
+# 2377 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 16002 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16017,7 +16017,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 573 "src/ocaml/preprocess/parser_raw.mly"
+# 587 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 16023 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -16025,7 +16025,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2364 "src/ocaml/preprocess/parser_raw.mly"
+# 2378 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 16031 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16050,7 +16050,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2365 "src/ocaml/preprocess/parser_raw.mly"
+# 2379 "src/ocaml/preprocess/parser_raw.mly"
          ( "!" )
 # 16056 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16075,7 +16075,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2366 "src/ocaml/preprocess/parser_raw.mly"
+# 2380 "src/ocaml/preprocess/parser_raw.mly"
          ( "+" )
 # 16081 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16100,7 +16100,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2367 "src/ocaml/preprocess/parser_raw.mly"
+# 2381 "src/ocaml/preprocess/parser_raw.mly"
             ( "+." )
 # 16106 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16125,7 +16125,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2368 "src/ocaml/preprocess/parser_raw.mly"
+# 2382 "src/ocaml/preprocess/parser_raw.mly"
           ( "-" )
 # 16131 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16150,7 +16150,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2369 "src/ocaml/preprocess/parser_raw.mly"
+# 2383 "src/ocaml/preprocess/parser_raw.mly"
              ( "-." )
 # 16156 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16175,7 +16175,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2370 "src/ocaml/preprocess/parser_raw.mly"
+# 2384 "src/ocaml/preprocess/parser_raw.mly"
          ( "*" )
 # 16181 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16200,7 +16200,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2371 "src/ocaml/preprocess/parser_raw.mly"
+# 2385 "src/ocaml/preprocess/parser_raw.mly"
           ( "=" )
 # 16206 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16225,7 +16225,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2372 "src/ocaml/preprocess/parser_raw.mly"
+# 2386 "src/ocaml/preprocess/parser_raw.mly"
          ( "<" )
 # 16231 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16250,7 +16250,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2373 "src/ocaml/preprocess/parser_raw.mly"
+# 2387 "src/ocaml/preprocess/parser_raw.mly"
             ( ">" )
 # 16256 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16275,7 +16275,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2374 "src/ocaml/preprocess/parser_raw.mly"
+# 2388 "src/ocaml/preprocess/parser_raw.mly"
        ( "or" )
 # 16281 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16300,7 +16300,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2375 "src/ocaml/preprocess/parser_raw.mly"
+# 2389 "src/ocaml/preprocess/parser_raw.mly"
            ( "||" )
 # 16306 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16325,7 +16325,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2376 "src/ocaml/preprocess/parser_raw.mly"
+# 2390 "src/ocaml/preprocess/parser_raw.mly"
               ( "&" )
 # 16331 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16350,7 +16350,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2377 "src/ocaml/preprocess/parser_raw.mly"
+# 2391 "src/ocaml/preprocess/parser_raw.mly"
                ( "&&" )
 # 16356 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16375,7 +16375,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2378 "src/ocaml/preprocess/parser_raw.mly"
+# 2392 "src/ocaml/preprocess/parser_raw.mly"
                ( ":=" )
 # 16381 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16400,7 +16400,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2379 "src/ocaml/preprocess/parser_raw.mly"
+# 2393 "src/ocaml/preprocess/parser_raw.mly"
            ( "+=" )
 # 16406 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16425,7 +16425,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2380 "src/ocaml/preprocess/parser_raw.mly"
+# 2394 "src/ocaml/preprocess/parser_raw.mly"
             ( "%" )
 # 16431 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16450,7 +16450,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (bool) = 
-# 2279 "src/ocaml/preprocess/parser_raw.mly"
+# 2293 "src/ocaml/preprocess/parser_raw.mly"
               ( true )
 # 16456 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16468,7 +16468,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (bool) = 
-# 2280 "src/ocaml/preprocess/parser_raw.mly"
+# 2294 "src/ocaml/preprocess/parser_raw.mly"
     ( false )
 # 16474 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16486,7 +16486,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (unit) = 
-# 2499 "src/ocaml/preprocess/parser_raw.mly"
+# 2513 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( () )
 # 16492 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16511,7 +16511,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (unit) = 
-# 2500 "src/ocaml/preprocess/parser_raw.mly"
+# 2514 "src/ocaml/preprocess/parser_raw.mly"
         ( () )
 # 16517 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16529,7 +16529,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.expression option) = 
-# 1308 "src/ocaml/preprocess/parser_raw.mly"
+# 1322 "src/ocaml/preprocess/parser_raw.mly"
                                         ( None )
 # 16535 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16561,7 +16561,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression option) = 
-# 1309 "src/ocaml/preprocess/parser_raw.mly"
+# 1323 "src/ocaml/preprocess/parser_raw.mly"
                    ( Some _2 )
 # 16567 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16593,7 +16593,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type option) = 
-# 1860 "src/ocaml/preprocess/parser_raw.mly"
+# 1874 "src/ocaml/preprocess/parser_raw.mly"
                     ( Some _2 )
 # 16599 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16611,7 +16611,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.core_type option) = 
-# 1861 "src/ocaml/preprocess/parser_raw.mly"
+# 1875 "src/ocaml/preprocess/parser_raw.mly"
     ( None )
 # 16617 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16629,7 +16629,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (unit) = 
-# 2503 "src/ocaml/preprocess/parser_raw.mly"
+# 2517 "src/ocaml/preprocess/parser_raw.mly"
     ( () )
 # 16635 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16654,7 +16654,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (unit) = 
-# 2504 "src/ocaml/preprocess/parser_raw.mly"
+# 2518 "src/ocaml/preprocess/parser_raw.mly"
          ( () )
 # 16660 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16679,7 +16679,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type option * Parsetree.core_type option) option) = 
-# 1699 "src/ocaml/preprocess/parser_raw.mly"
+# 1713 "src/ocaml/preprocess/parser_raw.mly"
                     ( Some _1 )
 # 16685 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16697,7 +16697,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type option * Parsetree.core_type option) option) = 
-# 1700 "src/ocaml/preprocess/parser_raw.mly"
+# 1714 "src/ocaml/preprocess/parser_raw.mly"
     ( None )
 # 16703 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16729,7 +16729,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type * Asttypes.variance) = 
-# 1950 "src/ocaml/preprocess/parser_raw.mly"
+# 1964 "src/ocaml/preprocess/parser_raw.mly"
                                          ( _2, _1 )
 # 16735 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16754,7 +16754,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1953 "src/ocaml/preprocess/parser_raw.mly"
+# 1967 "src/ocaml/preprocess/parser_raw.mly"
                             ( [_1] )
 # 16760 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16793,7 +16793,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1954 "src/ocaml/preprocess/parser_raw.mly"
+# 1968 "src/ocaml/preprocess/parser_raw.mly"
                                                                ( _3 :: _1 )
 # 16799 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16811,7 +16811,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1945 "src/ocaml/preprocess/parser_raw.mly"
+# 1959 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( [] )
 # 16817 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16836,7 +16836,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1946 "src/ocaml/preprocess/parser_raw.mly"
+# 1960 "src/ocaml/preprocess/parser_raw.mly"
                             ( [_1] )
 # 16842 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16875,7 +16875,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1947 "src/ocaml/preprocess/parser_raw.mly"
+# 1961 "src/ocaml/preprocess/parser_raw.mly"
                                                ( List.rev _2 )
 # 16881 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16909,7 +16909,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1957 "src/ocaml/preprocess/parser_raw.mly"
+# 1971 "src/ocaml/preprocess/parser_raw.mly"
                 ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_var _2) )
 # 16915 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16936,7 +16936,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1958 "src/ocaml/preprocess/parser_raw.mly"
+# 1972 "src/ocaml/preprocess/parser_raw.mly"
                ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
 # 16942 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16954,7 +16954,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.override_flag) = 
-# 2495 "src/ocaml/preprocess/parser_raw.mly"
+# 2509 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Fresh )
 # 16960 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16979,7 +16979,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.override_flag) = 
-# 2496 "src/ocaml/preprocess/parser_raw.mly"
+# 2510 "src/ocaml/preprocess/parser_raw.mly"
          ( Override )
 # 16985 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17004,7 +17004,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.package_type) = 
-# 2262 "src/ocaml/preprocess/parser_raw.mly"
+# 2276 "src/ocaml/preprocess/parser_raw.mly"
                 ( package_type_of_module_type _1 )
 # 17010 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17059,7 +17059,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 750 "src/ocaml/preprocess/parser_raw.mly"
+# 764 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos))(Pmod_constraint(_2, _4)) )
 # 17065 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17098,7 +17098,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.module_expr) = 
-# 754 "src/ocaml/preprocess/parser_raw.mly"
+# 768 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 17104 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17153,7 +17153,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 758 "src/ocaml/preprocess/parser_raw.mly"
+# 772 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack _4) )
 # 17159 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17222,7 +17222,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 760 "src/ocaml/preprocess/parser_raw.mly"
+# 774 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack(
               (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_constraint(_4, (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6))))) )
 # 17229 "src/ocaml/preprocess/parser_raw.ml"
@@ -17306,7 +17306,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 763 "src/ocaml/preprocess/parser_raw.mly"
+# 777 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack(
               (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_coerce(_4, Some((ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6)),
                                     (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _8))))) )
@@ -17377,7 +17377,7 @@ module Tables = struct
         let _v : (Parsetree.module_expr) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 767 "src/ocaml/preprocess/parser_raw.mly"
+# 781 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkmod ~loc:(make_loc _symbolstartpos _endpos)) ~attrs:_3 (Pmod_unpack(
               (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_coerce(_4, None, (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6))))) )
 # 17384 "src/ocaml/preprocess/parser_raw.ml"
@@ -17405,7 +17405,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 17411 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -17418,7 +17418,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -17432,7 +17432,7 @@ module Tables = struct
           
         in
         
-# 1114 "src/ocaml/preprocess/parser_raw.mly"
+# 1128 "src/ocaml/preprocess/parser_raw.mly"
           ( Some _2 )
 # 17438 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17450,7 +17450,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (string Location.loc option) = 
-# 1116 "src/ocaml/preprocess/parser_raw.mly"
+# 1130 "src/ocaml/preprocess/parser_raw.mly"
           ( None )
 # 17456 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17482,11 +17482,11 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (
-# 661 "src/ocaml/preprocess/parser_raw.mly"
+# 675 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.expression)
 # 17488 "src/ocaml/preprocess/parser_raw.ml"
         ) = 
-# 696 "src/ocaml/preprocess/parser_raw.mly"
+# 710 "src/ocaml/preprocess/parser_raw.mly"
                  ( _1 )
 # 17492 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17529,7 +17529,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -17546,7 +17546,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1707 "src/ocaml/preprocess/parser_raw.mly"
+# 1721 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_alias(_1, _3)) )
 # 17552 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17573,7 +17573,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1711 "src/ocaml/preprocess/parser_raw.mly"
+# 1725 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple(List.rev _1)) )
 # 17579 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17614,7 +17614,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1713 "src/ocaml/preprocess/parser_raw.mly"
+# 1727 "src/ocaml/preprocess/parser_raw.mly"
       ( mkpat_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple[_1;_3])) ((make_loc _symbolstartpos _endpos)) )
 # 17620 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17655,7 +17655,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1717 "src/ocaml/preprocess/parser_raw.mly"
+# 1731 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_or(_1, _3)) )
 # 17661 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17696,7 +17696,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1721 "src/ocaml/preprocess/parser_raw.mly"
+# 1735 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ppat_exception _3) _2 )
 # 17702 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17728,7 +17728,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern) = 
-# 1723 "src/ocaml/preprocess/parser_raw.mly"
+# 1737 "src/ocaml/preprocess/parser_raw.mly"
       ( Pat.attr _1 _2 )
 # 17734 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17753,7 +17753,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1724 "src/ocaml/preprocess/parser_raw.mly"
+# 1738 "src/ocaml/preprocess/parser_raw.mly"
                 ( _1 )
 # 17759 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17792,7 +17792,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1833 "src/ocaml/preprocess/parser_raw.mly"
+# 1847 "src/ocaml/preprocess/parser_raw.mly"
                                      ( _3 :: _1 )
 # 17798 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17831,7 +17831,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1834 "src/ocaml/preprocess/parser_raw.mly"
+# 1848 "src/ocaml/preprocess/parser_raw.mly"
                           ( [_3; _1] )
 # 17837 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17856,7 +17856,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1747 "src/ocaml/preprocess/parser_raw.mly"
+# 1761 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 17862 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17891,7 +17891,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -17907,7 +17907,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1749 "src/ocaml/preprocess/parser_raw.mly"
+# 1763 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_construct(_1, Some _2)) )
 # 17913 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17941,7 +17941,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1751 "src/ocaml/preprocess/parser_raw.mly"
+# 1765 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_variant(_1, Some _2)) )
 # 17947 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18017,7 +18017,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1753 "src/ocaml/preprocess/parser_raw.mly"
+# 1767 "src/ocaml/preprocess/parser_raw.mly"
       ( mkpat_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple[_5;_7])) ((make_loc _symbolstartpos _endpos)) )
 # 18023 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18058,7 +18058,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1757 "src/ocaml/preprocess/parser_raw.mly"
+# 1771 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ppat_lazy _3) _2)
 # 18064 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18101,7 +18101,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -18118,7 +18118,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1728 "src/ocaml/preprocess/parser_raw.mly"
+# 1742 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_alias(_1, _3)) )
 # 18124 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18145,7 +18145,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1732 "src/ocaml/preprocess/parser_raw.mly"
+# 1746 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple(List.rev _1)) )
 # 18151 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18186,7 +18186,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1734 "src/ocaml/preprocess/parser_raw.mly"
+# 1748 "src/ocaml/preprocess/parser_raw.mly"
       ( mkpat_cons ((make_loc _startpos__2_ _endpos__2_)) ((ghpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_tuple[_1;_3])) ((make_loc _symbolstartpos _endpos)) )
 # 18192 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18227,7 +18227,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1738 "src/ocaml/preprocess/parser_raw.mly"
+# 1752 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_or(_1, _3)) )
 # 18233 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18259,7 +18259,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.pattern) = 
-# 1742 "src/ocaml/preprocess/parser_raw.mly"
+# 1756 "src/ocaml/preprocess/parser_raw.mly"
       ( Pat.attr _1 _2 )
 # 18265 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18284,7 +18284,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1743 "src/ocaml/preprocess/parser_raw.mly"
+# 1757 "src/ocaml/preprocess/parser_raw.mly"
                 ( _1 )
 # 18290 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18323,7 +18323,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1842 "src/ocaml/preprocess/parser_raw.mly"
+# 1856 "src/ocaml/preprocess/parser_raw.mly"
                                             ( _3 :: _1 )
 # 18329 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18362,7 +18362,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1843 "src/ocaml/preprocess/parser_raw.mly"
+# 1857 "src/ocaml/preprocess/parser_raw.mly"
                                  ( [_3; _1] )
 # 18368 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18387,7 +18387,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern list) = 
-# 1838 "src/ocaml/preprocess/parser_raw.mly"
+# 1852 "src/ocaml/preprocess/parser_raw.mly"
             ( [_1] )
 # 18393 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18426,7 +18426,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.pattern list) = 
-# 1839 "src/ocaml/preprocess/parser_raw.mly"
+# 1853 "src/ocaml/preprocess/parser_raw.mly"
                                    ( _3 :: _1 )
 # 18432 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18447,7 +18447,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 18453 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -18458,7 +18458,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -18474,7 +18474,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1304 "src/ocaml/preprocess/parser_raw.mly"
+# 1318 "src/ocaml/preprocess/parser_raw.mly"
                   ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_var _1) )
 # 18480 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18501,7 +18501,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1305 "src/ocaml/preprocess/parser_raw.mly"
+# 1319 "src/ocaml/preprocess/parser_raw.mly"
                ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) Ppat_any )
 # 18507 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18526,7 +18526,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.payload) = 
-# 2605 "src/ocaml/preprocess/parser_raw.mly"
+# 2619 "src/ocaml/preprocess/parser_raw.mly"
               ( PStr _1 )
 # 18532 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18558,7 +18558,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.payload) = 
-# 2606 "src/ocaml/preprocess/parser_raw.mly"
+# 2620 "src/ocaml/preprocess/parser_raw.mly"
                     ( PSig _2 )
 # 18564 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18590,7 +18590,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.payload) = 
-# 2607 "src/ocaml/preprocess/parser_raw.mly"
+# 2621 "src/ocaml/preprocess/parser_raw.mly"
                     ( PTyp _2 )
 # 18596 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18622,7 +18622,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.payload) = 
-# 2608 "src/ocaml/preprocess/parser_raw.mly"
+# 2622 "src/ocaml/preprocess/parser_raw.mly"
                      ( PPat (_2, None) )
 # 18628 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18668,7 +18668,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.payload) = 
-# 2609 "src/ocaml/preprocess/parser_raw.mly"
+# 2623 "src/ocaml/preprocess/parser_raw.mly"
                                    ( PPat (_2, Some _4) )
 # 18674 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18693,7 +18693,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2166 "src/ocaml/preprocess/parser_raw.mly"
+# 2180 "src/ocaml/preprocess/parser_raw.mly"
           ( _1 )
 # 18699 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18734,7 +18734,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2168 "src/ocaml/preprocess/parser_raw.mly"
+# 2182 "src/ocaml/preprocess/parser_raw.mly"
           ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly(List.rev _1, _3)) )
 # 18740 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18759,7 +18759,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2172 "src/ocaml/preprocess/parser_raw.mly"
+# 2186 "src/ocaml/preprocess/parser_raw.mly"
           ( _1 )
 # 18765 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18800,7 +18800,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2174 "src/ocaml/preprocess/parser_raw.mly"
+# 2188 "src/ocaml/preprocess/parser_raw.mly"
           ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_poly(List.rev _1, _3)) )
 # 18806 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18846,7 +18846,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.attribute) = 
-# 2580 "src/ocaml/preprocess/parser_raw.mly"
+# 2594 "src/ocaml/preprocess/parser_raw.mly"
                                         ( (_2, _3) )
 # 18852 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18864,7 +18864,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.attributes) = 
-# 2586 "src/ocaml/preprocess/parser_raw.mly"
+# 2600 "src/ocaml/preprocess/parser_raw.mly"
                  ( [] )
 # 18870 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18896,7 +18896,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.attributes) = 
-# 2587 "src/ocaml/preprocess/parser_raw.mly"
+# 2601 "src/ocaml/preprocess/parser_raw.mly"
                                              ( _1 :: _2 )
 # 18902 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18974,7 +18974,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -18990,7 +18990,7 @@ module Tables = struct
         let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1883 "src/ocaml/preprocess/parser_raw.mly"
+# 1897 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Val.mk _3 _5 ~prim:_7 ~attrs:(attrs@_8)
                ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -19014,7 +19014,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 576 "src/ocaml/preprocess/parser_raw.mly"
+# 590 "src/ocaml/preprocess/parser_raw.mly"
        (string * string option)
 # 19020 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -19022,7 +19022,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string list) = 
-# 1877 "src/ocaml/preprocess/parser_raw.mly"
+# 1891 "src/ocaml/preprocess/parser_raw.mly"
            ( [fst _1] )
 # 19028 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19050,7 +19050,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (string list) = Obj.magic _2 in
         let _1 : (
-# 576 "src/ocaml/preprocess/parser_raw.mly"
+# 590 "src/ocaml/preprocess/parser_raw.mly"
        (string * string option)
 # 19056 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -19058,7 +19058,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (string list) = 
-# 1878 "src/ocaml/preprocess/parser_raw.mly"
+# 1892 "src/ocaml/preprocess/parser_raw.mly"
                                       ( fst _1 :: _2 )
 # 19064 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19076,7 +19076,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.private_flag) = 
-# 2476 "src/ocaml/preprocess/parser_raw.mly"
+# 2490 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Public )
 # 19082 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19101,7 +19101,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag) = 
-# 2477 "src/ocaml/preprocess/parser_raw.mly"
+# 2491 "src/ocaml/preprocess/parser_raw.mly"
             ( Private )
 # 19107 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19119,7 +19119,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2488 "src/ocaml/preprocess/parser_raw.mly"
+# 2502 "src/ocaml/preprocess/parser_raw.mly"
                  ( Public, Concrete )
 # 19125 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19144,7 +19144,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2489 "src/ocaml/preprocess/parser_raw.mly"
+# 2503 "src/ocaml/preprocess/parser_raw.mly"
             ( Private, Concrete )
 # 19150 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19169,7 +19169,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2490 "src/ocaml/preprocess/parser_raw.mly"
+# 2504 "src/ocaml/preprocess/parser_raw.mly"
             ( Public, Virtual )
 # 19175 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19201,7 +19201,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2491 "src/ocaml/preprocess/parser_raw.mly"
+# 2505 "src/ocaml/preprocess/parser_raw.mly"
                     ( Private, Virtual )
 # 19207 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19233,7 +19233,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.private_flag * Asttypes.virtual_flag) = 
-# 2492 "src/ocaml/preprocess/parser_raw.mly"
+# 2506 "src/ocaml/preprocess/parser_raw.mly"
                     ( Private, Virtual )
 # 19239 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19251,7 +19251,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.rec_flag) = 
-# 2464 "src/ocaml/preprocess/parser_raw.mly"
+# 2478 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Nonrecursive )
 # 19257 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19276,7 +19276,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.rec_flag) = 
-# 2465 "src/ocaml/preprocess/parser_raw.mly"
+# 2479 "src/ocaml/preprocess/parser_raw.mly"
         ( Recursive )
 # 19282 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19329,7 +19329,7 @@ module Tables = struct
         let _6 : (Parsetree.attributes) = Obj.magic _6 in
         let _5 : (Parsetree.module_expr) = Obj.magic _5 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 19335 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -19344,7 +19344,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -19360,7 +19360,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 851 "src/ocaml/preprocess/parser_raw.mly"
+# 865 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Mb.mk _4 _5 ~attrs:(attrs@_6)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -19388,7 +19388,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.module_binding list * string Location.loc option) = 
-# 845 "src/ocaml/preprocess/parser_raw.mly"
+# 859 "src/ocaml/preprocess/parser_raw.mly"
                        ( let (b, ext) = _1 in ([b], ext) )
 # 19394 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19420,7 +19420,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_binding list * string Location.loc option) = 
-# 847 "src/ocaml/preprocess/parser_raw.mly"
+# 861 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
 # 19426 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19480,7 +19480,7 @@ module Tables = struct
         let _6 : (Parsetree.module_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 19486 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -19495,7 +19495,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -19511,7 +19511,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 979 "src/ocaml/preprocess/parser_raw.mly"
+# 993 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Md.mk _4 _6 ~attrs:(attrs@_7)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -19539,7 +19539,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.module_declaration list * string Location.loc option) = 
-# 973 "src/ocaml/preprocess/parser_raw.mly"
+# 987 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in ([body], ext) )
 # 19545 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19571,7 +19571,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.module_declaration list * string Location.loc option) = 
-# 975 "src/ocaml/preprocess/parser_raw.mly"
+# 989 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (_2 :: l, ext) )
 # 19577 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19611,7 +19611,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.expression option *
   (Longident.t Location.loc * Parsetree.expression) list) = 
-# 1663 "src/ocaml/preprocess/parser_raw.mly"
+# 1677 "src/ocaml/preprocess/parser_raw.mly"
                                    ( (Some _1, _3) )
 # 19617 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19637,7 +19637,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression option *
   (Longident.t Location.loc * Parsetree.expression) list) = 
-# 1664 "src/ocaml/preprocess/parser_raw.mly"
+# 1678 "src/ocaml/preprocess/parser_raw.mly"
                   ( (None, _1) )
 # 19643 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19662,7 +19662,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.row_field) = 
-# 2269 "src/ocaml/preprocess/parser_raw.mly"
+# 2283 "src/ocaml/preprocess/parser_raw.mly"
               ( _1 )
 # 19668 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19687,7 +19687,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.row_field) = 
-# 2270 "src/ocaml/preprocess/parser_raw.mly"
+# 2284 "src/ocaml/preprocess/parser_raw.mly"
                      ( Rinherit _1 )
 # 19693 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19712,7 +19712,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.row_field list) = 
-# 2265 "src/ocaml/preprocess/parser_raw.mly"
+# 2279 "src/ocaml/preprocess/parser_raw.mly"
               ( [_1] )
 # 19718 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19751,7 +19751,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.row_field list) = 
-# 2266 "src/ocaml/preprocess/parser_raw.mly"
+# 2280 "src/ocaml/preprocess/parser_raw.mly"
                                  ( _3 :: _1 )
 # 19757 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19776,7 +19776,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.expression) = 
-# 1277 "src/ocaml/preprocess/parser_raw.mly"
+# 1291 "src/ocaml/preprocess/parser_raw.mly"
                           ( _1 )
 # 19782 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19810,7 +19810,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1278 "src/ocaml/preprocess/parser_raw.mly"
+# 1292 "src/ocaml/preprocess/parser_raw.mly"
               ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) _1 )
 # 19816 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19851,7 +19851,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1279 "src/ocaml/preprocess/parser_raw.mly"
+# 1293 "src/ocaml/preprocess/parser_raw.mly"
                        ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_sequence(_1, _3)) )
 # 19857 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -19906,7 +19906,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1281 "src/ocaml/preprocess/parser_raw.mly"
+# 1295 "src/ocaml/preprocess/parser_raw.mly"
       ( let seq = (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_sequence (_1, _5)) in
         let payload = PStr [mkstrexp seq []] in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_extension (_4, payload)) )
@@ -19972,7 +19972,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -19988,7 +19988,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2015 "src/ocaml/preprocess/parser_raw.mly"
+# 2029 "src/ocaml/preprocess/parser_raw.mly"
       ( let args, res = _4 in
         let (ext,attrs) = _2 in
           Te.decl _3 ~args ?res ~attrs:(attrs @ _5 @ _6)
@@ -20017,7 +20017,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2095 "src/ocaml/preprocess/parser_raw.mly"
+# 2109 "src/ocaml/preprocess/parser_raw.mly"
                                       ( [_1] )
 # 20023 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20042,7 +20042,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2096 "src/ocaml/preprocess/parser_raw.mly"
+# 2110 "src/ocaml/preprocess/parser_raw.mly"
                                           ( [_1] )
 # 20048 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20074,7 +20074,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2098 "src/ocaml/preprocess/parser_raw.mly"
+# 2112 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 :: _1 )
 # 20080 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20122,7 +20122,7 @@ module Tables = struct
         let _v : (Parsetree.include_description * string Location.loc option) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 943 "src/ocaml/preprocess/parser_raw.mly"
+# 957 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Incl.mk _3 ~attrs:(attrs@_4)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -20210,7 +20210,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -20226,7 +20226,7 @@ module Tables = struct
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2078 "src/ocaml/preprocess/parser_raw.mly"
+# 2092 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         if _3 <> Recursive then (not_expecting (make_loc _startpos__3_ _endpos__3_) "nonrec flag");
         Te.mk _5 (List.rev _8) ~params:_4 ~priv:_7
@@ -20248,7 +20248,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.signature) = 
-# 897 "src/ocaml/preprocess/parser_raw.mly"
+# 911 "src/ocaml/preprocess/parser_raw.mly"
                          ( [] )
 # 20254 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20280,7 +20280,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.signature) = 
-# 898 "src/ocaml/preprocess/parser_raw.mly"
+# 912 "src/ocaml/preprocess/parser_raw.mly"
                        ( ((text_sig _startpos__1_)) @ _2 )
 # 20286 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20312,7 +20312,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.signature) = 
-# 899 "src/ocaml/preprocess/parser_raw.mly"
+# 913 "src/ocaml/preprocess/parser_raw.mly"
                              ( ((text_sig _startpos__1_)) @ _1 :: _2 )
 # 20318 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20339,7 +20339,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 903 "src/ocaml/preprocess/parser_raw.mly"
+# 917 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_value body) ext )
 # 20345 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20366,7 +20366,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 905 "src/ocaml/preprocess/parser_raw.mly"
+# 919 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_value body) ext )
 # 20372 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20394,7 +20394,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 907 "src/ocaml/preprocess/parser_raw.mly"
+# 921 "src/ocaml/preprocess/parser_raw.mly"
       ( let (nr, l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_type (nr, List.rev l)) ext )
 # 20400 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20421,7 +20421,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 909 "src/ocaml/preprocess/parser_raw.mly"
+# 923 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_typext l) ext )
 # 20427 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20448,7 +20448,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 911 "src/ocaml/preprocess/parser_raw.mly"
+# 925 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_exception l) ext )
 # 20454 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20475,7 +20475,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 913 "src/ocaml/preprocess/parser_raw.mly"
+# 927 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_module body) ext )
 # 20481 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20502,7 +20502,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 915 "src/ocaml/preprocess/parser_raw.mly"
+# 929 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_module body) ext )
 # 20508 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20529,7 +20529,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 917 "src/ocaml/preprocess/parser_raw.mly"
+# 931 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_recmodule (List.rev l)) ext )
 # 20535 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20556,7 +20556,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 919 "src/ocaml/preprocess/parser_raw.mly"
+# 933 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_modtype body) ext )
 # 20562 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20583,7 +20583,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 921 "src/ocaml/preprocess/parser_raw.mly"
+# 935 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_open body) ext )
 # 20589 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20610,7 +20610,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 923 "src/ocaml/preprocess/parser_raw.mly"
+# 937 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_include body) ext )
 # 20616 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20637,7 +20637,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 925 "src/ocaml/preprocess/parser_raw.mly"
+# 939 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_class (List.rev l)) ext )
 # 20643 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20664,7 +20664,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 927 "src/ocaml/preprocess/parser_raw.mly"
+# 941 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mksig_ext ~loc:(make_loc _symbolstartpos _endpos)) (Psig_class_type (List.rev l)) ext )
 # 20670 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20698,7 +20698,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 929 "src/ocaml/preprocess/parser_raw.mly"
+# 943 "src/ocaml/preprocess/parser_raw.mly"
       ( (mksig ~loc:(make_loc _symbolstartpos _endpos))(Psig_extension (_1, (add_docs_attrs ((symbol_docs _symbolstartpos _endpos)) _2))) )
 # 20704 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20725,7 +20725,7 @@ module Tables = struct
         let _v : (Parsetree.signature_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 931 "src/ocaml/preprocess/parser_raw.mly"
+# 945 "src/ocaml/preprocess/parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mksig ~loc:(make_loc _symbolstartpos _endpos))(Psig_attribute _1) )
 # 20732 "src/ocaml/preprocess/parser_raw.ml"
@@ -20751,7 +20751,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.constant) = 
-# 2337 "src/ocaml/preprocess/parser_raw.mly"
+# 2351 "src/ocaml/preprocess/parser_raw.mly"
              ( _1 )
 # 20757 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20778,7 +20778,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 522 "src/ocaml/preprocess/parser_raw.mly"
+# 536 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 20784 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -20787,7 +20787,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2338 "src/ocaml/preprocess/parser_raw.mly"
+# 2352 "src/ocaml/preprocess/parser_raw.mly"
               ( let (n, m) = _2 in Pconst_integer("-" ^ n, m) )
 # 20793 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20814,7 +20814,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 502 "src/ocaml/preprocess/parser_raw.mly"
+# 516 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 20820 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -20823,7 +20823,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2339 "src/ocaml/preprocess/parser_raw.mly"
+# 2353 "src/ocaml/preprocess/parser_raw.mly"
                 ( let (f, m) = _2 in Pconst_float("-" ^ f, m) )
 # 20829 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20850,7 +20850,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 522 "src/ocaml/preprocess/parser_raw.mly"
+# 536 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 20856 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -20859,7 +20859,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2340 "src/ocaml/preprocess/parser_raw.mly"
+# 2354 "src/ocaml/preprocess/parser_raw.mly"
              ( let (n, m) = _2 in Pconst_integer (n, m) )
 # 20865 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20886,7 +20886,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _2 : (
-# 502 "src/ocaml/preprocess/parser_raw.mly"
+# 516 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 20892 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -20895,7 +20895,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.constant) = 
-# 2341 "src/ocaml/preprocess/parser_raw.mly"
+# 2355 "src/ocaml/preprocess/parser_raw.mly"
                ( let (f, m) = _2 in Pconst_float(f, m) )
 # 20901 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20920,7 +20920,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2210 "src/ocaml/preprocess/parser_raw.mly"
+# 2224 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 20926 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -20961,7 +20961,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2212 "src/ocaml/preprocess/parser_raw.mly"
+# 2226 "src/ocaml/preprocess/parser_raw.mly"
       ( match _2 with [sty] -> sty | _ ->
         raise_error (Syntaxerr.Error(Syntaxerr.Other (make_loc _symbolstartpos _endpos)));
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
@@ -20997,7 +20997,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2219 "src/ocaml/preprocess/parser_raw.mly"
+# 2233 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_var _2) )
 # 21003 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21024,7 +21024,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2221 "src/ocaml/preprocess/parser_raw.mly"
+# 2235 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) )
 # 21030 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21052,7 +21052,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21068,7 +21068,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2223 "src/ocaml/preprocess/parser_raw.mly"
+# 2237 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_constr(_1, [])) )
 # 21074 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21104,7 +21104,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21121,7 +21121,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2225 "src/ocaml/preprocess/parser_raw.mly"
+# 2239 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_constr(_2, [_1])) )
 # 21127 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21171,7 +21171,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21188,7 +21188,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2227 "src/ocaml/preprocess/parser_raw.mly"
+# 2241 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_constr(_4, List.rev _2)) )
 # 21194 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21230,7 +21230,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2229 "src/ocaml/preprocess/parser_raw.mly"
+# 2243 "src/ocaml/preprocess/parser_raw.mly"
       ( let (f, c) = _2 in (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_object (f, c)) )
 # 21236 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21264,7 +21264,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2231 "src/ocaml/preprocess/parser_raw.mly"
+# 2245 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_object ([], Closed)) )
 # 21270 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21300,7 +21300,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21317,7 +21317,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2233 "src/ocaml/preprocess/parser_raw.mly"
+# 2247 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_class(_2, [])) )
 # 21323 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21360,7 +21360,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21377,7 +21377,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2235 "src/ocaml/preprocess/parser_raw.mly"
+# 2249 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_class(_3, [_1])) )
 # 21383 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21434,7 +21434,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -21451,7 +21451,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2237 "src/ocaml/preprocess/parser_raw.mly"
+# 2251 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_class(_5, List.rev _2)) )
 # 21457 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21492,7 +21492,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2239 "src/ocaml/preprocess/parser_raw.mly"
+# 2253 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant([_2], Closed, None)) )
 # 21498 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21540,7 +21540,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2245 "src/ocaml/preprocess/parser_raw.mly"
+# 2259 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Closed, None)) )
 # 21546 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21595,7 +21595,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2247 "src/ocaml/preprocess/parser_raw.mly"
+# 2261 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(_2 :: List.rev _4, Closed, None)) )
 # 21601 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21643,7 +21643,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2249 "src/ocaml/preprocess/parser_raw.mly"
+# 2263 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Open, None)) )
 # 21649 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21677,7 +21677,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2251 "src/ocaml/preprocess/parser_raw.mly"
+# 2265 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant([], Open, None)) )
 # 21683 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21725,7 +21725,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2253 "src/ocaml/preprocess/parser_raw.mly"
+# 2267 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Closed, Some [])) )
 # 21731 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21787,7 +21787,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2255 "src/ocaml/preprocess/parser_raw.mly"
+# 2269 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_variant(List.rev _3, Closed, Some (List.rev _5))) )
 # 21793 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21842,7 +21842,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2257 "src/ocaml/preprocess/parser_raw.mly"
+# 2271 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_package _4) _3 )
 # 21848 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21869,7 +21869,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2259 "src/ocaml/preprocess/parser_raw.mly"
+# 2273 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_extension _1) )
 # 21875 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21894,7 +21894,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.core_type) = 
-# 2291 "src/ocaml/preprocess/parser_raw.mly"
+# 2305 "src/ocaml/preprocess/parser_raw.mly"
                      ( _1 )
 # 21900 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21935,7 +21935,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2293 "src/ocaml/preprocess/parser_raw.mly"
+# 2307 "src/ocaml/preprocess/parser_raw.mly"
       ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_tuple(_1 :: List.rev _3)) )
 # 21941 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21976,7 +21976,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1818 "src/ocaml/preprocess/parser_raw.mly"
+# 1832 "src/ocaml/preprocess/parser_raw.mly"
     ( let (fields, closed) = _2 in (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_record(fields, closed)) )
 # 21982 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22024,7 +22024,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1822 "src/ocaml/preprocess/parser_raw.mly"
+# 1836 "src/ocaml/preprocess/parser_raw.mly"
     ( (reloc_pat ~loc:(make_loc _symbolstartpos _endpos)) (mktailpat ((make_loc _startpos__4_ _endpos__4_)) (List.rev _2)) )
 # 22030 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22072,7 +22072,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1826 "src/ocaml/preprocess/parser_raw.mly"
+# 1840 "src/ocaml/preprocess/parser_raw.mly"
     ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_array(List.rev _2)) )
 # 22078 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22106,7 +22106,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1828 "src/ocaml/preprocess/parser_raw.mly"
+# 1842 "src/ocaml/preprocess/parser_raw.mly"
     ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_array []) )
 # 22112 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22147,7 +22147,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _startpos = _startpos__1_ in
         
-# 2614 "src/ocaml/preprocess/parser_raw.mly"
+# 2628 "src/ocaml/preprocess/parser_raw.mly"
     ( Fake.Meta.code _startpos _endpos _2 )
 # 22153 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22181,7 +22181,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _startpos = _startpos__1_ in
         
-# 2616 "src/ocaml/preprocess/parser_raw.mly"
+# 2630 "src/ocaml/preprocess/parser_raw.mly"
     ( Fake.Meta.uncode _startpos _endpos _2 )
 # 22187 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22209,7 +22209,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22225,7 +22225,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1442 "src/ocaml/preprocess/parser_raw.mly"
+# 1456 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident _1) )
 # 22231 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22252,7 +22252,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1444 "src/ocaml/preprocess/parser_raw.mly"
+# 1458 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_constant _1) )
 # 22258 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22280,7 +22280,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22296,7 +22296,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1446 "src/ocaml/preprocess/parser_raw.mly"
+# 1460 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct(_1, None)) )
 # 22302 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22323,7 +22323,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1448 "src/ocaml/preprocess/parser_raw.mly"
+# 1462 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_variant(_1, None)) )
 # 22329 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22364,7 +22364,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1450 "src/ocaml/preprocess/parser_raw.mly"
+# 1464 "src/ocaml/preprocess/parser_raw.mly"
       ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) _2 )
 # 22370 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22412,7 +22412,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1454 "src/ocaml/preprocess/parser_raw.mly"
+# 1468 "src/ocaml/preprocess/parser_raw.mly"
       ( (wrap_exp_attrs ~loc:(make_loc _symbolstartpos _endpos)) ((reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) _3) _2 (* check location *) )
 # 22418 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22453,7 +22453,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1456 "src/ocaml/preprocess/parser_raw.mly"
+# 1470 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_construct (mkloc (Lident "()") ((make_loc _symbolstartpos _endpos)),
                                None)) _2 )
 # 22460 "src/ocaml/preprocess/parser_raw.ml"
@@ -22502,7 +22502,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1461 "src/ocaml/preprocess/parser_raw.mly"
+# 1475 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _2 _3 )
 # 22508 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22545,7 +22545,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22562,7 +22562,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1463 "src/ocaml/preprocess/parser_raw.mly"
+# 1477 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_field(_1, _3)) )
 # 22568 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22618,7 +22618,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22634,7 +22634,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1465 "src/ocaml/preprocess/parser_raw.mly"
+# 1479 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, _4)) )
 # 22640 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22683,7 +22683,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22699,7 +22699,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1467 "src/ocaml/preprocess/parser_raw.mly"
+# 1481 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1,
                         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct((mkrhs (Lident "()") (make_loc _startpos__1_ _endpos__1_)), None)))) )
 # 22706 "src/ocaml/preprocess/parser_raw.ml"
@@ -22755,7 +22755,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1472 "src/ocaml/preprocess/parser_raw.mly"
+# 1486 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "Array" "get")),
                          [Nolabel,_1; Nolabel,_4])) )
 # 22762 "src/ocaml/preprocess/parser_raw.ml"
@@ -22811,7 +22811,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1477 "src/ocaml/preprocess/parser_raw.mly"
+# 1491 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_ident((array_function ~loc:(make_loc _symbolstartpos _endpos)) "String" "get")),
                          [Nolabel,_1; Nolabel,_4])) )
 # 22818 "src/ocaml/preprocess/parser_raw.ml"
@@ -22867,7 +22867,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1482 "src/ocaml/preprocess/parser_raw.mly"
+# 1496 "src/ocaml/preprocess/parser_raw.mly"
       ( (bigarray_get ~loc:(make_loc _symbolstartpos _endpos)) _1 _4 )
 # 22873 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22909,7 +22909,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1486 "src/ocaml/preprocess/parser_raw.mly"
+# 1500 "src/ocaml/preprocess/parser_raw.mly"
       ( let (exten, fields) = _2 in (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_record(fields, exten)) )
 # 22915 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22966,7 +22966,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -22982,7 +22982,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1490 "src/ocaml/preprocess/parser_raw.mly"
+# 1504 "src/ocaml/preprocess/parser_raw.mly"
       ( let (exten, fields) = _4 in
         let rec_exp = (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_record(fields, exten)) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, rec_exp)) )
@@ -23032,7 +23032,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1496 "src/ocaml/preprocess/parser_raw.mly"
+# 1510 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_array(List.rev _2)) )
 # 23038 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23066,7 +23066,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1500 "src/ocaml/preprocess/parser_raw.mly"
+# 1514 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_array []) )
 # 23072 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23129,7 +23129,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23145,7 +23145,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1502 "src/ocaml/preprocess/parser_raw.mly"
+# 1516 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_array(List.rev _4)))) )
 # 23151 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23194,7 +23194,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23210,7 +23210,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1504 "src/ocaml/preprocess/parser_raw.mly"
+# 1518 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_array []))) )
 # 23216 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23258,7 +23258,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1508 "src/ocaml/preprocess/parser_raw.mly"
+# 1522 "src/ocaml/preprocess/parser_raw.mly"
       ( (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) (mktailexp ((make_loc _startpos__4_ _endpos__4_)) (List.rev _2)) )
 # 23264 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23321,7 +23321,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23337,7 +23337,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1512 "src/ocaml/preprocess/parser_raw.mly"
+# 1526 "src/ocaml/preprocess/parser_raw.mly"
       ( let list_exp = (reloc_exp ~loc:(make_loc _symbolstartpos _endpos)) (mktailexp ((make_loc _startpos__6_ _endpos__6_)) (List.rev _4)) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, list_exp)) )
 # 23344 "src/ocaml/preprocess/parser_raw.ml"
@@ -23387,7 +23387,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23403,7 +23403,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1515 "src/ocaml/preprocess/parser_raw.mly"
+# 1529 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1,
                         (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_construct((mkrhs (Lident "[]") (make_loc _startpos__1_ _endpos__1_)), None)))) )
 # 23410 "src/ocaml/preprocess/parser_raw.ml"
@@ -23432,7 +23432,7 @@ module Tables = struct
         } = _menhir_stack in
         let _2 : (Parsetree.expression) = Obj.magic _2 in
         let _1 : (
-# 561 "src/ocaml/preprocess/parser_raw.mly"
+# 575 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 23438 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -23442,7 +23442,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1520 "src/ocaml/preprocess/parser_raw.mly"
+# 1534 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((mkoperator _1 (make_loc _startpos__1_ _endpos__1_)), [Nolabel,_2])) )
 # 23448 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23476,7 +23476,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1522 "src/ocaml/preprocess/parser_raw.mly"
+# 1536 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_apply((mkoperator "!" (make_loc _startpos__1_ _endpos__1_)), [Nolabel,_2])) )
 # 23482 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23519,7 +23519,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23536,7 +23536,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1524 "src/ocaml/preprocess/parser_raw.mly"
+# 1538 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_new _3) _2 )
 # 23542 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23577,7 +23577,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1526 "src/ocaml/preprocess/parser_raw.mly"
+# 1540 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_override _2) )
 # 23583 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23611,7 +23611,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1530 "src/ocaml/preprocess/parser_raw.mly"
+# 1544 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_override []))
 # 23617 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23667,7 +23667,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23683,7 +23683,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1532 "src/ocaml/preprocess/parser_raw.mly"
+# 1546 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_open(Fresh, _1, (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_override _4))))
 # 23689 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23726,7 +23726,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -23743,7 +23743,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1536 "src/ocaml/preprocess/parser_raw.mly"
+# 1550 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_send(_1, _3)) )
 # 23749 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23777,7 +23777,7 @@ module Tables = struct
         } = _menhir_stack in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : (
-# 573 "src/ocaml/preprocess/parser_raw.mly"
+# 587 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 23783 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _2 in
@@ -23788,7 +23788,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1538 "src/ocaml/preprocess/parser_raw.mly"
+# 1552 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkinfix ~loc:(make_loc _symbolstartpos _endpos) ~oploc:(make_loc _startpos__2_ _endpos__2_)) _1 _2 _3 )
 # 23794 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23843,7 +23843,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1540 "src/ocaml/preprocess/parser_raw.mly"
+# 1554 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_pack _4) _3 )
 # 23849 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -23912,7 +23912,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1542 "src/ocaml/preprocess/parser_raw.mly"
+# 1556 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_constraint ((ghexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_pack _4),
                                       (ghtyp ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_package _6)))
                     _3 )
@@ -23998,7 +23998,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24014,7 +24014,7 @@ module Tables = struct
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1548 "src/ocaml/preprocess/parser_raw.mly"
+# 1562 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_open(Fresh, _1,
         (mkexp_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_constraint ((ghexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_pack _6),
                                 (ghtyp ~loc:(make_loc _symbolstartpos _endpos)) (Ptyp_package _8)))
@@ -24044,7 +24044,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1555 "src/ocaml/preprocess/parser_raw.mly"
+# 1569 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_extension _1) )
 # 24050 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24071,7 +24071,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1557 "src/ocaml/preprocess/parser_raw.mly"
+# 1571 "src/ocaml/preprocess/parser_raw.mly"
       ( let id = mkloc "merlin.hole" ((make_loc _symbolstartpos _endpos)) in
         (mkexp ~loc:(make_loc _symbolstartpos _endpos)) (Pexp_extension (id, PStr [])) )
 # 24078 "src/ocaml/preprocess/parser_raw.ml"
@@ -24097,7 +24097,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Asttypes.arg_label * Parsetree.expression) list) = 
-# 1562 "src/ocaml/preprocess/parser_raw.mly"
+# 1576 "src/ocaml/preprocess/parser_raw.mly"
       ( [_1] )
 # 24103 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24129,7 +24129,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : ((Asttypes.arg_label * Parsetree.expression) list) = 
-# 1564 "src/ocaml/preprocess/parser_raw.mly"
+# 1578 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 :: _1 )
 # 24135 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24157,7 +24157,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24173,7 +24173,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1761 "src/ocaml/preprocess/parser_raw.mly"
+# 1775 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_var _1) )
 # 24179 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24198,7 +24198,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1762 "src/ocaml/preprocess/parser_raw.mly"
+# 1776 "src/ocaml/preprocess/parser_raw.mly"
                              ( _1 )
 # 24204 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24225,7 +24225,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1766 "src/ocaml/preprocess/parser_raw.mly"
+# 1780 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_any) )
 # 24231 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24252,7 +24252,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1768 "src/ocaml/preprocess/parser_raw.mly"
+# 1782 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constant _1) )
 # 24258 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24293,7 +24293,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1770 "src/ocaml/preprocess/parser_raw.mly"
+# 1784 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_interval (_1, _3)) )
 # 24299 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24321,7 +24321,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24337,7 +24337,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1772 "src/ocaml/preprocess/parser_raw.mly"
+# 1786 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_construct(_1, None)) )
 # 24343 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24364,7 +24364,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1774 "src/ocaml/preprocess/parser_raw.mly"
+# 1788 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_variant(_1, None)) )
 # 24370 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24400,7 +24400,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24417,7 +24417,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1776 "src/ocaml/preprocess/parser_raw.mly"
+# 1790 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_type _2) )
 # 24423 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24442,7 +24442,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.pattern) = 
-# 1778 "src/ocaml/preprocess/parser_raw.mly"
+# 1792 "src/ocaml/preprocess/parser_raw.mly"
       ( _1 )
 # 24448 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24484,7 +24484,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24500,7 +24500,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1780 "src/ocaml/preprocess/parser_raw.mly"
+# 1794 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open(_1, _3) )
 # 24506 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24549,7 +24549,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24565,7 +24565,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1782 "src/ocaml/preprocess/parser_raw.mly"
+# 1796 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open(_1, (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@
                Ppat_construct ((mkrhs (Lident "[]") (make_loc _startpos__4_ _endpos__4_)), None)) )
 # 24572 "src/ocaml/preprocess/parser_raw.ml"
@@ -24615,7 +24615,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24631,7 +24631,7 @@ module Tables = struct
         let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1785 "src/ocaml/preprocess/parser_raw.mly"
+# 1799 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open(_1, (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@
                  Ppat_construct ((mkrhs (Lident "()") (make_loc _startpos__4_ _endpos__4_)), None) ) )
 # 24638 "src/ocaml/preprocess/parser_raw.ml"
@@ -24688,7 +24688,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24704,7 +24704,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1788 "src/ocaml/preprocess/parser_raw.mly"
+# 1802 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos)) @@ Ppat_open (_1, _4) )
 # 24710 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24745,7 +24745,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1794 "src/ocaml/preprocess/parser_raw.mly"
+# 1808 "src/ocaml/preprocess/parser_raw.mly"
       ( (reloc_pat ~loc:(make_loc _symbolstartpos _endpos)) _2 )
 # 24751 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24800,7 +24800,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1798 "src/ocaml/preprocess/parser_raw.mly"
+# 1812 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_constraint(_2, _4)) )
 # 24806 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24846,7 +24846,7 @@ module Tables = struct
         } = _menhir_stack in
         let _5 : unit = Obj.magic _5 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 24852 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -24861,7 +24861,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24877,7 +24877,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1804 "src/ocaml/preprocess/parser_raw.mly"
+# 1818 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos)) (Ppat_unpack _4) _3 )
 # 24883 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24937,7 +24937,7 @@ module Tables = struct
         let _6 : (Parsetree.package_type) = Obj.magic _6 in
         let _5 : unit = Obj.magic _5 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 24943 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -24952,7 +24952,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -24968,7 +24968,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1806 "src/ocaml/preprocess/parser_raw.mly"
+# 1820 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat_attrs ~loc:(make_loc _symbolstartpos _endpos))
           (Ppat_constraint((mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_unpack _4),
                            (ghtyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_package _6)))
@@ -24998,7 +24998,7 @@ module Tables = struct
         let _v : (Parsetree.pattern) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1813 "src/ocaml/preprocess/parser_raw.mly"
+# 1827 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkpat ~loc:(make_loc _symbolstartpos _endpos))(Ppat_extension _1) )
 # 25004 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25019,7 +25019,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 25025 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -25027,7 +25027,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2518 "src/ocaml/preprocess/parser_raw.mly"
+# 2532 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 25033 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25048,7 +25048,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 25054 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -25056,7 +25056,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2519 "src/ocaml/preprocess/parser_raw.mly"
+# 2533 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 25062 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25081,7 +25081,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2520 "src/ocaml/preprocess/parser_raw.mly"
+# 2534 "src/ocaml/preprocess/parser_raw.mly"
         ( "and" )
 # 25087 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25106,7 +25106,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2521 "src/ocaml/preprocess/parser_raw.mly"
+# 2535 "src/ocaml/preprocess/parser_raw.mly"
        ( "as" )
 # 25112 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25131,7 +25131,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2522 "src/ocaml/preprocess/parser_raw.mly"
+# 2536 "src/ocaml/preprocess/parser_raw.mly"
            ( "assert" )
 # 25137 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25156,7 +25156,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2523 "src/ocaml/preprocess/parser_raw.mly"
+# 2537 "src/ocaml/preprocess/parser_raw.mly"
           ( "begin" )
 # 25162 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25181,7 +25181,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2524 "src/ocaml/preprocess/parser_raw.mly"
+# 2538 "src/ocaml/preprocess/parser_raw.mly"
           ( "class" )
 # 25187 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25206,7 +25206,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2525 "src/ocaml/preprocess/parser_raw.mly"
+# 2539 "src/ocaml/preprocess/parser_raw.mly"
                ( "constraint" )
 # 25212 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25231,7 +25231,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2526 "src/ocaml/preprocess/parser_raw.mly"
+# 2540 "src/ocaml/preprocess/parser_raw.mly"
        ( "do" )
 # 25237 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25256,7 +25256,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2527 "src/ocaml/preprocess/parser_raw.mly"
+# 2541 "src/ocaml/preprocess/parser_raw.mly"
          ( "done" )
 # 25262 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25281,7 +25281,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2528 "src/ocaml/preprocess/parser_raw.mly"
+# 2542 "src/ocaml/preprocess/parser_raw.mly"
            ( "downto" )
 # 25287 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25306,7 +25306,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2529 "src/ocaml/preprocess/parser_raw.mly"
+# 2543 "src/ocaml/preprocess/parser_raw.mly"
          ( "else" )
 # 25312 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25331,7 +25331,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2530 "src/ocaml/preprocess/parser_raw.mly"
+# 2544 "src/ocaml/preprocess/parser_raw.mly"
         ( "end" )
 # 25337 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25356,7 +25356,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2531 "src/ocaml/preprocess/parser_raw.mly"
+# 2545 "src/ocaml/preprocess/parser_raw.mly"
               ( "exception" )
 # 25362 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25381,7 +25381,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2532 "src/ocaml/preprocess/parser_raw.mly"
+# 2546 "src/ocaml/preprocess/parser_raw.mly"
              ( "external" )
 # 25387 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25406,7 +25406,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2533 "src/ocaml/preprocess/parser_raw.mly"
+# 2547 "src/ocaml/preprocess/parser_raw.mly"
           ( "false" )
 # 25412 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25431,7 +25431,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2534 "src/ocaml/preprocess/parser_raw.mly"
+# 2548 "src/ocaml/preprocess/parser_raw.mly"
         ( "for" )
 # 25437 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25456,7 +25456,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2535 "src/ocaml/preprocess/parser_raw.mly"
+# 2549 "src/ocaml/preprocess/parser_raw.mly"
         ( "fun" )
 # 25462 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25481,7 +25481,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2536 "src/ocaml/preprocess/parser_raw.mly"
+# 2550 "src/ocaml/preprocess/parser_raw.mly"
              ( "function" )
 # 25487 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25506,7 +25506,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2537 "src/ocaml/preprocess/parser_raw.mly"
+# 2551 "src/ocaml/preprocess/parser_raw.mly"
             ( "functor" )
 # 25512 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25531,7 +25531,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2538 "src/ocaml/preprocess/parser_raw.mly"
+# 2552 "src/ocaml/preprocess/parser_raw.mly"
        ( "if" )
 # 25537 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25556,7 +25556,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2539 "src/ocaml/preprocess/parser_raw.mly"
+# 2553 "src/ocaml/preprocess/parser_raw.mly"
        ( "in" )
 # 25562 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25581,7 +25581,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2540 "src/ocaml/preprocess/parser_raw.mly"
+# 2554 "src/ocaml/preprocess/parser_raw.mly"
             ( "include" )
 # 25587 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25606,7 +25606,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2541 "src/ocaml/preprocess/parser_raw.mly"
+# 2555 "src/ocaml/preprocess/parser_raw.mly"
             ( "inherit" )
 # 25612 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25631,7 +25631,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2542 "src/ocaml/preprocess/parser_raw.mly"
+# 2556 "src/ocaml/preprocess/parser_raw.mly"
                 ( "initializer" )
 # 25637 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25656,7 +25656,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2543 "src/ocaml/preprocess/parser_raw.mly"
+# 2557 "src/ocaml/preprocess/parser_raw.mly"
          ( "lazy" )
 # 25662 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25681,7 +25681,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2544 "src/ocaml/preprocess/parser_raw.mly"
+# 2558 "src/ocaml/preprocess/parser_raw.mly"
         ( "let" )
 # 25687 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25706,7 +25706,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2545 "src/ocaml/preprocess/parser_raw.mly"
+# 2559 "src/ocaml/preprocess/parser_raw.mly"
           ( "match" )
 # 25712 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25731,7 +25731,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2546 "src/ocaml/preprocess/parser_raw.mly"
+# 2560 "src/ocaml/preprocess/parser_raw.mly"
            ( "method" )
 # 25737 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25756,7 +25756,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2547 "src/ocaml/preprocess/parser_raw.mly"
+# 2561 "src/ocaml/preprocess/parser_raw.mly"
            ( "module" )
 # 25762 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25781,7 +25781,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2548 "src/ocaml/preprocess/parser_raw.mly"
+# 2562 "src/ocaml/preprocess/parser_raw.mly"
             ( "mutable" )
 # 25787 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25806,7 +25806,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2549 "src/ocaml/preprocess/parser_raw.mly"
+# 2563 "src/ocaml/preprocess/parser_raw.mly"
         ( "new" )
 # 25812 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25831,7 +25831,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2550 "src/ocaml/preprocess/parser_raw.mly"
+# 2564 "src/ocaml/preprocess/parser_raw.mly"
            ( "nonrec" )
 # 25837 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25856,7 +25856,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2551 "src/ocaml/preprocess/parser_raw.mly"
+# 2565 "src/ocaml/preprocess/parser_raw.mly"
            ( "object" )
 # 25862 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25881,7 +25881,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2552 "src/ocaml/preprocess/parser_raw.mly"
+# 2566 "src/ocaml/preprocess/parser_raw.mly"
        ( "of" )
 # 25887 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25906,7 +25906,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2553 "src/ocaml/preprocess/parser_raw.mly"
+# 2567 "src/ocaml/preprocess/parser_raw.mly"
          ( "open" )
 # 25912 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25931,7 +25931,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2554 "src/ocaml/preprocess/parser_raw.mly"
+# 2568 "src/ocaml/preprocess/parser_raw.mly"
        ( "or" )
 # 25937 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25956,7 +25956,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2555 "src/ocaml/preprocess/parser_raw.mly"
+# 2569 "src/ocaml/preprocess/parser_raw.mly"
             ( "private" )
 # 25962 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25981,7 +25981,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2556 "src/ocaml/preprocess/parser_raw.mly"
+# 2570 "src/ocaml/preprocess/parser_raw.mly"
         ( "rec" )
 # 25987 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26006,7 +26006,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2557 "src/ocaml/preprocess/parser_raw.mly"
+# 2571 "src/ocaml/preprocess/parser_raw.mly"
         ( "sig" )
 # 26012 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26031,7 +26031,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2558 "src/ocaml/preprocess/parser_raw.mly"
+# 2572 "src/ocaml/preprocess/parser_raw.mly"
            ( "struct" )
 # 26037 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26056,7 +26056,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2559 "src/ocaml/preprocess/parser_raw.mly"
+# 2573 "src/ocaml/preprocess/parser_raw.mly"
          ( "then" )
 # 26062 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26081,7 +26081,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2560 "src/ocaml/preprocess/parser_raw.mly"
+# 2574 "src/ocaml/preprocess/parser_raw.mly"
        ( "to" )
 # 26087 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26106,7 +26106,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2561 "src/ocaml/preprocess/parser_raw.mly"
+# 2575 "src/ocaml/preprocess/parser_raw.mly"
          ( "true" )
 # 26112 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26131,7 +26131,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2562 "src/ocaml/preprocess/parser_raw.mly"
+# 2576 "src/ocaml/preprocess/parser_raw.mly"
         ( "try" )
 # 26137 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26156,7 +26156,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2563 "src/ocaml/preprocess/parser_raw.mly"
+# 2577 "src/ocaml/preprocess/parser_raw.mly"
          ( "type" )
 # 26162 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26181,7 +26181,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2564 "src/ocaml/preprocess/parser_raw.mly"
+# 2578 "src/ocaml/preprocess/parser_raw.mly"
         ( "val" )
 # 26187 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26206,7 +26206,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2565 "src/ocaml/preprocess/parser_raw.mly"
+# 2579 "src/ocaml/preprocess/parser_raw.mly"
             ( "virtual" )
 # 26212 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26231,7 +26231,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2566 "src/ocaml/preprocess/parser_raw.mly"
+# 2580 "src/ocaml/preprocess/parser_raw.mly"
          ( "when" )
 # 26237 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26256,7 +26256,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2567 "src/ocaml/preprocess/parser_raw.mly"
+# 2581 "src/ocaml/preprocess/parser_raw.mly"
           ( "while" )
 # 26262 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26281,7 +26281,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2568 "src/ocaml/preprocess/parser_raw.mly"
+# 2582 "src/ocaml/preprocess/parser_raw.mly"
          ( "with" )
 # 26287 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26306,7 +26306,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor * string Location.loc option) = 
-# 2004 "src/ocaml/preprocess/parser_raw.mly"
+# 2018 "src/ocaml/preprocess/parser_raw.mly"
                               ( _1 )
 # 26312 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26377,7 +26377,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -26395,7 +26395,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -26411,7 +26411,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2007 "src/ocaml/preprocess/parser_raw.mly"
+# 2021 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Te.rebind _3 _5 ~attrs:(attrs @ _6 @ _7)
           ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -26439,7 +26439,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2085 "src/ocaml/preprocess/parser_raw.mly"
+# 2099 "src/ocaml/preprocess/parser_raw.mly"
                                       ( [_1] )
 # 26445 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26464,7 +26464,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2086 "src/ocaml/preprocess/parser_raw.mly"
+# 2100 "src/ocaml/preprocess/parser_raw.mly"
                                           ( [_1] )
 # 26470 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26489,7 +26489,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2087 "src/ocaml/preprocess/parser_raw.mly"
+# 2101 "src/ocaml/preprocess/parser_raw.mly"
                                  ( [_1] )
 # 26495 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26514,7 +26514,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2088 "src/ocaml/preprocess/parser_raw.mly"
+# 2102 "src/ocaml/preprocess/parser_raw.mly"
                                      ( [_1] )
 # 26520 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26546,7 +26546,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2090 "src/ocaml/preprocess/parser_raw.mly"
+# 2104 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 :: _1 )
 # 26552 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26578,7 +26578,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.extension_constructor list) = 
-# 2092 "src/ocaml/preprocess/parser_raw.mly"
+# 2106 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 :: _1 )
 # 26584 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26626,7 +26626,7 @@ module Tables = struct
         let _v : (Parsetree.include_declaration * string Location.loc option) = let _endpos = _endpos__4_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 824 "src/ocaml/preprocess/parser_raw.mly"
+# 838 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Incl.mk _3 ~attrs:(attrs@_4)
             ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -26714,7 +26714,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -26730,7 +26730,7 @@ module Tables = struct
         let _endpos = _endpos__9_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2069 "src/ocaml/preprocess/parser_raw.mly"
+# 2083 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         if _3 <> Recursive then (not_expecting (make_loc _startpos__3_ _endpos__3_) "nonrec flag");
         Te.mk _5 (List.rev _8) ~params:_4 ~priv:_7
@@ -26766,7 +26766,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.expression) = 
-# 1625 "src/ocaml/preprocess/parser_raw.mly"
+# 1639 "src/ocaml/preprocess/parser_raw.mly"
       ( _2 )
 # 26772 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26800,7 +26800,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1627 "src/ocaml/preprocess/parser_raw.mly"
+# 1641 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, o, p) = _1 in (ghexp ~loc:(make_loc _symbolstartpos _endpos))(Pexp_fun(l, o, p, _2)) )
 # 26806 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26855,7 +26855,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1629 "src/ocaml/preprocess/parser_raw.mly"
+# 1643 "src/ocaml/preprocess/parser_raw.mly"
       ( (mk_newtypes ~loc:(make_loc _symbolstartpos _endpos)) _3 _5 )
 # 26861 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26894,7 +26894,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.structure) = 
-# 779 "src/ocaml/preprocess/parser_raw.mly"
+# 793 "src/ocaml/preprocess/parser_raw.mly"
       ( (mark_rhs_docs _startpos__1_ _endpos__2_);
         ((text_str _startpos__1_)) @ mkstrexp _1 _2 :: _3 )
 # 26901 "src/ocaml/preprocess/parser_raw.ml"
@@ -26927,7 +26927,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure) = 
-# 781 "src/ocaml/preprocess/parser_raw.mly"
+# 795 "src/ocaml/preprocess/parser_raw.mly"
                                  ( _1 :: _2 )
 # 26933 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26952,7 +26952,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.structure) = 
-# 782 "src/ocaml/preprocess/parser_raw.mly"
+# 796 "src/ocaml/preprocess/parser_raw.mly"
                    ( _1 )
 # 26958 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -26979,7 +26979,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2622 "src/ocaml/preprocess/parser_raw.mly"
+# 2636 "src/ocaml/preprocess/parser_raw.mly"
     ( (val_of_lwt_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 )
 # 26985 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27006,7 +27006,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 791 "src/ocaml/preprocess/parser_raw.mly"
+# 805 "src/ocaml/preprocess/parser_raw.mly"
       ( (val_of_let_bindings ~loc:(make_loc _symbolstartpos _endpos)) _1 )
 # 27012 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27033,7 +27033,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 793 "src/ocaml/preprocess/parser_raw.mly"
+# 807 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_primitive body) ext )
 # 27039 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27060,7 +27060,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 795 "src/ocaml/preprocess/parser_raw.mly"
+# 809 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_primitive body) ext )
 # 27066 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27088,7 +27088,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 797 "src/ocaml/preprocess/parser_raw.mly"
+# 811 "src/ocaml/preprocess/parser_raw.mly"
       ( let (nr, l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_type (nr, List.rev l)) ext )
 # 27094 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27115,7 +27115,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 799 "src/ocaml/preprocess/parser_raw.mly"
+# 813 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_typext l) ext )
 # 27121 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27142,7 +27142,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 801 "src/ocaml/preprocess/parser_raw.mly"
+# 815 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_exception l) ext )
 # 27148 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27169,7 +27169,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 803 "src/ocaml/preprocess/parser_raw.mly"
+# 817 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_module body) ext )
 # 27175 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27196,7 +27196,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 805 "src/ocaml/preprocess/parser_raw.mly"
+# 819 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_recmodule(List.rev l)) ext )
 # 27202 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27223,7 +27223,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 807 "src/ocaml/preprocess/parser_raw.mly"
+# 821 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_modtype body) ext )
 # 27229 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27250,7 +27250,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 809 "src/ocaml/preprocess/parser_raw.mly"
+# 823 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_open body) ext )
 # 27256 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27277,7 +27277,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 811 "src/ocaml/preprocess/parser_raw.mly"
+# 825 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_class (List.rev l)) ext )
 # 27283 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27304,7 +27304,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 813 "src/ocaml/preprocess/parser_raw.mly"
+# 827 "src/ocaml/preprocess/parser_raw.mly"
       ( let (l, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_class_type (List.rev l)) ext )
 # 27310 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27331,7 +27331,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 815 "src/ocaml/preprocess/parser_raw.mly"
+# 829 "src/ocaml/preprocess/parser_raw.mly"
       ( let (body, ext) = _1 in (mkstr_ext ~loc:(make_loc _symbolstartpos _endpos)) (Pstr_include body) ext )
 # 27337 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27365,7 +27365,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 817 "src/ocaml/preprocess/parser_raw.mly"
+# 831 "src/ocaml/preprocess/parser_raw.mly"
       ( (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_extension (_1, (add_docs_attrs ((symbol_docs _symbolstartpos _endpos)) _2))) )
 # 27371 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27392,7 +27392,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _endpos = _endpos__1_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 819 "src/ocaml/preprocess/parser_raw.mly"
+# 833 "src/ocaml/preprocess/parser_raw.mly"
       ( (mark_symbol_docs _symbolstartpos _endpos);
         (mkstr ~loc:(make_loc _symbolstartpos _endpos))(Pstr_attribute _1) )
 # 27399 "src/ocaml/preprocess/parser_raw.ml"
@@ -27411,7 +27411,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.structure) = 
-# 785 "src/ocaml/preprocess/parser_raw.mly"
+# 799 "src/ocaml/preprocess/parser_raw.mly"
                          ( [] )
 # 27417 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27443,7 +27443,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure) = 
-# 786 "src/ocaml/preprocess/parser_raw.mly"
+# 800 "src/ocaml/preprocess/parser_raw.mly"
                        ( ((text_str _startpos__1_)) @ _2 )
 # 27449 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27475,7 +27475,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure) = 
-# 787 "src/ocaml/preprocess/parser_raw.mly"
+# 801 "src/ocaml/preprocess/parser_raw.mly"
                                   ( ((text_str _startpos__1_)) @ _1 :: _2 )
 # 27481 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27500,7 +27500,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2507 "src/ocaml/preprocess/parser_raw.mly"
+# 2521 "src/ocaml/preprocess/parser_raw.mly"
           ( "-" )
 # 27506 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27525,7 +27525,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2508 "src/ocaml/preprocess/parser_raw.mly"
+# 2522 "src/ocaml/preprocess/parser_raw.mly"
              ( "-." )
 # 27531 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27579,7 +27579,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.row_field) = let _endpos = _endpos__5_ in
         
-# 2274 "src/ocaml/preprocess/parser_raw.mly"
+# 2288 "src/ocaml/preprocess/parser_raw.mly"
       ( Rtag (_1, add_info_attrs ((symbol_info _endpos)) _5, _3, List.rev _4) )
 # 27585 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27612,7 +27612,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.row_field) = let _endpos = _endpos__2_ in
         
-# 2276 "src/ocaml/preprocess/parser_raw.mly"
+# 2290 "src/ocaml/preprocess/parser_raw.mly"
       ( Rtag (_1, add_info_attrs ((symbol_info _endpos)) _2, true, []) )
 # 27618 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27644,7 +27644,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.structure_item) = let _3 = 
-# 2436 "src/ocaml/preprocess/parser_raw.mly"
+# 2450 "src/ocaml/preprocess/parser_raw.mly"
                 ( None )
 # 27650 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27652,7 +27652,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -27692,7 +27692,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _1_inlined1 : (
-# 576 "src/ocaml/preprocess/parser_raw.mly"
+# 590 "src/ocaml/preprocess/parser_raw.mly"
        (string * string option)
 # 27698 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -27704,7 +27704,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _3 =
           let _1 = _1_inlined1 in
           
-# 2437 "src/ocaml/preprocess/parser_raw.mly"
+# 2451 "src/ocaml/preprocess/parser_raw.mly"
            ( let (s, d) = _1 in
                   Some (Exp.constant (Pconst_string (s, d) )) )
 # 27711 "src/ocaml/preprocess/parser_raw.ml"
@@ -27714,7 +27714,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -27754,7 +27754,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _1_inlined1 : (
-# 522 "src/ocaml/preprocess/parser_raw.mly"
+# 536 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 27760 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -27766,7 +27766,7 @@ module Tables = struct
         let _v : (Parsetree.structure_item) = let _3 =
           let _1 = _1_inlined1 in
           
-# 2439 "src/ocaml/preprocess/parser_raw.mly"
+# 2453 "src/ocaml/preprocess/parser_raw.mly"
         ( let (n, m) = _1 in
                   Some (Exp.constant (Pconst_integer (n, m))) )
 # 27773 "src/ocaml/preprocess/parser_raw.ml"
@@ -27776,7 +27776,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -27826,7 +27826,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2441 "src/ocaml/preprocess/parser_raw.mly"
+# 2455 "src/ocaml/preprocess/parser_raw.mly"
                                   ( Some (Exp.ident (mkloc _1 ((make_loc _symbolstartpos _endpos)))) )
 # 27832 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -27835,7 +27835,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -27885,7 +27885,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2441 "src/ocaml/preprocess/parser_raw.mly"
+# 2455 "src/ocaml/preprocess/parser_raw.mly"
                                   ( Some (Exp.ident (mkloc _1 ((make_loc _symbolstartpos _endpos)))) )
 # 27891 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -27894,7 +27894,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -27944,7 +27944,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2442 "src/ocaml/preprocess/parser_raw.mly"
+# 2456 "src/ocaml/preprocess/parser_raw.mly"
           ( Some (Exp.construct (mkloc (Longident.Lident "false") ((make_loc _symbolstartpos _endpos))) None) )
 # 27950 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -27953,7 +27953,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28003,7 +28003,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _symbolstartpos = _startpos__1_ in
           
-# 2443 "src/ocaml/preprocess/parser_raw.mly"
+# 2457 "src/ocaml/preprocess/parser_raw.mly"
          ( Some (Exp.construct (mkloc (Longident.Lident "true") ((make_loc _symbolstartpos _endpos))) None) )
 # 28009 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -28012,7 +28012,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2448 "src/ocaml/preprocess/parser_raw.mly"
+# 2462 "src/ocaml/preprocess/parser_raw.mly"
     ( let id = mkloc ("merlin.directive." ^ _2) ((make_loc _startpos__2_ _endpos__2_)) in
       let payload =
         match _3 with
@@ -28051,7 +28051,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type option * Parsetree.core_type option) = 
-# 1692 "src/ocaml/preprocess/parser_raw.mly"
+# 1706 "src/ocaml/preprocess/parser_raw.mly"
                     ( (Some _2, None) )
 # 28057 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28097,7 +28097,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.core_type option * Parsetree.core_type option) = 
-# 1693 "src/ocaml/preprocess/parser_raw.mly"
+# 1707 "src/ocaml/preprocess/parser_raw.mly"
                                            ( (Some _2, Some _4) )
 # 28103 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28129,7 +28129,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type option * Parsetree.core_type option) = 
-# 1694 "src/ocaml/preprocess/parser_raw.mly"
+# 1708 "src/ocaml/preprocess/parser_raw.mly"
                            ( (None, Some _2) )
 # 28135 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28195,7 +28195,7 @@ module Tables = struct
         let _7 : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) = Obj.magic _7 in
         let _6 : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = Obj.magic _6 in
         let _1_inlined1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 28201 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -28211,7 +28211,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -28227,7 +28227,7 @@ module Tables = struct
         let _endpos = _endpos__8_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1901 "src/ocaml/preprocess/parser_raw.mly"
+# 1915 "src/ocaml/preprocess/parser_raw.mly"
       ( let (kind, priv, manifest) = _6 in
         let (ext, attrs) = _2 in
         let ty =
@@ -28260,7 +28260,7 @@ module Tables = struct
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.rec_flag * Parsetree.type_declaration list *
   string Location.loc option) = 
-# 1893 "src/ocaml/preprocess/parser_raw.mly"
+# 1907 "src/ocaml/preprocess/parser_raw.mly"
       ( let (nonrec_flag, ty, ext) = _1 in (nonrec_flag, [ty], ext) )
 # 28266 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28294,7 +28294,7 @@ module Tables = struct
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.rec_flag * Parsetree.type_declaration list *
   string Location.loc option) = 
-# 1895 "src/ocaml/preprocess/parser_raw.mly"
+# 1909 "src/ocaml/preprocess/parser_raw.mly"
       ( let (nonrec_flag, tys, ext) = _1 in (nonrec_flag, _2 :: tys, ext) )
 # 28300 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28312,7 +28312,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1924 "src/ocaml/preprocess/parser_raw.mly"
+# 1938 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_abstract, Public, None) )
 # 28318 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28344,7 +28344,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1926 "src/ocaml/preprocess/parser_raw.mly"
+# 1940 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_abstract, Public, Some _2) )
 # 28350 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28383,7 +28383,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1928 "src/ocaml/preprocess/parser_raw.mly"
+# 1942 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_abstract, Private, Some _3) )
 # 28389 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28415,7 +28415,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1930 "src/ocaml/preprocess/parser_raw.mly"
+# 1944 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_variant(List.rev _2), Public, None) )
 # 28421 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28454,7 +28454,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1932 "src/ocaml/preprocess/parser_raw.mly"
+# 1946 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_variant(List.rev _3), Private, None) )
 # 28460 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28486,7 +28486,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1934 "src/ocaml/preprocess/parser_raw.mly"
+# 1948 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_open, Public, None) )
 # 28492 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28539,7 +28539,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1936 "src/ocaml/preprocess/parser_raw.mly"
+# 1950 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_record _4, _2, None) )
 # 28545 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28592,7 +28592,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1938 "src/ocaml/preprocess/parser_raw.mly"
+# 1952 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_variant(List.rev _5), _4, Some _2) )
 # 28598 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28638,7 +28638,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__4_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1940 "src/ocaml/preprocess/parser_raw.mly"
+# 1954 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_open, Public, Some _2) )
 # 28644 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28705,7 +28705,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__7_ in
         let _v : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) = 
-# 1942 "src/ocaml/preprocess/parser_raw.mly"
+# 1956 "src/ocaml/preprocess/parser_raw.mly"
       ( (Ptype_record _6, _4, Some _2) )
 # 28711 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28726,7 +28726,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 28732 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -28734,7 +28734,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2408 "src/ocaml/preprocess/parser_raw.mly"
+# 2422 "src/ocaml/preprocess/parser_raw.mly"
            ( Lident _1 )
 # 28740 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28767,7 +28767,7 @@ module Tables = struct
           };
         } = _menhir_stack in
         let _3 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 28773 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _3 in
@@ -28777,7 +28777,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2409 "src/ocaml/preprocess/parser_raw.mly"
+# 2423 "src/ocaml/preprocess/parser_raw.mly"
                                  ( Ldot(_1, _3) )
 # 28783 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28809,7 +28809,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Parsetree.core_type * Asttypes.variance) = 
-# 1968 "src/ocaml/preprocess/parser_raw.mly"
+# 1982 "src/ocaml/preprocess/parser_raw.mly"
                                 ( _2, _1 )
 # 28815 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28834,7 +28834,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1979 "src/ocaml/preprocess/parser_raw.mly"
+# 1993 "src/ocaml/preprocess/parser_raw.mly"
                    ( [_1] )
 # 28840 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28873,7 +28873,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1980 "src/ocaml/preprocess/parser_raw.mly"
+# 1994 "src/ocaml/preprocess/parser_raw.mly"
                                              ( _3 :: _1 )
 # 28879 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28891,7 +28891,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1963 "src/ocaml/preprocess/parser_raw.mly"
+# 1977 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( [] )
 # 28897 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28916,7 +28916,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1964 "src/ocaml/preprocess/parser_raw.mly"
+# 1978 "src/ocaml/preprocess/parser_raw.mly"
                    ( [_1] )
 # 28922 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28955,7 +28955,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = 
-# 1965 "src/ocaml/preprocess/parser_raw.mly"
+# 1979 "src/ocaml/preprocess/parser_raw.mly"
                                       ( List.rev _2 )
 # 28961 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28989,7 +28989,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__2_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1976 "src/ocaml/preprocess/parser_raw.mly"
+# 1990 "src/ocaml/preprocess/parser_raw.mly"
                 ( (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_var _2) )
 # 28995 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29007,7 +29007,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.variance) = 
-# 1971 "src/ocaml/preprocess/parser_raw.mly"
+# 1985 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Invariant )
 # 29013 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29032,7 +29032,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.variance) = 
-# 1972 "src/ocaml/preprocess/parser_raw.mly"
+# 1986 "src/ocaml/preprocess/parser_raw.mly"
          ( Covariant )
 # 29038 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29057,7 +29057,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.variance) = 
-# 1973 "src/ocaml/preprocess/parser_raw.mly"
+# 1987 "src/ocaml/preprocess/parser_raw.mly"
           ( Contravariant )
 # 29063 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29093,7 +29093,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29107,7 +29107,7 @@ module Tables = struct
           
         in
         
-# 2161 "src/ocaml/preprocess/parser_raw.mly"
+# 2175 "src/ocaml/preprocess/parser_raw.mly"
                            ( [_2] )
 # 29113 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29150,7 +29150,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29164,7 +29164,7 @@ module Tables = struct
           
         in
         
-# 2162 "src/ocaml/preprocess/parser_raw.mly"
+# 2176 "src/ocaml/preprocess/parser_raw.mly"
                                         ( _3 :: _1 )
 # 29170 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29185,7 +29185,7 @@ module Tables = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
         } = _menhir_stack in
         let _1 : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 29191 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1 in
@@ -29193,7 +29193,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (string) = 
-# 2351 "src/ocaml/preprocess/parser_raw.mly"
+# 2365 "src/ocaml/preprocess/parser_raw.mly"
            ( _1 )
 # 29199 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29232,7 +29232,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (string) = 
-# 2352 "src/ocaml/preprocess/parser_raw.mly"
+# 2366 "src/ocaml/preprocess/parser_raw.mly"
                            ( _2 )
 # 29238 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29257,7 +29257,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Longident.t) = 
-# 2393 "src/ocaml/preprocess/parser_raw.mly"
+# 2407 "src/ocaml/preprocess/parser_raw.mly"
               ( Lident _1 )
 # 29263 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29296,7 +29296,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Longident.t) = 
-# 2394 "src/ocaml/preprocess/parser_raw.mly"
+# 2408 "src/ocaml/preprocess/parser_raw.mly"
                                 ( Ldot(_1, _3) )
 # 29302 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29364,7 +29364,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _v : ((string Location.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
   Parsetree.attributes) = 
-# 1121 "src/ocaml/preprocess/parser_raw.mly"
+# 1135 "src/ocaml/preprocess/parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (mkloc _5 ((make_loc _startpos__5_ _endpos__5_)), Mutable, Cfk_virtual _7), _2 )
 # 29371 "src/ocaml/preprocess/parser_raw.ml"
@@ -29437,7 +29437,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29451,7 +29451,7 @@ module Tables = struct
           
         in
         
-# 1124 "src/ocaml/preprocess/parser_raw.mly"
+# 1138 "src/ocaml/preprocess/parser_raw.mly"
       ( if _1 = Override then (syntax_error (make_loc _startpos__1_ _endpos__1_));
         (_5, _4, Cfk_virtual _7), _2 )
 # 29458 "src/ocaml/preprocess/parser_raw.ml"
@@ -29517,7 +29517,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29531,7 +29531,7 @@ module Tables = struct
           
         in
         
-# 1127 "src/ocaml/preprocess/parser_raw.mly"
+# 1141 "src/ocaml/preprocess/parser_raw.mly"
       ( (_4, _3, Cfk_concrete (_1, _6)), _2 )
 # 29537 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29603,7 +29603,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29629,7 +29629,7 @@ module Tables = struct
             else
               _startpos__4_ in
         
-# 1129 "src/ocaml/preprocess/parser_raw.mly"
+# 1143 "src/ocaml/preprocess/parser_raw.mly"
       (
        let e = (mkexp_constraint ~loc:(make_loc _symbolstartpos _endpos)) _7 _5 in
        (_4, _3, Cfk_concrete (_1, e)), _2
@@ -29696,7 +29696,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29712,7 +29712,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 1868 "src/ocaml/preprocess/parser_raw.mly"
+# 1882 "src/ocaml/preprocess/parser_raw.mly"
       ( let (ext, attrs) = _2 in
         Val.mk _3 _5 ~attrs:(attrs@_6)
                ~loc:(((make_loc _symbolstartpos _endpos))) ~docs:((symbol_docs _symbolstartpos _endpos))
@@ -29773,7 +29773,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29787,7 +29787,7 @@ module Tables = struct
           
         in
         
-# 1219 "src/ocaml/preprocess/parser_raw.mly"
+# 1233 "src/ocaml/preprocess/parser_raw.mly"
       ( _3, _2, Virtual, _5 )
 # 29793 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29845,7 +29845,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29859,7 +29859,7 @@ module Tables = struct
           
         in
         
-# 1221 "src/ocaml/preprocess/parser_raw.mly"
+# 1235 "src/ocaml/preprocess/parser_raw.mly"
       ( _3, Mutable, _2, _5 )
 # 29865 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29902,7 +29902,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -29916,7 +29916,7 @@ module Tables = struct
           
         in
         
-# 1223 "src/ocaml/preprocess/parser_raw.mly"
+# 1237 "src/ocaml/preprocess/parser_raw.mly"
       ( _1, Immutable, Concrete, _3 )
 # 29922 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29934,7 +29934,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Asttypes.virtual_flag) = 
-# 2484 "src/ocaml/preprocess/parser_raw.mly"
+# 2498 "src/ocaml/preprocess/parser_raw.mly"
                                                 ( Concrete )
 # 29940 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29959,7 +29959,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.virtual_flag) = 
-# 2485 "src/ocaml/preprocess/parser_raw.mly"
+# 2499 "src/ocaml/preprocess/parser_raw.mly"
             ( Virtual )
 # 29965 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30021,7 +30021,7 @@ module Tables = struct
         let _v : (Parsetree.with_constraint) = let _endpos = _endpos__6_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2132 "src/ocaml/preprocess/parser_raw.mly"
+# 2146 "src/ocaml/preprocess/parser_raw.mly"
       ( Pwith_type
           ((mkrhs _3 (make_loc _startpos__3_ _endpos__3_)),
            (Type.mk ((mkrhs (Longident.last _3) (make_loc _startpos__3_ _endpos__3_)))
@@ -30085,7 +30085,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30101,7 +30101,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _symbolstartpos = _startpos__1_ in
         
-# 2143 "src/ocaml/preprocess/parser_raw.mly"
+# 2157 "src/ocaml/preprocess/parser_raw.mly"
       ( Pwith_typesubst
           (Type.mk _3
              ~params:_2
@@ -30155,7 +30155,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30173,7 +30173,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30187,7 +30187,7 @@ module Tables = struct
           
         in
         
-# 2149 "src/ocaml/preprocess/parser_raw.mly"
+# 2163 "src/ocaml/preprocess/parser_raw.mly"
       ( Pwith_module (_2, _4) )
 # 30193 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30228,7 +30228,7 @@ module Tables = struct
         let _1_inlined2 : (Longident.t) = Obj.magic _1_inlined2 in
         let _3 : unit = Obj.magic _3 in
         let _1_inlined1 : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30234 "src/ocaml/preprocess/parser_raw.ml"
         ) = Obj.magic _1_inlined1 in
@@ -30241,7 +30241,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30259,7 +30259,7 @@ module Tables = struct
           let _endpos = _endpos__1_ in
           let _startpos = _startpos__1_ in
           
-# 673 "src/ocaml/preprocess/parser_raw.mly"
+# 687 "src/ocaml/preprocess/parser_raw.mly"
     (
       (* Semantically we could use $symbolstartpos instead of $startpos
          here, but the code comes from calls to (Parsing.rhs_loc p) for
@@ -30273,7 +30273,7 @@ module Tables = struct
           
         in
         
-# 2151 "src/ocaml/preprocess/parser_raw.mly"
+# 2165 "src/ocaml/preprocess/parser_raw.mly"
       ( Pwith_modsubst (_2, _4) )
 # 30279 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30298,7 +30298,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Parsetree.with_constraint list) = 
-# 2126 "src/ocaml/preprocess/parser_raw.mly"
+# 2140 "src/ocaml/preprocess/parser_raw.mly"
                     ( [_1] )
 # 30304 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30337,7 +30337,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.with_constraint list) = 
-# 2127 "src/ocaml/preprocess/parser_raw.mly"
+# 2141 "src/ocaml/preprocess/parser_raw.mly"
                                          ( _3 :: _1 )
 # 30343 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30362,7 +30362,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_ in
         let _v : (Asttypes.private_flag) = 
-# 2154 "src/ocaml/preprocess/parser_raw.mly"
+# 2168 "src/ocaml/preprocess/parser_raw.mly"
           ( Public )
 # 30368 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30394,7 +30394,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
         let _v : (Asttypes.private_flag) = 
-# 2155 "src/ocaml/preprocess/parser_raw.mly"
+# 2169 "src/ocaml/preprocess/parser_raw.mly"
                   ( Private )
 # 30400 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30432,7 +30432,7 @@ module MenhirInterpreter = struct
       | T_VAL : unit terminal
       | T_UNDERSCORE : unit terminal
       | T_UIDENT : (
-# 584 "src/ocaml/preprocess/parser_raw.mly"
+# 598 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30438 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30445,7 +30445,7 @@ module MenhirInterpreter = struct
       | T_THEN : unit terminal
       | T_STRUCT : unit terminal
       | T_STRING : (
-# 576 "src/ocaml/preprocess/parser_raw.mly"
+# 590 "src/ocaml/preprocess/parser_raw.mly"
        (string * string option)
 # 30451 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30463,7 +30463,7 @@ module MenhirInterpreter = struct
       | T_QUESTION : unit terminal
       | T_PRIVATE : unit terminal
       | T_PREFIXOP : (
-# 561 "src/ocaml/preprocess/parser_raw.mly"
+# 575 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30469 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30473,7 +30473,7 @@ module MenhirInterpreter = struct
       | T_PERCENT : unit terminal
       | T_OR : unit terminal
       | T_OPTLABEL : (
-# 554 "src/ocaml/preprocess/parser_raw.mly"
+# 568 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30479 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30492,7 +30492,7 @@ module MenhirInterpreter = struct
       | T_MATCH : unit terminal
       | T_LPAREN : unit terminal
       | T_LIDENT : (
-# 537 "src/ocaml/preprocess/parser_raw.mly"
+# 551 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30498 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30513,39 +30513,39 @@ module MenhirInterpreter = struct
       | T_LBRACE : unit terminal
       | T_LAZY : unit terminal
       | T_LABEL : (
-# 524 "src/ocaml/preprocess/parser_raw.mly"
+# 538 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30519 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_INT : (
-# 522 "src/ocaml/preprocess/parser_raw.mly"
+# 536 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 30524 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_INITIALIZER : unit terminal
       | T_INHERIT : unit terminal
       | T_INFIXOP4 : (
-# 519 "src/ocaml/preprocess/parser_raw.mly"
+# 533 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30531 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_INFIXOP3 : (
-# 518 "src/ocaml/preprocess/parser_raw.mly"
+# 532 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30536 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_INFIXOP2 : (
-# 517 "src/ocaml/preprocess/parser_raw.mly"
+# 531 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30541 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_INFIXOP1 : (
-# 516 "src/ocaml/preprocess/parser_raw.mly"
+# 530 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30546 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_INFIXOP0 : (
-# 515 "src/ocaml/preprocess/parser_raw.mly"
+# 529 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30551 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30553,7 +30553,7 @@ module MenhirInterpreter = struct
       | T_IN : unit terminal
       | T_IF : unit terminal
       | T_HASHOP : (
-# 573 "src/ocaml/preprocess/parser_raw.mly"
+# 587 "src/ocaml/preprocess/parser_raw.mly"
        (string)
 # 30559 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30567,7 +30567,7 @@ module MenhirInterpreter = struct
       | T_FOR_LWT : unit terminal
       | T_FOR : unit terminal
       | T_FLOAT : (
-# 502 "src/ocaml/preprocess/parser_raw.mly"
+# 516 "src/ocaml/preprocess/parser_raw.mly"
        (string * char option)
 # 30573 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30587,14 +30587,14 @@ module MenhirInterpreter = struct
       | T_DOT : unit terminal
       | T_DONE : unit terminal
       | T_DOCSTRING : (
-# 592 "src/ocaml/preprocess/parser_raw.mly"
+# 606 "src/ocaml/preprocess/parser_raw.mly"
        (Docstrings.docstring)
 # 30593 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
       | T_DO : unit terminal
       | T_CONSTRAINT : unit terminal
       | T_COMMENT : (
-# 591 "src/ocaml/preprocess/parser_raw.mly"
+# 605 "src/ocaml/preprocess/parser_raw.mly"
        (string * Location.t)
 # 30600 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30605,7 +30605,7 @@ module MenhirInterpreter = struct
       | T_COLON : unit terminal
       | T_CLASS : unit terminal
       | T_CHAR : (
-# 482 "src/ocaml/preprocess/parser_raw.mly"
+# 496 "src/ocaml/preprocess/parser_raw.mly"
        (char)
 # 30611 "src/ocaml/preprocess/parser_raw.ml"
     ) terminal
@@ -30699,7 +30699,7 @@ module MenhirInterpreter = struct
       | N_pattern_comma_list : (Parsetree.pattern list) nonterminal
       | N_pattern : (Parsetree.pattern) nonterminal
       | N_parse_expression : (
-# 661 "src/ocaml/preprocess/parser_raw.mly"
+# 675 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.expression)
 # 30705 "src/ocaml/preprocess/parser_raw.ml"
     ) nonterminal
@@ -30766,12 +30766,12 @@ module MenhirInterpreter = struct
       | N_label : (string) nonterminal
       | N_item_extension : (Parsetree.extension) nonterminal
       | N_interface : (
-# 657 "src/ocaml/preprocess/parser_raw.mly"
+# 671 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.signature)
 # 30772 "src/ocaml/preprocess/parser_raw.ml"
     ) nonterminal
       | N_implementation : (
-# 655 "src/ocaml/preprocess/parser_raw.mly"
+# 669 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.structure)
 # 30777 "src/ocaml/preprocess/parser_raw.ml"
     ) nonterminal
@@ -31569,7 +31569,7 @@ end
 let parse_expression =
   fun lexer lexbuf ->
     (Obj.magic (MenhirInterpreter.entry 1550 lexer lexbuf) : (
-# 661 "src/ocaml/preprocess/parser_raw.mly"
+# 675 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.expression)
 # 31575 "src/ocaml/preprocess/parser_raw.ml"
     ))
@@ -31577,7 +31577,7 @@ let parse_expression =
 and interface =
   fun lexer lexbuf ->
     (Obj.magic (MenhirInterpreter.entry 1546 lexer lexbuf) : (
-# 657 "src/ocaml/preprocess/parser_raw.mly"
+# 671 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.signature)
 # 31583 "src/ocaml/preprocess/parser_raw.ml"
     ))
@@ -31585,7 +31585,7 @@ and interface =
 and implementation =
   fun lexer lexbuf ->
     (Obj.magic (MenhirInterpreter.entry 0 lexer lexbuf) : (
-# 655 "src/ocaml/preprocess/parser_raw.mly"
+# 669 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.structure)
 # 31591 "src/ocaml/preprocess/parser_raw.ml"
     ))
@@ -31595,7 +31595,7 @@ module Incremental = struct
   let parse_expression =
     fun initial_position ->
       (Obj.magic (MenhirInterpreter.start 1550 initial_position) : (
-# 661 "src/ocaml/preprocess/parser_raw.mly"
+# 675 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.expression)
 # 31601 "src/ocaml/preprocess/parser_raw.ml"
       ) MenhirInterpreter.checkpoint)
@@ -31603,7 +31603,7 @@ module Incremental = struct
   and interface =
     fun initial_position ->
       (Obj.magic (MenhirInterpreter.start 1546 initial_position) : (
-# 657 "src/ocaml/preprocess/parser_raw.mly"
+# 671 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.signature)
 # 31609 "src/ocaml/preprocess/parser_raw.ml"
       ) MenhirInterpreter.checkpoint)
@@ -31611,14 +31611,14 @@ module Incremental = struct
   and implementation =
     fun initial_position ->
       (Obj.magic (MenhirInterpreter.start 0 initial_position) : (
-# 655 "src/ocaml/preprocess/parser_raw.mly"
+# 669 "src/ocaml/preprocess/parser_raw.mly"
       (Parsetree.structure)
 # 31617 "src/ocaml/preprocess/parser_raw.ml"
       ) MenhirInterpreter.checkpoint)
   
 end
 
-# 2666 "src/ocaml/preprocess/parser_raw.mly"
+# 2680 "src/ocaml/preprocess/parser_raw.mly"
   
 
 # 31625 "src/ocaml/preprocess/parser_raw.ml"
