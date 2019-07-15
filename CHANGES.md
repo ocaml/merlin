@@ -1,3 +1,9 @@
+merlin master
+=============
+
+  + frontend
+    - error command: select which kind of errors to show (#995)
+
 merlin 3.3.2
 ============
 Mon Jul 15 11:10:35 CEST 2019
