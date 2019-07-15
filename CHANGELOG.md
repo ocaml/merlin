@@ -1,6 +1,6 @@
 merlin 3.3.2
 ============
-Tue Jul  9 17:34:42 CEST 2019
+Mon Jul 15 11:10:35 CEST 2019
 
   + backend
     - `**` globbing in .merlin won't look into hidden directories
@@ -15,6 +15,8 @@ Tue Jul  9 17:34:42 CEST 2019
       from a cmi), this fixes "jump to definition" on mutually recursive
       bindings (#984)
     - when completing an infix operator in a sub-module, wrap with () (#992)
+    - disable arity checks on externals (for Bucklescript compatibility)
+    - remove parser preprocessing (simplify compilation for OCaml < 4.08) (#997)
   + editor modes
     - emacs
       + fix position computation in presence of tabs or multi-byte characters (#981)
