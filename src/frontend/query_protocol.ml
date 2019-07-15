@@ -87,6 +87,12 @@ type shape = {
   shape_sub : shape list;
 }
 
+type error_filter = {
+  lexing : bool;
+  parsing : bool;
+  typing : bool;
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -150,7 +156,8 @@ type _ t =
     :  Msource.position
     -> shape list t
   | Errors(* *)
-    :  Location.error list t
+    :  error_filter
+    -> Location.error list t
   | Dump
     :  Std.json list
     -> Std.json t

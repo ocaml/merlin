@@ -139,7 +139,9 @@ let position_of_lexical_position (lex_position : Lexing.position) =
   Lsp.Protocol.{line; character;}
 
 let send_diagnostics rpc doc =
-  let command = Query_protocol.Errors in
+  let command =
+    Query_protocol.Errors { lexing = true; parsing = true; typing = true }
+  in
   let errors = Query_commands.dispatch (Document.pipeline doc) command in
   let diagnostics =
     List.map (fun (error : Location.error) ->

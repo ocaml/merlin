@@ -173,6 +173,14 @@ increasing size of all entities surrounding the position.
   ;
 
   command "errors"
+    ~spec:[
+      arg "-lexing" "<bool> Whether to report lexing errors or not"
+        (Marg.bool (fun l (_,p,t) -> (l,p,t)));
+      arg "-parsing" "<bool> Whether to report parsing errors or not"
+        (Marg.bool (fun p (l,_,t) -> (l,p,t)));
+      arg "-typing" "<bool> Whether to report typing errors or not"
+        (Marg.bool (fun t (l,p,_) -> (l,p,t)));
+    ]
     ~doc:"Returns a list of errors in current buffer.
 The value is a list where each item as the shape:
 
@@ -194,10 +202,9 @@ mark this range.
 It reflects whether Merlin was expecting such an error to be possible or not, \
 and is useful for debugging purposes.
 `message` is the error description to be shown to the user."
-    ~spec:[]
-    ~default:()
-    begin fun buffer () ->
-      run buffer (Query_protocol.Errors)
+    ~default:(true, true, true)
+    begin fun buffer (lexing, parsing, typing) ->
+      run buffer (Query_protocol.Errors { lexing; parsing; typing })
     end
   ;
 

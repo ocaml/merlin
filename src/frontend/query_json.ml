@@ -134,7 +134,17 @@ let dump (type a) : a t -> json =
       "end", mk_position pos_end;
     ]
   | Outline -> mk "outline" []
-  | Errors -> mk "errors" []
+  | Errors { lexing; parsing; typing } ->
+    let args =
+      if lexing && parsing && typing
+      then []
+      else [
+        "lexing", `Bool lexing;
+        "parsing", `Bool parsing;
+        "typing", `Bool typing;
+      ]
+    in
+    mk "errors" args
   | Shape pos ->
     mk "shape" [
       "position", mk_position pos;
@@ -358,7 +368,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List (json_of_outline outlines)
   | Shape _, shapes ->
     `List (List.map ~f:json_of_shape shapes)
-  | Errors, errors ->
+  | Errors _, errors ->
     `List (List.map ~f:json_of_error errors)
   | Dump _, json -> json
   | Path_of_source _, str -> `String str

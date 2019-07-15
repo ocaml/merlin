@@ -587,7 +587,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Outline.shape pos [Browse_tree.of_browse browse]
 
-  | Errors ->
+  | Errors { lexing; parsing; typing }->
     with_typer pipeline @@ fun typer ->
     let verbosity = verbosity pipeline in
     Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
@@ -650,8 +650,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       if n <> 0 then n else
         Lexing.compare_pos (error_end e1) (error_end e2)
     in
-    let errors = List.sort_uniq ~cmp
-        (lexer_errors @ parser_errors @ typer_errors) in
+    let errors =
+      List.sort_uniq ~cmp
+        ((if lexing then lexer_errors else []) @
+         (if parsing then parser_errors else []) @
+         (if typing then typer_errors else []))
+    in
     (* Filter anything after first parse error *)
     let limit = !first_syntax_error in
     if limit = Lexing.dummy_pos then errors else (
