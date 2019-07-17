@@ -25,9 +25,11 @@
          (file (alist-get 'file loc))
          (pos (alist-get 'pos loc))
          (line (alist-get 'line pos))
-         (col (alist-get 'col pos))
-         (desc (merlin-xref--line (merlin/make-point pos))))
-    (list (xref-make desc (xref-make-file-location file line col)))))
+         (col (alist-get 'col pos)))
+    (save-excursion
+      (find-file file)
+      (let ((desc (merlin-xref--line (merlin/make-point pos))))
+        (list (xref-make desc (xref-make-file-location file line col)))))))
 
 (cl-defmethod xref-backend-identifier-completion-table ((_backend (eql merlin-xref)))
   nil)
