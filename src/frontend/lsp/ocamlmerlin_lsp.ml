@@ -145,19 +145,24 @@ let send_diagnostics rpc doc =
   let errors = Query_commands.dispatch (Document.pipeline doc) command in
   let diagnostics =
     List.map (fun (error : Location.error) ->
+      let loc = Location.loc_of_report error in
       let range = {
         Lsp.Protocol.
-        start_ = position_of_lexical_position error.loc.loc_start;
-        end_ = position_of_lexical_position error.loc.loc_end;
+        start_ = position_of_lexical_position loc.loc_start;
+        end_ = position_of_lexical_position loc.loc_end;
       } in
       let severity =
         match error.source with
         | Warning -> Some Lsp.Protocol.PublishDiagnostics.Warning
         | _ -> Some Lsp.Protocol.PublishDiagnostics.Error
       in
+      let message =
+        Location.print_main Format.str_formatter error;
+        String.trim (Format.flush_str_formatter ())
+      in
       let diagnostic: Lsp.Protocol.PublishDiagnostics.diagnostic = {
         Lsp.Protocol.PublishDiagnostics.
-        message = error.Location.msg;
+        message;
         severity;
         range;
         relatedInformation = [];
