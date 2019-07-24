@@ -571,8 +571,11 @@ return (LOC1 . LOC2)."
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
     (merlin--call-merlin "stop-server")
-    (setq merlin-erroneous-buffer nil)
-    (setq merlin-buffer-configuration nil)))
+    ;; These are buffer-local variables, so reset them in all buffers.
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (kill-local-variable 'merlin-buffer-configurationn)
+        (kill-local-variable 'merlin-erroneous-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
