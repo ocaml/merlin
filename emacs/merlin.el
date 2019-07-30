@@ -234,8 +234,6 @@ The association list can contain the following optional keys:
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defvar merlin-opam-bin-path nil)
-
 ;; If user did not specify its merlin-favourite-caml-mode, try to guess it from
 ;; the buffer being edited
 (defvar merlin-guessed-favorite-caml-mode nil)
@@ -1681,44 +1679,44 @@ Empty string defaults to jumping to all these."
   (unless merlin-buffer-configuration
     (setq merlin-buffer-configuration (merlin--configuration)))
 
-  (let ((command (merlin-lookup 'command merlin-buffer-configuration)))
-    (unless command
-      (setq
-       command
-       (cond
-        ((functionp merlin-command) `(,(funcall merlin-command)))
-        ((stringp merlin-command) `(,merlin-command))
-        ((equal merlin-command 'esy) '("esy" "exec-command" "ocamlmerlin"))
-        ((equal merlin-command 'opam)
-         (with-temp-buffer
-           (if (eq (call-process-shell-command
-                    "opam config var bin" nil (current-buffer) nil) 0)
-               (let ((bin-path
-                      (replace-regexp-in-string "\n$" "" (buffer-string))))
-                 ;; the opam bin dir needs to be on the path, so if merlin
-                 ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
-                 ;; correct version is used rather than the version that
-                 ;; happens to be on the path
+  (let ((current-command (merlin-lookup 'command merlin-buffer-configuration)))
+    (if current-command
+        current-command
+      (let ((new-buffer-configuration
+             (cond
+              ((functionp merlin-command) `((command . (,(funcall merlin-command)))))
+              ((stringp merlin-command) `((command . (,merlin-command))))
+              ((equal merlin-command 'esy) '((command . ("esy" "exec-command" "ocamlmerlin"))))
+              ((equal merlin-command 'opam)
+               (with-temp-buffer
+                 (if (eq (call-process-shell-command
+                          "opam config var bin" nil (current-buffer) nil) 0)
+                     (let ((bin-path
+                            (replace-regexp-in-string "\n$" "" (buffer-string))))
+                       ;; the opam bin dir needs to be on the path, so if merlin
+                       ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
+                       ;; correct version is used rather than the version that
+                       ;; happens to be on the path
 
-                 ;; this was originally done via `opam exec' but that does not
-                 ;; work for opam 1, and added a performance hit
-                 (setq merlin-opam-bin-path (list (concat "PATH=" bin-path)))
-                 `(,(concat bin-path "/ocamlmerlin")))
+                       ;; this was originally done via `opam exec' but that does not
+                       ;; work for opam 1, and added a performance hit
+                       `((path . (,(concat "PATH=" bin-path)))
+                         (command . (,(concat bin-path "/ocamlmerlin")))))
 
-             ;; best effort if opam is not available, lookup for the binary in
-             ;; the existing env
-             (progn
-               (message "merlin-command: opam config failed (%S)"
-                        (buffer-string))
-               '("ocamlmerlin")))))))
+                   ;; best effort if opam is not available, lookup for the binary in
+                   ;; the existing env
+                   (progn
+                     (message "merlin-command: opam config failed (%S)"
+                              (buffer-string))
+                     '("ocamlmerlin"))))))))
 
-      ;; cache command in merlin-buffer configuration to avoid having to shell
-      ;; out to `opam` each time.
-      (push (cons 'command command) merlin-buffer-configuration)
-      (when merlin-opam-bin-path
-        (push (cons 'env merlin-opam-bin-path) merlin-buffer-configuration)))
+        ;; cache command in merlin-buffer configuration to avoid having to shell
+        ;; out to `opam` each time.
+        (push (cons 'command (merlin-lookup 'command new-buffer-configuration)) merlin-buffer-configuration)
+        (when (merlin-lookup 'path new-buffer-configuration)
+          (push (cons 'env (merlin-lookup 'path new-buffer-configuration)) merlin-buffer-configuration))
 
-    command))
+        (merlin-lookup 'command new-buffer-configuration)))))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
