@@ -648,8 +648,16 @@ int main(int argc, char **argv)
   else
   {
     argv[0] = ocamlmerlin_server;
+#ifdef _WIN32
+    int err = _spawnvp(_P_WAIT, merlin_path, argv);
+    if (err < 0)
+      failwith_perror("spawnvp(ocamlmerlin-server)");
+    else
+      exit(err);
+#else
     execvp(merlin_path, argv);
     failwith_perror("execvp(ocamlmerlin-server)");
+#endif
   }
 
   /* This is never reached */
