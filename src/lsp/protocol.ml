@@ -103,7 +103,7 @@ end
 
 (* DidChangeTextDocument notification, method="textDocument/didChange" *)
 module DidChange = struct
-  type params = didChangeTextDocumentParams [@@deriving yojson { strict = true }]
+  type params = didChangeTextDocumentParams [@@deriving yojson { strict = false }]
 
   and didChangeTextDocumentParams = {
     textDocument: VersionedTextDocumentIdentifier.t;
