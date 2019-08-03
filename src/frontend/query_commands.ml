@@ -1,30 +1,30 @@
 (* {{{ COPYING *(
 
-  This file is part of Merlin, an helper for ocaml editors
+   This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
+   Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
                              Thomas Refis  <refis.thomas(_)gmail.com>
                              Simon Castellan  <simon.castellan(_)iuwt.fr>
 
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation the
-  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-  sell copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation the
+   rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+   sell copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-  The Software is provided "as is", without warranty of any kind, express or
-  implied, including but not limited to the warranties of merchantability,
-  fitness for a particular purpose and noninfringement. In no event shall
-  the authors or copyright holders be liable for any claim, damages or other
-  liability, whether in an action of contract, tort or otherwise, arising
-  from, out of or in connection with the software or the use or other dealings
-  in the Software.
+   The Software is provided "as is", without warranty of any kind, express or
+   implied, including but not limited to the warranties of merchantability,
+   fitness for a particular purpose and noninfringement. In no event shall
+   the authors or copyright holders be liable for any claim, damages or other
+   liability, whether in an action of contract, tort or otherwise, arising
+   from, out of or in connection with the software or the use or other dealings
+   in the Software.
 
-)* }}} *)
+   )* }}} *)
 
 open Std
 open Misc
@@ -321,7 +321,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         )
     in
     let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
-        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
+      Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
     let all_items =
       List.merge_cons
         ~f:(fun a b ->
@@ -509,23 +509,23 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         path
     in
     if path = "" then `Invalid_context else
-    begin match
-      Locate.from_string
-        ~config:(Mpipeline.final_config pipeline)
-        ~env ~local_defs ~pos ml_or_mli path
-    with
-    | `Found (file, pos) ->
-      Locate.log ~title:"result"
-        "found: %s" (Option.value ~default:"<local buffer>" file);
-      `Found (file, pos)
-    | `Missing_labels_namespace ->
-      (* Can't happen because we haven't passed a namespace as input. *)
-      assert false
-    | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _|`Builtin _) as
-      otherwise ->
-      Locate.log ~title:"result" "not found";
-      otherwise
-    end
+      begin match
+          Locate.from_string
+            ~config:(Mpipeline.final_config pipeline)
+            ~env ~local_defs ~pos ml_or_mli path
+        with
+        | `Found (file, pos) ->
+          Locate.log ~title:"result"
+            "found: %s" (Option.value ~default:"<local buffer>" file);
+          `Found (file, pos)
+        | `Missing_labels_namespace ->
+          (* Can't happen because we haven't passed a namespace as input. *)
+          assert false
+        | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _|`Builtin _) as
+          otherwise ->
+          Locate.log ~title:"result" "not found";
+          otherwise
+      end
 
   | Jump (target, pos) ->
     with_typer pipeline @@ fun typer ->
@@ -551,18 +551,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       let l1,c1 = Lexing.split_pos loc_start in
       let l2,c2 = Lexing.split_pos loc_end in
       `List [
-         `String (Browse_raw.string_of_node node);
-         `Int l1; `Int c1;
-         `Int l2; `Int c2;
-       ]
+        `String (Browse_raw.string_of_node node);
+        `Int l1; `Int c1;
+        `Int l2; `Int c2;
+      ]
     in
     Destruct.log ~title:"nodes before" "%a"
       Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     let nodes =
       List.drop_while nodes
         ~f:(fun (_,t) ->
-          let {Location. loc_start; loc_end; _} = Mbrowse.node_loc t in
-          Lexing.compare_pos loc_start pos_start > 0 || Lexing.compare_pos loc_end pos_end < 0)
+            let {Location. loc_start; loc_end; _} = Mbrowse.node_loc t in
+            Lexing.compare_pos loc_start pos_start > 0 || Lexing.compare_pos loc_end pos_end < 0)
     in
     Destruct.log ~title:"nodes after" "%a"
       Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
@@ -694,11 +694,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let config = Mpipeline.final_config pipeline in
     let enabled = Mconfig.(config.merlin.extensions) in
     begin match kind with
-    | `All -> Extension.all
-    | `Enabled -> enabled
-    | `Disabled ->
-      List.fold_left ~f:(fun exts ext -> List.remove ext exts)
-        ~init:Extension.all enabled
+      | `All -> Extension.all
+      | `Enabled -> enabled
+      | `Disabled ->
+        List.fold_left ~f:(fun exts ext -> List.remove ext exts)
+          ~init:Extension.all enabled
     end
 
   | Path_list `Build ->

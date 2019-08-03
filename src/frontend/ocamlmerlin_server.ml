@@ -80,11 +80,11 @@ let main () =
     Printf.eprintf
       "Usage: %s <frontend> <arguments...>\n\
        Select the merlin frontend to execute. Valid values are:\n\
-      \n- 'old-protocol' executes the merlin frontend from previous version.\n\
+       \n- 'old-protocol' executes the merlin frontend from previous version.\n\
       \  It is a top level reading and writing commands in a JSON form.\n\
-      \n- 'single' is a simpler frontend that reads input from stdin,\n\
+       \n- 'single' is a simpler frontend that reads input from stdin,\n\
       \  processes a single query and outputs result on stdout.\n\
-      \n- 'server' works like 'single', but uses a background process to\n\
+       \n- 'server' works like 'single', but uses a background process to\n\
       \  speedup processing.\n\
        If no frontend is specified, it defaults to 'old-protocol' for\n\
        compatibility with existing editors.\n"

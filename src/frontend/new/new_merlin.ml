@@ -17,21 +17,21 @@ let commands_help () =
   List.iter (fun (New_commands.Command (name, doc, args, _, _)) ->
       print_newline ();
       let args = List.map (fun (kind, (key0,desc,_)) ->
-        let key1, desc =
-          let len = String.length desc in
-          match String.index desc ' ' with
-          | 0 -> key0, String.sub desc 1 (len - 1)
-          | idx -> key0 ^ " " ^ String.sub desc 0 idx,
-                   String.sub desc (idx + 1) (len - idx - 1)
-          | exception Not_found -> key0, desc
-        in
-        let key = match kind with
-          | `Mandatory -> key1
-          | `Optional  -> "[ " ^ key1 ^ " ]"
-          | `Many      -> "[ " ^ key1 ^ " " ^ key0 ^ " ... ]"
-        in
-        key, (key1, desc)
-      ) args in
+          let key1, desc =
+            let len = String.length desc in
+            match String.index desc ' ' with
+            | 0 -> key0, String.sub desc 1 (len - 1)
+            | idx -> key0 ^ " " ^ String.sub desc 0 idx,
+                     String.sub desc (idx + 1) (len - idx - 1)
+            | exception Not_found -> key0, desc
+          in
+          let key = match kind with
+            | `Mandatory -> key1
+            | `Optional  -> "[ " ^ key1 ^ " ]"
+            | `Many      -> "[ " ^ key1 ^ " " ^ key0 ^ " ... ]"
+          in
+          key, (key1, desc)
+        ) args in
       let args, descs = List.split args in
       print_endline ("### `" ^ String.concat " " (name :: args) ^ "`");
       print_newline ();
