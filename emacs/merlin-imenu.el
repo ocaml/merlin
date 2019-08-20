@@ -1,10 +1,10 @@
 ;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
 ;; Licensed under the MIT license.
 
-;; Author: tddsg
+;; Author: tddsg (Ta Quang Trung)
 ;; Created: 10 July 2016
-;; Updated: 27 April 2017
-;; Version: 0.2
+;; Updated: 20 August 2019
+;; Version: 0.3
 ;; Keywords: ocaml, imenu, merlin
 ;; URL:
 
