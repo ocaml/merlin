@@ -38,17 +38,33 @@
           (point))
       (error -1))))
 
+(defun update-item-name (name type kind line col)
+  (if (string= kind "Value") 
+      (let* ((new-type (if (string= type "null")
+                           (let* ((position (format "%d:%d" line col))
+                                  (types (merlin/call "type-enclosing"
+                                                      "-position" position
+                                                      "-expression" name)))
+                             (cdr (nth 3 (car types))))
+                         type))
+             (new-type (replace-regexp-in-string "\n" " " new-type)))
+        (if (string= new-type "null") name
+          (concat name " : " new-type)))
+    name))
+
 (defun parse-outline-item (prefix item)
   "Parse one item of the outline tree."
-  (let* ((start-line (cdr (nth 2 (nth 1 item))))
-         (start-col (cdr (nth 3 (nth 1 item))))
+  (let* ((line (cdr (nth 2 (nth 1 item))))
+         (col (cdr (nth 3 (nth 1 item))))
          (item-name (cdr (nth 3 item)))
          (item-kind (cdr (nth 4 item)))
+         (item-type (cdr (nth 5 item)))
          (sub-trees (cdr (nth 6 item)))
-         (item-full-name (concat prefix item-name))
-         (item-pos (compute-pos start-line start-col))
+         (item-name (update-item-name item-name item-type item-kind line col))
+         (item-name (concat prefix item-name))
+         (item-pos (compute-pos line col))
          (marker (set-marker (make-marker) item-pos))
-         (item-marker (cons item-full-name marker)))
+         (item-marker (cons item-name marker)))
     (cond ((string= item-kind "Value")
            (setq value-list (cons item-marker value-list)))
           ((string= item-kind "Type")
@@ -64,7 +80,7 @@
           ((string= item-kind "Label")
            (setq label-list (cons item-marker label-list)))
           (t (setq misc-list (cons item-marker misc-list))))
-    (if (not (null sub-trees))
+    (if (and (listp sub-trees) (not (null sub-trees)))
         (parse-outline-tree (concat prefix item-name " / ") sub-trees))))
 
 (defun parse-outline-tree (prefix outline)
