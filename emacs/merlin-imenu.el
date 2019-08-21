@@ -22,9 +22,7 @@
 ;; lists of different outline items
 (defvar-local value-list nil)
 (defvar-local type-list nil)
-(defvar-local class-list nil)
 (defvar-local exception-list nil)
-(defvar-local label-list nil)
 
 (defun compute-pos (line col)
   "Get location of the item."
@@ -68,12 +66,8 @@
            (setq value-list (cons item-marker value-list)))
           ((string= item-kind "Type")
            (setq type-list (cons item-marker type-list)))
-          ((string= item-kind "Class")
-           (setq class-list (cons item-marker class-list)))
           ((string= item-kind "Exn")
-           (setq exception-list (cons item-marker exception-list)))
-          ((string= item-kind "Label")
-           (setq label-list (cons item-marker label-list))))
+           (setq exception-list (cons item-marker exception-list))))
     (if (and (listp sub-trees) (not (null sub-trees)))
         (parse-outline-tree (concat prefix item-name " / ") sub-trees))))
 
@@ -89,17 +83,13 @@
   ;; Reset local vars
   (setq value-list nil
         type-list nil
-        class-list nil
-        exception-list nil
-        label-list nil)
+        exception-list nil)
   ;; Read outline tree
   (parse-outline-tree "" (merlin/call "outline"))
   (let ((index ()))
-    (when exception-list (push (cons "Exception" exception-list) index))
-    (when label-list (push (cons "Label" label-list) index))
-    (when type-list (push (cons "Type" type-list) index))
-    (when class-list (push (cons "Class" class-list) index))
     (when value-list (push (cons "Value" value-list) index))
+    (when exception-list (push (cons "Exception" exception-list) index))
+    (when type-list (push (cons "Type" type-list) index))
     index))
 
 ;; enable Merlin to use the merlin-imenu module
