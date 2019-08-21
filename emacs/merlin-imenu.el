@@ -1,9 +1,9 @@
 ;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
 ;; Licensed under the MIT license.
 
-;; Author: tddsg (Ta Quang Trung)
-;; Current version: 0.3
-;; Releases:
+;; Author: Ta Quang Trung
+;; Version: 0.3
+;; Release log:
 ;;   - v0.1: July 2016
 ;;   - v0.2: 27 April 2017
 ;;   - v0.3: 21 August 2019
