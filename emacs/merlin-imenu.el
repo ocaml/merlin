@@ -2,9 +2,11 @@
 ;; Licensed under the MIT license.
 
 ;; Author: tddsg (Ta Quang Trung)
-;; Created: 10 July 2016
-;; Updated: 20 August 2019
-;; Version: 0.3
+;; Current version: 0.3
+;; Releases:
+;;   - v0.1: July 2016
+;;   - v0.2: 27 April 2017
+;;   - v0.3: 21 August 2019
 ;; Keywords: ocaml, imenu, merlin
 ;; URL:
 
@@ -18,14 +20,11 @@
 (setq max-specpdl-size 10000)
 
 ;; lists of different outline items
-(defvar-local module-list nil)
 (defvar-local value-list nil)
 (defvar-local type-list nil)
 (defvar-local class-list nil)
 (defvar-local exception-list nil)
-(defvar-local constructor-list nil)
 (defvar-local label-list nil)
-(defvar-local misc-list nil)
 
 (defun compute-pos (line col)
   "Get location of the item."
@@ -39,18 +38,17 @@
       (error -1))))
 
 (defun update-item-name (name type kind line col)
-  (if (string= kind "Value") 
-      (let* ((new-type (if (string= type "null")
-                           (let* ((position (format "%d:%d" line col))
-                                  (types (merlin/call "type-enclosing"
-                                                      "-position" position
-                                                      "-expression" name)))
-                             (cdr (nth 3 (car types))))
-                         type))
-             (new-type (replace-regexp-in-string "\n" " " new-type)))
-        (if (string= new-type "null") name
-          (concat name " : " new-type)))
-    name))
+  (defun query-type-from-code ()
+    (let* ((types (merlin/call "type-enclosing"
+                               "-position" (format "%d:%d" line col)
+                               "-expression" name)))
+      (cdr (nth 3 (car types)))))
+  (let* ((new-type (cond ((not (string= kind "Value")) "null")
+                         ((not (string= type "null")) type)
+                         (t (query-type-from-code))))
+         (new-type (replace-regexp-in-string "\n" " " new-type))
+         (new-type (propertize new-type 'face 'font-lock-doc-face)))
+    (if (string= new-type "null") name (concat name " : " new-type))))
 
 (defun parse-outline-item (prefix item)
   "Parse one item of the outline tree."
@@ -71,15 +69,10 @@
            (setq type-list (cons item-marker type-list)))
           ((string= item-kind "Class")
            (setq class-list (cons item-marker class-list)))
-          ((string= item-kind "Module")
-           (setq module-list (cons item-marker module-list)))
           ((string= item-kind "Exn")
            (setq exception-list (cons item-marker exception-list)))
-          ((string= item-kind "Constructor")
-           (setq constructor-list (cons item-marker constructor-list)))
           ((string= item-kind "Label")
-           (setq label-list (cons item-marker label-list)))
-          (t (setq misc-list (cons item-marker misc-list))))
+           (setq label-list (cons item-marker label-list))))
     (if (and (listp sub-trees) (not (null sub-trees)))
         (parse-outline-tree (concat prefix item-name " / ") sub-trees))))
 
@@ -104,14 +97,11 @@
   ;; Read outline tree
   (parse-outline-tree "" (merlin/call "outline"))
   (let ((index ()))
-    (when module-list (push (cons "Module" module-list) index))
     (when exception-list (push (cons "Exception" exception-list) index))
     (when label-list (push (cons "Label" label-list) index))
-    (when constructor-list (push (cons "Constructor" constructor-list) index))
     (when type-list (push (cons "Type" type-list) index))
     (when class-list (push (cons "Class" class-list) index))
     (when value-list (push (cons "Value" value-list) index))
-    (when misc-list (push (cons "Misc" misc-list) index))
     index))
 
 ;; enable Merlin to use the merlin-imenu module
