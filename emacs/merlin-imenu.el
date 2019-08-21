@@ -37,8 +37,9 @@
           (point))
       (error -1))))
 
-(defun update-item-name (name type kind line col)
+(defun update-item-type (name type kind line col)
   (defun query-type-from-code ()
+    ;; NOTE: this query can be slow
     (let* ((types (merlin/call "type-enclosing"
                                "-position" (format "%d:%d" line col)
                                "-expression" name)))
@@ -58,7 +59,7 @@
          (item-kind (cdr (nth 4 item)))
          (item-type (cdr (nth 5 item)))
          (sub-trees (cdr (nth 6 item)))
-         (item-name (update-item-name item-name item-type item-kind line col))
+         (item-name (update-item-type item-name item-type item-kind line col))
          (item-name (concat prefix item-name))
          (item-pos (compute-pos line col))
          (marker (set-marker (make-marker) item-pos))
@@ -86,14 +87,11 @@
   "Create data for imenu using the merlin outline feature."
   (interactive)
   ;; Reset local vars
-  (setq module-list nil
-        value-list nil
+  (setq value-list nil
         type-list nil
         class-list nil
         exception-list nil
-        constructor-list nil
-        label-list nil
-        misc-list nil)
+        label-list nil)
   ;; Read outline tree
   (parse-outline-tree "" (merlin/call "outline"))
   (let ((index ()))
