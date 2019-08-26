@@ -405,7 +405,7 @@ of the buffer."
   ;
 
   command "refactor-open"
-    ~doc:"search-by-polarity -position pos -action <qualify|unqualify>\n\t\
+    ~doc:"refactor-open -position pos -action <qualify|unqualify>\n\t\
           TODO"
     ~spec: [
       arg "-position" "<position> Position to complete"
