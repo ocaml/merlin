@@ -123,7 +123,7 @@ Definitions useful to all versions of the typechecker.
 `fake.ml`: generate fake pieces of AST that implement the semantics of
 extensions from `src/kernel/extensions.ml`
 
-`msupport.ml`: bridge betwen extensions to OCaml typecheker and Merlin kernel.
+`msupport.ml`: bridge between extensions to OCaml typecheker and Merlin kernel.
 Mainly for warning and location management, capture of type errors and
 annotation of erroneous AST nodes
 

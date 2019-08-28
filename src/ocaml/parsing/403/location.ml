@@ -304,8 +304,12 @@ let pp_ksprintf ?before k fmt =
 
 (* Shift the formatter's offset by the length of the error prefix, which
    is always added by the compiler after the message has been formatted *)
-let print_phanton_error_prefix ppf =
-  Format.pp_print_as ppf (String.length error_prefix + 2 (* ": " *)) ""
+let print_phanton_error_prefix _ppf = ()
+(*   Format.pp_print_as ppf (String.length error_prefix + 2 (* ": " *)) "" *)
+
+let loc_of_report (e : error) = e.loc
+let print_main fmt { msg; _ } = Format.pp_print_string fmt msg
+let print_sub_msg = print_main
 
 let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) fmt =
   pp_ksprintf

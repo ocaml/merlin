@@ -96,8 +96,11 @@ let drop_leaf t =
   | [] | [ _ ] -> None
   | _leaf :: parents -> Some parents
 
-let has_attr attr attrs =
- List.exists ~f:(fun (str,_) -> str.Location.txt = attr) attrs
+let has_attr attr_name attrs =
+  List.exists ~f:(fun a ->
+    let (str,_) = Ast_helper.Attr.as_tuple a in
+    str.Location.txt = attr_name
+  ) attrs
 
 let select_leafs pos root =
   let branches = ref [] in

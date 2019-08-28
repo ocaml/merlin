@@ -28,16 +28,22 @@
 
 val log : 'a Logger.printf
 
+module Namespace : sig
+  type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
+end
+
 val from_string
   :  config:Mconfig.t
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
+  -> ?namespaces:Namespace.t list
   -> [ `ML | `MLI ]
   -> string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position
       | `Builtin of string
+      | `Missing_labels_namespace
       | `Not_found of string * string option
       | `Not_in_env of string
       | `At_origin ]

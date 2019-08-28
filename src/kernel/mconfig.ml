@@ -28,7 +28,7 @@ let dump_warnings st =
   let st' = Warnings.backup () in
   Warnings.restore st;
   Misc.try_finally Warnings.dump
-    (fun () -> Warnings.restore st')
+    ~always:(fun () -> Warnings.restore st')
 
 let dump_ocaml x = `Assoc [
     "include_dirs"         , `List (List.map ~f:Json.string x.include_dirs);
@@ -470,7 +470,7 @@ let ocaml_warnings_spec ~error =
       Misc.try_finally (fun () ->
           Warnings.parse_options error spec;
           { ocaml with warnings = Warnings.backup () })
-        (fun () -> Warnings.restore b'))
+        ~always:(fun () -> Warnings.restore b'))
 
 let ocaml_flags = [
   (
@@ -812,7 +812,7 @@ let global_modules ?(include_current=false) config = (
     | filename -> List.remove (Misc.unitname filename) modules
 )
 
-(** {1 Accessors for other informations} *)
+(** {1 Accessors for other information} *)
 
 let filename t = t.query.filename
 

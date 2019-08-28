@@ -8,7 +8,16 @@ import * as Rpc from "vscode-jsonrpc";
 
 let serverBin =
   os.platform() === "win32" ? "ocamlmerlin-lsp.exe" : "ocamlmerlin-lsp";
-let serverPath = path.join(__dirname, "..", "..", serverBin);
+let serverPath = path.join(
+  __dirname,
+  "..",
+  "..",
+  "_build",
+  "install",
+  "default",
+  "bin",
+  serverBin
+);
 
 export type LanguageServer = Rpc.MessageConnection;
 
@@ -40,10 +49,12 @@ export const start = (opts?: cp.SpawnOptions) => {
   return connection as LanguageServer;
 };
 
-export const startAndInitialize = async (opts?: cp.SpawnOptions) => {
-  let languageServer = start(opts);
+export const startAndInitialize = async (
+  capabilities?: Partial<Protocol.ClientCapabilities>
+) => {
+  let languageServer = start();
 
-  let capabilities: Protocol.ClientCapabilities = {};
+  capabilities = capabilities || {};
 
   let initializeParameters: Protocol.InitializeParams = {
     processId: process.pid,
@@ -62,6 +73,7 @@ export const startAndInitialize = async (opts?: cp.SpawnOptions) => {
 export const exit = async languageServer => {
   let ret = new Promise((resolve, reject) => {
     languageServer.onClose(() => {
+      languageServer.dispose();
       resolve();
     });
   });

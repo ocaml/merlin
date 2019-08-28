@@ -515,3 +515,8 @@ val mkloc: 'a -> Location.t -> 'a Asttypes.loc
 
 val pat_bound_idents: pattern -> (Ident.t * string Asttypes.loc) list
 val pat_bound_idents_with_loc : pattern -> (Ident.t * label loc) list
+(* Backported from 4.08
+
+   Needed for Browse_raw, but unused in the typedtree itself. *)
+
+type open_declaration

@@ -340,6 +340,14 @@ end
 module String = struct
   include StringLabels
 
+  let for_all f t =
+    let len = String.length t in
+    let rec loop i =
+      i = len || (f t.[i] && loop (i + 1))
+    in
+    loop 0
+
+
   let reverse s1 =
     let len = length s1 in
     let s2  = Bytes.make len 'a' in

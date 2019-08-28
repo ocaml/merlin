@@ -1,0 +1,8 @@
+(alias
+ (name runtest)
+ (deps external-arity.t)
+ (action
+   (progn
+     (setenv MERLIN %{dep:../merlin-wrapper}
+       (run %{bin:mdx} test --syntax=cram %{deps}))
+     (diff? %{deps} %{deps}.corrected))))

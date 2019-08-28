@@ -48,11 +48,13 @@ let rewrite cfg parsetree =
     restore ();
     cfg, parsetree
   | exception exn ->
-    log ~title:"rewrite" "failed with %t"
-      (fun () -> match Location.error_of_exn exn with
-         | None | Some `Already_displayed -> Printexc.to_string exn
-         | Some (`Ok err) -> err.Location.msg
-      );
+    log ~title:"rewrite" "failed with %a" Logger.fmt (fun fmt ->
+      match Location.error_of_exn exn with
+      | None | Some `Already_displayed ->
+        Format.fprintf fmt "%s" (Printexc.to_string exn)
+      | Some (`Ok err) ->
+        Location.print_main fmt err
+    );
     Msupport.raise_error exn;
     restore ();
     cfg, parsetree

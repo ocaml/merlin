@@ -148,17 +148,10 @@ let rec mod_smallerthan n m =
            | Some n2 -> Some (n1 + n2)
            | None -> None
         in
-        match acc, item with
+        match acc, Raw_compat.si_modtype_opt item with
         | None, _ -> None
         | Some n', _ when n' > n -> None
-        | Some n1, Sig_modtype (_,m) ->
-            begin match m.Types.mtd_type with
-              | Some m -> sub n1 m
-              | None -> None
-            end
-        | Some n1, Sig_module (_,m,_) ->
-          sub n1 m.Types.md_type
-
+        | Some n1, Some mty -> sub n1 mty
         | Some n', _ -> Some (succ n')
       end
     end
@@ -201,7 +194,7 @@ let print_type_with_decl ~verbosity env ppf typ =
             end;
           let ident = match path with
             | Path.Papply _ -> assert false
-            | Path.Pdot (_,name,_) -> Ident.create_persistent name
+            | Path.Pdot _ -> Ident.create_persistent (Path.last path)
             | Path.Pident ident -> ident
           in
           Printtyp.type_declaration env ident ppf decl
@@ -211,11 +204,10 @@ let print_type_with_decl ~verbosity env ppf typ =
     Printtyp.type_scheme env ppf typ
 
 let print_exn ppf exn =
-  let msg = match Location.error_of_exn exn with
-    | Some (`Ok {Location. msg; _}) -> msg
-    | None | Some `Already_displayed -> Printexc.to_string exn
-  in
-  Format.pp_print_string ppf msg
+  match Location.error_of_exn exn with
+  | None | Some `Already_displayed ->
+    Format.pp_print_string ppf (Printexc.to_string exn)
+  | Some (`Ok report) -> Location.print_main ppf report
 
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let print_expr expression =
@@ -250,7 +242,10 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         try
           let p = Env.lookup_type longident.Asttypes.txt env in
           let t = Env.find_type p env in
-          Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
+          Printtyp.type_declaration env
+            (Ident.create_persistent (* Incorrect, but doesn't matter. *)
+               (Path.last p))
+            ppf t;
           true
         with _ -> print_exn ppf exn; false
       end
@@ -312,4 +307,4 @@ let read_doc_attributes attrs =
     | _ :: rest -> loop rest
     | [] -> None
   in
-  loop attrs
+  loop (List.map ~f:Ast_helper.Attr.as_tuple attrs)

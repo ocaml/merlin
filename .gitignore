@@ -1,9 +1,11 @@
 _build
 .merlin
 jbuild-workspace
+dune-workspace
 *.install
 *.tar.gz
 *.pyc
+*.cmly
 
 ocamlmerlin
 ocamlmerlin-server

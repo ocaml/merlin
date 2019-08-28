@@ -21,32 +21,11 @@ type range = {
   end_: position [@key "end"];
 } [@@deriving yojson { strict = false }]
 
-module MarkedString = struct
-
-  type code = {
-    language : string;
-    value : string;
-  } [@@deriving yojson { strict = false }]
-
-  (* markedString can be used to render human readable text. It is either a
-   * markdown string or a code-block that provides a language and a code snippet.
-   * Note that markdown strings will be sanitized by the client - including
-   * escaping html *)
-  type t =
-    | MarkedString of string
-    | MarkedCode of code
-
-  let to_yojson = function
-    | MarkedString v -> `String v
-    | MarkedCode code -> code_to_yojson code
-
-  let of_yojson = function
-    | `String v -> Ok (MarkedString v)
-    | json ->
-      begin match code_of_yojson json with
-      | Ok code -> Ok (MarkedCode code)
-      | Error err -> Error err
-      end
+module Command = struct
+  type t = {
+    title : string;
+    command : string;
+  } [@@deriving yojson]
 end
 
 module MarkupKind = struct
@@ -63,6 +42,13 @@ module MarkupKind = struct
     | `String "markdown" -> Ok Markdown
     | `String _ -> Ok Plaintext
     | _ -> Error "invalid contentFormat"
+end
+
+module MarkupContent = struct
+  type t = {
+    value: string;
+    kind: MarkupKind.t;
+  } [@@deriving yojson { strict = false }]
 end
 
 module Location = struct
@@ -117,7 +103,7 @@ end
 
 (* DidChangeTextDocument notification, method="textDocument/didChange" *)
 module DidChange = struct
-  type params = didChangeTextDocumentParams [@@deriving yojson { strict = true }]
+  type params = didChangeTextDocumentParams [@@deriving yojson { strict = false }]
 
   and didChangeTextDocumentParams = {
     textDocument: VersionedTextDocumentIdentifier.t;
@@ -136,6 +122,155 @@ module TextDocumentPositionParams = struct
     textDocument: TextDocumentIdentifier.t;  (* the text document *)
     position: position;  (* the position inside the text document *)
   } [@@deriving yojson { strict = false }]
+end
+
+(**
+  A document highlight is a range inside a text document which deserves
+  special attention. Usually a document highlight is visualized by changing
+  the background color of its range.
+*)
+module DocumentHighlight = struct
+
+  (** The highlight kind, default is DocumentHighlightKind.Text. *)
+  type kind =
+    | Text (** 1: A textual occurrence. *)
+    | Read (** 2: Read-access of a symbol, like reading a variable. *)
+    | Write (** 3: Write-access of a symbol, like writing a variable. *)
+
+  let kind_to_yojson = function
+    | Text -> `Int 1
+    | Read -> `Int 2
+    | Write -> `Int 3
+
+  let kind_of_yojson = function
+    | `Int 1 -> Ok Text
+    | `Int 2 -> Ok Read
+    | `Int 3 -> Ok Write
+    | _ -> Error "expected int between 1 and 3"
+
+  type t = {
+    range: range;
+    kind: kind option;
+  } [@@deriving yojson { strict = false }]
+
+end
+
+(**
+   Complex text manipulations are described with an array of
+   TextEdit's, representing a single change to the document.
+
+   All text edits ranges refer to positions in the original
+   document. Text edits ranges must never overlap, that means no part of
+   the original document must be manipulated by more than one
+   edit. However, it is possible that multiple edits have the same start
+   position: multiple inserts, or any number of inserts followed by a
+   single remove or replace edit. If multiple inserts have the same
+   position, the order in the array defines the order in which the
+   inserted strings appear in the resulting text.
+*)
+module TextEdit = struct
+  type t = {
+    (** The range of the text document to be manipulated. To insert text into
+        a document create a range where start === end. *)
+    range: range;
+    (** The string to be inserted. For delete operations use an empty string. *)
+    newText: string;
+  } [@@deriving yojson { strict = false }]
+end
+
+
+(**
+   Describes textual changes on a single text document. The text
+   document is referred to as a VersionedTextDocumentIdentifier to
+   allow clients to check the text document version before an edit is
+   applied. A TextDocumentEdit describes all changes on a version Si
+   and after they are applied move the document to version Si+1. So
+   the creator of a TextDocumentEdit doesn't need to sort the array or
+   do any kind of ordering. However the edits must be non overlapping.
+*)
+module TextDocumentEdit = struct
+  type t = {
+    textDocument: VersionedTextDocumentIdentifier.t; (** The text document to change. *)
+    edits: TextEdit.t list; (** The edits to be applied. *)
+  } [@@deriving yojson { strict = false }]
+end
+
+(**
+   A workspace edit represents changes to many resources managed in
+   the workspace. The edit should either provide [changes] or
+   [documentChanges]. If the client can handle versioned document edits
+   and if [documentChanges] are present, the latter are preferred over
+   [changes].
+*)
+module WorkspaceEdit = struct
+
+  (** Holds changes to existing resources.
+
+      The json representation is an object with URIs as keys and edits
+      as values.
+  *)
+  type changes = (documentUri * TextEdit.t list) list
+
+  let changes_to_yojson changes =
+    let changes =
+      List.map (fun (uri, edits) ->
+        let uri = Uri.to_string uri in
+        let edits = `List (List.map TextEdit.to_yojson edits) in
+        uri, edits
+      ) changes
+    in
+    `Assoc changes
+
+  type documentChanges = TextDocumentEdit.t list [@@deriving to_yojson]
+
+  (**
+     Depending on the client capability
+     [workspace.workspaceEdit.resourceOperations] document changes are either an
+     array of [TextDocumentEdit]s to express changes to n different text
+     documents where each text document edit addresses a specific version of a
+     text document. Or it can contain above [TextDocumentEdit]s mixed with
+     create, rename and delete file / folder operations.
+
+     Whether a client supports versioned document edits is expressed via
+     [workspace.workspaceEdit.documentChanges] client capability.
+
+     If a client neither supports [documentChanges] nor
+     [workspace.workspaceEdit.resourceOperations] then only plain [TextEdit]s
+     using the [changes] property are supported.
+  *)
+  type t = {
+    changes: changes option;
+    documentChanges: documentChanges option;
+  } [@@deriving to_yojson { strict = false }]
+
+  let empty = {
+    changes = None;
+    documentChanges = None;
+  }
+
+  (** Create a {!type:t} based on the capabilities of the client. *)
+  let make ~documentChanges ~uri ~version ~edits =
+    match documentChanges with
+    | false ->
+      let changes = Some [ uri, edits ] in
+      { empty with changes }
+    | true ->
+      let documentChanges =
+        let textDocument = {
+          VersionedTextDocumentIdentifier.
+          uri;
+          version;
+        }
+        in
+        let edits = {
+          TextDocumentEdit.
+          edits;
+          textDocument;
+        }
+        in
+        Some [edits]
+      in
+      { empty with documentChanges }
 end
 
 (* PublishDiagnostics notification, method="textDocument/PublishDiagnostics" *)
@@ -239,6 +374,13 @@ module Completion = struct
     | Color (* 16 *)
     | File (* 17 *)
     | Reference (* 18 *)
+    | Folder (* 19 *)
+    | EnumMember (* 20 *)
+    | Constant (* 21 *)
+    | Struct (* 22 *)
+    | Event (* 23 *)
+    | Operator (* 24 *)
+    | TypeParameter (* 25 *)
 
   (** Once we get better PPX support we can use [@@deriving enum].
     Keep in sync with completionItemKind_of_int_opt. *)
@@ -261,6 +403,13 @@ module Completion = struct
     | Color -> 16
     | File -> 17
     | Reference -> 18
+    | Folder -> 19
+    | EnumMember -> 20
+    | Constant -> 21
+    | Struct -> 22
+    | Event -> 23
+    | Operator -> 24
+    | TypeParameter -> 25
 
   let completionItemKind_to_yojson v =
     `Int (int_of_completionItemKind v)
@@ -286,6 +435,13 @@ module Completion = struct
     | 16 -> Some Color
     | 17 -> Some File
     | 18 -> Some Reference
+    | 19 -> Some Folder
+    | 20 -> Some EnumMember
+    | 21 -> Some Constant
+    | 22 -> Some Struct
+    | 23 -> Some Event
+    | 24 -> Some Operator
+    | 25 -> Some TypeParameter
     | _ -> None
 
   let completionItemKind_of_yojson = function
@@ -355,7 +511,8 @@ module Completion = struct
     filterText: string option [@default None];  (* used for filtering; if absent, uses label *)
     insertText: string option [@default None];  (* used for inserting; if absent, uses label *)
     insertTextFormat: insertTextFormat option [@default None];
-    (* textEdits: TextEdit.t list;  (1* wire: split into hd and tl *1) *)
+    textEdit: TextEdit.t option [@default None];
+    additionalTextEdits: TextEdit.t list [@default []];
     (* command: Command.t option [@default None];  (1* if present, is executed after completion *1) *)
     (* data: Hh_json.json option [@default None]; *)
   }
@@ -363,12 +520,14 @@ end
 
 (* Hover request, method="textDocument/hover" *)
 module Hover = struct
-  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+  type params =
+    TextDocumentPositionParams.t
+    [@@deriving yojson { strict = false }]
 
   and result = hoverResult option [@default None]
 
   and hoverResult = {
-    contents: MarkedString.t list; (* wire: either a single one or an array *)
+    contents: MarkupContent.t;
     range: range option [@default None];
   }
 end
@@ -413,9 +572,9 @@ module Initialize = struct
    * We use the "can_" prefix for OCaml naming reasons; it's absent in LSP *)
 
   type synchronization = {
-    willSave: bool;  (* client can send textDocument/willSave *)
-    willSaveWaitUntil: bool;  (* textDoc.../willSaveWaitUntil *)
-    didSave: bool;  (* textDocument/didSave *)
+    willSave: bool [@default false];  (* client can send textDocument/willSave *)
+    willSaveWaitUntil: bool [@default false];  (* textDoc.../willSaveWaitUntil *)
+    didSave: bool [@default false];  (* textDocument/didSave *)
   } [@@deriving yojson { strict = false }]
 
   let synchronization_empty = {
@@ -425,7 +584,7 @@ module Initialize = struct
   }
 
   type completionItem = {
-    snippetSupport: bool;  (* client can do snippets as insert text *)
+    snippetSupport: bool [@default false];  (* client can do snippets as insert text *)
   } [@@deriving yojson { strict = false }]
 
   let completionItem_empty = {
@@ -448,9 +607,21 @@ module Initialize = struct
     contentFormat = [Plaintext];
   }
 
+  type documentSymbol = {
+    hierarchicalDocumentSymbolSupport : bool [@default false];
+  } [@@deriving yojson { strict = false }]
+
+  let documentSymbol_empty = {
+    hierarchicalDocumentSymbolSupport = false;
+  }
+
   type textDocumentClientCapabilities = {
     synchronization: synchronization [@default synchronization_empty];
-    completion: completion [@default completion_empty];  (* textDocument/completion *)
+    (** textDocument/completion *)
+    completion: completion [@default completion_empty];
+    (** textDocument/documentSymbol *)
+    documentSymbol: documentSymbol [@default documentSymbol_empty];
+    (** textDocument/hover *)
     hover: hover [@default hover_empty];
     (* omitted: dynamic-registration fields *)
   } [@@deriving yojson { strict = false }]
@@ -459,10 +630,12 @@ module Initialize = struct
     completion = completion_empty;
     synchronization = synchronization_empty;
     hover = hover_empty;
+    documentSymbol = documentSymbol_empty;
   }
 
   type workspaceEdit = {
-    documentChanges: bool;  (* client supports versioned doc changes *)
+    (** client supports versioned doc changes *)
+    documentChanges: bool [@default false];
   } [@@deriving yojson { strict = false }]
 
   let workspaceEdit_empty = {
@@ -470,9 +643,10 @@ module Initialize = struct
   }
 
   type workspaceClientCapabilities = {
-    applyEdit: bool [@default false];  (* client supports appling batch edits *)
+    (** client supports applying batch edits *)
+    applyEdit: bool [@default false];
     workspaceEdit: workspaceEdit [@default workspaceEdit_empty];
-    (* omitted: dynamic-registration fields *)
+    (** omitted: dynamic-registration fields *)
   } [@@deriving yojson { strict = false }]
 
   let workspaceClientCapabilities_empty = {
@@ -481,9 +655,12 @@ module Initialize = struct
   }
 
   type windowClientCapabilities = {
-    status: bool;  (* Nuclide-specific: client supports window/showStatusRequest *)
-    progress: bool;  (* Nuclide-specific: client supports window/progress *)
-    actionRequired: bool;  (* Nuclide-specific: client supports window/actionRequired *)
+    (* Nuclide-specific: client supports window/showStatusRequest *)
+    status: bool [@default false];
+    (* Nuclide-specific: client supports window/progress *)
+    progress: bool [@default false];
+    (* Nuclide-specific: client supports window/actionRequired *)
+    actionRequired: bool [@default false];
   } [@@deriving yojson { strict = false }]
 
   let windowClientCapabilities_empty = {
@@ -493,7 +670,8 @@ module Initialize = struct
   }
 
   type telemetryClientCapabilities = {
-    connectionStatus: bool;  (* Nuclide-specific: client supports telemetry/connectionStatus *)
+    (* Nuclide-specific: client supports telemetry/connectionStatus *)
+    connectionStatus: bool [@default false];
   } [@@deriving yojson { strict = false }]
 
   let telemetryClientCapabilities_empty = {
@@ -566,7 +744,7 @@ module Initialize = struct
   (* } *)
 
   and codeLensOptions = {
-    codelens_resolveProvider: bool;  (* wire "resolveProvider" *)
+    codelens_resolveProvider: bool [@key "resolveProvider"];  (* wire "resolveProvider" *)
   }
 
   and documentOnTypeFormattingOptions = {
@@ -612,10 +790,31 @@ module TypeDefinition = struct
   and result = Location.t list  (* wire: either a single one or an array *)
 end
 
-(* Represents information about programming constructs like variables etc. *)
-module SymbolInformation = struct
+(* References request, method="textDocument/references" *)
+module References = struct
+  type params = {
+    textDocument: TextDocumentIdentifier.t;  (* the text document *)
+    position: position;  (* the position inside the text document *)
+    context: referenceContext;
+  } [@@deriving yojson { strict = false }]
 
-  type symbolKind =
+  and referenceContext = {
+    includeDeclaration: bool;
+  }
+
+  and result = Location.t list (* wire: either a single one or an array *)
+end
+
+(* DocumentHighlight request, method="textDocument/documentHighlight" *)
+module TextDocumentHighlight = struct
+  type params = TextDocumentPositionParams.t [@@deriving yojson { strict = false }]
+
+  and result = DocumentHighlight.t list (* wire: either a single one or an array *)
+end
+
+module SymbolKind = struct
+
+  type t =
     | File  (* 1 *)
     | Module  (* 2 *)
     | Namespace  (* 3 *)
@@ -634,16 +833,16 @@ module SymbolInformation = struct
     | Number  (* 16 *)
     | Boolean  (* 17 *)
     | Array  (* 18 *)
-    |	Object (* 19 *)
-    |	Key (* 20 *)
-    |	Null (* 21 *)
-    |	EnumMember (* 22 *)
-    |	Struct (* 23 *)
-    |	Event (* 24 *)
-    |	Operator (* 25 *)
-    |	TypeParameter (* 26 *)
+    | Object (* 19 *)
+    | Key (* 20 *)
+    | Null (* 21 *)
+    | EnumMember (* 22 *)
+    | Struct (* 23 *)
+    | Event (* 24 *)
+    | Operator (* 25 *)
+    | TypeParameter (* 26 *)
 
-  let symbolKind_to_yojson = function
+  let to_yojson = function
     | File -> `Int 1
     | Module -> `Int 2
     | Namespace -> `Int 3
@@ -662,16 +861,16 @@ module SymbolInformation = struct
     | Number -> `Int 16
     | Boolean -> `Int 17
     | Array -> `Int 18
-    |	Object -> `Int 19
-    |	Key -> `Int 20
-    |	Null -> `Int 21
-    |	EnumMember -> `Int 22
-    |	Struct -> `Int 23
-    |	Event -> `Int 24
-    |	Operator -> `Int 25
-    |	TypeParameter -> `Int 16
+    | Object -> `Int 19
+    | Key -> `Int 20
+    | Null -> `Int 21
+    | EnumMember -> `Int 22
+    | Struct -> `Int 23
+    | Event -> `Int 24
+    | Operator -> `Int 25
+    | TypeParameter -> `Int 26
 
-  let symbolKind_of_yojson = function
+  let of_yojson = function
     | `Int 1 -> Ok File
     | `Int 2 -> Ok Module
     | `Int 3 -> Ok Namespace
@@ -690,35 +889,119 @@ module SymbolInformation = struct
     | `Int 16 -> Ok Number
     | `Int 17 -> Ok Boolean
     | `Int 18 -> Ok Array
-    |	`Int 19 -> Ok Object
-    |	`Int 20 -> Ok Key
-    |	`Int 21 -> Ok Null
-    |	`Int 22 -> Ok EnumMember
-    |	`Int 23 -> Ok Struct
-    |	`Int 24 -> Ok Event
-    |	`Int 25 -> Ok Operator
-    |	`Int 26 -> Ok TypeParameter
+    | `Int 19 -> Ok Object
+    | `Int 20 -> Ok Key
+    | `Int 21 -> Ok Null
+    | `Int 22 -> Ok EnumMember
+    | `Int 23 -> Ok Struct
+    | `Int 24 -> Ok Event
+    | `Int 25 -> Ok Operator
+    | `Int 26 -> Ok TypeParameter
     | _ -> Error "invalid SymbolKind"
-
-  type t = {
-    name : string;
-    kind : symbolKind;
-    deprecated : bool [@default false];
-    location : Location.t;  (* the span of the symbol including its contents *)
-    containerName : string option [@default None];  (* the symbol containing this symbol *)
-  } [@@deriving yojson]
 
 end
 
-(* Document Symbols request, method="textDocument/documentSymbols" *)
+module SymbolInformation = struct
+ type t = {
+    name : string;
+    kind : SymbolKind.t;
+    deprecated : bool [@default false];
+    (* the span of the symbol including its contents *)
+    location : Location.t;
+    (* the symbol containing this symbol *)
+    containerName : string option [@default None];
+  } [@@deriving yojson]
+end
+
 module DocumentSymbol = struct
-  type params = documentSymbolParams [@@deriving yojson]
 
-  and result = SymbolInformation.t list
+  type t = {
+    (**
+     * The name of this symbol. Will be displayed in the user interface and
+     * therefore must not be an empty string or a string only consisting of
+     * white spaces.
+     *)
+    name : string;
 
-  and documentSymbolParams = {
+    (**
+     * More detail for this symbol, e.g the signature of a function.
+     *)
+    detail: string option;
+
+    (**
+     * The kind of this symbol.
+     *)
+    kind: SymbolKind.t;
+
+    (**
+     * Indicates if this symbol is deprecated.
+     *)
+    deprecated : bool;
+
+    (**
+     * The range enclosing this symbol not including leading/trailing whitespace
+     * but everything else like comments. This information is typically used to
+     * determine if the clients cursor is inside the symbol to reveal in the
+     * symbol in the UI.
+     *)
+    range : range;
+
+    (**
+     * The range that should be selected and revealed when this symbol is being
+     * picked, e.g the name of a function.  Must be contained by the `range`.
+     *)
+    selectionRange : range;
+
+    (**
+     * Children of this symbol, e.g. properties of a class.
+     *)
+    children: t list;
+  } [@@deriving yojson]
+end
+
+(* Document Symbols request, method="textDocument/documentSymbols" *)
+module TextDocumentDocumentSymbol = struct
+  type params = {
     textDocument: TextDocumentIdentifier.t;
+  } [@@deriving yojson]
+
+  type result =
+    | DocumentSymbol of DocumentSymbol.t list
+    | SymbolInformation of SymbolInformation.t list
+
+  let result_to_yojson = function
+    | DocumentSymbol symbols ->
+      `List (Std.List.map symbols ~f:DocumentSymbol.to_yojson)
+    | SymbolInformation symbols ->
+      `List (Std.List.map symbols ~f:SymbolInformation.to_yojson)
+
+end
+
+module CodeLens = struct
+  type params = {
+    textDocument: TextDocumentIdentifier.t;
+  } [@@deriving yojson]
+
+  and result = item list
+
+  and item = {
+    range: range;
+    command: Command.t option;
   }
+end
+
+(** Rename symbol request, metho="textDocument/rename" *)
+module Rename = struct
+ type params = {
+   textDocument: TextDocumentIdentifier.t; (** The document to rename. *)
+   position: position; (** The position at which this request was sent. *)
+   newName: string; (** The new name of the symbol. If the given name
+                        is not valid the request must return a
+                        [ResponseError](#ResponseError) with an
+                        appropriate message set. *)
+  } [@@deriving yojson]
+
+  type result = WorkspaceEdit.t [@@deriving to_yojson]
 end
 
 module DebugEcho = struct

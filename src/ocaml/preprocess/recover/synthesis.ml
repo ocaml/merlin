@@ -96,16 +96,18 @@ struct
           let cost = cost_of_prod prod in
           const cost
 
+(*
   let can_pop prod pos =
     pos > 1 &&
     (match (Production.rhs prod).(pos - 1) with
      | T t, _, _ -> Terminal.typ t = None
      | _ -> false)
+*)
 
   let cost_of = function
     | Head (st, n) ->
         let acc = List.fold_left
-            (fun acc (sym, st') ->
+            (fun acc (_sym, st') ->
                List.fold_left (fun acc (prod, pos) ->
                    if pos = 1 && Production.lhs prod = n then
                      var (Tail (st, prod, 0)) :: acc
@@ -186,7 +188,7 @@ struct
     | Head (st, n) ->
         let acc = Abort in
         let acc = List.fold_left
-            (fun acc (sym, st') ->
+            (fun acc (_sym, st') ->
                List.fold_left (fun acc (prod, pos) ->
                    if pos = 1 && Production.lhs prod = n then
                      select (Var (Tail (st, prod, 0))) acc
@@ -205,7 +207,7 @@ struct
         in
         [acc]
 
-    | Tail (st, prod, pos) when pos = Array.length (Production.rhs prod) ->
+    | Tail (_st, prod, pos) when pos = Array.length (Production.rhs prod) ->
         [Reduce prod]
 
     | Tail (st, prod, pos) ->

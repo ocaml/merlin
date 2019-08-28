@@ -15,7 +15,22 @@
 
 open Std
 
-let () = Findlib.init ()
+let () =
+  try Findlib.init ()
+  with exn ->
+    let message = match exn with
+      | Failure message -> message
+      | exn -> Printexc.to_string exn
+    in
+    prerr_endline ("Error during findlib initialization: " ^ message);
+    (* This is a quick and dirty workaround to get Merlin to work even when
+       findlib directory has been removed.
+       The long term plan is to get rid of findlib inside Merlin. *)
+    begin match Sys.getenv "OCAMLFIND_CONF" with
+      | exception Not_found ->
+        Unix.putenv "OCAMLFIND_CONF" "/dev/null"
+      | _ -> ()
+    end
 
 (* Errors *)
 
@@ -26,10 +41,24 @@ let fatal_error msg =
 
 (* Exceptions *)
 
-let try_finally work cleanup =
-  let result = (try work () with e -> cleanup (); raise e) in
-  cleanup ();
-  result
+let try_finally ?(always=fun () -> ()) ?(exceptionally=fun () -> ()) work =
+  match work () with
+    | result ->
+      begin match always () with
+        | () -> result
+        | exception always_exn ->
+          exceptionally ();
+          raise always_exn
+      end
+    | exception work_exn ->
+      begin match always () with
+        | () ->
+          exceptionally ();
+          raise work_exn
+        | exception always_exn ->
+          exceptionally ();
+          raise always_exn
+      end
 ;;
 
 type ref_and_value = R : 'a ref * 'a -> ref_and_value

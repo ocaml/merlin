@@ -6,8 +6,8 @@
     "value": {
       "file": "tests/locate/context-detection/environment_on_open.ml",
       "pos": {
-        "line": 4,
-        "col": 2
+        "line": 1,
+        "col": 0
       }
     },
     "notifications": []

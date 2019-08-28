@@ -66,8 +66,8 @@ module Trie : sig
     Ident.t * Location.t * node
 
   and functor_application =
-    { funct : functor_
-    ; arg   : node }
+    { funct : Location.t * functor_
+    ; arg   : Location.t * node }
     (* The day where we want to support aliasing of functor arguments then arg
        should be [elt] instead of [node] *)
 
@@ -123,8 +123,8 @@ end = struct
     Ident.t * Location.t * node
 
   and functor_application =
-    { funct : functor_
-    ; arg   : node }
+    { funct : Location.t * functor_
+    ; arg   : Location.t * node }
 
   and functor_ =
     | Apply of functor_application
@@ -138,11 +138,11 @@ end = struct
     let key = Ident.name id in
     match String.Map.find key t with
     | exception Not_found ->
-      String.Map.add ~key ~data:(StampMap.singleton (Ident.binding_time id) elt) t
+      String.Map.add ~key ~data:(StampMap.singleton (Ident.stamp id) elt) t
     | stamp_map ->
       (* no replace? :'( *)
       String.Map.add (String.Map.remove key t) ~key
-        ~data:(StampMap.add (Ident.binding_time id) elt stamp_map)
+        ~data:(StampMap.add (Ident.stamp id) elt stamp_map)
 
   let singleton id node = add id node empty
 
@@ -156,7 +156,7 @@ end = struct
   let get (k : Namespaced_path.Id.t) t =
     match k with
     | Id id ->
-      [ StampMap.find (Ident.binding_time id)
+      [ StampMap.find (Ident.stamp id)
           (String.Map.find (Ident.name id) t) ]
     | String s ->
       List.map (StampMap.bindings (String.Map.find s t)) ~f:snd
@@ -224,15 +224,19 @@ let remove_indir_mty mty =
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 
-let sig_item_idns =
-  let open Types in function
-  | Sig_value (id, _) -> id, `Vals
-  | Sig_type (id, _, _) -> id, `Type
-  | Sig_typext (id, _, _) -> id, `Type
-  | Sig_module (id, _, _) -> id, `Mod
-  | Sig_modtype (id, _) -> id, `Modtype
-  | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
-  | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
+let sig_item_idns item =
+  let open Types in
+  let ns =
+    match item with
+    | Sig_value _ -> `Vals
+    | Sig_type _ -> `Type
+    | Sig_typext _ -> `Type
+    | Sig_module _ -> `Mod
+    | Sig_modtype _ -> `Modtype
+    | Sig_class _ -> `Vals (* that's just silly *)
+    | Sig_class_type _ -> `Type (* :_D *)
+  in
+  signature_item_id item, ns
 
 let include_idents l = List.map ~f:sig_item_idns l
 
@@ -268,8 +272,13 @@ let rec build ~local_buffer ~trie browses : t =
       in
       Functor ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
     | `Apply (funct, arg) ->
-      let funct = functor_ (remove_indir_me funct) in
-      let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+      let funct = funct.Typedtree.mod_loc, functor_ (remove_indir_me funct) in
+      let arg =
+        arg.Typedtree.mod_loc,
+        match remove_indir_me arg with
+        | `Str { str_items = []; _ } -> Trie.Leaf
+        | otherwise -> node_for_direct_mod `Mod otherwise
+      in
       Apply { funct; arg }
     | `Unpack -> (* TODO! *)
       Leaf
@@ -290,8 +299,10 @@ let rec build ~local_buffer ~trie browses : t =
       in
       Funct ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
     | `Apply (funct, arg) ->
-      let funct = functor_ (remove_indir_me funct) in
-      let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+      let funct = funct.Typedtree.mod_loc, functor_ (remove_indir_me funct) in
+      let arg =
+        arg.Typedtree.mod_loc, node_for_direct_mod `Mod (remove_indir_me arg)
+      in
       Apply { funct; arg }
     | `Unpack -> Unpack
   in
@@ -347,8 +358,13 @@ let rec build ~local_buffer ~trie browses : t =
             assert false
           | `Unpack -> f Leaf
           | `Apply (funct, arg) ->
-            let funct = functor_ (remove_indir_me funct) in
-            let arg = node_for_direct_mod `Mod (remove_indir_me arg) in
+            let funct =
+              funct.Typedtree.mod_loc, functor_ (remove_indir_me funct)
+            in
+            let arg =
+              arg.Typedtree.mod_loc,
+              node_for_direct_mod `Mod (remove_indir_me arg)
+            in
             f (Included (Apply { funct; arg }))
           | `Str str ->
             let str = lazy (build ~local_buffer ~trie [of_structure str]) in
@@ -368,7 +384,7 @@ let rec build ~local_buffer ~trie browses : t =
       if not local_buffer then
         trie
       else (
-        let id = Ident.create "?" in
+        let id = Ident.create_local "?" in
         let intern =
           lazy (build ~local_buffer ~trie:Trie.empty (Lazy.force t.t_children))
         in
@@ -419,6 +435,10 @@ let rec build ~local_buffer ~trie browses : t =
     | Case _
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
+    | Pattern p when local_buffer ->
+      List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }) ->
+          Trie.add id {loc; doc; namespace = `Vals; node = Leaf} trie
+      ) (Typedtree.pat_bound_idents_with_loc p)
     | ignored_node ->
       log ~title:"build" "ignored node: %t"
         (fun () -> string_of_node ignored_node);
@@ -450,12 +470,6 @@ and state =
   }
 
 let rec follow ~remember_loc ~state scopes ?before trie path =
-  let try_next_scope scopes path =
-    match scopes with
-    | [] -> Resolves_to (path, state) (* no englobing scope, give up *)
-    | (trie, before) :: scopes ->
-      follow ~remember_loc ~state scopes ?before trie path
-  in
   let trie, before, path, scopes, state =
     let rec try_substing_once path = function
       | [] -> None
@@ -485,10 +499,16 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
         trie, before, path, scopes, { state with substs }
       | _ -> assert false
   in
+  let try_next_scope () =
+    match scopes with
+    | [] -> Resolves_to (path, state) (* no englobing scope, give up *)
+    | (trie, before) :: scopes ->
+      follow ~remember_loc ~state scopes ?before trie path
+  in
   match Namespaced_path.head_exn path with
   | Applied_to path ->
     (* FIXME: That's wrong. The scope should be the one where the query was
-       emited. Not the point where we finally arrive on the application. *)
+       emitted. Not the point where we finally arrive on the application. *)
     let functor_argument =
       let scopes = (trie, before) :: scopes in
       Handled (path, scopes)
@@ -521,7 +541,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
           (* We wants the ones closed last to be at the beginning of the list. *)
           Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
       with
-      | [] -> try_next_scope scopes path
+      | [] -> try_next_scope ()
       | { loc; doc; node; namespace = _ } :: _ ->
         let inspect_functor_arg : Trie.node -> _ = function
           | Leaf -> Noop (* fuck it eh. *)
@@ -556,13 +576,13 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
           | Funct _ -> assert false (* TODO *)
           | Apply { funct; arg } ->
             log ~title:"inspect_functor" "functor application";
-            let functor_argument = inspect_functor_arg arg in
+            let functor_argument = inspect_functor_arg (snd arg) in
             let state =
               { state with
                 functor_arguments = functor_argument :: state.functor_arguments
               }
             in
-            inspect_functor path state funct
+            inspect_functor path state (snd funct)
         in
         let rec inspect_node state = function
           | Trie.Leaf ->
@@ -595,13 +615,13 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               follow ~remember_loc ~state scopes (Lazy.force t) stampless
             | Apply { funct; arg } ->
               log ~title:"include" "functor application";
-              let functor_argument = inspect_functor_arg arg in
+              let functor_argument = inspect_functor_arg (snd arg) in
               let state =
                 { state with
                   functor_arguments =
                     functor_argument :: state.functor_arguments }
               in
-              inspect_functor stampless state funct
+              inspect_functor stampless state (snd funct)
             end
           | Internal t ->
             let path = Namespaced_path.peal_head_exn path in
@@ -639,18 +659,19 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
             end
           | Apply { funct; arg } ->
             log ~title:"functor application" "";
-            let functor_argument = inspect_functor_arg arg in
+            let functor_argument = inspect_functor_arg (snd arg) in
             let state =
               { state with
                 functor_arguments = functor_argument :: state.functor_arguments
               }
             in
-            inspect_functor (Namespaced_path.peal_head_exn path) state funct
+            inspect_functor (Namespaced_path.peal_head_exn path) state
+              (snd funct)
         in
         inspect_node state node
     with
     | Not_found ->
-      try_next_scope scopes path
+      try_next_scope ()
 
 let initial_state = { substs = []; functor_arguments = [] }
 
@@ -662,8 +683,10 @@ let rec find ~remember_loc ~before scopes trie path =
     ) trie
   with
   | None ->
+    log ~title:"find" "didn't find anything";
     follow ~state:initial_state ~remember_loc ~before scopes trie path
   | Some (_name, _stamp, { Trie.loc; node; _ }) ->
+    log ~title:"find" "inspecting %s" _name;
     let rec inspect_node scopes : Trie.node -> _ = function
       | Internal (lazy subtrie)  ->
         let scopes = (trie, Some loc.Location.loc_start) :: scopes in
@@ -681,10 +704,47 @@ let rec find ~remember_loc ~before scopes trie path =
         else
           let scopes = (param, Some ploc.Location.loc_end) :: scopes in
           inspect_node scopes fnode
+      | Apply { funct = (floc, f); arg = (_aloc, a) } ->
+        let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+        if
+          Lexing.compare_pos floc.Location.loc_start before < 0
+          && Lexing.compare_pos floc.Location.loc_end before > 0
+        then
+          inspect_functor scopes f
+        else
+          inspect_node scopes a
       | Leaf
       | Included _
-      | Alias _
-      | Apply _ ->
+      | Alias _ ->
+        (* FIXME: not quite right (i.e. not necessarily a leaf). *)
+        log ~title:"find" "cursor in a leaf, so we look only before the leaf";
+        follow ~state:initial_state ~remember_loc ~before:loc.Location.loc_start
+          scopes trie path
+    and inspect_functor scopes : Trie.functor_ -> _ = function
+      | Funct ((id, ploc, node), fnode) ->
+        let param =
+          Trie.singleton id { loc = ploc; doc = None; namespace = `Mod; node }
+        in
+        if
+          Lexing.compare_pos ploc.Location.loc_start before < 0
+          && Lexing.compare_pos ploc.Location.loc_end before > 0
+        then
+          let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+          find ~remember_loc ~before scopes param path
+        else
+          let scopes = (param, Some ploc.Location.loc_end) :: scopes in
+          inspect_node scopes fnode
+      | Apply { funct = (floc, f); arg = (_aloc, a) } ->
+        let scopes = (trie, Some loc.Location.loc_start) :: scopes in
+        if
+          Lexing.compare_pos floc.Location.loc_start before < 0
+          && Lexing.compare_pos floc.Location.loc_end before > 0
+        then
+          inspect_functor scopes f
+        else
+          inspect_node scopes a
+      | Unpack
+      | Named _ ->
         (* FIXME: not quite right (i.e. not necessarily a leaf). *)
         log ~title:"find" "cursor in a leaf, so we look only before the leaf";
         follow ~state:initial_state ~remember_loc ~before:loc.Location.loc_start
@@ -695,11 +755,6 @@ let rec find ~remember_loc ~before scopes trie path =
 type context =
   | Initial of Lexing.position
   | Resume of state
-
-let find ~remember_loc ~context trie path =
-  match context with
-  | Initial before -> find ~remember_loc ~before [] trie path
-  | Resume   state -> follow ~remember_loc ~state [] trie path
 
 let rec dump fmt trie =
   let open Trie in
@@ -720,10 +775,11 @@ let rec dump fmt trie =
         dump_node node
     | Included Apply { funct; arg }
     | Apply { funct; arg } ->
-      Format.fprintf fmt " %a(%a)" dump_functor funct dump_node arg
-  and dump_functor fmt = function
+      Format.fprintf fmt " %a(%a)" dump_functor funct dump_node (snd arg)
+  and dump_functor fmt (_loc, funct) =
+    match funct with
     | Apply { funct; arg } ->
-      Format.fprintf fmt " %a(%a)" dump_functor funct dump_node arg
+      Format.fprintf fmt " %a(%a)" dump_functor funct dump_node (snd arg)
     | Funct ((id, _, _), node) ->
       Format.fprintf fmt " %s ->%a" (Ident.name id)
         dump_node node
@@ -744,3 +800,13 @@ let rec dump fmt trie =
     Format.pp_print_newline fmt ()
   ) trie;
   Format.pp_print_string fmt "}\n"
+
+let find ~remember_loc ~context trie path =
+  match context with
+  | Initial before ->
+    log ~title:"initial find"
+      "before %s, trie: %a"
+      (Lexing.print_position () before)
+      Logger.fmt (fun fmt -> dump fmt trie);
+    find ~remember_loc ~before [] trie path
+  | Resume   state -> follow ~remember_loc ~state [] trie path

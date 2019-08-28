@@ -125,7 +125,7 @@ Entries is the list of possible completion. Each entry is made of:
 - a name, the text that should be put in the buffer if selected
 - a kind, one of `'value'`, `'variant'`, `'constructor'`, `'label'`, `'module'`, `'signature'`, `'type'`, `'method'`, `'#'` (for method calls), `'exn'`, `'class'`
 - a description, most of the time a type or a definition line, to be put next to the name in completion box
-- optional informations which might not fit in the completion box, like signatures for modules or documentation string."
+- optional information which might not fit in the completion box, like signatures for modules or documentation string."
     ~default:("",`None,[],false,true)
     begin fun buffer (txt,pos,kinds,doc,typ) ->
       match pos with
@@ -173,6 +173,14 @@ increasing size of all entities surrounding the position.
   ;
 
   command "errors"
+    ~spec:[
+      arg "-lexing" "<bool> Whether to report lexing errors or not"
+        (Marg.bool (fun l (_,p,t) -> (l,p,t)));
+      arg "-parsing" "<bool> Whether to report parsing errors or not"
+        (Marg.bool (fun p (l,_,t) -> (l,p,t)));
+      arg "-typing" "<bool> Whether to report typing errors or not"
+        (Marg.bool (fun t (l,p,_) -> (l,p,t)));
+    ]
     ~doc:"Returns a list of errors in current buffer.
 The value is a list where each item as the shape:
 
@@ -194,10 +202,9 @@ mark this range.
 It reflects whether Merlin was expecting such an error to be possible or not, \
 and is useful for debugging purposes.
 `message` is the error description to be shown to the user."
-    ~spec:[]
-    ~default:()
-    begin fun buffer () ->
-      run buffer (Query_protocol.Errors)
+    ~default:(true, true, true)
+    begin fun buffer (lexing, parsing, typing) ->
+      run buffer (Query_protocol.Errors { lexing; parsing; typing })
     end
   ;
 
@@ -398,7 +405,7 @@ of the buffer."
   ;
 
   command "refactor-open"
-    ~doc:"search-by-polarity -position pos -action <qualify|unqualify>\n\t\
+    ~doc:"refactor-open -position pos -action <qualify|unqualify>\n\t\
           TODO"
     ~spec: [
       arg "-position" "<position> Position to complete"
@@ -569,8 +576,9 @@ The return value has the shape:
   (* Used only for testing *)
   command "dump"
     ~spec:[
-      arg "-what" "<parsetree|printast|env|fullenv|browse|tokens|flags\
-                   |warnings|exn|paths> Information to dump ()"
+      arg "-what" "<source|parsetree|ppxed-source|ppxed-parsetree|env|fullenv\
+                   |browse|tokens|flags|warnings|exn|paths> \
+                   Information to dump ()"
         (Marg.param "string" (fun what _ -> what));
     ]
     ~default:""

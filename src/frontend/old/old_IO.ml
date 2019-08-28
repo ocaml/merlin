@@ -176,7 +176,7 @@ let request_of_json context =
     | [`String "refresh"] ->
       request (Sync Refresh)
     | [`String "errors"] ->
-      request (Query Errors)
+      request (Query (Errors { lexing = true; parsing = true; typing = true }))
     | (`String "dump" :: args) ->
       request (Query (Dump args))
     | [`String "which"; `String "path"; `String name] ->

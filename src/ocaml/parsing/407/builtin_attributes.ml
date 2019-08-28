@@ -64,7 +64,7 @@ let error_of_extension ext =
   | `Other -> error_of_extension ext
   | `Syntax_error ->
     let txt, loc = Extend_helper.extract_syntax_error ext in
-    Location.error ~loc txt
+    Location.error ~source:Location.Parser ~loc txt
 
 let cat s1 s2 =
   if s2 = "" then s1 else s1 ^ "\n" ^ s2

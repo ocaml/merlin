@@ -111,7 +111,11 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
   let rec aux acc t =
     let acc =
       match Browse_raw.node_is_constructor t.t_node with
-      | Some d' when same_constructor env d d'.Location.txt ->
+      | Some d' when (
+          (* Don't try this at home kids. *)
+          try same_constructor env d d'.Location.txt
+          with Not_found -> same_constructor t.t_env d d'.Location.txt
+        ) ->
         {d' with Location.txt = t} :: acc
       | _ -> acc
     in
@@ -122,8 +126,8 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
 let all_occurrences_of_prefix ~strict_prefix path node =
   let rec path_prefix ~prefix path =
     Path.same prefix path ||
-    match path with
-    | Path.Pdot (p,_,_) -> path_prefix ~prefix p
+    match Path.Nopos.view path with
+    | Pdot (p,_) -> path_prefix ~prefix p
     | _ -> false
   in
   let rec aux env node acc =
@@ -131,8 +135,8 @@ let all_occurrences_of_prefix ~strict_prefix path node =
       let paths = Browse_raw.node_paths node in
       let has_prefix {Location. txt; _} =
         if not strict_prefix then path_prefix ~prefix:path txt
-        else match txt with
-          | Path.Pdot (p, _, _) -> path_prefix ~prefix:path p
+        else match Path.Nopos.view txt with
+          | Pdot (p, _) -> path_prefix ~prefix:path p
           | _ -> false
       in
       match List.filter ~f:has_prefix paths with

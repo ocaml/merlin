@@ -73,7 +73,17 @@ let verbosity pipeline =
   Mconfig.((Mpipeline.final_config pipeline).query.verbosity)
 
 let dump pipeline = function
-  | [`String "parsetree"] ->
+  | [`String "ppxed-source"] ->
+    let ppf, to_string = Format.to_string () in
+    begin match Mpipeline.ppx_parsetree pipeline with
+      | `Interface s -> Pprintast.signature ppf s
+      | `Implementation s -> Pprintast.structure ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
+    `String (to_string ())
+
+  | [`String "source"] ->
     let ppf, to_string = Format.to_string () in
     begin match Mpipeline.reader_parsetree pipeline with
       | `Interface s -> Pprintast.signature ppf s
@@ -83,9 +93,19 @@ let dump pipeline = function
     Format.pp_force_newline ppf ();
     `String (to_string ())
 
-  | [`String "printast"] ->
+  | [`String "parsetree"] ->
     let ppf, to_string = Format.to_string () in
     begin match Mpipeline.reader_parsetree pipeline with
+      | `Interface s -> Printast.interface ppf s
+      | `Implementation s -> Printast.implementation ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
+    `String (to_string ())
+
+  | [`String "ppxed-parsetree"] ->
+    let ppf, to_string = Format.to_string () in
+    begin match Mpipeline.ppx_parsetree pipeline with
       | `Interface s -> Printast.interface ppf s
       | `Implementation s -> Printast.implementation ppf s
     end;
@@ -162,8 +182,9 @@ let dump pipeline = function
     `List (List.map paths ~f:(fun s -> `String s))
 
   | _ -> failwith "known dump commands: \
-                   paths, exn, warnings, flags, tokens, browse, parsetree, \
-                   printast, env/fullenv (at {col:, line:})"
+                   paths, exn, warnings, flags, tokens, browse, source, \
+                   parsetree, ppxed-source, ppxed-parsetree, \
+                   env/fullenv (at {col:, line:})"
 
 let reconstruct_identifier pipeline pos = function
   | None ->
@@ -428,13 +449,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let paths =
           Browse_tree.all_occurrences_of_prefix ~strict_prefix:true path node in
         let paths = List.concat_map ~f:snd paths in
-        let rec path_to_string acc = function
-          | Path.Pident ident ->
+        let rec path_to_string acc p =
+          match Path.Nopos.view p with
+          | Pident ident ->
             String.concat ~sep:"." (Ident.name ident :: acc)
-          | Path.Pdot (path', s, _) when
+          | Pdot (path', s) when
               mode = `Unqualify && Path.same path path' ->
             String.concat ~sep:"." (s :: acc)
-          | Path.Pdot (path', s, _) ->
+          | Pdot (path', s) ->
             path_to_string (s :: acc) path'
           | _ -> raise Not_found
         in
@@ -496,7 +518,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Locate.log ~title:"result"
         "found: %s" (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)
-    | otherwise ->
+    | `Missing_labels_namespace ->
+      (* Can't happen because we haven't passed a namespace as input. *)
+      assert false
+    | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _|`Builtin _) as
+      otherwise ->
       Locate.log ~title:"result" "not found";
       otherwise
     end
@@ -561,7 +587,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Outline.shape pos [Browse_tree.of_browse browse]
 
-  | Errors ->
+  | Errors { lexing; parsing; typing }->
     with_typer pipeline @@ fun typer ->
     let verbosity = verbosity pipeline in
     Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
@@ -576,23 +602,34 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | e -> [e]
       | exception Not_found -> typer_errors
     in
-    let error_loc (e : Location.error) = e.Location.loc in
-    let error_start e = (error_loc e).Location.loc_start in
-    let error_end e = (error_loc e).Location.loc_end in
+    let error_start e = (Location.loc_of_report e).Location.loc_start in
+    let error_end e = (Location.loc_of_report e).Location.loc_end in
     (* Turn into Location.error, ignore ghost warnings *)
     let filter_error exn =
       match Location.error_of_exn exn with
       | None | Some `Already_displayed -> None
       | Some (`Ok (err : Location.error)) ->
-        if Location.(err.loc.loc_ghost) &&
+        if (Location.loc_of_report err).loc_ghost &&
            (match exn with Msupport.Warning _ -> true | _ -> false)
         then None
         else Some err
     in
     let lexer_errors  = List.filter_map ~f:filter_error lexer_errors in
-    let typer_errors  = List.filter_map ~f:filter_error typer_errors in
+    (* Ast can contain syntax error *)
+    let first_syntax_error = ref Lexing.dummy_pos in
+    let filter_typer_error exn =
+      let result = filter_error exn in
+      begin match result with
+        | Some ({Location. source = Location.Parser; _} as err)
+          when !first_syntax_error = Lexing.dummy_pos ||
+               Lexing.compare_pos !first_syntax_error (error_start err) > 0 ->
+          first_syntax_error := error_start err;
+        | _ -> ()
+      end;
+      result
+    in
+    let typer_errors  = List.filter_map ~f:filter_typer_error typer_errors in
     (* Track first parsing error *)
-    let first_parser_error = ref Lexing.dummy_pos in
     let filter_parser_error = function
       | Msupport.Warning _ as exn -> filter_error exn
       | exn ->
@@ -600,9 +637,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         begin match result with
           | None -> ()
           | Some err ->
-            if !first_parser_error = Lexing.dummy_pos ||
-               Lexing.compare_pos !first_parser_error (error_start err) > 0
-            then first_parser_error := error_start err;
+            if !first_syntax_error = Lexing.dummy_pos ||
+               Lexing.compare_pos !first_syntax_error (error_start err) > 0
+            then first_syntax_error := error_start err;
         end;
         result
     in
@@ -613,10 +650,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       if n <> 0 then n else
         Lexing.compare_pos (error_end e1) (error_end e2)
     in
-    let errors = List.sort_uniq ~cmp
-        (lexer_errors @ parser_errors @ typer_errors) in
+    let errors =
+      List.sort_uniq ~cmp
+        ((if lexing then lexer_errors else []) @
+         (if parsing then parser_errors else []) @
+         (if typing then typer_errors else []))
+    in
     (* Filter anything after first parse error *)
-    let limit = !first_parser_error in
+    let limit = !first_syntax_error in
     if limit = Lexing.dummy_pos then errors else (
       List.take_while errors
         ~f:(fun err -> Lexing.compare_pos (error_start err) limit <= 0)
@@ -672,9 +713,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     with_typer pipeline @@ fun typer ->
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let tnode = match Mbrowse.enclosing pos [str] with
-      | [] -> Browse_tree.dummy
-      | t -> Browse_tree.of_browse t
+    let tnode =
+      let should_ignore_tnode = function
+        | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
+        | _ -> false
+      in
+      let rec find = function
+        | [] -> Browse_tree.dummy
+        | (env, node)::rest ->
+          if should_ignore_tnode node
+          then find rest
+          else Browse_tree.of_node ~env node
+      in
+      find (Mbrowse.enclosing pos [str])
     in
     let str = Browse_tree.of_browse str in
     let get_loc {Location.txt = _; loc} = loc in

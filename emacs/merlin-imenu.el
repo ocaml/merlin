@@ -44,7 +44,7 @@
          (start-col (cdr (nth 3 (nth 1 item))))
          (item-name (cdr (nth 3 item)))
          (item-kind (cdr (nth 4 item)))
-         (sub-trees (cdr (nth 5 item)))
+         (sub-trees (cdr (nth 6 item)))
          (item-full-name (concat prefix item-name))
          (item-pos (compute-pos start-line start-col))
          (marker (set-marker (make-marker) item-pos))

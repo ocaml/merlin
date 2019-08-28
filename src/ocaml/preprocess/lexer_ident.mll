@@ -104,8 +104,14 @@ rule token = parse
             { INFIXOP3(Lexing.lexeme lexbuf) }
   | '#' (symbolchar | '#') +
             { let s = Lexing.lexeme lexbuf in
-              SHARPOP s }
+              HASHOP s }
   | eof { EOF }
+  | "'" newline "'"
+      { update_loc lexbuf None 1 false 1;
+        EOL }
+  | "'\\" newline
+      { update_loc lexbuf None 1 false 0;
+        EOL }
   | int_literal
   | float_literal
   | int_literal "l"
@@ -118,7 +124,6 @@ rule token = parse
   | "~"
   | "\""
   | "{" lowercase* "|"
-  | "'" newline "'"
   | "'" [^ '\\' '\'' '\010' '\013'] "'"
   | "'\\" ['\\' '\'' '"' 'n' 't' 'b' 'r' ' '] "'"
   | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"

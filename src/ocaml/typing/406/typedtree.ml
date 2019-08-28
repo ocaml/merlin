@@ -620,3 +620,8 @@ let rec alpha_pat env p = match p.pat_desc with
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc
+(* Backported from 4.08
+
+   Needed for Browse_raw, but unused in the typedtree itself. *)
+
+type open_declaration

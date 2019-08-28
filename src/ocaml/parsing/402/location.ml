@@ -260,6 +260,10 @@ type error =
     source : error_source;
   }
 
+let loc_of_report (e : error) = e.loc
+let print_main fmt { msg; _ } = Format.pp_print_string fmt msg
+let print_sub_msg = print_main
+
 let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") ?(source = Typer) fmt =
   Printf.ksprintf (fun msg -> {loc; msg; sub; if_highlight; source}) fmt
 

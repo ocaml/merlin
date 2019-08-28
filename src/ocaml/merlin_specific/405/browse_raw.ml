@@ -75,6 +75,7 @@ type node =
   | Include_description      of include_description
   | Include_declaration      of include_declaration
   | Open_description         of open_description
+  | Open_declaration         of open_declaration
 
   | Method_call              of expression * meth * Location.t
   | Record_field             of [`Expression of expression | `Pattern of pattern]
@@ -108,7 +109,7 @@ let node_update_env env0 = function
   | Class_declaration       _ | Class_description       _
   | Class_type_declaration  _ | Class_type_field        _
   | Include_description     _ | Include_declaration     _
-  | Open_description        _
+  | Open_description        _ | Open_declaration        _
     -> env0
 
 let node_real_loc loc0 = function
@@ -148,7 +149,7 @@ let node_real_loc loc0 = function
   | Structure _ | Signature _ | Case _ | Class_structure _ | Type_extension _
   | Class_field_kind _ | Module_type_constraint _ | With_constraint _
   | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
-  | Dummy
+  | Dummy | Open_declaration _
     -> loc0
 
 let node_attributes = function
@@ -627,7 +628,8 @@ let of_node = function
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
-  | Open_description _ -> id_fold
+  | Open_description _
+  | Open_declaration _ -> id_fold
   | Include_declaration i ->
     of_module_expr i.incl_mod
   | Include_description i ->
@@ -684,6 +686,7 @@ let string_of_node = function
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
   | Open_description        _ -> "open_description"
+  | Open_declaration        _ -> "open_declaration"
   | Include_description     _ -> "include_description"
   | Include_declaration     _ -> "include_declaration"
 

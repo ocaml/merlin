@@ -1,5 +1,3 @@
-open MenhirSdk
-
 let const c = fun _ -> c
 
 let group_assoc l =

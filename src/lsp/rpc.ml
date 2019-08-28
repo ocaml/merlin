@@ -193,9 +193,13 @@ module Request = struct
     | TextDocumentDefinition : Definition.params -> Definition.result t
     | TextDocumentTypeDefinition : TypeDefinition.params -> TypeDefinition.result t
     | TextDocumentCompletion : Completion.params -> Completion.result t
-    | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
+    | TextDocumentCodeLens : CodeLens.params -> CodeLens.result t
+    | TextDocumentRename : Rename.params -> Rename.result t
+    | DocumentSymbol : TextDocumentDocumentSymbol.params -> TextDocumentDocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
+    | TextDocumentReferences : References.params -> References.result t
+    | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 
   let request_result_to_response (type a) id (req : a t) (result : a) =
@@ -213,14 +217,26 @@ module Request = struct
     | TextDocumentCompletion _, result ->
       let json = Completion.result_to_yojson result in
       Some (Response.make id json)
+    | TextDocumentCodeLens _, result ->
+      let json = CodeLens.result_to_yojson result in
+      Some (Response.make id json)
+    | TextDocumentRename _, result ->
+      let json = Rename.result_to_yojson result in
+      Some (Response.make id json)
     | DocumentSymbol _, result ->
-      let json = DocumentSymbol.result_to_yojson result in
+      let json = TextDocumentDocumentSymbol.result_to_yojson result in
       Some (Response.make id json)
     | DebugEcho _, result ->
       let json = DebugEcho.result_to_yojson result in
       Some (Response.make id json)
     | DebugTextDocumentGet _, result ->
       let json = DebugTextDocumentGet.result_to_yojson result in
+      Some (Response.make id json)
+    | TextDocumentReferences _, result ->
+      let json = References.result_to_yojson result in
+      Some (Response.make id json)
+    | TextDocumentHighlight _, result ->
+      let json = TextDocumentHighlight.result_to_yojson result in
       Some (Response.make id json)
     | UnknownRequest _, _resp -> None
 end
@@ -247,7 +263,7 @@ module Message = struct
         Completion.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentCompletion params))
       | "textDocument/documentSymbol" ->
-        DocumentSymbol.params_of_yojson packet.params >>= fun params ->
+        TextDocumentDocumentSymbol.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, DocumentSymbol params))
       | "textDocument/hover" ->
         Hover.params_of_yojson packet.params >>= fun params ->
@@ -258,6 +274,18 @@ module Message = struct
       | "textDocument/typeDefinition" ->
         TypeDefinition.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, TextDocumentTypeDefinition params))
+      | "textDocument/references" ->
+        References.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, TextDocumentReferences params))
+      | "textDocument/codeLens" ->
+        CodeLens.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, TextDocumentCodeLens params))
+      | "textDocument/rename" ->
+        Rename.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, TextDocumentRename params))
+      | "textDocument/documentHighlight" ->
+        TextDocumentHighlight.params_of_yojson packet.params >>= fun params ->
+        Ok (Request (id, TextDocumentHighlight params))
       | "debug/echo" ->
         DebugEcho.params_of_yojson packet.params >>= fun params ->
         Ok (Request (id, DebugEcho params))
@@ -319,7 +347,7 @@ let start init_state handler ic oc =
     let start = Unix.gettimeofday () in
     let next_state = f () in
     let ellapsed = (Unix.gettimeofday () -. start) /. 1000.0 in
-    log ~title:"debug" "time ellapsed processing message: %fs" ellapsed;
+    log ~title:"debug" "time elapsed processing message: %fs" ellapsed;
     match next_state with
     | Ok next_state -> next_state
     | Error msg ->

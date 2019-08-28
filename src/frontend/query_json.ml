@@ -134,7 +134,17 @@ let dump (type a) : a t -> json =
       "end", mk_position pos_end;
     ]
   | Outline -> mk "outline" []
-  | Errors -> mk "errors" []
+  | Errors { lexing; parsing; typing } ->
+    let args =
+      if lexing && parsing && typing
+      then []
+      else [
+        "lexing", `Bool lexing;
+        "parsing", `Bool parsing;
+        "typing", `Bool typing;
+      ]
+    in
+    mk "errors" args
   | Shape pos ->
     mk "shape" [
       "position", mk_position pos;
@@ -217,21 +227,31 @@ let json_of_type_loc (loc,desc,tail) =
         | `Tail_call -> "call")
   ]
 
-let json_of_error {Location. msg; sub; loc; source; _} =
-  let msg = String.trim msg in
-  let typ = match source with
-      | Location.Lexer   -> "lexer"
-      | Location.Parser  -> "parser"
-      | Location.Typer   -> "typer"
-      | Location.Warning -> "warning"
-      | Location.Unknown -> "unknown"
-      | Location.Env     -> "env"
+let json_of_error (error : Location.error) =
+  let typ =
+    match error.source with
+    | Location.Lexer   -> "lexer"
+    | Location.Parser  -> "parser"
+    | Location.Typer   -> "typer"
+    | Location.Warning -> "warning"
+    | Location.Unknown -> "unknown"
+    | Location.Env     -> "env"
   in
-  let of_sub {Location. msg; loc; _} =
-    with_location ~skip_none:true loc ["message", `String (String.trim msg)] in
+  let of_sub loc sub =
+    let msg =
+      Location.print_sub_msg Format.str_formatter sub;
+      String.trim (Format.flush_str_formatter ())
+    in
+    with_location ~skip_none:true loc ["message", `String msg]
+  in
+  let loc = Location.loc_of_report error in
+  let msg =
+    Location.print_main Format.str_formatter error;
+    String.trim (Format.flush_str_formatter ())
+  in
   let content = [
     "type"    , `String typ;
-    "sub"     , `List (List.map ~f:of_sub sub);
+    "sub"     , `List (List.map ~f:(of_sub loc) error.sub);
     "valid"   , `Bool true;
     "message" , `String msg;
   ] in
@@ -257,10 +277,13 @@ let json_of_completions {Compl. entries; context } =
   ]
 
 let rec json_of_outline outline =
-  let json_of_item { outline_name ; outline_kind ; location ; children } =
+  let json_of_item { outline_name ; outline_kind ; outline_type; location ; children } =
     with_location location [
       "name", `String outline_name;
       "kind", `String (string_of_completion_kind outline_kind);
+      "type", (match outline_type with
+        | None -> `Null
+        | Some typ -> `String typ);
       "children", `List (json_of_outline children);
     ]
   in
@@ -345,7 +368,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List (json_of_outline outlines)
   | Shape _, shapes ->
     `List (List.map ~f:json_of_shape shapes)
-  | Errors, errors ->
+  | Errors _, errors ->
     `List (List.map ~f:json_of_error errors)
   | Dump _, json -> json
   | Path_of_source _, str -> `String str

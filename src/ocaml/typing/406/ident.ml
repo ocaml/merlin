@@ -28,6 +28,8 @@ let create s =
   incr currentstamp;
   { name = s; stamp = !currentstamp; flags = 0 }
 
+let create_local = create
+
 let create_predef_exn s =
   incr currentstamp;
   { name = s; stamp = !currentstamp; flags = predef_exn_flag }
@@ -58,6 +60,7 @@ let same i1 i2 = i1 = i2
 let compare i1 i2 = Pervasives.compare i1 i2
 
 let binding_time i = i.stamp
+let stamp i = i.stamp
 
 let current_time() = !currentstamp
 let set_current_time t = currentstamp := max !currentstamp t

@@ -81,9 +81,9 @@ let to_string l = to_string ~name:Id.name l
 let of_path ~namespace p =
   let rec aux namespace acc p =
     let open Path in
-    match p with
+    match Nopos.view p with
     | Pident id -> Ident (Id.Id id, namespace) :: acc
-    | Pdot (p, s, _) -> aux `Mod (Ident (Id.String s, namespace) :: acc) p
+    | Pdot (p, s) -> aux `Mod (Ident (Id.String s, namespace) :: acc) p
     | Papply (p1, p2) ->
       let acc =
         Applied_to (aux `Mod [] p2) :: acc

@@ -73,7 +73,8 @@ let run = function
       Logger.with_notifications notifications @@ fun () ->
       (* Parse commandline *)
       match begin
-        let start_time = Misc.time_spent () in
+        let start_cpu = Misc.time_spent () in
+        let start_clock = Unix.gettimeofday () *. 1000. in
         let config, command_args =
           let fails = ref [] in
           let config, command_args =
@@ -107,15 +108,17 @@ let run = function
               | None | Some `Already_displayed ->
                 ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
               | Some (`Ok err) ->
-                Location.report_error Format.str_formatter err;
+                Location.print_main Format.str_formatter err;
                 ("error", `String (Format.flush_str_formatter ()))
           in
-          let total_time = Misc.time_spent () -. start_time in
+          let cpu_time = Misc.time_spent () -. start_cpu in
+          let clock_time = Unix.gettimeofday () *. 1000. -. start_clock in
           let timing = Mpipeline.timing_information pipeline in
           let pipeline_time =
             List.fold_left (fun acc (_, k) -> k +. acc) 0.0 timing in
-          let timing = ("total", total_time) ::
-                       ("query", (total_time -. pipeline_time)) :: timing in
+          let timing = ("clock", clock_time) ::
+                       ("cpu", cpu_time) ::
+                       ("query", (cpu_time -. pipeline_time)) :: timing in
           let notify { Logger.section; msg } =
             `String (Printf.sprintf "%s: %s" section msg)
           in

@@ -1,5 +1,4 @@
 open MenhirSdk
-open Cmly_format
 
 include Cmly_read.Read(struct let filename = Sys.argv.(1) end)
 
@@ -87,10 +86,10 @@ let print_token () =
     | `REGULAR | `EOF ->
       printf "  | %s%s -> print_value (%s.T %s.T_%s) %s\n"
         (Terminal.name t)
-        (match Terminal.typ t with | None -> "" | Some typ -> " v")
+        (match Terminal.typ t with | None -> "" | Some _typ -> " v")
         menhir menhir
         (Terminal.name t)
-        (match Terminal.typ t with | None -> "()" | Some typ -> "v")
+        (match Terminal.typ t with | None -> "()" | Some _typ -> "v")
     | `PSEUDO | `ERROR -> ()
   in
   printf "let print_token = function\n";

@@ -29,9 +29,13 @@ module Request : sig
     | TextDocumentDefinition : Definition.params -> Definition.result t
     | TextDocumentTypeDefinition : TypeDefinition.params -> TypeDefinition.result t
     | TextDocumentCompletion : Completion.params -> Completion.result t
-    | DocumentSymbol : DocumentSymbol.params -> DocumentSymbol.result t
+    | TextDocumentCodeLens : CodeLens.params -> CodeLens.result t
+    | TextDocumentRename : Rename.params -> Rename.result t
+    | DocumentSymbol : TextDocumentDocumentSymbol.params -> TextDocumentDocumentSymbol.result t
     | DebugEcho : DebugEcho.params -> DebugEcho.result t
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
+    | TextDocumentReferences : References.params -> References.result t
+    | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
     | UnknownRequest : string * Yojson.Safe.json -> unit t
 end
 

@@ -37,6 +37,8 @@ let rec binding_time = function
   | Pdot(p, s, pos) -> binding_time p
   | Papply(p1, p2) -> max (binding_time p1) (binding_time p2)
 
+let scope = binding_time
+
 let kfalse x = false
 
 let rec name ?(paren=kfalse) = function
@@ -67,3 +69,49 @@ let rec compare p1 p2 =
   | ((Pident _ | Pdot _), (Pdot _ | Papply _)) -> -1
   | ((Pdot _ | Papply _), (Pident _ | Pdot _)) -> 1
 
+
+(* Backported from 4.08 *)
+
+module T = struct
+  type nonrec t = t
+  let compare = compare
+
+  let equal x y = compare x y = 0
+
+  (* Added for merlin *)
+  let rec hash = function
+    | Pident id -> Hashtbl.hash id
+    | Pdot (p, s, _) ->
+      let h = hash p in
+      Hashtbl.seeded_hash h (Hashtbl.hash s)
+    | Papply (p1, p2) ->
+      let h1 = hash p1 and h2 = hash p2 in
+      Hashtbl.seeded_hash h1 h2
+end
+
+module Map = Map.Make (T)
+module Set = Set.Make (T)
+
+(* Added for merlin *)
+
+let to_string_list p =
+  let rec aux acc = function
+  | Pident id -> Ident.name id :: acc
+  | Pdot (p, str, _) -> aux (str :: acc) p
+  | _ -> assert false
+  in
+  aux [] p
+
+module Path_tbl = Hashtbl.Make (T)
+
+module Nopos = struct
+  type nopos =
+    | Pident of Ident.t
+    | Pdot of t * string
+    | Papply of t * t
+
+  let view : t -> nopos = function
+    | Pident id -> Pident id
+    | Pdot (t, s, _) -> Pdot (t, s)
+    | Papply (p1, p2) -> Papply (p1, p2)
+end

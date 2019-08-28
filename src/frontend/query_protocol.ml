@@ -77,6 +77,7 @@ and item = {
     | `Class
     | `Method
   ];
+  outline_type : string option ;
   location : Location_aux.t ;
   children : outline ;
 }
@@ -84,6 +85,12 @@ and item = {
 type shape = {
   shape_loc : Location_aux.t;
   shape_sub : shape list;
+}
+
+type error_filter = {
+  lexing : bool;
+  parsing : bool;
+  typing : bool;
 }
 
 type is_tail_position = [`No | `Tail_position | `Tail_call]
@@ -149,7 +156,8 @@ type _ t =
     :  Msource.position
     -> shape list t
   | Errors(* *)
-    :  Location.error list t
+    :  error_filter
+    -> Location.error list t
   | Dump
     :  Std.json list
     -> Std.json t

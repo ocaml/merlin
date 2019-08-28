@@ -389,8 +389,8 @@ let current_unit = srefk ""
 
 (* Persistent structure descriptions *)
 
-type pers_typemap = (Path.t list Path_aux.Map.t
-                     * Path.t list Path_aux.Map.t) option
+type pers_typemap = (Path.t list Path.Map.t
+                     * Path.t list Path.Map.t) option
 
 type pers_struct = {
   ps_name: string;
@@ -502,8 +502,9 @@ let read_pers_struct check modname filename =
     List.fold_left (fun acc -> function Deprecated s -> Some s | _ -> acc) None
       flags
   in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let comps =
-    !components_of_module' ~deprecated empty Subst.identity
+    !components_of_module' ~deprecated empty id_subst
       (Pident(Ident.create_persistent name))
       (Mty_signature sign)
   in
@@ -511,7 +512,7 @@ let read_pers_struct check modname filename =
     | Cmi_cache_store (ps_typemap, ps_sig) -> ps_typemap, ps_sig
     | _ ->
       let ps_typemap = ref None in
-      let ps_sig = lazy (Subst.signature Subst.identity sign) in
+      let ps_sig = lazy (Subst.signature id_subst sign) in
       cmi_cache := Cmi_cache_store (ps_typemap, ps_sig);
       ps_typemap, ps_sig
   in
@@ -2536,3 +2537,7 @@ let check_state_consistency () =
     end
 
 let with_cmis f = f ()
+
+(* helper for merlin *)
+
+let add_merlin_extension_module id mty env = add_module id mty env
