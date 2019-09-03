@@ -228,15 +228,6 @@ let json_of_type_loc (loc,desc,tail) =
   ]
 
 let json_of_error (error : Location.error) =
-  let typ =
-    match error.source with
-    | Location.Lexer   -> "lexer"
-    | Location.Parser  -> "parser"
-    | Location.Typer   -> "typer"
-    | Location.Warning -> "warning"
-    | Location.Unknown -> "unknown"
-    | Location.Env     -> "env"
-  in
   let of_sub loc sub =
     let msg =
       Location.print_sub_msg Format.str_formatter sub;
@@ -248,6 +239,19 @@ let json_of_error (error : Location.error) =
   let msg =
     Location.print_main Format.str_formatter error;
     String.trim (Format.flush_str_formatter ())
+  in
+  let typ =
+    match error.source with
+    | Location.Lexer   -> "lexer"
+    | Location.Parser  -> "parser"
+    | Location.Typer   -> "typer"
+    | Location.Warning ->
+      if String.is_prefixed ~by:"Error" msg then
+        "typer" (* Handle warn-error (since 4.08) *)
+      else
+        "warning"
+    | Location.Unknown -> "unknown"
+    | Location.Env     -> "env"
   in
   let content = [
     "type"    , `String typ;
