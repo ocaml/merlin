@@ -10,6 +10,8 @@ and state =
   | Initialized of Protocol.Initialize.client_capabilities
   | Closed
 
+type yojson = Yojson.Safe.t
+let yojson_of_yojson d = d
 let {Logger. log} = Logger.for_section "lsp"
 
 let send rpc json =
@@ -41,7 +43,7 @@ module Headers = struct
 
   let has_content_length s =
     String.length s > content_length_len &&
-    String.equal (String.sub s 0 content_length_len) content_length
+    String.compare (String.sub s 0 content_length_len) content_length = 0
 
   let parse_content_length line =
     let v =
@@ -56,7 +58,7 @@ module Headers = struct
     | Done of t
 
   let parse_line headers line =
-    if String.equal line "\r\n"
+    if String.compare line "\r\n" = 0
     then Done headers
     else
       if has_content_length line
@@ -79,8 +81,100 @@ module Packet = struct
   type t = {
     id: int option [@default None];
     method_: string [@key "method"];
-    params: Yojson.Safe.json;
-  } [@@deriving yojson { strict = false }]
+    params: yojson;
+  }
+  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
+  
+let _ = fun (_ : t) -> ()
+let t_of_yojson =
+  (let _tp_loc = "src/lsp/rpc.ml.Packet.t" in
+   function
+   | `Assoc field_yojsons as yojson ->
+       let id_field = ref None
+       and method__field = ref None
+       and params_field = ref None
+       and duplicates = ref []
+       and extra = ref [] in
+       let rec iter =
+         function
+         | (field_name, _field_yojson)::tail ->
+             ((match field_name with
+               | "id" ->
+                   (match Ppx_yojson_conv_lib.(!) id_field with
+                    | None ->
+                        let fvalue =
+                          option_of_yojson int_of_yojson _field_yojson in
+                        id_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "method" ->
+                   (match Ppx_yojson_conv_lib.(!) method__field with
+                    | None ->
+                        let fvalue = string_of_yojson _field_yojson in
+                        method__field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "params" ->
+                   (match Ppx_yojson_conv_lib.(!) params_field with
+                    | None ->
+                        let fvalue = yojson_of_yojson _field_yojson in
+                        params_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | _ -> ());
+              iter tail)
+         | [] -> () in
+       (iter field_yojsons;
+        (match Ppx_yojson_conv_lib.(!) duplicates with
+         | _::_ ->
+             Ppx_yojson_conv_lib.Yojson_conv_error.record_duplicate_fields
+               _tp_loc (Ppx_yojson_conv_lib.(!) duplicates) yojson
+         | [] ->
+             (match Ppx_yojson_conv_lib.(!) extra with
+              | _::_ ->
+                  Ppx_yojson_conv_lib.Yojson_conv_error.record_extra_fields
+                    _tp_loc (Ppx_yojson_conv_lib.(!) extra) yojson
+              | [] ->
+                  (match ((Ppx_yojson_conv_lib.(!) id_field),
+                           (Ppx_yojson_conv_lib.(!) method__field),
+                           (Ppx_yojson_conv_lib.(!) params_field))
+                   with
+                   | (id_value, Some method__value, Some params_value) ->
+                       {
+                         id =
+                           ((match id_value with | None -> None | Some v -> v));
+                         method_ = method__value;
+                         params = params_value
+                       }
+                   | _ ->
+                       Ppx_yojson_conv_lib.Yojson_conv_error.record_undefined_elements
+                         _tp_loc yojson
+                         [((Ppx_yojson_conv_lib.poly_equal
+                              (Ppx_yojson_conv_lib.(!) method__field) None),
+                            "method_");
+                         ((Ppx_yojson_conv_lib.poly_equal
+                             (Ppx_yojson_conv_lib.(!) params_field) None),
+                           "params")]))))
+   | _ as yojson ->
+       Ppx_yojson_conv_lib.Yojson_conv_error.record_list_instead_atom _tp_loc
+         yojson : Ppx_yojson_conv_lib.Yojson.Safe.t -> t)
+let _ = t_of_yojson
+let yojson_of_t =
+  (function
+   | { id = v_id; method_ = v_method_; params = v_params } ->
+       let bnds : (string * Ppx_yojson_conv_lib.Yojson.Safe.t) list = [] in
+       let bnds =
+         let arg = yojson_of_yojson v_params in ("params", arg) :: bnds in
+       let bnds =
+         let arg = yojson_of_string v_method_ in ("method", arg) :: bnds in
+       let bnds =
+         let arg = yojson_of_option yojson_of_int v_id in ("id", arg) :: bnds in
+       `Assoc bnds : t -> Ppx_yojson_conv_lib.Yojson.Safe.t)
+let _ = yojson_of_t
+[@@@end]
 end
 
 let read rpc =
@@ -111,28 +205,303 @@ let read rpc =
       log ~title:"debug" "recv: %a" (fun () -> Yojson.Safe.pretty_to_string ~std:false) json;
       Ok json
     | exception Yojson.Json_error msg ->
-      errorf "error parsing json: %s" msg
+      Utils.Result.errorf "error parsing json: %s" msg
   in
 
-  read_content rpc >>= parse_json >>= Packet.of_yojson
+  read_content rpc >>= parse_json
+  >>= fun parsed -> match Packet.t_of_yojson parsed with
+  | r -> Ok r
+  | exception exn -> Error "Unexpected packet"
+
 
 module Response = struct
   type response = {
     id : int;
     jsonrpc: string;
-    result : Yojson.Safe.json;
-  } [@@deriving yojson]
+    result : yojson;
+  }
+  [@@deriving_inline yojson]
+  
+let _ = fun (_ : response) -> ()
+let response_of_yojson =
+  (let _tp_loc = "src/lsp/rpc.ml.Response.response" in
+   function
+   | `Assoc field_yojsons as yojson ->
+       let id_field = ref None
+       and jsonrpc_field = ref None
+       and result_field = ref None
+       and duplicates = ref []
+       and extra = ref [] in
+       let rec iter =
+         function
+         | (field_name, _field_yojson)::tail ->
+             ((match field_name with
+               | "id" ->
+                   (match Ppx_yojson_conv_lib.(!) id_field with
+                    | None ->
+                        let fvalue = int_of_yojson _field_yojson in
+                        id_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "jsonrpc" ->
+                   (match Ppx_yojson_conv_lib.(!) jsonrpc_field with
+                    | None ->
+                        let fvalue = string_of_yojson _field_yojson in
+                        jsonrpc_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "result" ->
+                   (match Ppx_yojson_conv_lib.(!) result_field with
+                    | None ->
+                        let fvalue = yojson_of_yojson _field_yojson in
+                        result_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | _ ->
+                   if
+                     Ppx_yojson_conv_lib.(!)
+                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
+                   then
+                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
+                   else ());
+              iter tail)
+         | [] -> () in
+       (iter field_yojsons;
+        (match Ppx_yojson_conv_lib.(!) duplicates with
+         | _::_ ->
+             Ppx_yojson_conv_lib.Yojson_conv_error.record_duplicate_fields
+               _tp_loc (Ppx_yojson_conv_lib.(!) duplicates) yojson
+         | [] ->
+             (match Ppx_yojson_conv_lib.(!) extra with
+              | _::_ ->
+                  Ppx_yojson_conv_lib.Yojson_conv_error.record_extra_fields
+                    _tp_loc (Ppx_yojson_conv_lib.(!) extra) yojson
+              | [] ->
+                  (match ((Ppx_yojson_conv_lib.(!) id_field),
+                           (Ppx_yojson_conv_lib.(!) jsonrpc_field),
+                           (Ppx_yojson_conv_lib.(!) result_field))
+                   with
+                   | (Some id_value, Some jsonrpc_value, Some result_value)
+                       ->
+                       {
+                         id = id_value;
+                         jsonrpc = jsonrpc_value;
+                         result = result_value
+                       }
+                   | _ ->
+                       Ppx_yojson_conv_lib.Yojson_conv_error.record_undefined_elements
+                         _tp_loc yojson
+                         [((Ppx_yojson_conv_lib.poly_equal
+                              (Ppx_yojson_conv_lib.(!) id_field) None), "id");
+                         ((Ppx_yojson_conv_lib.poly_equal
+                             (Ppx_yojson_conv_lib.(!) jsonrpc_field) None),
+                           "jsonrpc");
+                         ((Ppx_yojson_conv_lib.poly_equal
+                             (Ppx_yojson_conv_lib.(!) result_field) None),
+                           "result")]))))
+   | _ as yojson ->
+       Ppx_yojson_conv_lib.Yojson_conv_error.record_list_instead_atom _tp_loc
+         yojson : Ppx_yojson_conv_lib.Yojson.Safe.t -> response)
+let _ = response_of_yojson
+let yojson_of_response =
+  (function
+   | { id = v_id; jsonrpc = v_jsonrpc; result = v_result } ->
+       let bnds : (string * Ppx_yojson_conv_lib.Yojson.Safe.t) list = [] in
+       let bnds =
+         let arg = yojson_of_yojson v_result in ("result", arg) :: bnds in
+       let bnds =
+         let arg = yojson_of_string v_jsonrpc in ("jsonrpc", arg) :: bnds in
+       let bnds = let arg = yojson_of_int v_id in ("id", arg) :: bnds in
+       `Assoc bnds : response -> Ppx_yojson_conv_lib.Yojson.Safe.t)
+let _ = yojson_of_response
+[@@@end]
 
   type response_error = {
     id : int;
     jsonrpc: string;
     error : error;
-  } [@@deriving yojson]
+  }
 
   and error = {
     code : int;
     message : string;
   }
+  [@@deriving_inline yojson]
+  
+let _ = fun (_ : response_error) -> ()
+let _ = fun (_ : error) -> ()
+let rec response_error_of_yojson =
+  (let _tp_loc = "src/lsp/rpc.ml.Response.response_error" in
+   function
+   | `Assoc field_yojsons as yojson ->
+       let id_field = ref None
+       and jsonrpc_field = ref None
+       and error_field = ref None
+       and duplicates = ref []
+       and extra = ref [] in
+       let rec iter =
+         function
+         | (field_name, _field_yojson)::tail ->
+             ((match field_name with
+               | "id" ->
+                   (match Ppx_yojson_conv_lib.(!) id_field with
+                    | None ->
+                        let fvalue = int_of_yojson _field_yojson in
+                        id_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "jsonrpc" ->
+                   (match Ppx_yojson_conv_lib.(!) jsonrpc_field with
+                    | None ->
+                        let fvalue = string_of_yojson _field_yojson in
+                        jsonrpc_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "error" ->
+                   (match Ppx_yojson_conv_lib.(!) error_field with
+                    | None ->
+                        let fvalue = error_of_yojson _field_yojson in
+                        error_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | _ ->
+                   if
+                     Ppx_yojson_conv_lib.(!)
+                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
+                   then
+                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
+                   else ());
+              iter tail)
+         | [] -> () in
+       (iter field_yojsons;
+        (match Ppx_yojson_conv_lib.(!) duplicates with
+         | _::_ ->
+             Ppx_yojson_conv_lib.Yojson_conv_error.record_duplicate_fields
+               _tp_loc (Ppx_yojson_conv_lib.(!) duplicates) yojson
+         | [] ->
+             (match Ppx_yojson_conv_lib.(!) extra with
+              | _::_ ->
+                  Ppx_yojson_conv_lib.Yojson_conv_error.record_extra_fields
+                    _tp_loc (Ppx_yojson_conv_lib.(!) extra) yojson
+              | [] ->
+                  (match ((Ppx_yojson_conv_lib.(!) id_field),
+                           (Ppx_yojson_conv_lib.(!) jsonrpc_field),
+                           (Ppx_yojson_conv_lib.(!) error_field))
+                   with
+                   | (Some id_value, Some jsonrpc_value, Some error_value) ->
+                       {
+                         id = id_value;
+                         jsonrpc = jsonrpc_value;
+                         error = error_value
+                       }
+                   | _ ->
+                       Ppx_yojson_conv_lib.Yojson_conv_error.record_undefined_elements
+                         _tp_loc yojson
+                         [((Ppx_yojson_conv_lib.poly_equal
+                              (Ppx_yojson_conv_lib.(!) id_field) None), "id");
+                         ((Ppx_yojson_conv_lib.poly_equal
+                             (Ppx_yojson_conv_lib.(!) jsonrpc_field) None),
+                           "jsonrpc");
+                         ((Ppx_yojson_conv_lib.poly_equal
+                             (Ppx_yojson_conv_lib.(!) error_field) None),
+                           "error")]))))
+   | _ as yojson ->
+       Ppx_yojson_conv_lib.Yojson_conv_error.record_list_instead_atom _tp_loc
+         yojson : Ppx_yojson_conv_lib.Yojson.Safe.t -> response_error)
+and error_of_yojson =
+  (let _tp_loc = "src/lsp/rpc.ml.Response.error" in
+   function
+   | `Assoc field_yojsons as yojson ->
+       let code_field = ref None
+       and message_field = ref None
+       and duplicates = ref []
+       and extra = ref [] in
+       let rec iter =
+         function
+         | (field_name, _field_yojson)::tail ->
+             ((match field_name with
+               | "code" ->
+                   (match Ppx_yojson_conv_lib.(!) code_field with
+                    | None ->
+                        let fvalue = int_of_yojson _field_yojson in
+                        code_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | "message" ->
+                   (match Ppx_yojson_conv_lib.(!) message_field with
+                    | None ->
+                        let fvalue = string_of_yojson _field_yojson in
+                        message_field := (Some fvalue)
+                    | Some _ ->
+                        duplicates := (field_name ::
+                          (Ppx_yojson_conv_lib.(!) duplicates)))
+               | _ ->
+                   if
+                     Ppx_yojson_conv_lib.(!)
+                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
+                   then
+                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
+                   else ());
+              iter tail)
+         | [] -> () in
+       (iter field_yojsons;
+        (match Ppx_yojson_conv_lib.(!) duplicates with
+         | _::_ ->
+             Ppx_yojson_conv_lib.Yojson_conv_error.record_duplicate_fields
+               _tp_loc (Ppx_yojson_conv_lib.(!) duplicates) yojson
+         | [] ->
+             (match Ppx_yojson_conv_lib.(!) extra with
+              | _::_ ->
+                  Ppx_yojson_conv_lib.Yojson_conv_error.record_extra_fields
+                    _tp_loc (Ppx_yojson_conv_lib.(!) extra) yojson
+              | [] ->
+                  (match ((Ppx_yojson_conv_lib.(!) code_field),
+                           (Ppx_yojson_conv_lib.(!) message_field))
+                   with
+                   | (Some code_value, Some message_value) ->
+                       { code = code_value; message = message_value }
+                   | _ ->
+                       Ppx_yojson_conv_lib.Yojson_conv_error.record_undefined_elements
+                         _tp_loc yojson
+                         [((Ppx_yojson_conv_lib.poly_equal
+                              (Ppx_yojson_conv_lib.(!) code_field) None),
+                            "code");
+                         ((Ppx_yojson_conv_lib.poly_equal
+                             (Ppx_yojson_conv_lib.(!) message_field) None),
+                           "message")]))))
+   | _ as yojson ->
+       Ppx_yojson_conv_lib.Yojson_conv_error.record_list_instead_atom _tp_loc
+         yojson : Ppx_yojson_conv_lib.Yojson.Safe.t -> error)
+let _ = response_error_of_yojson
+and _ = error_of_yojson
+let rec yojson_of_response_error =
+  (function
+   | { id = v_id; jsonrpc = v_jsonrpc; error = v_error } ->
+       let bnds : (string * Ppx_yojson_conv_lib.Yojson.Safe.t) list = [] in
+       let bnds = let arg = yojson_of_error v_error in ("error", arg) :: bnds in
+       let bnds =
+         let arg = yojson_of_string v_jsonrpc in ("jsonrpc", arg) :: bnds in
+       let bnds = let arg = yojson_of_int v_id in ("id", arg) :: bnds in
+       `Assoc bnds : response_error -> Ppx_yojson_conv_lib.Yojson.Safe.t)
+and yojson_of_error =
+  (function
+   | { code = v_code; message = v_message } ->
+       let bnds : (string * Ppx_yojson_conv_lib.Yojson.Safe.t) list = [] in
+       let bnds =
+         let arg = yojson_of_string v_message in ("message", arg) :: bnds in
+       let bnds = let arg = yojson_of_int v_code in ("code", arg) :: bnds in
+       `Assoc bnds : error -> Ppx_yojson_conv_lib.Yojson.Safe.t)
+let _ = yojson_of_response_error
+and _ = yojson_of_error
+[@@@end]
+
 
   type t =
     | Response of response
@@ -145,8 +514,8 @@ module Response = struct
     Response_error {id; error = {code; message;}; jsonrpc="2.0"}
 
   let to_yojson = function
-    | Response v -> response_to_yojson v
-    | Response_error v -> response_error_to_yojson v
+    | Response v -> yojson_of_response v
+    | Response_error v -> yojson_of_response_error v
 end
 
 let send_response rpc (response : Response.t) =
@@ -162,14 +531,14 @@ module Server_notification = struct
   let method_ = function
     | PublishDiagnostics _ -> "textDocument/publishDiagnostics"
 
-  let params_to_yojson = function
-    | PublishDiagnostics params -> PublishDiagnostics.params_to_yojson params
+  let yojson_of_params = function
+    | PublishDiagnostics params -> PublishDiagnostics.yojson_of_params params
 
 end
 
 let send_notification rpc notif =
   let method_ = Server_notification.method_ notif in
-  let params = Server_notification.params_to_yojson notif in
+  let params = Server_notification.yojson_of_params notif in
   let response = `Assoc [("jsonrpc", (`String "2.0")); ("method", (`String method_)); ("params", params)] in
   send rpc response
 
@@ -181,7 +550,7 @@ module Client_notification = struct
     | TextDocumentDidChange of DidChange.params
     | Initialized
     | Exit
-    | UnknownNotification of string * Yojson.Safe.json
+    | UnknownNotification of string * Yojson.Safe.t
 end
 
 module Request = struct
@@ -200,43 +569,43 @@ module Request = struct
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | TextDocumentReferences : References.params -> References.result t
     | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
-    | UnknownRequest : string * Yojson.Safe.json -> unit t
+    | UnknownRequest : string * Yojson.Safe.t -> unit t
 
   let request_result_to_response (type a) id (req : a t) (result : a) =
     match req, result with
     | Shutdown, _resp -> None
     | TextDocumentHover _, result ->
-      let json = Hover.result_to_yojson result in
+      let json = Hover.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentDefinition _, result ->
-      let json = Definition.result_to_yojson result in
+      let json = Definition.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentTypeDefinition _, result ->
-      let json = TypeDefinition.result_to_yojson result in
+      let json = TypeDefinition.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentCompletion _, result ->
-      let json = Completion.result_to_yojson result in
+      let json = Completion.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentCodeLens _, result ->
-      let json = CodeLens.result_to_yojson result in
+      let json = CodeLens.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentRename _, result ->
-      let json = Rename.result_to_yojson result in
+      let json = Rename.yojson_of_result result in
       Some (Response.make id json)
     | DocumentSymbol _, result ->
-      let json = TextDocumentDocumentSymbol.result_to_yojson result in
+      let json = TextDocumentDocumentSymbol.yojson_of_result result in
       Some (Response.make id json)
     | DebugEcho _, result ->
-      let json = DebugEcho.result_to_yojson result in
+      let json = DebugEcho.yojson_of_result result in
       Some (Response.make id json)
     | DebugTextDocumentGet _, result ->
-      let json = DebugTextDocumentGet.result_to_yojson result in
+      let json = DebugTextDocumentGet.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentReferences _, result ->
-      let json = References.result_to_yojson result in
+      let json = References.yojson_of_result result in
       Some (Response.make id json)
     | TextDocumentHighlight _, result ->
-      let json = TextDocumentHighlight.result_to_yojson result in
+      let json = TextDocumentHighlight.yojson_of_result result in
       Some (Response.make id json)
     | UnknownRequest _, _resp -> None
 end
@@ -250,47 +619,46 @@ module Message = struct
     | Client_notification : Client_notification.t -> t
 
   let parse packet =
-    let open Utils.Result.Infix in
     match packet.Packet.id with
     | Some id ->
       begin match packet.method_ with
       | "initialize" ->
-        Protocol.Initialize.params_of_yojson packet.params >>= fun params ->
+        let params = Protocol.Initialize.params_of_yojson packet.params in
         Ok (Initialize (id, params))
       | "shutdown" ->
         Ok (Request (id, Shutdown))
       | "textDocument/completion" ->
-        Completion.params_of_yojson packet.params >>= fun params ->
+        let params = Completion.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentCompletion params))
       | "textDocument/documentSymbol" ->
-        TextDocumentDocumentSymbol.params_of_yojson packet.params >>= fun params ->
+        let params = TextDocumentDocumentSymbol.params_of_yojson packet.params in
         Ok (Request (id, DocumentSymbol params))
       | "textDocument/hover" ->
-        Hover.params_of_yojson packet.params >>= fun params ->
+        let params = Hover.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentHover params))
       | "textDocument/definition" ->
-        Definition.params_of_yojson packet.params >>= fun params ->
+        let params = Definition.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentDefinition params))
       | "textDocument/typeDefinition" ->
-        TypeDefinition.params_of_yojson packet.params >>= fun params ->
+        let params = TypeDefinition.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentTypeDefinition params))
       | "textDocument/references" ->
-        References.params_of_yojson packet.params >>= fun params ->
+        let params = References.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentReferences params))
       | "textDocument/codeLens" ->
-        CodeLens.params_of_yojson packet.params >>= fun params ->
+        let params = CodeLens.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentCodeLens params))
       | "textDocument/rename" ->
-        Rename.params_of_yojson packet.params >>= fun params ->
+        let params = Rename.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentRename params))
       | "textDocument/documentHighlight" ->
-        TextDocumentHighlight.params_of_yojson packet.params >>= fun params ->
+        let params = TextDocumentHighlight.params_of_yojson packet.params in
         Ok (Request (id, TextDocumentHighlight params))
       | "debug/echo" ->
-        DebugEcho.params_of_yojson packet.params >>= fun params ->
+        let params = DebugEcho.params_of_yojson packet.params in
         Ok (Request (id, DebugEcho params))
       | "debug/textDocument/get" ->
-        DebugTextDocumentGet.params_of_yojson packet.params >>= fun params ->
+        let params = DebugTextDocumentGet.params_of_yojson packet.params in
         Ok (Request (id, DebugTextDocumentGet params))
       | name ->
         Ok (Request (id, UnknownRequest (name, packet.params)))
@@ -298,10 +666,10 @@ module Message = struct
     | None ->
       begin match packet.method_ with
       | "textDocument/didOpen" ->
-        DidOpen.params_of_yojson packet.params >>= fun params ->
+        let params = DidOpen.params_of_yojson packet.params in
         Ok (Client_notification (TextDocumentDidOpen params))
       | "textDocument/didChange" ->
-        DidChange.params_of_yojson packet.params >>= fun params ->
+        let params = DidChange.params_of_yojson packet.params in
         Ok (Client_notification (TextDocumentDidChange params))
       | "exit" ->
         Ok (Client_notification Exit)
@@ -339,8 +707,7 @@ let start init_state handler ic oc =
   let open Utils.Result.Infix in
 
   let read_message rpc =
-    read rpc >>= fun packet ->
-    Message.parse packet
+    read rpc >>= fun packet -> Message.parse packet
   in
 
   let handle_message prev_state f =
@@ -364,7 +731,7 @@ let start init_state handler ic oc =
           read_message rpc >>= function
           | Message.Initialize (id, params) ->
             handler.on_initialize rpc state params >>= fun (next_state, result) ->
-            let json = Protocol.Initialize.result_to_yojson result in
+            let json = Protocol.Initialize.yojson_of_result result in
             let response = Response.make id json in
             rpc.state <- Initialized params.client_capabilities;
             send_response rpc response;

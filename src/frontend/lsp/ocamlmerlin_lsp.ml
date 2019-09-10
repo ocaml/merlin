@@ -1,3 +1,4 @@
+open Result
 let {Logger. log} = Logger.for_section "ocamlmerlin-lsp"
 
 let initializeInfo: Lsp.Protocol.Initialize.result = {
@@ -255,7 +256,7 @@ let on_request :
       in
       let contents = format_contents ~as_markdown ~typ ~doc in
       let range = Some {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+        Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
         end_ = position_of_lexical_position loc.loc_end;
       } in
       let resp = {
@@ -269,10 +270,10 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentReferences {textDocument = {uri;}; position; context = _} ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
-    let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
+    let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
     let lsp_locs = List.map (fun loc ->
       let range = {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+        Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
         end_ = position_of_lexical_position loc.loc_end;
       } in
       (* using original uri because merlin is looking only in local file *)
@@ -316,10 +317,10 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentHighlight {textDocument = {uri;}; position; } ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
-    let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
+    let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
     let lsp_locs = List.map (fun loc ->
       let range = {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+        Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
         end_ = position_of_lexical_position loc.loc_end;
       } in
       (* using the default kind as we are lacking info
@@ -646,12 +647,12 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentRename { textDocument = { uri }; position; newName } ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
-    let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
+    let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
     let version = Document.version doc in
     let edits = List.map (fun loc ->
       let range =
         {
-          Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
+          Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
           end_ = position_of_lexical_position loc.loc_end;
         }
       in
