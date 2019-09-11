@@ -577,7 +577,7 @@ return (LOC1 . LOC2)."
     ;; These are buffer-local variables, so reset them in all buffers.
     (dolist (buf (buffer-list))
       (with-current-buffer buf
-        (kill-local-variable 'merlin-buffer-configurationn)
+        (kill-local-variable 'merlin-buffer-configuration)
         (kill-local-variable 'merlin-erroneous-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;
