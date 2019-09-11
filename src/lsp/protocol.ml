@@ -7,6 +7,8 @@
  *
  *)
 
+let yojson_error = Ppx_yojson_conv_lib.Yojson_conv.of_yojson_error
+
 type documentUri = Uri.t
 [@@deriving_inline yojson]
 let _ = fun (_ : documentUri) -> ()
@@ -285,7 +287,7 @@ module MarkupKind = struct
     | `String "plaintext" -> Plaintext
     | `String "markdown" -> Markdown
     | `String _ -> Plaintext
-    | _ -> failwith "TODO: invalid contentFormat"
+    | node -> yojson_error "invalid contentFormat" node
 end
 
 module MarkupContent = struct
@@ -1234,7 +1236,7 @@ module DocumentHighlight = struct
     | `Int 1 -> Text
     | `Int 2 -> Read
     | `Int 3 -> Write
-    | _ -> failwith "TODO: expected int between 1 and 3"
+    | node -> yojson_error "kind expected to be int int between 1 and 3" node
 
   type t = {
     range: range;
@@ -1633,7 +1635,7 @@ module PublishDiagnostics = struct
     | `Int v -> (IntCode v)
     | `String v -> (StringCode v)
     | `Null -> NoCode
-    | _ -> failwith "TODO: invalid diagnostic.code"
+    | node -> yojson_error "invalid diagnostic.code" node
 
   type diagnosticSeverity =
     | Error (* 1 *)
@@ -1652,7 +1654,7 @@ module PublishDiagnostics = struct
     | `Int 2 -> Warning
     | `Int 3 -> Information
     | `Int 4 -> Hint
-    | _ -> failwith "TODO: expected int"
+    | node -> yojson_error "diagnostic.severity expected to be int" node
 
   type params = publishDiagnosticsParams
 
@@ -2071,7 +2073,7 @@ module Completion = struct
     | `Int 1 -> Invoked
     | `Int 2 -> TriggerCharacter
     | `Int 3 -> TriggerForIncompleteCompletions
-    | _ -> failwith "TODO: invalid completion.triggerKind"
+    | _ -> failwith "invalid completion.triggerKind"
 
   type completionItemKind =
     | Text (* 1 *)
@@ -2166,9 +2168,11 @@ module Completion = struct
     | `Int v ->
       begin match completionItemKind_of_int_opt v with
       | Some v -> v
-      | None -> failwith "TODO: invalid completion.kind"
+      | None -> yojson_error "completion.kind expected to be between 1 and 25"
+                  (`Int v)
       end
-    | _ -> failwith "TODO: invalid completion.kind: expected an integer"
+    | node -> yojson_error "completion.kind expected to be int between 1 and 25"
+                node
 
     (** Keep this in sync with `int_of_completionItemKind`. *)
   type insertTextFormat =
@@ -2195,9 +2199,9 @@ module Completion = struct
     | `Int v ->
       begin match insertFormat_of_int_opt v with
       | Some v -> v
-      | None -> failwith "TODO: invalid completion.kind"
+      | None -> yojson_error "insertTextFormat expected to be 1 or 2" (`Int v)
       end
-    | _ -> failwith "TODO: invalid completion.kind: expected an integer"
+    | node -> yojson_error "insertTextFormat expected to be 1 or 2" node
 
   type params = completionParams
 
@@ -2920,7 +2924,7 @@ module Initialize = struct
     | `String "off" -> Off
     | `String "messages" -> Messages
     | `String "verbose" -> Verbose
-    | _ -> failwith "TODO: invalid trace"
+    | node -> yojson_error "invalid trace" node
 
   type textDocumentSyncKind =
     | NoSync (* 0 *)  (* docs should not be synced at all. Wire "None" *)
@@ -2936,7 +2940,7 @@ module Initialize = struct
     | `Int 0 -> NoSync
     | `Int 1 -> FullSync
     | `Int 2 -> IncrementalSync
-    | _ -> failwith "TODO: invalid textDocumentSyncKind"
+    | node -> yojson_error "invalid textDocumentSyncKind" node
 
   (* synchronization capabilities say what messages the client is capable
    * of sending, should be be so asked by the server.
@@ -5673,7 +5677,7 @@ module SymbolKind = struct
     | `Int 24 -> Event
     | `Int 25 -> Operator
     | `Int 26 -> TypeParameter
-    | _ -> failwith "TODO: invalid SymbolKind"
+    | node -> yojson_error "invalid SymbolKind" node
 
 end
 

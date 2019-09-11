@@ -619,58 +619,65 @@ module Message = struct
     | Client_notification : Client_notification.t -> t
 
   let parse packet =
+    let open Utils.Result.Infix in
+    let parse_yojson f v =
+      match f v with
+      | exception Ppx_yojson_conv_lib.Yojson_conv.Of_yojson_error (Failure msg, _) ->
+        Error msg
+      | r -> Ok r
+    in
     match packet.Packet.id with
     | Some id ->
       begin match packet.method_ with
       | "initialize" ->
-        let params = Protocol.Initialize.params_of_yojson packet.params in
-        Ok (Initialize (id, params))
+        parse_yojson Protocol.Initialize.params_of_yojson packet.params
+        >>| fun params -> Initialize (id, params)
       | "shutdown" ->
         Ok (Request (id, Shutdown))
       | "textDocument/completion" ->
-        let params = Completion.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentCompletion params))
+        parse_yojson Completion.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentCompletion params)
       | "textDocument/documentSymbol" ->
-        let params = TextDocumentDocumentSymbol.params_of_yojson packet.params in
-        Ok (Request (id, DocumentSymbol params))
+        parse_yojson TextDocumentDocumentSymbol.params_of_yojson packet.params
+        >>| fun params -> Request (id, DocumentSymbol params)
       | "textDocument/hover" ->
-        let params = Hover.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentHover params))
+        parse_yojson Hover.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentHover params)
       | "textDocument/definition" ->
-        let params = Definition.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentDefinition params))
+        parse_yojson Definition.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentDefinition params)
       | "textDocument/typeDefinition" ->
-        let params = TypeDefinition.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentTypeDefinition params))
+        parse_yojson TypeDefinition.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentTypeDefinition params)
       | "textDocument/references" ->
-        let params = References.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentReferences params))
+        parse_yojson References.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentReferences params)
       | "textDocument/codeLens" ->
-        let params = CodeLens.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentCodeLens params))
+        parse_yojson CodeLens.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentCodeLens params)
       | "textDocument/rename" ->
-        let params = Rename.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentRename params))
+        parse_yojson Rename.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentRename params)
       | "textDocument/documentHighlight" ->
-        let params = TextDocumentHighlight.params_of_yojson packet.params in
-        Ok (Request (id, TextDocumentHighlight params))
+        parse_yojson TextDocumentHighlight.params_of_yojson packet.params
+        >>| fun params -> Request (id, TextDocumentHighlight params)
       | "debug/echo" ->
-        let params = DebugEcho.params_of_yojson packet.params in
-        Ok (Request (id, DebugEcho params))
+        parse_yojson DebugEcho.params_of_yojson packet.params
+        >>| fun params -> Request (id, DebugEcho params)
       | "debug/textDocument/get" ->
-        let params = DebugTextDocumentGet.params_of_yojson packet.params in
-        Ok (Request (id, DebugTextDocumentGet params))
+        parse_yojson DebugTextDocumentGet.params_of_yojson packet.params
+        >>| fun params -> Request (id, DebugTextDocumentGet params)
       | name ->
         Ok (Request (id, UnknownRequest (name, packet.params)))
       end
     | None ->
       begin match packet.method_ with
       | "textDocument/didOpen" ->
-        let params = DidOpen.params_of_yojson packet.params in
-        Ok (Client_notification (TextDocumentDidOpen params))
+        parse_yojson DidOpen.params_of_yojson packet.params
+        >>| fun params -> Client_notification (TextDocumentDidOpen params)
       | "textDocument/didChange" ->
-        let params = DidChange.params_of_yojson packet.params in
-        Ok (Client_notification (TextDocumentDidChange params))
+        parse_yojson DidChange.params_of_yojson packet.params
+        >>| fun params -> Client_notification (TextDocumentDidChange params)
       | "exit" ->
         Ok (Client_notification Exit)
       | "initialized" ->
