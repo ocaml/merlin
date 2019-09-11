@@ -8,3 +8,8 @@
         (merlin-imenu.el as emacs/site-lisp/merlin-imenu.el)
         (merlin-xref.el as emacs/site-lisp/merlin-xref.el)
         (merlin.el as emacs/site-lisp/merlin.el)))
+
+(rule
+ (targets merlin.elc)
+ (action (run
+   %{bin:emacs} --batch --no-init-file -f batch-byte-compile %{dep:merlin.el})))
