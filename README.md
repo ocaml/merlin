@@ -34,6 +34,23 @@ Note: if you want to work on merlin, you'll want to avoid the `-p merlin`, to
 build in dev mode, with some extra warnings enabled. In that case you'll also
 need an extra dependency: menhir.
 
+To compile the LSP support you'd need to run the following:
+
+```shell
+dune build -p merlin-lsp
+```
+
+If you want to work on merlin-lsp, make sure to manually install the
+additional dependency as following:
+
+```shell
+opam repo add janestreet-bleeding https://ocaml.janestreet.com/opam-repository
+opam install ppx_yojson_conv
+```
+
+This first step is temporary and won't be needed once `ppx_yojson_conv@0.13` and
+`ppx_yojson_conv_lib@0.13` are released to OPAM.
+
 Installation
 ------------
 
