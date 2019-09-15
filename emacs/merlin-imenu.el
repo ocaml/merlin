@@ -1,7 +1,7 @@
 ;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
 ;; Licensed under the MIT license.
 
-;; Author: Ta Quang Trung
+;; Author: tddsg (Ta Quang Trung)
 ;; Version: 0.3
 ;; Release log:
 ;;   - v0.1: July 2016
@@ -50,7 +50,6 @@
 
 (defun merlin-imenu-parse-outline-item (prefix item)
   "Parse one item of the outline tree."
-  ;; (message "Item: %s" item)
   (let* ((line (cdr (assoc 'line (assoc 'start item))))
          (col (cdr (assoc 'col (assoc 'start item))))
          (name (cdr (assoc 'name item)))
@@ -67,8 +66,7 @@
           ((string= kind "Exn")
            (setq exception-list (cons marker exception-list))))
     (if (and (listp sub-trees) (not (null sub-trees)))
-        (merlin-imenu-parse-outline-tree (concat prefix entry ".")
-                                         sub-trees))))
+        (merlin-imenu-parse-outline-tree (concat prefix entry ".") sub-trees))))
 
 (defun merlin-imenu-parse-outline-tree (prefix outline)
   "Parse outline tree."
