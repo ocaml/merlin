@@ -75,7 +75,6 @@
 
 (defun merlin-imenu-create-index ()
   "Create data for imenu using the merlin outline feature."
-  (interactive)
   ;; Reset local vars
   (setq value-list nil
         type-list nil
