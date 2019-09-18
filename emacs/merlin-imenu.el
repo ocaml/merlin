@@ -97,10 +97,6 @@
   (setq imenu-create-index-function 'merlin-imenu-create-index)
   (imenu--cleanup)
   (setq imenu--index-alist nil)
-  ;; locally extend threshold for imenu-max-item-length
-  (make-local-variable 'imenu-max-item-length)
-  (setq imenu-max-item-length 300)
-  ;; announcement
   (message "Merlin: merlin-imenu is selected, rescanning buffer..."))
 
 ;; enable Merlin to use the default tuareg-imenu module
