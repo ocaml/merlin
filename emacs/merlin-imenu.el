@@ -88,7 +88,7 @@
     (when type-list (push (cons "Type" type-list) index))
     index))
 
-;; enable Merlin to use the merlin-imenu module
+;;;###autoload
 (defun merlin-use-merlin-imenu ()
   "Merlin: use the custom imenu feature from Merlin"
   (interactive)
