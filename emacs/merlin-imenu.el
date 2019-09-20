@@ -16,9 +16,9 @@
 (require 'merlin)
 
 ;; lists of different outline items
-(defvar-local value-list nil)
-(defvar-local type-list nil)
-(defvar-local exception-list nil)
+(defvar-local merlin-imenu--value-list nil)
+(defvar-local merlin-imenu--type-list nil)
+(defvar-local merlin-imenu--exception-list nil)
 
 (defun merlin-imenu-compute-position (line col)
   "Get location of the item."
@@ -56,11 +56,11 @@
            (position (merlin-imenu-compute-position line col))
            (marker (cons entry (set-marker (make-marker) position))))
       (cond ((string= kind "Value")
-             (setq value-list (cons marker value-list)))
+             (setq merlin-imenu--value-list (cons marker merlin-imenu--value-list)))
             ((string= kind "Type")
-             (setq type-list (cons marker type-list)))
+             (setq merlin-imenu--type-list (cons marker merlin-imenu--type-list)))
             ((string= kind "Exn")
-             (setq exception-list (cons marker exception-list))))
+             (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list))))
       (when sub-trees
         (merlin-imenu-parse-outline (concat prefix entry ".") sub-trees)))))
 
@@ -68,15 +68,18 @@
   "Create data for imenu using the merlin outline feature."
   (interactive)
   ;; Reset local vars
-  (setq value-list nil
-        type-list nil
-        exception-list nil)
+  (setq merlin-imenu--value-list nil
+        merlin-imenu--type-list nil
+        merlin-imenu--exception-list nil)
   ;; Read outline tree
   (merlin-imenu-parse-outline "" (merlin/call "outline"))
   (let ((index nil))
-    (when value-list (push (cons "Value" value-list) index))
-    (when exception-list (push (cons "Exception" exception-list) index))
-    (when type-list (push (cons "Type" type-list) index))
+    (when merlin-imenu--value-list
+      (push (cons "Value" merlin-imenu--value-list) index))
+    (when merlin-imenu--exception-list
+      (push (cons "Exception" merlin-imenu--exception-list) index))
+    (when merlin-imenu--type-list
+      (push (cons "Type" merlin-imenu--type-list) index))
     index))
 
 ;; enable Merlin to use the merlin-imenu module
