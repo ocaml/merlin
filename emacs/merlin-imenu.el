@@ -11,7 +11,6 @@
 ;; URL:
 
 (require 'imenu)
-(require 'tuareg)
 (require 'subr-x)
 (require 'merlin)
 
@@ -76,7 +75,6 @@
 
 (defun merlin-imenu-create-index ()
   "Create data for imenu using the merlin outline feature."
-  (interactive)
   ;; Reset local vars
   (setq value-list nil
         type-list nil
@@ -89,25 +87,14 @@
     (when type-list (push (cons "Type" type-list) index))
     index))
 
-;; enable Merlin to use the merlin-imenu module
+;;;###autoload
 (defun merlin-use-merlin-imenu ()
   "Merlin: use the custom imenu feature from Merlin"
   (interactive)
   ;; change the index function and force a rescan of imenu-index
   (setq imenu-create-index-function 'merlin-imenu-create-index)
   (imenu--cleanup)
-  (setq imenu--index-alist nil)
-  (message "Merlin: merlin-imenu is selected, rescanning buffer..."))
-
-;; enable Merlin to use the default tuareg-imenu module
-(defun merlin-use-tuareg-imenu ()
-  "Merlin: use the default imenu feature from Tuareg"
-  (interactive)
-  ;; change the index function and force a rescan of imenu-index
-  (setq imenu-create-index-function 'tuareg-imenu-create-index)
-  (imenu--cleanup)
-  (setq imenu--index-alist nil)
-  (message "Merlin: tuareg-imenu is selected, rescanning buffer..."))
+  (setq imenu--index-alist nil))
 
 (provide 'merlin-imenu)
 ;;; merlin-imenu.el ends here
