@@ -94,5 +94,5 @@ type request = Request : Context.t * 'a command -> request
 type response =
   | Return    : 'a command * 'a -> response
   | Failure   : string -> response
-  | Error     : json -> response
+  | Error     : Json.t -> response
   | Exception : exn -> response
