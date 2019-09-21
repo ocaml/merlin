@@ -546,7 +546,7 @@ return (LOC1 . LOC2)."
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
   (let* ((binary (merlin-command))
-         (result (merlin--call-merlin binary command args)))
+         (result (merlin--call-merlin command args)))
     (condition-case err
         (setq result (car (read-from-string result)))
       (error
