@@ -34,5 +34,7 @@ env:
     TESTS=false
   - OCAML_VERSION=4.08
     PACKAGE=merlin
+  - OCAML_VERSION=4.09
+    PACKAGE=merlin
 os:
   - linux
