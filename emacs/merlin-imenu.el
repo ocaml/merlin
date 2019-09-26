@@ -14,14 +14,10 @@
 (require 'subr-x)
 (require 'merlin)
 
-;;; enable depth and size threshold for OCaml modules with big size
-(setq max-lisp-eval-depth 10000)
-(setq max-specpdl-size 10000)
-
 ;; lists of different outline items
-(defvar-local value-list nil)
-(defvar-local type-list nil)
-(defvar-local exception-list nil)
+(defvar-local merlin-imenu--value-list nil)
+(defvar-local merlin-imenu--type-list nil)
+(defvar-local merlin-imenu--exception-list nil)
 
 (defun merlin-imenu-compute-position (line col)
   "Get location of the item."
@@ -47,44 +43,41 @@
          (type (propertize type 'face 'font-lock-doc-face)))
     (if (string= type "null") name (concat name " : " type))))
 
-(defun merlin-imenu-parse-outline-item (prefix item)
-  "Parse one item of the outline tree."
-  (let* ((line (cdr (assoc 'line (assoc 'start item))))
-         (col (cdr (assoc 'col (assoc 'start item))))
-         (name (cdr (assoc 'name item)))
-         (kind (cdr (assoc 'kind item)))
-         (type (cdr (assoc 'type item)))
-         (sub-trees (cdr (assoc 'children item)))
-         (entry (merlin-imenu-create-entry prefix name type kind line col))
-         (position (merlin-imenu-compute-position line col))
-         (marker (cons entry (set-marker (make-marker) position))))
-    (cond ((string= kind "Value")
-           (setq value-list (cons marker value-list)))
-          ((string= kind "Type")
-           (setq type-list (cons marker type-list)))
-          ((string= kind "Exn")
-           (setq exception-list (cons marker exception-list))))
-    (if (and (listp sub-trees) (not (null sub-trees)))
-        (merlin-imenu-parse-outline-tree (concat prefix entry ".") sub-trees))))
-
-(defun merlin-imenu-parse-outline-tree (prefix outline)
-  "Parse outline tree."
-  (when (not (null outline))
-    (merlin-imenu-parse-outline-item prefix (car outline))
-    (merlin-imenu-parse-outline-tree prefix (cdr outline))))
+(defun merlin-imenu-parse-outline (prefix outline)
+  (dolist (item outline)
+    (let* ((line (cdr (assoc 'line (assoc 'start item))))
+           (col (cdr (assoc 'col (assoc 'start item))))
+           (name (cdr (assoc 'name item)))
+           (kind (cdr (assoc 'kind item)))
+           (type (cdr (assoc 'type item)))
+           (sub-trees (cdr (assoc 'children item)))
+           (entry (merlin-imenu-create-entry prefix name type kind line col))
+           (position (merlin-imenu-compute-position line col))
+           (marker (cons entry (set-marker (make-marker) position))))
+      (cond ((string= kind "Value")
+             (setq merlin-imenu--value-list (cons marker merlin-imenu--value-list)))
+            ((string= kind "Type")
+             (setq merlin-imenu--type-list (cons marker merlin-imenu--type-list)))
+            ((string= kind "Exn")
+             (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list))))
+      (when sub-trees
+        (merlin-imenu-parse-outline (concat prefix entry ".") sub-trees)))))
 
 (defun merlin-imenu-create-index ()
   "Create data for imenu using the merlin outline feature."
   ;; Reset local vars
-  (setq value-list nil
-        type-list nil
-        exception-list nil)
+  (setq merlin-imenu--value-list nil
+        merlin-imenu--type-list nil
+        merlin-imenu--exception-list nil)
   ;; Read outline tree
-  (merlin-imenu-parse-outline-tree "" (merlin/call "outline"))
-  (let ((index ()))
-    (when value-list (push (cons "Value" value-list) index))
-    (when exception-list (push (cons "Exception" exception-list) index))
-    (when type-list (push (cons "Type" type-list) index))
+  (merlin-imenu-parse-outline "" (merlin/call "outline"))
+  (let ((index nil))
+    (when merlin-imenu--value-list
+      (push (cons "Value" merlin-imenu--value-list) index))
+    (when merlin-imenu--exception-list
+      (push (cons "Exception" merlin-imenu--exception-list) index))
+    (when merlin-imenu--type-list
+      (push (cons "Type" merlin-imenu--type-list) index))
     index))
 
 ;;;###autoload
