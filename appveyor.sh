@@ -75,7 +75,7 @@ case $MODE in
             appveyor DownloadFile "http://download.camlcity.org/download/findlib-1.7.3.tar.gz" -FileName findlib-1.7.3.tar.gz
             appveyor DownloadFile "https://github.com/ocaml/dune/releases/download/1.0.1/dune-1.0.1.tbz" -FileName dune-1.0.1.tbz
             appveyor DownloadFile "https://github.com/ocaml/ocamlbuild/archive/0.11.0.tar.gz" -FileName ocamlbuild-0.11.0.tar.gz
-            appveyor DownloadFile "https://github.com/mjambon/yojson/archive/v1.4.0.tar.gz" -FileName yojson-1.4.0.tar.gz
+            appveyor DownloadFile "https://github.com/ocaml-community/yojson/archive/v1.6.0.tar.gz" -FileName yojson-1.6.0.tar.gz
             cp $APPVEYOR_BUILD_FOLDER/appveyor/*.patch $APPVEYOR_BUILD_FOLDER/../src/
             [[ -e $PREFIX/../version ]] || echo $OCAML_VERSION-$SERIAL> $PREFIX/../version
           fi
@@ -145,7 +145,7 @@ case $MODE in
             cd ..
           fi
           tar -xzf $APPVEYOR_BUILD_FOLDER/../src/cppo-1.5.0.tar.gz
-          tar -xzf $APPVEYOR_BUILD_FOLDER/../src/yojson-1.4.0.tar.gz
+          tar -xzf $APPVEYOR_BUILD_FOLDER/../src/yojson-1.6.0.tar.gz
           cd ocaml
 
           LOG_FILE=OCaml-$OCAML_VERSION-$PORT.log
@@ -179,7 +179,7 @@ case $MODE in
           fi
           cd ../cppo-1.5.0
           quietly_log "make PREFIX=$PREFIX opt install-bin"
-          cd ../yojson-1.4.0
+          cd ../yojson-1.6.0
           quietly_log "make && ocamlfind install yojson _build/install/default/lib/yojson/*"
           # Remove unnecessary commands to keep the build cache size down
           rm $PREFIX/bin/{ocaml,ocamlcp,ocamldebug,ocamldoc,ocamlmktop,ocamlobjinfo,ocamloptp,ocamlprof}.exe $PREFIX/lib/{expunge,extract_crc,objinfo_helper}.exe

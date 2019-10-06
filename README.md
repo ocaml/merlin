@@ -24,7 +24,7 @@ Manually building and installing Merlin
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.02.3, ocamlfind, yojson, dune >= 1.8.
+Dependencies: ocaml >= 4.02.3, ocamlfind, yojson >= 1.6.0, dune >= 1.8.
 
 ```shell
 dune build -p merlin
@@ -111,7 +111,7 @@ Read more in the [wiki](https://github.com/ocaml/merlin/wiki) to learn how to ma
 
 Development of Merlin
 =====================
- 
+
 Most of the development happens through the [github page](https://github.com/ocaml/merlin).
 
 The [mailing list](https://lists.forge.ocamlcore.org/cgi-bin/listinfo/merlin-discuss) welcomes general questions and discussions.
