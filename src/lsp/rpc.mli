@@ -5,7 +5,7 @@
 module Server_notification : sig
   open Protocol
 
-  type t = 
+  type t =
     | PublishDiagnostics of PublishDiagnostics.publishDiagnosticsParams
 end
 
@@ -17,7 +17,7 @@ module Client_notification : sig
     | TextDocumentDidChange of DidChange.params
     | Initialized
     | Exit
-    | UnknownNotification of string * Yojson.Safe.json
+    | UnknownNotification of string * Yojson.Safe.t
 end
 
 module Request : sig
@@ -36,7 +36,7 @@ module Request : sig
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | TextDocumentReferences : References.params -> References.result t
     | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
-    | UnknownRequest : string * Yojson.Safe.json -> unit t
+    | UnknownRequest : string * Yojson.Safe.t -> unit t
 end
 
 type t

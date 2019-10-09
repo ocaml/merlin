@@ -79,7 +79,7 @@ module Packet = struct
   type t = {
     id: int option [@default None];
     method_: string [@key "method"];
-    params: Yojson.Safe.json;
+    params: Yojson.Safe.t;
   } [@@deriving yojson { strict = false }]
 end
 
@@ -120,7 +120,7 @@ module Response = struct
   type response = {
     id : int;
     jsonrpc: string;
-    result : Yojson.Safe.json;
+    result : Yojson.Safe.t;
   } [@@deriving yojson]
 
   type response_error = {
@@ -154,7 +154,7 @@ let send_response rpc (response : Response.t) =
   send rpc json
 
 module Server_notification = struct
-  open Protocol 
+  open Protocol
 
   type t =
     | PublishDiagnostics of PublishDiagnostics.params
@@ -181,7 +181,7 @@ module Client_notification = struct
     | TextDocumentDidChange of DidChange.params
     | Initialized
     | Exit
-    | UnknownNotification of string * Yojson.Safe.json
+    | UnknownNotification of string * Yojson.Safe.t
 end
 
 module Request = struct
@@ -200,7 +200,7 @@ module Request = struct
     | DebugTextDocumentGet : DebugTextDocumentGet.params -> DebugTextDocumentGet.result t
     | TextDocumentReferences : References.params -> References.result t
     | TextDocumentHighlight : TextDocumentHighlight.params -> TextDocumentHighlight.result t
-    | UnknownRequest : string * Yojson.Safe.json -> unit t
+    | UnknownRequest : string * Yojson.Safe.t -> unit t
 
   let request_result_to_response (type a) id (req : a t) (result : a) =
     match req, result with

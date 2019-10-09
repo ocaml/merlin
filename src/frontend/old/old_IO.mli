@@ -34,16 +34,16 @@ val current_version : Old_protocol.protocol_version ref
 (* Misc *)
 val default_context : Old_protocol.Context.t
 
-val request_of_json : json -> Old_protocol.request
+val request_of_json : Json.t -> Old_protocol.request
 val json_of_response : Logger.notification list ->
-                       Old_protocol.response -> json
+                       Old_protocol.response -> Json.t
 
 val make_json : ?on_read:(Unix.file_descr -> unit) ->
                 input:Unix.file_descr ->
                 output:Unix.file_descr ->
-                unit -> (unit -> json option) * (json -> unit)
+                unit -> (unit -> Json.t option) * (Json.t -> unit)
 
 val make_sexp : ?on_read:(Unix.file_descr -> unit) ->
                 input:Unix.file_descr ->
                 output:Unix.file_descr ->
-                unit -> (unit -> json option) * (json -> unit)
+                unit -> (unit -> Json.t option) * (Json.t -> unit)
