@@ -39,3 +39,5 @@ let load_path = ref ([] : string list)
 let interface_suffix = ref ".mli"
 
 let max_tag = 245
+
+let safe_string = false
