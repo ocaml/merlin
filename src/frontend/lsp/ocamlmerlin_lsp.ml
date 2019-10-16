@@ -740,6 +740,7 @@ let main () =
   | _ -> start ()
 
 let () =
+  Printexc.record_backtrace true;
   let log_file =
     match Sys.getenv "MERLIN_LOG" with
     | exception Not_found -> None
