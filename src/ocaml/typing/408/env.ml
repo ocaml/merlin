@@ -3141,6 +3141,8 @@ let () =
       | _ -> None
     )
 
+(** merlin: manage internal state *)
+
 let check_state_consistency () =
   Std.Hashtbl.forall !persistent_structures @@ fun name ps ->
   match ps with
