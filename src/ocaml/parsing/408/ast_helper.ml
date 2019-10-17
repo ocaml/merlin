@@ -83,7 +83,9 @@ module Typ = struct
   let varify_constructors var_names t =
     let check_variable vl loc v =
       if List.mem v vl then
-        raise Syntaxerr.(Error(Variable_in_scope(loc,v))) in
+        Msupport_parsing.raise_error
+          Syntaxerr.(Error(Variable_in_scope(loc,v)))
+    in
     let var_names = List.map (fun v -> v.txt) var_names in
     let rec loop t =
       let desc =
