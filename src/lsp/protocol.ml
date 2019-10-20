@@ -2073,7 +2073,7 @@ module Completion = struct
     | `Int 1 -> Invoked
     | `Int 2 -> TriggerCharacter
     | `Int 3 -> TriggerForIncompleteCompletions
-    | _ -> failwith "invalid completion.triggerKind"
+    | v -> yojson_error "invalid completion.triggerKind, show be 1-3" v
 
   type completionItemKind =
     | Text (* 1 *)

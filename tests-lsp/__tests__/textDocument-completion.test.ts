@@ -138,11 +138,11 @@ describe("textDocument/completion", () => {
     let items = await queryCompletion(Types.Position.create(4, 12));
     let items_top5 = items.slice(0, 5);
     expect(items_top5).toMatchObject([
-      { label: "y", sortText: "0000", textEdit: undefined },
-      { label: "x", sortText: "0001", textEdit: undefined },
-      { label: "somenum", sortText: "0002", textEdit: undefined },
-      { label: "max_int", sortText: "0003", textEdit: undefined },
-      { label: "min_int", sortText: "0004", textEdit: undefined },
+      { label: "y", sortText: "0000", textEdit: null },
+      { label: "x", sortText: "0001", textEdit: null },
+      { label: "somenum", sortText: "0002", textEdit: null },
+      { label: "max_int", sortText: "0003", textEdit: null },
+      { label: "min_int", sortText: "0004", textEdit: null },
     ]);
   });
 
@@ -305,11 +305,11 @@ describe("textDocument/completion", () => {
     let items = await queryCompletion(Types.Position.create(0, 23));
     let items_top5 = items.slice(0, 5)
     expect(items_top5).toMatchObject([
-      {label: "~f", sortText: "0000", textEdit: undefined},
-      {label: "::", sortText: "0001", textEdit: undefined},
-      {label: "[]", sortText: "0002", textEdit: undefined},
-      {label: "!", sortText: "0003", textEdit: undefined},
-      {label: "exit", sortText: "0004", textEdit: undefined}
+      {label: "~f", sortText: "0000", textEdit: null},
+      {label: "::", sortText: "0001", textEdit: null},
+      {label: "[]", sortText: "0002", textEdit: null},
+      {label: "!", sortText: "0003", textEdit: null},
+      {label: "exit", sortText: "0004", textEdit: null}
     ]);
   });
 
