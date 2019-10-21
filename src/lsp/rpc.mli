@@ -5,7 +5,7 @@
 module Server_notification : sig
   open Protocol
 
-  type t = 
+  type t =
     | PublishDiagnostics of PublishDiagnostics.publishDiagnosticsParams
 end
 

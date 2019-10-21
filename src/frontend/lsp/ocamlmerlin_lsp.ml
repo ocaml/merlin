@@ -38,97 +38,6 @@ let initializeInfo: Lsp.Protocol.Initialize.result = {
   };
 }
 
-module Document : sig
-  type t
-
-  val make :
-    ?version:int
-    -> uri:Lsp.Protocol.documentUri
-    -> text:string
-    -> unit
-    -> t
-
-  val uri : t -> Lsp.Protocol.documentUri
-  val source : t -> Msource.t
-  val pipeline : t -> Mpipeline.t
-  val version : t -> int
-
-  val update_text : ?version:int -> Lsp.Protocol.DidChange.textDocumentContentChangeEvent -> t -> t
-end = struct
-  type t = {
-    tdoc : Lsp.Text_document.t;
-    source : Msource.t;
-    pipeline : Mpipeline.t;
-    config : Mconfig.t;
-  }
-
-  let normalize_line_endings text =
-    let text = Std.String.replace_all ~pattern:"\r\n" ~with_:"\n" text in
-    text
-
-  let uri doc = Lsp.Text_document.documentUri doc.tdoc
-  let source doc = doc.source
-  let pipeline doc = doc.pipeline
-  let version doc = Lsp.Text_document.version doc.tdoc
-
-  let make_config uri =
-    let path = Lsp.Uri.to_path uri in
-    let mconfig = Mconfig.initial in
-    let path = Misc.canonicalize_filename path in
-    let filename = Filename.basename path in
-    let directory = Filename.dirname path in
-    let mconfig = {
-      mconfig with query = {
-        mconfig.query with
-        verbosity = 1;
-        filename;
-        directory;
-      }
-    } in
-    Mconfig.load_dotmerlins mconfig ~filenames:[
-      let base = "." ^ filename ^ ".merlin" in
-      Filename.concat directory base
-    ]
-
-  let make ?(version=0) ~uri ~text () =
-    let tdoc = Lsp.Text_document.make ~version uri text in
-    (* we can do that b/c all text positions in LSP are line/col *)
-    let text = normalize_line_endings text in
-    let config = make_config uri in
-    let source = Msource.make text in
-    let pipeline = Mpipeline.make config source in
-    {tdoc; source; config; pipeline;}
-
-  let update_text ?version change doc =
-    let tdoc = Lsp.Text_document.apply_content_change ?version change doc.tdoc in
-    let text = Lsp.Text_document.text tdoc in
-    log ~title:"debug" "TEXT\n%s" text;
-    let config = make_config (Lsp.Text_document.documentUri tdoc) in
-    let source = Msource.make text in
-    let pipeline = Mpipeline.make config source in
-    {tdoc; config; source; pipeline;}
-end
-
-module Document_store : sig
-  type t
-  val make : unit -> t
-  val put : t -> Document.t -> unit
-  val get : t -> Lsp.Protocol.documentUri -> (Document.t, string) result
-  val get_opt : t -> Lsp.Protocol.documentUri -> Document.t option
-end = struct
-  type t = (Lsp.Protocol.documentUri, Document.t) Hashtbl.t
-
-  let make () = Hashtbl.create 50
-  let put store doc = Hashtbl.replace store (Document.uri doc) doc
-  let get_opt store uri =
-    try Some (Hashtbl.find store uri)
-    with Not_found -> None
-  let get store uri =
-    match get_opt store uri with
-    | Some doc -> Ok doc
-    | None -> Lsp.Utils.Result.errorf "no document found with uri: %a" Lsp.Uri.pp uri
-end
-
 let logical_of_position (position : Lsp.Protocol.position) =
   let line = position.line + 1 in
   let col = position.character in
@@ -139,6 +48,11 @@ let position_of_lexical_position (lex_position : Lexing.position) =
   let character = lex_position.pos_cnum - lex_position.pos_bol in
   Lsp.Protocol.{line; character;}
 
+let range_of_loc (loc : Location.t) : Lsp.Protocol.range =
+  { start_ = position_of_lexical_position loc.loc_start;
+    end_   = position_of_lexical_position loc.loc_end;
+  }
+
 let send_diagnostics rpc doc =
   let command =
     Query_protocol.Errors { lexing = true; parsing = true; typing = true }
@@ -147,11 +61,7 @@ let send_diagnostics rpc doc =
   let diagnostics =
     List.map (fun (error : Location.error) ->
       let loc = Location.loc_of_report error in
-      let range = {
-        Lsp.Protocol.
-        start_ = position_of_lexical_position loc.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = range_of_loc loc in
       let severity =
         match error.source with
         | Warning -> Some Lsp.Protocol.PublishDiagnostics.Warning
@@ -255,10 +165,7 @@ let on_request :
           client_capabilities.textDocument.hover.contentFormat
       in
       let contents = format_contents ~as_markdown ~typ ~doc in
-      let range = Some {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = Some (range_of_loc loc) in
       let resp = {
         Lsp.Protocol.Hover.
         contents;
@@ -272,10 +179,7 @@ let on_request :
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
     let lsp_locs = List.map (fun loc ->
-      let range = {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = range_of_loc loc in
       (* using original uri because merlin is looking only in local file *)
       {Lsp.Protocol.Location. uri; range;}
      ) locs in
@@ -298,10 +202,7 @@ let on_request :
           let loc = item.Query_protocol.location in
           let info = {
             Lsp.Protocol.CodeLens.
-            range = {
-              start_ = position_of_lexical_position loc.loc_start;
-              end_ = position_of_lexical_position loc.loc_end;
-            };
+            range = range_of_loc loc;
             command = Some {
               Lsp.Protocol.Command.
               title = typ;
@@ -319,10 +220,7 @@ let on_request :
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
     let lsp_locs = List.map (fun loc ->
-      let range = {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = range_of_loc loc in
       (* using the default kind as we are lacking info
          to make a difference between assignment and usage. *)
       {Lsp.Protocol.DocumentHighlight. kind = Some Text; range;}
@@ -330,27 +228,20 @@ let on_request :
     return (store, lsp_locs)
 
   | Lsp.Rpc.Request.DocumentSymbol {textDocument = {uri;}} ->
-    let module DocumentSymbol = Lsp.Protocol.DocumentSymbol in
-    let module SymbolKind = Lsp.Protocol.SymbolKind in
-
-    let kind item =
+    let kind item : Lsp.Protocol.SymbolKind.t =
       match item.Query_protocol.outline_kind with
-      | `Value -> SymbolKind.Function
-      | `Constructor -> SymbolKind.Constructor
-      | `Label -> SymbolKind.Property
-      | `Module -> SymbolKind.Module
-      | `Modtype -> SymbolKind.Module
-      | `Type -> SymbolKind.String
-      | `Exn -> SymbolKind.Constructor
-      | `Class -> SymbolKind.Class
-      | `Method -> SymbolKind.Method
+      | `Value -> Function
+      | `Constructor -> Constructor
+      | `Label -> Property
+      | `Module -> Module
+      | `Modtype -> Module
+      | `Type -> String
+      | `Exn -> Constructor
+      | `Class -> Class
+      | `Method -> Method
     in
 
-    let range item = {
-      Lsp.Protocol.
-      start_ = position_of_lexical_position item.Query_protocol.location.loc_start;
-      end_ = position_of_lexical_position item.location.loc_end;
-    } in
+    let range item = range_of_loc item.Query_protocol.location in
 
     let rec symbol item =
       let children = Std.List.map item.Query_protocol.children ~f:symbol in
@@ -650,12 +541,7 @@ let on_request :
     let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
     let version = Document.version doc in
     let edits = List.map (fun loc ->
-      let range =
-        {
-          Lsp.Protocol. start_ = position_of_lexical_position loc.Location.loc_start;
-          end_ = position_of_lexical_position loc.loc_end;
-        }
-      in
+      let range = range_of_loc loc in
       {Lsp.Protocol.TextEdit. newText = newName; range;}
     ) locs
     in
@@ -741,6 +627,7 @@ let main () =
   | _ -> start ()
 
 let () =
+  Printexc.record_backtrace true;
   let log_file =
     match Sys.getenv "MERLIN_LOG" with
     | exception Not_found -> None

@@ -542,12 +542,16 @@ let ocaml_flags = [
   (
     "-unsafe-string",
     Marg.unit (fun ocaml -> {ocaml with unsafe_string = true}),
-    " Make strings mutable (default)"
+    Printf.sprintf
+      " Make strings mutable (default: %B)"
+      (not Config.safe_string)
   );
   (
     "-safe-string",
     Marg.unit (fun ocaml -> {ocaml with unsafe_string = false}),
-    " Make strings immutable"
+    Printf.sprintf
+      " Make strings immutable (default: %B)"
+      Config.safe_string
   );
   (
     "-nopervasives",
@@ -614,7 +618,7 @@ let initial = {
     recursive_types      = false;
     strict_sequence      = false;
     applicative_functors = true;
-    unsafe_string        = true;
+    unsafe_string        = not Config.safe_string;
     nopervasives         = false;
     strict_formats       = false;
     open_modules         = [];

@@ -2,7 +2,7 @@
 (* This generated code requires the following version of MenhirLib: *)
 
 let () =
-  MenhirLib.StaticVersion.require_20190626
+  MenhirLib.StaticVersion.require_20190924
 
 module MenhirBasics = struct
   
@@ -285,8 +285,8 @@ let psig_value (vd, ext) =
   (Psig_value vd, ext)
 let psig_type ((nr, ext), tys) =
   (Psig_type (nr, tys), ext)
-let psig_typesubst ((nr, ext), tys) =
-  assert (nr = Recursive); (* see [no_nonrec_flag] *)
+let psig_typesubst ((_nr, ext), tys) =
+  (*assert (nr = Recursive);*) (* see [no_nonrec_flag] *)
   (Psig_typesubst tys, ext)
 let psig_exception (te, ext) =
   (Psig_exception te, ext)
@@ -528,10 +528,10 @@ let bigarray_set ~loc arr arg newval =
                         Nolabel, newval]))
 
 let lapply ~loc p1 p2 =
-  if !Clflags.applicative_functors
-  then Lapply(p1, p2)
-  else raise (Syntaxerr.Error(
-                  Syntaxerr.Applicative_path (make_loc loc)))
+  if not !Clflags.applicative_functors then
+    raise_error (Syntaxerr.Error(
+      Syntaxerr.Applicative_path (make_loc loc)));
+  Lapply(p1, p2)
 
 let exp_of_longident ~loc lid =
   mkexp ~loc (Pexp_ident {lid with txt = Lident(Longident.last lid.txt)})
@@ -701,7 +701,7 @@ let class_of_let_bindings ~loc lbs body =
       lbs.lbs_bindings
   in
     (* Our use of let_bindings(no_ext) guarantees the following: *)
-    assert (lbs.lbs_extension = None);
+    (* assert (lbs.lbs_extension = None); *)
     mkclass ~loc (Pcl_let (lbs.lbs_rec, List.rev bindings, body))
 
 (* Alternatively, we could keep the generic module type in the Parsetree
@@ -709,7 +709,7 @@ let class_of_let_bindings ~loc lbs body =
    the assertions below should be turned into explicit checks. *)
 let package_type_of_module_type pmty =
   let err loc s =
-    raise (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
+    raise_error (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
   in
   let map_cstr = function
     | Pwith_type (lid, ptyp) ->
@@ -722,24 +722,24 @@ let package_type_of_module_type pmty =
           err loc "private types are not supported";
 
         (* restrictions below are checked by the 'with_constraint' rule *)
-        assert (ptyp.ptype_kind = Ptype_abstract);
-        assert (ptyp.ptype_attributes = []);
-        let ty =
-          match ptyp.ptype_manifest with
-          | Some ty -> ty
-          | None -> assert false
-        in
-        (lid, ty)
+        (* assert (ptyp.ptype_kind = Ptype_abstract); *)
+        (* assert (ptyp.ptype_attributes = []); *)
+        begin match ptyp.ptype_manifest with
+        | Some ty -> Some (lid, ty)
+        | None -> None
+        end
     | _ ->
-        err pmty.pmty_loc "only 'with type t =' constraints are supported"
+        err pmty.pmty_loc "only 'with type t =' constraints are supported";
+        None
   in
   match pmty with
   | {pmty_desc = Pmty_ident lid} -> (lid, [])
   | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
-      (lid, List.map map_cstr cstrs)
+      (lid, List.filter_map map_cstr cstrs)
   | _ ->
       err pmty.pmty_loc
-        "only module type identifier and 'with type' constraints are supported"
+        "only module type identifier and 'with type' constraints are supported";
+      (Location.mkloc (Lident "_") pmty.pmty_loc, [])
 
 let mk_directive_arg ~loc k =
   { pdira_desc = k;
@@ -1959,7 +1959,7 @@ module Tables = struct
             let tys =
               let tys =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 1965 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2300,7 +2300,7 @@ module Tables = struct
             let tys =
               let tys =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2306 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2438,7 +2438,7 @@ module Tables = struct
             let _3 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2444 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2528,7 +2528,7 @@ module Tables = struct
             let _4 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2534 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2611,7 +2611,7 @@ module Tables = struct
             let _3 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2617 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2742,7 +2742,7 @@ module Tables = struct
             let _3 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2748 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2840,7 +2840,7 @@ module Tables = struct
               let xs = xs_inlined1 in
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2846 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -2859,7 +2859,7 @@ module Tables = struct
             let _3 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 2865 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -3450,7 +3450,7 @@ module Tables = struct
           let _1 =
             let _2 =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 3456 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -5114,7 +5114,7 @@ module Tables = struct
               let tys =
                 let params =
                   let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 5120 "src/ocaml/preprocess/parser_raw.ml"
                    in
@@ -5250,7 +5250,7 @@ module Tables = struct
           let _2 =
             let _1 =
               let _1 = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 5256 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -5674,7 +5674,7 @@ module Tables = struct
               let tys =
                 let params =
                   let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 5680 "src/ocaml/preprocess/parser_raw.ml"
                    in
@@ -5839,7 +5839,7 @@ module Tables = struct
           let _2 =
             let _1 =
               let _1 = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 5845 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -6934,7 +6934,7 @@ module Tables = struct
 # 6935 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 6940 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -6992,7 +6992,7 @@ module Tables = struct
 # 6993 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 6998 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -7314,7 +7314,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _5 =
           let xs =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 7320 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -7480,7 +7480,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _5 =
           let xs =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 7486 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -7670,7 +7670,7 @@ module Tables = struct
         let _v : (Parsetree.expression) = let _5 =
           let xs =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 7676 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -8559,7 +8559,7 @@ module Tables = struct
           let _3 =
             let xs =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 8565 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -8858,7 +8858,7 @@ module Tables = struct
           let _5 =
             let xs =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 8864 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -8965,7 +8965,7 @@ module Tables = struct
           let _5 =
             let xs =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 8971 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -9630,7 +9630,7 @@ module Tables = struct
             let _2 =
               let _1 =
                 let _1 = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 9636 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -9718,7 +9718,7 @@ module Tables = struct
           let _1 =
             let _2 =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 9724 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -9774,7 +9774,7 @@ module Tables = struct
             let _1 =
               let es =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 9780 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -12875,7 +12875,7 @@ module Tables = struct
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = let params =
           let params =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 12881 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -13969,7 +13969,7 @@ module Tables = struct
         let cstrs =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 13975 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -14132,7 +14132,7 @@ module Tables = struct
         let cstrs =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 14138 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -14287,7 +14287,7 @@ module Tables = struct
         let cstrs =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 14293 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -14435,7 +14435,7 @@ module Tables = struct
         let cstrs =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 14441 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -15897,7 +15897,7 @@ module Tables = struct
         let _v : (Parsetree.pattern * Parsetree.expression) = let _3 =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 15903 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -16786,7 +16786,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_declaration list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 16792 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16908,7 +16908,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 16914 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -16926,7 +16926,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_description list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 16932 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17055,7 +17055,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17061 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17073,7 +17073,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_type_declaration list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17079 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17202,7 +17202,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17208 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17220,7 +17220,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.module_binding list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17226 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17328,7 +17328,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17334 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17346,7 +17346,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.module_declaration list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17352 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17461,7 +17461,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17467 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17479,7 +17479,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.attributes) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17485 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17511,7 +17511,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_xs_ in
         let _v : (Parsetree.attributes) = 
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17517 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17529,7 +17529,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.type_declaration list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17535 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17620,7 +17620,7 @@ module Tables = struct
           let cstrs =
             let _1 =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 17626 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -17672,7 +17672,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17678 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17690,7 +17690,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.type_declaration list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17696 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17788,7 +17788,7 @@ module Tables = struct
           let cstrs =
             let _1 =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 17794 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -17848,7 +17848,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17854 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17866,7 +17866,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.attributes) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17872 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17898,7 +17898,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_xs_ in
         let _v : (Parsetree.attributes) = 
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17904 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17916,7 +17916,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.signature_item list list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 17922 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -17963,7 +17963,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 17969 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18010,7 +18010,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18016 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18028,7 +18028,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.structure_item list list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 18034 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18082,7 +18082,7 @@ module Tables = struct
               
             in
             
-# 267 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 267 "<standard.mly>"
     ( xs @ ys )
 # 18088 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -18094,7 +18094,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18100 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18197,7 +18197,7 @@ module Tables = struct
               
             in
             
-# 267 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 267 "<standard.mly>"
     ( xs @ ys )
 # 18203 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -18209,7 +18209,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18215 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18256,7 +18256,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18262 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18274,7 +18274,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_type_field list list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 18280 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18314,7 +18314,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18320 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18332,7 +18332,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.class_field list list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 18338 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18372,7 +18372,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18378 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18390,7 +18390,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.structure_item list list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 18396 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18430,7 +18430,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18436 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18448,7 +18448,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.toplevel_phrase list list) = 
-# 211 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 211 "<standard.mly>"
     ( [] )
 # 18454 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18494,7 +18494,7 @@ module Tables = struct
               
             in
             
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 18500 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -18506,7 +18506,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18512 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18597,7 +18597,7 @@ module Tables = struct
               
             in
             
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 18603 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -18609,7 +18609,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18615 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18661,7 +18661,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18667 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18718,7 +18718,7 @@ module Tables = struct
           
         in
         
-# 213 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 213 "<standard.mly>"
     ( x :: xs )
 # 18724 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18757,7 +18757,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_opat_ in
         let _v : ((Longident.t Location.loc * Parsetree.pattern) list * unit option) = let _2 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 18763 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -18838,7 +18838,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : ((Longident.t Location.loc * Parsetree.pattern) list * unit option) = let _2 = 
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 18844 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -21948,7 +21948,7 @@ module Tables = struct
           let _1 =
             let _3 =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 21954 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -22428,7 +22428,7 @@ module Tables = struct
           
         in
         
-# 221 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 221 "<standard.mly>"
     ( [ x ] )
 # 22434 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22474,7 +22474,7 @@ module Tables = struct
           
         in
         
-# 223 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 223 "<standard.mly>"
     ( x :: xs )
 # 22480 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22508,7 +22508,7 @@ module Tables = struct
 # 22509 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 221 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 221 "<standard.mly>"
     ( [ x ] )
 # 22514 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22549,7 +22549,7 @@ module Tables = struct
 # 22550 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 223 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 223 "<standard.mly>"
     ( x :: xs )
 # 22555 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -22647,7 +22647,7 @@ module Tables = struct
          in
         let oty =
           let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 22653 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -22696,7 +22696,7 @@ module Tables = struct
          in
         let oty =
           let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 22702 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -22753,12 +22753,12 @@ module Tables = struct
         let oty =
           let _1 =
             let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 22759 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 22764 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -22823,12 +22823,12 @@ module Tables = struct
         let oty =
           let _1 =
             let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 22829 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 22834 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -22871,7 +22871,7 @@ module Tables = struct
          in
         let oty =
           let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 22877 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -22920,7 +22920,7 @@ module Tables = struct
          in
         let oty =
           let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 22926 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -22977,12 +22977,12 @@ module Tables = struct
         let oty =
           let _1 =
             let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 22983 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 22988 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -23047,12 +23047,12 @@ module Tables = struct
         let oty =
           let _1 =
             let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 23053 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 23058 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -23109,7 +23109,7 @@ module Tables = struct
          in
         let oty =
           let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 23115 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -23172,7 +23172,7 @@ module Tables = struct
          in
         let oty =
           let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 23178 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -23243,12 +23243,12 @@ module Tables = struct
         let oty =
           let _1 =
             let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 23249 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 23254 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -23327,12 +23327,12 @@ module Tables = struct
         let oty =
           let _1 =
             let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 23333 "src/ocaml/preprocess/parser_raw.ml"
              in
             
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 23338 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -24819,7 +24819,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (unit option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 24825 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24844,7 +24844,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_x_ in
         let _v : (unit option) = 
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 24850 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24862,7 +24862,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (unit option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 24868 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24887,7 +24887,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_x_ in
         let _v : (unit option) = 
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 24893 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24905,7 +24905,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (string Location.loc option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 24911 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24953,13 +24953,13 @@ module Tables = struct
             
           in
           
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 24959 "src/ocaml/preprocess/parser_raw.ml"
           
         in
         
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 24965 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -24977,7 +24977,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.core_type option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 24983 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25009,12 +25009,12 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.core_type option) = let x = 
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 25015 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 25020 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25032,7 +25032,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.expression option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 25038 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25064,12 +25064,12 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.expression option) = let x = 
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 25070 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 25075 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25087,7 +25087,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.module_type option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 25093 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25119,12 +25119,12 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.module_type option) = let x = 
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 25125 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 25130 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25142,7 +25142,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.pattern option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 25148 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25174,12 +25174,12 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.pattern option) = let x = 
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 25180 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 25185 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25197,7 +25197,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : (Parsetree.expression option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 25203 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25229,12 +25229,12 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.expression option) = let x = 
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 25235 "src/ocaml/preprocess/parser_raw.ml"
          in
         
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 25240 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25252,7 +25252,7 @@ module Tables = struct
         let _startpos = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _endpos = _startpos in
         let _v : ((Parsetree.core_type option * Parsetree.core_type option) option) = 
-# 114 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 114 "<standard.mly>"
     ( None )
 # 25258 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -25277,7 +25277,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_x_ in
         let _v : ((Parsetree.core_type option * Parsetree.core_type option) option) = 
-# 116 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 116 "<standard.mly>"
     ( Some x )
 # 25283 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27346,7 +27346,7 @@ module Tables = struct
             let _1 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 27352 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -27457,7 +27457,7 @@ module Tables = struct
             let _1 =
               let _1 =
                 let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 27463 "src/ocaml/preprocess/parser_raw.ml"
                  in
@@ -27909,7 +27909,7 @@ module Tables = struct
         let _endpos = _endpos_fields_ in
         let _v : (Parsetree.expression option *
   (Longident.t Location.loc * Parsetree.expression) list) = let eo = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 27915 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -27955,12 +27955,12 @@ module Tables = struct
         let _v : (Parsetree.expression option *
   (Longident.t Location.loc * Parsetree.expression) list) = let eo =
           let x = 
-# 191 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 191 "<standard.mly>"
     ( x )
 # 27961 "src/ocaml/preprocess/parser_raw.ml"
            in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 27966 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -28503,7 +28503,7 @@ module Tables = struct
             
           in
           
-# 183 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 183 "<standard.mly>"
     ( x )
 # 28509 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -28812,7 +28812,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.case list) = let _1 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 28818 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -28851,7 +28851,7 @@ module Tables = struct
         let _v : (Parsetree.case list) = let _1 =
           let x = x_inlined1 in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 28857 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -29666,7 +29666,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.expression list) = let _2 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 29672 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29705,7 +29705,7 @@ module Tables = struct
         let _v : (Parsetree.expression list) = let _2 =
           let x = x_inlined1 in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 29711 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -29786,7 +29786,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_oe_ in
         let _v : ((string Location.loc * Parsetree.expression) list) = let _2 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 29792 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -29868,7 +29868,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : ((string Location.loc * Parsetree.expression) list) = let _2 = 
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 29874 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30016,7 +30016,7 @@ module Tables = struct
         let _startpos = _startpos_x_ in
         let _endpos = _endpos_x_ in
         let _v : (Parsetree.pattern list) = let _2 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 30022 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30055,7 +30055,7 @@ module Tables = struct
         let _v : (Parsetree.pattern list) = let _2 =
           let x = x_inlined1 in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 30061 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -30139,7 +30139,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_eo_ in
         let _v : ((Longident.t Location.loc * Parsetree.expression) list) = let _2 = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 30145 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30219,7 +30219,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_x_ in
         let _v : ((Longident.t Location.loc * Parsetree.expression) list) = let _2 = 
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 30225 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -30642,7 +30642,7 @@ module Tables = struct
         let _endpos = _endpos_xss_ in
         let _v : (Parsetree.signature) = let _1 =
           let _1 = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 30648 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -38420,7 +38420,7 @@ module Tables = struct
         let _v : (Parsetree.structure) = let _1 =
           let _1 =
             let ys = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 38426 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -38437,7 +38437,7 @@ module Tables = struct
               
             in
             
-# 267 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 267 "<standard.mly>"
     ( xs @ ys )
 # 38443 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -38493,7 +38493,7 @@ module Tables = struct
         let _v : (Parsetree.structure) = let _1 =
           let _1 =
             let ys = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 38499 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -38544,7 +38544,7 @@ module Tables = struct
               
             in
             
-# 267 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 267 "<standard.mly>"
     ( xs @ ys )
 # 38550 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -40011,7 +40011,7 @@ module Tables = struct
         let _4 =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 40017 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -40131,7 +40131,7 @@ module Tables = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__1_inlined1_ in
         let _v : (Parsetree.toplevel_phrase) = let arg = 
-# 124 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 124 "<standard.mly>"
     ( None )
 # 40137 "src/ocaml/preprocess/parser_raw.ml"
          in
@@ -40211,7 +40211,7 @@ module Tables = struct
             
           in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 40217 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -40292,7 +40292,7 @@ module Tables = struct
             
           in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 40298 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -40369,7 +40369,7 @@ module Tables = struct
             
           in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 40375 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -40446,7 +40446,7 @@ module Tables = struct
             
           in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 40452 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -40523,7 +40523,7 @@ module Tables = struct
             
           in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 40529 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -40600,7 +40600,7 @@ module Tables = struct
             
           in
           
-# 126 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 126 "<standard.mly>"
     ( Some x )
 # 40606 "src/ocaml/preprocess/parser_raw.ml"
           
@@ -40732,7 +40732,7 @@ module Tables = struct
 # 40733 "src/ocaml/preprocess/parser_raw.ml"
         ) = let _1 =
           let _1 = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 40738 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -40864,7 +40864,7 @@ module Tables = struct
           let _1 =
             let tys =
               let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 40870 "src/ocaml/preprocess/parser_raw.ml"
                in
@@ -41238,7 +41238,7 @@ module Tables = struct
         let _endpos = _endpos__3_ in
         let _v : ((Parsetree.core_type * Asttypes.variance) list) = let ps =
           let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 41244 "src/ocaml/preprocess/parser_raw.ml"
            in
@@ -41443,7 +41443,7 @@ module Tables = struct
         ) = let _1 =
           let _1 =
             let ys = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 41449 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -41460,7 +41460,7 @@ module Tables = struct
               
             in
             
-# 267 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 267 "<standard.mly>"
     ( xs @ ys )
 # 41466 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -41527,7 +41527,7 @@ module Tables = struct
         ) = let _1 =
           let _1 =
             let ys = 
-# 260 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 260 "<standard.mly>"
     ( List.flatten xss )
 # 41533 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -41574,7 +41574,7 @@ module Tables = struct
               
             in
             
-# 267 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 267 "<standard.mly>"
     ( xs @ ys )
 # 41580 "src/ocaml/preprocess/parser_raw.ml"
             
@@ -42593,7 +42593,7 @@ module Tables = struct
         let _v : (Parsetree.with_constraint) = let _6 =
           let _1 =
             let xs = 
-# 253 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 253 "<standard.mly>"
     ( List.rev xs )
 # 42599 "src/ocaml/preprocess/parser_raw.ml"
              in
@@ -44198,7 +44198,7 @@ end
 
 # 44200 "src/ocaml/preprocess/parser_raw.ml"
 
-# 269 "/Users/def/.opam/4.08.0/lib/menhir/standard.mly"
+# 269 "<standard.mly>"
   
 
 # 44205 "src/ocaml/preprocess/parser_raw.ml"

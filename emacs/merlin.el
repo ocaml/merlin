@@ -217,7 +217,9 @@ The association list can contain the following optional keys:
 
 - `logfile': path to the logfile
 
-- `name': a short name for this configuration, displayed in user notifications."
+- `name': a short name for this configuration, displayed in user notifications.
+
+- `do-not-cache-config': if set, refreshes the config on every command"
 )
 
 (defvar-local merlin-buffer-packages nil
@@ -543,22 +545,21 @@ return (LOC1 . LOC2)."
 
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
-  (let ((result (merlin--call-merlin command args)))
+  (let* ((binary (merlin-command))
+         (result (merlin--call-merlin command args)))
     (condition-case err
         (setq result (car (read-from-string result)))
       (error
-        (merlin-client-logger
-          (merlin-command) command -1 "failure")
+        (merlin-client-logger binary command -1 "failure")
         (error "merlin: error %s trying to parse answer: %s"
                err result))
       (quit
-        (merlin-client-logger
-          (merlin-command) command -1 "interrupted")))
+        (merlin-client-logger binary command -1 "interrupted")))
     (let* ((notifications (cdr-safe (assoc 'notifications result)))
            (timing (cdr-safe (assoc 'timing result)))
            (class (cdr-safe (assoc 'class result)))
            (value (cdr-safe (assoc 'value result))))
-      (merlin-client-logger (merlin-command) command timing class)
+      (merlin-client-logger binary command timing class)
       (dolist (notification notifications)
         (message "(merlin) %s" notification))
       (cond ((string-equal class "return") value)
@@ -574,8 +575,11 @@ return (LOC1 . LOC2)."
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
     (merlin--call-merlin "stop-server")
-    (setq merlin-erroneous-buffer nil)
-    (setq merlin-buffer-configuration nil)))
+    ;; These are buffer-local variables, so reset them in all buffers.
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (kill-local-variable 'merlin-buffer-configuration)
+        (kill-local-variable 'merlin-erroneous-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -1672,7 +1676,8 @@ Empty string defaults to jumping to all these."
 
 (defun merlin-command ()
   "Return or update path of ocamlmerlin binary selected by configuration"
-  (unless merlin-buffer-configuration
+  (when (or (not merlin-buffer-configuration)
+            (merlin-lookup 'do-not-cache-config merlin-buffer-configuration))
     (setq merlin-buffer-configuration (merlin--configuration)))
 
   (let ((command (merlin-lookup 'command merlin-buffer-configuration)))

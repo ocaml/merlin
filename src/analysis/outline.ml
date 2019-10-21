@@ -48,6 +48,11 @@ let get_class_field_desc_infos = function
   | Typedtree.Tcf_method (str_loc,_,_)  -> Some (str_loc, `Method)
   | _ -> None
 
+let outline_type ~env typ =
+  let ppf, to_string = Format.to_string () in
+  Type_utils.print_type_with_decl ~verbosity:0 env ppf typ;
+  Some (to_string ())
+
 let rec summarize node =
   let location = node.t_loc in
   match node.t_node with
@@ -55,15 +60,12 @@ let rec summarize node =
     begin match id_of_patt vb.vb_pat with
     | None -> None
     | Some ident ->
-      let outline_type =
-        let ppf, to_string = Format.to_string () in
-        Type_utils.print_type_with_decl ~verbosity:0 node.t_env ppf vb.vb_pat.pat_type;
-        Some (to_string ())
-      in
-      Some (mk ~location `Value outline_type ident)
+      let typ = outline_type ~env:node.t_env vb.vb_pat.pat_type in
+      Some (mk ~location `Value typ ident)
     end
   | Value_description vd  ->
-    Some (mk ~location `Value None vd.val_id)
+    let typ = outline_type ~env:node.t_env vd.val_val.val_type in
+    Some (mk ~location `Value typ vd.val_id)
 
   | Module_declaration md ->
     let children = get_mod_children node in

@@ -71,8 +71,8 @@ let psig_value (vd, ext) =
   (Psig_value vd, ext)
 let psig_type ((nr, ext), tys) =
   (Psig_type (nr, tys), ext)
-let psig_typesubst ((nr, ext), tys) =
-  assert (nr = Recursive); (* see [no_nonrec_flag] *)
+let psig_typesubst ((_nr, ext), tys) =
+  (*assert (nr = Recursive);*) (* see [no_nonrec_flag] *)
   (Psig_typesubst tys, ext)
 let psig_exception (te, ext) =
   (Psig_exception te, ext)
@@ -314,10 +314,10 @@ let bigarray_set ~loc arr arg newval =
                         Nolabel, newval]))
 
 let lapply ~loc p1 p2 =
-  if !Clflags.applicative_functors
-  then Lapply(p1, p2)
-  else raise (Syntaxerr.Error(
-                  Syntaxerr.Applicative_path (make_loc loc)))
+  if not !Clflags.applicative_functors then
+    raise_error (Syntaxerr.Error(
+      Syntaxerr.Applicative_path (make_loc loc)));
+  Lapply(p1, p2)
 
 let exp_of_longident ~loc lid =
   mkexp ~loc (Pexp_ident {lid with txt = Lident(Longident.last lid.txt)})
@@ -487,7 +487,7 @@ let class_of_let_bindings ~loc lbs body =
       lbs.lbs_bindings
   in
     (* Our use of let_bindings(no_ext) guarantees the following: *)
-    assert (lbs.lbs_extension = None);
+    (* assert (lbs.lbs_extension = None); *)
     mkclass ~loc (Pcl_let (lbs.lbs_rec, List.rev bindings, body))
 
 (* Alternatively, we could keep the generic module type in the Parsetree
@@ -495,7 +495,7 @@ let class_of_let_bindings ~loc lbs body =
    the assertions below should be turned into explicit checks. *)
 let package_type_of_module_type pmty =
   let err loc s =
-    raise (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
+    raise_error (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
   in
   let map_cstr = function
     | Pwith_type (lid, ptyp) ->
@@ -508,24 +508,24 @@ let package_type_of_module_type pmty =
           err loc "private types are not supported";
 
         (* restrictions below are checked by the 'with_constraint' rule *)
-        assert (ptyp.ptype_kind = Ptype_abstract);
-        assert (ptyp.ptype_attributes = []);
-        let ty =
-          match ptyp.ptype_manifest with
-          | Some ty -> ty
-          | None -> assert false
-        in
-        (lid, ty)
+        (* assert (ptyp.ptype_kind = Ptype_abstract); *)
+        (* assert (ptyp.ptype_attributes = []); *)
+        begin match ptyp.ptype_manifest with
+        | Some ty -> Some (lid, ty)
+        | None -> None
+        end
     | _ ->
-        err pmty.pmty_loc "only 'with type t =' constraints are supported"
+        err pmty.pmty_loc "only 'with type t =' constraints are supported";
+        None
   in
   match pmty with
   | {pmty_desc = Pmty_ident lid} -> (lid, [])
   | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
-      (lid, List.map map_cstr cstrs)
+      (lid, List.filter_map map_cstr cstrs)
   | _ ->
       err pmty.pmty_loc
-        "only module type identifier and 'with type' constraints are supported"
+        "only module type identifier and 'with type' constraints are supported";
+      (Location.mkloc (Lident "_") pmty.pmty_loc, [])
 
 let mk_directive_arg ~loc k =
   { pdira_desc = k;

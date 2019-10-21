@@ -1,33 +1,25 @@
 ;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
 ;; Licensed under the MIT license.
 
-;; Author: tddsg
-;; Created: 10 July 2016
-;; Updated: 27 April 2017
-;; Version: 0.2
+;; Author: tddsg (Ta Quang Trung)
+;; Version: 0.3
+;; Release log:
+;;   - v0.1: July 2016
+;;   - v0.2: 27 April 2017
+;;   - v0.3: 21 August 2019
 ;; Keywords: ocaml, imenu, merlin
 ;; URL:
 
 (require 'imenu)
-(require 'tuareg)
 (require 'subr-x)
 (require 'merlin)
 
-;;; enable depth and size threshold for OCaml modules with big size
-(setq max-lisp-eval-depth 10000)
-(setq max-specpdl-size 10000)
-
 ;; lists of different outline items
-(defvar-local module-list nil)
-(defvar-local value-list nil)
-(defvar-local type-list nil)
-(defvar-local class-list nil)
-(defvar-local exception-list nil)
-(defvar-local constructor-list nil)
-(defvar-local label-list nil)
-(defvar-local misc-list nil)
+(defvar-local merlin-imenu--value-list nil)
+(defvar-local merlin-imenu--type-list nil)
+(defvar-local merlin-imenu--exception-list nil)
 
-(defun compute-pos (line col)
+(defun merlin-imenu-compute-position (line col)
   "Get location of the item."
   (save-excursion
     (condition-case nil
@@ -38,85 +30,64 @@
           (point))
       (error -1))))
 
-(defun parse-outline-item (prefix item)
-  "Parse one item of the outline tree."
-  (let* ((start-line (cdr (nth 2 (nth 1 item))))
-         (start-col (cdr (nth 3 (nth 1 item))))
-         (item-name (cdr (nth 3 item)))
-         (item-kind (cdr (nth 4 item)))
-         (sub-trees (cdr (nth 6 item)))
-         (item-full-name (concat prefix item-name))
-         (item-pos (compute-pos start-line start-col))
-         (marker (set-marker (make-marker) item-pos))
-         (item-marker (cons item-full-name marker)))
-    (cond ((string= item-kind "Value")
-           (setq value-list (cons item-marker value-list)))
-          ((string= item-kind "Type")
-           (setq type-list (cons item-marker type-list)))
-          ((string= item-kind "Class")
-           (setq class-list (cons item-marker class-list)))
-          ((string= item-kind "Module")
-           (setq module-list (cons item-marker module-list)))
-          ((string= item-kind "Exn")
-           (setq exception-list (cons item-marker exception-list)))
-          ((string= item-kind "Constructor")
-           (setq constructor-list (cons item-marker constructor-list)))
-          ((string= item-kind "Label")
-           (setq label-list (cons item-marker label-list)))
-          (t (setq misc-list (cons item-marker misc-list))))
-    (if (not (null sub-trees))
-        (parse-outline-tree (concat prefix item-name " / ") sub-trees))))
+(defun merlin-imenu-create-entry (prefix name type kind line col)
+  (let* ((name (concat prefix name))
+         (type (cond ((not (string= kind "Value")) "null")
+                     ((not (string= type "null")) type)
+                     (t (let* ((types (merlin/call
+                                       "type-enclosing"
+                                       "-position" (format "%d:%d" line col)
+                                       "-expression" name)))
+                          (cdr (nth 3 (car types)))))))
+         (type (replace-regexp-in-string "\n" " " type))
+         (type (propertize type 'face 'font-lock-doc-face)))
+    (if (string= type "null") name (concat name " : " type))))
 
-(defun parse-outline-tree (prefix outline)
-  "Parse outline tree."
-  (when (not (null outline))
-    (parse-outline-item prefix (car outline))
-    (parse-outline-tree prefix (cdr outline))))
+(defun merlin-imenu-parse-outline (prefix outline)
+  (dolist (item outline)
+    (let* ((line (cdr (assoc 'line (assoc 'start item))))
+           (col (cdr (assoc 'col (assoc 'start item))))
+           (name (cdr (assoc 'name item)))
+           (kind (cdr (assoc 'kind item)))
+           (type (cdr (assoc 'type item)))
+           (sub-trees (cdr (assoc 'children item)))
+           (entry (merlin-imenu-create-entry prefix name type kind line col))
+           (position (merlin-imenu-compute-position line col))
+           (marker (cons entry (set-marker (make-marker) position))))
+      (cond ((string= kind "Value")
+             (setq merlin-imenu--value-list (cons marker merlin-imenu--value-list)))
+            ((string= kind "Type")
+             (setq merlin-imenu--type-list (cons marker merlin-imenu--type-list)))
+            ((string= kind "Exn")
+             (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list))))
+      (when sub-trees
+        (merlin-imenu-parse-outline (concat prefix entry ".") sub-trees)))))
 
 (defun merlin-imenu-create-index ()
   "Create data for imenu using the merlin outline feature."
-  (interactive)
   ;; Reset local vars
-  (setq module-list nil
-        value-list nil
-        type-list nil
-        class-list nil
-        exception-list nil
-        constructor-list nil
-        label-list nil
-        misc-list nil)
+  (setq merlin-imenu--value-list nil
+        merlin-imenu--type-list nil
+        merlin-imenu--exception-list nil)
   ;; Read outline tree
-  (parse-outline-tree "" (merlin/call "outline"))
-  (let ((index ()))
-    (when module-list (push (cons "Module" module-list) index))
-    (when exception-list (push (cons "Exception" exception-list) index))
-    (when label-list (push (cons "Label" label-list) index))
-    (when constructor-list (push (cons "Constructor" constructor-list) index))
-    (when type-list (push (cons "Type" type-list) index))
-    (when class-list (push (cons "Class" class-list) index))
-    (when value-list (push (cons "Value" value-list) index))
-    (when misc-list (push (cons "Misc" misc-list) index))
+  (merlin-imenu-parse-outline "" (merlin/call "outline"))
+  (let ((index nil))
+    (when merlin-imenu--value-list
+      (push (cons "Value" merlin-imenu--value-list) index))
+    (when merlin-imenu--exception-list
+      (push (cons "Exception" merlin-imenu--exception-list) index))
+    (when merlin-imenu--type-list
+      (push (cons "Type" merlin-imenu--type-list) index))
     index))
 
-;; enable Merlin to use the merlin-imenu module
+;;;###autoload
 (defun merlin-use-merlin-imenu ()
   "Merlin: use the custom imenu feature from Merlin"
   (interactive)
   ;; change the index function and force a rescan of imenu-index
   (setq imenu-create-index-function 'merlin-imenu-create-index)
   (imenu--cleanup)
-  (setq imenu--index-alist nil)
-  (message "Merlin: merlin-imenu is selected, rescanning buffer..."))
-
-;; enable Merlin to use the default tuareg-imenu module
-(defun merlin-use-tuareg-imenu ()
-  "Merlin: use the default imenu feature from Tuareg"
-  (interactive)
-  ;; change the index function and force a rescan of imenu-index
-  (setq imenu-create-index-function 'tuareg-imenu-create-index)
-  (imenu--cleanup)
-  (setq imenu--index-alist nil)
-  (message "Merlin: tuareg-imenu is selected, rescanning buffer..."))
+  (setq imenu--index-alist nil))
 
 (provide 'merlin-imenu)
 ;;; merlin-imenu.el ends here

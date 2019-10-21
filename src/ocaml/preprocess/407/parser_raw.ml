@@ -2,7 +2,7 @@
 (* This generated code requires the following version of MenhirLib: *)
 
 let () =
-  MenhirLib.StaticVersion.require_20190626
+  MenhirLib.StaticVersion.require_20190924
 
 module MenhirBasics = struct
   
@@ -33108,7 +33108,7 @@ end
 
 # 33110 "src/ocaml/preprocess/parser_raw.ml"
 
-# 269 "/Users/def/.opam/4.07.1/lib/menhir/standard.mly"
+# 269 "<standard.mly>"
   
 
 # 33115 "src/ocaml/preprocess/parser_raw.ml"

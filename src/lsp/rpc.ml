@@ -523,7 +523,7 @@ let send_response rpc (response : Response.t) =
   send rpc json
 
 module Server_notification = struct
-  open Protocol 
+  open Protocol
 
   type t =
     | PublishDiagnostics of PublishDiagnostics.params

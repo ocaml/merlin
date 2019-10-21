@@ -9,12 +9,12 @@ let _ = yojson_of_t
 
 let to_string uri = uri
 
+let proto =
+  match Sys.win32 with
+  | true -> "file:///"
+  | false -> "file://"
+
 let to_path (uri : t) =
-  let proto =
-    match Sys.win32 with
-    | true -> "file:///"
-    | false -> "file://"
-  in
   let path =
     match Std.String.chop_prefix ~prefix:proto uri with
     | Some path -> path
@@ -25,10 +25,6 @@ let to_path (uri : t) =
   |> Std.String.replace_all ~pattern:"%5C" ~with_:"/"
 
 let of_path (path : string) =
-  let proto = match Sys.win32 with
-    | true -> "file:///"
-    | false -> "file://"
-  in
   let path =
     path
     |> Std.String.replace_all ~pattern:"\\" ~with_:"/"
