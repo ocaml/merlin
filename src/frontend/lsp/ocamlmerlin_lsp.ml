@@ -227,20 +227,17 @@ let on_request :
     return (store, lsp_locs)
 
   | Lsp.Rpc.Request.DocumentSymbol {textDocument = {uri;}} ->
-    let module DocumentSymbol = Lsp.Protocol.DocumentSymbol in
-    let module SymbolKind = Lsp.Protocol.SymbolKind in
-
-    let kind item =
+    let kind item : Lsp.Protocol.SymbolKind.t =
       match item.Query_protocol.outline_kind with
-      | `Value -> SymbolKind.Function
-      | `Constructor -> SymbolKind.Constructor
-      | `Label -> SymbolKind.Property
-      | `Module -> SymbolKind.Module
-      | `Modtype -> SymbolKind.Module
-      | `Type -> SymbolKind.String
-      | `Exn -> SymbolKind.Constructor
-      | `Class -> SymbolKind.Class
-      | `Method -> SymbolKind.Method
+      | `Value -> Function
+      | `Constructor -> Constructor
+      | `Label -> Property
+      | `Module -> Module
+      | `Modtype -> Module
+      | `Type -> String
+      | `Exn -> Constructor
+      | `Class -> Class
+      | `Method -> Method
     in
 
     let range item = range_of_loc item.Query_protocol.location in
