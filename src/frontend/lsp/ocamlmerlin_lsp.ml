@@ -47,6 +47,11 @@ let position_of_lexical_position (lex_position : Lexing.position) =
   let character = lex_position.pos_cnum - lex_position.pos_bol in
   Lsp.Protocol.{line; character;}
 
+let range_of_loc (loc : Location.t) : Lsp.Protocol.range =
+  { start_ = position_of_lexical_position loc.loc_start;
+    end_   = position_of_lexical_position loc.loc_end;
+  }
+
 let send_diagnostics rpc doc =
   let command =
     Query_protocol.Errors { lexing = true; parsing = true; typing = true }
@@ -55,11 +60,7 @@ let send_diagnostics rpc doc =
   let diagnostics =
     List.map (fun (error : Location.error) ->
       let loc = Location.loc_of_report error in
-      let range = {
-        Lsp.Protocol.
-        start_ = position_of_lexical_position loc.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = range_of_loc loc in
       let severity =
         match error.source with
         | Warning -> Some Lsp.Protocol.PublishDiagnostics.Warning
@@ -163,10 +164,7 @@ let on_request :
           client_capabilities.textDocument.hover.contentFormat
       in
       let contents = format_contents ~as_markdown ~typ ~doc in
-      let range = Some {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = Some (range_of_loc loc) in
       let resp = {
         Lsp.Protocol.Hover.
         contents;
@@ -180,10 +178,7 @@ let on_request :
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
     let lsp_locs = List.map (fun loc ->
-      let range = {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = range_of_loc loc in
       (* using original uri because merlin is looking only in local file *)
       {Lsp.Protocol.Location. uri; range;}
      ) locs in
@@ -206,10 +201,7 @@ let on_request :
           let loc = item.Query_protocol.location in
           let info = {
             Lsp.Protocol.CodeLens.
-            range = {
-              start_ = position_of_lexical_position loc.loc_start;
-              end_ = position_of_lexical_position loc.loc_end;
-            };
+            range = range_of_loc loc;
             command = Some {
               Lsp.Protocol.Command.
               title = typ;
@@ -227,10 +219,7 @@ let on_request :
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
     let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
     let lsp_locs = List.map (fun loc ->
-      let range = {
-        Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
-        end_ = position_of_lexical_position loc.loc_end;
-      } in
+      let range = range_of_loc loc in
       (* using the default kind as we are lacking info
          to make a difference between assignment and usage. *)
       {Lsp.Protocol.DocumentHighlight. kind = Some Text; range;}
@@ -254,11 +243,7 @@ let on_request :
       | `Method -> SymbolKind.Method
     in
 
-    let range item = {
-      Lsp.Protocol.
-      start_ = position_of_lexical_position item.Query_protocol.location.loc_start;
-      end_ = position_of_lexical_position item.location.loc_end;
-    } in
+    let range item = range_of_loc item.Query_protocol.location in
 
     let rec symbol item =
       let children = Std.List.map item.Query_protocol.children ~f:symbol in
@@ -558,12 +543,7 @@ let on_request :
     let locs : Warnings.loc list = Query_commands.dispatch (Document.pipeline doc) command in
     let version = Document.version doc in
     let edits = List.map (fun loc ->
-      let range =
-        {
-          Lsp.Protocol. start_ = position_of_lexical_position loc.Warnings.loc_start;
-          end_ = position_of_lexical_position loc.loc_end;
-        }
-      in
+      let range = range_of_loc loc in
       {Lsp.Protocol.TextEdit. newText = newName; range;}
     ) locs
     in
