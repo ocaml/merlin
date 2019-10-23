@@ -7,9 +7,9 @@ dune-workspace
 *.pyc
 *.cmly
 
-ocamlmerlin
-ocamlmerlin-server
-ocamlmerlin-lsp
+/ocamlmerlin
+/ocamlmerlin-server
+/ocamlmerlin-lsp
 
 # Ignore garbage files from editors
 *.un~
