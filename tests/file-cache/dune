@@ -1,0 +1,21 @@
+(alias
+ (name run-server-test)
+ (enabled_if (< %{ocaml_version} 4.07.0))
+ (deps (:t test_old.t) test.ml dep.ml %{bin:ocamlmerlin} %{bin:ocamlmerlin-server})
+ (action
+   (progn
+     (setenv MERLIN %{dep:../merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (run %{bin:mdx} test --syntax=cram %{t})))
+     (diff? %{t} %{t}.corrected))))
+
+(alias
+ (name run-server-test)
+ (enabled_if (>= %{ocaml_version} 4.07.0))
+ (deps (:t test.t) test.ml dep.ml %{bin:ocamlmerlin} %{bin:ocamlmerlin-server})
+ (action
+   (progn
+     (setenv MERLIN %{dep:../merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (run %{bin:mdx} test --syntax=cram %{t})))
+     (diff? %{t} %{t}.corrected))))
