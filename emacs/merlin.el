@@ -1487,6 +1487,7 @@ Empty string defaults to jumping to all these."
 
 (defun merlin--occurrence-text (line-num marker start end source-buf)
   (concat (propertize (format "%7d:" line-num)
+                      'font-lock-face 'shadow
                       'occur-prefix t
                       'occur-target marker
                       'follow-link t
