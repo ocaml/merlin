@@ -40,7 +40,7 @@ And try again:
     "notifications": []
   }
 
-However if we remove the dep and try again, we get an I/O error:
+If we remove the dep and try again, the "Unbound module" error should reappear:
 
   $ rm dep.cm*
   $ $MERLIN server errors -filename test.ml < test.ml
