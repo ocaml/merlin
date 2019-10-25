@@ -12,7 +12,7 @@ src_dir=$(realpath -e $(pwd) 2>/dev/null || readlink -f $(pwd))
 cd - > /dev/null
 $(dirname ${BASH_SOURCE[0]})/%%OCAMLMERLIN_PATH%% "$@" \
     | jq 'del(.timing)' \
-    | $sed -e "s:$src_dir/::" \
-    | $sed -e 's:"/.*/\(\.opam\|opam2\)/[^/]*/\([^"]*\)":"~opam/\2":' \
+    | $sed -e "s:$src_dir/::g" \
+    | $sed -e 's:"/.*/\(\.opam\|opam2\)/[^/]*/\([^"]*\)":"~opam/\2":g' \
     | $sed -e 's:\\n:\
 :g'
