@@ -1487,6 +1487,7 @@ Empty string defaults to jumping to all these."
 
 (defun merlin--occurrence-text (line-num marker start end source-buf)
   (concat (propertize (format "%7d:" line-num)
+                      'font-lock-face 'shadow
                       'occur-prefix t
                       'occur-target marker
                       'follow-link t
@@ -1517,8 +1518,11 @@ Empty string defaults to jumping to all these."
         (occ-buff (merlin--get-occ-buff))
         (positions
          (mapcar (lambda (pos)
-                   (merlin--point-of-pos (assoc 'start pos))
-                   (cons (cons 'marker (point-marker)) pos))
+                   (cons
+                    (cons 'marker
+                          (copy-marker
+                           (merlin--point-of-pos (assoc 'start pos))))
+                    pos))
                  lst)))
     (with-current-buffer occ-buff
       (let ((inhibit-read-only t)
