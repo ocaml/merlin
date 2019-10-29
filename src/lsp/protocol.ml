@@ -826,7 +826,7 @@ module DidOpen = struct
   and didOpenTextDocumentParams = {
     textDocument: TextDocumentItem.t;  (* the document that was opened *)
   }
-  [@@deriving_inline yojson]
+  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : didOpenTextDocumentParams) -> ()
@@ -920,7 +920,7 @@ module DidChange = struct
     rangeLength: int option [@default None]; (* the length that got replaced *)
     text: string; (* the new text of the range/document *)
   }
-  [@@deriving_inline yojson]
+  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : didChangeTextDocumentParams) -> ()
@@ -1236,7 +1236,7 @@ module DocumentHighlight = struct
     | `Int 1 -> Text
     | `Int 2 -> Read
     | `Int 3 -> Write
-    | node -> yojson_error "kind expected to be int int between 1 and 3" node
+    | node -> yojson_error "kind expected to be an int between 1 and 3" node
 
   type t = {
     range: range;
@@ -1680,7 +1680,7 @@ module PublishDiagnostics = struct
 
   (* legacy FB extension *)
   and relatedLocation = diagnosticRelatedInformation
-  [@@deriving_inline yojson]
+  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : publishDiagnosticsParams) -> ()
@@ -2073,7 +2073,7 @@ module Completion = struct
     | `Int 1 -> Invoked
     | `Int 2 -> TriggerCharacter
     | `Int 3 -> TriggerForIncompleteCompletions
-    | v -> yojson_error "invalid completion.triggerKind, show be 1-3" v
+    | v -> yojson_error "invalid completion.triggerKind, should be equal to 1, 2 or 3" v
 
   type completionItemKind =
     | Text (* 1 *)
@@ -2171,7 +2171,7 @@ module Completion = struct
       | None -> yojson_error "completion.kind expected to be between 1 and 25"
                   (`Int v)
       end
-    | node -> yojson_error "completion.kind expected to be int between 1 and 25"
+    | node -> yojson_error "completion.kind expected to be between 1 and 25"
                 node
 
     (** Keep this in sync with `int_of_completionItemKind`. *)
@@ -2799,7 +2799,7 @@ module Hover = struct
     contents: MarkupContent.t;
     range: range option [@default None];
   }
-  [@@deriving_inline yojson]
+  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : result) -> ()
