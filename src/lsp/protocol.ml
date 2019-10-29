@@ -191,7 +191,7 @@ module Command = struct
   type t = {
     title : string;
     command : string;
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : t) -> ()
@@ -223,13 +223,7 @@ let t_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -825,8 +819,8 @@ module DidOpen = struct
 
   and didOpenTextDocumentParams = {
     textDocument: TextDocumentItem.t;  (* the document that was opened *)
-  }
-  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
+  } [@@yojson.allow_extra_fields]
+  [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : didOpenTextDocumentParams) -> ()
@@ -854,13 +848,7 @@ and didOpenTextDocumentParams_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -913,14 +901,14 @@ module DidChange = struct
   and didChangeTextDocumentParams = {
     textDocument: VersionedTextDocumentIdentifier.t;
     contentChanges: textDocumentContentChangeEvent list;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and textDocumentContentChangeEvent = {
     range: range option [@default None]; (* the range of the document that changed *)
     rangeLength: int option [@default None]; (* the length that got replaced *)
     text: string; (* the new text of the range/document *)
-  }
-  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
+  } [@@yojson.allow_extra_fields]
+  [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : didChangeTextDocumentParams) -> ()
@@ -962,13 +950,7 @@ and didChangeTextDocumentParams_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -1043,13 +1025,7 @@ and textDocumentContentChangeEvent_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -1661,7 +1637,7 @@ module PublishDiagnostics = struct
   and publishDiagnosticsParams = {
     uri: documentUri;
     diagnostics: diagnostic list;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and diagnostic = {
     range: range;  (* the range at which the message applies *)
@@ -1671,16 +1647,16 @@ module PublishDiagnostics = struct
     message: string;  (* the diagnostic's message *)
     relatedInformation: diagnosticRelatedInformation list;
     relatedLocations: relatedLocation list; (* legacy FB extension *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   and diagnosticRelatedInformation = {
     relatedLocation: Location.t;  (* wire: just "location" *)
     relatedMessage: string;  (* wire: just "message" *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   (* legacy FB extension *)
   and relatedLocation = diagnosticRelatedInformation
-  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
+  [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : publishDiagnosticsParams) -> ()
@@ -1721,13 +1697,7 @@ and publishDiagnosticsParams_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -1841,13 +1811,7 @@ and diagnostic_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -1939,13 +1903,7 @@ and diagnosticRelatedInformation_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -2209,18 +2167,18 @@ module Completion = struct
     textDocument: TextDocumentIdentifier.t;  (* the text document *)
     position: position;  (* the position inside the text document *)
     context: completionContext option [@default None];
-  }
+  } [@@yojson.allow_extra_fields]
 
   and completionContext = {
     triggerKind: completionTriggerKind;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and result = completionList  (* wire: can also be 'completionItem list' *)
 
   and completionList = {
     isIncomplete: bool; (* further typing should result in recomputing *)
     items: completionItem list;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and completionItem = {
     label: string;  (* the label in the UI *)
@@ -2237,7 +2195,7 @@ module Completion = struct
     additionalTextEdits: TextEdit.t list [@default []];
     (* command: Command.t option [@default None];  (1* if present, is executed after completion *1) *)
     (* data: Hh_json.json option [@default None]; *)
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
@@ -2290,13 +2248,7 @@ and completionParams_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -2356,13 +2308,7 @@ and completionContext_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -2422,13 +2368,7 @@ and completionList_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -2594,13 +2534,7 @@ and completionItem_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -2798,8 +2732,8 @@ module Hover = struct
   and hoverResult = {
     contents: MarkupContent.t;
     range: range option [@default None];
-  }
-  [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
+  } [@@yojson.allow_extra_fields]
+  [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : result) -> ()
@@ -2841,13 +2775,7 @@ and hoverResult_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -3927,11 +3855,11 @@ let _ = yojson_of_client_capabilities
 
   and result = {
     server_capabilities: server_capabilities [@key "capabilities"];
-  }
+  } [@@yojson.allow_extra_fields]
 
   and errorData = {
     retry: bool;  (* should client retry the initialize request *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   (* What capabilities the server provides *)
   and server_capabilities = {
@@ -3956,12 +3884,12 @@ let _ = yojson_of_client_capabilities
     typeCoverageProvider: bool;  (* Nuclide-specific feature *)
     rageProvider: bool;
     (* omitted: experimental *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   and completionOptions = {
     resolveProvider: bool;  (* server resolves extra info on demand *)
     triggerCharacters: string list; (* wire "triggerCharacters" *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   (* and signatureHelpOptions = { *)
   (*   sighelp_triggerCharacters: string list; (1* wire "triggerCharacters" *1) *)
@@ -3969,20 +3897,20 @@ let _ = yojson_of_client_capabilities
 
   and codeLensOptions = {
     codelens_resolveProvider: bool [@key "resolveProvider"];  (* wire "resolveProvider" *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   and documentOnTypeFormattingOptions = {
     firstTriggerCharacter: string;  (* e.g. "}" *)
     moreTriggerCharacter: string list;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and documentLinkOptions = {
     doclink_resolveProvider: bool;  (* wire "resolveProvider" *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   and executeCommandOptions = {
     commands: string list;  (* the commands to be executed on the server *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   (* text document sync options say what messages the server requests the
    * client to send. We use the "want_" prefix for OCaml naming reasons;
@@ -3993,11 +3921,11 @@ let _ = yojson_of_client_capabilities
     willSave: bool;  (* textDocument/willSave *)
     willSaveWaitUntil: bool;  (* textDoc.../willSaveWaitUntil *)
     didSave: saveOptions option [@default None];  (* textDocument/didSave *)
-  }
+  } [@@yojson.allow_extra_fields]
 
   and saveOptions = {
     includeText: bool;  (* the client should include content on save *)
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
@@ -4136,13 +4064,7 @@ and result_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4189,13 +4111,7 @@ and errorData_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4437,13 +4353,7 @@ and server_capabilities_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4633,13 +4543,7 @@ and completionOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4695,13 +4599,7 @@ and codeLensOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4765,13 +4663,7 @@ and documentOnTypeFormattingOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4832,13 +4724,7 @@ and documentLinkOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4890,13 +4776,7 @@ and executeCommandOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -4980,13 +4860,7 @@ and textDocumentSyncOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -5057,13 +4931,7 @@ and saveOptions_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -5384,7 +5252,7 @@ module References = struct
 
   and referenceContext = {
     includeDeclaration: bool;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and result = Location.t list (* wire: either a single one or an array *)
   [@@deriving_inline yojson]
@@ -5490,13 +5358,7 @@ and referenceContext_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -5690,7 +5552,7 @@ module SymbolInformation = struct
     location : Location.t;
     (* the symbol containing this symbol *)
     containerName : string option [@default None];
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : t) -> ()
@@ -5750,13 +5612,7 @@ let t_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -5871,7 +5727,7 @@ module DocumentSymbol = struct
     (**
      * Children of this symbol, e.g. properties of a class.
      *)
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : t) -> ()
@@ -5949,13 +5805,7 @@ let rec t_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -6047,7 +5897,7 @@ end
 module TextDocumentDocumentSymbol = struct
   type params = {
     textDocument: TextDocumentIdentifier.t;
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
@@ -6071,13 +5921,7 @@ let params_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -6130,15 +5974,15 @@ end
 module CodeLens = struct
   type params = {
     textDocument: TextDocumentIdentifier.t;
-  }
+  } [@@yojson.allow_extra_fields]
 
   and result = item list
 
   and item = {
     range: range;
     command: Command.t option;
-  }
-   [@@deriving_inline yojson]
+  } [@@yojson.allow_extra_fields]
+  [@@deriving_inline yojson]
    
 let _ = fun (_ : params) -> ()
 let _ = fun (_ : result) -> ()
@@ -6163,13 +6007,7 @@ let rec params_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -6228,13 +6066,7 @@ and item_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
@@ -6303,7 +6135,7 @@ module Rename = struct
                         is not valid the request must return a
                         [ResponseError](#ResponseError) with an
                         appropriate message set. *)
-  }
+  } [@@yojson.allow_extra_fields]
   [@@deriving_inline yojson]
   
 let _ = fun (_ : params) -> ()
@@ -6345,13 +6177,7 @@ let params_of_yojson =
                     | Some _ ->
                         duplicates := (field_name ::
                           (Ppx_yojson_conv_lib.(!) duplicates)))
-               | _ ->
-                   if
-                     Ppx_yojson_conv_lib.(!)
-                       Ppx_yojson_conv_lib.Yojson_conv.record_check_extra_fields
-                   then
-                     extra := (field_name :: (Ppx_yojson_conv_lib.(!) extra))
-                   else ());
+               | _ -> ());
               iter tail)
          | [] -> () in
        (iter field_yojsons;
