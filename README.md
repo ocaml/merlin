@@ -51,6 +51,14 @@ opam install ppx_yojson_conv
 This first step is temporary and won't be needed once `ppx_yojson_conv@0.13` and
 `ppx_yojson_conv_lib@0.13` are released to OPAM.
 
+After modifications to `@@deriving_inline yojson` annotations you need to run:
+
+```shell
+dune build @lint --auto-promote
+```
+
+So that changes are reflected in generated source code.
+
 Installation
 ------------
 
