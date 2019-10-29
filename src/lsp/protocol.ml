@@ -1335,11 +1335,11 @@ end
 *)
 module TextEdit = struct
   type t = {
+    range: range;
     (** The range of the text document to be manipulated. To insert text into
         a document create a range where start === end. *)
-    range: range;
-    (** The string to be inserted. For delete operations use an empty string. *)
     newText: string;
+    (** The string to be inserted. For delete operations use an empty string. *)
   }
   [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
   
@@ -3456,8 +3456,8 @@ let _ = yojson_of_textDocumentClientCapabilities
   }
 
   type workspaceEdit = {
-    (** client supports versioned doc changes *)
     documentChanges: bool [@default false];
+    (** client supports versioned doc changes *)
   }
   [@@deriving_inline yojson] [@@yojson.allow_extra_fields]
   
@@ -3523,8 +3523,8 @@ let _ = yojson_of_workspaceEdit
   }
 
   type workspaceClientCapabilities = {
-    (** client supports applying batch edits *)
     applyEdit: bool [@default false];
+    (** client supports applying batch edits *)
     workspaceEdit: workspaceEdit [@default workspaceEdit_empty];
     (** omitted: dynamic-registration fields *)
   }
@@ -5831,46 +5831,46 @@ end
 module DocumentSymbol = struct
 
   type t = {
+    name : string;
     (**
      * The name of this symbol. Will be displayed in the user interface and
      * therefore must not be an empty string or a string only consisting of
      * white spaces.
      *)
-    name : string;
 
+    detail: string option;
     (**
      * More detail for this symbol, e.g the signature of a function.
      *)
-    detail: string option;
 
+    kind: SymbolKind.t;
     (**
      * The kind of this symbol.
      *)
-    kind: SymbolKind.t;
 
+    deprecated : bool;
     (**
      * Indicates if this symbol is deprecated.
      *)
-    deprecated : bool;
 
+    range : range;
     (**
      * The range enclosing this symbol not including leading/trailing whitespace
      * but everything else like comments. This information is typically used to
      * determine if the clients cursor is inside the symbol to reveal in the
      * symbol in the UI.
      *)
-    range : range;
 
+    selectionRange : range;
     (**
      * The range that should be selected and revealed when this symbol is being
      * picked, e.g the name of a function.  Must be contained by the `range`.
      *)
-    selectionRange : range;
 
+    children: t list;
     (**
      * Children of this symbol, e.g. properties of a class.
      *)
-    children: t list;
   }
   [@@deriving_inline yojson]
   

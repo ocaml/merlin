@@ -211,7 +211,7 @@ let read rpc =
   read_content rpc >>= parse_json
   >>= fun parsed -> match Packet.t_of_yojson parsed with
   | r -> Ok r
-  | exception exn -> Error "Unexpected packet"
+  | exception _exn -> Error "Unexpected packet"
 
 
 module Response = struct
