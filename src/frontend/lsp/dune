@@ -2,5 +2,6 @@
  (name ocamlmerlin_lsp)
  (package merlin-lsp)
  (public_name ocamlmerlin-lsp)
+ (flags (:standard "-open" "Result"))
  (libraries config merlin_analysis merlin_kernel merlin_utils os_ipc
-            parsing query_protocol lsp typing utils query_commands))
+            parsing query_protocol lsp typing utils query_commands result))
