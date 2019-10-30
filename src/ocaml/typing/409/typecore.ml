@@ -3764,22 +3764,24 @@ and type_format loc str env =
         | Int_u  -> mk_constr "Int_u"  [] | Int_Cd -> mk_constr "Int_Cd" []
         | Int_Ci -> mk_constr "Int_Ci" [] | Int_Cu -> mk_constr "Int_Cu" []
       and mk_fconv (flag, kind) =
-        let flag =
-          match flag with
+        let flag = match flag with
           | Float_flag_ -> ""
           | Float_flag_p -> "p"
           | Float_flag_s -> "s"
         in
-        match kind with
-        | Float_f -> mk_constr ("Float_" ^ flag ^ "f") []
-        | Float_e -> mk_constr ("Float_" ^ flag ^ "e") []
-        | Float_E -> mk_constr ("Float_" ^ flag ^ "E") []
-        | Float_g -> mk_constr ("Float_" ^ flag ^ "g") []
-        | Float_G -> mk_constr ("Float_" ^ flag ^ "G") []
-        | Float_F -> mk_constr ("Float_F") []
-        (* should new constructors be introduced for %+F and % F ? *)
-        | Float_h -> mk_constr ("Float_" ^ flag ^ "h") []
-        | Float_H -> mk_constr ("Float_" ^ flag ^ "H") []
+        let kind = match kind with
+          | Float_f -> "f"
+          | Float_e -> "e"
+          | Float_E -> "E"
+          | Float_g -> "g"
+          | Float_G -> "G"
+          | Float_F -> "F"
+          | Float_h -> "h"
+          | Float_H -> "H"
+        in
+        let flag = mk_constr ("Float_flag_" ^ flag) [] in
+        let kind = mk_constr ("Float_" ^ kind) [] in
+        mk_exp_loc (Pexp_tuple [ flag; kind ])
       and mk_counter cnt = match cnt with
         | Line_counter  -> mk_constr "Line_counter"  []
         | Char_counter  -> mk_constr "Char_counter"  []
