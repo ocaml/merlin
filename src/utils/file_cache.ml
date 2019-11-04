@@ -36,19 +36,21 @@ end) = struct
   let cache : (string, File_id.t * float ref * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
+  let get_cached_entry ~title fid filename =
+    let fid', latest_use, file = Hashtbl.find cache filename in
+    if (File_id.check fid fid') then
+      log ~title "reusing %S" filename
+    else (
+      log ~title "%S was updated on disk" filename;
+      raise Not_found;
+    );
+    latest_use := Unix.time ();
+    file
+
   let read filename =
     let fid = File_id.get filename in
     let title = "read" in
-    try
-      let fid', latest_use, file = Hashtbl.find cache filename in
-      if (File_id.check fid fid') then
-        log ~title "reusing %S" filename
-      else (
-        log ~title "%S was updated on disk" filename;
-        raise Not_found;
-      );
-      latest_use := Unix.time ();
-      file
+    try get_cached_entry ~title fid filename
     with Not_found ->
     try
       log ~title "reading %S from disk" filename;
@@ -60,6 +62,11 @@ end) = struct
         filename (fun () -> Printexc.to_string exn);
       Hashtbl.remove cache filename;
       raise exn
+
+  let get_cached_entry filename =
+    let fid = File_id.get filename in
+    let title = "get_cached_entry" in
+    get_cached_entry ~title fid filename
 
   let flush ?older_than () =
     let title = "flush" in
