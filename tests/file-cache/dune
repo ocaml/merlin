@@ -1,6 +1,7 @@
 (alias
  (name run-server-test)
  (deps (:t test.t) test.ml dep.ml %{bin:ocamlmerlin} %{bin:ocamlmerlin-server})
+ (package merlin)
  (action
    (progn
      (setenv MERLIN %{dep:../merlin-wrapper}
