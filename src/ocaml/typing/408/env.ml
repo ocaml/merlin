@@ -95,12 +95,17 @@ let error err = raise (Error err)
 module EnvLazy : sig
   type ('a,'b) t
 
+  type log
+
   val force : ('a -> 'b) -> ('a,'b) t -> 'b
   val create : 'a -> ('a,'b) t
   val get_arg : ('a,'b) t -> 'a option
   val create_forced : 'b -> ('a, 'b) t
   val create_failed : exn -> ('a, 'b) t
 
+  val log : unit -> log
+  val force_logged : log -> ('a -> 'b option) -> ('a, 'b option) t -> 'b option
+  val backtrack : log -> unit
 end  = struct
 
   type ('a,'b) t = ('a,'b) eval ref
@@ -109,6 +114,12 @@ end  = struct
     | Done of 'b
     | Raise of exn
     | Thunk of 'a
+
+  type undo =
+    | Nil
+    | Cons : ('a, 'b) t * 'a * undo -> undo
+
+  type log = undo ref
 
   let force f x =
     match !x with
@@ -135,6 +146,34 @@ end  = struct
   let create_failed e =
     ref (Raise e)
 
+  let log () =
+    ref Nil
+
+  let force_logged log f x =
+    match !x with
+    | Done x -> x
+    | Raise e -> raise e
+    | Thunk e ->
+        match f e with
+        | None ->
+          x := Done None;
+          log := Cons(x, e, !log);
+          None
+        | Some _ as y ->
+          x := Done y;
+          y
+        | exception e ->
+          x := Raise e;
+          raise e
+
+  let backtrack log =
+    let rec loop = function
+      | Nil -> ()
+      | Cons(x, e, rest) ->
+          x := Thunk e;
+          loop rest
+    in
+    loop !log
 end
 
 (** Map indexed by the name of module components. *)
@@ -596,6 +635,22 @@ let diff env1 env2 =
   IdTbl.diff_keys env1.modules env2.modules @
   IdTbl.diff_keys env1.classes env2.classes
 
+type can_load_cmis =
+  | Can_load_cmis
+  | Cannot_load_cmis of EnvLazy.log
+
+let can_load_cmis = srefk Can_load_cmis
+
+let without_cmis f x =
+  let log = EnvLazy.log () in
+  let res =
+    Misc.(protect_refs
+            [ R (can_load_cmis, Cannot_load_cmis log)]
+            (fun () -> f x))
+  in
+  EnvLazy.backtrack log;
+  res
+
 (* Forward declarations *)
 
 let components_of_module' =
@@ -627,7 +682,11 @@ let md md_type =
   {md_type; md_attributes=[]; md_loc=Location.none}
 
 let get_components_opt c =
-  EnvLazy.force !components_of_module_maker' c.comps
+  match !can_load_cmis with
+  | Can_load_cmis ->
+    EnvLazy.force !components_of_module_maker' c.comps
+  | Cannot_load_cmis log ->
+    EnvLazy.force_logged log !components_of_module_maker' c.comps
 
 let empty_structure =
   Structure_comps {
@@ -861,6 +920,9 @@ let find_pers_struct check name =
   | Some ps -> ps
   | None -> raise Not_found
   | exception Not_found ->
+    match !can_load_cmis with
+    | Cannot_load_cmis _ -> raise Not_found
+    | Can_load_cmis ->
         let ps =
           match !Persistent_signature.load ~unit_name:name with
           | Some ps -> ps

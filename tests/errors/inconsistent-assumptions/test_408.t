@@ -79,22 +79,6 @@ Go to the file, and ask merlin to move you to the error:
     "value": [
       {
         "start": {
-          "line": 0,
-          "col": -1
-        },
-        "end": {
-          "line": 0,
-          "col": -1
-        },
-        "type": "env",
-        "sub": [],
-        "valid": true,
-        "message": "The files tests/errors/inconsistent-assumptions/_build/my_lib__Import.cmi
-  and tests/errors/inconsistent-assumptions/_build/my_lib.cmi
-  make inconsistent assumptions over interface My_lib__Import"
-      },
-      {
-        "start": {
           "line": 4,
           "col": 11
         },
