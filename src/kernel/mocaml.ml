@@ -7,7 +7,7 @@ let setup_config config = (
   let open Mconfig in
   let open Clflags in
   let ocaml = config.ocaml in
-  Config.load_path := Mconfig.build_path config;
+  Load_path.init (Mconfig.build_path config);
   Location.input_name  := config.query.filename;
   fast                 := ocaml.unsafe ;
   classic              := ocaml.classic ;
@@ -105,7 +105,8 @@ let with_printer printer f =
 (* Cleanup caches *)
 let clear_caches () = (
   Cmi_cache.clear ();
-  Cmt_cache.clear ()
+  Cmt_cache.clear ();
+  Directory_content_cache.clear ();
 )
 
 (* Flush cache *)

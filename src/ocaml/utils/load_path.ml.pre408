@@ -1,0 +1,2 @@
+let init build_path =
+  Config.load_path := build_path

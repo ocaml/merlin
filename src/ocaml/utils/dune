@@ -10,13 +10,23 @@ let ver =
     | _ -> raise Not_found
   with Not_found ->
     Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+
+let load_path =
+  let version = Scanf.sscanf J.ocaml_version "%d.%d." (fun ma mi -> ma, mi) in
+  if version >= (4,8)
+  then ""
+  else {|
+(rule
+  (targets load_path.ml)
+  (action (copy# load_path.ml.pre408 %{targets})))|}
 ;;
 
 Printf.ksprintf J.send {|
 (copy_files# %s/*.ml{,i})
+%s
 
 (library
   (name utils)
   (wrapped false)
   (libraries config findlib merlin_utils))
-|} ver
+|} ver load_path

@@ -63,13 +63,11 @@ val save_signature:
 val package_units:
   Env.t -> string list -> string -> string -> Typedtree.module_coercion
 
-(*
 (* Should be in Envaux, but it breaks the build of the debugger *)
 val initial_env:
   loc:Location.t -> safe_string:bool ->
   initially_opened_module:string option ->
   open_implicit_modules:string list -> Env.t
-*)
 
 module Sig_component_kind : sig
   type t =

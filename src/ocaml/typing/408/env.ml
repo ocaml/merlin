@@ -832,7 +832,7 @@ module Persistent_signature = struct
       cmi_cache : exn ref }
 
   let load = ref (fun ~unit_name ->
-      match find_in_path_uncap !Config.load_path (unit_name ^ ".cmi") with
+      match Load_path.find_uncap (unit_name ^ ".cmi") with
       | filename ->
         let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
         Some { filename; cmi; cmi_cache }
@@ -2592,7 +2592,6 @@ let read_signature modname filename =
   let ps = read_pers_struct modname filename in
   Lazy.force ps.ps_sig
 
-(*
 let is_identchar_latin1 = function
   | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
   | '\248'..'\255' | '\'' | '0'..'9' -> true
@@ -2616,7 +2615,6 @@ let persistent_structures_of_dir dir =
   |> List.to_seq
   |> Seq.filter_map unit_name_of_filename
   |> String.Set.of_seq
-*)
 
 (* Return the CRC of the interface of the given compilation unit *)
 
@@ -3207,7 +3205,7 @@ let check_state_consistency () =
   Std.Hashtbl.forall !persistent_structures @@ fun name ps ->
   match ps with
   | None ->
-    begin match find_in_path_uncap !Config.load_path (name ^ ".cmi") with
+    begin match Load_path.find_uncap (name ^ ".cmi") with
       | _ -> false
       | exception Not_found -> true
     end
