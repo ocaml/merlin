@@ -1,0 +1,21 @@
+(alias
+ (name runtest)
+ (deps (:t test.t))
+ (enabled_if (< %{ocaml_version} 4.08.0))
+ (action
+   (progn
+     (setenv MERLIN %{exe:../../merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (run %{bin:mdx} test --syntax=cram %{t})))
+     (diff? %{t} %{t}.corrected))))
+
+(alias
+ (name runtest)
+ (deps (:t test_408.t))
+ (enabled_if (>= %{ocaml_version} 4.08.0))
+ (action
+   (progn
+     (setenv MERLIN %{exe:../../merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (run %{bin:mdx} test --syntax=cram %{t})))
+     (diff? %{t} %{t}.corrected))))
