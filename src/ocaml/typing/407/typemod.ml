@@ -119,12 +119,18 @@ let initial_env ~loc ~safe_string ~initially_opened_module
     match initially_opened_module with
     | None -> env
     | Some name ->
-      snd (type_initially_opened_module env name)
+      try snd (type_initially_opened_module env name)
+      with exn ->
+        Msupport.raise_error exn;
+        env
   in
   let open_implicit_module env m =
     let open Asttypes in
     let lid = {loc; txt = Longident.parse m } in
-    snd (type_open_ Override env lid.loc lid)
+    try snd (type_open_ Override env lid.loc lid)
+    with exn ->
+      Msupport.raise_error exn;
+      env
   in
   List.fold_left open_implicit_module env open_implicit_modules
 

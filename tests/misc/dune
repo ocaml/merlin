@@ -10,7 +10,7 @@
 (alias
  (name runtest)
  (deps load_path.t)
- (enabled_if (< %{ocaml_version} 4.07.0))
+ (enabled_if (< %{ocaml_version} 4.08.0))
  (action
    (progn
      (setenv OCAMLC %{ocamlc}
@@ -21,7 +21,7 @@
 (alias
  (name runtest)
  (deps load_path_post_407.t)
- (enabled_if (>= %{ocaml_version} 4.07.0))
+ (enabled_if (>= %{ocaml_version} 4.08.0))
  (action
    (progn
      (setenv OCAMLC %{ocamlc}

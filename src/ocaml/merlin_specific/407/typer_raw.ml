@@ -30,30 +30,19 @@ open Std
 open Location
 open Parsetree
 
-let open_implicit_module m env =
-  let open Asttypes in
-  let lid = {loc = Location.in_file "command line";
-             txt = Longident.parse m } in
-  match snd (Typemod.type_open_ Override env lid.loc lid) with
-  | env -> env
-  | exception exn ->
-    Msupport.raise_error exn;
-    env
-
 let fresh_env () =
   (*Ident.reinit();*)
-  let initial =
-    if !Clflags.unsafe_string then
-      Env.initial_unsafe_string
-    else
-      Env.initial_safe_string in
-  let env =
+  let initially_opened_module =
     if !Clflags.nopervasives then
-      initial
+      None
     else
-      open_implicit_module "Stdlib" initial in
-  List.fold_right ~f:open_implicit_module
-    !Clflags.open_modules ~init:env
+      Some "Stdlib"
+  in
+  Typemod.initial_env
+    ~loc:(Location.in_file "command line")
+    ~safe_string:(not !Clflags.unsafe_string)
+    ~initially_opened_module
+    ~open_implicit_modules:(List.rev !Clflags.open_modules)
 
 
 module Rewrite_loc = struct
