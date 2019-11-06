@@ -12,6 +12,7 @@ atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
 re_wspaces = re.compile("[\n ]+")
 re_spaces = re.compile(" +")
 re_spaces_around_nl = re.compile(" *\n *")
+re_error_warning = re.compile(r"Error \(warning (\d+)\): ")
 
 protocol_version = 3
 
@@ -409,6 +410,8 @@ def vim_loclist(vimvar, ignore_warnings):
             msg = msg[8:]
         elif msg.startswith("Error: "):
             msg = msg[7:]
+        elif msg.startswith("Error (warning"):
+            msg = re.sub(re_error_warning, r"\1: ", msg)
         lnum = 1
         col = 1
         if 'start' in error:
