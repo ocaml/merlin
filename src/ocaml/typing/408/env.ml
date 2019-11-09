@@ -505,7 +505,7 @@ and module_declaration_lazy =
 
 and module_components =
   {
-    alerts: string String.Map.t;
+    alerts: Misc.alerts;
     loc: Location.t;
     comps: (components_maker, module_components_repr option) EnvLazy.t;
   }
@@ -3117,7 +3117,7 @@ let (initial_safe_string, initial_unsafe_string) =
     empty
 
 let add_type ~check id info env =
-add_type ~check ~predef:false id info env
+  add_type ~check ~predef:false id info env
 
 (* Return the environment summary *)
 

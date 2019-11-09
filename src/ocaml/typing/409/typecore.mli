@@ -17,7 +17,6 @@
 
 open Asttypes
 open Types
-open Format
 
 (* This variant is used to print improved error messages, and does not affect
    the behavior of the typechecker itself.
@@ -121,12 +120,14 @@ val self_coercion : (Path.t * Location.t list ref) list ref
 type error =
   | Constructor_arity_mismatch of Longident.t * int * int
   | Label_mismatch of Longident.t * Ctype.Unification_trace.t
-  | Pattern_type_clash of Ctype.Unification_trace.t
+  | Pattern_type_clash of
+      Ctype.Unification_trace.t * Typedtree.pattern_desc option
   | Or_pattern_type_clash of Ident.t * Ctype.Unification_trace.t
   | Multiply_bound_variable of string
   | Orpat_vars of Ident.t * Ident.t list
   | Expr_type_clash of
       Ctype.Unification_trace.t * type_forcing_context option
+      * Typedtree.expression_desc option
   | Apply_non_function of type_expr
   | Apply_wrong_label of arg_label * type_expr
   | Label_multiply_defined of string
@@ -142,6 +143,7 @@ type error =
   | Virtual_class of Longident.t
   | Private_type of type_expr
   | Private_label of Longident.t * type_expr
+  | Private_constructor of constructor_description * type_expr
   | Unbound_instance_variable of string * string list
   | Instance_variable_not_mutable of bool * string
   | Not_subtype of Ctype.Unification_trace.t * Ctype.Unification_trace.t
@@ -183,7 +185,7 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-val report_error: Env.t -> formatter -> error -> unit
+val report_error: loc:Location.t -> Env.t -> error -> Location.error
  (** @deprecated.  Use {!Location.error_of_exn}, {!Location.print_report}. *)
 
 (* Forward declaration, to be filled in by Typemod.type_module *)

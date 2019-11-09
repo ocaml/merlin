@@ -205,8 +205,6 @@ let set_fixed_row env loc p decl =
 
 (* Translate one type declaration *)
 
-module StringSet = String.Set
-
 let make_params env params =
   let make_param (sty, v) =
     try
@@ -218,12 +216,12 @@ let make_params env params =
 
 let transl_labels env closed lbls =
   assert (lbls <> []);
-  let all_labels = ref StringSet.empty in
+  let all_labels = ref String.Set.empty in
   List.iter
     (fun {pld_name = {txt=name; loc}} ->
-       if StringSet.mem name !all_labels then
+       if String.Set.mem name !all_labels then
          raise(Error(loc, Duplicate_label name));
-       all_labels := StringSet.add name !all_labels)
+       all_labels := String.Set.add name !all_labels)
     lbls;
   let mk {pld_name=name;pld_mutable=mut;pld_type=arg;pld_loc=loc;
           pld_attributes=attrs} =
@@ -431,12 +429,12 @@ let transl_declaration env sdecl id =
           | (_,_,loc)::_ ->
               Location.prerr_warning loc Warnings.Constraint_on_gadt
         end;
-        let all_constrs = ref StringSet.empty in
+        let all_constrs = ref String.Set.empty in
         List.iter
           (fun {pcd_name = {txt = name}} ->
-            if StringSet.mem name !all_constrs then
+            if String.Set.mem name !all_constrs then
               raise(Error(sdecl.ptype_loc, Duplicate_constructor name));
-            all_constrs := StringSet.add name !all_constrs)
+            all_constrs := String.Set.add name !all_constrs)
           scstrs;
         if List.length
             (List.filter (fun cd -> cd.pcd_args <> Pcstr_tuple []) scstrs)

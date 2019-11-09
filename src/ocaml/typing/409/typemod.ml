@@ -21,8 +21,6 @@ open Parsetree
 open Types
 open Format
 
-module String = Std.String
-
 module Sig_component_kind = struct
   type t =
     | Value
@@ -101,8 +99,6 @@ type error =
   | Badly_formed_signature of string * Typedecl.error
   | Cannot_hide_id of hiding_error
   | Invalid_type_subst_rhs
-  | Package_type_missing of Path.t * module_type * Longident.t
-  | Package_type_arity of Path.t * module_type * Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -111,13 +107,6 @@ let update_location loc = function
     Error (_, env, err) -> Error (loc, env, err)
   | err -> err
 let () = Typetexp.typemod_update_location := update_location
-
-module ImplementationHooks = Misc.MakeHooks(struct
-    type t = Typedtree.structure * Typedtree.module_coercion
-  end)
-module InterfaceHooks = Misc.MakeHooks(struct
-    type t = Typedtree.signature
-  end)
 
 open Typedtree
 
@@ -154,7 +143,6 @@ let type_open_ ?used_slot ?toplevel ovf env loc lid =
       ignore (extract_sig_open env lid.loc md.md_type);
       assert false
 
-(*
 let initial_env ~loc ~safe_string ~initially_opened_module
     ~open_implicit_modules =
   let env =
@@ -205,7 +193,6 @@ let initial_env ~loc ~safe_string ~initially_opened_module
   in
   let env = List.fold_left add_units env units in
   List.fold_left open_module env open_implicit_modules
-*)
 
 let type_open_descr ?used_slot ?toplevel env sod =
   let (path, newenv) =
@@ -268,7 +255,7 @@ let check_type_decl env loc id row_id newdecl decl rs rem =
   in
   let env = if rs = Trec_not then env else add_rec_types env rem in
   Includemod.type_declarations ~loc env id newdecl decl;
-  Typedecl.check_coherence env loc id newdecl
+  Typedecl.check_coherence env loc (Path.Pident id) newdecl
 
 let update_rec_next rs rem =
   match rs with
@@ -2327,8 +2314,8 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         let newenv = Env.update_short_paths newenv in
         Tstr_open od, sg, newenv
     | Pstr_class cl ->
-        let (classes, newenv) = Typeclass.class_declarations env cl in
-        let newenv = Env.update_short_paths newenv in
+        let (classes, new_env) = Typeclass.class_declarations env cl in
+        let new_env = Env.update_short_paths new_env in
         List.iter (fun cls ->
           let open Typeclass in
           let loc = cls.cls_id_loc.Location.loc in
@@ -2358,10 +2345,10 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
                Sig_type(cls.cls_obj_id, cls.cls_obj_abbr, rs, Exported);
                Sig_type(cls.cls_typesharp_id, cls.cls_abbr, rs, Exported)])
              classes []),
-        newenv
+        new_env
     | Pstr_class_type cl ->
-        let (classes, newenv) = Typeclass.class_type_declarations env cl in
-        let newenv = Env.update_short_paths newenv in
+        let (classes, new_env) = Typeclass.class_type_declarations env cl in
+        let new_env = Env.update_short_paths new_env in
         List.iter (fun decl ->
           let open Typeclass in
           let loc = decl.clsty_id_loc.Location.loc in
@@ -2390,7 +2377,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
                           Exported)
                 ])
              classes []),
-        newenv
+        new_env
     | Pstr_include sincl ->
         let smodl = sincl.pincl_mod in
         let modl =
@@ -2399,9 +2386,9 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         in
         let scope = Ctype.create_scope () in
         (* Rename all identifiers bound by this signature to avoid clashes *)
-        let sg, newenv = Env.enter_signature ~scope
+        let sg, new_env = Env.enter_signature ~scope
             (extract_sig_open env smodl.pmod_loc modl.mod_type) env in
-        let newenv = Env.update_short_paths newenv in
+        let new_env = Env.update_short_paths new_env in
         List.iter (Signature_names.check_sig_item names loc) sg;
         let incl =
           { incl_mod = modl;
@@ -2410,7 +2397,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
             incl_loc = sincl.pincl_loc;
           }
         in
-        Tstr_include incl, sg, newenv
+        Tstr_include incl, sg, new_env
     | Pstr_extension (ext, _attrs) ->
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
     | Pstr_attribute x ->
@@ -2448,9 +2435,6 @@ let type_toplevel_phrase env s =
   Env.reset_required_globals ();
   let (str, sg, _to_remove_from_sg, env) =
     type_structure ~toplevel:true false None env s Location.none in
-  let (str, _coerce) = ImplementationHooks.apply_hooks
-      { Misc.sourcefile = "//toplevel//" } (str, Tcoerce_none)
-  in
   (str, sg, (* to_remove_from_sg,*) env)
 
 let type_module_alias = type_module ~alias:true true false None
@@ -2529,21 +2513,10 @@ let type_package env m p nl =
   in
   let tl' =
     List.map
-      (fun name ->
-         let path = mkpath mp name in
-         match Env.find_type path env with
-         | decl -> begin
-             match decl.type_params with
-             | [] -> Btype.newgenty (Tconstr (path, [], ref Mnil))
-             | _ ->
-               raise (Error(m.pmod_loc, env,
-                            Package_type_arity(p, modl.mod_type, name)))
-           end
-         | exception Not_found ->
-             raise (Error(m.pmod_loc, env,
-                          Package_type_missing(p, modl.mod_type, name))))
-      nl
-  in
+      (fun name -> Btype.newgenty (Tconstr (mkpath mp name,[],ref Mnil)))
+      (* beware of interactions with Printtyp and short-path:
+         mp.name may have an arity > 0, cf. PR#7534 *)
+      nl in
   (* go back to original level *)
   Ctype.end_def ();
   if nl = [] then
@@ -2591,7 +2564,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       let simple_sg = Signature_names.simplify finalenv names sg in
       if !Clflags.print_types then begin
         Typecore.force_delayed_checks ();
-        Printtyp.wrap_printing_env initial_env
+        Printtyp.wrap_printing_env ~error:false initial_env
           (fun () -> fprintf std_formatter "%a@."
               (Printtyp.printed_signature sourcefile) simple_sg
           );
@@ -2602,7 +2575,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
         if Sys.file_exists sourceintf then begin
           let intf_file =
             try
-              find_in_path_uncap !Config.load_path (modulename ^ ".cmi")
+              Load_path.find_uncap (modulename ^ ".cmi")
             with Not_found ->
               raise(Error(Location.in_file sourcefile, Env.empty,
                           Interface_not_compiled sourceintf)) in
@@ -2650,16 +2623,12 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
              (Array.of_list (Cmt_format.get_saved_types ())))
           (Some sourcefile) initial_env None)
 
-let type_implementation sourcefile outputprefix modulename initial_env ast =
-  ImplementationHooks.apply_hooks { Misc.sourcefile }
-    (type_implementation sourcefile outputprefix modulename initial_env ast)
-
 let save_signature modname tsg outputprefix source_file initial_env cmi =
   Cmt_format.save_cmt  (outputprefix ^ ".cmti") modname
     (Cmt_format.Interface tsg) (Some source_file) initial_env (Some cmi)
 
-let type_interface sourcefile env ast =
-  InterfaceHooks.apply_hooks { Misc.sourcefile } (transl_signature env ast)
+let type_interface env ast =
+  transl_signature env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
@@ -2731,7 +2700,7 @@ let package_units initial_env objfiles cmifile modulename =
     (* Write packaged signature *)
     if not !Clflags.dont_write_files then begin
       let cmi =
-        Env.save_signature_with_imports ~alerts:StringMap.empty
+        Env.save_signature_with_imports ~alerts:String.Map.empty
           sg modulename
           (prefix ^ ".cmi") imports
       in
@@ -2873,20 +2842,9 @@ let report_error ppf = function
         Ident.print opened_item_id
   | Invalid_type_subst_rhs ->
       fprintf ppf "Only type synonyms are allowed on the right of :="
-  | Package_type_missing(p, mty, lid) ->
-      fprintf ppf
-        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
-        %a@;<1 -2>is not included in@ %a@]@ Type %a is missing.@]"
-        Printtyp.modtype mty path p longident lid
-  | Package_type_arity(p, mty, lid) ->
-      fprintf ppf
-        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
-        %a@;<1 -2>is not included in@ %a@]@ Type %a has a different arity.@]"
-        Printtyp.modtype mty path p longident lid
-
 
 let report_error env ppf err =
-  Printtyp.wrap_printing_env env (fun () -> report_error ppf err)
+  Printtyp.wrap_printing_env ~error:true env (fun () -> report_error ppf err)
 
 let () =
   Location.register_error_of_exn

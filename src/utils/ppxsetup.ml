@@ -28,14 +28,12 @@
 
 open Std
 
-module StringMap = Map.Make(String)
-
 type t = {
   ppxs: string list;
-  ppxopts: string list list StringMap.t;
+  ppxopts: string list list String.Map.t;
 }
 
-let empty = { ppxs = []; ppxopts = StringMap.empty }
+let empty = { ppxs = []; ppxopts = String.Map.empty }
 
 let add_ppx ppx t =
   if List.mem ppx ~set:t.ppxs
@@ -48,16 +46,17 @@ let add_ppxopts ppx opts t =
   | opts ->
     let ppx = Filename.basename ppx in
     let optss =
-      try StringMap.find ppx t.ppxopts
+      try String.Map.find ppx t.ppxopts
       with Not_found -> []
     in
     if not (List.mem ~set:optss opts) then
-      {t with ppxopts = StringMap.add ppx (opts :: optss) t.ppxopts}
+      let ppxopts = String.Map.add ~key:ppx ~data:(opts :: optss) t.ppxopts in
+      {t with ppxopts}
     else t
 
 let union ta tb =
   { ppxs = List.filter_dup (ta.ppxs @ tb.ppxs);
-    ppxopts = StringMap.merge (fun _ a b -> match a, b with
+    ppxopts = String.Map.merge ~f:(fun _ a b -> match a, b with
         | v, None | None, v -> v
         | Some a, Some b -> Some (List.filter_dup (a @ b)))
         ta.ppxopts tb.ppxopts
@@ -67,7 +66,7 @@ let command_line t =
   List.fold_right ~f:(fun ppx ppxs ->
       let basename = Filename.basename ppx in
       let opts =
-        try StringMap.find basename t.ppxopts
+        try String.Map.find basename t.ppxopts
         with Not_found -> []
       in
       let opts = List.concat (List.rev opts) in
@@ -82,9 +81,11 @@ let dump t =
     string_list t.ppxs;
     "options",
     `Assoc (
-      StringMap.fold (fun k opts acc ->
+      String.Map.fold
+        ~f:(fun ~key ~data:opts acc ->
           let opts = List.rev_map ~f:string_list opts in
-          (k, `List opts) :: acc)
-        t.ppxopts []
+          (key, `List opts) :: acc)
+        ~init:[]
+        t.ppxopts
     )
   ]

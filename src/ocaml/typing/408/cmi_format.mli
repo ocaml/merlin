@@ -15,7 +15,7 @@
 
 type pers_flags =
   | Rectypes
-  | Alerts of string Misc.String.Map.t
+  | Alerts of Misc.alerts
   | Opaque
   | Unsafe_string
 

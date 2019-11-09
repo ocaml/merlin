@@ -13,8 +13,8 @@
 (* The lexer definition *)
 
 {
-open Std
 open Misc
+open Std
 open Lexing
 open Parser_raw
 

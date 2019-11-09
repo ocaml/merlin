@@ -56,7 +56,7 @@ let rename = function
       incr currentstamp;
       Local { name; stamp = !currentstamp }
   | id ->
-      Misc.fatal_error (Printf.sprintf "Ident.rename %s" (name id))
+      Misc.fatal_errorf "Ident.rename %s" (name id)
 
 let unique_name = function
   | Local { name; stamp }
@@ -316,8 +316,7 @@ let make_key_generator () =
       decr c ;
       Local { name = key_name; stamp = stamp }
   | global_id ->
-      Misc.fatal_error
-        (Printf.sprintf "Ident.make_key_generator () %s" (name global_id))
+      Misc.fatal_errorf "Ident.make_key_generator () %s" (name global_id)
 
 let compare x y =
   match x, y with

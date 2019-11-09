@@ -70,6 +70,13 @@ module Unification_trace: sig
   (** Switch [expected] and [got] *)
   val swap: t -> t
 
+  (** [explain trace f] calls [f] on trace elements starting from the end
+      until [f ~prev elt] is [Some _], returns that
+      or [None] if the end of the trace is reached. *)
+  val explain:
+          'a elt list ->
+          (prev:'a elt option -> 'a elt -> 'b option) ->
+          'b option
 
   (** merlin specific *)
   val map_types : (type_expr -> type_expr) -> t -> t

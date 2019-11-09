@@ -449,12 +449,10 @@ let check_recmod_typedecls env sdecls decls =
 
 (* Auxiliaries for checking uniqueness of names in signatures and structures *)
 
-module StringSet = String.Set
-
 let check cl loc set_ref name =
-  if StringSet.mem name !set_ref
+  if String.Set.mem name !set_ref
   then raise(Error(loc, Env.empty, Repeated_name(cl, name)))
-  else set_ref := StringSet.add name !set_ref
+  else set_ref := String.Set.add name !set_ref
 
 let check_name cl set_ref name =
   check cl name.loc set_ref name.txt
@@ -566,9 +564,9 @@ let rec transl_modtype env smty =
       raise (Error_forward (Typetexp.error_of_extension ext))
 
 and transl_signature ?(keep_warnings = false) env sg =
-  let type_names = ref StringSet.empty
-  and module_names = ref StringSet.empty
-  and modtype_names = ref StringSet.empty in
+  let type_names = ref String.Set.empty
+  and module_names = ref String.Set.empty
+  and modtype_names = ref String.Set.empty in
   let rec transl_sig env sg =
     Ctype.init_def(Ident.current_time());
     match sg with
@@ -842,16 +840,16 @@ and transl_recmodule_modtypes loc env sdecls =
 
 let simplify_signature sg =
   let rec aux = function
-    | [] -> [], StringSet.empty, StringSet.empty
+    | [] -> [], String.Set.empty, String.Set.empty
     | (Sig_value(id, descr) as component) :: sg ->
         let (sg, val_names, ext_names) as k = aux sg in
         let name = Ident.name id in
-        if StringSet.mem name val_names then k
-        else (component :: sg, StringSet.add name val_names, ext_names)
+        if String.Set.mem name val_names then k
+        else (component :: sg, String.Set.add name val_names, ext_names)
     | (Sig_typext(id, ext, es) as component) :: sg ->
         let (sg, val_names, ext_names) as k = aux sg in
         let name = Ident.name id in
-        if StringSet.mem name ext_names then
+        if String.Set.mem name ext_names then
           (* #6510 *)
           match es, sg with
           | Text_first, Sig_typext(id2, ext2, Text_next) :: rest ->
@@ -859,7 +857,7 @@ let simplify_signature sg =
                val_names, ext_names)
           | _ -> k
         else
-          (component :: sg, val_names, StringSet.add name ext_names)
+          (component :: sg, val_names, String.Set.add name ext_names)
     | component :: sg ->
         let (sg, val_names, ext_names) = aux sg in
         (component :: sg, val_names, ext_names)
@@ -1251,9 +1249,9 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
       raise (Error_forward (Typetexp.error_of_extension ext))
 
 and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body anchor env sstr scope =
-  let type_names = ref StringSet.empty
-  and module_names = ref StringSet.empty
-  and modtype_names = ref StringSet.empty in
+  let type_names = ref String.Set.empty
+  and module_names = ref String.Set.empty
+  and modtype_names = ref String.Set.empty in
 
   let type_str_item env srem {pstr_loc = loc; pstr_desc = desc} =
     match desc with

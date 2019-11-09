@@ -21,6 +21,7 @@
 open Parsetree
 open Ast_helper
 open Location
+open Misc
 
 type mapper = {
   attribute: mapper -> attribute -> attribute;
@@ -627,16 +628,14 @@ let attribute_of_warning loc s =
   { loc; txt = "ocaml.ppwarning" },
   PStr ([Str.eval ~loc (Exp.constant (Pconst_string (s, None)))])
 
-module StringMap = Misc.String.Map
-
-let cookies = ref StringMap.empty
+let cookies = ref String.Map.empty
 
 let get_cookie k =
-  try Some (StringMap.find k !cookies)
+  try Some (String.Map.find k !cookies)
   with Not_found -> None
 
 let set_cookie k v =
-  cookies := StringMap.add k v !cookies
+  cookies := String.Map.add k v !cookies
 
 let tool_name_ref = ref "_none_"
 
@@ -675,7 +674,7 @@ module PpxContext = struct
   let get_cookies () =
     lid "cookies",
     make_list (make_pair make_string (fun x -> x))
-      (StringMap.bindings !cookies)
+      (String.Map.bindings !cookies)
 
   let mk fields =
     { txt = "ocaml.ppx.context"; loc = Location.none },
@@ -768,7 +767,7 @@ module PpxContext = struct
           let l = get_list (get_pair get_string (fun x -> x)) payload in
           cookies :=
             List.fold_left
-              (fun s (k, v) -> StringMap.add k v s) StringMap.empty
+              (fun s (k, v) -> String.Map.add k v s) String.Map.empty
               l
       | _ ->
           ()

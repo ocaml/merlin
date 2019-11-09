@@ -838,7 +838,7 @@ end) = struct
     match tpaths with
       [_] -> []
     | _ -> let open Printtyp in
-        wrap_printing_env env (fun () ->
+        wrap_printing_env ~error:true env (fun () ->
             reset(); strings_of_paths Type tpaths)
 
   let disambiguate_by_type env tpath lbls =
@@ -898,7 +898,7 @@ end) = struct
           if in_env lbl then
           begin
           let s =
-            Printtyp.wrap_printing_env env
+            Printtyp.wrap_printing_env ~error:true env
               (fun () -> Printtyp.string_of_path tpath) in
           warn lid.loc
             (Warnings.Name_out_of_scope (s, [Longident.last lid.txt], false));
