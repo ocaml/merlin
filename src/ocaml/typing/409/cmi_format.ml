@@ -13,16 +13,25 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Misc
+
 type pers_flags =
   | Rectypes
-  | Alerts of string Misc.StringMap.t
+  | Alerts of alerts
   | Opaque
   | Unsafe_string
 
+type error =
+  | Not_an_interface of filepath
+  | Wrong_version_interface of filepath * string
+  | Corrupted_interface of filepath
+
+exception Error of error
+
 type cmi_infos = {
-    cmi_name : string;
+    cmi_name : Misc.modname;
     cmi_sign : Types.signature_item list;
-    cmi_crcs : (string * Digest.t option) list;
+    cmi_crcs : crcs;
     cmi_flags : pers_flags list;
 }
 
@@ -50,7 +59,9 @@ let read_cmi filename =
       if String.sub buffer 0 pre_len
           = String.sub Config.cmi_magic_number 0 pre_len then
       begin
-        raise (Error (Wrong_version_interface (filename, buffer)))
+        let msg =
+          if buffer < Config.cmi_magic_number then "an older" else "a newer" in
+        raise (Error (Wrong_version_interface (filename, msg)))
       end else begin
         raise(Error(Not_an_interface filename))
       end
@@ -76,4 +87,26 @@ let output_cmi filename oc cmi =
   output_value oc cmi.cmi_flags;
   crc
 
-(* Error report moved to src/ocaml/typing/magic_numbers.ml *)
+(* Error report *)
+
+open Format
+
+let report_error ppf = function
+  | Not_an_interface filename ->
+      fprintf ppf "%a@ is not a compiled interface"
+        Location.print_filename filename
+  | Wrong_version_interface (filename, older_newer) ->
+      fprintf ppf
+        "%a@ is not a compiled interface for this version of OCaml.@.\
+         It seems to be for %s version of OCaml."
+        Location.print_filename filename older_newer
+  | Corrupted_interface filename ->
+      fprintf ppf "Corrupted compiled interface@ %a"
+        Location.print_filename filename
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error err -> Some (Location.error_of_printer_file report_error err)
+      | _ -> None
+    )

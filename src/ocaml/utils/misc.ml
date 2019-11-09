@@ -38,30 +38,51 @@ let () =
 
 exception Fatal_error of string * Printexc.raw_backtrace
 
+let () = Printexc.register_printer (function
+    | Fatal_error (msg, bt) ->
+      Some (Printf.sprintf "Fatal error: %s\n%s"
+              msg (Printexc.raw_backtrace_to_string bt))
+    | _ -> None
+  )
+
 let fatal_error msg =
   raise (Fatal_error (msg, Printexc.get_callstack 50))
 
+let fatal_errorf fmt =
+  (*Format.kasprintf is not available in 4.02.3 *)
+  (*Format.kasprintf fatal_error fmt*)
+  ignore (Format.flush_str_formatter ());
+  Format.kfprintf
+    (fun _ppf -> fatal_error (Format.flush_str_formatter ()))
+    Format.str_formatter fmt
+
 (* Exceptions *)
 
-let try_finally ?(always=fun () -> ()) ?(exceptionally=fun () -> ()) work =
+let try_finally ?(always=(fun () -> ())) ?(exceptionally=(fun () -> ())) work =
   match work () with
     | result ->
       begin match always () with
         | () -> result
         | exception always_exn ->
+          (* raise_with_backtrace is not available before OCaml 4.05 *)
+          (*let always_bt = Printexc.get_raw_backtrace () in*)
           exceptionally ();
+          (*Printexc.raise_with_backtrace always_exn always_bt*)
           raise always_exn
       end
     | exception work_exn ->
+      (*let work_bt = Printexc.get_raw_backtrace () in*)
       begin match always () with
         | () ->
           exceptionally ();
+          (*Printexc.raise_with_backtrace work_exn work_bt*)
           raise work_exn
         | exception always_exn ->
+          (*let always_bt = Printexc.get_raw_backtrace () in*)
           exceptionally ();
+          (*Printexc.raise_with_backtrace always_exn always_bt*)
           raise always_exn
       end
-;;
 
 type ref_and_value = R : 'a ref * 'a -> ref_and_value
 
@@ -337,10 +358,12 @@ let no_overflow_add a b = (a lxor b) lor (a lxor (lnot (a+b))) < 0
 
 let no_overflow_sub a b = (a lxor (lnot b)) lor (b lxor (a-b)) < 0
 
-let no_overflow_mul a b = b <> 0 && (a * b) / b = a
+(* Taken from Hacker's Delight, chapter "Overflow Detection" *)
+let no_overflow_mul a b =
+  not ((a = min_int && b < 0) || (b <> 0 && (a * b) / b <> a))
 
 let no_overflow_lsl a k =
-  0 <= k && k < Sys.word_size && min_int asr k <= a && a <= max_int asr k
+  0 <= k && k < Sys.word_size - 1 && min_int asr k <= a && a <= max_int asr k
 
 module Int_literal_converter = struct
   (* To convert integer literals, allowing max_int + 1 (PR#4210) *)
@@ -421,14 +444,19 @@ let get_ref r =
   let v = !r in
   r := []; v
 
-let fst3 (x,_,_) = x
+let set_or_ignore f opt x =
+  match f x with
+  | None -> ()
+  | Some y -> opt := Some y
+
+let fst3 (x, _, _) = x
 let snd3 (_,x,_) = x
 let thd3 (_,_,x) = x
 
-let fst4 (x,_,_,_) = x
-let snd4 (_,x,_,_) = x
+let fst4 (x, _, _, _) = x
+let snd4 (_,x,_, _) = x
 let thd4 (_,_,x,_) = x
-let fth4 (_,_,_,x) = x
+let for4 (_,_,_,x) = x
 
 
 module LongString = struct
@@ -622,6 +650,92 @@ let modules_in_path ~ext path =
 
 module String = struct
   include CamlString
-  module Set = Set.Make(struct type t = string let compare = compare end)
-  module Map = Map.Make(struct type t = string let compare = compare end)
+  module Ord = struct
+    type t = string
+    let compare = String.compare
+  end
+  module Set = Set.Make (Ord)
+  module Map = Map.Make (Ord)
+  module Tbl = Hashtbl.Make (struct
+      type t = string
+      let equal (x : string) (y : string) : bool = (x = y)
+      let hash = Hashtbl.hash
+    end)
+end
+
+
+type filepath = string
+type modname = string
+type crcs = (modname * Digest.t option) list
+
+type alerts = string String.Map.t
+
+
+module EnvLazy = struct
+  type ('a,'b) t = ('a,'b) eval ref
+
+  and ('a,'b) eval =
+    | Done of 'b
+    | Raise of exn
+    | Thunk of 'a
+
+  type undo =
+    | Nil
+    | Cons : ('a, 'b) t * 'a * undo -> undo
+
+  type log = undo ref
+
+  let force f x =
+    match !x with
+    | Done x -> x
+    | Raise e -> raise e
+    | Thunk e ->
+        match f e with
+        | y ->
+          x := Done y;
+          y
+        | exception e ->
+          x := Raise e;
+          raise e
+
+  let get_arg x =
+    match !x with Thunk a -> Some a | _ -> None
+
+  let create x =
+    ref (Thunk x)
+
+  let create_forced y =
+    ref (Done y)
+
+  let create_failed e =
+    ref (Raise e)
+
+  let log () =
+    ref Nil
+
+  let force_logged log f x =
+    match !x with
+    | Done x -> x
+    | Raise e -> raise e | Thunk e ->
+      match f e with
+      | None ->
+          x := Done None;
+          log := Cons(x, e, !log);
+          None
+      | Some _ as y ->
+          x := Done y;
+          y
+      | exception e ->
+          x := Raise e;
+          raise e
+
+  let backtrack log =
+    let rec loop = function
+      | Nil -> ()
+      | Cons(x, e, rest) ->
+          x := Thunk e;
+          loop rest
+    in
+    loop !log
+
 end

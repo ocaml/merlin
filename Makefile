@@ -1,7 +1,11 @@
-all: build ocamlmerlin ocamlmerlin-server ocamlmerlin-lsp
+all: build ocamlmerlin ocamlmerlin-server
+
+lsp:
+	dune build --always-show-command-line
+	$(MAKE) ocamlmerlin-lsp
 
 build:
-	dune build --always-show-command-line
+	dune build --always-show-command-line src/frontend/ocamlmerlin/ocamlmerlin_server.exe
 
 workspace:
 	dune build --always-show-command-line --workspace=dune-workspace.template merlin.install

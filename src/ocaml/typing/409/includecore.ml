@@ -249,7 +249,7 @@ and compare_records ~loc env params1 params2 n
           Some (Field_type ld1.ld_id)
       end
 
-let type_declarations ?(equality = false) ~loc env ~mark name decl1 id decl2 =
+let type_declarations ?(equality = false) ~loc env ~mark name decl1 path decl2 =
   Builtin_attributes.check_alerts_inclusion
     ~def:decl1.type_loc
     ~use:decl2.type_loc
@@ -268,7 +268,7 @@ let type_declarations ?(equality = false) ~loc env ~mark name decl1 id decl2 =
         then None else Some Manifest
     | (None, Some ty2) ->
         let ty1 =
-          Btype.newgenty (Tconstr(Pident id, decl2.type_params, ref Mnil))
+          Btype.newgenty (Tconstr(path, decl2.type_params, ref Mnil))
         in
         if Ctype.equal env true decl1.type_params decl2.type_params then
           if Ctype.equal env false [ty1] [ty2] then None
@@ -301,7 +301,7 @@ let type_declarations ?(equality = false) ~loc env ~mark name decl1 id decl2 =
             then Env.Positive else Env.Privatize
           in
           mark cstrs1 usage name decl1;
-          if equality then mark cstrs2 Env.Positive (Ident.name id) decl2
+          if equality then mark cstrs2 Env.Positive (Path.name path) decl2
         end;
         compare_variants ~loc env decl1.type_params
           decl2.type_params 1 cstrs1 cstrs2
@@ -364,20 +364,22 @@ let extension_constructors ~loc env ~mark id ext1 ext2 =
   in
   if not (Ctype.equal env true (ty1 :: ext1.ext_type_params)
                                (ty2 :: ext2.ext_type_params))
-  then Some (Field_type id)
-  else
-    let r =
-      compare_constructor_arguments ~loc env id
-        ext1.ext_type_params ext2.ext_type_params
-        ext1.ext_args ext2.ext_args
-    in
-    if r <> None then r else
+  then Some (Field_type id) else
+  let r =
     match ext1.ext_ret_type, ext2.ext_ret_type with
-      Some r1, Some r2 when not (Ctype.equal env true [r1] [r2]) ->
-        Some (Field_type id)
+    | Some r1, Some r2 ->
+        if Ctype.equal env true [r1] [r2] then
+          compare_constructor_arguments ~loc env id [r1] [r2]
+            ext1.ext_args ext2.ext_args
+        else Some (Field_type id)
     | Some _, None | None, Some _ ->
         Some (Field_type id)
-    | _ ->
-        match ext1.ext_private, ext2.ext_private with
-          Private, Public -> Some Privacy
-        | _, _ -> None
+    | None, None ->
+        compare_constructor_arguments ~loc env id
+          ext1.ext_type_params ext2.ext_type_params
+          ext1.ext_args ext2.ext_args
+  in
+  if r <> None then r else
+  match ext1.ext_private, ext2.ext_private with
+  | Private, Public -> Some Privacy
+  | _, _ -> None

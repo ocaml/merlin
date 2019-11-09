@@ -133,8 +133,6 @@ let set_fixed_row env loc p decl =
 
 (* Translate one type declaration *)
 
-module StringSet = String.Set
-
 let make_params env params =
   let make_param (sty, v) =
     try
@@ -188,12 +186,12 @@ let transl_declaration env sdecl id =
         if scstrs = [] then
           Syntaxerr.ill_formed_ast sdecl.ptype_loc
             "Variant types cannot be empty.";
-        let all_constrs = ref StringSet.empty in
+        let all_constrs = ref String.Set.empty in
         List.iter
           (fun {pcd_name = {txt = name}} ->
-            if StringSet.mem name !all_constrs then
+            if String.Set.mem name !all_constrs then
               raise(Error(sdecl.ptype_loc, Duplicate_constructor name));
-            all_constrs := StringSet.add name !all_constrs)
+            all_constrs := String.Set.add name !all_constrs)
           scstrs;
         if List.length
           (List.filter (fun cd -> cd.pcd_args <> []) scstrs)
@@ -227,12 +225,12 @@ let transl_declaration env sdecl id =
       | Ptype_record lbls ->
         if lbls = [] then
           Syntaxerr.ill_formed_ast sdecl.ptype_loc "Records cannot be empty.";
-        let all_labels = ref StringSet.empty in
+        let all_labels = ref String.Set.empty in
         List.iter
           (fun {pld_name = {txt=name}} ->
-            if StringSet.mem name !all_labels then
+            if String.Set.mem name !all_labels then
               raise(Error(sdecl.ptype_loc, Duplicate_label name));
-            all_labels := StringSet.add name !all_labels)
+            all_labels := String.Set.add name !all_labels)
           lbls;
         let lbls = List.map (fun {pld_name=name;
                                   pld_mutable=mut;

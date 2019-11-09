@@ -106,7 +106,7 @@ let dummy_method = Btype.dummy_method
    (its constructor is not available).
 *)
 let unbound_class =
-  Env.unbound_class
+  Path.Pident (Ident.create_local "*undef*")
 
 
                 (************************************)

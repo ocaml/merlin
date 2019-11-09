@@ -129,6 +129,7 @@ module Unification_trace = struct
         Incompatible_fields { name; diff = swap_diff diff}
     | Obj (Missing_field(pos,s)) -> Obj(Missing_field(swap_position pos,s))
     | Obj (Abstract_row pos) -> Obj(Abstract_row (swap_position pos))
+    | Variant (No_tags(pos,f)) -> Variant (No_tags(swap_position pos,f))
     | x -> x
   let swap x = List.map swap_elt x
 
@@ -140,6 +141,16 @@ module Unification_trace = struct
   let incompatible_fields name got expected =
     Incompatible_fields {name; diff={got; expected} }
 
+  let explain trace f =
+    let rec explain = function
+      | [] -> None
+      | [h] -> f ~prev:None h
+      | h :: (prev :: _ as rem) ->
+        match f ~prev:(Some prev) h with
+        | Some _ as m -> m
+        | None -> explain rem in
+    explain (List.rev trace)
+  
   let map_types f = map (map_desc f)
 end
 module Trace = Unification_trace
@@ -886,30 +897,42 @@ let rec lower_contravariant env var_level visited contra ty =
   in
   if must_visit then begin
     Hashtbl.add visited ty.id contra;
-    let generalize_rec = lower_contravariant env var_level visited in
+    let lower_rec = lower_contravariant env var_level visited in
     match ty.desc with
       Tvar _ -> if contra then set_level ty var_level
-    | Tconstr (path, tyl, abbrev) ->
-        let variance =
-          try (Env.find_type path env).type_variance
+    | Tconstr (_, [], _) -> ()
+    | Tconstr (path, tyl, _abbrev) ->
+       let variance, maybe_expand =
+         try
+           let typ = Env.find_type path env in
+           typ.type_variance,
+           typ.type_kind = Type_abstract
           with Not_found ->
             (* See testsuite/tests/typing-missing-cmi-2 for an example *)
-            List.map (fun _ -> Variance.may_inv) tyl
+            List.map (fun _ -> Variance.may_inv) tyl,
+            false
         in
-        abbrev := Mnil;
-        List.iter2
-          (fun v t ->
-            if Variance.(mem May_weak v)
-            then generalize_rec true t
-            else generalize_rec contra t)
-          variance tyl
+        if List.for_all ((=) Variance.null) variance then () else
+          let not_expanded () =
+            List.iter2
+              (fun v t ->
+                if v = Variance.null then () else
+                  if Variance.(mem May_weak v)
+                  then lower_rec true t
+                  else lower_rec contra t)
+              variance tyl in
+          if maybe_expand then (* we expand cautiously to avoid missing cmis *)
+            match !forward_try_expand_once env ty with
+            | ty -> lower_rec contra ty
+            | exception Cannot_expand -> not_expanded ()
+          else not_expanded ()
     | Tpackage (_, _, tyl) ->
-        List.iter (generalize_rec true) tyl
+        List.iter (lower_rec true) tyl
     | Tarrow (_, t1, t2, _) ->
-        generalize_rec true t1;
-        generalize_rec contra t2
+        lower_rec true t1;
+        lower_rec contra t2
     | _ ->
-        iter_type_expr (generalize_rec contra) ty
+        iter_type_expr (lower_rec contra) ty
   end
 
 let lower_contravariant env ty =
@@ -1595,7 +1618,10 @@ let expand_head env ty =
 let _ = forward_try_expand_once := try_expand_safe
 
 
-(* Expand until we find a non-abstract type declaration *)
+(* Expand until we find a non-abstract type declaration,
+   use try_expand_safe to avoid raising "Unify _" when
+   called on recursive types
+ *)
 
 let rec extract_concrete_typedecl env ty =
   let ty = repr ty in
@@ -1604,7 +1630,7 @@ let rec extract_concrete_typedecl env ty =
       let decl = Env.find_type p env in
       if decl.type_kind <> Type_abstract then (p, p, decl) else
       let ty =
-        try try_expand_once env ty with Cannot_expand -> raise Not_found
+        try try_expand_safe env ty with Cannot_expand -> raise Not_found
       in
       let (_, p', decl) = extract_concrete_typedecl env ty in
         (p, p', decl)

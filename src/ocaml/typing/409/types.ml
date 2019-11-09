@@ -80,7 +80,7 @@ end
 
 (* Maps of methods and instance variables *)
 
-module Meths = Map.Make(String)
+module Meths = Misc.String.Map
 module Vars = Meths
 
 (* Value descriptions *)
@@ -219,7 +219,7 @@ and type_transparence =
 
 (* Type expressions for the class language *)
 
-module Concr = Set.Make(String)
+module Concr = Misc.String.Set
 
 type class_type =
     Cty_constr of Path.t * type_expr list * class_type

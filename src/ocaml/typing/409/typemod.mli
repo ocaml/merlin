@@ -13,7 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** Type-checking of the module language and typed ast plugin hooks
+(** Type-checking of the module language and typed ast hooks
 
   {b Warning:} this module is unstable and part of
   {{!Compiler_libs}compiler-libs}.
@@ -41,7 +41,7 @@ val type_implementation:
   string -> string -> string -> Env.t -> Parsetree.structure ->
   Typedtree.structure * Typedtree.module_coercion
 val type_interface:
-        string -> Env.t -> Parsetree.signature -> Typedtree.signature
+        Env.t -> Parsetree.signature -> Typedtree.signature
 val transl_signature:
         Env.t -> Parsetree.signature -> Typedtree.signature
 val check_nongen_schemes:
@@ -63,13 +63,11 @@ val save_signature:
 val package_units:
   Env.t -> string list -> string -> string -> Typedtree.module_coercion
 
-(*
 (* Should be in Envaux, but it breaks the build of the debugger *)
 val initial_env:
   loc:Location.t -> safe_string:bool ->
   initially_opened_module:string option ->
   open_implicit_modules:string list -> Env.t
-*)
 
 module Sig_component_kind : sig
   type t =
@@ -130,19 +128,11 @@ type error =
   | Badly_formed_signature of string * Typedecl.error
   | Cannot_hide_id of hiding_error
   | Invalid_type_subst_rhs
-  | Package_type_missing of Path.t * module_type * Longident.t
-  | Package_type_arity of Path.t * module_type * Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
 val report_error: Env.t -> formatter -> error -> unit
-
-
-module ImplementationHooks : Misc.HookSig
-  with type t = Typedtree.structure * Typedtree.module_coercion
-module InterfaceHooks : Misc.HookSig
-  with type t = Typedtree.signature
 
 (* merlin *)
 
