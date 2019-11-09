@@ -136,12 +136,6 @@ exception Error_forward of Location.error
 
 val report_error: Env.t -> formatter -> error -> unit
 
-
-module ImplementationHooks : Misc.HookSig
-  with type t = Typedtree.structure * Typedtree.module_coercion
-module InterfaceHooks : Misc.HookSig
-  with type t = Typedtree.signature
-
 (* merlin *)
 
 val normalize_signature : Env.t -> Types.signature -> unit
