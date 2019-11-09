@@ -897,7 +897,7 @@ let fold_cltypes = fold_simple Env.fold_cltypes
 
 let report_error env ppf = function
   | Unbound_type_variable name ->
-      let add_name key _ l = if key = "_" then l else ("'" ^ key) :: l in
+      let add_name name _ l = if name = "_" then l else ("'" ^ name) :: l in
       let names = TyVarMap.fold add_name !type_variables [] in
     fprintf ppf "The type variable %s is unbound in this type declaration.@ %a"
       name
@@ -944,7 +944,7 @@ let report_error env ppf = function
          or remove it@ from the lower bound.@]@]"
          l l
   | Constructor_mismatch (ty, ty') ->
-      wrap_printing_env env (fun ()  ->
+      wrap_printing_env ~error:true env (fun ()  ->
         Printtyp.reset_and_mark_loops_list [ty; ty'];
         fprintf ppf "@[<hov>%s %a@ %s@ %a@]"
           "This variant type contains a constructor"
@@ -982,7 +982,7 @@ let report_error env ppf = function
   | Multiple_constraints_on_type s ->
       fprintf ppf "Multiple constraints for type %a" longident s
   | Method_mismatch (l, ty, ty') ->
-      wrap_printing_env env (fun ()  ->
+      wrap_printing_env ~error:true env (fun ()  ->
         Printtyp.reset_and_mark_loops_list [ty; ty'];
         fprintf ppf "@[<hov>Method '%s' has type %a,@ which should be %a@]"
           l Printtyp.type_expr ty Printtyp.type_expr ty')
