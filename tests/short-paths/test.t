@@ -132,6 +132,46 @@
         "sub": [],
         "valid": true,
         "message": "This expression has type t = M.t but an expression was expected of type unit"
+      },
+      {
+        "start": {
+          "line": 82,
+          "col": 13
+        },
+        "end": {
+          "line": 86,
+          "col": 6
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This functor has type functor (S : S) -> sig val bar : int -> S.t end
+  The parameter cannot be eliminated in the result type.
+  Please bind the argument to a module identifier."
+      },
+      {
+        "start": {
+          "line": 82,
+          "col": 22
+        },
+        "end": {
+          "line": 86,
+          "col": 5
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Signature mismatch:
+  Modules do not match:
+    sig type t = int val foo : 'a -> string end
+  is not included in
+    S
+  Values do not match:
+    val foo : 'a -> string
+  is not included in
+    val foo : int -> t
+  File \"test.ml\", line 72, characters 2-20: Expected declaration
+  File \"test.ml\", line 85, characters 8-11: Actual declaration"
       }
     ],
     "notifications": []
@@ -271,6 +311,46 @@
         "sub": [],
         "valid": true,
         "message": "This expression has type N.O.t but an expression was expected of type unit"
+      },
+      {
+        "start": {
+          "line": 82,
+          "col": 13
+        },
+        "end": {
+          "line": 86,
+          "col": 6
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This functor has type functor (S : S) -> sig val bar : int -> S.t end
+  The parameter cannot be eliminated in the result type.
+  Please bind the argument to a module identifier."
+      },
+      {
+        "start": {
+          "line": 82,
+          "col": 22
+        },
+        "end": {
+          "line": 86,
+          "col": 5
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Signature mismatch:
+  Modules do not match:
+    sig type t = int val foo : 'a -> string end
+  is not included in
+    S
+  Values do not match:
+    val foo : 'a -> string
+  is not included in
+    val foo : t -> t
+  File \"test.ml\", line 72, characters 2-20: Expected declaration
+  File \"test.ml\", line 85, characters 8-11: Actual declaration"
       }
     ],
     "notifications": []

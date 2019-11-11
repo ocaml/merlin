@@ -2101,7 +2101,7 @@ let report_error ppf = function
   | Cannot_eliminate_dependency mty ->
       fprintf ppf
         "@[This functor has type@ %a@ \
-           The parameter cannot be eliminated in the result type.@  \
+           The parameter cannot be eliminated in the result type.@ \
            Please bind the argument to a module identifier.@]" modtype mty
   | Signature_expected -> fprintf ppf "This module type is not a signature"
   | Structure_expected mty ->

@@ -1986,6 +1986,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                   mty_res
             | None ->
                 if generative then mty_res else
+                let parent_env = env in
                 let env =
                   Env.add_module ~arg:true param Mp_present arg.mod_type env
                 in
@@ -1994,7 +1995,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                 let nondep_mty =
                   try Mtype.nondep_supertype env [param] mty_res
                   with Ctype.Nondep_cannot_erase _ ->
-                    raise(Error(smod.pmod_loc, env,
+                    raise(Error(smod.pmod_loc, parent_env,
                                 Cannot_eliminate_dependency mty_functor))
                 in
                 (*
