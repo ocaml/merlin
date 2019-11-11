@@ -324,4 +324,11 @@ module EnvLazy: sig
   val force_logged : log -> ('a -> 'b option) -> ('a,'b option) t -> 'b option
   val backtrack : log -> unit
 
+  (* For compatibility with 4.02 and 4.03 *)
+  val is_val : ('a, 'b) t -> bool
+  type ('a, 'b) eval =
+    | Done of 'b
+    | Raise of exn
+    | Thunk of 'a
+  val view : ('a, 'b) t -> ('a, 'b) eval
 end

@@ -93,56 +93,6 @@ exception Error of error
 
 let error err = raise (Error err)
 
-module EnvLazy : sig
-  type ('a,'b) t
-
-  val force : ('a -> 'b) -> ('a,'b) t -> 'b
-  val create : 'a -> ('a,'b) t
-  val is_val : ('a,'b) t -> bool
-  val get_arg : ('a,'b) t -> 'a option
-
-  type ('a,'b) eval =
-      Done of 'b
-    | Raise of exn
-    | Thunk of 'a
-
-
-  val view : ('a,'b) t ->  ('a,'b) eval
-end  = struct
-
-  type ('a,'b) t = ('a,'b) eval ref
-
-  and ('a,'b) eval =
-      Done of 'b
-    | Raise of exn
-    | Thunk of 'a
-
-  let force f x =
-    match !x with
-        Done x -> x
-      | Raise e -> raise e
-      | Thunk e ->
-          try
-            let y = f e in
-            x := Done y;
-            y
-          with e ->
-            x := Raise e;
-            raise e
-
-  let is_val x =
-    match !x with Done _ -> true | _ -> false
-
-  let get_arg x =
-    match !x with Thunk a -> Some a | _ -> None
-
-  let create x =
-    let x = ref (Thunk x) in
-    x
-
-  let view x = !x
-end
-
 type aliasmap = {
   am_typ: Path.t list Path.Map.t;
   am_mod: Path.t list Path.Map.t;

@@ -738,4 +738,11 @@ module EnvLazy = struct
     in
     loop !log
 
+  (* For compatibility with 4.02 and 4.03 *)
+
+  let is_val t = match !t with
+    | Done _ -> true
+    | Raise _ | Thunk _ -> false
+
+  let view t = !t
 end
