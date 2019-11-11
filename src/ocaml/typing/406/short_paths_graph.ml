@@ -1,6 +1,6 @@
 [@@@ocaml.warning "-9"] (* yoleo *)
 
-module String_map = Map.Make(String)
+module String_map = Misc.String.Map
 
 module Ident = struct
 

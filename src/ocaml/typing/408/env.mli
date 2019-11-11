@@ -183,7 +183,7 @@ val add_persistent_structure : Ident.t -> t -> t
 
 (* Returns the set of persistent structures found in the given
    directory. *)
-(* val persistent_structures_of_dir : Load_path.Dir.t -> Misc.StringSet.t *)
+(* val persistent_structures_of_dir : Load_path.Dir.t -> Misc.String.Set.t *)
 
 (* [filter_non_loaded_persistent f env] removes all the persistent
    structures that are not yet loaded and for which [f] returns
@@ -244,11 +244,11 @@ val get_unit_name: unit -> string
 val read_signature: string -> string -> signature
         (* Arguments: module name, file name. Results: signature. *)
 val save_signature:
-  alerts:string Misc.StringMap.t -> signature -> string -> string ->
+  alerts:string Misc.String.Map.t -> signature -> string -> string ->
   Cmi_format.cmi_infos
         (* Arguments: signature, module name, file name. *)
 val save_signature_with_imports:
-  alerts:string Misc.StringMap.t ->
+  alerts:string Misc.String.Map.t ->
   signature -> string -> string -> (string * Digest.t option) list
   -> Cmi_format.cmi_infos
         (* Arguments: signature, module name, file name,

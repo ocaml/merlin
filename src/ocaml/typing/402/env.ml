@@ -369,7 +369,7 @@ let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
 
 let crc_units = sref Consistbl.create
 
-module StringSet = Std.String.Set
+module StringSet = String.Set
 
 let imported_units = ref StringSet.empty
 

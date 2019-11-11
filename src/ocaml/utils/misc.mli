@@ -249,8 +249,11 @@ val time_spent : unit -> float
     Sys.times/Unix.times.
     Both user and kernel cpu time is accounted.  *)
 
-module StringSet: Set.S with type elt = string
-module StringMap: Map.S with type key = string
+module String : sig
+  include module type of String
+  module Set: Set.S with type elt = string
+  module Map: Map.S with type key = string
+end
 (* TODO: replace all custom instantiations of StringSet/StringMap in various
    compiler modules with this one. *)
 

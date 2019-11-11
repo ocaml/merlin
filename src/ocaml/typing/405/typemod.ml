@@ -446,7 +446,7 @@ let check_recmod_typedecls env sdecls decls =
 
 (* Auxiliaries for checking uniqueness of names in signatures and structures *)
 
-module StringSet = Std.String.Set
+module StringSet = String.Set
 
 let check cl loc set_ref name =
   if StringSet.mem name !set_ref

@@ -1733,7 +1733,7 @@ module Shortest = struct
 
 end
 
-module String_set = Set.Make(String)
+module String_set = Misc.String.Set
 
 module Basis = struct
 

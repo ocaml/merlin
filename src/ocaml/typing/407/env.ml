@@ -139,7 +139,7 @@ type summary =
   | Env_modtype of summary * Ident.t * modtype_declaration
   | Env_class of summary * Ident.t * class_declaration
   | Env_cltype of summary * Ident.t * class_type_declaration
-  | Env_open of summary * StringSet.t * Path.t
+  | Env_open of summary * String.Set.t * Path.t
   | Env_functor_arg of summary * Ident.t
   | Env_constraints of summary * type_declaration PathMap.t
   | Env_copy_types of summary * string list
@@ -621,20 +621,20 @@ let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
 
 let crc_units = sref Consistbl.create
 
-let imported_units = srefk StringSet.empty
+let imported_units = srefk String.Set.empty
 
 let add_import s =
-  imported_units := StringSet.add s !imported_units
+  imported_units := String.Set.add s !imported_units
 
-let imported_opaque_units = srefk StringSet.empty
+let imported_opaque_units = srefk String.Set.empty
 
 let add_imported_opaque s =
-  imported_opaque_units := StringSet.add s !imported_opaque_units
+  imported_opaque_units := String.Set.add s !imported_opaque_units
 
 let clear_imports () =
   Consistbl.clear !crc_units;
-  imported_units := StringSet.empty;
-  imported_opaque_units := StringSet.empty
+  imported_units := String.Set.empty;
+  imported_opaque_units := String.Set.empty
 
 let check_consistency ps =
   try
@@ -2047,7 +2047,7 @@ let add_components ?filter_modules slot root env0 comps =
     TycompTbl.add_open slot w comps env0
   in
 
-  let skipped_modules = ref StringSet.empty in
+  let skipped_modules = ref String.Set.empty in
   let filter tbl env0_tbl =
     match filter_modules with
     | None -> tbl
@@ -2060,7 +2060,7 @@ let add_components ?filter_modules slot root env0 comps =
             (match IdTbl.find_name m env0_tbl~mark:false with
              | (_ : _ * _) -> false
              | exception _ -> true);
-          skipped_modules := StringSet.add m !skipped_modules;
+          skipped_modules := String.Set.add m !skipped_modules;
           acc
         end)
         tbl Tbl.empty
@@ -2165,10 +2165,10 @@ let open_signature_of_initially_opened_module root env =
 
 let open_signature_from_env_summary root env ~hidden_submodules =
   let filter_modules =
-    if StringSet.is_empty hidden_submodules then
+    if String.Set.is_empty hidden_submodules then
       None
     else
-      Some (fun m -> not (StringSet.mem m hidden_submodules))
+      Some (fun m -> not (String.Set.mem m hidden_submodules))
   in
   open_signature None root env ?filter_modules
 
@@ -2233,11 +2233,11 @@ let crc_of_unit name =
 (* Return the list of imported interfaces with their CRCs *)
 
 let imports () =
-  Consistbl.extract (StringSet.elements !imported_units) !crc_units
+  Consistbl.extract (String.Set.elements !imported_units) !crc_units
 
 (* Returns true if [s] is an opaque imported module  *)
 let is_imported_opaque s =
-  StringSet.mem s !imported_opaque_units
+  String.Set.mem s !imported_opaque_units
 
 (* Save a signature to a file *)
 

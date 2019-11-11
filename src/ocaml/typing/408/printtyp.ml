@@ -15,8 +15,8 @@
 
 (* Printing functions *)
 
-module M = Map.Make(String)
-module S = Set.Make(String)
+module M = Misc.String.Map
+module S = Misc.String.Set
 
 open Misc
 open Ctype

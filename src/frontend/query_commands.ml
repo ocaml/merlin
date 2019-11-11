@@ -26,8 +26,8 @@
 
 )* }}} *)
 
-open Std
 open Misc
+open Std
 open Query_protocol
 module Printtyp = Type_utils.Printtyp
 

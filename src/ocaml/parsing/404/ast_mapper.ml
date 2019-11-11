@@ -642,10 +642,7 @@ let attribute_of_warning loc s =
   { loc; txt = "ocaml.ppwarning" },
   PStr ([Str.eval ~loc (Exp.constant (Pconst_string (s, None)))])
 
-module StringMap = Map.Make(struct
-    type t = string
-    let compare = compare
-end)
+module StringMap = Misc.String.Map
 
 let cookies = ref StringMap.empty
 

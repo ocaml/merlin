@@ -407,20 +407,20 @@ let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
 
 let crc_units = sref Consistbl.create
 
-let imported_units = srefk StringSet.empty
+let imported_units = srefk String.Set.empty
 
 let add_import s =
-  imported_units := StringSet.add s !imported_units
+  imported_units := String.Set.add s !imported_units
 
-let imported_opaque_units = srefk StringSet.empty
+let imported_opaque_units = srefk String.Set.empty
 
 let add_imported_opaque s =
-  imported_opaque_units := StringSet.add s !imported_opaque_units
+  imported_opaque_units := String.Set.add s !imported_opaque_units
 
 let clear_imports () =
   Consistbl.clear !crc_units;
-  imported_units := StringSet.empty;
-  imported_opaque_units := StringSet.empty
+  imported_units := String.Set.empty;
+  imported_opaque_units := String.Set.empty
 
 let check_consistency ps =
   try
@@ -2046,11 +2046,11 @@ let crc_of_unit name =
 (* Return the list of imported interfaces with their CRCs *)
 
 let imports () =
-  Consistbl.extract (StringSet.elements !imported_units) !crc_units
+  Consistbl.extract (String.Set.elements !imported_units) !crc_units
 
 (* Returns true if [s] is an opaque imported module  *)
 let is_imported_opaque s =
-  StringSet.mem s !imported_opaque_units
+  String.Set.mem s !imported_opaque_units
 
 (* Save a signature to a file *)
 

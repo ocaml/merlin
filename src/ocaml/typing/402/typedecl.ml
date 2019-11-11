@@ -133,11 +133,7 @@ let set_fixed_row env loc p decl =
 
 (* Translate one type declaration *)
 
-module StringSet =
-  Set.Make(struct
-    type t = string
-    let compare (x:t) y = compare x y
-  end)
+module StringSet = String.Set
 
 let make_params env params =
   let make_param (sty, v) =
@@ -372,7 +368,7 @@ let rec check_constraints_rec env loc visited ty =
       Btype.iter_type_expr (check_constraints_rec env loc visited) ty
   end
 
-module SMap = Map.Make(String)
+module SMap = String.Map
 
 let check_constraints env sdecl (_, decl) =
   let visited = ref TypeSet.empty in

@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+module CamlString = String
+
 open Std
 
 let () =
@@ -581,9 +583,6 @@ let time_spent () =
   let t = times () in
   ((t.tms_utime +. t.tms_stime +. t.tms_cutime +. t.tms_cstime) *. 1000.0)
 
-module StringSet = Set.Make(struct type t = string let compare = compare end)
-module StringMap = Map.Make(struct type t = string let compare = compare end)
-
 let normalise_eol s =
   let b = Buffer.create 80 in
     for i = 0 to String.length s - 1 do
@@ -669,4 +668,10 @@ module MakeHooks(M: sig
   let add_hook name f = hooks := (name, f) :: !hooks
   let apply_hooks sourcefile intf =
     fold_hooks !hooks sourcefile intf
+end
+
+module String = struct
+  include CamlString
+  module Set = Set.Make(struct type t = string let compare = compare end)
+  module Map = Map.Make(struct type t = string let compare = compare end)
 end

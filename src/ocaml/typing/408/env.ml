@@ -175,7 +175,7 @@ end  = struct
 end
 
 (** Map indexed by the name of module components. *)
-module NameMap = StringMap
+module NameMap = String.Map
 
 type summary =
     Env_empty
@@ -505,7 +505,7 @@ and module_declaration_lazy =
 
 and module_components =
   {
-    alerts: string StringMap.t;
+    alerts: string String.Map.t;
     loc: Location.t;
     comps: (components_maker, module_components_repr option) EnvLazy.t;
   }
@@ -653,7 +653,7 @@ let without_cmis f x =
 
 let components_of_module' =
   ref ((fun ~alerts:_ ~loc:_ _env _sub _path _addr _mty -> assert false) :
-         alerts:string StringMap.t -> loc:Location.t -> t ->
+         alerts:string String.Map.t -> loc:Location.t -> t ->
        Subst.t option -> Subst.t -> Path.t -> address_lazy -> module_type ->
        module_components)
 let components_of_module_maker' =
@@ -742,20 +742,20 @@ let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
 
 let crc_units = sref Consistbl.create
 
-let imported_units = srefk StringSet.empty
+let imported_units = srefk String.Set.empty
 
 let add_import s =
-  imported_units := StringSet.add s !imported_units
+  imported_units := String.Set.add s !imported_units
 
-let imported_opaque_units = srefk StringSet.empty
+let imported_opaque_units = srefk String.Set.empty
 
 let add_imported_opaque s =
-  imported_opaque_units := StringSet.add s !imported_opaque_units
+  imported_opaque_units := String.Set.add s !imported_opaque_units
 
 let clear_imports () =
   Consistbl.clear !crc_units;
-  imported_units := StringSet.empty;
-  imported_opaque_units := StringSet.empty
+  imported_units := String.Set.empty;
+  imported_opaque_units := String.Set.empty
 
 let check_consistency ps =
   try
@@ -797,8 +797,8 @@ let register_pers_for_short_paths ps =
     List.exists
       (function
         | Alerts alerts ->
-          StringMap.mem "deprecated" alerts ||
-          StringMap.mem "ocaml.deprecated" alerts
+          String.Map.mem "deprecated" alerts ||
+          String.Map.mem "ocaml.deprecated" alerts
         | _ -> false)
       ps.ps_flags
   in
@@ -860,7 +860,7 @@ let acknowledge_pers_struct check modname
   let flags = cmi.cmi_flags in
   let alerts =
     List.fold_left (fun acc -> function Alerts s -> s | _ -> acc)
-      StringMap.empty
+      String.Map.empty
       flags
   in
   let id = Ident.create_persistent name in
@@ -1345,7 +1345,7 @@ exception Recmodule
 let report_alerts ?loc p alerts =
   match loc with
   | Some loc ->
-      StringMap.iter
+      String.Map.iter
         (fun kind message ->
            let message = if message = "" then "" else "\n" ^ message in
            Location.alert ~kind loc
@@ -2320,7 +2320,7 @@ let components_of_functor_appl f env p1 p2 =
     !check_well_formed_module env Location.(in_file !input_name)
       ("the signature of " ^ Path.name p) mty;
     let comps =
-      components_of_module ~alerts:StringMap.empty
+      components_of_module ~alerts:String.Map.empty
         ~loc:Location.none
         (*???*)
         env None Subst.identity p addr mty
@@ -2615,7 +2615,7 @@ let persistent_structures_of_dir dir =
   Load_path.Dir.files dir
   |> List.to_seq
   |> Seq.filter_map unit_name_of_filename
-  |> StringSet.of_seq
+  |> String.Set.of_seq
 *)
 
 (* Return the CRC of the interface of the given compilation unit *)
@@ -2635,11 +2635,11 @@ let crc_of_unit name =
 (* Return the list of imported interfaces with their CRCs *)
 
 let imports () =
-  Consistbl.extract (StringSet.elements !imported_units) !crc_units
+  Consistbl.extract (String.Set.elements !imported_units) !crc_units
 
 (* Returns true if [s] is an opaque imported module  *)
 let is_imported_opaque s =
-  StringSet.mem s !imported_opaque_units
+  String.Set.mem s !imported_opaque_units
 
 (* Save a signature to a file *)
 
@@ -2793,18 +2793,18 @@ let filter_non_loaded_persistent f env =
                  if f (Ident.create_persistent name) then
                    acc
                  else
-                   StringSet.add name acc)
+                   String.Set.add name acc)
       env.modules
-      StringSet.empty
+      String.Set.empty
   in
   let remove_ids tbl ids =
-    StringSet.fold
+    String.Set.fold
       (fun name tbl -> IdTbl.remove (Ident.create_persistent name) tbl)
       ids
       tbl
   in
   let rec filter_summary summary ids =
-    if StringSet.is_empty ids then
+    if String.Set.is_empty ids then
       summary
     else
       match summary with
@@ -2832,8 +2832,8 @@ let filter_non_loaded_persistent f env =
       | Env_copy_types (s, types) ->
           Env_copy_types (filter_summary s ids, types)
       | Env_persistent (s, id) ->
-          if StringSet.mem (Ident.name id) ids then
-            filter_summary s (StringSet.remove (Ident.name id) ids)
+          if String.Set.mem (Ident.name id) ids then
+            filter_summary s (String.Set.remove (Ident.name id) ids)
           else
             Env_persistent (filter_summary s ids, id)
   in
@@ -2915,7 +2915,7 @@ let short_paths_module_type_desc mty =
 
 let deprecated_of_alerts alerts =
   if
-    StringMap.exists (fun key _ ->
+    String.Map.exists (fun key _ ->
       match key with
       | "deprecated" | "ocaml.deprecated" -> true
       | _ -> false
@@ -2953,7 +2953,7 @@ and short_paths_module_components_desc env mpath comp =
   | Functor_comps _ -> assert false
   | Structure_comps c ->
       let comps =
-        StringMap.fold (fun name (decl, _) acc ->
+        String.Map.fold (fun name (decl, _) acc ->
           let desc = short_paths_type_desc decl in
           let depr = deprecated_of_attributes decl.type_attributes in
           let item = Short_paths.Desc.Module.Type(name, desc, depr) in
@@ -2961,7 +2961,7 @@ and short_paths_module_components_desc env mpath comp =
         ) c.comp_types []
       in
       let comps =
-        StringMap.fold (fun name clty  acc ->
+        String.Map.fold (fun name clty  acc ->
           let desc = short_paths_class_type_desc clty in
           let depr = deprecated_of_attributes clty.clty_attributes in
           let item = Short_paths.Desc.Module.Class_type(name, desc, depr) in
@@ -2969,7 +2969,7 @@ and short_paths_module_components_desc env mpath comp =
         ) c.comp_cltypes comps
       in
       let comps =
-        StringMap.fold (fun name mtd acc ->
+        String.Map.fold (fun name mtd acc ->
           let desc = short_paths_module_type_desc mtd.mtd_type in
           let depr = deprecated_of_attributes mtd.mtd_attributes in
           let item = Short_paths.Desc.Module.Module_type(name, desc, depr) in
@@ -2977,9 +2977,9 @@ and short_paths_module_components_desc env mpath comp =
         ) c.comp_modtypes comps
       in
       let comps =
-        StringMap.fold (fun name (data, _) acc ->
+        String.Map.fold (fun name (data, _) acc ->
           let comps =
-            match StringMap.find name c.comp_components with
+            match String.Map.find name c.comp_components with
             | exception Not_found -> assert false
             | comps, _ -> comps
           in
@@ -3040,7 +3040,7 @@ let short_paths_additions_desc env additions =
            let depr = deprecated_of_alerts comps.alerts in
            Short_paths.Desc.Module(id, desc, source, depr) :: acc
        | Type_open(root, decls) ->
-           StringMap.fold
+           String.Map.fold
              (fun name (decl, _) acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
@@ -3050,7 +3050,7 @@ let short_paths_additions_desc env additions =
                 Short_paths.Desc.Type(id, desc, source, depr) :: acc)
              decls acc
        | Class_type_open(root, decls) ->
-           StringMap.fold
+           String.Map.fold
              (fun name clty acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
@@ -3060,7 +3060,7 @@ let short_paths_additions_desc env additions =
                 Short_paths.Desc.Class_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_type_open(root, decls) ->
-           StringMap.fold
+           String.Map.fold
              (fun name mtd acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
@@ -3070,7 +3070,7 @@ let short_paths_additions_desc env additions =
                 Short_paths.Desc.Module_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_open(root, decls) ->
-           StringMap.fold
+           String.Map.fold
              (fun name comps acc ->
                match comps with
                | Persistent -> acc

@@ -26,8 +26,8 @@
 
 )* }}} *)
 
-open Std
 open Misc
+open Std
 
 let {Logger. log} = Logger.for_section "Mconfig_dot"
 

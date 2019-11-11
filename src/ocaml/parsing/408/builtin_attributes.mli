@@ -37,9 +37,9 @@ val check_alerts: Location.t -> Parsetree.attributes -> string -> unit
 val check_alerts_inclusion:
   def:Location.t -> use:Location.t -> Location.t -> Parsetree.attributes ->
   Parsetree.attributes -> string -> unit
-val alerts_of_attrs: Parsetree.attributes -> string Misc.StringMap.t
-val alerts_of_sig: Parsetree.signature -> string Misc.StringMap.t
-val alerts_of_str: Parsetree.structure -> string Misc.StringMap.t
+val alerts_of_attrs: Parsetree.attributes -> string Misc.String.Map.t
+val alerts_of_sig: Parsetree.signature -> string Misc.String.Map.t
+val alerts_of_str: Parsetree.structure -> string Misc.String.Map.t
 
 val check_deprecated_mutable:
     Location.t -> Parsetree.attributes -> string -> unit
