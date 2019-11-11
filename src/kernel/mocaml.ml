@@ -27,7 +27,7 @@ let setup_config config = (
 type typer_state = Local_store.scope
 
 let new_state ~unit_name =
-  let scope = Local_store.(merge (fresh Btype.state) (fresh Env.state)) in
+  let scope = Local_store.fresh Local_store.typechecker_state in
   Local_store.with_scope scope
     (fun () -> Env.set_unit_name unit_name);
   scope

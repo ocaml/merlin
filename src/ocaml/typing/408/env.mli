@@ -394,8 +394,6 @@ val unbound_class : Path.t
 
 (** merlin: manage internal state *)
 
-val state : Local_store.bindings
-
 val check_state_consistency: unit -> bool
 
 val without_cmis : ('a -> 'b) -> 'a -> 'b

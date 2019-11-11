@@ -210,10 +210,6 @@ val log_type: type_expr -> unit
 (**** Forward declarations ****)
 val print_raw: (Format.formatter -> type_expr -> unit) ref
 
-(** merlin: manage all internal state *)
-
-val state : Local_store.bindings
-
 (* merlin: Number of unification variables that have been linked so far.
    Used to estimate the "cost" of unification. *)
 val linked_variables: unit -> int

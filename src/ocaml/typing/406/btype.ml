@@ -87,9 +87,7 @@ type changes =
   | Unchanged
   | Invalid
 
-let state = Local_store.new_bindings ()
-let sref f = Local_store.ref state f
-let srefk k = Local_store.ref state (fun () -> k)
+open Local_store.Typechecker
 
 let trail = sref (fun () -> Weak.create 1)
 
@@ -215,7 +213,7 @@ let proxy ty =
 
 (**** Utilities for fixed row private types ****)
 
-let row_of_type t = 
+let row_of_type t =
   match (repr t).desc with
     Tobject(t,_) ->
       let rec get_row t =

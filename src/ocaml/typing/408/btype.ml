@@ -87,9 +87,7 @@ type changes =
   | Unchanged
   | Invalid
 
-let state = Local_store.new_bindings ()
-let sref f = Local_store.ref state f
-let srefk k = Local_store.ref state (fun () -> k)
+open Local_store.Typechecker
 
 let trail = sref (fun () -> Weak.create 1)
 
