@@ -1,10 +1,17 @@
 open Std
 
 type ref_and_reset = F : 'a ref * (unit -> 'a) -> ref_and_reset
-type bindings = { mutable refs: ref_and_reset list }
+type bindings = { mutable refs: ref_and_reset list; is_bound: bool ref }
 
 let new_bindings () =
-  { refs = [] }
+  let is_bound = ref false in
+  { refs = [F (is_bound, (fun () -> true))]; is_bound }
+
+let is_bound t = !(t.is_bound)
+
+let reset t =
+  assert (is_bound t);
+  List.iter ~f:(fun (F (ref, initializer_)) -> ref := initializer_ ()) t.refs
 
 let ref t f =
   let result = ref (f ()) in
@@ -17,8 +24,6 @@ type scope = a_slot list
 
 let fresh t =
   List.map ~f:(fun (F(ref,f)) -> Slot {ref; value = f ()}) t.refs
-
-let merge = (@)
 
 type ref_and_value = V : 'a ref * 'a -> ref_and_value
 let restore l = List.iter ~f:(fun (V(r,v)) -> r := v) l
@@ -36,9 +41,8 @@ let with_scope scope f =
     restore backup;
     reraise exn
 
-let typechecker_state = new_bindings ()
-
-module Typechecker = struct
-  let sref f = ref typechecker_state f
-  let srefk k = ref typechecker_state (fun () -> k)
+module Compiler = struct
+  let compiler_state = new_bindings ()
+  let sref f = ref compiler_state f
+  let srefk k = ref compiler_state (fun () -> k)
 end

@@ -16,8 +16,6 @@ type typedtree = [
 
 val run : Mconfig.t -> Mreader.parsetree -> result
 
-val with_typer : result -> (unit -> 'a) -> 'a
-
 val get_env : ?pos:Msource.position -> result -> Env.t
 
 val get_typedtree : result -> typedtree

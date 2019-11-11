@@ -1,6 +1,6 @@
 type t
-
 val make : Mconfig.t -> Msource.t -> t
+val with_pipeline : t -> (unit -> 'a) -> 'a
 val for_completion : Msource.position -> t -> t
 
 val raw_source : t -> Msource.t
@@ -9,7 +9,6 @@ val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t
 val get_lexing_pos : t -> [< Msource.position] -> Lexing.position
 
-val with_reader : t -> (unit -> 'a) -> 'a
 val reader_config : t -> Mconfig.t
 val reader_comments : t -> (string * Location.t) list
 val reader_parsetree : t -> Mreader.parsetree

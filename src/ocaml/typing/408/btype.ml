@@ -87,7 +87,7 @@ type changes =
   | Unchanged
   | Invalid
 
-open Local_store.Typechecker
+open Local_store.Compiler
 
 let trail = sref (fun () -> Weak.create 1)
 

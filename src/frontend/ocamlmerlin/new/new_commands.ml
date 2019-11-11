@@ -61,7 +61,6 @@ let rec find_command name = function
 let run pipeline query =
   Logger.log ~section:"New_commands" ~title:"run(query)"
     "%a" Logger.json (fun () -> Query_json.dump query);
-  Mpipeline.with_reader pipeline @@ fun () ->
   let result = Query_commands.dispatch pipeline query in
   let json = Query_json.json_of_response query result in
   json

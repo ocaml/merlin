@@ -60,14 +60,10 @@ let print_completion_entries ~with_types config source entries =
     List.rev_map ~f:(Completion.map_entry postprocess) entries
   else List.rev_map ~f:(Completion.map_entry (fun _ -> "")) entries
 
-let with_typer pipeline f =
-  let typer = Mpipeline.typer_result pipeline in
-  Mtyper.with_typer typer @@ fun () -> f typer
-
-let for_completion pipeline position f =
+let for_completion pipeline position =
   let pipeline = Mpipeline.for_completion position pipeline in
   let typer = Mpipeline.typer_result pipeline in
-  Mtyper.with_typer typer @@ fun () -> f pipeline typer
+  (pipeline, typer)
 
 let verbosity pipeline =
   Mconfig.((Mpipeline.final_config pipeline).query.verbosity)
@@ -114,7 +110,7 @@ let dump pipeline = function
     `String (to_string ())
 
   | (`String ("env" | "fullenv" as kind) :: opt_pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let kind = if kind = "env" then `Normal else `Full in
     let pos =
       match opt_pos with
@@ -149,7 +145,7 @@ let dump pipeline = function
     `List (List.map ~f:aux sg)
 
   | [`String "browse"] ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let structure = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     Browse_misc.dump_browse (snd (Mbrowse.leaf_node structure))
 
@@ -166,7 +162,7 @@ let dump pipeline = function
     `Assoc [ "user", user; "applied", applied ]
 
   | [`String "warnings"] ->
-    with_typer pipeline @@ fun _typer ->
+    let _typer = Mpipeline.typer_result pipeline in
     Warnings.dump () (*TODO*)
 
   | [`String "exn"] ->
@@ -242,7 +238,7 @@ let reconstruct_identifier pipeline pos = function
 let dispatch pipeline (type a) : a Query_protocol.t -> a =
   function
   | Type_expr (source, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let ppf, to_string = Format.to_string () in
@@ -252,7 +248,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Type_enclosing (expro, pos, index) ->
     let open Typedtree in
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -354,7 +350,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         )
 
   | Enclosing pos ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let path = match Mbrowse.enclosing pos [structures] with
@@ -364,7 +360,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     List.map ~f:Mbrowse.node_loc path
 
   | Complete_prefix (prefix, pos, _, with_doc, with_types) ->
-    for_completion pipeline pos @@ fun pipeline typer ->
+    let pipeline, typer = for_completion pipeline pos in
     let config = Mpipeline.final_config pipeline in
     let verbosity = Mconfig.(config.query.verbosity) in
     let no_labels = Mpipeline.reader_no_labels_for_completion pipeline in
@@ -393,7 +389,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     {Compl. entries; context }
 
   | Expand_prefix (prefix, pos, kinds, with_types) ->
-    for_completion pipeline pos @@ fun pipeline typer ->
+    let pipeline, typer = for_completion pipeline pos in
     let source = Mpipeline.input_source pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
@@ -406,7 +402,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     { Compl. entries ; context = `Unknown }
 
   | Polarity_search (query, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let query =
@@ -441,7 +437,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     { Compl. entries ; context = `Unknown }
 
   | Refactor_open (mode, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     begin match Raw_compat.select_open_node (Mtyper.node_at typer pos) with
       | None | Some (_, []) -> []
@@ -473,7 +469,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     end
 
   | Document (patho, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
     let config = Mpipeline.final_config pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -493,7 +489,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         ~env ~local_defs ~comments ~pos (`User_input path)
 
   | Locate (patho, ml_or_mli, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
@@ -528,19 +524,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     end
 
   | Jump (target, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let typedtree = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Jump.get typedtree pos target
 
   | Phrase (target, pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let typedtree = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Mpipeline.get_lexing_pos pipeline (Jump.phrase typedtree pos target)
 
   | Case_analysis (pos_start, pos_end) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let pos_start = Mpipeline.get_lexing_pos pipeline pos_start in
     let pos_end = Mpipeline.get_lexing_pos pipeline pos_end in
     let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
@@ -577,18 +573,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     end
 
   | Outline ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     Outline.get [Browse_tree.of_browse browse]
 
   | Shape pos ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     Outline.shape pos [Browse_tree.of_browse browse]
 
   | Errors { lexing; parsing; typing }->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
     Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
     let lexer_errors  = Mpipeline.reader_lexer_errors pipeline  in
@@ -710,7 +706,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     Mconfig.(config.merlin.source_path)
 
   | Occurrences (`Ident_at pos) ->
-    with_typer pipeline @@ fun typer ->
+    let typer = Mpipeline.typer_result pipeline in
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let tnode =
