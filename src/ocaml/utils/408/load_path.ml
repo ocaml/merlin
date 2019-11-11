@@ -17,8 +17,7 @@ module SMap = Misc.String.Map
 (* Mapping from basenames to full filenames *)
 type registry = string SMap.t ref
 
-let state = Local_store.new_bindings ()
-let srefk k = Local_store.ref state (fun () -> k)
+open Local_store.Typechecker
 
 let files : registry = srefk SMap.empty
 let files_uncap : registry = srefk SMap.empty
