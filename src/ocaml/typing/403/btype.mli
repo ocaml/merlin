@@ -225,10 +225,6 @@ val iter_type_expr_cstr_args: (type_expr -> unit) ->
 val map_type_expr_cstr_args: (type_expr -> type_expr) ->
   (constructor_arguments -> constructor_arguments)
 
-(** merlin: manage all internal state *)
-
-val state : Local_store.bindings
-
 (* merlin: Number of unification variables that have been linked so far.
    Used to estimate the "cost" of unification. *)
 val linked_variables: unit -> int

@@ -236,9 +236,6 @@ val iter_type_expr_cstr_args: (type_expr -> unit) ->
 val map_type_expr_cstr_args: (type_expr -> type_expr) ->
   (constructor_arguments -> constructor_arguments)
 
-(** merlin: internal state *)
-val state : Local_store.bindings
-
 (** merlin: check if a snapshot has been invalidated *)
 val is_valid: snapshot -> bool
 

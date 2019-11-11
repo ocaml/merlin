@@ -600,8 +600,7 @@ type changes =
 
 type snapshot = changes ref * int
 
-let state = Local_store.new_bindings ()
-let sref f = Local_store.ref state f
+open Local_store.Typechecker
 
 let trail = sref (fun () -> Weak.create 1)
 let last_snapshot = sref (fun () -> 0)

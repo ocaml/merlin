@@ -35,3 +35,10 @@ let with_scope scope f =
     List.iter ~f:(fun (Slot s) -> s.value <- !(s.ref)) scope;
     restore backup;
     reraise exn
+
+let typechecker_state = new_bindings ()
+
+module Typechecker = struct
+  let sref f = ref typechecker_state f
+  let srefk k = ref typechecker_state (fun () -> k)
+end
