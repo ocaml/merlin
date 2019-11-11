@@ -5,3 +5,4 @@
 (context (opam (switch 4.06.1)))
 (context (opam (switch 4.07.1)))
 (context (opam (switch 4.08.1)))
+(context (opam (switch 4.09.0)))

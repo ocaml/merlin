@@ -93,41 +93,6 @@ exception Error of error
 
 let error err = raise (Error err)
 
-module EnvLazy : sig
-  type ('a,'b) t
-
-  val force : ('a -> 'b) -> ('a,'b) t -> 'b
-  val create : 'a -> ('a,'b) t
-  val get_arg : ('a,'b) t -> 'a option
-end  = struct
-
-  type ('a,'b) t = ('a,'b) eval ref
-
-  and ('a,'b) eval =
-      Done of 'b
-    | Raise of exn
-    | Thunk of 'a
-
-  let force f x =
-    match !x with
-        Done x -> x
-      | Raise e -> raise e
-      | Thunk e ->
-          try
-            let y = f e in
-            x := Done y;
-            y
-          with e ->
-            x := Raise e;
-            raise e
-
-  let get_arg x =
-    match !x with Thunk a -> Some a | _ -> None
-
-  let create x =
-    ref (Thunk x)
-end
-
 module PathMap = Path.Map
 
 type summary =
