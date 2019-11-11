@@ -1534,6 +1534,3 @@ let shorten_class_type_path env p =
 
 let () =
   Env.shorten_module_path := shorten_module_path
-
-let compute_map_for_pers _name = true
-

@@ -342,14 +342,6 @@ let pers_map name =
     end;
     map
 
-let compute_map_for_pers name =
-  try
-    ignore (Env.find_pers_map name : _ * _);
-    false
-  with Not_found ->
-    ignore (pers_map name : _ * _);
-    true
-
 let pers_maps =
   (* Loading persistent map can trigger loading of other maps.
      Repeat until reaching a fix point *)
