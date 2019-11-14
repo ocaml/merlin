@@ -173,7 +173,10 @@ let print_type_with_decl ~verbosity env ppf typ =
   if verbosity > 0 then
     match (Ctype.repr typ).Types.desc with
     | Types.Tconstr (path, params, _) ->
-      let decl = Env.find_type path env in
+      let decl =
+        Env.with_cmis @@ fun () ->
+        Env.find_type path env
+      in
       let is_abstract =
         match decl.Types.type_kind with
         | Types.Type_abstract -> true

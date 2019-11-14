@@ -3218,7 +3218,8 @@ let check_state_consistency () =
       | exception Not_found -> false
     end
 
-let with_cmis f = f ()
+let with_cmis f =
+  Misc.(protect_refs [ R (can_load_cmis, Can_load_cmis)] f)
 
 (* helper for merlin *)
 
