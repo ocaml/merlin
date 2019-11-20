@@ -29,7 +29,7 @@ module Cache = struct
     in
     match List.assoc key !cache with
     | state ->
-      cache := List.remove_assoc key !cache;
+      cache := (key, state) :: List.remove_assoc key !cache;
       log ~title "found entry for this configuration";
       state
     | exception Not_found ->
