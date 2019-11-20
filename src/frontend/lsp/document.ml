@@ -13,7 +13,8 @@ let normalize_line_endings text =
 
 let uri doc = Lsp.Text_document.documentUri doc.tdoc
 let source doc = doc.source
-let pipeline doc = doc.pipeline
+let with_pipeline doc f =
+  Mpipeline.with_pipeline doc.pipeline (fun () -> f doc.pipeline)
 let version doc = Lsp.Text_document.version doc.tdoc
 
 let make_config uri =
