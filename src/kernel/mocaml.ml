@@ -5,11 +5,11 @@ open Local_store.Compiler
 
 type typer_state = Local_store.scope
 
-let bound = srefk None
+let current_state = srefk None
 
 let new_state () =
   let scope = Local_store.fresh compiler_state in
-  Local_store.with_scope scope (fun () -> bound := Some scope);
+  Local_store.with_scope scope (fun () -> current_state := Some scope);
   scope
 
 let with_state state f =
@@ -19,7 +19,7 @@ let with_state state f =
   | r -> Cmt_format.clear (); r
   | exception exn -> Cmt_format.clear (); reraise exn
 
-let is_current_state state = match !bound with
+let is_current_state state = match !current_state with
   | Some state' -> state == state'
   | None -> false
 
