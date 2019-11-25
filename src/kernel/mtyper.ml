@@ -1,4 +1,5 @@
 open Std
+open Local_store.Compiler
 
 let {Logger. log} = Logger.for_section "Mtyper"
 
@@ -17,9 +18,28 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+let cache = srefk None
+
+let fresh_env config =
+  let env0 = Typer_raw.fresh_env () in
+  let env0 = Extension.register Mconfig.(config.merlin.extensions) env0 in
+  let snap0 = Btype.snapshot () in
+  (env0, snap0)
+
+let get_cache config =
+  match !cache with
+  | Some (env0, snap0, items) when Btype.is_valid snap0 ->
+    env0, snap0, Some items
+  | Some _ | None ->
+    let env0, snap0 = fresh_env config in
+    env0, snap0, None
+
+let return_and_cache status =
+  cache := Some status;
+  status
+
 type result = {
-  config    : Mconfig.t;
-  state     : Mocaml.typer_state;
+  config : Mconfig.t;
   initial_env : Env.t;
   initial_snapshot : Btype.snapshot;
   typedtree : [
@@ -29,35 +49,6 @@ type result = {
         (Parsetree.structure_item, Typedtree.structure_item) item list
   ];
 }
-
-let cache = ref []
-
-let cache_key config =
-  Mconfig.(config.query.directory, config.query.filename, config.ocaml)
-
-let pop_cache config =
-  let title = "pop_cache" in
-  let key = cache_key config in
-  match List.assoc key !cache with
-  | (state, result) ->
-    cache := List.remove_assoc key !cache;
-    log ~title "found entry for this configuration";
-    if Mocaml.with_state state Env.check_state_consistency then (
-      log ~title "consistent state, reusing";
-      `Cached (state, result)
-    )
-    else (
-      log ~title "inconsistent state, dropping";
-      `Inconsistent
-    )
-  | exception Not_found -> (
-      log ~title "nothing cached for this configuration";
-      `None
-    )
-
-let push_cache config state t =
-  let t = (t.initial_env, t.initial_snapshot, t.typedtree) in
-  cache := List.take_n 5 ((cache_key config, (state, t)) :: !cache)
 
 let compatible_prefix result_items tree_items =
   let rec aux acc = function
@@ -71,12 +62,6 @@ let compatible_prefix result_items tree_items =
       acc, pitems
   in
   aux [] (result_items, tree_items)
-
-let fresh_env config =
-  let env0 = Typer_raw.fresh_env () in
-  let env0 = Extension.register Mconfig.(config.merlin.extensions) env0 in
-  let snap0 = Btype.snapshot () in
-  (env0, snap0)
 
 let rec type_structure caught env = function
   | parsetree_item :: rest ->
@@ -109,16 +94,12 @@ let rec type_signature caught env = function
     item :: type_signature caught part_env rest
   | [] -> []
 
-let type_implementation config caught cached parsetree =
-  let env0, snap0, (prefix, parsetree)  =
-    match cached with
-    | Some (env0, snap0, `Implementation items) when Btype.is_valid snap0 ->
-      env0, snap0, compatible_prefix items parsetree
-    | Some (env0, snap0, `Interface _)  when Btype.is_valid snap0 ->
-      env0, snap0, ([], parsetree)
-    | Some _ | None ->
-      let env0, snap0 = fresh_env config in
-      env0, snap0, ([], parsetree)
+let type_implementation config caught parsetree =
+  let env0, snap0, prefix = get_cache config in
+  let prefix, parsetree =
+    match prefix with
+    | Some (`Implementation items) -> compatible_prefix items parsetree
+    | Some (`Interface _) | None -> ([], parsetree)
   in
   let env', snap', warn' = match prefix with
     | [] -> (env0, snap0, Warnings.backup ())
@@ -130,19 +111,15 @@ let type_implementation config caught cached parsetree =
   Btype.backtrack snap';
   Warnings.restore warn';
   let suffix = type_structure caught env' parsetree in
-  env0, snap0, List.rev_append prefix suffix
+  return_and_cache
+    (env0, snap0, `Implementation (List.rev_append prefix suffix))
 
-let type_interface config caught cached parsetree =
-  let env0, snap0, (prefix, parsetree)  =
-    match cached with
-    | Some (env0, snap0, `Interface items) when
-        Btype.is_valid snap0 ->
-      env0, snap0, compatible_prefix items parsetree
-    | Some (env0, snap0, `Implementation _)  when Btype.is_valid snap0 ->
-      env0, snap0, ([], parsetree)
-    | Some _ | None ->
-      let env0, snap0 = fresh_env config in
-      env0, snap0, ([], parsetree)
+let type_interface config caught parsetree =
+  let env0, snap0, prefix = get_cache config in
+  let prefix, parsetree =
+    match prefix with
+    | Some (`Interface items) -> compatible_prefix items parsetree
+    | Some (`Implementation _) | None -> ([], parsetree)
   in
   let env', snap', warn' = match prefix with
     | [] -> (env0, snap0, Warnings.backup ())
@@ -154,41 +131,26 @@ let type_interface config caught cached parsetree =
   Btype.backtrack snap';
   Warnings.restore warn';
   let suffix = type_signature caught env' parsetree in
-  env0, snap0, List.rev_append prefix suffix
+  return_and_cache
+    (env0, snap0, `Interface (List.rev_append prefix suffix))
 
 let run config parsetree =
+  if not (Env.check_state_consistency ()) then (
+    Mocaml.flush_caches ();
+    Local_store.reset compiler_state;
+  );
   Mocaml.setup_config config;
-  let state, cached = match pop_cache config with
-    | `Cached (state, entry) -> (state, Some entry)
-    | `None | `Inconsistent ->
-      Mocaml.flush_caches ();
-      (Mocaml.new_state ~unit_name:(Mconfig.unitname config), None)
-  in
-  Mocaml.with_state state @@ fun () ->
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();
-  let result = match parsetree with
-    | `Implementation parsetree ->
-      let initial_env, initial_snapshot, items =
-        type_implementation config caught cached parsetree in
-      { config; state; initial_env; initial_snapshot;
-        typedtree = `Implementation items }
-    | `Interface parsetree ->
-      let initial_env, initial_snapshot, items =
-        type_interface config caught cached parsetree in
-      { config; state; initial_env; initial_snapshot;
-        typedtree = `Interface items }
+  let initial_env, initial_snapshot, typedtree = match parsetree with
+    | `Implementation parsetree -> type_implementation config caught parsetree
+    | `Interface parsetree -> type_interface config caught parsetree
   in
   Typecore.reset_delayed_checks ();
-  push_cache config state result;
-  result
-
-let with_typer t f =
-  Mocaml.with_state t.state f
+  { config; initial_env; initial_snapshot; typedtree }
 
 let get_env ?pos:_ t =
-  assert (Mocaml.is_current_state t.state);
   Option.value ~default:t.initial_env (
     match t.typedtree with
     | `Implementation l -> Option.map ~f:(fun x -> x.part_env) (List.last l)
@@ -196,7 +158,6 @@ let get_env ?pos:_ t =
   )
 
 let get_errors t =
-  assert (Mocaml.is_current_state t.state);
   let errors, checks = Option.value ~default:([],[]) (
       let f x = x.part_errors, x.part_checks in
       match t.typedtree with
@@ -212,7 +173,6 @@ let get_errors t =
   (!caught)
 
 let get_typedtree t =
-  assert (Mocaml.is_current_state t.state);
   let split_items l =
     let typd, typs = List.split (List.map ~f:(fun x -> x.typedtree_items) l) in
     (List.concat typd, List.concat typs)
@@ -226,7 +186,6 @@ let get_typedtree t =
     `Interface {Typedtree. sig_items; sig_type; sig_final_env = get_env t}
 
 let node_at ?(skip_recovered=false) t pos_cursor =
-  assert (Mocaml.is_current_state t.state);
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node

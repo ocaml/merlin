@@ -1,12 +1,12 @@
-(* Build settings *)
-val setup_config : Mconfig.t -> unit
-
-(* Instance of environment cache & btype unification log  *)
+(* An instance of load path, environment cache & btype unification log  *)
 type typer_state
 
-val new_state : unit_name:string -> typer_state
+val new_state : unit -> typer_state
 val with_state : typer_state -> (unit -> 'a) -> 'a
 val is_current_state : typer_state -> bool
+
+(* Build settings *)
+val setup_config : Mconfig.t -> unit
 
 (* Replace Outcome printer *)
 val default_printer :

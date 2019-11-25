@@ -22,6 +22,8 @@
 (**                                                                   **)
 (***********************************************************************)
 
+open Local_store.Compiler
+
 let exec_magic_number = "Caml1999X011"
 and cmi_magic_number = "Caml1999I020"
 and cmo_magic_number = "Caml1999O011"
@@ -41,7 +43,7 @@ and ast_intf_magic_number = "Caml1999N018"
 and cmxs_magic_number = "Caml2007D002"
 and cmt_magic_number = "Caml2012T007"
 
-let load_path = ref ([] : string list)
+let load_path = srefk ([] : string list)
 
 let interface_suffix = ref ".mli"
 

@@ -17,7 +17,7 @@ module SMap = Misc.String.Map
 (* Mapping from basenames to full filenames *)
 type registry = string SMap.t ref
 
-open Local_store.Typechecker
+open Local_store.Compiler
 
 let files : registry = srefk SMap.empty
 let files_uncap : registry = srefk SMap.empty
@@ -38,6 +38,7 @@ end
 let dirs = srefk []
 
 let reset () =
+  assert (Local_store.is_bound compiler_state);
   files := SMap.empty;
   files_uncap := SMap.empty;
   dirs := []
@@ -46,6 +47,7 @@ let get () = !dirs
 let get_paths () = List.map Dir.path !dirs
 
 let add dir =
+  assert (Local_store.is_bound compiler_state);
   let add_file base =
     let fn = Filename.concat dir.Dir.path base in
     files := SMap.add base fn !files;
@@ -55,6 +57,7 @@ let add dir =
   dirs := dir :: !dirs
 
 let remove_dir dir =
+  assert (Local_store.is_bound compiler_state);
   let new_dirs = List.filter (fun d -> Dir.path d <> dir) !dirs in
   if new_dirs <> !dirs then begin
     reset ();
@@ -70,12 +73,14 @@ let init l =
 let is_basename fn = Filename.basename fn = fn
 
 let find fn =
+  assert (Local_store.is_bound compiler_state);
   if is_basename fn then
     SMap.find fn !files
   else
     Misc.find_in_path (get_paths ()) fn
 
 let find_uncap fn =
+  assert (Local_store.is_bound compiler_state);
   if is_basename fn then
     SMap.find (String.uncapitalize_ascii fn) !files_uncap
   else

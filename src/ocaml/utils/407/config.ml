@@ -22,6 +22,8 @@
 (**                                                                   **)
 (***********************************************************************)
 
+open Local_store.Compiler
+
 
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
@@ -48,7 +50,7 @@ and cmxs_magic_number = "Caml1999D023"
     (* cmxs_magic_number is duplicated in otherlibs/dynlink/natdynlink.ml *)
 and cmt_magic_number = "Caml1999T024"
 
-let load_path = ref ([] : string list)
+let load_path = srefk ([] : string list)
 
 let interface_suffix = ref ".mli"
 

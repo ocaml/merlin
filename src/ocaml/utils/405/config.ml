@@ -22,6 +22,8 @@
 (**                                                                   **)
 (***********************************************************************)
 
+open Local_store.Compiler
+
 
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
@@ -45,7 +47,7 @@ and ast_intf_magic_number = "Caml1999N018"
 and cmxs_magic_number = "Caml2007D002"
 and cmt_magic_number = "Caml2012T009"
 
-let load_path = ref ([] : string list)
+let load_path = srefk ([] : string list)
 
 let interface_suffix = ref ".mli"
 

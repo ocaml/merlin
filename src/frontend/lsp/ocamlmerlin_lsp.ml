@@ -38,6 +38,10 @@ let initializeInfo: Lsp.Protocol.Initialize.result = {
   };
 }
 
+let dispatch_in_doc doc command =
+  Document.with_pipeline doc
+    (fun pipeline -> Query_commands.dispatch pipeline command)
+
 let logical_of_position (position : Lsp.Protocol.position) =
   let line = position.line + 1 in
   let col = position.character in
@@ -57,7 +61,8 @@ let send_diagnostics rpc doc =
   let command =
     Query_protocol.Errors { lexing = true; parsing = true; typing = true }
   in
-  let errors = Query_commands.dispatch (Document.pipeline doc) command in
+  Document.with_pipeline doc @@ fun pipeline ->
+  let errors = Query_commands.dispatch pipeline command in
   let diagnostics =
     List.map (fun (error : Location.error) ->
       let loc = Location.loc_of_report error in
@@ -125,7 +130,7 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentHover {textDocument = {uri;}; position;} ->
     let query_type doc pos =
       let command = Query_protocol.Type_enclosing (None, pos, None) in
-      match Query_commands.dispatch (Document.pipeline doc) command with
+      match dispatch_in_doc doc command with
       | []
       | (_, `Index _, _) :: _ -> None
       | (location, `String value, _) :: _ -> Some (location, value)
@@ -133,7 +138,7 @@ let on_request :
 
     let query_doc doc pos =
       let command = Query_protocol.Document (None, pos) in
-      match Query_commands.dispatch (Document.pipeline doc) command with
+      match dispatch_in_doc doc command with
       | `Found s | `Builtin s -> Some s
       | _ -> None
     in
@@ -177,7 +182,7 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentReferences {textDocument = {uri;}; position; context = _} ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
-    let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
+    let locs : Location.t list = dispatch_in_doc doc command in
     let lsp_locs = List.map (fun loc ->
       let range = range_of_loc loc in
       (* using original uri because merlin is looking only in local file *)
@@ -188,7 +193,7 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentCodeLens {textDocument = {uri;}} ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Outline in
-    let outline = Query_commands.dispatch (Document.pipeline doc) command in
+    let outline = dispatch_in_doc doc command in
     let symbol_infos =
       let rec symbol_info_of_outline_item item =
         let children =
@@ -218,7 +223,7 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentHighlight {textDocument = {uri;}; position; } ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
-    let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
+    let locs : Location.t list = dispatch_in_doc doc command in
     let lsp_locs = List.map (fun loc ->
       let range = range_of_loc loc in
       (* using the default kind as we are lacking info
@@ -282,7 +287,7 @@ let on_request :
 
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Outline in
-    let outline = Query_commands.dispatch (Document.pipeline doc) command in
+    let outline = dispatch_in_doc doc command in
     let symbols =
       let caps = client_capabilities.textDocument.documentSymbol in
       match caps.hierarchicalDocumentSymbolSupport with
@@ -299,7 +304,7 @@ let on_request :
     Document_store.get store uri >>= fun doc ->
     let position = logical_of_position position in
     let command = Query_protocol.Locate (None, `ML, position) in
-    begin match Query_commands.dispatch (Document.pipeline doc) command with
+    begin match dispatch_in_doc doc command with
     | `Found (path, lex_position) ->
       let position = position_of_lexical_position lex_position in
       let range = {Lsp.Protocol. start_ = position; end_ = position;} in
@@ -321,9 +326,8 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentTypeDefinition {textDocument = {uri;}; position;} ->
     Document_store.get store uri >>= fun doc ->
     let position = logical_of_position position in
-    let pipeline = Document.pipeline doc in
+    Document.with_pipeline doc @@ fun pipeline ->
     let typer = Mpipeline.typer_result pipeline in
-    Mtyper.with_typer typer @@ fun () ->
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline position in
     let path = Mbrowse.enclosing pos [structures] in
@@ -503,7 +507,8 @@ let on_request :
       )
     in
 
-    let completions = Query_commands.dispatch (Document.pipeline doc) complete in
+    Document.with_pipeline doc @@ fun pipeline ->
+    let completions = Query_commands.dispatch pipeline complete in
     let labels =
       match completions with
       | { Query_protocol.Compl. entries = _; context = `Unknown } -> []
@@ -523,7 +528,7 @@ let on_request :
       match completions, labels with
       | { Query_protocol.Compl. entries = []; context = _ }, [] ->
         let { Query_protocol.Compl. entries; context = _} =
-          Query_commands.dispatch (Document.pipeline doc) expand
+          Query_commands.dispatch pipeline expand
         in
         let range = range_prefix prefix in
         List.map (fun entry -> (`Replace (range, entry))) entries
@@ -538,7 +543,7 @@ let on_request :
   | Lsp.Rpc.Request.TextDocumentRename { textDocument = { uri }; position; newName } ->
     Document_store.get store uri >>= fun doc ->
     let command = Query_protocol.Occurrences (`Ident_at (logical_of_position position)) in
-    let locs : Location.t list = Query_commands.dispatch (Document.pipeline doc) command in
+    let locs : Location.t list = dispatch_in_doc doc command in
     let version = Document.version doc in
     let edits = List.map (fun loc ->
       let range = range_of_loc loc in

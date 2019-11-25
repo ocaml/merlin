@@ -96,7 +96,10 @@ let run = function
         let json =
           let class_, message =
             Printexc.record_backtrace true;
-            match command_action pipeline command_args with
+            match
+              Mpipeline.with_pipeline pipeline @@ fun () ->
+              command_action pipeline command_args
+            with
             | result ->
               ("return", result)
             | exception (Failure str) ->
