@@ -49,11 +49,8 @@ let customize config =
   | `Flags flags ->
     let flags_to_apply = [{workdir = config.query.directory; workval = flags}] in
     {config with merlin = {config.merlin with flags_to_apply}}
-  | `Use pkgs ->
-    let packages_to_load =
-      List.filter_dup (pkgs @ config.merlin.packages_to_load)
-    in
-    {config with merlin = {config.merlin with packages_to_load}}
+  | `Use _pkgs ->
+    config
   | `Path (var, action, paths) ->
     let f l = match action with
       | `Add -> List.filter_dup (paths @ l)

@@ -86,23 +86,14 @@ let add_or_remove = function
 let with_failures failures assoc = match failures with
   | `Ok -> assoc
   | `Failures failures ->
-    let packages, flags, extensions =
-      List.fold_left failures ~init:([],[],[]) ~f:(
-        fun (pkgs, flgs, exts) (str,exn) ->
-          let str = "\"" ^ str ^ "\"" in
+    let flags, extensions =
+      List.fold_left failures ~init:([],[]) ~f:(
+        fun (flgs, exts) (str,exn) ->
           match exn with
-          | Fl_package_base.No_such_package _ -> str :: pkgs, flgs, exts
-          | Arg.Bad _ -> pkgs, str :: flgs, exts
-          | Extension.Unknown -> pkgs, flgs, str :: exts
-          | e -> (str ^ " (" ^ Printexc.to_string e ^ ")") :: pkgs, flgs, exts
+          | Arg.Bad _ -> str :: flgs, exts
+          | Extension.Unknown -> flgs, str :: exts
+          | _ -> assert false
       )
-    in
-    let packages =
-      match packages with
-      | [] -> []
-      | failures ->
-        let str = String.concat ~sep:", " failures in
-        [ `String ("Failed to load some packages " ^ str) ]
     in
     let flags =
       match flags with
@@ -118,7 +109,7 @@ let with_failures failures assoc = match failures with
         let str = String.concat ~sep:", " failures in
         [ `String ("Unknown extensions " ^ str) ]
     in
-    ("failures", `List (packages @ flags @ extensions)) :: assoc
+    ("failures", `List (flags @ extensions)) :: assoc
 
 let document_of_json =
   let make kind path dot_merlins =

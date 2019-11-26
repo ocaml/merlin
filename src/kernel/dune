@@ -5,4 +5,9 @@
  (name merlin_kernel)
  (wrapped false)
  (libraries config merlin_extend merlin_specific merlin_utils parsing
-            preprocess typing utils findlib))
+            preprocess typing utils))
+
+(rule
+  (targets standard_library.ml)
+  (action
+    (write-file %{targets} "let path = {|%{ocaml-config:standard_library}|}")))

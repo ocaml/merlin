@@ -28,6 +28,6 @@ Printf.ksprintf J.send {|
 (library
   (name utils)
   (wrapped false)
-  (libraries config findlib merlin_utils)
+  (libraries config merlin_utils)
   (modules_without_implementation result_compat))
 |} ver load_path

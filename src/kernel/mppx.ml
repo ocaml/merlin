@@ -31,11 +31,7 @@ let with_include_dir path f =
 
 
 let rewrite cfg parsetree =
-  let ppx = cfg.ocaml.ppx @
-            List.map
-              (fun ppx -> {Std. workdir = cfg.query.directory; workval = ppx })
-              (Ppxsetup.command_line cfg.merlin.packages_ppx)
-  in
+  let ppx = cfg.ocaml.ppx in
   let prev_dir = Sys.getcwd () in
   let restore () =
     if not (change_directory prev_dir) then

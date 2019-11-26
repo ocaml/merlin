@@ -29,7 +29,7 @@
 open Misc
 open Std
 
-let {Logger. log} = Logger.for_section "Mconfig_dot"
+(* let {Logger. log} = Logger.for_section "Mconfig_dot" *)
 
 type directive = [
   | `B of string
@@ -295,6 +295,8 @@ let load ~stdlib filenames =
   in
   postprocess_config config
 
+(*
+
 (* FIXME: Move elsewhere, processing of findlib packages*)
 
 let ppx_of_package ?(predicates=[]) setup pkg =
@@ -430,3 +432,7 @@ let path_of_packages ?conf ?path ?toolchain packages =
 let list_packages ?conf ?path ?toolchain () =
   set_findlib_path ?conf ?path ?toolchain ();
   Fl_package_base.list_packages ()
+*)
+
+let standard_library () =
+  Standard_library.path
