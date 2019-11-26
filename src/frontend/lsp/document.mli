@@ -9,7 +9,7 @@ val make :
 
 val uri : t -> Lsp.Protocol.documentUri
 val source : t -> Msource.t
-val pipeline : t -> Mpipeline.t
+val with_pipeline : t -> (Mpipeline.t -> 'a) -> 'a
 val version : t -> int
 
 val update_text : ?version:int -> Lsp.Protocol.DidChange.textDocumentContentChangeEvent -> t -> t

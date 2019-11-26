@@ -24,7 +24,7 @@ open Path
 open Types
 open Btype
 
-open Local_store.Typechecker
+open Local_store.Compiler
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 

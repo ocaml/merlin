@@ -1,3 +1,7 @@
+open Std
+
+let {Logger. log} = Logger.for_section "Pipeline"
+
 let time_shift = ref 0.0
 
 let timed_lazy r x =
@@ -14,6 +18,26 @@ let timed_lazy r x =
     | x -> update (); x
     | exception exn -> update (); Std.reraise exn
   )
+
+module Cache = struct
+  let cache = ref []
+
+  let get config =
+    let title = "pop_cache" in
+    let key =
+      Mconfig.(config.query.directory, config.query.filename, config.ocaml)
+    in
+    match List.assoc key !cache with
+    | state ->
+      cache := (key, state) :: List.remove_assoc key !cache;
+      log ~title "found entry for this configuration";
+      state
+    | exception Not_found ->
+      log ~title "nothing cached for this configuration";
+      let state = Mocaml.new_state () in
+      cache := (key, state) :: List.take_n 5 !cache;
+      state
+end
 
 module Typer = struct
   type t = {
@@ -32,6 +56,7 @@ end
 
 type t = {
   config : Mconfig.t;
+  state  : Mocaml.typer_state;
   raw_source : Msource.t;
   source : Msource.t lazy_t;
   reader : (Mreader.result * Mconfig.t) lazy_t;
@@ -50,12 +75,13 @@ let raw_source t = t.raw_source
 let input_config t = t.config
 let input_source t = Lazy.force t.source
 
+let with_pipeline t f =
+  Mocaml.with_state t.state @@ fun () ->
+  Mreader.with_ambient_reader t.config (input_source t) f
+
 let get_lexing_pos t pos =
   Msource.get_lexing_pos
     (input_source t) ~filename:(Mconfig.filename t.config) pos
-
-let with_reader t f =
-  Mreader.with_ambient_reader t.config (input_source t) f
 
 let reader t = Lazy.force t.reader
 
@@ -79,6 +105,7 @@ let typer_result t = (typer t).Typer.result
 let typer_errors t = Lazy.force (typer t).Typer.errors
 
 let process
+    ?state
     ?(pp_time=ref 0.0)
     ?(reader_time=ref 0.0)
     ?(ppx_time=ref 0.0)
@@ -86,6 +113,10 @@ let process
     ?(error_time=ref 0.0)
     ?for_completion
     config raw_source =
+  let state = match state with
+    | None -> Cache.get config
+    | Some state -> state
+  in
   let source = timed_lazy pp_time (lazy (
       match Mconfig.(config.ocaml.pp) with
       | None -> raw_source
@@ -119,17 +150,17 @@ let process
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
       { Typer. errors; result }
     )) in
-  { config; raw_source; source; reader; ppx; typer;
+  { config; state; raw_source; source; reader; ppx; typer;
     pp_time; reader_time; ppx_time; typer_time; error_time }
 
 let make config source =
   process (Mconfig.normalize config) source
 
 let for_completion position
-    {config; raw_source;
+    {config; state; raw_source;
      pp_time; reader_time; ppx_time; typer_time; error_time; _} =
   process config raw_source ~for_completion:position
-    ~pp_time ~reader_time ~ppx_time ~typer_time ~error_time
+    ~state ~pp_time ~reader_time ~ppx_time ~typer_time ~error_time
 
 let timing_information t = [
   "pp"     , !(t.pp_time);

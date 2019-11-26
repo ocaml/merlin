@@ -6,3 +6,13 @@
      (setenv MERLIN %{dep:../merlin-wrapper}
        (run %{bin:mdx} test --syntax=cram %{deps}))
      (diff? %{deps} %{deps}.corrected))))
+
+(alias
+ (name runtest)
+ (deps load_path.t)
+ (action
+   (progn
+     (setenv OCAMLC %{ocamlc}
+     (setenv MERLIN %{dep:../merlin-wrapper}
+       (run %{bin:mdx} test --syntax=cram %{deps})))
+     (diff? %{deps} %{deps}.corrected))))

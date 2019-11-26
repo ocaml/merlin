@@ -1,13 +1,37 @@
 open Std
+open Local_store.Compiler
 
+(* Instance of environment cache & btype unification log  *)
+
+type typer_state = Local_store.scope
+
+let current_state = srefk None
+
+let new_state () =
+  let scope = Local_store.fresh compiler_state in
+  Local_store.with_scope scope (fun () -> current_state := Some scope);
+  scope
+
+let with_state state f =
+  if Local_store.is_bound compiler_state then
+    failwith "Mocaml.with_state: another instance is already in use";
+  match Local_store.with_scope state f with
+  | r -> Cmt_format.clear (); r
+  | exception exn -> Cmt_format.clear (); reraise exn
+
+let is_current_state state = match !current_state with
+  | Some state' -> state == state'
+  | None -> false
 
 (* Build settings *)
 
 let setup_config config = (
+  assert Local_store.(is_bound compiler_state);
   let open Mconfig in
   let open Clflags in
   let ocaml = config.ocaml in
-  Config.load_path := Mconfig.build_path config;
+  Load_path.init (Mconfig.build_path config);
+  Env.set_unit_name (Mconfig.unitname config);
   Location.input_name  := config.query.filename;
   fast                 := ocaml.unsafe ;
   classic              := ocaml.classic ;
@@ -21,35 +45,6 @@ let setup_config config = (
   strict_formats       := ocaml.strict_formats ;
   open_modules         := ocaml.open_modules ;
 )
-
-(* Instance of environment cache & btype unification log  *)
-
-type typer_state = Local_store.scope
-
-let new_state ~unit_name =
-  let scope = Local_store.fresh Local_store.typechecker_state in
-  Local_store.with_scope scope
-    (fun () -> Env.set_unit_name unit_name);
-  scope
-
-let current_state = ref None
-
-let with_state state f =
-  let state' = !current_state in
-  current_state := Some state;
-  match Local_store.with_scope state f with
-  | r ->
-    current_state := state';
-    Cmt_format.clear ();
-    r
-  | exception exn ->
-    current_state := state';
-    Cmt_format.clear ();
-    reraise exn
-
-let is_current_state state = match !current_state with
-  | Some state' -> state == state'
-  | None -> false
 
 (** Switchable implementation of Oprint *)
 
@@ -105,7 +100,8 @@ let with_printer printer f =
 (* Cleanup caches *)
 let clear_caches () = (
   Cmi_cache.clear ();
-  Cmt_cache.clear ()
+  Cmt_cache.clear ();
+  Directory_content_cache.clear ();
 )
 
 (* Flush cache *)

@@ -152,7 +152,6 @@ let type_open_ ?used_slot ?toplevel ovf env loc lid =
       ignore (extract_sig_open env lid.loc md.md_type);
       assert false
 
-(*
 let initial_env ~loc ~safe_string ~initially_opened_module
     ~open_implicit_modules =
   let env =
@@ -203,7 +202,6 @@ let initial_env ~loc ~safe_string ~initially_opened_module
   in
   let env = List.fold_left add_units env units in
   List.fold_left open_module env open_implicit_modules
-*)
 
 let type_open_descr ?used_slot ?toplevel env sod =
   let (path, newenv) =
@@ -2601,7 +2599,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
         if Sys.file_exists sourceintf then begin
           let intf_file =
             try
-              find_in_path_uncap !Config.load_path (modulename ^ ".cmi")
+              Load_path.find_uncap (modulename ^ ".cmi")
             with Not_found ->
               raise(Error(Location.in_file sourcefile, Env.empty,
                           Interface_not_compiled sourceintf)) in

@@ -2,20 +2,19 @@
 
 type bindings
 val new_bindings : unit -> bindings
+val is_bound : bindings -> bool
+val reset : bindings -> unit
 
 val ref : bindings -> (unit -> 'a) -> 'a ref
 
 type scope
 val fresh : bindings -> scope
-val merge : scope -> scope -> scope
 val with_scope : scope -> (unit -> 'a) -> 'a
 
-(* Typechecker state *)
+(* ... Unique instance for compiler-libs state *)
 
-val typechecker_state : bindings
-
-module Typechecker : sig
-  (* Scopped-references *)
+module Compiler : sig
+  val compiler_state : bindings
   val sref : (unit -> 'a) -> 'a ref
   val srefk : 'a -> 'a ref
 end
