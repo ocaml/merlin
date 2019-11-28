@@ -367,6 +367,8 @@ val check_value_name: string -> Location.t -> unit
 
 val print_address : Format.formatter -> address -> unit
 
+val unbound_class : Path.t
+
 (** merlin: manage internal state *)
 
 val check_state_consistency: unit -> bool
