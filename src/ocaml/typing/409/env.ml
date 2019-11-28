@@ -2928,4 +2928,7 @@ let check_state_consistency () =
   in
   Persistent_env.forall ~found ~missing !persistent_env
 
+let with_cmis f =
+  Persistent_env.with_cmis !persistent_env f ()
+
 let add_merlin_extension_module id mty env = add_module id Mp_present mty env

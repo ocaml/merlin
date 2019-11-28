@@ -373,6 +373,11 @@ let () =
 
 (* helper for merlin *)
 
+let with_cmis penv f x =
+  Misc.(protect_refs
+          [R (penv.can_load_cmis, Can_load_cmis)]
+          (fun () -> f x))
+
 let forall ~found ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
       | Missing -> missing name

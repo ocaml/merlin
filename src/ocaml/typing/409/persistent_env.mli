@@ -102,6 +102,8 @@ val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a) -> modname -> Digest.t
 val add_delayed_check_forward: ((unit -> unit) -> unit) ref
 
 (* helper for merlin *)
+val with_cmis : 'a t -> ('b -> 'c) -> 'b -> 'c
+
 val forall :
   found:(modname -> filepath -> 'a -> bool) ->
   missing:(modname -> bool) ->
