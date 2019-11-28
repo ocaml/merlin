@@ -23,9 +23,7 @@ open Path
 open Types
 open Btype
 
-let state = Local_store.new_bindings ()
-let sref f = Local_store.ref state f
-let srefk k = Local_store.ref state (fun () -> k)
+open Local_store.Compiler
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 

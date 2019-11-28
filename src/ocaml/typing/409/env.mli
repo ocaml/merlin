@@ -369,8 +369,6 @@ val print_address : Format.formatter -> address -> unit
 
 (** merlin: manage internal state *)
 
-val state : Local_store.bindings
-
 val check_state_consistency: unit -> bool
 
 (* helper for merlin *)
