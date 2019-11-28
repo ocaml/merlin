@@ -688,6 +688,7 @@ let sign_of_cmi ~freshen
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let flags = cmi.cmi_flags in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let id = Ident.create_persistent name in
   let path = Pident id in
   let addr = EnvLazy.create_forced (Aident id) in
@@ -701,15 +702,15 @@ let sign_of_cmi ~freshen
     match !cmi_cache with
     | Cmi_cache_store pm_signature -> pm_signature
     | _ ->
-      let sg = lazy (Subst.signature Make_local Subst.identity sign) in
+      let sg = lazy (Subst.signature Make_local id_subst sign) in
       cmi_cache := Cmi_cache_store sg;
       sg
   in
   let pm_components =
     let freshening_subst =
-      if freshen then (Some Subst.identity) else None in
+      if freshen then (Some id_subst) else None in
     !components_of_module' ~alerts ~loc
-      empty freshening_subst Subst.identity path addr (Mty_signature sign) in
+      empty freshening_subst id_subst path addr (Mty_signature sign) in
   {
     pm_signature;
     pm_components;
