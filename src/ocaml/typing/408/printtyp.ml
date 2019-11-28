@@ -464,7 +464,7 @@ and raw_type_desc ppf = function
         raw_type_list tl
   | Tvariant row ->
       fprintf ppf
-        "@[<hov1>{@[%s@,%a;@]@ @[%s@,%a;@]@ %s%b;@ %s%b;@ @[<1>%s%t@]}@]"
+        "@[<hov1>{@[%s@,%a;@]@ @[%s@,%a;@]@ %s%B;@ %s%B;@ @[<1>%s%t@]}@]"
         "row_fields="
         (raw_list (fun ppf (l, f) ->
           fprintf ppf "@[%s,@ %a@]" l raw_field f))
@@ -485,7 +485,7 @@ and raw_field ppf = function
     Rpresent None -> fprintf ppf "Rpresent None"
   | Rpresent (Some t) -> fprintf ppf "@[<1>Rpresent(Some@,%a)@]" raw_type t
   | Reither (c,tl,m,e) ->
-      fprintf ppf "@[<hov1>Reither(%b,@,%a,@,%b,@,@[<1>ref%t@])@]" c
+      fprintf ppf "@[<hov1>Reither(%B,@,%a,@,%B,@,@[<1>ref%t@])@]" c
         raw_type_list tl m
         (fun ppf ->
           match !e with None -> fprintf ppf " None"
@@ -513,7 +513,7 @@ let wrap_printing_env env f =
   reset_naming_context ();
   try_finally f ~always:(fun () -> set_printing_env Env.empty)
 
-let wrap_printing_env env f =
+let wrap_printing_env ?error:_ env f =
   Env.without_cmis (wrap_printing_env env) f
 
 type type_result = Short_paths.type_result =
@@ -1871,6 +1871,7 @@ let report_unification_error ppf env tr
     txt1 txt2 =
   wrap_printing_env env (fun () -> unification_error env tr txt1 ppf txt2
                             type_expected_explanation)
+    ~error:true
 ;;
 
 (** [trace] requires the trace to be prepared *)
@@ -1894,7 +1895,7 @@ let trace fst keep_last txt ppf tr =
     raise exn
 
 let report_subtyping_error ppf env tr1 txt1 tr2 =
-  wrap_printing_env env (fun () ->
+  wrap_printing_env ~error:true env (fun () ->
     reset ();
     let tr1 = prepare_trace (fun t t' -> prepare_expansion (t, t')) tr1 in
     let tr2 = prepare_trace (fun t t' -> prepare_expansion (t, t')) tr2 in
@@ -1912,7 +1913,7 @@ let report_subtyping_error ppf env tr1 txt1 tr2 =
 
 
 let report_ambiguous_type_error ppf env tp0 tpl txt1 txt2 txt3 =
-  wrap_printing_env env (fun () ->
+  wrap_printing_env ~error:true env (fun () ->
     reset ();
     let tp0 = trees_of_type_path_expansion tp0 in
       match tpl with

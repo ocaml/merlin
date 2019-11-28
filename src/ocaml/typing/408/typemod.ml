@@ -264,7 +264,7 @@ let check_type_decl env loc id row_id newdecl decl rs rem =
   in
   let env = if rs = Trec_not then env else add_rec_types env rem in
   Includemod.type_declarations ~loc env id newdecl decl;
-  Typedecl.check_coherence env loc id newdecl
+  Typedecl.check_coherence env loc (Path.Pident id) newdecl
 
 let update_rec_next rs rem =
   match rs with
@@ -2537,8 +2537,8 @@ let type_package env m p nl =
                             Package_type_arity(p, modl.mod_type, name)))
            end
          | exception Not_found ->
-             raise (Error(m.pmod_loc, env,
-                          Package_type_missing(p, modl.mod_type, name))))
+           raise (Error(m.pmod_loc, env,
+                        Package_type_missing(p, modl.mod_type, name))))
       nl
   in
   (* go back to original level *)
@@ -2588,7 +2588,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       let simple_sg = Signature_names.simplify finalenv names sg in
       if !Clflags.print_types then begin
         Typecore.force_delayed_checks ();
-        Printtyp.wrap_printing_env initial_env
+        Printtyp.wrap_printing_env ~error:false initial_env
           (fun () -> fprintf std_formatter "%a@."
               (Printtyp.printed_signature sourcefile) simple_sg
           );
@@ -2869,21 +2869,20 @@ let report_error ppf = function
         (Sig_component_kind.to_string user_kind) (Ident.name user_id)
         Ident.print opened_item_id
   | Invalid_type_subst_rhs ->
-      fprintf ppf "Only type synonyms are allowed on the right of :="
+    fprintf ppf "Only type synonyms are allowed on the right of :="
   | Package_type_missing(p, mty, lid) ->
-      fprintf ppf
-        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
-        %a@;<1 -2>is not included in@ %a@]@ Type %a is missing.@]"
-        Printtyp.modtype mty path p longident lid
+    fprintf ppf
+      "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+       %a@;<1 -2>is not included in@ %a@]@ Type %a is missing.@]"
+      Printtyp.modtype mty path p longident lid
   | Package_type_arity(p, mty, lid) ->
-      fprintf ppf
-        "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
-        %a@;<1 -2>is not included in@ %a@]@ Type %a has a different arity.@]"
-        Printtyp.modtype mty path p longident lid
-
+    fprintf ppf
+      "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+       %a@;<1 -2>is not included in@ %a@]@ Type %a has a different arity.@]"
+      Printtyp.modtype mty path p longident lid
 
 let report_error env ppf err =
-  Printtyp.wrap_printing_env env (fun () -> report_error ppf err)
+  Printtyp.wrap_printing_env ~error:true env (fun () -> report_error ppf err)
 
 let () =
   Location.register_error_of_exn
