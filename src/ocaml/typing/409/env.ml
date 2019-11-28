@@ -2922,7 +2922,7 @@ let check_state_consistency () =
     | _ -> false
     | exception Not_found -> true
   and found _modname filename pm =
-    match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
+    match !(Cmi_cache.(get_cached_entry filename).Cmi_cache.cmi_cache) with
     | Cmi_cache_store sg -> Std.lazy_eq sg pm.pm_signature
     | _ -> false
     | exception Not_found -> false
