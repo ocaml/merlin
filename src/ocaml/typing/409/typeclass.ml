@@ -105,8 +105,7 @@ let dummy_method = Btype.dummy_method
    Path associated to the temporary class type of a class being typed
    (its constructor is not available).
 *)
-let unbound_class =
-  Path.Pident (Ident.create_local "*undef*")
+let unbound_class = Env.unbound_class
 
 
                 (************************************)
