@@ -99,6 +99,8 @@ type error =
   | Badly_formed_signature of string * Typedecl.error
   | Cannot_hide_id of hiding_error
   | Invalid_type_subst_rhs
+  | Package_type_missing of Path.t * module_type * Longident.t
+  | Package_type_arity of Path.t * module_type * Longident.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -2524,10 +2526,21 @@ let type_package env m p nl =
   in
   let tl' =
     List.map
-      (fun name -> Btype.newgenty (Tconstr (mkpath mp name,[],ref Mnil)))
-      (* beware of interactions with Printtyp and short-path:
-         mp.name may have an arity > 0, cf. PR#7534 *)
-      nl in
+      (fun name ->
+         let path = mkpath mp name in
+         match Env.find_type path env with
+         | decl -> begin
+             match decl.type_params with
+             | [] -> Btype.newgenty (Tconstr (path, [], ref Mnil))
+             | _ ->
+               raise (Error(m.pmod_loc, env,
+                            Package_type_arity(p, modl.mod_type, name)))
+           end
+         | exception Not_found ->
+           raise (Error(m.pmod_loc, env,
+                        Package_type_missing(p, modl.mod_type, name))))
+      nl
+  in
   (* go back to original level *)
   Ctype.end_def ();
   if nl = [] then
@@ -2856,7 +2869,17 @@ let report_error ppf = function
         (Sig_component_kind.to_string user_kind) (Ident.name user_id)
         Ident.print opened_item_id
   | Invalid_type_subst_rhs ->
-      fprintf ppf "Only type synonyms are allowed on the right of :="
+    fprintf ppf "Only type synonyms are allowed on the right of :="
+  | Package_type_missing(p, mty, lid) ->
+    fprintf ppf
+      "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+       %a@;<1 -2>is not included in@ %a@]@ Type %a is missing.@]"
+      Printtyp.modtype mty path p longident lid
+  | Package_type_arity(p, mty, lid) ->
+    fprintf ppf
+      "@[<v>Signature mismatch:@ @[<hv 2>Modules do not match:@ \
+       %a@;<1 -2>is not included in@ %a@]@ Type %a has a different arity.@]"
+      Printtyp.modtype mty path p longident lid
 
 let report_error env ppf err =
   Printtyp.wrap_printing_env ~error:true env (fun () -> report_error ppf err)
