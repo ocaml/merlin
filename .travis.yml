@@ -26,8 +26,8 @@ env:
   #   PACKAGE=merlin
   # - OCAML_VERSION=4.06
   #   PACKAGE=merlin
-  - OCAML_VERSION=4.07
-    PACKAGE=merlin
+  # - OCAML_VERSION=4.07
+  #   PACKAGE=merlin
   - OCAML_VERSION=4.07
     PACKAGE=merlin-lsp
     TESTS_LSP=true
