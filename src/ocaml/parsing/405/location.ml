@@ -379,16 +379,6 @@ let () =
             (errorf ~loc:(in_file !input_name)
              "Some fatal warnings were triggered (%d occurrences)" n)
 
-      (*| Misc.HookExnWrapper {error = e; hook_name;
-                             hook_info={Misc.sourcefile}} ->
-          let sub = match error_of_exn e with
-            | None -> error (Printexc.to_string e)
-            | Some err -> err
-          in
-          Some
-            (errorf ~loc:(in_file sourcefile)
-               "In hook %S:" hook_name
-               ~sub:[sub])*)
       | Error e -> Some e
       | Misc.Fatal_error (msg, bt) ->
           Some (errorf "Fatal error: %s.\n%s" msg (Printexc.raw_backtrace_to_string bt))

@@ -49,9 +49,6 @@ val wrap_printing_env: ?error:bool -> Env.t -> (unit -> 'a) -> 'a
     (* Call the function using the environment for type path shortening *)
     (* This affects all the printing functions below *)
     (* Also, if [~error:true], then disable the loading of cmis *)
-val compute_map_for_pers: string -> bool
-    (* Call the function using the environment for type path shortening *)
-    (* This affects all the printing functions below *)
 val shorten_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_path: Env.t -> Path.t -> Path.t

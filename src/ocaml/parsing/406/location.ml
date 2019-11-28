@@ -285,17 +285,6 @@ let () =
       | Sys_error msg ->
           Some (errorf ~loc:(in_file !input_name)
                 "I/O error: %s" msg)
-
-      | Misc.HookExnWrapper {error = e; hook_name;
-                             hook_info={Misc.sourcefile}} ->
-          let sub = match error_of_exn e with
-            | None | Some `Already_displayed -> error (Printexc.to_string e)
-            | Some (`Ok err) -> err
-          in
-          Some
-            (errorf ~loc:(in_file sourcefile)
-               "In hook %S:" hook_name
-               ~sub:[sub])
       | _ -> None
     )
 

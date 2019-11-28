@@ -49,13 +49,6 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-module ImplementationHooks = Misc.MakeHooks(struct
-    type t = Typedtree.structure * Typedtree.module_coercion
-  end)
-module InterfaceHooks = Misc.MakeHooks(struct
-    type t = Typedtree.signature
-  end)
-
 open Typedtree
 
 let fst3 (x,_,_) = x
@@ -1593,9 +1586,6 @@ let type_toplevel_phrase env s =
   end;
   let (str, sg, env) =
     type_structure ~toplevel:true false None env s Location.none in
-  let (str, _coerce) = ImplementationHooks.apply_hooks
-      { Misc.sourcefile = "//toplevel//" } (str, Tcoerce_none)
-  in
   (str, sg, env)
 
 let type_module_alias = type_module ~alias:true true false None
@@ -1778,20 +1768,16 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       (Some sourcefile) initial_env None;
     raise e
 
-let type_implementation sourcefile outputprefix modulename initial_env ast =
-  ImplementationHooks.apply_hooks { Misc.sourcefile }
-    (type_implementation sourcefile outputprefix modulename initial_env ast)
-
 let save_signature modname tsg outputprefix source_file initial_env cmi =
   Cmt_format.save_cmt  (outputprefix ^ ".cmti") modname
     (Cmt_format.Interface tsg) (Some source_file) initial_env (Some cmi)
 
-let type_interface sourcefile env ast =
+let type_interface _sourcefile env ast =
   begin
     let iter = Builtin_attributes.emit_external_warnings in
     iter.Ast_iterator.signature iter ast
   end;
-  InterfaceHooks.apply_hooks { Misc.sourcefile } (transl_signature env ast)
+  transl_signature env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
