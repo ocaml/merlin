@@ -1,8 +1,35 @@
-merlin master
-=============
+merlin 3.3.3
+============
+Fri Nov 29 17:35:58 CET 2019
 
+  + backend
+    - support OCaml 4.09 (#1055)
+    - fix parse errors in 4.08 (#1037)
+    - update 4.08 support to OCaml 4.08.1 (#1053)
+    - support `without_cmis` 
+    - separate reading from caching in file-cache, use caching in
+      `Env.check_state_consistency` (#1044)
+    - simplify compiler state management (#1056, #1059)
+    - fix creation of initial environment, improve compatibility with
+      upstream 4.08 (#1052)
   + frontend
+    - code re-organization (#1042)
     - error command: select which kind of errors to show (#995)
+    - print value types in outline (#1014)
+    - fix process handling in windows (#1005)
+  + editor modes
+    - emacs
+      + bugfixes in merlin-imenu, merlin-xref (#1000, #1021, #1001)
+      + show types in merlin-imenu (#1013)
+      + reset buffer local configurations when resetting server (#1004)
+      + remove merlin-use-tuareg-imenu
+      + fix stack overflow (#1024)
+      + fix merlin-occurrence (#1043)
+    - vim
+      + display warn-error warnings as errors (#1009)
+  + testsuite
+    - cover file-cache and `check_state_consistency` (#1044)
+    - check inconsistent assumptions, test server versus single modes (#1047)
 
 merlin 3.3.2
 ============
