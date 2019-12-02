@@ -172,8 +172,7 @@ let stdlib =
     | Some stdlib -> stdlib
     | None -> match env with
       | Some stdlib -> stdlib
-      | None ->
-        Mconfig_dot.standard_library ()
+      | None -> Standard_library.path
 
 let normalize_step t =
   let merlin = t.merlin in

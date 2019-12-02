@@ -36,28 +36,23 @@ type config = {
   source_path  : string list;
   cmi_path     : string list;
   cmt_path     : string list;
-  packages     : string list;
   flags        : string list with_workdir list;
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
-  findlib      : string option;
   reader       : string list;
-  findlib_path : string list;
-  findlib_toolchain : string option;
   exclude_query_dir : bool;
 }
 
 (** Load one or more .merlin file *)
 val load : stdlib:string -> string list -> config
 
-val standard_library : unit -> string
+val find_project_config : string -> string option
+(** [find_project_config dir] searches for a "project configuration file" in dir
+    and its parent directories. Stopping on the first one it finds and returning
+    its path, returning None otherwise (if '/' was reached without finding such
+    a file).
 
-(*
-val path_of_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> string list ->
-  (string list (* packages *) *
-   Ppxsetup.t *
-   string list (* failures *))
-
-val list_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string list
+    A project configuration files is one of:
+    - .merlin
 *)
