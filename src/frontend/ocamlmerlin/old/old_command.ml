@@ -96,9 +96,14 @@ let configure (state : buffer) =
           directory = Misc.canonicalize_filename (Filename.dirname path);
         }
     } in
-  let config = Mconfig.load_dotmerlins config
-      ~filenames:(Option.cons (Option.map ~f:Filename.dirname state.path)
-                    (Option.value ~default:[] state.dot_merlins))
+  let config =
+    match state.dot_merlins with
+    | Some (first :: _) -> (* ignore anything but the first one... *)
+      Mconfig.get_external_config first config
+    | None | Some [] ->
+      match state.path with
+      | None -> config
+      | Some p -> Mconfig.get_external_config (Filename.dirname p) config
   in
   List.fold_left ~f:customize ~init:config state.customization
 
@@ -194,9 +199,13 @@ let dispatch_sync config state (type a) : a sync_command -> a = function
       Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->
+    (*
     let pipeline = make_pipeline config state in
     let config = Mpipeline.final_config pipeline in
     (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
+    *)
+    (* FIXME: ??? *)
+    ([], `Ok)
 
   | Checkout _ -> failwith "invalid arguments"
 

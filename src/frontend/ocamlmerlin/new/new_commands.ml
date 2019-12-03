@@ -579,8 +579,11 @@ The return value has the shape:
     begin fun pipeline () ->
       let config = Mpipeline.final_config pipeline in
       `Assoc [
+        (* TODO: print the configuration context. *)
+        (*
         "dot_merlins", `List (List.rev_map ~f:Json.string
                                 Mconfig.(config.merlin.dotmerlin_loaded));
+        *)
         "failures", `List (List.map ~f:Json.string
                              Mconfig.(config.merlin.failures));
       ]

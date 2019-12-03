@@ -45,7 +45,6 @@ type merlin = {
   flags_to_apply    : string list with_workdir list;
 
   flags_applied    : string list with_workdir list;
-  dotmerlin_loaded : string list;
 
   failures    : string list;
   extension_to_reader : (string * string) list
@@ -74,7 +73,7 @@ val initial : t
 
 val dump : t -> json
 
-val load_dotmerlins : filenames:string list -> t -> t
+val get_external_config : string -> t -> t
 
 val normalize : t -> t
 

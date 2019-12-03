@@ -87,7 +87,6 @@ type merlin = {
   flags_to_apply    : string list with_workdir list;
 
   flags_applied    : string list with_workdir list;
-  dotmerlin_loaded : string list;
 
   failures    : string list;
 
@@ -121,7 +120,6 @@ let dump_merlin x =
     "log_file"     , Json.option Json.string x.log_file;
     "log_sections" , Json.list Json.string x.log_sections;
     "flags_to_apply"   , `List (List.map ~f:dump_flag_list x.flags_to_apply);
-    "dotmerlin_loaded" , `List (List.map ~f:Json.string x.dotmerlin_loaded);
 
     "failures"         , `List (List.map ~f:Json.string x.failures);
     "assoc_suffixes"   , `List (
@@ -205,29 +203,31 @@ let rec normalize t =
   ) else
     normalize (normalize_step t)
 
-let load_dotmerlins ~filenames t =
-  let open Mconfig_dot in
-  let stdlib = stdlib t in
-  let dot = Mconfig_dot.load ~stdlib filenames in
-  let merlin = t.merlin in
-  let merlin = {
-    merlin with
-    build_path = dot.build_path @ merlin.build_path;
-    source_path = dot.source_path @ merlin.source_path;
-    cmi_path = dot.cmi_path @ merlin.cmi_path;
-    cmt_path = dot.cmt_path @ merlin.cmt_path;
-    exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-    extensions = dot.extensions @ merlin.extensions;
-    suffixes = dot.suffixes @ merlin.suffixes;
-    stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-    reader =
-      if dot.reader = []
-      then merlin.reader
-      else dot.reader;
-    flags_to_apply = dot.flags @ merlin.flags_to_apply;
-    dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
-  } in
-  normalize { t with merlin }
+let get_external_config path t =
+  let path = Misc.canonicalize_filename path in
+  let directory = Filename.dirname path in
+  match Mconfig_dot.find_project_context directory with
+  | None -> t
+  | Some ctxt ->
+    let dot = Mconfig_dot.get_config ctxt path in
+    let merlin = t.merlin in
+    let merlin = {
+      merlin with
+      build_path = dot.build_path @ merlin.build_path;
+      source_path = dot.source_path @ merlin.source_path;
+      cmi_path = dot.cmi_path @ merlin.cmi_path;
+      cmt_path = dot.cmt_path @ merlin.cmt_path;
+      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+      extensions = dot.extensions @ merlin.extensions;
+      suffixes = dot.suffixes @ merlin.suffixes;
+      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+      reader =
+        if dot.reader = []
+        then merlin.reader
+        else dot.reader;
+      flags_to_apply = dot.flags @ merlin.flags_to_apply;
+    } in
+    normalize { t with merlin }
 
 let merlin_flags = [
   (
@@ -569,7 +569,6 @@ let initial = {
 
     flags_to_apply    = [];
     flags_applied     = [];
-    dotmerlin_loaded  = [];
 
     failures = [];
     extension_to_reader = [(".re","reason");(".rei","reason")];
@@ -595,10 +594,7 @@ let global_flags = [
         let filename = Filename.basename path in
         let directory = Filename.dirname path in
         let t = {t with query = {query with filename; directory}} in
-        load_dotmerlins t ~filenames:[
-          let base = "." ^ filename ^ ".merlin" in
-          Filename.concat directory base
-        ]),
+        get_external_config path t),
     "<path> Path of the buffer; \
      extension determines the kind of file (interface or implementation), \
      basename is used as name of the module being definer, \
@@ -606,7 +602,7 @@ let global_flags = [
   );
   (
     "-dot-merlin",
-    marg_path (fun dotmerlin t -> load_dotmerlins ~filenames:[dotmerlin] t),
+    marg_path (fun dotmerlin t -> get_external_config dotmerlin t),
     "<path> Load <path> as a .merlin; if it is a directory, \
      look for .merlin here or in a parent directory"
   );

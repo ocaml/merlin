@@ -28,10 +28,7 @@
 
 open Std
 
-(** Load and cache dot-merlin files **)
-
 type config = {
-  dot_merlins  : string list;
   build_path   : string list;
   source_path  : string list;
   cmi_path     : string list;
@@ -44,10 +41,11 @@ type config = {
   exclude_query_dir : bool;
 }
 
-(** Load one or more .merlin file *)
-val load : stdlib:string -> string list -> config
+type context
 
-val find_project_config : string -> string option
+val get_config : context -> string -> config
+
+val find_project_context : string -> context option
 (** [find_project_config dir] searches for a "project configuration file" in dir
     and its parent directories. Stopping on the first one it finds and returning
     its path, returning None otherwise (if '/' was reached without finding such
