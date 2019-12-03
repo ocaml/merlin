@@ -212,6 +212,7 @@ let get_config (dir, cfg) path =
   (* TODO: ensure [path] is absolute, or that it is relative to dir, and not the
      cwd. *)
   output_string p.stdin (path ^ "\n");
+  flush p.stdin;
   let directives = read_cfg p.stdout in
   postprocess_config (prepend_config ~dir directives empty_config)
 
