@@ -10,8 +10,7 @@ build: [
   ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
 depends: [
-  "merlin"
-  "dune" {build & >= "1.8.0"}
+  "dune"
   "ocamlfind" {>= "1.5.2"}
   "yojson" {>= "1.6.0"}
   "ppx_yojson_conv_lib"
