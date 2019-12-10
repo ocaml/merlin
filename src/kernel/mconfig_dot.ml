@@ -29,7 +29,7 @@
 open Misc
 open Std
 
-(* let {Logger. log} = Logger.for_section "Mconfig_dot" *)
+let {Logger. log} = Logger.for_section "Mconfig_dot"
 
 type directive = [
   | `B of string
@@ -117,6 +117,9 @@ module Configurator = struct
       Some Dot_merlin
     | _ -> None
 
+  let to_string = function
+    | Dot_merlin -> "dot-merlin-reader"
+
   module Process = struct
     type t = {
       pid : int;
@@ -151,7 +154,15 @@ module Configurator = struct
   let running_processes : (string * t, Process.t) Hashtbl.t = Hashtbl.create 0
 
   let get_process ~dir configurator =
-    try Hashtbl.find running_processes (dir, configurator)
+    try
+      let p = Hashtbl.find running_processes (dir, configurator) in
+      let i, _ = Unix.waitpid [ WNOHANG ] p.pid in
+      if i = 0 then
+        p
+      else
+        let p = Process.start ~dir configurator in
+        Hashtbl.replace running_processes (dir, configurator) p;
+        p
     with Not_found ->
       let p = Process.start ~dir configurator in
       Hashtbl.add running_processes (dir, configurator) p;
@@ -211,13 +222,21 @@ let read_cfg ic =
 type context = string * Configurator.t
 
 let get_config (dir, cfg) path =
-  let p = Configurator.get_process ~dir cfg in
-  (* TODO: ensure [path] is absolute, or that it is relative to dir, and not the
-     cwd. *)
-  output_string p.stdin (path ^ "\n");
-  flush p.stdin;
-  let directives = read_cfg p.stdout in
-  postprocess_config (prepend_config ~dir directives empty_config)
+  try
+    let p = Configurator.get_process ~dir cfg in
+    (* TODO: ensure [path] is absolute, or that it is relative to dir, and not the
+       cwd. *)
+    output_string p.stdin (path ^ "\n");
+    flush p.stdin;
+    let directives =
+      read_cfg p.stdout
+    in
+    postprocess_config (prepend_config ~dir directives empty_config)
+  with End_of_file ->
+    log ~title:"get_config"
+      "%s process died when trying to retrieve the config for %s"
+      (Configurator.to_string cfg) dir;
+    empty_config
 
 let find_project_context start_dir =
   let rec loop dir =
