@@ -11,3 +11,7 @@
 (alias
   (name runtest)
   (deps merlin-wrapper))
+
+(executable
+ (name gen_tests)
+ (libraries utils))
