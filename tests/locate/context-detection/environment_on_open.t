@@ -1,3 +1,4 @@
+(enabled_if (>= %{ocaml_version} 4.08.0))
 
   $ $MERLIN single locate -look-for ml -position 6:6 \
   > -filename ./environment_on_open.ml < ./environment_on_open.ml

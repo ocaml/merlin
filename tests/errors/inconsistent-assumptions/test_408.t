@@ -1,3 +1,5 @@
+(enabled_if (>= %{ocaml_version} 4.08.0))
+
 Let us take the following project, that defines a library "my_lib":
 
   $ cat > import.ml <<EOF \

@@ -1,3 +1,5 @@
+(enabled_if (< %{ocaml_version} 4.07.0))
+
 Same tests as in recent.t, but a different output
 
 No double underscore because the stdlib does not have them.
