@@ -6,9 +6,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./misc
+   (chdir ./misc
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -20,9 +20,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./misc
+   (chdir ./misc
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -34,9 +34,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./type-enclosing
+   (chdir ./type-enclosing
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -48,9 +48,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./recovery
+   (chdir ./recovery
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -62,9 +62,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./file-cache
+   (chdir ./file-cache
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -76,9 +76,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./warnings
+   (chdir ./warnings
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -90,9 +90,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./short-paths
+   (chdir ./short-paths
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -104,9 +104,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./polarity-search
+   (chdir ./polarity-search
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -118,9 +118,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./polarity-search
+   (chdir ./polarity-search
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -132,9 +132,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./type-expr
+   (chdir ./type-expr
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -146,9 +146,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./errors/inconsistent-assumptions
+   (chdir ./errors/inconsistent-assumptions
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -160,9 +160,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./errors/inconsistent-assumptions
+   (chdir ./errors/inconsistent-assumptions
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -174,9 +174,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./errors/typing-after-parsing
+   (chdir ./errors/typing-after-parsing
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -188,9 +188,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./motion
+   (chdir ./motion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -202,9 +202,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./motion
+   (chdir ./motion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -216,9 +216,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/local-definitions
+   (chdir ./locate/local-definitions
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -230,9 +230,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/local-definitions
+   (chdir ./locate/local-definitions
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -244,9 +244,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/ambiguity
+   (chdir ./locate/ambiguity
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -258,9 +258,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/ambiguity
+   (chdir ./locate/ambiguity
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -272,9 +272,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/mutually-recursive
+   (chdir ./locate/mutually-recursive
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -286,9 +286,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/issue845
+   (chdir ./locate/issue845
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -300,9 +300,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/non-local/preference
+   (chdir ./locate/non-local/preference
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -314,9 +314,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/non-local/ignore-kept-locs
+   (chdir ./locate/non-local/ignore-kept-locs
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -328,9 +328,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/includes
+   (chdir ./locate/includes
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -342,9 +342,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/reconstruct-identifier
+   (chdir ./locate/reconstruct-identifier
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -356,9 +356,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/reconstruct-identifier
+   (chdir ./locate/reconstruct-identifier
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -370,9 +370,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/functors
+   (chdir ./locate/functors
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -384,9 +384,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/functors
+   (chdir ./locate/functors
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -398,9 +398,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/functors
+   (chdir ./locate/functors
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -412,9 +412,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/functors
+   (chdir ./locate/functors
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -426,9 +426,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/functors
+   (chdir ./locate/functors
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -440,9 +440,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/functors
+   (chdir ./locate/functors
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -454,9 +454,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/partial-cmt
+   (chdir ./locate/partial-cmt
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -468,9 +468,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/looping-substitution
+   (chdir ./locate/looping-substitution
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -482,9 +482,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/sig-substs
+   (chdir ./locate/sig-substs
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -496,9 +496,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/issue802
+   (chdir ./locate/issue802
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -510,9 +510,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -524,9 +524,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -538,9 +538,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -552,9 +552,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -566,9 +566,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -580,9 +580,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -594,9 +594,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./locate/context-detection
+   (chdir ./locate/context-detection
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -608,9 +608,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./destruct
+   (chdir ./destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -622,9 +622,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./config
+   (chdir ./config
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -636,9 +636,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./config/flags
+   (chdir ./config/flags
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -650,9 +650,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./config/flags
+   (chdir ./config/flags
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -664,9 +664,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./config/flags
+   (chdir ./config/flags
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -678,9 +678,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./no-escape
+   (chdir ./no-escape
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -692,9 +692,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./pp
+   (chdir ./pp
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -706,9 +706,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./completion
+   (chdir ./completion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -720,9 +720,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./completion
+   (chdir ./completion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -734,9 +734,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./occurrences
+   (chdir ./occurrences
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
@@ -748,9 +748,9 @@
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %{exe:merlin-wrapper}
-   (setenv OCAMLC %{ocamlc}
-     (chdir ./occurrences
+   (chdir ./occurrences
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))

@@ -21,9 +21,9 @@ let gen_rule dir file =
        %%{bin:ocamlmerlin}
        %%{bin:ocamlmerlin-server})
  (action
-   (setenv MERLIN %%{exe:merlin-wrapper}
-   (setenv OCAMLC %%{ocamlc}
-     (chdir %s
+   (chdir %s
+     (setenv MERLIN %%{exe:merlin-wrapper}
+     (setenv OCAMLC %%{ocamlc}
        (progn
          (run %%{bin:mdx} test --syntax=cram %%{t})
          (diff? %%{t} %%{t}.corrected)))))))
