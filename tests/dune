@@ -5,6 +5,7 @@
    (progn
      (with-stdout-to %{targets}
        (run sed -e "s#%%OCAMLMERLIN_PATH%%#%{bin:ocamlmerlin}#"
+                -e "s#%%DOT_MERLIN_READER%%#%{bin:dot-merlin-reader}#"
             merlin-wrapper-template))
      (bash "chmod +x %{targets}"))))
 
