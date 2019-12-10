@@ -5,10 +5,9 @@
  (flags (:standard "-open" "Result"))
  (libraries
   merlin_specific
-  config
   merlin_analysis
   merlin_kernel
-  merlin_utils os_ipc
+  merlin_utils
   parsing
   query_protocol
   lsp
