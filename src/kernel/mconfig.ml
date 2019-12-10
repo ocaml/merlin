@@ -594,6 +594,8 @@ let global_flags = [
         let filename = Filename.basename path in
         let directory = Filename.dirname path in
         let t = {t with query = {query with filename; directory}} in
+        Logger.with_log_file t.merlin.log_file
+          ~sections:t.merlin.log_sections @@ fun () ->
         get_external_config path t),
     "<path> Path of the buffer; \
      extension determines the kind of file (interface or implementation), \
