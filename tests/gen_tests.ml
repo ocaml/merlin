@@ -43,6 +43,6 @@ let rec scan_fs dir =
   ) content
 
 let () =
-  scan_fs (Sys.getcwd ());
+  scan_fs ".";
   flush_all ();
   exit 0

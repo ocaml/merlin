@@ -1,756 +1,756 @@
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/misc/external-arity.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/misc)
+ (deps (:t ./misc/external-arity.t)
+       (source_tree ./misc)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/misc
+     (chdir ./misc
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/misc/load_path.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/misc)
+ (deps (:t ./misc/load_path.t)
+       (source_tree ./misc)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/misc
+     (chdir ./misc
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/type-enclosing/letop.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/type-enclosing)
+ (deps (:t ./type-enclosing/letop.t)
+       (source_tree ./type-enclosing)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/type-enclosing
+     (chdir ./type-enclosing
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.04.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/recovery/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/recovery)
+ (deps (:t ./recovery/test.t)
+       (source_tree ./recovery)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/recovery
+     (chdir ./recovery
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/file-cache/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/file-cache)
+ (deps (:t ./file-cache/test.t)
+       (source_tree ./file-cache)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/file-cache
+     (chdir ./file-cache
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/warnings/backtrack.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/warnings)
+ (deps (:t ./warnings/backtrack.t)
+       (source_tree ./warnings)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/warnings
+     (chdir ./warnings
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/short-paths/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/short-paths)
+ (deps (:t ./short-paths/test.t)
+       (source_tree ./short-paths)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/short-paths
+     (chdir ./short-paths
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (< %{ocaml_version} 4.07.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/polarity-search/older.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/polarity-search)
+ (deps (:t ./polarity-search/older.t)
+       (source_tree ./polarity-search)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/polarity-search
+     (chdir ./polarity-search
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.07.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/polarity-search/recent.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/polarity-search)
+ (deps (:t ./polarity-search/recent.t)
+       (source_tree ./polarity-search)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/polarity-search
+     (chdir ./polarity-search
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/type-expr/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/type-expr)
+ (deps (:t ./type-expr/test.t)
+       (source_tree ./type-expr)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/type-expr
+     (chdir ./type-expr
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (< %{ocaml_version} 4.08.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/errors/inconsistent-assumptions/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/errors/inconsistent-assumptions)
+ (deps (:t ./errors/inconsistent-assumptions/test.t)
+       (source_tree ./errors/inconsistent-assumptions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/errors/inconsistent-assumptions
+     (chdir ./errors/inconsistent-assumptions
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/errors/inconsistent-assumptions/test_408.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/errors/inconsistent-assumptions)
+ (deps (:t ./errors/inconsistent-assumptions/test_408.t)
+       (source_tree ./errors/inconsistent-assumptions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/errors/inconsistent-assumptions
+     (chdir ./errors/inconsistent-assumptions
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/errors/typing-after-parsing/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/errors/typing-after-parsing)
+ (deps (:t ./errors/typing-after-parsing/test.t)
+       (source_tree ./errors/typing-after-parsing)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/errors/typing-after-parsing
+     (chdir ./errors/typing-after-parsing
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/motion/phrase.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/motion)
+ (deps (:t ./motion/phrase.t)
+       (source_tree ./motion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/motion
+     (chdir ./motion
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/motion/jump.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/motion)
+ (deps (:t ./motion/jump.t)
+       (source_tree ./motion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/motion
+     (chdir ./motion
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/local-definitions/issue798.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/local-definitions)
+ (deps (:t ./locate/local-definitions/issue798.t)
+       (source_tree ./locate/local-definitions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/local-definitions
+     (chdir ./locate/local-definitions
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/local-definitions/issue806.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/local-definitions)
+ (deps (:t ./locate/local-definitions/issue806.t)
+       (source_tree ./locate/local-definitions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/local-definitions
+     (chdir ./locate/local-definitions
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/ambiguity/rebinding.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/ambiguity)
+ (deps (:t ./locate/ambiguity/rebinding.t)
+       (source_tree ./locate/ambiguity)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/ambiguity
+     (chdir ./locate/ambiguity
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/ambiguity/not-in-env.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/ambiguity)
+ (deps (:t ./locate/ambiguity/not-in-env.t)
+       (source_tree ./locate/ambiguity)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/ambiguity
+     (chdir ./locate/ambiguity
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/mutually-recursive/issue973.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/mutually-recursive)
+ (deps (:t ./locate/mutually-recursive/issue973.t)
+       (source_tree ./locate/mutually-recursive)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/mutually-recursive
+     (chdir ./locate/mutually-recursive
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/issue845/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/issue845)
+ (deps (:t ./locate/issue845/test.t)
+       (source_tree ./locate/issue845)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/issue845
+     (chdir ./locate/issue845
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/non-local/preference/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/non-local/preference)
+ (deps (:t ./locate/non-local/preference/test.t)
+       (source_tree ./locate/non-local/preference)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/non-local/preference
+     (chdir ./locate/non-local/preference
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/non-local/ignore-kept-locs/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/non-local/ignore-kept-locs)
+ (deps (:t ./locate/non-local/ignore-kept-locs/test.t)
+       (source_tree ./locate/non-local/ignore-kept-locs)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/non-local/ignore-kept-locs
+     (chdir ./locate/non-local/ignore-kept-locs
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/includes/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/includes)
+ (deps (:t ./locate/includes/test.t)
+       (source_tree ./locate/includes)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/includes
+     (chdir ./locate/includes
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/reconstruct-identifier/off_by_one.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/reconstruct-identifier)
+ (deps (:t ./locate/reconstruct-identifier/off_by_one.t)
+       (source_tree ./locate/reconstruct-identifier)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/reconstruct-identifier
+     (chdir ./locate/reconstruct-identifier
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/reconstruct-identifier/newlines.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/reconstruct-identifier)
+ (deps (:t ./locate/reconstruct-identifier/newlines.t)
+       (source_tree ./locate/reconstruct-identifier)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/reconstruct-identifier
+     (chdir ./locate/reconstruct-identifier
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/functors/generative.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/functors)
+ (deps (:t ./locate/functors/generative.t)
+       (source_tree ./locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/functors
+     (chdir ./locate/functors
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/functors/missed_shadowing.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/functors)
+ (deps (:t ./locate/functors/missed_shadowing.t)
+       (source_tree ./locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/functors
+     (chdir ./locate/functors
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/functors/all_local.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/functors)
+ (deps (:t ./locate/functors/all_local.t)
+       (source_tree ./locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/functors
+     (chdir ./locate/functors
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/functors/included.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/functors)
+ (deps (:t ./locate/functors/included.t)
+       (source_tree ./locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/functors
+     (chdir ./locate/functors
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/functors/from_application.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/functors)
+ (deps (:t ./locate/functors/from_application.t)
+       (source_tree ./locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/functors
+     (chdir ./locate/functors
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/functors/nested_applications.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/functors)
+ (deps (:t ./locate/functors/nested_applications.t)
+       (source_tree ./locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/functors
+     (chdir ./locate/functors
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/partial-cmt/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/partial-cmt)
+ (deps (:t ./locate/partial-cmt/test.t)
+       (source_tree ./locate/partial-cmt)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/partial-cmt
+     (chdir ./locate/partial-cmt
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/looping-substitution/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/looping-substitution)
+ (deps (:t ./locate/looping-substitution/test.t)
+       (source_tree ./locate/looping-substitution)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/looping-substitution
+     (chdir ./locate/looping-substitution
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/sig-substs/basic.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/sig-substs)
+ (deps (:t ./locate/sig-substs/basic.t)
+       (source_tree ./locate/sig-substs)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/sig-substs
+     (chdir ./locate/sig-substs
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/issue802/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/issue802)
+ (deps (:t ./locate/issue802/test.t)
+       (source_tree ./locate/issue802)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/issue802
+     (chdir ./locate/issue802
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/test.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/label.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/label.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/from_a_pattern.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/from_a_pattern.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/mod_constr.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/mod_constr.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/field.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/field.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/environment_on_open.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/environment_on_open.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)(enabled_if (< %{ocaml_version} 4.08.0))
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/locate/context-detection/environment_on_open_bad.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/locate/context-detection)
+ (deps (:t ./locate/context-detection/environment_on_open_bad.t)
+       (source_tree ./locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/locate/context-detection
+     (chdir ./locate/context-detection
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/destruct/basic.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/destruct)
+ (deps (:t ./destruct/basic.t)
+       (source_tree ./destruct)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/destruct
+     (chdir ./destruct
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/config/path-expansion.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/config)
+ (deps (:t ./config/path-expansion.t)
+       (source_tree ./config)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/config
+     (chdir ./config
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/config/flags/invalid.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/config/flags)
+ (deps (:t ./config/flags/invalid.t)
+       (source_tree ./config/flags)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/config/flags
+     (chdir ./config/flags
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/config/flags/nolabels.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/config/flags)
+ (deps (:t ./config/flags/nolabels.t)
+       (source_tree ./config/flags)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/config/flags
+     (chdir ./config/flags
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/config/flags/unsafe.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/config/flags)
+ (deps (:t ./config/flags/unsafe.t)
+       (source_tree ./config/flags)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/config/flags
+     (chdir ./config/flags
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/no-escape/test.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/no-escape)
+ (deps (:t ./no-escape/test.t)
+       (source_tree ./no-escape)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/no-escape
+     (chdir ./no-escape
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/pp/simple-pp.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/pp)
+ (deps (:t ./pp/simple-pp.t)
+       (source_tree ./pp)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/pp
+     (chdir ./pp
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/completion/expansion.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/completion)
+ (deps (:t ./completion/expansion.t)
+       (source_tree ./completion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/completion
+     (chdir ./completion
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/completion/parenthesize.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/completion)
+ (deps (:t ./completion/parenthesize.t)
+       (source_tree ./completion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/completion
+     (chdir ./completion
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/occurrences/issue827.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/occurrences)
+ (deps (:t ./occurrences/issue827.t)
+       (source_tree ./occurrences)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/occurrences
+     (chdir ./occurrences
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 
 (alias
  (name runtest)
- (deps (:t /home/trefis/repos/merlin/_build/default/tests/occurrences/basic.t)
-       (source_tree /home/trefis/repos/merlin/_build/default/tests/occurrences)
+ (deps (:t ./occurrences/basic.t)
+       (source_tree ./occurrences)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
    (setenv MERLIN %{exe:merlin-wrapper}
    (setenv OCAMLC %{ocamlc}
-     (chdir /home/trefis/repos/merlin/_build/default/tests/occurrences
+     (chdir ./occurrences
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
