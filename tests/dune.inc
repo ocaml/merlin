@@ -1,12 +1,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./misc/external-arity.t)
-       (source_tree ./misc)
+ (deps (:t ./test-dirs/misc/external-arity.t)
+       (source_tree ./test-dirs/misc)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./misc
+   (chdir ./test-dirs/misc
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -15,12 +15,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./misc/load_path.t)
-       (source_tree ./misc)
+ (deps (:t ./test-dirs/misc/load_path.t)
+       (source_tree ./test-dirs/misc)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./misc
+   (chdir ./test-dirs/misc
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -29,12 +29,12 @@
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t ./type-enclosing/letop.t)
-       (source_tree ./type-enclosing)
+ (deps (:t ./test-dirs/type-enclosing/letop.t)
+       (source_tree ./test-dirs/type-enclosing)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./type-enclosing
+   (chdir ./test-dirs/type-enclosing
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -43,12 +43,12 @@
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.04.0))
- (deps (:t ./recovery/test.t)
-       (source_tree ./recovery)
+ (deps (:t ./test-dirs/recovery/test.t)
+       (source_tree ./test-dirs/recovery)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./recovery
+   (chdir ./test-dirs/recovery
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -57,12 +57,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./file-cache/test.t)
-       (source_tree ./file-cache)
+ (deps (:t ./test-dirs/file-cache/test.t)
+       (source_tree ./test-dirs/file-cache)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./file-cache
+   (chdir ./test-dirs/file-cache
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -71,12 +71,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./warnings/backtrack.t)
-       (source_tree ./warnings)
+ (deps (:t ./test-dirs/warnings/backtrack.t)
+       (source_tree ./test-dirs/warnings)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./warnings
+   (chdir ./test-dirs/warnings
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -85,12 +85,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./short-paths/test.t)
-       (source_tree ./short-paths)
+ (deps (:t ./test-dirs/short-paths/test.t)
+       (source_tree ./test-dirs/short-paths)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./short-paths
+   (chdir ./test-dirs/short-paths
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -99,12 +99,12 @@
 
 (alias
  (name runtest)(enabled_if (< %{ocaml_version} 4.07.0))
- (deps (:t ./polarity-search/older.t)
-       (source_tree ./polarity-search)
+ (deps (:t ./test-dirs/polarity-search/older.t)
+       (source_tree ./test-dirs/polarity-search)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./polarity-search
+   (chdir ./test-dirs/polarity-search
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -113,12 +113,12 @@
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.07.0))
- (deps (:t ./polarity-search/recent.t)
-       (source_tree ./polarity-search)
+ (deps (:t ./test-dirs/polarity-search/recent.t)
+       (source_tree ./test-dirs/polarity-search)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./polarity-search
+   (chdir ./test-dirs/polarity-search
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -127,12 +127,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./type-expr/test.t)
-       (source_tree ./type-expr)
+ (deps (:t ./test-dirs/type-expr/test.t)
+       (source_tree ./test-dirs/type-expr)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./type-expr
+   (chdir ./test-dirs/type-expr
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -141,12 +141,12 @@
 
 (alias
  (name runtest)(enabled_if (< %{ocaml_version} 4.08.0))
- (deps (:t ./errors/inconsistent-assumptions/test.t)
-       (source_tree ./errors/inconsistent-assumptions)
+ (deps (:t ./test-dirs/errors/inconsistent-assumptions/test.t)
+       (source_tree ./test-dirs/errors/inconsistent-assumptions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./errors/inconsistent-assumptions
+   (chdir ./test-dirs/errors/inconsistent-assumptions
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -155,12 +155,12 @@
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t ./errors/inconsistent-assumptions/test_408.t)
-       (source_tree ./errors/inconsistent-assumptions)
+ (deps (:t ./test-dirs/errors/inconsistent-assumptions/test_408.t)
+       (source_tree ./test-dirs/errors/inconsistent-assumptions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./errors/inconsistent-assumptions
+   (chdir ./test-dirs/errors/inconsistent-assumptions
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -169,12 +169,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./errors/typing-after-parsing/test.t)
-       (source_tree ./errors/typing-after-parsing)
+ (deps (:t ./test-dirs/errors/typing-after-parsing/test.t)
+       (source_tree ./test-dirs/errors/typing-after-parsing)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./errors/typing-after-parsing
+   (chdir ./test-dirs/errors/typing-after-parsing
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -183,12 +183,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./motion/phrase.t)
-       (source_tree ./motion)
+ (deps (:t ./test-dirs/motion/phrase.t)
+       (source_tree ./test-dirs/motion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./motion
+   (chdir ./test-dirs/motion
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -197,12 +197,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./motion/jump.t)
-       (source_tree ./motion)
+ (deps (:t ./test-dirs/motion/jump.t)
+       (source_tree ./test-dirs/motion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./motion
+   (chdir ./test-dirs/motion
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -211,12 +211,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/local-definitions/issue798.t)
-       (source_tree ./locate/local-definitions)
+ (deps (:t ./test-dirs/locate/local-definitions/issue798.t)
+       (source_tree ./test-dirs/locate/local-definitions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/local-definitions
+   (chdir ./test-dirs/locate/local-definitions
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -225,12 +225,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/local-definitions/issue806.t)
-       (source_tree ./locate/local-definitions)
+ (deps (:t ./test-dirs/locate/local-definitions/issue806.t)
+       (source_tree ./test-dirs/locate/local-definitions)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/local-definitions
+   (chdir ./test-dirs/locate/local-definitions
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -239,12 +239,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/ambiguity/rebinding.t)
-       (source_tree ./locate/ambiguity)
+ (deps (:t ./test-dirs/locate/ambiguity/rebinding.t)
+       (source_tree ./test-dirs/locate/ambiguity)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/ambiguity
+   (chdir ./test-dirs/locate/ambiguity
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -253,12 +253,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/ambiguity/not-in-env.t)
-       (source_tree ./locate/ambiguity)
+ (deps (:t ./test-dirs/locate/ambiguity/not-in-env.t)
+       (source_tree ./test-dirs/locate/ambiguity)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/ambiguity
+   (chdir ./test-dirs/locate/ambiguity
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -267,12 +267,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/mutually-recursive/issue973.t)
-       (source_tree ./locate/mutually-recursive)
+ (deps (:t ./test-dirs/locate/mutually-recursive/issue973.t)
+       (source_tree ./test-dirs/locate/mutually-recursive)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/mutually-recursive
+   (chdir ./test-dirs/locate/mutually-recursive
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -281,12 +281,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/issue845/test.t)
-       (source_tree ./locate/issue845)
+ (deps (:t ./test-dirs/locate/issue845/test.t)
+       (source_tree ./test-dirs/locate/issue845)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/issue845
+   (chdir ./test-dirs/locate/issue845
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -295,12 +295,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/non-local/preference/test.t)
-       (source_tree ./locate/non-local/preference)
+ (deps (:t ./test-dirs/locate/non-local/preference/test.t)
+       (source_tree ./test-dirs/locate/non-local/preference)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/non-local/preference
+   (chdir ./test-dirs/locate/non-local/preference
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -309,12 +309,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/non-local/ignore-kept-locs/test.t)
-       (source_tree ./locate/non-local/ignore-kept-locs)
+ (deps (:t ./test-dirs/locate/non-local/ignore-kept-locs/test.t)
+       (source_tree ./test-dirs/locate/non-local/ignore-kept-locs)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/non-local/ignore-kept-locs
+   (chdir ./test-dirs/locate/non-local/ignore-kept-locs
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -323,12 +323,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/includes/test.t)
-       (source_tree ./locate/includes)
+ (deps (:t ./test-dirs/locate/includes/test.t)
+       (source_tree ./test-dirs/locate/includes)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/includes
+   (chdir ./test-dirs/locate/includes
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -337,12 +337,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/reconstruct-identifier/off_by_one.t)
-       (source_tree ./locate/reconstruct-identifier)
+ (deps (:t ./test-dirs/locate/reconstruct-identifier/off_by_one.t)
+       (source_tree ./test-dirs/locate/reconstruct-identifier)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/reconstruct-identifier
+   (chdir ./test-dirs/locate/reconstruct-identifier
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -351,12 +351,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/reconstruct-identifier/newlines.t)
-       (source_tree ./locate/reconstruct-identifier)
+ (deps (:t ./test-dirs/locate/reconstruct-identifier/newlines.t)
+       (source_tree ./test-dirs/locate/reconstruct-identifier)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/reconstruct-identifier
+   (chdir ./test-dirs/locate/reconstruct-identifier
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -365,12 +365,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/functors/generative.t)
-       (source_tree ./locate/functors)
+ (deps (:t ./test-dirs/locate/functors/generative.t)
+       (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/functors
+   (chdir ./test-dirs/locate/functors
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -379,12 +379,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/functors/missed_shadowing.t)
-       (source_tree ./locate/functors)
+ (deps (:t ./test-dirs/locate/functors/missed_shadowing.t)
+       (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/functors
+   (chdir ./test-dirs/locate/functors
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -393,12 +393,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/functors/all_local.t)
-       (source_tree ./locate/functors)
+ (deps (:t ./test-dirs/locate/functors/all_local.t)
+       (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/functors
+   (chdir ./test-dirs/locate/functors
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -407,12 +407,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/functors/included.t)
-       (source_tree ./locate/functors)
+ (deps (:t ./test-dirs/locate/functors/included.t)
+       (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/functors
+   (chdir ./test-dirs/locate/functors
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -421,12 +421,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/functors/from_application.t)
-       (source_tree ./locate/functors)
+ (deps (:t ./test-dirs/locate/functors/from_application.t)
+       (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/functors
+   (chdir ./test-dirs/locate/functors
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -435,12 +435,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/functors/nested_applications.t)
-       (source_tree ./locate/functors)
+ (deps (:t ./test-dirs/locate/functors/nested_applications.t)
+       (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/functors
+   (chdir ./test-dirs/locate/functors
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -449,12 +449,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/partial-cmt/test.t)
-       (source_tree ./locate/partial-cmt)
+ (deps (:t ./test-dirs/locate/partial-cmt/test.t)
+       (source_tree ./test-dirs/locate/partial-cmt)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/partial-cmt
+   (chdir ./test-dirs/locate/partial-cmt
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -463,12 +463,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/looping-substitution/test.t)
-       (source_tree ./locate/looping-substitution)
+ (deps (:t ./test-dirs/locate/looping-substitution/test.t)
+       (source_tree ./test-dirs/locate/looping-substitution)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/looping-substitution
+   (chdir ./test-dirs/locate/looping-substitution
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -477,12 +477,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/sig-substs/basic.t)
-       (source_tree ./locate/sig-substs)
+ (deps (:t ./test-dirs/locate/sig-substs/basic.t)
+       (source_tree ./test-dirs/locate/sig-substs)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/sig-substs
+   (chdir ./test-dirs/locate/sig-substs
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -491,12 +491,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/issue802/test.t)
-       (source_tree ./locate/issue802)
+ (deps (:t ./test-dirs/locate/issue802/test.t)
+       (source_tree ./test-dirs/locate/issue802)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/issue802
+   (chdir ./test-dirs/locate/issue802
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -505,12 +505,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/context-detection/test.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/test.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -519,12 +519,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/context-detection/label.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/label.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -533,12 +533,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/context-detection/from_a_pattern.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/from_a_pattern.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -547,12 +547,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/context-detection/mod_constr.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/mod_constr.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -561,12 +561,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./locate/context-detection/field.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/field.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -575,12 +575,12 @@
 
 (alias
  (name runtest)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t ./locate/context-detection/environment_on_open.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/environment_on_open.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -589,12 +589,12 @@
 
 (alias
  (name runtest)(enabled_if (< %{ocaml_version} 4.08.0))
- (deps (:t ./locate/context-detection/environment_on_open_bad.t)
-       (source_tree ./locate/context-detection)
+ (deps (:t ./test-dirs/locate/context-detection/environment_on_open_bad.t)
+       (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./locate/context-detection
+   (chdir ./test-dirs/locate/context-detection
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -603,12 +603,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./destruct/basic.t)
-       (source_tree ./destruct)
+ (deps (:t ./test-dirs/destruct/basic.t)
+       (source_tree ./test-dirs/destruct)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./destruct
+   (chdir ./test-dirs/destruct
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -617,12 +617,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./config/path-expansion.t)
-       (source_tree ./config)
+ (deps (:t ./test-dirs/config/path-expansion.t)
+       (source_tree ./test-dirs/config)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./config
+   (chdir ./test-dirs/config
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -631,12 +631,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./config/flags/invalid.t)
-       (source_tree ./config/flags)
+ (deps (:t ./test-dirs/config/flags/invalid.t)
+       (source_tree ./test-dirs/config/flags)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./config/flags
+   (chdir ./test-dirs/config/flags
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -645,12 +645,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./config/flags/nolabels.t)
-       (source_tree ./config/flags)
+ (deps (:t ./test-dirs/config/flags/nolabels.t)
+       (source_tree ./test-dirs/config/flags)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./config/flags
+   (chdir ./test-dirs/config/flags
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -659,12 +659,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./config/flags/unsafe.t)
-       (source_tree ./config/flags)
+ (deps (:t ./test-dirs/config/flags/unsafe.t)
+       (source_tree ./test-dirs/config/flags)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./config/flags
+   (chdir ./test-dirs/config/flags
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -673,12 +673,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./no-escape/test.t)
-       (source_tree ./no-escape)
+ (deps (:t ./test-dirs/no-escape/test.t)
+       (source_tree ./test-dirs/no-escape)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./no-escape
+   (chdir ./test-dirs/no-escape
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -687,12 +687,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./pp/simple-pp.t)
-       (source_tree ./pp)
+ (deps (:t ./test-dirs/pp/simple-pp.t)
+       (source_tree ./test-dirs/pp)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./pp
+   (chdir ./test-dirs/pp
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -701,12 +701,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./completion/expansion.t)
-       (source_tree ./completion)
+ (deps (:t ./test-dirs/completion/expansion.t)
+       (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./completion
+   (chdir ./test-dirs/completion
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -715,12 +715,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./completion/parenthesize.t)
-       (source_tree ./completion)
+ (deps (:t ./test-dirs/completion/parenthesize.t)
+       (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./completion
+   (chdir ./test-dirs/completion
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -729,12 +729,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./occurrences/issue827.t)
-       (source_tree ./occurrences)
+ (deps (:t ./test-dirs/occurrences/issue827.t)
+       (source_tree ./test-dirs/occurrences)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./occurrences
+   (chdir ./test-dirs/occurrences
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
@@ -743,12 +743,12 @@
 
 (alias
  (name runtest)
- (deps (:t ./occurrences/basic.t)
-       (source_tree ./occurrences)
+ (deps (:t ./test-dirs/occurrences/basic.t)
+       (source_tree ./test-dirs/occurrences)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./occurrences
+   (chdir ./test-dirs/occurrences
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn

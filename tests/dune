@@ -12,16 +12,12 @@
   (name runtest)
   (deps merlin-wrapper))
 
-(executable
- (name gen_tests)
- (libraries utils))
-
 (include dune.inc)
 
 (rule
  (targets dune.inc.gen)
  (deps    (source_tree .))
- (action  (with-stdout-to %{targets} (run ./gen_tests.exe))))
+ (action  (with-stdout-to %{targets} (run ./gen/gen_tests.exe))))
 
 (alias
  (name   runtest)
