@@ -139,6 +139,9 @@ module Configurator = struct
       Unix.chdir dir;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
       Unix.chdir cwd;
+      Unix.close stdin_r;
+      Unix.close stdout_w;
+      Unix.close stderr_w;
       let stdin = Unix.out_channel_of_descr stdin_w in
       let stdout = Unix.in_channel_of_descr stdout_r in
       let stderr = Unix.in_channel_of_descr stderr_r in
