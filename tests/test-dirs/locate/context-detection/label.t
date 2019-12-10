@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/label.ml",
+      "file": "tests/test-dirs/locate/context-detection/label.ml",
       "pos": {
         "line": 3,
         "col": 4
@@ -16,7 +16,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/label.ml",
+      "file": "tests/test-dirs/locate/context-detection/label.ml",
       "pos": {
         "line": 8,
         "col": 4

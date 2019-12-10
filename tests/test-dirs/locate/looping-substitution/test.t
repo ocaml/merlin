@@ -11,7 +11,7 @@ Do the thing:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/looping-substitution/test.ml",
+      "file": "tests/test-dirs/locate/looping-substitution/test.ml",
       "pos": {
         "line": 5,
         "col": 4

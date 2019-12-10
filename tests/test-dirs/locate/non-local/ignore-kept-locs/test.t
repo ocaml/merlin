@@ -1,3 +1,7 @@
+Setup the test context:
+
+  $ $OCAMLC -c -bin-annot -keep-locs a.ml
+
 Make sure that we do not use locations coming from the cmi:
 
   $ $MERLIN single locate -look-for ml -log-section locate -log-file log \
@@ -5,7 +9,7 @@ Make sure that we do not use locations coming from the cmi:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/non-local/ignore-kept-locs/a.ml",
+      "file": "tests/test-dirs/locate/non-local/ignore-kept-locs/a.ml",
       "pos": {
         "line": 1,
         "col": 4
@@ -24,7 +28,7 @@ Make sure that we do not use locations coming from the cmi:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/non-local/ignore-kept-locs/a.ml",
+      "file": "tests/test-dirs/locate/non-local/ignore-kept-locs/a.ml",
       "pos": {
         "line": 1,
         "col": 4

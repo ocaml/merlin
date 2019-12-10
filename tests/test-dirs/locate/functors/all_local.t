@@ -4,7 +4,7 @@ Check that we can jump locally inside the functor:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/all_local.ml",
+      "file": "tests/test-dirs/locate/functors/all_local.ml",
       "pos": {
         "line": 12,
         "col": 2
@@ -19,7 +19,7 @@ Check that we can jump from inside the functor to the (sig of the) parameter:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/all_local.ml",
+      "file": "tests/test-dirs/locate/functors/all_local.ml",
       "pos": {
         "line": 9,
         "col": 12
@@ -34,7 +34,7 @@ Check the argument is substituted for the parameter
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/all_local.ml",
+      "file": "tests/test-dirs/locate/functors/all_local.ml",
       "pos": {
         "line": 6,
         "col": 2

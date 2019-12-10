@@ -5,7 +5,7 @@ A simple name is not expanded
   sh: ...
   [
     {
-      "workdir": "tests/config",
+      "workdir": "tests/test-dirs/config",
       "workval": "test1"
     }
   ]
@@ -17,7 +17,7 @@ Neither is an absolute path
   sh: ...
   [
     {
-      "workdir": "tests/config",
+      "workdir": "tests/test-dirs/config",
       "workval": "/test2"
     }
   ]
@@ -29,7 +29,7 @@ But relative names are
   sh: ...
   [
     {
-      "workdir": "tests/config",
+      "workdir": "tests/test-dirs/config",
       "workval": "./test3"
     }
   ]

@@ -19,7 +19,7 @@ FIXME: this jumps to the .mli...
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/issue845/local_map.mli",
+      "file": "tests/test-dirs/locate/issue845/local_map.mli",
       "pos": {
         "line": 1,
         "col": 0
@@ -36,7 +36,7 @@ Test jumping to intf:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/issue845/local_map.mli",
+      "file": "tests/test-dirs/locate/issue845/local_map.mli",
       "pos": {
         "line": 1,
         "col": 0

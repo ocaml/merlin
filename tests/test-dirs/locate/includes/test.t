@@ -10,7 +10,7 @@ thing.
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/includes/foo.ml",
+      "file": "tests/test-dirs/locate/includes/foo.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -26,7 +26,7 @@ the structure, but the stamp will have changed:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/includes/foo.ml",
+      "file": "tests/test-dirs/locate/includes/foo.ml",
       "pos": {
         "line": 1,
         "col": 0

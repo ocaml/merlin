@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/field.ml",
+      "file": "tests/test-dirs/locate/context-detection/field.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -16,7 +16,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/field.ml",
+      "file": "tests/test-dirs/locate/context-detection/field.ml",
       "pos": {
         "line": 1,
         "col": 0

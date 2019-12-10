@@ -4,7 +4,7 @@ Searching foo from bar works:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/mutually-recursive/issue973.ml",
+      "file": "tests/test-dirs/locate/mutually-recursive/issue973.ml",
       "pos": {
         "line": 1,
         "col": 8
@@ -19,7 +19,7 @@ And so does bar from foo:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/mutually-recursive/issue973.ml",
+      "file": "tests/test-dirs/locate/mutually-recursive/issue973.ml",
       "pos": {
         "line": 4,
         "col": 4

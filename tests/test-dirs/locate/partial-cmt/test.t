@@ -13,7 +13,7 @@ Jump:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/partial-cmt/a.ml",
+      "file": "tests/test-dirs/locate/partial-cmt/a.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -45,7 +45,7 @@ That is: if the file is a.mli then the test is broken:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/partial-cmt/a.ml",
+      "file": "tests/test-dirs/locate/partial-cmt/a.ml",
       "pos": {
         "line": 1,
         "col": 0

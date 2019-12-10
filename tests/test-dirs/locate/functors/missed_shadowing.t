@@ -5,7 +5,7 @@ Reproduce bug described (and fixed) in commit e558d203334fd06f7653a6388b46dba895
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/missed_shadowing.ml",
+      "file": "tests/test-dirs/locate/functors/missed_shadowing.ml",
       "pos": {
         "line": 3,
         "col": 10
@@ -19,7 +19,7 @@ Reproduce bug described (and fixed) in commit e558d203334fd06f7653a6388b46dba895
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/missed_shadowing.ml",
+      "file": "tests/test-dirs/locate/functors/missed_shadowing.ml",
       "pos": {
         "line": 7,
         "col": 0

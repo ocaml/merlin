@@ -5,7 +5,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/environment_on_open.ml",
+      "file": "tests/test-dirs/locate/context-detection/environment_on_open.ml",
       "pos": {
         "line": 1,
         "col": 0

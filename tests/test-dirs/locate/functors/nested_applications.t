@@ -4,7 +4,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/nested_applications.ml",
+      "file": "tests/test-dirs/locate/functors/nested_applications.ml",
       "pos": {
         "line": 5,
         "col": 0
@@ -18,7 +18,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/nested_applications.ml",
+      "file": "tests/test-dirs/locate/functors/nested_applications.ml",
       "pos": {
         "line": 10,
         "col": 2
@@ -32,7 +32,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/nested_applications.ml",
+      "file": "tests/test-dirs/locate/functors/nested_applications.ml",
       "pos": {
         "line": 10,
         "col": 2
@@ -46,7 +46,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/nested_applications.ml",
+      "file": "tests/test-dirs/locate/functors/nested_applications.ml",
       "pos": {
         "line": 21,
         "col": 54
@@ -60,7 +60,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/nested_applications.ml",
+      "file": "tests/test-dirs/locate/functors/nested_applications.ml",
       "pos": {
         "line": 5,
         "col": 0

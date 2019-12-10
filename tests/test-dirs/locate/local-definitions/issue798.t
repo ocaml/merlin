@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/local-definitions/issue798.ml",
+      "file": "tests/test-dirs/locate/local-definitions/issue798.ml",
       "pos": {
         "line": 6,
         "col": 8

@@ -4,7 +4,7 @@ Trying them all:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -17,7 +17,7 @@ Trying them all:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 3,
         "col": 0
@@ -30,7 +30,7 @@ Trying them all:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 3,
         "col": 0
@@ -45,7 +45,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 5,
         "col": 4
@@ -58,7 +58,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -71,7 +71,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 5,
         "col": 4
@@ -93,7 +93,7 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -106,7 +106,7 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -119,7 +119,7 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 11,
         "col": 0
@@ -148,7 +148,7 @@ FIXME this should jump to line 11:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 13,
         "col": 0
@@ -161,7 +161,7 @@ FIXME this should jump to line 11:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 23,
         "col": 6
@@ -174,7 +174,7 @@ FIXME this should jump to line 11:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/context-detection/test.ml",
+      "file": "tests/test-dirs/locate/context-detection/test.ml",
       "pos": {
         "line": 13,
         "col": 0

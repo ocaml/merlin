@@ -6,7 +6,7 @@ when both are present in the buffer (the struct will always be preferred).
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/sig-substs/basic.ml",
+      "file": "tests/test-dirs/locate/sig-substs/basic.ml",
       "pos": {
         "line": 3,
         "col": 4

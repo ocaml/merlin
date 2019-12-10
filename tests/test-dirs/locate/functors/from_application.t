@@ -5,7 +5,7 @@ FIXME: we confuse the module for the constructor and jump to the wrong place
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/from_application.ml",
+      "file": "tests/test-dirs/locate/functors/from_application.ml",
       "pos": {
         "line": 5,
         "col": 0
@@ -20,7 +20,7 @@ Jump from inside the functor application to inside the functor application:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/from_application.ml",
+      "file": "tests/test-dirs/locate/functors/from_application.ml",
       "pos": {
         "line": 14,
         "col": 4
@@ -35,7 +35,7 @@ Jump from inside the functor application to the outer scope:
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/functors/from_application.ml",
+      "file": "tests/test-dirs/locate/functors/from_application.ml",
       "pos": {
         "line": 9,
         "col": 0

@@ -4,7 +4,7 @@ Regression test for #624
   {
     "class": "return",
     "value": {
-      "file": "tests/locate/reconstruct-identifier/off_by_one.ml",
+      "file": "tests/test-dirs/locate/reconstruct-identifier/off_by_one.ml",
       "pos": {
         "line": 1,
         "col": 0
