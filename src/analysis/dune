@@ -1,4 +1,14 @@
 (library
  (name merlin_analysis)
  (wrapped false)
- (libraries config merlin_kernel merlin_utils parsing preprocess query_protocol typing utils))
+ (libraries
+  config
+  merlin_specific
+  merlin_extend
+  merlin_kernel
+  merlin_utils
+  parsing
+  preprocess
+  query_protocol
+  typing
+  utils))
