@@ -37,7 +37,7 @@ Printf.ksprintf J.send {|
 (library
   (name preprocess)
   (wrapped false)
-  (libraries parsing))
+  (libraries parsing utils merlin_utils))
 
 (menhir
  (modules parser_raw)

@@ -6,4 +6,13 @@
 (library
  (name      query_commands)
  (modules   query_commands)
- (libraries merlin_analysis query_protocol))
+ (libraries
+  merlin_utils
+  merlin_kernel
+  utils
+  parsing
+  typing
+  merlin_specific
+  config
+  merlin_analysis
+  query_protocol))
