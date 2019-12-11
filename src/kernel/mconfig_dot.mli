@@ -43,7 +43,7 @@ type config = {
 
 type context
 
-val get_config : context -> string -> config
+val get_config : context -> string -> config * string list
 
 val find_project_context : string -> context option
 (** [find_project_config dir] searches for a "project configuration file" in dir

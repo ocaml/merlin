@@ -42,6 +42,7 @@ type directive = [
   | `SUFFIX of string
   | `READER of string list
   | `EXCLUDE_QUERY_DIR
+  | `ERROR_MSG of string
 ]
 
 type config = {
@@ -87,25 +88,27 @@ let parse_suffix str =
     else [(first, second)]
 
 let prepend_config ~dir:cwd (directives : directive list) config =
-  List.fold_left ~init:config ~f:(fun config ->
+  List.fold_left ~init:(config, []) ~f:(fun (config, errors) ->
     function
-    | `B path -> {config with build_path = path :: config.build_path}
-    | `S path -> {config with source_path = path :: config.source_path}
-    | `CMI path -> {config with cmi_path = path :: config.cmi_path}
-    | `CMT path -> {config with cmt_path = path :: config.cmt_path}
+    | `B path -> {config with build_path = path :: config.build_path}, errors
+    | `S path -> {config with source_path = path :: config.source_path}, errors
+    | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
+    | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
     | `EXT exts ->
-      {config with extensions = exts @ config.extensions}
+      {config with extensions = exts @ config.extensions}, errors
     | `SUFFIX suffix ->
-      {config with suffixes = (parse_suffix suffix) @ config.suffixes}
+      {config with suffixes = (parse_suffix suffix) @ config.suffixes}, errors
     | `FLG flags ->
       let flags = {workdir = cwd; workval = Shell.split_command flags} in
-      {config with flags = flags :: config.flags}
+      {config with flags = flags :: config.flags}, errors
     | `STDLIB path ->
-      {config with stdlib = Some path}
+      {config with stdlib = Some path}, errors
     | `READER reader ->
-      {config with reader}
+      {config with reader}, errors
     | `EXCLUDE_QUERY_DIR ->
-      {config with exclude_query_dir = true}
+      {config with exclude_query_dir = true}, errors
+    | `ERROR_MSG str ->
+      config, str :: errors
   ) directives
 
 module Configurator = struct
@@ -133,7 +136,7 @@ module Configurator = struct
         match cfg with
         | Dot_merlin ->
           let prog = "dot-merlin-reader" in
-          prog, [| prog; "--errors-on-stderr" |]
+          prog, [| prog |]
       in
       let cwd = Sys.getcwd () in
       let stdin_r, stdin_w = Unix.pipe () in
@@ -211,6 +214,8 @@ let read_cfg ic =
       aux @@ (`READER (List.rev (rev_split_words (String.drop 7 line)))) :: acc
     else if String.is_prefixed ~by:"EXCLUDE_QUERY_DIR" line then
       aux @@ `EXCLUDE_QUERY_DIR :: acc
+    else if String.is_prefixed ~by:"ERROR_MSG" line then
+      aux @@ `ERROR_MSG (String.drop 10 line) :: acc
     else (
       Logger.notify ~section:"build config" "unexpected directive \"%s\"" line;
       aux @@ acc
@@ -231,12 +236,14 @@ let get_config (dir, cfg) path =
     let directives =
       read_cfg p.stdout
     in
-    postprocess_config (prepend_config ~dir directives empty_config)
+    let cfg, failures = prepend_config ~dir directives empty_config in
+    postprocess_config cfg, failures
   with End_of_file ->
     log ~title:"get_config"
       "%s process died when trying to retrieve the config for %s"
       (Configurator.to_string cfg) dir;
-    empty_config
+    empty_config, [ Printf.sprintf "couldn't retrieve the config from %s" 
+                      (Configurator.to_string cfg)]
 
 let find_project_context start_dir =
   let rec loop dir =

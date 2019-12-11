@@ -62,6 +62,22 @@
 (alias (name runtest) (deps (alias completion-parenthesize)))
 
 (alias
+ (name config-dot-merlin-reader-erroneous-config)
+ (deps (:t ./test-dirs/config/dot-merlin-reader/erroneous-config.t)
+       (source_tree ./test-dirs/config/dot-merlin-reader)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/config/dot-merlin-reader
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias config-dot-merlin-reader-erroneous-config)))
+
+(alias
  (name config-flags-invalid)
  (deps (:t ./test-dirs/config/flags/invalid.t)
        (source_tree ./test-dirs/config/flags)

@@ -209,7 +209,7 @@ let get_external_config path t =
   match Mconfig_dot.find_project_context directory with
   | None -> t
   | Some ctxt ->
-    let dot = Mconfig_dot.get_config ctxt path in
+    let dot, failures = Mconfig_dot.get_config ctxt path in
     let merlin = t.merlin in
     let merlin = {
       merlin with
@@ -226,6 +226,7 @@ let get_external_config path t =
         then merlin.reader
         else dot.reader;
       flags_to_apply = dot.flags @ merlin.flags_to_apply;
+      failures = failures @ merlin.failures;
     } in
     normalize { t with merlin }
 

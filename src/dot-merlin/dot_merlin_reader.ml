@@ -46,8 +46,6 @@ let () =
     | _ -> ()
     end
 
-let errors_on_stderr = ref false
-
 let {Logger. log} = Logger.for_section "Mconfig_dot"
 
 module Directive = struct
@@ -68,9 +66,14 @@ module Directive = struct
     ]
 
   module Processed = struct
-    type t = [
+    type acceptable_in_input = [
       | include_path
       | no_processing_required
+    ]
+
+    type t = [
+      | acceptable_in_input
+      | `ERROR_MSG of string
     ]
 
     let print : t -> unit = function
@@ -84,11 +87,12 @@ module Directive = struct
       | `SUFFIX s -> Printf.printf "SUFFIX %s\n" s
       | `READER _ss -> failwith "TODO"
       | `EXCLUDE_QUERY_DIR -> Printf.printf "EXCLUDE_QUERY_DIR\n"
+      | `ERROR_MSG s -> Printf.printf "ERROR_MSG %s\n" s
   end
 
   module Raw = struct
     type t = [
-      | Processed.t
+      | Processed.acceptable_in_input
       | `PKG of string list
       | `FINDLIB of string
       | `FINDLIB_PATH of string
@@ -497,10 +501,6 @@ let postprocess cfg =
       in
       [ `FLG ("-ppx " ^ cmd)]
   in
-  if !errors_on_stderr then (
-    List.iter failures ~f:(Printf.eprintf "%s\n");
-    Printf.eprintf "%!"
-  );
   List.concat
     [ List.concat_map cfg.to_canonicalize ~f:(fun (dir, directive) ->
         let dirs =
@@ -515,6 +515,7 @@ let postprocess cfg =
     ; (cfg.pass_forward :> Directive.Processed.t list)
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
+    ; List.map failures ~f:(fun s -> `ERROR_MSG s)
     ]
 
 let load dot_merlin_file =
@@ -536,7 +537,4 @@ let rec main () =
     Printf.printf "\n%!";
     main ()
 
-let () =
-  if Array.length Sys.argv > 1 && Sys.argv.(1) = "--errors-on-stderr" then
-    errors_on_stderr := true;
-  main ()
+let () = main ()
