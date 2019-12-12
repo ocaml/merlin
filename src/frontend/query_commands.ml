@@ -326,7 +326,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
-  | Type_definition pos ->
+  | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
