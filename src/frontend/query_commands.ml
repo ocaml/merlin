@@ -332,12 +332,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let path = Mbrowse.enclosing pos [structures] in
     let path =
-      let rec resolve_tlink env ty =
-        match ty.Types.desc with
-        | Tconstr (path, _, _) -> Some (env, path)
-        | Tlink ty -> resolve_tlink env ty
-        | _ -> None
-      in
       Std.List.filter_map path ~f:(fun (env, node) ->
         Locate.log ~title:"debug" "inspecting node: %s" (Browse_raw.string_of_node node);
         match node with
@@ -345,7 +339,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | Pattern {pat_type = ty; _}
         | Core_type {ctyp_type = ty; _}
         | Value_description { val_desc = { ctyp_type = ty; _ }; _ } ->
-          resolve_tlink env ty
+          begin match (Ctype.repr ty).desc with
+            | Tconstr (path, _, _) -> Some (env, path)
+            | _ -> None
+          end
         | _ -> None
       )
     in
