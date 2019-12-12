@@ -77,6 +77,9 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
+  | Type_definition _ ->
+    failwith "This isn't supported via the frontend"
+
   | Enclosing pos ->
     mk "enclosing" [
       "position", mk_position pos;
@@ -386,3 +389,6 @@ let json_of_response (type a) (query : a t) (response : a) : json =
              ~f:(fun loc -> with_location loc []))
   | Version, version ->
     `String version
+  | Type_definition _, _ ->
+    (* Impossible to reach as queries reach here only via LSP *)
+    assert false

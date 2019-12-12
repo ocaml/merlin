@@ -326,6 +326,49 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
+  | Type_definition pos ->
+    let typer = Mpipeline.typer_result pipeline in
+    let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let path = Mbrowse.enclosing pos [structures] in
+    let path =
+      let rec resolve_tlink env ty =
+        match ty.Types.desc with
+        | Tconstr (path, _, _) -> Some (env, path)
+        | Tlink ty -> resolve_tlink env ty
+        | _ -> None
+      in
+      Std.List.filter_map path ~f:(fun (env, node) ->
+        Locate.log ~title:"debug" "inspecting node: %s" (Browse_raw.string_of_node node);
+        match node with
+        | Browse_raw.Expression {exp_type = ty; _}
+        | Pattern {pat_type = ty; _}
+        | Core_type {ctyp_type = ty; _}
+        | Value_description { val_desc = { ctyp_type = ty; _ }; _ } ->
+          resolve_tlink env ty
+        | _ -> None
+      )
+    in
+    Std.List.filter_map path ~f:(fun (env, path) ->
+      Locate.log ~title:"debug" "found type: %s" (Path.name path);
+      let local_defs = Mtyper.get_typedtree typer in
+      match
+        Locate.from_string
+          ~config:(Mpipeline.final_config pipeline)
+          ~env ~local_defs ~pos ~namespaces:[`Type] `MLI
+          (* FIXME: instead of converting to a string, pass it directly. *)
+          (Path.name path)
+      with
+      | exception Env.Error _ -> None
+      | `Found (path, lex_position) -> Some (path, lex_position)
+      | `At_origin
+      | `Builtin _
+      | `File_not_found _
+      | `Invalid_context
+      | `Missing_labels_namespace
+      | `Not_found _
+      | `Not_in_env _ -> None)
+
   | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
     let pipeline, typer = for_completion pipeline pos in
     let config = Mpipeline.final_config pipeline in
