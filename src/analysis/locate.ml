@@ -705,6 +705,33 @@ let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
     else
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
+let from_path ~config ~local_defs ~pos ~namespace ml_or_mli path =
+  let str_ident = Path.name path in
+  let browse = Mbrowse.of_typedtree local_defs in
+  let lazy_trie =
+    lazy (Typedtrie.of_browses ~local_buffer:true
+            [Browse_tree.of_browse browse])
+  in
+  let nss_path = Namespaced_path.of_path ~namespace path in
+  let loc = Location.none in
+  match
+    locate ~config ~ml_or_mli ~path:nss_path ~lazy_trie ~pos ~str_ident loc
+  with
+  | `Not_found _
+  | `File_not_found _ as err -> err
+  | `Found (loc, _) ->
+    match find_source ~config loc with
+    | Found src -> `Found (Some src, loc.Location.loc_start)
+    | Not_found f ->
+      let path = Path.name path in
+      File.explain_not_found path f
+    | Multiple_matches lst ->
+      let matches = String.concat lst ~sep:", " in
+      `File_not_found (
+        sprintf "Several source files in your path have the same name, and \
+                 merlin doesn't know which is the right one: %s"
+          matches)
+
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   let browse = Mbrowse.of_typedtree local_defs in
   let lazy_trie =
