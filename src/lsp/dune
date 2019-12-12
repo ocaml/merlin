@@ -1,7 +1,0 @@
-(library
-  (name lsp)
-  (libraries merlin_utils yojson threads.posix result ppx_yojson_conv_lib)
-  (flags :standard "-open" "Result" "-open" "Ppx_yojson_conv_lib" "-open" "Yojson_conv")
-  (lint (pps ppx_yojson_conv)))
-
-(ocamllex (modules text_document_text))

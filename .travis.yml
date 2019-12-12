@@ -4,15 +4,6 @@ dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script: |
   bash -ex .travis-opam.sh
-  # Run LSP test suite
-  if [ "$TESTS_LSP" = "true" ]; then
-    set -e
-    opam config exec -- dune build -p merlin-lsp
-    cd tests-lsp/
-    npm install
-    npm run test
-    set +e
-  fi
 env:
   matrix:
   - OCAML_VERSION=4.02
@@ -28,10 +19,6 @@ env:
   #   PACKAGE=merlin
   # - OCAML_VERSION=4.07
   #   PACKAGE=merlin
-  - OCAML_VERSION=4.07
-    PACKAGE=merlin-lsp
-    TESTS_LSP=true
-    TESTS=false
   - OCAML_VERSION=4.08
     PACKAGE=merlin
   - OCAML_VERSION=4.09
