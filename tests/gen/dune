@@ -1,3 +1,3 @@
 (executable
  (name gen_tests)
- (libraries utils))
+ (libraries merlin_utils))

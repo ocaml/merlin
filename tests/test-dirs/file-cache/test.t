@@ -1,7 +1,7 @@
 The server might already be running, we kill it to make sure we start from a
 clean slate:
 
-  $ (killall ocamlmerlin_server.exe; true) &> /dev/null
+  $ $MERLIN server stop-server
 
 First try: nothing has been built:
 
