@@ -1,3 +1,5 @@
+  $ echo "FLG -open Mylib__" > .merlin
+
 Compile the various units as dune would:
 
   $ $OCAMLC -c -no-alias-deps -w -49 -bin-annot mylib__.ml
@@ -9,7 +11,13 @@ Test jumping from a normal constructor:
   $ $MERLIN single locate -look-for ml -position 5:21 -filename ./a.ml < ./a.ml
   {
     "class": "return",
-    "value": "Not in environment 'Constructor'",
+    "value": {
+      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
     "notifications": []
   }
 
@@ -18,7 +26,13 @@ From an exception:
   $ $MERLIN single locate -look-for ml -position 3:21 -filename ./a.ml < ./a.ml
   {
     "class": "return",
-    "value": "Not in environment 'MyError'",
+    "value": {
+      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "pos": {
+        "line": 3,
+        "col": 0
+      }
+    },
     "notifications": []
   }
 
@@ -27,7 +41,13 @@ From an extension constructor:
   $ $MERLIN single locate -look-for ml -position 7:16 -filename ./a.ml < ./a.ml
   {
     "class": "return",
-    "value": "Not in environment 'C1'",
+    "value": {
+      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "pos": {
+        "line": 7,
+        "col": 12
+      }
+    },
     "notifications": []
   }
 
@@ -36,6 +56,12 @@ And from the extensible type name itself:
   $ $MERLIN single locate -look-for ml -position 7:10 -filename ./a.ml < ./a.ml
   {
     "class": "return",
-    "value": "Not in environment 'ext'",
+    "value": {
+      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "pos": {
+        "line": 5,
+        "col": 0
+      }
+    },
     "notifications": []
   }
