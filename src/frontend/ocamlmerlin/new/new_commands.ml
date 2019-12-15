@@ -363,6 +363,21 @@ different file."
     end
   ;
 
+  command "locate-type"
+    ~spec: [
+      arg "-position" "<position> Position to complete"
+        (marg_position (fun pos _ -> pos));
+    ]
+    ~doc: "Locate the declaration of the type of the expression"
+    ~default:`None
+    begin fun buffer pos ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Locate_type pos)
+    end
+  ;
+
   command "occurrences"
     ~spec: [
       arg "-identifier-at" "<position> Position to complete"

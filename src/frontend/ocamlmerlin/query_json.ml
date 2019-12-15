@@ -77,8 +77,10 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
-  | Locate_type _ ->
-    failwith "This isn't supported via the frontend"
+  | Locate_type pos ->
+    mk "locate-type" [
+      "position", mk_position pos
+    ]
 
   | Enclosing pos ->
     mk "enclosing" [
@@ -389,6 +391,11 @@ let json_of_response (type a) (query : a t) (response : a) : json =
              ~f:(fun loc -> with_location loc []))
   | Version, version ->
     `String version
-  | Locate_type _, _ ->
-    (* Impossible to reach as queries reach here only via LSP *)
-    assert false
+  | Locate_type _, locs ->
+    `List (
+      List.map locs ~f:(fun (t, pos) ->
+          match t with
+          | None ->
+            `Assoc ["pos", Lexing.json_of_position pos]
+          | Some file ->
+            `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]))
