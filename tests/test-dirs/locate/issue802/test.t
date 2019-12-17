@@ -1,3 +1,5 @@
+  $ echo "FLG -open Mylib__" > .merlin
+
 Compile the various units as dune would:
 
   $ $OCAMLC -c -no-alias-deps -w -49 -bin-annot mylib__.ml

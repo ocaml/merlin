@@ -34,6 +34,7 @@ let rec scan_fs dir =
     try Sys.readdir dir
     with Sys_error _ -> [||]
   in
+  Array.sort String.compare content;
   Array.iter (fun file ->
     let path = dir ^/ file in
     if Sys.is_directory path then
