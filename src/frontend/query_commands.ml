@@ -359,7 +359,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
-  | Complete_prefix (prefix, pos, _, with_doc, with_types) ->
+  | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
     let pipeline, typer = for_completion pipeline pos in
     let config = Mpipeline.final_config pipeline in
     let verbosity = Mconfig.(config.query.verbosity) in
@@ -379,7 +379,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-      Completion.branch_complete config ?get_doc ?target_type prefix branch |>
+      Completion.branch_complete config ~kinds ?get_doc ?target_type prefix branch |>
       print_completion_entries ~with_types config source
     and context = match context with
       | `Application context when no_labels ->
