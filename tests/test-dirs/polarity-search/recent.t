@@ -11,11 +11,13 @@ A few simple tests that show all the things we want to preserve or improve:
   > jq '.value.entries[] | del(.info) | del(.kind)'
   {
     "name": "Stdlib__int64.bits_of_float",
-    "desc": "float -> int64"
+    "desc": "float -> int64",
+    "deprecated": false
   }
   {
     "name": "Stdlib__int64.of_float",
-    "desc": "float -> int64"
+    "desc": "float -> int64",
+    "deprecated": false
   }
 
 - Duplicated elements
@@ -31,14 +33,14 @@ A few simple tests that show all the things we want to preserve or improve:
           "name": "string_of_int",
           "kind": "Value",
           "desc": "int -> string",
-          "info": ""
+          "info": "",
+          "deprecated": false
         },
         {
           "name": "string_of_int",
           "kind": "Value",
           "desc": "int -> string",
-          "info": ""
-        },
+          "info": "",
 
 # To keep
 
@@ -49,49 +51,49 @@ A few simple tests that show all the things we want to preserve or improve:
   > tr '\n' ' ' | jq '.value.entries[] | del(.info) | del(.kind)' | head -n48
   {
     "name": "**",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "**",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "*.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "*.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "+.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "+.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "-.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "-.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "/.",
-    "desc": "float -> float -> float"
+    "desc": "float -> float -> float",
+    "deprecated": false
   }
   {
     "name": "/.",
-    "desc": "float -> float -> float"
-  }
-  {
-    "name": "atan2",
-    "desc": "float -> float -> float"
-  }
-  {
-    "name": "atan2",
-    "desc": "float -> float -> float"
-  }
+    "desc": "float -> float -> float",

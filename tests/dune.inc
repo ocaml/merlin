@@ -1,20 +1,5 @@
 
 (alias
- (name completion-expansion)
- (deps (:t ./test-dirs/completion/expansion.t)
-       (source_tree ./test-dirs/completion)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
- (action
-   (chdir ./test-dirs/completion
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias completion-expansion)))
-
-(alias
  (name completion-parenthesize)
  (deps (:t ./test-dirs/completion/parenthesize.t)
        (source_tree ./test-dirs/completion)

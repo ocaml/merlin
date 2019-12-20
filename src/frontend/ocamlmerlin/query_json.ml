@@ -261,11 +261,12 @@ let json_of_error (error : Location.error) =
   ] in
   with_location ~skip_none:true loc content
 
-let json_of_completion {Compl. name; kind; desc; info} =
+let json_of_completion {Compl. name; kind; desc; info; deprecated} =
   `Assoc ["name", `String name;
           "kind", `String (string_of_completion_kind kind);
           "desc", `String desc;
-          "info", `String info]
+          "info", `String info;
+          "deprecated", `Bool deprecated]
 
 let json_of_completions {Compl. entries; context } =
   `Assoc [
