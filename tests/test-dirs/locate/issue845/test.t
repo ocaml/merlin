@@ -13,13 +13,13 @@ Test jumping to impl:
 
 FIXME: this jumps to the .mli...
 
-  $ $MERLIN single locate -look-for-ml -position 1:24 -filename test.ml <<EOF \
+  $ $MERLIN single locate -look-for ml -position 1:24 -filename test.ml <<EOF \
   > module SM = Local_map.Make(String) \
   > EOF
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/issue845/local_map.mli",
+      "file": "tests/test-dirs/locate/issue845/local_map.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -30,7 +30,7 @@ FIXME: this jumps to the .mli...
 
 Test jumping to intf:
 
-  $ $MERLIN single locate -look-for-mli -position 1:24 -filename test.ml <<EOF \
+  $ $MERLIN single locate -look-for mli -position 1:24 -filename test.ml <<EOF \
   > module SM = Local_map.Make(String) \
   > EOF
   {

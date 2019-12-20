@@ -6,7 +6,7 @@ in the environment to fallback to:
 Test when the include is a name, this should directly redirect us to the right
 thing.
 
-  $ $MERLIN single locate -look-for-mli -position 4:17 -filename test.ml < test.ml
+  $ $MERLIN single locate -look-for mli -position 4:17 -filename test.ml < test.ml
   {
     "class": "return",
     "value": {
@@ -22,7 +22,7 @@ thing.
 Test including a structure: there we will want to look up the ident again inside
 the structure, but the stamp will have changed:
 
-  $ $MERLIN single locate -look-for-mli -position 10:17 -filename test.ml < test.ml
+  $ $MERLIN single locate -look-for mli -position 10:17 -filename test.ml < test.ml
   {
     "class": "return",
     "value": {

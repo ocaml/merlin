@@ -1,4 +1,4 @@
-  $ $MERLIN single phrase next -position 1:0 -filename test.ml <<EOF \
+  $ $MERLIN single phrase -target next -position 1:0 -filename test.ml <<EOF \
   > let x = 5 \
   > let y = 2 \
   > EOF
@@ -15,7 +15,7 @@
 
 FIXME: ??
 
-  $ $MERLIN single phrase prev -position 2:0 -filename test.ml <<EOF \
+  $ $MERLIN single phrase -target prev -position 2:0 -filename test.ml <<EOF \
   > let x = 5 \
   > let y = 2 \
   > EOF
@@ -23,7 +23,7 @@ FIXME: ??
     "class": "return",
     "value": {
       "pos": {
-        "line": 3,
+        "line": 1,
         "col": 0
       }
     },
