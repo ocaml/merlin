@@ -13,9 +13,16 @@ let gen_rule dir file =
     else
       ""
   in
+  let alias_name =
+    match Std.String.chop_prefix ~prefix:"./test-dirs/" path with
+    | None -> assert false
+    | Some path ->
+      Std.String.replace_all ~pattern:"/" ~with_:"-" path
+      |> Filename.chop_extension
+  in
   Printf.printf {|
 (alias
- (name runtest)%s
+ (name %s)%s
  (deps (:t %s)
        (source_tree %s)
        %%{bin:ocamlmerlin}
@@ -27,7 +34,8 @@ let gen_rule dir file =
        (progn
          (run %%{bin:mdx} test --syntax=cram %%{t})
          (diff? %%{t} %%{t}.corrected)))))))
-|} enabled_if path dir dir
+(alias (name runtest) (deps (alias %s)))
+|} alias_name enabled_if path dir dir alias_name
 
 let rec scan_fs dir =
   let content =
