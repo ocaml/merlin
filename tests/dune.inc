@@ -90,8 +90,6 @@
 (alias (name runtest) (deps (alias config-path-expansion)))
 
 (alias
- (name runtest)
-(alias
  (name destruct-basic)
  (deps (:t ./test-dirs/destruct/basic.t)
        (source_tree ./test-dirs/destruct)
