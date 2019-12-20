@@ -311,3 +311,11 @@ let read_doc_attributes attrs =
     | [] -> None
   in
   loop (List.map ~f:Ast_helper.Attr.as_tuple attrs)
+
+let is_deprecated =
+  List.exists ~f:(fun (attr : Parsetree.attribute) ->
+      match Ast_helper.Attr.as_tuple attr with
+      | {Location.txt =
+           ("deprecated" | "ocaml.deprecated"); loc = _}, _ ->
+        true
+      | _ -> false)

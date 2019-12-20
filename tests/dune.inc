@@ -1,5 +1,20 @@
 
 (alias
+ (name completion-expansion)
+ (deps (:t ./test-dirs/completion/expansion.t)
+       (source_tree ./test-dirs/completion)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/completion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias completion-expansion)))
+
+(alias
  (name completion-parenthesize)
  (deps (:t ./test-dirs/completion/parenthesize.t)
        (source_tree ./test-dirs/completion)
@@ -73,6 +88,21 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias config-path-expansion)))
+
+(alias
+ (name deprecation-run)
+ (deps (:t ./test-dirs/deprecation/run.t)
+       (source_tree ./test-dirs/deprecation)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/deprecation
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias deprecation-run)))
 
 (alias
  (name destruct-basic)

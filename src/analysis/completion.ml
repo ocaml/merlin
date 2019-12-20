@@ -234,7 +234,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
         end
       | _, _ -> `None
   in
-  let deprecated = false in
+  let deprecated = Type_utils.is_deprecated attrs in
   {name; kind; desc; info; deprecated}
 
 let item_for_global_module name =

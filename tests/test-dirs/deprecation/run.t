@@ -10,7 +10,7 @@
           "kind": "Value",
           "desc": "unit -> int",
           "info": "",
-          "deprecated": false
+          "deprecated": true
         },
         {
           "name": "baz",
