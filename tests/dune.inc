@@ -435,6 +435,21 @@
 (alias (name runtest) (deps (alias locate-issue845-test)))
 
 (alias
+ (name locate-issue949-run)
+ (deps (:t ./test-dirs/locate/issue949/run.t)
+       (source_tree ./test-dirs/locate/issue949)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/locate/issue949
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias locate-issue949-run)))
+
+(alias
  (name locate-local-definitions-issue798)
  (deps (:t ./test-dirs/locate/local-definitions/issue798.t)
        (source_tree ./test-dirs/locate/local-definitions)
