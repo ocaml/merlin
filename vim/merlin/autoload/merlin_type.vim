@@ -103,51 +103,71 @@ endfunction
 
 function! merlin_type#Show(type, tail_info)
 
-  let l:user_lazyredraw = &lazyredraw
-  if l:user_lazyredraw ==# 0
-    set lazyredraw
-  endif
-
   let l:msg = a:type . a:tail_info
   let l:lines = split(l:msg, '\n')
-  call s:RecordType(l:lines)
-
-  if exists("t:merlin_autohide") && t:merlin_autohide == 1
-    let t:merlin_autohide = 0
-    call merlin_type#HideTypeHistory(0)
-  endif
-
   let l:length = len(l:lines)
 
-  let l:win = bufwinnr(g:merlin_type_history)
-  let l:cur = winnr()
-  if l:win >=# 0
-    exe l:win . "wincmd w"
-    call s:TemporaryResize(l:length)
-    normal! Gzb
-  elseif l:length >=# g:merlin_type_history_auto_open
-    call merlin_type#ShowTypeHistory()
-    call s:TemporaryResize(l:length)
-    let t:merlin_autohide=1
-    normal! Gzb
-    augroup MerlinTypeHistory
-      autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory(0)
-    augroup END
-  else
-    silent call merlin_type#ShowTypeHistory()
-    let l:end = line("$")
-    let l:start = l:end - l:length + 1
-    let l:msg = merlin_type#ShowLines(l:start, l:end)
-    close
-    exe t:merlin_restore_windows
-    " The message isn't always visible if we don't force a refresh here (?!)
-    redrawstatus
-    execute l:msg
-  endif
-  exe l:cur . "wincmd w"
+  if has('popupwin')
+    if ! exists("g:merlin_type_history")
+      let l:cur = winnr()
+      silent call s:CreateTypeHistory()
+      close
+      exe l:cur . "wincmd w"
+      exe t:merlin_restore_windows
+    endif
 
-  if l:user_lazyredraw ==# 0
-    set nolazyredraw
+    if exists('g:merlin_type_history_size')
+      silent call deletebufline(g:merlin_type_history, 1, g:merlin_type_history_size)
+    endif
+
+    call appendbufline(g:merlin_type_history, 0, l:lines)
+    call deletebufline(g:merlin_type_history, l:length + 1)
+
+    let g:merlin_type_history_size = l:length
+    call popup_atcursor(g:merlin_type_history, { 'pos': 'topleft' })
+  else
+    let l:user_lazyredraw = &lazyredraw
+    if l:user_lazyredraw ==# 0
+      set lazyredraw
+    endif
+
+    if exists("t:merlin_autohide") && t:merlin_autohide == 1
+      let t:merlin_autohide = 0
+      call merlin_type#HideTypeHistory(0)
+    endif
+
+    call s:RecordType(l:lines)
+
+    let l:win = bufwinnr(g:merlin_type_history)
+    let l:cur = winnr()
+    if l:win >=# 0
+      exe l:win . "wincmd w"
+      call s:TemporaryResize(l:length)
+      normal! Gzb
+    elseif l:length >=# g:merlin_type_history_auto_open
+      call merlin_type#ShowTypeHistory()
+      call s:TemporaryResize(l:length)
+      let t:merlin_autohide=1
+      normal! Gzb
+      augroup MerlinTypeHistory
+        autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory(0)
+      augroup END
+    else
+      silent call merlin_type#ShowTypeHistory()
+      let l:end = line("$")
+      let l:start = l:end - l:length + 1
+      let l:msg = merlin_type#ShowLines(l:start, l:end)
+      close
+      exe t:merlin_restore_windows
+      " The message isn't always visible if we don't force a refresh here (?!)
+      redrawstatus
+      execute l:msg
+    endif
+    exe l:cur . "wincmd w"
+
+    if l:user_lazyredraw ==# 0
+      set nolazyredraw
+    endif
   endif
 endfunction
 
