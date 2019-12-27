@@ -132,34 +132,13 @@ pprintast).
     "notifications": []
   }
 
-  $ $MERLIN single case-analysis -start 1:4 -end 1:4 -filename stacktrace.ml <<EOF \
-  > let () = () \
-  > EOF
+  $ echo "let () = ()" | $MERLIN single case-analysis -start 1:4 -end 1:4 -filename stacktrace.ml | grep -E -v "Raised|Called|Re-raised"
   {
     "class": "exception",
     "value": "Invalid_argument(\"get_every_pattern: [{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":0},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":11},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"value_binding\\\",\\\"children\\\":[{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":4},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":6},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"pattern (stacktrace.ml[1,0+4]..stacktrace.ml[1,0+6])\\\
     Tpat_construct \\\\\\\"()\\\\\\\"\\\
     []\\\
   \\\",\\\"children\\\":[]},{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":9},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":11},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"expression\\\",\\\"children\\\":[]}]}]\")
-  Raised at file \"stdlib.ml\", line 30, characters 20-45
-  Called from file \"src/analysis/destruct.ml\", line 426, characters 34-59
-  Called from file \"src/ocaml/utils/misc.ml\", line 62, characters 8-15
-  Re-raised at file \"src/ocaml/utils/misc.ml\", line 79, characters 10-24
-  Called from file \"src/ocaml/utils/misc.ml\", line 94, characters 10-14
-  Re-raised at file \"src/ocaml/utils/misc.ml\", line 96, characters 38-45
-  Called from file \"src/ocaml/typing/409/persistent_env.ml\", line 142, characters 10-109
-  Called from file \"src/utils/std.ml\", line 679, characters 8-12
-  Re-raised at file \"src/utils/std.ml\", line 681, characters 30-39
-  Called from file \"src/frontend/ocamlmerlin/new/new_commands.ml\", line 64, characters 15-53
-  Called from file \"src/utils/std.ml\", line 679, characters 8-12
-  Re-raised at file \"src/utils/std.ml\", line 681, characters 30-39
-  Called from file \"src/ocaml/utils/misc.ml\", line 62, characters 8-15
-  Re-raised at file \"src/ocaml/utils/misc.ml\", line 79, characters 10-24
-  Called from file \"src/utils/local_store.ml\", line 42, characters 8-12
-  Re-raised at file \"src/utils/local_store.ml\", line 52, characters 4-15
-  Called from file \"src/kernel/mocaml.ml\", line 18, characters 8-38
-  Re-raised at file \"src/kernel/mocaml.ml\", line 20, characters 42-53
-  Called from file \"src/frontend/ocamlmerlin/new/new_merlin.ml\", line 100, characters 14-110
   ",
     "notifications": []
   }
