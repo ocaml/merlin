@@ -5,6 +5,9 @@ install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.t
 script: |
   bash -ex .travis-opam.sh
 env:
+  global:
+  - EXTRA_DEPS="dot-merlin-reader"
+  - PINS="dot-merlin-reader.dev:."
   matrix:
   - OCAML_VERSION=4.02
     PACKAGE=merlin
