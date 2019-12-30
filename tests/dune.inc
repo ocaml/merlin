@@ -1,10 +1,12 @@
 
 (alias
  (name completion-application_context)(enabled_if (>= %{ocaml_version} 4.09.0))
+ (package merlin)
  (deps (:t ./test-dirs/completion/application_context.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/completion
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -16,6 +18,7 @@
 
 (alias
  (name completion-expansion)
+ (package merlin)
  (deps (:t ./test-dirs/completion/expansion.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
@@ -47,6 +50,7 @@
 
 (alias
  (name completion-parenthesize)
+ (package merlin)
  (deps (:t ./test-dirs/completion/parenthesize.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
@@ -63,6 +67,7 @@
 
 (alias
  (name config-dot-merlin-reader-erroneous-config)
+ (package merlin)
  (deps (:t ./test-dirs/config/dot-merlin-reader/erroneous-config.t)
        (source_tree ./test-dirs/config/dot-merlin-reader)
        %{bin:ocamlmerlin}
@@ -79,6 +84,7 @@
 
 (alias
  (name config-flags-invalid)
+ (package merlin)
  (deps (:t ./test-dirs/config/flags/invalid.t)
        (source_tree ./test-dirs/config/flags)
        %{bin:ocamlmerlin}
@@ -95,6 +101,7 @@
 
 (alias
  (name config-flags-nolabels)
+ (package merlin)
  (deps (:t ./test-dirs/config/flags/nolabels.t)
        (source_tree ./test-dirs/config/flags)
        %{bin:ocamlmerlin}
@@ -111,6 +118,7 @@
 
 (alias
  (name config-flags-unsafe)
+ (package merlin)
  (deps (:t ./test-dirs/config/flags/unsafe.t)
        (source_tree ./test-dirs/config/flags)
        %{bin:ocamlmerlin}
@@ -127,6 +135,7 @@
 
 (alias
  (name config-path-expansion)
+ (package merlin)
  (deps (:t ./test-dirs/config/path-expansion.t)
        (source_tree ./test-dirs/config)
        %{bin:ocamlmerlin}
@@ -143,10 +152,12 @@
 
 (alias
  (name deprecation-run)
+ (package merlin)
  (deps (:t ./test-dirs/deprecation/run.t)
        (source_tree ./test-dirs/deprecation)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/deprecation
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -158,6 +169,7 @@
 
 (alias
  (name destruct-basic)
+ (package merlin)
  (deps (:t ./test-dirs/destruct/basic.t)
        (source_tree ./test-dirs/destruct)
        %{bin:ocamlmerlin}
@@ -204,10 +216,12 @@
 
 (alias
  (name errors-error-in-constrained-env-test)
+ (package merlin)
  (deps (:t ./test-dirs/errors/error-in-constrained-env/test.t)
        (source_tree ./test-dirs/errors/error-in-constrained-env)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/errors/error-in-constrained-env
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -219,6 +233,7 @@
 
 (alias
  (name errors-inconsistent-assumptions-test)(enabled_if (< %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/errors/inconsistent-assumptions/test.t)
        (source_tree ./test-dirs/errors/inconsistent-assumptions)
        %{bin:ocamlmerlin}
@@ -235,6 +250,7 @@
 
 (alias
  (name errors-inconsistent-assumptions-test_408)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/errors/inconsistent-assumptions/test_408.t)
        (source_tree ./test-dirs/errors/inconsistent-assumptions)
        %{bin:ocamlmerlin}
@@ -251,6 +267,7 @@
 
 (alias
  (name errors-typing-after-parsing-test)
+ (package merlin)
  (deps (:t ./test-dirs/errors/typing-after-parsing/test.t)
        (source_tree ./test-dirs/errors/typing-after-parsing)
        %{bin:ocamlmerlin}
@@ -267,6 +284,7 @@
 
 (alias
  (name file-cache-test)
+ (package merlin)
  (deps (:t ./test-dirs/file-cache/test.t)
        (source_tree ./test-dirs/file-cache)
        %{bin:ocamlmerlin}
@@ -283,6 +301,7 @@
 
 (alias
  (name locate-ambiguity-not-in-env)
+ (package merlin)
  (deps (:t ./test-dirs/locate/ambiguity/not-in-env.t)
        (source_tree ./test-dirs/locate/ambiguity)
        %{bin:ocamlmerlin}
@@ -299,6 +318,7 @@
 
 (alias
  (name locate-ambiguity-rebinding)
+ (package merlin)
  (deps (:t ./test-dirs/locate/ambiguity/rebinding.t)
        (source_tree ./test-dirs/locate/ambiguity)
        %{bin:ocamlmerlin}
@@ -315,6 +335,7 @@
 
 (alias
  (name locate-context-detection-environment_on_open)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/environment_on_open.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -331,6 +352,7 @@
 
 (alias
  (name locate-context-detection-environment_on_open_bad)(enabled_if (< %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/environment_on_open_bad.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -347,6 +369,7 @@
 
 (alias
  (name locate-context-detection-field)
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/field.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -363,6 +386,7 @@
 
 (alias
  (name locate-context-detection-from_a_pattern)
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/from_a_pattern.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -379,6 +403,7 @@
 
 (alias
  (name locate-context-detection-label)
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/label.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -395,6 +420,7 @@
 
 (alias
  (name locate-context-detection-mod_constr)
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/mod_constr.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -411,6 +437,7 @@
 
 (alias
  (name locate-context-detection-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/context-detection/test.t)
        (source_tree ./test-dirs/locate/context-detection)
        %{bin:ocamlmerlin}
@@ -427,6 +454,7 @@
 
 (alias
  (name locate-functors-all_local)
+ (package merlin)
  (deps (:t ./test-dirs/locate/functors/all_local.t)
        (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
@@ -443,6 +471,7 @@
 
 (alias
  (name locate-functors-from_application)
+ (package merlin)
  (deps (:t ./test-dirs/locate/functors/from_application.t)
        (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
@@ -459,6 +488,7 @@
 
 (alias
  (name locate-functors-generative)
+ (package merlin)
  (deps (:t ./test-dirs/locate/functors/generative.t)
        (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
@@ -475,6 +505,7 @@
 
 (alias
  (name locate-functors-included)
+ (package merlin)
  (deps (:t ./test-dirs/locate/functors/included.t)
        (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
@@ -491,6 +522,7 @@
 
 (alias
  (name locate-functors-missed_shadowing)
+ (package merlin)
  (deps (:t ./test-dirs/locate/functors/missed_shadowing.t)
        (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
@@ -507,6 +539,7 @@
 
 (alias
  (name locate-functors-nested_applications)
+ (package merlin)
  (deps (:t ./test-dirs/locate/functors/nested_applications.t)
        (source_tree ./test-dirs/locate/functors)
        %{bin:ocamlmerlin}
@@ -523,6 +556,7 @@
 
 (alias
  (name locate-includes-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/includes/test.t)
        (source_tree ./test-dirs/locate/includes)
        %{bin:ocamlmerlin}
@@ -539,6 +573,7 @@
 
 (alias
  (name locate-issue802-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/issue802/test.t)
        (source_tree ./test-dirs/locate/issue802)
        %{bin:ocamlmerlin}
@@ -555,6 +590,7 @@
 
 (alias
  (name locate-issue845-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/issue845/test.t)
        (source_tree ./test-dirs/locate/issue845)
        %{bin:ocamlmerlin}
@@ -571,10 +607,12 @@
 
 (alias
  (name locate-issue949-run)
+ (package merlin)
  (deps (:t ./test-dirs/locate/issue949/run.t)
        (source_tree ./test-dirs/locate/issue949)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/locate/issue949
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -586,6 +624,7 @@
 
 (alias
  (name locate-local-definitions-issue798)
+ (package merlin)
  (deps (:t ./test-dirs/locate/local-definitions/issue798.t)
        (source_tree ./test-dirs/locate/local-definitions)
        %{bin:ocamlmerlin}
@@ -602,6 +641,7 @@
 
 (alias
  (name locate-local-definitions-issue806)
+ (package merlin)
  (deps (:t ./test-dirs/locate/local-definitions/issue806.t)
        (source_tree ./test-dirs/locate/local-definitions)
        %{bin:ocamlmerlin}
@@ -618,6 +658,7 @@
 
 (alias
  (name locate-looping-substitution-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/looping-substitution/test.t)
        (source_tree ./test-dirs/locate/looping-substitution)
        %{bin:ocamlmerlin}
@@ -634,6 +675,7 @@
 
 (alias
  (name locate-mutually-recursive-issue973)
+ (package merlin)
  (deps (:t ./test-dirs/locate/mutually-recursive/issue973.t)
        (source_tree ./test-dirs/locate/mutually-recursive)
        %{bin:ocamlmerlin}
@@ -650,6 +692,7 @@
 
 (alias
  (name locate-non-local-ignore-kept-locs-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/non-local/ignore-kept-locs/test.t)
        (source_tree ./test-dirs/locate/non-local/ignore-kept-locs)
        %{bin:ocamlmerlin}
@@ -666,6 +709,7 @@
 
 (alias
  (name locate-non-local-preference-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/non-local/preference/test.t)
        (source_tree ./test-dirs/locate/non-local/preference)
        %{bin:ocamlmerlin}
@@ -682,6 +726,7 @@
 
 (alias
  (name locate-partial-cmt-test)
+ (package merlin)
  (deps (:t ./test-dirs/locate/partial-cmt/test.t)
        (source_tree ./test-dirs/locate/partial-cmt)
        %{bin:ocamlmerlin}
@@ -698,6 +743,7 @@
 
 (alias
  (name locate-reconstruct-identifier-newlines)
+ (package merlin)
  (deps (:t ./test-dirs/locate/reconstruct-identifier/newlines.t)
        (source_tree ./test-dirs/locate/reconstruct-identifier)
        %{bin:ocamlmerlin}
@@ -714,6 +760,7 @@
 
 (alias
  (name locate-reconstruct-identifier-off_by_one)
+ (package merlin)
  (deps (:t ./test-dirs/locate/reconstruct-identifier/off_by_one.t)
        (source_tree ./test-dirs/locate/reconstruct-identifier)
        %{bin:ocamlmerlin}
@@ -730,6 +777,7 @@
 
 (alias
  (name locate-sig-substs-basic)
+ (package merlin)
  (deps (:t ./test-dirs/locate/sig-substs/basic.t)
        (source_tree ./test-dirs/locate/sig-substs)
        %{bin:ocamlmerlin}
@@ -761,6 +809,7 @@
 
 (alias
  (name misc-external-arity)
+ (package merlin)
  (deps (:t ./test-dirs/misc/external-arity.t)
        (source_tree ./test-dirs/misc)
        %{bin:ocamlmerlin}
@@ -777,6 +826,7 @@
 
 (alias
  (name misc-load_path)
+ (package merlin)
  (deps (:t ./test-dirs/misc/load_path.t)
        (source_tree ./test-dirs/misc)
        %{bin:ocamlmerlin}
@@ -793,6 +843,7 @@
 
 (alias
  (name motion-jump)
+ (package merlin)
  (deps (:t ./test-dirs/motion/jump.t)
        (source_tree ./test-dirs/motion)
        %{bin:ocamlmerlin}
@@ -809,6 +860,7 @@
 
 (alias
  (name motion-phrase)
+ (package merlin)
  (deps (:t ./test-dirs/motion/phrase.t)
        (source_tree ./test-dirs/motion)
        %{bin:ocamlmerlin}
@@ -825,6 +877,7 @@
 
 (alias
  (name no-escape-test)
+ (package merlin)
  (deps (:t ./test-dirs/no-escape/test.t)
        (source_tree ./test-dirs/no-escape)
        %{bin:ocamlmerlin}
@@ -841,6 +894,7 @@
 
 (alias
  (name occurrences-basic)
+ (package merlin)
  (deps (:t ./test-dirs/occurrences/basic.t)
        (source_tree ./test-dirs/occurrences)
        %{bin:ocamlmerlin}
@@ -857,6 +911,7 @@
 
 (alias
  (name occurrences-issue827)
+ (package merlin)
  (deps (:t ./test-dirs/occurrences/issue827.t)
        (source_tree ./test-dirs/occurrences)
        %{bin:ocamlmerlin}
@@ -873,10 +928,12 @@
 
 (alias
  (name outline-run)
+ (package merlin)
  (deps (:t ./test-dirs/outline/run.t)
        (source_tree ./test-dirs/outline)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/outline
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -888,6 +945,7 @@
 
 (alias
  (name polarity-search-older)(enabled_if (< %{ocaml_version} 4.07.0))
+ (package merlin)
  (deps (:t ./test-dirs/polarity-search/older.t)
        (source_tree ./test-dirs/polarity-search)
        %{bin:ocamlmerlin}
@@ -904,6 +962,7 @@
 
 (alias
  (name polarity-search-recent)(enabled_if (>= %{ocaml_version} 4.07.0))
+ (package merlin)
  (deps (:t ./test-dirs/polarity-search/recent.t)
        (source_tree ./test-dirs/polarity-search)
        %{bin:ocamlmerlin}
@@ -920,6 +979,7 @@
 
 (alias
  (name pp-simple-pp)
+ (package merlin)
  (deps (:t ./test-dirs/pp/simple-pp.t)
        (source_tree ./test-dirs/pp)
        %{bin:ocamlmerlin}
@@ -936,6 +996,7 @@
 
 (alias
  (name recovery-test)(enabled_if (>= %{ocaml_version} 4.04.0))
+ (package merlin)
  (deps (:t ./test-dirs/recovery/test.t)
        (source_tree ./test-dirs/recovery)
        %{bin:ocamlmerlin}
@@ -952,6 +1013,7 @@
 
 (alias
  (name short-paths-test)(enabled_if (>= %{ocaml_version} 4.10.0))
+ (package merlin)
  (deps (:t ./test-dirs/short-paths/test.t)
        (source_tree ./test-dirs/short-paths)
        %{bin:ocamlmerlin}
@@ -968,10 +1030,12 @@
 
 (alias
  (name short-paths-test_pre_410)(enabled_if (< %{ocaml_version} 4.10.0))
+ (package merlin)
  (deps (:t ./test-dirs/short-paths/test_pre_410.t)
        (source_tree ./test-dirs/short-paths)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/short-paths
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -983,10 +1047,12 @@
 
 (alias
  (name type-enclosing-constructors_and_paths-cons)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/constructors_and_paths/cons.t)
        (source_tree ./test-dirs/type-enclosing/constructors_and_paths)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/constructors_and_paths
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -998,10 +1064,12 @@
 
 (alias
  (name type-enclosing-misc-let)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/misc/let.t)
        (source_tree ./test-dirs/type-enclosing/misc)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/misc
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1013,10 +1081,12 @@
 
 (alias
  (name type-enclosing-misc-letop)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/misc/letop.t)
        (source_tree ./test-dirs/type-enclosing/misc)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/misc
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1028,6 +1098,7 @@
 
 (alias
  (name type-enclosing-modules-alias)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/modules/alias.t)
        (source_tree ./test-dirs/type-enclosing/modules)
        %{bin:ocamlmerlin}
@@ -1044,10 +1115,12 @@
 
 (alias
  (name type-enclosing-modules-issue1003)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/modules/issue1003.t)
        (source_tree ./test-dirs/type-enclosing/modules)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/modules
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1059,10 +1132,12 @@
 
 (alias
  (name type-enclosing-modules-module_type)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/modules/module_type.t)
        (source_tree ./test-dirs/type-enclosing/modules)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/modules
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1074,10 +1149,12 @@
 
 (alias
  (name type-enclosing-modules-not-in-env)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/modules/not-in-env.t)
        (source_tree ./test-dirs/type-enclosing/modules)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/modules
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1089,10 +1166,12 @@
 
 (alias
  (name type-enclosing-objects-test_correct_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/objects/test_correct_pre_408.t)
        (source_tree ./test-dirs/type-enclosing/objects)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/objects
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1104,10 +1183,12 @@
 
 (alias
  (name type-enclosing-objects-test_wrong_from_408)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/objects/test_wrong_from_408.t)
        (source_tree ./test-dirs/type-enclosing/objects)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/objects
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1119,10 +1200,12 @@
 
 (alias
  (name type-enclosing-records-issue864)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/records/issue864.t)
        (source_tree ./test-dirs/type-enclosing/records)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/records
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1134,10 +1217,12 @@
 
 (alias
  (name type-enclosing-records-record)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/records/record.t)
        (source_tree ./test-dirs/type-enclosing/records)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/records
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1149,10 +1234,12 @@
 
 (alias
  (name type-enclosing-recovery-issue1109_from_406)(enabled_if (>= %{ocaml_version} 4.06.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/recovery/issue1109_from_406.t)
        (source_tree ./test-dirs/type-enclosing/recovery)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/recovery
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1164,10 +1251,12 @@
 
 (alias
  (name type-enclosing-recovery-issue1109_pre_406)(enabled_if (< %{ocaml_version} 4.06.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/recovery/issue1109_pre_406.t)
        (source_tree ./test-dirs/type-enclosing/recovery)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/recovery
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1179,10 +1268,12 @@
 
 (alias
  (name type-enclosing-types-gadt_correct_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/types/gadt_correct_pre_408.t)
        (source_tree ./test-dirs/type-enclosing/types)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/types
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1194,10 +1285,12 @@
 
 (alias
  (name type-enclosing-types-gadt_wrong_from_408)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/types/gadt_wrong_from_408.t)
        (source_tree ./test-dirs/type-enclosing/types)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/types
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1209,10 +1302,12 @@
 
 (alias
  (name type-enclosing-types-types)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/types/types.t)
        (source_tree ./test-dirs/type-enclosing/types)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/types
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1224,10 +1319,12 @@
 
 (alias
  (name type-enclosing-types-variants)
+ (package merlin)
  (deps (:t ./test-dirs/type-enclosing/types/variants.t)
        (source_tree ./test-dirs/type-enclosing/types)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/type-enclosing/types
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1239,6 +1336,7 @@
 
 (alias
  (name type-expr-test)
+ (package merlin)
  (deps (:t ./test-dirs/type-expr/test.t)
        (source_tree ./test-dirs/type-expr)
        %{bin:ocamlmerlin}
@@ -1255,10 +1353,12 @@
 
 (alias
  (name typer-cache-test)
+ (package merlin)
  (deps (:t ./test-dirs/typer-cache/test.t)
        (source_tree ./test-dirs/typer-cache)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/typer-cache
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -1270,6 +1370,7 @@
 
 (alias
  (name warnings-backtrack)
+ (package merlin)
  (deps (:t ./test-dirs/warnings/backtrack.t)
        (source_tree ./test-dirs/warnings)
        %{bin:ocamlmerlin}

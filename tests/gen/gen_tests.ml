@@ -23,6 +23,7 @@ let gen_rule dir file =
   Printf.printf {|
 (alias
  (name %s)%s
+ (package merlin)
  (deps (:t %s)
        (source_tree %s)
        %%{bin:ocamlmerlin}
