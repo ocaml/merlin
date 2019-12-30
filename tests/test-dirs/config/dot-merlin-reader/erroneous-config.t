@@ -23,3 +23,19 @@ And look at merlin's config:
       "Failed to load packages: does-not-exist"
     ]
   }
+
+Also, see that the failure is reported to the user:
+
+  $ echo | $MERLIN single errors -filename test.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "type": "unknown",
+        "sub": [],
+        "valid": true,
+        "message": "Failed to load packages: does-not-exist"
+      }
+    ],
+    "notifications": []
+  }

@@ -692,6 +692,15 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
          (if parsing then parser_errors else []) @
          (if typing then typer_errors else []))
     in
+    (* Add configuration errors *)
+    let errors =
+      let cfg = Mpipeline.final_config pipeline in
+      let failures =
+        (* FIXME: the source is known *)
+        List.map ~f:(Location.error ~source:Unknown) cfg.merlin.failures
+      in
+      failures @ errors
+    in
     (* Filter anything after first parse error *)
     let limit = !first_syntax_error in
     if limit = Lexing.dummy_pos then errors else (
