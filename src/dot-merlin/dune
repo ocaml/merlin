@@ -1,5 +1,5 @@
 (executable
- (package merlin)
+ (package dot-merlin-reader)
  (name dot_merlin_reader)
  (public_name dot-merlin-reader)
  (libraries findlib merlin_utils utils str))
