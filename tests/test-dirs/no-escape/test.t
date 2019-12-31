@@ -211,3 +211,57 @@ unused case after
     "notifications": []
   }
 
+Syntax errors also shouldn't escape:
+
+  $ echo "let f (_ : (module S with type 'a t = int)) = ()" | \
+  > $MERLIN single errors -filename "invalid_package_type.ml"
+  {
+    "class": "exception",
+    "value": "Syntaxerr.Error(_)
+  Raised at file \"src/ocaml/preprocess/parser_raw.mly\", line 498, characters 4-69
+  Called from file \"src/ocaml/preprocess/parser_raw.mly\", line 504, characters 10-56
+  Called from file \"list.ml\", line 92, characters 20-23
+  Called from file \"src/ocaml/preprocess/parser_raw.mly\", line 525, characters 12-35
+  Called from file \"src/ocaml/preprocess/parser_raw.mly\", line 3325, characters 21-53
+  Called from file \"src/utils/menhirLib.ml\", line 1885, characters 18-44
+  Called from file \"src/utils/std.ml\", line 93, characters 17-25
+  Called from file \"src/kernel/mreader_recover.ml\", line 210, characters 10-57
+  Called from file \"src/kernel/mreader_recover.ml\", line 248, characters 28-38
+  Called from file \"src/kernel/mreader_parser.ml\", line 130, characters 21-35
+  Called from file \"src/kernel/mreader_parser.ml\", line 175, characters 20-48
+  Called from file \"src/kernel/mreader_parser.ml\", line 190, characters 6-42
+  Called from file \"src/ocaml/utils/misc.ml\", line 62, characters 8-15
+  Re-raised at file \"src/ocaml/utils/misc.ml\", line 79, characters 10-24
+  Called from file \"src/kernel/mreader_parser.ml\", line 204, characters 20-56
+  Called from file \"src/kernel/mreader.ml\", line 49, characters 15-77
+  Called from file \"src/kernel/mpipeline.ml\", line 134, characters 19-62
+  Called from file \"camlinternalLazy.ml\", line 31, characters 17-27
+  Re-raised at file \"camlinternalLazy.ml\", line 36, characters 4-11
+  Re-raised at file \"src/kernel/mpipeline.ml\", line 19, characters 34-49
+  Called from file \"camlinternalLazy.ml\", line 31, characters 17-27
+  Re-raised at file \"camlinternalLazy.ml\", line 36, characters 4-11
+  Called from file \"camlinternalLazy.ml\", line 31, characters 17-27
+  Re-raised at file \"camlinternalLazy.ml\", line 36, characters 4-11
+  Re-raised at file \"src/kernel/mpipeline.ml\", line 19, characters 34-49
+  Called from file \"camlinternalLazy.ml\", line 31, characters 17-27
+  Re-raised at file \"camlinternalLazy.ml\", line 36, characters 4-11
+  Called from file \"camlinternalLazy.ml\", line 31, characters 17-27
+  Re-raised at file \"camlinternalLazy.ml\", line 36, characters 4-11
+  Re-raised at file \"src/kernel/mpipeline.ml\", line 19, characters 34-49
+  Called from file \"camlinternalLazy.ml\", line 31, characters 17-27
+  Re-raised at file \"camlinternalLazy.ml\", line 36, characters 4-11
+  Called from file \"src/kernel/mpipeline.ml\", line 104, characters 21-30
+  Called from file \"src/frontend/query_commands.ml\", line 587, characters 16-47
+  Called from file \"src/frontend/ocamlmerlin/new/new_commands.ml\", line 64, characters 15-53
+  Called from file \"src/utils/std.ml\", line 679, characters 8-12
+  Re-raised at file \"src/utils/std.ml\", line 681, characters 30-39
+  Called from file \"src/ocaml/utils/misc.ml\", line 62, characters 8-15
+  Re-raised at file \"src/ocaml/utils/misc.ml\", line 79, characters 10-24
+  Called from file \"src/utils/local_store.ml\", line 42, characters 8-12
+  Re-raised at file \"src/utils/local_store.ml\", line 52, characters 4-15
+  Called from file \"src/kernel/mocaml.ml\", line 18, characters 8-38
+  Re-raised at file \"src/kernel/mocaml.ml\", line 20, characters 42-53
+  Called from file \"src/frontend/ocamlmerlin/new/new_merlin.ml\", line 100, characters 14-110
+  ",
+    "notifications": []
+  }
