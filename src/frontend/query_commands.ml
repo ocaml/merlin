@@ -373,7 +373,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let get_doc =
       if not with_doc then None else
         let local_defs = Mtyper.get_typedtree typer in
-        let config = Mpipeline.final_config pipeline in
         Some (Locate.get_doc ~config ~env ~local_defs
                 ~comments:(Mpipeline.reader_comments pipeline) ~pos)
     in
