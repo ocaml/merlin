@@ -211,3 +211,41 @@ unused case after
     "notifications": []
   }
 
+Syntax errors also shouldn't escape:
+
+  $ echo "let f (_ : (module S with type 'a t = int)) = ()" | \
+  > $MERLIN single errors -filename "invalid_package_type.ml"
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 11
+        },
+        "end": {
+          "line": 1,
+          "col": 42
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module type S"
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 26
+        },
+        "end": {
+          "line": 1,
+          "col": 41
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "invalid package type: parametrized types are not supported"
+      }
+    ],
+    "notifications": []
+  }
