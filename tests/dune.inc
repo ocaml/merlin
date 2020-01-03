@@ -90,6 +90,21 @@
 (alias (name runtest) (deps (alias config-path-expansion)))
 
 (alias
+ (name deprecation-run)
+ (deps (:t ./test-dirs/deprecation/run.t)
+       (source_tree ./test-dirs/deprecation)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/deprecation
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias deprecation-run)))
+
+(alias
  (name destruct-basic)
  (deps (:t ./test-dirs/destruct/basic.t)
        (source_tree ./test-dirs/destruct)

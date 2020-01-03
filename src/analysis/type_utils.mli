@@ -67,3 +67,5 @@ val lookup_module : Longident.t ->
 
 val read_doc_attributes : Parsetree.attributes -> (string * Location.t) option
 (** [read_doc_attributes] looks for a docstring in an attribute list. *)
+
+val is_deprecated : Parsetree.attributes -> bool

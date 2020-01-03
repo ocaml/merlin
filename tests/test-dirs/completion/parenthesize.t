@@ -5,42 +5,49 @@
       "name": "()",
       "kind": "Constructor",
       "desc": "MyList.u",
-      "info": ""
+      "info": "",
+      "deprecated": false
     },
     {
       "name": "(::)",
       "kind": "Constructor",
       "desc": "'a * 'a MyList.t -> 'a MyList.t",
-      "info": ""
+      "info": "",
+      "deprecated": false
     },
     {
       "name": "(mod)",
       "kind": "Value",
       "desc": "MyList.u",
-      "info": ""
+      "info": "",
+      "deprecated": false
     },
     {
       "name": "[]",
       "kind": "Constructor",
       "desc": "'a MyList.t",
-      "info": ""
+      "info": "",
+      "deprecated": false
     },
     {
       "name": "random",
       "kind": "Value",
       "desc": "int",
-      "info": ""
+      "info": "",
+      "deprecated": false
     },
     {
       "name": "t",
       "kind": "Type",
       "desc": "type 'a t = (::) of 'a * 'a MyList.t | []",
-      "info": ""
+      "info": "",
+      "deprecated": false
     },
     {
       "name": "u",
       "kind": "Type",
       "desc": "type u = ()",
-      "info": ""
+      "info": "",
+      "deprecated": false
     }
   ]

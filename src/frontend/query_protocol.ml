@@ -34,6 +34,7 @@ struct
            `Module|`Modtype|`Type|`MethodCall];
     desc: 'desc;
     info: 'desc;
+    deprecated: bool;
   }
 
   type entry = string raw_entry
