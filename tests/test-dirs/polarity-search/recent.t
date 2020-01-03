@@ -8,22 +8,21 @@ A few simple tests that show all the things we want to preserve or improve:
 
   $ echo "" | $MERLIN single search-by-polarity -query "-float +int64" \
   > -position 1:0 -filename test.ml | \
-  > jq '.value.entries[] | del(.info) | del(.kind)'
+  > jq '.value.entries[] | del(.info) | del(.kind) | del(.deprecated)'
   {
     "name": "Stdlib__int64.bits_of_float",
-    "desc": "float -> int64",
-    "deprecated": false
+    "desc": "float -> int64"
   }
   {
     "name": "Stdlib__int64.of_float",
-    "desc": "float -> int64",
-    "deprecated": false
+    "desc": "float -> int64"
   }
 
 - Duplicated elements
 
   $ echo "" | $MERLIN single search-by-polarity -safe-string \
   > -query "-int +string" -position 1:0 -filename test.ml | \
+  > tr '\n' ' ' | jq '.value.entries[] |= del (.deprecated)' | \
   > head -n16
   {
     "class": "return",
@@ -33,14 +32,14 @@ A few simple tests that show all the things we want to preserve or improve:
           "name": "string_of_int",
           "kind": "Value",
           "desc": "int -> string",
-          "info": "",
-          "deprecated": false
+          "info": ""
         },
         {
           "name": "string_of_int",
           "kind": "Value",
           "desc": "int -> string",
-          "info": "",
+          "info": ""
+        },
 
 # To keep
 
@@ -48,52 +47,52 @@ A few simple tests that show all the things we want to preserve or improve:
 
   $ echo "" | $MERLIN single search-by-polarity \
   > -query "-float +fun +fun +float" -position 1:0 -filename test.ml | \
-  > tr '\n' ' ' | jq '.value.entries[] | del(.info) | del(.kind)' | head -n48
+  > tr '\n' ' ' | jq '.value.entries[] | del(.info) | del(.kind) | del (.deprecated)' | head -n48
   {
     "name": "**",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "**",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "*.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "*.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "+.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "+.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "-.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "-.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "/.",
-    "desc": "float -> float -> float",
-    "deprecated": false
+    "desc": "float -> float -> float"
   }
   {
     "name": "/.",
-    "desc": "float -> float -> float",
+    "desc": "float -> float -> float"
+  }
+  {
+    "name": "atan2",
+    "desc": "float -> float -> float"
+  }
+  {
+    "name": "atan2",
+    "desc": "float -> float -> float"
+  }

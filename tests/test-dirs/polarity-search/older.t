@@ -7,7 +7,7 @@ We should probably rely on our own.
 
   $ echo "" | $MERLIN single search-by-polarity -query "-float +int64" \
   > -position 1:0 -filename test.ml | \
-  > jq '.value.entries[] | del(.info) | del(.kind)'
+  > jq '.value.entries[] | del(.info) | del(.kind) | del (.deprecated)'
   {
     "name": "Int64.bits_of_float",
     "desc": "float -> int64"
@@ -43,7 +43,7 @@ There is less duplication than on versions >= 4.07, but there still is some.
 
   $ echo "" | $MERLIN single search-by-polarity \
   > -query "-float +fun +fun +float" -position 1:0 -filename test.ml | \
-  > jq '.value.entries[] | del(.info) | del(.kind)'
+  > jq '.value.entries[] | del(.info) | del(.kind) | del (.deprecated)'
   {
     "name": "**",
     "desc": "float -> float -> float"
