@@ -631,44 +631,11 @@ type persistent_module = {
 
 (* Short paths basis *)
 
-let short_paths_basis = sref Short_paths.Basis.create
-
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
-(* FIXME
-let register_pers_for_short_paths ps =
-  let deps, alias_deps =
-    List.fold_left
-      (fun (deps, alias_deps) (name, digest) ->
-         Short_paths.Basis.add !short_paths_basis name;
-         match digest with
-         | None -> deps, name :: alias_deps
-         | Some _ -> name :: deps, alias_deps)
-      ([], []) ps.ps_crcs
-  in
-  let path = Pident (Ident.create_persistent ps.ps_name) in
-  let components =
-    lazy (!short_paths_module_components_desc' empty path ps.ps_comps)
-  in
-  let desc =
-    Short_paths.Desc.Module.(Fresh (Signature components))
-  in
-  let is_deprecated =
-    List.exists
-      (function
-        | Alerts alerts ->
-          String.Map.mem "deprecated" alerts ||
-          String.Map.mem "ocaml.deprecated" alerts
-        | _ -> false)
-      ps.ps_flags
-  in
-  let deprecated =
-    if is_deprecated then Short_paths.Desc.Deprecated
-    else Short_paths.Desc.Not_deprecated
-  in
-  Short_paths.Basis.load !short_paths_basis ps.ps_name
-    deps alias_deps desc deprecated
-*)
+let short_paths_components name pm =
+  let path = Pident (Ident.create_persistent name) in
+  lazy (!short_paths_module_components_desc' empty path pm.pm_components)
 
 exception Cmi_cache_store of signature lazy_t
 
@@ -732,16 +699,20 @@ let import_crcs ~source crcs =
   Persistent_env.import_crcs !persistent_env ~source crcs
 
 let read_pers_mod modname filename =
-  Persistent_env.read !persistent_env read_sign_of_cmi modname filename
+  Persistent_env.read !persistent_env
+    read_sign_of_cmi short_paths_components modname filename
 
 let find_pers_mod name =
-  Persistent_env.find !persistent_env read_sign_of_cmi name
+  Persistent_env.find !persistent_env
+    read_sign_of_cmi short_paths_components name
 
 let check_pers_mod ~loc name =
-  Persistent_env.check !persistent_env read_sign_of_cmi ~loc name
+  Persistent_env.check !persistent_env
+    read_sign_of_cmi short_paths_components ~loc name
 
 let crc_of_unit name =
-  Persistent_env.crc_of_unit !persistent_env read_sign_of_cmi name
+  Persistent_env.crc_of_unit !persistent_env
+    read_sign_of_cmi short_paths_components name
 
 let is_imported_opaque modname =
   Persistent_env.is_imported_opaque !persistent_env modname
@@ -2816,7 +2787,8 @@ let update_short_paths env =
   let env, short_paths =
     match env.short_paths with
     | None ->
-      let short_paths = Short_paths.initial !short_paths_basis in
+      let basis = Persistent_env.short_paths_basis !persistent_env in
+      let short_paths = Short_paths.initial basis in
       let env = { env with short_paths = Some short_paths } in
       env, short_paths
     | Some short_paths -> env, short_paths
@@ -2833,7 +2805,9 @@ let update_short_paths env =
 
 let short_paths env =
   match env.short_paths with
-  | None -> Short_paths.initial !short_paths_basis
+  | None ->
+    let basis = Persistent_env.short_paths_basis !persistent_env in
+    Short_paths.initial basis
   | Some short_paths -> short_paths
 
 (* Make the initial environment *)

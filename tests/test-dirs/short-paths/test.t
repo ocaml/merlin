@@ -380,7 +380,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type Dep.M.t"
+        "message": "This expression has type int but an expression was expected of type Dep.t"
       }
     ],
     "notifications": []

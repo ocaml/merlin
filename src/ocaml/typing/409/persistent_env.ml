@@ -71,6 +71,7 @@ type 'a t = {
   imported_opaque_units: String.Set.t ref;
   crc_units: Consistbl.t;
   can_load_cmis: can_load_cmis ref;
+  short_paths_basis: Short_paths.Basis.t ref;
 }
 
 let empty () = {
@@ -79,6 +80,7 @@ let empty () = {
   imported_opaque_units = ref String.Set.empty;
   crc_units = Consistbl.create ();
   can_load_cmis = ref Can_load_cmis;
+  short_paths_basis = ref (Short_paths.Basis.create ());
 }
 
 let clear penv =
@@ -88,12 +90,14 @@ let clear penv =
     imported_opaque_units;
     crc_units;
     can_load_cmis;
+    short_paths_basis;
   } = penv in
   Hashtbl.clear persistent_structures;
   imported_units := String.Set.empty;
   imported_opaque_units := String.Set.empty;
   Consistbl.clear crc_units;
   can_load_cmis := Can_load_cmis;
+  short_paths_basis := Short_paths.Basis.create ();
   ()
 
 let clear_missing {persistent_structures; _} =
@@ -135,6 +139,8 @@ let can_load_cmis penv =
   !(penv.can_load_cmis)
 let set_can_load_cmis penv setting =
   penv.can_load_cmis := setting
+let short_paths_basis penv =
+  !(penv.short_paths_basis)
 
 let without_cmis penv f x =
   let log = EnvLazy.log () in
@@ -152,6 +158,36 @@ let fold {persistent_structures; _} f x =
       | Found (_, pm) -> f modname pm x)
     persistent_structures x
 
+let register_pers_for_short_paths penv ps components =
+  let deps, alias_deps =
+    List.fold_left
+      (fun (deps, alias_deps) (name, digest) ->
+         Short_paths.Basis.add (short_paths_basis penv) name;
+         match digest with
+         | None -> deps, name :: alias_deps
+         | Some _ -> name :: deps, alias_deps)
+      ([], []) ps.ps_crcs
+  in
+  let desc =
+    Short_paths.Desc.Module.(Fresh (Signature components))
+  in
+  let is_deprecated =
+    List.exists
+      (function
+        | Alerts alerts ->
+          String.Map.mem "deprecated" alerts ||
+          String.Map.mem "ocaml.deprecated" alerts
+        | _ -> false)
+      ps.ps_flags
+  in
+  let deprecated =
+    if is_deprecated then Short_paths.Desc.Deprecated
+    else Short_paths.Desc.Not_deprecated
+  in
+  Short_paths.Basis.load (short_paths_basis penv) ps.ps_name
+    deps alias_deps desc deprecated
+
+
 (* Reading persistent structures from .cmi files *)
 
 let save_pers_struct penv crc ps pm =
@@ -168,7 +204,7 @@ let save_pers_struct penv crc ps pm =
   Consistbl.set crc_units modname crc ps.ps_filename;
   add_import penv modname
 
-let acknowledge_pers_struct penv check modname pers_sig pm =
+let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
   let { Persistent_signature.filename; cmi } = pers_sig in
   let name = cmi.cmi_name in
   let crcs = cmi.cmi_crcs in
@@ -194,17 +230,21 @@ let acknowledge_pers_struct penv check modname pers_sig pm =
   if check then check_consistency penv ps;
   let {persistent_structures; _} = penv in
   Hashtbl.add persistent_structures modname (Found (ps, pm));
+  register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm);
   ps
 
-let read_pers_struct penv val_of_pers_sig check modname filename =
+let read_pers_struct
+      penv val_of_pers_sig short_path_comps check modname filename =
   add_import penv modname;
   let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
   let pers_sig = { Persistent_signature.filename; cmi; cmi_cache } in
   let pm = val_of_pers_sig pers_sig in
-  let ps = acknowledge_pers_struct penv check modname pers_sig pm in
+  let ps =
+    acknowledge_pers_struct penv short_path_comps check modname pers_sig pm
+  in
   (ps, pm)
 
-let find_pers_struct penv val_of_pers_sig check name =
+let find_pers_struct penv val_of_pers_sig short_path_comps check name =
   let {persistent_structures; _} = penv in
   if name = "*predef*" then raise Not_found;
   match Hashtbl.find persistent_structures name with
@@ -223,13 +263,13 @@ let find_pers_struct penv val_of_pers_sig check name =
         in
         add_import penv name;
         let pm = val_of_pers_sig psig in
-        let ps = acknowledge_pers_struct penv check name psig pm in
+        let ps = acknowledge_pers_struct penv short_path_comps check name psig pm in
         (ps, pm)
 
 (* Emits a warning if there is no valid cmi for name *)
-let check_pers_struct penv f ~loc name =
+let check_pers_struct penv f1 f2 ~loc name =
   try
-    ignore (find_pers_struct penv f false name)
+    ignore (find_pers_struct penv f1 f2 false name)
   with
   | Not_found ->
       let warn = Warnings.No_cmi_file(name, None) in
@@ -258,13 +298,13 @@ let check_pers_struct penv f ~loc name =
       let warn = Warnings.No_cmi_file(name, Some msg) in
         Location.prerr_warning loc warn
 
-let read penv f modname filename =
-  snd (read_pers_struct penv f true modname filename)
+let read penv f1 f2 modname filename =
+  snd (read_pers_struct penv f1 f2 true modname filename)
 
-let find penv f name =
-  snd (find_pers_struct penv f true name)
+let find penv f1 f2 name =
+  snd (find_pers_struct penv f1 f2 true name)
 
-let check penv f ~loc name =
+let check penv f1 f2 ~loc name =
   let {persistent_structures; _} = penv in
   if not (Hashtbl.mem persistent_structures name) then begin
     (* PR#6843: record the weak dependency ([add_import]) regardless of
@@ -273,11 +313,11 @@ let check penv f ~loc name =
     add_import penv name;
     if (Warnings.is_active (Warnings.No_cmi_file("", None))) then
       !add_delayed_check_forward
-        (fun () -> check_pers_struct penv f ~loc name)
+        (fun () -> check_pers_struct penv f1 f2 ~loc name)
   end
 
-let crc_of_unit penv f name =
-  let (ps, _pm) = find_pers_struct penv f true name in
+let crc_of_unit penv f1 f2 name =
+  let (ps, _pm) = find_pers_struct penv f1 f2 true name in
   let crco =
     try
       List.assoc name ps.ps_crcs
