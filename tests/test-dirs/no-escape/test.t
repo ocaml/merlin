@@ -250,19 +250,60 @@ Syntax errors also shouldn't escape:
     "notifications": []
   }
 
-Env initialization errors should also be caught:
+Env initialization errors should also be caught, though it is currently
+difficult to report them if the buffer is empty, therefore there should be
+a different behavior between:
 
   $ echo "" | $MERLIN single errors -open Absent_unit -filename "env_init.ml"
   {
-    "class": "error",
-    "value": "Unbound module Absent_unit",
+    "class": "return",
+    "value": [],
     "notifications": []
   }
+
+And:
+
+  $ echo "let x = 3" | \
+  > $MERLIN single errors -open Absent_unit -filename "env_init.ml" | \
+  > jq ".value |= (map(del(.start.line) | del(.end.line)))"
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "col": -1
+        },
+        "end": {
+          "col": -1
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module Absent_unit"
+      }
+    ],
+    "notifications": []
+  }
+
+And of course, it should never leak for other requests:
 
   $ echo "" | $MERLIN single type-enclosing -position 1:0 -expression "3" \
   > -open Absent_unit -filename "env_init.ml"
   {
-    "class": "error",
-    "value": "Unbound module Absent_unit",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": -1
+        },
+        "end": {
+          "line": 1,
+          "col": 0
+        },
+        "type": "int",
+        "tail": "no"
+      }
+    ],
     "notifications": []
   }
