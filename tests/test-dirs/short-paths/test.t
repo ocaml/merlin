@@ -1,3 +1,5 @@
+  $ $OCAMLC -c dep.mli
+
   $ $MERLIN single errors -filename test.ml < test.ml
   {
     "class": "return",
@@ -172,6 +174,20 @@
     val foo : int -> t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
   File \"test.ml\", line 85, characters 8-11: Actual declaration"
+      },
+      {
+        "start": {
+          "line": 90,
+          "col": 18
+        },
+        "end": {
+          "line": 90,
+          "col": 19
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This expression has type int but an expression was expected of type Dep.M.t"
       }
     ],
     "notifications": []
@@ -351,6 +367,20 @@
     val foo : t -> t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
   File \"test.ml\", line 85, characters 8-11: Actual declaration"
+      },
+      {
+        "start": {
+          "line": 90,
+          "col": 18
+        },
+        "end": {
+          "line": 90,
+          "col": 19
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This expression has type int but an expression was expected of type Dep.M.t"
       }
     ],
     "notifications": []
