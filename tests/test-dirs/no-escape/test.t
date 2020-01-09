@@ -249,3 +249,20 @@ Syntax errors also shouldn't escape:
     ],
     "notifications": []
   }
+
+Env initialization errors should also be caught:
+
+  $ echo "" | $MERLIN single errors -open Absent_unit -filename "env_init.ml"
+  {
+    "class": "error",
+    "value": "Unbound module Absent_unit",
+    "notifications": []
+  }
+
+  $ echo "" | $MERLIN single type-enclosing -position 1:0 -expression "3" \
+  > -open Absent_unit -filename "env_init.ml"
+  {
+    "class": "error",
+    "value": "Unbound module Absent_unit",
+    "notifications": []
+  }
