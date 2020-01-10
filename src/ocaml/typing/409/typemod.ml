@@ -154,7 +154,11 @@ let initial_env ~loc ~safe_string ~initially_opened_module
   let open_module env m =
     let open Asttypes in
     let lid = {loc; txt = Longident.parse m } in
-    snd (type_open_ Override env lid.loc lid)
+    try
+      snd (type_open_ Override env lid.loc lid)
+    with Typetexp.Error _ as exn ->
+      Msupport.raise_error exn;
+      env
   in
   let add_units env units =
     String.Set.fold
