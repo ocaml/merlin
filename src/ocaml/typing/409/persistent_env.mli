@@ -50,19 +50,24 @@ type 'a t
 
 val empty : unit -> 'a t
 
+val short_paths_basis : 'a t -> Short_paths.Basis.t
+
 val clear : 'a t -> unit
 val clear_missing : 'a t -> unit
 
 val fold : 'a t -> (modname -> 'a -> 'b -> 'b) -> 'b -> 'b
 
 val read : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> modname -> filepath -> 'a
 val find : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> modname -> 'a
 
 val find_in_cache : 'a t -> modname -> 'a option
 
 val check : 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> modname -> unit
 
 (* [looked_up penv md] checks if one has already tried
@@ -96,7 +101,9 @@ val import_crcs : 'a t -> source:filepath -> crcs -> unit
 val imports : 'a t -> crcs
 
 (* Return the CRC of the interface of the given compilation unit *)
-val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a) -> modname -> Digest.t
+val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a)
+  -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
+  -> modname -> Digest.t
 
 (* Forward declaration to break mutual recursion with Typecore. *)
 val add_delayed_check_forward: ((unit -> unit) -> unit) ref

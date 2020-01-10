@@ -84,3 +84,7 @@ module Bar = Functor (struct
 
     let foo _i = "haha"
   end)
+
+(* #1082 *)
+
+let x : Dep.M.t = 5
