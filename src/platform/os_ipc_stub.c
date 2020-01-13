@@ -311,7 +311,7 @@ value ml_merlin_server_accept(value server, value val_timeout)
         }
       }
       env = caml_alloc_string(i - env_start);
-      memcpy(String_val(env), &buffer[env_start], i - env_start);
+      memcpy((char *)String_val(env), &buffer[env_start], i - env_start);
     }
 
     // Extract remaining args

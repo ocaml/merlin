@@ -175,7 +175,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env cmi =
            | None -> None
            | Some cmi -> Some (output_cmi temp_file_name oc cmi)
          in
-         let source_digest = Option.map Digest.file sourcefile in
+         let source_digest = Option.map ~f:Digest.file sourcefile in
          let cmt = {
            cmt_modname = modname;
            cmt_annots = clear_env binary_annots;
@@ -188,7 +188,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env cmi =
            cmt_source_digest = source_digest;
            cmt_initial_env = if need_to_clear_env then
                keep_only_summary initial_env else initial_env;
-           cmt_imports = List.sort compare (Env.imports ());
+           cmt_imports = List.sort ~cmp:compare (Env.imports ());
            cmt_interface_digest = this_crc;
            cmt_use_summaries = need_to_clear_env;
          } in

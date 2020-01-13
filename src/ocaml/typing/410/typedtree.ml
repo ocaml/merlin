@@ -662,9 +662,6 @@ let rev_pat_bound_idents_full pat =
   iter_bound_idents add pat;
   !idents_full
 
-let pat_bound_idents_with_loc p =
-  List.map (fun (id,loc,_ty) -> id, loc) (pat_bound_idents_full p)
-
 let rev_only_idents idents_full =
   List.rev_map (fun (id,_,_) -> id) idents_full
 
@@ -672,6 +669,9 @@ let pat_bound_idents_full pat =
   List.rev (rev_pat_bound_idents_full pat)
 let pat_bound_idents pat =
   rev_only_idents (rev_pat_bound_idents_full pat)
+
+let pat_bound_idents_with_loc p =
+  List.map (fun (id,loc,_ty) -> id, loc) (pat_bound_idents_full p)
 
 let rev_let_bound_idents_full bindings =
   let idents_full = ref [] in

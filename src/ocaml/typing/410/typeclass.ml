@@ -47,6 +47,23 @@ type class_type_info = {
   clsty_info : Typedtree.class_type_declaration;
 }
 
+type 'a full_class = {
+  id : Ident.t;
+  id_loc : tag loc;
+  clty: class_declaration;
+  ty_id: Ident.t;
+  cltydef: class_type_declaration;
+  obj_id: Ident.t;
+  obj_abbr: type_declaration;
+  cl_id: Ident.t;
+  cl_abbr: type_declaration;
+  arity: int;
+  pub_meths: string list;
+  coe: Warnings.loc list;
+  expr: 'a;
+  req: 'a Typedtree.class_infos;
+}
+
 type error =
     Unconsistent_constraint of Ctype.Unification_trace.t
   | Field_type_mismatch of string * string * Ctype.Unification_trace.t
@@ -1709,6 +1726,7 @@ let check_coercions env { id; id_loc; clty; ty_id; cltydef; obj_id; obj_abbr;
 
 (*******************************)
 
+(* FIXME MERLIN CHECK *)
 let type_classes define_class approx kind env cls =
   let scope = Ctype.create_scope () in
   let cls =
@@ -1722,17 +1740,17 @@ let type_classes define_class approx kind env cls =
       cls
   in
   Ctype.begin_class_def ();
-  let (res, newenv) =
+  let (res, env) =
     List.fold_left (initial_env define_class approx) ([], env) cls
   in
-  let (res, newenv) =
-    List.fold_right (class_infos define_class kind) res ([], newenv)
+  let (res, env) =
+    List.fold_right (class_infos define_class kind) res ([], env)
   in
   Ctype.end_def ();
-  let res = List.rev_map (final_decl newenv define_class) res in
+  let res = List.rev_map (final_decl env define_class) res in
   let decls = List.fold_right extract_type_decls res [] in
   let decls =
-    try Typedecl_variance.update_class_decls newenv decls
+    try Typedecl_variance.update_class_decls env decls
     with Typedecl_variance.Error(loc, err) ->
       raise (Typedecl.Error(loc, Typedecl.Variance err))
   in

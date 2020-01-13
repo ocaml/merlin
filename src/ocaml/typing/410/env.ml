@@ -414,6 +414,10 @@ type type_descriptions =
 
 let in_signature_flag = 0x01
 
+type 'a value_or_persistent =
+  | Value of 'a
+  | Persistent
+
 type t = {
   values: (value_entry, value_data) IdTbl.t;
   constrs: constructor_data TycompTbl.t;

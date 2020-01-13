@@ -40,12 +40,13 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   Parser_raw.parse_expression lexer lexbuf
 
 let lookup_module name env =
-  let path = Env.lookup_module ~load:true name env in
+  let path =
+    Env.lookup_module_path ~use:false ~loc:Location.none ~load:true name env in
   let md = Env.find_module path env in
   path, md.Types.md_type, md.Types.md_attributes
 
 let lookup_modtype name env =
-  let path, mdtype = Env.lookup_modtype name env in
+  let path, mdtype = Env.lookup_modtype ~loc:Location.none name env in
   path, mdtype.Types.mtd_type
 
 let lookup_module_or_modtype name env =
@@ -155,15 +156,13 @@ let rec mod_smallerthan n m =
         | Some n', _ -> Some (succ n')
       end
     end
-  | Mty_functor (_,m1,m2) ->
+  | Mty_functor (m1,m2) ->
     begin
-      match m1 with
-      | None -> None
-      | Some m1 ->
-      match mod_smallerthan n m1 with
-      | None -> None
-      | Some n1 ->
-      match mod_smallerthan (n - n1) m2 with
+      match mod_smallerthan n m2, m1 with
+      | None, _ -> None
+      | result, Unit -> result
+      | Some n1, Named (_, mt) ->
+      match mod_smallerthan (n - n1) mt with
       | None -> None
       | Some n2 -> Some (n1 + n2)
     end
@@ -243,8 +242,10 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         true
       with exn ->
         try
-          let p = Env.lookup_type longident.Asttypes.txt env in
-          let t = Env.find_type p env in
+          let p, t =
+            Env.lookup_type ~use:false ~loc:Location.none
+              longident.Asttypes.txt env
+          in
           Printtyp.type_declaration env
             (Ident.create_persistent (* Incorrect, but doesn't matter. *)
                (Path.last p))
@@ -275,7 +276,8 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         with _ ->
           try
             let cstr_desc =
-              Env.lookup_constructor longident.Asttypes.txt env
+              Env.lookup_constructor ~use:true ~loc:Location.none
+                Env.Positive longident.Asttypes.txt env
             in
                   (*
                      Format.pp_print_string ppf name;
