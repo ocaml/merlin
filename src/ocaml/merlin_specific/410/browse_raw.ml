@@ -143,9 +143,10 @@ let node_real_loc loc0 = function
   | Open_description        {open_loc = loc}
   | Open_declaration        {open_loc = loc}
     -> loc
-  | Module_binding_name          {mb_name = loc}
-  | Module_declaration_name      {md_name = loc}
   | Module_type_declaration_name {mtd_name = loc}
+    -> loc.Location.loc
+  | Module_declaration_name      {md_name = loc}
+  | Module_binding_name          {mb_name = loc}
     -> loc.Location.loc
   | Structure _ | Signature _ | Case _ | Class_structure _ | Type_extension _
   | Class_field_kind _ | Module_type_constraint _ | With_constraint _
@@ -409,9 +410,9 @@ and of_module_expr_desc = function
   | Tmod_ident _ -> id_fold
   | Tmod_structure str ->
     app (Structure str)
-  | Tmod_functor (_,_,mto,me) ->
-    option_fold of_module_type mto **
-    of_module_expr me
+  | Tmod_functor (Unit,me) -> of_module_expr me
+  | Tmod_functor (Named (_, _, mt),me) ->
+    of_module_type mt ** of_module_expr me
   | Tmod_apply (me1,me2,_) ->
     of_module_expr me1 **
     of_module_expr me2
@@ -455,9 +456,9 @@ and of_module_type_desc = function
   | Tmty_ident _ | Tmty_alias _ -> id_fold
   | Tmty_signature sg ->
     app (Signature sg)
-  | Tmty_functor (_,_,mto,mt) ->
-    option_fold of_module_type mto **
-    of_module_type mt
+  | Tmty_functor (Named (_,_,mt1),mt2) ->
+    of_module_type mt1 ** of_module_type mt2
+  | Tmty_functor (Unit,mt) -> of_module_type mt
   | Tmty_with (mt,wcs) ->
     list_fold (fun (_,_,wc) -> app (With_constraint wc)) wcs **
     of_module_type mt
@@ -754,7 +755,7 @@ let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
 let module_expr_paths { Typedtree. mod_desc } =
   match mod_desc with
   | Tmod_ident (path, loc) -> [reloc path loc]
-  | Tmod_functor (id, loc, _, _) -> [reloc (Path.Pident id) loc]
+  | Tmod_functor (Named (Some id, loc, _), _) -> [reloc (Path.Pident id) loc]
   | _ -> []
 
 let expression_paths { Typedtree. exp_desc; _ } =
@@ -765,7 +766,7 @@ let expression_paths { Typedtree. exp_desc; _ } =
   | Texp_setinstvar (_,path,loc,_) -> [reloc path loc]
   | Texp_override (_,ps) ->
     List.map ~f:(fun (path,loc,_) -> reloc path loc) ps
-  | Texp_letmodule (id,loc,_,_,_) -> [reloc (Path.Pident id) loc]
+  | Texp_letmodule (Some id,loc,_,_,_) -> [reloc (Path.Pident id) loc]
   | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
     [mkloc (Path.Pident id) loc]
   | Texp_construct ({Location. loc}, {Types. cstr_name; cstr_res; _}, _) ->
@@ -800,7 +801,7 @@ let module_type_paths { Typedtree. mty_desc } =
   match mty_desc with
   | Tmty_ident (path, loc) | Tmty_alias (path, loc) ->
     [reloc path loc]
-  | Tmty_functor (id,loc,_,_) ->
+  | Tmty_functor (Named (Some id,loc,_),_) ->
     [reloc (Path.Pident id) loc]
   | Tmty_with (_,ls) ->
     List.map ~f:(fun (p,l,_) -> reloc p l) ls
@@ -828,11 +829,11 @@ let node_paths =
   | Class_field f -> class_field_paths f
   | Module_expr me -> module_expr_paths me
   | Structure_item (i,_) -> structure_item_paths i
-  | Module_binding_name { mb_id; mb_name } ->
+  | Module_binding_name { mb_id = Some mb_id; mb_name } ->
     [reloc (Path.Pident mb_id) mb_name]
   | Module_type mt -> module_type_paths mt
   | Signature_item (i,_) -> signature_item_paths i
-  | Module_declaration_name { md_id; md_name } ->
+  | Module_declaration_name { md_id = Some md_id; md_name } ->
     [reloc (Path.Pident md_id) md_name]
   | Module_type_declaration_name { mtd_id; mtd_name } ->
     [reloc (Path.Pident mtd_id) mtd_name]

@@ -103,11 +103,6 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-let update_location loc = function
-    Error (_, env, err) -> Error (loc, env, err)
-  | err -> err
-let () = Typetexp.typemod_update_location := update_location
-
 open Typedtree
 
 let rec path_concat head p =

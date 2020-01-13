@@ -417,11 +417,15 @@ module Rewrite_loc = struct
   and u_module_type_desc = function
     | Pmty_ident loc -> Pmty_ident (u_loc loc)
     | Pmty_signature sg -> Pmty_signature (u_signature sg)
-    | Pmty_functor (loc, mto, mt) -> Pmty_functor (u_loc loc, u_option u_module_type mto, u_module_type mt)
+    | Pmty_functor (fp, mt) -> Pmty_functor (u_functor_parameter fp, u_module_type mt)
     | Pmty_with (mt, wts) -> Pmty_with (u_module_type mt, List.map ~f:u_with_constraint wts)
     | Pmty_typeof me -> Pmty_typeof (u_module_expr me)
     | Pmty_extension ext -> Pmty_extension (u_extension ext)
     | Pmty_alias loc -> Pmty_alias (u_loc loc)
+
+  and u_functor_parameter = function
+    | Unit -> Unit
+    | Named (name, mt) -> Named (u_loc name, u_module_type mt)
 
   and u_signature l = List.map ~f:u_signature_item l
 
@@ -516,8 +520,8 @@ module Rewrite_loc = struct
   and u_module_expr_desc = function
     | Pmod_ident loc -> Pmod_ident (u_loc loc)
     | Pmod_structure str -> Pmod_structure (u_structure str)
-    | Pmod_functor (loc, mto, me) ->
-      Pmod_functor (u_loc loc, u_option u_module_type mto, u_module_expr me)
+    | Pmod_functor (fp, me) ->
+      Pmod_functor (u_functor_parameter fp, u_module_expr me)
     | Pmod_apply (me1, me2) ->
       Pmod_apply (u_module_expr me1, u_module_expr me2)
     | Pmod_constraint (me, mt) ->

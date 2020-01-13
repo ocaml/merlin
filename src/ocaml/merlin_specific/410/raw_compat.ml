@@ -54,7 +54,8 @@ let signature_of_summary =
   | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not,Exported))
   | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not,Exported))
   | Env_open _ | Env_empty | Env_functor_arg _
-  | Env_constraints _ | Env_copy_types _ | Env_persistent _ -> None
+  | Env_constraints _ | Env_copy_types _ | Env_persistent _
+  | Env_value_unbound _ | Env_module_unbound _ -> None
 
 let summary_prev = function
   | Env.Env_empty -> None
@@ -64,8 +65,9 @@ let summary_prev = function
   | Env.Env_class (s,_,_)    | Env.Env_cltype (s,_,_)
   | Env.Env_functor_arg (s,_)
   | Env.Env_constraints (s,_)
-  | Env.Env_copy_types (s,_)
-  | Env.Env_persistent (s,_) ->
+  | Env.Env_copy_types s
+  | Env.Env_persistent (s,_)
+  | Env.Env_value_unbound (s, _, _) | Env.Env_module_unbound (s, _, _) ->
     Some s
 
 let summary_module_ident_opt = function
