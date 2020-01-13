@@ -1320,107 +1320,116 @@ and transl_signature ?(keep_warnings = false) env sg =
             transl_sig env srem
           end
         | Psig_module pmd ->
-          (* FIXME MERLIN CHECK *)
           let scope = Ctype.create_scope () in
-          let id = Ident.create_scoped ~scope pmd.pmd_name.txt in
           begin match
-            Signature_names.check_module names pmd.pmd_name.loc id;
-            Builtin_attributes.warning_scope pmd.pmd_attributes
-              (fun () -> transl_modtype env pmd.pmd_type)
-          with
-          | tmty ->
+            let tmty =
+              Builtin_attributes.warning_scope pmd.pmd_attributes
+                (fun () -> transl_modtype env pmd.pmd_type)
+            in
             let pres =
               match tmty.mty_type with
               | Mty_alias _ -> Mp_absent
               | _ -> Mp_present
             in
-            let md = {
-              md_type=tmty.mty_type;
-              md_attributes=pmd.pmd_attributes;
-              md_loc=pmd.pmd_loc;
-            }
-            in
-            let newenv = Env.enter_module_declaration id pres md env in
-            let newenv = Env.update_short_paths newenv in
+            match pmd.pmd_name.txt with
+            | None -> None, pres, env, None, tmty
+            | Some name ->
+              let md = {
+                md_type=tmty.mty_type;
+                md_attributes=pmd.pmd_attributes;
+                md_loc=pmd.pmd_loc;
+              } in
+              let id, newenv =
+                Env.enter_module_declaration ~scope name pres md env
+              in
+              let newenv = Env.update_short_paths newenv in
+              Signature_names.check_module names pmd.pmd_name.loc id;
+              let sig_item = Sig_module(id, pres, md, Trec_not, Exported) in
+              Some id, pres, newenv, Some sig_item, tmty
+          with
+          | id, pres, newenv, sig_item, tmty ->
             let (trem, rem, final_env) = transl_sig newenv srem in
             mksig (Tsig_module {md_id=id; md_name=pmd.pmd_name;
                                 md_presence=pres; md_type=tmty;
                                 md_loc=pmd.pmd_loc;
                                 md_attributes=pmd.pmd_attributes})
               env loc :: trem,
-            (match id with
-             | None -> rem
-             | Some id -> Sig_module(id, pres, md, Trec_not, Exported) :: rem),
+            (match sig_item with | None -> rem | Some i -> i :: rem),
             final_env
           | exception exn ->
             Msupport.raise_error exn;
             transl_sig env srem
           end
-          (* FIXME MERLIN END CHECK *)
         | Psig_modsubst pms ->
           let scope = Ctype.create_scope () in
-          let id = Ident.create_scoped ~scope pms.pms_name.txt in
           begin match
-            let (path, _) as res =
-              Typetexp.find_module env pms.pms_manifest.loc pms.pms_manifest.txt
-            in
-            let info =
-              `Substituted_away (Subst.add_module id path Subst.identity)
-            in
-            Signature_names.check_module ~info names pms.pms_name.loc id;
-            res
-          with
-          | path, md ->
-            let aliasable = not (Env.is_functor_arg path env) in
-            let md =
-              if not aliasable then
-                md
-              else
-                { md_type = Mty_alias path;
-                  md_attributes = pms.pms_attributes;
-                  md_loc = pms.pms_loc }
-            in
-            let pres =
-              match md.md_type with
-              | Mty_alias _ -> Mp_absent
-              | _ -> Mp_present
-            in
-            let newenv = Env.enter_module_declaration id pres md env in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_modsubst {ms_id=id; ms_name=pms.pms_name;
-                                  ms_manifest=path; ms_txt=pms.pms_manifest;
-                                  ms_loc=pms.pms_loc;
-                                  ms_attributes=pms.pms_attributes})
-              env loc :: trem,
-            rem,
-            final_env
-          | exception exn ->
-            Msupport.raise_error exn;
-            transl_sig env srem
+              let path, md =
+                Env.lookup_module ~loc:pms.pms_manifest.loc
+                  pms.pms_manifest.txt env
+              in
+              let aliasable = not (Env.is_functor_arg path env) in
+              let md =
+                if not aliasable then
+                  md
+                else
+                  { md_type = Mty_alias path;
+                    md_attributes = pms.pms_attributes;
+                    md_loc = pms.pms_loc }
+              in
+              let pres =
+                match md.md_type with
+                | Mty_alias _ -> Mp_absent
+                | _ -> Mp_present
+              in
+              let id, newenv =
+                Env.enter_module_declaration ~scope pms.pms_name.txt pres md env
+              in
+              let info =
+                `Substituted_away (Subst.add_module id path Subst.identity)
+              in
+              Signature_names.check_module ~info names pms.pms_name.loc id;
+              (newenv, Tsig_modsubst {ms_id=id; ms_name=pms.pms_name;
+                                      ms_manifest=path; ms_txt=pms.pms_manifest;
+                                      ms_loc=pms.pms_loc;
+                                      ms_attributes=pms.pms_attributes})
+            with
+            | newenv, sig_item ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              (mksig sig_item env loc :: trem, rem, final_env)
+            | exception exn ->
+              Msupport.raise_error exn;
+              transl_sig env srem
           end
         | Psig_recmodule sdecls ->
           begin match
-            let (decls, _) as res=
-              transl_recmodule_modtypes env sdecls in
-            List.iter
-              (fun md -> Signature_names.check_module names md.md_loc md.md_id)
-              decls;
-            res
-          with
-          | (decls, newenv) ->
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_recmodule decls) env loc :: trem,
-            map_rec (fun rs md ->
-                let d = {Types.md_type = md.md_type.mty_type;
-                         md_attributes = md.md_attributes;
-                         md_loc = md.md_loc;
-                        } in
-                Sig_module(md.md_id, Mp_present, d, rs, Exported))
-              decls rem,
-            final_env
-          | exception exn ->
-            Msupport.raise_error exn;
-            transl_sig env srem
+              let tdecls, newenv =
+                transl_recmodule_modtypes env sdecls in
+              let decls =
+                List.filter_map (fun md ->
+                    match md.md_id with
+                    | None -> None
+                    | Some id -> Some (id, md)
+                  ) tdecls
+              in
+              List.iter
+                (fun (id, md) -> Signature_names.check_module names md.md_loc id)
+                decls;
+              (tdecls, decls, newenv)
+            with
+            | (tdecls, decls, newenv) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_recmodule tdecls) env loc :: trem,
+              map_rec (fun rs (id, md) ->
+                  let d = {Types.md_type = md.md_type.mty_type;
+                           md_attributes = md.md_attributes;
+                           md_loc = md.md_loc;
+                          } in
+                  Sig_module(id, Mp_present, d, rs, Exported))
+                decls rem,
+              final_env
+            | exception exn ->
+              Msupport.raise_error exn;
+              transl_sig env srem
           end
         | Psig_modtype pmtd ->
           begin match transl_modtype_decl names env pmtd with
@@ -2080,7 +2089,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                         raise(Error(smod.pmod_loc, env,
                                     Cannot_eliminate_dependency mty_functor))
                 in
-                (* FIXME MERLIN: uncomment? *)        
+                (* FIXME MERLIN comment? *)
                 begin match
                   Includemod.modtypes ~loc:smod.pmod_loc env mty_res nondep_mty
                 with
@@ -2093,7 +2102,6 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                   fatal_error
                     "nondep_supertype not included in original module type"
                 end;
-                *)
                 nondep_mty
           in
           check_well_formed_module env smod.pmod_loc
@@ -2320,7 +2328,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
           | None -> None, env, []
           | Some name ->
             let id, e = Env.enter_module_declaration ~scope name pres md env in
-            let e = Env.update_short_paths newenv in
+            let e = Env.update_short_paths e in
             Signature_names.check_module names pmb_loc id;
             Some id, e,
             [Sig_module(id, pres,
