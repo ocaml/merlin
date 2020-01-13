@@ -442,8 +442,10 @@ and simple_pattern ctxt (f:Format.formatter) (x:pattern) : unit =
     | Ppat_var ({txt = txt;_}) -> protect_ident f txt
     | Ppat_array l ->
         pp f "@[<2>[|%a|]@]"  (list (pattern1 ctxt) ~sep:";") l
-    | Ppat_unpack (s) ->
-        pp f "(module@ %s)@ " s.txt
+    | Ppat_unpack { txt = None } ->
+        pp f "(module@ _)@ "
+    | Ppat_unpack { txt = Some s } ->
+        pp f "(module@ %s)@ " s
     | Ppat_type li ->
         pp f "#%a" longident_loc li
     | Ppat_record (l, closed) ->
@@ -516,7 +518,7 @@ and sugar_expr ctxt f e =
   | Pexp_apply ({ pexp_desc = Pexp_ident {txt = id; _};
                   pexp_attributes=[]; _}, args)
     when List.for_all (fun (lab, _) -> lab = Nolabel) args -> begin
-      let print_indexop a path_prefix assign left right print_index indices
+      let print_indexop a path_prefix assign left sep right print_index indices
           rem_args =
         let print_path ppf = function
           | None -> ()
@@ -525,11 +527,11 @@ and sugar_expr ctxt f e =
             | false, [] ->
               pp f "@[%a%a%s%a%s@]"
                 (simple_expr ctxt) a print_path path_prefix
-                left (list ~sep:"," print_index) indices right; true
+                left (list ~sep print_index) indices right; true
             | true, [v] ->
               pp f "@[%a%a%s%a%s@ <-@;<1 2>%a@]"
                 (simple_expr ctxt) a print_path path_prefix
-                left (list ~sep:"," print_index) indices right
+                left (list ~sep print_index) indices right
                 (simple_expr ctxt) v; true
             | _ -> false in
       match id, List.map snd args with
@@ -540,18 +542,18 @@ and sugar_expr ctxt f e =
           let print = print_indexop a None assign in
           match path, other_args with
           | Lident "Array", i :: rest ->
-            print ".(" ")" (expression ctxt) [i] rest
+            print ".(" "" ")" (expression ctxt) [i] rest
           | Lident "String", i :: rest ->
-            print ".[" "]" (expression ctxt) [i] rest
+            print ".[" "" "]" (expression ctxt) [i] rest
           | Ldot (Lident "Bigarray", "Array1"), i1 :: rest ->
-            print ".{" "}" (simple_expr ctxt) [i1] rest
+            print ".{" "," "}" (simple_expr ctxt) [i1] rest
           | Ldot (Lident "Bigarray", "Array2"), i1 :: i2 :: rest ->
-            print ".{" "}" (simple_expr ctxt) [i1; i2] rest
+            print ".{" "," "}" (simple_expr ctxt) [i1; i2] rest
           | Ldot (Lident "Bigarray", "Array3"), i1 :: i2 :: i3 :: rest ->
-            print ".{" "}" (simple_expr ctxt) [i1; i2; i3] rest
+            print ".{" "," "}" (simple_expr ctxt) [i1; i2; i3] rest
           | Ldot (Lident "Bigarray", "Genarray"),
             {pexp_desc = Pexp_array indexes; pexp_attributes = []} :: rest ->
-              print ".{" "}" (simple_expr ctxt) indexes rest
+              print ".{" "," "}" (simple_expr ctxt) indexes rest
           | _ -> false
         end
       | (Lident s | Ldot(_,s)) , a :: i :: rest
@@ -560,6 +562,11 @@ and sugar_expr ctxt f e =
              assignment operators end with [right_bracket ^ "<-"],
              access operators end with [right_bracket] directly
           *)
+          let multi_indices = String.contains s ';' in
+          let i =
+              match i.pexp_desc with
+                | Pexp_array l when multi_indices -> l
+                | _ -> [ i ] in
           let assign = last_is '-' s in
           let kind =
             (* extract the right end bracket *)
@@ -574,8 +581,9 @@ and sugar_expr ctxt f e =
             | Ldot(m,_) -> Some m
             | _ -> None in
           let left = String.sub s 0 (1+String.index s left) in
-          print_indexop a path_prefix assign left right
-            (expression ctxt) [i] rest
+          print_indexop a path_prefix assign left ";" right
+            (if multi_indices then expression ctxt else simple_expr ctxt)
+            i rest
       | _ -> false
     end
   | _ -> false
@@ -698,7 +706,8 @@ and expression ctxt f x =
         pp f "@[<hov2>{<%a>}@]"
           (list string_x_expression  ~sep:";"  )  l;
     | Pexp_letmodule (s, me, e) ->
-        pp f "@[<hov2>let@ module@ %s@ =@ %a@ in@ %a@]" s.txt
+        pp f "@[<hov2>let@ module@ %s@ =@ %a@ in@ %a@]"
+          (Option.value s.txt ~default:"_")
           (module_expr reset_ctxt) me (expression ctxt) e
     | Pexp_letexception (cd, e) ->
         pp f "@[<hov2>let@ exception@ %a@ in@ %a@]"
@@ -1019,15 +1028,17 @@ and module_type ctxt f x =
       (attributes ctxt) x.pmty_attributes
   end else
     match x.pmty_desc with
-    | Pmty_functor (_, None, mt2) ->
+    | Pmty_functor (Unit, mt2) ->
         pp f "@[<hov2>functor () ->@ %a@]" (module_type ctxt) mt2
-    | Pmty_functor (s, Some mt1, mt2) ->
-        if s.txt = "_" then
-          pp f "@[<hov2>%a@ ->@ %a@]"
-            (module_type1 ctxt) mt1 (module_type ctxt) mt2
-        else
-          pp f "@[<hov2>functor@ (%s@ :@ %a)@ ->@ %a@]" s.txt
-            (module_type ctxt) mt1 (module_type ctxt) mt2
+    | Pmty_functor (Named (s, mt1), mt2) ->
+        begin match s.txt with
+        | None ->
+            pp f "@[<hov2>%a@ ->@ %a@]"
+              (module_type1 ctxt) mt1 (module_type ctxt) mt2
+        | Some name ->
+            pp f "@[<hov2>functor@ (%s@ :@ %a)@ ->@ %a@]" name
+              (module_type ctxt) mt1 (module_type ctxt) mt2
+        end
     | Pmty_with (mt, []) -> module_type ctxt f mt
     | Pmty_with (mt, l) ->
         let with_constraint f = function
@@ -1101,12 +1112,13 @@ and signature_item ctxt f x : unit =
       end
   | Psig_module ({pmd_type={pmty_desc=Pmty_alias alias;
                             pmty_attributes=[]; _};_} as pmd) ->
-      pp f "@[<hov>module@ %s@ =@ %a@]%a" pmd.pmd_name.txt
+      pp f "@[<hov>module@ %s@ =@ %a@]%a"
+        (Option.value pmd.pmd_name.txt ~default:"_")
         longident_loc alias
         (item_attributes ctxt) pmd.pmd_attributes
   | Psig_module pmd ->
       pp f "@[<hov>module@ %s@ :@ %a@]%a"
-        pmd.pmd_name.txt
+        (Option.value pmd.pmd_name.txt ~default:"_")
         (module_type ctxt) pmd.pmd_type
         (item_attributes ctxt) pmd.pmd_attributes
   | Psig_modsubst pms ->
@@ -1139,11 +1151,13 @@ and signature_item ctxt f x : unit =
         | [] -> () ;
         | pmd :: tl ->
             if not first then
-              pp f "@ @[<hov2>and@ %s:@ %a@]%a" pmd.pmd_name.txt
+              pp f "@ @[<hov2>and@ %s:@ %a@]%a"
+                (Option.value pmd.pmd_name.txt ~default:"_")
                 (module_type1 ctxt) pmd.pmd_type
                 (item_attributes ctxt) pmd.pmd_attributes
             else
-              pp f "@[<hov2>module@ rec@ %s:@ %a@]%a" pmd.pmd_name.txt
+              pp f "@[<hov2>module@ rec@ %s:@ %a@]%a"
+                (Option.value pmd.pmd_name.txt ~default:"_")
                 (module_type1 ctxt) pmd.pmd_type
                 (item_attributes ctxt) pmd.pmd_attributes;
             string_x_module_type_list f ~first:false tl
@@ -1168,11 +1182,12 @@ and module_expr ctxt f x =
           (module_type ctxt) mt
     | Pmod_ident (li) ->
         pp f "%a" longident_loc li;
-    | Pmod_functor (_, None, me) ->
+    | Pmod_functor (Unit, me) ->
         pp f "functor ()@;->@;%a" (module_expr ctxt) me
-    | Pmod_functor (s, Some mt, me) ->
+    | Pmod_functor (Named (s, mt), me) ->
         pp f "functor@ (%s@ :@ %a)@;->@;%a"
-          s.txt (module_type ctxt) mt (module_expr ctxt) me
+          (Option.value s.txt ~default:"_")
+          (module_type ctxt) mt (module_expr ctxt) me
     | Pmod_apply (me1, me2) ->
         pp f "(%a)(%a)" (module_expr ctxt) me1 (module_expr ctxt) me2
         (* Cf: #7200 *)
@@ -1297,14 +1312,18 @@ and structure_item ctxt f x =
   | Pstr_exception ed -> exception_declaration ctxt f ed
   | Pstr_module x ->
       let rec module_helper = function
-        | {pmod_desc=Pmod_functor(s,mt,me'); pmod_attributes = []} ->
-            if mt = None then pp f "()"
-            else Misc.may (pp f "(%s:%a)" s.txt (module_type ctxt)) mt;
+        | {pmod_desc=Pmod_functor(arg_opt,me'); pmod_attributes = []} ->
+            begin match arg_opt with
+            | Unit -> pp f "()"
+            | Named (s, mt) ->
+              pp f "(%s:%a)" (Option.value s.txt ~default:"_")
+                (module_type ctxt) mt
+            end;
             module_helper me'
         | me -> me
       in
       pp f "@[<hov2>module %s%a@]%a"
-        x.pmb_name.txt
+        (Option.value x.pmb_name.txt ~default:"_")
         (fun f me ->
            let me = module_helper me in
            match me with
@@ -1383,18 +1402,29 @@ and structure_item ctxt f x =
   | Pstr_recmodule decls -> (* 3.07 *)
       let aux f = function
         | ({pmb_expr={pmod_desc=Pmod_constraint (expr, typ)}} as pmb) ->
-            pp f "@[<hov2>@ and@ %s:%a@ =@ %a@]%a" pmb.pmb_name.txt
+            pp f "@[<hov2>@ and@ %s:%a@ =@ %a@]%a"
+              (Option.value pmb.pmb_name.txt ~default:"_")
               (module_type ctxt) typ
               (module_expr ctxt) expr
               (item_attributes ctxt) pmb.pmb_attributes
-        | _ -> assert false
+        | pmb ->
+            pp f "@[<hov2>@ and@ %s@ =@ %a@]%a"
+              (Option.value pmb.pmb_name.txt ~default:"_")
+              (module_expr ctxt) pmb.pmb_expr
+              (item_attributes ctxt) pmb.pmb_attributes
       in
       begin match decls with
       | ({pmb_expr={pmod_desc=Pmod_constraint (expr, typ)}} as pmb) :: l2 ->
           pp f "@[<hv>@[<hov2>module@ rec@ %s:%a@ =@ %a@]%a@ %a@]"
-            pmb.pmb_name.txt
+            (Option.value pmb.pmb_name.txt ~default:"_")
             (module_type ctxt) typ
             (module_expr ctxt) expr
+            (item_attributes ctxt) pmb.pmb_attributes
+            (fun f l2 -> List.iter (aux f) l2) l2
+      | pmb :: l2 ->
+          pp f "@[<hv>@[<hov2>module@ rec@ %s@ =@ %a@]%a@ %a@]"
+            (Option.value pmb.pmb_name.txt ~default:"_")
+            (module_expr ctxt) pmb.pmb_expr
             (item_attributes ctxt) pmb.pmb_attributes
             (fun f l2 -> List.iter (aux f) l2) l2
       | _ -> assert false

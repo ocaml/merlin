@@ -60,7 +60,7 @@ type t =
   | Unused_extension of string * bool * bool * bool (* 38 *)
   | Unused_rec_flag                         (* 39 *)
   | Name_out_of_scope of string * string list * bool   (* 40 *)
-  | Ambiguous_name of string list * string list *  bool * string (* 41 *)
+  | Ambiguous_name of string list * string list * bool * string (* 41 *)
   | Disambiguated_name of string            (* 42 *)
   | Nonoptional_label of string             (* 43 *)
   | Open_shadow_identifier of string * string (* 44 *)
@@ -86,6 +86,7 @@ type t =
   | Unsafe_without_parsing                  (* 64 *)
   | Redefining_unit of string               (* 65 *)
   | Unused_open_bang of string              (* 66 *)
+  | Unused_functor_parameter of string      (* 67 *)
 ;;
 
 type alert = {kind:string; message:string; def:loc; use:loc}
@@ -99,6 +100,7 @@ val parse_alert_option: string -> unit
   *)
 
 val without_warnings : (unit -> 'a) -> 'a
+  (** Run the thunk with all warnings and alerts disabled. *)
 
 val is_active : t -> bool;;
 val is_error : t -> bool;;
@@ -128,7 +130,7 @@ val backup: unit -> state
 val restore: state -> unit
 val mk_lazy: (unit -> 'a) -> 'a Lazy.t
     (** Like [Lazy.of_fun], but the function is applied with
-        the warning settings at the time [mk_lazy] is called. *)
+        the warning/alert settings at the time [mk_lazy] is called. *)
 
 (* merlin *)
 

@@ -637,6 +637,8 @@ and comment state = parse
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+  | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
+      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | eof
@@ -652,6 +654,8 @@ and comment state = parse
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       }
+  | (lowercase | uppercase) identchar *
+      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | _
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
 

@@ -355,7 +355,7 @@ module MenhirInterpreter : sig
     | N_reversed_nonempty_llist_typevar_ : (string Location.loc list) nonterminal
     | N_reversed_nonempty_llist_name_tag_ : (string list) nonterminal
     | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Asttypes.arg_label * Parsetree.expression) list) nonterminal
-    | N_reversed_nonempty_llist_functor_arg_ : ((string Location.loc * Parsetree.module_type option) list) nonterminal
+    | N_reversed_nonempty_llist_functor_arg_ : (Parsetree.functor_parameter list) nonterminal
     | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Warnings.loc) list) nonterminal
     | N_reversed_bar_llist_extension_constructor_declaration_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_extension_constructor_ : (Parsetree.extension_constructor list) nonterminal
@@ -404,6 +404,7 @@ module MenhirInterpreter : sig
     | N_module_type_declaration : (Parsetree.module_type_declaration * string Location.loc option) nonterminal
     | N_module_type : (Parsetree.module_type) nonterminal
     | N_module_subst : (Parsetree.module_substitution * string Location.loc option) nonterminal
+    | N_module_name : (string option) nonterminal
     | N_module_expr : (Parsetree.module_expr) nonterminal
     | N_module_declaration_body : (Parsetree.module_type) nonterminal
     | N_module_binding_body : (Parsetree.module_expr) nonterminal
@@ -446,6 +447,7 @@ module MenhirInterpreter : sig
     | N_label_declaration : (Parsetree.label_declaration) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
+    | N_index_mod : (string) nonterminal
     | N_implementation : (Parsetree.structure) nonterminal
     | N_ident : (string) nonterminal
     | N_generic_type_declaration_nonrec_flag_type_kind_ : ((Asttypes.rec_flag * string Location.loc option) *
@@ -459,9 +461,8 @@ module MenhirInterpreter : sig
   Parsetree.core_type option * Parsetree.attributes * Warnings.loc *
   Docstrings.info) nonterminal
     | N_generalized_constructor_arguments : (Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
-    | N_functor_args : ((string Location.loc * Parsetree.module_type option) list) nonterminal
-    | N_functor_arg_name : (string) nonterminal
-    | N_functor_arg : (string Location.loc * Parsetree.module_type option) nonterminal
+    | N_functor_args : (Parsetree.functor_parameter list) nonterminal
+    | N_functor_arg : (Parsetree.functor_parameter) nonterminal
     | N_function_type : (Parsetree.core_type) nonterminal
     | N_fun_def : (Parsetree.expression) nonterminal
     | N_fun_binding : (Parsetree.expression) nonterminal

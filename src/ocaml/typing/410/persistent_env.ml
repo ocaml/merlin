@@ -233,8 +233,7 @@ let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
   register_pers_for_short_paths penv ps (short_path_comps ps.ps_name pm);
   ps
 
-let read_pers_struct
-      penv val_of_pers_sig short_path_comps check modname filename =
+let read_pers_struct penv val_of_pers_sig short_path_comps check modname filename =
   add_import penv modname;
   let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
   let pers_sig = { Persistent_signature.filename; cmi; cmi_cache } in
@@ -386,7 +385,7 @@ let report_error ppf =
   let open Format in
   function
   | Illegal_renaming(modname, ps_name, filename) -> fprintf ppf
-      "Wrong file naming: %a@ contains the compiled interface for @ \
+      "Wrong file naming: %a@ contains the compiled interface for@ \
        %s when %s was expected"
       Location.print_filename filename ps_name modname
   | Inconsistent_import(name, source1, source2) -> fprintf ppf

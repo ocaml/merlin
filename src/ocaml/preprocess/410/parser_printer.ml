@@ -248,6 +248,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_type_declaration) -> "module_type_declaration"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_type) -> "module_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_subst) -> "module_subst"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_name) -> "module_name"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_expr) -> "module_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_declaration_body) -> "module_declaration_body"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_module_binding_body) -> "module_binding_body"
@@ -289,6 +290,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label_declaration) -> "label_declaration"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_index_mod) -> "index_mod"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_implementation) -> "implementation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ident) -> "ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_) -> "generic_type_declaration_nonrec_flag_type_kind_"
@@ -297,7 +299,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generic_constructor_declaration_BAR_) -> "generic_constructor_declaration_BAR_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generalized_constructor_arguments) -> "generalized_constructor_arguments"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_functor_args) -> "functor_args"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_functor_arg_name) -> "functor_arg_name"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_functor_arg) -> "functor_arg"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_function_type) -> "function_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_fun_def) -> "fun_def"
@@ -572,6 +573,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_module_type_declaration -> (fun _ -> "module_type_declaration")
   | MenhirInterpreter.N MenhirInterpreter.N_module_type -> (fun _ -> "module_type")
   | MenhirInterpreter.N MenhirInterpreter.N_module_subst -> (fun _ -> "module_subst")
+  | MenhirInterpreter.N MenhirInterpreter.N_module_name -> (fun _ -> "module_name")
   | MenhirInterpreter.N MenhirInterpreter.N_module_expr -> (fun _ -> "module_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_module_declaration_body -> (fun _ -> "module_declaration_body")
   | MenhirInterpreter.N MenhirInterpreter.N_module_binding_body -> (fun _ -> "module_binding_body")
@@ -613,6 +615,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_label_declaration -> (fun _ -> "label_declaration")
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")
+  | MenhirInterpreter.N MenhirInterpreter.N_index_mod -> (fun _ -> "index_mod")
   | MenhirInterpreter.N MenhirInterpreter.N_implementation -> (fun _ -> "implementation")
   | MenhirInterpreter.N MenhirInterpreter.N_ident -> (fun _ -> "ident")
   | MenhirInterpreter.N MenhirInterpreter.N_generic_type_declaration_nonrec_flag_type_kind_ -> (fun _ -> "generic_type_declaration_nonrec_flag_type_kind_")
@@ -621,7 +624,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_generic_constructor_declaration_BAR_ -> (fun _ -> "generic_constructor_declaration_BAR_")
   | MenhirInterpreter.N MenhirInterpreter.N_generalized_constructor_arguments -> (fun _ -> "generalized_constructor_arguments")
   | MenhirInterpreter.N MenhirInterpreter.N_functor_args -> (fun _ -> "functor_args")
-  | MenhirInterpreter.N MenhirInterpreter.N_functor_arg_name -> (fun _ -> "functor_arg_name")
   | MenhirInterpreter.N MenhirInterpreter.N_functor_arg -> (fun _ -> "functor_arg")
   | MenhirInterpreter.N MenhirInterpreter.N_function_type -> (fun _ -> "function_type")
   | MenhirInterpreter.N MenhirInterpreter.N_fun_def -> (fun _ -> "fun_def")
