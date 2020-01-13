@@ -42,6 +42,7 @@ let nullable (type a) : a MenhirInterpreter.nonterminal -> bool =
   | N_list_and_class_type_declaration_ -> true
   | N_list_and_class_description_ -> true
   | N_list_and_class_declaration_ -> true
+  | N_index_mod -> true
   | N_generalized_constructor_arguments -> true
   | N_formal_class_parameters -> true
   | N_ext -> true

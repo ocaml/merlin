@@ -13,11 +13,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* When you change this, you need to update the documentation:
+(* When you change this, you need to update:
+   - the list 'description' at the bottom of this file
    - man/ocamlc.m
-   - man/ocamlopt.m
-   - manual/manual/cmds/comp.etex
-   - manual/manual/cmds/native.etex
 *)
 
 type loc = {
@@ -93,7 +91,7 @@ type t =
   | Unsafe_without_parsing                  (* 64 *)
   | Redefining_unit of string               (* 65 *)
   | Unused_open_bang of string              (* 66 *)
-
+  | Unused_functor_parameter of string      (* 67 *)
 ;;
 
 (* If you remove a warning, leave a hole in the numbering.  NEVER change
@@ -103,6 +101,7 @@ type t =
 *)
 
 type alert = {kind:string; message:string; def:loc; use:loc}
+
 
 let number = function
   | Comment_start -> 1
@@ -170,9 +169,10 @@ let number = function
   | Unsafe_without_parsing -> 64
   | Redefining_unit _ -> 65
   | Unused_open_bang _ -> 66
+  | Unused_functor_parameter _ -> 67
 ;;
 
-let last_warning_number = 66
+let last_warning_number = 67
 ;;
 
 (* Must be the max number returned by the [number] function. *)
@@ -399,7 +399,7 @@ let parse_options errflag s =
   current := {(!current) with error; active}
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
-let defaults_w = "+a-4-6-7-9-27-29-32..42-44-45-48-50-60-66";;
+let defaults_w = "+a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67";;
 let defaults_warn_error = "-a+31";;
 
 let () = parse_options false defaults_w;;
@@ -535,7 +535,7 @@ let message = function
       s ^ " belongs to several types: " ^ String.concat " " tl ^
       "\nThe first one was selected. Please disambiguate if this is wrong."
       ^ expansion
-  | Ambiguous_name (_, _, false, _) -> assert false
+  | Ambiguous_name (_, _, false, _ ) -> assert false
   | Ambiguous_name (_slist, tl, true, expansion) ->
       "these field labels belong to several types: " ^
       String.concat " " tl ^
@@ -612,10 +612,14 @@ let message = function
   | Unused_module s -> "unused module " ^ s ^ "."
   | Unboxable_type_in_prim_decl t ->
       Printf.sprintf
-        "This primitive declaration uses type %s, which is unannotated and\n\
-         unboxable. The representation of such types may change in future\n\
-         versions. You should annotate the declaration of %s with [@@boxed]\n\
-         or [@@unboxed]." t t
+        "This primitive declaration uses type %s, whose representation\n\
+         may be either boxed or unboxed. Without an annotation to indicate\n\
+         which representation is intended, the boxed representation has been\n\
+         selected by default. This default choice may change in future\n\
+         versions of the compiler, breaking the primitive implementation.\n\
+         You should explicitly annotate the declaration of %s\n\
+         with [@@boxed] or [@@unboxed], so that its external interface\n\
+         remains stable in the future." t t
   | Constraint_on_gadt ->
       "Type constraints do not apply to GADT cases of variant types."
   | Erroneous_printed_signature s ->
@@ -632,9 +636,10 @@ let message = function
         "This type declaration is defining a new '()' constructor\n\
          which shadows the existing one.\n\
          Hint: Did you mean 'type %s = unit'?" name
+  | Unused_functor_parameter s -> "unused functor parameter " ^ s ^ "."
 ;;
 
-let nerrors = ref 0
+let nerrors = ref 0;;
 
 type reporting_information =
   { id : string
@@ -654,7 +659,6 @@ let report w =
          is_error = is_error w;
          sub_locs = [];
        }
-;;
 
 let report_alert (alert : alert) =
   match alert_is_active alert with

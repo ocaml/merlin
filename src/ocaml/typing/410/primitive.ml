@@ -200,6 +200,10 @@ let native_name p =
 let byte_name p =
   p.prim_name
 
+let native_name_is_external p =
+  let nat_name = native_name p in
+  nat_name <> "" && nat_name.[0] <> '%'
+
 let report_error ppf err =
   match err with
   | Old_style_float_with_native_repr_attribute ->

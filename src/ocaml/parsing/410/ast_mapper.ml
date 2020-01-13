@@ -249,6 +249,10 @@ module CT = struct
       (List.map (sub.class_type_field sub) pcsig_fields)
 end
 
+let map_functor_param sub = function
+  | Unit -> Unit
+  | Named (s, mt) -> Named (map_loc sub s, sub.module_type sub mt)
+
 module MT = struct
   (* Type expressions for the module language *)
 
@@ -260,10 +264,10 @@ module MT = struct
     | Pmty_ident s -> ident ~loc ~attrs (map_loc sub s)
     | Pmty_alias s -> alias ~loc ~attrs (map_loc sub s)
     | Pmty_signature sg -> signature ~loc ~attrs (sub.signature sub sg)
-    | Pmty_functor (s, mt1, mt2) ->
-        functor_ ~loc ~attrs (map_loc sub s)
-          (Misc.may_map (sub.module_type sub) mt1)
-          (sub.module_type sub mt2)
+    | Pmty_functor (param, mt) ->
+        functor_ ~loc ~attrs
+          (map_functor_param sub param)
+          (sub.module_type sub mt)
     | Pmty_with (mt, l) ->
         with_ ~loc ~attrs (sub.module_type sub mt)
           (List.map (sub.with_constraint sub) l)
@@ -318,9 +322,9 @@ module M = struct
     match desc with
     | Pmod_ident x -> ident ~loc ~attrs (map_loc sub x)
     | Pmod_structure str -> structure ~loc ~attrs (sub.structure sub str)
-    | Pmod_functor (arg, arg_ty, body) ->
-        functor_ ~loc ~attrs (map_loc sub arg)
-          (Misc.may_map (sub.module_type sub) arg_ty)
+    | Pmod_functor (param, body) ->
+        functor_ ~loc ~attrs
+          (map_functor_param sub param)
           (sub.module_expr sub body)
     | Pmod_apply (m1, m2) ->
         apply ~loc ~attrs (sub.module_expr sub m1) (sub.module_expr sub m2)
@@ -798,7 +802,7 @@ module PpxContext = struct
       [
         lid "tool_name",    make_string tool_name;
         lid "include_dirs", make_list make_string !Clflags.include_dirs;
-        lid "load_path",    make_list make_string !Config.load_path;
+        lid "load_path",    make_list make_string (Load_path.get_paths ());
         lid "open_modules", make_list make_string !Clflags.open_modules;
         lid "for_package",  make_option make_string !Clflags.for_package;
         lid "debug",        make_bool !Clflags.debug;
@@ -868,7 +872,7 @@ module PpxContext = struct
       | "include_dirs" ->
           Clflags.include_dirs := get_list get_string payload
       | "load_path" ->
-          Config.load_path := get_list get_string payload
+          Load_path.init (get_list get_string payload)
       | "open_modules" ->
           Clflags.open_modules := get_list get_string payload
       | "for_package" ->

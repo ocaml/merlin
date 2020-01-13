@@ -25,7 +25,7 @@ type symptom =
   | Type_declarations of Ident.t * type_declaration
         * type_declaration * Includecore.type_mismatch
   | Extension_constructors of Ident.t * extension_constructor
-        * extension_constructor * Includecore.type_mismatch
+        * extension_constructor * Includecore.extension_constructor_mismatch
   | Module_types of module_type * module_type
   | Modtype_infos of Ident.t * modtype_declaration * modtype_declaration
   | Modtype_permutation of Types.module_type * Typedtree.module_coercion
@@ -41,10 +41,14 @@ type symptom =
   | Invalid_module_alias of Path.t
 
 type pos =
-    Module of Ident.t | Modtype of Ident.t | Arg of Ident.t | Body of Ident.t
+  | Module of Ident.t
+  | Modtype of Ident.t
+  | Arg of functor_parameter
+  | Body of functor_parameter
 type error = pos list * Env.t * symptom
 
 exception Error of error list
+exception Apply_error of Location.t * Path.t * Path.t * error list
 
 type mark =
   | Mark_both
@@ -293,25 +297,32 @@ and try_modtypes ~loc env ~mark cxt subst mty1 mty2 =
       try_modtypes2 ~loc env ~mark cxt mty1 (Subst.modtype Keep subst mty2)
   | (Mty_signature sig1, Mty_signature sig2) ->
       signatures ~loc env ~mark cxt subst sig1 sig2
-  | (Mty_functor(param1, None, res1), Mty_functor(_param2, None, res2)) ->
+  | (Mty_functor(Unit, res1), Mty_functor(Unit, res2)) ->
     begin
-      match modtypes ~loc env ~mark (Body param1::cxt) subst res1 res2 with
+      match modtypes ~loc env ~mark (Body Unit::cxt) subst res1 res2 with
       | Tcoerce_none -> Tcoerce_none
       | cc -> Tcoerce_functor (Tcoerce_none, cc)
     end
-  | (Mty_functor(param1, Some arg1, res1),
-     Mty_functor(param2, Some arg2, res2)) ->
+  | (Mty_functor(Named (param1, arg1) as arg, res1),
+     Mty_functor(Named (param2, arg2), res2)) ->
       let arg2' = Subst.modtype Keep subst arg2 in
       let cc_arg =
         modtypes ~loc env ~mark:(negate_mark mark)
-          (Arg param1::cxt) Subst.identity arg2' arg1
+          (Arg arg::cxt) Subst.identity arg2' arg1
       in
-      let cc_res =
-        modtypes ~loc (Env.add_module param1 Mp_present arg2' env) ~mark
-          (Body param1::cxt)
-          (Subst.add_module param2 (Path.Pident param1) subst)
-          res1 res2
+      let env, subst =
+        match param1, param2 with
+        | Some p1, Some p2 ->
+            Env.add_module p1 Mp_present arg2' env,
+            Subst.add_module p2 (Path.Pident p1) subst
+        | None, Some p2 ->
+            Env.add_module p2 Mp_present arg2' env, subst
+        | Some p1, None ->
+            Env.add_module p1 Mp_present arg2' env, subst
+        | None, None ->
+            env, subst
       in
+      let cc_res = modtypes ~loc env ~mark (Body arg::cxt) subst res1 res2 in
       begin match (cc_arg, cc_res) with
           (Tcoerce_none, Tcoerce_none) -> Tcoerce_none
         | _ -> Tcoerce_functor(cc_arg, cc_res)
@@ -543,9 +554,15 @@ let check_modtype_inclusion ~loc env mty1 path1 mty2 =
            (Mtype.strengthen ~aliasable env mty1 path1) mty2)
 
 let () =
-  Env.check_modtype_inclusion := (fun ~loc a b c d ->
-    try (check_modtype_inclusion ~loc a b c d : unit)
-    with Error _ -> raise Not_found)
+  Env.check_functor_application :=
+    (fun ~errors ~loc env mty1 path1 mty2 path2 ->
+       try
+         check_modtype_inclusion ~loc env mty1 path1 mty2
+       with Error errs ->
+         if errors then
+           raise (Apply_error(loc, path1, path2, errs))
+         else
+           raise Not_found)
 
 (* Check that an implementation of a compilation unit meets its
    interface. *)
@@ -654,8 +671,10 @@ module Illegal_permutation = struct
         | Sig_module (id, _, md,_,_) -> find env (Module id :: ctx) q md.md_type
         | _ -> raise Not_found
         end
-    | Mty_functor(x,Some mt,_), InArg :: q -> find env (Arg x :: ctx) q mt
-    | Mty_functor(x,_,mt), InBody :: q -> find env (Body x :: ctx) q mt
+    | Mty_functor(Named (_,mt) as arg,_), InArg :: q ->
+        find env (Arg arg :: ctx) q mt
+    | Mty_functor(arg, mt), InBody :: q ->
+        find env (Body arg :: ctx) q mt
     | _ -> raise Not_found
 
   let find env path mt = find env [] path mt
@@ -709,7 +728,7 @@ let rec context ppf = function
   | Body x :: rem ->
       fprintf ppf "functor (%s) ->@ %a" (argname x) context_mty rem
   | Arg x :: rem ->
-      fprintf ppf "functor (%a : %a) -> ..." Printtyp.ident x context_mty rem
+      fprintf ppf "functor (%s : %a) -> ..." (argname x) context_mty rem
   | [] ->
       fprintf ppf "<here>"
 and context_mty ppf = function
@@ -720,12 +739,13 @@ and args ppf = function
     Body x :: rem ->
       fprintf ppf "(%s)%a" (argname x) args rem
   | Arg x :: rem ->
-      fprintf ppf "(%a :@ %a) : ..." Printtyp.ident x context_mty rem
+      fprintf ppf "(%s :@ %a) : ..." (argname  x) context_mty rem
   | cxt ->
       fprintf ppf " :@ %a" context_mty cxt
-and argname x =
-  let s = Ident.name x in
-  if s = "*" then "" else s
+and argname = function
+  | Unit -> ""
+  | Named (None, _) -> "_"
+  | Named (Some id, _) -> Ident.name id
 
 let alt_context ppf cxt =
   if cxt = [] then () else
@@ -760,20 +780,20 @@ let include_err env ppf = function
         "is not included in"
         !Oprint.out_sig_item
         (Printtyp.tree_of_type_declaration id d2 Trec_first)
-        show_locs (d1.type_loc, d2.type_loc)
         (Includecore.report_type_mismatch
            "the first" "the second" "declaration") err
+        show_locs (d1.type_loc, d2.type_loc)
   | Extension_constructors(id, x1, x2, err) ->
-      fprintf ppf "@[<v>@[<hv>%s:@;<1 2>%a@ %s@;<1 2>%a@]%a%a@]"
+      fprintf ppf "@[<v>@[<hv>%s:@;<1 2>%a@ %s@;<1 2>%a@]@ %a%a@]"
         "Extension declarations do not match"
         !Oprint.out_sig_item
         (Printtyp.tree_of_extension_constructor id x1 Text_first)
         "is not included in"
         !Oprint.out_sig_item
         (Printtyp.tree_of_extension_constructor id x2 Text_first)
-        show_locs (x1.ext_loc, x2.ext_loc)
-        (Includecore.report_type_mismatch
+        (Includecore.report_extension_constructor_mismatch
            "the first" "the second" "declaration") err
+        show_locs (x1.ext_loc, x2.ext_loc)
   | Module_types(mty1, mty2)->
       fprintf ppf
        "@[<hv 2>Modules do not match:@ \
@@ -839,7 +859,11 @@ let report_error ppf errs =
   let print_errs ppf = List.iter (include_err' ppf) in
   Printtyp.Conflicts.reset();
   fprintf ppf "@[<v>%a%a%t@]" print_errs errs include_err err
-    Printtyp.Conflicts.print
+    Printtyp.Conflicts.print_explanations
+
+let report_apply_error p1 p2 ppf errs =
+  fprintf ppf "@[The type of %a does not match %a's parameter@ %a@]"
+    Printtyp.path p1 Printtyp.path p2 report_error errs
 
 (* We could do a better job to split the individual error items
    as sub-messages of the main interface mismatch on the whole unit. *)
@@ -847,5 +871,7 @@ let () =
   Location.register_error_of_exn
     (function
       | Error err -> Some (Location.error_of_printer_file report_error err)
+      | Apply_error(loc, p1, p2, err) ->
+          Some (Location.error_of_printer ~loc (report_apply_error p1 p2) err)
       | _ -> None
     )

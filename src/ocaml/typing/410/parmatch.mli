@@ -48,7 +48,7 @@ val le_pats : pattern list -> pattern list -> bool
 (** Exported compatibility functor, abstracted over constructor equality *)
 module Compat :
   functor
-    (Constr: sig
+    (_ : sig
       val equal :
           Types.constructor_description ->
             Types.constructor_description ->
@@ -91,6 +91,14 @@ val ppat_of_type :
     (string, label_description) Hashtbl.t
 
 val pressure_variants: Env.t -> pattern list -> unit
+
+(** [check_partial pred loc caselist] and [check_unused refute pred caselist]
+    are called with a function [pred] which will be given counter-example
+    candidates: they may be partially ill-typed, and have to be type-checked
+    to extract a valid counter-example.
+    [pred] returns a valid counter-example or [None].
+    [refute] indicates that [check_unused] was called on a refutation clause.
+ *)
 val check_partial:
     ((string, constructor_description) Hashtbl.t ->
      (string, label_description) Hashtbl.t ->
