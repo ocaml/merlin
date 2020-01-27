@@ -274,11 +274,11 @@ module Utils = struct
     in
     List.fold_left ~f:try_dir ~init:[] path
 
-  let find_all_matches ~config ?(with_fallback=false) file =
+  let find_all_matches ~config ~dir ?(with_fallback=false) file =
     let files =
       List.concat_map ~f:(fun synonym_pair ->
         find_all_in_path_uncap ~src_suffix_pair:synonym_pair ~with_fallback
-          (Mconfig.source_path config) file
+          (dir :: (Mconfig.source_path config)) file
       ) Mconfig.(config.merlin.suffixes)
     in
     List.uniq files ~cmp:String.compare
@@ -581,15 +581,12 @@ let find_source ~config loc =
     | "" -> dir
     | cwd -> Misc.canonicalize_filename ~cwd dir
   in
-  match Utils.find_all_matches ~config ~with_fallback file with
-  | [] ->
-    log ~title:"find_source" "failed to find %S in source path (fallback = %b)"
-       filename with_fallback ;
-    log ~title:"find_source" "looking for %S in %S" (File.name file) dir ;
-    begin match Utils.find_file_with_path ~config ~with_fallback file [dir] with
-    | Some source -> Found source
-    | None ->
-      log ~title:"find_source" "Trying to find %S in %S directly" fname dir;
+  match Utils.find_all_matches ~dir ~config ~with_fallback file with
+  | [] -> begin
+      log ~title:"find_source"
+        "failed to find %S in source path or %S (fallback = %b)"
+        filename dir with_fallback ;
+      log ~title:"find_source" "Trying to find %S in %S directly" fname dir ;
       try Found (Misc.find_in_path [dir] fname)
       with _ -> Not_found file
     end
