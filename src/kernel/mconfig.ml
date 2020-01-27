@@ -751,11 +751,13 @@ let document_arguments oc =
   print_doc findlib_flags;
   output_string oc "Flags accepted by ocamlc and ocamlopt but not affecting merlin will be ignored.\n"
 
-let source_path config = (
-  config.query.directory ::
-  config.merlin.source_path @
-  config.merlin.packages_path
-)
+let source_path config =
+  let stdlib = if config.ocaml.no_std_include then [] else [stdlib config] in
+  List.concat
+    [[config.query.directory];
+     stdlib;
+     config.merlin.source_path;
+     config.merlin.packages_path]
 
 let build_path config = (
   let dirs =
