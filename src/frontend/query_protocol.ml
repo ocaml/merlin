@@ -79,6 +79,7 @@ and item = {
     | `Method
   ];
   outline_type : string option ;
+  deprecated : bool ;
   location : Location_aux.t ;
   children : outline ;
 }

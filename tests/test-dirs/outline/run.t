@@ -28,7 +28,8 @@
             "name": "z",
             "kind": "Label",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           },
           {
             "start": {
@@ -42,7 +43,8 @@
             "name": "y",
             "kind": "Label",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           },
           {
             "start": {
@@ -56,9 +58,11 @@
             "name": "x",
             "kind": "Label",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           }
-        ]
+        ],
+        "deprecated": false
       },
       {
         "start": {
@@ -85,7 +89,8 @@
             "name": "Righty",
             "kind": "Constructor",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           },
           {
             "start": {
@@ -99,9 +104,11 @@
             "name": "Lefty",
             "kind": "Constructor",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           }
-        ]
+        ],
+        "deprecated": false
       },
       {
         "start": {
@@ -115,7 +122,8 @@
         "name": "Ex",
         "kind": "Exn",
         "type": null,
-        "children": []
+        "children": [],
+        "deprecated": false
       },
       {
         "start": {
@@ -142,9 +150,11 @@
             "name": "b",
             "kind": "Method",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           }
-        ]
+        ],
+        "deprecated": false
       },
       {
         "start": {
@@ -184,7 +194,8 @@
                 "name": "foo",
                 "kind": "Value",
                 "type": "t -> int",
-                "children": []
+                "children": [],
+                "deprecated": false
               },
               {
                 "start": {
@@ -198,9 +209,11 @@
                 "name": "t",
                 "kind": "Type",
                 "type": null,
-                "children": []
+                "children": [],
+                "deprecated": false
               }
-            ]
+            ],
+            "deprecated": false
           },
           {
             "start": {
@@ -214,9 +227,11 @@
             "name": "t",
             "kind": "Type",
             "type": null,
-            "children": []
+            "children": [],
+            "deprecated": false
           }
-        ]
+        ],
+        "deprecated": false
       }
     ],
     "notifications": []
