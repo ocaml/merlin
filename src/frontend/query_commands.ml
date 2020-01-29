@@ -284,6 +284,27 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       let exprs = reconstruct_identifier pipeline pos expro in
       let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
       let open Browse_raw in
+      let ident_opt =
+        let longident_to_string id = try
+          String.concat ~sep:"." (Longident.flatten id)
+          with Misc.Fatal_error _ -> ""
+        in
+        let ret typ = Mbrowse.node_loc node, `Type (env, typ), `No in
+        match node with
+        | Expression e ->
+          (match e.exp_desc with
+          | Texp_construct ({ Location. txt; loc=_ }, cdesc, _) ->
+            Some(longident_to_string txt, ret cdesc.cstr_res)
+          | Texp_ident (_, { Location. txt; loc=_ }, vdes) ->
+            Some(longident_to_string txt, ret vdes.val_type)
+          | _ -> None)
+        | Pattern p ->
+          (match p.pat_desc with
+          | Tpat_construct ({ Location. txt; loc=_ }, cdesc, _) ->
+            Some(longident_to_string txt, ret cdesc.cstr_res)
+          | _ -> None)
+        | _ -> None
+      in
       let include_lident = match node with
         | Pattern _ -> false
         | _ -> true
@@ -298,23 +319,31 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           -> false
         | _ -> true
       in
-      List.filter_map exprs ~f:(fun {Location. txt = source; loc} ->
-          match source with
-          | "" -> None
-          | source when not include_lident && Char.is_lowercase source.[0] ->
-            None
-          | source when not include_uident && Char.is_uppercase source.[0] ->
-            None
-          | source ->
-            try
-              let ppf, to_string = Format.to_string () in
-              if Type_utils.type_in_env ~verbosity env ppf source then
-                Some (loc, `String (to_string ()), `No)
-              else
-                None
-            with _ ->
+      let f =
+        fun {Location. txt = source; loc} ->
+          match ident_opt with
+          | Some (ident, typ) when ident = source ->
+            (* Retrieve the type from the AST when it is possible *)
+            Some typ
+          | _ ->
+            (* Else use the reconstructed identifier *)
+            match source with
+            | "" -> None
+            | source when not include_lident && Char.is_lowercase source.[0] ->
               None
-        )
+            | source when not include_uident && Char.is_uppercase source.[0] ->
+              None
+            | source ->
+              try
+                let ppf, to_string = Format.to_string () in
+                if Type_utils.type_in_env ~verbosity env ppf source then
+                  Some (loc, `String (to_string ()), `No)
+                else
+                  None
+              with _ ->
+                None
+      in
+      List.filter_map exprs ~f
     in
     let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
