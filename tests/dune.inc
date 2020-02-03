@@ -810,6 +810,21 @@
 (alias (name runtest) (deps (alias short-paths-test)))
 
 (alias
+ (name type-enclosing-cons)
+ (deps (:t ./test-dirs/type-enclosing/cons.t)
+       (source_tree ./test-dirs/type-enclosing)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-cons)))
+
+(alias
  (name type-enclosing-letop)(enabled_if (>= %{ocaml_version} 4.08.0))
  (deps (:t ./test-dirs/type-enclosing/letop.t)
        (source_tree ./test-dirs/type-enclosing)
