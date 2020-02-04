@@ -120,6 +120,21 @@
 (alias (name runtest) (deps (alias destruct-basic)))
 
 (alias
+ (name errors-error-in-constrained-env-test)
+ (deps (:t ./test-dirs/errors/error-in-constrained-env/test.t)
+       (source_tree ./test-dirs/errors/error-in-constrained-env)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/errors/error-in-constrained-env
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias errors-error-in-constrained-env-test)))
+
+(alias
  (name errors-inconsistent-assumptions-test)(enabled_if (< %{ocaml_version} 4.08.0))
  (deps (:t ./test-dirs/errors/inconsistent-assumptions/test.t)
        (source_tree ./test-dirs/errors/inconsistent-assumptions)
