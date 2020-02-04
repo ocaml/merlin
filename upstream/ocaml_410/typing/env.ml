@@ -693,16 +693,6 @@ let find_name_module ~mark name tbl =
       let path = Pident(Ident.create_persistent name) in
       path, Mod_persistent
 
-(* Short paths basis *)
-
-let short_paths_module_components_desc' = ref (fun _ -> assert false)
-
-let short_paths_components name pm =
-  let path = Pident (Ident.create_persistent name) in
-  lazy (!short_paths_module_components_desc' empty path pm.pm_components)
-
-exception Cmi_cache_store of signature lazy_t
-
 let add_persistent_structure id env =
   if not (Ident.persistent id) then invalid_arg "Env.add_persistent_structure";
   if not (Current_unit_name.is_name_of id) then
@@ -1665,7 +1655,7 @@ and store_type ~check id info env =
         let k = (ty_name, loc, name) in
         if not (Hashtbl.mem used_constructors k) then
           let used = constructor_usages () in
-          backtracking_add !used_constructors k (add_constructor_usage priv used);
+          Hashtbl.add used_constructors k (add_constructor_usage priv used);
           if not (ty_name = "" || ty_name.[0] = '_')
           then !add_delayed_check_forward
               (fun () ->
@@ -1713,9 +1703,9 @@ and store_extension ~check id addr ext env =
     let ty_name = Path.last ext.ext_type_path in
     let name = cstr.cstr_name in
     let k = (ty_name, loc, name) in
-    if not (Hashtbl.mem !used_constructors k) then begin
+    if not (Hashtbl.mem used_constructors k) then begin
       let used = constructor_usages () in
-      backtracking_add !used_constructors k (add_constructor_usage priv used);
+      Hashtbl.add used_constructors k (add_constructor_usage priv used);
       !add_delayed_check_forward
         (fun () ->
           if not (is_in_signature env) && not used.cu_positive then
