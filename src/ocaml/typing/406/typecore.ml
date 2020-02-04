@@ -1894,7 +1894,7 @@ struct
         x y
 
     let single id access = M.add id access M.empty
-  
+
     let empty = M.empty
 
     let list_matching p t =
@@ -2717,11 +2717,13 @@ and type_expect ?in_function ?recarg env sexp ty_expected =
   Msupport.with_saved_types
     ~warning_attribute:sexp.pexp_attributes ?save_part:None
     (fun () ->
+      let saved = save_levels () in
       try
         type_expect_ ?in_function ?recarg env sexp ty_expected
       with exn ->
         Msupport.erroneous_type_register ty_expected;
         raise_error exn;
+        set_levels saved;
         let loc = sexp.pexp_loc in
         {
           exp_desc = Texp_ident

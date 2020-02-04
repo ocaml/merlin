@@ -118,6 +118,20 @@ let nongen_level = ref 0
 let global_level = ref 1
 let saved_level = ref []
 
+type levels =
+    { current_level: int; nongen_level: int; global_level: int;
+      saved_level: (int * int) list; }
+let save_levels () =
+  { current_level = !current_level;
+    nongen_level = !nongen_level;
+    global_level = !global_level;
+    saved_level = !saved_level }
+let set_levels l =
+  current_level := l.current_level;
+  nongen_level := l.nongen_level;
+  global_level := l.global_level;
+  saved_level := l.saved_level
+
 let get_current_level () = !current_level
 let init_def level = current_level := level; nongen_level := level
 let begin_def () =
@@ -2280,7 +2294,7 @@ let complete_type_list ?(allow_absent=false) env nl1 lv2 mty2 nl2 tl2 =
         nt2 :: complete (if n = n2 then nl else nl1) ntl'
     | n :: nl, _ ->
         try
-          let path = 
+          let path =
             Env.lookup_type (concat_longident (Longident.Lident "Pkg") n) env'
           in
           match Env.find_type path env' with

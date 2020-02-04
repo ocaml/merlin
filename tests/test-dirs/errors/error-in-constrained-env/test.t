@@ -10,21 +10,6 @@ The fix is to save and restore levels when attempting a recoverable typing.
     "value": [
       {
         "start": {
-          "line": 5,
-          "col": 4
-        },
-        "end": {
-          "line": 7,
-          "col": 13
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "This definition has type 'a gadt -> 'a -> string which is less general than
-    'a0. 'a0 gadt -> 'a0 -> string"
-      },
-      {
-        "start": {
           "line": 7,
           "col": 9
         },
