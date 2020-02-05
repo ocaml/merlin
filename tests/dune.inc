@@ -51,6 +51,23 @@
 (alias (name runtest) (deps (alias completion-infix)))
 
 (alias
+ (name completion-keyword)
+ (package merlin)
+ (deps (:t ./test-dirs/completion/keyword.t)
+       (source_tree ./test-dirs/completion)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/completion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias completion-keyword)))
+
+(alias
  (name completion-parenthesize_from_411)(enabled_if (>= %{ocaml_version} 4.11.0))
  (package merlin)
  (deps (:t ./test-dirs/completion/parenthesize_from_411.t)

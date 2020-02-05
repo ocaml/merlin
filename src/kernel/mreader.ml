@@ -14,6 +14,7 @@ type result = {
   comments      : comment list;
   parsetree     : parsetree;
   no_labels_for_completion : bool;
+  keywords      : string list;
 }
 
 (* Normal entry point *)
@@ -51,9 +52,10 @@ let normal_parse ?for_completion config source =
   and parser_errors = Mreader_parser.errors parser
   and parsetree = Mreader_parser.result parser
   and comments = Mreader_lexer.comments lexer
+  and keywords = Mreader_lexer.keywords_list lexer
   in
   { config; lexer_errors; parser_errors; comments; parsetree;
-    no_labels_for_completion; }
+    no_labels_for_completion; keywords }
 
 (* Pretty-printing *)
 
@@ -166,9 +168,9 @@ let parse ?for_completion config source =
       (Mreader_extend.parse ?for_completion)
   with
   | Some (`No_labels no_labels_for_completion, parsetree) ->
-    let (lexer_errors, parser_errors, comments) = ([], [], []) in
+    let (lexer_errors, parser_errors, comments, keywords) = ([], [], [], []) in
     { config; lexer_errors; parser_errors; comments; parsetree;
-      no_labels_for_completion; }
+      no_labels_for_completion; keywords }
   | None -> normal_parse ?for_completion config source
 
 (* Update config after parse *)

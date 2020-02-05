@@ -47,3 +47,5 @@ val reconstruct_identifier:
   Mconfig.t -> Msource.t -> Lexing.position -> string Location.loc list
 
 val identifier_suffix: string Location.loc list -> string Location.loc list
+
+val keywords_list : t -> string list

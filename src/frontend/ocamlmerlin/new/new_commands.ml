@@ -37,6 +37,7 @@ let marg_position f = Marg.param "position"
 
 let marg_completion_kind f = Marg.param "completion-kind"
     (function
+      | "keyword" -> f `Keywords
       | "t" | "type" | "types"           -> f `Types
       | "v" | "val" | "value" | "values" -> f `Values
       | "variant" | "variants" | "var"   -> f `Variants

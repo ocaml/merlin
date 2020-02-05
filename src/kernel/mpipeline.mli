@@ -15,6 +15,7 @@ val reader_parsetree : t -> Mreader.parsetree
 val reader_lexer_errors : t -> exn list
 val reader_parser_errors : t -> exn list
 val reader_no_labels_for_completion : t -> bool
+val reader_keywords : t -> string list
 
 val ppx_parsetree : t -> Mreader.parsetree
 val ppx_errors : t -> exn list

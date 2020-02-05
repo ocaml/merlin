@@ -28,6 +28,10 @@ exception Error of error * Location.t
 type keywords
 val keywords: (string * Parser_raw.token) list -> keywords
 
+val ocaml_keywords : unit -> string list
+
+val list_of_keywords : keywords -> string list
+
 (* Monad in which the lexer evaluates *)
 type 'a result =
   | Return of 'a

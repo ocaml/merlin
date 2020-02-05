@@ -56,14 +56,17 @@ val branch_complete
                -> [> `Found of string ])
   -> ?target_type:Types.type_expr
   -> ?kinds:Compl.kind list
+  -> keywords:string list
   -> string
   -> Mbrowse.t
   -> raw_info Compl.raw_entry list
 
 val expand_prefix
-  : global_modules:string list
+   : global_modules:string list
   -> ?kinds:Compl.kind list
-  -> Env.t -> string
+  -> keywords:string list
+  -> Env.t
+  -> string
   -> raw_info Compl.raw_entry list
 
 val application_context : prefix:Asttypes.label -> Mbrowse.t ->

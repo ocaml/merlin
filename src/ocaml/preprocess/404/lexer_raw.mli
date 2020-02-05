@@ -29,6 +29,8 @@ val report_error : formatter -> error -> unit
 type keywords
 val keywords: (string * Parser_raw.token) list -> keywords
 
+val ocaml_keywords : unit -> string list
+
 (* Monad in which the lexer evaluates *)
 type 'a result =
   | Return of 'a

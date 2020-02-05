@@ -12,6 +12,7 @@ type result = {
   comments      : comment list;
   parsetree     : parsetree;
   no_labels_for_completion : bool;
+  keywords      : string list;
 }
 
 type pretty_parsetree = Extend_protocol.Reader.pretty_parsetree

@@ -138,6 +138,10 @@ let keyword_table : keywords =
     "asr", INFIXOP4("asr");
 ]
 
+let ocaml_keywords =
+  let l = lazy (Hashtbl.fold (fun k _ acc -> k :: acc) keyword_table []) in
+  fun () -> Lazy.force l
+
 let keywords l = create_hashtable 11 l
 
 (* To store the position of the beginning of a string and comment *)

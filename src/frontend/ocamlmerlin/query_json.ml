@@ -52,6 +52,7 @@ let dump (type a) : a t -> json =
         | `Types        -> `String "type"
         | `Values       -> `String "value"
         | `Variants     -> `String "variant"
+        | `Keywords     -> `String "keyword"
       ) kind)
   in
   function
@@ -212,6 +213,7 @@ let string_of_completion_kind = function
   | `MethodCall  -> "#"
   | `Exn         -> "Exn"
   | `Class       -> "Class"
+  | `Keyword     -> "Keyword"
 
 let with_location ?(skip_none=false) loc assoc =
   if skip_none && loc = Location.none then

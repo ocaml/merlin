@@ -80,6 +80,8 @@ type t = {
   lexer: Mreader_lexer.t;
 }
 
+let keywords t = Mreader_lexer.keywords_list t.lexer
+
 let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
 
 let errors_ref = ref []

@@ -42,6 +42,7 @@ type t = {
   config: Mconfig.t;
   source: Msource.t;
   items: item list;
+  keywords_list : string list Lazy.t;
 }
 
 let get_tokens keywords pos text =
@@ -89,7 +90,8 @@ let make warnings keywords config source =
     (Msource.text source)
     []
   in
-  { keywords; items; config; source }
+  let keywords_list = lazy (Lexer_raw.ocaml_keywords ()) in
+  { keywords; items; config; source; keywords_list }
 
 let item_start = function
   | Triple (_,s,_) -> s
@@ -360,3 +362,5 @@ let identifier_suffix ident =
   match List.last ident with
   | Some x when is_uppercase x -> drop_lowercase [] ident
   | _ -> ident
+
+let keywords_list t = Lazy.force t.keywords_list

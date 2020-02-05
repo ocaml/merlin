@@ -165,6 +165,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
   in
   let kind, text =
     match ty with
+    | `Keyword -> (`Keyword, `None)
     | `Value v ->
       (`Value, `Type_scheme v.Types.val_type)
     | `Cons c  -> (`Constructor, `Constructor c)
@@ -276,7 +277,7 @@ let fold_variant_constructors ~env ~init ~f =
   in
   aux init
 
-let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch =
+let get_candidates ?get_doc ?target_type ?prefix_path ~keywords ~prefix kind ~validate env branch =
   let cstr_attributes c = c.Types.cstr_attributes in
   let val_attributes v = v.Types.val_attributes in
   let type_attributes t = t.Types.type_attributes in
@@ -425,6 +426,17 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
               ~attrs:(lbl_attributes l)
             :: candidates
         ) prefix_path env []
+      | `Keywords ->
+        begin match prefix_path with
+          | Some _ -> []
+          | None ->
+            List.fold_left keywords ~init:[] ~f:(fun candidates kw ->
+                if validate `Keyword `Keyword kw then
+                  make_weighted_candidate ~exact:(kw = prefix) kw `Keyword ~attrs:[]
+                  :: candidates
+                else
+                  candidates)
+        end
     in
     let of_kind_group = function
       | #Query_protocol.Compl.kind as k -> of_kind k
@@ -442,16 +454,16 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
 
 let gen_values = `Group [`Values; `Constructor]
 
-let default_kinds = [`Variants; gen_values; `Types; `Modules; `Modules_type]
+let default_kinds = [ `Variants; gen_values; `Types; `Modules; `Modules_type]
 
 let completion_order = function
-  | `Expression  -> [`Variants; gen_values; `Types; `Modules; `Modules_type]
-  | `Structure   -> [gen_values; `Types; `Modules; `Modules_type]
-  | `Pattern     -> [`Variants; `Constructor; `Modules; `Labels; `Values; `Types; `Modules_type]
-  | `Module      -> [`Modules; `Modules_type; `Types; gen_values]
-  | `Module_type -> [`Modules_type; `Modules; `Types; gen_values]
-  | `Signature   -> [`Types; `Modules; `Modules_type; gen_values]
-  | `Type        -> [`Types; `Modules; `Modules_type; gen_values]
+  | `Expression  -> [`Variants; gen_values; `Types; `Modules; `Modules_type; `Keywords]
+  | `Structure   -> [gen_values; `Types; `Modules; `Modules_type; `Keywords]
+  | `Pattern     -> [`Variants; `Constructor; `Modules; `Labels; `Values; `Types; `Modules_type; `Keywords]
+  | `Module      -> [`Modules; `Modules_type; `Types; gen_values; `Keywords]
+  | `Module_type -> [`Modules_type; `Modules; `Types; gen_values; `Keywords]
+  | `Signature   -> [`Types; `Modules; `Modules_type; gen_values; `Keywords]
+  | `Type        -> [`Types; `Modules; `Modules_type; gen_values; `Keywords]
 
 type kinds = [kind | `Group of kind list] list
 
@@ -475,7 +487,7 @@ type is_label =
   | `Declaration of Types.type_expr * Types.label_declaration list
   ]
 
-let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
+let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label ~keywords
     config (env,node) branch =
   Env.with_cmis @@ fun () ->
   let seen = Hashtbl.create 7 in
@@ -537,7 +549,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
           (kinds : kind list :> kinds)
       in
       let add_completions acc kind =
-        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch @ acc
+        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~keywords ~validate env branch @ acc
       in
       List.fold_left ~f:add_completions order ~init:[]
     else base_completion
@@ -570,7 +582,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
   with Not_found -> []
 
 (* Propose completion from a particular node *)
-let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
+let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix = function
   | [] -> []
   | (env, node) :: branch ->
     match node with
@@ -588,7 +600,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
         with _ -> `Maybe
       in
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-      complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
+      complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label ~keywords buffer
         (env,node) branch
     | Record_field (parent, lbl, _) ->
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
@@ -631,7 +643,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
           `Description (Array.to_list lbls)
       in
       let result =
-        complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
+        complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label ~keywords buffer
           (env, node) branch
       in
       Btype.backtrack snap;
@@ -639,10 +651,10 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
     | _ ->
       let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
       complete_prefix ?get_doc ?target_type ?kinds ~prefix buffer
-        ~is_label:(if is_label then `Maybe else `No)
+        ~is_label:(if is_label then `Maybe else `No) ~keywords
         (env, node) branch
 
-let expand_prefix ~global_modules ?(kinds=[]) env prefix =
+let expand_prefix ~global_modules ?(kinds=[]) ~keywords env prefix =
   Env.with_cmis @@ fun () ->
   let lidents, last =
     let ts = Expansion.explore ~global_modules env in
@@ -660,7 +672,7 @@ let expand_prefix ~global_modules ?(kinds=[]) env prefix =
   let process_prefix_path prefix_path =
     let candidates =
       let aux compl kind =
-        get_candidates ?prefix_path ~prefix:"" kind ~validate env [] @ compl in
+        get_candidates ?prefix_path ~prefix:"" kind ~validate ~keywords env [] @ compl in
       List.fold_left ~f:aux kinds ~init:[]
     in
     match prefix_path with

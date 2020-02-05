@@ -33,6 +33,8 @@ type kind =
 
 type t
 
+val keywords : t -> string list
+
 val make : Warnings.state -> Mreader_lexer.t -> kind -> t
 
 type tree = [

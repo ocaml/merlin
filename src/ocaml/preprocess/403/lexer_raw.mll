@@ -140,6 +140,10 @@ let keyword_table : keywords =
 
 let keywords l = create_hashtable 11 l
 
+let ocaml_keywords =
+  let l = lazy (Hashtbl.fold (fun k _ acc -> k :: acc) keyword_table []) in
+  fun () -> Lazy.force l
+
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
 
