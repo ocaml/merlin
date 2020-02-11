@@ -232,10 +232,20 @@ let option_fold f' o env (f : _ f0) acc = match o with
   | None -> acc
   | Some x -> f' x env f acc
 
-let of_expression e = app (Expression e)
+let of_core_type ct = app (Core_type ct)
+let of_exp_extra (exp,_,_) = match exp with
+  | Texp_constraint ct ->
+    of_core_type ct
+  | Texp_coerce (cto,ct) ->
+    of_core_type ct ** option_fold of_core_type cto
+  | Texp_poly cto ->
+    option_fold of_core_type cto
+  | Texp_open _ | Texp_newtype _ ->
+    id_fold
+let of_expression e = app (Expression e) **
+    list_fold of_exp_extra e.exp_extra
 let of_case c = app (Case c)
 let of_pattern p = app (Pattern p)
-let of_core_type ct = app (Core_type ct)
 let of_value_binding vb = app (Value_binding vb)
 let of_module_type mt = app (Module_type mt)
 let of_module_expr me = app (Module_expr me)
@@ -327,16 +337,6 @@ let of_expression_desc loc = function
     app (Class_structure cs)
   | Texp_pack me ->
     of_module_expr me
-
-and of_exp_extra (exp,_,_) = match exp with
-  | Texp_constraint ct ->
-    of_core_type ct
-  | Texp_coerce (cto,ct) ->
-    of_core_type ct ** option_fold of_core_type cto
-  | Texp_poly cto ->
-    option_fold of_core_type cto
-  | Texp_open _ | Texp_newtype _ ->
-    id_fold
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
@@ -496,9 +496,8 @@ let of_node = function
   | Pattern { pat_desc; pat_extra } ->
     of_pattern_desc pat_desc **
     list_fold of_pat_extra pat_extra
-  | Expression { exp_desc; exp_extra; exp_loc } ->
-    of_expression_desc exp_loc exp_desc **
-    list_fold of_exp_extra exp_extra
+  | Expression { exp_desc; exp_extra=_; exp_loc } ->
+    of_expression_desc exp_loc exp_desc
   | Case { c_lhs; c_guard; c_rhs } ->
     of_pattern c_lhs ** of_expression c_rhs **
     option_fold of_expression c_guard
