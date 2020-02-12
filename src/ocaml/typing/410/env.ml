@@ -756,7 +756,7 @@ let short_paths_components _name _pm =
   lazy (failwith "TODO")
   (*lazy (!short_paths_module_components_desc' empty path pm.pm_components)*)
 
-exception Cmi_cache_store of signature lazy_t
+exception Cmi_cache_store of module_data
 
 let add_persistent_structure id env =
   if not (Ident.persistent id) then invalid_arg "Env.add_persistent_structure";
@@ -782,7 +782,7 @@ let components_of_module ~alerts ~loc env fs ps path addr mty =
     }
   }
 
-let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
+let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; cmi_cache } =
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let flags = cmi.cmi_flags in
@@ -808,11 +808,13 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
       empty freshening_subst Subst.identity
       path mda_address (Mty_signature sign)
   in
-  {
+  let result = {
     mda_declaration;
     mda_components;
     mda_address;
-  }
+  } in
+  cmi_cache := Cmi_cache_store result;
+  result
 
 (*   let pm_signature =
     match !cmi_cache with
@@ -3316,10 +3318,9 @@ let check_state_consistency () =
     match Load_path.find_uncap (modname ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
-  and found _modname filename pm =
+  and found _modname filename md =
     match !(Cmi_cache.(get_cached_entry filename).Cmi_cache.cmi_cache) with
-    (*FIXME MERLIN
-      | Cmi_cache_store sg -> Std.lazy_eq sg pm.pm_signature*)
+    | Cmi_cache_store md' -> md == md'
     | _ -> false
     | exception Not_found -> false
   in
