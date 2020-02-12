@@ -2524,12 +2524,16 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
     | [] -> ([], [], env)
     | pstr :: srem ->
         let previous_saved_types = Cmt_format.get_saved_types () in
-        let desc, sg, new_env = type_str_item env srem pstr in
-        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
-        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
-                                    :: previous_saved_types);
-        let (str_rem, sig_rem, final_env) = type_struct new_env srem in
-        (str :: str_rem, sg @ sig_rem, final_env)
+        match type_str_item env srem pstr with
+        | desc, sg, new_env ->
+          let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+          Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+                                      :: previous_saved_types);
+          let (str_rem, sig_rem, final_env) = type_struct new_env srem in
+          (str :: str_rem, sg @ sig_rem, final_env)
+        | exception exn ->
+          Msupport.raise_error exn;
+          type_struct env srem
   in
   if !Clflags.annotations then
     (* moved to genannot *)
