@@ -716,15 +716,16 @@ module EnvLazy = struct
   let force_logged log f x =
     match !x with
     | Done x -> x
-    | Raise e -> raise e | Thunk e ->
+    | Raise e -> raise e
+    | Thunk e ->
       match f e with
-      | None ->
-          x := Done None;
+      | (Error _ as err : _ result) ->
+          x := Done err;
           log := Cons(x, e, !log);
-          None
-      | Some _ as y ->
-          x := Done y;
-          y
+          err
+      | Ok _ as res ->
+          x := Done res;
+          res
       | exception e ->
           x := Raise e;
           raise e
@@ -745,4 +746,24 @@ module EnvLazy = struct
     | Raise _ | Thunk _ -> false
 
   let view t = !t
+
+  (* For compatibility with 4.08 and 4.09 *)
+
+  let force_logged_408 log f x =
+    match !x with
+    | Done x -> x
+    | Raise e -> raise e | Thunk e ->
+      match f e with
+      | None ->
+          x := Done None;
+          log := Cons(x, e, !log);
+          None
+      | Some _ as y ->
+          x := Done y;
+          y
+      | exception e ->
+          x := Raise e;
+          raise e
+
+
 end

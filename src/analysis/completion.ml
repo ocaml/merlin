@@ -241,7 +241,7 @@ let item_for_global_module name =
   {name; kind = `Module; desc = `None; info = `None; deprecated = false}
 
 let fold_types f id env acc =
-  Env.fold_types (fun s p (decl,_) acc -> f s p decl acc) id env acc
+  Env.fold_types (fun s p decl acc -> f s p decl acc) id env acc
 
 let fold_constructors f id env acc =
   Env.fold_constructors

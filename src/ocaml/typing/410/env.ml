@@ -1,3 +1,6 @@
+(*FIXME MERLIN*)
+[@@@ocaml.warning "-26-27-32-37-38"];;
+
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -748,9 +751,10 @@ let find_name_module ~mark name tbl =
 
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
-let short_paths_components name pm =
-  let path = Pident (Ident.create_persistent name) in
-  lazy (!short_paths_module_components_desc' empty path pm.pm_components)
+let short_paths_components _name _pm =
+  (*let path = Pident (Ident.create_persistent name) in*)
+  failwith "TODO"
+  (*lazy (!short_paths_module_components_desc' empty path pm.pm_components)*)
 
 exception Cmi_cache_store of signature lazy_t
 
@@ -823,7 +827,7 @@ let read_sign_of_cmi = sign_of_cmi ~freshen:true
 
 let save_sign_of_cmi = sign_of_cmi ~freshen:false
 
-let persistent_env : persistent_module Persistent_env.t ref =
+let persistent_env : module_data Persistent_env.t ref =
   sref Persistent_env.empty
 
 let without_cmis f x =
@@ -1290,7 +1294,7 @@ let rec scrape_alias_for_visit env (sub : Subst.t option) mty =
       begin match may_subst Subst.module_path sub path with
       | Pident id
         when Ident.persistent id
-          && not (Persistent_env.looked_up persistent_env (Ident.name id)) ->
+          && not (Persistent_env.looked_up !persistent_env (Ident.name id)) ->
           false
       | path -> (* PR#6600: find_module may raise Not_found *)
           try scrape_alias_for_visit env sub (find_module path env).md_type
@@ -1330,7 +1334,7 @@ let iter_env wrap proj1 proj2 f env () =
            iter_components (Pident id) path data.mda_components
        | Mod_persistent ->
            let modname = Ident.name id in
-           match Persistent_env.find_in_cache persistent_env modname with
+           match Persistent_env.find_in_cache !persistent_env modname with
            | None -> ()
            | Some data ->
                iter_components (Pident id) path data.mda_components)
@@ -1351,7 +1355,7 @@ let same_types env1 env2 =
   env1.types == env2.types && env1.modules == env2.modules
 
 let used_persistent () =
-  Persistent_env.fold persistent_env
+  Persistent_env.fold !persistent_env
     (fun s _m r -> Concr.add s r)
     Concr.empty
 
@@ -1741,7 +1745,7 @@ and check_value_name name loc =
 
 and store_value ?check id addr decl env =
   check_value_name (Ident.name id) decl.val_loc;
-  Option.iter (fun f -> check_usage decl.val_loc id f value_declarations) check;
+  Option.iter (fun f -> check_usage decl.val_loc id f !value_declarations) check;
   let vda = { vda_description = decl; vda_address = addr } in
   { env with
     values = IdTbl.add id (Val_bound vda) env.values;
@@ -1767,7 +1771,7 @@ and store_type ~check id info env =
         let name = cstr.cstr_name in
         let loc = cstr.cstr_loc in
         let k = (ty_name, loc, name) in
-        if not (Hashtbl.mem used_constructors k) then
+        if not (Hashtbl.mem !used_constructors k) then
           let used = constructor_usages () in
           backtracking_add !used_constructors k (add_constructor_usage priv used);
           if not (ty_name = "" || ty_name.[0] = '_')
@@ -1802,7 +1806,7 @@ and store_type_infos id info env =
      computation of label representations. *)
   let tda = { tda_declaration = info; tda_descriptions = [], [] } in
   { env with
-    types = IdTbl.add id (info,([],[])) env.types;
+    types = IdTbl.add id tda env.types;
     summary = Env_type(env.summary, id, info);
     short_paths_additions =
       short_paths_type false id info env.short_paths_additions; }
@@ -1857,8 +1861,8 @@ and store_module ~check ~freshening_sub id addr presence md env =
   { env with
     modules = IdTbl.add id (Mod_local mda) env.modules;
     summary = Env_module(env.summary, id, presence, md);
-    short_paths_additions =
-      short_paths_module id md mod_comps env.short_paths_additions; }
+    (* FIXME MERLIN short_paths_additions =
+       short_paths_module id md mod_comps env.short_paths_additions; *) }
 
 and store_modtype id info env =
   { env with
@@ -1927,8 +1931,8 @@ let add_value ?check id desc env =
   let addr = value_declaration_address env id desc in
   store_value ?check id addr desc env
 
-let add_type ~check ~predef id info env =
-  store_type ~check ~predef id info env
+let add_type ~check id info env =
+  store_type ~check id info env
 
 and add_extension ~check id ext env =
   let addr = extension_declaration_address env id ext in
@@ -1975,7 +1979,7 @@ let enter_value ?check name desc env =
 
 let enter_type ~scope name info env =
   let id = Ident.create_scoped ~scope name in
-  let env = store_type ~check:true ~predef:false id info env in
+  let env = store_type ~check:true id info env in
   (id, env)
 
 let enter_extension ~scope name ext env =
@@ -2012,7 +2016,7 @@ let enter_module ~scope ?arg s presence mty env =
 let add_item comp env =
   match comp with
     Sig_value(id, decl, _)    -> add_value id decl env
-  | Sig_type(id, decl, _, _)  -> add_type ~check:false ~predef:false id decl env
+  | Sig_type(id, decl, _, _)  -> add_type ~check:false id decl env
   | Sig_typext(id, ext, _, _) -> add_extension ~check:false id ext env
   | Sig_module(id, presence, md, _, _) ->
       add_module_declaration ~check:false id presence md env
@@ -2052,7 +2056,8 @@ let add_components slot root env0 comps =
   let add w comps env0 = IdTbl.add_open slot w root comps env0 in
   let add_types w comps env0 additions =
     let types = add w comps env0 in
-    let additions = short_paths_type_open root comps additions in
+    (*FIXME MERLIN
+      let additions = short_paths_type_open root comps additions in*)
     types, additions
   in
   let add_cltypes w comps env0 additions =
@@ -2067,7 +2072,8 @@ let add_components slot root env0 comps =
   in
   let add_modules w comps env0 additions =
     let modules = add w comps env0 in
-    let additions = short_paths_module_open root comps additions in
+    (*FIXME MERLIN
+    let additions = short_paths_module_open root comps additions in*)
     modules, additions
   in
   let constrs =
@@ -2240,19 +2246,19 @@ let (initial_safe_string, initial_unsafe_string) =
 (* Tracking usage *)
 
 let mark_module_used name loc =
-  match Hashtbl.find module_declarations (name, loc) with
+  match Hashtbl.find !module_declarations (name, loc) with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_modtype_used _name _mtd = ()
 
 let mark_value_used name vd =
-  match Hashtbl.find value_declarations (name, vd.val_loc) with
+  match Hashtbl.find !value_declarations (name, vd.val_loc) with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_type_used name td =
-  match Hashtbl.find type_declarations (name, td.type_loc) with
+  match Hashtbl.find !type_declarations (name, td.type_loc) with
   | mark -> mark ()
   | exception Not_found -> ()
 
@@ -2265,7 +2271,7 @@ let mark_constructor_used usage ty_name cd =
   let name = Ident.name cd.cd_id in
   let loc = cd.cd_loc in
   let k = (ty_name, loc, name) in
-  match Hashtbl.find used_constructors k with
+  match Hashtbl.find !used_constructors k with
   | mark -> mark usage
   | exception Not_found -> ()
 
@@ -2273,7 +2279,7 @@ let mark_extension_used usage name ext =
   let ty_name = Path.last ext.ext_type_path in
   let loc = ext.ext_loc in
   let k = (ty_name, loc, name) in
-  match Hashtbl.find used_constructors k with
+  match Hashtbl.find !used_constructors k with
   | mark -> mark usage
   | exception Not_found -> ()
 
@@ -2286,7 +2292,7 @@ let mark_constructor_description_used usage env cstr =
   mark_type_path_used env ty_path;
   let ty_name = Path.last ty_path in
   let k = (ty_name, cstr.cstr_loc, cstr.cstr_name) in
-  match Hashtbl.find used_constructors k with
+  match Hashtbl.find !used_constructors k with
   | mark -> mark usage
   | exception Not_found -> ()
 
@@ -2299,36 +2305,36 @@ let mark_label_description_used () env lbl =
   mark_type_path_used env ty_path
 
 let mark_class_used name cty =
-  match Hashtbl.find type_declarations (name, cty.cty_loc) with
+  match Hashtbl.find !type_declarations (name, cty.cty_loc) with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let mark_cltype_used name clty =
-  match Hashtbl.find type_declarations (name, clty.clty_loc) with
+  match Hashtbl.find !type_declarations (name, clty.clty_loc) with
   | mark -> mark ()
   | exception Not_found -> ()
 
 let set_value_used_callback name vd callback =
   let key = (name, vd.val_loc) in
   try
-    let old = Hashtbl.find value_declarations key in
-    Hashtbl.replace value_declarations key (fun () -> old (); callback ())
+    let old = Hashtbl.find !value_declarations key in
+    Hashtbl.replace !value_declarations key (fun () -> old (); callback ())
       (* this is to support cases like:
                let x = let x = 1 in x in x
          where the two declarations have the same location
          (e.g. resulting from Camlp4 expansion of grammar entries) *)
   with Not_found ->
-    Hashtbl.add value_declarations key callback
+    Hashtbl.add !value_declarations key callback
 
 let set_type_used_callback name td callback =
   let loc = td.type_loc in
   if loc.Location.loc_ghost then ()
   else let key = (name, loc) in
   let old =
-    try Hashtbl.find type_declarations key
+    try Hashtbl.find !type_declarations key
     with Not_found -> ignore
   in
-  Hashtbl.replace type_declarations key (fun () -> callback old)
+  Hashtbl.replace !type_declarations key (fun () -> callback old)
 
 (* Lookup by name *)
 
@@ -2365,7 +2371,7 @@ let use_module ~use ~loc name path mda =
   if use then begin
     let comps = mda.mda_components in
     mark_module_used name comps.loc;
-    Misc.Stdlib.String.Map.iter
+    Misc.String.Map.iter
       (fun kind message ->
          let message = if message = "" then "" else "\n" ^ message in
          Location.alert ~kind loc
@@ -2986,7 +2992,7 @@ let fold_modules f lid env acc =
                in
                f name p md acc
            | Mod_persistent ->
-               match Persistent_env.find_in_cache persistent_env name with
+               match Persistent_env.find_in_cache !persistent_env name with
                | None -> acc
                | Some mda ->
                    let md =
@@ -3047,7 +3053,7 @@ let filter_non_loaded_persistent f env =
          | Mod_local _ -> acc
          | Mod_unbound _ -> acc
          | Mod_persistent ->
-             match Persistent_env.find_in_cache persistent_env name with
+             match Persistent_env.find_in_cache !persistent_env name with
              | Some _ -> acc
              | None ->
                  if f (Ident.create_persistent name) then
@@ -3312,7 +3318,8 @@ let check_state_consistency () =
     | exception Not_found -> true
   and found _modname filename pm =
     match !(Cmi_cache.(get_cached_entry filename).Cmi_cache.cmi_cache) with
-    | Cmi_cache_store sg -> Std.lazy_eq sg pm.pm_signature
+    (*FIXME MERLIN
+      | Cmi_cache_store sg -> Std.lazy_eq sg pm.pm_signature*)
     | _ -> false
     | exception Not_found -> false
   in
@@ -3322,3 +3329,10 @@ let with_cmis f =
   Persistent_env.with_cmis !persistent_env f ()
 
 let add_merlin_extension_module id mty env = add_module id Mp_present mty env
+
+(* FIXME MERLIN Update the short paths table *)
+let update_short_paths x = x
+
+(* FIXME MERLIN Return the short paths table *)
+let short_paths _ = Short_paths.initial (Short_paths.Basis.create ())
+
