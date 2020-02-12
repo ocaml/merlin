@@ -28,25 +28,25 @@ let version = Sys.ocaml_version
 
 let flambda = false
 
-let exec_magic_number = "Caml1999X026"
-and cmi_magic_number = "Caml1999I026"
-and cmo_magic_number = "Caml1999O026"
-and cma_magic_number = "Caml1999A026"
+let exec_magic_number = "Caml1999X027"
+and cmi_magic_number = "Caml1999I027"
+and cmo_magic_number = "Caml1999O027"
+and cma_magic_number = "Caml1999A027"
 and cmx_magic_number =
   if flambda then
-    "Caml1999y026"
+    "Caml1999y027"
   else
-    "Caml1999Y026"
+    "Caml1999Y027"
 and cmxa_magic_number =
   if flambda then
-    "Caml1999z026"
+    "Caml1999z027"
   else
-    "Caml1999Z026"
-and ast_impl_magic_number = "Caml1999M026"
-and ast_intf_magic_number = "Caml1999N026"
-and cmxs_magic_number = "Caml1999D026"
+    "Caml1999Z027"
+and ast_impl_magic_number = "Caml1999M027"
+and ast_intf_magic_number = "Caml1999N027"
+and cmxs_magic_number = "Caml1999D027"
     (* cmxs_magic_number is duplicated in otherlibs/dynlink/natdynlink.ml *)
-and cmt_magic_number = "Caml1999T026"
+and cmt_magic_number = "Caml1999T027"
 
 let load_path = ref ([] : string list)
 
