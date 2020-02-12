@@ -753,7 +753,7 @@ let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
 let short_paths_components _name _pm =
   (*let path = Pident (Ident.create_persistent name) in*)
-  failwith "TODO"
+  lazy (failwith "TODO")
   (*lazy (!short_paths_module_components_desc' empty path pm.pm_components)*)
 
 exception Cmi_cache_store of signature lazy_t
