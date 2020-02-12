@@ -151,9 +151,15 @@ let initial_env ~loc ~safe_string ~initially_opened_module
     let lid = {loc; txt = Longident.parse m } in
     try
       snd (type_open_ Override env lid.loc lid)
-    with Typetexp.Error _ as exn ->
+    with
+    | (Typetexp.Error _ | Env.Error _) as exn ->
       Msupport.raise_error exn;
       env
+    | exn ->
+      Printf.ksprintf failwith
+        "Uncaught exception %s in initial_env.open_module: %s"
+        Obj.Extension_constructor.(name (of_val exn))
+        (Printexc.to_string exn)
   in
   let add_units env units =
     String.Set.fold
