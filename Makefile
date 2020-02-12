@@ -16,6 +16,10 @@ test:
 	dune build --always-show-command-line --workspace=dune-workspace.test
 	dune runtest --workspace=dune-workspace.test
 
+test-current:
+	dune build --always-show-command-line
+	dune runtest
+
 preprocess:
 	dune build --always-show-command-line @preprocess
 
