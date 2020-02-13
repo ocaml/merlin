@@ -1,6 +1,6 @@
 
 (alias
- (name completion-application_context)
+ (name completion-application_context)(enabled_if (>= %{ocaml_version} 4.09.0))
  (deps (:t ./test-dirs/completion/application_context.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
@@ -840,7 +840,7 @@
 (alias (name runtest) (deps (alias short-paths-test)))
 
 (alias
- (name type-enclosing-cons)
+ (name type-enclosing-cons)(enabled_if (>= %{ocaml_version} 4.09.0))
  (deps (:t ./test-dirs/type-enclosing/cons.t)
        (source_tree ./test-dirs/type-enclosing)
        %{bin:ocamlmerlin}

@@ -1,3 +1,4 @@
+(enabled_if (>= %{ocaml_version} 4.09.0))
 Various parts of the cons.ml:
 
 - The expression:
