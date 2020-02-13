@@ -750,6 +750,21 @@
 (alias (name runtest) (deps (alias occurrences-issue827)))
 
 (alias
+ (name outline-run)
+ (deps (:t ./test-dirs/outline/run.t)
+       (source_tree ./test-dirs/outline)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/outline
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias outline-run)))
+
+(alias
  (name polarity-search-older)(enabled_if (< %{ocaml_version} 4.07.0))
  (deps (:t ./test-dirs/polarity-search/older.t)
        (source_tree ./test-dirs/polarity-search)
