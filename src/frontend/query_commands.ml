@@ -362,6 +362,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | `Invalid_context
       | `Missing_labels_namespace
       | `Not_found _
+      | `Builtin
       | `Not_in_env _ -> None)
 
   | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
