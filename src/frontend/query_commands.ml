@@ -333,7 +333,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let path = Mbrowse.enclosing pos [structures] in
     let path =
       Std.List.filter_map path ~f:(fun (env, node) ->
-        Locate.log ~title:"debug" "inspecting node: %s" (Browse_raw.string_of_node node);
+        Locate.log ~title:"query_commands Locate_type"
+          "inspecting node: %s" (Browse_raw.string_of_node node);
         match node with
         | Browse_raw.Expression {exp_type = ty; _}
         | Pattern {pat_type = ty; _}
