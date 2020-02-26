@@ -628,37 +628,25 @@ end = struct
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
           | `Constr ->
             log ~title:"lookup" "lookup in constructor namespace" ;
-            let cd =
-              Env.lookup_constructor ~use:false ~loc:Location.none
-                Env.Positive ident env
-            in
+            let cd = Env.find_constructor_by_name ident env in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
           | `Mod ->
             log ~title:"lookup" "lookup in module namespace" ;
-            let path =
-              Env.lookup_module_path ~use:false ~loc:Location.none ~load:true
-                ident env
-            in
-            let md = Env.find_module path env in
+            let path, md = Env.find_module_by_name ident env in
             raise (Found (path, Namespaced_path.of_path ~namespace:`Mod path, md.Types.md_loc))
           | `Modtype ->
             log ~title:"lookup" "lookup in module type namespace" ;
-            let path, mtd =
-              Env.lookup_modtype ~use:false ~loc:Location.none ident env
-            in
+            let path, mtd = Env.find_modtype_by_name ident env in
             raise (Found (path, Namespaced_path.of_path ~namespace:`Modtype path, mtd.Types.mtd_loc))
           | `Type ->
             log ~title:"lookup" "lookup in type namespace" ;
-            let path, typ_decl =
-              Env.lookup_type ~use:false ~loc:Location.none ident env
-            in
-            (*let typ_decl = Env.find_type path env in*)
+            let path, typ_decl = Env.find_type_by_name ident env in
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, typ_decl.Types.type_loc))
           | `Vals ->
             log ~title:"lookup" "lookup in value namespace" ;
-            let path, val_desc = Env.lookup_value ~loc:Location.none ident env in
+            let path, val_desc = Env.find_value_by_name ident env in
             raise (Found (path, Namespaced_path.of_path ~namespace:`Vals path, val_desc.Types.val_loc))
           | `This_label lbl ->
             log ~title:"lookup"
@@ -668,9 +656,7 @@ end = struct
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace" ;
-            let lbl =
-              Env.lookup_label ~use:false ~loc:Location.none ident env
-            in
+            let lbl = Env.find_label_by_name ident env in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
             raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
