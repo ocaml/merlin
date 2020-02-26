@@ -40,13 +40,11 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   Parser_raw.parse_expression lexer lexbuf
 
 let lookup_module name env =
-  let path =
-    Env.lookup_module_path ~use:false ~loc:Location.none ~load:true name env in
-  let md = Env.find_module path env in
+  let path, md = Env.find_module_by_name name env in
   path, md.Types.md_type, md.Types.md_attributes
 
 let lookup_modtype name env =
-  let path, mdtype = Env.lookup_modtype ~loc:Location.none name env in
+  let path, mdtype = Env.find_modtype_by_name name env in
   path, mdtype.Types.mtd_type
 
 let lookup_module_or_modtype name env =
@@ -242,10 +240,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         true
       with exn ->
         try
-          let p, t =
-            Env.lookup_type ~use:false ~loc:Location.none
-              longident.Asttypes.txt env
-          in
+          let p, t = Env.find_type_by_name longident.Asttypes.txt env in
           Printtyp.type_declaration env
             (Ident.create_persistent (* Incorrect, but doesn't matter. *)
                (Path.last p))
@@ -276,8 +271,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         with _ ->
           try
             let cstr_desc =
-              Env.lookup_constructor ~use:true ~loc:Location.none
-                Env.Positive longident.Asttypes.txt env
+              Env.find_constructor_by_name longident.Asttypes.txt env
             in
                   (*
                      Format.pp_print_string ppf name;
