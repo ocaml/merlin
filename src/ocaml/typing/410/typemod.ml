@@ -2096,7 +2096,9 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                         raise(Error(smod.pmod_loc, parent_env,
                                     Cannot_eliminate_dependency mty_functor))
                 in
-                (* FIXME MERLIN comment? *)
+                (* TODO(merlin): we could perhaps log the "fatal error" cases...
+                   not sure it's worth the effort. *)
+                (*
                 begin match
                   Includemod.modtypes ~loc:smod.pmod_loc env mty_res nondep_mty
                 with
@@ -2109,6 +2111,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                   fatal_error
                     "nondep_supertype not included in original module type"
                 end;
+                *)
                 nondep_mty
           in
           check_well_formed_module env smod.pmod_loc
