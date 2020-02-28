@@ -2084,6 +2084,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                   match param with
                   | None -> env, mty_res
                   | Some param ->
+                      let parent_env = env in
                       let env =
                         Env.add_module ~arg:true param Mp_present arg.mod_type
                           env
@@ -2092,7 +2093,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                         "the signature of this functor application" mty_res;
                       try env, Mtype.nondep_supertype env [param] mty_res
                       with Ctype.Nondep_cannot_erase _ ->
-                        raise(Error(smod.pmod_loc, env,
+                        raise(Error(smod.pmod_loc, parent_env,
                                     Cannot_eliminate_dependency mty_functor))
                 in
                 (* FIXME MERLIN comment? *)
