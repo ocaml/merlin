@@ -1727,7 +1727,6 @@ let check_coercions env { id; id_loc; clty; ty_id; cltydef; obj_id; obj_abbr;
 
 (*******************************)
 
-(* FIXME MERLIN CHECK *)
 let type_classes define_class approx kind env cls =
   let scope = Ctype.create_scope () in
   let cls =

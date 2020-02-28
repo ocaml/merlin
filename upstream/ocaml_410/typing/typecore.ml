@@ -716,7 +716,7 @@ end) = struct
                      (tp0, tp))
                   lbls
               in
-              raise (error (lid.loc, env,
+              raise (Error (lid.loc, env,
                             Name_type_mismatch (type_kind, lid.txt, tp, tpl)))
     in
     if in_env lbl then
@@ -1343,7 +1343,7 @@ and type_pat_aux ~exception_allowed ~no_existentials ~mode
       | Some r, (_ :: _ as exs)  ->
           let exs = List.map (Ctype.existential_name constr) exs in
           let name = constr.cstr_name in
-          raise (error (loc, !env, Unexpected_existential (r,name, exs)))
+          raise (Error (loc, !env, Unexpected_existential (r,name, exs)))
       end;
       (* if constructor is gadt, we must verify that the expected type has the
          correct head *)
@@ -1369,7 +1369,7 @@ and type_pat_aux ~exception_allowed ~no_existentials ~mode
         | _ -> ()
         end;
       if List.length sargs <> constr.cstr_arity then
-        raise(error(loc, !env, Constructor_arity_mismatch(lid.txt,
+        raise(Error(loc, !env, Constructor_arity_mismatch(lid.txt,
                                      constr.cstr_arity, List.length sargs)));
       begin_def ();
       let (ty_args, ty_res) =
@@ -1393,7 +1393,7 @@ and type_pat_aux ~exception_allowed ~no_existentials ~mode
         | Ppat_alias (p, _) ->
             check_non_escaping p
         | Ppat_constraint _ ->
-            raise (error (p.ppat_loc, !env, Inlined_record_escape))
+            raise (Error (p.ppat_loc, !env, Inlined_record_escape))
         | _ ->
             ()
       in
@@ -1456,7 +1456,7 @@ and type_pat_aux ~exception_allowed ~no_existentials ~mode
         begin try
           unify_pat_types ~refine loc env ty_res (instance record_ty)
         with Error(_loc, _env, Pattern_type_clash(trace, _)) ->
-          raise(error(label_lid.loc, !env,
+          raise(Error(label_lid.loc, !env,
                       Label_mismatch(label_lid.txt, trace)))
         end;
         end_def ();
@@ -1622,7 +1622,7 @@ and type_pat_aux ~exception_allowed ~no_existentials ~mode
       )
   | Ppat_exception p ->
       if not exception_allowed then
-        raise (error (loc, !env, Exception_pattern_disallowed))
+        raise (Error (loc, !env, Exception_pattern_disallowed))
       else begin
         type_pat p Predef.type_exn (fun p_exn ->
         rp k {
@@ -1686,7 +1686,7 @@ let check_unused ?(lev=get_current_level ()) env expected_ty cases =
           env expected_ty constrs labels spat
       with
         Some pat when refute ->
-          raise (error (spat.ppat_loc, env, Unrefuted_pattern pat))
+          raise (Error (spat.ppat_loc, env, Unrefuted_pattern pat))
       | r -> r)
     cases
 
@@ -1967,7 +1967,7 @@ let check_recursive_bindings env valbinds =
   List.iter
     (fun {vb_expr} ->
        if not (Rec_check.is_valid_recursive_expression ids vb_expr) then
-         raise(error(vb_expr.exp_loc, env, Illegal_letrec_expr))
+         raise(Error(vb_expr.exp_loc, env, Illegal_letrec_expr))
     )
     valbinds
 
@@ -1975,7 +1975,7 @@ let check_recursive_class_bindings env ids exprs =
   List.iter
     (fun expr ->
        if not (Rec_check.is_valid_class_expr ids expr) then
-         raise(error(expr.cl_loc, env, Illegal_class_expr)))
+         raise(Error(expr.cl_loc, env, Illegal_class_expr)))
     exprs
 
 (* Approximate the type of an expression, for better recursion *)
@@ -2015,7 +2015,7 @@ let rec type_approx env sexp =
       let ty = type_approx env e in
       let ty1 = approx_type env sty in
       begin try unify env ty ty1 with Unify trace ->
-        raise(error(sexp.pexp_loc, env, Expr_type_clash (trace, None, None)))
+        raise(Error(sexp.pexp_loc, env, Expr_type_clash (trace, None, None)))
       end;
       ty1
   | Pexp_coerce (e, sty1, sty2) ->
@@ -2027,7 +2027,7 @@ let rec type_approx env sexp =
       and ty1 = approx_ty_opt sty1
       and ty2 = approx_type env sty2 in
       begin try unify env ty ty1 with Unify trace ->
-        raise(error(sexp.pexp_loc, env, Expr_type_clash (trace, None, None)))
+        raise(Error(sexp.pexp_loc, env, Expr_type_clash (trace, None, None)))
       end;
       ty2
   | _ -> newvar ()
@@ -2066,7 +2066,7 @@ let check_univars env expans kind exp ty_expected vars =
   if List.length vars = List.length vars' then () else
   let ty = newgenty (Tpoly(repr exp.exp_type, vars'))
   and ty_expected = repr ty_expected in
-  raise (error (exp.exp_loc, env,
+  raise (Error (exp.exp_loc, env,
                 Less_general(kind, [Unification_trace.diff ty ty_expected])))
 
 let check_partial_application statement exp =
@@ -2660,7 +2660,7 @@ and type_expect_
          type_label_a_list directly *)
       let rec check_duplicates = function
         | (_, lbl1, _) :: (_, lbl2, _) :: _ when lbl1.lbl_pos = lbl2.lbl_pos ->
-          raise(error(loc, env, Label_multiply_defined lbl1.lbl_name))
+          raise(Error(loc, env, Label_multiply_defined lbl1.lbl_name))
         | _ :: rem ->
             check_duplicates rem
         | [] -> ()
@@ -2693,7 +2693,7 @@ and type_expect_
                             else lbl :: missing_labels (n + 1) rem
                       in
                       let missing = missing_labels 0 label_names in
-                      raise(error(loc, env, Label_missing missing)))
+                      raise(Error(loc, env, Label_missing missing)))
                 lbl.lbl_all
             in
             None, label_definitions
@@ -2759,7 +2759,7 @@ and type_expect_
         type_label_exp false env loc ty_record (lid, label, snewval) in
       unify_exp env record ty_record;
       if label.lbl_mut = Immutable then
-        raise(error(loc, env, Label_not_mutable lid.txt));
+        raise(Error(loc, env, Label_not_mutable lid.txt));
       rue {
         exp_desc = Texp_setfield(record, label_loc, label, newval);
         exp_loc = loc; exp_extra = [];
@@ -2838,7 +2838,7 @@ and type_expect_
                                  val_kind = Val_reg; Types.val_loc = loc; } env
               ~check:(fun s -> Warnings.Unused_for_index s)
         | _ ->
-            raise (error (param.ppat_loc, env, Invalid_for_loop_index))
+            raise (Error (param.ppat_loc, env, Invalid_for_loop_index))
       in
       let body = type_statement ~explanation:For_loop_body new_env sbody in
       rue {
@@ -2905,13 +2905,13 @@ and type_expect_
                       (Warnings.Not_principal "this ground coercion");
                 with Subtype (tr1, tr2) ->
                   (* prerr_endline "coercion failed"; *)
-                  raise(error(loc, env, Not_subtype(tr1, tr2)))
+                  raise(Error(loc, env, Not_subtype(tr1, tr2)))
                 end;
             | _ ->
                 let ty, b = enlarge_type env ty' in
                 force ();
                 begin try Ctype.unify env arg.exp_type ty with Unify trace ->
-                  raise(error(sarg.pexp_loc, env,
+                  raise(Error(sarg.pexp_loc, env,
                         Coercion_failure(ty', full_expand env ty', trace, b)))
                 end
             end;
@@ -2929,7 +2929,7 @@ and type_expect_
               let force'' = subtype env ty ty' in
               force (); force' (); force'' ()
             with Subtype (tr1, tr2) ->
-              raise(error(loc, env, Not_subtype(tr1, tr2)))
+              raise(Error(loc, env, Not_subtype(tr1, tr2)))
             end;
             end_def ();
             generalize_structure ty;
@@ -2966,7 +2966,7 @@ and type_expect_
               let method_id =
                 begin try List.assoc met methods with Not_found ->
                   let valid_methods = List.map fst methods in
-                  raise(error(e.pexp_loc, env,
+                  raise(Error(e.pexp_loc, env,
                               Undefined_inherited_method (met, valid_methods)))
                 end
               in
@@ -3098,7 +3098,7 @@ and type_expect_
             exp_attributes = sexp.pexp_attributes;
             exp_env = env }
       | _ ->
-          raise(error(loc, env, Instance_variable_not_mutable lab.txt))
+          raise(Error(loc, env, Instance_variable_not_mutable lab.txt))
     end
   | Pexp_override lst ->
       let _ =
