@@ -2080,7 +2080,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                 in
                 Subst.modtype (Rescope scope) subst mty_res
             | None ->
-                let env, nondep_mty =
+                let _env, nondep_mty =
                   match param with
                   | None -> env, mty_res
                   | Some param ->
