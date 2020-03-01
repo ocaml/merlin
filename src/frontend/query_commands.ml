@@ -347,11 +347,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | _ -> None
       )
     in
-    Std.List.filter_map path ~f:(fun (_env, path) ->
+    Std.List.filter_map path ~f:(fun (env, path) ->
       Locate.log ~title:"debug" "found type: %s" (Path.name path);
       let local_defs = Mtyper.get_typedtree typer in
       match
         Locate.from_path
+          ~env
           ~config:(Mpipeline.final_config pipeline)
           ~local_defs ~pos ~namespace:`Type `MLI
           path

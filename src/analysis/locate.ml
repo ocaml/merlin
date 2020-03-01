@@ -605,6 +605,12 @@ end
 
 module Env_lookup : sig
 
+  val loc
+    : Path.t
+    -> Namespaced_path.Namespace.t
+    -> Env.t
+    -> Location.t option
+
   val in_namespaces
      : Namespace.inferred list
     -> Longident.t
@@ -612,6 +618,22 @@ module Env_lookup : sig
     -> (Path.t * Namespaced_path.t * Location.t) option
 
 end = struct
+
+  let loc path (namespace : Namespaced_path.Namespace.t) env =
+    try
+      Some (
+        match namespace with
+        | `Unknown
+        | `Apply
+        | `Vals -> (Env.find_value path env).val_loc
+        | `Constr
+        | `Labels
+        | `Type -> (Env.find_type path env).type_loc
+        | `Functor
+        | `Mod -> (Env.find_module path env).md_loc
+        | `Modtype -> (Env.find_modtype path env).mtd_loc)
+    with
+      Not_found -> None
 
   exception Found of (Path.t * Namespaced_path.t * Location.t)
 
@@ -705,7 +727,7 @@ let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
     else
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
-let from_path ~config ~local_defs ~pos ~namespace ml_or_mli path =
+let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
   if Utils.is_builtin_path path then
     `Builtin
   else
@@ -716,7 +738,11 @@ let from_path ~config ~local_defs ~pos ~namespace ml_or_mli path =
               [Browse_tree.of_browse browse])
     in
     let nss_path = Namespaced_path.of_path ~namespace path in
-    let loc = Location.none in
+    let loc =
+      match Env_lookup.loc path namespace env with
+      | None -> Location.none
+      | Some loc -> loc
+    in
     match
       locate ~config ~ml_or_mli ~path:nss_path ~lazy_trie ~pos ~str_ident loc
     with
