@@ -336,24 +336,24 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         Locate.log ~title:"query_commands Locate_type"
           "inspecting node: %s" (Browse_raw.string_of_node node);
         match node with
-        | Browse_raw.Expression {exp_type = ty; exp_loc = loc; _}
-        | Pattern {pat_type = ty; pat_loc = loc; _}
-        | Core_type {ctyp_type = ty; ctyp_loc = loc; _}
-        | Value_description { val_desc = { ctyp_type = ty; _ }; val_loc = loc; _ } ->
+        | Browse_raw.Expression {exp_type = ty; _}
+        | Pattern {pat_type = ty; _}
+        | Core_type {ctyp_type = ty; _}
+        | Value_description { val_desc = { ctyp_type = ty; _ }; _ } ->
           begin match (Ctype.repr ty).desc with
-            | Tconstr (path, _, _) -> Some (env, loc, path)
+            | Tconstr (path, _, _) -> Some (env, path)
             | _ -> None
           end
         | _ -> None
       )
     in
-    Std.List.filter_map path ~f:(fun (_env, loc, path) ->
+    Std.List.filter_map path ~f:(fun (_env, path) ->
       Locate.log ~title:"debug" "found type: %s" (Path.name path);
       let local_defs = Mtyper.get_typedtree typer in
       match
         Locate.from_path
           ~config:(Mpipeline.final_config pipeline)
-          ~local_defs ~pos ~namespace:`Type ~loc `MLI
+          ~local_defs ~pos ~namespace:`Type `MLI
           path
       with
       | exception Env.Error _ -> None

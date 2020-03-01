@@ -37,7 +37,6 @@ val from_path
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
   -> namespace:Namespaced_path.Namespace.t
-  -> loc:Location.t
   -> [ `ML | `MLI ]
   -> Path.t
   -> [> `File_not_found of string

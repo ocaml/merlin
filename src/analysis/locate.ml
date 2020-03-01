@@ -705,7 +705,7 @@ let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
     else
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
-let from_path ~config ~local_defs ~pos ~namespace ~loc ml_or_mli path =
+let from_path ~config ~local_defs ~pos ~namespace ml_or_mli path =
   if Utils.is_builtin_path path then
     `Builtin
   else
@@ -716,6 +716,7 @@ let from_path ~config ~local_defs ~pos ~namespace ~loc ml_or_mli path =
               [Browse_tree.of_browse browse])
     in
     let nss_path = Namespaced_path.of_path ~namespace path in
+    let loc = Location.none in
     match
       locate ~config ~ml_or_mli ~path:nss_path ~lazy_trie ~pos ~str_ident loc
     with
