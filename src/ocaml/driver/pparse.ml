@@ -38,11 +38,51 @@ let report_error = function
     log ~title:"report_error"
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
-let ppx_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s %s 1>&2"
-    cmd (Filename.quote fn_in) (Filename.quote fn_out)
+module type PpxCmd = sig
+  val prepare_ppx_commandline : string -> string -> unit
+
+  val ppx_commandline : string -> string -> string -> string
+
+  val run_ppx_command : string -> string -> int
+end
+
+module WinCmd : PpxCmd = struct
+  let prepare_ppx_commandline fn_in fn_out =
+    Unix.putenv "merlin_fn_in" (Filename.quote fn_in);
+    Unix.putenv "merlin_fn_out" (Filename.quote fn_out)
+
+  let ppx_commandline cmd fn_in fn_out =
+    Printf.sprintf "%s %s %s 1>&2" cmd "%merlin_fn_in%" "%merlin_fn_out%"
+
+  let run_ppx_command workdir cmd =
+    let pid =
+        Unix.create_process "cmd.exe" [|"/c"; cmd|]
+        Unix.stdin Unix.stderr Unix.stderr
+    in
+    let (_, exit) =
+        Unix.waitpid [] pid
+    in
+    match exit with
+    | Unix.WEXITED x -> x
+    | Unix.WSIGNALED x -> x
+    | Unix.WSTOPPED x -> x
+end
+
+module UnixCmd : PpxCmd = struct
+  let prepare_ppx_commandline _fn_in _fn_out = ()
+
+  let run_ppx_command workdir cmd =
+    Sys.command cmd;
+    0
+
+  let ppx_commandline cmd fn_in fn_out =
+    Printf.sprintf "%s %s %s 1>&2"
+      cmd (Filename.quote fn_in) (Filename.quote fn_out)
+end
 
 let apply_rewriter magic ppx (fn_in, failures) =
+  let (module PpxCmd : PpxCmd) =
+    if Sys.os_type = "Win32" then (module WinCmd) else (module UnixCmd) in
   let title = "apply_rewriter" in
   log ~title "running %S from directory %S" ppx.workval ppx.workdir;
   Logger.log_flush ();
@@ -52,9 +92,11 @@ let apply_rewriter magic ppx (fn_in, failures) =
     with exn ->
       log ~title "cannot change directory %S: %a" ppx.workdir Logger.exn exn
   end;
-  let comm = ppx_commandline ppx.workval fn_in fn_out in
+  PpxCmd.prepare_ppx_commandline fn_in fn_out;
+  let comm = PpxCmd.ppx_commandline ppx.workval fn_in fn_out in
   let failure =
-    let ok = Sys.command comm = 0 in
+    let res = PpxCmd.run_ppx_command ppx.workdir comm in
+    let ok = res = 0 in
     if not ok then Some (CannotRun comm)
     else if not (Sys.file_exists fn_out) then
       Some (WrongMagic comm)
