@@ -1,3 +1,10 @@
+merlin 3.3.4~4.10preview1
+=========================
+Mon Mar  2 14:26:32 CET 2020
+
+This is a preview release that adds support for OCaml 4.10.
+Short-path is disabled.  Other versions of OCaml are not supported.
+
 merlin 3.3.3
 ============
 Fri Nov 29 17:35:58 CET 2019
