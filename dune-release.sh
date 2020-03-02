@@ -1,11 +1,18 @@
 #!/bin/sh
 
 TAG="$1"
+VER="$2"
 
 if [ -z "$TAG" ]; then
-  printf "Usage: ./dune-release.sh <tag-name>\n"
+  printf "Usage: ./dune-release.sh <tag-name> [<pkg-version>]\n"
   printf "Please make sure that dune-release is available.\n"
   exit 1
+fi
+
+FLAGS="-t $TAG"
+
+if [ -n "$VER" ]; then
+  FLAGS="$FLAGS --pkg-version=$VER"
 fi
 
 step()
@@ -16,10 +23,10 @@ step()
   if [ "x$action" == "xN" ]; then exit 2; fi
 }
 
-dune-release distrib -p merlin -n merlin -t "$TAG" --skip-tests #--skip-lint
+dune-release distrib -p merlin -n merlin $FLAGS --skip-tests #--skip-lint
 step
-dune-release publish distrib -p merlin -n merlin -t "$TAG"
+dune-release publish distrib -p merlin -n merlin $FLAGS
 step
-dune-release opam pkg -p merlin -n merlin -t "$TAG"
+dune-release opam pkg -p merlin -n merlin $FLAGS
 step
-dune-release opam submit -p merlin -n merlin -t "$TAG"
+dune-release opam submit -p merlin -n merlin $FLAGS
