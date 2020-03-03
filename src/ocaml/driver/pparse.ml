@@ -72,8 +72,7 @@ module UnixCmd : PpxCmd = struct
   let prepare_ppx_commandline _fn_in _fn_out = ()
 
   let run_ppx_command workdir cmd =
-    Sys.command cmd;
-    0
+    Sys.command cmd
 
   let ppx_commandline cmd fn_in fn_out =
     Printf.sprintf "%s %s %s 1>&2"
