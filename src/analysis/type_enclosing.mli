@@ -43,9 +43,13 @@ val from_nodes
      ) list
 
 val from_reconstructed
-  : int -> string Location.loc list -> Env.t -> Mbrowse.node
+  : 
+  (string -> Context.t option) ->
+  int -> string Location.loc list -> Env.t -> Mbrowse.node
   -> (Location.t *
-      [> `String of string | `Type of Env.t * Types.type_expr ] *
+      [> `Modtype of Env.t * Types.module_type
+             | `String of string
+             | `Type of Env.t * Types.type_expr ] *
       Query_protocol.is_tail_position
      ) list
 
