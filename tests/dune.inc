@@ -810,6 +810,21 @@
 (alias (name runtest) (deps (alias type-enclosing-letop)))
 
 (alias
+ (name type-enclosing-module_type)
+ (deps (:t ./test-dirs/type-enclosing/module_type.t)
+       (source_tree ./test-dirs/type-enclosing)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-module_type)))
+
+(alias
  (name type-expr-test)
  (deps (:t ./test-dirs/type-expr/test.t)
        (source_tree ./test-dirs/type-expr)
