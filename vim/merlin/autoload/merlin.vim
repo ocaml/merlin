@@ -1,17 +1,22 @@
 if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 
 if !exists('g:merlin_python_version')
-  let g:merlin_python_version = 2
+  if has('python3')
+    let g:merlin_python_version = 3
+  elseif has('python') || has('python2')
+    let g:merlin_python_version = 2
+  else
+    echoerr "Error: Required vim compiled with +python or +python3"
+    finish
+  endif
 endif
 
-if has('python3') && !(has('python') && g:merlin_python_version == 2)
-  let g:merlin_python_version = 3
+if g:merlin_python_version == 3
   command! -nargs=1 MerlinPy python3 <args>
-elseif has('python')
-  let g:merlin_python_version = 2
+elseif g:merlin_python_version == 2
   command! -nargs=1 MerlinPy python <args>
 else
-  echoerr "Error: Required vim compiled with +python or +python3"
+  echoerr "Error: Unknown version of python, expecting 2 or 3 (g:merlin_python_version = " . g:merlin_python_version . ")"
   finish
 endif
 
