@@ -1,6 +1,6 @@
 
 (alias
- (name completion-application_context)
+ (name completion-application_context)(enabled_if (>= %{ocaml_version} 4.09.0))
  (deps (:t ./test-dirs/completion/application_context.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
@@ -853,6 +853,21 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias type-enclosing-cons)))
+
+(alias
+ (name type-enclosing-let)
+ (deps (:t ./test-dirs/type-enclosing/let.t)
+       (source_tree ./test-dirs/type-enclosing)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-let)))
 
 (alias
  (name type-enclosing-letop)(enabled_if (>= %{ocaml_version} 4.08.0))
