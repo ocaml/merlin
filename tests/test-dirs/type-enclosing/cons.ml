@@ -12,4 +12,15 @@ module M = struct
   type u = A | B
 end
 
-let f () = (M.A : M.t);
+let f () = (M.A : M.t)
+
+let g = M.A
+
+module N = struct
+  type t = A of int
+  let x = 3
+end
+
+let _ = Some (N.A 3)
+
+let _ = N.x

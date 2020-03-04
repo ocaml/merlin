@@ -36,36 +36,65 @@ We aim to fix that in the future.
 
 - The pattern:
 
-  $ $MERLIN single type-enclosing -position 8:6 -verbosity 0 \
+  $ $MERLIN single type-enclosing -position 8:5 -verbosity 0 \
   > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
   [
     {
       "start": {
-        "line": 7,
-        "col": 2
+        "line": 8,
+        "col": 4
       },
       "end": {
         "line": 8,
-        "col": 11
+        "col": 5
       },
-      "type": "unit",
+      "type": "t",
       "tail": "no"
     },
     {
       "start": {
-        "line": 6,
-        "col": 6
+        "line": 8,
+        "col": 4
       },
       "end": {
         "line": 8,
-        "col": 11
+        "col": 5
       },
-      "type": "t -> unit",
+      "type": "t",
       "tail": "no"
     }
   ]
 
-- Non-regression test:
+- Non-regression tests:
+
+  $ $MERLIN single type-enclosing -position 17:9 -verbosity 0 \
+  > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 17,
+        "col": 8
+      },
+      "end": {
+        "line": 17,
+        "col": 9
+      },
+      "type": "sig type t = A type u = A | B end",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 17,
+        "col": 8
+      },
+      "end": {
+        "line": 17,
+        "col": 11
+      },
+      "type": "M.u",
+      "tail": "no"
+    }
+  ]
 
   $ $MERLIN single type-enclosing -position 15:13 -verbosity 0 \
   > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
@@ -121,6 +150,122 @@ We aim to fix that in the future.
         "col": 15
       },
       "type": "M.t",
+      "tail": "no"
+    }
+  ]
+
+  $ $MERLIN single type-enclosing -position 24:15 -verbosity 0 \
+  > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 24,
+        "col": 14
+      },
+      "end": {
+        "line": 24,
+        "col": 15
+      },
+      "type": "sig type t = A of int val x : int end",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 24,
+        "col": 13
+      },
+      "end": {
+        "line": 24,
+        "col": 20
+      },
+      "type": "N.t",
+      "tail": "no"
+    }
+  ]
+
+  $ $MERLIN single type-enclosing -position 24:17 -verbosity 0 \
+  > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 24,
+        "col": 14
+      },
+      "end": {
+        "line": 24,
+        "col": 17
+      },
+      "type": "int -> N.t",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 24,
+        "col": 13
+      },
+      "end": {
+        "line": 24,
+        "col": 20
+      },
+      "type": "N.t",
+      "tail": "no"
+    }
+  ]
+
+  $ $MERLIN single type-enclosing -position 26:9 -verbosity 0 \
+  >  -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 26,
+        "col": 8
+      },
+      "end": {
+        "line": 26,
+        "col": 9
+      },
+      "type": "sig type t = A of int val x : int end",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 26,
+        "col": 8
+      },
+      "end": {
+        "line": 26,
+        "col": 11
+      },
+      "type": "int",
+      "tail": "no"
+    }
+  ]
+
+  $ $MERLIN single type-enclosing -position 26:11 -verbosity 0 \
+  > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 26,
+        "col": 8
+      },
+      "end": {
+        "line": 26,
+        "col": 11
+      },
+      "type": "int",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 26,
+        "col": 8
+      },
+      "end": {
+        "line": 26,
+        "col": 11
+      },
+      "type": "int",
       "tail": "no"
     }
   ]

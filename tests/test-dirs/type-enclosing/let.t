@@ -3,7 +3,7 @@
 Get type of a shadowing let binding:
 
   $ $MERLIN single type-enclosing -position 4:4 -verbosity 0 \
-  > -filename ./let.ml < ./let.ml | jq ".value[0:2]"
+  > -log-file /tmp/m_log_let -filename ./let.ml < ./let.ml | jq ".value[0:2]"
   [
     {
       "start": {
