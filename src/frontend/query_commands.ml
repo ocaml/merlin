@@ -243,18 +243,28 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let ppf, to_string = Format.to_string () in
     let verbosity = verbosity pipeline in
-    ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
+    let context = Context.Expr in
+    ignore (Type_utils.type_in_env ~verbosity ~context env ppf source : bool);
     to_string ()
 
   | Type_enclosing (expro, pos, index) ->
     let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
-    let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let path = match Mbrowse.enclosing pos [structures] with
+    let structures = Mbrowse.enclosing pos
+      [Mbrowse.of_typedtree (Mtyper.get_typedtree typer)] in
+    let path = match structures with
       | [] -> []
       | browse -> Browse_misc.annotate_tail_calls browse
     in
+    
+    let get_context lident =
+      Context.inspect_browse_tree
+        [structures]
+        (Longident.parse lident)
+        pos
+    in
+
     let result = Type_enclosing.from_nodes path in
 
     (* enclosings of cursor in given expression *)
@@ -274,7 +284,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         )
     in
     let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
-    let small_enclosings = Type_enclosing.from_reconstructed verbosity exprs env node in
+    let small_enclosings =
+      Type_enclosing.from_reconstructed get_context verbosity exprs env
+   node  in
     Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
       Logger.fmt (fun fmt ->
         Format.fprintf fmt "result = [ %a ]"
@@ -283,15 +295,16 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           small_enclosings
       );
 
-    let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
-        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
     let all_items =
+      let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
+        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
       List.merge_cons
         ~f:(fun a b ->
             (* Tail position is computed only on result, and result comes last
                As an approximation, when two items are similar, we returns the
                rightmost one *)
             if compare (normalize a) (normalize b) = 0 then Some b else None)
+
         (small_enclosings @ result)
     in
     let ppf = Format.str_formatter in

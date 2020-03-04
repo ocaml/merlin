@@ -32,32 +32,10 @@ let from_nodes path =
   in
   List.filter_map ~f:aux path
 
-let from_node env node =
-  let longident_to_string id = try
-      String.concat ~sep:"." (Longident.flatten id)
-    with Misc.Fatal_error _ -> ""
-  in
-  let ret typ = Mbrowse.node_loc node, `Type (env, typ), `No in
-  match node with
-  | Expression e ->
-    (match e.exp_desc with
-     | Texp_construct ({ Location. txt; loc=_ }, cdesc, _) ->
-       Some(longident_to_string txt, ret cdesc.cstr_res)
-     | Texp_ident (_, { Location. txt; loc=_ }, vdes) ->
-       Some(longident_to_string txt, ret vdes.val_type)
-     | _ -> None)
-  | Pattern p ->
-    (match p.pat_desc with
-     | Tpat_construct ({ Location. txt; loc=_ }, cdesc, _) ->
-       Some(longident_to_string txt, ret cdesc.cstr_res)
-     | _ -> None)
-  | _ -> None
-
-let from_reconstructed verbosity exprs env node =
+let from_reconstructed get_context verbosity exprs env node =
   let open Browse_raw in
   log ~title:"from_reconstructed" "node = %s"
     (Browse_raw.string_of_node node);
-  let ident_opt = from_node env node in
   let include_lident = match node with
     | Pattern _ -> false
     | _ -> true
@@ -74,17 +52,16 @@ let from_reconstructed verbosity exprs env node =
   in
   let f =
     fun {Location. txt = source; loc} ->
-      match ident_opt with
-      | Some (ident, typ) when ident = source ->
-        (* Retrieve the type from the AST when it is possible *)
-        log ~title:"from_reconstructed" "retrieving type from AST";
-        Some typ
+      let context = get_context source in
+      match context with
+      (* Retrieve the type from the AST when it is possible *)
+      | Some (Context.Constructor cd) ->
+        Some (Mbrowse.node_loc node, `Type (env, cd.cstr_res), `No)
       | _ ->
+        let context = Option.value ~default:Context.Expr context in
         (* Else use the reconstructed identifier *)
         match source with
-        | "" ->
-          log ~title:"from_reconstructed" "no reconstructed identifier";
-          None
+        | "" -> None
         | source when not include_lident && Char.is_lowercase source.[0] ->
           log ~title:"from_reconstructed" "skipping lident";
           None
@@ -94,7 +71,7 @@ let from_reconstructed verbosity exprs env node =
         | source ->
           try
             let ppf, to_string = Format.to_string () in
-            if Type_utils.type_in_env ~verbosity env ppf source then (
+            if Type_utils.type_in_env ~verbosity ~context env ppf source then (
               log ~title:"from_reconstructed" "typed %s" source;
               Some (loc, `String (to_string ()), `No)
             ) else (
