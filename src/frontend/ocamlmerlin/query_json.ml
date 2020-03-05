@@ -337,6 +337,26 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       | `Found doc ->
         `String doc
     end
+  | Locate_type _, resp ->
+    begin match resp with
+      | `At_origin -> `String "Already at definition point"
+      | `Builtin s ->
+        `String (sprintf "%S is a builtin, and it is therefore impossible \
+                          to jump to its definition" s)
+      | `Invalid_context -> `String "Not a valid identifier"
+      | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
+      | `Not_found (i, Some f) ->
+        `String
+          (sprintf "%s was supposed to be in %s but could not be found" i f)
+      | `Not_in_env str ->
+        `String (Printf.sprintf "Not in environment '%s'" str)
+      | `File_not_found msg ->
+        `String msg
+      | `Found (None,pos) ->
+        `Assoc ["pos", Lexing.json_of_position pos]
+      | `Found (Some file,pos) ->
+        `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
+    end
   | Locate _, resp ->
     begin match resp with
       | `At_origin -> `String "Already at definition point"
@@ -391,11 +411,3 @@ let json_of_response (type a) (query : a t) (response : a) : json =
              ~f:(fun loc -> with_location loc []))
   | Version, version ->
     `String version
-  | Locate_type _, locs ->
-    `List (
-      List.map locs ~f:(fun (t, pos) ->
-          match t with
-          | None ->
-            `Assoc ["pos", Lexing.json_of_position pos]
-          | Some file ->
-            `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]))

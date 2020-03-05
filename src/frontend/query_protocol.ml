@@ -131,7 +131,16 @@ type _ t =
        | `Not_found of string * string option
        | `No_documentation
        ] t
-  | Locate_type : Msource.position -> (string option * Lexing.position) list t
+  | Locate_type
+    : Msource.position
+      -> [ `Found of string option * Lexing.position
+         | `Invalid_context
+         | `Builtin of string
+         | `Not_in_env of string
+         | `File_not_found of string
+         | `Not_found of string * string option
+         | `At_origin
+         ] t
   | Locate(* *)
     : string option * [ `ML | `MLI ] * Msource.position
     -> [ `Found of string option * Lexing.position
