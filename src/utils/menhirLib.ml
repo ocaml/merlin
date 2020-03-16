@@ -3133,14 +3133,8 @@ module Make
   type item =
       int * int
 
-  let low_bits =
-    10
-
-  let low_limit =
-    1 lsl low_bits
-
   let export t : item =
-    (t lsr low_bits, t mod low_limit)
+    (t lsr 7, t mod 128)
 
   let items s =
     (* Map [s] to its LR(0) core. *)
@@ -3519,5 +3513,5 @@ module MakeEngineTable (T : TableFormat.TABLES) = struct
 end
 end
 module StaticVersion = struct
-let require_20200211 = ()
+let require_20190924 = ()
 end
