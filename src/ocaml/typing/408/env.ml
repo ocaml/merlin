@@ -600,7 +600,7 @@ let get_components_opt c =
   | Can_load_cmis ->
     EnvLazy.force !components_of_module_maker' c.comps
   | Cannot_load_cmis log ->
-    EnvLazy.force_logged log !components_of_module_maker' c.comps
+    EnvLazy.force_logged_408 log !components_of_module_maker' c.comps
 
 let empty_structure =
   Structure_comps {
@@ -3138,3 +3138,22 @@ let with_cmis f =
 (* helper for merlin *)
 
 let add_merlin_extension_module id mty env = add_module id Mp_present mty env
+
+(* Compat with 4.10 *)
+
+let find_value_by_name ident env =
+  lookup_value ident env
+
+let find_module_by_name ident env =
+  let path = lookup_module ~load:true ident env in
+  path, find_module path env
+
+let find_constructor_by_name ident env =
+  lookup_constructor ident env
+
+let find_modtype_by_name ident env =
+  lookup_modtype ident env
+
+let find_type_by_name ident env =
+  let path = lookup_type ident env in
+  path, find_type path env
