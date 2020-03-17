@@ -3332,3 +3332,4 @@ let update_short_paths x = x
 (* FIXME MERLIN Return the short paths table *)
 let short_paths _ = Short_paths.initial (Short_paths.Basis.create ())
 
+let fold_type_decls = fold_types
