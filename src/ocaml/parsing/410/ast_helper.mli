@@ -175,6 +175,8 @@ module Exp:
                   -> expression
     val letmodule: ?loc:loc -> ?attrs:attrs -> str_opt -> module_expr
                    -> expression -> expression
+    val letmodule_no_opt: ?loc:loc -> ?attrs:attrs -> label -> module_expr
+                   -> expression -> expression
     val letexception:
       ?loc:loc -> ?attrs:attrs -> extension_constructor -> expression
       -> expression

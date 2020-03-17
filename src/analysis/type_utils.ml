@@ -154,7 +154,8 @@ let rec mod_smallerthan n m =
         | Some n', _ -> Some (succ n')
       end
     end
-  | Mty_functor (m1,m2) ->
+  | Mty_functor _ ->
+    let (m1,m2) = unpack_functor m in
     begin
       match mod_smallerthan n m2, m1 with
       | None, _ -> None

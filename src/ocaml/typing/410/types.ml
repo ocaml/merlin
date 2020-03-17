@@ -377,3 +377,9 @@ let signature_item_id = function
   | Sig_class (id, _, _, _)
   | Sig_class_type (id, _, _, _)
     -> id
+
+(* Merlin specific *)
+
+let unpack_functor = function
+  | Mty_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Types.unpack_functor (merlin)"

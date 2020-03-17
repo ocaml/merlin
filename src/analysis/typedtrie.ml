@@ -208,7 +208,9 @@ let remove_indir_me me =
   match me.Typedtree.mod_desc with
   | Typedtree.Tmod_ident (path, _) -> `Alias path
   | Typedtree.Tmod_structure str -> `Str str
-  | Typedtree.Tmod_functor (fp, me) -> `Functor (fp, `Mod_expr me)
+  | Typedtree.Tmod_functor _ ->
+    let (fp,me) = Typedtree.unpack_functor_me me in
+    `Functor (fp, `Mod_expr me)
   | Typedtree.Tmod_apply (me1, me2, _) -> `Apply (me1, me2)
   | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
   | Typedtree.Tmod_unpack _ -> `Unpack
@@ -218,7 +220,9 @@ let remove_indir_mty mty =
   | Typedtree.Tmty_alias (path, _) -> `Alias path
   | Typedtree.Tmty_ident (path, _) -> `Ident path
   | Typedtree.Tmty_signature sg -> `Sg sg
-  | Typedtree.Tmty_functor (fp, mty) -> `Functor (fp, `Mod_type mty)
+  | Typedtree.Tmty_functor _ ->
+    let (fp,mty) = Typedtree.unpack_functor_mty mty in
+    `Functor (fp, `Mod_type mty)
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 
@@ -408,7 +412,7 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_me mb.mb_expr)
       in
-      begin match mb.mb_id with
+      begin match Raw_compat.mb_id mb with
         | None -> trie
         | Some id ->
           Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie
@@ -418,7 +422,7 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_mty md.md_type)
       in
-      begin match md.md_id with
+      begin match Raw_compat.md_id md with
         | None -> trie
         | Some id ->
           Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie

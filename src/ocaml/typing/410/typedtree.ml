@@ -731,3 +731,15 @@ let split_pattern pat =
         Some pat, None
   in
   split_pattern pat
+
+(* Merlin specific *)
+
+let unpack_functor_me me =
+  match me.mod_desc with
+  | Tmod_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
+
+let unpack_functor_mty mty =
+  match mty.mty_desc with
+  | Tmty_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"

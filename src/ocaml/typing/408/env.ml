@@ -3157,3 +3157,6 @@ let find_modtype_by_name ident env =
 let find_type_by_name ident env =
   let path = lookup_type ident env in
   path, find_type path env
+
+let find_label_by_name ident env =
+  lookup_label ident env

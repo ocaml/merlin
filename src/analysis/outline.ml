@@ -69,14 +69,14 @@ let rec summarize node =
 
   | Module_declaration md ->
     let children = get_mod_children node in
-    begin match md.md_id with
+    begin match Raw_compat.md_id md with
       | None -> None
       | Some id -> Some (mk ~children ~location `Module None id)
     end
 
-  | Module_binding mb     ->
+  | Module_binding mb ->
     let children = get_mod_children node in
-    begin match mb.mb_id with
+    begin match Raw_compat.mb_id mb with
       | None -> None
       | Some id -> Some (mk ~children ~location `Module None id)
     end

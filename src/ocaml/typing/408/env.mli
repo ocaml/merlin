@@ -407,6 +407,7 @@ val add_merlin_extension_module: Ident.t -> module_type -> t -> t
 
 val find_value_by_name: Longident.t -> t -> Path.t * value_description
 val find_constructor_by_name: Longident.t -> t -> constructor_description
+val find_label_by_name: Longident.t -> t -> label_description
 val find_type_by_name: Longident.t -> t -> Path.t * type_declaration
 val find_module_by_name: Longident.t -> t -> Path.t * module_declaration
 val find_modtype_by_name: Longident.t -> t -> Path.t * modtype_declaration

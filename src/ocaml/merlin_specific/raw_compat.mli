@@ -81,3 +81,6 @@ module Pattern : sig
   (** will raise [Not_supported] if the desc doesn't exist in that version of
       OCaml. *)
 end
+
+val md_id : Typedtree.module_declaration -> Ident.t option
+val mb_id : Typedtree.module_binding -> Ident.t option

@@ -514,3 +514,7 @@ type label_description =
 val bound_value_identifiers: signature -> Ident.t list
 
 val signature_item_id : signature_item -> Ident.t
+
+(* Merlin specific *)
+
+val unpack_functor : module_type -> functor_parameter * module_type
