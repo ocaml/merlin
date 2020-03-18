@@ -259,6 +259,20 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
     (* enclosings of cursor in given expression *)
     let exprs = reconstruct_identifier pipeline pos expro in
+    let () =
+      Logger.log ~section:Type_enclosing.log_section
+        ~title:"reconstruct identifier" "%a"
+        Logger.json (fun () ->
+          let lst =
+            List.map exprs ~f:(fun { Location.loc; txt } ->
+              `Assoc [ "start", Lexing.json_of_position loc.Location.loc_start
+                     ; "end",   Lexing.json_of_position loc.Location.loc_end
+                     ; "identifier", `String txt]
+            )
+          in
+          `List lst
+        )
+    in
     let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let small_enclosings = Type_enclosing.from_reconstructed verbosity exprs env node in
 

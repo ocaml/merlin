@@ -48,3 +48,5 @@ val from_reconstructed
       [> `String of string | `Type of Env.t * Types.type_expr ] *
       Query_protocol.is_tail_position
      ) list
+
+val log_section : string
