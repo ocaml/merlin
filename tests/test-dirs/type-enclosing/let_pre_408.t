@@ -1,4 +1,4 @@
-(enabled_if (>= %{ocaml_version} 4.08.0))
+(enabled_if (< %{ocaml_version} 4.08.0))
 
 Get type of a shadowing let binding:
 
@@ -24,7 +24,7 @@ Get type of a shadowing let binding:
       },
       "end": {
         "line": 4,
-        "col": 7
+        "col": 34
       },
       "type": "float",
       "tail": "no"
