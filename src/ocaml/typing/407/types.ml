@@ -358,3 +358,14 @@ let signature_item_id = function
   | Sig_class (id, _, _)
   | Sig_class_type (id, _, _)
     -> id
+
+(* Merlin specific *)
+
+type functor_parameter =
+  | Unit
+  | Named of Ident.t option * module_type
+
+let unpack_functor = function
+  | Mty_functor (_, None, mty) -> Unit, mty
+  | Mty_functor (id, Some mty1, mty2) -> Named (Some id, mty1), mty2
+  | _ -> invalid_arg "Types.unpack_functor (merlin)"
