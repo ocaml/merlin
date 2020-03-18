@@ -307,6 +307,8 @@ type alerts = string String.Map.t
 
 
 module EnvLazy: sig
+  open! Result_compat (* merlin *)
+
   type ('a,'b) t
 
   type log
