@@ -674,3 +674,12 @@ val pat_bound_idents_with_loc : pattern -> (Ident.t * label loc) list
    Needed for Browse_raw, but unused in the typedtree itself. *)
 
 type open_declaration
+
+(* Merlin specific *)
+
+type functor_parameter =
+  | Unit
+  | Named of Ident.t option * string option loc * module_type
+
+val unpack_functor_me : module_expr -> functor_parameter * module_expr
+val unpack_functor_mty : module_type -> functor_parameter * module_type
