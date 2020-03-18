@@ -151,6 +151,8 @@ module Exp:
                   -> expression
     val letmodule: ?loc:loc -> ?attrs:attrs -> str -> module_expr -> expression
                    -> expression
+    val letmodule_no_opt: ?loc:loc -> ?attrs:attrs -> label -> module_expr
+                   -> expression -> expression
     val assert_: ?loc:loc -> ?attrs:attrs -> expression -> expression
     val lazy_: ?loc:loc -> ?attrs:attrs -> expression -> expression
     val poly: ?loc:loc -> ?attrs:attrs -> expression -> core_type option
