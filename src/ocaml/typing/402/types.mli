@@ -299,3 +299,10 @@ and ext_status =
 (* Backported from 4.08 *)
 
 val signature_item_id : signature_item -> Ident.t
+
+(* Merlin specific *)
+type functor_parameter =
+  | Unit
+  | Named of Ident.t option * module_type
+
+val unpack_functor : module_type -> functor_parameter * module_type
