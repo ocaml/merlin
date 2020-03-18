@@ -2765,3 +2765,6 @@ let find_type_by_name ident env =
 
 let find_label_by_name ident env =
   lookup_label ident env
+
+let fold_type_decls f =
+  fold_types (fun s p (decl, _) acc -> f s p decl acc)

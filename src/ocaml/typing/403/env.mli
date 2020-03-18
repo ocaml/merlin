@@ -272,6 +272,9 @@ val fold_values:
 val fold_types:
   (string -> Path.t -> type_declaration * type_descriptions -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
+val fold_type_decls:
+  (string -> Path.t -> type_declaration -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
 val fold_constructors:
   (constructor_description -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
