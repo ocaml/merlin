@@ -55,6 +55,8 @@ let from_node env node =
 
 let from_reconstructed verbosity exprs env node =
   let open Browse_raw in
+  log ~title:"from_reconstructed" "node = %s"
+    (Browse_raw.string_of_node node);
   let ident_opt = from_node env node in
   let include_lident = match node with
     | Pattern _ -> false

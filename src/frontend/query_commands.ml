@@ -275,6 +275,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let small_enclosings = Type_enclosing.from_reconstructed verbosity exprs env node in
+    Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
+      Logger.fmt (fun fmt ->
+        Format.fprintf fmt "result = [ %a ]"
+          (Format.pp_print_list ~pp_sep:Format.pp_print_space
+             (fun fmt (loc, _, _) -> Location.print_loc fmt loc))
+          small_enclosings
+      );
 
     let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
