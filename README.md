@@ -12,9 +12,12 @@ If you have a working [Opam](https://opam.ocaml.org/) installation, Merlin is on
 ```shell
 opam install merlin
 opam user-setup install
+opam install merlin-extend
 ```
 
 [opam-user-setup](https://github.com/OCamlPro/opam-user-setup) takes care of configuring Emacs and Vim to make best use of your current install.
+
+[merlin-extend](https://github.com/let-def/merlin-extend) is needed to use Merlin with BuckleScript or ReasonML development.
 
 You can also [configure the editor](#editor-setup) yourself, if you prefer.
 
