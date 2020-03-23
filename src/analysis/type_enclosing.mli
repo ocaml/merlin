@@ -32,6 +32,7 @@
     - the information might be redundant with the one we get from the AST.
 *)
 
+val log_section : string
 
 val from_nodes
   : (Env.t * Browse_raw.node * Query_protocol.is_tail_position) list
