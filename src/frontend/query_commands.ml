@@ -31,6 +31,9 @@ open Std
 open Query_protocol
 module Printtyp = Type_utils.Printtyp
 
+let log_section = "query-commands"
+let {Logger.log} = Logger.for_section log_section
+
 let print_completion_entries ~with_types config source entries =
   if with_types then
     let input_ref = ref [] and output_ref = ref [] in
@@ -190,6 +193,10 @@ let reconstruct_identifier pipeline pos = function
         pos
     in
     let path = Mreader_lexer.identifier_suffix path in
+    log ~title:"reconstruct-identifier" 
+      "paths: [%s]" 
+      (String.concat ~sep:";" (List.map path
+        ~f:(fun l -> l.Location.txt)));
     let reify dot =
       if dot = "" ||
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
@@ -257,7 +264,24 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> []
       | browse -> Browse_misc.annotate_tail_calls browse
     in
+    let exprs = reconstruct_identifier pipeline pos expro in
     
+    let () =
+      Logger.log ~section:Type_enclosing.log_section
+        ~title:"reconstruct identifier" "%a"
+        Logger.json (fun () ->
+          let lst =
+            List.map exprs ~f:(fun { Location.loc; txt } ->
+              `Assoc [ "start", Lexing.json_of_position loc.Location.loc_start
+                     ; "end",   Lexing.json_of_position loc.Location.loc_end
+                     ; "identifier", `String txt]
+            )
+          in
+          `List lst
+        )
+    in
+
+
     let get_context lident =
       Context.inspect_browse_tree
         [structures]
