@@ -24,11 +24,7 @@ let from_nodes path =
     | Module_declaration_name {md_type = {mty_type = m}}
     | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
       ret (`Modtype (env, m))
-    | _ ->
-      log ~title:"from_nodes"
-        "unhandled node under cursor: %s"
-        (Browse_raw.string_of_node node);
-      None
+    | _ -> None
   in
   List.filter_map ~f:aux path
 

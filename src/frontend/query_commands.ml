@@ -282,12 +282,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
 
 
-    let get_context lident =
+    (* let get_context lident =
       Context.inspect_browse_tree
         [structures]
         (Longident.parse lident)
         pos
-    in
+    in *)
 
     let result = Type_enclosing.from_nodes path in
 
@@ -308,6 +308,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         )
     in
     let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
+    let get_context lident =
+      Context.inspect_browse_tree
+        [Mtyper.node_at typer pos]
+        (Longident.parse lident)
+        pos
+    in
     let small_enclosings =
       Type_enclosing.from_reconstructed get_context verbosity exprs env
    node  in
