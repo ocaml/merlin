@@ -207,6 +207,41 @@ let print_exn ppf exn =
     Format.pp_print_string ppf (Printexc.to_string exn)
   | Some (`Ok report) -> Location.print_main ppf report
 
+let print_type ppf env lid  =
+  let p, t = Env.find_type_by_name lid.Asttypes.txt env in
+  Printtyp.type_declaration env
+    (Ident.create_persistent (* Incorrect, but doesn't matter. *)
+       (Path.last p))
+    ppf t
+
+let print_modtype ppf verbosity env lid =
+  let _p, mtd = Env.find_modtype_by_name lid.Asttypes.txt env in
+  match mtd.mtd_type with
+  | Some mt -> print_short_modtype verbosity env ppf mt
+  | None -> Format.pp_print_string ppf "(* abstract module *)"
+
+let print_modpath ppf verbosity env lid =
+  let _path, md =
+    Env.find_module_by_name lid.Asttypes.txt env
+  in
+  print_short_modtype verbosity env ppf (md.md_type)
+
+let print_constr ppf env lid =
+  let cstr_desc =
+    Env.find_constructor_by_name lid.Asttypes.txt env
+  in
+  (*
+    Format.pp_print_string ppf name;
+    Format.pp_print_string ppf " : ";
+  *)
+  (* FIXME: support Reader printer *)
+  !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc)
+
+let print_label ppf env lid  =
+  let lbl_des = Env.lookup_label lid.Asttypes.txt env in
+  Printtyp.type_expr ppf lbl_des.lbl_arg
+
+exception Fallback
 let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
@@ -232,66 +267,42 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
     in
     let open Context in
     match extract_specific_parsing_info e with
-    | `Ident longident ->
-      (match context with
-       | Type ->
-         begin try
-             let p, t = Env.find_type_by_name longident.Asttypes.txt env in
-             Printtyp.type_declaration env
-               (Ident.create_persistent (* Incorrect, but doesn't matter. *)
-                  (Path.last p))
-               ppf t;
-             true
-           with exn -> print_exn ppf exn; false
-         end
-       | _ ->
-         begin try
-             (* Don't catch type errors *)
-             print_expr e;
-             true
-           with exn -> print_exn ppf exn; false
-         end)
+    | `Ident longident | `Constr longident ->
+      begin try
+          begin match context with
+            | Label _ ->
+              print_label ppf env longident
+            | Type ->
+              print_type ppf env longident
+            (* TODO: special processing for module aliases ? *)
+            | Module_type ->
+              print_modtype ppf verbosity env longident
+            | Module_path ->
+              print_modpath ppf verbosity env longident
+            | Constructor _ ->
+              print_constr ppf env longident
+            | _ -> raise Fallback
+          end;
+          true
+        with _ ->
+        (* Fallback to contextless typing attemps *)
+        try
+          print_expr e;
+          true
+        with exn -> try
+            print_modpath ppf verbosity env longident;
+            true
+          with _ -> try
+              (* TODO: useless according to test suite *)
+              print_modtype ppf verbosity env longident;
+              true
+            with _ -> try
+                (* TODO: useless according to test suite *)
+                print_constr ppf env longident;
+                true
+              with _ -> print_exn ppf exn; false
+      end
 
-    | `Constr longident ->
-      (match context with
-       (* TODO: special processing for module aliases ? *)
-       | Module_type ->
-         begin try
-             let _path, mtd = Env.find_modtype_by_name longident.Asttypes.txt env in
-             (match mtd.mtd_type with
-              | Some mt -> print_short_modtype verbosity env ppf mt
-              | None -> Format.pp_print_string ppf "(* abstract module *)");
-             true
-           with exn -> print_exn ppf exn; false
-         end
-       | Module_path ->
-         begin try
-             let _path, md =
-               Env.find_module_by_name longident.Asttypes.txt env
-             in
-             print_short_modtype verbosity env ppf (md.md_type);
-             true
-           with exn -> print_exn ppf exn; false
-         end
-       | _ ->
-         begin try
-             print_expr e;
-             true
-           with exn ->
-           try
-             let cstr_desc =
-               Env.find_constructor_by_name longident.Asttypes.txt env
-             in
-                    (*
-                      Format.pp_print_string ppf name;
-                      Format.pp_print_string ppf " : ";
-                    *)
-             (* FIXME: support Reader printer *)
-             !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc);
-             true
-           with _ -> print_exn ppf exn; false
-         end
-      )
     | `Other ->
       try print_expr e; true
       with exn -> print_exn ppf exn; false

@@ -27,6 +27,7 @@
     }
   ]
 
+FIXME: not int but Foo
   $ $MERLIN single type-enclosing -position 5:11 -verbosity 1 \
   > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
   [
