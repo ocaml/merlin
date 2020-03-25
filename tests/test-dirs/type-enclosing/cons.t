@@ -154,6 +154,11 @@ We aim to fix that in the future.
     }
   ]
 
+FIXME: the following two tests works only because of
+the fallbacks implemented in type_utils. Context is
+unable to answer correctly du to the enclosing node
+being "Texp_constant" and not "Texp_construct". in
+the expression (M.A x).
   $ $MERLIN single type-enclosing -position 24:15 -verbosity 0 \
   > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
   [

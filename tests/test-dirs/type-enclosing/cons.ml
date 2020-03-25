@@ -14,7 +14,7 @@ end
 
 let f () = (M.A : M.t)
 
-let g = M.A
+let _ = M.A
 
 module N = struct
   type t = A of int

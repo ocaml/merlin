@@ -870,8 +870,8 @@
 (alias (name runtest) (deps (alias type-enclosing-cons)))
 
 (alias
- (name type-enclosing-context)
- (deps (:t ./test-dirs/type-enclosing/context.t)
+ (name type-enclosing-context_correct_pre_406)(enabled_if (< %{ocaml_version} 4.06.0))
+ (deps (:t ./test-dirs/type-enclosing/context_correct_pre_406.t)
        (source_tree ./test-dirs/type-enclosing)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
@@ -882,10 +882,25 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-context)))
+(alias (name runtest) (deps (alias type-enclosing-context_correct_pre_406)))
 
 (alias
- (name type-enclosing-let)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (name type-enclosing-context_wrong_from_406)(enabled_if (>= %{ocaml_version} 4.06.0))
+ (deps (:t ./test-dirs/type-enclosing/context_wrong_from_406.t)
+       (source_tree ./test-dirs/type-enclosing)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-context_wrong_from_406)))
+
+(alias
+ (name type-enclosing-let)
  (deps (:t ./test-dirs/type-enclosing/let.t)
        (source_tree ./test-dirs/type-enclosing)
        %{bin:ocamlmerlin}
@@ -898,21 +913,6 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias type-enclosing-let)))
-
-(alias
- (name type-enclosing-let_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
- (deps (:t ./test-dirs/type-enclosing/let_pre_408.t)
-       (source_tree ./test-dirs/type-enclosing)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
- (action
-   (chdir ./test-dirs/type-enclosing
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-let_pre_408)))
 
 (alias
  (name type-enclosing-letop)(enabled_if (>= %{ocaml_version} 4.08.0))
