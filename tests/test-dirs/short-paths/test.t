@@ -1,5 +1,3 @@
-(enabled_if (< %{ocaml_version} 4.10.0))
-
   $ $OCAMLC -c dep.mli
 
   $ $MERLIN single errors -filename test.ml < test.ml
