@@ -1726,7 +1726,6 @@ let check_coercions env { id; id_loc; clty; ty_id; cltydef; obj_id; obj_abbr;
 
 (*******************************)
 
-(* FIXME MERLIN CHECK *)
 let type_classes define_class approx kind env cls =
   let scope = Ctype.create_scope () in
   let cls =
@@ -1740,17 +1739,17 @@ let type_classes define_class approx kind env cls =
       cls
   in
   Ctype.begin_class_def ();
-  let (res, env) =
+  let (res, newenv) =
     List.fold_left (initial_env define_class approx) ([], env) cls
   in
-  let (res, env) =
-    List.fold_right (class_infos define_class kind) res ([], env)
+  let (res, newenv) =
+    List.fold_right (class_infos define_class kind) res ([], newenv)
   in
   Ctype.end_def ();
-  let res = List.rev_map (final_decl env define_class) res in
+  let res = List.rev_map (final_decl newenv define_class) res in
   let decls = List.fold_right extract_type_decls res [] in
   let decls =
-    try Typedecl_variance.update_class_decls env decls
+    try Typedecl_variance.update_class_decls newenv decls
     with Typedecl_variance.Error(loc, err) ->
       raise (Typedecl.Error(loc, Typedecl.Variance err))
   in
