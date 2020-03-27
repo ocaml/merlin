@@ -3,7 +3,16 @@ open Std
 let log_section = "type-enclosing"
 let {Logger.log} = Logger.for_section log_section
 
-let from_nodes path =
+type type_info =
+  | Modtype of Env.t * Types.module_type
+  | Type of Env.t * Types.type_expr
+  | Type_decl of Env.t * Ident.t * Types.type_declaration
+  | String of string
+
+type typed_enclosings =
+  (Location.t * type_info * Query_protocol.is_tail_position) list
+
+let from_nodes ~path =
   let aux (env, node, tail) =
     let open Browse_raw in
     let ret x = Some (Mbrowse.node_loc node, x, tail) in
@@ -12,9 +21,9 @@ let from_nodes path =
     | Pattern {pat_type = t}
     | Core_type {ctyp_type = t}
     | Value_description { val_desc = { ctyp_type = t } } ->
-      ret (`Type (env, t))
+      ret (Type (env, t))
     | Type_declaration { typ_id = id; typ_type = t} ->
-      ret (`Type_decl (env, id, t))
+      ret (Type_decl (env, id, t))
     | Module_expr {mod_type = m}
     | Module_type {mty_type = m}
     | Module_binding {mb_expr = {mod_type = m}}
@@ -23,12 +32,12 @@ let from_nodes path =
     | Module_binding_name {mb_expr = {mod_type = m}}
     | Module_declaration_name {md_type = {mty_type = m}}
     | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
-      ret (`Modtype (env, m))
+      ret (Modtype (env, m))
     | _ -> None
   in
   List.filter_map ~f:aux path
 
-let from_reconstructed get_context verbosity exprs env node =
+let from_reconstructed ~get_context ~verbosity env node exprs =
   let open Browse_raw in
   log ~title:"from_reconstructed" "node = %s\nexprs = [%s]"
     (Browse_raw.string_of_node node)
@@ -60,7 +69,7 @@ let from_reconstructed get_context verbosity exprs env node =
       | Some (Context.Constructor cd) ->
         log ~title:"from_reconstructed" "ctx: constructor %s"
           cd.cstr_name;
-        Some (Mbrowse.node_loc node, `Type (env, cd.cstr_res), `No)
+        Some (Mbrowse.node_loc node, Type (env, cd.cstr_res), `No)
       | _ ->
         let context = Option.value ~default:Context.Expr context in
         (* Else use the reconstructed identifier *)
@@ -79,7 +88,7 @@ let from_reconstructed get_context verbosity exprs env node =
             let ppf, to_string = Format.to_string () in
             if Type_utils.type_in_env ~verbosity ~context env ppf source then (
               log ~title:"from_reconstructed" "typed %s" source;
-              Some (loc, `String (to_string ()), `No)
+              Some (loc, String (to_string ()), `No)
             )
             else (
               log ~title:"from_reconstructed" "FAILED to type %s" source;
