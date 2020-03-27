@@ -1,6 +1,3 @@
-(*FIXME MERLIN*)
-[@@@ocaml.warning "-26-27-32-37-38"];;
-
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -417,10 +414,6 @@ type type_descriptions =
 
 let in_signature_flag = 0x01
 
-type 'a value_or_persistent =
-  | Value of 'a
-  | Persistent
-
 type t = {
   values: (value_entry, value_data) IdTbl.t;
   constrs: constructor_data TycompTbl.t;
@@ -534,10 +527,10 @@ and short_paths_addition =
   | Class_type of Ident.t * class_type_declaration
   | Module_type of Ident.t * modtype_declaration
   | Module of Ident.t * module_declaration * module_components
-  | Type_open of Path.t * (type_declaration * type_descriptions) NameMap.t
+  | Type_open of Path.t * type_data NameMap.t
   | Class_type_open of Path.t * class_type_declaration NameMap.t
   | Module_type_open of Path.t * modtype_declaration NameMap.t
-  | Module_open of Path.t * (module_components * address_lazy) value_or_persistent NameMap.t
+  | Module_open of Path.t * module_data NameMap.t
 
 let empty_structure =
   Structure_comps {
@@ -2054,8 +2047,7 @@ let add_components slot root env0 comps =
   let add w comps env0 = IdTbl.add_open slot w root comps env0 in
   let add_types w comps env0 additions =
     let types = add w comps env0 in
-    (*FIXME MERLIN
-      let additions = short_paths_type_open root comps additions in*)
+    let additions = short_paths_type_open root comps additions in
     types, additions
   in
   let add_cltypes w comps env0 additions =
@@ -2070,8 +2062,7 @@ let add_components slot root env0 comps =
   in
   let add_modules w comps env0 additions =
     let modules = add w comps env0 in
-    (*FIXME MERLIN
-    let additions = short_paths_module_open root comps additions in*)
+    let additions = short_paths_module_open root comps additions in
     modules, additions
   in
   let constrs =
@@ -3531,7 +3522,7 @@ let short_paths_additions_desc env additions =
            Short_paths.Desc.Module(id, desc, source, depr) :: acc
        | Type_open(root, decls) ->
            String.Map.fold
-             (fun name (decl, _) acc ->
+             (fun name { tda_declaration = decl; _ } acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
                 let desc = Short_paths.Desc.Type.Alias path in
@@ -3561,10 +3552,7 @@ let short_paths_additions_desc env additions =
              decls acc
        | Module_open(root, decls) ->
            String.Map.fold
-             (fun name comps acc ->
-               match comps with
-               | Persistent -> acc
-               | Value (comps, _) ->
+             (fun name { mda_components = comps; _ } acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
                 let desc = Short_paths.Desc.Module.Alias path in
