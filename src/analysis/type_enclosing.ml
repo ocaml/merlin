@@ -33,25 +33,25 @@ let from_nodes path =
   List.filter_map ~f:aux path
 
 let from_node env node =
-        let longident_to_string id = try
-          String.concat ~sep:"." (Longident.flatten id)
-          with Misc.Fatal_error _ -> ""
-        in
-        let ret typ = Mbrowse.node_loc node, `Type (env, typ), `No in
-        match node with
-        | Expression e ->
-          (match e.exp_desc with
-          | Texp_construct ({ Location. txt; loc=_ }, cdesc, _) ->
-            Some(longident_to_string txt, ret cdesc.cstr_res)
-          | Texp_ident (_, { Location. txt; loc=_ }, vdes) ->
-            Some(longident_to_string txt, ret vdes.val_type)
-          | _ -> None)
-        | Pattern p ->
-          (match p.pat_desc with
-          | Tpat_construct ({ Location. txt; loc=_ }, cdesc, _) ->
-            Some(longident_to_string txt, ret cdesc.cstr_res)
-          | _ -> None)
-        | _ -> None
+  let longident_to_string id = try
+      String.concat ~sep:"." (Longident.flatten id)
+    with Misc.Fatal_error _ -> ""
+  in
+  let ret typ = Mbrowse.node_loc node, `Type (env, typ), `No in
+  match node with
+  | Expression e ->
+    (match e.exp_desc with
+     | Texp_construct ({ Location. txt; loc=_ }, cdesc, _) ->
+       Some(longident_to_string txt, ret cdesc.cstr_res)
+     | Texp_ident (_, { Location. txt; loc=_ }, vdes) ->
+       Some(longident_to_string txt, ret vdes.val_type)
+     | _ -> None)
+  | Pattern p ->
+    (match p.pat_desc with
+     | Tpat_construct ({ Location. txt; loc=_ }, cdesc, _) ->
+       Some(longident_to_string txt, ret cdesc.cstr_res)
+     | _ -> None)
+  | _ -> None
 
 let from_reconstructed verbosity exprs env node =
   let open Browse_raw in
