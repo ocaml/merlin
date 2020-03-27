@@ -1,30 +1,30 @@
 (* {{{ COPYING *(
 
-  This file is part of Merlin, an helper for ocaml editors
+   This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
-                             Thomas Refis  <refis.thomas(_)gmail.com>
-                             Simon Castellan  <simon.castellan(_)iuwt.fr>
+   Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
+                            Thomas Refis  <refis.thomas(_)gmail.com>
+                            Simon Castellan  <simon.castellan(_)iuwt.fr>
 
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation the
-  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-  sell copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the "Software"),
+   to deal in the Software without restriction, including without limitation the
+   rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+   sell copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-  The Software is provided "as is", without warranty of any kind, express or
-  implied, including but not limited to the warranties of merchantability,
-  fitness for a particular purpose and noninfringement. In no event shall
-  the authors or copyright holders be liable for any claim, damages or other
-  liability, whether in an action of contract, tort or otherwise, arising
-  from, out of or in connection with the software or the use or other dealings
-  in the Software.
+   The Software is provided "as is", without warranty of any kind, express or
+   implied, including but not limited to the warranties of merchantability,
+   fitness for a particular purpose and noninfringement. In no event shall
+   the authors or copyright holders be liable for any claim, damages or other
+   liability, whether in an action of contract, tort or otherwise, arising
+   from, out of or in connection with the software or the use or other dealings
+   in the Software.
 
-)* }}} *)
+   )* }}} *)
 
 open Std
 
@@ -134,27 +134,27 @@ end
 let rec mod_smallerthan n m =
   if n < 0 then None
   else
-  let open Types in
-  match m with
-  | Mty_ident _ -> Some 1
-  | Mty_signature s ->
-    begin match List.length_lessthan n s with
-    | None -> None
-    | Some _ ->
-      List.fold_left s ~init:(Some 0)
-      ~f:begin fun acc item ->
-        let sub n1 m = match mod_smallerthan (n - n1) m with
-           | Some n2 -> Some (n1 + n2)
-           | None -> None
-        in
-        match acc, Raw_compat.si_modtype_opt item with
-        | None, _ -> None
-        | Some n', _ when n' > n -> None
-        | Some n1, Some mty -> sub n1 mty
-        | Some n', _ -> Some (succ n')
+    let open Types in
+    match m with
+    | Mty_ident _ -> Some 1
+    | Mty_signature s ->
+      begin match List.length_lessthan n s with
+        | None -> None
+        | Some _ ->
+          List.fold_left s ~init:(Some 0)
+            ~f:begin fun acc item ->
+              let sub n1 m = match mod_smallerthan (n - n1) m with
+                | Some n2 -> Some (n1 + n2)
+                | None -> None
+              in
+              match acc, Raw_compat.si_modtype_opt item with
+              | None, _ -> None
+              | Some n', _ when n' > n -> None
+              | Some n1, Some mty -> sub n1 mty
+              | Some n', _ -> Some (succ n')
+            end
       end
-    end
-  | Mty_functor _ ->
+    | Mty_functor _ ->
     let (m1,m2) = unpack_functor m in
     begin
       match mod_smallerthan n m2, m1 with
@@ -236,10 +236,10 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     match extract_specific_parsing_info e with
     | `Ident longident ->
       begin try
-        (* Don't catch type errors *)
-        print_expr e;
-        true
-      with exn ->
+          (* Don't catch type errors *)
+          print_expr e;
+          true
+        with exn ->
         try
           let p, t = Env.find_type_by_name longident.Asttypes.txt env in
           Printtyp.type_declaration env
@@ -252,9 +252,9 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
 
     | `Constr longident ->
       begin try
-        print_expr e;
-        true
-      with exn ->
+          print_expr e;
+          true
+        with exn ->
         try
           (* TODO: special processing for module aliases? *)
           match lookup_module_or_modtype longident.Asttypes.txt env with
@@ -263,25 +263,25 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
             true
           | _path, Some md ->
             begin match mod_smallerthan 1000 md with
-            | None when verbosity = 0 ->
-              Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
-            | _ ->
-              Printtyp.modtype env ppf md
+              | None when verbosity = 0 ->
+                Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
+              | _ ->
+                Printtyp.modtype env ppf md
             end;
             true
         with _ ->
-          try
-            let cstr_desc =
-              Env.find_constructor_by_name longident.Asttypes.txt env
-            in
-                  (*
-                     Format.pp_print_string ppf name;
-                     Format.pp_print_string ppf " : ";
-                  *)
-            (* FIXME: support Reader printer *)
-            !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc);
-            true
-          with _ -> print_exn ppf exn; false
+        try
+          let cstr_desc =
+            Env.find_constructor_by_name longident.Asttypes.txt env
+          in
+          (*
+              Format.pp_print_string ppf name;
+              Format.pp_print_string ppf " : ";
+          *)
+          (* FIXME: support Reader printer *)
+          !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc);
+          true
+        with _ -> print_exn ppf exn; false
       end
 
     | `Other ->
@@ -296,7 +296,7 @@ let read_doc_attributes attrs =
       | PStr[{ pstr_desc = Pstr_eval(
           ({Parsetree. pexp_desc =
               Parsetree.Pexp_constant (Parsetree.Pconst_string (str, _)) ; _} as expr), _)
-        ; _ }] ->
+             ; _ }] ->
         Some(str, expr.pexp_loc)
       | _ -> None
   in
