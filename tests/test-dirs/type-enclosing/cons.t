@@ -13,7 +13,7 @@ Various parts of the cons.ml:
         "line": 4,
         "col": 14
       },
-      "type": "t",
+      "type": "t'",
       "tail": "no"
     },
     {
@@ -108,7 +108,7 @@ We aim to fix that in the future.
         "line": 15,
         "col": 15
       },
-      "type": "M.t",
+      "type": "M.u",
       "tail": "no"
     },
     {
