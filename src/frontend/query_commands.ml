@@ -193,8 +193,8 @@ let reconstruct_identifier pipeline pos = function
         pos
     in
     let path = Mreader_lexer.identifier_suffix path in
-    log ~title:"reconstruct-identifier" 
-      "paths: [%s]" 
+    log ~title:"reconstruct-identifier"
+      "paths: [%s]"
       (String.concat ~sep:";" (List.map path
         ~f:(fun l -> l.Location.txt)));
     let reify dot =
@@ -265,7 +265,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | browse -> Browse_misc.annotate_tail_calls browse
     in
     let exprs = reconstruct_identifier pipeline pos expro in
-    
+
     let () =
       Logger.log ~section:Type_enclosing.log_section
         ~title:"reconstruct identifier" "%a"
@@ -281,15 +281,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         )
     in
 
-
-    (* let get_context lident =
-      Context.inspect_browse_tree
-        [structures]
-        (Longident.parse lident)
-        pos
-    in *)
-
-    let result = Type_enclosing.from_nodes path in
+    let result = Type_enclosing.from_nodes ~path in
 
     (* enclosings of cursor in given expression *)
     let exprs = reconstruct_identifier pipeline pos expro in
@@ -310,13 +302,15 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let get_context lident =
       Context.inspect_browse_tree
-        [Mtyper.node_at typer pos]
+        ~cursor:pos
         (Longident.parse lident)
-        pos
+        [Mtyper.node_at typer pos]
     in
     let small_enclosings =
-      Type_enclosing.from_reconstructed get_context verbosity exprs env
-   node  in
+      Type_enclosing.from_reconstructed
+        ~get_context ~verbosity
+        env node exprs
+    in
     Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
       Logger.fmt (fun fmt ->
         Format.fprintf fmt "result = [ %a ]"
@@ -343,16 +337,16 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           let print = match index with None -> true | Some index -> index = i in
           let ret x = (loc, x, tail) in
           match text with
-          | `String str -> ret (`String str)
-          | `Type (env, t) when print ->
+          | Type_enclosing.String str -> ret (`String str)
+          | Type_enclosing.Type (env, t) when print ->
             Printtyp.wrap_printing_env env ~verbosity
               (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
             ret (`String (Format.flush_str_formatter ()))
-          | `Type_decl (env, id, t) when print ->
+          | Type_enclosing.Type_decl (env, id, t) when print ->
             Printtyp.wrap_printing_env env ~verbosity
               (fun () -> Printtyp.type_declaration env id ppf t);
             ret (`String (Format.flush_str_formatter ()))
-          | `Modtype (env, m) when print ->
+          | Type_enclosing.Modtype (env, m) when print ->
             Printtyp.wrap_printing_env env ~verbosity
               (fun () -> Printtyp.modtype env ppf m);
             ret (`String (Format.flush_str_formatter ()))

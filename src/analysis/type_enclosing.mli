@@ -7,10 +7,10 @@
 
     (2) is primarily useful in the following situations:
     - when the identifier is polymorphic in the environment, but monomorphic in
-    the AST because it's been instantiated.
+      the AST because it's been instantiated.
     - when there is a syntax or type error in that area, and we don't have a
-    precise enough AST node for the position (i.e. we got a "recovered" node, of
-    type ['a]).
+      precise enough AST node for the position (i.e. we got a "recovered" node, of
+      type ['a]).
 
     Furthermore, (2) has a finer granularity than (1): when the cursor is in the
     middle of a longident, e.g. [Foo.B|ar.Baz.lol] (with | being the cursor),
@@ -21,8 +21,8 @@
 
     There are however some issues with the small enclosings:
     - one has to be careful of the context (obviously that information won't be
-    available in case of parse errors); because a given identifier could exist
-    in different namespaces, for instance:
+      available in case of parse errors); because a given identifier could exist
+      in different namespaces, for instance:
     {[
       type t
       module type t = sig val t : t end
@@ -34,22 +34,23 @@
 
 val log_section : string
 
-val from_nodes
-  : (Env.t * Browse_raw.node * Query_protocol.is_tail_position) list
-  -> (Location.t *
-      [> `Modtype of Env.t * Types.module_type
-      | `Type of Env.t * Types.type_expr
-      | `Type_decl of Env.t * Ident.t * Types.type_declaration ] *
-      Query_protocol.is_tail_position
-     ) list
+type type_info =
+  | Modtype of Env.t * Types.module_type
+  | Type of Env.t * Types.type_expr
+  | Type_decl of Env.t * Ident.t * Types.type_declaration
+  | String of string
 
-val from_reconstructed
-  : 
-  (string -> Context.t option) ->
-  int -> string Location.loc list -> Env.t -> Mbrowse.node
-  -> (Location.t *
-      [> `Modtype of Env.t * Types.module_type
-             | `String of string
-             | `Type of Env.t * Types.type_expr ] *
-      Query_protocol.is_tail_position
-     ) list
+type typed_enclosings =
+  (Location.t * type_info * Query_protocol.is_tail_position) list
+
+val from_nodes :
+  path:(Env.t * Browse_raw.node * Query_protocol.is_tail_position) list ->
+  typed_enclosings
+
+val from_reconstructed :
+  get_context:(string -> Context.t option) ->
+  verbosity:int ->
+  Env.t ->
+  Mbrowse.node ->
+  string Location.loc list ->
+  typed_enclosings

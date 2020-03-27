@@ -727,7 +727,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
         `Error `Missing_labels_namespace
       )
     | None ->
-      match Context.inspect_browse_tree [browse] lid pos, is_label with
+      match Context.inspect_browse_tree ~cursor:pos lid [browse], is_label with
       | None, _ ->
         log ~title:"from_string" "already at origin, doing nothing" ;
         `Error `At_origin
@@ -775,7 +775,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     | `Completion_entry entry -> from_completion_entry ~config ~pos ~lazy_trie entry
     | `User_input path ->
       let lid = Longident.parse path in
-      begin match Context.inspect_browse_tree [browse] lid pos with
+      begin match Context.inspect_browse_tree ~cursor:pos lid [browse] with
       | None ->
         `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->
