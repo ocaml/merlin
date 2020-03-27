@@ -1747,7 +1747,7 @@ and store_value ?check id addr decl env =
     values = IdTbl.add id (Val_bound vda) env.values;
     summary = Env_value(env.summary, id, decl) }
 
-and store_type ~check id info env =
+and store_type ~check ~predef id info env =
   let loc = info.type_loc in
   if check then
     check_usage loc id (fun s -> Warnings.Unused_type_declaration s)
@@ -1792,7 +1792,9 @@ and store_type ~check id info env =
         (fun (id, descr) labels -> TycompTbl.add id descr labels)
         labels env.labels;
     types = IdTbl.add id tda env.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = Env_type(env.summary, id, info);
+    short_paths_additions =
+      short_paths_type predef id info env.short_paths_additions; }
 
 and store_type_infos id info env =
   (* Simplified version of store_type that doesn't compute and store
@@ -1857,8 +1859,8 @@ and store_module ~check ~freshening_sub id addr presence md env =
   { env with
     modules = IdTbl.add id (Mod_local mda) env.modules;
     summary = Env_module(env.summary, id, presence, md);
-    (* FIXME MERLIN short_paths_additions =
-       short_paths_module id md mod_comps env.short_paths_additions; *) }
+    short_paths_additions =
+      short_paths_module id md comps env.short_paths_additions; }
 
 and store_modtype id info env =
   { env with
@@ -1927,8 +1929,8 @@ let add_value ?check id desc env =
   let addr = value_declaration_address env id desc in
   store_value ?check id addr desc env
 
-let add_type ~check id info env =
-  store_type ~check id info env
+let add_type ~check ~predef id info env =
+  store_type ~check ~predef id info env
 
 and add_extension ~check id ext env =
   let addr = extension_declaration_address env id ext in
@@ -1975,7 +1977,7 @@ let enter_value ?check name desc env =
 
 let enter_type ~scope name info env =
   let id = Ident.create_scoped ~scope name in
-  let env = store_type ~check:true id info env in
+  let env = store_type ~check:true ~predef:false id info env in
   (id, env)
 
 let enter_extension ~scope name ext env =
@@ -2012,7 +2014,7 @@ let enter_module ~scope ?arg s presence mty env =
 let add_item comp env =
   match comp with
     Sig_value(id, decl, _)    -> add_value id decl env
-  | Sig_type(id, decl, _, _)  -> add_type ~check:false id decl env
+  | Sig_type(id, decl, _, _)  -> add_type ~check:false ~predef:false id decl env
   | Sig_typext(id, ext, _, _) -> add_extension ~check:false id ext env
   | Sig_module(id, presence, md, _, _) ->
       add_module_declaration ~check:false id presence md env
@@ -2235,9 +2237,12 @@ let save_signature_with_imports ~alerts sg modname filename imports =
 (* Make the initial environment *)
 let (initial_safe_string, initial_unsafe_string) =
   Predef.build_initial_env
-    (add_type ~check:false)
+    (add_type ~check:false ~predef:true)
     (add_extension ~check:false)
     empty
+
+let add_type ~check id info env =
+  add_type ~check ~predef:false id info env
 
 (* Tracking usage *)
 

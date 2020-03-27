@@ -2080,9 +2080,9 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                 in
                 Subst.modtype (Rescope scope) subst mty_res
             | None ->
-                let _env, nondep_mty =
+                let nondep_mty =
                   match param with
-                  | None -> env, mty_res
+                  | None -> mty_res
                   | Some param ->
                       let parent_env = env in
                       let env =
@@ -2091,7 +2091,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                       in
                       check_well_formed_module env smod.pmod_loc
                         "the signature of this functor application" mty_res;
-                      try env, Mtype.nondep_supertype env [param] mty_res
+                      try Mtype.nondep_supertype env [param] mty_res
                       with Ctype.Nondep_cannot_erase _ ->
                         raise(Error(smod.pmod_loc, parent_env,
                                     Cannot_eliminate_dependency mty_functor))
