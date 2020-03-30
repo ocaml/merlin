@@ -95,6 +95,10 @@ let inspect_pattern ~cursor ~lid p =
   | _ ->
     Some Patt
 
+let name_of_path path =
+  Option.value ~default:"*type-error*"
+    (List.last (Path.to_string_list path))
+
 let inspect_expression ~cursor ~lid e : t =
   match e.Typedtree.exp_desc with
   | Texp_construct (lid_loc, cd, _) ->
@@ -103,16 +107,17 @@ let inspect_expression ~cursor ~lid e : t =
       if cursor_on_longident_end ~cursor ~lid_loc cd.cstr_name then
         Constructor cd
       else Module_path
-    else Expr
-  | Texp_ident (Path.Pident id as _p, lid_loc, _) ->
-    if Mbrowse.is_recovered_ident id then
+    else Module_path
+  | Texp_ident (p, lid_loc, _) ->
+    let name = name_of_path p in
+    if name = "*type-error*" then
       (* For type_enclosing: it is enough to return Module_path here.
          - If the cursor was on the end of the lid typing should fail anyway
          - If the cursor is on a segment of the path it should be typed ad a
          Module_path
          TODO: double check that this is correct-enough behavior for Locate *)
       Module_path
-    else if cursor_on_longident_end ~cursor ~lid_loc (Ident.name id) then
+    else if cursor_on_longident_end ~cursor ~lid_loc name then
       Expr
     else
       Module_path
