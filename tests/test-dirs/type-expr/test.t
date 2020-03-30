@@ -20,7 +20,7 @@
   $ $MERLIN single type-expression -expression "t" -position end -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "type t = T",
+    "value": "Unbound value t",
     "notifications": []
   }
 
