@@ -187,6 +187,7 @@ let get_typedtree t =
 
 let node_at ?(skip_recovered=false) t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
+  log ~title:"node_at" "Node: %s" (Mbrowse.print () node);
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node
        is introduced, so the node to check for recovery is the second one. *)
@@ -197,4 +198,7 @@ let node_at ?(skip_recovered=false) t pos_cursor =
   match Mbrowse.deepest_before pos_cursor [node] with
   | [] -> [get_env t, Browse_raw.Dummy]
   | path when skip_recovered -> select path
-  | path -> path
+  | path ->
+    log ~title:"node_at" "Deepest before %s"
+      (Mbrowse.print () path);
+    path
