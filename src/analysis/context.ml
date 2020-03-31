@@ -125,6 +125,10 @@ let inspect_expression ~cursor ~lid e : t =
     Expr
 
 let inspect_browse_tree ~cursor lid browse : t option =
+  log ~title:"inspect_context" "current node is: [%s]"
+    (String.concat ~sep:"|" (
+      List.map ~f:(Mbrowse.print ()) browse
+    ));
   match Mbrowse.enclosing cursor browse with
   | [] ->
     log ~title:"inspect_context"
@@ -133,7 +137,7 @@ let inspect_browse_tree ~cursor lid browse : t option =
   | enclosings ->
     let open Browse_raw in
     let node = Browse_tree.of_browse enclosings in
-    log ~title:"inspect_context" "current node is: %s"
+    log ~title:"inspect_context" "current enclosing node is: %s"
       (string_of_node node.Browse_tree.t_node);
     match node.Browse_tree.t_node with
     | Pattern p -> inspect_pattern ~cursor ~lid p
