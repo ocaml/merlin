@@ -2063,12 +2063,13 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
                mod_attributes = smod.pmod_attributes;
                mod_loc = smod.pmod_loc }
       | Mty_functor (Named (param, mty_param), mty_res) as mty_functor ->
-          (* FIXME MERLIN recover from inclusion error *)
           let coercion =
             try
               Includemod.modtypes ~loc:sarg.pmod_loc env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise(Error(sarg.pmod_loc, env, Not_included msg)) in
+              Msupport.raise_error(Error(sarg.pmod_loc, env, Not_included msg));
+              Tcoerce_none
+          in
           let mty_appl =
             match path with
             | Some path ->
