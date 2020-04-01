@@ -327,14 +327,6 @@ let ident_stdlib = Ident.create_persistent "Stdlib"
 let non_shadowed_pervasive = function
   | Pdot(Pident id, _) -> Ident.same id ident_stdlib
   | _ -> false
-(* FIXME MERLIN Not sure what to do with
-    (non_shadowed_pervasive definition in 4.10):
-  | Pdot(Pident id, s) as path ->
-      Ident.same id ident_stdlib &&
-      (match Env.find_type_by_name (Lident s) !printing_env with
-       | (path', _) -> Path.same path path'
-       | exception Not_found -> true)
-*)
 
 let find_double_underscore s =
   let len = String.length s in
