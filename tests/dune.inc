@@ -825,8 +825,8 @@
 (alias (name runtest) (deps (alias recovery-test)))
 
 (alias
- (name short-paths-test)
- (deps (:t ./test-dirs/short-paths/test.t)
+ (name short-paths-test_pre_410)(enabled_if (< %{ocaml_version} 4.10.0))
+ (deps (:t ./test-dirs/short-paths/test_pre_410.t)
        (source_tree ./test-dirs/short-paths)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
@@ -837,7 +837,7 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias short-paths-test)))
+(alias (name runtest) (deps (alias short-paths-test_pre_410)))
 
 (alias
  (name type-enclosing-cons)
