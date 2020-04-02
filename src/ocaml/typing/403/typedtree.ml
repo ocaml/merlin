@@ -610,3 +610,23 @@ let mknoloc = Location.mknoloc
    Needed for Browse_raw, but unused in the typedtree itself. *)
 
 type open_declaration
+
+(* Merlin specific *)
+
+type functor_parameter =
+  | Unit
+  | Named of Ident.t option * string option loc * module_type
+
+let unpack_functor_me me =
+  match me.mod_desc with
+  | Tmod_functor (_, _, None, me) -> Unit, me
+  | Tmod_functor (id, str, Some mty, me) ->
+    Named (Some id, { str with txt = Some str.txt }, mty), me
+  | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
+
+let unpack_functor_mty mty =
+  match mty.mty_desc with
+  | Tmty_functor (_, _, None, mty) -> Unit, mty
+  | Tmty_functor (id, str, Some mty, mty2) ->
+    Named (Some id, { str with txt = Some str.txt }, mty), mty2
+  | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"

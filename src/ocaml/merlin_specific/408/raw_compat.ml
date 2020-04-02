@@ -198,3 +198,6 @@ module Pattern = struct
 
   let update_desc_exn p pat_desc = { p with Typedtree. pat_desc }
 end
+
+let md_id { Typedtree.md_id; _ } = Some md_id
+let mb_id { Typedtree.mb_id; _ } = Some mb_id

@@ -307,6 +307,8 @@ type alerts = string String.Map.t
 
 
 module EnvLazy: sig
+  open! Result_compat (* merlin *)
+
   type ('a,'b) t
 
   type log
@@ -321,7 +323,8 @@ module EnvLazy: sig
      [None] then [t] is recorded in [log]. [backtrack log] will then reset all
      the recorded [t]s back to their original state. *)
   val log : unit -> log
-  val force_logged : log -> ('a -> 'b option) -> ('a,'b option) t -> 'b option
+  val force_logged :
+    log -> ('a -> ('b, 'c) result) -> ('a,('b, 'c) result) t -> ('b, 'c) result
   val backtrack : log -> unit
 
   (* For compatibility with 4.02 and 4.03 *)
@@ -331,4 +334,8 @@ module EnvLazy: sig
     | Raise of exn
     | Thunk of 'a
   val view : ('a, 'b) t -> ('a, 'b) eval
+
+  (* For compatibility with 4.08 and 4.09 *)
+  val force_logged_408 :
+    log -> ('a -> 'b option) -> ('a,'b option) t -> 'b option
 end

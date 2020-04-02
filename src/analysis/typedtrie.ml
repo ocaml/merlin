@@ -63,7 +63,7 @@ module Trie : sig
     | Apply of functor_application
 
   and functor_parameter =
-    Ident.t * Location.t * node
+    (Ident.t option * Location.t * node) option
 
   and functor_application =
     { funct : Location.t * functor_
@@ -120,7 +120,7 @@ end = struct
     | Apply of functor_application
 
   and functor_parameter =
-    Ident.t * Location.t * node
+    (Ident.t option * Location.t * node) option
 
   and functor_application =
     { funct : Location.t * functor_
@@ -208,8 +208,9 @@ let remove_indir_me me =
   match me.Typedtree.mod_desc with
   | Typedtree.Tmod_ident (path, _) -> `Alias path
   | Typedtree.Tmod_structure str -> `Str str
-  | Typedtree.Tmod_functor (param_id, param_name, param_sig, me) ->
-    `Functor (param_id, param_name.loc, param_sig, `Mod_expr me)
+  | Typedtree.Tmod_functor _ ->
+    let (fp,me) = Typedtree.unpack_functor_me me in
+    `Functor (fp, `Mod_expr me)
   | Typedtree.Tmod_apply (me1, me2, _) -> `Apply (me1, me2)
   | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
   | Typedtree.Tmod_unpack _ -> `Unpack
@@ -219,8 +220,9 @@ let remove_indir_mty mty =
   | Typedtree.Tmty_alias (path, _) -> `Alias path
   | Typedtree.Tmty_ident (path, _) -> `Ident path
   | Typedtree.Tmty_signature sg -> `Sg sg
-  | Typedtree.Tmty_functor (param_id, param_name, param_sig, mty) ->
-    `Functor (param_id, param_name.loc, param_sig, `Mod_type mty)
+  | Typedtree.Tmty_functor _ ->
+    let (fp,mty) = Typedtree.unpack_functor_mty mty in
+    `Functor (fp, `Mod_type mty)
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 
@@ -262,15 +264,18 @@ let rec build ~local_buffer ~trie browses : t =
       Internal (lazy (build ~local_buffer ~trie:Trie.empty [of_signature s]))
     | `Mod_expr me -> node_for_direct_mod `Mod (remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (remove_indir_mty mty)
-    | `Functor (param_id, param_loc, param, packed) ->
-      let param_node =
-        match param, local_buffer with
-        | None, _
-        | _, false -> Trie.Leaf
-        | Some mty, true ->
-          node_for_direct_mod `Modtype (remove_indir_mty mty)
+    | `Functor (fp, packed) ->
+      let param = match fp with
+        | Typedtree.Unit -> None
+        | Typedtree.Named (id, loc, mty) ->
+          let mty =
+            if local_buffer
+            then node_for_direct_mod `Modtype (remove_indir_mty mty)
+            else Trie.Leaf
+          in
+          Some (id, loc.Location.loc, mty)
       in
-      Functor ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
+      Functor (param, node_for_direct_mod `Mod packed)
     | `Apply (funct, arg) ->
       let funct = funct.Typedtree.mod_loc, functor_ (remove_indir_me funct) in
       let arg =
@@ -289,15 +294,18 @@ let rec build ~local_buffer ~trie browses : t =
     | `Sg _ -> assert false
     | `Mod_expr me -> functor_ (remove_indir_me me)
     | `Mod_type _ -> assert false
-    | `Functor (param_id, param_loc, param, packed) ->
-      let param_node =
-        match param, local_buffer with
-        | None, _
-        | _, false -> Trie.Leaf
-        | Some mty, true ->
-          node_for_direct_mod `Modtype (remove_indir_mty mty)
+    | `Functor (fp, packed) ->
+      let param = match fp with
+        | Typedtree.Unit -> None
+        | Typedtree.Named (id, loc, mty) ->
+          let mty =
+            if local_buffer
+            then node_for_direct_mod `Modtype (remove_indir_mty mty)
+            else Trie.Leaf
+          in
+          Some (id, loc.Location.loc, mty)
       in
-      Funct ((param_id, param_loc, param_node), node_for_direct_mod `Mod packed)
+      Funct (param, node_for_direct_mod `Mod packed)
     | `Apply (funct, arg) ->
       let funct = funct.Typedtree.mod_loc, functor_ (remove_indir_me funct) in
       let arg =
@@ -404,13 +412,21 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_me mb.mb_expr)
       in
-      Trie.add mb.mb_id { loc=t.t_loc; doc; namespace=`Mod; node } trie
+      begin match Raw_compat.mb_id mb with
+        | None -> trie
+        | Some id ->
+          Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie
+      end
     | Module_declaration md ->
       let node =
         node_for_direct_mod `Mod
           (remove_indir_mty md.md_type)
       in
-      Trie.add md.md_id { loc=t.t_loc; doc; namespace=`Mod; node } trie
+      begin match Raw_compat.md_id md with
+        | None -> trie
+        | Some id ->
+          Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie
+      end
     | Module_type_declaration mtd ->
       let node =
         match mtd.mtd_type with
@@ -631,7 +647,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               let scopes = (trie, Some loc.Location.loc_start) :: scopes in
               follow ~remember_loc ~state ?before scopes (Lazy.force t) path
             end
-          | Functor ((id, _, _), node) ->
+          | Functor (param, node) ->
             log ~title:"node" "functor";
             let path = Namespaced_path.peal_head_exn path in
             begin match Namespaced_path.head path with
@@ -646,7 +662,10 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
                 | Noop :: functor_arguments ->
                   { state with functor_arguments }
                 | Handled (new_prefix, scopes) :: functor_arguments ->
-                  assert (Ident.name id <> "*"); (* sigh. *)
+                  let id = match param with
+                    | None | Some (None, _, _) -> assert false (* sigh. *)
+                    | Some (Some id, _, _) -> id
+                  in
                   let subst =
                     { old_prefix =
                         Namespaced_path.of_path ~namespace:`Mod (Pident id)
@@ -691,9 +710,13 @@ let rec find ~remember_loc ~before scopes trie path =
       | Internal (lazy subtrie)  ->
         let scopes = (trie, Some loc.Location.loc_start) :: scopes in
         find ~remember_loc ~before scopes subtrie path
-      | Functor ((id, ploc, node), fnode) ->
+      | Functor (None, fnode) -> inspect_node scopes fnode
+      | Functor (Some (id, ploc, node), fnode) ->
         let param =
-          Trie.singleton id { loc = ploc; doc = None; namespace = `Mod; node }
+          match id with
+          | None -> Trie.empty
+          | Some id ->
+            Trie.singleton id { loc = ploc; doc = None; namespace = `Mod; node }
         in
         if
           Lexing.compare_pos ploc.Location.loc_start before < 0
@@ -721,9 +744,13 @@ let rec find ~remember_loc ~before scopes trie path =
         follow ~state:initial_state ~remember_loc ~before:loc.Location.loc_start
           scopes trie path
     and inspect_functor scopes : Trie.functor_ -> _ = function
-      | Funct ((id, ploc, node), fnode) ->
+      | Funct (None, fnode) -> inspect_node scopes fnode
+      | Funct (Some (id, ploc, node), fnode) ->
         let param =
-          Trie.singleton id { loc = ploc; doc = None; namespace = `Mod; node }
+          match id with
+          | None -> Trie.empty
+          | Some id ->
+            Trie.singleton id { loc = ploc; doc = None; namespace = `Mod; node }
         in
         if
           Lexing.compare_pos ploc.Location.loc_start before < 0
@@ -770,7 +797,9 @@ let rec dump fmt trie =
         Format.fprintf fmt " = %a" dump (Lazy.force t)
       else
         Format.fprintf fmt " = <lazy>"
-    | Functor ((id, _, _), node) ->
+    | Functor ((None | Some (None, _, _)), node) ->
+      Format.fprintf fmt " () ->%a" dump_node node
+    | Functor (Some (Some id, _, _), node) ->
       Format.fprintf fmt " %s ->%a" (Ident.name id)
         dump_node node
     | Included Apply { funct; arg }
@@ -780,9 +809,10 @@ let rec dump fmt trie =
     match funct with
     | Apply { funct; arg } ->
       Format.fprintf fmt " %a(%a)" dump_functor funct dump_node (snd arg)
-    | Funct ((id, _, _), node) ->
-      Format.fprintf fmt " %s ->%a" (Ident.name id)
-        dump_node node
+    | Funct ((None | Some (None, _, _)), node) ->
+      Format.fprintf fmt " () ->%a" dump_node node
+    | Funct (Some (Some id, _, _), node) ->
+      Format.fprintf fmt " %s ->%a" (Ident.name id) dump_node node
     | Named path ->
       Format.fprintf fmt " = %s" (Namespaced_path.to_string path)
     | Unpack ->

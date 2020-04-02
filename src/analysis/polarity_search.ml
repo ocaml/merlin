@@ -80,7 +80,8 @@ let match_query env query t =
 let build_query ~positive ~negative env =
   let prepare r l =
     if l = Longident.Lident "fun" then (incr r; None) else
-    Some (normalize_path env (Env.lookup_type l env))
+    let set, _ = Env.find_type_by_name l env in
+    Some (normalize_path env set)
   in
   let pos_fun = ref 0 and neg_fun = ref 0 in
   let positive = List.filter_map positive ~f:(prepare pos_fun) in
@@ -104,7 +105,7 @@ let directories ~global_modules env =
   in
   List.fold_left ~f:(fun l name ->
       let lident = Longident.Lident name in
-      match Env.lookup_module ~load:true lident env with
+      match Env.find_module_by_name lident env with
       | exception _ -> l
       | _ -> Trie (name, lident, lazy (explore lident env)) :: l
     ) ~init:[] global_modules
@@ -124,7 +125,7 @@ let execute_query query env dirs =
   in
   let rec recurse acc (Trie (_, dir, children)) =
     match
-      ignore (Env.lookup_module ~load:true dir env);
+      ignore (Env.find_module_by_name dir env);
       Lazy.force children
     with
     | children ->

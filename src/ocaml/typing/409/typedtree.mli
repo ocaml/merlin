@@ -735,3 +735,12 @@ val pat_bound_idents_with_loc: pattern -> (Ident.t * string loc) list
 
 (** Splits an or pattern into its value (left) and exception (right) parts. *)
 val split_pattern : pattern -> pattern option * pattern option
+
+(* Merlin specific *)
+
+type functor_parameter =
+  | Unit
+  | Named of Ident.t option * string option loc * module_type
+
+val unpack_functor_me : module_expr -> functor_parameter * module_expr
+val unpack_functor_mty : module_type -> functor_parameter * module_type

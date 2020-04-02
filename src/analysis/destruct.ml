@@ -404,9 +404,8 @@ let node config source node parents =
     let pexp = filter_expr_attr (Untypeast.untype_expression expr) in
     let needs_parentheses, result =
       if is_package ty then (
-        let name = Location.mknoloc "M" in
         let mode = Ast_helper.Mod.unpack pexp in
-        false, Ast_helper.Exp.letmodule name mode placeholder
+        false, Ast_helper.Exp.letmodule_no_opt "M" mode placeholder
       ) else (
         let ps = gen_patterns expr.Typedtree.exp_env ty in
         let cases  =

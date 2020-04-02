@@ -1952,3 +1952,28 @@ let with_cmis f = f ()
 (* helper for merlin *)
 
 let add_merlin_extension_module id mty env = add_module id mty env
+
+(* Compat with 4.10 *)
+
+let find_value_by_name ident env =
+  lookup_value ident env
+
+let find_module_by_name ident env =
+  let path = lookup_module ~load:true ident env in
+  path, find_module path env
+
+let find_constructor_by_name ident env =
+  lookup_constructor ident env
+
+let find_modtype_by_name ident env =
+  lookup_modtype ident env
+
+let find_type_by_name ident env =
+  let path = lookup_type ident env in
+  path, find_type path env
+
+let find_label_by_name ident env =
+  lookup_label ident env
+
+let fold_type_decls f =
+  fold_types (fun s p (decl, _) acc -> f s p decl acc)
