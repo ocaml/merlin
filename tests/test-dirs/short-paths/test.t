@@ -138,6 +138,22 @@
       {
         "start": {
           "line": 82,
+          "col": 13
+        },
+        "end": {
+          "line": 86,
+          "col": 6
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This functor has type functor (S : S) -> sig val bar : int -> S.t end
+  The parameter cannot be eliminated in the result type.
+  Please bind the argument to a module identifier."
+      },
+      {
+        "start": {
+          "line": 82,
           "col": 22
         },
         "end": {
@@ -311,6 +327,22 @@
         "sub": [],
         "valid": true,
         "message": "This expression has type N.O.t but an expression was expected of type unit"
+      },
+      {
+        "start": {
+          "line": 82,
+          "col": 13
+        },
+        "end": {
+          "line": 86,
+          "col": 6
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "This functor has type functor (S : S) -> sig val bar : int -> S.t end
+  The parameter cannot be eliminated in the result type.
+  Please bind the argument to a module identifier."
       },
       {
         "start": {
