@@ -70,22 +70,7 @@ We try again after revealing the dependency:
   $ $MERLIN server errors -filename test.ml -cmi-path sub < test.ml
   {
     "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 1,
-          "col": 5
-        },
-        "end": {
-          "line": 1,
-          "col": 8
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "Unbound module Dep"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
 
@@ -136,7 +121,22 @@ Hidden:
   $ $MERLIN server errors -filename test.ml < test.ml
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 5
+        },
+        "end": {
+          "line": 1,
+          "col": 8
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module Dep"
+      }
+    ],
     "notifications": []
   }
 
