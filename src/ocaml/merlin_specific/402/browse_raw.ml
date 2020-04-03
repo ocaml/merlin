@@ -233,6 +233,7 @@ let option_fold f' o env (f : _ f0) acc = match o with
   | Some x -> f' x env f acc
 
 let of_core_type ct = app (Core_type ct)
+
 let of_exp_extra (exp,_,_) = match exp with
   | Texp_constraint ct ->
     of_core_type ct
@@ -244,16 +245,17 @@ let of_exp_extra (exp,_,_) = match exp with
     id_fold
 let of_expression e = app (Expression e) **
     list_fold of_exp_extra e.exp_extra
-let of_case c = app (Case c)
-let of_pattern p = app (Pattern p)
-let of_value_binding vb = app (Value_binding vb)
-let of_module_type mt = app (Module_type mt)
-let of_module_expr me = app (Module_expr me)
-let of_typ_param (ct,_) = of_core_type ct
 
 let of_pat_extra (pat,_,_) = match pat with
   | Tpat_constraint ct -> of_core_type ct
   | Tpat_type _ | Tpat_unpack -> id_fold
+let of_pattern p = app (Pattern p) ** list_fold of_pat_extra p.pat_extra
+
+let of_case c = app (Case c)
+let of_value_binding vb = app (Value_binding vb)
+let of_module_type mt = app (Module_type mt)
+let of_module_expr me = app (Module_expr me)
+let of_typ_param (ct,_) = of_core_type ct
 
 let of_record_field obj loc lbl =
   fun env (f : _ f0) acc ->
@@ -493,9 +495,8 @@ and of_class_type_field_desc = function
 
 let of_node = function
   | Dummy -> id_fold
-  | Pattern { pat_desc; pat_extra } ->
-    of_pattern_desc pat_desc **
-    list_fold of_pat_extra pat_extra
+  | Pattern { pat_desc; pat_extra=_ } ->
+    of_pattern_desc pat_desc
   | Expression { exp_desc; exp_extra=_; exp_loc } ->
     of_expression_desc exp_loc exp_desc
   | Case { c_lhs; c_guard; c_rhs } ->

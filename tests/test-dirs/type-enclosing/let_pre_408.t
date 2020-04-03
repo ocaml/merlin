@@ -14,18 +14,6 @@ Get type of a shadowing let binding:
         "line": 4,
         "col": 7
       },
-      "type": "int",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 4,
-        "col": 4
-      },
-      "end": {
-        "line": 4,
-        "col": 34
-      },
       "type": "float",
       "tail": "no"
     }
