@@ -24,9 +24,7 @@ module Cache = struct
 
   let get config =
     let title = "pop_cache" in
-    let key =
-      Mconfig.(config.query.directory, config.query.filename, config.ocaml)
-    in
+    let key = config in
     match List.assoc key !cache with
     | state ->
       cache := (key, state) :: List.remove_assoc key !cache;
