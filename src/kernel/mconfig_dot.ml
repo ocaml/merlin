@@ -26,24 +26,11 @@
 
 )* }}} *)
 
-open Misc
 open Std
 
 let {Logger. log} = Logger.for_section "Mconfig_dot"
 
-type directive = [
-  | `B of string
-  | `S of string
-  | `CMI of string
-  | `CMT of string
-  | `EXT of string list
-  | `FLG of string
-  | `STDLIB of string
-  | `SUFFIX of string
-  | `READER of string list
-  | `EXCLUDE_QUERY_DIR
-  | `ERROR_MSG of string
-]
+type directive = Dot_protocol.directive
 
 type config = {
   build_path   : string list;
@@ -187,43 +174,6 @@ let postprocess_config config =
     exclude_query_dir = config.exclude_query_dir;
   }
 
-let read_cfg ic =
-  let rec aux acc =
-    let line = String.trim (input_line ic) in
-    if line = "" then
-      List.rev acc
-    else if String.is_prefixed ~by:"B " line then
-      aux @@ (`B (String.drop 2 line)) :: acc
-    else if String.is_prefixed ~by:"S " line then
-      aux @@ (`S (String.drop 2 line)) :: acc
-    else if String.is_prefixed ~by:"SRC " line then
-      aux @@ (`S (String.drop 4 line)) :: acc
-    else if String.is_prefixed ~by:"CMI " line then
-      aux @@ (`CMI (String.drop 4 line)) :: acc
-    else if String.is_prefixed ~by:"CMT " line then
-      aux @@ (`CMT (String.drop 4 line)) :: acc
-    else if String.is_prefixed ~by:"EXT " line then
-      aux @@ (`EXT (rev_split_words (String.drop 4 line))) :: acc
-    else if String.is_prefixed ~by:"FLG " line then
-      aux @@ (`FLG (String.drop 4 line)) :: acc
-    else if String.is_prefixed ~by:"STDLIB " line then
-      aux @@ (`STDLIB (String.drop 7 line)) :: acc
-    else if String.is_prefixed ~by:"SUFFIX " line then
-      aux @@ (`SUFFIX (String.drop 7 line)) :: acc
-    else if String.is_prefixed ~by:"READER " line then
-      aux @@ (`READER (List.rev (rev_split_words (String.drop 7 line)))) :: acc
-    else if String.is_prefixed ~by:"EXCLUDE_QUERY_DIR" line then
-      aux @@ `EXCLUDE_QUERY_DIR :: acc
-    else if String.is_prefixed ~by:"ERROR_MSG" line then
-      aux @@ `ERROR_MSG (String.drop 10 line) :: acc
-    else (
-      Logger.notify ~section:"build config" "unexpected directive \"%s\"" line;
-      aux @@ acc
-    )
-  in
-  (* TODO: error handling. *)
-  aux []
-
 type context = string * Configurator.t
 
 let get_config (dir, cfg) path =
@@ -233,16 +183,14 @@ let get_config (dir, cfg) path =
        cwd. *)
     output_string p.stdin (path ^ "\n");
     flush p.stdin;
-    let directives =
-      read_cfg p.stdout
-    in
+    let directives = Dot_protocol.read ~in_channel:p.stdout in
     let cfg, failures = prepend_config ~dir directives empty_config in
     postprocess_config cfg, failures
   with End_of_file ->
     log ~title:"get_config"
       "%s process died when trying to retrieve the config for %s"
       (Configurator.to_string cfg) dir;
-    empty_config, [ Printf.sprintf "couldn't retrieve the config from %s" 
+    empty_config, [ Printf.sprintf "couldn't retrieve the config from %s"
                       (Configurator.to_string cfg)]
 
 let find_project_context start_dir =

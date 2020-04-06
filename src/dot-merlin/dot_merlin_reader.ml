@@ -48,64 +48,11 @@ let () =
 
 let {Logger. log} = Logger.for_section "Mconfig_dot"
 
-module Directive = struct
-  type include_path = [
-    | `B of string
-    | `S of string
-    | `CMI of string
-    | `CMT of string
-  ]
-
-  type no_processing_required = [
-      | `EXT of string list
-      | `FLG of string
-      | `STDLIB of string
-      | `SUFFIX of string
-      | `READER of string list
-      | `EXCLUDE_QUERY_DIR
-    ]
-
-  module Processed = struct
-    type acceptable_in_input = [
-      | include_path
-      | no_processing_required
-    ]
-
-    type t = [
-      | acceptable_in_input
-      | `ERROR_MSG of string
-    ]
-
-    let print : t -> unit = function
-      | `B s -> Printf.printf "B %s\n" s
-      | `S s -> Printf.printf "S %s\n" s
-      | `CMI s -> Printf.printf "CMI %s\n" s
-      | `CMT s -> Printf.printf "CMT %s\n" s
-      | `EXT _ss -> failwith "TODO"
-      | `FLG s -> Printf.printf "FLG %s\n" s
-      | `STDLIB s -> Printf.printf "STDLIB %s\n" s
-      | `SUFFIX s -> Printf.printf "SUFFIX %s\n" s
-      | `READER _ss -> failwith "TODO"
-      | `EXCLUDE_QUERY_DIR -> Printf.printf "EXCLUDE_QUERY_DIR\n"
-      | `ERROR_MSG s -> Printf.printf "ERROR_MSG %s\n" s
-  end
-
-  module Raw = struct
-    type t = [
-      | Processed.acceptable_in_input
-      | `PKG of string list
-      | `FINDLIB of string
-      | `FINDLIB_PATH of string
-      | `FINDLIB_TOOLCHAIN of string
-    ]
-  end
-end
-
 type file = {
   recurse    : bool;
   includes   : string list;
   path       : string;
-  directives : Directive.Raw.t list;
+  directives : Dot_protocol.Directive.Raw.t list;
 }
 
 module Cache = File_cache.Make (struct
@@ -354,8 +301,8 @@ let path_of_packages ?conf ?path ?toolchain packages =
   path, ppxs, failures
 
 type config = {
-  pass_forward : Directive.no_processing_required list;
-  to_canonicalize : (string * Directive.include_path) list;
+  pass_forward : Dot_protocol.Directive.no_processing_required list;
+  to_canonicalize : (string * Dot_protocol.Directive.include_path) list;
   stdlib : string option;
   packages_to_load : string list;
   findlib : string option;
@@ -374,7 +321,7 @@ let empty_config = {
 }
 
 let prepend_config ~cwd ~cfg =
-  List.fold_left ~init:cfg ~f:(fun cfg (d : Directive.Raw.t) ->
+  List.fold_left ~init:cfg ~f:(fun cfg (d : Dot_protocol.Directive.Raw.t) ->
     match d with
     | `B _ | `S _ | `CMI _ | `CMT _  as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
@@ -510,9 +457,9 @@ let postprocess cfg =
           | `CMI path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
           | `CMT path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
         in
-        (dirs :> Directive.Processed.t list)
+        (dirs :> Dot_protocol.directive list)
       )
-    ; (cfg.pass_forward :> Directive.Processed.t list)
+    ; (cfg.pass_forward :> Dot_protocol.directive list)
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
     ; List.map failures ~f:(fun s -> `ERROR_MSG s)
@@ -533,7 +480,7 @@ let rec main () =
   | exception End_of_file -> exit 0
   | _file ->
     let directives = load dot_merlin_file in
-    List.iter directives ~f:Directive.Processed.print;
+    Dot_protocol.write ~out_channel:stdout directives;
     Printf.printf "\n%!";
     main ()
 

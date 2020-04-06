@@ -4,7 +4,7 @@
 (library
  (name merlin_kernel)
  (wrapped false)
- (libraries config merlin_extend merlin_specific merlin_utils parsing
+ (libraries config merlin_extend merlin_specific merlin_utils merlin_dot_protocol parsing
             preprocess typing utils))
 
 (rule
