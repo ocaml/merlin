@@ -960,19 +960,34 @@
 (alias (name runtest) (deps (alias type-enclosing-not-in-env)))
 
 (alias
- (name type-enclosing-record)
- (deps (:t ./test-dirs/type-enclosing/record.t)
-       (source_tree ./test-dirs/type-enclosing)
+ (name type-enclosing-records-issue864)
+ (deps (:t ./test-dirs/type-enclosing/records/issue864.t)
+       (source_tree ./test-dirs/type-enclosing/records)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./test-dirs/type-enclosing
+   (chdir ./test-dirs/type-enclosing/records
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-record)))
+(alias (name runtest) (deps (alias type-enclosing-records-issue864)))
+
+(alias
+ (name type-enclosing-records-record)
+ (deps (:t ./test-dirs/type-enclosing/records/record.t)
+       (source_tree ./test-dirs/type-enclosing/records)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing/records
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-records-record)))
 
 (alias
  (name type-expr-test)
