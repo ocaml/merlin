@@ -1095,7 +1095,7 @@
 (alias (name runtest) (deps (alias type-enclosing-types-types)))
 
 (alias
- (name type-enclosing-types-variants)(enabled_if (< %{ocaml_version} 4.08.0))
+ (name type-enclosing-types-variants)
  (deps (:t ./test-dirs/type-enclosing/types/variants.t)
        (source_tree ./test-dirs/type-enclosing/types)
        %{bin:ocamlmerlin}
@@ -1108,21 +1108,6 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias type-enclosing-types-variants)))
-
-(alias
- (name type-enclosing-types-variants_deprecated_from_408)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t ./test-dirs/type-enclosing/types/variants_deprecated_from_408.t)
-       (source_tree ./test-dirs/type-enclosing/types)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
- (action
-   (chdir ./test-dirs/type-enclosing/types
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-types-variants_deprecated_from_408)))
 
 (alias
  (name type-expr-test)

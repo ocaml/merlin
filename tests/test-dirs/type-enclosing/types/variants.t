@@ -1,5 +1,3 @@
-(enabled_if (< %{ocaml_version} 4.08.0))
-
   $ $MERLIN single type-enclosing -position 2:15 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
   [
@@ -115,11 +113,11 @@
     {
       "start": {
         "line": 5,
-        "col": 9
+        "col": 8
       },
       "end": {
         "line": 5,
-        "col": 13
+        "col": 12
       },
       "type": "type core = [ `A | `B ]",
       "tail": "no"
@@ -131,9 +129,9 @@
       },
       "end": {
         "line": 5,
-        "col": 13
+        "col": 12
       },
-      "type": "[< core > `B ]",
+      "type": "core",
       "tail": "no"
     }
   ]
@@ -144,13 +142,13 @@
     {
       "start": {
         "line": 5,
-        "col": 16
+        "col": 15
       },
       "end": {
         "line": 5,
-        "col": 18
+        "col": 17
       },
-      "type": "[< core > `B ]",
+      "type": "core",
       "tail": "no"
     }
   ]
