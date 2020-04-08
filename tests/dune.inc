@@ -960,6 +960,21 @@
 (alias (name runtest) (deps (alias type-enclosing-modules-not-in-env)))
 
 (alias
+ (name type-enclosing-objects-test)
+ (deps (:t ./test-dirs/type-enclosing/objects/test.t)
+       (source_tree ./test-dirs/type-enclosing/objects)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing/objects
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-objects-test)))
+
+(alias
  (name type-enclosing-records-issue864)
  (deps (:t ./test-dirs/type-enclosing/records/issue864.t)
        (source_tree ./test-dirs/type-enclosing/records)
