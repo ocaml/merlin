@@ -855,49 +855,49 @@
 (alias (name runtest) (deps (alias short-paths-test_pre_410)))
 
 (alias
- (name type-enclosing-cons)
- (deps (:t ./test-dirs/type-enclosing/cons.t)
-       (source_tree ./test-dirs/type-enclosing)
+ (name type-enclosing-constructors_and_paths-cons)
+ (deps (:t ./test-dirs/type-enclosing/constructors_and_paths/cons.t)
+       (source_tree ./test-dirs/type-enclosing/constructors_and_paths)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./test-dirs/type-enclosing
+   (chdir ./test-dirs/type-enclosing/constructors_and_paths
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-cons)))
+(alias (name runtest) (deps (alias type-enclosing-constructors_and_paths-cons)))
 
 (alias
- (name type-enclosing-let)
- (deps (:t ./test-dirs/type-enclosing/let.t)
-       (source_tree ./test-dirs/type-enclosing)
+ (name type-enclosing-misc-let)
+ (deps (:t ./test-dirs/type-enclosing/misc/let.t)
+       (source_tree ./test-dirs/type-enclosing/misc)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./test-dirs/type-enclosing
+   (chdir ./test-dirs/type-enclosing/misc
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-let)))
+(alias (name runtest) (deps (alias type-enclosing-misc-let)))
 
 (alias
- (name type-enclosing-letop)(enabled_if (>= %{ocaml_version} 4.08.0))
- (deps (:t ./test-dirs/type-enclosing/letop.t)
-       (source_tree ./test-dirs/type-enclosing)
+ (name type-enclosing-misc-letop)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (deps (:t ./test-dirs/type-enclosing/misc/letop.t)
+       (source_tree ./test-dirs/type-enclosing/misc)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./test-dirs/type-enclosing
+   (chdir ./test-dirs/type-enclosing/misc
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-letop)))
+(alias (name runtest) (deps (alias type-enclosing-misc-letop)))
 
 (alias
  (name type-enclosing-modules-alias)
@@ -945,19 +945,19 @@
 (alias (name runtest) (deps (alias type-enclosing-modules-module_type)))
 
 (alias
- (name type-enclosing-not-in-env)
- (deps (:t ./test-dirs/type-enclosing/not-in-env.t)
-       (source_tree ./test-dirs/type-enclosing)
+ (name type-enclosing-modules-not-in-env)
+ (deps (:t ./test-dirs/type-enclosing/modules/not-in-env.t)
+       (source_tree ./test-dirs/type-enclosing/modules)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
  (action
-   (chdir ./test-dirs/type-enclosing
+   (chdir ./test-dirs/type-enclosing/modules
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias type-enclosing-not-in-env)))
+(alias (name runtest) (deps (alias type-enclosing-modules-not-in-env)))
 
 (alias
  (name type-enclosing-records-issue864)
