@@ -1020,6 +1020,21 @@
 (alias (name runtest) (deps (alias type-enclosing-recovery-issue1109_pre_406)))
 
 (alias
+ (name type-enclosing-types-gadt)
+ (deps (:t ./test-dirs/type-enclosing/types/gadt.t)
+       (source_tree ./test-dirs/type-enclosing/types)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing/types
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-types-gadt)))
+
+(alias
  (name type-enclosing-types-types)
  (deps (:t ./test-dirs/type-enclosing/types/types.t)
        (source_tree ./test-dirs/type-enclosing/types)
@@ -1033,6 +1048,21 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias type-enclosing-types-types)))
+
+(alias
+ (name type-enclosing-types-variants)
+ (deps (:t ./test-dirs/type-enclosing/types/variants.t)
+       (source_tree ./test-dirs/type-enclosing/types)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/type-enclosing/types
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-types-variants)))
 
 (alias
  (name type-expr-test)
