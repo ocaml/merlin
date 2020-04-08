@@ -1,21 +1,8 @@
-FIXME: Int here is not the Int module  but a constructor!
-MAYBEFIX: by PR 1108
+(enabled_if (< %{ocaml_version} 4.08.0))
 
   $ $MERLIN single type-enclosing -position 3:5 -verbosity 0 \
   > -filename ./gadt.ml < ./gadt.ml | tr '\r\n' ' ' | jq ".value[0:2]"
   [
-    {
-      "start": {
-        "line": 3,
-        "col": 4
-      },
-      "end": {
-        "line": 3,
-        "col": 7
-      },
-      "type": "(module Stdlib__int)",
-      "tail": "no"
-    },
     {
       "start": {
         "line": 2,
@@ -42,7 +29,7 @@ MAYBEFIX: by PR 1108
         "line": 9,
         "col": 7
       },
-      "type": "(module Stdlib__int)",
+      "type": "int -> int term",
       "tail": "no"
     },
     {

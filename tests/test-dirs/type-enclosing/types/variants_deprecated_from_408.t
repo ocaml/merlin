@@ -1,7 +1,9 @@
-(enabled_if (< %{ocaml_version} 4.08.0))
+(enabled_if (>= %{ocaml_version} 4.08.0))
 
   $ $MERLIN single type-enclosing -position 2:15 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -31,6 +33,8 @@
 
   $ $MERLIN single type-enclosing -position 2:13 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -60,6 +64,8 @@
 
   $ $MERLIN single type-enclosing -position 4:5 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -77,6 +83,8 @@
 
   $ $MERLIN single type-enclosing -position 4:5 -verbosity 1 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -94,6 +102,8 @@
 
   $ $MERLIN single type-enclosing -position 4:5 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -111,6 +121,8 @@
 
   $ $MERLIN single type-enclosing -position 5:9 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -140,6 +152,8 @@
 
   $ $MERLIN single type-enclosing -position 5:17 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -158,6 +172,8 @@
 FIXME: Not satisfying, expected core not more
   $ $MERLIN single type-enclosing -position 9:3 -verbosity 0 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {
@@ -187,6 +203,8 @@ FIXME: Not satisfying, expected core not more
 
   $ $MERLIN single type-enclosing -position 9:3 -verbosity 1 \
   > -filename ./variants.ml < ./variants.ml | jq ".value[0:2]"
+  Alert deprecated: old syntax for polymorphic variant type
+  Alert deprecated: old syntax for polymorphic variant type
   [
     {
       "start": {

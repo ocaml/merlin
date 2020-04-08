@@ -1,3 +1,5 @@
+(enabled_if (>= %{ocaml_version} 4.08.0))
+
   $ $MERLIN single type-enclosing -position 1:5 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
   [
