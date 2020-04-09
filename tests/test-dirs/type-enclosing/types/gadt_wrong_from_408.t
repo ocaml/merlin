@@ -1,7 +1,7 @@
 (enabled_if (>= %{ocaml_version} 4.08.0))
 
 FIXME: Int here is not the Int module  but a constructor!
-MAYBEFIX: by PR 1108
+See issue https://github.com/ocaml/merlin/issues/1125
 
   $ $MERLIN single type-enclosing -position 3:5 -verbosity 0 \
   > -filename ./gadt.ml < ./gadt.ml | tr '\r\n' ' ' | jq ".value[0:2]"
@@ -64,18 +64,6 @@ MAYBEFIX: by PR 1108
   $ $MERLIN single type-enclosing -position 8:21 -verbosity 0 \
   > -filename ./gadt.ml < ./gadt.ml | tr '\r\n' ' ' | jq ".value[0:2]"
   [
-    {
-      "start": {
-        "line": 8,
-        "col": 20
-      },
-      "end": {
-        "line": 8,
-        "col": 21
-      },
-      "type": "type a",
-      "tail": "no"
-    },
     {
       "start": {
         "line": 8,

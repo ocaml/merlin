@@ -52,18 +52,6 @@
     {
       "start": {
         "line": 8,
-        "col": 20
-      },
-      "end": {
-        "line": 8,
-        "col": 21
-      },
-      "type": "type a",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 8,
         "col": 8
       },
       "end": {
