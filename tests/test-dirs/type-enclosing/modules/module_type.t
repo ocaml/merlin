@@ -1,8 +1,5 @@
 Get the type of a module type with the same name as a module:
 
-FIXME: first two tests are wrong
-FIXBY: https://github.com/ocaml/merlin/pull/1108
-
   $ $MERLIN single type-enclosing -position 5:9 -verbosity 0 \
   > -filename ./module_type.mli < ./module_type.mli | jq ".value[0:2]"
   [
@@ -15,7 +12,7 @@ FIXBY: https://github.com/ocaml/merlin/pull/1108
         "line": 5,
         "col": 9
       },
-      "type": "sig type b end",
+      "type": "sig type a end",
       "tail": "no"
     },
     {
@@ -44,7 +41,7 @@ FIXBY: https://github.com/ocaml/merlin/pull/1108
         "line": 5,
         "col": 9
       },
-      "type": "sig type b end",
+      "type": "sig type a end",
       "tail": "no"
     },
     {
