@@ -237,10 +237,6 @@ let print_constr ppf env lid =
   (* FIXME: support Reader printer *)
   !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc)
 
-let print_label ppf env lid  =
-  let lbl_des = Env.lookup_label lid.Asttypes.txt env in
-  Printtyp.type_expr ppf lbl_des.lbl_arg
-
 exception Fallback
 let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
   let print_expr expression =
@@ -270,8 +266,10 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
     | `Ident longident | `Constr longident ->
       begin try
           begin match context with
-            | Label _ ->
-              print_label ppf env longident
+            | Label lbl_des ->
+              (* We use information from the context because `Env.find_label_by_name`
+              can fail *)
+              Printtyp.type_expr ppf lbl_des.lbl_arg;
             | Type ->
               print_type ppf env longident
             (* TODO: special processing for module aliases ? *)
