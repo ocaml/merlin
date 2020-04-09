@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.08.0))
-
 Get type of a shadowing let binding:
 
   $ $MERLIN single type-enclosing -position 4:4 -verbosity 0 \
