@@ -1,7 +1,3 @@
-Various parts of the record.ml:
-FIXME: first and third tests are wrong (bad use of context)
-FIXBY: https://github.com/ocaml/merlin/pull/1108
-
   $ $MERLIN single type-enclosing -position 4:11 -verbosity 0 \
   > -filename ./record.ml < ./record.ml | jq ".value[0:2]"
   [
@@ -14,7 +10,7 @@ FIXBY: https://github.com/ocaml/merlin/pull/1108
         "line": 4,
         "col": 11
       },
-      "type": "int",
+      "type": "float",
       "tail": "no"
     },
     {
@@ -60,7 +56,7 @@ FIXBY: https://github.com/ocaml/merlin/pull/1108
         "line": 8,
         "col": 11
       },
-      "type": "int",
+      "type": "float",
       "tail": "no"
     },
     {
