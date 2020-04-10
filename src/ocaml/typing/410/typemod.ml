@@ -152,7 +152,7 @@ let initial_env ~loc ~safe_string ~initially_opened_module
     try
       snd (type_open_ Override env lid.loc lid)
     with
-    | (Typetexp.Error _ | Env.Error _) as exn ->
+    | (Typetexp.Error _ | Env.Error _ | Magic_numbers.Cmi.Error _) as exn ->
       Msupport.raise_error exn;
       env
     | exn ->
