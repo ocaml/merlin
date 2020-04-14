@@ -307,3 +307,49 @@ And of course, it should never leak for other requests:
     ],
     "notifications": []
   }
+
+When typing the Test module, Merlin will try to load the Foo dependency.
+However foo.cmi is not a valid cmi file, we must make sure Merlin handle this
+properly (this should also cover the "wrong magic number" case).
+
+  $ $MERLIN single errors -filename test_use.ml < test_use.ml | \
+  > tr '\r\n' ' ' | jq ".value |= (map(del(.start.line) | del(.end.line)))"
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "col": -1
+        },
+        "end": {
+          "col": -1
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Corrupted compiled interface tests/test-dirs/no-escape/foo.cmi"
+      }
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single errors -filename test_open.ml -open Foo < test_open.ml | \
+  > tr '\r\n' ' ' | jq ".value |= (map(del(.start.line) | del(.end.line)))"
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "col": -1
+        },
+        "end": {
+          "col": -1
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Corrupted compiled interface tests/test-dirs/no-escape/foo.cmi"
+      }
+    ],
+    "notifications": []
+  }
