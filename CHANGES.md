@@ -1,3 +1,35 @@
+merlin 3.3.4
+============
+Tue Apr 14 15:25:05 CEST 2020
+
+  + ocaml support
+    - full support from OCaml 4.02 to OCaml 4.10 (#1117, #1127)
+    - fix desynchronized cache (#1120)
+    - short path for OCaml 4.09 and OCaml 4.10 (#1082, #1117)
+    - catch and test environment initialization errors (#1083, #1130)
+    - restore type levels after recovery (#1092)
+  + merlin binary
+    - fix syntax errors in 4.08 and 4.09 (#1081)
+    - complete-prefix command accepts -kind option to filter results (#1071)
+    - code cleanup (#1093, #1079, #1112)
+    - better handling of expression and pattern extra nodes during browse tree
+      traversal (#1091, #1121)
+    - improve context detection (e.g. appropriate namespace for lookup) for
+      various queries (#1104, #1110)
+    - add stdlib to locate source path (#1085)
+  + editor modes
+    - vim: tweak heuristic to select python version (#1111)
+    - emacs: marlin/call
+    - lsp: move server to its own repository (#1069),
+      https://github.com/ocaml/ocaml-lsp
+  + test suite
+    - dune rules for the test suite are now generated, deterministic and
+      can be run individually (#1068, #1070, #1072)
+    - fix incorrect command-line arguments in tests (#1073)
+    - better coverage of frontend features (#1075, #1078, #1088, #1089, #1126)
+
+Build no longer relies on implicit transitive_deps (#1065).
+
 merlin 3.3.4~4.10preview1
 =========================
 Mon Mar  2 14:26:32 CET 2020
@@ -44,7 +76,7 @@ Mon Jul 15 11:10:35 CEST 2019
 
   + backend
     - `**` globbing in .merlin won't look into hidden directories
-      (starting with a '.') (by Daniel Bünzl, #990)
+      (starting with a '.') (by Daniel Bünzli, #990)
     - fallback to "/dev/null" configuration for findlib
     - better 4.08 support:
       + support for letop (let+, and+, ...) (#986)
