@@ -22,11 +22,35 @@ let timed_lazy r x =
 module Cache = struct
   let cache = ref []
 
+  (* Values from configuration that are used as a key for the cache.
+     These values should:
+     - allow to maximize reuse; associating a single typechecker instance to a
+       filename and directory is natural, but keying also based on verbosity
+       makes no sense
+     - prevent reuse in different environments (if there is a change in
+       loadpath, a new typechecker should be produced).
+
+     It would be better to guarantee that the typechecker was well-behaved
+     when the loadpath changes (so that we can reusing the same instance, and
+     let the typechecker figure which part of its internal state should be
+     invalidated).
+     However we already had many bug related to that.  There are subtle changes
+     in the type checker behavior accross the different versions of OCaml.
+     It is simpler to create new instances upfront.
+  *)
+
+  let key config =
+    Mconfig.(
+      config.query.filename,
+      config.query.directory,
+      config.ocaml,
+      config.findlib,
+      {config.merlin with log_file = None; log_sections = []}
+    )
+
   let get config =
     let title = "pop_cache" in
-    let key =
-      Mconfig.(config.query.directory, config.query.filename, config.ocaml)
-    in
+    let key = key config in
     match List.assoc key !cache with
     | state ->
       cache := (key, state) :: List.remove_assoc key !cache;

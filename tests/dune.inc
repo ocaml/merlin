@@ -1125,6 +1125,21 @@
 (alias (name runtest) (deps (alias type-expr-test)))
 
 (alias
+ (name typer-cache-test)
+ (deps (:t ./test-dirs/typer-cache/test.t)
+       (source_tree ./test-dirs/typer-cache)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/typer-cache
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias typer-cache-test)))
+
+(alias
  (name warnings-backtrack)
  (deps (:t ./test-dirs/warnings/backtrack.t)
        (source_tree ./test-dirs/warnings)
