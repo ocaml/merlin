@@ -156,7 +156,7 @@ let initial_env ~loc ~safe_string ~initially_opened_module
     let lid = {loc; txt = Longident.parse m } in
     try
       snd (type_open_ Override env lid.loc lid)
-    with Typetexp.Error _ as exn ->
+    with (Typetexp.Error _ | Magic_numbers.Cmi.Error _) as exn ->
       Msupport.raise_error exn;
       env
   in

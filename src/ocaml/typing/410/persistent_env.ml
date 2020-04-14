@@ -273,8 +273,8 @@ let check_pers_struct penv f1 f2 ~loc name =
   | Not_found ->
       let warn = Warnings.No_cmi_file(name, None) in
         Location.prerr_warning loc warn
-  | Cmi_format.Error err ->
-      let msg = Format.asprintf "%a" Cmi_format.report_error err in
+  | Magic_numbers.Cmi.Error err ->
+      let msg = Format.asprintf "%a" Magic_numbers.Cmi.report_error err in
       let warn = Warnings.No_cmi_file(name, Some msg) in
         Location.prerr_warning loc warn
   | Error err ->
