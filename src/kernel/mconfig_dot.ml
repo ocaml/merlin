@@ -101,14 +101,18 @@ let prepend_config ~dir:cwd (directives : directive list) config =
 module Configurator = struct
   type t =
     | Dot_merlin
+    | Dune
 
   let of_string_opt = function
     | ".merlin" ->
       Some Dot_merlin
+    | "dune-project" | "dune" ->
+      Some Dune
     | _ -> None
 
   let to_string = function
     | Dot_merlin -> "dot-merlin-reader"
+    | Dune -> "dune"
 
   module Process = struct
     type t = {
@@ -124,7 +128,11 @@ module Configurator = struct
         | Dot_merlin ->
           let prog = "dot-merlin-reader" in
           prog, [| prog |]
+        | Dune ->
+          let prog = "dune" in
+          prog, [| prog; "ocaml-merlin" |]
       in
+      log ~title:"get_config" "Using %s configuration provider." (to_string cfg);
       let cwd = Sys.getcwd () in
       let stdin_r, stdin_w = Unix.pipe () in
       let stdout_r, stdout_w = Unix.pipe () in
@@ -179,9 +187,10 @@ type context = string * Configurator.t
 let get_config (dir, cfg) path =
   try
     let p = Configurator.get_process ~dir cfg in
-    (* TODO: ensure [path] is absolute, or that it is relative to dir, and not the
-       cwd. *)
-    output_string p.stdin (path ^ "\n");
+    let cmd = Dot_protocol.Commands.make_f path in
+    (* TODO: ensure [path] is absolute, or that it is relative to dir, and not the cwd. *)
+    log ~title:"get_config" "Provider: %s; Command: %s" (Configurator.to_string cfg) cmd;
+    output_string p.stdin (cmd ^ "\n");
     flush p.stdin;
     let directives = Dot_protocol.read ~in_channel:p.stdout in
     let cfg, failures = prepend_config ~dir directives empty_config in
@@ -197,12 +206,17 @@ let find_project_context start_dir =
   let rec loop dir =
     try
       Some (
-        List.find_map [ ".merlin"; (* dune-project, jbuild, ... *)] ~f:(fun f ->
-          let fname = Filename.concat dir f in
-          if Sys.file_exists fname && not (Sys.is_directory fname)
-          then Some (dir, Option.get (Configurator.of_string_opt f))
-          else None
-        )
+        List.find_map [
+            ".merlin"
+            ; "dune-project"
+            ; "dune" ; "jbuild"
+          ]
+          ~f:(fun f ->
+            let fname = Filename.concat dir f in
+            if Sys.file_exists fname && not (Sys.is_directory fname)
+            then Some (dir, Option.get (Configurator.of_string_opt f))
+            else None
+          )
     )
     with Not_found ->
       let parent = Filename.dirname dir in
