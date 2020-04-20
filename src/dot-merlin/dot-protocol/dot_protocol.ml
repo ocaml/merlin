@@ -124,22 +124,40 @@ end
 
 module Csexp = Csexp.Make (Sexp)
 
+module Commands = struct
+  type t = File of string | Halt | Unknown
+
+  let read_input in_channel =
+    let open Sexp in
+    match Csexp.input in_channel with
+    | Ok (List [Atom "File"; Atom path]) -> File path
+    | Ok (Atom "Halt") -> Halt
+    | Ok _ -> Unknown
+    | Error _msg -> Halt
+
+  let make_f path =
+    Sexp.(List [Atom "File"; Atom path])
+    |> Csexp.to_string
+end
+
+
 let read ~in_channel =
-  match Csexp.input in_channel with
+  let str = input_line in_channel in
+  match Csexp.parse_string str with
   | Ok (Sexp.List directives) ->
       List.rev
         (List.filter_map directives ~f:(fun dir ->
              match Sexp.to_directive dir with
              | Ok dir -> Some dir
              | Error msg ->
-                 Logger.notify ~section:"Parse CSEXP"
-                   "Directive-parsing error: %s" msg;
+                 Logger.notify ~section:"CSEXP parse error"
+                   "%s in\n%s" msg str;
                  None))
   | Ok _  ->
-      Logger.notify ~section:"Parse CSEXP" "Parser expected a toplevel list";
+      Logger.notify ~section:"CSEXP parse error" "Parser expected a toplevel list";
       []
-  | Error s ->
-      Logger.notify ~section:"Parse CSEXP" "Bad CSEXP \"%s\"" s;
+  | Error (_, s) ->
+      Logger.notify ~section:"CSEXP parse error" "Bad CSEXP \"%s\" (in \"%s\"" s str;
       []
 
 let write ~out_channel (directives : directive list) =
