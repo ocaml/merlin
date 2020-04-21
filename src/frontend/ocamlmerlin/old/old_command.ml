@@ -103,7 +103,7 @@ let configure (state : buffer) =
     | None | Some [] ->
       match state.path with
       | None -> config
-      | Some p -> Mconfig.get_external_config (Filename.dirname p) config
+      | Some p -> Mconfig.get_external_config p config
   in
   List.fold_left ~f:customize ~init:config state.customization
 
