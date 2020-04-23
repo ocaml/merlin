@@ -16,11 +16,21 @@ type result = {
   no_labels_for_completion : bool;
 }
 
-let rec process_directives acc = function
-  | [] -> List.rev acc
-  | Parsetree.Ptop_dir _ :: phrases -> process_directives acc phrases
+let rec process_directives config acc = function
+  | [] -> (config, List.rev acc)
+  | Parsetree.Ptop_dir
+      { pdir_name = { txt = "require"; _ };
+        pdir_arg = Some { pdira_desc = (Pdir_string package); _ };
+        _ } :: phrases ->
+    let open Mconfig in
+    let merlin = {
+      config.merlin with
+      packages_to_load = package :: config.merlin.packages_to_load} in
+    process_directives {config with merlin} acc phrases
+  | Parsetree.Ptop_dir _ :: phrases ->
+    process_directives config acc phrases
   | Parsetree.Ptop_def items :: phrases ->
-    process_directives (List.rev_append items acc) phrases
+    process_directives config (List.rev_append items acc) phrases
 
 (* Normal entry point *)
 
@@ -60,12 +70,15 @@ let normal_parse ?for_completion config source =
   and parsetree = Mreader_parser.result parser
   and comments = Mreader_lexer.comments lexer
   in
-  let parsetree =
+  let config, parsetree =
     match parsetree with
     | `Script phrases ->
-      `Implementation (process_directives [] phrases)
-    | `Implementation x -> `Implementation x
-    | `Interface x -> `Interface x
+      let config, parsetree = process_directives config [] phrases in
+      config, `Implementation parsetree
+    | `Implementation parsetree ->
+      config, `Implementation parsetree
+    | `Interface parsetree ->
+      config, `Interface parsetree
   in
   { config; lexer_errors; parser_errors; comments; parsetree;
     no_labels_for_completion; }
