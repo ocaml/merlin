@@ -16,25 +16,79 @@ type result = {
   no_labels_for_completion : bool;
 }
 
-let rec process_directives config acc = function
-  | [] -> (config, List.rev acc)
-  | Parsetree.Ptop_dir
-      { pdir_name = { txt = "require"; _ };
-        pdir_arg = Some { pdira_desc = (Pdir_string package); _ };
-        _ } :: phrases ->
-    let open Mconfig in
-    let merlin = {
-      config.merlin with
-      packages_to_load = package :: config.merlin.packages_to_load} in
-    process_directives {config with merlin} acc phrases
-  | Parsetree.Ptop_dir _ :: phrases ->
-    process_directives config acc phrases
-  | Parsetree.Ptop_def items :: phrases ->
-    process_directives config (List.rev_append items acc) phrases
+let rec process_directives
+    config lexer_errors parser_errors comments no_labels_for_completion
+    phrases =
+  let rec process config acc = function
+    | [] ->
+      let parsetree = `Implementation (List.rev acc) in
+      { config; lexer_errors; parser_errors; comments; parsetree;
+        no_labels_for_completion; }
+    | Parsetree.Ptop_dir
+        { pdir_name = { txt = "require"; _ };
+          pdir_arg = Some { pdira_desc = (Pdir_string package); _ };
+          _ } :: phrases ->
+      let open Mconfig in
+      let merlin = {
+        config.merlin with
+        packages_to_load = package :: config.merlin.packages_to_load} in
+      process {config with merlin} acc phrases
+    | Parsetree.Ptop_dir
+        { pdir_name = { txt = "use"; _ };
+          pdir_arg = Some { pdira_desc = (Pdir_string "topfind"); _ };
+          _ } :: phrases ->
+      process config acc phrases
+    | Parsetree.Ptop_dir
+        { pdir_name = { txt = "use"; _ };
+          pdir_arg = Some { pdira_desc = (Pdir_string file); _ };
+          _ } :: phrases -> begin
+        (* TODO check suffix for implementation *)
+        (* TODO lookup for file in some "configured" paths. Which one ?? *)
+        let in_channel = open_in file in
+        let source = Msource.make (Misc.string_of_file in_channel) in
+        close_in in_channel;
+        let u = normal_parse config source in
+        match u.parsetree with
+        | `Implementation items ->
+          (* TODO merge syntax and lexer_errors ?? *)
+          process u.config (List.rev_append items acc) phrases
+        | `Interface _ ->
+          assert false
+      end
+    | Parsetree.Ptop_dir
+        { pdir_name = { txt = "mod_use"; _ };
+          pdir_arg = Some { pdira_desc = (Pdir_string file); _ };
+          _ } :: phrases -> begin
+        (* TODO check suffix for implementation *)
+        (* TODO lookup for file in some "configured" paths. Which one ?? *)
+        let in_channel = open_in file in
+        let source = Msource.make (Misc.string_of_file in_channel) in
+        close_in in_channel;
+        let u = normal_parse config source in
+        match u.parsetree with
+        | `Implementation items ->
+          (* TODO merge syntax and lexer_errors ?? *)
+          let modname =
+            String.capitalize_ascii (Filename.remove_extension file) in
+          let mod_item =
+            let open Ast_helper in
+            Str.module_ (Mb.mk
+                           (Location.mknoloc (Some modname))
+                           (Mod.structure items))
+          in
+          process u.config (mod_item :: acc) phrases
+        | `Interface _ ->
+          assert false
+      end
+    | Parsetree.Ptop_dir _ :: phrases ->
+      process config acc phrases
+    | Parsetree.Ptop_def items :: phrases ->
+      process config (List.rev_append items acc) phrases in
+  process config [] phrases
 
 (* Normal entry point *)
 
-let normal_parse ?for_completion config source =
+and normal_parse ?for_completion config source =
   let kind =
     let filename = Mconfig.(config.query.filename) in
     let extension =
@@ -51,7 +105,6 @@ let normal_parse ?for_completion config source =
     then Mreader_parser.MLI
     else Mreader_parser.ML
   in
-  Mocaml.setup_config config;
   let lexer =
     let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
     Mreader_lexer.make Mconfig.(config.ocaml.warnings) keywords config source
@@ -70,18 +123,19 @@ let normal_parse ?for_completion config source =
   and parsetree = Mreader_parser.result parser
   and comments = Mreader_lexer.comments lexer
   in
-  let config, parsetree =
-    match parsetree with
-    | `Script phrases ->
-      let config, parsetree = process_directives config [] phrases in
-      config, `Implementation parsetree
-    | `Implementation parsetree ->
-      config, `Implementation parsetree
-    | `Interface parsetree ->
-      config, `Interface parsetree
-  in
-  { config; lexer_errors; parser_errors; comments; parsetree;
-    no_labels_for_completion; }
+  match parsetree with
+  | `Script phrases ->
+    process_directives
+      config lexer_errors parser_errors comments no_labels_for_completion
+      phrases
+  | `Implementation parsetree ->
+    let parsetree = `Implementation parsetree in
+    { config; lexer_errors; parser_errors; comments; parsetree;
+      no_labels_for_completion; }
+  | `Interface parsetree ->
+    let parsetree = `Interface parsetree in
+    { config; lexer_errors; parser_errors; comments; parsetree;
+      no_labels_for_completion; }
 
 (* Pretty-printing *)
 
@@ -197,7 +251,9 @@ let parse ?for_completion config source =
     let (lexer_errors, parser_errors, comments) = ([], [], []) in
     { config; lexer_errors; parser_errors; comments; parsetree;
       no_labels_for_completion; }
-  | None -> normal_parse ?for_completion config source
+  | None ->
+    Mocaml.setup_config config;
+    normal_parse ?for_completion config source
 
 (* Update config after parse *)
 
