@@ -33,6 +33,7 @@ module I = Parser_raw.MenhirInterpreter
 type kind =
   | ML
   | MLI
+  | SCRIPT
   (*| MLL | MLY*)
 
 module Dump = struct
@@ -65,6 +66,7 @@ type 'a step =
 type tree = [
   | `Interface of Parsetree.signature
   | `Implementation of Parsetree.structure
+  | `Script of Parsetree.toplevel_phrase list
 ]
 
 type t = {
@@ -154,15 +156,14 @@ let run_parser warnings lexer kind =
   let initial_pos = Mreader_lexer.initial_position lexer in
   match kind with
   | ML  ->
-    let result =
-      let state = Parser_raw.Incremental.implementation initial_pos in
-      parse state tokens in
-    `Implementation result
+    let state = Parser_raw.Incremental.implementation initial_pos in
+    `Implementation (parse state tokens)
   | MLI ->
-    let result =
-      let state = Parser_raw.Incremental.interface initial_pos in
-      parse state tokens in
-    `Interface result
+    let state = Parser_raw.Incremental.interface initial_pos in
+    `Interface (parse state tokens)
+  | SCRIPT ->
+    let state = Parser_raw.Incremental.use_file initial_pos in
+    `Script (parse state tokens)
 
 let make warnings lexer kind =
   errors_ref := [];

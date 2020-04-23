@@ -16,6 +16,12 @@ type result = {
   no_labels_for_completion : bool;
 }
 
+let rec process_directives acc = function
+  | [] -> List.rev acc
+  | Parsetree.Ptop_dir _ :: phrases -> process_directives acc phrases
+  | Parsetree.Ptop_def items :: phrases ->
+    process_directives (List.rev_append items acc) phrases
+
 (* Normal entry point *)
 
 let normal_parse ?for_completion config source =
@@ -28,7 +34,9 @@ let normal_parse ?for_completion config source =
     in
     Logger.log ~section:"Mreader" ~title:"run"
       "extension(%S) = %S" filename extension;
-    if List.exists ~f:(fun (_impl,intf) -> intf = extension)
+    if String.is_prefixed ~by:"#!" (Msource.text source)
+    then Mreader_parser.SCRIPT
+    else if List.exists ~f:(fun (_impl,intf) -> intf = extension)
         Mconfig.(config.merlin.suffixes)
     then Mreader_parser.MLI
     else Mreader_parser.ML
@@ -51,6 +59,13 @@ let normal_parse ?for_completion config source =
   and parser_errors = Mreader_parser.errors parser
   and parsetree = Mreader_parser.result parser
   and comments = Mreader_lexer.comments lexer
+  in
+  let parsetree =
+    match parsetree with
+    | `Script phrases ->
+      `Implementation (process_directives [] phrases)
+    | `Implementation x -> `Implementation x
+    | `Interface x -> `Interface x
   in
   { config; lexer_errors; parser_errors; comments; parsetree;
     no_labels_for_completion; }
