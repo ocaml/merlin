@@ -361,6 +361,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
                 ~local_defs ~pos ~namespace:`Type `MLI
                 path with
         | `Builtin -> `Builtin (Path.name path)
+        | `Not_in_env _ as s -> s
         | `Not_found _ as s -> s
         | `Found _ as s -> s
         | `File_not_found _ as s -> s

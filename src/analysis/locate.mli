@@ -43,6 +43,7 @@ val from_path
   -> [> `File_not_found of string
      | `Found of string option * Lexing.position
      | `Builtin
+     | `Not_in_env of string
      | `Not_found of string * string option ]
 
 val from_string

@@ -557,24 +557,35 @@ let find_source ~config loc =
    [find_source] doesn't like the "-o" option of the compiler. This hack handles
    Jane Street specific use case where "-o" is used to prefix a unit name by the
    name of the library which contains it. *)
-let find_source ~config loc =
-  match find_source ~config loc with
-  | Found _ as result -> result
-  | failure ->
-    let fname = loc.Location.loc_start.Lexing.pos_fname in
-    match
-      let i = String.first_double_underscore_end fname in
-      let pos = i + 1 in
-      let fname = String.sub fname ~pos ~len:(String.length fname - pos) in
-      let loc =
-        let lstart = { loc.Location.loc_start with Lexing.pos_fname = fname } in
-        { loc with Location.loc_start = lstart }
-      in
-      find_source ~config loc
-    with
+let find_source ~config loc path =
+  let result =
+    match find_source ~config loc with
     | Found _ as result -> result
-    | _ -> failure
-    | exception _ -> failure
+    | failure ->
+      let fname = loc.Location.loc_start.Lexing.pos_fname in
+      match
+        let i = String.first_double_underscore_end fname in
+        let pos = i + 1 in
+        let fname = String.sub fname ~pos ~len:(String.length fname - pos) in
+        let loc =
+          let lstart = { loc.Location.loc_start with Lexing.pos_fname = fname } in
+          { loc with Location.loc_start = lstart }
+        in
+        find_source ~config loc
+      with
+      | Found _ as result -> result
+      | _ -> failure
+      | exception _ -> failure
+  in
+  match result with
+  | Found src -> `Found (Some src, loc.Location.loc_start)
+  | Not_found f -> File.explain_not_found path f
+  | Multiple_matches lst ->
+    let matches = String.concat lst ~sep:", " in
+    `File_not_found (
+      sprintf "Several source files in your path have the same name, and \
+               merlin doesn't know which is the right one: %s"
+        matches)
 
 let recover _ =
   match Fallback.get () with
@@ -728,38 +739,25 @@ let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
 let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
+  let str_ident = Path.name path in
   if Utils.is_builtin_path path then
     `Builtin
   else
-    let str_ident = Path.name path in
     let browse = Mbrowse.of_typedtree local_defs in
     let lazy_trie =
       lazy (Typedtrie.of_browses ~local_buffer:true
               [Browse_tree.of_browse browse])
     in
     let nss_path = Namespaced_path.of_path ~namespace path in
-    let loc =
-      match Env_lookup.loc path namespace env with
-      | None -> Location.none
-      | Some loc -> loc
-    in
-    match
-      locate ~config ~ml_or_mli ~path:nss_path ~lazy_trie ~pos ~str_ident loc
-    with
-    | `Not_found _
-    | `File_not_found _ as err -> err
-    | `Found (loc, _) ->
-      match find_source ~config loc with
-      | Found src -> `Found (Some src, loc.Location.loc_start)
-      | Not_found f ->
-        let path = Path.name path in
-        File.explain_not_found path f
-      | Multiple_matches lst ->
-        let matches = String.concat lst ~sep:", " in
-        `File_not_found (
-          sprintf "Several source files in your path have the same name, and \
-                   merlin doesn't know which is the right one: %s"
-            matches)
+    match Env_lookup.loc path namespace env with
+    | None -> `Not_in_env str_ident
+    | Some loc ->
+      match
+        locate ~config ~ml_or_mli ~path:nss_path ~lazy_trie ~pos ~str_ident loc
+      with
+      | `Not_found _
+      | `File_not_found _ as err -> err
+      | `Found (loc, _) -> find_source ~config loc str_ident
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   let browse = Mbrowse.of_typedtree local_defs in
@@ -806,18 +804,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     match from_longident ~config ~pos ~env ~lazy_trie nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
-    | `Found (loc, _) ->
-      match find_source ~config loc with
-      | Found src -> `Found (Some src, loc.Location.loc_start)
-      | Not_found f -> File.explain_not_found path f
-      | Multiple_matches lst ->
-        let matches = String.concat lst ~sep:", " in
-        `File_not_found (
-          sprintf "Several source files in your path have the same name, and \
-                   merlin doesn't know which is the right one: %s"
-            matches
-        )
-
+    | `Found (loc, _) -> find_source ~config loc path
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   let browse = Mbrowse.of_typedtree local_defs in
