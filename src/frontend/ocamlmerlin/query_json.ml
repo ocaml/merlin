@@ -287,7 +287,7 @@ let json_of_completions {Compl. entries; context } =
   ]
 
 let rec json_of_outline outline =
-  let json_of_item { outline_name ; outline_kind ; outline_type; location ; children } =
+  let json_of_item { outline_name ; outline_kind ; outline_type; location ; children ; deprecated } =
     with_location location [
       "name", `String outline_name;
       "kind", `String (string_of_completion_kind outline_kind);
@@ -295,6 +295,7 @@ let rec json_of_outline outline =
         | None -> `Null
         | Some typ -> `String typ);
       "children", `List (json_of_outline children);
+      "deprecated", `Bool deprecated
     ]
   in
   List.map ~f:json_of_item outline

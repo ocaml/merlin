@@ -39,9 +39,9 @@ let id_of_patt = function
   | { pat_desc = Tpat_var (id, _) ; _ } -> Some id
   | _ -> None
 
-let mk ?(children=[]) ~location outline_kind outline_type id =
+let mk ?(children=[]) ~location ~deprecated outline_kind outline_type id =
   { Query_protocol.  outline_kind; outline_type; location; children;
-    outline_name = Ident.name id }
+    outline_name = Ident.name id ; deprecated }
 
 let get_class_field_desc_infos = function
   | Typedtree.Tcf_val (str_loc,_,_,_,_) -> Some (str_loc, `Value)
@@ -57,33 +57,40 @@ let rec summarize node =
   let location = node.t_loc in
   match node.t_node with
   | Value_binding vb      ->
+    let deprecated = Type_utils.is_deprecated vb.vb_attributes in
     begin match id_of_patt vb.vb_pat with
     | None -> None
     | Some ident ->
       let typ = outline_type ~env:node.t_env vb.vb_pat.pat_type in
-      Some (mk ~location `Value typ ident)
+      Some (mk ~location ~deprecated `Value typ ident)
     end
   | Value_description vd  ->
+    let deprecated = Type_utils.is_deprecated vd.val_attributes in
     let typ = outline_type ~env:node.t_env vd.val_val.val_type in
-    Some (mk ~location `Value typ vd.val_id)
+    Some (mk ~location ~deprecated `Value typ vd.val_id)
 
   | Module_declaration md ->
     let children = get_mod_children node in
     begin match Raw_compat.md_id md with
-      | None -> None
-      | Some id -> Some (mk ~children ~location `Module None id)
+    | None -> None
+    | Some id ->
+      let deprecated = Type_utils.is_deprecated md.md_attributes in
+      Some (mk ~children ~location ~deprecated `Module None id)
     end
 
   | Module_binding mb ->
     let children = get_mod_children node in
     begin match Raw_compat.mb_id mb with
-      | None -> None
-      | Some id -> Some (mk ~children ~location `Module None id)
+    | None -> None
+    | Some id ->
+      let deprecated = Type_utils.is_deprecated mb.mb_attributes in
+      Some (mk ~children ~location ~deprecated `Module None id)
     end
 
   | Module_type_declaration mtd ->
     let children = get_mod_children node in
-    Some (mk ~children ~location `Modtype None mtd.mtd_id)
+    let deprecated = Type_utils.is_deprecated mtd.mtd_attributes in
+    Some (mk ~deprecated ~children ~location `Modtype None mtd.mtd_id)
 
   | Type_declaration td ->
     let children =
@@ -92,14 +99,19 @@ let rec summarize node =
         | Type_kind _ ->
           List.map (Lazy.force child.t_children) ~f:(fun x ->
             match x.t_node with
-            | Constructor_declaration c -> mk `Constructor None c.cd_id ~location:c.cd_loc
-            | Label_declaration ld      -> mk `Label None ld.ld_id ~location:ld.ld_loc
+            | Constructor_declaration c ->
+              let deprecated = Type_utils.is_deprecated c.cd_attributes in
+              mk `Constructor None c.cd_id ~deprecated ~location:c.cd_loc
+            | Label_declaration ld ->
+              let deprecated = Type_utils.is_deprecated ld.ld_attributes in
+              mk `Label None ld.ld_id ~deprecated ~location:ld.ld_loc
             | _ -> assert false (* ! *)
           )
         | _ -> []
       )
     in
-    Some (mk ~children ~location `Type None td.typ_id)
+    let deprecated = Type_utils.is_deprecated td.typ_attributes in
+    Some (mk ~children ~location ~deprecated `Type None td.typ_id)
 
   | Type_extension te ->
     let name = Path.name te.tyext_path in
@@ -108,16 +120,20 @@ let rec summarize node =
         summarize x >>| fun x -> { x with Query_protocol.outline_kind = `Constructor }
       )
     in
-    Some { Query_protocol. outline_name = name; outline_kind = `Type; outline_type = None; location; children }
+    let deprecated = Type_utils.is_deprecated te.tyext_attributes in
+    Some { Query_protocol. outline_name = name; outline_kind = `Type
+         ; outline_type = None; location; children; deprecated }
 
   | Extension_constructor ec ->
-    Some (mk ~location `Exn None ec.ext_id )
+    let deprecated = Type_utils.is_deprecated ec.ext_attributes in
+    Some (mk ~location `Exn None ec.ext_id ~deprecated)
 
   | Class_declaration cd ->
     let children =
       List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
     in
-    Some (mk ~children ~location `Class None cd.ci_id_class_type)
+    let deprecated = Type_utils.is_deprecated cd.ci_attributes in
+    Some (mk ~children ~location `Class None cd.ci_id_class_type ~deprecated)
 
   | _ -> None
 
@@ -131,12 +147,14 @@ and get_class_elements node =
       | Class_field cf ->
         begin match get_class_field_desc_infos cf.cf_desc with
         | Some (str_loc, outline_kind) ->
+          let deprecated = Type_utils.is_deprecated cf.cf_attributes in
           Some { Query_protocol.
             outline_name = str_loc.Location.txt;
             outline_kind;
             outline_type = None;
             location = str_loc.Location.loc;
-            children = []
+            children = [];
+            deprecated
           }
         | None -> None
         end
