@@ -32,6 +32,20 @@ module Namespace : sig
   type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
 end
 
+val from_path
+  : config:Mconfig.t
+  -> env:Env.t
+  -> local_defs:Mtyper.typedtree
+  -> pos:Lexing.position
+  -> namespace:Namespaced_path.Namespace.t
+  -> [ `ML | `MLI ]
+  -> Path.t
+  -> [> `File_not_found of string
+     | `Found of string option * Lexing.position
+     | `Builtin
+     | `Not_in_env of string
+     | `Not_found of string * string option ]
+
 val from_string
   :  config:Mconfig.t
   -> env:Env.t

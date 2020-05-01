@@ -645,6 +645,21 @@
 (alias (name runtest) (deps (alias locate-sig-substs-basic)))
 
 (alias
+ (name locate-type-run)
+ (deps (:t ./test-dirs/locate-type/run.t)
+       (source_tree ./test-dirs/locate-type)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/locate-type
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias locate-type-run)))
+
+(alias
  (name misc-external-arity)
  (deps (:t ./test-dirs/misc/external-arity.t)
        (source_tree ./test-dirs/misc)

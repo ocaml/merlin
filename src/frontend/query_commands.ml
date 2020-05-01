@@ -326,6 +326,47 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     List.map ~f:Mbrowse.node_loc path
 
+  | Locate_type pos ->
+    let typer = Mpipeline.typer_result pipeline in
+    let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let node =
+      match Mbrowse.enclosing pos [structures] with
+      | path :: _ -> Some path
+      | [] -> None
+    in
+    let path =
+      Option.bind node ~f:(fun (env, node) ->
+          Locate.log ~title:"query_commands Locate_type"
+            "inspecting node: %s" (Browse_raw.string_of_node node);
+          match node with
+          | Browse_raw.Expression {exp_type = ty; _}
+          | Pattern {pat_type = ty; _}
+          | Core_type {ctyp_type = ty; _}
+          | Value_description { val_desc = { ctyp_type = ty; _ }; _ } ->
+            begin match (Ctype.repr ty).desc with
+              | Tconstr (path, _, _) -> Some (env, path)
+              | _ -> None
+            end
+          | _ -> None)
+    in
+    begin match path with
+      | None -> `Invalid_context
+      | Some (env, path) ->
+        Locate.log ~title:"debug" "found type: %s" (Path.name path);
+        let local_defs = Mtyper.get_typedtree typer in
+        match Locate.from_path
+                ~env
+                ~config:(Mpipeline.final_config pipeline)
+                ~local_defs ~pos ~namespace:`Type `MLI
+                path with
+        | `Builtin -> `Builtin (Path.name path)
+        | `Not_in_env _ as s -> s
+        | `Not_found _ as s -> s
+        | `Found _ as s -> s
+        | `File_not_found _ as s -> s
+    end
+
   | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
     let pipeline, typer = for_completion pipeline pos in
     let config = Mpipeline.final_config pipeline in
@@ -521,6 +562,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     Destruct.log ~title:"nodes before" "%a"
       Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     let nodes =
+      (* Drop nodes that:
+         - start inside the user's selection
+         - finish inside the user's selection
+      *)
       List.drop_while nodes
         ~f:(fun (_,t) ->
           let {Location. loc_start; loc_end; _} = Mbrowse.node_loc t in

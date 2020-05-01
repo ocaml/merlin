@@ -77,6 +77,11 @@ let dump (type a) : a t -> json =
       "position", mk_position pos;
     ]
 
+  | Locate_type pos ->
+    mk "locate-type" [
+      "position", mk_position pos
+    ]
+
   | Enclosing pos ->
     mk "enclosing" [
       "position", mk_position pos;
@@ -299,6 +304,26 @@ let rec json_of_shape { shape_loc; shape_sub } =
     "children", `List (List.map ~f:json_of_shape shape_sub);
   ]
 
+let json_of_locate resp =
+  match resp with
+  | `At_origin -> `String "Already at definition point"
+  | `Builtin s ->
+    `String (sprintf "%S is a builtin, and it is therefore impossible \
+                      to jump to its definition" s)
+  | `Invalid_context -> `String "Not a valid identifier"
+  | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
+  | `Not_found (i, Some f) ->
+    `String
+      (sprintf "%s was supposed to be in %s but could not be found" i f)
+  | `Not_in_env str ->
+    `String (Printf.sprintf "Not in environment '%s'" str)
+  | `File_not_found msg ->
+    `String msg
+  | `Found (None,pos) ->
+    `Assoc ["pos", Lexing.json_of_position pos]
+  | `Found (Some file,pos) ->
+    `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
+
 let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
@@ -332,26 +357,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       | `Found doc ->
         `String doc
     end
-  | Locate _, resp ->
-    begin match resp with
-      | `At_origin -> `String "Already at definition point"
-      | `Builtin s ->
-        `String (sprintf "%S is a builtin, and it is therefore impossible \
-                          to jump to its definition" s)
-      | `Invalid_context -> `String "Not a valid identifier"
-      | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
-      | `Not_found (i, Some f) ->
-        `String
-          (sprintf "%s was supposed to be in %s but could not be found" i f)
-      | `Not_in_env str ->
-        `String (Printf.sprintf "Not in environment '%s'" str)
-      | `File_not_found msg ->
-        `String msg
-      | `Found (None,pos) ->
-        `Assoc ["pos", Lexing.json_of_position pos]
-      | `Found (Some file,pos) ->
-        `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
-    end
+  | Locate_type _, resp -> json_of_locate resp
+  | Locate _, resp -> json_of_locate resp
   | Jump _, resp ->
     begin match resp with
       | `Error str ->
