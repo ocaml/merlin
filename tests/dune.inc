@@ -794,10 +794,12 @@
 
 (alias
  (name locate-type-run)
+ (package merlin)
  (deps (:t ./test-dirs/locate-type/run.t)
        (source_tree ./test-dirs/locate-type)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/locate-type
      (setenv MERLIN %{exe:merlin-wrapper}
