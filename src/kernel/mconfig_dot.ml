@@ -126,10 +126,10 @@ module Configurator = struct
       let prog, args =
         match cfg with
         | Dot_merlin ->
-          let prog = "dot-merlin-reader" in
+          let prog = "/Users/ulysse/tmp/merlin/_build/install/default/bin/dot-merlin-reader" in
           prog, [| prog |]
         | Dune ->
-          let prog = "dune" in
+          let prog = "/Users/ulysse/tmp/dune/_build/install/default/bin/dune" in
           prog, [| prog; "ocaml-merlin" |]
       in
       log ~title:"get_config" "Using %s configuration provider." (to_string cfg);
@@ -139,6 +139,7 @@ module Configurator = struct
       let stderr_r, stderr_w = Unix.pipe () in
       Unix.chdir dir;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
+      (* let pid = Unix.create_process prog args stdin_r stdout_w (Unix.descr_of_out_channel stderr) in *)
       Unix.chdir cwd;
       Unix.close stdin_r;
       Unix.close stdout_w;
@@ -188,7 +189,6 @@ let get_config (dir, cfg) path =
   try
     let p = Configurator.get_process ~dir cfg in
     let cmd = Dot_protocol.Commands.make_f path in
-    (* TODO: ensure [path] is absolute, or that it is relative to dir, and not the cwd. *)
     log ~title:"get_config" "Provider: %s; Command: %s" (Configurator.to_string cfg) cmd;
     output_string p.stdin (cmd ^ "\n");
     flush p.stdin;
