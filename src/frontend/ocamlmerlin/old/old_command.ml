@@ -199,12 +199,14 @@ let dispatch_sync config state (type a) : a sync_command -> a = function
       Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->
-    (*
-    let pipeline = make_pipeline config state in
-    let config = Mpipeline.final_config pipeline in
-    (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
-    *)
-    (* FIXME: ??? *)
+    (* let pipeline = make_pipeline config state in let config =
+    Mpipeline.final_config pipeline in
+    (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*) *)
+
+    (* FIXME: In the old protocol this shoudl return the list of all .merlin
+    files loaded for current buffer and a list of failures that might have
+    happened during loading (missing package for instance, ill-formed .merlin,
+    etc) *)
     ([], `Ok)
 
   | Checkout _ -> failwith "invalid arguments"
