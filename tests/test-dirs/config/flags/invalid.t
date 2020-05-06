@@ -2,6 +2,9 @@
   {
     "class": "return",
     "value": {
+      "dot_merlins": [
+        "tests/dune"
+      ],
       "failures": [
         "unknown flag -lalala"
       ]

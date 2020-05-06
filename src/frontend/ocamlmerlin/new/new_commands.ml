@@ -579,11 +579,18 @@ The return value has the shape:
     begin fun pipeline () ->
       let config = Mpipeline.final_config pipeline in
       `Assoc [
-        (* TODO: print the configuration context. *)
-        (*
-        "dot_merlins", `List (List.rev_map ~f:Json.string
-                                Mconfig.(config.merlin.dotmerlin_loaded));
+        (* TODO Remove support for multiple configuration files
+          The protocol could be changed to:
+          'config_file': path_to_dot_merlin_or_dune
+
+          For now, if the configurator is dune, the field 'dot_merlins'
+          will contain the path to the dune file (or jbuild, or dune-project)
         *)
+
+        "dot_merlins", `List
+          (match Mconfig.(config.merlin.config_path) with
+          | Some path -> [Json.string path]
+          | None -> []);
         "failures", `List (List.map ~f:Json.string
                              Mconfig.(config.merlin.failures));
       ]

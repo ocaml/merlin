@@ -45,12 +45,17 @@ type context
 
 val get_config : context -> string -> config * string list
 
-val find_project_context : string -> context option
+val find_project_context : string -> (context * string) option
 (** [find_project_config dir] searches for a "project configuration file" in dir
     and its parent directories. Stopping on the first one it finds and returning
-    its path, returning None otherwise (if '/' was reached without finding such
-    a file).
+    a configuration context along with the path to the configuration file,
+    returning None otherwise (if '/' was reached without finding such a file).
 
     A project configuration files is one of:
     - .merlin
+    - dune
+    - jbuild
+    - dune-project
+
+    They are detected in that order.
 *)

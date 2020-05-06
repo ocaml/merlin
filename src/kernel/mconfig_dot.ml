@@ -207,14 +207,12 @@ let find_project_context start_dir =
     try
       Some (
         List.find_map [
-            ".merlin"
-            ; "dune-project"
-            ; "dune" ; "jbuild"
+            ".merlin" ; "dune" ; "jbuild"; "dune-project"
           ]
           ~f:(fun f ->
             let fname = Filename.concat dir f in
             if Sys.file_exists fname && not (Sys.is_directory fname)
-            then Some (dir, Option.get (Configurator.of_string_opt f))
+            then Some ((dir, Option.get (Configurator.of_string_opt f)), fname)
             else None
           )
     )

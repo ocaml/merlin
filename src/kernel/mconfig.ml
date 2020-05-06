@@ -81,15 +81,15 @@ type merlin = {
   protocol    : [`Json | `Sexp];
   log_file    : string option;
   log_sections : string list;
+  config_path : string option;
 
   exclude_query_dir : bool;
 
-  flags_to_apply    : string list with_workdir list;
+  flags_to_apply : string list with_workdir list;
 
-  flags_applied    : string list with_workdir list;
+  flags_applied : string list with_workdir list;
 
-  failures    : string list;
-
+  failures : string list;
   extension_to_reader : (string * string) list
 
 }
@@ -208,7 +208,7 @@ let get_external_config path t =
   let directory = Filename.dirname path in
   match Mconfig_dot.find_project_context directory with
   | None -> t
-  | Some ctxt ->
+  | Some (ctxt, config_path) ->
     let dot, failures = Mconfig_dot.get_config ctxt path in
     let merlin = t.merlin in
     let merlin = {
@@ -227,6 +227,7 @@ let get_external_config path t =
         else dot.reader;
       flags_to_apply = dot.flags @ merlin.flags_to_apply;
       failures = failures @ merlin.failures;
+      config_path = Some config_path;
     } in
     normalize { t with merlin }
 
@@ -565,6 +566,7 @@ let initial = {
     protocol    = `Json;
     log_file    = None;
     log_sections = [];
+    config_path = None;
 
     exclude_query_dir = false;
 

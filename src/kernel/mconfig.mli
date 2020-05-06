@@ -39,14 +39,15 @@ type merlin = {
   protocol    : [`Json | `Sexp];
   log_file    : string option;
   log_sections: string list;
+  config_path : string option;
 
   exclude_query_dir : bool;
 
-  flags_to_apply    : string list with_workdir list;
+  flags_to_apply : string list with_workdir list;
 
-  flags_applied    : string list with_workdir list;
+  flags_applied : string list with_workdir list;
 
-  failures    : string list;
+  failures : string list;
   extension_to_reader : (string * string) list
 }
 
