@@ -83,7 +83,7 @@ type _ sync_command =
   | Flags_get
     :  string list sync_command
   | Project_get
-    :  (string list * [`Ok | `Failures of (string * exn) list]) sync_command
+    :  (string list * [`Ok | `Failures of string list]) sync_command
 
 type 'a command =
   | Query of 'a Query_protocol.t

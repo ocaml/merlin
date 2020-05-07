@@ -126,10 +126,10 @@ module Configurator = struct
       let prog, args =
         match cfg with
         | Dot_merlin ->
-          let prog = "/Users/ulysse/tmp/merlin/_build/install/default/bin/dot-merlin-reader" in
+          let prog = "dot-merlin-reader" in
           prog, [| prog |]
         | Dune ->
-          let prog = "/Users/ulysse/tmp/dune/_build/install/default/bin/dune" in
+          let prog = "dune" in
           prog, [| prog; "ocaml-merlin" |]
       in
       log ~title:"get_config" "Using %s configuration provider." (to_string cfg);

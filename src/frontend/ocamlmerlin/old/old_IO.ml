@@ -242,7 +242,12 @@ let json_of_sync_command (type a) (command : a sync_command) (response : a) : js
             "merlin",  `String version
            ]
   | Project_get, (strs, fails) ->
-    `Assoc (with_failures fails ["result", `List (List.map ~f:Json.string strs)])
+    let failures = match fails with
+      | `Failures ((_::_) as fails) ->
+        ["failures", `List (List.map ~f:Json.string fails)]
+      | _ -> []
+    in
+    `Assoc (("result", `List (List.map ~f:Json.string strs))::failures)
   | Idle_job, b -> `Bool b
 
 let classify_response = function
