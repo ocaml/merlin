@@ -15,7 +15,7 @@ depends: [
   "yojson" {>= "1.6.0"}
   "mdx" {with-test & >= "1.3.0"}
   "conf-jq" {with-test}
-  "csexp" {>= "1.0.0"}
+  "csexp" {>= "1.1.0"}
 ]
 synopsis:
   "Editor helper, provides completion, typing and source browsing in Vim and Emacs"
