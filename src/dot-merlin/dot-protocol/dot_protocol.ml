@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Std
+open Std.Result
 
 module Directive = struct
   type include_path =
@@ -61,14 +62,15 @@ type directive = Directive.Processed.t
 module Sexp = struct
   type t = Atom of string | List of t list
 
+  exception Bad_directive of string * string
+  exception Unexpected of string
+
   let atoms_of_strings = List.map ~f:(fun s -> Atom s)
 
   let strings_of_atoms =
     List.filter_map ~f:(function Atom s -> Some s | _ -> None)
 
   let to_directive sexp =
-    let exception Bad_directive of string * string in
-    let exception Unexpected of string in
     try
       Ok
         ( match sexp with
