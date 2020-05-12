@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Std.Result
 
 module Directive = struct
   type include_path =
@@ -62,45 +61,38 @@ type directive = Directive.Processed.t
 module Sexp = struct
   type t = Atom of string | List of t list
 
-  exception Bad_directive of string * string
-  exception Unexpected of string
-
   let atoms_of_strings = List.map ~f:(fun s -> Atom s)
 
   let strings_of_atoms =
     List.filter_map ~f:(function Atom s -> Some s | _ -> None)
 
   let to_directive sexp =
-    try
-      Ok
-        ( match sexp with
-        | List [ Atom tag; Atom value ] ->
-          begin match tag with
-            | "S" -> `S value
-            | "B" -> `B value
-            | "CMI" -> `CMI value
-            | "CMT" -> `CMT value
-            | "FLG" -> `FLG value
-            | "STDLIB" -> `STDLIB value
-            | "SUFFIX" -> `SUFFIX value
-            | "ERROR" -> `ERROR_MSG value
-            | _ -> raise (Bad_directive (tag, value))
-          end
-        | List [ Atom tag; List l ] -> (
-            let value = strings_of_atoms l in
-            match tag with
-            | "EXT" -> `EXT value
-            | "READER" -> `READER value
-            | _ -> raise (Bad_directive (tag, String.concat ~sep:" " value)) )
-        | List [ Atom "EXCLUDE_QUERY_DIR" ] -> `EXCLUDE_QUERY_DIR
-        | _ -> raise (Unexpected "Unexpect s-expression form") )
-    with
-    | Bad_directive (tag, value) ->
-        let msg =
-          Printf.sprintf "Unknown or ill-formed directive \"%s %s\"" tag value
-        in
-        Error msg
-    | Unexpected e -> Error e
+    let make_error str =
+      let str = Printf.sprintf "Unknown configuration tag \"%s\"" str in
+      `ERROR_MSG str
+    in
+    match sexp with
+    | List [ Atom tag; Atom value ] ->
+      begin match tag with
+        | "S" -> `S value
+        | "B" -> `B value
+        | "CMI" -> `CMI value
+        | "CMT" -> `CMT value
+        | "FLG" -> `FLG value
+        | "STDLIB" -> `STDLIB value
+        | "SUFFIX" -> `SUFFIX value
+        | "ERROR" -> `ERROR_MSG value
+        | tag -> make_error tag
+      end
+    | List [ Atom tag; List l ] ->
+        let value = strings_of_atoms l in
+        begin match tag with
+        | "EXT" -> `EXT value
+        | "READER" -> `READER value
+        | tag -> make_error tag
+      end
+    | List [ Atom "EXCLUDE_QUERY_DIR" ] -> `EXCLUDE_QUERY_DIR
+    | _ -> `ERROR_MSG "Unexpect output from external config reader"
 
   let from_directives (directives : Directive.Processed.t list) =
     let f t =
@@ -147,20 +139,12 @@ let read ~in_channel =
   let str = input_line in_channel in
   match Csexp.parse_string str with
   | Ok (Sexp.List directives) ->
-      List.rev
-        (List.filter_map directives ~f:(fun dir ->
-             match Sexp.to_directive dir with
-             | Ok dir -> Some dir
-             | Error msg ->
-                 Logger.notify ~section:"CSEXP parse error"
-                   "%s in\n%s" msg str;
-                 None))
-  | Ok _  ->
-      Logger.notify ~section:"CSEXP parse error" "Parser expected a toplevel list";
-      []
-  | Error (_, s) ->
-      Logger.notify ~section:"CSEXP parse error" "Bad CSEXP \"%s\" (in \"%s\"" s str;
-      []
+      List.rev (List.map directives ~f:(fun dir -> Sexp.to_directive dir))
+  | Ok _ | Error _ ->
+      let msg = Printf.sprintf
+        "Received wrong output from external config reader: \"%s\"" str
+      in
+      [`ERROR_MSG msg]
 
 let write ~out_channel (directives : directive list) =
   directives |> Sexp.from_directives |> Csexp.to_channel out_channel
