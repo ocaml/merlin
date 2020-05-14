@@ -66,6 +66,11 @@ module Sexp = struct
   let strings_of_atoms =
     List.filter_map ~f:(function Atom s -> Some s | _ -> None)
 
+  let rec to_string = function
+  | Atom s -> s
+  | List l -> String.concat ~sep:" "
+    ( List.concat [["("]; List.map ~f:to_string l;[")"]])
+
   let to_directive sexp =
     let make_error str =
       let str = Printf.sprintf "Unknown configuration tag \"%s\"" str in
@@ -129,20 +134,26 @@ module Commands = struct
     | Ok _ -> Unknown
     | Error _msg -> Halt
 
-  let make_f path =
+  let send_file ~out_channel path =
     Sexp.(List [Atom "File"; Atom path])
-    |> Csexp.to_string
+    |> Csexp.to_channel out_channel
 end
 
 
 let read ~in_channel =
-  let str = input_line in_channel in
-  match Csexp.parse_string str with
+  match Csexp.input in_channel with
   | Ok (Sexp.List directives) ->
       List.rev (List.map directives ~f:(fun dir -> Sexp.to_directive dir))
-  | Ok _ | Error _ ->
+  | Ok sexp ->
+    let msg = Printf.sprintf
+      "Received wrong output from external config reader: \"%s\""
+      (Sexp.to_string sexp)
+    in
+    [`ERROR_MSG msg]
+  | Error msg ->
       let msg = Printf.sprintf
-        "Received wrong output from external config reader: \"%s\"" str
+        "Bad csexp received from the external config reader: \"%s\""
+        msg
       in
       [`ERROR_MSG msg]
 

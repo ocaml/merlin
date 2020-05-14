@@ -481,7 +481,7 @@ let rec main () =
   | File _path ->
     let directives = load dot_merlin_file in
     Dot_protocol.write ~out_channel:stdout directives;
-    Printf.printf "\n%!";
+    flush stdout;
     main ()
   | Unknown -> main ()
 

@@ -188,9 +188,9 @@ type context = string * Configurator.t
 let get_config (dir, cfg) path =
   try
     let p = Configurator.get_process ~dir cfg in
-    let cmd = Dot_protocol.Commands.make_f path in
-    log ~title:"get_config" "Provider: %s; Command: %s" (Configurator.to_string cfg) cmd;
-    output_string p.stdin (cmd ^ "\n");
+    Dot_protocol.Commands.send_file
+      ~out_channel:p.stdin
+      path;
     flush p.stdin;
     let directives = Dot_protocol.read ~in_channel:p.stdout in
     let cfg, failures = prepend_config ~dir directives empty_config in

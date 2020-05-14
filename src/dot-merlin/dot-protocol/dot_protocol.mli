@@ -75,9 +75,11 @@ module Commands : sig
   type t = File of string | Halt | Unknown
 
   val read_input : in_channel -> t
-  val make_f : string -> string
+  val send_file : out_channel:out_channel -> string -> unit
 end
 
-val read : in_channel: in_channel -> directive list
+(** [read inc] reads one csexp from the channel [inc] and returns the list of
+  directives it represents *)
+val read : in_channel:in_channel -> directive list
 
-val write : out_channel: out_channel -> directive list -> unit
+val write : out_channel:out_channel -> directive list -> unit
