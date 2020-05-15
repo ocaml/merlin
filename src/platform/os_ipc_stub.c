@@ -19,6 +19,7 @@ typedef SSIZE_T ssize_t;
 #endif
 #else
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -141,9 +142,15 @@ static ssize_t recv_buffer(int fd, int fds[3])
     return -1;
   }
 
-  fds[0] = fds0[0];
-  fds[1] = fds0[1];
-  fds[2] = fds0[2];
+  {
+    int i;
+    for (i = 0; i < 3; ++i)
+    {
+      fds[i] = fds0[i];
+      if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
+        perror("fcntl");
+    }
+  }
 
   return recvd;
 }
