@@ -147,7 +147,7 @@ static ssize_t recv_buffer(int fd, int fds[3])
     for (i = 0; i < 3; ++i)
     {
       fds[i] = fds0[i];
-      if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
+      if (fcntl(fds[i], F_SETFD, FD_CLOEXEC) == -1)
         perror("fcntl");
     }
   }
