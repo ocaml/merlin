@@ -135,6 +135,21 @@
 (alias (name runtest) (deps (alias destruct-basic)))
 
 (alias
+ (name errors-alerts-test)
+ (deps (:t ./test-dirs/errors/alerts/test.t)
+       (source_tree ./test-dirs/errors/alerts)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/errors/alerts
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias errors-alerts-test)))
+
+(alias
  (name errors-error-in-constrained-env-test)
  (deps (:t ./test-dirs/errors/error-in-constrained-env/test.t)
        (source_tree ./test-dirs/errors/error-in-constrained-env)
