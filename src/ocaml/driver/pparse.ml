@@ -39,29 +39,75 @@ let report_error = function
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
 module type PpxCmd = sig
-  val prepare_ppx_commandline : string -> string -> unit
+  type command_input
 
-  val ppx_commandline : string -> string -> string -> string
+  val ppx_commandline : string -> string -> string -> command_input
 
-  val run_ppx_command : string -> string -> int
+  val run_ppx_command : string -> command_input -> string -> int
+
+  val to_debug_string : command_input -> string
 end
 
 module WinCmd : PpxCmd = struct
-  let prepare_ppx_commandline fn_in fn_out =
-    Unix.putenv "merlin_fn_in" (Filename.quote fn_in);
-    Unix.putenv "merlin_fn_out" (Filename.quote fn_out)
+  type command_input = string * string list
+  let normalize_first_segment_as_windows_path s =
+    let separated = String.split_on_char ' ' s in
+    let rec first_path cur_str rest =
+      match (cur_str, rest) with
+      | ("", []) -> ("", [])
+      | ("", hd::tl) -> first_path hd tl
+      | (s, []) -> (s, [])
+      | (s, hd::tl) ->
+          if (s.[(String.length s) - 1]) == '\\'
+          then
+            first_path
+              (s ^ ((String.sub s 0 ((String.length s) - 1)) ^ (" " ^ hd))) tl
+          else (s, rest) in
+    let (s, separated) = first_path "" separated in
+    (s, (String.concat " " separated))
 
   let ppx_commandline cmd fn_in fn_out =
-    Printf.sprintf "%s %s %s 1>&2" cmd "%merlin_fn_in%" "%merlin_fn_out%"
+    (* Keep the first path to exe outside of Shell.split_command because Dune
+     * currently produces paths that are not in the unix shell syntax *)
+    let normalized_first_path, rest = normalize_first_segment_as_windows_path cmd in
+    log ~title:"Hey" "normalized windows exe path %s and rest %s for orig command %s" normalized_first_path rest cmd;
+    Unix.putenv "merlin_fn_in" (Filename.quote fn_in);
+    Unix.putenv "merlin_fn_out" (Filename.quote fn_out);
 
-  let run_ppx_command workdir cmd =
+    let splitted_command = Shell.split_command rest in
+    (normalized_first_path, splitted_command)
+
+  let win_env_name i = "merlin_arg_" ^ string_of_int i
+
+  let win_arg_cmd_name i = "%" ^ win_env_name i ^ "%"
+
+  let set_win_arg_names args =
+    List.iteri(fun i s ->
+      let env_name = win_env_name i in
+      Unix.putenv env_name s;
+    ) args
+
+  let win_arg_cmd_names args = List.mapi(fun i s -> win_arg_cmd_name i) args
+
+  let win_sh_cmd ppx_exe args =
+    let args_str = String.concat " " (win_arg_cmd_names args) in
+    ppx_exe ^ " " ^ args_str ^ " %merlin_fn_in% %merlin_fn_out%"
+
+  let to_debug_string (ppx_exe, args) = "cmd.exe /c " ^ win_sh_cmd ppx_exe args
+
+  let run_ppx_command workdir (ppx_exe, args) fn_out =
+    let oc_out = open_out_bin fn_out in
+    set_win_arg_names args;
+    let full_cmd = win_sh_cmd ppx_exe args in
     let pid =
-        Unix.create_process "cmd.exe" [|"/c"; cmd|]
-        Unix.stdin Unix.stderr Unix.stderr
+      Unix.create_process "cmd.exe" [|"/c"; full_cmd|]
+      Unix.stdin Unix.stderr Unix.stderr
+
     in
     let (_, exit) =
         Unix.waitpid [] pid
     in
+    close_out oc_out;
     match exit with
     | Unix.WEXITED x -> x
     | Unix.WSIGNALED x -> x
@@ -69,14 +115,16 @@ module WinCmd : PpxCmd = struct
 end
 
 module UnixCmd : PpxCmd = struct
-  let prepare_ppx_commandline _fn_in _fn_out = ()
+  type command_input = string
 
-  let run_ppx_command workdir cmd =
+  let run_ppx_command workdir cmd fn_out =
     Sys.command cmd
 
   let ppx_commandline cmd fn_in fn_out =
     Printf.sprintf "%s %s %s 1>&2"
       cmd (Filename.quote fn_in) (Filename.quote fn_out)
+
+  let to_debug_string s = s
 end
 
 let apply_rewriter magic ppx (fn_in, failures) =
@@ -91,14 +139,13 @@ let apply_rewriter magic ppx (fn_in, failures) =
     with exn ->
       log ~title "cannot change directory %S: %a" ppx.workdir Logger.exn exn
   end;
-  PpxCmd.prepare_ppx_commandline fn_in fn_out;
   let comm = PpxCmd.ppx_commandline ppx.workval fn_in fn_out in
   let failure =
-    let res = PpxCmd.run_ppx_command ppx.workdir comm in
+    let res = PpxCmd.run_ppx_command ppx.workdir comm fn_out in
     let ok = res = 0 in
-    if not ok then Some (CannotRun comm)
+    if not ok then Some (CannotRun (PpxCmd.to_debug_string comm))
     else if not (Sys.file_exists fn_out) then
-      Some (WrongMagic comm)
+      Some (WrongMagic (PpxCmd.to_debug_string comm ^ " - " ^ fn_out ^ " doesn't even exist"))
     else
       (* check magic before passing to the next ppx *)
       let ic = open_in_bin fn_out in
@@ -108,7 +155,7 @@ let apply_rewriter magic ppx (fn_in, failures) =
       in
       close_in ic;
       if buffer <> magic then
-        Some (WrongMagic comm)
+        Some (WrongMagic (PpxCmd.to_debug_string comm ^ " - " ^ fn_out ^ " has wrong magic code"))
       else
         None
   in
