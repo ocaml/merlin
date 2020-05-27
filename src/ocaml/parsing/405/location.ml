@@ -266,6 +266,9 @@ let formatter_for_warnings = ref err_formatter;;
 let prerr_warning_ref = ref (fun loc w -> print_warning loc !formatter_for_warnings w);;
 let prerr_warning loc w = !prerr_warning_ref loc w;;
 
+let print_alert _ _ _ = ()
+let prerr_alert_ref = ref (fun _ _ -> ())
+
 let echo_eof () =
   print_newline ();
   incr num_loc_lines
