@@ -51,7 +51,7 @@ end
 module WinCmd : PpxCmd = struct
   type command_input = string * string list
   let normalize_first_segment_as_windows_path s =
-    let separated = String.split_on_char ' ' s in
+    let separated = String.split_on_char_ ' ' s in
     let rec first_path cur_str rest =
       match (cur_str, rest) with
       | ("", []) -> ("", [])
