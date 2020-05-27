@@ -222,6 +222,8 @@ val print_alert: t -> formatter -> Warnings.alert -> unit
 (** Prints an alert. This is simply the composition of [report_alert] and
    [print_report]. *)
 
+val prerr_alert_ref: (t -> Warnings.alert -> unit) ref
+
 val prerr_alert: t -> Warnings.alert -> unit
 (** Same as [print_alert], but uses [!formatter_for_warnings] as output
    formatter. *)
