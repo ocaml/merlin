@@ -747,7 +747,10 @@ let print_alert loc ppf w =
   | None -> ()
   | Some report -> print_report ppf report
 
-let prerr_alert loc w = print_alert loc !formatter_for_warnings w
+let prerr_alert_ref =
+  ref (fun loc w -> print_alert loc !formatter_for_warnings w)
+
+let prerr_alert loc w = !prerr_alert_ref loc w
 
 let alert ?(def = none) ?(use = none) ~kind loc message =
   prerr_alert loc {Warnings.kind; message; def; use}
