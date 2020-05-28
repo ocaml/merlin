@@ -298,17 +298,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           `List lst
         )
     in
-    let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
-    let get_context lident =
-      Context.inspect_browse_tree
-        ~cursor:pos
-        (Longident.parse lident)
-        [Mtyper.node_at typer pos]
-    in
+    let nodes = Mtyper.node_at typer pos in
     let small_enclosings =
-      Type_enclosing.from_reconstructed
-        ~get_context ~verbosity
-        env node exprs
+      Type_enclosing.from_reconstructed exprs
+       ~nodes ~cursor:pos ~verbosity
     in
     Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
       Logger.fmt (fun fmt ->

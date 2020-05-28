@@ -37,8 +37,9 @@ let from_nodes ~path =
   in
   List.filter_map ~f:aux path
 
-let from_reconstructed ~get_context ~verbosity env node exprs =
+let from_reconstructed ~nodes ~cursor ~verbosity exprs =
   let open Browse_raw in
+  let env, node = Mbrowse.leaf_node nodes in
   log ~title:"from_reconstructed" "node = %s\nexprs = [%s]"
     (Browse_raw.string_of_node node)
     (String.concat ~sep:";" (List.map exprs ~f:(fun l ->
@@ -58,6 +59,14 @@ let from_reconstructed ~get_context ~verbosity env node exprs =
       -> false
     | _ -> true
   in
+
+  let get_context lident =
+    Context.inspect_browse_tree
+      ~cursor
+      (Longident.parse lident)
+      [nodes]
+  in
+
   let f =
     fun {Location. txt = source; loc} ->
       let context = get_context source in
