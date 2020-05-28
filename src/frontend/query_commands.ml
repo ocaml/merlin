@@ -31,9 +31,6 @@ open Std
 open Query_protocol
 module Printtyp = Type_utils.Printtyp
 
-let log_section = "query-commands"
-let {Logger.log} = Logger.for_section log_section
-
 let print_completion_entries ~with_types config source entries =
   if with_types then
     let input_ref = ref [] and output_ref = ref [] in
@@ -193,7 +190,9 @@ let reconstruct_identifier pipeline pos = function
         pos
     in
     let path = Mreader_lexer.identifier_suffix path in
-    log ~title:"reconstruct-identifier"
+    Logger.log
+      ~section:Type_enclosing.log_section
+      ~title:"reconstruct-identifier"
       "paths: [%s]"
       (String.concat ~sep:";" (List.map path
         ~f:(fun l -> l.Location.txt)));
