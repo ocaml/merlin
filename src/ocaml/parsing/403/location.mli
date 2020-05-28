@@ -61,6 +61,9 @@ val print_warning: t -> formatter -> Warnings.t -> unit
 val formatter_for_warnings : formatter ref
 val prerr_warning_ref: (t -> Warnings.t -> unit) ref
 val prerr_warning: t -> Warnings.t -> unit
+(* Dummy functions for future alert handling *)
+val print_alert: t -> formatter -> Warnings.t -> unit
+val prerr_alert_ref: (t -> Warnings.t -> unit) ref
 val echo_eof: unit -> unit
 val reset: unit -> unit
 
