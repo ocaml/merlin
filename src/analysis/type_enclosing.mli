@@ -48,9 +48,8 @@ val from_nodes :
   typed_enclosings
 
 val from_reconstructed :
-  get_context:(string -> Context.t option) ->
+  nodes:(Env.t * Browse_raw.node) list ->
+  cursor:Lexing.position ->
   verbosity:int ->
-  Env.t ->
-  Mbrowse.node ->
   string Location.loc list ->
   typed_enclosings
