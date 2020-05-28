@@ -46,10 +46,6 @@ val to_string : t -> string
   information given the selected identifier, the position of the cursor and the
   typed tree. It is used by Locate and Type_enclosing.
 
-  [Mbrowse.enclosing cursor mbrowse] is used to obtain the node enclosing the
-  cursor's position un the typed tree. This node is then filtered to deduce
-  information on the enlosing context.
-
   The cursor position is used to distinguished wether a module path or an actual
   constructor name is pointed at when the cursor is in the middle of a
   longident, e.g. [Foo.B|ar.Constructor] (with | being the cursor).
