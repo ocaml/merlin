@@ -10,7 +10,7 @@
         "line": 5,
         "col": 11
       },
-      "type": "int",
+      "type": "type x = Foo",
       "tail": "no"
     },
     {
@@ -39,7 +39,7 @@
         "line": 5,
         "col": 11
       },
-      "type": "int",
+      "type": "type x = Foo",
       "tail": "no"
     },
     {

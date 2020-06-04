@@ -53,20 +53,24 @@ let to_string = function
   | Type -> "type"
   | Unknown -> "unknown"
 
-(* Distinguish between "Mo[d]ule.Constructor" and "Module.Cons[t]ructor" *)
-let cursor_on_constructor_name ~cursor:pos
-      ~cstr_token:{ Asttypes.loc; txt = lid } cd =
+(* Distinguish between "Mo[d]ule.something" and "Module.some[t]hing" *)
+let cursor_on_longident_end
+    ~cursor:cursor_pos
+    ~lid_loc:{ Asttypes.loc; txt = lid }
+    name
+  =
   match lid with
   | Longident.Lident _ -> true
   | _ ->
     let end_offset = loc.loc_end.pos_cnum in
+    let cstr_name_size = String.length name in
     let constr_pos =
       { loc.loc_end
-        with pos_cnum = end_offset - String.length cd.Types.cstr_name }
+        with pos_cnum = end_offset - cstr_name_size }
     in
-    Lexing.compare_pos pos constr_pos >= 0
+    Lexing.compare_pos cursor_pos constr_pos >= 0
 
-let inspect_pattern ~pos ~lid p =
+let inspect_pattern ~cursor ~lid p =
   let open Typedtree in
   log ~title:"inspect_context" "%a" Logger.fmt
     (fun fmt -> Format.fprintf fmt "current pattern is: %a"
@@ -81,37 +85,62 @@ let inspect_pattern ~pos ~lid p =
       subpattern, then it must mean that the cursor is on the alias. *)
     None
   | Tpat_construct (lid_loc, cd, _)
-    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
+    when cursor_on_longident_end ~cursor ~lid_loc cd.cstr_name
         && (Longident.last lid) = (Longident.last lid_loc.txt) ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
-      subpattern, then it must mean that the cursor is on the constructor
-      itself.  *)
-      Some (Constructor cd)
+       subpattern, then it must mean that the cursor is on the constructor
+       itself.  *)
+    Some (Constructor cd)
+  | Tpat_construct _ -> Some Module_path
   | _ ->
     Some Patt
 
-let inspect_expression ~pos ~lid e : t =
+let name_of_path path =
+  Option.value ~default:"*type-error*"
+    (List.last (Path.to_string_list path))
+
+let inspect_expression ~cursor ~lid e : t =
   match e.Typedtree.exp_desc with
-  | Texp_construct (lid_loc, cd, _)
-    when cursor_on_constructor_name ~cursor:pos ~cstr_token:lid_loc cd
-        && (Longident.last lid) = (Longident.last lid_loc.txt) ->
-    Constructor cd
+  | Texp_construct (lid_loc, cd, _) ->
+    (* TODO: is this first test necessary ? *)
+    if (Longident.last lid) = (Longident.last lid_loc.txt) then
+      if cursor_on_longident_end ~cursor ~lid_loc cd.cstr_name then
+        Constructor cd
+      else Module_path
+    else Module_path
+  | Texp_ident (p, lid_loc, _) ->
+    let name = name_of_path p in
+    if name = "*type-error*" then
+      (* For type_enclosing: it is enough to return Module_path here.
+         - If the cursor was on the end of the lid typing should fail anyway
+         - If the cursor is on a segment of the path it should be typed ad a
+         Module_path
+         TODO: double check that this is correct-enough behavior for Locate *)
+      Module_path
+    else if cursor_on_longident_end ~cursor ~lid_loc name then
+      Expr
+    else
+      Module_path
   | _ ->
     Expr
 
-let inspect_browse_tree browse lid pos : t option =
-  match Mbrowse.enclosing pos browse with
+let inspect_browse_tree ~cursor lid browse : t option =
+  log ~title:"inspect_context" "current node is: [%s]"
+    (String.concat ~sep:"|" (
+      List.map ~f:(Mbrowse.print ()) browse
+    ));
+  match Mbrowse.enclosing cursor browse with
   | [] ->
     log ~title:"inspect_context"
-      "no enclosing around: %a" Lexing.print_position pos;
+      "no enclosing around: %a" Lexing.print_position cursor;
     Some Unknown
   | enclosings ->
     let open Browse_raw in
     let node = Browse_tree.of_browse enclosings in
-    log ~title:"inspect_context" "current node is: %s"
+    log ~title:"inspect_context" "current enclosing node is: %s"
       (string_of_node node.Browse_tree.t_node);
     match node.Browse_tree.t_node with
-    | Pattern p -> inspect_pattern ~pos ~lid p
+    | Pattern p -> inspect_pattern ~cursor ~lid p
     | Value_description _
     | Type_declaration _
     | Extension_constructor _
@@ -126,6 +155,6 @@ let inspect_browse_tree browse lid pos : t option =
       (* if we stopped here, then we're on the label itself, and whether or
           not punning is happening is not important *)
       Some (Label lbl)
-    | Expression e -> Some (inspect_expression ~pos ~lid e)
+    | Expression e -> Some (inspect_expression ~cursor ~lid e)
     | _ ->
       Some Unknown

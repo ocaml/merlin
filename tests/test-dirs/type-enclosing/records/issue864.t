@@ -6,6 +6,18 @@
       {
         "start": {
           "line": 5,
+          "col": 23
+        },
+        "end": {
+          "line": 5,
+          "col": 24
+        },
+        "type": "int",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 5,
           "col": 21
         },
         "end": {
@@ -51,6 +63,18 @@
       {
         "start": {
           "line": 7,
+          "col": 34
+        },
+        "end": {
+          "line": 7,
+          "col": 37
+        },
+        "type": "int",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 7,
           "col": 32
         },
         "end": {
@@ -88,8 +112,6 @@
     "notifications": []
   }
 
-FIXME: see https://github.com/ocaml/merlin/issues/864
-MAYBEFIXEDBY: PR 1108
   $ $MERLIN single type-enclosing -position 9:35 -verbosity 0 \
   > -filename ./issue864.ml < ./issue864.ml
   {
@@ -104,7 +126,7 @@ MAYBEFIXEDBY: PR 1108
           "line": 9,
           "col": 35
         },
-        "type": "string",
+        "type": "int",
         "tail": "no"
       },
       {

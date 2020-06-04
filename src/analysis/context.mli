@@ -41,6 +41,17 @@ type t =
 
 val to_string : t -> string
 
+(**
+  [inspect_browse_tree lid ~cursor mbrowse] tries to provide contextual
+  information given the selected identifier, the position of the cursor and the
+  typed tree. It is used by Locate and Type_enclosing.
+
+  The cursor position is used to distinguished wether a module path or an actual
+  constructor name is pointed at when the cursor is in the middle of a
+  longident, e.g. [Foo.B|ar.Constructor] (with | being the cursor).
+
+  FIXME: when cursor at (M.|A 3), the enclosing node returned is const 3, thus
+  breaking the context inference.
+*)
 val inspect_browse_tree :
-  Mbrowse.t list -> Longident.t ->
-  Std.Lexing.position -> t option
+  cursor:Std.Lexing.position -> Longident.t -> Mbrowse.t list -> t option

@@ -1,7 +1,3 @@
-Various parts of the record.ml:
-FIXME: first and third tests are wrong (bad use of context)
-FIXBY: https://github.com/ocaml/merlin/pull/1108
-
   $ $MERLIN single type-enclosing -position 4:11 -verbosity 0 \
   > -filename ./record.ml < ./record.ml | jq ".value[0:2]"
   [
@@ -14,7 +10,7 @@ FIXBY: https://github.com/ocaml/merlin/pull/1108
         "line": 4,
         "col": 11
       },
-      "type": "int",
+      "type": "float",
       "tail": "no"
     },
     {
@@ -60,7 +56,7 @@ FIXBY: https://github.com/ocaml/merlin/pull/1108
         "line": 8,
         "col": 11
       },
-      "type": "int",
+      "type": "float",
       "tail": "no"
     },
     {
@@ -194,10 +190,21 @@ FIXME: The following results are not entirely satisfying (`foo.Bar -> foo` could
     }
   ]
 
-FIXME: should highlight `baz` with type `unit`
   $ $MERLIN single type-enclosing -position 12:16 -verbosity 0 \
   > -filename ./record.ml < ./record.ml | jq ".value[0:2]"
   [
+    {
+      "start": {
+        "line": 12,
+        "col": 15
+      },
+      "end": {
+        "line": 12,
+        "col": 18
+      },
+      "type": "unit",
+      "tail": "no"
+    },
     {
       "start": {
         "line": 12,
@@ -209,24 +216,24 @@ FIXME: should highlight `baz` with type `unit`
       },
       "type": "foo.Bar",
       "tail": "no"
-    },
-    {
-      "start": {
-        "line": 12,
-        "col": 8
-      },
-      "end": {
-        "line": 12,
-        "col": 26
-      },
-      "type": "foo",
-      "tail": "no"
     }
   ]
 
   $ $MERLIN single type-enclosing -position 12:16 -verbosity 1 \
   > -filename ./record.ml < ./record.ml | jq ".value[0:2]"
   [
+    {
+      "start": {
+        "line": 12,
+        "col": 15
+      },
+      "end": {
+        "line": 12,
+        "col": 18
+      },
+      "type": "unit",
+      "tail": "no"
+    },
     {
       "start": {
         "line": 12,
@@ -237,18 +244,6 @@ FIXME: should highlight `baz` with type `unit`
         "col": 26
       },
       "type": "type Bar = { baz : unit; }",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 12,
-        "col": 8
-      },
-      "end": {
-        "line": 12,
-        "col": 26
-      },
-      "type": "type foo = Bar of { baz : unit; }",
       "tail": "no"
     }
   ]

@@ -43,17 +43,6 @@ let lookup_module name env =
   let path, md = Env.find_module_by_name name env in
   path, md.Types.md_type, md.Types.md_attributes
 
-let lookup_modtype name env =
-  let path, mdtype = Env.find_modtype_by_name name env in
-  path, mdtype.Types.mtd_type
-
-let lookup_module_or_modtype name env =
-  try
-    let path, mty, _ = lookup_module name env in
-    path, Some mty
-  with Not_found ->
-    lookup_modtype name env
-
 let verbosity = ref 0
 
 module Printtyp = struct
@@ -134,27 +123,27 @@ end
 let rec mod_smallerthan n m =
   if n < 0 then None
   else
-  let open Types in
-  match m with
-  | Mty_ident _ -> Some 1
-  | Mty_signature s ->
-    begin match List.length_lessthan n s with
-    | None -> None
-    | Some _ ->
-      List.fold_left s ~init:(Some 0)
-      ~f:begin fun acc item ->
-        let sub n1 m = match mod_smallerthan (n - n1) m with
-           | Some n2 -> Some (n1 + n2)
-           | None -> None
-        in
-        match acc, Raw_compat.si_modtype_opt item with
-        | None, _ -> None
-        | Some n', _ when n' > n -> None
-        | Some n1, Some mty -> sub n1 mty
-        | Some n', _ -> Some (succ n')
+    let open Types in
+    match m with
+    | Mty_ident _ -> Some 1
+    | Mty_signature s ->
+      begin match List.length_lessthan n s with
+        | None -> None
+        | Some _ ->
+          List.fold_left s ~init:(Some 0)
+            ~f:begin fun acc item ->
+              let sub n1 m = match mod_smallerthan (n - n1) m with
+                | Some n2 -> Some (n1 + n2)
+                | None -> None
+              in
+              match acc, Raw_compat.si_modtype_opt item with
+              | None, _ -> None
+              | Some n', _ when n' > n -> None
+              | Some n1, Some mty -> sub n1 mty
+              | Some n', _ -> Some (succ n')
+            end
       end
-    end
-  | Mty_functor _ ->
+    | Mty_functor _ ->
     let (m1,m2) = unpack_functor m in
     begin
       match mod_smallerthan n m2, m1 with
@@ -166,6 +155,14 @@ let rec mod_smallerthan n m =
       | Some n2 -> Some (n1 + n2)
     end
   | _ -> Some 1
+
+let print_short_modtype verbosity env ppf md  =
+  match mod_smallerthan 1000 md with
+  | None when verbosity = 0 ->
+    Format.pp_print_string ppf
+      "(* large signature, repeat to confirm *)";
+  | _ ->
+    Printtyp.modtype env ppf md
 
 let print_type_with_decl ~verbosity env ppf typ =
   if verbosity > 0 then
@@ -210,7 +207,38 @@ let print_exn ppf exn =
     Format.pp_print_string ppf (Printexc.to_string exn)
   | Some (`Ok report) -> Location.print_main ppf report
 
-let type_in_env ?(verbosity=0) ?keywords env ppf expr =
+let print_type ppf env lid  =
+  let p, t = Env.find_type_by_name lid.Asttypes.txt env in
+  Printtyp.type_declaration env
+    (Ident.create_persistent (* Incorrect, but doesn't matter. *)
+       (Path.last p))
+    ppf t
+
+let print_modtype ppf verbosity env lid =
+  let _p, mtd = Env.find_modtype_by_name lid.Asttypes.txt env in
+  match mtd.mtd_type with
+  | Some mt -> print_short_modtype verbosity env ppf mt
+  | None -> Format.pp_print_string ppf "(* abstract module *)"
+
+let print_modpath ppf verbosity env lid =
+  let _path, md =
+    Env.find_module_by_name lid.Asttypes.txt env
+  in
+  print_short_modtype verbosity env ppf (md.md_type)
+
+let print_constr ppf env lid =
+  let cstr_desc =
+    Env.find_constructor_by_name lid.Asttypes.txt env
+  in
+  (*
+    Format.pp_print_string ppf name;
+    Format.pp_print_string ppf " : ";
+  *)
+  (* FIXME: support Reader printer *)
+  !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc)
+
+exception Fallback
+let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
       Env.with_cmis @@ fun () ->
@@ -233,55 +261,44 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
       | Parsetree.Pexp_construct (longident, _) -> `Constr longident
       | _ -> `Other
     in
+    let open Context in
     match extract_specific_parsing_info e with
-    | `Ident longident ->
+    | `Ident longident | `Constr longident ->
       begin try
-        (* Don't catch type errors *)
-        print_expr e;
-        true
-      with exn ->
-        try
-          let p, t = Env.find_type_by_name longident.Asttypes.txt env in
-          Printtyp.type_declaration env
-            (Ident.create_persistent (* Incorrect, but doesn't matter. *)
-               (Path.last p))
-            ppf t;
+          begin match context with
+            | Label lbl_des ->
+              (* We use information from the context because `Env.find_label_by_name`
+              can fail *)
+              Printtyp.type_expr ppf lbl_des.lbl_arg;
+            | Type ->
+              print_type ppf env longident
+            (* TODO: special processing for module aliases ? *)
+            | Module_type ->
+              print_modtype ppf verbosity env longident
+            | Module_path ->
+              print_modpath ppf verbosity env longident
+            | Constructor _ ->
+              print_constr ppf env longident
+            | _ -> raise Fallback
+          end;
           true
-        with _ -> print_exn ppf exn; false
-      end
-
-    | `Constr longident ->
-      begin try
-        print_expr e;
-        true
-      with exn ->
-        try
-          (* TODO: special processing for module aliases? *)
-          match lookup_module_or_modtype longident.Asttypes.txt env with
-          | _path, None ->
-            Format.pp_print_string ppf "(* abstract module *)";
-            true
-          | _path, Some md ->
-            begin match mod_smallerthan 1000 md with
-            | None when verbosity = 0 ->
-              Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
-            | _ ->
-              Printtyp.modtype env ppf md
-            end;
-            true
         with _ ->
-          try
-            let cstr_desc =
-              Env.find_constructor_by_name longident.Asttypes.txt env
-            in
-                  (*
-                     Format.pp_print_string ppf name;
-                     Format.pp_print_string ppf " : ";
-                  *)
-            (* FIXME: support Reader printer *)
-            !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc);
+        (* Fallback to contextless typing attemps *)
+        try
+          print_expr e;
+          true
+        with exn -> try
+            print_modpath ppf verbosity env longident;
             true
-          with _ -> print_exn ppf exn; false
+          with _ -> try
+              (* TODO: useless according to test suite *)
+              print_modtype ppf verbosity env longident;
+              true
+            with _ -> try
+                (* TODO: useless according to test suite *)
+                print_constr ppf env longident;
+                true
+              with _ -> print_exn ppf exn; false
       end
 
     | `Other ->
