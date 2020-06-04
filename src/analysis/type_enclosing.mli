@@ -7,10 +7,10 @@
 
     (2) is primarily useful in the following situations:
     - when the identifier is polymorphic in the environment, but monomorphic in
-      the AST because it's been instantiated.
+    the AST because it's been instantiated.
     - when there is a syntax or type error in that area, and we don't have a
-      precise enough AST node for the position (i.e. we got a "recovered" node, of
-      type ['a]).
+    precise enough AST node for the position (i.e. we got a "recovered" node, of
+    type ['a]).
 
     Furthermore, (2) has a finer granularity than (1): when the cursor is in the
     middle of a longident, e.g. [Foo.B|ar.Baz.lol] (with | being the cursor),
@@ -21,8 +21,8 @@
 
     There are however some issues with the small enclosings:
     - one has to be careful of the context (obviously that information won't be
-      available in case of parse errors); because a given identifier could exist
-      in different namespaces, for instance:
+    available in case of parse errors); because a given identifier could exist
+    in different namespaces, for instance:
     {[
       type t
       module type t = sig val t : t end

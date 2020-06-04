@@ -29,8 +29,8 @@
 type t =
   | Constructor of Types.constructor_description
     (* We attach the constructor description here so in the case of
-       disambiguated constructors we actually directly look for the type path
-       (cf. #486, #794). *)
+      disambiguated constructors we actually directly look for the type
+      path (cf. #486, #794). *)
   | Expr
   | Label of Types.label_description (* Similar to constructors. *)
   | Module_path

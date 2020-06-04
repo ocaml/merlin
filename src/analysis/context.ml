@@ -32,9 +32,9 @@ let {Logger. log} = Logger.for_section "context"
 
 type t =
   | Constructor of Types.constructor_description
-  (* We attach the constructor description here so in the case of
-     disambiguated constructors we actually directly look for the type
-     path (cf. #486, #794). *)
+    (* We attach the constructor description here so in the case of
+      disambiguated constructors we actually directly look for the type
+      path (cf. #486, #794). *)
   | Expr
   | Label of Types.label_description (* Similar to constructors. *)
   | Module_path
@@ -74,7 +74,7 @@ let inspect_pattern ~cursor ~lid p =
   let open Typedtree in
   log ~title:"inspect_context" "%a" Logger.fmt
     (fun fmt -> Format.fprintf fmt "current pattern is: %a"
-        (Printtyped.pattern 0) p);
+                  (Printtyped.pattern 0) p);
   match p.pat_desc with
   | Tpat_any when Longident.last lid = "_" -> None
   | Tpat_var (_, str_loc) when (Longident.last lid) = str_loc.txt ->
@@ -82,11 +82,11 @@ let inspect_pattern ~cursor ~lid p =
   | Tpat_alias (_, _, str_loc)
     when (Longident.last lid) = str_loc.txt ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
-       subpattern, then it must mean that the cursor is on the alias. *)
+      subpattern, then it must mean that the cursor is on the alias. *)
     None
   | Tpat_construct (lid_loc, cd, _)
     when cursor_on_longident_end ~cursor ~lid_loc cd.cstr_name
-      && (Longident.last lid) = (Longident.last lid_loc.txt) ->
+        && (Longident.last lid) = (Longident.last lid_loc.txt) ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the constructor
        itself.  *)
