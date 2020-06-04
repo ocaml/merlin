@@ -53,9 +53,8 @@ val find_project_context : string -> (context * string) option
 
     A project configuration files is one of:
     - .merlin
-    - dune
-    - jbuild
     - dune-project
+    - dune-workspace
 
-    They are detected in that order.
+    They are detected in that order. [dune] and [jbuild] file do not need to be taken into account because any project using a recent version of dune should have a dune-project file which is even auto-generated when it is missing. And only recent versions of dune will stop writing .merlin files.
 *)

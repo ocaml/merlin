@@ -208,7 +208,7 @@ let find_project_context start_dir =
     try
       Some (
         List.find_map [
-            ".merlin" ; "dune" ; "jbuild"; "dune-project"
+            ".merlin" ; "dune-project"; "dune-workspace"
           ]
           ~f:(fun f ->
             let fname = Filename.concat dir f in
