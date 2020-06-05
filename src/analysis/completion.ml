@@ -487,12 +487,15 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
     make_candidate ~get_doc ~attrs ~exact name ?loc ?path ty in
   let find ?prefix_path ~is_label prefix =
     let valid tag name =
-      try
-        (* Prevent identifiers introduced by type checker to leak *)
-        ignore (String.index name '-' : int);
-        false
-      with Not_found ->
-        String.is_prefixed ~by:prefix name && uniq (tag,name)
+      let no_leak () =
+        (* Prevent identifiers introduced by type checker
+          and recovery to leak *)
+        List.for_all ~f:(fun by -> not (String.is_prefixed ~by name))
+          ["self-"; "selfpat-"; "*type-"]
+      in
+      String.is_prefixed ~by:prefix name
+      && uniq (tag,name)
+      && no_leak ()
     in
     (* Hack to prevent extensions namespace to leak
        + another to hide the "Library_name__Module" present at Jane Street *)
