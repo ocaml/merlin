@@ -41,11 +41,13 @@ Printf.ksprintf J.send {|
 
 (menhir
  (modules parser_raw)
+ (enabled_if (<> %%{profile} "release"))
  (mode    (promote-into %s))
  (flags :standard --inspection --table --cmly))
 
 (rule
   (targets parser_recover.ml)
+  (enabled_if (<> %%{profile} "release"))
   (deps    parser_raw.cmly)
   (mode    (promote-into %s))
   (action
@@ -54,6 +56,7 @@ Printf.ksprintf J.send {|
 
 (rule
   (targets parser_explain.ml)
+  (enabled_if (<> %%{profile} "release"))
   (deps    parser_raw.cmly)
   (mode    (promote-into %s))
   (action
@@ -62,6 +65,7 @@ Printf.ksprintf J.send {|
 
 (rule
   (targets parser_printer.ml)
+  (enabled_if (<> %%{profile} "release"))
   (deps    parser_raw.cmly)
   (mode    (promote-into %s))
   (action
