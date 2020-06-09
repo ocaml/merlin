@@ -1,3 +1,15 @@
+merlin 3.3.5
+============
+Tue Jun  9 15:13:42 CET 2020
+
+  + backend
+    - fix completion of names containing `-` (#1142)
+    - alerts are no-more ignored and reported as warnings (#1138)
+    - fix several type-enclosing bugs by performing context-analysis (#1108)
+  + frontend
+    - lsp: add deprecation flag to outline items (#1087)
+    - lsp: add go-to typedef (`Locate_type`) (#1067)
+
 merlin 3.3.4
 ============
 Tue Apr 14 15:25:05 CEST 2020
@@ -45,7 +57,7 @@ Fri Nov 29 17:35:58 CET 2019
     - support OCaml 4.09 (#1055)
     - fix parse errors in 4.08 (#1037)
     - update 4.08 support to OCaml 4.08.1 (#1053)
-    - support `without_cmis` 
+    - support `without_cmis`
     - separate reading from caching in file-cache, use caching in
       `Env.check_state_consistency` (#1044)
     - simplify compiler state management (#1056, #1059)
