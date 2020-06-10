@@ -2,11 +2,11 @@ merlin 3.3.5
 ============
 Tue Jun  9 15:13:42 CET 2020
 
-  + backend
+  + ocaml support
+    - alerts are no-more ignored and are reported as warnings (#1138)
+  + merlin binary
     - fix completion of names containing `-` (#1142)
-    - alerts are no-more ignored and reported as warnings (#1138)
     - fix several type-enclosing bugs by performing context-analysis (#1108)
-  + frontend
     - lsp: add deprecation flag to outline items (#1087)
     - lsp: add go-to typedef (`Locate_type`) (#1067)
 
