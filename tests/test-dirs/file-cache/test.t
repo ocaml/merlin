@@ -64,3 +64,5 @@ If we remove the dep and try again, the "Unbound module" error should reappear:
     ],
     "notifications": []
   }
+
+  $ $MERLIN server stop-server

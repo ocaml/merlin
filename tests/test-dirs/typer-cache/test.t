@@ -1,4 +1,4 @@
-Instances of the typechecker are cached based on configuration 
+Instances of the typechecker are cached based on configuration
 (values of type `Mconfig.t`).
 
 Older versions of Merlin ignored some components resulting in possible
@@ -92,7 +92,7 @@ We should check in the other direction too. Starting from a visible dep and
 hidding it.  Older versions of the typechecker (before the 4.08 revamp of Env)
 would accumulate dependencies and forget to flush the cache when a dependency
 disappeared.
- 
+
   $ $MERLIN server stop-server
 
 
@@ -169,3 +169,5 @@ Reference:
 Now some cleanup.
 
   $ rm sub/dep.cm*
+
+  $ $MERLIN server stop-server
