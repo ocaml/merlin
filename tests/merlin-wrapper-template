@@ -13,6 +13,7 @@ cd - > /dev/null
 $(dirname ${BASH_SOURCE[0]})/%%OCAMLMERLIN_PATH%% "$@" \
     | jq 'del(.timing)' \
     | $sed -e "s:$src_dir/::g" \
+    | $sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | $sed -e 's:"/.*/\(\.opam\|opam2\)/[^/]*/\([^"]*\)":"~opam/\2":g' \
     | $sed -e 's:\\n:\
 :g'

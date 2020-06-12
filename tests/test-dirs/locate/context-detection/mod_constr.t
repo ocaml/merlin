@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "~opam/lib/ocaml/string.ml",
+      "file": "lib/ocaml/string.ml",
       "pos": {
         "line": 1,
         "col": 0
