@@ -1,11 +1,7 @@
-(enabled_if (and (>= %{ocaml_version} 4.06.0) (< %{ocaml_version} 4.08.0)))
+(enabled_if (< %{ocaml_version} 4.08.0))
 
-  $ dune build @check
-  File "main.ml", line 2, characters 8-12:
-  Error (warning 3): deprecated: Lib.sqrt
-  I am deprecated
-  [1]
-
+  $ echo "S .\nB .\nFLG -nopervasives" > .merlin
+  $ $OCAMLC -nopervasives -c -bin-annot lib.mli
   $ $MERLIN single errors -filename main.ml < main.ml
   {
     "class": "return",
@@ -19,10 +15,10 @@
           "line": 2,
           "col": 12
         },
-        "type": "typer",
+        "type": "warning",
         "sub": [],
         "valid": true,
-        "message": "Error (warning 3): deprecated: Lib.sqrt
+        "message": "Warning 3: deprecated: Lib.sqrt
   I am deprecated"
       }
     ],
