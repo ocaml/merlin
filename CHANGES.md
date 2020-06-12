@@ -1,3 +1,11 @@
+merlin 3.3.6
+============
+Fri Jun 12 10:51 CEST 2020
+
+  + merlin_binary
+    - Fix a test that required Dune 2.5
+    - Fix another test that lacked reproducibility
+
 merlin 3.3.5
 ============
 Tue Jun  9 15:13:42 CET 2020
