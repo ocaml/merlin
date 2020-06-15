@@ -35,10 +35,12 @@
 
 (alias
  (name completion-infix)
+ (package merlin)
  (deps (:t ./test-dirs/completion/infix.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/completion
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -203,10 +205,12 @@
 
 (alias
  (name errors-alerts-test-pre-408)(enabled_if (< %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/errors/alerts/test-pre-408.t)
        (source_tree ./test-dirs/errors/alerts)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/errors/alerts
      (setenv MERLIN %{exe:merlin-wrapper}
@@ -218,10 +222,12 @@
 
 (alias
  (name errors-alerts-test)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
  (deps (:t ./test-dirs/errors/alerts/test.t)
        (source_tree ./test-dirs/errors/alerts)
        %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server})
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
  (action
    (chdir ./test-dirs/errors/alerts
      (setenv MERLIN %{exe:merlin-wrapper}
