@@ -140,7 +140,6 @@ module Configurator = struct
       Unix.chdir dir;
       Unix.set_close_on_exec stdin_w;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
-      (* let pid = Unix.create_process prog args stdin_r stdout_w (Unix.descr_of_out_channel stderr) in *)
       Unix.chdir cwd;
       Unix.close stdin_r;
       Unix.close stdout_w;
