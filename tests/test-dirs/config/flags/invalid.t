@@ -3,7 +3,7 @@
     "class": "return",
     "value": {
       "dot_merlins": [
-        "tests/dune"
+        "tests/test-dirs/config/flags/.merlin"
       ],
       "failures": [
         "unknown flag -lalala"
