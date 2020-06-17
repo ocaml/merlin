@@ -38,8 +38,7 @@ let () =
     in
     prerr_endline ("Error during findlib initialization: " ^ message);
     (* This is a quick and dirty workaround to get Merlin to work even when
-       findlib directory has been removed.
-       The long term plan is to get rid of findlib inside Merlin. *)
+       findlib directory has been removed. *)
     begin match Sys.getenv "OCAMLFIND_CONF" with
     | exception Not_found ->
       Unix.putenv "OCAMLFIND_CONF" "/dev/null"
@@ -167,8 +166,6 @@ let directives_of_files filenames =
     | [] -> List.rev acc
   in
   process [] filenames
-
-(* FIXME: Move elsewhere, processing of findlib packages*)
 
 let ppx_of_package ?(predicates=[]) setup pkg =
   let d = Findlib.package_directory pkg in
