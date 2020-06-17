@@ -28,22 +28,24 @@
 
 open Misc
 open Std
+open Std.Result
 
-let () =
-  try Findlib.init ()
+let findlib_ok =
+  try
+    Ok (Findlib.init ())
   with exn ->
     let message = match exn with
       | Failure message -> message
       | exn -> Printexc.to_string exn
     in
-    prerr_endline ("Error during findlib initialization: " ^ message);
     (* This is a quick and dirty workaround to get Merlin to work even when
        findlib directory has been removed. *)
     begin match Sys.getenv "OCAMLFIND_CONF" with
     | exception Not_found ->
       Unix.putenv "OCAMLFIND_CONF" "/dev/null"
     | _ -> ()
-    end
+    end;
+    Error ("Error during findlib initialization: " ^ message)
 
 let {Logger. log} = Logger.for_section "Mconfig_dot"
 
@@ -443,7 +445,7 @@ let postprocess cfg =
         List.map lst ~f:Import_from_dune.quote
         |> String.concat ~sep:" "
       in
-      [ `FLG ("-ppx " ^ cmd)]
+      [ `FLG ("-ppx " ^ cmd) ]
   in
   List.concat
     [ List.concat_map cfg.to_canonicalize ~f:(fun (dir, directive) ->
@@ -468,7 +470,10 @@ let load dot_merlin_file =
     List.fold_left directives ~init:empty_config
       ~f:(fun cfg file -> process_one ~cfg file)
   in
-  postprocess cfg
+  let directives = postprocess cfg in
+  match cfg.packages_to_load, findlib_ok with
+  | [], _ | _, Ok _ -> directives
+  | _, Error msg -> (`ERROR_MSG msg) :: directives
 
 let dot_merlin_file =  Filename.concat (Sys.getcwd ()) ".merlin"
 
