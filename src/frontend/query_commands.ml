@@ -696,8 +696,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let errors =
       let cfg = Mpipeline.final_config pipeline in
       let failures =
-        (* FIXME: the source is known *)
-        List.map ~f:(Location.error ~source:Unknown) cfg.merlin.failures
+        List.map ~f:(Location.error ~source:Location.Config) cfg.merlin.failures
       in
       failures @ errors
     in

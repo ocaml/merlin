@@ -31,7 +31,7 @@ Also, see that the failure is reported to the user:
     "class": "return",
     "value": [
       {
-        "type": "unknown",
+        "type": "config",
         "sub": [],
         "valid": true,
         "message": "Failed to load packages: does-not-exist"
