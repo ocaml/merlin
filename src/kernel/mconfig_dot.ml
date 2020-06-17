@@ -130,7 +130,7 @@ module Configurator = struct
           prog, [| prog |]
         | Dune ->
           let prog = "dune" in
-          prog, [| prog; "ocaml-merlin" |]
+          prog, [| prog; "ocaml-merlin"; "--no-print-directory" |]
       in
       log ~title:"get_config" "Using %s configuration provider." (to_string cfg);
       let cwd = Sys.getcwd () in
