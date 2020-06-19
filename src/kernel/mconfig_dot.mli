@@ -28,34 +28,33 @@
 
 open Std
 
-(** Load and cache dot-merlin files **)
-
 type config = {
-  dot_merlins  : string list;
   build_path   : string list;
   source_path  : string list;
   cmi_path     : string list;
   cmt_path     : string list;
-  packages     : string list;
   flags        : string list with_workdir list;
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
-  findlib      : string option;
   reader       : string list;
-  findlib_path : string list;
-  findlib_toolchain : string option;
   exclude_query_dir : bool;
 }
 
-(** Load one or more .merlin file *)
-val load : stdlib:string -> string list -> config
+type context
 
-val standard_library : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string
+val get_config : context -> string -> config * string list
 
-val path_of_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> string list ->
-  (string list (* packages *) *
-   Ppxsetup.t *
-   string list (* failures *))
+val find_project_context : string -> (context * string) option
+(** [find_project_config dir] searches for a "project configuration file" in dir
+    and its parent directories. Stopping on the first one it finds and returning
+    a configuration context along with the path to the configuration file,
+    returning None otherwise (if '/' was reached without finding such a file).
 
-val list_packages : ?conf:string -> ?path:string list -> ?toolchain:string -> unit -> string list
+    A project configuration files is one of:
+    - .merlin
+    - dune-project
+    - dune-workspace
+
+    They are detected in that order. [dune] and [jbuild] file do not need to be taken into account because any project using a recent version of dune should have a dune-project file which is even auto-generated when it is missing. And only recent versions of dune will stop writing .merlin files.
+*)

@@ -692,6 +692,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
          (if parsing then parser_errors else []) @
          (if typing then typer_errors else []))
     in
+    (* Add configuration errors *)
+    let errors =
+      let cfg = Mpipeline.final_config pipeline in
+      let failures =
+        List.map ~f:(Location.error ~source:Location.Config) cfg.merlin.failures
+      in
+      failures @ errors
+    in
     (* Filter anything after first parse error *)
     let limit = !first_syntax_error in
     if limit = Lexing.dummy_pos then errors else (
@@ -722,9 +730,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     List.concat_map ~f:with_ext exts
 
   | Findlib_list ->
-    let config = Mpipeline.final_config pipeline in
-    let {Mconfig. conf; path; toolchain} = config.Mconfig.findlib in
-    Mconfig_dot.list_packages ?conf ~path ?toolchain ()
+    []
 
   | Extension_list kind ->
     let config = Mpipeline.final_config pipeline in

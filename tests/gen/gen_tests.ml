@@ -23,10 +23,12 @@ let gen_rule dir file =
   Printf.printf {|
 (alias
  (name %s)%s
+ (package merlin)
  (deps (:t %s)
        (source_tree %s)
        %%{bin:ocamlmerlin}
-       %%{bin:ocamlmerlin-server})
+       %%{bin:ocamlmerlin-server}
+       %%{bin:dot-merlin-reader})
  (action
    (chdir %s
      (setenv MERLIN %%{exe:merlin-wrapper}

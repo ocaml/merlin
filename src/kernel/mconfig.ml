@@ -67,20 +67,6 @@ let marg_commandline f =
   Marg.param "command"
     (fun workval acc -> f {workdir = unsafe_get_cwd (); workval} acc)
 
-(** {1 Findlib configuration} *)
-
-type findlib = {
-  conf : string option;
-  path : string list;
-  toolchain : string option;
-}
-
-let dump_findlib x = `Assoc [
-    "conf", Json.option Json.string x.conf;
-    "path", `List (List.map ~f:Json.string x.path);
-    "toolchain", Json.option Json.string x.toolchain;
-  ]
-
 (** {1 Merlin high-level settings} *)
 
 type merlin = {
@@ -95,21 +81,15 @@ type merlin = {
   protocol    : [`Json | `Sexp];
   log_file    : string option;
   log_sections : string list;
+  config_path : string option;
 
   exclude_query_dir : bool;
 
-  flags_to_apply    : string list with_workdir list;
-  packages_to_load  : string list;
+  flags_to_apply : string list with_workdir list;
 
-  flags_applied    : string list with_workdir list;
-  dotmerlin_loaded : string list;
-  packages_loaded  : string list;
+  flags_applied : string list with_workdir list;
 
-  packages_path : string list;
-  packages_ppx  : Ppxsetup.t;
-
-  failures    : string list;
-
+  failures : string list;
   extension_to_reader : (string * string) list
 
 }
@@ -140,10 +120,6 @@ let dump_merlin x =
     "log_file"     , Json.option Json.string x.log_file;
     "log_sections" , Json.list Json.string x.log_sections;
     "flags_to_apply"   , `List (List.map ~f:dump_flag_list x.flags_to_apply);
-    "packages_to_load" , `List (List.map ~f:Json.string x.packages_to_load);
-    "dotmerlin_loaded" , `List (List.map ~f:Json.string x.dotmerlin_loaded);
-    "packages_loaded"  , `List (List.map ~f:Json.string x.packages_loaded);
-    "packages_path"    , `List (List.map ~f:Json.string x.packages_path);
 
     "failures"         , `List (List.map ~f:Json.string x.failures);
     "assoc_suffixes"   , `List (
@@ -170,14 +146,12 @@ let dump_query x = `Assoc [
 
 type t = {
   ocaml   : ocaml;
-  findlib : findlib;
   merlin  : merlin;
   query   : query;
 }
 
 let dump x = `Assoc [
     "ocaml"   , dump_ocaml x.ocaml;
-    "findlib" , dump_findlib x.findlib;
     "merlin"  , dump_merlin x.merlin;
     "query"   , dump_query x.query;
   ]
@@ -196,32 +170,11 @@ let stdlib =
     | Some stdlib -> stdlib
     | None -> match env with
       | Some stdlib -> stdlib
-      | None ->
-        Mconfig_dot.standard_library
-          ?conf:config.findlib.conf
-          ~path:config.findlib.path
-          ?toolchain:config.findlib.toolchain ()
+      | None -> Standard_library.path
 
 let normalize_step t =
-  let merlin = t.merlin and findlib = t.findlib in
-  let open Mconfig_dot in
-  if merlin.packages_to_load <> [] then
-    let path, ppx, failures = path_of_packages
-        ?conf:findlib.conf
-        ~path:findlib.path
-        ?toolchain:findlib.toolchain
-        merlin.packages_to_load
-    in
-    { t with merlin =
-               { merlin with
-                 packages_to_load = [];
-                 packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
-                 packages_path = path @ merlin.packages_path;
-                 packages_ppx  = Ppxsetup.union ppx merlin.packages_ppx;
-                 failures = failures @ merlin.failures
-               }
-    }
-  else if merlin.flags_to_apply <> [] then
+  let merlin = t.merlin in
+  if merlin.flags_to_apply <> [] then
     let flagss = merlin.flags_to_apply in
     let t = {t with merlin = { merlin with
                                flags_to_apply = [];
@@ -241,8 +194,7 @@ let normalize_step t =
 
 let is_normalized t =
   let merlin = t.merlin in
-  merlin.flags_to_apply = [] &&
-  merlin.packages_to_load = []
+  merlin.flags_to_apply = []
 
 let rec normalize t =
   if is_normalized t then (
@@ -251,51 +203,33 @@ let rec normalize t =
   ) else
     normalize (normalize_step t)
 
-let load_dotmerlins ~filenames t =
-  let open Mconfig_dot in
-  let stdlib = stdlib t in
-  let dot = Mconfig_dot.load ~stdlib filenames in
-  let merlin = t.merlin in
-  let merlin = {
-    merlin with
-    build_path = dot.build_path @ merlin.build_path;
-    source_path = dot.source_path @ merlin.source_path;
-    cmi_path = dot.cmi_path @ merlin.cmi_path;
-    cmt_path = dot.cmt_path @ merlin.cmt_path;
-    exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-    extensions = dot.extensions @ merlin.extensions;
-    suffixes = dot.suffixes @ merlin.suffixes;
-    stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-    reader =
-      if dot.reader = []
-      then merlin.reader
-      else dot.reader;
-    flags_to_apply = dot.flags @ merlin.flags_to_apply;
-    dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
-    packages_to_load = dot.packages @ merlin.packages_to_load;
-  } in
-  let findlib = {
-    conf = Option.plus dot.findlib t.findlib.conf;
-    path = dot.findlib_path @ t.findlib.path;
-    toolchain = Option.plus dot.findlib_toolchain t.findlib.toolchain;
-  } in
-  normalize { t with merlin; findlib }
-
-let findlib_flags = [
-  (
-    "-findlib-conf",
-    marg_path (fun conf findlib ->
-        let conf = if conf = "" then None else Some conf in
-        {findlib with conf}),
-    "<path> Path to findlib.conf to use for resolving packages"
-  );
-  (
-    "-findlib-path",
-    marg_path (fun path findlib ->
-        {findlib with path = path :: findlib.path}),
-    "<path> Add <path> to the list of paths considered "
-  );
-]
+let get_external_config path t =
+  let path = Misc.canonicalize_filename path in
+  let directory = Filename.dirname path in
+  match Mconfig_dot.find_project_context directory with
+  | None -> t
+  | Some (ctxt, config_path) ->
+    let dot, failures = Mconfig_dot.get_config ctxt path in
+    let merlin = t.merlin in
+    let merlin = {
+      merlin with
+      build_path = dot.build_path @ merlin.build_path;
+      source_path = dot.source_path @ merlin.source_path;
+      cmi_path = dot.cmi_path @ merlin.cmi_path;
+      cmt_path = dot.cmt_path @ merlin.cmt_path;
+      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+      extensions = dot.extensions @ merlin.extensions;
+      suffixes = dot.suffixes @ merlin.suffixes;
+      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+      reader =
+        if dot.reader = []
+        then merlin.reader
+        else dot.reader;
+      flags_to_apply = dot.flags @ merlin.flags_to_apply;
+      failures = failures @ merlin.failures;
+      config_path = Some config_path;
+    } in
+    normalize { t with merlin }
 
 let merlin_flags = [
   (
@@ -359,12 +293,6 @@ let merlin_flags = [
         | Some _ ->
           {merlin with extensions = extension :: merlin.extensions}),
     "<extension> Load merlin syntax extension"
-  );
-  (
-    "-package",
-    Marg.param "package" (fun pkg merlin ->
-        {merlin with packages_to_load = pkg :: merlin.packages_to_load}),
-    "<package> Load findlib package"
   );
   (
     "-flags",
@@ -626,11 +554,6 @@ let initial = {
     pp                   = None;
     warnings             = Warnings.backup ();
   };
-  findlib = {
-    conf = None;
-    path = [];
-    toolchain = None;
-  };
   merlin = {
     build_path  = [];
     source_path = [];
@@ -643,17 +566,12 @@ let initial = {
     protocol    = `Json;
     log_file    = None;
     log_sections = [];
+    config_path = None;
 
     exclude_query_dir = false;
 
     flags_to_apply    = [];
-    packages_to_load  = [];
     flags_applied     = [];
-    dotmerlin_loaded  = [];
-    packages_loaded   = [];
-
-    packages_path = [];
-    packages_ppx  = Ppxsetup.empty;
 
     failures = [];
     extension_to_reader = [(".re","reason");(".rei","reason")];
@@ -679,10 +597,9 @@ let global_flags = [
         let filename = Filename.basename path in
         let directory = Filename.dirname path in
         let t = {t with query = {query with filename; directory}} in
-        load_dotmerlins t ~filenames:[
-          let base = "." ^ filename ^ ".merlin" in
-          Filename.concat directory base
-        ]),
+        Logger.with_log_file t.merlin.log_file
+          ~sections:t.merlin.log_sections @@ fun () ->
+        get_external_config path t),
     "<path> Path of the buffer; \
      extension determines the kind of file (interface or implementation), \
      basename is used as name of the module being definer, \
@@ -690,7 +607,7 @@ let global_flags = [
   );
   (
     "-dot-merlin",
-    marg_path (fun dotmerlin t -> load_dotmerlins ~filenames:[dotmerlin] t),
+    marg_path (fun dotmerlin t -> get_external_config dotmerlin t),
     "<path> Load <path> as a .merlin; if it is a directory, \
      look for .merlin here or in a parent directory"
   );
@@ -718,9 +635,6 @@ let () =
     ~f:(add (fun x -> x.ocaml) (fun x ocaml -> {x with ocaml}))
     ocaml_flags;
   List.iter
-    ~f:(add (fun x -> x.findlib) (fun x findlib -> {x with findlib}))
-    findlib_flags;
-  List.iter
     ~f:(add (fun x -> x.merlin) (fun x merlin -> {x with merlin}))
     merlin_flags;
   List.iter
@@ -733,7 +647,6 @@ let () =
 let flags_for_completion () =
   List.sort ~cmp:compare (
     "-dot-merlin" :: "-reader" ::
-    List.map ~f:(fun (x,_,_) -> x) findlib_flags @
     List.map ~f:(fun (x,_,_) -> x) ocaml_flags
   )
 
@@ -747,8 +660,6 @@ let document_arguments oc =
   print_doc query_flags;
   output_string oc "Flags affecting OCaml frontend:\n";
   print_doc ocaml_flags;
-  output_string oc "Flags affecting Findlib behavior:\n";
-  print_doc findlib_flags;
   output_string oc "Flags accepted by ocamlc and ocamlopt but not affecting merlin will be ignored.\n"
 
 let source_path config =
@@ -756,8 +667,7 @@ let source_path config =
   List.concat
     [[config.query.directory];
      stdlib;
-     config.merlin.source_path;
-     config.merlin.packages_path]
+     config.merlin.source_path]
 
 let build_path config = (
   let dirs =
@@ -769,7 +679,6 @@ let build_path config = (
   let dirs =
     config.merlin.cmi_path @
     config.merlin.build_path @
-    config.merlin.packages_path @
     dirs
   in
   let stdlib = stdlib config in
@@ -799,7 +708,6 @@ let cmt_path config = (
   let dirs =
     config.merlin.cmt_path @
     config.merlin.build_path @
-    config.merlin.packages_path @
     dirs
   in
   let stdlib = stdlib config in

@@ -5,6 +5,7 @@
    (progn
      (with-stdout-to %{targets}
        (run sed -e "s#%%OCAMLMERLIN_PATH%%#%{bin:ocamlmerlin}#"
+                -e "s#%%DOT_MERLIN_READER%%#%{bin:dot-merlin-reader}#"
             merlin-wrapper-template))
      (bash "chmod +x %{targets}"))))
 
@@ -20,5 +21,6 @@
  (action  (with-stdout-to %{targets} (run ./gen/gen_tests.exe))))
 
 (alias
+ (package merlin)
  (name   runtest)
  (action (diff dune.inc dune.inc.gen)))

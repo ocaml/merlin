@@ -17,23 +17,6 @@ module CamlString = String
 
 open Std
 
-let () =
-  try Findlib.init ()
-  with exn ->
-    let message = match exn with
-      | Failure message -> message
-      | exn -> Printexc.to_string exn
-    in
-    prerr_endline ("Error during findlib initialization: " ^ message);
-    (* This is a quick and dirty workaround to get Merlin to work even when
-       findlib directory has been removed.
-       The long term plan is to get rid of findlib inside Merlin. *)
-    begin match Sys.getenv "OCAMLFIND_CONF" with
-      | exception Not_found ->
-        Unix.putenv "OCAMLFIND_CONF" "/dev/null"
-      | _ -> ()
-    end
-
 (* Errors *)
 
 exception Fatal_error of string * Printexc.raw_backtrace

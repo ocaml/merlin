@@ -280,7 +280,7 @@ let mkloc txt loc = { txt ; loc }
 let mknoloc txt = mkloc txt none
 
 
-type error_source = Lexer | Parser | Typer | Warning | Unknown | Env
+type error_source = Lexer | Parser | Typer | Warning | Unknown | Env | Config
 
 type error =
   {

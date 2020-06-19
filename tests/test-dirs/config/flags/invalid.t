@@ -2,7 +2,9 @@
   {
     "class": "return",
     "value": {
-      "dot_merlins": [],
+      "dot_merlins": [
+        "tests/test-dirs/config/flags/.merlin"
+      ],
       "failures": [
         "unknown flag -lalala"
       ]

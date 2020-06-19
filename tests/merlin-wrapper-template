@@ -6,6 +6,8 @@ if [ "$uname" == "Darwin" ]; then
     sed="gsed"
 fi;
 
+export PATH=$(dirname %%DOT_MERLIN_READER%%):$PATH
+
 src_dir="$(dirname ${BASH_SOURCE[0]})/.."
 cd "$src_dir"
 src_dir=$(realpath -e $(pwd) 2>/dev/null || readlink -f $(pwd))
