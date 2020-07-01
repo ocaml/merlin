@@ -11,7 +11,7 @@
 (library
  (name merlin_utils)
  (wrapped false)
- (libraries str yojson unix)
+ (libraries str yojson unix result)
  (c_names platform_misc))
 
 ; [Printf.ifprintf] doesn't have the right type before ocaml/ocaml#201, and
