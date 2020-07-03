@@ -40,6 +40,7 @@ type merlin = {
   log_file    : string option;
   log_sections: string list;
   config_path : string option;
+  dune_support : bool;
 
   exclude_query_dir : bool;
 

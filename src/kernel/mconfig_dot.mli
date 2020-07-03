@@ -45,7 +45,7 @@ type context
 
 val get_config : context -> string -> config * string list
 
-val find_project_context : string -> (context * string) option
+val find_project_context : dune_support:bool -> string -> (context * string) option
 (** [find_project_config dir] searches for a "project configuration file" in dir
     and its parent directories. Stopping on the first one it finds and returning
     a configuration context along with the path to the configuration file,

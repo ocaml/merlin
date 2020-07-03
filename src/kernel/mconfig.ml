@@ -82,6 +82,7 @@ type merlin = {
   log_file    : string option;
   log_sections : string list;
   config_path : string option;
+  dune_support : bool;
 
   exclude_query_dir : bool;
 
@@ -206,7 +207,8 @@ let rec normalize t =
 let get_external_config path t =
   let path = Misc.canonicalize_filename path in
   let directory = Filename.dirname path in
-  match Mconfig_dot.find_project_context directory with
+  let dune_support = t.merlin.dune_support in
+  match Mconfig_dot.find_project_context ~dune_support directory with
   | None -> t
   | Some (ctxt, config_path) ->
     let dot, failures = Mconfig_dot.get_config ctxt path in
@@ -596,6 +598,7 @@ let initial = {
     log_file    = None;
     log_sections = [];
     config_path = None;
+    dune_support = check_dune_version ();
 
     exclude_query_dir = false;
 
