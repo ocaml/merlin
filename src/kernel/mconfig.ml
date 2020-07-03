@@ -120,6 +120,7 @@ let dump_merlin x =
       );
     "log_file"     , Json.option Json.string x.log_file;
     "log_sections" , Json.list Json.string x.log_sections;
+    "dune_support", `Bool x.dune_support;
     "flags_to_apply"   , `List (List.map ~f:dump_flag_list x.flags_to_apply);
 
     "failures"         , `List (List.map ~f:Json.string x.failures);
