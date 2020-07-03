@@ -534,6 +534,35 @@ let ocaml_flags = [
 
 (** {1 Main configuration} *)
 
+let check_dune_version () =
+  (* We only allow dune as a configuration reader if the subcommand
+  [ocaml-merlin] exists and dune's version is at least 2.7 *)
+  let prog = "dune" in
+  let stdin_r, stdin_w = Unix.pipe ~cloexec:true () in
+  let stdout_r, stdout_w = Unix.pipe ~cloexec:true () in
+  let dune_out = Unix.in_channel_of_descr stdout_r in
+  let pid =
+    Unix.create_process prog [|prog; "ocaml-merlin"; "--version"|] stdin_r stdout_w stdout_w
+  in
+  let rec wait_exit_0 () =
+    try (snd (Unix.waitpid [] pid)) = Unix.WEXITED 0 with
+    | Unix.Unix_error (EINTR, _, _) -> wait_exit_0 ()
+  in
+  let close_all () =
+    List.iter ~f:Unix.close [stdin_r; stdin_w; stdout_r; stdout_w];
+    close_in_noerr dune_out;
+  in
+  try begin
+    let version = input_line dune_out in
+    let res = wait_exit_0 () && version >= "2.7.0" in
+    close_all ();
+    res
+  end
+  with _ ->
+    Unix.kill pid 9;
+    ignore (wait_exit_0 ());
+    close_all ();
+    false
 let initial = {
   ocaml = {
     include_dirs         = [];
