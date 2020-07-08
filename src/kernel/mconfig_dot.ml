@@ -185,22 +185,51 @@ let postprocess_config config =
 
 type context = string * Configurator.t
 
+exception Process_exited
+exception End_of_input
+
 let get_config (dir, cfg) path =
   try
     let p = Configurator.get_process ~dir cfg in
+    if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
+      raise Process_exited;
     Dot_protocol.Commands.send_file
       ~out_channel:p.stdin
       path;
     flush p.stdin;
-    let directives = Dot_protocol.read ~in_channel:p.stdout in
-    let cfg, failures = prepend_config ~dir directives empty_config in
-    postprocess_config cfg, failures
-  with End_of_file ->
-    log ~title:"get_config"
-      "%s process died when trying to retrieve the config for %s"
-      (Configurator.to_string cfg) dir;
-    empty_config, [ Printf.sprintf "couldn't retrieve the config from %s"
-                      (Configurator.to_string cfg)]
+    match Dot_protocol.read ~in_channel:p.stdout with
+    | Ok directives ->
+      let cfg, failures = prepend_config ~dir directives empty_config in
+      postprocess_config cfg, failures
+    | Error (Dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
+    | Error (Dot_protocol.Csexp_parse_error _) -> raise End_of_input
+  with
+    | Process_exited ->
+      (* This can happen
+      - If `dot-merlin-reader` is not installed and the project use `.merlin`
+        files
+      - There was a bug in the external reader causing a crash *)
+      let error = Printf.sprintf
+        "A problem occured with merlin external configuration reader. %s If \
+         the problem persists, please file an issue on Merlin's tracker."
+        (match cfg with
+        | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
+        | Dune -> "Check that `dune` is installed and up-to-date.")
+      in
+      empty_config, [ error ]
+    | End_of_input ->
+      (* This can happen
+        - if a project using old-dune has not been built and Merlin wrongly tries to
+          start `new-dune ocaml-merlin` in the absence of `.merlin` files
+        - the process stopped in the middle of its answer (which is very unlikely) *)
+      let error = Printf.sprintf
+        "Merlin could not load its configuration from the external reader. %s"
+        (match cfg with
+        | Dot_merlin -> "If the problem persists, please file an issue on \
+          Merlin's tracker."
+        | Dune -> "Building your project with `dune` might solve this issue.")
+      in
+      empty_config, [ error ]
 
 let find_project_context start_dir =
   let rec loop dir =

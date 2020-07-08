@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Std
+open Std.Result
 
 module Directive = struct
   type include_path =
@@ -139,23 +140,21 @@ module Commands = struct
     |> Csexp.to_channel out_channel
 end
 
+type read_error =
+  | Unexpected_output of string
+  | Csexp_parse_error of string
 
 let read ~in_channel =
   match Csexp.input in_channel with
   | Ok (Sexp.List directives) ->
-      List.rev (List.map directives ~f:(fun dir -> Sexp.to_directive dir))
+      Ok (List.rev (List.map directives ~f:Sexp.to_directive))
   | Ok sexp ->
     let msg = Printf.sprintf
-      "Received wrong output from external config reader: \"%s\""
+      "A list of directives was expected, instead got: \"%s\""
       (Sexp.to_string sexp)
     in
-    [`ERROR_MSG msg]
-  | Error msg ->
-      let msg = Printf.sprintf
-        "Bad csexp received from the external config reader: \"%s\""
-        msg
-      in
-      [`ERROR_MSG msg]
+    Error (Unexpected_output msg)
+  | Error msg -> Error (Csexp_parse_error msg)
 
 let write ~out_channel (directives : directive list) =
   directives |> Sexp.from_directives |> Csexp.to_channel out_channel
