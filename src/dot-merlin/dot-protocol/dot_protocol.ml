@@ -147,7 +147,7 @@ type read_error =
 let read ~in_channel =
   match Csexp.input in_channel with
   | Ok (Sexp.List directives) ->
-      Ok (List.rev (List.map directives ~f:Sexp.to_directive))
+      Ok (List.map directives ~f:Sexp.to_directive)
   | Ok sexp ->
     let msg = Printf.sprintf
       "A list of directives was expected, instead got: \"%s\""

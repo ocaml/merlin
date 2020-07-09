@@ -359,7 +359,7 @@ let prepend_config ~cwd ~cfg =
 
 let process_one ~cfg {path;directives; _ } =
   let cwd = Filename.dirname path in
-  prepend_config ~cwd ~cfg directives
+  prepend_config ~cwd ~cfg (List.rev directives)
 
 let expand =
   let filter path =
