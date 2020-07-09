@@ -36,9 +36,9 @@ open Typedtree
 
 type node =
   | Dummy
-  | Pattern                  of pattern
+  | Pattern                  : _ general_pattern -> node
   | Expression               of expression
-  | Case                     of case
+  | Case                     : _ case -> node
   | Class_expr               of class_expr
   | Class_structure          of class_structure
   | Class_field              of class_field
@@ -257,7 +257,9 @@ let of_expression e = app (Expression e) ** list_fold of_exp_extra e.exp_extra
 let of_pat_extra (pat,_,_) = match pat with
   | Tpat_constraint ct -> of_core_type ct
   | Tpat_type _ | Tpat_unpack | Tpat_open _ -> id_fold
-let of_pattern p = app (Pattern p) ** list_fold of_pat_extra p.pat_extra
+
+let of_pattern (type k) (p : k general_pattern) =
+  app (Pattern p) ** list_fold of_pat_extra p.pat_extra
 
 let of_case c = app (Case c)
 let of_label_declaration ct = app (Label_declaration ct)
@@ -282,10 +284,12 @@ let of_exp_record_field obj loc lbl =
 let of_pat_record_field obj loc lbl =
   of_record_field (`Pattern obj) loc lbl
 
-let of_pattern_desc = function
+let of_pattern_desc (type k) (desc : k pattern_desc) =
+  match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
+  | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
     list_fold of_pattern ps
   | Tpat_record (ls,_) ->
@@ -317,7 +321,9 @@ let of_expression_desc loc = function
         | (_,None) -> id_fold
         | (_,Some e) -> of_expression e)
       ls
-  | Texp_match (e,cs,_)
+  | Texp_match (e,cs,_) ->
+    of_expression e **
+    list_fold of_case cs
   | Texp_try (e,cs) ->
     of_expression e **
     list_fold of_case cs
@@ -735,9 +741,9 @@ let fake_path typ name loc =
       | exception Not_found -> []
     end
 
-let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
+let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
-    match pat_desc with
+    match (pat_desc : k pattern_desc) with
     | Tpat_construct ({Location. loc},{Types. cstr_name; cstr_res; _},_) ->
       fake_path cstr_res cstr_name loc
     | Tpat_var (id,_) -> [mkloc (Path.Pident id) pat_loc]
