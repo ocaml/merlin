@@ -83,16 +83,9 @@ let mknoloc txt = mkloc txt none
 
 let input_name = ref "_none_"
 let input_lexbuf = ref (None : lexbuf option)
-let input_phrase_buffer = ref (None : Buffer.t option)
 
 (******************************************************************************)
 (* Terminal info *)
-
-let status = ref Terminfo.Uninitialised
-
-let setup_terminal () =
-  if !status = Terminfo.Uninitialised then
-    status := Terminfo.setup stdout
 
 (* The number of lines already printed after input.
 
@@ -133,16 +126,16 @@ let print_updating_num_loc_lines ppf f arg =
   pp_print_flush ppf ();
   pp_set_formatter_out_functions ppf out_functions
 
-let setup_colors () =
-  Misc.Color.setup !Clflags.color
-
 (******************************************************************************)
 (* Printing locations, e.g. 'File "foo.ml", line 3, characters 10-12' *)
 
 let rewrite_absolute_path path =
+  (*
   match Misc.get_build_path_prefix_map () with
   | None -> path
   | Some map -> Build_path_prefix_map.rewrite map path
+  *)
+  path
 
 let absolute_path s = (* This function could go into Filename *)
   let open Filename in
@@ -162,7 +155,7 @@ let absolute_path s = (* This function could go into Filename *)
   aux s
 
 let show_filename file =
-  if !Clflags.absname then absolute_path file else file
+  (* if !Clflags.absname then absolute_path file else *) file
 
 let print_filename ppf file =
   Format.pp_print_string ppf (show_filename file)
@@ -174,7 +167,6 @@ let print_filename ppf file =
    location might be invalid; in which case we do not print it.
  *)
 let print_loc ppf loc =
-  setup_colors ();
   let file_valid = function
     | "_none_" ->
         (* This is a dummy placeholder, but we print it anyway to please editors
@@ -192,10 +184,9 @@ let print_loc ppf loc =
     if loc.loc_start.pos_fname = "" then !input_name
     else loc.loc_start.pos_fname
   in
-  let startline = loc.loc_start.pos_lnum in
-  let endline = loc.loc_end.pos_lnum in
+  let line = loc.loc_start.pos_lnum in
   let startchar = loc.loc_start.pos_cnum - loc.loc_start.pos_bol in
-  let endchar = loc.loc_end.pos_cnum - loc.loc_end.pos_bol in
+  let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_bol in
 
   let first = ref true in
   let capitalize s =
@@ -213,13 +204,8 @@ let print_loc ppf loc =
      existing setup of editors that parse locations in error messages (e.g.
      Emacs). *)
   comma ();
-  let startline = if line_valid startline then startline else 1 in
-  let endline = if line_valid endline then endline else startline in
-  begin if startline = endline then
-    Format.fprintf ppf "%s %i" (capitalize "line") startline
-  else
-    Format.fprintf ppf "%s %i-%i" (capitalize "lines") startline endline
-  end;
+  Format.fprintf ppf "%s %i" (capitalize "line")
+    (if line_valid line then line else 1);
 
   if chars_valid ~startchar ~endchar then (
     comma ();
@@ -245,6 +231,7 @@ let print_locs ppf locs =
    overlap).
 *)
 
+(*
 module ISet : sig
   type 'a bound = 'a * int
   type 'a t
@@ -294,71 +281,34 @@ struct
     List.exists (fun ((_, s), (_, e)) -> s <= pos && pos <= e) iset
 
   let find_bound_in iset ~range:(start, end_)  =
-    Misc.Stdlib.List.find_map (fun ((a, x), (b, y)) ->
+    try Some (
+    Std.List.find_map ~f:(fun ((a, x), (b, y)) ->
       if start <= x && x <= end_ then Some (a, x)
       else if start <= y && y <= end_ then Some (b, y)
       else None
     ) iset
+    ) with Not_found -> None
 
   let is_start iset ~pos =
-    Misc.Stdlib.List.find_map (fun ((a, x), _) ->
+    try Some (
+    Std.List.find_map ~f:(fun ((a, x), _) ->
       if pos = x then Some a else None
     ) iset
+    ) with Not_found -> None
 
   let is_end iset ~pos =
-    Misc.Stdlib.List.find_map (fun (_, (b, y)) ->
+    try Some (
+    Std.List.find_map ~f:(fun (_, (b, y)) ->
       if pos = y then Some b else None
     ) iset
+    ) with Not_found -> None
 
   let extrema iset =
     if iset = [] then None
     else Some (fst (List.hd iset), snd (List.hd (List.rev iset)))
 end
-
-(******************************************************************************)
-(* Toplevel: highlighting and quoting locations *)
-
-(* Highlight the locations using standout mode.
-
-   If [locs] is empty, this function is a no-op.
 *)
-let highlight_terminfo lb ppf locs =
-  Format.pp_print_flush ppf ();  (* avoid mixing Format and normal output *)
-  (* Char 0 is at offset -lb.lex_abs_pos in lb.lex_buffer. *)
-  let pos0 = -lb.lex_abs_pos in
-  (* Do nothing if the buffer does not contain the whole phrase. *)
-  if pos0 < 0 then raise Exit;
-  (* Count number of lines in phrase *)
-  let lines = ref !num_loc_lines in
-  for i = pos0 to lb.lex_buffer_len - 1 do
-    if Bytes.get lb.lex_buffer i = '\n' then incr lines
-  done;
-  (* If too many lines, give up *)
-  if !lines >= Terminfo.num_lines stdout - 2 then raise Exit;
-  (* Move cursor up that number of lines *)
-  flush stdout; Terminfo.backup stdout !lines;
-  (* Print the input, switching to standout for the location *)
-  let bol = ref false in
-  print_string "# ";
-  for pos = 0 to lb.lex_buffer_len - pos0 - 1 do
-    if !bol then (print_string "  "; bol := false);
-    if List.exists (fun loc -> pos = loc.loc_start.pos_cnum) locs then
-      Terminfo.standout stdout true;
-    if List.exists (fun loc -> pos = loc.loc_end.pos_cnum) locs then
-      Terminfo.standout stdout false;
-    let c = Bytes.get lb.lex_buffer (pos + pos0) in
-    print_char c;
-    bol := (c = '\n')
-  done;
-  (* Make sure standout mode is over *)
-  Terminfo.standout stdout false;
-  (* Position cursor back to original location *)
-  Terminfo.resume stdout !num_loc_lines;
-  flush stdout
 
-let highlight_terminfo lb ppf locs =
-  try highlight_terminfo lb ppf locs
-  with Exit -> ()
 
 (* Highlight the location by printing it again.
 
@@ -391,10 +341,12 @@ let highlight_terminfo lb ppf locs =
    If [locs] is empty then this function is a no-op.
 *)
 
+(*
 type input_line = {
   text : string;
   start_pos : int;
 }
+*)
 
 (* Takes a list of lines with possibly missing line numbers.
 
@@ -403,6 +355,7 @@ type input_line = {
 
    This is not always the case, typically if lexer line directives are
    involved... *)
+(*
 let infer_line_numbers
     (lines: (int option * input_line) list):
   (int option * input_line) list
@@ -420,73 +373,17 @@ let infer_line_numbers
       List.mapi (fun i (_, line) -> (Some (m + i), line)) lines
   | _, _ ->
       lines
-
+*)
 (* [get_lines] must return the lines to highlight, given starting and ending
    positions.
 
    See [lines_around_from_current_input] below for an instantiation of
    [get_lines] that reads from the current input.
 *)
-let highlight_quote ppf
-    ~(get_lines: start_pos:position -> end_pos:position -> input_line list)
-    ?(max_lines = 10)
-    highlight_tag
-    locs
-  =
-  let iset = ISet.of_intervals @@ List.filter_map (fun loc ->
-    let s, e = loc.loc_start, loc.loc_end in
-    if s.pos_cnum = -1 || e.pos_cnum = -1 then None
-    else Some ((s, s.pos_cnum), (e, e.pos_cnum - 1))
-  ) locs in
-  match ISet.extrema iset with
-  | None -> ()
-  | Some ((leftmost, _), (rightmost, _)) ->
-      let lines =
-        get_lines ~start_pos:leftmost ~end_pos:rightmost
-        |> List.map (fun ({ text; start_pos } as line) ->
-          let end_pos = start_pos + String.length text - 1 in
-          let line_nb =
-            match ISet.find_bound_in iset ~range:(start_pos, end_pos) with
-            | None -> None
-            | Some (p, _) -> Some p.pos_lnum
-          in
-          (line_nb, line))
-        |> infer_line_numbers
-        |> List.map (fun (lnum, { text; start_pos }) ->
-          (text,
-           Option.fold ~some:Int.to_string ~none:"" lnum,
-           start_pos))
-      in
-    Format.fprintf ppf "@[<v>";
-    begin match lines with
-    | [] | [("", _, _)] -> ()
-    | [(line, line_nb, line_start_cnum)] ->
-        (* Single-line error *)
-        Format.fprintf ppf "%s | %s@," line_nb line;
-        Format.fprintf ppf "%*s   " (String.length line_nb) "";
-        for pos = line_start_cnum to rightmost.pos_cnum - 1 do
-          if ISet.is_start iset ~pos <> None then
-            Format.fprintf ppf "@{<%s>" highlight_tag;
-          if ISet.mem iset ~pos then Format.pp_print_char ppf '^'
-          else Format.pp_print_char ppf ' ';
-          if ISet.is_end iset ~pos <> None then
-            Format.fprintf ppf "@}"
-        done;
-        Format.fprintf ppf "@}@,"
-    | _ ->
-        (* Multi-line error *)
-        Misc.pp_two_columns ~sep:"|" ~max_lines ppf
-        @@ List.map (fun (line, line_nb, line_start_cnum) ->
-          let line = String.mapi (fun i car ->
-            if ISet.mem iset ~pos:(line_start_cnum + i) then car else '.'
-          ) line in
-          (line_nb, line)
-        ) lines
-    end;
-    Format.fprintf ppf "@]"
 
 
 
+(*
 let lines_around
     ~(start_pos: position) ~(end_pos: position)
     ~(seek: int -> unit)
@@ -523,7 +420,9 @@ let lines_around
   in
   loop ();
   List.rev !lines
+*)
 
+(*
 (* Try to get lines from a lexbuf *)
 let lines_around_from_lexbuf
     ~(start_pos: position) ~(end_pos: position)
@@ -547,24 +446,9 @@ let lines_around_from_lexbuf
     in
     lines_around ~start_pos ~end_pos ~seek ~read_char
   end
+*)
 
-(* Attempt to get lines from the phrase buffer *)
-let lines_around_from_phrasebuf
-    ~(start_pos: position) ~(end_pos: position)
-    (pb: Buffer.t):
-  input_line list
-  =
-  let pos = ref 0 in
-  let seek n = pos := n in
-  let read_char () =
-    if !pos >= Buffer.length pb then None
-    else begin
-      let c = Buffer.nth pb !pos in
-      incr pos; Some c
-    end
-  in
-  lines_around ~start_pos ~end_pos ~seek ~read_char
-
+(*
 (* Get lines from a file *)
 let lines_around_from_file
     ~(start_pos: position) ~(end_pos: position)
@@ -582,7 +466,9 @@ let lines_around_from_file
     close_in cin;
     lines
   with Sys_error _ -> []
+*)
 
+(*
 (* A [get_lines] function for [highlight_quote] that reads from the current
    input.
 
@@ -602,24 +488,17 @@ let lines_around_from_current_input ~start_pos ~end_pos =
     else
       []
   in
-  match !input_lexbuf, !input_phrase_buffer, !input_name with
-  | _, Some pb, "//toplevel//" ->
-      begin match lines_around_from_phrasebuf pb ~start_pos ~end_pos with
-      | [] -> (* Could not read the input from the phrase buffer. This is likely
-                 a sign that we were given a buggy location. *)
-          []
-      | lines ->
-          lines
-      end
-  | Some lb, _, _ ->
+  match !input_lexbuf with
+  | Some lb ->
       begin match lines_around_from_lexbuf lb ~start_pos ~end_pos with
       | [] -> (* The input is likely not in the lexbuf anymore *)
           from_file ()
       | lines ->
           lines
       end
-  | None, _, _ ->
+  | None ->
       from_file ()
+*)
 
 (******************************************************************************)
 (* Reporting errors and warnings *)
@@ -636,11 +515,20 @@ type report_kind =
   | Report_alert of string
   | Report_alert_as_error of string
 
+type error_source = Lexer | Parser | Typer | Warning | Unknown | Env
+
 type report = {
   kind : report_kind;
   main : msg;
   sub : msg list;
+  source : error_source;
 }
+
+let loc_of_report { main; _ } = main.loc
+let print_msg fmt msg = msg.txt fmt
+let print_main fmt { main; _ } = print_msg fmt main
+let print_sub_msg = print_msg
+
 
 type report_printer = {
   (* The entry point *)
@@ -663,6 +551,7 @@ type report_printer = {
     Format.formatter -> (Format.formatter -> unit) -> unit;
 }
 
+(*
 let is_dummy_loc loc =
   (* Fixme: this should be just [loc.loc_ghost] and the function should be
      inlined below. However, currently, the compiler emits in some places ghost
@@ -670,6 +559,7 @@ let is_dummy_loc loc =
      should be made non-ghost -- in the meantime we just check if the ranges are
      valid. *)
   loc.loc_start.pos_cnum = -1 || loc.loc_end.pos_cnum = -1
+*)
 
 (* It only makes sense to highlight (i.e. quote or underline the corresponding
    source code) locations that originate from the current input.
@@ -687,18 +577,22 @@ let is_dummy_loc loc =
    in particular this is not what happens when using -pp or -ppx or a ppx
    driver.
 *)
+                                 (*
 let is_quotable_loc loc =
   not (is_dummy_loc loc)
   && loc.loc_start.pos_fname = !input_name
   && loc.loc_end.pos_fname = !input_name
 
 let error_style () =
+  let open Misc.Error_style in
   match !Clflags.error_style with
-  | Some setting -> setting
-  | None -> Misc.Error_style.default_setting
+  | Some Contextual | None -> Contextual
+  | Some Short -> Short
+                                 *)
 
 let batch_mode_printer : report_printer =
-  let pp_loc _self report ppf loc =
+  let pp_loc _self _report _ppf _loc =
+    (*
     let tag = match report.kind with
       | Report_warning_as_error _
       | Report_alert_as_error _
@@ -717,10 +611,11 @@ let batch_mode_printer : report_printer =
           ()
     in
     Format.fprintf ppf "@[<v>%a:@ %a@]" print_loc loc highlight loc
+    *)
+    ()
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
-    setup_colors ();
     (* Make sure we keep [num_loc_lines] updated. *)
     print_updating_num_loc_lines ppf (fun ppf () ->
       Format.fprintf ppf "@[<v>%a%a: %a%a@]@."
@@ -765,38 +660,9 @@ let batch_mode_printer : report_printer =
   { pp; pp_report_kind; pp_main_loc; pp_main_txt;
     pp_submsgs; pp_submsg; pp_submsg_loc; pp_submsg_txt }
 
-let terminfo_toplevel_printer (lb: lexbuf): report_printer =
-  let pp self ppf err =
-    setup_colors ();
-    (* Highlight all toplevel locations of the report, instead of displaying
-       the main location. Do it now instead of in [pp_main_loc], to avoid
-       messing with Format boxes. *)
-    let sub_locs = List.map (fun { loc; _ } -> loc) err.sub in
-    let all_locs = err.main.loc :: sub_locs in
-    let locs_highlighted = List.filter is_quotable_loc all_locs in
-    highlight_terminfo lb ppf locs_highlighted;
-    batch_mode_printer.pp self ppf err
-  in
-  let pp_main_loc _ _ _ _ = () in
-  let pp_submsg_loc _ _ ppf loc =
-    if not loc.loc_ghost then
-      Format.fprintf ppf "%a:@ " print_loc loc in
-  { batch_mode_printer with pp; pp_main_loc; pp_submsg_loc }
-
-let best_toplevel_printer () =
-  setup_terminal ();
-  match !status, !input_lexbuf with
-  | Terminfo.Good_term, Some lb ->
-      terminfo_toplevel_printer lb
-  | _, _ ->
-      batch_mode_printer
-
 (* Creates a printer for the current input *)
 let default_report_printer () : report_printer =
-  if !input_name = "//toplevel//" then
-    best_toplevel_printer ()
-  else
-    batch_mode_printer
+  batch_mode_printer
 
 let report_printer = ref default_report_printer
 
@@ -812,26 +678,26 @@ type error = report
 let report_error ppf err =
   print_report ppf err
 
-let mkerror loc sub txt =
-  { kind = Report_error; main = { loc; txt }; sub }
+let mkerror loc sub txt source =
+  { kind = Report_error; main = { loc; txt }; sub; source }
 
-let errorf ?(loc = none) ?(sub = []) =
-  Format.kdprintf (mkerror loc sub)
+let errorf ?(loc = none) ?(sub = []) ?(source=Typer) =
+  Format.kdprintf (fun msg -> mkerror loc sub msg source)
 
-let error ?(loc = none) ?(sub = []) msg_str =
-  mkerror loc sub (fun ppf -> Format.pp_print_string ppf msg_str)
+let error ?(loc = none) ?(sub = []) ?(source=Typer) msg_str =
+  mkerror loc sub (fun ppf -> Format.pp_print_string ppf msg_str) source
 
-let error_of_printer ?(loc = none) ?(sub = []) pp x =
-  mkerror loc sub (fun ppf -> pp ppf x)
+let error_of_printer ?(loc = none) ?(sub = []) ?(source=Typer) pp x =
+  mkerror loc sub (fun ppf -> pp ppf x) source
 
-let error_of_printer_file print x =
-  error_of_printer ~loc:(in_file !input_name) print x
+let error_of_printer_file ?source print x =
+  error_of_printer ?source ~loc:(in_file !input_name) print x
 
 (******************************************************************************)
 (* Reporting warnings: generating a report from a warning number using the
    information in [Warnings] + convenience functions. *)
 
-let default_warning_alert_reporter report mk (loc: t) w : report option =
+let default_warning_alert_reporter ?(source = Typer) report mk (loc: t) w : report option =
   match report w with
   | `Inactive -> None
   | `Active { Warnings.id; message; is_error; sub_locs } ->
@@ -841,7 +707,7 @@ let default_warning_alert_reporter report mk (loc: t) w : report option =
       let sub = List.map (fun (loc, sub_message) ->
         { loc; txt = msg_of_str sub_message }
       ) sub_locs in
-      Some { kind; main; sub }
+      Some { kind; main; sub; source }
 
 
 let default_warning_reporter =
@@ -862,7 +728,9 @@ let print_warning loc ppf w =
   | None -> ()
   | Some report -> print_report ppf report
 
-let prerr_warning loc w = print_warning loc !formatter_for_warnings w
+let prerr_warning_ref =
+  ref (fun loc w -> print_warning loc !formatter_for_warnings w);;
+let prerr_warning loc w = !prerr_warning_ref loc w
 
 let default_alert_reporter =
   default_warning_alert_reporter
@@ -880,7 +748,10 @@ let print_alert loc ppf w =
   | None -> ()
   | Some report -> print_report ppf report
 
-let prerr_alert loc w = print_alert loc !formatter_for_warnings w
+let prerr_alert_ref =
+  ref (fun loc w -> print_alert loc !formatter_for_warnings w)
+
+let prerr_alert loc w = !prerr_alert_ref loc w
 
 let alert ?(def = none) ?(use = none) ~kind loc message =
   prerr_alert loc {Warnings.kind; message; def; use}
@@ -939,5 +810,5 @@ let () =
       | _ -> None
     )
 
-let raise_errorf ?(loc = none) ?(sub = []) =
-  Format.kdprintf (fun txt -> raise (Error (mkerror loc sub txt)))
+let raise_errorf ?(loc = none) ?(sub = []) ?(source = Typer)=
+  Format.kdprintf (fun txt -> raise (Error (mkerror loc sub txt source)))

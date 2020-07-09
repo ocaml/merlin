@@ -19,7 +19,7 @@
 open Misc
 open Cmi_format
 
-module Consistbl = Consistbl.Make (Misc.Stdlib.String)
+module Consistbl = Consistbl.Make (Misc.String)
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
@@ -54,7 +54,7 @@ type pers_struct = {
   ps_flags: pers_flags list;
 }
 
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 (* If a .cmi file is missing (or invalid), we
    store it as Missing in the cache. *)
@@ -125,11 +125,7 @@ let import_crcs penv ~source crcs =
 
 let check_consistency penv ps =
   try import_crcs penv ~source:ps.ps_filename ps.ps_crcs
-  with Consistbl.Inconsistency {
-      unit_name = name;
-      inconsistent_source = source;
-      original_source = auth;
-    } ->
+  with Consistbl.Inconsistency (name, source, auth) ->
     error (Inconsistent_import(name, auth, source))
 
 let can_load_cmis penv =

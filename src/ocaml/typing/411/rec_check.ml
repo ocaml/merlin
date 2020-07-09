@@ -585,6 +585,7 @@ let rec expression : Typedtree.expression -> term_judg =
     | Texp_tuple exprs ->
       list expression exprs << Guard
     | Texp_array exprs ->
+      (*
       let array_mode = match Typeopt.array_kind exp with
         | Lambda.Pfloatarray ->
             (* (flat) float arrays unbox their elements *)
@@ -596,6 +597,12 @@ let rec expression : Typedtree.expression -> term_judg =
         | Lambda.Paddrarray | Lambda.Pintarray ->
             (* non-generic, non-float arrays act as constructors *)
             Guard
+      in
+      *)
+      let array_mode =
+        (* FIXME MERLIN this is incorrect, but it won't report false positive, so it
+           will do for now. *)
+        Guard
       in
       list expression exprs << array_mode
     | Texp_construct (_, desc, exprs) ->

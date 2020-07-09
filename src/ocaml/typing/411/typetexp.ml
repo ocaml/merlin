@@ -51,7 +51,7 @@ exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
 (** Map indexed by type variable names. *)
-module TyVarMap = Misc.Stdlib.String.Map
+module TyVarMap = Misc.String.Map
 
 type variable_context = int * type_expr TyVarMap.t
 

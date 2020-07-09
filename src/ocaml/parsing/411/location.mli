@@ -39,7 +39,6 @@ val none : t
 (** An arbitrary value of type [t]; describes an empty ghost range. *)
 
 val is_none : t -> bool
-(** True for [Location.none], false any other location *)
 
 val in_file : string -> t
 (** Return an empty ghost range located in a given file. *)
@@ -77,13 +76,6 @@ val mkloc : 'a -> t -> 'a loc
 val input_name: string ref
 val input_lexbuf: Lexing.lexbuf option ref
 
-(* This is used for reporting errors coming from the toplevel.
-
-   When running a toplevel session (i.e. when [!input_name] is "//toplevel//"),
-   [!input_phrase_buffer] should be [Some buf] where [buf] contains the last
-   toplevel phrase. *)
-val input_phrase_buffer: Buffer.t option ref
-
 
 (** {1 Toplevel-specific functions} *)
 
@@ -110,11 +102,6 @@ val print_loc: formatter -> t -> unit
 val print_locs: formatter -> t list -> unit
 
 
-(** {1 Toplevel-specific location highlighting} *)
-
-val highlight_terminfo:
-  Lexing.lexbuf -> formatter -> t list -> unit
-
 
 (** {1 Reporting errors and warnings} *)
 
@@ -131,11 +118,18 @@ type report_kind =
   | Report_alert of string
   | Report_alert_as_error of string
 
+type error_source = Lexer | Parser | Typer | Warning | Unknown | Env
+
 type report = {
   kind : report_kind;
   main : msg;
   sub : msg list;
+  source : error_source;
 }
+
+val loc_of_report: report -> t
+val print_main : formatter -> report -> unit
+val print_sub_msg : formatter -> msg -> unit
 
 type report_printer = {
   (* The entry point *)
@@ -165,11 +159,6 @@ type report_printer = {
 (** {2 Report printers used in the compiler} *)
 
 val batch_mode_printer: report_printer
-
-val terminfo_toplevel_printer: Lexing.lexbuf -> report_printer
-
-val best_toplevel_printer: unit -> report_printer
-(** Detects the terminal capabilities and selects an adequate printer *)
 
 (** {2 Printing a [report]} *)
 
@@ -209,6 +198,8 @@ val print_warning: t -> formatter -> Warnings.t -> unit
 (** Prints a warning. This is simply the composition of [report_warning] and
    [print_report]. *)
 
+val prerr_warning_ref: (t -> Warnings.t -> unit) ref
+
 val prerr_warning: t -> Warnings.t -> unit
 (** Same as [print_warning], but uses [!formatter_for_warnings] as output
    formatter. *)
@@ -233,6 +224,8 @@ val print_alert: t -> formatter -> Warnings.alert -> unit
 (** Prints an alert. This is simply the composition of [report_alert] and
    [print_report]. *)
 
+val prerr_alert_ref: (t -> Warnings.alert -> unit) ref
+
 val prerr_alert: t -> Warnings.alert -> unit
 (** Same as [print_alert], but uses [!formatter_for_warnings] as output
    formatter. *)
@@ -249,15 +242,15 @@ val alert: ?def:t -> ?use:t -> kind:string -> t -> string -> unit
 type error = report
 (** An [error] is a [report] which [report_kind] must be [Report_error]. *)
 
-val error: ?loc:t -> ?sub:msg list -> string -> error
+val error: ?loc:t -> ?sub:msg list -> ?source:error_source -> string -> error
 
-val errorf: ?loc:t -> ?sub:msg list ->
+val errorf: ?loc:t -> ?sub:msg list -> ?source:error_source ->
   ('a, Format.formatter, unit, error) format4 -> 'a
 
-val error_of_printer: ?loc:t -> ?sub:msg list ->
+val error_of_printer: ?loc:t -> ?sub:msg list -> ?source:error_source ->
   (formatter -> 'a -> unit) -> 'a -> error
 
-val error_of_printer_file: (formatter -> 'a -> unit) -> 'a -> error
+val error_of_printer_file: ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
 
 
 (** {1 Automatically reporting errors for raised exceptions} *)
@@ -280,7 +273,7 @@ exception Already_displayed_error
 (** Raising [Already_displayed_error] signals an error which has already been
    printed. The exception will be caught, but nothing will be printed *)
 
-val raise_errorf: ?loc:t -> ?sub:msg list ->
+val raise_errorf: ?loc:t -> ?sub:msg list -> ?source:error_source ->
   ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 val report_exception: formatter -> exn -> unit

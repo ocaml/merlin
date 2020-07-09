@@ -35,8 +35,10 @@ val unflatten: string list -> t option
 
 val last: t -> string
 val parse: string -> t
+  (* (* disabled in merlin. *)
 [@@deprecated "this function may misparse its input,\n\
 use \"Parse.longident\" or \"Longident.unflatten\""]
+     *)
 (**
 
    This function is broken on identifiers that are not just "Word.Word.word";

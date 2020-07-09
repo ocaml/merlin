@@ -29,6 +29,8 @@ type attrs = attribute list
 
 let default_loc = ref Location.none
 
+let const_string s = Pconst_string (s, !default_loc, None)
+
 let with_default_loc l f =
   Misc.protect_refs [Misc.R (default_loc, l)] f
 
@@ -49,6 +51,8 @@ module Attr = struct
     { attr_name = name;
       attr_payload = payload;
       attr_loc = loc }
+
+  let as_tuple { attr_name; attr_payload; _ } = (attr_name, attr_payload)
 end
 
 module Typ = struct
@@ -640,3 +644,24 @@ module Of = struct
   let inherit_ ?loc ty =
     mk ?loc (Oinherit ty)
 end
+
+(** merlin: refactored out of Parser *)
+
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_attributes: attributes;
+    lb_docs: docs Lazy.t;
+    lb_text: text Lazy.t;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: rec_flag;
+    lbs_extension: string Asttypes.loc option;
+    lbs_loc: Location.t }
+
+
+(* merlin specific *)
+
+let no_label = Nolabel

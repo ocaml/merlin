@@ -107,21 +107,21 @@ let alerts_of_attrs l =
          | None | Some "" -> Some message
          | Some s -> Some (cat s message)
        in
-       Misc.Stdlib.String.Map.update kind upd acc
+       Misc.String.Map.update kind upd acc
     )
-    Misc.Stdlib.String.Map.empty
+    Misc.String.Map.empty
     (alert_attrs l)
 
 let check_alerts loc attrs s =
-  Misc.Stdlib.String.Map.iter
+  Misc.String.Map.iter
     (fun kind message -> Location.alert loc ~kind (cat s message))
     (alerts_of_attrs attrs)
 
 let check_alerts_inclusion ~def ~use loc attrs1 attrs2 s =
   let m2 = alerts_of_attrs attrs2 in
-  Misc.Stdlib.String.Map.iter
+  Misc.String.Map.iter
     (fun kind msg ->
-       if not (Misc.Stdlib.String.Map.mem kind m2) then
+       if not (Misc.String.Map.mem kind m2) then
          Location.alert ~def ~use ~kind loc (cat s msg)
     )
     (alerts_of_attrs attrs1)

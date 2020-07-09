@@ -23,7 +23,7 @@ open Path
 open Types
 open Btype
 
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
@@ -737,7 +737,7 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
   let path = Pident id in
   let alerts =
     List.fold_left (fun acc -> function Alerts s -> s | _ -> acc)
-      Misc.Stdlib.String.Map.empty
+      Misc.String.Map.empty
       flags
   in
   let md =
@@ -1826,7 +1826,7 @@ let components_of_functor_appl ~loc f env p1 p2 =
     !check_well_formed_module env loc
       ("the signature of " ^ Path.name p) mty;
     let comps =
-      components_of_module ~alerts:Misc.Stdlib.String.Map.empty
+      components_of_module ~alerts:Misc.String.Map.empty
         ~uid:Uid.internal_not_actually_unique
         (*???*)
         env None Subst.identity p addr mty
@@ -2096,7 +2096,7 @@ let unit_name_of_filename fn =
       let unit =
         String.capitalize_ascii (Filename.remove_extension fn)
       in
-      if String.for_all is_identchar_latin1 unit then
+      if Std.String.for_all is_identchar_latin1 unit then
         Some unit
       else
         None
@@ -2248,7 +2248,7 @@ let use_module ~use ~loc path mda =
   if use then begin
     let comps = mda.mda_components in
     mark_module_used comps.uid;
-    Misc.Stdlib.String.Map.iter
+    Misc.String.Map.iter
       (fun kind message ->
          let message = if message = "" then "" else "\n" ^ message in
          Location.alert ~kind loc

@@ -32,6 +32,8 @@ type str = string with_loc
 type str_opt = string option with_loc
 type attrs = attribute list
 
+val const_string : string -> constant
+
 (** {1 Default locations} *)
 
 val default_loc: loc ref
@@ -58,6 +60,8 @@ end
 (** {1 Attributes} *)
 module Attr : sig
   val mk: ?loc:loc -> str -> payload -> attribute
+
+  val as_tuple : attribute -> str * payload
 end
 
 (** {1 Core language} *)
@@ -488,3 +492,24 @@ module Of:
       label with_loc -> core_type -> object_field
     val inherit_: ?loc:loc -> core_type -> object_field
   end
+
+(** merlin: refactored out of Parser *)
+
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_attributes: attributes;
+    lb_docs: docs Lazy.t;
+    lb_text: text Lazy.t;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: rec_flag;
+    lbs_extension: string Asttypes.loc option;
+    lbs_loc: Location.t }
+
+
+(* merlin specific *)
+
+val no_label : arg_label

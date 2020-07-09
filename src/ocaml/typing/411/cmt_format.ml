@@ -13,6 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Std
 open Cmi_format
 open Typedtree
 
@@ -131,7 +132,7 @@ let read filename =
            in
            Some cmi, cmt
          else
-           raise(Cmi_format.Error(Cmi_format.Not_an_interface filename))
+           raise Magic_numbers.Cmi.(Error(Not_an_interface filename))
        in
        cmi, cmt
     )
@@ -144,7 +145,7 @@ let read_cmt filename =
 let read_cmi filename =
   match read filename with
       None, _ ->
-        raise (Cmi_format.Error (Cmi_format.Not_an_interface filename))
+        raise Magic_numbers.Cmi.(Error (Not_an_interface filename))
     | Some cmi, _ -> cmi
 
 let saved_types = ref []
@@ -158,9 +159,11 @@ let add_saved_type b = saved_types := b :: !saved_types
 let get_saved_types () = !saved_types
 let set_saved_types l = saved_types := l
 
-let record_value_dependency vd1 vd2 =
+(*let record_value_dependency vd1 vd2 =
   if vd1.Types.val_loc <> vd2.Types.val_loc then
-    value_deps := (vd1, vd2) :: !value_deps
+    value_deps := (vd1, vd2) :: !value_deps*)
+
+let record_value_dependency _vd1 _vd2 = ()
 
 let save_cmt filename modname binary_annots sourcefile initial_env cmi =
   if !Clflags.binary_annotations && not !Clflags.print_types then begin
@@ -172,12 +175,12 @@ let save_cmt filename modname binary_annots sourcefile initial_env cmi =
            | None -> None
            | Some cmi -> Some (output_cmi temp_file_name oc cmi)
          in
-         let source_digest = Option.map Digest.file sourcefile in
+         let source_digest = Option.map ~f:Digest.file sourcefile in
          let cmt = {
            cmt_modname = modname;
            cmt_annots = clear_env binary_annots;
            cmt_value_dependencies = !value_deps;
-           cmt_comments = Lexer.comments ();
+           cmt_comments = [];
            cmt_args = Sys.argv;
            cmt_sourcefile = sourcefile;
            cmt_builddir = Location.rewrite_absolute_path (Sys.getcwd ());
@@ -185,7 +188,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env cmi =
            cmt_source_digest = source_digest;
            cmt_initial_env = if need_to_clear_env then
                keep_only_summary initial_env else initial_env;
-           cmt_imports = List.sort compare (Env.imports ());
+           cmt_imports = List.sort ~cmp:compare (Env.imports ());
            cmt_interface_digest = this_crc;
            cmt_use_summaries = need_to_clear_env;
          } in

@@ -21,7 +21,7 @@ open Parsetree
 open Types
 open Format
 
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 module Sig_component_kind = struct
   type t =
@@ -2789,7 +2789,7 @@ let package_units initial_env objfiles cmifile modulename =
     (* Write packaged signature *)
     if not !Clflags.dont_write_files then begin
       let cmi =
-        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
+        Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
           sg modulename
           (prefix ^ ".cmi") imports
       in

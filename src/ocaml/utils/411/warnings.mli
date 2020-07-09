@@ -13,13 +13,6 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** Warning definitions
-
-  {b Warning:} this module is unstable and part of
-  {{!Compiler_libs}compiler-libs}.
-
-*)
-
 type loc = {
   loc_start: Lexing.position;
   loc_end: Lexing.position;
@@ -138,3 +131,7 @@ val restore: state -> unit
 val mk_lazy: (unit -> 'a) -> 'a Lazy.t
     (** Like [Lazy.of_fun], but the function is applied with
         the warning/alert settings at the time [mk_lazy] is called. *)
+
+(* merlin *)
+
+val dump : ?verbose:bool -> unit -> Std.json

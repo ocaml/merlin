@@ -22,7 +22,7 @@ open Primitive
 open Types
 open Typetexp
 
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 type native_repr_kind = Unboxed | Untagged
 

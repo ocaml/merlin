@@ -25,7 +25,7 @@ open Types
 open Btype
 open Outcometree
 
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 (* Print a long identifier *)
 
@@ -1623,7 +1623,7 @@ let recursive_sigitem = function
   | Sig_module(id, _, _, rs, _) -> Some (id,rs,0)
   | _ -> None
 
-let skip k l = snd (Misc.Stdlib.List.split_at k l)
+let skip k l = snd (Std.List.split_n k l)
 
 let protect_rec_items items =
   let rec get_ids recs = function

@@ -24,7 +24,7 @@ open Parsetree
 open Ast_helper
 open Location
 
-module String = Misc.Stdlib.String
+module String = Misc.String
 
 type mapper = {
   attribute: mapper -> attribute -> attribute;
@@ -823,7 +823,7 @@ module PpxContext = struct
         lid "open_modules", make_list make_string !Clflags.open_modules;
         lid "for_package",  make_option make_string !Clflags.for_package;
         lid "debug",        make_bool !Clflags.debug;
-        lid "use_threads",  make_bool !Clflags.use_threads;
+        lid "use_threads",  make_bool false;
         lid "use_vmthreads", make_bool false;
         lid "recursive_types", make_bool !Clflags.recursive_types;
         lid "principal", make_bool !Clflags.principal;
@@ -896,11 +896,12 @@ module PpxContext = struct
           Clflags.for_package := get_option get_string payload
       | "debug" ->
           Clflags.debug := get_bool payload
-      | "use_threads" ->
+      (*| "use_threads" ->
           Clflags.use_threads := get_bool payload
       | "use_vmthreads" ->
           if get_bool payload then
             raise_errorf "Internal error: vmthreads not supported after 4.09.0"
+        *)
       | "recursive_types" ->
           Clflags.recursive_types := get_bool payload
       | "principal" ->

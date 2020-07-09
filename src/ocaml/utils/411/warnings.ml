@@ -213,8 +213,8 @@ type state =
   {
     active: bool array;
     error: bool array;
-    alerts: (Misc.Stdlib.String.Set.t * bool); (* false:set complement *)
-    alert_errors: (Misc.Stdlib.String.Set.t * bool); (* false:set complement *)
+    alerts: (Std.String.Set.t * bool); (* false:set complement *)
+    alert_errors: (Std.String.Set.t * bool); (* false:set complement *)
   }
 
 let current =
@@ -222,8 +222,8 @@ let current =
     {
       active = Array.make (last_warning_number + 1) true;
       error = Array.make (last_warning_number + 1) false;
-      alerts = (Misc.Stdlib.String.Set.empty, false); (* all enabled *)
-      alert_errors = (Misc.Stdlib.String.Set.empty, true); (* all soft *)
+      alerts = (Std.String.Set.empty, false); (* all enabled *)
+      alert_errors = (Std.String.Set.empty, true); (* all soft *)
     }
 
 let disabled = ref false
@@ -235,21 +235,27 @@ let backup () = !current
 
 let restore x = current := x
 
-let is_active x =
-  not !disabled && (!current).active.(number x)
+(* Some warnings are not properly implemented in merlin, just disable *)
+let is_disabled x = (x >= 32 && x <= 39) || x = 60
 
-let is_error x =
-  not !disabled && (!current).error.(number x)
+let is_active x =
+  not !disabled &&
+  let x = number x in
+  not (is_disabled x) && (!current).active.(x)
+let is_error x  =
+  not !disabled &&
+  let x = number x in
+  not (is_disabled x) && (!current).error.(x)
 
 let alert_is_active {kind; _} =
   not !disabled &&
   let (set, pos) = (!current).alerts in
-  Misc.Stdlib.String.Set.mem kind set = pos
+  Std.String.Set.mem kind set = pos
 
 let alert_is_error {kind; _} =
   not !disabled &&
   let (set, pos) = (!current).alert_errors in
-  Misc.Stdlib.String.Set.mem kind set = pos
+  Std.String.Set.mem kind set = pos
 
 let mk_lazy f =
   let state = backup () in
@@ -270,15 +276,15 @@ let set_alert ~error ~enable s =
   let upd =
     match s with
     | "all" ->
-        (Misc.Stdlib.String.Set.empty, not enable)
+        (Std.String.Set.empty, not enable)
     | s ->
         let (set, pos) =
           if error then (!current).alert_errors else (!current).alerts
         in
         let f =
           if enable = pos
-          then Misc.Stdlib.String.Set.add
-          else Misc.Stdlib.String.Set.remove
+          then Std.String.Set.add
+          else Std.String.Set.remove
         in
         (f s set, pos)
   in
@@ -700,7 +706,7 @@ let descriptions =
   [
     1, "Suspicious-looking start-of-comment mark.";
     2, "Suspicious-looking end-of-comment mark.";
-    3, "Deprecated synonym for the 'deprecated' alert.";
+    3, "Deprecated synonym for the 'deprecated' alert";
     4, "Fragile pattern matching: matching that will remain complete even\n\
    \    if additional constructors are added to one of the variant types\n\
    \    matched.";
@@ -761,9 +767,9 @@ let descriptions =
    50, "Unexpected documentation comment.";
    51, "Warning on non-tail calls if @tailcall present.";
    52, "Fragile constant pattern.";
-   53, "Attribute cannot appear in this context.";
-   54, "Attribute used more than once on an expression.";
-   55, "Inlining impossible.";
+   53, "Attribute cannot appear in this context";
+   54, "Attribute used more than once on an expression";
+   55, "Inlining impossible";
    56, "Unreachable case in a pattern-matching (based on type information).";
    57, "Ambiguous or-pattern variables under guard.";
    58, "Missing cmx file.";
@@ -794,4 +800,32 @@ let help_warnings () =
           (String.concat ", " (List.map Int.to_string l))
   done;
   exit 0
+;;
+
+(* merlin *)
+
+let dump ?(verbose=false) () =
+  let open Std in
+  let actives arr =
+    let acc = ref [] in
+    for i = 1 to last_warning_number do
+      if arr.(i) then (
+        let x =
+          try
+            if verbose then
+              let desc = List.assoc i descriptions in
+              `String (string_of_int i ^ ": " ^ desc)
+            else
+              `Int i
+          with Not_found -> `Int i
+        in
+        acc := x :: !acc
+      )
+    done;
+    List.rev !acc
+  in
+  `Assoc [
+    "actives", `List (actives !current.active);
+    "warn_error", `List (actives !current.error);
+  ]
 ;;
