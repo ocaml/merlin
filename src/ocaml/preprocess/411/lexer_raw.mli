@@ -1,29 +1,18 @@
-(**************************************************************************)
-(*                                                                        *)
-(*                                 OCaml                                  *)
-(*                                                                        *)
-(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
-(*                                                                        *)
-(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
-(*     en Automatique.                                                    *)
-(*                                                                        *)
-(*   All rights reserved.  This file is distributed under the terms of    *)
-(*   the GNU Lesser General Public License version 2.1, with the          *)
-(*   special exception on linking described in the file LICENSE.          *)
-(*                                                                        *)
-(**************************************************************************)
+(***********************************************************************)
+(*                                                                     *)
+(*                                OCaml                                *)
+(*                                                                     *)
+(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
+(*                                                                     *)
+(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
+(*  en Automatique.  All rights reserved.  This file is distributed    *)
+(*  under the terms of the Q Public License version 1.0.               *)
+(*                                                                     *)
+(***********************************************************************)
 
-(** The lexical analyzer
+open Std
 
-  {b Warning:} this module is unstable and part of
-  {{!Compiler_libs}compiler-libs}.
-
-*)
-
-val init : unit -> unit
-val token: Lexing.lexbuf -> Parser.token
-val skip_hash_bang: Lexing.lexbuf -> unit
-
+(* Possible errors *)
 type error =
   | Illegal_character of char
   | Illegal_escape of string * string option
@@ -33,32 +22,39 @@ type error =
   | Unterminated_string_in_comment of Location.t * Location.t
   | Keyword_as_label of string
   | Invalid_literal of string
-  | Invalid_directive of string * string option
-;;
-
 exception Error of error * Location.t
 
-val in_comment : unit -> bool;;
-val in_string : unit -> bool;;
+(* Keywords, manipulated by extensions *)
+type keywords
+val keywords: (string * Parser_raw.token) list -> keywords
 
+(* Monad in which the lexer evaluates *)
+type 'a result =
+  | Return of 'a
+  | Refill of (unit -> 'a result)
+  | Fail of error * Location.t
 
-val print_warnings : bool ref
-val handle_docstrings: bool ref
-val comments : unit -> (string * Location.t) list
-val token_with_comments : Lexing.lexbuf -> Parser.token
+type preprocessor = (Lexing.lexbuf -> Parser_raw.token) -> Lexing.lexbuf -> Parser_raw.token
 
-(*
-  [set_preprocessor init preprocessor] registers [init] as the function
-to call to initialize the preprocessor when the lexer is initialized,
-and [preprocessor] a function that is called when a new token is needed
-by the parser, as [preprocessor lexer lexbuf] where [lexer] is the
-lexing function.
+type state = {
+  keywords: keywords;
+  mutable buffer: Buffer.t;
+  mutable string_start_loc: Location.t;
+  mutable comment_start_loc: Location.t list;
+  mutable preprocessor: preprocessor option;
+}
 
-When a preprocessor is configured by calling [set_preprocessor], the lexer
-changes its behavior to accept backslash-newline as a token-separating blank.
-*)
+val make: ?preprocessor:preprocessor -> keywords -> state
 
-val set_preprocessor :
-  (unit -> unit) ->
-  ((Lexing.lexbuf -> Parser.token) -> Lexing.lexbuf -> Parser.token) ->
-  unit
+(* The lexical analyzer *)
+
+val skip_sharp_bang: state -> Lexing.lexbuf -> Parser_raw.token result
+val token: state -> Lexing.lexbuf -> Parser_raw.token result
+
+(* Comments are filtered out from the token rule and stored in a global
+   variable. *)
+type comment = string * Location.t
+
+(* If you want to get the raw output, including comments, from the lexer, use
+   the [token_with_comments] entry point. *)
+val token_without_comments : state -> Lexing.lexbuf -> Parser_raw.token result
