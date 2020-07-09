@@ -150,11 +150,18 @@ let initial_env ~loc ~safe_string ~initially_opened_module
   in
   let open_module env m =
     let open Asttypes in
-    let lexbuf = Lexing.from_string m in
-    let txt =
-      Location.init lexbuf (Printf.sprintf "command line argument: -open %S" m);
-      Parse.simple_module_path lexbuf in
-        snd (type_open_ Override env loc {txt;loc})
+    let lid = {loc; txt = Longident.parse m } in
+    try
+      snd (type_open_ Override env lid.loc lid)
+    with
+    | (Typetexp.Error _ | Env.Error _ | Magic_numbers.Cmi.Error _) as exn ->
+      Msupport.raise_error exn;
+      env
+    | exn ->
+      Printf.ksprintf failwith
+        "Uncaught exception %s in initial_env.open_module: %s"
+        Obj.Extension_constructor.(name (of_val exn))
+        (Printexc.to_string exn)
   in
   let add_units env units =
     String.Set.fold
@@ -2626,10 +2633,6 @@ let () =
 
 (* Typecheck an implementation file *)
 
-let gen_annot outputprefix sourcefile annots =
-  Cmt2annot.gen_annot (Some (outputprefix ^ ".annot"))
-    ~sourcefile:(Some sourcefile) ~use_summaries:false annots
-
 let type_implementation sourcefile outputprefix modulename initial_env ast =
   Cmt_format.clear ();
   Misc.try_finally (fun () ->
@@ -2646,7 +2649,6 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           (fun () -> fprintf std_formatter "%a@."
               (Printtyp.printed_signature sourcefile) simple_sg
           );
-        gen_annot outputprefix sourcefile (Cmt_format.Implementation str);
         (str, Tcoerce_none)   (* result is ignored by Compile.implementation *)
       end else begin
         let sourceintf =
@@ -2670,7 +2672,6 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           let annots = Cmt_format.Implementation str in
           Cmt_format.save_cmt (outputprefix ^ ".cmt") modulename
             annots (Some sourcefile) initial_env None;
-          gen_annot outputprefix sourcefile annots;
           (str, coercion)
         end else begin
           let coercion =
@@ -2692,8 +2693,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
             in
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-              annots (Some sourcefile) initial_env (Some cmi);
-            gen_annot outputprefix sourcefile annots
+              annots (Some sourcefile) initial_env (Some cmi)
           end;
           (str, coercion)
         end
@@ -2705,8 +2705,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
             (Array.of_list (Cmt_format.get_saved_types ()))
         in
         Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-          annots (Some sourcefile) initial_env None;
-        gen_annot outputprefix sourcefile annots
+          annots (Some sourcefile) initial_env None
       )
 
 let save_signature modname tsg outputprefix source_file initial_env cmi =
