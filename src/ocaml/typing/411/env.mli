@@ -436,8 +436,37 @@ val print_path: (Format.formatter -> Path.t -> unit) ref
 
 (** Folds *)
 
+(** Folding over all identifiers (for analysis purpose) *)
+
+val fold_values:
+  (string -> Path.t -> value_description -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+val fold_types:
+  (string -> Path.t -> type_declaration -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+val fold_type_decls:
+  (string -> Path.t -> type_declaration -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
 val fold_constructors:
   (constructor_description -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+val fold_labels:
+  (label_description -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+
+(** Persistent structures are only traversed if they are already loaded. *)
+val fold_modules:
+  (string -> Path.t -> module_declaration -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+
+val fold_modtypes:
+  (string -> Path.t -> modtype_declaration -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+val fold_classes:
+  (string -> Path.t -> class_declaration -> 'a -> 'a) ->
+  Longident.t option -> t -> 'a -> 'a
+val fold_cltypes:
+  (string -> Path.t -> class_type_declaration -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
 
 (** Utilities *)
@@ -445,3 +474,13 @@ val scrape_alias: t -> module_type -> module_type
 val check_value_name: string -> Location.t -> unit
 
 val print_address : Format.formatter -> address -> unit
+
+(** merlin: manage internal state *)
+
+val check_state_consistency: unit -> bool
+
+val with_cmis : (unit -> 'a) -> 'a
+
+(* helper for merlin *)
+
+val add_merlin_extension_module: Ident.t -> module_type -> t -> t

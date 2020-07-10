@@ -159,7 +159,7 @@ let texp_function_cases = function
   | Typedtree.Texp_function {cases; _} -> cases
   | _ -> assert false
 
-let const_string (s, o) = Asttypes.Const_string (s, o)
+let const_string (s, o) = Asttypes.Const_string (s, Location.none, o)
 
 let dummy_type_scheme desc =
   { Types. level = 0 ; id = 0 ; scope = Btype.generic_level ; desc }
@@ -172,6 +172,7 @@ let si_modtype_opt : Types.signature_item -> Types.module_type option = function
   | Sig_module (_, _, m, _, _) -> Some m.md_type
   | _ -> None
 
+(*
 module Pattern = struct
   open Asttypes
 
@@ -200,6 +201,7 @@ module Pattern = struct
 
   let update_desc_exn p pat_desc = { p with Typedtree. pat_desc }
 end
+   *)
 
 let md_id { Typedtree.md_id; _ } = md_id
 let mb_id { Typedtree.mb_id; _ } = mb_id

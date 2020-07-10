@@ -52,6 +52,7 @@ val ctype_instance : Env.t -> Types.type_expr -> Types.type_expr
 
 val si_modtype_opt : Types.signature_item -> Types.module_type option
 
+(*
 module Pattern : sig
   open Asttypes
 
@@ -82,6 +83,7 @@ module Pattern : sig
   (** will raise [Not_supported] if the desc doesn't exist in that version of
       OCaml. *)
 end
+*)
 
 val md_id : Typedtree.module_declaration -> Ident.t option
 val mb_id : Typedtree.module_binding -> Ident.t option

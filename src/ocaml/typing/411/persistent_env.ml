@@ -367,3 +367,17 @@ let () =
           Some (Location.error_of_printer_file report_error err)
       | _ -> None
     )
+
+(* helper for merlin *)
+
+let with_cmis penv f x =
+  Misc.(protect_refs
+          [R (penv.can_load_cmis, Can_load_cmis)]
+          (fun () -> f x))
+
+let forall ~found ~missing t =
+  Std.Hashtbl.forall t.persistent_structures (fun name -> function
+      | Missing -> missing name
+      | Found (pers_struct, a) ->
+        found name pers_struct.ps_filename a
+    )
