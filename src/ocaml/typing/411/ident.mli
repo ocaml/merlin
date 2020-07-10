@@ -56,6 +56,7 @@ val global: t -> bool
 val is_predef: t -> bool
 
 val scope: t -> int
+val stamp: t -> int
 
 val lowest_scope : int
 val highest_scope: int

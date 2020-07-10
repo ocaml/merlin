@@ -48,3 +48,28 @@ let parse s =
   | None -> Lident ""  (* should not happen, but don't put assert false
                           so as not to crash the toplevel (see Genprintval) *)
   | Some v -> v
+
+let keep_suffix =
+  let rec aux = function
+    | Lident str ->
+      if String.uncapitalize_ascii str <> str then
+        Some (Lident str, false)
+      else
+        None
+    | Ldot (t, str) ->
+      if String.uncapitalize_ascii str <> str then
+        match aux t with
+        | None -> Some (Lident str, true)
+        | Some (t, is_label) -> Some (Ldot (t, str), is_label)
+      else
+        None
+    | t -> Some (t, false) (* Can be improved... *)
+  in
+  function
+  | Lident s -> Lident s, false
+  | Ldot (t, s) ->
+    begin match aux t with
+    | None -> Lident s, true
+    | Some (t, is_label) -> Ldot (t, s), is_label
+    end
+  | otherwise -> otherwise, false

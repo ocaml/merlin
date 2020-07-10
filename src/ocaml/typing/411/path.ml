@@ -127,3 +127,20 @@ module T = struct
 end
 module Set = Set.Make(T)
 module Map = Map.Make(T)
+
+let to_string_list p =
+  let rec aux acc = function
+    | Pident id -> Ident.name id :: acc
+    | Pdot (p, str) -> aux (str :: acc) p
+    | _ -> assert false
+  in
+  aux [] p
+
+module Nopos = struct
+  type nopos = t =
+    | Pident of Ident.t
+    | Pdot of t * string
+    | Papply of t * t
+
+  let view p = p
+end
