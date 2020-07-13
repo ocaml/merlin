@@ -765,6 +765,7 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; cmi_cache; _
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let flags = cmi.cmi_flags in
+  let id_subst = Subst.(make_loc_ghost identity) in
   let id = Ident.create_persistent name in
   let path = Pident id in
   let alerts =
@@ -781,14 +782,14 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; cmi_cache; _
   in
   let mda_address = EnvLazy.create_forced (Aident id) in
   let mda_declaration =
-    EnvLazy.create (Subst.identity, Subst.Make_local, md)
+    EnvLazy.create (id_subst, Subst.Make_local, md)
   in
   let mda_components =
     let freshening_subst =
-      if freshen then (Some Subst.identity) else None
+      if freshen then (Some id_subst) else None
     in
     components_of_module ~alerts ~uid:md.md_uid
-      empty freshening_subst Subst.identity
+      empty freshening_subst id_subst
       path mda_address (Mty_signature sign)
   in
   let result = {

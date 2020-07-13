@@ -41,6 +41,7 @@ val add_module: Ident.t -> Path.t -> t -> t
 val add_module_path: Path.t -> Path.t -> t -> t
 val add_modtype: Ident.t -> module_type -> t -> t
 val for_saving: t -> t
+val make_loc_ghost: t -> t
 val reset_for_saving: unit -> unit
 
 val module_path: t -> Path.t -> Path.t

@@ -29,6 +29,7 @@ type t =
     modules: Path.t Path.Map.t;
     modtypes: module_type Ident.Map.t;
     for_saving: bool;
+    make_loc_ghost: bool;
   }
 
 let identity =
@@ -36,6 +37,7 @@ let identity =
     modules = Path.Map.empty;
     modtypes = Ident.Map.empty;
     for_saving = false;
+    make_loc_ghost = false;
   }
 
 let add_type_path id p s = { s with types = Path.Map.add id (Path p) s.types }
@@ -50,9 +52,12 @@ let add_module id p s = add_module_path (Pident id) p s
 let add_modtype id ty s = { s with modtypes = Ident.Map.add id ty s.modtypes }
 
 let for_saving s = { s with for_saving = true }
+let make_loc_ghost s = { s with make_loc_ghost = true }
 
 let loc s x =
-  if s.for_saving && not !Clflags.keep_locs then Location.none else x
+  if s.for_saving && not !Clflags.keep_locs then Location.none
+  else if s.make_loc_ghost then { x with loc_ghost = true }
+  else x
 
 let remove_loc =
   let open Ast_mapper in
@@ -552,4 +557,5 @@ let compose s1 s2 =
     modules = merge_path_maps (module_path s2) s1.modules s2.modules;
     modtypes = merge_tbls (modtype Keep s2) s1.modtypes s2.modtypes;
     for_saving = s1.for_saving || s2.for_saving;
+    make_loc_ghost = s1.make_loc_ghost || s2.make_loc_ghost;
   }
