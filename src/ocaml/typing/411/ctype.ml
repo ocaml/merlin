@@ -106,6 +106,11 @@ module Unification_trace = struct
     { got; expected}
   let diff got expected = Diff (map_diff short {got;expected})
 
+  let map_desc f { t; expanded } =
+    let t = f t in
+    let expanded = Std.Option.map ~f expanded in
+    { t; expanded }
+
   let map_elt f = function
     | Diff x -> Diff (map_diff f x)
     | Escape {kind=Equation x; context} -> Escape {kind=Equation(f x); context}
@@ -153,6 +158,7 @@ module Unification_trace = struct
         | None -> explain rem in
     explain (List.rev trace)
 
+  let map_types f = map (map_desc f)
 end
 module Trace = Unification_trace
 

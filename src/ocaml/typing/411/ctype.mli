@@ -85,6 +85,8 @@ module Unification_trace: sig
           (prev:'a elt option -> 'a elt -> 'b option) ->
           'b option
 
+  (** merlin specific *)
+  val map_types : (type_expr -> type_expr) -> t -> t
 end
 
 exception Unify of Unification_trace.t
