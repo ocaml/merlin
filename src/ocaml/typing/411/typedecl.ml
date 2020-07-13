@@ -1310,6 +1310,7 @@ let check_unboxable env loc ty =
   let all_unboxable_types = Btype.fold_type_expr check_type Path.Set.empty ty in
   Path.Set.fold
     (fun p () ->
+       let p = Printtyp.shorten_type_path env p in
        Location.prerr_warning loc
          (Warnings.Unboxable_type_in_prim_decl (Path.name p))
     )
@@ -1345,9 +1346,11 @@ let transl_value_decl env loc valdecl =
           ~native_repr_args
           ~native_repr_res
       in
+      (*
       if prim.prim_arity = 0 &&
          (prim.prim_name = "" || prim.prim_name.[0] <> '%') then
         raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));
+      *)
       if !Clflags.native_code
       && prim.prim_arity > 5
       && prim.prim_native_name = ""
