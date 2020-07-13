@@ -799,7 +799,7 @@ let rec alpha_pat
        try Tpat_var (alpha_var env id, s) with
        | Not_found -> Tpat_any}
   | Tpat_alias (p1, id, s) ->
-      let new_p =  alpha_pat env p1 in
+      let new_p : k general_pattern =  alpha_pat env p1 in
       begin try
         {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s)}
       with
