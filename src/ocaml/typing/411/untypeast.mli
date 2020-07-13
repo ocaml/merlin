@@ -85,5 +85,5 @@ val untype_signature : ?mapper:mapper -> Typedtree.signature -> signature
 val constant : Asttypes.constant -> Parsetree.constant
 
 (* Merlin *)
-val untype_pattern : Typedtree.pattern -> Parsetree.pattern
+val untype_pattern : _ Typedtree.general_pattern -> Parsetree.pattern
 val untype_expression : Typedtree.expression -> Parsetree.expression

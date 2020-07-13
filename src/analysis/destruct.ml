@@ -26,8 +26,10 @@
 
 )* }}} *)
 
+(*
 open Std
 open Browse_raw
+   *)
 
 exception Not_allowed of string
 exception Useless_refine
@@ -43,6 +45,7 @@ let () =
     | _ -> None
   )
 
+(*
 let mk_id s  = Location.mknoloc (Longident.Lident s)
 let mk_var s = Location.mknoloc s
 
@@ -465,7 +468,7 @@ let node config source node parents =
     loc, str
   | Pattern patt ->
     let last_case_loc, patterns = get_every_pattern parents in
-    List.iter patterns ~f:(fun p ->
+    List.iter patterns ~f:(fun (Pat p) ->
       let p = filter_pat_attr (Untypeast.untype_pattern p) in
       log ~title:"EXISTING" "%t"
         (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
@@ -537,3 +540,7 @@ let node config source node parents =
     end
   | node ->
     raise (Not_allowed (string_of_node node))
+   *)
+
+let node _ _ _ _ =
+  failwith "not supported on 4.11 yet"
