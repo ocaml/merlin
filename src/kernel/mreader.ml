@@ -180,7 +180,7 @@ let apply_directives config tree =
       | PStr[{ pstr_desc = Pstr_eval(expr, _) ; _}] ->
         begin match expr with
           | {Parsetree. pexp_desc =
-               Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _))
+               Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _, _))
             ; _ } ->
             Some (msg, expr.pexp_loc)
           | _ -> None

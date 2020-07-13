@@ -406,6 +406,8 @@ type t = {
   summary: summary;
   local_constraints: type_declaration Path.Map.t;
   flags: int;
+  short_paths: Short_paths.t option;
+  short_paths_additions: short_paths_addition list;
 }
 
 and module_declaration_lazy =
@@ -498,6 +500,16 @@ and class_data =
     clda_address : address_lazy }
 
 and cltype_data = class_type_declaration
+
+and short_paths_addition =
+  | Type of Ident.t * type_declaration
+  | Class_type of Ident.t * class_type_declaration
+  | Module_type of Ident.t * modtype_declaration
+  | Module of Ident.t * module_declaration * module_components
+  | Type_open of Path.t * type_data NameMap.t
+  | Class_type_open of Path.t * class_type_declaration NameMap.t
+  | Module_type_open of Path.t * modtype_declaration NameMap.t
+  | Module_open of Path.t * module_data NameMap.t
 
 let empty_structure =
   Structure_comps {
@@ -594,6 +606,8 @@ let empty = {
   summary = Env_empty; local_constraints = Path.Map.empty;
   flags = 0;
   functor_args = Ident.empty;
+  short_paths = None;
+  short_paths_additions = [];
  }
 
 let in_signature b env =
@@ -653,6 +667,11 @@ let strengthen =
   (* to be filled with Mtype.strengthen *)
   ref ((fun ~aliasable:_ _env _mty _path -> assert false) :
          aliasable:bool -> t -> module_type -> Path.t -> module_type)
+
+let shorten_module_path =
+  (* to be filled with Printtyp.shorten_module_path *)
+  ref ((fun _ _ -> assert false) :
+         t -> Path.t -> Path.t)
 
 let md md_type =
   {md_type; md_attributes=[]; md_loc=Location.none
@@ -742,7 +761,7 @@ let components_of_module ~alerts ~uid env fs ps path addr mty =
     }
   }
 
-let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
+let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; cmi_cache; _ } =
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let flags = cmi.cmi_flags in
@@ -772,11 +791,14 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
       empty freshening_subst Subst.identity
       path mda_address (Mty_signature sign)
   in
-  {
+  let result = {
     mda_declaration;
     mda_components;
     mda_address;
-  }
+  } in
+  cmi_cache := Cmi_cache_store result;
+  result
+
 
 let read_sign_of_cmi = sign_of_cmi ~freshen:true
 
@@ -794,16 +816,20 @@ let import_crcs ~source crcs =
   Persistent_env.import_crcs !persistent_env ~source crcs
 
 let read_pers_mod modname filename =
-  Persistent_env.read !persistent_env read_sign_of_cmi modname filename
+  Persistent_env.read !persistent_env
+    read_sign_of_cmi short_paths_components modname filename
 
 let find_pers_mod name =
-  Persistent_env.find !persistent_env read_sign_of_cmi name
+  Persistent_env.find !persistent_env
+    read_sign_of_cmi short_paths_components name
 
 let check_pers_mod ~loc name =
-  Persistent_env.check !persistent_env read_sign_of_cmi ~loc name
+  Persistent_env.check !persistent_env
+    read_sign_of_cmi short_paths_components ~loc name
 
 let crc_of_unit name =
-  Persistent_env.crc_of_unit !persistent_env read_sign_of_cmi name
+  Persistent_env.crc_of_unit !persistent_env
+    read_sign_of_cmi short_paths_components name
 
 let is_imported_opaque modname =
   Persistent_env.is_imported_opaque !persistent_env modname
@@ -1465,6 +1491,45 @@ let prefix_idents root freshening_sub prefixing_sub sg =
   in
   prefix_idents root [] freshening_sub prefixing_sub sg
 
+(* Short path additions *)
+
+let short_paths_type predef id decl old =
+  if not predef && !Clflags.real_paths then old
+  else Type(id, decl) :: old
+
+let short_paths_type_open path decls old =
+  if !Clflags.real_paths then old
+  else Type_open(path, decls) :: old
+
+let unbound_class = Path.Pident (Ident.create_local "*undef*")
+
+let is_dummy_class decl =
+  Path.same decl.clty_path unbound_class
+
+let short_paths_class_type id decl old =
+  if !Clflags.real_paths || is_dummy_class decl then old
+  else Class_type(id, decl) :: old
+
+let short_paths_class_type_open path decls old =
+  if !Clflags.real_paths then old
+  else Class_type_open(path, decls) :: old
+
+let short_paths_module_type id decl old =
+  if !Clflags.real_paths then old
+  else Module_type(id, decl) :: old
+
+let short_paths_module_type_open path decls old =
+  if !Clflags.real_paths then old
+  else Module_type_open(path, decls) :: old
+
+let short_paths_module id decl comps old =
+  if !Clflags.real_paths then old
+  else Module(id, decl, comps) :: old
+
+let short_paths_module_open path comps old =
+  if !Clflags.real_paths then old
+  else Module_open(path, comps) :: old
+
 (* Compute structure descriptions *)
 
 let add_to_tbl id decl tbl =
@@ -1684,7 +1749,7 @@ and store_value ?check id addr decl env =
     values = IdTbl.add id (Val_bound vda) env.values;
     summary = Env_value(env.summary, id, decl) }
 
-and store_type ~check id info env =
+and store_type ~check ~predef id info env =
   let loc = info.type_loc in
   if check then
     check_usage loc id info.type_uid
@@ -1734,7 +1799,9 @@ and store_type ~check id info env =
         (fun (id, descr) labels -> TycompTbl.add id descr labels)
         labels env.labels;
     types = IdTbl.add id tda env.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = Env_type(env.summary, id, info);
+    short_paths_additions =
+      short_paths_type predef id info env.short_paths_additions; }
 
 and store_type_infos id info env =
   (* Simplified version of store_type that doesn't compute and store
@@ -1745,7 +1812,9 @@ and store_type_infos id info env =
   let tda = { tda_declaration = info; tda_descriptions = [], [] } in
   { env with
     types = IdTbl.add id tda env.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = Env_type(env.summary, id, info);
+    short_paths_additions =
+      short_paths_type false id info env.short_paths_additions; }
 
 and store_extension ~check ~rebind id addr ext env =
   let loc = ext.ext_loc in
@@ -1799,12 +1868,16 @@ and store_module ~check ~freshening_sub id addr presence md env =
   in
   { env with
     modules = IdTbl.add id (Mod_local mda) env.modules;
-    summary = Env_module(env.summary, id, presence, md) }
+    summary = Env_module(env.summary, id, presence, md);
+    short_paths_additions =
+      short_paths_module id md comps env.short_paths_additions; }
 
 and store_modtype id info env =
   { env with
     modtypes = IdTbl.add id info env.modtypes;
-    summary = Env_modtype(env.summary, id, info) }
+    summary = Env_modtype(env.summary, id, info);
+    short_paths_additions =
+      short_paths_module_type id info env.short_paths_additions; }
 
 and store_class id addr desc env =
   let clda = { clda_declaration = desc; clda_address = addr } in
@@ -1815,7 +1888,9 @@ and store_class id addr desc env =
 and store_cltype id desc env =
   { env with
     cltypes = IdTbl.add id desc env.cltypes;
-    summary = Env_cltype(env.summary, id, desc) }
+    summary = Env_cltype(env.summary, id, desc);
+    short_paths_additions =
+      short_paths_class_type id desc env.short_paths_additions; }
 
 let scrape_alias env mty = scrape_alias env None mty
 
@@ -1912,7 +1987,7 @@ let enter_value ?check name desc env =
 
 let enter_type ~scope name info env =
   let id = Ident.create_scoped ~scope name in
-  let env = store_type ~check:true id info env in
+  let env = store_type ~check:true ~predef:false id info env in
   (id, env)
 
 let enter_extension ~scope ~rebind name ext env =
@@ -1949,7 +2024,7 @@ let enter_module ~scope ?arg s presence mty env =
 let add_item comp env =
   match comp with
     Sig_value(id, decl, _)    -> add_value id decl env
-  | Sig_type(id, decl, _, _)  -> add_type ~check:false id decl env
+  | Sig_type(id, decl, _, _)  -> add_type ~check:false ~predef:false id decl env
   | Sig_typext(id, ext, _, _) ->
       add_extension ~check:false ~rebind:false id ext env
   | Sig_module(id, presence, md, _, _) ->
@@ -1988,6 +2063,26 @@ let add_components slot root env0 comps =
     TycompTbl.add_open slot w comps env0
   in
   let add w comps env0 = IdTbl.add_open slot w root comps env0 in
+  let add_types w comps env0 additions =
+    let types = add w comps env0 in
+    let additions = short_paths_type_open root comps additions in
+    types, additions
+  in
+  let add_cltypes w comps env0 additions =
+    let cltypes = add w comps env0 in
+    let additions = short_paths_class_type_open root comps additions in
+    cltypes, additions
+  in
+  let add_modtypes w comps env0 additions =
+    let modtypes = add w comps env0 in
+    let additions = short_paths_module_type_open root comps additions in
+    modtypes, additions
+  in
+  let add_modules w comps env0 additions =
+    let modules = add w comps env0 in
+    let additions = short_paths_module_open root comps additions in
+    modules, additions
+  in
   let constrs =
     add_l (fun x -> `Constructor x) comps.comp_constrs env0.constrs
   in
@@ -1997,20 +2092,24 @@ let add_components slot root env0 comps =
   let values =
     add (fun x -> `Value x) comps.comp_values env0.values
   in
-  let types =
-    add (fun x -> `Type x) comps.comp_types env0.types
+  let types, additions =
+    add_types (fun x -> `Type x)
+      comps.comp_types env0.types env0.short_paths_additions
   in
-  let modtypes =
-    add (fun x -> `Module_type x) comps.comp_modtypes env0.modtypes
+  let modtypes, additions =
+    add_modtypes (fun x -> `Module_type x)
+      comps.comp_modtypes env0.modtypes additions
   in
   let classes =
     add (fun x -> `Class x) comps.comp_classes env0.classes
   in
-  let cltypes =
-    add (fun x -> `Class_type x) comps.comp_cltypes env0.cltypes
+  let cltypes, additions =
+    add_cltypes (fun x -> `Class_type x)
+      comps.comp_cltypes env0.cltypes additions
   in
-  let modules =
-    add (fun x -> `Module x) comps.comp_modules env0.modules
+  let modules, additions =
+    add_modules (fun x -> `Module x)
+      comps.comp_modules env0.modules additions
   in
   { env0 with
     summary = Env_open(env0.summary, root);
@@ -2022,6 +2121,7 @@ let add_components slot root env0 comps =
     classes;
     cltypes;
     modules;
+    short_paths_additions = additions
   }
 
 let open_signature slot root env0 : (_,_) result =
@@ -2045,13 +2145,13 @@ let open_signature
     ?(used_slot = ref false)
     ?(loc = Location.none) ?(toplevel = false)
     ovf root env =
-  let unused =
+  let unused root =
     match ovf with
     | Asttypes.Fresh -> Warnings.Unused_open (Path.name root)
     | Asttypes.Override -> Warnings.Unused_open_bang (Path.name root)
   in
   let warn_unused =
-    Warnings.is_active unused
+    Warnings.is_active (unused root)
   and warn_shadow_id =
     Warnings.is_active (Warnings.Open_shadow_identifier ("", ""))
   and warn_shadow_lc =
@@ -2066,7 +2166,7 @@ let open_signature
         (fun () ->
            if not !used then begin
              used := true;
-             Location.prerr_warning loc unused
+             Location.prerr_warning loc (unused (!shorten_module_path env root))
            end
         );
     let shadowed = ref [] in
@@ -2130,10 +2230,11 @@ let save_signature_with_transform cmi_transform ~alerts sg modname filename =
   let cmi =
     Persistent_env.make_cmi !persistent_env modname sg alerts
     |> cmi_transform in
+  let cmi_cache = ref Not_found in
   let pm = save_sign_of_cmi
-      { Persistent_env.Persistent_signature.cmi; filename } in
+      { Persistent_env.Persistent_signature.cmi; filename; cmi_cache } in
   Persistent_env.save_cmi !persistent_env
-    { Persistent_env.Persistent_signature.filename; cmi } pm;
+    { Persistent_env.Persistent_signature.filename; cmi; cmi_cache } pm;
   cmi
 
 let save_signature ~alerts sg modname filename =
@@ -2148,9 +2249,12 @@ let save_signature_with_imports ~alerts sg modname filename imports =
 (* Make the initial environment *)
 let (initial_safe_string, initial_unsafe_string) =
   Predef.build_initial_env
-    (add_type ~check:false)
+    (add_type ~check:false ~predef:true)
     (add_extension ~check:false ~rebind:false)
     empty
+
+let add_type ~check id info env =
+  add_type ~check ~predef:false id info env
 
 (* Tracking usage *)
 

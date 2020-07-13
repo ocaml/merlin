@@ -49,10 +49,14 @@ val strings_of_paths: namespace -> Path.t list -> string list
 val raw_type_expr: formatter -> type_expr -> unit
 val string_of_label: Asttypes.arg_label -> string
 
-val wrap_printing_env: error:bool -> Env.t -> (unit -> 'a) -> 'a
+val wrap_printing_env: ?error:bool -> Env.t -> (unit -> 'a) -> 'a
     (* Call the function using the environment for type path shortening *)
     (* This affects all the printing functions below *)
     (* Also, if [~error:true], then disable the loading of cmis *)
+val shorten_type_path: Env.t -> Path.t -> Path.t
+val shorten_module_type_path: Env.t -> Path.t -> Path.t
+val shorten_module_path: Env.t -> Path.t -> Path.t
+val shorten_class_type_path: Env.t -> Path.t -> Path.t
 
 module Naming_context: sig
   val enable: bool -> unit
@@ -91,6 +95,7 @@ module Conflicts: sig
 
   val reset: unit -> unit
 end
+
 
 val reset: unit -> unit
 val mark_loops: type_expr -> unit

@@ -42,3 +42,6 @@ val top_phrase: Format.formatter -> Parsetree.toplevel_phrase -> unit
 val tyvar: Format.formatter -> string -> unit
   (** Print a type variable name, taking care of the special treatment
       required for the single quote character in second position. *)
+
+(* merlin *)
+val case_list : Format.formatter -> Parsetree.case list -> unit

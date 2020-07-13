@@ -17,6 +17,8 @@
 
 open Types
 
+val ident_bytes: Ident.t
+
 val type_int: type_expr
 val type_char: type_expr
 val type_string: type_expr

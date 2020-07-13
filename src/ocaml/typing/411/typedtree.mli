@@ -799,7 +799,13 @@ val mkloc: 'a -> Location.t -> 'a Asttypes.loc
 val pat_bound_idents: 'k general_pattern -> Ident.t list
 val pat_bound_idents_full:
   'k general_pattern -> (Ident.t * string loc * Types.type_expr) list
+val pat_bound_idents_with_loc: 'k general_pattern -> (Ident.t * string loc) list
 
 (** Splits an or pattern into its value (left) and exception (right) parts. *)
 val split_pattern:
   computation general_pattern -> pattern option * pattern option
+
+(* Merlin specific *)
+
+val unpack_functor_me : module_expr -> functor_parameter * module_expr
+val unpack_functor_mty : module_type -> functor_parameter * module_type

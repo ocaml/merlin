@@ -93,7 +93,7 @@ let extract_syntax_error (id, payload : extension) : string * Location.t =
    let msg = match payload with
      | PStr [{ pstr_desc = Pstr_eval (
          {Parsetree. pexp_desc =
-            Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _)) ; _ }, _
+            Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _, _)) ; _ }, _
        ); _ }] ->
        msg
      | _ -> invalid_msg

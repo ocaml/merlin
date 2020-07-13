@@ -390,6 +390,12 @@ val summary: t -> summary
 val keep_only_summary : t -> t
 val env_of_only_summary : (summary -> Subst.t -> t) -> t -> t
 
+(* Update the short paths table *)
+val update_short_paths : t -> t
+
+(* Return the short paths table *)
+val short_paths : t -> Short_paths.t
+
 (* Error report *)
 
 type error =
@@ -433,6 +439,9 @@ val print_longident: (Format.formatter -> Longident.t -> unit) ref
 (* Forward declaration to break mutual recursion with Printtyp. *)
 val print_path: (Format.formatter -> Path.t -> unit) ref
 
+
+(* Forward declaration to break mutual recursion with Printtyp *)
+val shorten_module_path : (t -> Path.t -> Path.t) ref
 
 (** Folds *)
 

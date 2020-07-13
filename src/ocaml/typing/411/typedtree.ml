@@ -772,6 +772,9 @@ let rev_only_idents idents_full =
 
 let pat_bound_idents_full pat =
   List.rev (rev_pat_bound_idents_full pat)
+let pat_bound_idents_with_loc p =
+  List.map (fun (id,loc,_ty) -> id, loc) (pat_bound_idents_full p)
+
 let pat_bound_idents pat =
   rev_only_idents (rev_pat_bound_idents_full pat)
 
@@ -839,3 +842,15 @@ let split_pattern pat =
         combine_opts (into cpat) exns1 exns2
   in
   split_pattern pat
+
+(* Merlin specific *)
+
+let unpack_functor_me me =
+  match me.mod_desc with
+  | Tmod_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Typedtree.unpack_functor_me (merlin)"
+
+let unpack_functor_mty mty =
+  match mty.mty_desc with
+  | Tmty_functor (fp, mty) -> fp, mty
+  | _ -> invalid_arg "Typedtree.unpack_functor_mty (merlin)"

@@ -42,7 +42,7 @@ let node_of_binary_part env part =
     Browse_raw.Structure_item (x, env)
   | Partial_expression x ->
     Browse_raw.Expression x
-  | Partial_pattern x ->
+  | Partial_pattern (_, x) ->
     Browse_raw.Pattern x
   | Partial_class_expr x ->
     Browse_raw.Class_expr x
