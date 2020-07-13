@@ -21,13 +21,6 @@ type pers_flags =
   | Opaque
   | Unsafe_string
 
-type error =
-  | Not_an_interface of filepath
-  | Wrong_version_interface of filepath * string
-  | Corrupted_interface of filepath
-
-exception Error of error
-
 (* these type abbreviations are not exported;
    they are used to provide consistency across
    input_value and output_value usage. *)
@@ -54,6 +47,7 @@ let input_cmi ic =
     }
 
 let read_cmi filename =
+  let open Magic_numbers.Cmi in
   let ic = open_in_bin filename in
   try
     let buffer =
@@ -65,9 +59,7 @@ let read_cmi filename =
       if String.sub buffer 0 pre_len
           = String.sub Config.cmi_magic_number 0 pre_len then
       begin
-        let msg =
-          if buffer < Config.cmi_magic_number then "an older" else "a newer" in
-        raise (Error (Wrong_version_interface (filename, msg)))
+        raise (Error (Wrong_version_interface (filename, buffer)))
       end else begin
         raise(Error(Not_an_interface filename))
       end
@@ -93,26 +85,4 @@ let output_cmi filename oc cmi =
   output_value oc (cmi.cmi_flags : flags);
   crc
 
-(* Error report *)
-
-open Format
-
-let report_error ppf = function
-  | Not_an_interface filename ->
-      fprintf ppf "%a@ is not a compiled interface"
-        Location.print_filename filename
-  | Wrong_version_interface (filename, older_newer) ->
-      fprintf ppf
-        "%a@ is not a compiled interface for this version of OCaml.@.\
-         It seems to be for %s version of OCaml."
-        Location.print_filename filename older_newer
-  | Corrupted_interface filename ->
-      fprintf ppf "Corrupted compiled interface@ %a"
-        Location.print_filename filename
-
-let () =
-  Location.register_error_of_exn
-    (function
-      | Error err -> Some (Location.error_of_printer_file report_error err)
-      | _ -> None
-    )
+(* Error report moved to src/ocaml/typing/magic_numbers.ml *)
