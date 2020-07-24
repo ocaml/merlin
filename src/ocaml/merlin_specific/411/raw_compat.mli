@@ -60,6 +60,7 @@ module Pattern : sig
   type computation = Typedtree.computation = Computation_pattern
 
   type 'a general_pattern = 'a Typedtree.general_pattern
+  type 'a pattern = 'a general_pattern
 
   type _ desc_view =
     | Tpat_any : value desc_view
@@ -89,11 +90,11 @@ module Pattern : sig
 
   and tpat_value_argument = private value general_pattern
 
-  val view : 'a general_pattern -> 'a desc_view
+  val view : 'a pattern -> 'a desc_view
 
   exception Not_supported
 
-  val update_desc_exn : 'a general_pattern -> 'a desc_view -> 'a general_pattern
+  val update_desc_exn : 'a pattern -> 'a desc_view -> 'a pattern
   (** will raise [Not_supported] if the desc doesn't exist in that version of
       OCaml. *)
 end

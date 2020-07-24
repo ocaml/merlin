@@ -180,6 +180,7 @@ module Pattern = struct
   type computation = Typedtree.computation = Computation_pattern
 
   type 'a general_pattern = 'a Typedtree.general_pattern
+  type 'a pattern = 'a general_pattern
 
   type 'a desc_view = 'a Typedtree.pattern_desc =
     | Tpat_any : value desc_view
