@@ -26,10 +26,8 @@
 
 )* }}} *)
 
-(*
 open Std
 open Browse_raw
-   *)
 
 exception Not_allowed of string
 exception Useless_refine
@@ -45,7 +43,6 @@ let () =
     | _ -> None
   )
 
-(*
 let mk_id s  = Location.mknoloc (Longident.Lident s)
 let mk_var s = Location.mknoloc s
 
@@ -198,8 +195,6 @@ let rec needs_parentheses = function
       end
     | _ -> needs_parentheses ts
 
-type pat = Pat : _ Typedtree.general_pattern -> pat
-
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
@@ -217,7 +212,7 @@ let rec get_every_pattern = function
           | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
                 match node with
-              | Pattern p -> Pat p :: acc
+              | Pattern p -> p :: acc
               | _ -> acc
               ) env node acc
           | _ -> acc
@@ -264,104 +259,68 @@ let filter_expr_attr expr =
 let filter_pat_attr pat =
   filter_attr.Ast_mapper.pat filter_attr pat
 
-let rec subst_patt' initial ~by patt =
-  let f = subst_patt' initial ~by in
+let rec subst_patt initial ~by patt =
+  let f = subst_patt initial ~by in
   if patt == initial then by else
-  let open Typedtree in
-  match patt.pat_desc with
+  match Raw_compat.Pattern.view patt with
   | Tpat_any
   | Tpat_var _
   | Tpat_constant _ -> patt
   | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = (Tpat_alias (f p, x, y) )}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_alias (f p, x, y) )
   | Tpat_tuple lst ->
-    { patt with pat_desc = (Tpat_tuple (List.map lst ~f))}
+    Raw_compat.Pattern.update_desc_exn patt
+      (Tpat_tuple (List.map lst ~f))
   | Tpat_construct (lid, cd, lst) ->
-    { patt with pat_desc = (Tpat_construct (lid, cd, List.map lst ~f))}
+    Raw_compat.Pattern.update_desc_exn patt
+      (Tpat_construct (lid, cd, List.map lst ~f))
   | Tpat_variant (lbl, pat_opt, row_desc) ->
-    { patt with pat_desc = (Tpat_variant (lbl, Option.map pat_opt ~f, row_desc))}
+    Raw_compat.Pattern.update_desc_exn patt
+      (Tpat_variant (lbl, Option.map pat_opt ~f, row_desc))
   | Tpat_record (sub, flg) ->
     let sub' =
       List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
     in
-    { patt with pat_desc = (Tpat_record (sub', flg))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_record (sub', flg))
   | Tpat_array lst ->
-    { patt with pat_desc = (Tpat_array (List.map lst ~f))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_array (List.map lst ~f))
   | Tpat_or (p1, p2, row) ->
-    { patt with pat_desc = (Tpat_or (f p1, f p2, row))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_or (f p1, f p2, row))
   | Tpat_lazy p ->
-    { patt with pat_desc = (Tpat_lazy (f p))}
-
-let rec subst_patt : type k.
-  Typedtree.pattern -> by:Typedtree.pattern -> k Typedtree.general_pattern ->
-  k Typedtree.general_pattern =
-  fun initial ~by patt ->
-  match patt.pat_desc with
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_lazy (f p))
   | Tpat_exception p ->
-    { patt with pat_desc = Tpat_exception (subst_patt' initial ~by p) }
-  | Tpat_value _ ->
-    raise (Not_allowed "value pattern, 4.11, FIXME")
-  | Tpat_or (p1, p2, row) ->
-    { patt with
-      pat_desc =
-        Tpat_or (subst_patt initial ~by p1, subst_patt initial ~by p2, row) }
-  | (Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_alias _ | Tpat_tuple _
-    | Tpat_construct _ | Tpat_variant _ | Tpat_record _ | Tpat_array _
-    | Tpat_lazy _)  as x ->
-    let patt' = subst_patt' initial ~by { patt with pat_desc = x } in
-    (* FIXME: despite matching on the GADT, I apprently can't unify [k] and
-       [Typedtree.value] ... *)
-    (Obj.magic patt' : k Typedtree.general_pattern)
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_exception (f p))
 
-let rec rm_sub' patt sub =
-  let f p = rm_sub' p sub in
-  let open Typedtree in
-  match patt.pat_desc with
+let rec rm_sub patt sub =
+  let f p = rm_sub p sub in
+  match Raw_compat.Pattern.view patt with
   | Tpat_any
   | Tpat_var _
   | Tpat_constant _ -> patt
   | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = (Tpat_alias (f p, x, y) )}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_alias (f p, x, y) )
   | Tpat_tuple lst ->
-    { patt with pat_desc = (Tpat_tuple (List.map lst ~f))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_tuple (List.map lst ~f))
   | Tpat_construct (lid, cd, lst) ->
-    { patt with pat_desc = (Tpat_construct (lid, cd, List.map lst ~f))}
+    Raw_compat.Pattern.update_desc_exn patt
+      (Tpat_construct (lid, cd, List.map lst ~f))
   | Tpat_variant (lbl, pat_opt, row_desc) ->
-    { patt with pat_desc = (Tpat_variant (lbl, Option.map pat_opt ~f, row_desc))}
+    Raw_compat.Pattern.update_desc_exn patt
+      (Tpat_variant (lbl, Option.map pat_opt ~f, row_desc))
   | Tpat_record (sub, flg) ->
     let sub' =
       List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
     in
-    { patt with pat_desc = (Tpat_record (sub', flg))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_record (sub', flg))
   | Tpat_array lst ->
-    { patt with pat_desc = (Tpat_array (List.map lst ~f))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_array (List.map lst ~f))
   | Tpat_or (p1, p2, row) ->
     if p1 == sub then p2 else if p2 == sub then p1 else
-    { patt with pat_desc = (Tpat_or (f p1, f p2, row))}
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_or (f p1, f p2, row))
   | Tpat_lazy p ->
-    { patt with pat_desc = (Tpat_lazy (f p))}
-
-let rec rm_sub : type k.
-  k Typedtree.general_pattern -> Typedtree.pattern ->
-  k Typedtree.general_pattern =
-  fun patt sub ->
-  match patt.pat_desc with
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_lazy (f p))
   | Tpat_exception p ->
-    { patt with pat_desc = Tpat_exception (rm_sub' p sub) }
-  | Tpat_value _ ->
-    raise (Not_allowed "value pattern, 4.11, FIXME")
-  | Tpat_or (p1, p2, row) ->
-    { patt with
-      pat_desc =
-        Tpat_or (rm_sub p1 sub, rm_sub p2 sub, row) }
-  | (Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_alias _ | Tpat_tuple _
-    | Tpat_construct _ | Tpat_variant _ | Tpat_record _ | Tpat_array _
-    | Tpat_lazy _)  as x ->
-    let patt' = rm_sub' { patt with pat_desc = x } sub in
-    (* FIXME: despite matching on the GADT, I apprently can't unify [k] and
-       [Typedtree.value] ... *)
-    (Obj.magic patt' : k Typedtree.general_pattern)
-
+    Raw_compat.Pattern.update_desc_exn patt (Tpat_exception (f p) )
 
 let rec qualify_constructors f pat =
   let open Typedtree in
@@ -407,35 +366,31 @@ let rec qualify_constructors f pat =
   in
   { pat with pat_desc = pat_desc }
 
-let find_branch patterns (type k) (sub : k Typedtree.general_pattern) =
-  let rec is_sub_patt : type k'. k' Typedtree.general_pattern -> bool =
-    fun patt ->
-      if patt == Obj.magic (* bouh! *) sub then true else
-        let open Typedtree in
-        match patt.pat_desc with
-        | Tpat_any
-        | Tpat_var _
-        | Tpat_constant _
-        | Tpat_variant (_, None, _) -> false
-        | Tpat_alias (p,_,_)
-        | Tpat_variant (_, Some p, _)
-        | Tpat_lazy p
-        | Tpat_exception p ->
-          is_sub_patt p
-        | Tpat_value p ->
-          is_sub_patt (p :> pattern)
-        | Tpat_tuple lst
-        | Tpat_construct (_, _, lst)
-        | Tpat_array lst ->
-          List.exists lst ~f:is_sub_patt
-        | Tpat_record (subs, _) ->
-          List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p)
-        | Tpat_or (p1, p2, _) ->
-          is_sub_patt p1 || is_sub_patt p2
+let find_branch patterns sub =
+  let rec is_sub_patt patt ~sub =
+    if patt == sub then true else
+      match Raw_compat.Pattern.view patt with
+      | Tpat_any
+      | Tpat_var _
+      | Tpat_constant _
+      | Tpat_variant (_, None, _) -> false
+      | Tpat_alias (p,_,_)
+      | Tpat_variant (_, Some p, _)
+      | Tpat_lazy p
+      | Tpat_exception p ->
+        is_sub_patt p ~sub
+      | Tpat_tuple lst
+      | Tpat_construct (_, _, lst)
+      | Tpat_array lst ->
+        List.exists lst ~f:(is_sub_patt ~sub)
+      | Tpat_record (subs, _) ->
+        List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p ~sub)
+      | Tpat_or (p1, p2, _) ->
+        is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
   in
   let rec aux before = function
     | [] -> raise Not_found
-    | p :: after when is_sub_patt p -> before, after, p
+    | p :: after when is_sub_patt p ~sub -> before, after, p
     | p :: ps -> aux (p :: before) ps
   in
   aux [] patterns
@@ -468,7 +423,7 @@ let node config source node parents =
     loc, str
   | Pattern patt ->
     let last_case_loc, patterns = get_every_pattern parents in
-    List.iter patterns ~f:(fun (Pat p) ->
+    List.iter patterns ~f:(fun p ->
       let p = filter_pat_attr (Untypeast.untype_pattern p) in
       log ~title:"EXISTING" "%t"
         (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
@@ -540,7 +495,3 @@ let node config source node parents =
     end
   | node ->
     raise (Not_allowed (string_of_node node))
-   *)
-
-let node _ _ _ _ =
-  failwith "not supported on 4.11 yet"
