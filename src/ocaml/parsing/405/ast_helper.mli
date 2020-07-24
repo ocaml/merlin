@@ -462,6 +462,8 @@ type let_bindings =
 (* merlin specific *)
 
 val no_label : arg_label
+val extract_str_payload : payload -> (string * Location.t) option
+
 (* backported from 4.08 *)
 
 (** {1 Attributes} *)
