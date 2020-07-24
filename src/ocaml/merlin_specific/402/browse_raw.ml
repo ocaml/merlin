@@ -827,3 +827,23 @@ let node_is_constructor = function
   | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None
+
+let node_of_binary_part env part =
+  let open Cmt_format in
+  match part with
+  | Partial_structure x ->
+    Structure x
+  | Partial_structure_item x ->
+    Structure_item (x, env)
+  | Partial_expression x ->
+    Expression x
+  | Partial_pattern x ->
+    Pattern x
+  | Partial_class_expr x ->
+    Class_expr x
+  | Partial_signature x ->
+    Signature x
+  | Partial_signature_item x ->
+    Signature_item (x, env)
+  | Partial_module_type x ->
+    Module_type x

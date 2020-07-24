@@ -113,3 +113,5 @@ val node_paths : node -> Path.t Location.loc list
 val node_is_constructor : node ->
   [ `Description of Types.constructor_description
   | `Declaration of Typedtree.constructor_declaration ] Location.loc option
+
+val node_of_binary_part : Env.t -> Cmt_format.binary_part -> node

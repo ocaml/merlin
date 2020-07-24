@@ -21,13 +21,6 @@ type pers_flags =
   | Opaque
   | Unsafe_string
 
-type error =
-  | Not_an_interface of filepath
-  | Wrong_version_interface of filepath * string
-  | Corrupted_interface of filepath
-
-exception Error of error
-
 type cmi_infos = {
     cmi_name : Misc.modname;
     cmi_sign : Types.signature_item list;

@@ -21,13 +21,6 @@ type pers_flags =
   | Opaque
   | Unsafe_string
 
-type error =
-  | Not_an_interface of filepath
-  | Wrong_version_interface of filepath * string
-  | Corrupted_interface of filepath
-
-exception Error of error
-
 type cmi_infos = {
     cmi_name : Misc.modname;
     cmi_sign : Types.signature_item list;
@@ -87,26 +80,4 @@ let output_cmi filename oc cmi =
   output_value oc cmi.cmi_flags;
   crc
 
-(* Error report *)
-
-open Format
-
-let report_error ppf = function
-  | Not_an_interface filename ->
-      fprintf ppf "%a@ is not a compiled interface"
-        Location.print_filename filename
-  | Wrong_version_interface (filename, older_newer) ->
-      fprintf ppf
-        "%a@ is not a compiled interface for this version of OCaml.@.\
-         It seems to be for %s version of OCaml."
-        Location.print_filename filename older_newer
-  | Corrupted_interface filename ->
-      fprintf ppf "Corrupted compiled interface@ %a"
-        Location.print_filename filename
-
-let () =
-  Location.register_error_of_exn
-    (function
-      | Error err -> Some (Location.error_of_printer_file report_error err)
-      | _ -> None
-    )
+(* Error report moved to {!Magic_numbers.Cmi} *)
