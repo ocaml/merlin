@@ -84,7 +84,7 @@ module Cache = File_cache.Make (struct
           else if String.is_prefixed ~by:"EXT " line then
             tell (`EXT (rev_split_words (String.drop 4 line)))
           else if String.is_prefixed ~by:"FLG " line then
-            tell (`FLG (String.drop 4 line))
+            tell (`FLG (Shell.split_command (String.drop 4 line)))
           else if String.is_prefixed ~by:"REC" line then
             recurse := true
           else if String.is_prefixed ~by:". " line then
@@ -441,11 +441,9 @@ let postprocess cfg =
     match Ppxsetup.command_line ppxsetup with
     | [] -> []
     | lst ->
-      let cmd =
-        List.map lst ~f:Import_from_dune.quote
-        |> String.concat ~sep:" "
+      let cmd = String.concat ~sep:" " lst
       in
-      [ `FLG ("-ppx " ^ cmd) ]
+      [ `FLG ["-ppx"; cmd] ]
   in
   List.concat
     [ List.concat_map cfg.to_canonicalize ~f:(fun (dir, directive) ->

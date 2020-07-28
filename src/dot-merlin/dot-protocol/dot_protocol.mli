@@ -47,7 +47,7 @@ module Directive : sig
 
   type no_processing_required =
     [ `EXT of string list
-    | `FLG of string
+    | `FLG of string list
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list

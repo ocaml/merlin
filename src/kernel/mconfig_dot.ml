@@ -86,7 +86,7 @@ let prepend_config ~dir:cwd (directives : directive list) config =
     | `SUFFIX suffix ->
       {config with suffixes = (parse_suffix suffix) @ config.suffixes}, errors
     | `FLG flags ->
-      let flags = {workdir = cwd; workval = Shell.split_command flags} in
+      let flags = {workdir = cwd; workval = flags} in
       {config with flags = flags :: config.flags}, errors
     | `STDLIB path ->
       {config with stdlib = Some path}, errors

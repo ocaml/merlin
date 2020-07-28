@@ -35,7 +35,7 @@ module Directive = struct
 
   type no_processing_required =
     [ `EXT of string list
-    | `FLG of string
+    | `FLG of string list
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list
@@ -84,7 +84,6 @@ module Sexp = struct
         | "B" -> `B value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
-        | "FLG" -> `FLG value
         | "STDLIB" -> `STDLIB value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
@@ -94,6 +93,7 @@ module Sexp = struct
         let value = strings_of_atoms l in
         begin match tag with
         | "EXT" -> `EXT value
+        | "FLG" -> `FLG value
         | "READER" -> `READER value
         | tag -> make_error tag
       end
@@ -110,7 +110,7 @@ module Sexp = struct
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
-        | `FLG s -> ("FLG", single s)
+        | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)
         | `SUFFIX s -> ("SUFFIX", single s)
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
