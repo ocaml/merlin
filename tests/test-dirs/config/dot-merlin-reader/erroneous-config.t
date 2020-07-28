@@ -39,3 +39,5 @@ Also, see that the failure is reported to the user:
     ],
     "notifications": []
   }
+
+  $ rm .merlin
