@@ -142,3 +142,15 @@ pprintast).
   ",
     "notifications": []
   }
+
+  $ $MERLIN single case-analysis -start 4:9 -end 4:11 -filename no_comp_pat.ml <<EOF \
+  > let _ = \
+  >   match (None : unit option) with \
+  >   | None -> () \
+  >   | exception _ -> () \
+  > EOF
+  {
+    "class": "error",
+    "value": "Destruct not allowed on computation pattern",
+    "notifications": []
+  }

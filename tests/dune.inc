@@ -150,6 +150,21 @@
 (alias (name runtest) (deps (alias destruct-basic)))
 
 (alias
+ (name destruct-more)
+ (deps (:t ./test-dirs/destruct/more.t)
+       (source_tree ./test-dirs/destruct)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server})
+ (action
+   (chdir ./test-dirs/destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias destruct-more)))
+
+(alias
  (name errors-alerts-test-pre-408)(enabled_if (< %{ocaml_version} 4.08.0))
  (deps (:t ./test-dirs/errors/alerts/test-pre-408.t)
        (source_tree ./test-dirs/errors/alerts)
