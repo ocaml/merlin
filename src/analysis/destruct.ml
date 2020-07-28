@@ -205,14 +205,23 @@ let rec get_every_pattern = function
       get_every_pattern parents
     | Expression _ ->
       (* We are on the right node *)
-      let patterns =
+      let patterns : Typedtree.pattern list =
         Mbrowse.fold_node (fun env node acc ->
           match node with
           | Pattern _ -> (* Not expected here *) assert false
           | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
-                match node with
-              | Pattern p -> p :: acc
+                 match node with
+              | Pattern p ->
+                begin match Typedtree.classify_pattern p with
+                | Value -> let p : Typedtree.pattern = p in p :: acc
+                | Computation -> let val_p, _ = Typedtree.split_pattern p in
+                  (* We ignore computation patterns *)
+                  begin match val_p with
+                  | Some val_p ->  val_p :: acc
+                  | None -> acc
+                  end
+                end
               | _ -> acc
               ) env node acc
           | _ -> acc
@@ -236,6 +245,7 @@ let rec destructible patt =
   | Tpat_any | Tpat_var _ -> true
   | Tpat_alias (p, _, _)  -> destructible p
   | _ -> false
+
 
 let is_package ty =
   match ty.Types.desc with
@@ -288,8 +298,6 @@ let rec subst_patt initial ~by patt =
     Raw_compat.Pattern.update_desc_exn patt (Tpat_or (f p1, f p2, row))
   | Tpat_lazy p ->
     Raw_compat.Pattern.update_desc_exn patt (Tpat_lazy (f p))
-  | Tpat_exception p ->
-    Raw_compat.Pattern.update_desc_exn patt (Tpat_exception (f p))
 
 let rec rm_sub patt sub =
   let f p = rm_sub p sub in
@@ -319,8 +327,6 @@ let rec rm_sub patt sub =
     Raw_compat.Pattern.update_desc_exn patt (Tpat_or (f p1, f p2, row))
   | Tpat_lazy p ->
     Raw_compat.Pattern.update_desc_exn patt (Tpat_lazy (f p))
-  | Tpat_exception p ->
-    Raw_compat.Pattern.update_desc_exn patt (Tpat_exception (f p) )
 
 let rec qualify_constructors f pat =
   let open Typedtree in
@@ -376,8 +382,7 @@ let find_branch patterns sub =
       | Tpat_variant (_, None, _) -> false
       | Tpat_alias (p,_,_)
       | Tpat_variant (_, Some p, _)
-      | Tpat_lazy p
-      | Tpat_exception p ->
+      | Tpat_lazy p ->
         is_sub_patt p ~sub
       | Tpat_tuple lst
       | Tpat_construct (_, _, lst)
@@ -422,75 +427,81 @@ let node config source node parents =
     let str = if needs_parentheses then "(" ^ str ^ ")" else str in
     loc, str
   | Pattern patt ->
-    let last_case_loc, patterns = get_every_pattern parents in
-    List.iter patterns ~f:(fun p ->
-      let p = filter_pat_attr (Untypeast.untype_pattern p) in
-      log ~title:"EXISTING" "%t"
-        (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
-    ) ;
-    let pss = List.map patterns ~f:(fun x -> [ x ]) in
-    begin match Parmatch.complete_partial pss with
-    | Some pat ->
-      let pat  = qualify_constructors Printtyp.shorten_type_path pat in
-      let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
-      let case = Ast_helper.Exp.case ppat placeholder in
-      let loc =
-        let open Location in
-        { last_case_loc with loc_start = last_case_loc.loc_end }
-      in
-      let str = Mreader.print_pretty
-           config source (Pretty_case_list [ case ]) in
-      loc, str
-    | None ->
-      if not (destructible patt) then raise Nothing_to_do else
-      let ty = patt.Typedtree.pat_type in
-      begin match gen_patterns patt.Typedtree.pat_env ty with
-      | [] -> assert false (* we raise Not_allowed, but never return [] *)
-      | [ more_precise ] ->
-        (* If only one pattern is generated, then we're only refining the
-           current pattern, not generating new branches. *)
-        let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
+    begin match Typedtree.classify_pattern patt with
+    | Computation -> raise (Not_allowed ("computation pattern"));
+    | Value ->
+      let _patt : Typedtree.value Typedtree.general_pattern = patt in
+      let last_case_loc, patterns = get_every_pattern parents in
+      (* Printf.eprintf "tot %d o%!"(List.length patterns); *)
+      List.iter patterns ~f:(fun p ->
+        let p = filter_pat_attr (Untypeast.untype_pattern p) in
+        log ~title:"EXISTING" "%t"
+          (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
+      ) ;
+      let pss = List.map patterns ~f:(fun x -> [ x ]) in
+      begin match Parmatch.complete_partial pss with
+      | Some pat ->
+        let pat  = qualify_constructors Printtyp.shorten_type_path pat in
+        let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
+        let case = Ast_helper.Exp.case ppat placeholder in
+        let loc =
+          let open Location in
+          { last_case_loc with loc_start = last_case_loc.loc_end }
+        in
         let str = Mreader.print_pretty
-            config source (Pretty_pattern ppat) in
-        patt.Typedtree.pat_loc, str
-      | sub_patterns ->
-        let rev_before, after, top_patt =
-          find_branch patterns patt
-        in
-        let new_branches =
-          List.map sub_patterns ~f:(fun by ->
-            subst_patt patt ~by top_patt
-          )
-        in
-        let patterns =
-          List.rev_append rev_before
-            (List.append new_branches after)
-        in
-        let unused = Parmatch.return_unused patterns in
-        let new_branches =
-          List.fold_left unused ~init:new_branches ~f:(fun branches u ->
-            match u with
-            | `Unused p -> List.remove ~phys:true p branches
-            | `Unused_subs (p, lst) ->
-              List.map branches ~f:(fun branch ->
-                if branch != p then branch else
-                List.fold_left lst ~init:branch ~f:rm_sub
-              )
-          )
-        in
-        match new_branches with
-        | [] -> raise Useless_refine
-        | p :: ps ->
-          let p =
-            List.fold_left ps ~init:p ~f:(fun acc p ->
-              Tast_helper.Pat.pat_or top_patt.Typedtree.pat_env
-                top_patt.Typedtree.pat_type acc p
-            )
-          in
-          let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
+            config source (Pretty_case_list [ case ]) in
+        loc, str
+      | None ->
+       if not (destructible patt) then raise Nothing_to_do else
+        let ty = patt.Typedtree.pat_type in
+        begin match gen_patterns patt.Typedtree.pat_env ty with
+        | [] -> assert false (* we raise Not_allowed, but never return [] *)
+        | [ more_precise ] ->
+          (* If only one pattern is generated, then we're only refining the
+            current pattern, not generating new branches. *)
+          let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
           let str = Mreader.print_pretty
               config source (Pretty_pattern ppat) in
-          top_patt.Typedtree.pat_loc, str
+          patt.Typedtree.pat_loc, str
+        | sub_patterns ->
+          let rev_before, after, top_patt =
+            find_branch patterns patt
+          in
+          let new_branches =
+            List.map sub_patterns ~f:(fun by ->
+              subst_patt patt ~by top_patt
+            )
+          in
+          let patterns =
+            List.rev_append rev_before
+              (List.append new_branches after)
+          in
+          let unused = Parmatch.return_unused patterns in
+          let new_branches =
+            List.fold_left unused ~init:new_branches ~f:(fun branches u ->
+              match u with
+              | `Unused p -> List.remove ~phys:true p branches
+              | `Unused_subs (p, lst) ->
+                List.map branches ~f:(fun branch ->
+                  if branch != p then branch else
+                  List.fold_left lst ~init:branch ~f:rm_sub
+                )
+            )
+          in
+          match new_branches with
+          | [] -> raise Useless_refine
+          | p :: ps ->
+            let p =
+              List.fold_left ps ~init:p ~f:(fun acc p ->
+                Tast_helper.Pat.pat_or top_patt.Typedtree.pat_env
+                  top_patt.Typedtree.pat_type acc p
+              )
+            in
+            let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
+            let str = Mreader.print_pretty
+                config source (Pretty_pattern ppat) in
+            top_patt.Typedtree.pat_loc, str
+        end
       end
     end
   | node ->
