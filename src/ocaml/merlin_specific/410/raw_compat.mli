@@ -54,46 +54,30 @@ val si_modtype_opt : Types.signature_item -> Types.module_type option
 module Pattern : sig
   open Asttypes
 
+  type pattern = Typedtree.pattern
 
-  type value = unit
-  type computation = unit
+  type desc_view =
+    | Tpat_any
+    | Tpat_var of Ident.t * string loc
+    | Tpat_alias of pattern * Ident.t * string loc
+    | Tpat_constant of constant
+    | Tpat_tuple of pattern list
+    | Tpat_construct of
+        Longident.t loc * Types.constructor_description * pattern list
+    | Tpat_variant of label * pattern option * Types.row_desc ref
+    | Tpat_record of
+        (Longident.t loc * Types.label_description * pattern) list *
+        closed_flag
+    | Tpat_array of pattern list
+    | Tpat_or of pattern * pattern * Types.row_desc option
+    | Tpat_lazy of pattern
+    | Tpat_exception of pattern
 
-  type 'a general_pattern = Typedtree.pattern
-  type 'a pattern = 'a general_pattern
-
-  type _ desc_view =
-    | Tpat_any : value desc_view
-    | Tpat_var : Ident.t * string loc -> value desc_view
-    | Tpat_alias :
-        value general_pattern * Ident.t * string loc -> value desc_view
-    | Tpat_constant : constant -> value desc_view
-    | Tpat_tuple : value general_pattern list -> value desc_view
-    | Tpat_construct :
-        Longident.t loc * Types.constructor_description *
-          value general_pattern list ->
-        value desc_view
-    | Tpat_variant :
-        label * value general_pattern option * Types.row_desc ref ->
-        value desc_view
-    | Tpat_record :
-        (Longident.t loc * Types.label_description * value general_pattern) list *
-          closed_flag ->
-        value desc_view
-    | Tpat_array : value general_pattern list -> value desc_view
-    | Tpat_lazy : value general_pattern -> value desc_view
-    | Tpat_value : tpat_value_argument -> computation desc_view
-    | Tpat_exception : value general_pattern -> computation desc_view
-    | Tpat_or :
-        'k general_pattern * 'k general_pattern * Types.row_desc option ->
-        'k desc_view
-
-  and tpat_value_argument = private value general_pattern
-
-  val view : 'a pattern -> 'a desc_view
+  val view : pattern -> desc_view
 
   exception Not_supported
 
-  val update_desc_exn : 'a pattern -> 'a desc_view -> 'a pattern
+  val update_desc_exn : pattern -> desc_view -> pattern
   (** will raise [Not_supported] if the desc doesn't exist in that version of
       OCaml. *)
 end

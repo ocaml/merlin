@@ -173,76 +173,30 @@ let si_modtype_opt : Types.signature_item -> Types.module_type option = function
 module Pattern = struct
   open Asttypes
 
-  type value = unit
-  type computation = unit
+  type pattern = Typedtree.pattern
 
-  type _ pattern = Typedtree.pattern
-  type 'a general_pattern = 'a pattern
+  type desc_view = Typedtree.pattern_desc =
+    | Tpat_any
+    | Tpat_var of Ident.t * string loc
+    | Tpat_alias of pattern * Ident.t * string loc
+    | Tpat_constant of constant
+    | Tpat_tuple of pattern list
+    | Tpat_construct of
+        Longident.t loc * Types.constructor_description * pattern list
+    | Tpat_variant of label * pattern option * Types.row_desc ref
+    | Tpat_record of
+        (Longident.t loc * Types.label_description * pattern) list *
+        closed_flag
+    | Tpat_array of pattern list
+    | Tpat_or of pattern * pattern * Types.row_desc option
+    | Tpat_lazy of pattern
+    | Tpat_exception of pattern
 
-  type _ desc_view =
-    | Tpat_any : value desc_view
-    | Tpat_var : Ident.t * string loc -> value desc_view
-    | Tpat_alias :
-        value general_pattern * Ident.t * string loc -> value desc_view
-    | Tpat_constant : constant -> value desc_view
-    | Tpat_tuple : value general_pattern list -> value desc_view
-    | Tpat_construct :
-        Longident.t loc * Types.constructor_description *
-          value general_pattern list ->
-        value desc_view
-    | Tpat_variant :
-        label * value general_pattern option * Types.row_desc ref ->
-        value desc_view
-    | Tpat_record :
-        (Longident.t loc * Types.label_description * value general_pattern) list *
-          closed_flag ->
-        value desc_view
-    | Tpat_array : value general_pattern list -> value desc_view
-    | Tpat_lazy : value general_pattern -> value desc_view
-    | Tpat_value : tpat_value_argument -> computation desc_view
-    | Tpat_exception : value general_pattern -> computation desc_view
-    | Tpat_or :
-        'k general_pattern * 'k general_pattern * Types.row_desc option ->
-        'k desc_view
-
-  and tpat_value_argument = private value pattern
-
-  let view (type a) (p : a pattern) : a desc_view =
-    Obj.magic (* Well. *) @@
-    match p.Typedtree.pat_desc with
-    | Tpat_any -> Tpat_any
-    | Tpat_var (id, s) -> Tpat_var (id, s)
-    | Tpat_alias (p, id, s) -> Tpat_alias (p, id, s)
-    | Tpat_constant c -> Tpat_constant c
-    | Tpat_tuple ps -> Tpat_tuple ps
-    | Tpat_construct (lid, cd, ps) -> Tpat_construct (lid, cd, ps)
-    | Tpat_variant (lbl, po, rd) -> Tpat_variant (lbl, po, rd)
-    | Tpat_record (flds, cf) -> Tpat_record (flds, cf)
-    | Tpat_array ps -> Tpat_array ps
-    | Tpat_or (p1, p2, row) -> Tpat_or (p1, p2, row)
-    | Tpat_lazy p -> Tpat_lazy p
-    | Tpat_exception p -> Tpat_exception p
+  let view p = p.Typedtree.pat_desc
 
   exception Not_supported
 
-  let update_desc_exn (type a) p (desc_view : a desc_view) =
-    let pat_desc : Typedtree.pattern_desc =
-      match desc_view with
-      | Tpat_value _ -> raise Not_supported
-      | Tpat_any -> Tpat_any
-      | Tpat_var (id, s) -> Tpat_var (id, s)
-      | Tpat_alias (p, id, s) -> Tpat_alias (p, id, s)
-      | Tpat_constant c -> Tpat_constant c
-      | Tpat_tuple ps -> Tpat_tuple ps
-      | Tpat_construct (lid, cd, ps) -> Tpat_construct (lid, cd, ps)
-      | Tpat_variant (lbl, po, rd) -> Tpat_variant (lbl, po, rd)
-      | Tpat_record (flds, cf) -> Tpat_record (flds, cf)
-      | Tpat_array ps -> Tpat_array ps
-      | Tpat_or (p1, p2, row) -> Tpat_or (p1, p2, row)
-      | Tpat_lazy p -> Tpat_lazy p
-      | Tpat_exception p -> Tpat_exception p
-    in
-    { p with Typedtree. pat_desc }
+  let update_desc_exn p pat_desc = { p with Typedtree. pat_desc }
 end
 
 let md_id { Typedtree.md_id; _ } = Some md_id
