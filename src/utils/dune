@@ -11,7 +11,7 @@
 (library
  (name merlin_utils)
  (libraries str yojson unix result)
- (c_names platform_misc))
+ (foreign_stubs (language c) (names platform_misc)))
 
 ; [Printf.ifprintf] doesn't have the right type before ocaml/ocaml#201, and
 ; [make_iprintf] doesn't exist before ocaml/ocaml#267

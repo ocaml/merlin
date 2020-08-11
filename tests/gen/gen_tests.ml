@@ -23,8 +23,8 @@ let gen_rule dir file =
       |> Filename.chop_extension
   in
   Printf.printf {|
-(alias
- (name %s)%s
+(rule
+ (alias %s)%s
  (package merlin)
  (deps (:t %s)
        (source_tree %s)
