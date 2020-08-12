@@ -1,7 +1,7 @@
 Create a .merlin:
 
-  $ cat > .merlin <<EOF \
-  > S ../../../../src/frontend \
+  $ cat > .merlin <<EOF
+  > S ../../../../src/frontend
   > EOF
 
   $ echo | $MERLIN single check-configuration -filename test.ml

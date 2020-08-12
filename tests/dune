@@ -4,23 +4,85 @@
  (action
    (progn
      (with-stdout-to %{targets}
-       (run sed -e "s#%%OCAMLMERLIN_PATH%%#%{bin:ocamlmerlin}#"
-                -e "s#%%DOT_MERLIN_READER%%#%{bin:dot-merlin-reader}#"
+       (run sed -e "s#%%OCAMLMERLIN_PATH%%#ocamlmerlin#"
+                -e "s#%%DOT_MERLIN_READER%%#dot-merlin-reader#"
             merlin-wrapper-template))
      (bash "chmod +x %{targets}"))))
 
+
+(env (_
+ (binaries merlin-wrapper)
+ (env-vars 
+  (MERLIN merlin-wrapper)
+  (OCAMLC ocamlc))))
+
 (alias
-  (name runtest)
-  (deps merlin-wrapper))
+ (name test-deps)
+ (deps
+  %{bin:merlin-wrapper}
+  (package merlin)
+  (package dot-merlin-reader)))
 
-(include dune.inc)
+(cram
+ (applies_to :whole_subtree)
+ (deps (alias test-deps)))
 
-(rule
- (targets dune.inc.gen)
- (deps    (source_tree .))
- (action  (with-stdout-to %{targets} (run ./gen/gen_tests.exe))))
+(subdir test-dirs/pre-410
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (< %{ocaml_version} 4.10.0))))
 
-(rule
- (alias   runtest)
- (package merlin)
- (action (diff dune.inc dune.inc.gen)))
+(subdir test-dirs/from-410
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (>= %{ocaml_version} 4.10.0))))
+
+(subdir test-dirs/pre-409
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (< %{ocaml_version} 4.09.0))))
+
+(subdir test-dirs/from-409
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (>= %{ocaml_version} 4.09.0))))
+
+(subdir test-dirs/pre-408
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (< %{ocaml_version} 4.08.0))))
+
+(subdir test-dirs/from-408
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (>= %{ocaml_version} 4.08.0))))
+
+(subdir test-dirs/pre-407
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (< %{ocaml_version} 4.07.0))))
+
+(subdir test-dirs/from-407
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (>= %{ocaml_version} 4.07.0))))
+
+(subdir test-dirs/pre-406
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (< %{ocaml_version} 4.06.0))))
+
+(subdir test-dirs/from-406
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (>= %{ocaml_version} 4.06.0))))
+
+(subdir test-dirs/pre-404
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (< %{ocaml_version} 4.04.0))))
+
+(subdir test-dirs/from-404
+ (cram
+  (applies_to :whole_subtree)
+  (enabled_if (>= %{ocaml_version} 4.04.0))))

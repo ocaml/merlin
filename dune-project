@@ -2,4 +2,5 @@
 (name merlin)
 (using menhir 2.0)
 
+(cram enable)
 (implicit_transitive_deps false)
