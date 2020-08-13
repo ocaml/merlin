@@ -87,6 +87,10 @@ module Sexp = struct
         | "STDLIB" -> `STDLIB value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
+        | "FLG" ->
+            (* This means merlin asked dune 2.6 for configuration.
+              But the protocole evolved, only dune 2.8 should be used *)
+            `ERROR_MSG "No .merlin file found. Try building the project."
         | tag -> make_error tag
       end
     | List [ Atom tag; List l ] ->
