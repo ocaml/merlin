@@ -2,8 +2,8 @@ Testing array desugaring
 
   $ touch .merlin
 
-  $ $MERLIN single errors -filename array_good.ml <<EOF \
-  > let x = [|0|].(0) \
+  $ $MERLIN single errors -filename array_good.ml <<EOF
+  > let x = [|0|].(0)
   > EOF
   {
     "class": "return",
@@ -11,9 +11,9 @@ Testing array desugaring
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename array_bad.ml <<EOF \
-  > module Array = struct end \
-  > let x = [|0|].(0) \
+  $ $MERLIN single errors -filename array_bad.ml <<EOF
+  > module Array = struct end
+  > let x = [|0|].(0)
   > EOF
   {
     "class": "return",
@@ -36,9 +36,9 @@ Testing array desugaring
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename array_fake_good.ml <<EOF \
-  > module Array = struct let get _ _ = () end \
-  > let x = [|0|].(0) \
+  $ $MERLIN single errors -filename array_fake_good.ml <<EOF
+  > module Array = struct let get _ _ = () end
+  > let x = [|0|].(0)
   > EOF
   {
     "class": "return",
@@ -46,8 +46,8 @@ Testing array desugaring
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename unsafe_array_good.ml -unsafe <<EOF \
-  > let x = [|0|].(0) \
+  $ $MERLIN single errors -filename unsafe_array_good.ml -unsafe <<EOF
+  > let x = [|0|].(0)
   > EOF
   {
     "class": "return",
@@ -55,9 +55,9 @@ Testing array desugaring
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename unsafe_array_bad.ml -unsafe <<EOF \
-  > module Array = struct end \
-  > let x = [|0|].(0) \
+  $ $MERLIN single errors -filename unsafe_array_bad.ml -unsafe <<EOF
+  > module Array = struct end
+  > let x = [|0|].(0)
   > EOF
   {
     "class": "return",
@@ -80,9 +80,9 @@ Testing array desugaring
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename unsafe_array_fake_good.ml -unsafe <<EOF \
-  > module Array = struct let unsafe_get _ _ = () end \
-  > let x = [|0|].(0) \
+  $ $MERLIN single errors -filename unsafe_array_fake_good.ml -unsafe <<EOF
+  > module Array = struct let unsafe_get _ _ = () end
+  > let x = [|0|].(0)
   > EOF
   {
     "class": "return",
