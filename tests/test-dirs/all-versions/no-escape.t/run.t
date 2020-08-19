@@ -1,7 +1,7 @@
 These tests ensure that all type errors are caught by the kernel, no exception
 should reach top-level
 
-  $ echo "type p = P : 'a -> 'a -> p" | \
+  $ echo "type p = P : 'a -> 'a -> p" |
   > $MERLIN single errors -filename ./incorrect_gadt.ml
   {
     "class": "return",
@@ -39,7 +39,7 @@ should reach top-level
     "notifications": []
   }
 
-  $ echo "let error : unknown_type_constructor = assert false" | \
+  $ echo "let error : unknown_type_constructor = assert false" |
   > $MERLIN single errors -filename  "unkown_constr.ml"
   {
     "class": "return",
@@ -62,7 +62,7 @@ should reach top-level
     "notifications": []
   }
 
-  $ echo "val error : unknown_type_constructor" | \
+  $ echo "val error : unknown_type_constructor" |
   > $MERLIN single errors -filename  "unkown_constr.mli"
   {
     "class": "return",
@@ -85,7 +85,7 @@ should reach top-level
     "notifications": []
   }
 
-  $ echo "type t = A | A" | \
+  $ echo "type t = A | A" |
   > $MERLIN single errors -filename  "two_constr.ml"
   {
     "class": "return",
@@ -108,7 +108,7 @@ should reach top-level
     "notifications": []
   }
 
-  $ echo "type t = A | A" | \
+  $ echo "type t = A | A" |
   > $MERLIN single errors -filename  "two_constr.mli"
   {
     "class": "return",
@@ -131,7 +131,7 @@ should reach top-level
     "notifications": []
   }
 
-  $ echo "let x = 4 val x : int" | \
+  $ echo "let x = 4 val x : int" |
   > $MERLIN single errors -filename  "ml_in_mli.mli"
   {
     "class": "return",
@@ -156,7 +156,7 @@ should reach top-level
 
 vals are no allowed in ml files and detected during semantic analysis
 
-  $ echo "val x : int" | \
+  $ echo "val x : int" |
   > $MERLIN single errors -filename  "mli_in_ml.ml"
   {
     "class": "return",
@@ -182,12 +182,12 @@ vals are no allowed in ml files and detected during semantic analysis
 The code should raise a single error (for Bb typo), but shouldn't report the
 unused case after
 
-  $ $MERLIN single errors -filename "unused_case_after_error.ml" <<EOF \
-  > type t = A | B | C \
-  > let f = function \
-  >   | A -> 1 \
-  >   | Bb -> 1 \
-  >   | C -> 1 \
+  $ $MERLIN single errors -filename "unused_case_after_error.ml" <<EOF
+  > type t = A | B | C
+  > let f = function
+  >   | A -> 1
+  >   | Bb -> 1
+  >   | C -> 1
   > EOF
   {
     "class": "return",
@@ -213,7 +213,7 @@ unused case after
 
 Syntax errors also shouldn't escape:
 
-  $ echo "let f (_ : (module S with type 'a t = int)) = ()" | \
+  $ echo "let f (_ : (module S with type 'a t = int)) = ()" |
   > $MERLIN single errors -filename "invalid_package_type.ml"
   {
     "class": "return",
@@ -264,7 +264,7 @@ a different behavior between:
 And:
 
   $ echo "let x = 3" | \
-  > $MERLIN single errors -open Absent_unit -filename "env_init.ml" | \
+  > $MERLIN single errors -open Absent_unit -filename "env_init.ml" |
   > jq ".value |= (map(del(.start.line) | del(.end.line)))"
   {
     "class": "return",
@@ -312,7 +312,7 @@ When typing the Test module, Merlin will try to load the Foo dependency.
 However foo.cmi is not a valid cmi file, we must make sure Merlin handle this
 properly (this should also cover the "wrong magic number" case).
 
-  $ $MERLIN single errors -filename test_use.ml < test_use.ml | \
+  $ $MERLIN single errors -filename test_use.ml < test_use.ml |
   > tr '\r\n' ' ' | jq ".value |= (map(del(.start.line) | del(.end.line)))"
   {
     "class": "return",
@@ -327,13 +327,13 @@ properly (this should also cover the "wrong magic number" case).
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Corrupted compiled interface tests/test-dirs/no-escape/foo.cmi"
+        "message": "Corrupted compiled interface $TESTCASE_ROOT/foo.cmi"
       }
     ],
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename test_open.ml -open Foo < test_open.ml | \
+  $ $MERLIN single errors -filename test_open.ml -open Foo < test_open.ml |
   > tr '\r\n' ' ' | jq ".value |= (map(del(.start.line) | del(.end.line)))"
   {
     "class": "return",
@@ -348,7 +348,7 @@ properly (this should also cover the "wrong magic number" case).
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Corrupted compiled interface tests/test-dirs/no-escape/foo.cmi"
+        "message": "Corrupted compiled interface $TESTCASE_ROOT/foo.cmi"
       }
     ],
     "notifications": []
