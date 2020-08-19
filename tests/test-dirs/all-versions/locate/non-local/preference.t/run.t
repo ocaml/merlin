@@ -9,7 +9,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/preference/a.ml",
+      "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 1,
         "col": 4
@@ -22,7 +22,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/preference/a.ml",
+      "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 1,
         "col": 4
@@ -35,7 +35,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/preference/a.ml",
+      "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 1,
         "col": 4
@@ -48,7 +48,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/preference/a.mli",
+      "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 3,
         "col": 0
@@ -61,7 +61,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/preference/a.mli",
+      "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 3,
         "col": 0
@@ -74,7 +74,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/preference/a.mli",
+      "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 3,
         "col": 0

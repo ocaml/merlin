@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/context-detection/field.ml",
+      "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -16,7 +16,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/context-detection/field.ml",
+      "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -31,7 +31,7 @@ the field bar rather than the identifier.
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/context-detection/field.ml",
+      "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 10,
         "col": 2
@@ -45,7 +45,7 @@ Normal punning works as expected:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/context-detection/field.ml",
+      "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 14,
         "col": 4

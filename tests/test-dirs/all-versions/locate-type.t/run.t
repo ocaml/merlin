@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate-type/a.ml",
+      "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 2,
         "col": 2

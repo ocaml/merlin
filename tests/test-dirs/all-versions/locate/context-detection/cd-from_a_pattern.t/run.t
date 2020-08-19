@@ -28,7 +28,7 @@ We call locate from the broken pattern:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/context-detection/from_a_pattern.ml",
+      "file": "$TESTCASE_ROOT/from_a_pattern.ml",
       "pos": {
         "line": 1,
         "col": 0

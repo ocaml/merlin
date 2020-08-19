@@ -5,7 +5,7 @@
     "class": "return",
     "value": {
       "dot_merlins": [
-        "tests/test-dirs/config/flags/.merlin"
+        "$TESTCASE_ROOT/.merlin"
       ],
       "failures": [
         "unknown flag -lalala"

@@ -9,7 +9,7 @@ Make sure that we do not use locations coming from the cmi:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/ignore-kept-locs/a.ml",
+      "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 1,
         "col": 4
@@ -28,7 +28,7 @@ Make sure that we do not use locations coming from the cmi:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/non-local/ignore-kept-locs/a.ml",
+      "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 1,
         "col": 4

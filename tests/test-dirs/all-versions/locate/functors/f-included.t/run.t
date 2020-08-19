@@ -4,7 +4,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/functors/included.ml",
+      "file": "$TESTCASE_ROOT/included.ml",
       "pos": {
         "line": 14,
         "col": 6

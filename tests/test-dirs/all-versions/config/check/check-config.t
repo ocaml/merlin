@@ -9,7 +9,7 @@ Create a .merlin:
     "class": "return",
     "value": {
       "dot_merlins": [
-        "tests/test-dirs/config/check/.merlin"
+        "$TESTCASE_ROOT/.merlin"
       ],
       "failures": []
     },

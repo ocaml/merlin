@@ -4,7 +4,7 @@ Jumping to Z.foo before the rebinding of X:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/ambiguity/rebinding.ml",
+      "file": "$TESTCASE_ROOT/rebinding.ml",
       "pos": {
         "line": 4,
         "col": 10
@@ -19,7 +19,7 @@ Jumping to Z.foo after the rebinding of X:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/ambiguity/rebinding.ml",
+      "file": "$TESTCASE_ROOT/rebinding.ml",
       "pos": {
         "line": 4,
         "col": 10

@@ -4,7 +4,7 @@ Check that we handle generative functors properly:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/functors/generative.ml",
+      "file": "$TESTCASE_ROOT/generative.ml",
       "pos": {
         "line": 8,
         "col": 6

@@ -3,7 +3,7 @@
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/context-detection/environment_on_open.ml",
+      "file": "$TESTCASE_ROOT/environment_on_open.ml",
       "pos": {
         "line": 1,
         "col": 0

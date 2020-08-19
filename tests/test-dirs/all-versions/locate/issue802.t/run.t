@@ -12,7 +12,7 @@ Test jumping from a normal constructor:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -27,7 +27,7 @@ From an exception:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 3,
         "col": 0
@@ -42,7 +42,7 @@ From an extension constructor:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 7,
         "col": 12
@@ -57,7 +57,7 @@ And from the extensible type name itself:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/issue802/error.ml",
+      "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 5,
         "col": 0

@@ -5,7 +5,7 @@ We need to be careful about newlines in Lexer_ident:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/reconstruct-identifier/newline_in_quotes.ml",
+      "file": "$TESTCASE_ROOT/newline_in_quotes.ml",
       "pos": {
         "line": 1,
         "col": 4
@@ -19,7 +19,7 @@ We need to be careful about newlines in Lexer_ident:
   {
     "class": "return",
     "value": {
-      "file": "tests/test-dirs/locate/reconstruct-identifier/escaped_newline.ml",
+      "file": "$TESTCASE_ROOT/escaped_newline.ml",
       "pos": {
         "line": 1,
         "col": 4
