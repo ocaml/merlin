@@ -165,8 +165,8 @@
 (alias (name runtest) (deps (alias destruct-basic)))
 
 (alias
- (name destruct-more)
- (deps (:t ./test-dirs/destruct/more.t)
+ (name destruct-since_411)(enabled_if (>= %{ocaml_version} 4.11.0))
+ (deps (:t ./test-dirs/destruct/since_411.t)
        (source_tree ./test-dirs/destruct)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server})
@@ -177,7 +177,7 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias destruct-more)))
+(alias (name runtest) (deps (alias destruct-since_411)))
 
 (alias
  (name errors-alerts-test-pre-408)(enabled_if (< %{ocaml_version} 4.08.0))
