@@ -28,5 +28,7 @@ env:
     PACKAGE=merlin
   - OCAML_VERSION=4.10
     PACKAGE=merlin
+  - OCAML_VERSION=4.11
+    PACKAGE=merlin
 os:
   - linux

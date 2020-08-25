@@ -90,13 +90,9 @@ let extract_syntax_error (id, payload : extension) : string * Location.t =
     invalid_arg "Merlin_extend.Reader_helper.extract_syntax_error";
   let invalid_msg =
       "Warning: extension produced an incorrect syntax-error node" in
-   let msg = match payload with
-     | PStr [{ pstr_desc = Pstr_eval (
-         {Parsetree. pexp_desc =
-            Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _)) ; _ }, _
-       ); _ }] ->
-       msg
-     | _ -> invalid_msg
+   let msg = match Ast_helper.extract_str_payload payload with
+     | Some (msg, _loc) -> msg
+     | None -> invalid_msg
   in
   msg, id.Location.loc
 

@@ -395,6 +395,8 @@ module Cstr:
 (* merlin specific *)
 
 val no_label : label
+val extract_str_payload : payload -> (string * Location.t) option
+
 (* backported from 4.08 *)
 
 (** {1 Attributes} *)

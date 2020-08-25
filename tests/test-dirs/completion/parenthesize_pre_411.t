@@ -1,3 +1,5 @@
+(enabled_if (< %{ocaml_version} 4.11.0))
+
   $ $MERLIN single complete-prefix -position 11:15 -prefix MyList. \
   > -filename parenthesize.ml < parenthesize.ml | jq ".value.entries | sort_by(.name)"
   [

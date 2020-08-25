@@ -7,3 +7,4 @@
 (context (opam (switch 4.08.1)))
 (context (opam (switch 4.09.0)))
 (context (opam (switch 4.10.0) (merlin)))
+(context (opam (switch ocaml-variants.4.11.0+beta2)))

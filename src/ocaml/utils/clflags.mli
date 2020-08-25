@@ -34,3 +34,5 @@ val for_package          : string option ref
 val debug                : bool ref
 val opaque               : bool ref
 val unboxed_types        : bool ref
+
+val locations            : bool ref

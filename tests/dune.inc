@@ -51,9 +51,9 @@
 (alias (name runtest) (deps (alias completion-infix)))
 
 (alias
- (name completion-parenthesize)
+ (name completion-parenthesize_from_411)(enabled_if (>= %{ocaml_version} 4.11.0))
  (package merlin)
- (deps (:t ./test-dirs/completion/parenthesize.t)
+ (deps (:t ./test-dirs/completion/parenthesize_from_411.t)
        (source_tree ./test-dirs/completion)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server}
@@ -65,7 +65,24 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias completion-parenthesize)))
+(alias (name runtest) (deps (alias completion-parenthesize_from_411)))
+
+(alias
+ (name completion-parenthesize_pre_411)(enabled_if (< %{ocaml_version} 4.11.0))
+ (package merlin)
+ (deps (:t ./test-dirs/completion/parenthesize_pre_411.t)
+       (source_tree ./test-dirs/completion)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/completion
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias completion-parenthesize_pre_411)))
 
 (alias
  (name config-check-check-config)
@@ -202,6 +219,23 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias destruct-basic)))
+
+(alias
+ (name destruct-since_411)(enabled_if (>= %{ocaml_version} 4.11.0))
+ (package merlin)
+ (deps (:t ./test-dirs/destruct/since_411.t)
+       (source_tree ./test-dirs/destruct)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias destruct-since_411)))
 
 (alias
  (name errors-alerts-test-pre-408)(enabled_if (< %{ocaml_version} 4.08.0))

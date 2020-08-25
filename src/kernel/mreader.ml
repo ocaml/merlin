@@ -176,23 +176,11 @@ let parse ?for_completion config source =
 (*
 let apply_directives config tree =
   let config = ref config in
-  let read_payload =
-    let open Parsetree in function
-      | PStr[{ pstr_desc = Pstr_eval(expr, _) ; _}] ->
-        begin match expr with
-          | {Parsetree. pexp_desc =
-               Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _))
-            ; _ } ->
-            Some (msg, expr.pexp_loc)
-          | _ -> None
-        end
-      | _ -> None
-  in
   let attribute _ attr =
     let ({Location. txt = name; _}, payload) = Ast_helper.Attr.as_tuple attr in
     match name with
     | "merlin.directive.require" ->
-      begin match read_payload payload with
+      begin match Ast_helper.extract_str_payload payload with
         | None -> ()
         | Some (package, _) ->
           let open Mconfig in

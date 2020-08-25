@@ -489,6 +489,16 @@ end
 
 let no_label = ""
 
+(* Can't be put in Raw_compat because that module depends on library "parsing",
+   but we need that function in this library *)
+let extract_str_payload = function
+  | PStr [{ pstr_desc = Pstr_eval (
+      {Parsetree. pexp_loc; pexp_desc =
+         Parsetree.Pexp_constant (Parsetree.Pconst_string (msg, _)) ; _ }, _
+    ); _ }] ->
+    Some (msg, pexp_loc)
+  | _ -> None
+
 (* backported from 4.08 *)
 
 (** {1 Attributes} *)

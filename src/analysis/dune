@@ -1,3 +1,23 @@
+(* -*- tuareg -*- *)
+
+module J = Jbuild_plugin.V1
+;;
+
+let ocaml_ver =
+    Scanf.sscanf J.ocaml_version "%s@.%s@." (fun maj min -> maj ^ min)
+;;
+
+let ver =
+  if ocaml_ver >= "411" then
+    "new"
+  else
+    "old"
+;;
+
+Printf.ksprintf J.send {|
+(rule
+ (action (copy# destruct.ml.%s destruct.ml)))
+
 (library
  (name merlin_analysis)
  (wrapped false)
@@ -12,3 +32,4 @@
   query_protocol
   typing
   utils))
+|} ver

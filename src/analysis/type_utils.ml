@@ -308,19 +308,10 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
 (* From doc-ock
    https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml *)
 let read_doc_attributes attrs =
-  let read_payload =
-    let open Parsetree in function
-      | PStr[{ pstr_desc = Pstr_eval(
-          ({Parsetree. pexp_desc =
-              Parsetree.Pexp_constant (Parsetree.Pconst_string (str, _)) ; _} as expr), _)
-        ; _ }] ->
-        Some(str, expr.pexp_loc)
-      | _ -> None
-  in
   let rec loop = function
     | ({Location.txt =
           ("doc" | "ocaml.doc"); loc = _}, payload) :: _ ->
-      read_payload payload
+      Ast_helper.extract_str_payload payload
     | _ :: rest -> loop rest
     | [] -> None
   in

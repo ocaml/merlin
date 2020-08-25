@@ -33,25 +33,7 @@ open Browse_raw
 type node = Browse_raw.node
 type t = (Env.t * node) list
 
-let node_of_binary_part env part =
-  let open Cmt_format in
-  match part with
-  | Partial_structure x ->
-    Browse_raw.Structure x
-  | Partial_structure_item x ->
-    Browse_raw.Structure_item (x, env)
-  | Partial_expression x ->
-    Browse_raw.Expression x
-  | Partial_pattern x ->
-    Browse_raw.Pattern x
-  | Partial_class_expr x ->
-    Browse_raw.Class_expr x
-  | Partial_signature x ->
-    Browse_raw.Signature x
-  | Partial_signature_item x ->
-    Browse_raw.Signature_item (x, env)
-  | Partial_module_type x ->
-    Browse_raw.Module_type x
+let node_of_binary_part = Browse_raw.node_of_binary_part
 
 let fold_node f env t acc =
   let acc =

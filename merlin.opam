@@ -10,7 +10,7 @@ build: [
   ["dune" "runtest" "-p" name "-j" jobs] {with-test & os != "macos" & ocaml:version >= "4.03"}
 ]
 depends: [
-  "ocaml" {>= "4.02.3" & < "4.11"}
+  "ocaml" {>= "4.02.3" & < "4.12"}
   "dune" {>= "1.8.0"}
   "dot-merlin-reader" {>= "1.0"}
   "yojson" {>= "1.6.0"}
