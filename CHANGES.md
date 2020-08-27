@@ -1,3 +1,10 @@
+merlin 3.3.8
+============
+Thu Aug 27 14:48:42 CEST 2020
+
+  + merlin binary
+    - dune: restore compatibility with dune 1.8.0 (#1157, #1153)
+
 merlin 3.3.7
 ============
 Tue Aug 25 15:13:42 CEST 2020
