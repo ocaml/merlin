@@ -26,12 +26,13 @@ jobs:
         ocaml-version:
           - 4.03.0
           - 4.04.2
-          - 4.05.0
-          - 4.06.1
+          #- 4.05.0
+          #- 4.06.1
           - 4.07.1
           - 4.08.1
           - 4.09.1
           - 4.10.1
+          - 4.11.0
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
