@@ -1,0 +1,57 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          #- macos-latest
+          - ubuntu-latest
+          #- windows-latest
+        ocaml-version:
+          - 4.03.0
+          - 4.04.2
+          - 4.05.0
+          - 4.06.1
+          - 4.07.1
+          - 4.08.1
+          - 4.09.1
+          - 4.10.1
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          # A directory to store and save the cache
+          path: ~/.opam
+          # An explicit key for restoring and saving the cache
+          key: ${{ matrix.os }}-${{ matrix.ocaml-version }}-build
+      - name: Set up OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1.0.1
+        with:
+          # Version of the OCaml compiler to initialise
+          ocaml-version: ${{ matrix.ocaml-version }}
+
+      - run: opam pin add merlin.dev . --no-action
+      - run: opam pin add dot-merlin-reader.dev . --no-action
+      - run: opam install . --deps-only --with-test
+      - run: opam exec -- dune build
+      - run: opam exec -- dune runtest
