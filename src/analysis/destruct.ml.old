@@ -32,6 +32,7 @@ open Browse_raw
 exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
+exception Wrong_parent of string
 
 let {Logger. log} = Logger.for_section "destruct"
 
@@ -228,7 +229,7 @@ let rec get_every_pattern = function
       loc, patterns
     | _ ->
       let s = Json.to_string (Browse_misc.dump_browse parent) in
-      invalid_arg (sprintf "get_every_pattern: %s" s)(* Something went wrong. *)
+      raise  (Wrong_parent (sprintf "get_every_pattern: %s" s)) (* Something went wrong. *)
 
 let rec destructible patt =
   let open Typedtree in

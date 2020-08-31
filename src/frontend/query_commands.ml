@@ -31,6 +31,8 @@ open Std
 open Query_protocol
 module Printtyp = Type_utils.Printtyp
 
+exception No_nodes
+
 let print_completion_entries ~with_types config source entries =
   if with_types then
     let input_ref = ref [] and output_ref = ref [] in
@@ -603,7 +605,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     Destruct.log ~title:"nodes after" "%a"
       Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     begin match nodes with
-      | [] -> failwith "No node at given range"
+      | [] -> raise No_nodes
       | (env,node) :: parents ->
         let source = Mpipeline.input_source pipeline in
         let config = Mpipeline.final_config pipeline in
