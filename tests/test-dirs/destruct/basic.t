@@ -135,7 +135,7 @@ pprintast).
   $ echo "let () = ()" | $MERLIN single case-analysis -start 1:4 -end 1:4 -filename stacktrace.ml | grep -E -v "Raised|Called|Re-raised"
   {
     "class": "exception",
-    "value": "Invalid_argument(\"get_every_pattern: [{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":0},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":11},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"value_binding\\\",\\\"children\\\":[{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":4},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":6},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"pattern (stacktrace.ml[1,0+4]..stacktrace.ml[1,0+6])\\\
+    "value": "Destruct.Wrong_parent(\"get_every_pattern: [{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":0},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":11},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"value_binding\\\",\\\"children\\\":[{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":4},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":6},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"pattern (stacktrace.ml[1,0+4]..stacktrace.ml[1,0+6])\\\
     Tpat_construct \\\\\\\"()\\\\\\\"\\\
     []\\\
   \\\",\\\"children\\\":[]},{\\\"filename\\\":\\\"stacktrace.ml\\\",\\\"start\\\":{\\\"line\\\":1,\\\"col\\\":9},\\\"end\\\":{\\\"line\\\":1,\\\"col\\\":11},\\\"ghost\\\":false,\\\"attrs\\\":[],\\\"kind\\\":\\\"expression\\\",\\\"children\\\":[]}]}]\")

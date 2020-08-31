@@ -27,4 +27,6 @@
 
 )* }}} *)
 
+exception No_nodes
+
 val dispatch : Mpipeline.t -> 'a Query_protocol.t -> 'a
