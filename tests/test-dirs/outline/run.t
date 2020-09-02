@@ -236,3 +236,9 @@
     ],
     "notifications": []
   }
+  $ $MERLIN single outline < path.ml | jq '.value[].type'
+  "A.a"
+  null
+  $ $MERLIN single outline -short-paths < path.ml | jq '.value[].type'
+  "a"
+  null
