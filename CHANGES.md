@@ -1,3 +1,12 @@
+merlin 3.3.9
+============
+Thu Sep  3 14:02:27 CEST 2020
+
+  + merlin binary
+    - outline: respect `-short-paths` when printing types
+  + ocaml support
+    - backport patches from 4.11.1
+
 merlin 3.3.8
 ============
 Thu Aug 27 14:48:42 CEST 2020
