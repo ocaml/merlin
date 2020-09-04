@@ -1,4 +1,4 @@
-(enabled_if (>= %{ocaml_version} 4.11.0))
+(enabled_if (>= %{ocaml_version} 4.08.0))
 
   $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml -log-file /tmp/mlog2 <<EOF \
   > let _ = \
@@ -7,10 +7,24 @@
   >   | Some 3 -> () \
   > EOF
   {
-    "class": "error",
-    "value": "Destruct not allowed on computation pattern",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 16
+        },
+        "end": {
+          "line": 4,
+          "col": 16
+        }
+      },
+      "
+  | Some 0|None -> (??)"
+    ],
     "notifications": []
   }
+
 
   $ $MERLIN single case-analysis -start 4:4 -end 4:8 -filename complete.ml -log-file /tmp/mlog2 <<EOF \
   > let _ = \
@@ -98,8 +112,21 @@ Same two tests but with the exception pattern at the end
   >   | exception _ -> () \
   > EOF
   {
-    "class": "error",
-    "value": "Destruct not allowed on computation pattern",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 21
+        },
+        "end": {
+          "line": 4,
+          "col": 21
+        }
+      },
+      "
+  | Some _ -> (??)"
+    ],
     "notifications": []
   }
 
