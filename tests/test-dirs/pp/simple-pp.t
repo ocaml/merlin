@@ -21,7 +21,7 @@
     ],
     "notifications": []
   }
-  $ $MERLIN single errors -pp 'cpp -E' -filename test.ml <<EOF \
+  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF \
   > #ifndef FOO \
   > let x : int = "hello" \
   > #else \
@@ -48,7 +48,7 @@
     ],
     "notifications": []
   }
-  $ $MERLIN single errors -pp 'cpp -E' -filename test.ml <<EOF \
+  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF \
   > #ifdef FOO \
   > let x : int = "hello" \
   > #else \
