@@ -32,3 +32,4 @@ env:
     PACKAGE=merlin
 os:
   - linux
+  - macos
