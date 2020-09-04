@@ -9,27 +9,9 @@ env:
   - EXTRA_DEPS="dot-merlin-reader"
   - PINS="dot-merlin-reader.dev:."
   matrix:
-  - OCAML_VERSION=4.02
-    PACKAGE=merlin
-    TESTS=false
-  - OCAML_VERSION=4.03
-    PACKAGE=merlin
-  # - OCAML_VERSION=4.04
-  #   PACKAGE=merlin
-  # - OCAML_VERSION=4.05
-  #   PACKAGE=merlin
-  # - OCAML_VERSION=4.06
-  #   PACKAGE=merlin
-  # - OCAML_VERSION=4.07
-  #   PACKAGE=merlin
-  - OCAML_VERSION=4.08
-    PACKAGE=merlin
-  - OCAML_VERSION=4.09
-    PACKAGE=merlin
-  - OCAML_VERSION=4.10
-    PACKAGE=merlin
   - OCAML_VERSION=4.11
     PACKAGE=merlin
 os:
   - linux
   - macos
+  - freebsd
