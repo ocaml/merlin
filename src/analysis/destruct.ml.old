@@ -196,6 +196,11 @@ let rec needs_parentheses = function
       end
     | _ -> needs_parentheses ts
 
+let patt_is_comput patt =
+  match Raw_compat.Pattern.view patt with
+  | Raw_compat.Pattern.Tpat_exception _ -> true
+  | _ -> false
+
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
@@ -213,8 +218,9 @@ let rec get_every_pattern = function
           | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
                 match node with
-              | Pattern p -> p :: acc
-              | _ -> acc
+                | Pattern p when patt_is_comput p -> acc
+                | Pattern p -> p :: acc
+                | _ -> acc
               ) env node acc
           | _ -> acc
         ) Env.empty parent []
