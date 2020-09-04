@@ -7,7 +7,7 @@ dev-repo: "git+https://github.com/ocaml/merlin.git"
 build: [
   ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]
-  ["dune" "runtest" "-p" name "-j" "1"] {with-test & os != "macos" & ocaml:version >= "4.03"}
+  ["dune" "runtest" "-p" name "-j" "1"] {with-test & ocaml:version >= "4.03"}
 ]
 depends: [
   "ocaml" {>= "4.02.3" & < "4.12"}
