@@ -238,23 +238,6 @@
 (alias (name runtest) (deps (alias destruct-complete)))
 
 (alias
- (name destruct-exceptions_410.)(enabled_if (and (>= %{ocaml_version} 4.10.0) (< %{ocaml_version} 4.11.0)))
- (package merlin)
- (deps (:t ./test-dirs/destruct/exceptions_410..t)
-       (source_tree ./test-dirs/destruct)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server}
-       %{bin:dot-merlin-reader})
- (action
-   (chdir ./test-dirs/destruct
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias destruct-exceptions_410.)))
-
-(alias
  (name destruct-exceptions_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
  (package merlin)
  (deps (:t ./test-dirs/destruct/exceptions_pre_408.t)
@@ -272,9 +255,9 @@
 (alias (name runtest) (deps (alias destruct-exceptions_pre_408)))
 
 (alias
- (name destruct-exceptions_pre_410)(enabled_if (and (>= %{ocaml_version} 4.08.0) (< %{ocaml_version} 4.10.0)))
+ (name destruct-exceptions_pre_411)(enabled_if (and (>= %{ocaml_version} 4.08.0) (< %{ocaml_version} 4.11.0)))
  (package merlin)
- (deps (:t ./test-dirs/destruct/exceptions_pre_410.t)
+ (deps (:t ./test-dirs/destruct/exceptions_pre_411.t)
        (source_tree ./test-dirs/destruct)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server}
@@ -286,7 +269,7 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias destruct-exceptions_pre_410)))
+(alias (name runtest) (deps (alias destruct-exceptions_pre_411)))
 
 (alias
  (name destruct-exceptions_since_411)(enabled_if (>= %{ocaml_version} 4.11.0))
