@@ -1,6 +1,6 @@
 (enabled_if (< %{ocaml_version} 4.08.0))
 FIXME
-  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml -log-file /tmp/mlog2 <<EOF \
+  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF \
   > let _ = \
   >   match (None : int option) with \
   >   | exception _ -> () \
@@ -25,7 +25,7 @@ FIXME
     "notifications": []
   }
 
-  $ $MERLIN single case-analysis -start 4:4 -end 4:8 -filename complete.ml -log-file /tmp/mlog2 <<EOF \
+  $ $MERLIN single case-analysis -start 4:4 -end 4:8 -filename complete.ml <<EOF \
   > let _ = \
   >   match (None : int option) with \
   >   | exception _ -> () \
@@ -51,7 +51,7 @@ FIXME
 
 FIXME: `Some 0` certainly is a missing case but we can do better:
 
-  $ $MERLIN single case-analysis -start 4:4 -end 4:8 -filename complete.ml -log-file /tmp/mlog2 <<EOF \
+  $ $MERLIN single case-analysis -start 4:4 -end 4:8 -filename complete.ml <<EOF \
   > let _ = \
   >   match (None : int option) with \
   >   | exception _ -> () \
