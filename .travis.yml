@@ -1,5 +1,4 @@
 language: c
-sudo: true
 dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
 script: |
@@ -13,5 +12,9 @@ env:
     PACKAGE=merlin
 os:
   - linux
-  - macos
+  - osx
   - freebsd
+jobs:
+  include:
+  - os: linux
+    env: OCAML_VERSION=4.02 PACKAGE=merlin TESTS=false
