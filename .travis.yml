@@ -7,6 +7,7 @@ env:
   global:
   - EXTRA_DEPS="dot-merlin-reader"
   - PINS="dot-merlin-reader.dev:."
+  - ASSUME_ALWAYS_YES=YES
   matrix:
   - OCAML_VERSION=4.11
     PACKAGE=merlin
