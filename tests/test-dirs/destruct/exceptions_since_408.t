@@ -156,3 +156,102 @@ FIXME: `Some 0` certainly is a missing case but we can do better
     ],
     "notifications": []
   }
+
+Tests with exception in or-pattern
+
+  $ $MERLIN single case-analysis -start 3:4 -end 3:4 -filename exp_or.ml <<EOF \
+  > let _ = \
+  >   match (None : unit option) with \
+  >   | None | exception _ -> () \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 28
+        },
+        "end": {
+          "line": 3,
+          "col": 28
+        }
+      },
+      "
+  | Some _ -> (??)"
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single case-analysis -start 3:11 -end 3:11 -filename exp_or.ml <<EOF \
+  > let _ = \
+  >   match (None : unit option) with \
+  >   | None | exception _ -> () \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 28
+        },
+        "end": {
+          "line": 3,
+          "col": 28
+        }
+      },
+      "
+  | Some _ -> (??)"
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single case-analysis -start 3:4 -end 3:4 -filename exp_or.ml <<EOF \
+  > let _ = \
+  >   match (None : unit option) with \
+  >   | exception _ | None -> () \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 28
+        },
+        "end": {
+          "line": 3,
+          "col": 28
+        }
+      },
+      "
+  | Some _ -> (??)"
+    ],
+    "notifications": []
+  }
+
+
+  $ $MERLIN single case-analysis -start 3:4 -end 3:4 -filename exp_or.ml <<EOF \
+  > let _ = \
+  >   match (None : unit option) with \
+  >   | exception Not_found | None | exception _ -> () \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 50
+        },
+        "end": {
+          "line": 3,
+          "col": 50
+        }
+      },
+      "
+  | Some _ -> (??)"
+    ],
+    "notifications": []
+  }
