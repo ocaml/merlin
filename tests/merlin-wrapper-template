@@ -1,21 +1,15 @@
 #!/usr/bin/env bash
 
-sed="sed"
-uname=$(uname -s)
-if [ "$uname" == "Darwin" ]; then
-    sed="gsed"
-fi;
-
 export PATH=$(dirname %%DOT_MERLIN_READER%%):$PATH
 
 src_dir="$(dirname ${BASH_SOURCE[0]})/.."
 cd "$src_dir"
-src_dir=$(realpath -e $(pwd) 2>/dev/null || readlink -f $(pwd))
+src_dir=$(pwd -P)
 cd - > /dev/null
 $(dirname ${BASH_SOURCE[0]})/%%OCAMLMERLIN_PATH%% "$@" \
     | jq 'del(.timing)' \
-    | $sed -e "s:$src_dir/::g" \
-    | $sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
-    | $sed -e 's:"/.*/\(\.opam\|opam2\)/[^/]*/\([^"]*\)":"~opam/\2":g' \
-    | $sed -e 's:\\n:\
+    | sed -e "s:$src_dir/::g" \
+    | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
+    | sed -e 's:"/.*/\(\.opam\|opam2\)/[^/]*/\([^"]*\)":"~opam/\2":g' \
+    | sed -e 's:\\n:\
 :g'
