@@ -47,7 +47,7 @@ module Directive : sig
 
   type no_processing_required =
     [ `EXT of string list
-    | `FLG of string
+    | `FLG of string list
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list
@@ -78,8 +78,12 @@ module Commands : sig
   val send_file : out_channel:out_channel -> string -> unit
 end
 
+type read_error =
+  | Unexpected_output of string
+  | Csexp_parse_error of string
+
 (** [read inc] reads one csexp from the channel [inc] and returns the list of
   directives it represents *)
-val read : in_channel:in_channel -> directive list
+val read : in_channel:in_channel -> (directive list, read_error) Std.Result.t
 
 val write : out_channel:out_channel -> directive list -> unit

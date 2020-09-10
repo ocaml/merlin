@@ -2,7 +2,10 @@ merlin dev
 ============
 
   + merlin binary
-    - fix completion of pattern matchings with exception patterns
+    - fix completion of pattern matchings with exception patterns (#1169)
+    - delegate configuration reading to external programs via a simple protocol
+    and create a new package `dot-merlin-reader` with a binary that reads
+    `.merlin` files. (#1123, #1152)
 
 merlin 3.3.8
 ============

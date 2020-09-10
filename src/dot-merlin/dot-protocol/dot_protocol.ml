@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Std
+open Std.Result
 
 module Directive = struct
   type include_path =
@@ -34,7 +35,7 @@ module Directive = struct
 
   type no_processing_required =
     [ `EXT of string list
-    | `FLG of string
+    | `FLG of string list
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list
@@ -83,16 +84,20 @@ module Sexp = struct
         | "B" -> `B value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
-        | "FLG" -> `FLG value
         | "STDLIB" -> `STDLIB value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
+        | "FLG" ->
+            (* This means merlin asked dune 2.6 for configuration.
+              But the protocole evolved, only dune 2.8 should be used *)
+            `ERROR_MSG "No .merlin file found. Try building the project."
         | tag -> make_error tag
       end
     | List [ Atom tag; List l ] ->
         let value = strings_of_atoms l in
         begin match tag with
         | "EXT" -> `EXT value
+        | "FLG" -> `FLG value
         | "READER" -> `READER value
         | tag -> make_error tag
       end
@@ -109,7 +114,7 @@ module Sexp = struct
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
-        | `FLG s -> ("FLG", single s)
+        | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)
         | `SUFFIX s -> ("SUFFIX", single s)
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
@@ -139,23 +144,21 @@ module Commands = struct
     |> Csexp.to_channel out_channel
 end
 
+type read_error =
+  | Unexpected_output of string
+  | Csexp_parse_error of string
 
 let read ~in_channel =
   match Csexp.input in_channel with
   | Ok (Sexp.List directives) ->
-      List.rev (List.map directives ~f:(fun dir -> Sexp.to_directive dir))
+      Ok (List.map directives ~f:Sexp.to_directive)
   | Ok sexp ->
     let msg = Printf.sprintf
-      "Received wrong output from external config reader: \"%s\""
+      "A list of directives was expected, instead got: \"%s\""
       (Sexp.to_string sexp)
     in
-    [`ERROR_MSG msg]
-  | Error msg ->
-      let msg = Printf.sprintf
-        "Bad csexp received from the external config reader: \"%s\""
-        msg
-      in
-      [`ERROR_MSG msg]
+    Error (Unexpected_output msg)
+  | Error msg -> Error (Csexp_parse_error msg)
 
 let write ~out_channel (directives : directive list) =
   directives |> Sexp.from_directives |> Csexp.to_channel out_channel
