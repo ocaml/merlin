@@ -196,6 +196,19 @@ let rec needs_parentheses = function
       end
     | _ -> needs_parentheses ts
 
+(* [patt_without_comput p] strips exception components from an or-pattern *)
+let rec patt_without_comput patt =
+  match Raw_compat.Pattern.view patt with
+  | Raw_compat.Pattern.Tpat_exception _ -> None
+  | Raw_compat.Pattern.Tpat_or (p1, p2, None) ->
+    begin match patt_without_comput p1, patt_without_comput p2 with
+    | None, None -> None
+    | Some p1, Some p2 ->
+      Some { patt with pat_desc = Typedtree.Tpat_or (p1, p2, None) }
+    | Some p, None | None, Some p -> Some p
+    end
+  | _ -> Some patt
+
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
@@ -213,8 +226,8 @@ let rec get_every_pattern = function
           | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
                 match node with
-              | Pattern p -> p :: acc
-              | _ -> acc
+                | Pattern p -> Option.cons (patt_without_comput p) acc
+                | _ -> acc
               ) env node acc
           | _ -> acc
         ) Env.empty parent []
