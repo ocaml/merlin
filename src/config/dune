@@ -6,5 +6,6 @@
 
 (library
  (name config)
+ (public_name merlin.config)
  (wrapped false)
  (modules my_config))

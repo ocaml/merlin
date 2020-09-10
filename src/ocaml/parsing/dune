@@ -15,6 +15,7 @@ Printf.ksprintf J.send {|
 
 (library
   (name parsing)
+  (public_name merlin.parsing)
   (wrapped false)
   (flags (:standard -w -9))
   (modules_without_implementation asttypes parsetree)

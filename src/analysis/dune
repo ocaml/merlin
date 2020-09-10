@@ -20,6 +20,7 @@ Printf.ksprintf J.send {|
 
 (library
  (name merlin_analysis)
+ (public_name merlin.analysis)
  (wrapped false)
  (libraries
   config

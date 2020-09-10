@@ -1,10 +1,12 @@
 (library
  (name      query_protocol)
+ (public_name merlin.query_protocol)
  (modules   query_protocol)
  (libraries merlin_kernel merlin_utils parsing))
 
 (library
  (name      query_commands)
+ (public_name      merlin.query_commands)
  (modules   query_commands)
  (libraries
   merlin_utils

@@ -36,6 +36,7 @@ Printf.ksprintf J.send {|
 
 (library
   (name preprocess)
+  (public_name merlin.preprocess)
   (wrapped false)
   (libraries parsing utils merlin_utils))
 

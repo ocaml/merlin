@@ -17,6 +17,7 @@ Printf.ksprintf J.send {|
 
 (library
   (name typing)
+  (public_name merlin.typing)
   (wrapped false)
   (flags (:standard -w -9))
   (modules_without_implementation annot outcometree)
