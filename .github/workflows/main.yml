@@ -36,6 +36,8 @@ jobs:
         include:
           - os: macos-latest
             ocaml-version: 4.11.1
+          - os: windows-latest
+            ocaml-version: 4.11.1
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
