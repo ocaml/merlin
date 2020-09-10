@@ -1,5 +1,0 @@
-(library
- (name merlin_dot_protocol)
- (public_name merlin.merlin_dot_protocol)
- (wrapped false)
- (libraries merlin_utils csexp result))
