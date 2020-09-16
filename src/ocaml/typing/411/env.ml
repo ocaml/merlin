@@ -3581,6 +3581,3 @@ let short_paths env =
     let basis = Persistent_env.short_paths_basis !persistent_env in
     Short_paths.initial basis
   | Some short_paths -> short_paths
-
-
-let fold_type_decls = fold_types

@@ -394,7 +394,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         ) prefix_path env []
 
       | `Types ->
-        Env.fold_type_decls (fun name path decl candidates ->
+        Env.fold_types (fun name path decl candidates ->
           if not @@ validate `Lident `Typ name then candidates else
           make_weighted_candidate ~exact:(name = prefix) name ~path (`Typ decl)
             ~loc:decl.Types.type_loc ~attrs:(type_attributes decl)
