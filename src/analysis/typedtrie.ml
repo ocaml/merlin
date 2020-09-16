@@ -412,7 +412,7 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_me mb.mb_expr)
       in
-      begin match Raw_compat.mb_id mb with
+      begin match mb.mb_id with
         | None -> trie
         | Some id ->
           Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie
@@ -422,7 +422,7 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_mty md.md_type)
       in
-      begin match Raw_compat.md_id md with
+      begin match md.md_id with
         | None -> trie
         | Some id ->
           Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie

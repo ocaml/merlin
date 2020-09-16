@@ -28,24 +28,68 @@
 
 open Std
 
+let dummy_type_scheme desc =
+  { Types. level = 0 ; id = 0 ; scope = Btype.generic_level ; desc }
+
 let print_constructor c =
   let open Types in
   match c.cstr_args with
   | [] ->
     Printtyp.tree_of_type_scheme
-      (Raw_compat.dummy_type_scheme c.cstr_res.desc)
+      (dummy_type_scheme c.cstr_res.desc)
   | args ->
     let desc = Tarrow (Ast_helper.no_label,
-                       Raw_compat.dummy_type_scheme (Ttuple args),
+                       dummy_type_scheme (Ttuple args),
                        c.cstr_res, Cok)
     in
-    Printtyp.tree_of_type_scheme (Raw_compat.dummy_type_scheme desc)
+    Printtyp.tree_of_type_scheme (dummy_type_scheme desc)
 
 let signature_of_env ?(ignore_extensions=true) env =
+  let signature_of_summary =
+    let open Env in
+    let open Types in
+    (* FIXME: the use of [Exported] here is wrong... The compiler should export
+      that information. *)
+    function
+    | Env_value (_,i,v)      -> Some (Sig_value (i,v,Exported))
+    (* Trec_not == bluff, FIXME *)
+    | Env_type (_,i,t)       -> Some (Sig_type (i,t,Trec_not,Exported))
+    (* Texp_first == bluff, FIXME *)
+    | Env_extension (_,i,e)  ->
+      begin match e.ext_type_path with
+      | Path.Pident id when Ident.name id = "exn" ->
+        Some (Sig_typext (i,e, Text_exception, Exported))
+      | _ ->
+        Some (Sig_typext (i,e, Text_first, Exported))
+      end
+    | Env_module (_,i,pr,m)  -> Some (Sig_module (i,pr,m,Trec_not,Exported))
+    | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m,Exported))
+    | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not,Exported))
+    | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not,Exported))
+    | Env_open _ | Env_empty | Env_functor_arg _
+    | Env_constraints _ | Env_copy_types _ | Env_persistent _
+    | Env_value_unbound _ | Env_module_unbound _ -> None
+  in
+  let summary_prev = function
+    | Env.Env_empty -> None
+    | Env.Env_open (s,_)       | Env.Env_value (s,_,_)
+    | Env.Env_type (s,_,_)     | Env.Env_extension (s,_,_)
+    | Env.Env_module (s,_,_,_) | Env.Env_modtype (s,_,_)
+    | Env.Env_class (s,_,_)    | Env.Env_cltype (s,_,_)
+    | Env.Env_functor_arg (s,_)
+    | Env.Env_constraints (s,_)
+    | Env.Env_copy_types s
+    | Env.Env_persistent (s,_)
+    | Env.Env_value_unbound (s, _, _) | Env.Env_module_unbound (s, _, _) ->
+      Some s
+  in
+  let summary_module_ident_opt = function
+    | Env.Env_module (_,i,_,_) -> Some i
+    | _ -> None
+  in
   let sg = ref [] in
   let append item = sg := item :: !sg in
   let rec aux summary =
-    let open Raw_compat in
     match summary_module_ident_opt summary with
     | Some i when ignore_extensions && i = Extension.ident -> ()
     | _ ->

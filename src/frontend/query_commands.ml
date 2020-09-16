@@ -477,7 +477,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
   | Refactor_open (mode, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    begin match Raw_compat.select_open_node (Mtyper.node_at typer pos) with
+    begin match Mbrowse.select_open_node (Mtyper.node_at typer pos) with
       | None | Some (_, []) -> []
       | Some (path, ((_, node) :: _)) ->
         let paths =
