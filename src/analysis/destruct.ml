@@ -109,17 +109,12 @@ let rec gen_patterns ?(recurse=true) env type_expr =
     | constructors, _ ->
       let prefix =
         let path = Printtyp.shorten_type_path env path in
-        match Path.to_string_list path with
-        | [] -> assert false
-        | p :: ps ->
-          fun name ->
-            let open Longident in
-            match
-              List.fold_left ps ~init:(Lident p) ~f:(fun lid p -> Ldot (lid, p))
-            with
-            | Lident _ -> Lident name
-            | Ldot (lid, _) -> Ldot (lid, name)
-            | _ -> assert false
+        let lid  = Untypeast.lident_of_path path in
+        fun name ->
+          match lid with
+          | Lident _ -> Longident.Lident name
+          | Ldot (lid, _) -> Ldot (lid, name)
+          | _ -> assert false
       in
       let are_types_unifiable typ =
         let snap = Btype.snapshot () in
@@ -411,17 +406,10 @@ let rec qualify_constructors ~unmangling_tables f pat  =
           begin match (Btype.repr pat.pat_type).Types.desc with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
-            begin match Path.to_string_list path with
-            | [] -> assert false
-            | p :: ps ->
-              let open Longident in
-              match
-                List.fold_left ps ~init:(Lident p)
-                  ~f:(fun lid p -> Ldot (lid, p))
-              with
-              | Lident _ -> { lid with Asttypes.txt = Lident name }
-              | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
-              | _ -> assert false
+            begin match Untypeast.lident_of_path path with
+            | Lident _ -> { lid with Asttypes.txt = Longident.Lident name }
+            | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
+            | _ -> assert false
             end
           | _ -> lid
           end
