@@ -53,12 +53,3 @@ module Set : Set.S with type elt = t
 
 (* merlin specific *)
 val to_string_list : t -> string list
-
-module Nopos : sig
-  type nopos = t =
-    | Pident of Ident.t
-    | Pdot of t * string
-    | Papply of t * t
-
-  val view : t -> nopos
-end

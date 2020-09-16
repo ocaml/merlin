@@ -483,8 +483,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let paths =
           Browse_tree.all_occurrences_of_prefix ~strict_prefix:true path node in
         let paths = List.concat_map ~f:snd paths in
-        let rec path_to_string acc p =
-          match Path.Nopos.view p with
+        let rec path_to_string acc (p : Path.t) =
+          match p with
           | Pident ident ->
             String.concat ~sep:"." (Ident.name ident :: acc)
           | Pdot (path', s) when
