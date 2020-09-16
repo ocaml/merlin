@@ -6,14 +6,14 @@ script: |
 env:
   global:
   - EXTRA_DEPS="dot-merlin-reader"
-  - PINS="dot-merlin-reader.dev:."
+  - PINS="dot-merlin-reader.3.4.0:."
   - ASSUME_ALWAYS_YES=YES
   matrix:
   - OCAML_VERSION=4.11
     PACKAGE=merlin
 os:
   - linux
-  - osx
+#  - osx
   - freebsd
 jobs:
   include:
