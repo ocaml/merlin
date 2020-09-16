@@ -1,5 +1,6 @@
-merlin dev
+merlin 3.4.0
 ============
+Wed Sep 16 15:00:42 CEST 2020
 
   + merlin binary
     - fix completion of pattern matchings with exception patterns (#1169)
