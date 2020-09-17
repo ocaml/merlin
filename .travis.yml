@@ -1,21 +1,20 @@
 language: c
 dist: xenial
 install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
-script: |
-  bash -ex .travis-opam.sh
+script: bash -ex .travis-opam.sh
 env:
   global:
   - EXTRA_DEPS="dot-merlin-reader"
   - PINS="dot-merlin-reader.3.4.0:."
-  - ASSUME_ALWAYS_YES=YES
+  - PACKAGE=merlin
   matrix:
   - OCAML_VERSION=4.11
-    PACKAGE=merlin
 os:
   - linux
-#  - osx
+  - osx
   - freebsd
+osx_image: xcode11.3
 jobs:
   include:
   - os: linux
-    env: OCAML_VERSION=4.02 PACKAGE=merlin TESTS=false
+    env: OCAML_VERSION=4.02 TESTS=false
