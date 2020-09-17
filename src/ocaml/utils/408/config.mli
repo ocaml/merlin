@@ -18,9 +18,6 @@
 val version: string
         (* The current version number of the system *)
 
-val load_path: string list ref
-        (* Directories in the search path for .cmi and .cmo files *)
-
 val interface_suffix: string ref
         (* Suffix for interface file names *)
 
