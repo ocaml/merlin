@@ -241,8 +241,9 @@ let rec get_every_pattern = function
       in
       loc, patterns
     | _ ->
-      let s = Json.to_string (Browse_misc.dump_browse parent) in
-      raise  (Wrong_parent (sprintf "get_every_pattern: %s" s)) (* Something went wrong. *)
+      (* We were not in a match *)
+      let s = Mbrowse.print_node () parent in
+      raise  (Not_allowed s)
 
 let rec destructible patt =
   let open Typedtree in
