@@ -441,9 +441,9 @@ let postprocess cfg =
     match Ppxsetup.command_line ppxsetup with
     | [] -> []
     | lst ->
-      let cmd = String.concat ~sep:" " lst
+      let cmd = List.concat_map lst ~f:(fun pp -> ["-ppx"; pp])
       in
-      [ `FLG ["-ppx"; cmd] ]
+      [ `FLG  cmd]
   in
   List.concat
     [ List.concat_map cfg.to_canonicalize ~f:(fun (dir, directive) ->
