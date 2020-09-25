@@ -19,7 +19,9 @@ let predef_exn_flag = 2
 
 (* A stamp of 0 denotes a persistent identifier *)
 
-let currentstamp = ref 0
+open Local_store.Compiler
+
+let currentstamp = srefk 0
 
 let create s =
   incr currentstamp;

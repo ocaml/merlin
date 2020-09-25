@@ -26,8 +26,10 @@ type t =
 
 (* A stamp of 0 denotes a persistent identifier *)
 
-let currentstamp = ref 0
-let predefstamp = ref 0
+open Local_store.Compiler
+
+let currentstamp = srefk 0
+let predefstamp = srefk 0
 
 let create_scoped ~scope s =
   incr currentstamp;
