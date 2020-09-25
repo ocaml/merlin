@@ -408,23 +408,6 @@
 (alias (name runtest) (deps (alias errors-typing-after-parsing-test)))
 
 (alias
- (name file-cache-test)
- (package merlin)
- (deps (:t ./test-dirs/file-cache/test.t)
-       (source_tree ./test-dirs/file-cache)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server}
-       %{bin:dot-merlin-reader})
- (action
-   (chdir ./test-dirs/file-cache
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias file-cache-test)))
-
-(alias
  (name locate-ambiguity-not-in-env)
  (package merlin)
  (deps (:t ./test-dirs/locate/ambiguity/not-in-env.t)
