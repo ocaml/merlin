@@ -19,6 +19,8 @@ open Path
 open Types
 open Btype
 
+let _ = Ident.reset_current_time 0
+
 let builtin_idents = ref []
 
 let wrap create s =

@@ -24,7 +24,7 @@ let predef_exn_flag = 2
 
 open Local_store.Compiler
 
-let currentstamp = srefk 0
+let currentstamp = srefk 999
 
 let create s =
   incr currentstamp;
@@ -69,6 +69,7 @@ let stamp i = i.stamp
 
 let current_time() = !currentstamp
 let set_current_time t = currentstamp := max !currentstamp t
+let reset_current_time t = currentstamp := t
 
 let reinit_level = ref (-1)
 
