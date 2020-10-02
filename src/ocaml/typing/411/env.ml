@@ -728,8 +728,6 @@ let short_paths_components name pm =
   let path = Pident (Ident.create_persistent name) in
   lazy (!short_paths_module_components_desc' empty path pm.mda_components)
 
-exception Cmi_cache_store of module_data
-
 let add_persistent_structure id env =
   if not (Ident.persistent id) then invalid_arg "Env.add_persistent_structure";
   if not (Current_unit_name.is_name_of id) then
@@ -761,7 +759,7 @@ let components_of_module ~alerts ~uid env fs ps path addr mty =
     }
   }
 
-let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; cmi_cache; _ } =
+let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let flags = cmi.cmi_flags in
@@ -797,7 +795,6 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; cmi_cache; _
     mda_components;
     mda_address;
   } in
-  cmi_cache := Cmi_cache_store result;
   result
 
 
@@ -2231,11 +2228,10 @@ let save_signature_with_transform cmi_transform ~alerts sg modname filename =
   let cmi =
     Persistent_env.make_cmi !persistent_env modname sg alerts
     |> cmi_transform in
-  let cmi_cache = ref Not_found in
   let pm = save_sign_of_cmi
-      { Persistent_env.Persistent_signature.cmi; filename; cmi_cache } in
+      { Persistent_env.Persistent_signature.cmi; filename } in
   Persistent_env.save_cmi !persistent_env
-    { Persistent_env.Persistent_signature.filename; cmi; cmi_cache } pm;
+    { Persistent_env.Persistent_signature.filename; cmi } pm;
   cmi
 
 let save_signature ~alerts sg modname filename =
@@ -3298,10 +3294,9 @@ let check_state_consistency () =
     match Load_path.find_uncap (modname ^ ".cmi") with
     | _ -> false
     | exception Not_found -> true
-  and found _modname filename md =
-    match !(Cmi_cache.(get_cached_entry filename).Cmi_cache.cmi_cache) with
-    | Cmi_cache_store md' -> md == md'
-    | _ -> false
+  and found _modname filename ps_name _md =
+    match Cmi_cache.get_cached_entry filename with
+    | cmi_infos -> ps_name == cmi_infos.Cmi_format.cmi_name
     | exception Not_found -> false
   in
   Persistent_env.forall ~found ~missing !persistent_env

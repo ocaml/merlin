@@ -33,8 +33,7 @@ val report_error: Format.formatter -> error -> unit
 module Persistent_signature : sig
   type t =
     { filename : string; (** Name of the file containing the signature. *)
-      cmi : Cmi_format.cmi_infos;
-      cmi_cache : exn ref }
+      cmi : Cmi_format.cmi_infos }
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
@@ -116,6 +115,6 @@ val add_delayed_check_forward: ((unit -> unit) -> unit) ref
 val with_cmis : 'a t -> ('b -> 'c) -> 'b -> 'c
 
 val forall :
-  found:(modname -> filepath -> 'a -> bool) ->
+  found:(modname -> filepath -> string -> 'a -> bool) ->
   missing:(modname -> bool) ->
   'a t -> bool

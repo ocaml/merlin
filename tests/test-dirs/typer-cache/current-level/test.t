@@ -52,7 +52,7 @@ buffers, and different runs for the same buffer:
   > $MERLIN server dump -what current-level -filename test.ml
   {
     "class": "return",
-    "value": 0,
+    "value": 2,
     "notifications": []
   }
 

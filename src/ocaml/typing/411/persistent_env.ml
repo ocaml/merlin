@@ -35,14 +35,13 @@ let error err = raise (Error err)
 module Persistent_signature = struct
   type t =
     { filename : string;
-      cmi : Cmi_format.cmi_infos;
-      cmi_cache : exn ref }
+      cmi : Cmi_format.cmi_infos }
 
   let load = ref (fun ~unit_name ->
       match Load_path.find_uncap (unit_name ^ ".cmi") with
       | filename ->
-        let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
-        Some { filename; cmi; cmi_cache }
+        let cmi = Cmi_cache.read filename in
+        Some { filename; cmi }
       | exception Not_found -> None)
 end
 
@@ -237,8 +236,8 @@ let acknowledge_pers_struct penv short_path_comps check modname pers_sig pm =
 
 let read_pers_struct penv val_of_pers_sig short_path_comps check modname filename =
   add_import penv modname;
-  let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
-  let pers_sig = { Persistent_signature.filename; cmi; cmi_cache } in
+  let cmi = Cmi_cache.read filename in
+  let pers_sig = { Persistent_signature.filename; cmi } in
   let pm = val_of_pers_sig pers_sig in
   let ps = acknowledge_pers_struct penv short_path_comps check modname pers_sig pm in
   (ps, pm)
@@ -421,5 +420,5 @@ let forall ~found ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
       | Missing -> missing name
       | Found (pers_struct, a) ->
-        found name pers_struct.ps_filename a
+        found name pers_struct.ps_filename pers_struct.ps_name a
     )
