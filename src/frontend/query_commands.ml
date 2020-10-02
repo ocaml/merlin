@@ -151,6 +151,10 @@ let dump pipeline = function
     let structure = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     Browse_misc.dump_browse (snd (Mbrowse.leaf_node structure))
 
+  | [`String "current-level"] ->
+    let _typer = Mpipeline.typer_result pipeline in
+    `Int (Ctype.get_current_level ())
+
   | [`String "tokens"] ->
     failwith "TODO"
 
