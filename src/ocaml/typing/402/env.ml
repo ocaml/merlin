@@ -28,14 +28,14 @@ open Local_store.Compiler
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
 let value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 16)
+  s_table Hashtbl.create 16
     (* This table is used to usage of value declarations.  A declaration is
        identified with its name and location.  The callback attached to a
        declaration is called whenever the value is used explicitly
        (lookup_value) or implicitly (inclusion test between signatures,
        cf Includemod.value_descriptions). *)
 
-let type_declarations = sref (fun () -> Hashtbl.create 16)
+let type_declarations = s_table Hashtbl.create 16
 
 type constructor_usage = Positive | Pattern | Privatize
 type constructor_usages =
@@ -78,9 +78,9 @@ let constructor_usages () =
 
 let used_constructors :
     (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t ref
-  = sref (fun () -> Hashtbl.create 16)
+  = s_table Hashtbl.create 16
 
-let prefixed_sg = sref (fun () -> Hashtbl.create 113)
+let prefixed_sg = s_table Hashtbl.create 113
 
 type error =
   | Illegal_renaming of string * string * string
@@ -296,7 +296,7 @@ let get_components c =
 (* The name of the compilation unit currently compiled.
    "" if outside a compilation unit. *)
 
-let current_unit = srefk ""
+let current_unit = s_ref ""
 
 (* Persistent structure descriptions *)
 type pers_typemap =
@@ -313,11 +313,11 @@ type pers_struct =
     ps_flags: pers_flags list }
 
 let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 17)
+  s_table Hashtbl.create 17
 
 (* Consistency between persistent structures *)
 
-let crc_units = sref Consistbl.create
+let crc_units = s_table Consistbl.create ()
 
 let imported_units = ref String.Set.empty
 

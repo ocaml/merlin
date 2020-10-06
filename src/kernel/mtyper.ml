@@ -18,7 +18,7 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
-let cache = srefk None
+let cache = s_ref None
 
 let fresh_env config =
   let env0 = Typer_raw.fresh_env () in

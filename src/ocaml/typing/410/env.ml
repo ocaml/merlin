@@ -28,15 +28,15 @@ open Local_store.Compiler
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
 let value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 16)
+  s_table Hashtbl.create 16
     (* This table is used to usage of value declarations.  A declaration is
        identified with its name and location.  The callback attached to a
        declaration is called whenever the value is used explicitly
        (lookup_value) or implicitly (inclusion test between signatures,
        cf Includemod.value_descriptions). *)
 
-let type_declarations = sref (fun () -> Hashtbl.create 16)
-let module_declarations = sref (fun () -> Hashtbl.create 16)
+let type_declarations = s_table Hashtbl.create 16
+let module_declarations = s_table Hashtbl.create 16
 
 type constructor_usage = Positive | Pattern | Privatize
 type constructor_usages =
@@ -88,7 +88,7 @@ let constructor_usages () =
 
 let used_constructors :
     (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t ref
-  = sref (fun () -> Hashtbl.create 16)
+  = s_table Hashtbl.create 16
 
 (** Map indexed by the name of module components. *)
 module NameMap = String.Map
@@ -822,7 +822,7 @@ let read_sign_of_cmi = sign_of_cmi ~freshen:true
 let save_sign_of_cmi = sign_of_cmi ~freshen:false
 
 let persistent_env : module_data Persistent_env.t ref =
-  sref Persistent_env.empty
+  s_table Persistent_env.empty ()
 
 let without_cmis f x =
   Persistent_env.without_cmis !persistent_env f x
@@ -1115,7 +1115,7 @@ let find_hash_type path env =
   | Papply _ ->
       raise Not_found
 
-let required_globals = srefk []
+let required_globals = s_ref []
 let reset_required_globals () = required_globals := []
 let get_required_globals () = !required_globals
 let add_required_global id =
@@ -3110,8 +3110,8 @@ let summary env =
   if Path.Map.is_empty env.local_constraints then env.summary
   else Env_constraints (env.summary, env.local_constraints)
 
-let last_env = srefk empty
-let last_reduced_env = srefk empty
+let last_env = s_ref empty
+let last_reduced_env = s_ref empty
 
 let keep_only_summary env =
   if !last_env == env then !last_reduced_env

@@ -602,9 +602,9 @@ type snapshot = changes ref * int
 
 open Local_store.Compiler
 
-let trail = sref (fun () -> Weak.create 1)
-let last_snapshot = sref (fun () -> 0)
-let linked_variables = sref (fun () -> 0)
+let trail = s_table Weak.create 1
+let last_snapshot = s_ref 0
+let linked_variables = s_ref 0
 
 let log_change ch =
   match Weak.get !trail 0 with None -> ()

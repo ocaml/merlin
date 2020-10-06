@@ -50,7 +50,7 @@ and cmxs_magic_number = "Caml1999D023"
     (* cmxs_magic_number is duplicated in otherlibs/dynlink/natdynlink.ml *)
 and cmt_magic_number = "Caml1999T024"
 
-let load_path = srefk ([] : string list)
+let load_path = s_ref ([] : string list)
 
 let interface_suffix = ref ".mli"
 

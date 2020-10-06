@@ -31,14 +31,14 @@ open Local_store.Compiler
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
 let value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 16)
+  s_table Hashtbl.create 16
     (* This table is used to usage of value declarations.  A declaration is
        identified with its name and location.  The callback attached to a
        declaration is called whenever the value is used explicitly
        (lookup_value) or implicitly (inclusion test between signatures,
        cf Includemod.value_descriptions). *)
 
-let type_declarations = sref (fun () -> Hashtbl.create 16)
+let type_declarations = s_table Hashtbl.create 16
 
 type constructor_usage = Positive | Pattern | Privatize
 type constructor_usages =
@@ -78,9 +78,9 @@ let constructor_usages () =
 
 let used_constructors :
     (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t ref
-  = sref (fun () -> Hashtbl.create 16)
+  = s_table Hashtbl.create 16
 
-let prefixed_sg = sref (fun () -> Hashtbl.create 113)
+let prefixed_sg = s_table Hashtbl.create 113
 
 type error =
   | Illegal_renaming of string * string * string
@@ -335,7 +335,7 @@ let get_components c =
 (* The name of the compilation unit currently compiled.
    "" if outside a compilation unit. *)
 
-let current_unit = srefk ""
+let current_unit = s_ref ""
 
 (* Persistent structure descriptions *)
 
@@ -353,18 +353,18 @@ type pers_struct = {
 }
 
 let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 17)
+  s_table Hashtbl.create 17
 
 (* Consistency between persistent structures *)
 
-let crc_units = sref Consistbl.create
+let crc_units = s_table Consistbl.create ()
 
-let imported_units = srefk String.Set.empty
+let imported_units = s_ref String.Set.empty
 
 let add_import s =
   imported_units := String.Set.add s !imported_units
 
-let imported_opaque_units = srefk String.Set.empty
+let imported_opaque_units = s_ref String.Set.empty
 
 let add_imported_opaque s =
   imported_opaque_units := String.Set.add s !imported_opaque_units
@@ -389,7 +389,7 @@ let check_consistency ps =
 
 (* Short paths basis *)
 
-let short_paths_basis = sref Short_paths.Basis.create
+let short_paths_basis = s_table Short_paths.Basis.create ()
 
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
@@ -734,7 +734,7 @@ let find_module ~alias path env =
           raise Not_found
       end
 
-let required_globals = srefk []
+let required_globals = s_ref []
 let reset_required_globals () = required_globals := []
 let get_required_globals () = !required_globals
 let add_required_global id =

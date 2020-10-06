@@ -1,6 +1,9 @@
+type 'a table = { ref: 'a ref; init: unit -> 'a }
+type 'a immutable = { ref: 'a ref; mutable snapshot: 'a }
+
 type ref_and_reset =
-  | Table : { ref: 'a ref; init: unit -> 'a } -> ref_and_reset
-  | Immutable : { ref: 'a ref; mutable snapshot: 'a } -> ref_and_reset
+  | Table : 'a table -> ref_and_reset
+  | Immutable : 'a immutable -> ref_and_reset
 
 type bindings = {
   mutable refs: ref_and_reset list;
@@ -33,7 +36,8 @@ let ref t k =
   t.refs <- (Immutable { ref; snapshot = k }) :: t.refs;
   ref
 
-type slot = Slot : { ref : 'a ref; mutable value : 'a } -> slot
+type 'a cell = { ref : 'a ref; mutable value : 'a }
+type slot = Slot : 'a cell -> slot
 type scope = { slots: slot list; scope_bound : bool ref }
 
 let fresh t =
@@ -52,10 +56,15 @@ let with_scope { slots; scope_bound } f =
   assert (not !scope_bound);
   scope_bound := true;
   List.iter (fun (Slot {ref;value}) -> ref := value) slots;
-  Fun.protect f ~finally:(fun () ->
+  match f () with
+  | res ->
     List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
-    scope_bound := false
-  )
+    scope_bound := false;
+    res
+  | exception exn ->
+    List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
+    scope_bound := false;
+    raise exn
 
 module Compiler = struct
   let compiler_state = new_bindings ()
