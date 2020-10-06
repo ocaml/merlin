@@ -20,6 +20,8 @@ open Asttypes
 open Types
 open Btype
 
+open Local_store.Compiler
+
 (*
    Type manipulation after type inference
    ======================================
@@ -85,10 +87,10 @@ exception Unification_recursive_abbrev of (type_expr * type_expr) list
 
 (**** Type level management ****)
 
-let current_level = ref 0
-let nongen_level = ref 0
-let global_level = ref 1
-let saved_level = ref []
+let current_level = s_ref 0
+let nongen_level = s_ref 0
+let global_level = s_ref 1
+let saved_level = s_ref []
 
 type levels =
     { current_level: int; nongen_level: int; global_level: int;

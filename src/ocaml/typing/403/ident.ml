@@ -14,6 +14,7 @@
 (**************************************************************************)
 
 open Format
+open Local_store.Compiler
 
 type t = { stamp: int; name: string; mutable flags: int }
 
@@ -22,7 +23,7 @@ let predef_exn_flag = 2
 
 (* A stamp of 0 denotes a persistent identifier *)
 
-let currentstamp = ref 0
+let currentstamp = s_ref 0
 
 let create s =
   incr currentstamp;

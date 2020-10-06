@@ -19,6 +19,8 @@ open Path
 open Types
 open Btype
 
+open Local_store.Compiler
+
 type t =
   { types: (Ident.t, Path.t) Tbl.t;
     modules: (Ident.t, Path.t) Tbl.t;
@@ -95,7 +97,7 @@ let type_path s = function
 
 (* Special type ids for saved signatures *)
 
-let new_id = ref (-1)
+let new_id = s_ref (-1)
 let reset_for_saving () = new_id := -1
 
 let newpersty desc =

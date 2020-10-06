@@ -18,6 +18,8 @@
 open Asttypes
 open Types
 
+open Local_store.Compiler
+
 (**** Sets, maps and hashtables of types ****)
 
 module TypeSet = Set.Make(TypeOps)
@@ -40,7 +42,7 @@ let pivot_level = 2 * lowest_level - 1
 
 (**** Some type creators ****)
 
-let new_id = ref (-1)
+let new_id = s_ref (-1)
 
 let newty2 level desc  =
   incr new_id; { desc; level; scope = lowest_level; id = !new_id }
