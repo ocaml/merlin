@@ -1,6 +1,7 @@
-open Std
+type ref_and_reset =
+  | Table : { ref: 'a ref; init: unit -> 'a } -> ref_and_reset
+  | Immutable : { ref: 'a ref; mutable snapshot: 'a } -> ref_and_reset
 
-type ref_and_reset = F : 'a ref * (unit -> 'a) -> ref_and_reset
 type bindings = {
   mutable refs: ref_and_reset list;
   mutable frozen : bool;
@@ -14,45 +15,50 @@ let is_bound t = !(t.is_bound)
 
 let reset t =
   assert (is_bound t);
-  List.iter ~f:(fun (F (ref, initializer_)) -> ref := initializer_ ()) t.refs
+  List.iter (function
+    | Table { ref; init } -> ref := init ()
+    | Immutable { ref; snapshot } -> ref := snapshot
+  ) t.refs
 
-let ref t f =
-  let result = ref (f ()) in
+let table t create size =
+  let init () = create size in
+  let ref = ref (init ()) in
   assert (not t.frozen);
-  t.refs <- (F (result, f)) :: t.refs;
-  result
+  t.refs <- (Table { ref; init }) :: t.refs;
+  ref
 
-type 'a slot = { ref : 'a ref; mutable value : 'a }
-type a_slot = Slot : 'a slot -> a_slot
-type scope = { slots: a_slot list; scope_bound : bool ref }
+let ref t k =
+  let ref = ref k in
+  assert (not t.frozen);
+  t.refs <- (Immutable { ref; snapshot = k }) :: t.refs;
+  ref
+
+type slot = Slot : { ref : 'a ref; mutable value : 'a } -> slot
+type scope = { slots: slot list; scope_bound : bool ref }
 
 let fresh t =
+  let slots =
+    List.map (function
+      | Table { ref; init } -> Slot {ref; value = init ()}
+      | Immutable r ->
+          if not t.frozen then r.snapshot <- !(r.ref);
+          Slot { ref = r.ref; value = r.snapshot }
+    ) t.refs
+  in
   t.frozen <- true;
-  { slots = List.map ~f:(fun (F(ref,f)) -> Slot {ref; value = f ()}) t.refs;
-    scope_bound = t.is_bound }
-
-type ref_and_value = V : 'a ref * 'a -> ref_and_value
-let restore l = List.iter ~f:(fun (V(r,v)) -> r := v) l
+  { slots; scope_bound = t.is_bound }
 
 let with_scope { slots; scope_bound } f =
   assert (not !scope_bound);
   scope_bound := true;
-  let backup = List.rev_map ~f:(fun (Slot {ref;_}) -> V (ref,!ref)) slots in
-  List.iter ~f:(fun (Slot {ref;value}) -> ref := value) slots;
-  match f () with
-  | x ->
-    List.iter ~f:(fun (Slot s) -> s.value <- !(s.ref)) slots;
-    scope_bound := false;
-    restore backup;
-    x
-  | exception exn ->
-    List.iter ~f:(fun (Slot s) -> s.value <- !(s.ref)) slots;
-    scope_bound := false;
-    restore backup;
-    reraise exn
+  List.iter (fun (Slot {ref;value}) -> ref := value) slots;
+  Fun.protect f ~finally:(fun () ->
+    List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
+    scope_bound := false
+  )
 
 module Compiler = struct
   let compiler_state = new_bindings ()
-  let sref f = ref compiler_state f
-  let srefk k = ref compiler_state (fun () -> k)
+  let s_table f n = table compiler_state f n
+  let s_ref k = ref compiler_state k
 end
