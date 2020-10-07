@@ -26,6 +26,8 @@ type type_replacement =
 
 module PathMap = Path.Map
 
+open Local_store.Compiler
+
 type t =
   { types: type_replacement PathMap.t;
     modules: Path.t PathMap.t;
@@ -131,7 +133,7 @@ let to_subst_by_type_function s p =
 
 (* Special type ids for saved signatures *)
 
-let new_id = ref (-1)
+let new_id = s_ref (-1)
 let reset_for_saving () = new_id := -1
 
 let newpersty desc =

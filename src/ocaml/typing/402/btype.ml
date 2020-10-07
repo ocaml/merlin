@@ -17,6 +17,8 @@
 open Misc
 open Types
 
+open Local_store.Compiler
+
 (**** Sets, maps and hashtables of types ****)
 
 module TypeSet = Set.Make(TypeOps)
@@ -39,7 +41,7 @@ let pivot_level = 2 * lowest_level - 1
 
 (**** Some type creators ****)
 
-let new_id = ref (-1)
+let new_id = s_ref (-1)
 
 let newty2 level desc  =
   incr new_id; { desc; level; id = !new_id }
@@ -602,9 +604,9 @@ type snapshot = changes ref * int
 
 open Local_store.Compiler
 
-let trail = sref (fun () -> Weak.create 1)
-let last_snapshot = sref (fun () -> 0)
-let linked_variables = sref (fun () -> 0)
+let trail = s_table Weak.create 1
+let last_snapshot = s_ref 0
+let linked_variables = s_ref 0
 
 let log_change ch =
   match Weak.get !trail 0 with None -> ()

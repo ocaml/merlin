@@ -28,15 +28,15 @@ open Local_store.Compiler
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
 let value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 16)
+  s_table Hashtbl.create 16
     (* This table is used to usage of value declarations.  A declaration is
        identified with its name and location.  The callback attached to a
        declaration is called whenever the value is used explicitly
        (lookup_value) or implicitly (inclusion test between signatures,
        cf Includemod.value_descriptions). *)
 
-let type_declarations = sref (fun () -> Hashtbl.create 16)
-let module_declarations = sref (fun () -> Hashtbl.create 16)
+let type_declarations = s_table Hashtbl.create 16
+let module_declarations = s_table Hashtbl.create 16
 
 type constructor_usage = Positive | Pattern | Privatize
 type constructor_usages =
@@ -76,7 +76,7 @@ let constructor_usages () =
 
 let used_constructors :
     (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t ref
-  = sref (fun () -> Hashtbl.create 16)
+  = s_table Hashtbl.create 16
 
 type error =
   | Illegal_renaming of string * string * string
@@ -553,7 +553,7 @@ type can_load_cmis =
   | Can_load_cmis
   | Cannot_load_cmis of EnvLazy.log
 
-let can_load_cmis = srefk Can_load_cmis
+let can_load_cmis = s_ref Can_load_cmis
 
 let without_cmis f x =
   let log = EnvLazy.log () in
@@ -626,7 +626,7 @@ let rec print_address ppf = function
 (* The name of the compilation unit currently compiled.
    "" if outside a compilation unit. *)
 
-let current_unit = srefk ""
+let current_unit = s_ref ""
 
 let find_same_module id tbl =
   match IdTbl.find_same id tbl with
@@ -652,18 +652,18 @@ type pers_struct =
     ps_flags: pers_flags list }
 
 let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 17)
+  s_table Hashtbl.create 17
 
 (* Consistency between persistent structures *)
 
-let crc_units = sref Consistbl.create
+let crc_units = s_table Consistbl.create ()
 
-let imported_units = srefk String.Set.empty
+let imported_units = s_ref String.Set.empty
 
 let add_import s =
   imported_units := String.Set.add s !imported_units
 
-let imported_opaque_units = srefk String.Set.empty
+let imported_opaque_units = s_ref String.Set.empty
 
 let add_imported_opaque s =
   imported_opaque_units := String.Set.add s !imported_opaque_units
@@ -688,7 +688,7 @@ let check_consistency ps =
 
 (* Short paths basis *)
 
-let short_paths_basis = sref Short_paths.Basis.create
+let short_paths_basis = s_table Short_paths.Basis.create ()
 
 let short_paths_module_components_desc' = ref (fun _ -> assert false)
 
@@ -1127,7 +1127,7 @@ let find_constructor_address path env =
   | Papply _ ->
       raise Not_found
 
-let required_globals = srefk []
+let required_globals = s_ref []
 let reset_required_globals () = required_globals := []
 let get_required_globals () = !required_globals
 let add_required_global id =
@@ -1630,7 +1630,7 @@ let may_subst subst_f sub x =
    not yet evaluated structures) *)
 
 type iter_cont = unit -> unit
-let iter_env_cont = srefk []
+let iter_env_cont = s_ref []
 
 let rec scrape_alias_for_visit env sub mty =
   match mty with
@@ -3041,8 +3041,8 @@ let summary env =
   if Path.Map.is_empty env.local_constraints then env.summary
   else Env_constraints (env.summary, env.local_constraints)
 
-let last_env = srefk empty
-let last_reduced_env = srefk empty
+let last_env = s_ref empty
+let last_reduced_env = s_ref empty
 
 let keep_only_summary env =
   if !last_env == env then !last_reduced_env

@@ -19,8 +19,8 @@ type registry = string SMap.t ref
 
 open Local_store.Compiler
 
-let files : registry = srefk SMap.empty
-let files_uncap : registry = srefk SMap.empty
+let files : registry = s_ref SMap.empty
+let files_uncap : registry = s_ref SMap.empty
 
 module Dir = struct
   type t = {
@@ -35,7 +35,7 @@ module Dir = struct
     { path; files = Array.to_list (Directory_content_cache.read path) }
 end
 
-let dirs = srefk []
+let dirs = s_ref []
 
 let reset () =
   assert (Local_store.is_bound compiler_state);

@@ -18,6 +18,8 @@
 open Asttypes
 open Types
 
+open Local_store.Compiler
+
 (**** Sets, maps and hashtables of types ****)
 
 module TypeSet = Set.Make(TypeOps)
@@ -40,7 +42,7 @@ let pivot_level = 2 * lowest_level - 1
 
 (**** Some type creators ****)
 
-let new_id = ref (-1)
+let new_id = s_ref (-1)
 
 let newty2 level desc  =
   incr new_id; { desc; level; scope = lowest_level; id = !new_id }
@@ -85,7 +87,7 @@ type changes =
 
 open Local_store.Compiler
 
-let trail = sref (fun () -> Weak.create 1)
+let trail = s_table Weak.create 1
 
 let log_change ch =
   match Weak.get !trail 0 with None -> ()
@@ -720,8 +722,8 @@ let undo_change = function
   | Cfun f -> f ()
 
 type snapshot = changes ref * int
-let last_snapshot = srefk 0
-let linked_variables = srefk 0
+let last_snapshot = s_ref 0
+let linked_variables = s_ref 0
 
 let log_type ty =
   if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))

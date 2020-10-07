@@ -5,7 +5,7 @@ open Local_store.Compiler
 
 type typer_state = Local_store.scope
 
-let current_state = srefk None
+let current_state = s_ref None
 
 let new_state () =
   let scope = Local_store.fresh compiler_state in
