@@ -196,6 +196,37 @@ let rec needs_parentheses = function
       end
     | _ -> needs_parentheses ts
 
+let rec get_match = function
+| [] -> assert false
+| parent :: parents ->
+  match parent with
+  | Case _
+  | Pattern _ ->
+    (* We are still in the same branch, going up. *)
+    get_match parents
+  | Expression m ->
+    (match m.Typedtree.exp_desc with
+    | Typedtree.Texp_match (e, _, _) -> m, e.exp_type
+    | Typedtree.Texp_function _ ->
+      let typ = Ctype.repr m.exp_type in
+        (* Function must have arrow type. This arrow type
+           might be hidden behind type constructors *)
+        m, (match typ.desc with
+        | Tarrow (_, te, _, _) -> te
+        | Tconstr _ ->
+          (match (Ctype.full_expand m.exp_env typ |> Ctype.repr).desc with
+          | Tarrow (_, te, _, _) -> te
+          | _ -> assert false)
+        | _ -> assert false)
+    | _ ->
+      (* We were not in a match *)
+      let s = Mbrowse.print_node () parent in
+      raise  (Not_allowed s))
+  | _ ->
+    (* We were not in a match *)
+    let s = Mbrowse.print_node () parent in
+    raise  (Not_allowed s)
+
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
@@ -435,7 +466,13 @@ let node config source node parents =
           (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
       ) ;
       let pss = List.map patterns ~f:(fun x -> [ x ]) in
-      begin match Parmatch.complete_partial pss with
+      let m, e_typ = get_match parents in
+      let pred = Typecore.partial_pred
+        ~lev:Btype.generic_level
+        m.Typedtree.exp_env
+        e_typ
+      in
+      begin match Parmatch.complete_partial ~pred pss with
       | Some pat ->
         let pat  = qualify_constructors Printtyp.shorten_type_path pat in
         let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
