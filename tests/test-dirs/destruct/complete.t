@@ -1,4 +1,57 @@
-Test 1
+###############
+## SUM TYPES ##
+###############
+
+Test 1.1 : FIXME (void type no Some)
+
+  $ cat >typ5.ml <<EOF          \
+  > type void = |               \
+  > let f (x : void option) =   \
+  >   match x with              \
+  >   | None -> ()              \
+  > EOF
+
+  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename typ5.ml <typ5.ml | \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 14
+        },
+        "end": {
+          "line": 4,
+          "col": 14
+        }
+      },
+      "|Some _ -> (??)"
+    ],
+    "notifications": []
+  }
+
+Test 1.2
+
+  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF \
+  > let _ = \
+  >   match (None : int option option) with \
+  >   | Some (Some 3) -> () \
+  > EOF
+
+Test 1.3 : with type constructor
+
+  $ $MERLIN single case-analysis -start 3:5 -end 3:5 -filename funny.ml <<EOF \
+  > type funny = int option -> unit \
+  > let v : funny = function \
+  >   | None -> ()    \
+  > EOF
+
+#############
+## RECORDS ##
+#############
+
+Test 2.1
 
   $ cat >typ.ml <<EOF \
   > type a = A | B of string \
@@ -28,36 +81,7 @@ Test 1
     "notifications": []
   }
 
-Test 2
-
-  $ cat >typ2.ml <<EOF \
-  > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
-  > let f (x : basic_color) = \
-  >   match x with          \
-  >   | \`Blue -> ()        \
-  > EOF
-
-  $ $MERLIN single case-analysis -start 4:5 -end 4:5 -filename typ2.ml <typ2.ml | \
-  > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
-  {
-    "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 4,
-          "col": 15
-        },
-        "end": {
-          "line": 4,
-          "col": 15
-        }
-      },
-      "|`Yellow|`Red -> (??)"
-    ],
-    "notifications": []
-  }
-
-Test 3 : FIXME ?
+Test 2.2 : FIXME ?
 
   $ cat >typ3.ml <<EOF \
   > type a = A | B of string \
@@ -88,39 +112,44 @@ Test 3 : FIXME ?
     "notifications": []
   }
 
-Test 4
+##########################
+## POLYMORPHIC VARIANTS ##
+##########################
 
-  $ cat >typ4.ml <<EOF \
-  > type b = C | D of string \
-  > type a = A | B of b   \
-  > type recd = { a : a } \
-  > let f (x : recd) =    \
-  >   match x with        \
-  >   | { a = A } -> ()   \
-  >   | { a = B _ } -> () \
+Test 3.1
+
+  $ cat >typ2.ml <<EOF \
+  > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
+  > let f (x : basic_color) = \
+  >   match x with          \
+  >   | \`Blue -> ()        \
   > EOF
 
-  $ $MERLIN single case-analysis -start 7:12 -end 7:12 -filename typ4.ml <typ4.ml | \
+  $ $MERLIN single case-analysis -start 4:5 -end 4:5 -filename typ2.ml <typ2.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
     "value": [
       {
         "start": {
-          "line": 7,
-          "col": 4
+          "line": 4,
+          "col": 15
         },
         "end": {
-          "line": 7,
+          "line": 4,
           "col": 15
         }
       },
-      "{ a = B (C) }|{ a = B (D _) }"
+      "|`Yellow|`Red -> (??)"
     ],
     "notifications": []
   }
 
-Test 5
+##########
+## GADT ##
+##########
+
+Test 4.1
 
   $ cat >typ3.ml <<EOF                              \
   > type _ term =                                   \
@@ -153,7 +182,7 @@ Test 5
     "notifications": []
   }
 
-Test 6
+Test 4.2
 
   $ cat >typ4.ml <<EOF                              \
   > type _ term =                                   \
@@ -186,7 +215,7 @@ Test 6
     "notifications": []
   }
 
-Test 7 : FIXME this match IS exhaustive
+Test 4.3 : FIXME this match IS exhaustive
 
   $ cat >typ4b.ml <<EOF         \
   > type _ t =                  \
@@ -216,43 +245,6 @@ Test 7 : FIXME this match IS exhaustive
     ],
     "notifications": []
   }
-
-Test 8 : FIXME (void type no Some)
-
-  $ cat >typ5.ml <<EOF          \
-  > type void = |               \
-  > let f (x : void option) =   \
-  >   match x with              \
-  >   | None -> ()              \
-  > EOF
-
-  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename typ5.ml <typ5.ml | \
-  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
-  {
-    "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 4,
-          "col": 14
-        },
-        "end": {
-          "line": 4,
-          "col": 14
-        }
-      },
-      "|Some _ -> (??)"
-    ],
-    "notifications": []
-  }
-
-Test 9
-
-  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF \
-  > let _ = \
-  >   match (None : int option option) with \
-  >   | Some (Some 3) -> () \
-  > EOF
 
 
 Et avec types dans un module ? Préfixe correct ?
