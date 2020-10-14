@@ -38,6 +38,24 @@ Test 1.2
   >   match (None : int option option) with \
   >   | Some (Some 3) -> () \
   > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 23
+        },
+        "end": {
+          "line": 3,
+          "col": 23
+        }
+      },
+      "
+  | Some (Some 0)|Some (None)|None -> (??)"
+    ],
+    "notifications": []
+  }
 
 Test 1.3 : with type constructor
 
@@ -46,6 +64,24 @@ Test 1.3 : with type constructor
   > let v : funny = function \
   >   | None -> ()    \
   > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 14
+        },
+        "end": {
+          "line": 3,
+          "col": 14
+        }
+      },
+      "
+  | Some _ -> (??)"
+    ],
+    "notifications": []
+  }
 
 #############
 ## RECORDS ##
