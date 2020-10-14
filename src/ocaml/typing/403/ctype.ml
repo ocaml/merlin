@@ -22,7 +22,7 @@ open Asttypes
 open Types
 open Btype
 
-open Local_store.Compiler
+open Local_store
 
 (*
    Type manipulation after type inference

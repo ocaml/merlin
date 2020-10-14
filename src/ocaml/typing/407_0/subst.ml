@@ -26,7 +26,7 @@ type type_replacement =
 
 module PathMap = Path.Map
 
-open Local_store.Compiler
+open Local_store
 
 type t =
   { types: type_replacement PathMap.t;

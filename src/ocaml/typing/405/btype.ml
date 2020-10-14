@@ -19,7 +19,7 @@ open Misc
 open Asttypes
 open Types
 
-open Local_store.Compiler
+open Local_store
 
 (**** Sets, maps and hashtables of types ****)
 
@@ -89,7 +89,7 @@ type changes =
   | Unchanged
   | Invalid
 
-open Local_store.Compiler
+open Local_store
 
 let trail = s_table Weak.create 1
 

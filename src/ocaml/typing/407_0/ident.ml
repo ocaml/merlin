@@ -14,7 +14,7 @@
 (**************************************************************************)
 
 open Format
-open Local_store.Compiler
+open Local_store
 
 type t = { stamp: int; name: string; flags: int }
 

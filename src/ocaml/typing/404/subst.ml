@@ -20,7 +20,7 @@ open Path
 open Types
 open Btype
 
-open Local_store.Compiler
+open Local_store
 
 type t =
   { types: (Ident.t, Path.t) Tbl.t;
