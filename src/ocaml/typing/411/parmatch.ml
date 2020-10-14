@@ -2681,9 +2681,10 @@ let do_complete_partial ?pred pss =
       fatal_error "Parmatch.check_partial"
     end
 
-let complete_partial pss =
+let complete_partial ~pred pss =
   let pss = get_mins le_pats pss in
-  do_complete_partial pss
+
+  do_complete_partial ~pred pss
 
 let return_unused casel =
   let rec do_rec acc pref = function
