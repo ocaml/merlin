@@ -1,3 +1,4 @@
+Test 1
 
   $ cat >typ.ml <<EOF \
   > type a = A | B of string \
@@ -27,6 +28,8 @@
     "notifications": []
   }
 
+Test 2
+
   $ cat >typ2.ml <<EOF \
   > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
   > let f (x : basic_color) = \
@@ -54,8 +57,7 @@
     "notifications": []
   }
 
-FIXME ?
-
+Test 3 : FIXME ?
 
   $ cat >typ3.ml <<EOF \
   > type a = A | B of string \
@@ -86,6 +88,8 @@ FIXME ?
     "notifications": []
   }
 
+Test 4
+
   $ cat >typ4.ml <<EOF \
   > type b = C | D of string \
   > type a = A | B of b   \
@@ -115,6 +119,8 @@ FIXME ?
     ],
     "notifications": []
   }
+
+Test 5
 
   $ cat >typ3.ml <<EOF                              \
   > type _ term =                                   \
@@ -147,6 +153,8 @@ FIXME ?
     "notifications": []
   }
 
+Test 6
+
   $ cat >typ4.ml <<EOF                              \
   > type _ term =                                   \
   >  | Int : int -> int term                        \
@@ -178,7 +186,7 @@ FIXME ?
     "notifications": []
   }
 
-FIXME
+Test 7 : FIXME this match IS exhaustive
 
   $ cat >typ4b.ml <<EOF         \
   > type _ t =                  \
@@ -209,7 +217,7 @@ FIXME
     "notifications": []
   }
 
-FIXME
+Test 8 : FIXME (void type no Some)
 
   $ cat >typ5.ml <<EOF          \
   > type void = |               \
@@ -237,3 +245,19 @@ FIXME
     ],
     "notifications": []
   }
+
+Test 9
+
+  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF \
+  > let _ = \
+  >   match (None : int option option) with \
+  >   | Some (Some 3) -> () \
+  > EOF
+
+
+Et avec types dans un module ? Préfixe correct ?
+Agrandir la base de tests:
+3 cat : créer le PM, compélter et préciser les _
+Pour chaque cat: Somme / Variant polymorphe / GADT / records
+
+Autres cas: quand pas une variable de type ou type abstait, quand on ne peut pas détruire

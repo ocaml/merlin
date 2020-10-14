@@ -12,7 +12,7 @@ TODO: test all error cases
     "notifications": []
   }
 
-
+Test 2 : option
   $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename make_exhaustive.ml <<EOF \
   > let _ = \
   >   match (None : unit option) with \
@@ -37,6 +37,7 @@ TODO: test all error cases
     "notifications": []
   }
 
+Test 3 : option complete
   $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename refine_pattern.ml <<EOF \
   > let _ = \
   >   match (None : unit option) with \
@@ -61,6 +62,7 @@ TODO: test all error cases
     "notifications": []
   }
 
+Test 4 : module
   $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename unpack_module.ml <<EOF \
   > module type S = sig end \
   >  \
@@ -85,6 +87,7 @@ TODO: test all error cases
     "notifications": []
   }
 
+Test 5
   $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename record_exp.ml <<EOF \
   > let f (x : int ref) = \
   >   x \
@@ -107,7 +110,7 @@ TODO: test all error cases
     "notifications": []
   }
 
-FIXME: put each case on a different line (if it doesn't require updating
+Test 6 : FIXME: put each case on a different line (if it doesn't require updating
 pprintast).
 
   $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename variant_exp.ml <<EOF \
@@ -132,12 +135,16 @@ pprintast).
     "notifications": []
   }
 
+Test 7
+
   $ echo "let () = ()" | $MERLIN single case-analysis -start 1:4 -end 1:4 -filename stacktrace.ml | grep -E -v "Raised|Called|Re-raised"
   {
     "class": "error",
     "value": "Destruct not allowed on value_binding",
     "notifications": []
   }
+
+Test 8
 
   $ $MERLIN single case-analysis -start 4:2 -end 4:1 -filename nonode.ml <<EOF | grep -B 1 Query_commands.No_nodes \
   > let f (x : int option) = \
@@ -146,3 +153,12 @@ pprintast).
   > EOF
     "class": "exception",
     "value": "Query_commands.No_nodes
+
+Test 9 : with type constructor
+
+  $ $MERLIN single case-analysis -start 3:5 -end 3:5 -filename funny.ml <<EOF \
+  > type funny = int option -> unit \
+  > let v : funny = function \
+  >   | None -> ()    \
+  > EOF
+
