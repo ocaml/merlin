@@ -221,23 +221,6 @@
 (alias (name runtest) (deps (alias deprecation-run)))
 
 (alias
- (name destruct-basic)
- (package merlin)
- (deps (:t ./test-dirs/destruct/basic.t)
-       (source_tree ./test-dirs/destruct)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server}
-       %{bin:dot-merlin-reader})
- (action
-   (chdir ./test-dirs/destruct
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias destruct-basic)))
-
-(alias
  (name destruct-complete)
  (package merlin)
  (deps (:t ./test-dirs/destruct/complete.t)
@@ -255,9 +238,9 @@
 (alias (name runtest) (deps (alias destruct-complete)))
 
 (alias
- (name destruct-exceptions_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
+ (name destruct-create)
  (package merlin)
- (deps (:t ./test-dirs/destruct/exceptions_pre_408.t)
+ (deps (:t ./test-dirs/destruct/create.t)
        (source_tree ./test-dirs/destruct)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server}
@@ -269,12 +252,12 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias destruct-exceptions_pre_408)))
+(alias (name runtest) (deps (alias destruct-create)))
 
 (alias
- (name destruct-exceptions_since_408)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (name destruct-errors)
  (package merlin)
- (deps (:t ./test-dirs/destruct/exceptions_since_408.t)
+ (deps (:t ./test-dirs/destruct/errors.t)
        (source_tree ./test-dirs/destruct)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server}
@@ -286,7 +269,41 @@
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias destruct-exceptions_since_408)))
+(alias (name runtest) (deps (alias destruct-errors)))
+
+(alias
+ (name destruct-errors_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
+ (package merlin)
+ (deps (:t ./test-dirs/destruct/errors_pre_408.t)
+       (source_tree ./test-dirs/destruct)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias destruct-errors_pre_408)))
+
+(alias
+ (name destruct-errors_since_408)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
+ (deps (:t ./test-dirs/destruct/errors_since_408.t)
+       (source_tree ./test-dirs/destruct)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias destruct-errors_since_408)))
 
 (alias
  (name destruct-from_val)
@@ -321,6 +338,23 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias destruct-issue596)))
+
+(alias
+ (name destruct-refine)
+ (package merlin)
+ (deps (:t ./test-dirs/destruct/refine.t)
+       (source_tree ./test-dirs/destruct)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias destruct-refine)))
 
 (alias
  (name errors-alerts-test-pre-408)(enabled_if (< %{ocaml_version} 4.08.0))
