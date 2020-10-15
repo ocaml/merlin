@@ -3,6 +3,7 @@
 ###############
 
 Test 1.1 : option refine
+
   $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename refine_pattern.ml <<EOF \
   > let _ = \
   >   match (None : unit option) with \
@@ -28,13 +29,17 @@ Test 1.1 : option refine
   }
 
 Test 1.2 : option refine
-  $ $MERLIN single case-analysis -start 5:9 -end 5:10 -filename refine_pattern.ml <<EOF \
+
+  $ cat >typ12.ml <<EOF \
   > type t = A | B of int \
   > let _ = \
   >   match (None : t option) with \
   >   | None -> () \
   >   | Some _ -> () \
   > EOF
+
+  $ $MERLIN single case-analysis -start 5:9 -end 5:10 -filename typ12.ml < typ12.ml \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
     "value": [
@@ -54,12 +59,16 @@ Test 1.2 : option refine
   }
 
 Test 1.3 : FIXME ? int option
-  $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename refine_pattern.ml <<EOF \
+
+  $ cat >typ13.ml <<EOF \
   > let _ = \
   >   match (None : int option) with \
   >   | None -> () \
   >   | Some _ -> () \
   > EOF
+
+  $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename typ13.ml < typ13.ml \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
     "value": [
@@ -83,6 +92,7 @@ Test 1.3 : FIXME ? int option
 #############
 
 Test 2.1
+
   $ cat >typ4.ml <<EOF \
   > type b = C | D of string \
   > type a = A | B of b   \

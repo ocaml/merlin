@@ -32,6 +32,7 @@ pprintast).
 #############
 
 Test 2.1
+
   $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename record_exp.ml <<EOF \
   > let f (x : int ref) = \
   >   x \
@@ -150,6 +151,7 @@ Test 4.1
   }
 
 Test 4.2
+
   $ cat >typ4.ml <<EOF                              \
   > type _ term =                                   \
   >  | Int : int -> int term                        \
@@ -184,6 +186,7 @@ Test 4.2
 ############
 
 Test 6.1
+
   $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename unpack_module.ml <<EOF \
   > module type S = sig end \
   >  \

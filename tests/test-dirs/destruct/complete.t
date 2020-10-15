@@ -33,11 +33,14 @@ Test 1.1 : FIXME (void type no Some)
 
 Test 1.2 : FIXME ?
 
-  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF \
+  $ cat >typ12.ml <<EOF \
   > let _ = \
   >   match (None : int option option) with \
   >   | Some (Some 3) -> () \
   > EOF
+
+  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename typ12.ml < typ12.ml \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
     "value": [
@@ -51,8 +54,7 @@ Test 1.2 : FIXME ?
           "col": 23
         }
       },
-      "
-  | Some (Some 0)|Some (None)|None -> (??)"
+      "|Some (Some 0)|Some (None)|None -> (??)"
     ],
     "notifications": []
   }
