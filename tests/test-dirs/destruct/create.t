@@ -185,7 +185,7 @@ Test 4.2
 ## MODULE ##
 ############
 
-Test 6.1
+Test 5.1
 
   $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename unpack_module.ml <<EOF \
   > module type S = sig end \
@@ -208,5 +208,46 @@ Test 6.1
       },
       "let module M = (val x) in (??)"
     ],
+    "notifications": []
+  }
+
+Test 5.2 : Module path
+
+  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename module_path.ml <<EOF \
+  > module T = struct type t = A | B of int end \
+  >  \
+  > let g (x : T.t) = \
+  >   x \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 2
+        },
+        "end": {
+          "line": 4,
+          "col": 3
+        }
+      },
+      "match x with | T.A -> (??) | T.B _ -> (??)"
+    ],
+    "notifications": []
+  }
+
+test 5.3 : Abstract type
+
+
+  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename module_path.ml <<EOF \
+  > module T : sig type t end = struct type t = A | B of int end \
+  >  \
+  > let g (x : T.t) = \
+  >   x \
+  > EOF
+  {
+    "class": "error",
+    "value": "Destruct not allowed on non-destructible type: t",
     "notifications": []
   }

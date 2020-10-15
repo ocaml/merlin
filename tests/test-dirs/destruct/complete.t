@@ -314,10 +314,34 @@ Test 4.3 : FIXME this match IS exhaustive
     "notifications": []
   }
 
+############
+## MODULE ##
+############
 
-Et avec types dans un module ? Préfixe correct ?
-Agrandir la base de tests:
-3 cat : créer le PM, compélter et préciser les _
-Pour chaque cat: Somme / Variant polymorphe / GADT / records
+Test 5.1 : Module path
 
-Autres cas: quand pas une variable de type ou type abstait, quand on ne peut pas détruire
+  $ $MERLIN single case-analysis -start 5:4 -end 5:4 -filename module_path.ml <<EOF \
+  > module T = struct type t = A | B of int end \
+  >  \
+  > let g x = \
+  >   match x with  \
+  >   | T.A -> () \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 5,
+          "col": 13
+        },
+        "end": {
+          "line": 5,
+          "col": 13
+        }
+      },
+      "
+  | T.B _ -> (??)"
+    ],
+    "notifications": []
+  }
