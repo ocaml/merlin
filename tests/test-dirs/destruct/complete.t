@@ -31,7 +31,7 @@ Test 1.1 : FIXME (void type no Some)
     "notifications": []
   }
 
-Test 1.2
+Test 1.2 : FIXME ?
 
   $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF \
   > let _ = \
@@ -177,6 +177,36 @@ Test 3.1
         }
       },
       "|`Yellow|`Red -> (??)"
+    ],
+    "notifications": []
+  }
+
+Test 3.1
+
+  $ cat >typv3.ml <<EOF \
+  > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
+  > type better_color = [ basic_color | \`Gold ] \
+  > let f (x : better_color) = \
+  >   match x with          \
+  >   | #basic_color -> ()        \
+  > EOF
+
+  $ $MERLIN single case-analysis -start 5:5 -end 5:5 -filename typv3.ml <typv3.ml | \
+  > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 5,
+          "col": 22
+        },
+        "end": {
+          "line": 5,
+          "col": 22
+        }
+      },
+      "|`Gold -> (??)"
     ],
     "notifications": []
   }
