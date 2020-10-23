@@ -92,7 +92,8 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
   "The path to merlin in your installation."
   :group 'merlin :type '(choice (file :tag "Filename (default binary is \"ocamlmerlin\")")
                                 (function :tag "Function returning path to the binary")
-                                (const :tag "Use current opam switch" opam)))
+                                (const :tag "Use current opam switch" opam)
+                                (const :tag "Use esy" esy)))
 
 (defcustom merlin-completion-with-doc nil
   "If non-nil, tries to retrieve ocamldoc comments associated with each completion candidate"
@@ -234,8 +235,6 @@ The association list can contain the following optional keys:
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defvar merlin-opam-bin-path nil)
 
 ;; If user did not specify its merlin-favourite-caml-mode, try to guess it from
 ;; the buffer being edited
@@ -483,19 +482,22 @@ return (LOC1 . LOC2)."
 
 (defun merlin--call-merlin (command &rest args)
   "Invoke merlin binary with the proper setup to execute the command passed as argument (lookup appropriate binary, setup logging, pass global settings)"
-  ; Really start process
-  (let ((binary      (merlin-command))
-        (flags       (merlin-lookup 'flags merlin-buffer-configuration))
-        (process-environment (copy-list process-environment))
-        (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
-        ; FIXME use logfile
-        (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
-                         merlin-logfile))
-        (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
-                                          merlin-buffer-extensions))
-        (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
-                                          merlin-buffer-packages))
-        (filename    (buffer-file-name (buffer-base-buffer))))
+  ;; Really start process
+  (let* ((merlin-cmd-parts    (merlin-command))
+         (binary              (car merlin-cmd-parts))
+         (binary-base-args    (cdr merlin-cmd-parts))
+         (flags               (merlin-lookup 'flags merlin-buffer-configuration))
+         (process-environment (copy-list process-environment))
+         (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
+         ;; FIXME use logfile
+         (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
+                          merlin-logfile))
+         (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
+                                           merlin-buffer-extensions))
+         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
+                                           merlin-buffer-packages))
+         (filename    (buffer-file-name (buffer-base-buffer))))
+
     ;; Update environment
     (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
       (let* ((equal-pos (string-match-p "=" binding))
@@ -508,29 +510,31 @@ return (LOC1 . LOC2)."
           (setq process-environment (cons binding process-environment)))))
     ;; Compute verbosity
     (when (eq merlin/verbosity-context t)
-        (setq merlin/verbosity-context (cons command args)))
+        (setq merlin/verbosity-context (cons command (append binary-base-args args))))
     (if (not merlin/verbosity-context)
         (setq merlin--verbosity-cache nil)
       (if (equal merlin/verbosity-context (car-safe merlin--verbosity-cache))
           (setcdr merlin--verbosity-cache (1+ (cdr merlin--verbosity-cache)))
         (setq merlin--verbosity-cache (cons merlin/verbosity-context 0))))
     ;; Compute full command line.
-    (setq args (merlin--map-flatten-to-string
-                 "server" command "-protocol" "sexp"
-                 (when dot-merlin
-                   (list "-dot-merlin" dot-merlin))
-                 ;; Is debug mode enabled
-                 (when merlin-debug '("-log-file" "-"))
-                 ;; If command is repeated, increase verbosity
-                 (when merlin/verbosity-context
-                   (list "-verbosity" (cdr merlin--verbosity-cache)))
-                 packages
-                 extensions
-                 (unless (string-equal merlin-buffer-flags "")
-                   (cons "-flags" merlin-buffer-flags))
-                 (when filename
-                   (cons "-filename" filename))
-                 args))
+    (setq args
+          (append binary-base-args
+                  (merlin--map-flatten-to-string
+                   "server" command "-protocol" "sexp"
+                   (when dot-merlin
+                     (list "-dot-merlin" dot-merlin))
+                   ;; Is debug mode enabled
+                   (when merlin-debug '("-log-file" "-"))
+                   ;; If command is repeated, increase verbosity
+                   (when merlin/verbosity-context
+                     (list "-verbosity" (cdr merlin--verbosity-cache)))
+                   packages
+                   extensions
+                   (unless (string-equal merlin-buffer-flags "")
+                     (cons "-flags" merlin-buffer-flags))
+                   (when filename
+                     (cons "-filename" filename))
+                   args)))
     ;; Log last commands
     (setq merlin-debug-last-commands
           (cons (cons (cons binary args) nil) merlin-debug-last-commands))
@@ -1684,43 +1688,44 @@ Empty string defaults to jumping to all these."
             (merlin-lookup 'do-not-cache-config merlin-buffer-configuration))
     (setq merlin-buffer-configuration (merlin--configuration)))
 
-  (let ((command (merlin-lookup 'command merlin-buffer-configuration)))
-    (unless command
-      (setq
-       command
-       (cond
-        ((functionp merlin-command) (funcall merlin-command))
-        ((stringp merlin-command) merlin-command)
-        ((equal merlin-command 'opam)
-         (with-temp-buffer
-           (if (eq (call-process-shell-command
-                    "opam config var bin" nil (current-buffer) nil) 0)
-               (let ((bin-path
-                      (replace-regexp-in-string "\n$" "" (buffer-string))))
-                 ;; the opam bin dir needs to be on the path, so if merlin
-                 ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
-                 ;; correct version is used rather than the version that
-                 ;; happens to be on the path
+  (let ((current-command (merlin-lookup 'command merlin-buffer-configuration)))
+    (if current-command
+        current-command
+      (let ((new-buffer-configuration
+             (cond
+              ((functionp merlin-command) `((command . (,(funcall merlin-command)))))
+              ((stringp merlin-command) `((command . (,merlin-command))))
+              ((equal merlin-command 'esy) '((command . ("esy" "exec-command" "ocamlmerlin"))))
+              ((equal merlin-command 'opam)
+               (with-temp-buffer
+                 (if (eq (call-process-shell-command
+                          "opam config var bin" nil (current-buffer) nil) 0)
+                     (let ((bin-path
+                            (replace-regexp-in-string "\n$" "" (buffer-string))))
+                       ;; the opam bin dir needs to be on the path, so if merlin
+                       ;; calls out to sub binaries (e.g. ocamlmerlin-reason), the
+                       ;; correct version is used rather than the version that
+                       ;; happens to be on the path
 
-                 ;; this was originally done via `opam exec' but that does not
-                 ;; work for opam 1, and added a performance hit
-                 (setq merlin-opam-bin-path (list (concat "PATH=" bin-path)))
-                 (concat bin-path "/ocamlmerlin"))
+                       ;; this was originally done via `opam exec' but that does not
+                       ;; work for opam 1, and added a performance hit
+                       `((path . (,(concat "PATH=" bin-path)))
+                         (command . (,(concat bin-path "/ocamlmerlin")))))
 
-             ;; best effort if opam is not available, lookup for the binary in
-             ;; the existing env
-             (progn
-               (message "merlin-command: opam config failed (%S)"
-                        (buffer-string))
-               "ocamlmerlin"))))))
+                   ;; best effort if opam is not available, lookup for the binary in
+                   ;; the existing env
+                   (progn
+                     (message "merlin-command: opam config failed (%S)"
+                              (buffer-string))
+                     '("ocamlmerlin"))))))))
 
-      ;; cache command in merlin-buffer configuration to avoid having to shell
-      ;; out to `opam` each time.
-      (push (cons 'command command) merlin-buffer-configuration)
-      (when merlin-opam-bin-path
-        (push (cons 'env merlin-opam-bin-path) merlin-buffer-configuration)))
+        ;; cache command in merlin-buffer configuration to avoid having to shell
+        ;; out to `opam` each time.
+        (push (cons 'command (merlin-lookup 'command new-buffer-configuration)) merlin-buffer-configuration)
+        (when (merlin-lookup 'path new-buffer-configuration)
+          (push (cons 'env (merlin-lookup 'path new-buffer-configuration)) merlin-buffer-configuration))
 
-    command))
+        (merlin-lookup 'command new-buffer-configuration)))))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
