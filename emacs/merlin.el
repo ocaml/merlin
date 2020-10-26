@@ -6,7 +6,7 @@
 ;; Created: 30 August 2016
 ;; Version: 3.0
 ;; Keywords: ocaml languages
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "25.1"))
 ;; URL: https://github.com/ocaml/merlin
 
 ;;; Commentary:
@@ -1826,6 +1826,7 @@ Short cuts:
               (let ((configuration (merlin--configuration)))
                 (when configuration (setq merlin-buffer-configuration configuration)))
               (add-to-list 'after-change-functions 'merlin--on-edit)
+              (add-hook 'xref-backend-functions 'merlin-xref-backend nil t)
               ;; TODO: Sanity check for selected merlin version
               (unless merlin--idle-timer
                 (setq merlin--idle-timer
@@ -1836,12 +1837,14 @@ Short cuts:
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
       (remove-overlays nil nil 'merlin-kind 'highlight)
-      (remove-overlays nil nil 'merlin-kind 'error))))
+      (remove-overlays nil nil 'merlin-kind 'error)
+      (remove-hook 'xref-backend-functions 'merlin-xref-backend t))))
 
 (provide 'merlin)
 
 ;; Load these after (provide 'merlin) because they (require 'merlin)
 (require 'merlin-cap)
+(require 'merlin-xref)
 (eval-after-load 'company '(require 'merlin-company))
 (eval-after-load 'auto-complete '(require 'merlin-ac))
 (eval-after-load 'iedit '(require 'merlin-iedit))
