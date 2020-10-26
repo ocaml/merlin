@@ -20,7 +20,7 @@
 
 ;;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'crm) ;; for completing-read-multiple
 ;; caml-types for highlighting
 ;; (https://github.com/ocaml/merlin/issues/331)
@@ -486,7 +486,7 @@ return (LOC1 . LOC2)."
   ; Really start process
   (let ((binary      (merlin-command))
         (flags       (merlin-lookup 'flags merlin-buffer-configuration))
-        (process-environment (copy-list process-environment))
+        (process-environment (cl-copy-list process-environment))
         (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
         ; FIXME use logfile
         (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
@@ -503,7 +503,7 @@ return (LOC1 . LOC2)."
                        (substring binding 0 (1+ equal-pos))
                        binding))
              (is-prefix (lambda (x) (string-prefix-p prefix x))))
-        (setq process-environment (delete-if is-prefix process-environment))
+        (setq process-environment (cl-delete-if is-prefix process-environment))
         (when equal-pos
           (setq process-environment (cons binding process-environment)))))
     ;; Compute verbosity
@@ -651,14 +651,14 @@ return (LOC1 . LOC2)."
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
   (setq point (next-single-char-property-change point prop nil limit))
-  (unless (find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
+  (unless (cl-find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
     (setq point (next-single-char-property-change point prop nil limit)))
   point)
 
 (defun merlin--overlay-previous-property-set (point prop &optional limit)
   "Find previous point where PROP is set (like previous-single-char-property-change but ensure that prop is not-nil)."
   (setq point (previous-single-char-property-change point prop nil limit))
-  (unless (find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
+  (unless (cl-find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
     (setq point (previous-single-char-property-change point prop nil limit)))
   point)
 
@@ -670,7 +670,7 @@ return (LOC1 . LOC2)."
   (let ((point (merlin--overlay-next-property-set point 'merlin-pending-error limit)))
     (when group
       (while (not (or (eq point (point-max))
-                      (find-if 'merlin--error-group-pred (overlays-at point))))
+                      (cl-find-if 'merlin--error-group-pred (overlays-at point))))
         (setq point (merlin--overlay-next-property-set point 'merlin-pending-error limit))))
     point))
 
@@ -678,7 +678,7 @@ return (LOC1 . LOC2)."
   (let ((point (merlin--overlay-previous-property-set point 'merlin-pending-error limit)))
     (when group
       (while (not (or (eq point (point-min))
-                      (find-if 'merlin--error-group-pred (overlays-at point))))
+                      (cl-find-if 'merlin--error-group-pred (overlays-at point))))
         (setq point (merlin--overlay-next-property-set point 'merlin-pending-error limit))))
     point))
 
@@ -798,8 +798,8 @@ return (LOC1 . LOC2)."
                      (cons (car bounds) (1+ (cdr bounds))))))
     (setq bounds (cons (copy-marker (car bounds))
                        (copy-marker (cdr bounds))))
-    (acons 'sub (mapcar 'merlin--transform-add-error-bounds subs)
-           (acons 'bounds bounds err))))
+    (cl-acons 'sub (mapcar 'merlin--transform-add-error-bounds subs)
+              (cl-acons 'bounds bounds err))))
 
 (defun merlin-transform-display-errors (errors)
   "Populate the error list with ERRORS, transformed into an emacs-friendly
@@ -834,14 +834,14 @@ Return t if there were not any or nil if there were.  Moreover, it displays the
 errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
   (let* ((errors (merlin/call "errors"))
-         (no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
-    (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
+         (no-loc (cl-remove-if (lambda (e) (assoc 'start e)) errors)))
+    (setq errors (cl-remove-if-not (lambda (e) (assoc 'start e)) errors))
     (unless merlin-report-warnings
-      (setq errors (remove-if (lambda (e)
-                                (or
-                                  (eq (cdr-safe (assoc 'message e)) "warning")
-                                  (merlin--error-warning-p (cdr (assoc 'message e)))))
-                              errors)))
+      (setq errors (cl-remove-if (lambda (e)
+                                   (or
+                                    (eq (cdr-safe (assoc 'message e)) "warning")
+                                    (merlin--error-warning-p (cdr (assoc 'message e)))))
+                                 errors)))
     (setq merlin-erroneous-buffer (or errors no-loc))
     (dolist (e no-loc)
       (message "%s" (cdr (assoc 'message e))))
@@ -1231,14 +1231,14 @@ If called repeatedly, increase the verbosity of the type shown."
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
 strictly within, or nil if there is no such element."
-  (find-if (lambda (extent)
-             (let ((start (merlin--point-of-pos (assoc 'start extent)))
-                   (end (merlin--point-of-pos (assoc 'end extent))))
-               (or (and (> low start)
-                        (<= high end))
-                   (and (< high end)
-                        (>= low start)))))
-           list))
+  (cl-find-if (lambda (extent)
+                (let ((start (merlin--point-of-pos (assoc 'start extent)))
+                      (end (merlin--point-of-pos (assoc 'end extent))))
+                  (or (and (> low start)
+                           (<= high end))
+                      (and (< high end)
+                           (>= low start)))))
+              list))
 
 (defun merlin-enclosing-expand ()
   "Select the construct enclosing point (or the region, if it is active)."
@@ -1247,10 +1247,10 @@ strictly within, or nil if there is no such element."
            (merlin/call "enclosing"
                         "-position" (merlin/unmake-point (point))))
          (extents (if (use-region-p)
-                    (merlin--find-extents enclosing-extents
-                                          (region-beginning)
-                                          (region-end))
-                    (first enclosing-extents))))
+                      (merlin--find-extents enclosing-extents
+                                            (region-beginning)
+                                            (region-end))
+                    (cl-first enclosing-extents))))
     (if (not extents)
               (error "No enclosing construct")
       (merlin--goto-point (cdr (assoc 'start extents)))
