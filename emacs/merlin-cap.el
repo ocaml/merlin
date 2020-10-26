@@ -1,4 +1,4 @@
-;;; merlin-cap.el --- Merlin and completion-at-point integration.   -*- coding: utf-8 -*-
+;;; merlin-cap.el --- Merlin and completion-at-point integration.   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
@@ -49,7 +49,7 @@ trigger useless merlin calls.")
 
 (defun merlin-cap ()
   "Perform completion at point with merlin."
-  (lexical-let*
+  (let*
       ((bounds       (merlin/completion-bounds))
        (start        (car bounds))
        (end          (cdr bounds))

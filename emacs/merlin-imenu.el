@@ -1,4 +1,4 @@
-;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
+;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: tddsg (Ta Quang Trung)

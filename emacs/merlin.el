@@ -1,10 +1,12 @@
-;;; merlin.el --- Mode for Merlin, an assistant for OCaml.   -*- coding: utf-8 -*-
+;;; merlin.el --- Mode for Merlin, an assistant for OCaml   -*- coding: utf-8; lexical-binding: t -*-
+
 ;; Licensed under the MIT license.
 
 ;; Author: Frédéric Bour <frederic.bour(_)lakaban.net>
 ;; Created: 30 August 2016
 ;; Version: 3.0
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "24.3"))
 ;; URL: https://github.com/ocaml/merlin
 
 ;;; Commentary:
@@ -32,12 +34,6 @@
 (defgroup merlin nil
   "merlin binding mode allowing completion and typing in OCaml files."
   :group 'languages :prefix "merlin-")
-
-(unless (fboundp 'defvar-local)
-  (defmacro defvar-local (var val &optional docstring)
-    "Compatibility macro setup by Merlin for Emacs < 24.3"
-    `(progn (defvar ,var ,val ,docstring)
-            (make-variable-buffer-local (quote ,var)))))
 
 ;;
 ;; Faces
@@ -390,7 +386,7 @@ containing fields file, line and col."
 (defun merlin--highlight (bounds face)
   "Create an overlay on BOUNDS (of the form (START . END)) and give it FACE."
   (remove-overlays nil nil 'merlin-kind 'highlight)
-  (lexical-let ((overlay (make-overlay (car bounds) (cdr bounds))))
+  (let ((overlay (make-overlay (car bounds) (cdr bounds))))
     (overlay-put overlay 'face face)
     (overlay-put overlay 'merlin-kind 'highlight)
     (if merlin-allow-sit-for
@@ -1088,7 +1084,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 
 (defun merlin--type-region ()
   "Show the type of the region."
-  (lexical-let*
+  (let*
     ((substring  (merlin/buffer-substring (region-beginning) (region-end)))
      (on-success (lambda (type) (merlin--type-display nil type nil)))
      (on-error   (lambda (err)
