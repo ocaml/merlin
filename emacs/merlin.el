@@ -399,9 +399,7 @@ containing fields file, line and col."
 (defun merlin--goto-point (data)
   "Go to the point indicated by DATA which must be an assoc list with fields
 line and col. If narrowing is in effect, widen if DATA is outside the visible region."
-  (let ((line-num (merlin-lookup 'line data 0))
-        (col-byte-offset (merlin-lookup 'col data 0))
-        (target-pos (merlin--point-of-pos data)))
+  (let ((target-pos (merlin--point-of-pos data)))
     ;; If our target position is outside the narrowed region, we'll
     ;; have to widen.
     (when (or (< target-pos (point-min))
@@ -479,14 +477,14 @@ return (LOC1 . LOC2)."
 
 (defun merlin--call-merlin (command &rest args)
   "Invoke merlin binary with the proper setup to execute the command passed as argument (lookup appropriate binary, setup logging, pass global settings)"
-  ; Really start process
+  ;; Really start process
   (let ((binary      (merlin-command))
-        (flags       (merlin-lookup 'flags merlin-buffer-configuration))
+        ;; (flags       (merlin-lookup 'flags merlin-buffer-configuration))
         (process-environment (cl-copy-list process-environment))
         (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
-        ; FIXME use logfile
-        (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
-                         merlin-logfile))
+        ;; FIXME use logfile
+        ;; (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
+        ;;                  merlin-logfile))
         (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
                                           merlin-buffer-extensions))
         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
@@ -612,7 +610,7 @@ return (LOC1 . LOC2)."
 (defvar-local merlin--last-edit nil
   "Coordinates (start . end) of last edition or nil, to prevent error messages from flickering when cursor is around edition.")
 
-(defun merlin--on-edit (start end length)
+(defun merlin--on-edit (start end _length)
   "Memorize coordinates of last edition to avoid flickering error messages around the cursor"
   (setq merlin--last-edit (cons start end)))
 
@@ -775,7 +773,7 @@ return (LOC1 . LOC2)."
   "Returns non-nil if OVERLAY is about a pending error."
   (if overlay (overlay-get overlay 'merlin-pending-error) nil))
 
-(defun merlin--kill-error-if-edited (overlay is-after beg end &optional length)
+(defun merlin--kill-error-if-edited (overlay is-after _beg _end &optional _length)
   "Remove an error from the pending error lists if it is edited by the user."
   (when is-after (delete-overlay overlay)))
 
@@ -927,7 +925,6 @@ prefix of `bar' is `'."
   (let* ((merlin/verbosity-context t) ; increase verbosity level if necessary
          (ident- (merlin/completion-split-ident ident))
          (suffix (cdr ident-))
-         (prefix (car ident-))
          (data   (merlin/call "complete-prefix"
                               "-position" (merlin/unmake-point (point))
                               "-prefix" ident
@@ -953,8 +950,7 @@ prefix of `bar' is `'."
                               "-position" (merlin/unmake-point (point))
                               "-prefix" ident))
       (setq entries (cdr (assoc 'entries data)))
-      (setq-local merlin--dwimed t)
-      (setq prefix ""))
+      (setq-local merlin--dwimed t))
     ;; Concat results
     (let ((result (append labels entries)))
       (if expected-ty
@@ -1057,7 +1053,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 ;; EXPRESSION TYPING ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
+(defun merlin--type-expression (exp callback-if-success &optional _callback-if-exn)
   "Get the type of EXP inside the local context."
   (when exp
     (funcall callback-if-success
