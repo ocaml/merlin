@@ -1767,17 +1767,6 @@ Empty string defaults to jumping to all these."
     merlin-map
     ))
 
-(defun merlin-setup ()
-  "Set up a buffer for use with merlin."
-  (interactive)
-  (let ((configuration (merlin--configuration)))
-    (when configuration (setq merlin-buffer-configuration configuration)))
-  (add-to-list 'after-change-functions 'merlin--on-edit)
-  ;; TODO: Sanity check for selected merlin version
-  (unless merlin--idle-timer
-    (setq merlin--idle-timer
-          (run-with-idle-timer 0.5 t 'merlin-show-error-on-current-line))))
-
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
   (cond ((equal (buffer-name) merlin-type-buffer-name) nil)
@@ -1828,13 +1817,20 @@ Short cuts:
   :lighter (:eval (merlin-lighter))
   :keymap merlin-mode-map
   (if merlin-mode
-    ;; When enabling merlin
-    (progn
-      (when (member major-mode '(tuareg-mode caml-mode reason-mode))
-	(setq merlin-guessed-favorite-caml-mode major-mode))
-      (if (merlin-can-handle-buffer)
-          (merlin-setup)
-        (merlin-mode -1)))
+      ;; When enabling merlin
+      (progn
+        (when (derived-mode-p 'tuareg-mode 'caml-mode 'reason-mode)
+	  (setq merlin-guessed-favorite-caml-mode major-mode))
+        (if (merlin-can-handle-buffer)
+            (progn
+              (let ((configuration (merlin--configuration)))
+                (when configuration (setq merlin-buffer-configuration configuration)))
+              (add-to-list 'after-change-functions 'merlin--on-edit)
+              ;; TODO: Sanity check for selected merlin version
+              (unless merlin--idle-timer
+                (setq merlin--idle-timer
+                      (run-with-idle-timer 0.5 t 'merlin-show-error-on-current-line))))
+          (merlin-mode -1)))
     ;; When disabling merlin
     (progn
       (when merlin-highlight-overlay
