@@ -658,15 +658,15 @@ return (LOC1 . LOC2)."
     (setq point (previous-single-char-property-change point prop nil limit)))
   point)
 
-;; group is dynamically scoped
-(defun merlin--error-group-pred (err)
-  (eq (overlay-get err 'merlin-error-group) group))
+(defun merlin--has-error-group-overlay-at-point (point group)
+  (cl-some (lambda (err) (eq (overlay-get err 'merlin-error-group) group))
+           (overlays-at point)))
 
 (defun merlin--error-group-next (point group &optional limit)
   (let ((point (merlin--overlay-next-property-set point 'merlin-pending-error limit)))
     (when group
       (while (not (or (eq point (point-max))
-                      (cl-find-if 'merlin--error-group-pred (overlays-at point))))
+                      (merlin--has-error-group-overlay-at-point point group)))
         (setq point (merlin--overlay-next-property-set point 'merlin-pending-error limit))))
     point))
 
@@ -674,7 +674,7 @@ return (LOC1 . LOC2)."
   (let ((point (merlin--overlay-previous-property-set point 'merlin-pending-error limit)))
     (when group
       (while (not (or (eq point (point-min))
-                      (cl-find-if 'merlin--error-group-pred (overlays-at point))))
+                      (merlin--has-error-group-overlay-at-point point group)))
         (setq point (merlin--overlay-next-property-set point 'merlin-pending-error limit))))
     point))
 
