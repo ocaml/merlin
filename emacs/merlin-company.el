@@ -133,8 +133,7 @@
 ;; Register into company-mode ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'merlin-company-backend))
+(add-to-list 'company-backends 'merlin-company-backend)
 
 (provide 'merlin-company)
 ;;; merlin-company.el ends here
