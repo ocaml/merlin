@@ -16,7 +16,7 @@ let ver =
 
 Printf.ksprintf J.send {|
 (rule
- (copy# destruct.ml.%s destruct.ml))
+ (copy# destruct.%s.ml destruct.ml))
 
 (library
  (name merlin_analysis)
