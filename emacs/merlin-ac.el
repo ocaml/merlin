@@ -110,6 +110,7 @@ wrong then recompute it."
 (defun merlin-ac-setup-easy ()
   "Integrate merlin to auto-complete with sane defaults"
   (auto-complete-mode t)
+  (local-set-key (kbd "C-c C-l") 'ac-merlin-locate)
   (set (make-local-variable 'ac-auto-show-menu) t)
   (set (make-local-variable 'ac-auto-start) nil)
   (set (make-local-variable 'ac-delay) 0.0)
@@ -139,7 +140,6 @@ wrong then recompute it."
                            (prefix . merlin-ac--prefix)))
 
 (ac-define-source "merlin" merlin-ac-source)
-(define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate)
 
 (defun merlin-ac--setup ()
   (when merlin-ac-setup
