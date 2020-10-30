@@ -1846,7 +1846,6 @@ Short cuts:
 (require 'merlin-cap)
 (require 'merlin-xref)
 (eval-after-load 'company '(require 'merlin-company))
-(eval-after-load 'auto-complete '(require 'merlin-ac))
 (eval-after-load 'iedit '(require 'merlin-iedit))
 
 ;;; merlin.el ends here

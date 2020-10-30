@@ -7,7 +7,10 @@
 ;; Created: 15 May 2015
 ;; Version: 0.1
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1") (merlin "3") (auto-complete "1.5"))
 ;; URL: http://github.com/ocaml/merlin
+
+;;; Code:
 
 (require 'merlin)
 (require 'auto-complete)
@@ -107,6 +110,7 @@ wrong then recompute it."
 
 ;; Public functions
 
+;;;###autoload
 (defun merlin-ac-setup-easy ()
   "Integrate merlin to auto-complete with sane defaults"
   (auto-complete-mode t)
