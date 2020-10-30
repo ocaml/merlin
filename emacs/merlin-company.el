@@ -7,6 +7,7 @@
 ;; Created: 15 May 2015
 ;; Version: 0.1
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1") (merlin "3") (company "0.9"))
 ;; URL: http://github.com/ocaml/merlin
 
 (require 'merlin)
@@ -29,7 +30,8 @@
 
 (defcustom merlin-company-everywhere t
   "Non-nil to offer completions in comments and strings."
-  :type 'boolean)
+  :type 'boolean
+  :group 'merlin)
 
 ;; Internal functions
 

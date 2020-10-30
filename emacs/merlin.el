@@ -1845,7 +1845,6 @@ Short cuts:
 ;; Load these after (provide 'merlin) because they (require 'merlin)
 (require 'merlin-cap)
 (require 'merlin-xref)
-(eval-after-load 'company '(require 'merlin-company))
 (eval-after-load 'iedit '(require 'merlin-iedit))
 
 ;;; merlin.el ends here
