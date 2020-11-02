@@ -20,7 +20,7 @@
 ;;; Usage:
 ;; TODO
 
-;;;; Code:
+;;; Code:
 
 (require 'cl-lib)
 (require 'crm) ;; for completing-read-multiple
@@ -1026,7 +1026,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (let ((curr-dir default-directory))
     (with-current-buffer (get-buffer-create merlin-type-buffer-name)
       (when (member major-mode '(nil fundamental-mode))
-                                          ; Guess value for merlin-favourite-caml-mode
+        ;; Guess value for merlin-favourite-caml-mode
         (let ((caml-mode (or merlin-favourite-caml-mode
                              merlin-guessed-favorite-caml-mode)))
           (when caml-mode
@@ -1038,13 +1038,13 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
       (goto-char (point-min))
       (read-only-mode 1)
       (use-local-map merlin-types-buffer-map)
-      ; finally make sure that the type buffer directory is the same as the last
-      ; (ml) buffer we were in.
-      ; Indeed if people move to that buffer and start looking for a file we
-      ; want them to be in the directory they were in when they last requested a
-      ; type, not in the directory they were in when they first requested a
-      ; type (for long lived emacs sessions that directory might not even exist
-      ; anymore).
+      ;; finally make sure that the type buffer directory is the same as the last
+      ;; (ml) buffer we were in.
+      ;; Indeed if people move to that buffer and start looking for a file we
+      ;; want them to be in the directory they were in when they last requested a
+      ;; type, not in the directory they were in when they first requested a
+      ;; type (for long lived emacs sessions that directory might not even exist
+      ;; anymore).
       (setq default-directory curr-dir))))
 
 
