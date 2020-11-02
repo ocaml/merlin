@@ -556,12 +556,11 @@ return (LOC1 . LOC2)."
       (merlin-client-logger binary command timing class)
       (dolist (notification notifications)
         (message "(merlin) %s" notification))
-      (cond ((string-equal class "return") value)
-            ((string-equal class "failure")
-             (error "merlin-mode failure: %s" value))
-            ((string-equal class "error")
-             (error "merlin: %s" value))
-            (t (error "unknown answer: %S:%S" class value))))))
+      (pcase class
+        ("return" value)
+        ("failure" (error "merlin-mode failure: %s" value))
+        ("error" (error "merlin: %s" value))
+        (_ (error "unknown answer: %S:%S" class value))))))
 
 (defun merlin-stop-server ()
   "Shutdown merlin server."
@@ -1577,11 +1576,12 @@ Empty string defaults to jumping to all these."
 (defun merlin-occurrences-list (lst)
   (save-excursion
     (merlin-occurrences-populate-buffer lst)
-    (cond ((equal merlin-occurrences-show-buffer 'same)
-           (switch-to-buffer (merlin--get-occ-buff)))
-          ((equal merlin-occurrences-show-buffer 'other)
-           (switch-to-buffer-other-window (merlin--get-occ-buff)))
-          (t nil))))
+    (cl-case merlin-occurrences-show-buffer
+      ('same
+       (switch-to-buffer (merlin--get-occ-buff)))
+      ('other
+       (switch-to-buffer-other-window (merlin--get-occ-buff)))
+      (t nil))))
 
 (defun merlin--occurrences ()
   (merlin-call "occurrences" "-identifier-at" (merlin-unmake-point (point))))
