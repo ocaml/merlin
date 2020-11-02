@@ -324,12 +324,10 @@ The association list can contain the following optional keys:
   "Return content of buffer between two points or empty string if points are not valid"
   (if (< start end) (buffer-substring-no-properties start end) ""))
 
-(defun merlin-lookup (key list &optional default)
+(defsubst merlin-lookup (key list &optional default)
   "Lookup KEY in LIST which is a list of pairs. If not found,
 return DEFAULT or the value associated to KEY."
-  (let ((v (assoc key list)))
-    (if v (cdr v)
-      default)))
+  (assoc-default key list nil default))
 
 (defun merlin--differs-from-current-file (path)
   (not (string-equal path (buffer-file-name))))
