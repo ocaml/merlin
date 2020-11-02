@@ -51,24 +51,24 @@
 (defun merlin-company--doc-buffer (candidate)
   "Computes the /doc/ of CANDIDATE and returns the buffer where it printed it"
   (cond
-    ((merlin-company--has-doc candidate)
-     (let* ((doc (merlin-company--get-candidate-doc candidate))
-            ; We add (** and *) around documentation so we can reuse the type buffer
-            ; without getting some weird highlighting.
-            (doc (concat
-                   "val " candidate " : "
-                   (merlin-company--get-candidate-type candidate)
-                   "\n\n(** " doc " *)")))
-       (merlin/display-in-type-buffer doc)))
+   ((merlin-company--has-doc candidate)
+    (let* ((doc (merlin-company--get-candidate-doc candidate))
+                                        ; We add (** and *) around documentation so we can reuse the type buffer
+                                        ; without getting some weird highlighting.
+           (doc (concat
+                 "val " candidate " : "
+                 (merlin-company--get-candidate-type candidate)
+                 "\n\n(** " doc " *)")))
+      (merlin-display-in-type-buffer doc)))
 
-    ((merlin-company--is-module candidate)
-     (merlin/display-in-type-buffer
-      (merlin/call "type-expression"
-                   "-position" (merlin/unmake-point (point))
-                   "-expression" (substring-no-properties candidate))))
+   ((merlin-company--is-module candidate)
+    (merlin-display-in-type-buffer
+     (merlin-call "type-expression"
+                  "-position" (merlin-unmake-point (point))
+                  "-expression" (substring-no-properties candidate))))
 
-    (t (merlin/display-in-type-buffer
-         (merlin-company--get-candidate-type candidate))))
+   (t (merlin-display-in-type-buffer
+       (merlin-company--get-candidate-type candidate))))
   (get-buffer merlin-type-buffer-name))
 
 (defun merlin-company--meta (candidate)
@@ -94,8 +94,8 @@
     (cl-case command
       (interactive (company-begin-backend 'merlin-company-backend))
       (prefix
-       (let* ((bounds (merlin/completion-bounds))
-              (result (merlin/buffer-substring (car bounds) (cdr bounds))))
+       (let* ((bounds (merlin-completion-bounds))
+              (result (merlin-buffer-substring (car bounds) (cdr bounds))))
          (when (and (boundp 'company-candidates-cache)
                     (or (string-match-p "\\.$" result)
                         (member '("" "") company-candidates-cache)))
@@ -109,19 +109,19 @@
       (doc-buffer (merlin-company--doc-buffer arg))
       (location
        (ignore-errors
-         (let ((data (merlin/locate arg)))
+         (let ((data (merlin-locate arg)))
            (when (listp data)
              (let ((filename (merlin-lookup 'file data (buffer-file-name)))
                    (linum (cdr (assoc 'line (assoc 'pos data)))))
                (cons filename linum))))))
       (candidates
        (when (or merlin-company-everywhere (not (company-in-string-or-comment)))
-         (let ((prefix (merlin/completion-prefix arg)))
-           (cl-loop for x in (merlin/complete arg)
+         (let ((prefix (merlin-completion-prefix arg)))
+           (cl-loop for x in (merlin-complete arg)
                     collect
-                    (propertize (merlin/completion-entry-text prefix x)
+                    (propertize (merlin-completion-entry-text prefix x)
                                 'merlin-compl-type
-                                (merlin/completion-entry-short-description x)
+                                (merlin-completion-entry-short-description x)
                                 'merlin-arg-type (cdr (assoc 'argument_type x))
                                 'merlin-compl-doc (cdr (assoc 'info x)))))))
       (post-completion

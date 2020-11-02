@@ -59,11 +59,11 @@ auto-complete"
 
 (defun merlin-ac--make-popup-item (data)
   "Create a popup item from data DATA."
-  (let ((desc (merlin/completion-entry-short-description data)))
+  (let ((desc (merlin-completion-entry-short-description data)))
     (popup-make-item
      ;; Note: ac refuses to display an item if merlin-ac--ac-prefix is not a
      ;; prefix the item. So "dwim" completion won't work with ac.
-     (merlin/completion-entry-text merlin-ac--prefix data)
+     (merlin-completion-entry-text merlin-ac--prefix data)
      :summary (when (and merlin-completion-types merlin-ac-use-summary) desc)
      :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
      :document (let ((doc (cdr-safe (assoc 'info data))))
@@ -71,10 +71,10 @@ auto-complete"
 
 (defun merlin-ac--source-refresh-cache ()
   "Refresh the cache of completion."
-  (setq merlin-ac--prefix (merlin/completion-prefix ac-prefix))
+  (setq merlin-ac--prefix (merlin-completion-prefix ac-prefix))
   (setq merlin-ac--ac-prefix ac-prefix)
   (setq merlin-ac--cache (mapcar #'merlin-ac--make-popup-item
-                                 (merlin/complete merlin-ac--prefix))))
+                                 (merlin-complete merlin-ac--prefix))))
 
 (defun merlin-ac--source-init ()
   "Initialize the cache for `auto-complete' completion.
@@ -85,7 +85,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--prefix ()
   "Retrieve the prefix for completion with merlin."
-  (let* ((bounds (merlin/completion-bounds))
+  (let* ((bounds (merlin-completion-bounds))
          (start  (car-safe bounds))
          (end    (cdr-safe bounds)))
     (unless (and bounds (< (- end start) merlin-ac-prefix-size))
@@ -93,7 +93,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--fetch-type ()
   "Prints the type of the selected candidate"
-  (let ((candidate (merlin/buffer-substring merlin-ac--point (point))))
+  (let ((candidate (merlin-buffer-substring merlin-ac--point (point))))
     (when merlin-completion-types
       (mapc (lambda (item)
               (when (string-equal candidate item)
@@ -103,7 +103,7 @@ variable `merlin-ac--cache')."
 (defun merlin-ac--candidates ()
   "Return the candidates for auto-completion with auto-complete. If the cache is
 wrong then recompute it."
-  (unless (and (equal (merlin/completion-prefix ac-prefix) merlin-ac--prefix)
+  (unless (and (equal (merlin-completion-prefix ac-prefix) merlin-ac--prefix)
                (string-prefix-p merlin-ac--ac-prefix ac-prefix))
     (merlin-ac--source-refresh-cache))
   merlin-ac--cache)
@@ -131,7 +131,7 @@ wrong then recompute it."
     (when (popup-hidden-p ac-menu)
       (ac-show-menu))
     (let ((merlin-locate-in-new-window 'always))
-      (merlin/locate (ac-selected-candidate)))
+      (merlin-locate (ac-selected-candidate)))
     (ac-show-menu)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -29,8 +29,8 @@
       (dolist (pos occurrences)
         (let* ((start (assoc 'start pos))
                (end   (assoc 'end   pos))
-               (beginning (merlin/make-point start))
-               (ending    (merlin/make-point end)))
+               (beginning (merlin-make-point start))
+               (ending    (merlin-make-point end)))
           (if (text-property-not-all beginning ending 'read-only nil)
               (push (iedit-make-read-only-occurrence-overlay beginning ending)
                     iedit-read-only-occurrences-overlays)
@@ -45,8 +45,8 @@
   "Edit occurrences of identifier under cursor using `iedit'."
   (interactive)
   (if (bound-and-true-p iedit-mode) (iedit-mode -1)
-    (let ((r (merlin/call "occurrences"
-                          "-identifier-at" (merlin/unmake-point (point)))))
+    (let ((r (merlin-call "occurrences"
+                          "-identifier-at" (merlin-unmake-point (point)))))
       (when r
         (if (listp r)
             (flet ((iedit-printable (a)
