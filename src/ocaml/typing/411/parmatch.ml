@@ -2653,27 +2653,27 @@ let do_complete_partial ?pred pss =
   (* c/p of [do_check_partial] without the parts concerning the generation of
      the error message or the warning emiting. *)
   match pss with
-  | [] -> None
+  | [] -> None, None
   | ps :: _  ->
     begin match exhaust None pss (List.length ps) with
-    | No_matching_value -> None
+    | No_matching_value -> None, None
     | Witnesses [u] ->
       let v =
         match pred with
         | Some pred ->
           let (pattern,constrs,labels) = Conv.conv u in
-          pred constrs labels pattern
-        | None -> Some u
+          pred constrs labels pattern, Some (constrs, labels)
+        | None -> Some u, None
       in
       begin match v with
-      | None -> None
-      | Some v ->
+      | None, _ -> None, None
+      | Some v, unmangling_tables ->
         match v.pat_desc with
         | Tpat_construct (_, {cstr_name="*extension*"}, _) ->
           (* Matching over values of open types must include a wild card pattern
             in order to be exhaustive. *)
-          Some omega
-        | _ -> Some v
+          Some omega, unmangling_tables
+        | _ -> Some v, unmangling_tables
       end
     | _ ->
       (* FIXME: Are we sure we'll never get [Rsome lst]? This would be better
