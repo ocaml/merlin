@@ -257,7 +257,7 @@ Test 4.2
   >  | Int : int -> int term                        \
   >  | Add : (int -> int -> int) term               \
   >  | App : ('b -> 'a) term * 'b term -> 'a term   \
-  > let eval : type a. a term -> unit =           \
+  > let eval (type a) : a term -> unit =           \
   >   function                                      \
   >   | Int _ -> ()                                 \
   >   | Add -> ()                                   \
