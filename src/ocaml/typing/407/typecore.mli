@@ -198,3 +198,15 @@ val check_recursive_class_bindings :
 val extract_concrete_record :
   Env.t -> Types.type_expr -> Path.t * Path.t * Types.label_declaration list
 
+(* Merlin specific *)
+type type_pat_mode
+val partial_pred :
+  lev:int ->
+  ?mode:type_pat_mode ->
+  ?explode:int ->
+  Env.t ->
+  type_expr ->
+  (label, constructor_description) Hashtbl.t ->
+  (label, label_description) Hashtbl.t ->
+  Parsetree.pattern ->
+  Typedtree.pattern option

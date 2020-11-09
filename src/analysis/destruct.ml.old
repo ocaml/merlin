@@ -219,7 +219,9 @@ let rec get_match = function
     get_match parents
   | Expression m ->
     (match m.Typedtree.exp_desc with
-    | Typedtree.Texp_match (e, _, _) -> m, e.exp_type
+    | Typedtree.Texp_match _ as match_ ->
+      let e = Raw_compat.tmatch_scrutinee match_ in
+      m, e.exp_type
     | Typedtree.Texp_function _ ->
       let typ = Ctype.repr m.exp_type in
         (* Function must have arrow type. This arrow type
@@ -422,7 +424,7 @@ let rec qualify_constructors ~unmangling_tables f pat =
               | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
               | _ -> assert false
             end
-          | _ -> lid
+          | _ -> { lid with Asttypes.txt = Lident name }
           end
         | _ -> lid (* already qualified *)
       in
