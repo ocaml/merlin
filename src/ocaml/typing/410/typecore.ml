@@ -5421,3 +5421,8 @@ let () =
 let type_expect ?in_function env e ty = type_expect ?in_function env e ty
 let type_exp env e = type_exp env e
 let type_argument env e t1 t2 = type_argument env e t1 t2
+
+(* Merlin specific *)
+let partial_pred =
+  let splitting_mode = Refine_or {inside_nonsplit_or = false} in
+  partial_pred ~splitting_mode
