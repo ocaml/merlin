@@ -159,6 +159,10 @@ let texp_function_cases = function
   | Typedtree.Texp_function {cases; _} -> cases
   | _ -> assert false
 
+let tmatch_scrutinee = function
+  | Typedtree.Texp_match (e, _, _) -> e
+  | _ -> assert false
+
 let const_string (s, o) = Asttypes.Const_string (s, o)
 
 let dummy_type_scheme desc =
