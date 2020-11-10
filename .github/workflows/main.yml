@@ -10,7 +10,7 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    - cron:  '0 12 */6 * *'
+    - cron: '0 12 */6 * *'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -51,7 +51,7 @@ jobs:
           # An explicit key for restoring and saving the cache
           key: ${{ matrix.os }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}-build
       - name: Set up OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1.0.1
+        uses: avsm/setup-ocaml@v1
         with:
           # Version of the OCaml compiler to initialise
           ocaml-version: ${{ matrix.ocaml-version }}
