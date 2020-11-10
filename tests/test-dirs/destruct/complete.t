@@ -89,7 +89,7 @@ Test 1.3 : with type constructor
 ## RECORDS ##
 #############
 
-Test 2.1 : FIXME : useless _ in record pattern
+Test 2.1
 
   $ cat >typ.ml <<EOF \
   > type a = A | B of string \
