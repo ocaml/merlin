@@ -43,6 +43,8 @@ val select_open_node :
 
 val texp_function_cases : Typedtree.expression_desc -> Typedtree.case list
 
+val tmatch_scrutinee : Typedtree.expression_desc -> Typedtree.expression
+
 val const_string : string * string option -> Asttypes.constant
 
 val dummy_type_scheme : Types.type_desc -> Types.type_expr
