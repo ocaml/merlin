@@ -114,7 +114,7 @@ Test 2.1 : FIXME : useless _ in record pattern
           "col": 19
         }
       },
-      "|{ a = B _;_} -> (??)"
+      "|{ a = B _ } -> (??)"
     ],
     "notifications": []
   }
