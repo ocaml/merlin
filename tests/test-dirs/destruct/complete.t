@@ -224,8 +224,8 @@ Test 4.1
   >  | Int : int -> int term                        \
   >  | Add : (int -> int -> int) term               \
   >  | App : ('b -> 'a) term * 'b term -> 'a term   \
-  > let eval : type a. a term -> a term =           \
-  >   fun x : a term -> match x with                \
+  > let eval : type a. a term -> unit =           \
+  >   fun (x : a term) -> match x with                \
   >   | Int _ -> ()                                 \
   >   | Add -> ()                                   \
   > EOF
@@ -257,7 +257,7 @@ Test 4.2
   >  | Int : int -> int term                        \
   >  | Add : (int -> int -> int) term               \
   >  | App : ('b -> 'a) term * 'b term -> 'a term   \
-  > let eval : type a. a term -> a term =           \
+  > let eval (type a) : a term -> unit =           \
   >   function                                      \
   >   | Int _ -> ()                                 \
   >   | Add -> ()                                   \
@@ -283,7 +283,7 @@ Test 4.2
     "notifications": []
   }
 
-Test 4.3 : FIXME this match IS exhaustive
+Test 4.3 : this match IS exhaustive
 
   $ cat >typ4b.ml <<EOF         \
   > type _ t =                  \
@@ -297,20 +297,8 @@ Test 4.3 : FIXME this match IS exhaustive
   $ $MERLIN single case-analysis -start 6:4 -end 6:4 -filename typ4b.ml <typ4b.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
-    "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 6,
-          "col": 11
-        },
-        "end": {
-          "line": 6,
-          "col": 11
-        }
-      },
-      "|B -> (??)"
-    ],
+    "class": "error",
+    "value": "Nothing to do",
     "notifications": []
   }
 
@@ -337,6 +325,34 @@ Test 5.1 : Module path
         },
         "end": {
           "line": 5,
+          "col": 13
+        }
+      },
+      "
+  | T.B _ -> (??)"
+    ],
+    "notifications": []
+  }
+
+
+Test 5.1 : Module path (with function)
+
+  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename module_path.ml <<EOF \
+  > module T = struct type t = A | B of int end \
+  >  \
+  > let g = function \
+  >   | T.A -> () \
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 13
+        },
+        "end": {
+          "line": 4,
           "col": 13
         }
       },

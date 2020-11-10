@@ -143,3 +143,13 @@ val create_package_type : Location.t -> Env.t ->
 
 val extract_concrete_record :
   Env.t -> Types.type_expr -> Path.t * Path.t * Types.label_declaration list
+
+(* Merlin specific *)
+val partial_pred :
+  lev:int ->
+  Env.t ->
+  type_expr ->
+  (label, constructor_description) Hashtbl.t ->
+  (label, label_description) Hashtbl.t ->
+  Parsetree.pattern ->
+  Typedtree.pattern option

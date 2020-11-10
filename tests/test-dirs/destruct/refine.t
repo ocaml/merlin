@@ -123,6 +123,36 @@ Test 2.1
     "notifications": []
   }
 
+Test 2.2
+
+  $ cat >typ4b.ml <<EOF                       \
+  > type a = A | B                            \
+  > type recd = { x : a; y : bool; z : a }    \
+  > let f (r : recd) =                        \
+  >   match r with                            \
+  >   | { x = _ ; y ; _ } -> ()           \
+  > EOF
+
+  $ $MERLIN single case-analysis -start 5:11 -end 5:11 -filename typ4b.ml <typ4b.ml | \
+  > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 5,
+          "col": 4
+        },
+        "end": {
+          "line": 5,
+          "col": 21
+        }
+      },
+      "{ x = A; y;_}|{ x = B; y;_}"
+    ],
+    "notifications": []
+  }
+
 ##########################
 ## POLYMORPHIC VARIANTS ##
 ##########################

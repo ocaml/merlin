@@ -215,3 +215,16 @@ val constant: Parsetree.constant -> (Asttypes.constant, error) result
 val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
 val check_recursive_class_bindings :
   Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
+
+(* Merlin specific *)
+type type_pat_mode
+val partial_pred :
+  lev:int ->
+  ?mode:type_pat_mode ->
+  ?explode:int ->
+  Env.t ->
+  type_expr ->
+  (label, constructor_description) Hashtbl.t ->
+  (label, label_description) Hashtbl.t ->
+  Parsetree.pattern ->
+  Typedtree.pattern option

@@ -209,6 +209,39 @@ let rec patt_without_comput patt =
     end
   | _ -> Some patt
 
+let rec get_match = function
+| [] -> assert false
+| parent :: parents ->
+  match parent with
+  | Case _
+  | Pattern _ ->
+    (* We are still in the same branch, going up. *)
+    get_match parents
+  | Expression m ->
+    (match m.Typedtree.exp_desc with
+    | Typedtree.Texp_match _ as match_ ->
+      let e = Raw_compat.tmatch_scrutinee match_ in
+      m, e.exp_type
+    | Typedtree.Texp_function _ ->
+      let typ = Ctype.repr m.exp_type in
+        (* Function must have arrow type. This arrow type
+            might be hidden behind type constructors *)
+        m, (match typ.desc with
+        | Tarrow (_, te, _, _) -> te
+        | Tconstr _ ->
+          (match (Ctype.full_expand m.exp_env typ |> Ctype.repr).desc with
+          | Tarrow (_, te, _, _) -> te
+          | _ -> assert false)
+        | _ -> assert false)
+    | _ ->
+      (* We were not in a match *)
+      let s = Mbrowse.print_node () parent in
+      raise  (Not_allowed s))
+  | _ ->
+    (* We were not in a match *)
+    let s = Mbrowse.print_node () parent in
+    raise  (Not_allowed s)
+
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
@@ -337,22 +370,53 @@ let rec rm_sub patt sub =
   | Tpat_exception p ->
     Raw_compat.Pattern.update_desc_exn patt (Tpat_exception (f p) )
 
-let rec qualify_constructors f pat =
+let rec qualify_constructors ~unmangling_tables f pat =
   let open Typedtree in
+  let qualify_constructors = qualify_constructors ~unmangling_tables in
   let pat_desc =
     match pat.pat_desc with
     | Tpat_alias (p, id, loc) -> Tpat_alias (qualify_constructors f p, id, loc)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
     | Tpat_record (labels, closed) ->
       let labels =
+        let open Longident in
         List.map labels
-          ~f:(fun (lid, descr, pat) -> lid, descr, qualify_constructors f pat)
+          ~f:(fun (({ Location.txt ; _ } as lid), lbl_des, pat) ->
+            let lid_name = flatten txt |> String.concat ~sep:"." in
+            let pat = qualify_constructors f pat in
+            (* Un-mangle *)
+            match unmangling_tables with
+            | Some (_, labels) ->
+              (match Hashtbl.find_some labels lid_name with
+              | Some lbl_des -> (
+                  { lid with txt = Lident lbl_des.Types.lbl_name },
+                  lbl_des,
+                  pat
+                )
+              | None -> (lid, lbl_des, pat))
+            | None -> (lid, lbl_des, pat))
+      in
+      let closed =
+        if List.length labels > 0 then
+          let _, lbl_des, _ = List.hd labels in
+          if List.length labels = Array.length lbl_des.Types.lbl_all then
+            Asttypes.Closed
+          else Asttypes.Open
+        else closed
       in
       Tpat_record (labels, closed)
     | Tpat_construct (lid, cstr_desc, ps) ->
       let lid =
         match lid.Asttypes.txt with
         | Longident.Lident name ->
+          (* Un-mangle *)
+          let name = match unmangling_tables with
+            | Some (constrs, _) ->
+              (match  Hashtbl.find_some constrs name with
+              | Some cstr_des -> cstr_des.Types.cstr_name
+              | None -> name)
+            | None -> name
+          in
           begin match (Btype.repr pat.pat_type).Types.desc with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
@@ -368,7 +432,7 @@ let rec qualify_constructors f pat =
               | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
               | _ -> assert false
             end
-          | _ -> lid
+          | _ -> { lid with Asttypes.txt = Lident name }
           end
         | _ -> lid (* already qualified *)
       in
@@ -444,9 +508,18 @@ let node config source node parents =
         (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
-    begin match Parmatch.complete_partial pss with
-    | Some pat ->
-      let pat  = qualify_constructors Printtyp.shorten_type_path pat in
+    let match_, e_typ = get_match parents in
+    let pred = Typecore.partial_pred
+      ~lev:Btype.generic_level
+      match_.Typedtree.exp_env
+      e_typ
+    in
+    begin match Parmatch.complete_partial ~pred pss with
+    | Some pat, unmangling_tables ->
+      (* Unmangling and prefixing *)
+      let pat =
+        qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat
+      in
       let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
       let case = Ast_helper.Exp.case ppat placeholder in
       let loc =
@@ -456,7 +529,7 @@ let node config source node parents =
       let str = Mreader.print_pretty
            config source (Pretty_case_list [ case ]) in
       loc, str
-    | None ->
+    | None, _ ->
       if not (destructible patt) then raise Nothing_to_do else
       let ty = patt.Typedtree.pat_type in
       begin match gen_patterns patt.Typedtree.pat_env ty with
