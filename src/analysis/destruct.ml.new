@@ -384,6 +384,14 @@ let rec qualify_constructors ~unmangling_tables f pat  =
               | None -> (lid, lbl_des, pat))
             | None -> (lid, lbl_des, pat))
       in
+      let closed =
+        if List.length labels > 0 then
+          let _, lbl_des, _ = List.hd labels in
+          if List.length labels = Array.length lbl_des.Types.lbl_all then
+            Asttypes.Closed
+          else Asttypes.Open
+        else closed
+      in
       Tpat_record (labels, closed)
     | Tpat_construct (lid, cstr_desc, ps) ->
       let lid =
