@@ -3,19 +3,19 @@ open Local_store
 
 (* Instance of environment cache & btype unification log  *)
 
-type typer_state = Local_store.scope
+type typer_state = Local_store.store
 
 let current_state = s_ref None
 
 let new_state () =
-  let scope = Local_store.fresh () in
-  Local_store.with_scope scope (fun () -> current_state := Some scope);
-  scope
+  let store = Local_store.fresh () in
+  Local_store.with_store store (fun () -> current_state := Some store);
+  store
 
 let with_state state f =
   if Local_store.is_bound () then
     failwith "Mocaml.with_state: another instance is already in use";
-  match Local_store.with_scope state f with
+  match Local_store.with_store state f with
   | r -> Cmt_format.clear (); r
   | exception exn -> Cmt_format.clear (); reraise exn
 
