@@ -537,7 +537,9 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
           (kinds : kind list :> kinds)
       in
       let add_completions acc kind =
-        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch :: acc
+        get_candidates
+          ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch
+        :: acc
       in
       List.fold_left ~f:add_completions order ~init:[]
       |> List.concat
