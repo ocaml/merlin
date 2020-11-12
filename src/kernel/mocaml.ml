@@ -1,21 +1,21 @@
 open Std
-open Local_store.Compiler
+open Local_store
 
 (* Instance of environment cache & btype unification log  *)
 
-type typer_state = Local_store.scope
+type typer_state = Local_store.store
 
 let current_state = s_ref None
 
 let new_state () =
-  let scope = Local_store.fresh compiler_state in
-  Local_store.with_scope scope (fun () -> current_state := Some scope);
-  scope
+  let store = Local_store.fresh () in
+  Local_store.with_store store (fun () -> current_state := Some store);
+  store
 
 let with_state state f =
-  if Local_store.is_bound compiler_state then
+  if Local_store.is_bound () then
     failwith "Mocaml.with_state: another instance is already in use";
-  match Local_store.with_scope state f with
+  match Local_store.with_store state f with
   | r -> Cmt_format.clear (); r
   | exception exn -> Cmt_format.clear (); reraise exn
 
@@ -26,7 +26,7 @@ let is_current_state state = match !current_state with
 (* Build settings *)
 
 let setup_config config = (
-  assert Local_store.(is_bound compiler_state);
+  assert Local_store.(is_bound ());
   let open Mconfig in
   let open Clflags in
   let ocaml = config.ocaml in

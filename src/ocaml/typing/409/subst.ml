@@ -24,7 +24,7 @@ type type_replacement =
   | Path of Path.t
   | Type_function of { params : type_expr list; body : type_expr }
 
-open Local_store.Compiler
+open Local_store
 
 type t =
   { types: type_replacement Path.Map.t;

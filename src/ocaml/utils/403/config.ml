@@ -22,7 +22,7 @@
 (**                                                                   **)
 (***********************************************************************)
 
-open Local_store.Compiler
+open Local_store
 
 let exec_magic_number = "Caml1999X011"
 and cmi_magic_number = "Caml1999I020"

@@ -1,5 +1,5 @@
 open Std
-open Local_store.Compiler
+open Local_store
 
 let {Logger. log} = Logger.for_section "Mtyper"
 
@@ -137,7 +137,7 @@ let type_interface config caught parsetree =
 let run config parsetree =
   if not (Env.check_state_consistency ()) then (
     Mocaml.flush_caches ();
-    Local_store.reset compiler_state;
+    Local_store.reset ();
   );
   Mocaml.setup_config config;
   let caught = ref [] in

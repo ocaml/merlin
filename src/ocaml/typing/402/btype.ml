@@ -17,7 +17,7 @@
 open Misc
 open Types
 
-open Local_store.Compiler
+open Local_store
 
 (**** Sets, maps and hashtables of types ****)
 
@@ -602,7 +602,7 @@ type changes =
 
 type snapshot = changes ref * int
 
-open Local_store.Compiler
+open Local_store
 
 let trail = s_table Weak.create 1
 let last_snapshot = s_ref 0

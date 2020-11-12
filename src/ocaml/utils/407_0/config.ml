@@ -22,7 +22,7 @@
 (**                                                                   **)
 (***********************************************************************)
 
-open Local_store.Compiler
+open Local_store
 
 
 (* The main OCaml version string has moved to ../VERSION *)
