@@ -1445,6 +1445,23 @@
 (alias (name runtest) (deps (alias type-enclosing-recovery-issue1109_pre_406)))
 
 (alias
+ (name type-enclosing-types-alias)
+ (package merlin)
+ (deps (:t ./test-dirs/type-enclosing/types/alias.t)
+       (source_tree ./test-dirs/type-enclosing/types)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/type-enclosing/types
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias type-enclosing-types-alias)))
+
+(alias
  (name type-enclosing-types-gadt_correct_pre_408)(enabled_if (< %{ocaml_version} 4.08.0))
  (package merlin)
  (deps (:t ./test-dirs/type-enclosing/types/gadt_correct_pre_408.t)
