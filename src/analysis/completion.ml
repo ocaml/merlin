@@ -537,9 +537,12 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
           (kinds : kind list :> kinds)
       in
       let add_completions acc kind =
-        get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch @ acc
+        get_candidates
+          ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch
+        :: acc
       in
       List.fold_left ~f:add_completions order ~init:[]
+      |> List.concat
     else base_completion
   in
   try
@@ -660,7 +663,7 @@ let expand_prefix ~global_modules ?(kinds=[]) env prefix =
   let process_prefix_path prefix_path =
     let candidates =
       let aux compl kind =
-        get_candidates ?prefix_path ~prefix:"" kind ~validate env [] @ compl in
+        get_candidates ?prefix_path ~prefix:"" kind ~validate env [] :: compl in
       List.fold_left ~f:aux kinds ~init:[]
     in
     match prefix_path with
@@ -669,11 +672,13 @@ let expand_prefix ~global_modules ?(kinds=[]) env prefix =
         if not (validate' name) then None else
           Some (item_for_global_module name)
       in
-      candidates @ List.filter_map global_modules ~f
+      candidates @ [List.filter_map global_modules ~f]
+      |> List.flatten
     | Some lident ->
       let lident = Longident.flatten lident in
       let lident = String.concat ~sep:"." lident ^ "." in
-      List.map candidates ~f:(fun c -> { c with name = lident ^ parenthesize_name c.name })
+      List.concat_map candidates ~f:(List.map ~f:(fun c ->
+          { c with name = lident ^ parenthesize_name c.name }))
   in
   List.concat_map ~f:process_prefix_path lidents
 
