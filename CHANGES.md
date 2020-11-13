@@ -1,3 +1,11 @@
+merlin 3.4.2
+============
+Fri Nov 13 12:16:42 CEST 2020
+
+  + merlin binary
+    - simplify local store implementation and API (#1188, #1184)
+    - fix a destruct issue allowing ill-typed match completions (#1194)
+
 merlin 3.4.1
 ============
 Thu Oct  1 15:31:42 CEST 2020
