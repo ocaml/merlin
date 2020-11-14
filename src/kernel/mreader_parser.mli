@@ -29,6 +29,7 @@
 type kind =
   | ML
   | MLI
+  | SCRIPT
   (*| MLL | MLY*)
 
 type t
@@ -38,6 +39,7 @@ val make : Warnings.state -> Mreader_lexer.t -> kind -> t
 type tree = [
   | `Interface of Parsetree.signature
   | `Implementation of Parsetree.structure
+  | `Script of Parsetree.toplevel_phrase list
 ]
 
 val result : t -> tree
