@@ -2,21 +2,20 @@
 
 [Merlin](https://ocaml.github.io/merlin/) is an editor service that provides modern IDE features for OCaml.
 
-Emacs and Vim support is provided out-of-the-box. External contributors added support for Visual Studio Code, Sublime Text and Atom.
+Emacs and Vim support is provided out-of-the-box. To get editor support with Merlin in
+other editors, see [this](#other-editors).
 
 Easy installation with Opam
 ===========================
 
-If you have a working [Opam](https://opam.ocaml.org/) installation, Merlin is only two commands away:
+If you have a working [Opam](https://opam.ocaml.org/) installation, install Merlin running the following two commands in terminal:
 
 ```shell
 opam install merlin
 opam user-setup install
 ```
 
-[opam-user-setup](https://github.com/OCamlPro/opam-user-setup) takes care of configuring Emacs and Vim to make best use of your current install.
-
-You can also [configure the editor](#editor-setup) yourself, if you prefer.
+[opam-user-setup](https://github.com/OCamlPro/opam-user-setup) takes care of configuring Emacs and Vim to make best use of your current install. You can also [configure the editor](#editor-setup) yourself, if you prefer.
 
 Manually building and installing Merlin
 =======================================
@@ -34,18 +33,14 @@ Note: if you want to work on merlin, you'll want to avoid the `-p merlin`, to
 build in dev mode, with some extra warnings enabled. In that case you'll also
 need an extra dependency: menhir.
 
-LSP
----
-
-The LSP server has moved to its own
-[project](https://github.com/ocaml/ocaml-lsp).
-
 Installation
 ------------
 
 If you haven't encountered any errors in the previous step, just run:
 
-    $ dune install -p merlin
+```shell
+dune install -p merlin
+```
 
 You can pass an explicit prefix to dune, using `--prefix`. It defaults to
 your current opam switch.
@@ -53,12 +48,13 @@ your current opam switch.
 Editor setup
 ============
 
-To setup Emacs and Vim, you need to instruct them to run the appropriate script when an OCaml file is opened.
+To set up Emacs and Vim, you need to instruct them to run the appropriate script when an OCaml file is opened.
 
 In the rest of the document, \<SHARE\_DIR\> refers to the directory where Merlin data files are installed.
 
-It will usually be:  
-- printed by the command `opam config var share`, if you used opam  
+It will usually be:
+
+- printed by the command `opam config var share`, if you used opam
 - "\<prefix\>/share" if you explicitly specified a prefix when configuring Merlin
 
 ### Vim setup
@@ -97,16 +93,32 @@ A more comprehensive documentation can be found on the [emacs-from-scratch wiki]
 
 ### Other editors
 
-The wiki also contains pages for:  
-- [Acme](https://github.com/ocaml/merlin/wiki/acme-from-scratch)  
-- [Atom](https://github.com/ocaml/merlin/wiki/atom-from-scratch)  
+Merlin only supports Vim and Emacs out-of-the-box. Below is a short reference of getting
+merlin-based editor support in other editors.
+
+#### Visual Studio Code
+
+OCaml has official support for Visual Studio Code through an extension called `OCaml Platform` available in the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=ocamllabs.ocaml-platform). Project source is available [here](https://github.com/ocamllabs/vscode-ocaml-platform).
+*Note* that it requires [OCaml-LSP](https://github.com/ocaml/ocaml-lsp), an official
+[Language Server Protocol(LSP)](https://microsoft.github.io/language-server-protocol/specifications/specification-current/)
+implementation for OCaml based on merlin. It can be installed by running `opam install ocaml-lsp-server`.
+
+#### Editors without official support
+
+Consider using [OCaml-LSP](https://github.com/ocaml/ocaml-lsp) along with your editor's
+plugin for LSP if there is one.
+
+The wiki also contains pages for:
+
+- [Acme](https://github.com/ocaml/merlin/wiki/acme-from-scratch)
+- [Atom](https://github.com/ocaml/merlin/wiki/atom-from-scratch)
 - [Spacemacs](https://github.com/ocaml/merlin/wiki/spacemacs-from-scratch)
 
-External contributors have implemented modes for more editors:  
-* [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)  
-* [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)  
-* [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)  
-* [nuclide for Atom](https://nuclide.io/) includes Merlin support
+External contributors have implemented modes for more editors:
+
+- [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)
+- [nuclide for Atom](https://nuclide.io/) includes Merlin support
+- [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)
 
 Next steps
 ==========
@@ -164,17 +176,20 @@ When you encounter an issue, please report it with as much detail as possible. A
 
 Check that our issue database doesn't already include that problem/suggestion. You can click "subscribe" on issues to follow their progress and updates.
 
-When reporting issues, please include:  
-- steps to reproduce the problem, if possible with some code triggering the issue,  
+When reporting issues, please include:
+
+- steps to reproduce the problem, if possible with some code triggering the issue,
 - version of the tools you are using: operating system, editor, OCaml.
 
-Try to be as specific as possible:  
-- avoid generic phrasing such as "doesn't work", explain why it is not working (editor is freezing, you got an error message, the answer is not what was expected, ...)  
-- include the content of error messages.
+Try to be as specific as possible:
 
-If it seems relevant, also include information about your development environment:  
-- the Opam version and switch in use,  
-- other toolchains involved (OCaml flavors, cygwin, C compiler, shell, ...),  
+- avoid generic phrasing such as "doesn't work", explain *what* is happening (editor is freezing, you got an error message, the answer is not what was expected, ...)
+- include the content of error messages if there are any.
+
+If it seems relevant, also include information about your development environment:
+
+- the Opam version and switch in use,
+- other toolchains involved (OCaml flavors, cygwin, C compiler, shell, ...),
 - how the editor was setup.
 
 ### Pull Requests
@@ -270,7 +285,6 @@ Distribution and configuration:
 * [Edgar Aroutinian](https://github.com/fxfactorial), [ocaml-starterkit](https://github.com/fxfactorial/ocaml-starterkit), collection of tools for beginners in OCaml
 
 Support for other editors:
-* [Hackwaly](https://github.com/hackwaly), [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)
 * [Luc Rocher](https://github.com/cynddl), [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)
 * [Pieter Goetschalckx](https://github.com/314eter), [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)
 * various contributors, [nuclide package for Atom](https://nuclide.io/)
