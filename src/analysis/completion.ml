@@ -277,6 +277,41 @@ let fold_variant_constructors ~env ~init ~f =
   in
   aux init
 
+let is_intf_keyword = function
+  | "as"
+  | "assert"
+  | "begin"
+  | "do"
+  | "done"
+  | "downto"
+  | "else"
+  | "false"
+  | "for"
+  | "fun"
+  | "function"
+  | "if"
+  | "lazy"
+  | "let"
+  | "match"
+  | "new"
+  | "or"
+  | "rec"
+  | "struct"
+  | "then"
+  | "to"
+  | "true"
+  | "try"
+  | "when"
+  | "while"
+  | "lor"
+  | "lxor"
+  | "mod"
+  | "land"
+  | "lsl"
+  | "lsr"
+  | "asr" -> false
+  | _ -> true
+
 let get_candidates ?get_doc ?target_type ?prefix_path ~keywords ~prefix kind ~validate env branch =
   let cstr_attributes c = c.Types.cstr_attributes in
   let val_attributes v = v.Types.val_attributes in
@@ -426,21 +461,32 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~keywords ~prefix kind ~va
               ~attrs:(lbl_attributes l)
             :: candidates
         ) prefix_path env []
-      | `Keywords ->
-        begin match prefix_path with
-          | Some _ -> []
-          | None ->
-            List.fold_left keywords ~init:[] ~f:(fun candidates kw ->
-                if validate `Keyword `Keyword kw then
-                  make_weighted_candidate ~exact:(kw = prefix) kw `Keyword ~attrs:[]
-                  :: candidates
-                else
-                  candidates)
-        end
+      | `Keywords ctx ->
+        let validate =
+          match ctx with
+          | `Impl -> validate
+          | `Intf -> fun a b kw -> is_intf_keyword kw && validate a b kw
+        in
+        match prefix_path with
+        | Some _ -> []
+        | None ->
+          List.fold_left keywords ~init:[] ~f:(fun candidates kw ->
+              if validate `Keyword `Keyword kw then
+                make_weighted_candidate ~exact:(kw = prefix) kw `Keyword ~attrs:[]
+                :: candidates
+              else
+                candidates)
     in
     let of_kind_group = function
-      | #Query_protocol.Compl.kind as k -> of_kind k
       | `Group kinds -> List.concat_map ~f:of_kind kinds
+      | (`Variants
+        | `Values
+        | `Constructor
+        | `Types
+        | `Modules
+        | `Modules_type
+        | `Labels
+        | `Keywords _) as k -> of_kind k
     in
     try of_kind_group kind
     with exn ->
@@ -457,13 +503,13 @@ let gen_values = `Group [`Values; `Constructor]
 let default_kinds = [ `Variants; gen_values; `Types; `Modules; `Modules_type]
 
 let completion_order = function
-  | `Expression  -> [`Variants; gen_values; `Types; `Modules; `Modules_type; `Keywords]
-  | `Structure   -> [gen_values; `Types; `Modules; `Modules_type; `Keywords]
-  | `Pattern     -> [`Variants; `Constructor; `Modules; `Labels; `Values; `Types; `Modules_type; `Keywords]
-  | `Module      -> [`Modules; `Modules_type; `Types; gen_values; `Keywords]
-  | `Module_type -> [`Modules_type; `Modules; `Types; gen_values; `Keywords]
-  | `Signature   -> [`Types; `Modules; `Modules_type; gen_values; `Keywords]
-  | `Type        -> [`Types; `Modules; `Modules_type; gen_values; `Keywords]
+  | `Expression  -> [`Variants; gen_values; `Types; `Modules; `Modules_type; `Keywords `Impl]
+  | `Structure   -> [gen_values; `Types; `Modules; `Modules_type; `Keywords `Impl]
+  | `Pattern     -> [`Variants; `Constructor; `Modules; `Labels; `Values; `Types; `Modules_type; `Keywords `Impl]
+  | `Module      -> [`Modules; `Modules_type; `Types; gen_values; `Keywords `Impl]
+  | `Module_type -> [`Modules_type; `Modules; `Types; gen_values; `Keywords `Intf]
+  | `Signature   -> [`Types; `Modules; `Modules_type; gen_values; `Keywords `Intf]
+  | `Type        -> [`Types; `Modules; `Modules_type; gen_values; `Keywords `Intf]
 
 type kinds = [kind | `Group of kind list] list
 
@@ -486,6 +532,17 @@ type is_label =
   | `Description of Types.label_description list
   | `Declaration of Types.type_expr * Types.label_declaration list
   ]
+
+let kinds_expand_keywords =
+  List.concat_map ~f:(function
+      | `Keywords -> [`Keywords `Intf; `Keywords `Impl]
+      | (`Labels
+        | `Modules
+        | `Modules_type
+        | `Types
+        | `Values
+        | `Variants
+        | `Constructor) as k -> [k])
 
 let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label ~keywords
     config (env,node) branch =
@@ -546,7 +603,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label ~keyword
           let kind = classify_node node in
           completion_order kind
         else
-          (kinds : kind list :> kinds)
+          kinds_expand_keywords kinds
       in
       let add_completions acc kind =
         get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~keywords ~validate env branch @ acc
@@ -667,7 +724,7 @@ let expand_prefix ~global_modules ?(kinds=[]) ~keywords env prefix =
   let validate _ _ s = validate' s in
   let kinds = match kinds with
     | [] -> default_kinds
-    | kinds -> (kinds : kind list :> kinds)
+    | kinds -> kinds_expand_keywords kinds
   in
   let process_prefix_path prefix_path =
     let candidates =
