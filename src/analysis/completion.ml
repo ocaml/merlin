@@ -336,14 +336,14 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
           let c = Btype.linked_variables in
           try
             let c' = c () in
-            Ctype.unify_var env ty (Raw_compat.ctype_instance env scheme);
+            Ctype.unify_var env ty (Ctype.instance scheme);
             c () - c'
           with _ ->
             let arity = arrow_arity (-arity) scheme in
             if arity > 0 then begin
               let c' = c () in
               Btype.backtrack snap;
-              let ty' = Raw_compat.ctype_instance env scheme in
+              let ty' = Ctype.instance scheme in
               let ty' = nth_arrow arity ty' in
               try Ctype.unify_var env ty ty'; arity + c () - c'
               with _ -> 1000
@@ -394,7 +394,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         ) prefix_path env []
 
       | `Types ->
-        Env.fold_type_decls (fun name path decl candidates ->
+        Env.fold_types (fun name path decl candidates ->
           if not @@ validate `Lident `Typ name then candidates else
           make_weighted_candidate ~exact:(name = prefix) name ~path (`Typ decl)
             ~loc:decl.Types.type_loc ~attrs:(type_attributes decl)
@@ -684,6 +684,46 @@ let expand_prefix ~global_modules ?(kinds=[]) env prefix =
 
 open Typedtree
 
+let labels_of_application ~prefix = function
+  | {exp_desc = Texp_apply (f, args); exp_env; _} ->
+    let rec labels t =
+      let t = Ctype.repr t in
+      match t.Types.desc with
+      | Types.Tarrow (label, lhs, rhs, _) ->
+        (label, lhs) :: labels rhs
+      | _ ->
+        let t' = Ctype.full_expand exp_env t in
+        if Types.TypeOps.equal t t' then
+          []
+        else
+          labels t'
+    in
+    let labels = labels f.exp_type in
+    let is_application_of label (label',expr) =
+      match expr with
+      | Some {exp_loc = {Location. loc_ghost; loc_start; loc_end}; _} ->
+        label = label'
+        && (Btype.prefixed_label_name label <> prefix)
+        && not loc_ghost
+        && not (loc_start = loc_end)
+      | None -> false
+    in
+    List.filter_map ~f:(fun (label, ty) ->
+        match label with
+        | Asttypes.Nolabel -> None
+        | label when List.exists ~f:(is_application_of label) args -> None
+        | Asttypes.Labelled str -> Some ("~" ^ str, ty)
+        | Asttypes.Optional str ->
+          let ty = match (Ctype.repr ty).Types.desc with
+            | Types.Tconstr (path, [ty], _)
+              when Path.same path Predef.path_option -> ty
+            | _ -> ty
+          in
+          Some ("?" ^ str, ty)
+      ) labels
+  | _ -> []
+
+
 let application_context ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
@@ -719,7 +759,7 @@ let application_context ~prefix path =
           target_type := Some earg.exp_type;
           earg
       in
-      let labels = Raw_compat.labels_of_application ~prefix app in
+      let labels = labels_of_application ~prefix app in
       `Application { argument_type = pr earg.exp_type;
                      labels = List.map ~f:(fun (lbl,ty) -> lbl, pr ty) labels;
                    }

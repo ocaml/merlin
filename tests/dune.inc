@@ -459,23 +459,6 @@
 (alias (name runtest) (deps (alias errors-typing-after-parsing-test)))
 
 (alias
- (name file-cache-test)
- (package merlin)
- (deps (:t ./test-dirs/file-cache/test.t)
-       (source_tree ./test-dirs/file-cache)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server}
-       %{bin:dot-merlin-reader})
- (action
-   (chdir ./test-dirs/file-cache
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias file-cache-test)))
-
-(alias
  (name locate-ambiguity-not-in-env)
  (package merlin)
  (deps (:t ./test-dirs/locate/ambiguity/not-in-env.t)
@@ -1547,21 +1530,55 @@
 (alias (name runtest) (deps (alias type-expr-test)))
 
 (alias
- (name typer-cache-test)
+ (name typer-cache-current-level-test)
  (package merlin)
- (deps (:t ./test-dirs/typer-cache/test.t)
-       (source_tree ./test-dirs/typer-cache)
+ (deps (:t ./test-dirs/typer-cache/current-level/test.t)
+       (source_tree ./test-dirs/typer-cache/current-level)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server}
        %{bin:dot-merlin-reader})
  (action
-   (chdir ./test-dirs/typer-cache
+   (chdir ./test-dirs/typer-cache/current-level
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias typer-cache-test)))
+(alias (name runtest) (deps (alias typer-cache-current-level-test)))
+
+(alias
+ (name typer-cache-load_path-test)
+ (package merlin)
+ (deps (:t ./test-dirs/typer-cache/load_path/test.t)
+       (source_tree ./test-dirs/typer-cache/load_path)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/typer-cache/load_path
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias typer-cache-load_path-test)))
+
+(alias
+ (name typer-cache-stamps-test)
+ (package merlin)
+ (deps (:t ./test-dirs/typer-cache/stamps/test.t)
+       (source_tree ./test-dirs/typer-cache/stamps)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/typer-cache/stamps
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias typer-cache-stamps-test)))
 
 (alias
  (name warnings-backtrack)

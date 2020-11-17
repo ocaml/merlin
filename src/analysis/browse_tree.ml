@@ -126,7 +126,7 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
 let all_occurrences_of_prefix ~strict_prefix path node =
   let rec path_prefix ~prefix path =
     Path.same prefix path ||
-    match Path.Nopos.view path with
+    match path with
     | Pdot (p,_) -> path_prefix ~prefix p
     | _ -> false
   in
@@ -135,7 +135,7 @@ let all_occurrences_of_prefix ~strict_prefix path node =
       let paths = Browse_raw.node_paths node in
       let has_prefix {Location. txt; _} =
         if not strict_prefix then path_prefix ~prefix:path txt
-        else match Path.Nopos.view txt with
+        else match txt with
           | Pdot (p, _) -> path_prefix ~prefix:path p
           | _ -> false
       in

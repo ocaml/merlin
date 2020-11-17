@@ -46,6 +46,9 @@ val drop_leaf : t -> t option
  * Returns the matching node and all its ancestors or the empty list. *)
 val deepest_before : Lexing.position -> t list -> t
 
+
+val select_open_node : t -> (Path.t * t) option
+
 val enclosing : Lexing.position -> t list -> t
 
 val of_structure : Typedtree.structure -> t

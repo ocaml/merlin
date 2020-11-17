@@ -170,6 +170,35 @@ let deepest_before pos roots =
     in
     (aux root)
 
+(* Select open nodes *)
+
+let rec select_open_node =
+  function[@warning "-9"]
+  | (_, ( Structure_item ({str_desc =
+                             Tstr_open { open_expr =
+                                           { mod_desc = Tmod_ident (p, _) }}},
+                          _)))
+    :: ancestors ->
+    Some (p, ancestors)
+  | (_, ( Signature_item ({sig_desc = Tsig_open op}, _))) :: ancestors ->
+    Some (fst op.open_expr, ancestors)
+  | (_, Pattern {pat_extra; _}) :: ancestors
+    when List.exists pat_extra
+        ~f:(function (Tpat_open _, _ ,_) -> true | _ -> false) ->
+    let p = List.find_map pat_extra
+        ~f:(function | Tpat_open (p,_,_), _ ,_ -> Some p
+                     | _ -> None)
+    in
+    Some (p, ancestors)
+  | (_, Expression { exp_desc =
+                       Texp_open ({ open_expr =
+                                      { mod_desc = Tmod_ident (p, _)}}, _);
+                     _
+                   }) :: _ as ancestors ->
+    Some (p, ancestors)
+  | [] -> None
+  | _ :: ancestors -> select_open_node ancestors
+
 let of_structure str =
   let env =
     match str.str_items with

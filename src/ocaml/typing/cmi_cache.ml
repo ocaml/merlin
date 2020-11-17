@@ -26,16 +26,9 @@
 
 )* }}} *)
 
-type cmi_item = {
-  cmi: Cmi_format.cmi_infos;
-  cmi_cache: exn ref;
-}
 
 include File_cache.Make (struct
-  type t = cmi_item
-  let read name = {
-    cmi = Cmi_format.read_cmi name;
-    cmi_cache = ref Not_found;
-  }
+  type t = Cmi_format.cmi_infos
+  let read name = Cmi_format.read_cmi name
   let cache_name = "Cmi_cache"
 end)

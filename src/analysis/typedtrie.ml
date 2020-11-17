@@ -385,9 +385,9 @@ let rec build ~local_buffer ~trie browses : t =
       end
     | Value_binding vb ->
       let trie =
-        List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }) ->
+        List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }, _) ->
             Trie.add id {loc; doc; namespace = `Vals; node = Leaf} trie
-        ) (Typedtree.pat_bound_idents_with_loc vb.vb_pat)
+        ) (Typedtree.pat_bound_idents_full vb.vb_pat)
       in
       if not local_buffer then
         trie
@@ -412,7 +412,7 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_me mb.mb_expr)
       in
-      begin match Raw_compat.mb_id mb with
+      begin match mb.mb_id with
         | None -> trie
         | Some id ->
           Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie
@@ -422,7 +422,7 @@ let rec build ~local_buffer ~trie browses : t =
         node_for_direct_mod `Mod
           (remove_indir_mty md.md_type)
       in
-      begin match Raw_compat.md_id md with
+      begin match md.md_id with
         | None -> trie
         | Some id ->
           Trie.add id { loc=t.t_loc; doc; namespace=`Mod; node } trie
@@ -452,9 +452,9 @@ let rec build ~local_buffer ~trie browses : t =
     | Expression _ when local_buffer ->
       build ~local_buffer ~trie (Lazy.force t.t_children)
     | Pattern p when local_buffer ->
-      List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }) ->
+      List.fold_left ~init:trie ~f:(fun trie (id, { Asttypes.loc; _ }, _) ->
           Trie.add id {loc; doc; namespace = `Vals; node = Leaf} trie
-      ) (Typedtree.pat_bound_idents_with_loc p)
+      ) (Typedtree.pat_bound_idents_full p)
     | ignored_node ->
       log ~title:"build" "ignored node: %t"
         (fun () -> string_of_node ignored_node);

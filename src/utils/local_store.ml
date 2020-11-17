@@ -1,9 +1,6 @@
-type 'a table = { ref: 'a ref; init: unit -> 'a }
-type 'a immutable = { ref: 'a ref; mutable snapshot: 'a }
-
 type ref_and_reset =
-  | Table : 'a table -> ref_and_reset
-  | Ref : 'a immutable -> ref_and_reset
+  | Table : { ref: 'a ref; init: unit -> 'a } -> ref_and_reset
+  | Ref : { ref: 'a ref; mutable snapshot: 'a } -> ref_and_reset
 
 type bindings = {
   mutable refs: ref_and_reset list;
@@ -37,8 +34,7 @@ let s_ref k =
     (Ref { ref; snapshot = k }) :: global_bindings.refs;
   ref
 
-type 'a cell = { ref : 'a ref; mutable value : 'a }
-type slot = Slot : 'a cell -> slot
+type slot = Slot : { ref : 'a ref; mutable value : 'a } -> slot
 type store = slot list
 
 let fresh () =
@@ -57,12 +53,7 @@ let with_store slots f =
   assert (not global_bindings.is_bound);
   global_bindings.is_bound <- true;
   List.iter (fun (Slot {ref;value}) -> ref := value) slots;
-  match f () with
-  | res ->
+  Fun.protect f ~finally:(fun () ->
     List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
     global_bindings.is_bound <- false;
-    res
-  | exception exn ->
-    List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
-    global_bindings.is_bound <- false;
-    raise exn
+  )

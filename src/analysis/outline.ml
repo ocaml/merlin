@@ -72,7 +72,7 @@ let rec summarize node =
 
   | Module_declaration md ->
     let children = get_mod_children node in
-    begin match Raw_compat.md_id md with
+    begin match md.md_id with
     | None -> None
     | Some id ->
       let deprecated = Type_utils.is_deprecated md.md_attributes in
@@ -81,7 +81,7 @@ let rec summarize node =
 
   | Module_binding mb ->
     let children = get_mod_children node in
-    begin match Raw_compat.mb_id mb with
+    begin match mb.mb_id with
     | None -> None
     | Some id ->
       let deprecated = Type_utils.is_deprecated mb.mb_attributes in
