@@ -47,3 +47,9 @@ val max_tag: int
 
 val safe_string: bool
 val flat_float_array: bool
+
+(**/**)
+
+val merlin : bool
+
+(**/**)
