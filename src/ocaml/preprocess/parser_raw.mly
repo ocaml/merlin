@@ -228,10 +228,10 @@ let not_expecting loc nonterm =
 let unclosed opening_name opening_loc closing_name closing_loc =
   raise(Syntaxerr.Error(Syntaxerr.Unclosed(make_loc opening_loc, opening_name,
                                            make_loc closing_loc, closing_name)))
+*)
 
 let expecting loc nonterm =
-    raise Syntaxerr.(Error(Expecting(make_loc loc, nonterm)))
-*)
+    raise_error Syntaxerr.(Error(Expecting(make_loc loc, nonterm)))
 
 let dotop ~left ~right ~assign ~ext ~multi =
   let assign = if assign then "<-" else "" in
@@ -3135,11 +3135,13 @@ type_variance:
   | INFIXOP2
       { if $1 = "+!" then Covariant, Injective else
         if $1 = "-!" then Contravariant, Injective else
-        expecting $loc($1) "type_variance" }
+        (expecting $loc($1) "type_variance";
+         NoVariance, NoInjectivity) }
   | PREFIXOP
       { if $1 = "!+" then Covariant, Injective else
         if $1 = "!-" then Contravariant, Injective else
-        expecting $loc($1) "type_variance" }
+        (expecting $loc($1) "type_variance";
+         NoVariance, NoInjectivity) }
 ;
 
 (* A sequence of constructor declarations is either a single BAR, which

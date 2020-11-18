@@ -14,7 +14,7 @@
 
 open Local_store
 
-module SMap = Misc.Stdlib.String.Map
+module SMap = Misc.String.Map
 
 (* Mapping from basenames to full filenames *)
 type registry = string SMap.t ref
