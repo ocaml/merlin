@@ -345,6 +345,8 @@ let symbolcharnopercent =
   ['!' '$' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let dotsymbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '/' ':' '=' '>' '?' '@' '^' '|']
+let symbolchar_or_hash =
+  symbolchar | '#'
 let kwdopchar =
   ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
 
@@ -576,9 +578,9 @@ rule token state = parse
   | "-"  { return MINUS }
   | "-." { return MINUSDOT }
 
-  | "!" symbolchar + as op
+  | "!" symbolchar_or_hash + as op
             { return (PREFIXOP op) }
-  | ['~' '?'] symbolchar + as op
+  | ['~' '?'] symbolchar_or_hash + as op
             { return (PREFIXOP op) }
   | ['=' '<' '|' '&' '$' '>'] symbolchar * as op
             { return (keyword_or state op
@@ -592,11 +594,8 @@ rule token state = parse
   | '%'     { return PERCENT }
   | ['*' '/' '%'] symbolchar * as op
             { return (INFIXOP3 op) }
-  | '#' (symbolchar | '#') + as op
-            { return (try Hashtbl.find state.keywords op
-                      with Not_found -> HASHOP op) }
   (* Old style js_of_ocaml support is implemented by generating a custom token *)
-  | '#' (symbolchar | '#') + as op
+  | '#' symbolchar_or_hash + as op
             { return (try Hashtbl.find state.keywords op
                       with Not_found -> HASHOP op) }
   | "let" kwdopchar dotsymbolchar * as op
