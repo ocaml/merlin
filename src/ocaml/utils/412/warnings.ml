@@ -931,7 +931,7 @@ let dump ?(verbose=false) () =
         let x =
           try
             if verbose then
-              let desc = List.assoc i descriptions in
+              let _,desc,_ = List.find ~f:(fun (n, _, _) -> n = i) descriptions in
               `String (string_of_int i ^ ": " ^ desc)
             else
               `Int i

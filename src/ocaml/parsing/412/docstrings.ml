@@ -50,12 +50,12 @@ let warn_bad_docstrings () =
          match ds.ds_attached with
          | Info -> ()
          | Unattached ->
-           prerr_warning ds.ds_loc (Warnings.Unexpected_dostring true)
+           prerr_warning ds.ds_loc (Warnings.Unexpected_docstring true)
          | Docs ->
              match ds.ds_associated with
              | Zero | One -> ()
              | Many ->
-               prerr_warning ds.ds_loc (Warnings.Unexpected_dostring false))
+               prerr_warning ds.ds_loc (Warnings.Unexpected_docstring false))
       (List.rev !docstrings)
 end
 

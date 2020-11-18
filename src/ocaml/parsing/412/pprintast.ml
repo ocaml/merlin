@@ -415,7 +415,7 @@ and pattern_or ctxt f x =
   in
   match left_associative x [] with
   | [] -> assert false
-  | [x] -> pattern1 ctx f x
+  | [x] -> pattern1 ctxt f x
   | orpats -> 
       pp f "@[<hov0>%a@]" (list ~sep:"@ |" (pattern1 ctxt)) orpats
 
