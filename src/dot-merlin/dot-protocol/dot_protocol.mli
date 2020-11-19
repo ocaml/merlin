@@ -84,6 +84,6 @@ type read_error =
 
 (** [read inc] reads one csexp from the channel [inc] and returns the list of
   directives it represents *)
-val read : in_channel:in_channel -> (directive list, read_error) Std.Result.t
+val read : in_channel:in_channel -> (directive list, read_error) Merlin_utils.Std.Result.t
 
 val write : out_channel:out_channel -> directive list -> unit
