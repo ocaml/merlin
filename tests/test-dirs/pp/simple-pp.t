@@ -48,28 +48,12 @@
     ],
     "notifications": []
   }
-<<<<<<< HEAD
-  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF \
-  > #ifdef FOO \
-  > let x : int = "hello" \
-  > #else \
-  > let x : int = 42 \
-  > #endif \
-||||||| parent of 2011a0be... Test promotion: round 2
-  $ $MERLIN single errors -pp 'cpp -E' -filename test.ml <<EOF \
-  > #ifdef FOO \
-  > let x : int = "hello" \
-  > #else \
-  > let x : int = 42 \
-  > #endif \
-=======
-  $ $MERLIN single errors -pp 'cpp -E' -filename test.ml <<EOF
+  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF
   > #ifdef FOO
   > let x : int = "hello"
   > #else
   > let x : int = 42
   > #endif
->>>>>>> 2011a0be... Test promotion: round 2
   > EOF
   {
     "class": "return",

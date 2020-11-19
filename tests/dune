@@ -12,7 +12,7 @@
 
 (env (_
  (binaries merlin-wrapper)
- (env-vars 
+ (env-vars
   (MERLIN merlin-wrapper)
   (OCAMLC ocamlc))))
 
@@ -26,63 +26,3 @@
 (cram
  (applies_to :whole_subtree)
  (deps (alias test-deps)))
-
-(subdir test-dirs/pre-410
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (< %{ocaml_version} 4.10.0))))
-
-(subdir test-dirs/from-410
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (>= %{ocaml_version} 4.10.0))))
-
-(subdir test-dirs/pre-409
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (< %{ocaml_version} 4.09.0))))
-
-(subdir test-dirs/from-409
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (>= %{ocaml_version} 4.09.0))))
-
-(subdir test-dirs/pre-408
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (< %{ocaml_version} 4.08.0))))
-
-(subdir test-dirs/from-408
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (>= %{ocaml_version} 4.08.0))))
-
-(subdir test-dirs/pre-407
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (< %{ocaml_version} 4.07.0))))
-
-(subdir test-dirs/from-407
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (>= %{ocaml_version} 4.07.0))))
-
-(subdir test-dirs/pre-406
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (< %{ocaml_version} 4.06.0))))
-
-(subdir test-dirs/from-406
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (>= %{ocaml_version} 4.06.0))))
-
-(subdir test-dirs/pre-404
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (< %{ocaml_version} 4.04.0))))
-
-(subdir test-dirs/from-404
- (cram
-  (applies_to :whole_subtree)
-  (enabled_if (>= %{ocaml_version} 4.04.0))))

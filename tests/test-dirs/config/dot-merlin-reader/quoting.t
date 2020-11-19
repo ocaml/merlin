@@ -1,12 +1,12 @@
-  $ cat > .merlin <<EOF \
-  > EXCLUDE_QUERY_DIR \
-  > FLG -pp 'I/definitly/need/quoting.exe -nothing' \
-  > FLG -ppx '/path/to/ppx.exe --as-ppx --cookie '\\''library-name="model"'\\''' \
-  > FLG -w @3 \
+  $ cat > .merlin <<EOF
+  > EXCLUDE_QUERY_DIR
+  > FLG -pp 'I/definitly/need/quoting.exe -nothing'
+  > FLG -ppx '/path/to/ppx.exe --as-ppx --cookie '\\''library-name="model"'\\'''
+  > FLG -w @3
   > EOF
 
-  $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g' \
-  > (4:File${#FILE}:$FILE) \
+  $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
+  > (4:File${#FILE}:$FILE)
   > EOF
   ((?:EXCLUDE_QUERY_DIR)(?:FLG(?:-pp?:I/definitly/need/quoting.exe -nothing))(?:FLG(?:-ppx?:/path/to/ppx.exe --as-ppx --cookie 'library-name="model"'))(?:FLG(?:-w?:@3)))
 
@@ -18,21 +18,21 @@
     "cmt_path": [],
     "flags_applied": [
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "$TESTCASE_ROOT",
         "workval": [
           "-pp",
           "I/definitly/need/quoting.exe -nothing"
         ]
       },
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "$TESTCASE_ROOT",
         "workval": [
           "-ppx",
           "/path/to/ppx.exe --as-ppx --cookie 'library-name=\"model\"'"
         ]
       },
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "$TESTCASE_ROOT",
         "workval": [
           "-w",
           "@3"
