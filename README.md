@@ -93,7 +93,7 @@ A more comprehensive documentation can be found on the [emacs-from-scratch wiki]
 
 ### Other editors
 
-Merlin only supports Vim and Emacs out-of-the-box. Below is a short reference of getting
+Merlin only supports Vim and Emacs out-of-the-box. This section describes shortly how to get
 merlin-based editor support in other editors.
 
 #### Visual Studio Code
