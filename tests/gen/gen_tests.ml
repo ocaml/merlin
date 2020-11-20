@@ -1,3 +1,5 @@
+open Merlin_utils
+
 let (^/) = Filename.concat
 
 let gen_rule dir file =

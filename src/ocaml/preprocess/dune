@@ -37,6 +37,7 @@ Printf.ksprintf J.send {|
 (library
   (name preprocess)
   (wrapped false)
+  (flags -open Merlin_utils)
   (libraries parsing utils merlin_utils))
 
 (menhir

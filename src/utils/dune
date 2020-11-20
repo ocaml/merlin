@@ -10,7 +10,6 @@
 
 (library
  (name merlin_utils)
- (wrapped false)
  (libraries str yojson unix result)
  (c_names platform_misc))
 
