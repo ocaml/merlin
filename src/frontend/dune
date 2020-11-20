@@ -7,7 +7,7 @@
 (library
  (name      query_commands)
  (modules   query_commands)
- (flags -open Merlin_utils)
+ (flags -open Merlin_utils -open Merlin_analysis)
  (libraries
   merlin_utils
   merlin_kernel
