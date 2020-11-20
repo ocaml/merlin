@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.08.0))
-
 Various parts of the letop:
 
 - The operator:

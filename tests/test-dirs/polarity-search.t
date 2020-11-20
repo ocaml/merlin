@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.07.0))
-
 A few simple tests that show all the things we want to preserve or improve:
 
 # To improve

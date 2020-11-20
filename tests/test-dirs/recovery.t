@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.04.0))
-
 ?? should be parsed as merlin.hole, and merlin.hole shouldn't be treated as a
 type error.
 

@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.08.0))
-
   $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename complete.ml <<EOF
   > let _ =
   >   match (None : int option) with

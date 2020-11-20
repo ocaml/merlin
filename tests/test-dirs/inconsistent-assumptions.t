@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.08.0))
-
 Let us take the following project, that defines a library "my_lib":
 
   $ cat > import.ml <<EOF
@@ -65,7 +63,7 @@ Do an update that breaks the build:
 
   $ echo "let x = if x > 2 then 'c' else 'd'" >> import.ml
   $ cp *.ml *.mli _build/
-  $ cd _build 
+  $ cd _build
   $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Import import.ml
   $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Bar bar.ml
   $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Foo foo.ml

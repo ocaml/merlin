@@ -1,5 +1,3 @@
-(enabled_if (>= %{ocaml_version} 4.08.0))
-
 FIXME: Int here is not the Int module  but a constructor!
 See issue https://github.com/ocaml/merlin/issues/1125
 
