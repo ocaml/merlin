@@ -1,13 +1,13 @@
-(rule
- (targets merlin-wrapper)
- (deps    merlin-wrapper-template)
- (action
-   (progn
-     (with-stdout-to %{targets}
-       (run sed -e "s#%%OCAMLMERLIN_PATH%%#ocamlmerlin#"
-                -e "s#%%DOT_MERLIN_READER%%#dot-merlin-reader#"
-            merlin-wrapper-template))
-     (bash "chmod +x %{targets}"))))
+; (rule
+;  (targets merlin-wrapper)
+;  (deps    merlin-wrapper-template)
+;  (action
+;    (progn
+;      (with-stdout-to %{targets}
+;        (run sed -e "s#%%OCAMLMERLIN_PATH%%#ocamlmerlin#"
+;                 -e "s#%%DOT_MERLIN_READER%%#dot-merlin-reader#"
+;             merlin-wrapper-template))
+;      (bash "chmod +x %{targets}"))))
 
 
 (env (_
