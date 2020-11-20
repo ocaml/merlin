@@ -1,8 +1,8 @@
 A simple name is not expanded
 
-  $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx test1 | \
+  $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx test1 \
+  > 2> /dev/null | \
   > jq '.value.ocaml.ppx'
-  sh: test1: command not found
   [
     {
       "workdir": "$TESTCASE_ROOT",
@@ -12,9 +12,9 @@ A simple name is not expanded
 
 Neither is an absolute path
 
-  $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx /test2 | \
+  $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx /test2 \
+  > 2> /dev/null | \
   > jq '.value.ocaml.ppx'
-  sh: /test2: No such file or directory
   [
     {
       "workdir": "$TESTCASE_ROOT",
@@ -24,9 +24,9 @@ Neither is an absolute path
 
 But relative names are
 
-  $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx ./test3 | \
+  $ echo | $MERLIN single dump-configuration -filename relative_path.ml -ppx ./test3 \
+  > 2> /dev/null | \
   > jq '.value.ocaml.ppx'
-  sh: ./test3: No such file or directory
   [
     {
       "workdir": "$TESTCASE_ROOT",
