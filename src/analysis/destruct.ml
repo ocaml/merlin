@@ -120,9 +120,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         let snap = Btype.snapshot () in
         let res =
           try
-            Ctype.unify_gadt 0 (ref env) type_expr typ [@ocaml.warning "-6"]
-            (* The label was called "newtype_level" up to 4.06 (incl) and became
-               "equation_level" after that. *) ;
+            ignore (
+              Ctype.unify_gadt ~equations_level:0
+                ~allow_recursive:true (* really? *)
+                (ref env) type_expr typ
+            );
             true
           with Ctype.Unify _trace -> false
         in
