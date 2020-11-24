@@ -67,6 +67,11 @@ let try_finally ?(always=(fun () -> ())) ?(exceptionally=(fun () -> ())) work =
           raise always_exn
       end
 
+let reraise_preserving_backtrace e f =
+  let bt = Printexc.get_raw_backtrace () in
+  f ();
+  Printexc.raise_with_backtrace e bt
+
 type ref_and_value = R : 'a ref * 'a -> ref_and_value
 
 let protect_refs =
