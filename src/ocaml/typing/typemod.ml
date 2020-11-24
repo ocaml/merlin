@@ -98,6 +98,7 @@ type error =
   | Recursive_module_require_explicit_type
   | Apply_generative
   | Cannot_scrape_alias of Path.t
+  | Cannot_scrape_package_type of Path.t
   | Badly_formed_signature of string * Typedecl.error
   | Cannot_hide_id of hiding_error
   | Invalid_type_subst_rhs
@@ -171,7 +172,7 @@ let initial_env ~loc ~safe_string ~initially_opened_module
       env
   in
   let units =
-    List.rev_map Env.persistent_structures_of_dir (Load_path.get ())
+    List.map Env.persistent_structures_of_dir (Load_path.get ())
   in
   let env, units =
     match initially_opened_module with
@@ -484,14 +485,14 @@ let merge_constraint initial_env remove_aliases loc sg constr =
             type_manifest = None;
             type_variance =
               List.map
-                (fun (_, v) ->
+                (fun (_, (v, i)) ->
                    let (c, n) =
                      match v with
                      | Covariant -> true, false
                      | Contravariant -> false, true
-                     | Invariant -> false, false
+                     | NoVariance -> false, false
                    in
-                   make_variance (not n) (not c) false
+                   make_variance (not n) (not c) (i = Injective)
                 )
                 sdecl.ptype_params;
             type_separability =
@@ -1900,43 +1901,43 @@ let check_recmodule_inclusion env bindings =
 
 (* Helper for unpack *)
 
-let rec package_constraints env loc mty constrs =
+let rec package_constraints_sig env loc sg constrs =
+  List.map
+    (function
+      | Sig_type (id, ({type_params=[]} as td), rs, priv)
+        when List.mem_assoc [Ident.name id] constrs ->
+          let ty = List.assoc [Ident.name id] constrs in
+          Sig_type (id, {td with type_manifest = Some ty}, rs, priv)
+      | Sig_module (id, pres, md, rs, priv) ->
+          let rec aux = function
+            | (m :: ((_ :: _) as l), t) :: rest when m = Ident.name id ->
+                (l, t) :: aux rest
+            | _ :: rest -> aux rest
+            | [] -> []
+          in
+          let md =
+            {md with
+             md_type = package_constraints env loc md.md_type (aux constrs)
+            }
+          in
+          Sig_module (id, pres, md, rs, priv)
+      | item -> item
+    )
+    sg
+
+and package_constraints env loc mty constrs =
   if constrs = [] then mty
-  else let sg = extract_sig env loc mty in
-  let sg' =
-    List.map
-      (function
-        | Sig_type (id, ({type_params=[]} as td), rs, priv)
-          when List.mem_assoc [Ident.name id] constrs ->
-            let ty = List.assoc [Ident.name id] constrs in
-            Sig_type (id, {td with type_manifest = Some ty}, rs, priv)
-        | Sig_module (id, _, md, rs, priv) ->
-            let rec aux = function
-              | (m :: ((_ :: _) as l), t) :: rest when m = Ident.name id ->
-                  (l, t) :: aux rest
-              | _ :: rest -> aux rest
-              | [] -> []
-            in
-            let md =
-              {md with
-               md_type = package_constraints env loc md.md_type (aux constrs)
-              }
-            in
-            Sig_module (id, Mp_present, md, rs, priv)
-        | item -> item
-      )
-      sg
-  in
-  Mty_signature sg'
+  else begin
+    match Mtype.scrape env mty with
+    | Mty_signature sg ->
+        Mty_signature (package_constraints_sig env loc sg constrs)
+    | Mty_functor _ | Mty_alias _ -> assert false
+    | Mty_ident p -> raise(Error(loc, env, Cannot_scrape_package_type p))
+  end
 
 let modtype_of_package env loc p nl tl =
-  match (Env.find_modtype p env).mtd_type with
-  | Some mty when nl <> [] ->
-      package_constraints env loc mty
-        (List.combine (List.map Longident.flatten nl) tl)
-  | _ | exception Not_found (* missing cmi *) ->
-      if nl = [] then Mty_ident p
-      else raise(Error(loc, env, Signature_expected))
+  package_constraints env loc (Mty_ident p)
+    (List.combine (List.map Longident.flatten nl) tl)
 
 let package_subtype env p1 nl1 tl1 p2 nl2 tl2 =
   let mkmty p nl tl =
@@ -1946,11 +1947,13 @@ let package_subtype env p1 nl1 tl1 p2 nl2 tl2 =
     let (nl, tl) = List.split ntl in
     modtype_of_package env Location.none p nl tl
   in
-  let mty1 = mkmty p1 nl1 tl1 and mty2 = mkmty p2 nl2 tl2 in
-  let loc = Location.none in
-  match Includemod.modtypes ~loc ~mark:Mark_both env mty1 mty2 with
-  | Tcoerce_none -> true
-  | _ | exception Includemod.Error _ -> false
+  match mkmty p1 nl1 tl1, mkmty p2 nl2 tl2 with
+  | exception Error(_, _, Cannot_scrape_package_type _) -> false
+  | mty1, mty2 ->
+    let loc = Location.none in
+    match Includemod.modtypes ~loc ~mark:Mark_both env mty1 mty2 with
+    | Tcoerce_none -> true
+    | _ | exception Includemod.Error _ -> false
 
 let () = Ctype.package_subtype := package_subtype
 
@@ -2022,7 +2025,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
       in md
   | Pmod_structure sstr ->
       let (str, sg, names, _finalenv) =
-        type_structure funct_body anchor env sstr smod.pmod_loc in
+        type_structure funct_body anchor env sstr in
       let md =
         { mod_desc = Tmod_structure str;
           mod_type = Mty_signature sg;
@@ -2259,10 +2262,10 @@ and type_open_decl_aux ?used_slot ?toplevel funct_body names env od =
     } in
     open_descr, sg, newenv
 
-and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body anchor env sstr scope =
+and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body anchor env sstr =
   let names = Signature_names.create () in
 
-  let type_str_item env srem {pstr_loc = loc; pstr_desc = desc} =
+  let type_str_item env {pstr_loc = loc; pstr_desc = desc} =
     match desc with
     | Pstr_eval (sexpr, attrs) ->
         let expr =
@@ -2271,21 +2274,8 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         in
         Tstr_eval (expr, attrs), [], env
     | Pstr_value(rec_flag, sdefs) ->
-        let scope =
-          match rec_flag with
-          | Recursive ->
-              Some (Annot.Idef {scope with
-                                Location.loc_start = loc.Location.loc_start})
-          | Nonrecursive ->
-              let start =
-                match srem with
-                | [] -> loc.Location.loc_end
-                | {pstr_loc = loc2} :: _ -> loc2.Location.loc_start
-              in
-              Some (Annot.Idef {scope with Location.loc_start = start})
-        in
         let (defs, newenv) =
-          Typecore.type_binding env rec_flag sdefs scope in
+          Typecore.type_binding env rec_flag sdefs in
         let () = if rec_flag = Recursive then
           Typecore.check_recursive_bindings env defs
         in
@@ -2570,7 +2560,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
     | [] -> ([], [], env)
     | pstr :: srem ->
         let previous_saved_types = Cmt_format.get_saved_types () in
-        match type_str_item env srem pstr with
+        match type_str_item env pstr with
         | desc, sg, new_env ->
           let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
           Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
@@ -2592,15 +2582,15 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
 let type_toplevel_phrase env s =
   Env.reset_required_globals ();
   let (str, sg, _to_remove_from_sg, env) =
-    type_structure ~toplevel:true false None env s Location.none in
+    type_structure ~toplevel:true false None env s in
   (str, sg, (* to_remove_from_sg, *) env)
 
 let type_module_alias = type_module ~alias:true true false None
 let type_module = type_module true false None
 
-let merlin_type_structure env str loc =
+let merlin_type_structure env str =
   let (str, sg, _sg_names, env) =
-    type_structure ~keep_warnings:true false None env str loc
+    type_structure ~keep_warnings:true false None env str
   in
   str, sg, env
 let type_structure = type_structure false None
@@ -2776,7 +2766,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       if !Clflags.print_types then (* #7656 *)
         Warnings.parse_options false "-32-34-37-38-60";
       let (str, sg, names, finalenv) =
-        type_structure initial_env ast (Location.in_file sourcefile) in
+        type_structure initial_env ast in
       let simple_sg = Signature_names.simplify finalenv names sg in
       if !Clflags.print_types then begin
         Typecore.force_delayed_checks ();
@@ -3035,6 +3025,10 @@ let report_error ppf = function
   | Cannot_scrape_alias p ->
       fprintf ppf
         "This is an alias for module %a, which is missing"
+        path p
+  | Cannot_scrape_package_type p ->
+      fprintf ppf
+        "The type of this packed module refers to %a, which is missing"
         path p
   | Badly_formed_signature (context, err) ->
       fprintf ppf "@[In %s:@ %a@]" context Typedecl.report_error err
