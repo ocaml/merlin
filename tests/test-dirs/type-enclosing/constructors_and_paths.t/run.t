@@ -1,7 +1,7 @@
 Various parts of the cons.ml:
 
 - The expression:
-  $ ocamlmerlin single type-enclosing -position 4:14 -verbosity 0 \
+  $ $MERLIN single type-enclosing -position 4:14 -verbosity 0 \
   > -filename ./cons.ml < ./cons.ml| jq ".value[0:2]"
   [
     {
