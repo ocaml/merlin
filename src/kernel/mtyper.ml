@@ -67,7 +67,7 @@ let rec type_structure caught env = function
   | parsetree_item :: rest ->
     let items, _, part_env =
       Typemod.merlin_type_structure env [parsetree_item]
-        parsetree_item.Parsetree.pstr_loc in
+    in
     let typedtree_items =
       (items.Typedtree.str_items, items.Typedtree.str_type) in
     let item = {
