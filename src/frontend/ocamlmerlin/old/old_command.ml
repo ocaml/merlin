@@ -213,7 +213,7 @@ let document_states
   : (string option * string list option, state) Hashtbl.t
   = Hashtbl.create 7
 
-let dispatch (type a) (context : Context.t) (cmd : a command) =
+let dispatch (type a) (context : Context.t) (cmd : a command) : a =
   let open Context in
   (* Document selection *)
   let state = match context.document with
