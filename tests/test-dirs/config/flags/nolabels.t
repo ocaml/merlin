@@ -1,7 +1,5 @@
 classic and labels
 
-  $ touch .merlin
-
   $ $MERLIN single errors -filename labels_ok_1.ml <<EOF
   > let f ~x = () in f ~x:(); f ()
   > EOF
