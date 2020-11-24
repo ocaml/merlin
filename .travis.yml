@@ -8,8 +8,8 @@ env:
   - ASSUME_ALWAYS_YES=YES
   matrix:
   - OCAML_VERSION=4.11
-    PACKAGE=merlin,dot-merlin-reader
+    PACKAGE=merlin
 os:
-#  - linux
+  - linux
 #  - osx
   - freebsd
