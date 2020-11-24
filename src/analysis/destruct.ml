@@ -50,12 +50,12 @@ let mk_var s = Location.mknoloc s
 module Predef_types = struct
   let char_ env ty =
     let a = Tast_helper.Pat.constant env ty (Asttypes.Const_char 'a') in
-    let z = Parmatch.omega in
+    let z = Patterns.omega in
     [ a ; z ]
 
   let int_ env ty =
     let zero = Tast_helper.Pat.constant env ty (Asttypes.Const_int 0) in
-    let n = Parmatch.omega in
+    let n = Patterns.omega in
     [ zero ; n ]
 
   let string_ env ty =
@@ -64,7 +64,7 @@ module Predef_types = struct
         Asttypes.Const_string ("", Location.none, None)
       )
     in
-    let s = Parmatch.omega in
+    let s = Patterns.omega in
     [ empty ; s ]
 
   let tbl = Hashtbl.create 3
@@ -90,7 +90,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
   | Tobject _  -> raise (Not_allowed "object type")
   | Tpackage _ -> raise (Not_allowed "modules")
   | Ttuple lst ->
-    let patterns = Parmatch.omega_list lst in
+    let patterns = Patterns.omega_list lst in
     [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
@@ -143,7 +143,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         ) else
           let args =
             if cstr_descr.cstr_arity <= 0 then [] else
-              Parmatch.omegas cstr_descr.cstr_arity
+              Patterns.omegas cstr_descr.cstr_arity
           in
           let lidl = Location.mknoloc (prefix cstr_descr.cstr_name) in
           Some (Tast_helper.Pat.construct env type_expr lidl cstr_descr args)
@@ -152,7 +152,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
   | Tvariant row_desc ->
     List.filter_map row_desc.row_fields ~f:(function
       | lbl, Rpresent param_opt ->
-        let popt = Option.map param_opt ~f:(fun _ -> Parmatch.omega) in
+        let popt = Option.map param_opt ~f:(fun _ -> Patterns.omega) in
         Some (Tast_helper.Pat.variant env type_expr lbl popt (ref row_desc))
       | _, _ -> None
     )
