@@ -376,11 +376,31 @@ endfunction
 
 function! merlin#Locate(...)
   if (a:0 > 1)
-    echoerr "Locate: to many arguments (expected 0 or 1)"
+    echoerr "Locate: too many arguments (expected 0 or 1)"
   elseif (a:0 == 0) || (a:1 == "")
     MerlinPy merlin.vim_locate_under_cursor()
   else
     MerlinPy merlin.vim_locate_at_cursor(vim.eval("a:1"))
+  endif
+endfunction
+
+function! merlin#LocateImpl(...)
+  if (a:0 > 1)
+    echoerr "Locate: too many arguments (expected 0 or 1)"
+  elseif (a:0 == 0) || (a:1 == "")
+    MerlinPy merlin.vim_locate_choice_under_cursor("ml")
+  else
+    MerlinPy merlin.vim_locate_choice_at_cursor(vim.eval("a:1"), "ml)
+  endif
+endfunction
+
+function! merlin#LocateIntf(...)
+  if (a:0 > 1)
+    echoerr "Locate: too many arguments (expected 0 or 1)"
+  elseif (a:0 == 0) || (a:1 == "")
+    MerlinPy merlin.vim_locate_choice_under_cursor("mli")
+  else
+    MerlinPy merlin.vim_locate_choice_at_cursor(vim.eval("a:1"), "mli")
   endif
 endfunction
 
@@ -570,6 +590,8 @@ function! merlin#Register()
 
   """ Locate  ------------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
+  command! -buffer -nargs=? MerlinLocateImpl call merlin#LocateImpl(<q-args>)
+  command! -buffer -nargs=? MerlinLocateIntf call merlin#LocateIntf(<q-args>)
   command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
 
 

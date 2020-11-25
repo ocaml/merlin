@@ -250,9 +250,11 @@ def differs_from_current_file(path):
 def vim_fnameescape(s):
     return vim.eval("fnameescape('%s')" % s.replace("'","''"))
 
-def command_locate(path, pos):
+def command_locate(path, pos, choice):
     try:
-        choice = vim.eval('g:merlin_locate_preference')
+        if choice is None:
+            choice = vim.eval('g:merlin_locate_preference')
+
         if pos is None:
             return command("locate", "-prefix", path, "-look-for", choice)
         else:
@@ -429,10 +431,16 @@ def vim_loclist(vimvar, ignore_warnings):
 
 # Locate
 def vim_locate_at_cursor(path):
-    command_locate(path, vim.current.window.cursor)
+    command_locate(path, vim.current.window.cursor, None)
 
 def vim_locate_under_cursor():
     vim_locate_at_cursor(None)
+
+def vim_locate_choice_at_cursor(path, choice):
+    command_locate(path, vim.current.window.cursor, choice)
+
+def vim_locate_choice_under_cursor(choice):
+    vim_locate_choice_at_cursor(None, choice)
 
 # Jump and Phrase motion
 def vim_jump_to(target):
