@@ -1,8 +1,8 @@
 
-  $ $MERLIN single case-analysis -start 3:2 -end 3:3 -filename typ.ml <<EOF | sed -e 's/,_)/, _)/g' \
-  > type my_list = Atom | Elt of string * my_list \
-  > let f x : my_list = \
-  >   x \
+  $ $MERLIN single case-analysis -start 3:2 -end 3:3 -filename typ.ml <<EOF | sed -e 's/,_)/, _)/g'
+  > type my_list = Atom | Elt of string * my_list
+  > let f x : my_list =
+  >   x
   > EOF
   {
     "class": "return",
@@ -22,10 +22,10 @@
     "notifications": []
   }
 
-  $ $MERLIN single case-analysis -start 3:2 -end 3:3 -filename typ.ml <<EOF \
-  > type my_rec = { atom: string; elt: string * my_rec } \
-  > let f x : my_rec = \
-  >   x \
+  $ $MERLIN single case-analysis -start 3:2 -end 3:3 -filename typ.ml <<EOF
+  > type my_rec = { atom: string; elt: string * my_rec }
+  > let f x : my_rec =
+  >   x
   > EOF
   {
     "class": "return",
@@ -46,11 +46,11 @@
   }
 
 FIXME
-  $ $MERLIN single case-analysis -start 4:18 -end 4:21 -filename typ.ml <<EOF \
-  > type my_rec = { atom: string; elt: string * my_rec } \
-  > let f x : my_rec = \
-  >   match (x : my_rec) with \
-  >   | { atom; elt = _ } -> () \
+  $ $MERLIN single case-analysis -start 4:18 -end 4:21 -filename typ.ml <<EOF
+  > type my_rec = { atom: string; elt: string * my_rec }
+  > let f x : my_rec =
+  >   match (x : my_rec) with
+  >   | { atom; elt = _ } -> ()
   > EOF
   {
     "class": "error",
@@ -58,10 +58,10 @@ FIXME
     "notifications": []
   }
 
-  $ $MERLIN single case-analysis -start 3:2 -end 3:3 -filename typ.ml <<EOF \
-  > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
-  > let f x : basic_color = \
-  >   x \
+  $ $MERLIN single case-analysis -start 3:2 -end 3:3 -filename typ.ml <<EOF
+  > type basic_color = [ \`Blue | \`Red | \`Yellow ]
+  > let f x : basic_color =
+  >   x
   > EOF
   {
     "class": "return",
@@ -81,12 +81,12 @@ FIXME
     "notifications": []
   }
 
-  $ cat >typ.ml <<EOF             \
-  > type my_list = Atom | Elt of string * my_list \
-  > let f x : my_list =           \
-  >   match (x : my_list) with    \
-  >   | Atom -> ()                \
-  >   | Elt (_, _) -> ()          \
+  $ cat >typ.ml <<EOF
+  > type my_list = Atom | Elt of string * my_list
+  > let f x : my_list =
+  >   match (x : my_list) with
+  >   | Atom -> ()
+  >   | Elt (_, _) -> ()
   > EOF
 
   $ $MERLIN single case-analysis -start 5:12 -end 5:13 -filename typ.ml <typ.ml | \
@@ -109,13 +109,13 @@ FIXME
     "notifications": []
   }
 
-  $ cat >typ2.ml <<EOF                              \
-  > type _ term =                                   \
-  >  | Int : int -> int term                        \
-  >  | Add : (int -> int -> int) term               \
-  >  | App : ('b -> 'a) term * 'b term -> 'a term   \
-  > let eval : type a. a term -> a term =           \
-  >   fun x -> x                           \
+  $ cat >typ2.ml <<EOF
+  > type _ term =
+  >  | Int : int -> int term
+  >  | Add : (int -> int -> int) term
+  >  | App : ('b -> 'a) term * 'b term -> 'a term
+  > let eval : type a. a term -> a term =
+  >   fun x -> x
   > EOF
 
   $ $MERLIN single case-analysis -start 6:10 -end 6:10 -filename typ2.ml <typ2.ml | \
@@ -126,13 +126,13 @@ FIXME
     "notifications": []
   }
 
-  $ cat >typ3.ml <<EOF                              \
-  > type _ term =                                   \
-  >  | Int : int -> int term                        \
-  >  | Add : (int -> int -> int) term               \
-  >  | App : ('b -> 'a) term * 'b term -> 'a term   \
-  > let eval : type a. a term -> a term =           \
-  >   fun x : a term -> x                           \
+  $ cat >typ3.ml <<EOF
+  > type _ term =
+  >  | Int : int -> int term
+  >  | Add : (int -> int -> int) term
+  >  | App : ('b -> 'a) term * 'b term -> 'a term
+  > let eval : type a. a term -> a term =
+  >   fun x : a term -> x
   > EOF
 
   $ $MERLIN single case-analysis -start 6:20 -end 6:20 -filename typ3.ml <typ3.ml | \

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+export PATH=$(dirname dot-merlin-reader):$PATH
+
+touch .merlin && ocamlmerlin "$@" \
+    | jq 'del(.timing)' \
+    | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
+    | sed -e 's:"/.*/\(\.opam\|opam2\)/[^/]*/\([^"]*\)":"~opam/\2":g' \
+    | sed -e 's:\\n:\
+:g'

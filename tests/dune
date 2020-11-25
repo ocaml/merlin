@@ -1,26 +1,28 @@
-(rule
- (targets merlin-wrapper)
- (deps    merlin-wrapper-template)
- (action
-   (progn
-     (with-stdout-to %{targets}
-       (run sed -e "s#%%OCAMLMERLIN_PATH%%#%{bin:ocamlmerlin}#"
-                -e "s#%%DOT_MERLIN_READER%%#%{bin:dot-merlin-reader}#"
-            merlin-wrapper-template))
-     (bash "chmod +x %{targets}"))))
+; (rule
+;  (targets merlin-wrapper)
+;  (deps    merlin-wrapper-template)
+;  (action
+;    (progn
+;      (with-stdout-to %{targets}
+;        (run sed -e "s#%%OCAMLMERLIN_PATH%%#ocamlmerlin#"
+;                 -e "s#%%DOT_MERLIN_READER%%#dot-merlin-reader#"
+;             merlin-wrapper-template))
+;      (bash "chmod +x %{targets}"))))
+
+
+(env (_
+ (binaries merlin-wrapper)
+ (env-vars
+  (MERLIN merlin-wrapper)
+  (OCAMLC ocamlc))))
 
 (alias
-  (name runtest)
-  (deps merlin-wrapper))
+ (name test-deps)
+ (deps
+  %{bin:merlin-wrapper}
+  (package merlin)
+  (package dot-merlin-reader)))
 
-(include dune.inc)
-
-(rule
- (targets dune.inc.gen)
- (deps    (source_tree .))
- (action  (with-stdout-to %{targets} (run ./gen/gen_tests.exe))))
-
-(alias
- (package merlin)
- (name   runtest)
- (action (diff dune.inc dune.inc.gen)))
+(cram
+ (applies_to :whole_subtree)
+ (deps (alias test-deps)))

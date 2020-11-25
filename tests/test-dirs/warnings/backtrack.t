@@ -3,8 +3,8 @@ environment in different queries, some warnings will be reported only once.
 
   $ $MERLIN server stop-server
 
-  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF \
-  > let f x = () \
+  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF
+  > let f x = ()
   > EOF
   {
     "class": "return",
@@ -27,9 +27,9 @@ environment in different queries, some warnings will be reported only once.
     "notifications": []
   }
 
-  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF \
-  >  \
-  > let f x = () \
+  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF
+  > 
+  > let f x = ()
   > EOF
   {
     "class": "return",
@@ -52,8 +52,8 @@ environment in different queries, some warnings will be reported only once.
     "notifications": []
   }
 
-  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF \
-  > let f x = () \
+  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF
+  > let f x = ()
   > EOF
   {
     "class": "return",

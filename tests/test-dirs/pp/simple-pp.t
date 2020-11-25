@@ -1,5 +1,5 @@
-  $ $MERLIN single errors -pp cat -filename test.ml <<EOF \
-  > let x : int = "hello" \
+  $ $MERLIN single errors -pp cat -filename test.ml <<EOF
+  > let x : int = "hello"
   > EOF
   {
     "class": "return",
@@ -21,12 +21,12 @@
     ],
     "notifications": []
   }
-  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF \
-  > #ifndef FOO \
-  > let x : int = "hello" \
-  > #else \
-  > let x : int = 42 \
-  > #endif \
+  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF
+  > #ifndef FOO
+  > let x : int = "hello"
+  > #else
+  > let x : int = 42
+  > #endif
   > EOF
   {
     "class": "return",
@@ -48,12 +48,12 @@
     ],
     "notifications": []
   }
-  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF \
-  > #ifdef FOO \
-  > let x : int = "hello" \
-  > #else \
-  > let x : int = 42 \
-  > #endif \
+  $ $MERLIN single errors -pp 'cpp -Wno-everything -E' -filename test.ml <<EOF
+  > #ifdef FOO
+  > let x : int = "hello"
+  > #else
+  > let x : int = 42
+  > #endif
   > EOF
   {
     "class": "return",

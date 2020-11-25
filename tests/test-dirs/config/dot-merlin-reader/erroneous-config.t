@@ -1,9 +1,9 @@
 Create a broke .merlin:
 
-  $ cat > .merlin <<EOF \
-  > FLG -principal \
-  > PKG does-not-exist \
-  > # some comment \
+  $ cat > .merlin <<EOF
+  > FLG -principal
+  > PKG does-not-exist
+  > # some comment
   > EOF
 
 And look at merlin's config:
@@ -13,7 +13,7 @@ And look at merlin's config:
   {
     "flags_applied": [
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "$TESTCASE_ROOT",
         "workval": [
           "-principal"
         ]
