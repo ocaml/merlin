@@ -497,25 +497,29 @@ let node config source node parents =
         e_typ
       in
       begin match Parmatch.complete_partial ~pred pss with
-      | Some pat, unmangling_tables ->
-        (* Unmangling and prefixing *)
-        let pat =
-          qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat
-        in
+      | _ :: _ as patterns ->
+        let cases =
+          List.map patterns ~f:(fun (pat, unmangling_tables) ->
+            (* Unmangling and prefixing *)
+            let pat =
+              qualify_constructors ~unmangling_tables
+                Printtyp.shorten_type_path pat
+            in
 
-        (* Untyping and casing *)
-        let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
-        let case = Ast_helper.Exp.case ppat placeholder in
+            (* Untyping and casing *)
+            let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
+            Ast_helper.Exp.case ppat placeholder
+          )
+        in
         let loc =
           let open Location in
           { last_case_loc with loc_start = last_case_loc.loc_end }
         in
 
         (* Pretty printing *)
-        let str = Mreader.print_pretty
-            config source (Pretty_case_list [ case ]) in
+        let str = Mreader.print_pretty config source (Pretty_case_list cases) in
         loc, str
-      | None, _ ->
+      | [] ->
         begin match Typedtree.classify_pattern patt with
         | Computation -> raise (Not_allowed ("computation pattern"));
         | Value ->

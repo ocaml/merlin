@@ -2506,7 +2506,7 @@ let do_complete_partial ?pred pss =
   (* c/p of [do_check_partial] without the parts concerning the generation of
      the error message or the warning emiting. *)
   match pss with
-  | [] -> None, None
+  | [] -> []
   | ps :: _  ->
     let typecheck p =
       match pred with
@@ -2516,19 +2516,9 @@ let do_complete_partial ?pred pss =
             (pred constrs labels pattern)
       | None -> Some (p, None)
     in
-    let counter_examples =
-      exhaust None pss (List.length ps)
-      |> Seq.filter_map typecheck in
-    match counter_examples () with
-    | Seq.Nil -> None, None
-    | Seq.Cons ((v, unmangling_tables), _rest) ->
-        (* FIXME: gather what's in [_rest]? *)
-        match v.pat_desc with
-        | Tpat_construct (_, {cstr_name="*extension*"}, _) ->
-          (* Matching over values of open types must include a wild card pattern
-            in order to be exhaustive. *)
-          Some omega, unmangling_tables
-        | _ -> Some v, unmangling_tables
+    exhaust None pss (List.length ps)
+    |> Seq.filter_map typecheck
+    |> List.of_seq
 
 let complete_partial ~pred pss =
   let pss = get_mins le_pats pss in
