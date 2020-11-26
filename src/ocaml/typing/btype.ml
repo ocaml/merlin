@@ -638,7 +638,7 @@ let rec check_expans visited ty =
   | _ -> ()
 *)
 
-let memo = ref []
+let memo = s_ref []
         (* Contains the list of saved abbreviation expansions. *)
 
 let cleanup_abbrev () =
