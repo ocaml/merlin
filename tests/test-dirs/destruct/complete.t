@@ -54,7 +54,7 @@ Test 1.2 : FIXME ?
           "col": 23
         }
       },
-      "|Some (Some 0)|Some (None)|None -> (??)"
+      "|Some (Some 0) -> (??)|Some (None) -> (??)|None -> (??)"
     ],
     "notifications": []
   }
