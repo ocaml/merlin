@@ -38,8 +38,8 @@ Test 3
           "col": 16
         }
       },
-      "
-  | Some 0|None -> (??)"
+      " | Some 0 -> (??)
+  | None -> (??)"
     ],
     "notifications": []
   }
@@ -120,8 +120,8 @@ FIXME: `Some 0` certainly is a missing case but we can do better:
           "col": 16
         }
       },
-      "
-  | Some 0|None -> (??)"
+      " | Some 0 -> (??)
+  | None -> (??)"
     ],
     "notifications": []
   }
@@ -176,8 +176,8 @@ FIXME: `Some 0` certainly is a missing case but we can do better
           "col": 21
         }
       },
-      "
-  | Some 0|None -> (??)"
+      " | Some 0 -> (??)
+  | None -> (??)"
     ],
     "notifications": []
   }
