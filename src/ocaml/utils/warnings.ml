@@ -835,11 +835,14 @@ type reporting_information =
 
 let id_name w =
   let n = number w in
+  (* (* Merlin: let's keep our messages compact. *)
   match List.find_opt (fun (m, _, _) -> m = n) descriptions with
   | Some (_, _, s :: _) ->
       Printf.sprintf "%d [%s]" n s
   | _ ->
       string_of_int n
+  *)
+  string_of_int n
 
 let report w =
   match is_active w with
