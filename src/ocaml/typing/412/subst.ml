@@ -20,11 +20,11 @@ open Path
 open Types
 open Btype
 
+open Local_store
+
 type type_replacement =
   | Path of Path.t
   | Type_function of { params : type_expr list; body : type_expr }
-
-open Local_store
 
 type t =
   { types: type_replacement Path.Map.t;
