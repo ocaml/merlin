@@ -18,6 +18,7 @@ depends: [
   "conf-jq" {with-test}
   "csexp" {>= "1.2.3"}
   "result" {>= "1.5"}
+  "menhir" {dev}
 ]
 synopsis:
   "Editor helper, provides completion, typing and source browsing in Vim and Emacs"
