@@ -26,8 +26,8 @@
 
 )* }}} *)
 
-open Misc
 open Merlin_utils
+open Misc
 open Std
 open Std.Result
 
