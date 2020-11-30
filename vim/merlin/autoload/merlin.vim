@@ -388,9 +388,9 @@ function! merlin#LocateImpl(...)
   if (a:0 > 1)
     echoerr "Locate: too many arguments (expected 0 or 1)"
   elseif (a:0 == 0) || (a:1 == "")
-    MerlinPy merlin.vim_locate_choice_under_cursor("ml")
+    MerlinPy merlin.vim_locate_choice_under_cursor("implementation")
   else
-    MerlinPy merlin.vim_locate_choice_at_cursor(vim.eval("a:1"), "ml)
+    MerlinPy merlin.vim_locate_choice_at_cursor(vim.eval("a:1"), "implementation")
   endif
 endfunction
 
@@ -398,9 +398,9 @@ function! merlin#LocateIntf(...)
   if (a:0 > 1)
     echoerr "Locate: too many arguments (expected 0 or 1)"
   elseif (a:0 == 0) || (a:1 == "")
-    MerlinPy merlin.vim_locate_choice_under_cursor("mli")
+    MerlinPy merlin.vim_locate_choice_under_cursor("interface")
   else
-    MerlinPy merlin.vim_locate_choice_at_cursor(vim.eval("a:1"), "mli")
+    MerlinPy merlin.vim_locate_choice_at_cursor(vim.eval("a:1"), "interface")
   endif
 endfunction
 
