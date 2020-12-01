@@ -590,8 +590,8 @@ function! merlin#Register()
 
   """ Locate  ------------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
-  command! -buffer -nargs=? MerlinLocateImpl call merlin#LocateImpl(<q-args>)
-  command! -buffer -nargs=? MerlinLocateIntf call merlin#LocateIntf(<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocateImpl call merlin#LocateImpl(<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocateIntf call merlin#LocateIntf(<q-args>)
   command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
 
 
