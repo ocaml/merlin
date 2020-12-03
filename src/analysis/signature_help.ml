@@ -4,10 +4,17 @@ open Browse_raw
 
 open Extend_protocol.Reader
 
+type parameter_info =
+  { label : Asttypes.arg_label
+  ; param_start : int
+  ; param_end : int
+  ; argument : Typedtree.expression option
+  }
+
 type application_signature =
   { fun_name : string option
   ; signature : string
-  ; param_offsets : (int * int) list
+  ; parameters : parameter_info list
   ; active_param : int option
   }
 
@@ -25,7 +32,6 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
     longident ppf li;
     Some (to_string ())
   | _ -> None
-
 
 (* Type variables shared across arguments should all be
    printed with the same name.
@@ -46,7 +52,6 @@ let pp_parameter_type env ppf ty =
     Format.fprintf ppf "(%a)" (pp_type env) ty
   | ty -> pp_type env ppf ty
 
-
 (* print parameter labels and types *)
 let pp_parameter env label ppf ty =
   match label with
@@ -65,74 +70,87 @@ let pp_parameter env label ppf ty =
     Format.fprintf ppf "?%s:%a" l (pp_parameter_type env) (unwrap_option ty)
 
 (* record buffer offsets to be able to underline parameter types *)
-let print_parameter_offset buffer env label ty =
-  let ppf = Format.formatter_of_buffer buffer in
+let print_parameter_offset ?arg:argument ppf buffer env label ty =
   let param_start = Buffer.length buffer in
   Format.fprintf ppf "%a%!" (pp_parameter env label) ty;
   let param_end = Buffer.length buffer in
   Format.pp_print_string ppf " -> ";
   Format.pp_print_flush ppf ();
-  (param_start, param_end)
+  { label; param_start; param_end; argument }
 
-let application_signature = function
-  (* provide signature information for applied functions *)
-  | (_, Expression earg) :: (_, Expression { exp_desc =
-      Texp_apply ({ exp_type = { desc = Tarrow _; _ }; _ } as efun, eargs); _ }) :: _ ->
-    Type_utils.Printtyp.reset ();
-    let buffer = Buffer.create 16 in
-    let rec separate_signature ?(i=0) ?(param_offsets=[]) ?active_param args ty =
-      match (args, ty) with
-      | [], { Types.desc = Tarrow (label, ty1, ty2, _) } ->
-        let offset = print_parameter_offset buffer efun.exp_env label ty1 in
-        let param_offsets = offset::param_offsets in
-        separate_signature args ty2 ~i:(succ i) ~param_offsets ?active_param
+let separate_function_signature ~args (e : Typedtree.expression) =
+  Type_utils.Printtyp.reset ();
+  let buffer = Buffer.create 16 in
+  let ppf = Format.formatter_of_buffer buffer in
+  let rec separate ?(i=0) ?(parameters=[]) args ty =
+    match (args, ty) with
+    | (l, arg)::args, { Types.desc = Tarrow (label, ty1, ty2, _) } ->
+      let parameter = print_parameter_offset ppf buffer e.exp_env label ty1 ?arg in
+      separate args ty2 ~i:(succ i) ~parameters:(parameter::parameters)
 
-      | arg :: args, { Types.desc = Tarrow (label, ty1, ty2, _) } ->
-        let offset = print_parameter_offset buffer efun.exp_env label ty1 in
-        let param_offsets = offset::param_offsets in
-        let active_param = match arg with
-          | (l, Some e) when l = label && e == earg -> Some i
-          | _ -> active_param
-        in
-        separate_signature args ty2 ~i:(succ i) ~param_offsets ?active_param
+    | [], { Types.desc = Tarrow (label, ty1, ty2, _) } ->
+      let parameter = print_parameter_offset ppf buffer e.exp_env label ty1 in
+      separate args ty2 ~i:(succ i) ~parameters:(parameter::parameters)
 
-      (* end of function type, print remaining type without recording offsets *)
+    (* end of function type, print remaining type without recording offsets *)
+    | _ ->
+      Format.fprintf ppf
+        "%a%!" (pp_type e.exp_env) ty;
+      { fun_name = extract_ident e.exp_desc
+      ; signature = Buffer.contents buffer
+      ; parameters = List.rev parameters
+      ; active_param = None
+      }
+  in
+  separate args e.exp_type
+
+let active_parameter_by_arg ~arg params =
+  let find_by_arg = function
+    | { argument = Some a; _ } when a == arg -> true
+    | _ -> false
+  in
+  try Some (List.index params ~f:find_by_arg)
+  with Not_found -> None
+
+let active_parameter_by_prefix ~prefix params =
+  let common = function
+    | Asttypes.Nolabel -> Some 0
+    | l when String.is_prefixed ~by:"~" prefix
+          || String.is_prefixed ~by:"?" prefix ->
+      Some (String.common_prefix_len (Btype.prefixed_label_name l) prefix)
+    | _ -> None
+  in
+
+  let rec find_by_prefix ?(i=0) ?longest_len ?longest_i = function
+    | [] -> longest_i
+    | p :: ps ->
+      match common p.label, longest_len with
+      | Some common_len, Some longest_len when common_len > longest_len ->
+        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+      | Some common_len, None ->
+        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
       | _ ->
-        Format.fprintf (Format.formatter_of_buffer buffer)
-          "%a%!" (pp_type efun.exp_env) ty;
-        { fun_name = extract_ident efun.exp_desc
-        ; signature = Buffer.contents buffer
-        ; param_offsets = List.rev param_offsets
-        ; active_param
-        }
-    in
-    `Application (separate_signature eargs efun.exp_type)
+        find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i
+  in
+  find_by_prefix params
 
-  (* provide signature information directly after
-     an unapplied function-type value *)
+let application_signature ~prefix = function
+  (* provide signature information for applied functions *)
+  | (_, Expression arg) :: (_, Expression { exp_desc =
+      Texp_apply ({ exp_type = { desc = Tarrow _; _ }; _ } as e, args); _}) :: _ ->
+    let result = separate_function_signature e ~args in
+    let active_param = active_parameter_by_arg ~arg result.parameters in
+    let active_param = match active_param with
+      | Some _ as ap -> ap
+      | None -> active_parameter_by_prefix ~prefix result.parameters
+    in
+    `Application { result with active_param }
+
+  (* provide signature information directly after an unapplied function-type
+     value *)
   | (_, Expression ({ exp_type = { desc = Tarrow _; _ }; _ } as e)) :: _ ->
-    Type_utils.Printtyp.reset ();
-    let buffer = Buffer.create 16 in
-    (* sets active_param to index of first unlabelled parameter *)
-    let rec separate_signature ?(i=0) ?(param_offsets=[]) ?active_param = function
-      | { Types.desc = Tarrow (label, ty1, ty2, _) } ->
-        let offset = print_parameter_offset buffer e.exp_env label ty1 in
-        let param_offsets = offset::param_offsets in
-        let active_param = match active_param, label with
-          | None, Asttypes.Nolabel -> Some i
-          | _ -> active_param
-        in
-        separate_signature ty2 ~i:(succ i) ~param_offsets ?active_param
+    let result = separate_function_signature e ~args:[] in
+    let active_param = active_parameter_by_prefix ~prefix result.parameters in
+    `Application { result with active_param }
 
-      (* end of function type, print remaining type without recording offsets *)
-      | ty ->
-        Format.fprintf (Format.formatter_of_buffer buffer)
-          "%a%!" (pp_type e.exp_env) ty;
-        { fun_name = extract_ident e.exp_desc
-        ; signature = Buffer.contents buffer
-        ; param_offsets = List.rev param_offsets
-        ; active_param
-        }
-    in
-    `Application (separate_signature e.exp_type)
   | _ -> `Unknown
