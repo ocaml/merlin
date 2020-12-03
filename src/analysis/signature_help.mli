@@ -16,4 +16,4 @@ type application_signature =
 val application_signature :
      prefix:string
   -> Mbrowse.t
-  -> [> `Application of application_signature | `Unknown ]
+  -> application_signature option

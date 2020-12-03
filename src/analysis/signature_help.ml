@@ -146,13 +146,13 @@ let application_signature ~prefix = function
       | Some _ as ap -> ap
       | None -> active_parameter_by_prefix ~prefix result.parameters
     in
-    `Application { result with active_param }
+    Some { result with active_param }
 
   (* provide signature information directly after an unapplied function-type
      value *)
   | (_, Expression ({ exp_type = { desc = Tarrow _; _ }; _ } as e)) :: _ ->
     let result = separate_function_signature e ~args:[] in
     let active_param = active_parameter_by_prefix ~prefix result.parameters in
-    `Application { result with active_param }
+    Some { result with active_param }
 
-  | _ -> `Unknown
+  | _ -> None
