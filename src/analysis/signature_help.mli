@@ -6,7 +6,8 @@ type parameter_info =
   }
 
 type application_signature =
-  { fun_name : string option
+  { function_name : string option
+  ; function_position : Msource.position
   ; signature : string
   ; parameters : parameter_info list
   ; active_param : int option

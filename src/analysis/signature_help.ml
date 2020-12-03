@@ -12,7 +12,8 @@ type parameter_info =
   }
 
 type application_signature =
-  { fun_name : string option
+  { function_name : string option
+  ; function_position : Msource.position
   ; signature : string
   ; parameters : parameter_info list
   ; active_param : int option
@@ -96,7 +97,8 @@ let separate_function_signature ~args (e : Typedtree.expression) =
     | _ ->
       Format.fprintf ppf
         "%a%!" (pp_type e.exp_env) ty;
-      { fun_name = extract_ident e.exp_desc
+      { function_name = extract_ident e.exp_desc
+      ; function_position = `Offset e.exp_loc.loc_end.pos_cnum
       ; signature = Buffer.contents buffer
       ; parameters = List.rev parameters
       ; active_param = None
