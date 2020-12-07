@@ -130,9 +130,7 @@ function! merlin_type#Show(type, tail_info)
     call s:TemporaryResize(l:length)
     let t:merlin_autohide=1
     normal! Gzb
-    augroup MerlinTypeHistory
-      autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory(0)
-    augroup END
+    let t:merlin_hide_type_history = 1
   else
     silent call merlin_type#ShowTypeHistory()
     let l:end = line("$")
@@ -145,6 +143,17 @@ function! merlin_type#Show(type, tail_info)
     execute l:msg
   endif
   exe l:cur . "wincmd w"
+  augroup MerlinTypeHistory
+    au!
+    if gettabvar(tabpagenr(), "merlin_restore_type_history_height", 0)
+      autocmd CursorMoved,InsertEnter * call s:RestoreTypeHistoryHeight()
+    endif
+    if gettabvar(tabpagenr(), "merlin_hide_type_history", 0)
+      autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory(0)
+    endif
+  augroup END
+  unlet! t:merlin_restore_type_history_height
+  unlet! t:merlin_hide_type_history
 
   if l:user_lazyredraw ==# 0
     set nolazyredraw
@@ -160,10 +169,7 @@ function! s:TemporaryResize(height)
     execute "resize" . target_height
   endif
   if target_height ># g:merlin_type_history_height
-    augroup MerlinTypeHistory
-      au!
-      autocmd CursorMoved,InsertEnter * call s:RestoreTypeHistoryHeight()
-    augroup END
+    let t:merlin_restore_type_history_height = 1
   endif
 endfunction
 
