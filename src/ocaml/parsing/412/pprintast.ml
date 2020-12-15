@@ -28,6 +28,8 @@ open Longident
 open Parsetree
 open Ast_helper
 
+let msupport_raise_error = ref raise
+
 let prefix_symbols  = [ '!'; '?'; '~' ] ;;
 let infix_symbols = [ '='; '<'; '>'; '@'; '^'; '|'; '&'; '+'; '-'; '*'; '/';
                       '$'; '%'; '#' ]
@@ -416,7 +418,7 @@ and pattern_or ctxt f x =
   match left_associative x [] with
   | [] -> assert false
   | [x] -> pattern1 ctxt f x
-  | orpats -> 
+  | orpats ->
       pp f "@[<hov0>%a@]" (list ~sep:"@ |" (pattern1 ctxt)) orpats
 
 and pattern1 ctxt (f:Format.formatter) (x:pattern) : unit =
@@ -1258,7 +1260,7 @@ and binding ctxt f {pvb_pat=p; pvb_expr=x; _} =
     match gadt_pattern, gadt_exp with
     | Some (p, pt_tyvars, pt_ct), Some (e_tyvars, e, e_ct)
       when tyvars_str pt_tyvars = tyvars_str e_tyvars ->
-      let ety = Typ.varify_constructors e_tyvars e_ct in
+      let ety = Typ.varify_constructors ~raise:!msupport_raise_error e_tyvars e_ct in
       if ety = pt_ct then
       Some (p, pt_tyvars, e_ct, e) else None
     | _ -> None in

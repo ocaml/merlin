@@ -45,3 +45,4 @@ val tyvar: Format.formatter -> string -> unit
 
 (* merlin *)
 val case_list : Format.formatter -> Parsetree.case list -> unit
+val msupport_raise_error : (exn -> unit) ref
