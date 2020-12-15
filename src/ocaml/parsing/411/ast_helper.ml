@@ -18,6 +18,7 @@
 open Asttypes
 open Parsetree
 open Docstrings
+open Msupport_parsing
 
 type 'a with_loc = 'a Location.loc
 type loc = Location.t
@@ -85,7 +86,7 @@ module Typ = struct
   let varify_constructors var_names t =
     let check_variable vl loc v =
       if List.mem v vl then
-        raise Syntaxerr.(Error(Variable_in_scope(loc,v))) in
+        raise_error Syntaxerr.(Error(Variable_in_scope(loc,v))) in
     let var_names = List.map (fun v -> v.txt) var_names in
     let rec loop t =
       let desc =
