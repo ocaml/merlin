@@ -71,7 +71,7 @@ let cursor_on_longident_end
     Lexing.compare_pos cursor_pos constr_pos >= 0
 
 let inspect_pattern (type a) ~cursor ~lid (p : a Typedtree.general_pattern) =
-  log ~title:"inspect_context" "%a" Logger.fmt
+  log ~title:"inspect_pattern" "%a" Logger.fmt
     (fun fmt -> Format.fprintf fmt "current pattern is: %a"
                   (Printtyped.pattern 0) p);
   match p.pat_desc with
@@ -95,6 +95,10 @@ let inspect_pattern (type a) ~cursor ~lid (p : a Typedtree.general_pattern) =
     Some Patt
 
 let inspect_expression ~cursor ~lid e : t =
+  log ~title:"inspect_expression" "%a" Logger.fmt
+    (fun fmt -> Format.fprintf fmt "current exp is: %a"
+                  (Printast.expression 0)
+                  (Untypeast.untype_expression e));
   match e.Typedtree.exp_desc with
   | Texp_construct (lid_loc, cd, _) ->
     (* TODO: is this first test necessary ? *)
@@ -120,19 +124,19 @@ let inspect_expression ~cursor ~lid e : t =
     Expr
 
 let inspect_browse_tree ~cursor lid browse : t option =
-  log ~title:"inspect_context" "current node is: [%s]"
+  log ~title:"inspect_browse_tree" "current node is: [%s]"
     (String.concat ~sep:"|" (
       List.map ~f:(Mbrowse.print ()) browse
     ));
   match Mbrowse.enclosing cursor browse with
   | [] ->
-    log ~title:"inspect_context"
+    log ~title:"inspect_browse_tree"
       "no enclosing around: %a" Lexing.print_position cursor;
     Some Unknown
   | enclosings ->
     let open Browse_raw in
     let node = Browse_tree.of_browse enclosings in
-    log ~title:"inspect_context" "current enclosing node is: %s"
+    log ~title:"inspect_browse_tree" "current enclosing node is: %s"
       (string_of_node node.Browse_tree.t_node);
     match node.Browse_tree.t_node with
     | Pattern p -> inspect_pattern ~cursor ~lid p
