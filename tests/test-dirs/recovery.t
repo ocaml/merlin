@@ -1,7 +1,7 @@
-?? should be parsed as merlin.hole, and merlin.hole shouldn't be treated as a
+_ should be parsed as Pexp_hole, and Pexp_hole shouldn't be treated as a
 type error.
 
-  $ echo "let () = ??" | \
+  $ echo "let () = _" | \
   > $MERLIN single errors -filename hole_0.ml
   {
     "class": "return",
@@ -10,7 +10,7 @@ type error.
   }
 
 This incomplete expression should generate only a parser error.
-The hole is filled with merlin.hole.
+The hole is filled with Pexp_hole.
 
   $ echo "let _ =" | \
   > $MERLIN single errors -filename hole_1.ml
@@ -38,7 +38,7 @@ The hole is filled with merlin.hole.
   $ echo "let _ =" | \
   > $MERLIN single dump -what source -filename hole_1.ml | \
   > tr -d '\n' | jq '.value'
-  "let _ = [%merlin.hole ]"
+  "let _ = _"
 
 A bit trickier: the recovery is tempted to put a ->. (unreachable), but the
 penalty should prevent it.
