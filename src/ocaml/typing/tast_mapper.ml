@@ -375,6 +375,8 @@ let expr sub x =
         e
     | Texp_open (od, e) ->
         Texp_open (sub.open_declaration sub od, sub.expr sub e)
+    | Texp_hole ->
+        Texp_hole
   in
   {x with exp_extra; exp_desc; exp_env}
 

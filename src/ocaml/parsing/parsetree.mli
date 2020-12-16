@@ -385,6 +385,7 @@ and expression_desc =
         (* [%id] *)
   | Pexp_unreachable
         (* . *)
+  | Pexp_hole
 
 and case =   (* (P -> E) or (P when E0 -> E) *)
     {

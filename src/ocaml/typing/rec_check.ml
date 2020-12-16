@@ -192,6 +192,7 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_function _
     | Texp_lazy _
     | Texp_unreachable
+    | Texp_hole
     | Texp_extension_constructor _ ->
         Static
 
@@ -821,6 +822,7 @@ let rec expression : Typedtree.expression -> term_judg =
         [] |- .: m
       *)
       empty
+    | Texp_hole -> empty
     | Texp_extension_constructor (_lid, pth) ->
       path pth << Dereference
     | Texp_open (od, e) ->

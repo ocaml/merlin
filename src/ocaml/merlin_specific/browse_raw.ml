@@ -310,7 +310,7 @@ let of_method_call obj meth arg loc =
 
 let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
-  | Texp_variant (_,None) | Texp_new _ -> id_fold
+  | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { cases; _ } ->
