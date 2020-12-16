@@ -33,14 +33,14 @@
 
           {[
             match e with
-            | p1 -> (??)
+            | p1 -> _
             | ...
           ]}
 
           This matching will be exhaustive.
 
           If [e] has a "package" type, it will be replaced by
-          [let module M = (val e) in (??)]
+          [let module M = (val e) in _]
 
       - a pattern context:
           Here two different behaviors can be observed:

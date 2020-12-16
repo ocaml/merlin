@@ -647,8 +647,7 @@ let expr_of_lwt_bindings ~loc lbs body =
   let default_loc = ref Location.none
 
   let default_expr () =
-    let id = Location.mkloc "merlin.hole" !default_loc in
-    Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
+    Exp.mk ~loc:!default_loc (Pexp_hole)
 
   let default_pattern () = Pat.any ~loc:!default_loc ()
 
@@ -2492,9 +2491,8 @@ let_pattern [@recovery default_pattern ()]:
       { mkinfix $1 $2 $3 }
   | extension
       { Pexp_extension $1 }
-  | QUESTIONQUESTION
-      { let id = mkrhs "merlin.hole" $loc in
-        Pexp_extension (id, PStr []) }
+  | UNDERSCORE
+      { Pexp_hole }
   | od=open_dot_declaration DOT mkrhs(LPAREN RPAREN {Lident "()"})
       { (* TODO: review the location of Pexp_construct *)
         Pexp_open(od, mkexp ~loc:$sloc (Pexp_construct($3, None))) }
