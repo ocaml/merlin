@@ -17,7 +17,7 @@
           "col": 3
         }
       },
-      "match (x : my_list) with | Atom -> (??) | Elt (_, _) -> (??)"
+      "match (x : my_list) with | Atom -> _ | Elt (_, _) -> _"
     ],
     "notifications": []
   }
@@ -40,7 +40,7 @@
           "col": 3
         }
       },
-      "match (x : my_rec) with | { atom; elt } -> (??)"
+      "match (x : my_rec) with | { atom; elt } -> _"
     ],
     "notifications": []
   }
@@ -76,7 +76,7 @@ FIXME
           "col": 3
         }
       },
-      "match (x : basic_color) with | `Blue -> (??) | `Yellow -> (??) | `Red -> (??)"
+      "match (x : basic_color) with | `Blue -> _ | `Yellow -> _ | `Red -> _"
     ],
     "notifications": []
   }
@@ -150,7 +150,7 @@ FIXME
           "col": 21
         }
       },
-      "match (x : a term) with|Int _ -> (??)|Add -> (??)|App (_,_) -> (??)"
+      "match (x : a term) with|Int _ -> _|Add -> _|App (_,_) -> _"
     ],
     "notifications": []
   }
