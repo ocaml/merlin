@@ -2126,7 +2126,8 @@ let rec is_nonexpansive exp =
   | Texp_constant _
   | Texp_unreachable
   | Texp_function _
-  | Texp_array [] -> true
+  | Texp_array []
+  | Texp_hole -> true
   | Texp_let(_rec_flag, pat_exp_list, body) ->
       List.for_all (fun vb -> is_nonexpansive vb.vb_expr) pat_exp_list &&
       is_nonexpansive body
@@ -2423,7 +2424,7 @@ let check_partial_application statement exp =
             | Texp_setinstvar _ | Texp_override _ | Texp_assert _
             | Texp_lazy _ | Texp_object _ | Texp_pack _ | Texp_unreachable
             | Texp_extension_constructor _ | Texp_ifthenelse (_, _, None)
-            | Texp_function _ ->
+            | Texp_function _ | Texp_hole ->
                 check_statement ()
             | Texp_match (_, cases, _) ->
                 List.iter (fun {c_rhs; _} -> check c_rhs) cases
@@ -3774,21 +3775,11 @@ and type_expect_
           raise (error (loc, env, Invalid_extension_constructor_payload))
       end
 
-  | Pexp_extension ({ txt = "merlin.hole"; _ } as s, payload) ->
-    let attr = Ast_helper.Attr.mk s payload in
-    re { exp_desc = Texp_ident
-                      (Path.Pident (Ident.create_local "*type-hole*"),
-                       Location.mkloc (Longident.Lident "*type-hole*") loc,
-                       { Types.
-                         val_type = ty_expected;
-                         val_kind = Val_reg;
-                         val_loc = loc;
-                         val_attributes = [];
-                         val_uid = Uid.internal_not_actually_unique;
-                       });
+  | Pexp_hole ->
+    re { exp_desc = Texp_hole;
          exp_loc = loc; exp_extra = [];
          exp_type = instance ty_expected;
-         exp_attributes = attr :: sexp.pexp_attributes;
+         exp_attributes = sexp.pexp_attributes;
          exp_env = env }
 
   | Pexp_extension ext ->
