@@ -22,7 +22,7 @@ pprintast).
           "col": 3
         }
       },
-      "match x with | None -> (??) | Some _ -> (??)"
+      "match x with | None -> _ | Some _ -> _"
     ],
     "notifications": []
   }
@@ -50,7 +50,7 @@ Test 2.1
           "col": 3
         }
       },
-      "match x with | { contents } -> (??)"
+      "match x with | { contents } -> _"
     ],
     "notifications": []
   }
@@ -82,7 +82,7 @@ Test 3.1
           "col": 3
         }
       },
-      "match x with|`Blue -> (??)|`Yellow -> (??)|`Red -> (??)"
+      "match x with|`Blue -> _|`Yellow -> _|`Red -> _"
     ],
     "notifications": []
   }
@@ -111,7 +111,7 @@ Test 3.1
           "col": 3
         }
       },
-      "match x with|`Blue -> (??)|`Yellow -> (??)|`Red -> (??)|`Gold -> (??)"
+      "match x with|`Blue -> _|`Yellow -> _|`Red -> _|`Gold -> _"
     ],
     "notifications": []
   }
@@ -145,7 +145,7 @@ Test 4.1
           "col": 3
         }
       },
-      "(match x with|I _ -> (??))"
+      "(match x with|I _ -> _)"
     ],
     "notifications": []
   }
@@ -176,7 +176,7 @@ Test 4.2
           "col": 3
         }
       },
-      "match x with|Int _ -> (??)|Add -> (??)|App (_,_) -> (??)"
+      "match x with|Int _ -> _|Add -> _|App (_,_) -> _"
     ],
     "notifications": []
   }
@@ -205,7 +205,7 @@ Test 5.1
           "col": 3
         }
       },
-      "let module M = (val x) in (??)"
+      "let module M = (val x) in _"
     ],
     "notifications": []
   }
@@ -230,7 +230,7 @@ Test 5.2 : Module path
           "col": 3
         }
       },
-      "match x with | T.A -> (??) | T.B _ -> (??)"
+      "match x with | T.A -> _ | T.B _ -> _"
     ],
     "notifications": []
   }
