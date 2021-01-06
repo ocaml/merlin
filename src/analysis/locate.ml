@@ -610,8 +610,8 @@ module Namespace = struct
     | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
     | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
     | Label lbl     -> [ `This_label lbl ]
-    | Constructor c -> [ `This_cstr c ]
     | Module_path   -> [ `Mod ]
+    | Constructor (c, _) -> [ `This_cstr c ]
 end
 
 module Env_lookup : sig

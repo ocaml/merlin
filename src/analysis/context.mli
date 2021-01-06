@@ -27,7 +27,7 @@
 )* }}} *)
 
 type t =
-  | Constructor of Types.constructor_description
+  | Constructor of Types.constructor_description * Location.t
     (* We attach the constructor description here so in the case of
       disambiguated constructors we actually directly look for the type
       path (cf. #486, #794). *)
