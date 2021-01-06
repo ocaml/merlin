@@ -78,7 +78,9 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
       | Some (Context.Constructor (cd, loc)) ->
         log ~title:"from_reconstructed" "ctx: constructor %s"
           cd.cstr_name;
-        Some (loc, Type (env, cd.cstr_res), `No)
+        let ppf, to_string = Format.to_string () in
+        Type_utils.print_constr ~verbosity env ppf cd;
+        Some (loc, String (to_string ()), `No)
       | _ ->
         let context = Option.value ~default:Context.Expr context in
         (* Else use the reconstructed identifier *)

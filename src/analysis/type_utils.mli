@@ -69,3 +69,6 @@ val read_doc_attributes : Parsetree.attributes -> (string * Location.t) option
 (** [read_doc_attributes] looks for a docstring in an attribute list. *)
 
 val is_deprecated : Parsetree.attributes -> bool
+
+val print_constr : verbosity:int -> Env.t -> Format.formatter ->
+  Types.constructor_description -> unit
