@@ -1,5 +1,4 @@
-FIXME: Int here is not the Int module  but a constructor!
-See issue https://github.com/ocaml/merlin/issues/1125
+Initially from issue https://github.com/ocaml/merlin/issues/1125
 
   $ cat > gadt.ml <<EOF
   > 
@@ -57,7 +56,7 @@ See issue https://github.com/ocaml/merlin/issues/1125
         "line": 9,
         "col": 7
       },
-      "type": "(module Stdlib__int)",
+      "type": "int -> int term",
       "tail": "no"
     },
     {

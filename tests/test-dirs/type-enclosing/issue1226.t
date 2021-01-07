@@ -1,4 +1,4 @@
-FIXME
+Fixed.
 
   $ $MERLIN single type-enclosing  -position 5:9 -filename test.ml <<EOF
   > module Foo = struct
@@ -19,7 +19,7 @@ FIXME
           "line": 5,
           "col": 11
         },
-        "type": "sig val bar : int end",
+        "type": "int -> t",
         "tail": "no"
       },
       {
