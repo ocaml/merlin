@@ -304,10 +304,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           `List lst
         )
     in
-    let nodes = Mtyper.node_at typer pos in
     let small_enclosings =
       Type_enclosing.from_reconstructed exprs
-       ~nodes ~cursor:pos ~verbosity
+       ~nodes:structures ~cursor:pos ~verbosity
     in
     Logger.log ~section:Type_enclosing.log_section ~title:"small enclosing" "%a"
       Logger.fmt (fun fmt ->

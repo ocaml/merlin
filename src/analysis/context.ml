@@ -31,7 +31,7 @@ open Std
 let {Logger. log} = Logger.for_section "context"
 
 type t =
-  | Constructor of Types.constructor_description
+  | Constructor of Types.constructor_description * Location.t
     (* We attach the constructor description here so in the case of
       disambiguated constructors we actually directly look for the type
       path (cf. #486, #794). *)
@@ -44,7 +44,7 @@ type t =
   | Unknown
 
 let to_string = function
-  | Constructor cd -> Printf.sprintf "constructor %s" cd.cstr_name
+  | Constructor (cd, _) -> Printf.sprintf "constructor %s" cd.cstr_name
   | Expr -> "expression"
   | Label lbl -> Printf.sprintf "record field %s" lbl.lbl_name
   | Module_path -> "module path"
@@ -89,7 +89,7 @@ let inspect_pattern (type a) ~cursor ~lid (p : a Typedtree.general_pattern) =
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the constructor
        itself.  *)
-    Some (Constructor cd)
+    Some (Constructor (cd, lid_loc.loc))
   | Tpat_construct _ -> Some Module_path
   | _ ->
     Some Patt
@@ -100,7 +100,7 @@ let inspect_expression ~cursor ~lid e : t =
     (* TODO: is this first test necessary ? *)
     if (Longident.last lid) = (Longident.last lid_loc.txt) then
       if cursor_on_longident_end ~cursor ~lid_loc cd.cstr_name then
-        Constructor cd
+        Constructor (cd, lid_loc.loc)
       else Module_path
     else Module_path
   | Texp_ident (p, lid_loc, _) ->
