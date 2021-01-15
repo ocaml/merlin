@@ -2105,7 +2105,7 @@ let expand_trace env trace =
 let deep_occur t0 ty =
   let rec occur_rec ty =
     let ty = repr ty in
-    if ty.level >= lowest_level then begin
+    if ty.level >= t0.level then begin
       if ty == t0 then raise Occur;
       ty.level <- pivot_level - ty.level;
       iter_type_expr occur_rec ty
@@ -4546,7 +4546,7 @@ let closed_schema env ty =
 
 (* Normalize a type before printing, saving... *)
 (* Cannot use mark_type because deep_occur uses it too *)
-let rec normalize_type_rec env visited ty =
+let rec normalize_type_rec visited ty =
   let ty = repr ty in
   if not (TypeSet.mem ty !visited) then begin
     visited := TypeSet.add ty !visited;
@@ -4567,7 +4567,8 @@ let rec normalize_type_rec env visited ty =
               let tyl' =
                 List.fold_left
                   (fun tyl ty ->
-                    if List.exists (fun ty' -> equal env false [ty] [ty']) tyl
+                    if List.exists
+                        (fun ty' -> equal Env.empty false [ty] [ty']) tyl
                     then tyl else ty::tyl)
                   [ty] tyl
               in
@@ -4605,11 +4606,11 @@ let rec normalize_type_rec env visited ty =
         set_type_desc fi fi'.desc
     | _ -> ()
     end;
-    iter_type_expr (normalize_type_rec env visited) ty
+    iter_type_expr (normalize_type_rec visited) ty
   end
 
-let normalize_type env ty =
-  normalize_type_rec env (ref TypeSet.empty) ty
+let normalize_type ty =
+  normalize_type_rec (ref TypeSet.empty) ty
 
 
                               (*************************)
