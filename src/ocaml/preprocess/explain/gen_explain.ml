@@ -7,7 +7,7 @@ open G
 
 let print_header () =
   let name = Filename.chop_extension (Filename.basename Sys.argv.(1)) in
-  printf "open %s\n" (String.capitalize name)
+  printf "open %s\n" (String.capitalize_ascii name)
 
 let attributes_at st =
   List.fold_left
