@@ -144,18 +144,6 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-let trace_of_error = function
-    Label_mismatch (_,tr)
-  | Pattern_type_clash (tr,_)
-  | Or_pattern_type_clash (_,tr)
-  | Expr_type_clash (tr,_,_)
-  | Coercion_failure (_,_,tr,_)
-  | Less_general (_,tr)
-  | Letop_type_clash (_,tr)
-  | Andop_type_clash (_,tr)
-  | Bindings_type_clash tr -> Some tr
-  | _ -> None
-
 (* merlin: deep copy types in errors, to keep them meaningful after
    backtracking *)
 let deep_copy () =
@@ -2894,7 +2882,8 @@ and type_expect_
       if maybe_expansive arg then lower_contravariant env arg.exp_type;
       generalize arg.exp_type;
       let cases, partial =
-        type_cases Computation env arg.exp_type ty_expected true loc caselist in
+        type_cases Computation env
+          arg.exp_type ty_expected_explained true loc caselist in
       re {
         exp_desc = Texp_match(arg, cases, partial);
         exp_loc = loc; exp_extra = [];
@@ -2904,7 +2893,8 @@ and type_expect_
   | Pexp_try(sbody, caselist) ->
       let body = type_expect env sbody ty_expected_explained in
       let cases, _ =
-        type_cases Value env Predef.type_exn ty_expected false loc caselist in
+        type_cases Value env
+          Predef.type_exn ty_expected_explained false loc caselist in
       re {
         exp_desc = Texp_try(body, cases);
         exp_loc = loc; exp_extra = [];
@@ -3727,9 +3717,13 @@ and type_expect_
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_open (od, e) ->
+      let tv = newvar () in
       let (od, _, newenv) = !type_open_decl env od in
       let exp = type_expect newenv e ty_expected_explained in
-      rue {
+      (* Force the return type to be well-formed in the original
+         environment *)
+      unify_var newenv tv exp.exp_type;
+      re {
         exp_desc = Texp_open (od, exp);
         exp_type = exp.exp_type;
         exp_loc = loc;
@@ -3776,7 +3770,8 @@ and type_expect_
       let exp, ands = type_andops env slet.pbop_exp sands ty_andops in
       let scase = Ast_helper.Exp.case spat_params sbody in
       let cases, partial =
-        type_cases Value env ty_params ty_func_result true loc [scase]
+        type_cases Value env
+          ty_params (mk_expected ty_func_result) true loc [scase]
       in
       let body =
         match cases with
@@ -3925,8 +3920,8 @@ and type_function ?in_function loc attrs env ty_expected_explained l caselist =
     generalize_structure ty_res
   end;
   let cases, partial =
-    type_cases Value ~in_function:(loc_fun,ty_fun) env ty_arg ty_res
-      true loc caselist in
+    type_cases Value ~in_function:(loc_fun,ty_fun) env
+      ty_arg (mk_expected ty_res) true loc caselist in
   let not_nolabel_function ty =
     let ls, tvar = list_labels env ty in
     List.for_all ((<>) Nolabel) ls && not tvar
@@ -4743,9 +4738,11 @@ and type_cases
     : type k . k pattern_category ->
            ?in_function:_ -> _ -> _ -> _ -> _ -> _ -> Parsetree.case list ->
            k case list * partial
-  = fun category ?in_function env ty_arg ty_res partial_flag loc caselist ->
+    = fun category ?in_function env
+      ty_arg ty_res_explained partial_flag loc caselist ->
   let has_errors = Msupport.monitor_errors () in
   (* ty_arg is _fully_ generalized *)
+  let { ty = ty_res; explanation } = ty_res_explained in
   let patterns = List.map (fun {pc_lhs=p} -> p) caselist in
   let contains_polyvars = List.exists contains_polymorphic_variant patterns in
   let erase_either = contains_polyvars && contains_variant_either ty_arg in
@@ -4845,7 +4842,7 @@ and type_cases
   ) half_typed_cases;
   (* type bodies *)
   let in_function = if List.length caselist = 1 then in_function else None in
-  let mk_cases interbranch_propagation =
+  let cases =
     List.map
       (fun { typed_pat = pat; branch_env = ext_env; pat_vars = pvs; unpacks;
              untyped_case = {pc_lhs = _; pc_guard; pc_rhs};
@@ -4873,7 +4870,8 @@ and type_cases
             end_def ();
             generalize_structure ty; ty
           end
-          else if contains_gadt && interbranch_propagation then
+          else if contains_gadt then
+            (* allow propagation from preceding branches *)
             correct_levels ty_res
           else ty_res in
         let guard =
@@ -4885,7 +4883,8 @@ and type_cases
                    (mk_expected ~explanation:When_guard Predef.type_bool))
         in
         let exp =
-          type_unpacks ?in_function ext_env unpacks pc_rhs (mk_expected ty_res')
+          type_unpacks ?in_function ext_env
+            unpacks pc_rhs (mk_expected ?explanation ty_res')
         in
         {
          c_lhs = pat;
@@ -4894,31 +4893,6 @@ and type_cases
         }
       )
       half_typed_cases
-  in
-  let cases =
-    let may_backtrack = does_contain_gadt && not !Clflags.principal in
-    if not may_backtrack then mk_cases false else
-    let state = save_state (ref env) in
-    let has_equation_escape err =
-      match trace_of_error err with
-        Some tr ->
-          List.exists Ctype.Unification_trace.
-            (function Escape {kind=Equation _} -> true | _ -> false) tr
-      | None -> false
-    in
-    try mk_cases false
-    with Error(_,_,err) when has_equation_escape err ->
-      set_state state (ref env);
-      let cases = mk_cases true in
-      let msg =
-        Format.asprintf
-          "@[<v2>@ @[<hov>The return type of this pattern-matching \
-           is ambiguous.@ \
-           Please add a type annotation,@ as the choice of `@[%a@]'@]@]"
-          Printtyp.type_expr ty_res
-      in
-      Location.prerr_warning loc (Warnings.Not_principal msg);
-      cases
   in
   if !Clflags.principal || does_contain_gadt then begin
     let ty_res' = instance ty_res in
