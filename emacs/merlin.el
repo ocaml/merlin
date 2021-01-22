@@ -1308,6 +1308,18 @@ strictly within, or nil if there is no such element."
             (merlin--goto-point start)
             (message "%s" typ)))))))
 
+(defun merlin--first-hole-between (pmin pmax)
+  "Jump to the first hole in the given range and prints its type"
+  (let* ((hole (merlin--first-hole (merlin--holes) pmin '>)))
+    (when hole
+      (let* ((start (merlin-lookup 'start hole))
+             (typ (merlin-lookup 'type hole))
+             (hole-point (merlin-make-point start)))
+        (if (<= hole-point pmax)
+          (progn
+            (merlin--goto-point start)
+            (message "%s" typ)))))))
+
 (defun merlin-next-hole ()
   "Jump to the next hole and print its type"
   (interactive)
@@ -1357,6 +1369,45 @@ strictly within, or nil if there is no such element."
   (merlin--destruct-bounds (if (region-active-p)
                              (cons (region-beginning) (region-end))
                              (cons (point) (point)))))
+
+;;;;;;;;;;;;;;;
+;; CONSTRUCT ;;
+;;;;;;;;;;;;;;;
+
+
+(defun merlin--construct-complete (start stop results)
+  (let ((start (merlin--point-of-pos start))
+        (stop  (merlin--point-of-pos stop)))
+    (cl-labels ((insert-choice (_b _e newtext)
+          (completion--replace start stop newtext)
+          (merlin--first-hole-between start (+ start (length newtext)))))
+      (if (= (length results) 1)
+        (insert-choice 0 0 (car results))
+        (with-output-to-temp-buffer "*Constructions*"
+          (progn 
+            (with-current-buffer "*Constructions*"
+              (setq-local 
+                completion-list-insert-choice-function
+                #'insert-choice))
+            (display-completion-list results)))))))
+
+(defun merlin--construct-point (point)
+  "Execute a construct on POINT"
+  (progn
+    (ignore point) ; Without this Emacs bytecode compiler complains about an    
+                   ; unused variable. This may be a bug in the compiler
+    (let ((result (merlin-call "construct"
+                              "-position" (merlin-unmake-point (point)))))
+      (when result
+        (let* ((loc   (car result))
+              (start (cdr (assoc 'start loc)))
+              (stop  (cdr (assoc 'end loc))))
+          (merlin--construct-complete start stop (cadr result)))))))
+
+(defun merlin-construct ()
+  "Construct over the current hole"
+  (interactive)
+  (merlin--construct-point (cons (point) (point))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
