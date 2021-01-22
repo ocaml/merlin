@@ -93,6 +93,15 @@ The return value has the shape \
     end
   ;
 
+  command "holes"
+    ~spec:[]
+    ~doc:"Returns the list of the positions of all the holes in the file."
+    ~default:()
+    begin fun buffer () ->
+      run buffer (Query_protocol.Holes)
+    end
+  ;
+
   command "complete-prefix"
     ~spec: [
       arg "-position" "<position> Position to complete"
