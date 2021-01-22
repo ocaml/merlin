@@ -1,5 +1,5 @@
   $ $MERLIN single type-enclosing -position 5:11 -verbosity 0 \
-  > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
+  > -filename ./types.ml < ./types.ml | jq ".value"
   [
     {
       "start": {
@@ -28,7 +28,7 @@
   ]
 
   $ $MERLIN single type-enclosing -position 5:11 -verbosity 1 \
-  > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
+  > -filename ./types.ml < ./types.ml | jq ".value"
   [
     {
       "start": {
@@ -59,7 +59,7 @@
 FIXED: small enclosing was incorrect?
 
   $ $MERLIN single type-enclosing -position 7:9 -verbosity 0 \
-  > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
+  > -filename ./types.ml < ./types.ml | jq ".value"
   [
     {
       "start": {
@@ -78,7 +78,7 @@ FIXED: small enclosing was incorrect?
 FIXED: small enclosing was incorrect?
 
   $ $MERLIN single type-enclosing -position 9:9 -verbosity 0 \
-  > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
+  > -filename ./types.ml < ./types.ml | jq ".value"
   [
     {
       "start": {
@@ -97,7 +97,7 @@ FIXED: small enclosing was incorrect?
 FIXME: A type with a type param shouldn't equal itself - aliasing a list type
 
   $ $MERLIN single type-enclosing -short-paths -position 11:9 -verbosity 0 \
-  > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
+  > -filename ./types.ml < ./types.ml | jq ".value"
   [
     {
       "start": {
@@ -113,10 +113,49 @@ FIXME: A type with a type param shouldn't equal itself - aliasing a list type
     }
   ]
 
+Same result regardless of verbosity:
+
+  $ $MERLIN single type-enclosing -short-paths -position 11:9 -verbosity 1 \
+  > -filename ./types.ml < ./types.ml | jq ".value"
+  [
+    {
+      "start": {
+        "line": 11,
+        "col": 0
+      },
+      "end": {
+        "line": 11,
+        "col": 19
+      },
+      "type": "type 'a l = 'a l",
+      "tail": "no"
+    }
+  ]
+
+OK without -short-paths
+
+  $ $MERLIN single type-enclosing -position 11:9 -verbosity 0 \
+  > -filename ./types.ml < ./types.ml | jq ".value"
+  [
+    {
+      "start": {
+        "line": 11,
+        "col": 0
+      },
+      "end": {
+        "line": 11,
+        "col": 19
+      },
+      "type": "type 'a l = 'a list",
+      "tail": "no"
+    }
+  ]
+
+
 FIXED: small enclosing at EOF was incorrect?
 
   $ $MERLIN single type-enclosing -short-paths -position 17:9 -verbosity 0 \
-  > -filename ./types.ml < ./types.ml | jq ".value[0:2]"
+  > -filename ./types.ml < ./types.ml | jq ".value"
   [
     {
       "start": {
