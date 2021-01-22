@@ -7,6 +7,7 @@ type comment = (string * Location.t)
 
 type result = {
   config        : Mconfig.t;
+  lexer_keywords: string list;
   lexer_errors  : exn list;
   parser_errors : exn list;
   comments      : comment list;

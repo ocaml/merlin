@@ -114,6 +114,7 @@ let typer  t = Lazy.force t.typer
 let reader_config    t = (snd (reader t))
 let reader_parsetree t = (fst (reader t)).Mreader.parsetree
 let reader_comments  t = (fst (reader t)).Mreader.comments
+let reader_lexer_keywords  t = (fst (reader t)).Mreader.lexer_keywords
 let reader_lexer_errors  t = (fst (reader t)).Mreader.lexer_errors
 let reader_parser_errors t = (fst (reader t)).Mreader.parser_errors
 let reader_no_labels_for_completion t =

@@ -44,6 +44,7 @@ let marg_completion_kind f = Marg.param "completion-kind"
       | "l" | "label" | "labels"         -> f `Labels
       | "m" | "mod" | "module"           -> f `Modules
       | "mt" | "modtype" | "module-type" -> f `Modules_type
+      | "k" | "kw" | "keyword"           -> f `Keywords
       | str ->
         failwithf "expecting completion kind, got %S. \
                    kind can be value, variant, constructor, \

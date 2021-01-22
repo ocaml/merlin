@@ -31,7 +31,7 @@ struct
   type 'desc raw_entry = {
     name: string;
     kind: [`Value|`Constructor|`Variant|`Label|
-           `Module|`Modtype|`Type|`MethodCall];
+           `Module|`Modtype|`Type|`MethodCall|`Keyword];
     desc: 'desc;
     info: 'desc;
     deprecated: bool;
@@ -59,6 +59,7 @@ struct
     | `Types
     | `Values
     | `Variants
+    | `Keywords
   ]
 end
 

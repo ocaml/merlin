@@ -418,10 +418,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         Some (Locate.get_doc ~config ~env ~local_defs
                 ~comments:(Mpipeline.reader_comments pipeline) ~pos)
     in
+    let keywords = Mpipeline.reader_lexer_keywords pipeline in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-      Completion.branch_complete config ~kinds ?get_doc ?target_type prefix branch |>
-      print_completion_entries ~with_types config source
+      Completion.branch_complete config ~kinds ?get_doc ?target_type ~keywords
+        prefix branch
+      |> print_completion_entries ~with_types config source
     and context = match context with
       | `Application context when no_labels ->
         `Application {context with Compl.labels = []}
