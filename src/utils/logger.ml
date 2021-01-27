@@ -49,8 +49,6 @@ let log_flush () =
   | None -> ()
   | Some oc -> flush oc
 
-open Logger_helper
-
 let log ~section ~title fmt =
   match !destination with
   | Some oc when is_section_enabled section ->
@@ -63,7 +61,7 @@ let log ~section ~title fmt =
         )
       ) fmt
   | None | Some _ ->
-    ifprintf () fmt
+    Printf.ifprintf () fmt
 
 let fmt_buffer = Buffer.create 128
 let fmt_handle = Format.formatter_of_buffer fmt_buffer
