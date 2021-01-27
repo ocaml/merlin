@@ -54,7 +54,7 @@ In the rest of the document, \<SHARE\_DIR\> refers to the directory where Merlin
 
 It will usually be:
 
-- printed by the command `opam config var share`, if you used opam
+- printed by the command `opam var share`, if you used opam
 - "\<prefix\>/share" if you explicitly specified a prefix when configuring Merlin
 
 ### Vim setup
