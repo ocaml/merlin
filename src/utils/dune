@@ -1,13 +1,5 @@
 (rule (copy# ../platform/platform_misc.c platform_misc.c))
 
-(rule
- (targets menhirLib.ml menhirLib.mli)
- (mode promote)
- (action
-  (progn
-   (copy %{lib:menhirLib:menhirLib.ml}  menhirLib.ml)
-   (copy %{lib:menhirLib:menhirLib.mli} menhirLib.mli))))
-
 (library
  (name merlin_utils)
  (libraries str yojson unix result)
