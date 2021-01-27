@@ -436,6 +436,8 @@ DATA must be an assoc list with fields line and col."
              (- (position-bytes (point))
                 (position-bytes (line-beginning-position)))))))
 
+(define-obsolete-function-alias 'merlin/unmake-point 'merlin-unmake-point "2021-01-27")
+
 (defun merlin--make-bounds (data)
   "From a remote merlin object DATA {\"start\": LOC1; \"end\": LOC2},
 return (LOC1 . LOC2)."
@@ -559,6 +561,8 @@ return (LOC1 . LOC2)."
         ("failure" (error "merlin-mode failure: %s" value))
         ("error" (error "merlin: %s" value))
         (_ (error "unknown answer: %S:%S" class value))))))
+
+(define-obsolete-function-alias 'merlin/call 'merlin-call "2021-01-27")
 
 (defun merlin-stop-server ()
   "Shutdown merlin server."
@@ -1044,6 +1048,8 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
       ;; type (for long lived emacs sessions that directory might not even exist
       ;; anymore).
       (setq default-directory curr-dir))))
+
+(define-obsolete-function-alias 'merlin/display-in-type-buffer 'merlin-display-in-type-buffer "2021-01-27")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;
