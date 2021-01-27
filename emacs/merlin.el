@@ -960,7 +960,7 @@ prefix of `bar' is `'."
         result))))
 
 ;; FIXME: merlin shouldn't rely on editor to compute bounds
-(defun bounds-of-ocaml-atom-at-point ()
+(defun merlin-bounds-of-ocaml-atom-at-point ()
   "Return the start and end points of an ocaml atom near point.
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
@@ -973,7 +973,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
         nil)))) ; no atom at point
 
 (put 'ocaml-atom 'bounds-of-thing-at-point
-     'bounds-of-ocaml-atom-at-point)
+     'merlin-bounds-of-ocaml-atom-at-point)
 
 (defun merlin-completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
