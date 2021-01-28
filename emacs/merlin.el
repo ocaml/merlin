@@ -1818,12 +1818,12 @@ Empty string defaults to jumping to all these."
 (defun merlin/sync ())
 (make-obsolete 'merlin/sync nil "Synchronization happens automatically since Merlin 3.0")
 
-(define-obsolete-function-alias 'merlin-project-check 'merlin-configuration-check)
+(define-obsolete-function-alias 'merlin-project-check 'merlin-configuration-check "v2.5.4")
 
-(define-obsolete-function-alias 'merlin--copy-enclosing 'merlin-copy-enclosing)
-(define-obsolete-function-alias 'merlin--destruct-enclosing 'merlin-destruct-enclosing)
+(define-obsolete-function-alias 'merlin--copy-enclosing 'merlin-copy-enclosing "v2.5.4")
+(define-obsolete-function-alias 'merlin--destruct-enclosing 'merlin-destruct-enclosing "v2.5.4")
 
-(define-obsolete-function-alias 'merlin-restart-process 'merlin-stop-server)
+(define-obsolete-function-alias 'merlin-restart-process 'merlin-stop-server "v2.5.4")
 
 ;;;###autoload
 (define-minor-mode merlin-mode
