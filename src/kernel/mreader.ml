@@ -9,6 +9,7 @@ type comment = (string * Location.t)
 
 type result = {
   config        : Mconfig.t;
+  lexer_keywords: string list;
   lexer_errors  : exn list;
   parser_errors : exn list;
   comments      : comment list;
@@ -47,12 +48,13 @@ let normal_parse ?for_completion config source =
       Mreader_lexer.for_completion lexer pos
   in
   let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
-  let lexer_errors = Mreader_lexer.errors lexer
+  let lexer_keywords = Mreader_lexer.keywords lexer
+  and lexer_errors = Mreader_lexer.errors lexer
   and parser_errors = Mreader_parser.errors parser
   and parsetree = Mreader_parser.result parser
   and comments = Mreader_lexer.comments lexer
   in
-  { config; lexer_errors; parser_errors; comments; parsetree;
+  { config; lexer_keywords; lexer_errors; parser_errors; comments; parsetree;
     no_labels_for_completion; }
 
 (* Pretty-printing *)
@@ -167,7 +169,8 @@ let parse ?for_completion config source =
   with
   | Some (`No_labels no_labels_for_completion, parsetree) ->
     let (lexer_errors, parser_errors, comments) = ([], [], []) in
-    { config; lexer_errors; parser_errors; comments; parsetree;
+    let lexer_keywords = [] (* TODO? *) in
+    { config; lexer_keywords; lexer_errors; parser_errors; comments; parsetree;
       no_labels_for_completion; }
   | None -> normal_parse ?for_completion config source
 

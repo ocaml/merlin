@@ -354,6 +354,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         1000 - cost
     in
     let of_kind = function
+      | `Keywords -> [] (* cannot happen after a dot. *)
       | `Variants ->
         let add_variant name param candidates =
           if not @@ validate `Variant `Variant name then candidates else
@@ -475,8 +476,8 @@ type is_label =
   | `Declaration of Types.type_expr * Types.label_declaration list
   ]
 
-let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
-    config (env,node) branch =
+let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~keywords ~prefix
+    ~is_label config (env,node) branch =
   Env.with_cmis @@ fun () ->
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
@@ -549,7 +550,22 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
     match prefix with
     | Longident.Ldot (prefix_path, prefix) -> find ~prefix_path ~is_label prefix
     | Longident.Lident prefix ->
+      (* Regular completion *)
       let compl = find ~is_label prefix in
+      (* Keywords completion *)
+      let compl =
+        if not (List.mem `Keywords ~set:kinds) then
+          compl
+        else
+          List.fold_left keywords ~init:compl ~f:(fun candidates name ->
+            if String.is_prefixed ~by:prefix name then
+              { name; kind = `Keyword; desc = `None; info = `None
+              ; deprecated = false }
+              :: candidates
+            else
+              candidates
+          )
+      in
       (* Add modules on path but not loaded *)
       List.fold_left (Mconfig.global_modules config) ~init:compl ~f:(
         fun candidates name ->
@@ -573,7 +589,8 @@ let complete_prefix ?get_doc ?target_type ?(kinds=[]) ~prefix ~is_label
   with Not_found -> []
 
 (* Propose completion from a particular node *)
-let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
+let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
+  function
   | [] -> []
   | (env, node) :: branch ->
     match node with
@@ -591,8 +608,8 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
         with _ -> `Maybe
       in
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-      complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
-        (env,node) branch
+      complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix ~is_label
+        buffer (env,node) branch
     | Record_field (parent, lbl, _) ->
       let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
       let snap = Btype.snapshot () in
@@ -634,14 +651,14 @@ let branch_complete buffer ?get_doc ?target_type ?kinds prefix = function
           `Description (Array.to_list lbls)
       in
       let result =
-        complete_prefix ?get_doc ?target_type ?kinds ~prefix ~is_label buffer
-          (env, node) branch
+        complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix ~is_label
+          buffer (env, node) branch
       in
       Btype.backtrack snap;
       result
     | _ ->
       let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
-      complete_prefix ?get_doc ?target_type ?kinds ~prefix buffer
+      complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix buffer
         ~is_label:(if is_label then `Maybe else `No)
         (env, node) branch
 

@@ -121,6 +121,9 @@ let tokens t =
   rev_filter_map t.items
     ~f:(function Triple t -> Some t | _ -> None)
 
+let keywords t =
+  Lexer_raw.list_keywords t.keywords
+
 let errors t =
   rev_filter_map t.items
     ~f:(function Error (err, loc) -> Some (Lexer_raw.Error (err, loc))

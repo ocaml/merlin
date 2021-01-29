@@ -12,6 +12,7 @@ val get_lexing_pos : t -> [< Msource.position] -> Lexing.position
 val reader_config : t -> Mconfig.t
 val reader_comments : t -> (string * Location.t) list
 val reader_parsetree : t -> Mreader.parsetree
+val reader_lexer_keywords : t -> string list
 val reader_lexer_errors : t -> exn list
 val reader_parser_errors : t -> exn list
 val reader_no_labels_for_completion : t -> bool

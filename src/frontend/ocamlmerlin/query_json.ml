@@ -46,6 +46,7 @@ let dump (type a) : a t -> json =
   let kinds_to_json kind =
     `List (List.map ~f:(function
         | `Constructor  -> `String "constructor"
+        | `Keywords     -> `String "keywords"
         | `Labels       -> `String "label"
         | `Modules      -> `String "module"
         | `Modules_type -> `String "module-type"
@@ -212,6 +213,7 @@ let string_of_completion_kind = function
   | `MethodCall  -> "#"
   | `Exn         -> "Exn"
   | `Class       -> "Class"
+  | `Keyword     -> "Keyword"
 
 let with_location ?(skip_none=false) loc assoc =
   if skip_none && loc = Location.none then

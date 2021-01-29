@@ -142,6 +142,12 @@ let keyword_table : keywords =
 
 let keywords l = create_hashtable 11 l
 
+let list_keywords =
+  let add_kw str _tok kws = str :: kws in
+  let init = Hashtbl.fold add_kw keyword_table [] in
+  fun keywords ->
+    Hashtbl.fold add_kw keywords init
+
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
 
