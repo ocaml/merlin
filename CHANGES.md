@@ -1,3 +1,28 @@
+merlin 4.0
+==========
+
+  + ocaml support
+    Detailled list of changes on
+    https://tarides.com/blog/2021-01-26-recent-and-upcoming-changes-to-merlin#dropping-support-for-old-versions-of-ocaml
+    Summary:
+    - any revision of Merlin now only supports one version of OCaml. Support for
+      other versions will be found in other branches
+    - stopped actively supporting version older than 4.11
+  + merlin binary
+    - add keyword completion (disabled by default) (#1243)
+    - fix a bug which caused type-enclosing to sometimes look at an incorrect
+      node (#1232, fixes #1226)
+    - properly report leaked parsing error (#1223, fixes #1222)
+    - wrap `merlin_analysis` and `merlin_utils` library
+  + editor modes
+    - emacs: add missing mandatory argument for define-obsolete-function-alias
+      (#1250, by Atharva Shukla, fixes #1234)
+    - emacs: use "opam var" instead of "opam config var" (#1249, by Raja Boujbel)
+    - vim: fix CursorMoved semantics (#1213, by Daniel Dickstein)
+    - vim: add :MerlinLocateImpl and :MerlinLocateIntf (#1208 by Matthew Ryan)
+  + test suite
+    - replace mdx usage by dune's cram mechanism
+
 merlin 3.4.2
 ============
 Fri Nov 13 12:16:42 CEST 2020
