@@ -38,3 +38,12 @@
   (action
     (with-stdout-to %{targets}
        (run %{exe:./printer/gen_printer.exe} %{deps}))))
+(rule
+  (targets parser_raw_completion.ml)
+  (enabled_if (<> %{profile} "release"))
+  (deps    parser_raw.cmly)
+  (mode    promote)
+  (action
+    (with-stdout-to %{targets}
+       (run %{exe:./complete/gen_complete.exe} %{deps}))))
+
