@@ -8,6 +8,7 @@ merlin 4.0
     - any revision of Merlin now only supports one version of OCaml. Support for
       other versions will be found in other branches
     - stopped actively supporting version older than 4.11
+    - add support for 4.12
   + merlin binary
     - add keyword completion (disabled by default) (#1243)
     - fix a bug which caused type-enclosing to sometimes look at an incorrect
