@@ -48,6 +48,7 @@ jobs:
           # Version of the OCaml compiler to initialise
           ocaml-version: ${{ matrix.ocaml-version }}
 
+      - run: opam switch create --repositories=default,beta=git://github.com/ocaml/ocaml-beta-repository.git 4.12 4.12.0+trunk
       - run: opam pin add . --no-action
       - run: opam depext conf-jq --yes # merlin --yes --with-test # opam depext bug
       - run: opam install . --deps-only --with-test

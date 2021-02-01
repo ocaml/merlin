@@ -480,8 +480,8 @@ let rec raw_type ppf ty =
   let ty = safe_repr [] ty in
   if List.memq ty !visited then fprintf ppf "{id=%d}" ty.id else begin
     visited := ty :: !visited;
-    fprintf ppf "@[<1>{id=%d;level=%d;desc=@,%a}@]" ty.id ty.level
-      raw_type_desc ty.desc
+    fprintf ppf "@[<1>{id=%d;scope=%d;level=%d;desc=@,%a}@]" ty.id ty.level
+      ty.scope raw_type_desc ty.desc
   end
 and raw_type_list tl = raw_list raw_type tl
 and raw_type_desc ppf = function
@@ -801,7 +801,7 @@ let rec mark_loops_rec visited ty =
     | Tunivar _ -> add_named_var ty
 
 let mark_loops ty =
-  normalize_type Env.empty ty;
+  normalize_type ty;
   mark_loops_rec [] ty;;
 
 let reset_loop_marks () =
@@ -1126,8 +1126,20 @@ let rec tree_of_type_decl id decl =
     let vari =
       List.map2
         (fun ty v ->
-          if abstr || not (is_Tvar (repr ty)) then Variance.get_upper v
-          else (true,true))
+          let is_var = is_Tvar (repr ty) in
+          if abstr || not is_var then
+            let inj =
+              decl.type_kind = Type_abstract && Variance.mem Inj v &&
+              match decl.type_manifest with
+              | None -> true
+              | Some ty -> (* only abstract or private row types *)
+                  decl.type_private = Private &&
+                  Btype.is_constr_row ~allow_ident:true (Btype.row_of_type ty)
+            and (co, cn) = Variance.get_upper v in
+            (if not cn then Covariant else
+             if not co then Contravariant else NoVariance),
+            (if inj then Injective else NoInjectivity)
+          else (NoVariance,NoInjectivity))
         decl.type_params decl.type_variance
     in
     (Ident.name id,
@@ -1404,10 +1416,15 @@ let tree_of_class_param param variance =
   (match tree_of_typexp true param with
     Otyp_var (_, s) -> s
   | _ -> "?"),
-  if is_Tvar (repr param) then (true, true) else variance
+  if is_Tvar (repr param) then Asttypes.(NoVariance, NoInjectivity)
+                          else variance
 
 let class_variance =
-  List.map Variance.(fun v -> mem May_pos v, mem May_neg v)
+  let open Variance in let open Asttypes in
+  List.map (fun v ->
+    (if not (mem May_pos v) then Contravariant else
+     if not (mem May_neg v) then Covariant else NoVariance),
+    NoInjectivity)
 
 let tree_of_class_declaration id cl rs =
   let params = filter_params cl.cty_params in
@@ -1947,8 +1964,19 @@ let explanation intro prev env = function
   | Trace.Obj o -> explain_object o
   | Trace.Rec_occur(x,y) ->
       reset_and_mark_loops y;
-      Some(dprintf "@,@[<hov>The type variable %a occurs inside@ %a@]"
-            marked_type_expr x marked_type_expr y)
+      begin match x.desc with
+      | Tvar _ | Tunivar _  ->
+          Some(dprintf "@,@[<hov>The type variable %a occurs inside@ %a@]"
+                 marked_type_expr x marked_type_expr y)
+      | _ ->
+          (* We had a delayed unification of the type variable with
+             a non-variable after the occur check. *)
+          Some ignore
+           (* There is no need to search further for an explanation, but
+              we don't want to print a message of the form:
+                {[ The type int occurs inside int list -> 'a |}
+           *)
+      end
 
 let mismatch intro env trace =
   Trace.explain trace (fun ~prev h -> explanation intro prev env h)
