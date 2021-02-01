@@ -20,13 +20,19 @@ opam user-setup install
 Manually building and installing Merlin
 =======================================
 
+Since version 4.0, merlin's repository has a dedicated branch per version of
+OCaml, and the branch name consist of the concatenation of OCaml major version
+and minor version. So, for instance, `OCaml 4.11.*` maps to branch `411`.
+The main branch is usually synchronized with the branch compatible with the
+latest (almost-)released version of OCaml.
+
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.02.3, ocamlfind, yojson >= 1.6.0, dune >= 1.8.
+Dependencies: ocamlfind, yojson >= 1.6.0, dune >= 2.7.
 
 ```shell
-dune build -p merlin
+dune build -p dot-merlin-reader,merlin
 ```
 
 Note: if you want to work on merlin, you'll want to avoid the `-p merlin`, to
@@ -39,7 +45,7 @@ Installation
 If you haven't encountered any errors in the previous step, just run:
 
 ```shell
-dune install -p merlin
+dune install -p dot-merlin-reader,merlin
 ```
 
 You can pass an explicit prefix to dune, using `--prefix`. It defaults to
