@@ -20,8 +20,7 @@
  (name test-deps)
  (deps
   %{bin:merlin-wrapper}
-  (package merlin)
-  (package dot-merlin-reader)))
+  (package merlin)))
 
 (cram
  (applies_to :whole_subtree)
