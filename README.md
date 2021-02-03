@@ -26,6 +26,10 @@ and minor version. So, for instance, `OCaml 4.11.*` maps to branch `411`.
 The main branch is usually synchronized with the branch compatible with the
 latest (almost-)released version of OCaml.
 
+Note: if you're using an older version of OCaml (between 4.02 and 4.10) you will
+want to build the 3.4 branch, although it won't contain the most recent
+features.
+
 Compilation
 -----------
 
