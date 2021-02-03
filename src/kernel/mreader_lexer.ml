@@ -41,7 +41,7 @@ type t = {
   keywords: keywords;
   config: Mconfig.t;
   source: Msource.t;
-  items: item list;
+  rev_items: item list;
 }
 
 let get_tokens keywords pos text =
@@ -83,13 +83,13 @@ let initial_position config =
 
 let make warnings keywords config source =
   Msupport.catch_errors warnings (ref []) @@ fun () ->
-  let items =
+  let rev_items =
     get_tokens keywords
     (initial_position config)
     (Msource.text source)
     []
   in
-  { keywords; items; config; source }
+  { keywords; rev_items; config; source }
 
 let item_start = function
   | Triple (_,s,_) -> s
@@ -118,16 +118,16 @@ let rev_filter_map ~f lst =
   aux [] lst
 
 let tokens t =
-  rev_filter_map t.items
+  rev_filter_map t.rev_items
     ~f:(function Triple t -> Some t | _ -> None)
 
 let errors t =
-  rev_filter_map t.items
+  rev_filter_map t.rev_items
     ~f:(function Error (err, loc) -> Some (Lexer_raw.Error (err, loc))
                | _ -> None)
 
 let comments t =
-  rev_filter_map t.items
+  rev_filter_map t.rev_items
     ~f:(function Comment t -> Some t | _ -> None)
 
 open Parser_raw
@@ -325,36 +325,32 @@ let for_completion t pos =
     | Triple ((LABEL _ | OPTLABEL _), _, _) -> no_labels := true
     | _ -> ()
   in
-  let rec aux acc = function
+  let fake_ident = Triple (LIDENT "", pos, pos) in
+  let rec aux suffix = function
     (* Cursor is before item: continue *)
     | item :: items when Lexing.compare_pos (item_start item) pos >= 0 ->
-      aux (item :: acc) items
+      aux (item :: suffix) items
 
     (* Cursor is in the middle of item: stop *)
-    | item :: _ when Lexing.compare_pos (item_end item) pos > 0 ->
+    | (item :: _) as items when Lexing.compare_pos (item_end item) pos > 0 ->
       check_label item;
-      raise Exit
+      (suffix, items)
 
     (* Cursor is at the end *)
-    | ((Triple (token, _, loc_end) as item) :: _) as items
+    | ((Triple (token, _, loc_end) as item) :: _) as rev_prefix
       when Lexing.compare_pos pos loc_end = 0 ->
       check_label item;
       begin match token with
-        (* Already on identifier, no need to introduce *)
-        | UIDENT _ | LIDENT _ -> raise Exit
-        | _ -> acc, items
+        (* Already on identifier, no need to introduce a fake identifier *)
+        | UIDENT _ | LIDENT _ -> (suffix, rev_prefix)
+        | _ -> (fake_ident :: suffix, rev_prefix)
       end
 
-    | items -> acc, items
+    | rev_prefix -> (fake_ident :: suffix, rev_prefix)
   in
-  let t =
-    match aux [] t.items with
-    | exception Exit -> t
-    | acc, items ->
-      {t with items =
-                List.rev_append acc (Triple (LIDENT "", pos, pos) :: items)}
-  in
-  (!no_labels, t)
+  let suffix, rev_prefix = aux [] t.rev_items in
+  let rev_prefix = Triple (SNAPSHOT, pos, pos) :: rev_prefix in
+  (!no_labels, {t with rev_items = List.rev_append suffix rev_prefix})
 
 let identifier_suffix ident =
   match List.last ident with

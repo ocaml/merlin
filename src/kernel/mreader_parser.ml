@@ -72,22 +72,28 @@ type steps =[
   | `Structure of (Parsetree.structure step * Mreader_lexer.triple) list
 ]
 
+type snapshot = Snapshot : _ Parser_raw.MenhirInterpreter.env -> snapshot
+
 type t = {
   kind: kind;
   tree: tree;
   steps: steps;
   errors: exn list;
   lexer: Mreader_lexer.t;
+  snapshot: snapshot option;
 }
 
 let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
 
 let errors_ref = ref []
 
-let resume_parse =
+let resume_parse snapshot =
   let rec normal acc tokens = function
     | I.InputNeeded env as checkpoint ->
       let token, tokens = match tokens with
+        | (Parser_raw.SNAPSHOT, _, _) :: token :: tokens ->
+          snapshot := Some (Snapshot env);
+          token, tokens
         | token :: tokens -> token, tokens
         | [] -> eof_token, []
       in
@@ -165,17 +171,17 @@ let seek_step steps tokens =
   in
   aux [] (steps, tokens)
 
-let parse initial steps tokens initial_pos =
+let parse snapshot initial steps tokens initial_pos =
   let acc, tokens = seek_step steps tokens in
   let step =
     match acc with
     | (step, _) :: _ -> step
     | [] -> Correct (initial initial_pos)
   in
-  let acc, result = resume_parse acc tokens step in
+  let acc, result = resume_parse snapshot acc tokens step in
   List.rev acc, result
 
-let run_parser warnings lexer previous kind =
+let run_parser snapshot warnings lexer previous kind =
   Msupport.catch_errors warnings errors_ref @@ fun () ->
   let tokens = Mreader_lexer.tokens lexer in
   let initial_pos = Mreader_lexer.initial_position lexer in
@@ -187,7 +193,7 @@ let run_parser warnings lexer previous kind =
     in
     let steps, result =
       let state = Parser_raw.Incremental.implementation in
-      parse state steps tokens initial_pos in
+      parse snapshot state steps tokens initial_pos in
     `Structure steps, `Implementation result
   | MLI ->
     let steps = match previous with
@@ -196,16 +202,19 @@ let run_parser warnings lexer previous kind =
     in
     let steps, result =
       let state = Parser_raw.Incremental.interface in
-      parse state steps tokens initial_pos in
+      parse snapshot state steps tokens initial_pos in
     `Signature steps, `Interface result
 
 let make warnings lexer kind =
   errors_ref := [];
-  let steps, tree = run_parser warnings lexer `None kind in
+  let snapshot = ref None in
+  let steps, tree = run_parser snapshot warnings lexer `None kind in
   let errors = !errors_ref in
   errors_ref := [];
-  {kind; steps; tree; errors; lexer}
+  {kind; steps; tree; errors; lexer; snapshot = !snapshot}
 
 let result t = t.tree
 
 let errors t = t.errors
+
+let snapshot t = t.snapshot

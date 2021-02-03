@@ -33,6 +33,8 @@ type kind =
 
 type t
 
+type snapshot = Snapshot : _ Parser_raw.MenhirInterpreter.env -> snapshot
+
 val make : Warnings.state -> Mreader_lexer.t -> kind -> t
 
 type tree = [
@@ -43,3 +45,5 @@ type tree = [
 val result : t -> tree
 
 val errors : t -> exn list
+
+val snapshot : t -> snapshot option

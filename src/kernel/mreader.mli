@@ -12,6 +12,7 @@ type result = {
   comments      : comment list;
   parsetree     : parsetree;
   no_labels_for_completion : bool;
+  snapshot_for_completion : Mreader_parser.snapshot option;
 }
 
 type pretty_parsetree = Extend_protocol.Reader.pretty_parsetree

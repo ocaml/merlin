@@ -1,7 +1,7 @@
 
 (* The type of tokens. *)
 
-type token =
+type token = 
   | WITH
   | WHILE_LWT
   | WHILE
@@ -20,6 +20,7 @@ type token =
   | STRUCT
   | STRING of (string * Location.t * string option)
   | STAR
+  | SNAPSHOT
   | SIG
   | SEMISEMI
   | SEMI
@@ -169,21 +170,15 @@ val interface: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.signature
 val implementation: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.structure)
 
 module MenhirInterpreter : sig
-
-  module ET : sig
-    type state = int
-    type production = int
-    val goto_prod : state -> production -> state
-  end
-
+  
   (* The incremental API. *)
-
+  
   include MenhirLib.IncrementalEngine.INCREMENTAL_ENGINE
     with type token = token
-
+  
   (* The indexed type of terminal symbols. *)
-
-  type _ terminal =
+  
+  type _ terminal = 
     | T_error : unit terminal
     | T_WITH : unit terminal
     | T_WHILE_LWT : unit terminal
@@ -203,6 +198,7 @@ module MenhirInterpreter : sig
     | T_STRUCT : unit terminal
     | T_STRING : (string * Location.t * string option) terminal
     | T_STAR : unit terminal
+    | T_SNAPSHOT : unit terminal
     | T_SIG : unit terminal
     | T_SEMISEMI : unit terminal
     | T_SEMI : unit terminal
@@ -318,10 +314,10 @@ module MenhirInterpreter : sig
     | T_AND : unit terminal
     | T_AMPERSAND : unit terminal
     | T_AMPERAMPER : unit terminal
-
+  
   (* The indexed type of nonterminal symbols. *)
-
-  type _ nonterminal =
+  
+  type _ nonterminal = 
     | N_with_type_binder : (Asttypes.private_flag) nonterminal
     | N_with_constraint : (Parsetree.with_constraint) nonterminal
     | N_virtual_with_private_flag : (Asttypes.private_flag) nonterminal
@@ -538,46 +534,46 @@ module MenhirInterpreter : sig
     | N_and_let_binding : (Ast_helper.let_binding) nonterminal
     | N_alias_type : (Parsetree.core_type) nonterminal
     | N_additive : (string) nonterminal
-
+  
   (* The inspection API. *)
-
+  
   include MenhirLib.IncrementalEngine.INSPECTION
     with type 'a lr1state := 'a lr1state
     with type production := production
     with type 'a terminal := 'a terminal
     with type 'a nonterminal := 'a nonterminal
     with type 'a env := 'a env
-
+  
 end
 
 (* The entry point(s) to the incremental API. *)
 
 module Incremental : sig
-
+  
   val use_file: Lexing.position -> (Parsetree.toplevel_phrase list) MenhirInterpreter.checkpoint
-
+  
   val toplevel_phrase: Lexing.position -> (Parsetree.toplevel_phrase) MenhirInterpreter.checkpoint
-
+  
   val parse_val_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
-
+  
   val parse_pattern: Lexing.position -> (Parsetree.pattern) MenhirInterpreter.checkpoint
-
+  
   val parse_mty_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
-
+  
   val parse_mod_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
-
+  
   val parse_mod_ext_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
-
+  
   val parse_expression: Lexing.position -> (Parsetree.expression) MenhirInterpreter.checkpoint
-
+  
   val parse_core_type: Lexing.position -> (Parsetree.core_type) MenhirInterpreter.checkpoint
-
+  
   val parse_constr_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
-
+  
   val parse_any_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
-
+  
   val interface: Lexing.position -> (Parsetree.signature) MenhirInterpreter.checkpoint
-
+  
   val implementation: Lexing.position -> (Parsetree.structure) MenhirInterpreter.checkpoint
-
+  
 end

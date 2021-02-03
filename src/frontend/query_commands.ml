@@ -418,16 +418,35 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         Some (Locate.get_doc ~config ~env ~local_defs
                 ~comments:(Mpipeline.reader_comments pipeline) ~pos)
     in
+    let syntactic =
+      match Mpipeline.reader_snapshot_for_completion pipeline with
+      | None -> []
+      | Some (Snapshot env) -> Syntactic_completion.analyse_stack env
+    in
+    let syntactic =
+      List.map Syntactic_completion.state_to_rhs syntactic
+      |> List.flatten
+      |> List.filter_map ~f:(fun rhs ->
+          let (compl, suffix) = Syntactic_completion.rhs_to_string rhs in
+          if String.is_prefixed ~by:prefix compl then
+            Some {Query_protocol.Compl.
+                   name = compl; kind = `Syntax;
+                   desc = suffix; info = ""; deprecated = false;
+                 }
+          else None
+        )
+    in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
       Completion.branch_complete config ~kinds ?get_doc ?target_type prefix branch |>
       print_completion_entries ~with_types config source
-    and context = match context with
+    and context =  match context  with
       | `Application context when no_labels ->
         `Application {context with Compl.labels = []}
       | context -> context
     in
-    {Compl. entries; context }
+    let entries = syntactic @ entries in
+    { Compl. entries; context }
 
   | Expand_prefix (prefix, pos, kinds, with_types) ->
     let pipeline, typer = for_completion pipeline pos in

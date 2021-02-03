@@ -36,6 +36,7 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_STRUCT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_STRING -> ("", Location.none, None)
     | MenhirInterpreter.T MenhirInterpreter.T_STAR -> ()
+    | MenhirInterpreter.T MenhirInterpreter.T_SNAPSHOT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SIG -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SEMI -> ()
@@ -395,6 +396,7 @@ let can_pop (type a) : a terminal -> bool = function
   | T_THEN -> true
   | T_STRUCT -> true
   | T_STAR -> true
+  | T_SNAPSHOT -> true
   | T_SIG -> true
   | T_SEMISEMI -> true
   | T_SEMI -> true

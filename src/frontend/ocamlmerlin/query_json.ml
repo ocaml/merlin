@@ -212,6 +212,7 @@ let string_of_completion_kind = function
   | `MethodCall  -> "#"
   | `Exn         -> "Exn"
   | `Class       -> "Class"
+  | `Syntax      -> "Syntax"
 
 let with_location ?(skip_none=false) loc assoc =
   if skip_none && loc = Location.none then

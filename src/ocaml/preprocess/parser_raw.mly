@@ -725,7 +725,7 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token LESSMINUS [@symbol "<-"] [@cost 2]
 %token LET [@symbol "let"]
 %token <string> LIDENT [@cost 2] [@recovery "_"][@printer Printf.sprintf "LIDENT(%S)"]
-%token LPAREN [@symbol ")"]
+%token LPAREN [@symbol "("]
 %token LBRACKETAT [@symbol "[@"]
 %token LBRACKETATAT [@symbol "[@@"]
 %token LBRACKETATATAT [@symbol "[@@@"]
@@ -800,6 +800,8 @@ let expr_of_lwt_bindings ~loc lbs body =
 %token DOTLESS [@cost 1] [@symbol ".<"]
 %token DOTTILDE [@cost 1] [@symbol ".~"]
 %token GREATERDOT [@cost 1] [@symbol ">."]
+
+%token SNAPSHOT
 
 /* Precedences and associativities.
 

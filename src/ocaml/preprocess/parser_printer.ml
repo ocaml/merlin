@@ -37,6 +37,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRUCT) -> "struct"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRING) -> "STRING"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STAR) -> "*"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SNAPSHOT) -> "SNAPSHOT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SIG) -> "sig"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) -> ";;"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMI) -> ";"
@@ -70,7 +71,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_METHOD) -> "method"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MATCH_LWT) -> "match_lwt"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MATCH) -> "match"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LPAREN) -> ")"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LPAREN) -> "("
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LIDENT) -> "LIDENT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LET_LWT) -> "lwt"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LETOP) -> "LETOP"
@@ -380,6 +381,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_STRUCT -> (fun _ -> "struct")
   | MenhirInterpreter.T MenhirInterpreter.T_STRING -> (string_of_STRING)
   | MenhirInterpreter.T MenhirInterpreter.T_STAR -> (fun _ -> "*")
+  | MenhirInterpreter.T MenhirInterpreter.T_SNAPSHOT -> (fun _ -> "SNAPSHOT")
   | MenhirInterpreter.T MenhirInterpreter.T_SIG -> (fun _ -> "sig")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> (fun _ -> ";;")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMI -> (fun _ -> ";")
@@ -413,7 +415,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_METHOD -> (fun _ -> "method")
   | MenhirInterpreter.T MenhirInterpreter.T_MATCH_LWT -> (fun _ -> "match_lwt")
   | MenhirInterpreter.T MenhirInterpreter.T_MATCH -> (fun _ -> "match")
-  | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> (fun _ -> ")")
+  | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> (fun _ -> "(")
   | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> (Printf.sprintf "LIDENT(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_LET_LWT -> (fun _ -> "lwt")
   | MenhirInterpreter.T MenhirInterpreter.T_LETOP -> (fun _ -> "LETOP")
@@ -722,6 +724,7 @@ let print_token = function
   | STRUCT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRUCT) ()
   | STRING v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRING) v
   | STAR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STAR) ()
+  | SNAPSHOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SNAPSHOT) ()
   | SIG -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SIG) ()
   | SEMISEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) ()
   | SEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMI) ()
@@ -859,6 +862,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_STRUCT -> STRUCT
   | MenhirInterpreter.T_STRING -> STRING v
   | MenhirInterpreter.T_STAR -> STAR
+  | MenhirInterpreter.T_SNAPSHOT -> SNAPSHOT
   | MenhirInterpreter.T_SIG -> SIG
   | MenhirInterpreter.T_SEMISEMI -> SEMISEMI
   | MenhirInterpreter.T_SEMI -> SEMI

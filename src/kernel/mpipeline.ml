@@ -118,6 +118,8 @@ let reader_lexer_errors  t = (fst (reader t)).Mreader.lexer_errors
 let reader_parser_errors t = (fst (reader t)).Mreader.parser_errors
 let reader_no_labels_for_completion t =
   (fst (reader t)).Mreader.no_labels_for_completion
+let reader_snapshot_for_completion t =
+  (fst (reader t)).Mreader.snapshot_for_completion
 
 let ppx_parsetree t = (ppx t).Ppx.parsetree
 let ppx_errors    t = (ppx t).Ppx.errors

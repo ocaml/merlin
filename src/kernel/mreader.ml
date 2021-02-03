@@ -14,6 +14,7 @@ type result = {
   comments      : comment list;
   parsetree     : parsetree;
   no_labels_for_completion : bool;
+  snapshot_for_completion : Mreader_parser.snapshot option;
 }
 
 (* Normal entry point *)
@@ -51,9 +52,10 @@ let normal_parse ?for_completion config source =
   and parser_errors = Mreader_parser.errors parser
   and parsetree = Mreader_parser.result parser
   and comments = Mreader_lexer.comments lexer
+  and snapshot_for_completion = Mreader_parser.snapshot parser
   in
   { config; lexer_errors; parser_errors; comments; parsetree;
-    no_labels_for_completion; }
+    no_labels_for_completion; snapshot_for_completion }
 
 (* Pretty-printing *)
 
@@ -168,7 +170,7 @@ let parse ?for_completion config source =
   | Some (`No_labels no_labels_for_completion, parsetree) ->
     let (lexer_errors, parser_errors, comments) = ([], [], []) in
     { config; lexer_errors; parser_errors; comments; parsetree;
-      no_labels_for_completion; }
+      no_labels_for_completion; snapshot_for_completion = None }
   | None -> normal_parse ?for_completion config source
 
 (* Update config after parse *)

@@ -333,8 +333,12 @@ def vim_fillentries(entries, vimvar):
     prep = vim_complete_prepare
     prep_nl = vim_complete_prepare_preserve_newlines
     for prop in entries:
-        vim.command("let tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-                (prep(prop['name']),prep(prop['desc']),prep_nl(prop['info']),prep(prop['kind'][:1])))
+        if prop['kind'] == 'Syntax':
+            vim.command("let tmp = {'word':'%s','menu':'%s'}" %
+                    (prep(prop['name']),prep(prop['desc'])))
+        else:
+            vim.command("let tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+                    (prep(prop['name']),prep(prop['desc']),prep_nl(prop['info']),prep(prop['kind'][:1])))
         vim.command("call add(%s, tmp)" % vimvar)
 
 # Complete
