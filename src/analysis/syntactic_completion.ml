@@ -21,7 +21,9 @@ let union_mask lookahead s1 s2 =
   done;
   Bytes.unsafe_to_string result
 
-let mask_mem mask index =
+let terminal_mem mask (index : _ Parser_raw.MenhirInterpreter.terminal) =
+  mask = "" ||
+  let index : int = Obj.magic index in
   let offset = index / 8 in
   let shift = index mod 8 in
   if String.length mask > offset
@@ -74,25 +76,49 @@ let analyse_stack env : (int * string) list =
   | None -> reached
   | Some env -> consume_stack env reached context
 
-let state_to_rhs (state, lookahead) =
+let rec expand_nt lookahead expanded acc tail nt =
+  if List.mem nt !expanded then acc else (
+    expanded := nt :: !expanded;
+    let prods = (Lazy.force Complete_data.nonterminal_prods).(nt) in
+    List.fold_left (fun acc prod ->
+        let rhs = Complete_data.productions.(prod) in
+        let len = Array.length rhs in
+        if len = 0 then acc else (
+          let tail = Array.to_list (Array.sub rhs 1 (len - 1)) @ tail in
+          match rhs.(0) with
+          | X (N nt') ->
+            expand_nt lookahead expanded acc tail (Obj.magic nt' : int)
+          | X (T t) as sym ->
+            if terminal_mem lookahead t
+            then (sym :: tail) :: acc
+            else acc
+        )
+      ) acc prods
+  )
+
+let immediate_state_to_rhs lookahead acc state =
   let lazy items_table = Complete_data.items_table in
   Array.fold_left begin fun acc (prod, dot) ->
     let rhs = Complete_data.productions.(prod) in
     let len = Array.length rhs in
     if dot < len then
+      let tail = Array.to_list (Array.sub rhs (dot + 1) (len - dot - 1)) in
       match rhs.(dot) with
-      | X (N _) -> acc
-      | X (T t) ->
-        let index : int = Obj.magic t in
-        if lookahead = "" || mask_mem lookahead index then
-          Array.sub rhs dot (len - dot) :: acc
-        else
-          acc
+      | X (N n) -> expand_nt lookahead (ref []) acc tail (Obj.magic n)
+      | X (T t) as sym ->
+        if terminal_mem lookahead t
+        then (sym :: tail) :: acc
+        else acc
     else acc
-  end [] items_table.(state)
+  end acc items_table.(state)
+
+let state_to_rhs (state, lookahead) =
+  let lazy reds = Complete_data.reduction_table in
+  let _, states = reds.(state) in
+  List.fold_left (immediate_state_to_rhs lookahead) [] (state :: states)
 
 let rhs_to_string rhs =
-  match Array.to_list (Array.map Parser_printer.print_symbol rhs) with
+  match List.map Parser_printer.print_symbol rhs with
   | [] -> assert false
   | hd :: tl ->
     hd, String.concat " " tl

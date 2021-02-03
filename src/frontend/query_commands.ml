@@ -423,6 +423,28 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | None -> []
       | Some (Snapshot env) -> Syntactic_completion.analyse_stack env
     in
+    Logger.log ~section:"completion" ~title:"syntactic states"
+      "%s" (String.concat ~sep:"\n"
+              (syntactic
+               |> List.map ~f:(fun (st,_) ->
+                   List.map (fun st ->
+                       string_of_int st ^ ": " ^
+                       let lazy items = Complete_data.items_table in
+                       String.concat ~sep:", " (
+                         Array.to_list (
+                           Array.map (fun (prod,dot) ->
+                               let rhs = Complete_data.productions.(prod) in
+                               let hd, tl = Syntactic_completion.rhs_to_string (Array.to_list rhs) in
+                               Printf.sprintf "(%d,%d): %s %s" prod dot hd tl
+                             ) items.(st)
+                         )
+                       )
+                     )
+                     (st :: snd (Lazy.force Complete_data.reduction_table).(st))
+                 )
+               |> List.flatten
+              )
+           );
     let syntactic =
       List.map Syntactic_completion.state_to_rhs syntactic
       |> List.flatten

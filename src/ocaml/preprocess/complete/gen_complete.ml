@@ -165,13 +165,13 @@ let () =
   in
   Printf.printf "let reduction_table : \
                  ((int * string) list list * int list) array lazy_t =\n\
-                \  lazy (Marshal.from_string %S 0)\n\
-                 let goto_table : (int * int) list array lazy_t =\n\
-                \  lazy (Marshal.from_string %S 0)\n\
-                 let items_table : (int * int) array array lazy_t =\n\
                 \  lazy (Marshal.from_string %S 0)\n"
-    (Marshal.to_string red_tbl [])
-    (Marshal.to_string goto_tbl [])
+    (Marshal.to_string red_tbl []);
+  Printf.printf "let goto_table : (int * int) list array lazy_t =\n\
+                \  lazy (Marshal.from_string %S 0)\n"
+    (Marshal.to_string goto_tbl []);
+  Printf.printf "let items_table : (int * int) array array lazy_t =\n\
+                \  lazy (Marshal.from_string %S 0)\n"
     (Marshal.to_string items_tbl []);
   print_endline "open Parser_raw";
   print_endline "let productions = MenhirInterpreter.[|";
@@ -185,67 +185,22 @@ let () =
         ) (Production.rhs prod);
     print_endline "|];";
   end;
-  print_endline "|]"
-
-
-(*let () =
-  let stringlist f l =
-    "[" ^ String.concat ";" (List.map f l) ^ "]"
+  print_endline "|]";
+  let first_real_nt =
+    let exception Found of int in
+    try
+      Nonterminal.iter (fun nt -> if Nonterminal.kind nt = `REGULAR then
+                           raise (Found (Nonterminal.to_int nt)));
+      assert false
+    with Found nt -> nt
   in
-  let string_of_int' f x = string_of_int (f x) in
-
-  Lr1.iter (fun lr1 ->
-      let reductions, visited = closure lr1 in
-      Printf.printf "%d: %s, %s\n"
-        (Lr1.to_int lr1)
-        (stringlist (stringlist (fun (prod, lookahead) ->
-             string_of_int' Production.to_int prod ^ "," ^ stringlist (string_of_int' Terminal.to_int) lookahead))
-             reductions)
-        (stringlist (fun lr1 -> string_of_int (Lr1.to_int lr1)) visited)
-    )*)
-
-(*type arities = int array
-
-let arities =
-  Array.init Production.count begin fun prod ->
-   Array.length (Production.rhs (Production.of_int prod))
-  end
-
-type reductions = int array array
-
-let reductions : reductions =
-  Array.init Lr1.count begin fun lr1 ->
-    let to_prod (_, prods) = Production.to_int (List.hd prods) in
-    Lr1.reductions (Lr1.of_int lr1)
-    |> List.map to_prod
-    |> List.sort_uniq compare
-    |> List.sort (fun p1 p2 -> Int.compare arities.(p1) arities.(p2))
-    |> Array.of_list
-  end*)
-
-(*type itemsets = (int * int) array array
-
-let itemsets0 =
-  Lr0.tabulate begin fun lr0 ->
-    let to_item (prod, dot) = (Production.to_int prod, dot) in
-    Lr0.items lr0
-    |> List.map to_item
-    |> Array.of_list
-  end
-
-let itemsets : itemsets =
-  Array.init Lr1.count begin fun lr1 ->
-    itemsets0 (Lr1.lr0 (Lr1.of_int lr1))
-  end
-
-let () =
-  Printf.printf "let raw_arities : int array lazy_t = \
-                   lazy (Marshal.from_string %S 0)\n\
-                 let raw_reductions : int array array lazy_t = \
-                   lazy (Marshal.from_string %S 0)\n\
-                 let raw_itemsets : (int * int) array array lazy_t = \
-                   lazy (Marshal.from_string %S 0)\n"
-    (Marshal.to_string arities [])
-    (Marshal.to_string reductions [])
-    (Marshal.to_string itemsets [])
-*)
+  let nonterminals_tbl = Array.make (Nonterminal.count - first_real_nt) [] in
+  Production.iter (fun p ->
+      if Production.kind p = `REGULAR then (
+        let lhs = Nonterminal.to_int (Production.lhs p) - first_real_nt in
+        nonterminals_tbl.(lhs) <- Production.to_int p :: nonterminals_tbl.(lhs)
+      )
+    );
+  Printf.printf "let nonterminal_prods : int list array lazy_t =\n\
+                \  lazy (Marshal.from_string %S 0)\n"
+    (Marshal.to_string nonterminals_tbl [])
