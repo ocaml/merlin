@@ -150,9 +150,11 @@ let itemsets0 =
     |> Array.of_list
   end
 
-
 let () =
-  let red_tbl = Array.init Lr1.count (fun lr1 -> closure (Lr1.of_int lr1)) in
+  let reduction_table, visit_table =
+    let table = Array.init Lr1.count (fun lr1 -> closure (Lr1.of_int lr1)) in
+    Array.map fst table, Array.map snd table
+  in
   let goto_tbl = Array.init Lr1.count (fun lr1 ->
       List.filter_map (function
           | (N nt, target) -> Some (Nonterminal.to_int nt, Lr1.to_int target)
@@ -163,14 +165,22 @@ let () =
   let items_tbl : itemsets =
     Array.init Lr1.count (fun lr1 -> itemsets0 (Lr1.lr0 (Lr1.of_int lr1)))
   in
-  Printf.printf "let reduction_table : \
-                 ((int * string) list list * int list) array lazy_t =\n\
+  Printf.printf "type state = int\n\
+                 type terminal = int\n\
+                 type production = int\n\
+                 type lookahead_set = string\n";
+  Printf.printf "let state_to_reduction_table : \
+                   (production * lookahead_set) list list array lazy_t =\n\
                 \  lazy (Marshal.from_string %S 0)\n"
-    (Marshal.to_string red_tbl []);
-  Printf.printf "let goto_table : (int * int) list array lazy_t =\n\
+    (Marshal.to_string reduction_table []);
+  Printf.printf "let state_closure_table : state list array lazy_t =\n\
+                \  lazy (Marshal.from_string %S 0)\n"
+    (Marshal.to_string visit_table []);
+  Printf.printf "let state_goto_table : \
+                   (terminal * state) list array lazy_t =\n\
                 \  lazy (Marshal.from_string %S 0)\n"
     (Marshal.to_string goto_tbl []);
-  Printf.printf "let items_table : (int * int) array array lazy_t =\n\
+  Printf.printf "let items_table : (production * int) array array lazy_t =\n\
                 \  lazy (Marshal.from_string %S 0)\n"
     (Marshal.to_string items_tbl []);
   print_endline "open Parser_raw";
@@ -201,6 +211,7 @@ let () =
         nonterminals_tbl.(lhs) <- Production.to_int p :: nonterminals_tbl.(lhs)
       )
     );
-  Printf.printf "let nonterminal_prods : int list array lazy_t =\n\
+  Printf.printf "let nonterminal_to_productions : \
+                   production list array lazy_t =\n\
                 \  lazy (Marshal.from_string %S 0)\n"
     (Marshal.to_string nonterminals_tbl [])

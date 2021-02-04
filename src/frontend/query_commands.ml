@@ -419,44 +419,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
                 ~comments:(Mpipeline.reader_comments pipeline) ~pos)
     in
     let syntactic =
-      match Mpipeline.reader_snapshot_for_completion pipeline with
-      | None -> []
-      | Some (Snapshot env) -> Syntactic_completion.analyse_stack env
-    in
-    Logger.log ~section:"completion" ~title:"syntactic states"
-      "%s" (String.concat ~sep:"\n"
-              (syntactic
-               |> List.map ~f:(fun (st,_) ->
-                   List.map (fun st ->
-                       string_of_int st ^ ": " ^
-                       let lazy items = Complete_data.items_table in
-                       String.concat ~sep:", " (
-                         Array.to_list (
-                           Array.map (fun (prod,dot) ->
-                               let rhs = Complete_data.productions.(prod) in
-                               let hd, tl = Syntactic_completion.rhs_to_string (Array.to_list rhs) in
-                               Printf.sprintf "(%d,%d): %s %s" prod dot hd tl
-                             ) items.(st)
-                         )
-                       )
-                     )
-                     (st :: snd (Lazy.force Complete_data.reduction_table).(st))
-                 )
-               |> List.flatten
-              )
-           );
-    let syntactic =
-      List.map Syntactic_completion.state_to_rhs syntactic
-      |> List.flatten
-      |> List.filter_map ~f:(fun rhs ->
-          let (compl, suffix) = Syntactic_completion.rhs_to_string rhs in
-          if String.is_prefixed ~by:prefix compl then
-            Some {Query_protocol.Compl.
-                   name = compl; kind = `Syntax;
-                   desc = suffix; info = ""; deprecated = false;
-                 }
-          else None
-        )
+      let entries =
+        match Mpipeline.reader_snapshot_for_completion pipeline with
+        | None -> []
+        | Some (Snapshot env) -> Syntactic_completion.completion_for_parser env
+      in
+      List.filter_map entries ~f:begin fun (compl, suffix) ->
+        if String.is_prefixed ~by:prefix compl then
+          Some {Query_protocol.Compl.
+                 name = compl; kind = `Syntax;
+                 desc = suffix; info = ""; deprecated = false;
+               }
+        else None
+      end
     in
     let entries =
       Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
@@ -467,7 +442,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         `Application {context with Compl.labels = []}
       | context -> context
     in
-    let entries = syntactic @ entries in
+    let entries = entries @ syntactic in
     { Compl. entries; context }
 
   | Expand_prefix (prefix, pos, kinds, with_types) ->
