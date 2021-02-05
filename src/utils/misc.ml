@@ -120,10 +120,10 @@ let rec split_path path acc =
   | dir when dir = path ->
     let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
     let dir =
-      if String.length dir > 2 && is_letter dir.[0] && dir.[1] = ':'
+      if not Sys.unix && String.length dir > 2 && is_letter dir.[0] && dir.[1] = ':'
       then
-        Printf.sprintf "%s%s"
-          (String.sub dir ~pos:0 ~len:2)
+        Printf.sprintf "%c:%s"
+          dir.[0]
           Filename.dir_sep
       else dir
     in
