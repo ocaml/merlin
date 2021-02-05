@@ -116,9 +116,19 @@ let remove_file filename =
   with Sys_error _msg -> ()
 
 let rec split_path path acc =
-  match Filename.dirname path, Filename.basename path with
-  | dir, _ when dir = path -> dir :: acc
-  | dir, base -> split_path dir (base :: acc)
+  match Filename.dirname path with
+  | dir when dir = path ->
+    let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
+    let dir =
+      if String.length dir > 2 && is_letter dir.[0] && dir.[1] = ':'
+      then
+        Printf.sprintf "%s%s"
+          (String.sub dir ~pos:0 ~len:2)
+          Filename.dir_sep
+      else dir
+    in
+    dir :: acc
+  | dir -> split_path dir (Filename.basename path :: acc)
 
 (* Deal with case insensitive FS *)
 
