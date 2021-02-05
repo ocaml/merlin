@@ -117,8 +117,12 @@ let rec split_path path acc =
     let dir =
       if not Sys.unix && String.length dir > 2 && is_letter dir.[0] && dir.[1] = ':'
       then
+        (* We do two things here:
+            - We use an uppercase letter to match Dune's behavior
+            - We also add the separator ousrselves because [Filename.concat]
+            does not if its first argument is of the form ["C:"] *)
         Printf.sprintf "%c:%s"
-          dir.[0]
+          ((Char.uppercase dir.[0])[@warning "-3"])
           Filename.dir_sep
       else dir
     in
