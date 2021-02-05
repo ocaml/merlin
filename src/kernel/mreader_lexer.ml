@@ -332,18 +332,18 @@ let for_completion t pos =
       aux (item :: suffix) items
 
     (* Cursor is in the middle of item: stop *)
-    | (item :: _) as items when Lexing.compare_pos (item_end item) pos > 0 ->
+    | item :: items when Lexing.compare_pos (item_end item) pos > 0 ->
       check_label item;
-      (suffix, items)
+      (item :: suffix, items)
 
     (* Cursor is at the end *)
-    | ((Triple (token, _, loc_end) as item) :: _) as rev_prefix
+    | (Triple (token, _, loc_end) as item) :: items
       when Lexing.compare_pos pos loc_end = 0 ->
       check_label item;
       begin match token with
         (* Already on identifier, no need to introduce a fake identifier *)
-        | UIDENT _ | LIDENT _ -> (suffix, rev_prefix)
-        | _ -> (fake_ident :: suffix, rev_prefix)
+        | UIDENT _ | LIDENT _ -> (suffix, item :: items)
+        | _ -> (item :: fake_ident :: suffix, items)
       end
 
     | rev_prefix -> (fake_ident :: suffix, rev_prefix)
