@@ -39,3 +39,27 @@ value ml_merlin_fs_exact_case(value path)
 }
 
 #endif
+#ifdef _WIN32
+
+/* File descriptor inheritance */
+
+#include <windows.h>
+#include <io.h>
+
+value ml_merlin_dont_inherit_stdio(value vstatus)
+{
+  int status = Int_val(vstatus) ? 0 : HANDLE_FLAG_INHERIT;
+  SetHandleInformation((HANDLE)_get_osfhandle(1), HANDLE_FLAG_INHERIT, status);
+  SetHandleInformation((HANDLE)_get_osfhandle(2), HANDLE_FLAG_INHERIT, status);
+  return Val_unit;
+}
+
+#else
+
+value ml_merlin_dont_inherit_stdio(value vstatus)
+{
+  (void)vstatus;
+  return Val_unit;
+}
+
+#endif

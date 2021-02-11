@@ -139,7 +139,24 @@ module Configurator = struct
       let stderr_r, stderr_w = Unix.pipe () in
       Unix.chdir dir;
       Unix.set_close_on_exec stdin_w;
+      (* Set the windows equivalent of close on exec for and stdin stderr
+
+         Most processes spawned by merlin are supposed to inherit stderr to
+         output their debug information. This is fine because these processes
+         are short-lived.
+         However the dune helper we are about to spawn is long-lived, which can
+         cause issues with inherited descriptors because it will outlive
+         merlin's client process.
+         This is not an issue under Unix because file descriptors are replaced
+         (stdin/out/err are new), but under Windows, handle can accumulate.
+         This makes emacs block, synchronously waiting for the inherited (but
+         unused) stdout/stderr to be closed.
+
+         Os_ipc.merlin_dont_inherit_stdio is a no-op under Unix.
+      *)
+      Os_ipc.merlin_dont_inherit_stdio true;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
+      Os_ipc.merlin_dont_inherit_stdio false;
       Unix.chdir cwd;
       Unix.close stdin_r;
       Unix.close stdout_w;
