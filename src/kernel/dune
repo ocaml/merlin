@@ -5,8 +5,8 @@
  (name merlin_kernel)
  (wrapped false)
  (flags -open Merlin_utils)
- (libraries config merlin_extend merlin_specific merlin_utils merlin_dot_protocol parsing
-            preprocess typing utils))
+ (libraries config os_ipc parsing preprocess typing utils
+            merlin_extend merlin_specific merlin_utils merlin_dot_protocol))
 
 (rule
   (targets standard_library.ml)
