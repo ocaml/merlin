@@ -115,8 +115,10 @@ module Configurator = struct
     | Dune -> "dune"
 
   module Process = struct
-    type t = {
+    type nonrec t = {
       pid : int;
+      kind : t;
+      initial_cwd : string;
       stdin: out_channel;
       stdout: in_channel;
       stderr: in_channel;
@@ -132,7 +134,6 @@ module Configurator = struct
           let prog = "dune" in
           prog, [| prog; "ocaml-merlin"; "--no-print-directory" |]
       in
-      log ~title:"get_config" "Using %s configuration provider." (to_string cfg);
       let cwd = Sys.getcwd () in
       let stdin_r, stdin_w = Unix.pipe () in
       let stdout_r, stdout_w = Unix.pipe () in
@@ -155,6 +156,9 @@ module Configurator = struct
          Os_ipc.merlin_dont_inherit_stdio is a no-op under Unix.
       *)
       Os_ipc.merlin_dont_inherit_stdio true;
+      log ~title:"get_config" "Starting %s configuration provider from dir %s."
+        (to_string cfg)
+        dir;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
       Os_ipc.merlin_dont_inherit_stdio false;
       Unix.chdir cwd;
@@ -164,7 +168,8 @@ module Configurator = struct
       let stdin = Unix.out_channel_of_descr stdin_w in
       let stdout = Unix.in_channel_of_descr stdout_r in
       let stderr = Unix.in_channel_of_descr stderr_r in
-      { pid; stdin; stdout; stderr }
+      let initial_cwd =  Misc.canonicalize_filename dir in
+      { pid; kind = cfg; initial_cwd; stdin; stdout; stderr }
   end
 
   let running_processes : (string * t, Process.t) Hashtbl.t = Hashtbl.create 0
