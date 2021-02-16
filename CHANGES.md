@@ -1,3 +1,11 @@
+merlin 4.1
+==========
+Tue Feb 16 10:33:11 AM CET 2021
+
+  + merlin binary:
+    - fix windows paths canonicalization (#1254)
+    - fix hanging on windows (#1256, #1263)
+
 merlin 4.0
 ==========
 
