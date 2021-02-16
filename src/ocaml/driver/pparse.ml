@@ -38,6 +38,8 @@ let report_error = function
     log ~title:"report_error"
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
+external merlin_system_command : string -> int = "ml_merlin_system_command"
+
 let ppx_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s %s 1>&2"
     cmd (Filename.quote fn_in) (Filename.quote fn_out)
@@ -54,7 +56,7 @@ let apply_rewriter magic ppx (fn_in, failures) =
   end;
   let comm = ppx_commandline ppx.workval fn_in fn_out in
   let failure =
-    let ok = Sys.command comm = 0 in
+    let ok = merlin_system_command comm = 0 in
     if not ok then Some (CannotRun comm)
     else if not (Sys.file_exists fn_out) then
       Some (WrongMagic comm)
@@ -159,7 +161,7 @@ let apply_pp ~workdir ~filename ~source ~pp =
   end;
   let fn_out = fn_in ^ ".out" in
   let comm = pp_commandline pp fn_in fn_out in
-  let ok = Sys.command comm = 0 in
+  let ok = merlin_system_command comm = 0 in
   Misc.remove_file fn_in;
   if not ok then begin
     Misc.remove_file fn_out;
