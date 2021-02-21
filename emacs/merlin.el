@@ -1108,10 +1108,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 
 (defvar merlin-type-enclosing-map
   (let ((keymap (make-sparse-keymap)))
-    (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
-    (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
-    (define-key keymap (kbd "C-d") 'merlin-destruct-enclosing)
-    (define-key keymap (kbd "C-w") 'merlin-copy-enclosing)
+    (define-key keymap (kbd "C-<up>") #'merlin-type-enclosing-go-up)
+    (define-key keymap (kbd "C-<down>") #'merlin-type-enclosing-go-down)
+    (define-key keymap (kbd "C-d") #'merlin-destruct-enclosing)
+    (define-key keymap (kbd "C-w") #'merlin-copy-enclosing)
     keymap)
   "The local map to navigate type enclosing.")
 
@@ -1126,7 +1126,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (unless (or (not (eq map (cadr overriding-terminal-local-map)))
                 (eq this-command (lookup-key map (this-command-keys-vector))))
       (merlin--type-enclosing-reset)
-      (remove-hook 'pre-command-hook 'merlin--type-enclosing-reset-hooked))))
+      (remove-hook 'pre-command-hook #'merlin--type-enclosing-reset-hooked))))
 
 (defun merlin--type-enclosing-text (item)
   (if (stringp (car item))
@@ -1209,7 +1209,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (if (version< emacs-version "24.4")
         (progn
           (set-temporary-overlay-map merlin-type-enclosing-map t)
-          (add-hook 'pre-command-hook 'merlin--type-enclosing-reset-hooked))
+          (add-hook 'pre-command-hook #'merlin--type-enclosing-reset-hooked))
       (set-temporary-overlay-map merlin-type-enclosing-map t
                                  'merlin--type-enclosing-reset))))
 
@@ -1726,14 +1726,14 @@ Empty string defaults to jumping to all these."
   (let ((merlin-map (make-sparse-keymap))
         (merlin-menu-map (make-sparse-keymap))
         (merlin-show-type-map (make-sparse-keymap)))
-    (define-key merlin-map (kbd "C-c C-x") 'merlin-error-next)
-    (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
-    (define-key merlin-map (kbd "C-c &"  ) 'merlin-pop-stack)
-    (define-key merlin-map (kbd "C-c C-r") 'merlin-error-check)
-    (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
-    (define-key merlin-map (kbd "C-c C-d") 'merlin-destruct)
-    (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
-    (define-key merlin-map (kbd "C-c C-p") 'merlin-phrase-prev)
+    (define-key merlin-map (kbd "C-c C-x") #'merlin-error-next)
+    (define-key merlin-map (kbd "C-c C-l") #'merlin-locate)
+    (define-key merlin-map (kbd "C-c &"  ) #'merlin-pop-stack)
+    (define-key merlin-map (kbd "C-c C-r") #'merlin-error-check)
+    (define-key merlin-map (kbd "C-c C-t") #'merlin-type-enclosing)
+    (define-key merlin-map (kbd "C-c C-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c C-n") #'merlin-phrase-next)
+    (define-key merlin-map (kbd "C-c C-p") #'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
       '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
@@ -1826,7 +1826,7 @@ Short cuts:
               (let ((configuration (merlin--configuration)))
                 (when configuration (setq merlin-buffer-configuration configuration)))
               (add-to-list 'after-change-functions 'merlin--on-edit)
-              (add-hook 'xref-backend-functions 'merlin-xref-backend nil t)
+              (add-hook 'xref-backend-functions #'merlin-xref-backend nil t)
               ;; TODO: Sanity check for selected merlin version
               (unless merlin--idle-timer
                 (setq merlin--idle-timer
@@ -1838,7 +1838,7 @@ Short cuts:
         (delete-overlay merlin-highlight-overlay))
       (remove-overlays nil nil 'merlin-kind 'highlight)
       (remove-overlays nil nil 'merlin-kind 'error)
-      (remove-hook 'xref-backend-functions 'merlin-xref-backend t))))
+      (remove-hook 'xref-backend-functions #'merlin-xref-backend t))))
 
 (provide 'merlin)
 

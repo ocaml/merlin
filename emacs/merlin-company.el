@@ -18,7 +18,7 @@
 ;; company.
 ;;
 ;; If you always want company-mode to be available, consider adding:
-;;   (add-hook 'after-init-hook 'global-company-mode)
+;;   (add-hook 'after-init-hook #'global-company-mode)
 ;; in your .emacs.
 
 

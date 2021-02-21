@@ -77,7 +77,7 @@ trigger useless merlin calls.")
 (defun merlin-cap--setup ()
   (add-hook 'completion-at-point-functions #'merlin-completion-at-point nil 'local))
 
-(add-hook 'merlin-mode-hook 'merlin-cap--setup)
+(add-hook 'merlin-mode-hook #'merlin-cap--setup)
 (when merlin-mode (merlin-cap--setup))
 
 (provide 'merlin-cap)
