@@ -251,10 +251,12 @@ let get_config (dir, cfg) path_abs =
     (* Starting with Dune 2.8.3 relative paths are prefered. However to maintain
     compatibility with 2.8 <= Dune <= 2.8.2  we always retry with an absolute
     path if using a relative one failed *)
-    let answer = match query path p with
-    | Ok ([`ERROR_MSG _]) when p.kind = Dune ->
-      query path_abs p
-    | answer -> answer in
+    let answer =
+      match query path p with
+      | Ok ([`ERROR_MSG _]) when p.kind = Dune ->
+        query path_abs p
+      | answer -> answer
+    in
 
     match answer with
     | Ok directives ->
