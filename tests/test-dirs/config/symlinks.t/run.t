@@ -32,3 +32,27 @@ include the symlinks:
   > sed s,/real/,/real_or_link/,g | sed s,/link/,/real_or_link/,g
   Querying dune for file: main.ml
   Querying dune for file: $TESTCASE_ROOT/real_or_link/main.ml
+
+And we perform the same testing when Merlin is started from the "real" dir
+  $ cd ../real
+
+  $ ocamlmerlin single dump-configuration -filename main.ml < main.ml \
+  >  -log-section Mconfig -log-file - 2>&1 |
+  > grep "Querying dune for file" |
+  > sed s,/real/,/real_or_link/,g | sed s,/link/,/real_or_link/,g
+  Querying dune for file: main.ml
+  Querying dune for file: $TESTCASE_ROOT/real_or_link/main.ml
+
+  $ ocamlmerlin single dump-configuration -filename $ROOT_DIR/real/main.ml < main.ml \
+  >  -log-section Mconfig -log-file - 2>&1 |
+  > grep "Querying dune for file" |
+  > sed s,/real/,/real_or_link/,g | sed s,/link/,/real_or_link/,g
+  Querying dune for file: main.ml
+  Querying dune for file: $TESTCASE_ROOT/real_or_link/main.ml
+
+  $ ocamlmerlin single dump-configuration -filename $ROOT_DIR/link/main.ml < main.ml \
+  >  -log-section Mconfig -log-file - 2>&1 |
+  > grep "Querying dune for file" |
+  > sed s,/real/,/real_or_link/,g | sed s,/link/,/real_or_link/,g
+  Querying dune for file: main.ml
+  Querying dune for file: $TESTCASE_ROOT/real_or_link/main.ml
