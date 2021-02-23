@@ -1,3 +1,5 @@
+  $ ROOT_DIR=$(pwd)
+
 We work in a directory which is a symlink to another
   $ ln -s real link
   $ cd link
@@ -17,8 +19,6 @@ started and then an absolute path which may or may not include the symlink
 
 However editors will use absolute path to the file which may (or may not ?)
 include the symlinks:
-  $ ROOT_DIR=$(cd .. && pwd)
-
   $ ocamlmerlin single dump-configuration -filename $ROOT_DIR/real/main.ml < main.ml \
   >  -log-section Mconfig -log-file - 2>&1 |
   > grep "Querying dune for file" |
