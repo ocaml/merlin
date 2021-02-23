@@ -115,8 +115,10 @@ module Configurator = struct
     | Dune -> "dune"
 
   module Process = struct
-    type t = {
+    type nonrec t = {
       pid : int;
+      kind : t;
+      initial_cwd : string;
       stdin: out_channel;
       stdout: in_channel;
       stderr: in_channel;
@@ -132,7 +134,6 @@ module Configurator = struct
           let prog = "dune" in
           prog, [| prog; "ocaml-merlin"; "--no-print-directory" |]
       in
-      log ~title:"get_config" "Using %s configuration provider." (to_string cfg);
       let cwd = Sys.getcwd () in
       let stdin_r, stdin_w = Unix.pipe () in
       let stdout_r, stdout_w = Unix.pipe () in
@@ -155,6 +156,9 @@ module Configurator = struct
          Os_ipc.merlin_dont_inherit_stdio is a no-op under Unix.
       *)
       Os_ipc.merlin_dont_inherit_stdio true;
+      log ~title:"get_config" "Starting %s configuration provider from dir %s."
+        (to_string cfg)
+        dir;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
       Os_ipc.merlin_dont_inherit_stdio false;
       Unix.chdir cwd;
@@ -164,7 +168,8 @@ module Configurator = struct
       let stdin = Unix.out_channel_of_descr stdin_w in
       let stdout = Unix.in_channel_of_descr stdout_r in
       let stderr = Unix.in_channel_of_descr stderr_r in
-      { pid; stdin; stdout; stderr }
+      let initial_cwd =  Misc.canonicalize_filename dir in
+      { pid; kind = cfg; initial_cwd; stdin; stdout; stderr }
   end
 
   let running_processes : (string * t, Process.t) Hashtbl.t = Hashtbl.create 0
@@ -205,16 +210,55 @@ type context = string * Configurator.t
 exception Process_exited
 exception End_of_input
 
-let get_config (dir, cfg) path =
-  try
-    let p = Configurator.get_process ~dir cfg in
-    if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
-      raise Process_exited;
+let get_config (dir, cfg) path_abs =
+  let log_query path =
+    log ~title:"get_config" "Querying %s for file: %s"
+      (Configurator.to_string cfg)
+      path
+  in
+  let query path (p : Configurator.Process.t) =
+    log_query path;
     Dot_protocol.Commands.send_file
       ~out_channel:p.stdin
       path;
     flush p.stdin;
-    match Dot_protocol.read ~in_channel:p.stdout with
+    Dot_protocol.read ~in_channel:p.stdout
+  in
+  try
+    let p = Configurator.get_process ~dir cfg in
+    if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
+      raise Process_exited;
+
+    (* Both [p.initial_cwd] and [path_abs] have gone through
+    [canonicalize_filename] *)
+    let path_rel =
+      String.chop_prefix ~prefix:p.initial_cwd path_abs
+      |> Option.map ~f:(fun path ->
+        (* We need to remove the leading path separator after chopping.
+        There is one case where no separator is left: when [initial_cwd]
+        was the root of the filesystem *)
+        if String.length path > 0 && path.[0] = Filename.dir_sep.[0] then
+           String.drop 1 path
+        else path)
+    in
+
+    let path =
+      match p.kind, path_rel with
+      | Dune, Some path_rel -> path_rel
+      | _, _ -> path_abs
+    in
+
+    (* Starting with Dune 2.8.3 relative paths are prefered. However to maintain
+    compatibility with 2.8 <= Dune <= 2.8.2  we always retry with an absolute
+    path if using a relative one failed *)
+    let answer =
+      match query path p with
+      | Ok ([`ERROR_MSG _]) when p.kind = Dune ->
+        query path_abs p
+      | answer -> answer
+    in
+
+    match answer with
     | Ok directives ->
       let cfg, failures = prepend_config ~dir directives empty_config in
       postprocess_config cfg, failures
