@@ -204,6 +204,23 @@
 (alias (name runtest) (deps (alias config-path-expansion)))
 
 (alias
+ (name config-symlinks.t-run)
+ (package merlin)
+ (deps (:t ./test-dirs/config/symlinks.t/run.t)
+       (source_tree ./test-dirs/config/symlinks.t)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/config/symlinks.t
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias config-symlinks.t-run)))
+
+(alias
  (name deprecation-run)
  (package merlin)
  (deps (:t ./test-dirs/deprecation/run.t)
