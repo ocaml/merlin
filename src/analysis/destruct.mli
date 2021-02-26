@@ -75,6 +75,11 @@ exception Useless_refine
 exception Nothing_to_do
 exception Wrong_parent of string
 
+module Path_utils : sig
+  val to_shortest_lid : env:Env.t -> Path.t -> Longident.t
+  val replace_name_by : name:string -> Longident.t -> Longident.t
+end
+
 val node :
   Mconfig.t -> Msource.t -> Browse_raw.node ->
   Browse_raw.node list -> Location.t * string
