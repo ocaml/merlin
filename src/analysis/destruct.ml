@@ -45,8 +45,10 @@ let () =
   )
 
 module Path_utils : sig
-  val to_shortest_lid : env:Env.t -> Path.t -> Longident.t
-  val replace_name_by : name:string -> Longident.t -> Longident.t
+  val to_shortest_lid :
+    env:Env.t ->
+    ?name:string ->
+    env_check:(Longident.t -> Env.t -> 'a) -> Path.t -> Longident.t
 end = struct
   let opens env =
     let rec aux acc = function
@@ -57,23 +59,33 @@ end = struct
     in
     aux [] env
 
-  let rec to_shortest_lid ~(opens : Path.t list) =
-    function
+  let rec to_shortest_lid ~(opens : Path.t list) = function
     | Path.Pdot (path, name) when List.exists ~f:(Path.same path) opens ->
       Longident.Lident name
     | Path.Pdot (path, name) -> Ldot (to_shortest_lid ~opens path, name)
     | Pident ident -> Lident (Ident.name ident)
     | _ -> assert false
 
-  let to_shortest_lid ~env =
-    let opens = opens (Env.summary env) in
-    to_shortest_lid ~opens
+  let maybe_replace_name ?name lid =
+    let open Longident in
+    Option.value_map name
+      ~default:lid
+      ~f:(fun name -> match lid with
+        | Lident _ -> Lident name
+        | Ldot (lid, _) -> Ldot (lid, name)
+        | _ -> assert false)
 
-  let replace_name_by ~name =
-    let open Longident in function
-    | Lident _ -> Lident name
-    | Ldot (lid, _) -> Ldot (lid, name)
-    | _ -> assert false
+  let to_shortest_lid ~env ?name ~env_check path =
+    let opens = opens (Env.summary env) in
+    let lid =
+      to_shortest_lid ~opens path
+      |> maybe_replace_name ?name
+    in
+    try
+      env_check lid env |> ignore;
+      lid
+    with Not_found ->
+      maybe_replace_name ?name (Untypeast.lident_of_path path)
 end
 
 let mk_id s  = Location.mknoloc (Longident.Lident s)
@@ -141,8 +153,9 @@ let rec gen_patterns ?(recurse=true) env type_expr =
     | constructors, _ ->
       let prefix =
         let path = Printtyp.shorten_type_path env path in
-        let lid  = Path_utils.to_shortest_lid ~env path in
-        fun name -> Path_utils.replace_name_by ~name lid
+        fun name ->
+          let env_check = Env.find_constructor_by_name in
+          Path_utils.to_shortest_lid ~env ~name ~env_check path
       in
       let are_types_unifiable typ =
         let snap = Btype.snapshot () in
@@ -436,11 +449,9 @@ let rec qualify_constructors ~unmangling_tables f pat  =
           begin match (Btype.repr pat.pat_type).Types.desc with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
-            begin match Path_utils.to_shortest_lid ~env:pat.pat_env path with
-            | Lident _ -> { lid with Asttypes.txt = Longident.Lident name }
-            | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
-            | _ -> assert false
-            end
+            let env_check = Env.find_constructor_by_name in
+            let txt = Path_utils.to_shortest_lid ~env:pat.pat_env ~name ~env_check path in
+            { lid with Asttypes.txt }
           | _ -> lid
           end
         | _ -> lid (* already qualified *)
