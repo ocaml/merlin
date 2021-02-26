@@ -44,6 +44,19 @@ let print_constructor c =
     in
     Printtyp.tree_of_type_scheme (dummy_type_scheme desc)
 
+let summary_prev = function
+  | Env.Env_empty -> None
+  | Env.Env_open (s,_)       | Env.Env_value (s,_,_)
+  | Env.Env_type (s,_,_)     | Env.Env_extension (s,_,_)
+  | Env.Env_module (s,_,_,_) | Env.Env_modtype (s,_,_)
+  | Env.Env_class (s,_,_)    | Env.Env_cltype (s,_,_)
+  | Env.Env_functor_arg (s,_)
+  | Env.Env_constraints (s,_)
+  | Env.Env_copy_types s
+  | Env.Env_persistent (s,_)
+  | Env.Env_value_unbound (s, _, _) | Env.Env_module_unbound (s, _, _) ->
+    Some s
+
 let signature_of_env ?(ignore_extensions=true) env =
   let signature_of_summary =
     let open Env in
@@ -69,19 +82,6 @@ let signature_of_env ?(ignore_extensions=true) env =
     | Env_open _ | Env_empty | Env_functor_arg _
     | Env_constraints _ | Env_copy_types _ | Env_persistent _
     | Env_value_unbound _ | Env_module_unbound _ -> None
-  in
-  let summary_prev = function
-    | Env.Env_empty -> None
-    | Env.Env_open (s,_)       | Env.Env_value (s,_,_)
-    | Env.Env_type (s,_,_)     | Env.Env_extension (s,_,_)
-    | Env.Env_module (s,_,_,_) | Env.Env_modtype (s,_,_)
-    | Env.Env_class (s,_,_)    | Env.Env_cltype (s,_,_)
-    | Env.Env_functor_arg (s,_)
-    | Env.Env_constraints (s,_)
-    | Env.Env_copy_types s
-    | Env.Env_persistent (s,_)
-    | Env.Env_value_unbound (s, _, _) | Env.Env_module_unbound (s, _, _) ->
-      Some s
   in
   let summary_module_ident_opt = function
     | Env.Env_module (_,i,_,_) -> Some i
