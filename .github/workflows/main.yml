@@ -6,9 +6,9 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ 3.4 ]
   pull_request:
-    branches: [ master ]
+    branches: [ 3.4 ]
   schedule:
     - cron: '0 12 */6 * *'
 
