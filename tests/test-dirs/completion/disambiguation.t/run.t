@@ -6,7 +6,15 @@ available:
   {
     "class": "return",
     "value": {
-      "entries": [],
+      "entries": [
+        {
+          "name": "Foobar",
+          "kind": "Constructor",
+          "desc": "T.t",
+          "info": "",
+          "deprecated": false
+        }
+      ],
       "context": null
     },
     "notifications": []
