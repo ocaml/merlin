@@ -44,7 +44,7 @@
                           "-identifier-at" (merlin/unmake-point (point)))))
       (when r
         (if (listp r)
-            (flet ((iedit-printable (a)
+            (cl-letf ((iedit-printable (a)
                      (merlin-iedit--printable))
                    (iedit-make-occurrences-overlays (a b c)
                      (merlin-iedit--make-occurrences-overlays a)))
