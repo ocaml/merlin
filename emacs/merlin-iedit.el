@@ -13,9 +13,10 @@
 ;;; Code:
 
 (require 'merlin)
+(require 'cl-lib)
 (require 'iedit)
 
-(defun merlin-iedit--printable ()
+(defun merlin-iedit--printable (&rest _args)
   "Stub substituting `iedit-printable' during merlin-iedit-occurrences."
   "merlin-iedit-occurrences")
 
@@ -47,10 +48,10 @@
                           "-identifier-at" (merlin-unmake-point (point)))))
       (when r
         (if (listp r)
-            (flet ((iedit-printable (a)
-                                    (merlin-iedit--printable))
-                   (iedit-make-occurrences-overlays (a b c)
-                                                    (merlin-iedit--make-occurrences-overlays a)))
+            (cl-letf (((symbol-function 'iedit-printable) #'merlin-iedit--printable)
+                      ((symbol-function 'iedit-make-occurrences-overlays)
+                       (lambda (a b c)
+                         (merlin-iedit--make-occurrences-overlays a))))
               (iedit-start r (point-min) (point-max)))
           (message r))))))
 
