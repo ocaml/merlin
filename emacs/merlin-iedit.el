@@ -35,9 +35,7 @@
               (push (iedit-make-read-only-occurrence-overlay beginning ending)
                     iedit-read-only-occurrences-overlays)
             (push (iedit-make-occurrence-overlay beginning ending)
-                  iedit-occurrences-overlays))))
-      (when (and occurrences iedit-unmatched-lines-invisible)
-        (iedit-hide-unmatched-lines iedit-occurrence-context-lines))))
+                  iedit-occurrences-overlays))))))
   (length occurrences))
 
 ;;;###autoload
