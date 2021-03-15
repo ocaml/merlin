@@ -10,7 +10,7 @@ build: [
   ["dune" "runtest" "-p" "merlin,dot-merlin-reader" "-j" "1"] {with-test}
 ]
 depends: [
-  "ocaml" {> "4.11.1" }
+  "ocaml" {>= "4.12" & < "4.13"}
   "dune" {>= "2.7.0"}
   "dot-merlin-reader" {>= "4.0"}
   "yojson" {>= "1.6.0"}
