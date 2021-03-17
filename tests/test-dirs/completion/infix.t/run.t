@@ -2,13 +2,6 @@
   > -filename infix.ml < infix.ml | jq ".value.entries | sort_by(.name)"
   [
     {
-      "name": "(())",
-      "kind": "Constructor",
-      "desc": "unit",
-      "info": "",
-      "deprecated": false
-    },
-    {
       "name": "(>>)",
       "kind": "Value",
       "desc": "int",

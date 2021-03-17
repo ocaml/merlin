@@ -33,6 +33,8 @@ open Browse_raw
 
 open Extend_protocol.Reader
 
+let {Logger. log} = Logger.for_section "Completion"
+
 type raw_info =
   [ `Constructor of Types.constructor_description
   | `Modtype of Types.module_type
@@ -280,6 +282,8 @@ let fold_sumtype_constructors ~env ~init ~f t =
   let t = Ctype.repr t in
   match t.desc with
   | Tconstr (path, _, _) ->
+    log ~title:"fold_sumtype_constructors" "node type: %s"
+      (Path.name path);
     begin match Env.find_type_descrs path env with
     | exception Not_found -> init
     | constrs, _ -> List.fold_right constrs ~init ~f
@@ -408,9 +412,10 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         let in_scope_candidates =
           Env.fold_constructors consider_constr prefix_path env []
         in
-        begin match target_type with
-        | None -> in_scope_candidates
-        | Some ty ->
+        begin match prefix_path, target_type with
+        | Some _, _
+        | _, None -> in_scope_candidates
+        | None, Some ty ->
           fold_sumtype_constructors ~env ~init:in_scope_candidates
             ~f:consider_constr ty
         end
@@ -454,7 +459,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
     in
     try of_kind_group kind
     with exn ->
-      Logger.log ~section:"Completion" ~title:"get_candidates/of_kind"
+      log ~title:"get_candidates/of_kind"
         "Failed with exception: %a" Logger.exn exn;
       []
   in
