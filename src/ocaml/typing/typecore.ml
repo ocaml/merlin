@@ -2166,7 +2166,8 @@ let rec is_nonexpansive exp =
   | Texp_constant _
   | Texp_unreachable
   | Texp_function _
-  | Texp_array [] -> true
+  | Texp_array []
+  | Texp_hole -> true
   | Texp_let(_rec_flag, pat_exp_list, body) ->
       List.for_all (fun vb -> is_nonexpansive vb.vb_expr) pat_exp_list &&
       is_nonexpansive body
@@ -2477,6 +2478,7 @@ let check_partial_application statement exp =
             | Texp_apply _ | Texp_send _ | Texp_new _ | Texp_letop _ ->
                 Location.prerr_warning exp_loc
                   Warnings.Ignored_partial_application
+            | Texp_hole -> ()
           end
         in
         check exp
@@ -3836,6 +3838,13 @@ and type_expect_
       | _ ->
           raise (error (loc, env, Invalid_extension_constructor_payload))
       end
+
+  | Pexp_hole ->
+    re { exp_desc = Texp_hole;
+         exp_loc = loc; exp_extra = [];
+         exp_type = instance ty_expected;
+         exp_attributes = sexp.pexp_attributes;
+         exp_env = env }
 
   | Pexp_extension ({ txt = "merlin.hole"; _ } as s, payload) ->
     let attr = Ast_helper.Attr.mk s payload in

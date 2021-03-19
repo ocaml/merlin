@@ -38,8 +38,8 @@ Test 3
           "col": 16
         }
       },
-      " | Some 0 -> (??)
-  | None -> (??)"
+      " | Some 0 -> _
+  | None -> _"
     ],
     "notifications": []
   }
@@ -66,7 +66,7 @@ Test 4
         }
       },
       "
-  | None -> (??)"
+  | None -> _"
     ],
     "notifications": []
   }
@@ -93,7 +93,7 @@ Test 5
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }
@@ -120,8 +120,8 @@ FIXME: `Some 0` certainly is a missing case but we can do better:
           "col": 16
         }
       },
-      " | Some 0 -> (??)
-  | None -> (??)"
+      " | Some 0 -> _
+  | None -> _"
     ],
     "notifications": []
   }
@@ -149,7 +149,7 @@ Same two tests but with the exception pattern at the end
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }
@@ -176,8 +176,8 @@ FIXME: `Some 0` certainly is a missing case but we can do better
           "col": 21
         }
       },
-      " | Some 0 -> (??)
-  | None -> (??)"
+      " | Some 0 -> _
+  | None -> _"
     ],
     "notifications": []
   }
@@ -204,7 +204,7 @@ Tests with exception in or-pattern
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }
@@ -230,7 +230,7 @@ Test 10
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }
@@ -256,7 +256,7 @@ Test 11
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }
@@ -282,7 +282,7 @@ Test 12
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }

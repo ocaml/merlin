@@ -259,6 +259,7 @@ let expr sub {exp_extra; exp_desc; exp_env; _} =
   | Texp_open (od, e) ->
       sub.open_declaration sub od;
       sub.expr sub e
+  | Texp_hole -> ()
 
 
 let package_type sub {pack_fields; _} =

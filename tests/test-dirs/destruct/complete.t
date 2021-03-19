@@ -26,7 +26,7 @@ Test 1.1 : FIXME (void type no Some)
           "col": 14
         }
       },
-      "|Some _ -> (??)"
+      "|Some _ -> _"
     ],
     "notifications": []
   }
@@ -54,7 +54,7 @@ Test 1.2 : FIXME ?
           "col": 23
         }
       },
-      "|Some (Some 0) -> (??)|Some (None) -> (??)|None -> (??)"
+      "|Some (Some 0) -> _|Some (None) -> _|None -> _"
     ],
     "notifications": []
   }
@@ -80,7 +80,7 @@ Test 1.3 : with type constructor
         }
       },
       "
-  | Some _ -> (??)"
+  | Some _ -> _"
     ],
     "notifications": []
   }
@@ -114,7 +114,7 @@ Test 2.1
           "col": 19
         }
       },
-      "|{ a = B _ } -> (??)"
+      "|{ a = B _ } -> _"
     ],
     "notifications": []
   }
@@ -178,7 +178,7 @@ Test 3.1
           "col": 15
         }
       },
-      "|`Yellow|`Red -> (??)"
+      "|`Yellow|`Red -> _"
     ],
     "notifications": []
   }
@@ -208,7 +208,7 @@ Test 3.1
           "col": 22
         }
       },
-      "|`Gold -> (??)"
+      "|`Gold -> _"
     ],
     "notifications": []
   }
@@ -245,7 +245,7 @@ Test 4.1
           "col": 13
         }
       },
-      "|App (_,_) -> (??)"
+      "|App (_,_) -> _"
     ],
     "notifications": []
   }
@@ -278,7 +278,7 @@ Test 4.2
           "col": 13
         }
       },
-      "|App (_,_) -> (??)"
+      "|App (_,_) -> _"
     ],
     "notifications": []
   }
@@ -328,7 +328,7 @@ Test 5.1 : Module path
         }
       },
       "
-  | T.B _ -> (??)"
+  | T.B _ -> _"
     ],
     "notifications": []
   }
@@ -355,7 +355,7 @@ Test 5.1 : Module path (with function)
         }
       },
       "
-  | T.B _ -> (??)"
+  | T.B _ -> _"
     ],
     "notifications": []
   }

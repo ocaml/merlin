@@ -61,6 +61,7 @@ let float_literal =
   (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
 
 rule token = parse
+  | "_" { EOL }
   | newline
       { update_loc lexbuf None 1 false 0;
         token lexbuf }
@@ -120,7 +121,6 @@ rule token = parse
   | ".<"
   | ">."
   | ".~"
-  | "_"
   | "~"
   | "\""
   | "{" lowercase* "|"
