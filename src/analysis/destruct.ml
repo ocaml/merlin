@@ -122,7 +122,7 @@ module Predef_types = struct
 end
 
 let placeholder =
-  Ast_helper.Exp.ident (mk_id "??")
+  Ast_helper.Exp.hole ()
 
 let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in

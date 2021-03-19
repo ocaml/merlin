@@ -163,6 +163,8 @@ type _ t =
     -> Lexing.position t
   | Case_analysis(* *)
     : Msource.position * Msource.position -> (Location.t * string) t
+  | Holes(* *)
+    : Location.t list t
   | Outline(* *)
     :  outline t
   | Shape(* *)

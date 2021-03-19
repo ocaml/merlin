@@ -619,6 +619,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         Destruct.node config source node (List.map ~f:snd parents)
     end
 
+  | Holes ->
+    let typer = Mpipeline.typer_result pipeline in
+    let nodes = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    List.concat_map ~f:(Browse_raw.all_holes) nodes
+
   | Outline ->
     let typer = Mpipeline.typer_result pipeline in
     let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in

@@ -864,7 +864,7 @@ The precedences must be listed from low to high.
 /* Finally, the first tokens of simple_expr are above everything else. */
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW PREFIXOP STRING TRUE UIDENT
+          NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
           LBRACKETPERCENT QUOTED_STRING_EXPR
           DOTLESS DOTTILDE GREATERDOT QUESTIONQUESTION
 
@@ -2492,9 +2492,8 @@ let_pattern [@recovery default_pattern ()]:
       { mkinfix $1 $2 $3 }
   | extension
       { Pexp_extension $1 }
-  | QUESTIONQUESTION
-      { let id = mkrhs "merlin.hole" $loc in
-        Pexp_extension (id, PStr []) }
+  | UNDERSCORE
+      { Pexp_hole }
   | od=open_dot_declaration DOT mkrhs(LPAREN RPAREN {Lident "()"})
       { (* TODO: review the location of Pexp_construct *)
         Pexp_open(od, mkexp ~loc:$sloc (Pexp_construct($3, None))) }
