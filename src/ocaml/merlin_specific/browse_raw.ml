@@ -897,7 +897,13 @@ let node_of_binary_part env part =
 let all_holes (env, node) =
   let rec aux acc (env, node) =
     let f env node acc = match node with
-      | Expression { exp_desc = Texp_hole; exp_loc; _}  -> exp_loc :: acc
+      | Expression {
+          exp_desc = Texp_hole;
+          exp_loc;
+          exp_type;
+          exp_env;
+          _
+        } -> (exp_loc, exp_env, exp_type) :: acc
       | _ -> aux acc (env, node)
     in
     fold_node f env node acc

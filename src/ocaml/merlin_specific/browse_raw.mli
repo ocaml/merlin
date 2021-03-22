@@ -116,4 +116,4 @@ val node_is_constructor : node ->
 
 val node_of_binary_part : Env.t -> Cmt_format.binary_part -> node
 
-val all_holes : Env.t * node -> Location.t list
+val all_holes : Env.t * node -> (Location.t * Env.t * Types.type_expr) list
