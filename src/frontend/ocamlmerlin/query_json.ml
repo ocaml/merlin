@@ -383,7 +383,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List [ assoc ; `String str ]
   | Holes, locations ->
     `List (List.map locations
-              ~f:(fun loc -> with_location loc []))
+              ~f:(fun (loc, typ) -> with_location loc ["type", `String typ]))
   | Outline, outlines ->
     `List (json_of_outline outlines)
   | Shape _, shapes ->

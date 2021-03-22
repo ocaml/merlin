@@ -8,6 +8,7 @@
 
   $ cat >h2.ml <<EOF
   > let x : int option = _
+  > let g x y = x * y
   > let f x y = g _ _
   > EOF
 
@@ -22,26 +23,29 @@
       "end": {
         "line": 1,
         "col": 22
-      }
+      },
+      "type": "int option"
     },
     {
       "start": {
-        "line": 2,
+        "line": 3,
         "col": 14
       },
       "end": {
-        "line": 2,
+        "line": 3,
         "col": 15
-      }
+      },
+      "type": "int"
     },
     {
       "start": {
-        "line": 2,
+        "line": 3,
         "col": 16
       },
       "end": {
-        "line": 2,
+        "line": 3,
         "col": 17
-      }
+      },
+      "type": "int"
     }
   ]
