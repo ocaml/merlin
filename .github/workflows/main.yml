@@ -32,10 +32,10 @@ jobs:
           - 4.08.1
           - 4.09.1
           - 4.10.1
-          - 4.11.1
+          - 4.11.2
         include:
           - os: macos-latest
-            ocaml-version: 4.11.1
+            ocaml-version: 4.11.2
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -56,9 +56,6 @@ jobs:
           # Version of the OCaml compiler to initialise
           ocaml-version: ${{ matrix.ocaml-version }}
 
-      - run: opam pin add . --no-action
-      - run: opam depext conf-jq --yes # merlin --yes --with-test # opam depext bug
+      - run: opam depext conf-jq --yes # opam depext bug
       - run: opam install . --deps-only --with-test
-      - run: opam install menhir
-      - run: opam exec -- dune build
-      - run: opam exec -- dune runtest
+      - run: opam exec -- dune runtest -p merlin,dot-merlin-reader
