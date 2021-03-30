@@ -119,21 +119,21 @@
 (alias (name runtest) (deps (alias config-dot-merlin-reader-erroneous-config)))
 
 (alias
- (name config-dot-merlin-reader-quoting)
+ (name config-dot-merlin-reader-quoting-quoting)
  (package merlin)
- (deps (:t ./test-dirs/config/dot-merlin-reader/quoting.t)
-       (source_tree ./test-dirs/config/dot-merlin-reader)
+ (deps (:t ./test-dirs/config/dot-merlin-reader/quoting/quoting.t)
+       (source_tree ./test-dirs/config/dot-merlin-reader/quoting)
        %{bin:ocamlmerlin}
        %{bin:ocamlmerlin-server}
        %{bin:dot-merlin-reader})
  (action
-   (chdir ./test-dirs/config/dot-merlin-reader
+   (chdir ./test-dirs/config/dot-merlin-reader/quoting
      (setenv MERLIN %{exe:merlin-wrapper}
      (setenv OCAMLC %{ocamlc}
        (progn
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias config-dot-merlin-reader-quoting)))
+(alias (name runtest) (deps (alias config-dot-merlin-reader-quoting-quoting)))
 
 (alias
  (name config-flags-invalid)

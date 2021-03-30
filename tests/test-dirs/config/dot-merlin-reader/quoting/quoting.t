@@ -18,21 +18,21 @@
     "cmt_path": [],
     "flags_applied": [
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "tests/test-dirs/config/dot-merlin-reader/quoting",
         "workval": [
           "-pp",
           "I/definitly/need/quoting.exe -nothing"
         ]
       },
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "tests/test-dirs/config/dot-merlin-reader/quoting",
         "workval": [
           "-ppx",
           "/path/to/ppx.exe --as-ppx --cookie 'library-name=\"model\"'"
         ]
       },
       {
-        "workdir": "tests/test-dirs/config/dot-merlin-reader",
+        "workdir": "tests/test-dirs/config/dot-merlin-reader/quoting",
         "workval": [
           "-w",
           "@3"

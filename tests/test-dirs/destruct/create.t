@@ -5,7 +5,7 @@
 Test 1.1 : FIXME: put each case on a different line (if it doesn't require updating
 pprintast).
 
-  $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename variant_exp.ml <<EOF \
+  $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename variant_expcr.ml <<EOF \
   > let f (x : int option) = \
   >   x \
   > EOF
@@ -33,7 +33,7 @@ pprintast).
 
 Test 2.1
 
-  $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename record_exp.ml <<EOF \
+  $ $MERLIN single case-analysis -start 2:2 -end 2:3 -filename record_expcr.ml <<EOF \
   > let f (x : int ref) = \
   >   x \
   > EOF
@@ -61,13 +61,13 @@ Test 2.1
 
 Test 3.1
 
-  $ cat >typv2.ml <<EOF \
+  $ cat >typv2cr.ml <<EOF \
   > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
   > let f (x : basic_color) = \
   >   x                       \
   > EOF
 
-  $ $MERLIN single case-analysis -start 3:2 -end 3:2 -filename typv2.ml <typv2.ml | \
+  $ $MERLIN single case-analysis -start 3:2 -end 3:2 -filename typv2cr.ml <typv2cr.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -89,14 +89,14 @@ Test 3.1
 
 Test 3.1
 
-  $ cat >typv3.ml <<EOF \
+  $ cat >typv3cr.ml <<EOF \
   > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
   > type better_color = [ basic_color | \`Gold ] \
   > let f (x : better_color) = \
   >   x                       \
   > EOF
 
-  $ $MERLIN single case-analysis -start 4:2 -end 4:2 -filename typv3.ml <typv3.ml | \
+  $ $MERLIN single case-analysis -start 4:2 -end 4:2 -filename typv3cr.ml <typv3cr.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -122,7 +122,7 @@ Test 3.1
 
 Test 4.1
 
-  $ cat >typ4b.ml <<EOF         \
+  $ cat >typ4bcr.ml <<EOF         \
   > type _ t =                  \
   >   | I : int -> int t               \
   >   | B : bool t              \
@@ -130,7 +130,7 @@ Test 4.1
   >   x        \
   > EOF
 
-  $ $MERLIN single case-analysis -start 5:2 -end 5:2 -filename typ4b.ml <typ4b.ml | \
+  $ $MERLIN single case-analysis -start 5:2 -end 5:2 -filename typ4bcr.ml <typ4bcr.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -152,7 +152,7 @@ Test 4.1
 
 Test 4.2
 
-  $ cat >typ4.ml <<EOF                              \
+  $ cat >typ4crcr.ml <<EOF                              \
   > type _ term =                                   \
   >  | Int : int -> int term                        \
   >  | Add : (int -> int -> int) term               \
@@ -161,7 +161,7 @@ Test 4.2
   >   x                                             \
   > EOF
 
-  $ $MERLIN single case-analysis -start 6:2 -end 6:2 -filename typ4.ml <typ4.ml | \
+  $ $MERLIN single case-analysis -start 6:2 -end 6:2 -filename typ4crcr.ml <typ4crcr.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -187,7 +187,7 @@ Test 4.2
 
 Test 5.1
 
-  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename unpack_module.ml <<EOF \
+  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename unpack_modulecr.ml <<EOF \
   > module type S = sig end \
   >  \
   > let g (x : (module S)) = \
@@ -213,7 +213,7 @@ Test 5.1
 
 Test 5.2 : Module path
 
-  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename module_path.ml <<EOF \
+  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename module_pathcr.ml <<EOF \
   > module T = struct type t = A | B of int end \
   >  \
   > let g (x : T.t) = \
@@ -240,7 +240,7 @@ Test 5.2 : Module path
 test 5.3 : Abstract type
 
 
-  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename module_path.ml <<EOF \
+  $ $MERLIN single case-analysis -start 4:2 -end 4:3 -filename module_pathcr.ml <<EOF \
   > module T : sig type t end = struct type t = A | B of int end \
   >  \
   > let g (x : T.t) = \

@@ -4,7 +4,7 @@
 
 Test 1.1 : option refine
 
-  $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename refine_pattern.ml <<EOF \
+  $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename refine_patternre.ml <<EOF \
   > let _ = \
   >   match (None : unit option) with \
   >   | None -> () \
@@ -30,7 +30,7 @@ Test 1.1 : option refine
 
 Test 1.2 : option refine
 
-  $ cat >typ12.ml <<EOF \
+  $ cat >typ12re.ml <<EOF \
   > type t = A | B of int \
   > let _ = \
   >   match (None : t option) with \
@@ -38,7 +38,7 @@ Test 1.2 : option refine
   >   | Some _ -> () \
   > EOF
 
-  $ $MERLIN single case-analysis -start 5:9 -end 5:10 -filename typ12.ml < typ12.ml \
+  $ $MERLIN single case-analysis -start 5:9 -end 5:10 -filename typ12re.ml < typ12re.ml \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -60,14 +60,14 @@ Test 1.2 : option refine
 
 Test 1.3 : FIXME ? int option
 
-  $ cat >typ13.ml <<EOF \
+  $ cat >typ13re.ml <<EOF \
   > let _ = \
   >   match (None : int option) with \
   >   | None -> () \
   >   | Some _ -> () \
   > EOF
 
-  $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename typ13.ml < typ13.ml \
+  $ $MERLIN single case-analysis -start 4:9 -end 4:10 -filename typ13re.ml < typ13re.ml \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -93,7 +93,7 @@ Test 1.3 : FIXME ? int option
 
 Test 2.1
 
-  $ cat >typ4.ml <<EOF \
+  $ cat >typ4rere.ml <<EOF \
   > type b = C | D of string \
   > type a = A | B of b   \
   > type recd = { a : a } \
@@ -103,7 +103,7 @@ Test 2.1
   >   | { a = B _ } -> () \
   > EOF
 
-  $ $MERLIN single case-analysis -start 7:12 -end 7:12 -filename typ4.ml <typ4.ml | \
+  $ $MERLIN single case-analysis -start 7:12 -end 7:12 -filename typ4rere.ml <typ4rere.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -125,7 +125,7 @@ Test 2.1
 
 Test 2.2
 
-  $ cat >typ4b.ml <<EOF                       \
+  $ cat >typ4bre.ml <<EOF                       \
   > type a = A | B                            \
   > type recd = { x : a; y : bool; z : a }    \
   > let f (r : recd) =                        \
@@ -133,7 +133,7 @@ Test 2.2
   >   | { x = _ ; y ; _ } -> ()           \
   > EOF
 
-  $ $MERLIN single case-analysis -start 5:11 -end 5:11 -filename typ4b.ml <typ4b.ml | \
+  $ $MERLIN single case-analysis -start 5:11 -end 5:11 -filename typ4bre.ml <typ4bre.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -159,7 +159,7 @@ Test 2.2
 
 Test 3.1
 
-  $ cat >typ2.ml <<EOF \
+  $ cat >typ2re.ml <<EOF \
   > type blues = [ \`Cyan | \`Methyl ] \
   > type basic_color = [ \`Blue of blues ] \
   > let f (x : basic_color) = \
@@ -167,7 +167,7 @@ Test 3.1
   >   | \`Blue _ -> ()        \
   > EOF
 
-  $ $MERLIN single case-analysis -start 5:11 -end 5:11 -filename typ2.ml <typ2.ml | \
+  $ $MERLIN single case-analysis -start 5:11 -end 5:11 -filename typ2re.ml <typ2re.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -193,7 +193,7 @@ Test 3.1
 
 Test 4.1 : Fixme: missing space and ()
 
-  $ cat >typ3.ml <<EOF                              \
+  $ cat >typ3re.ml <<EOF                              \
   > type _ sub_t =                                  \
   >   | A : int -> int sub_t                        \
   >   | B : int -> float sub_t                      \
@@ -204,7 +204,7 @@ Test 4.1 : Fixme: missing space and ()
   >   | Int _ -> ()                                 \
   > EOF
 
-  $ $MERLIN single case-analysis -start 8:8 -end 8:8 -filename typ3.ml <typ3.ml | \
+  $ $MERLIN single case-analysis -start 8:8 -end 8:8 -filename typ3re.ml <typ3re.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -226,7 +226,7 @@ Test 4.1 : Fixme: missing space and ()
 
 Test 4.2
 
-  $ cat >typ3b.ml <<EOF                             \
+  $ cat >typ3bre.ml <<EOF                             \
   > type _ sub_t =                                  \
   >   | A : int -> int sub_t                        \
   >   | B : int -> int sub_t                        \
@@ -237,7 +237,7 @@ Test 4.2
   >   | Int _ -> ()                                 \
   > EOF
 
-  $ $MERLIN single case-analysis -start 8:8 -end 8:8 -filename typ3b.ml <typ3b.ml | \
+  $ $MERLIN single case-analysis -start 8:8 -end 8:8 -filename typ3bre.ml <typ3bre.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -263,7 +263,7 @@ Test 4.2
 
 Test 5.1 : Nothing to do
 
-  $ $MERLIN single case-analysis -start 4:9 -end 4:11 -filename nothing_to_do.ml <<EOF \
+  $ $MERLIN single case-analysis -start 4:9 -end 4:11 -filename nothing_to_dore.ml <<EOF \
   > let _ = \
   >   match (None : unit option) with \
   >   | None -> () \

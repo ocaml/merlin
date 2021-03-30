@@ -4,14 +4,14 @@
 
 Test 1.1 : FIXME (void type no Some)
 
-  $ cat >typ5.ml <<EOF          \
+  $ cat >typ5co.ml <<EOF          \
   > type void = |               \
   > let f (x : void option) =   \
   >   match x with              \
   >   | None -> ()              \
   > EOF
 
-  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename typ5.ml <typ5.ml | \
+  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename typ5co.ml <typ5co.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -33,13 +33,13 @@ Test 1.1 : FIXME (void type no Some)
 
 Test 1.2 : FIXME ?
 
-  $ cat >typ12.ml <<EOF \
+  $ cat >typ12co.ml <<EOF \
   > let _ = \
   >   match (None : int option option) with \
   >   | Some (Some 3) -> () \
   > EOF
 
-  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename typ12.ml < typ12.ml \
+  $ $MERLIN single case-analysis -start 3:4 -end 3:8 -filename typ12co.ml < typ12co.ml \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -61,7 +61,7 @@ Test 1.2 : FIXME ?
 
 Test 1.3 : with type constructor
 
-  $ $MERLIN single case-analysis -start 3:5 -end 3:5 -filename funny.ml <<EOF \
+  $ $MERLIN single case-analysis -start 3:5 -end 3:5 -filename funnyco.ml <<EOF \
   > type funny = int option -> unit \
   > let v : funny = function \
   >   | None -> ()    \
@@ -91,7 +91,7 @@ Test 1.3 : with type constructor
 
 Test 2.1
 
-  $ cat >typ.ml <<EOF \
+  $ cat >typco.ml <<EOF \
   > type a = A | B of string \
   > type recd = { a : a } \
   > let f (x : recd) =    \
@@ -99,7 +99,7 @@ Test 2.1
   >   | { a = A } -> ()   \
   > EOF
 
-  $ $MERLIN single case-analysis -start 5:4 -end 5:4 -filename typ.ml < typ.ml | \
+  $ $MERLIN single case-analysis -start 5:4 -end 5:4 -filename typco.ml < typco.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -121,7 +121,7 @@ Test 2.1
 
 Test 2.2 : FIXME ?
 
-  $ cat >typ3.ml <<EOF \
+  $ cat >typ3co.ml <<EOF \
   > type a = A | B of string \
   > type recd = { a : a } \
   > let f (x : recd) =    \
@@ -130,7 +130,7 @@ Test 2.2 : FIXME ?
   >   | { a = B _ } -> () \
   > EOF
 
-  $ $MERLIN single case-analysis -start 6:12 -end 6:12 -filename typ3.ml <typ3.ml | \
+  $ $MERLIN single case-analysis -start 6:12 -end 6:12 -filename typ3co.ml <typ3co.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -156,14 +156,14 @@ Test 2.2 : FIXME ?
 
 Test 3.1
 
-  $ cat >typ2.ml <<EOF \
+  $ cat >typ2co.ml <<EOF \
   > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
   > let f (x : basic_color) = \
   >   match x with          \
   >   | \`Blue -> ()        \
   > EOF
 
-  $ $MERLIN single case-analysis -start 4:5 -end 4:5 -filename typ2.ml <typ2.ml | \
+  $ $MERLIN single case-analysis -start 4:5 -end 4:5 -filename typ2co.ml <typ2co.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -185,7 +185,7 @@ Test 3.1
 
 Test 3.1
 
-  $ cat >typv3.ml <<EOF \
+  $ cat >typv3co.ml <<EOF \
   > type basic_color = [ \`Blue | \`Red | \`Yellow ] \
   > type better_color = [ basic_color | \`Gold ] \
   > let f (x : better_color) = \
@@ -193,7 +193,7 @@ Test 3.1
   >   | #basic_color -> ()        \
   > EOF
 
-  $ $MERLIN single case-analysis -start 5:5 -end 5:5 -filename typv3.ml <typv3.ml | \
+  $ $MERLIN single case-analysis -start 5:5 -end 5:5 -filename typv3co.ml <typv3co.ml | \
   > sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -219,7 +219,7 @@ Test 3.1
 
 Test 4.1
 
-  $ cat >typ3.ml <<EOF                              \
+  $ cat >typ3co.ml <<EOF                              \
   > type _ term =                                   \
   >  | Int : int -> int term                        \
   >  | Add : (int -> int -> int) term               \
@@ -230,7 +230,7 @@ Test 4.1
   >   | Add -> ()                                   \
   > EOF
 
-  $ $MERLIN single case-analysis -start 8:4 -end 8:4 -filename typ3.ml <typ3.ml | \
+  $ $MERLIN single case-analysis -start 8:4 -end 8:4 -filename typ3co.ml <typ3co.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -252,7 +252,7 @@ Test 4.1
 
 Test 4.2
 
-  $ cat >typ4.ml <<EOF                              \
+  $ cat >typ4coco.ml <<EOF                              \
   > type _ term =                                   \
   >  | Int : int -> int term                        \
   >  | Add : (int -> int -> int) term               \
@@ -263,7 +263,7 @@ Test 4.2
   >   | Add -> ()                                   \
   > EOF
 
-  $ $MERLIN single case-analysis -start 8:4 -end 8:4 -filename typ4.ml <typ4.ml | \
+  $ $MERLIN single case-analysis -start 8:4 -end 8:4 -filename typ4coco.ml <typ4coco.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "return",
@@ -285,7 +285,7 @@ Test 4.2
 
 Test 4.3 : this match IS exhaustive
 
-  $ cat >typ4b.ml <<EOF         \
+  $ cat >typ4bco.ml <<EOF         \
   > type _ t =                  \
   >   | I : int t               \
   >   | B : bool t              \
@@ -294,7 +294,7 @@ Test 4.3 : this match IS exhaustive
   >   | I -> ()                 \
   > EOF
 
-  $ $MERLIN single case-analysis -start 6:4 -end 6:4 -filename typ4b.ml <typ4b.ml | \
+  $ $MERLIN single case-analysis -start 6:4 -end 6:4 -filename typ4bco.ml <typ4bco.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "error",
@@ -308,7 +308,7 @@ Test 4.3 : this match IS exhaustive
 
 Test 5.1 : Module path
 
-  $ $MERLIN single case-analysis -start 5:4 -end 5:4 -filename module_path.ml <<EOF \
+  $ $MERLIN single case-analysis -start 5:4 -end 5:4 -filename module_pathco.ml <<EOF \
   > module T = struct type t = A | B of int end \
   >  \
   > let g x = \
@@ -337,7 +337,7 @@ Test 5.1 : Module path
 
 Test 5.1 : Module path (with function)
 
-  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename module_path.ml <<EOF \
+  $ $MERLIN single case-analysis -start 4:4 -end 4:4 -filename module_pathco.ml <<EOF \
   > module T = struct type t = A | B of int end \
   >  \
   > let g = function \
