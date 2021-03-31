@@ -476,7 +476,7 @@
 (alias (name runtest) (deps (alias errors-typing-after-parsing-test)))
 
 (alias
- (name file-cache-test)
+ (name file-cache-test)(locks  ../server)
  (package merlin)
  (deps (:t ./test-dirs/file-cache/test.t)
        (source_tree ./test-dirs/file-cache)
@@ -1564,7 +1564,7 @@
 (alias (name runtest) (deps (alias type-expr-test)))
 
 (alias
- (name typer-cache-test)
+ (name typer-cache-test)(locks  ../server)
  (package merlin)
  (deps (:t ./test-dirs/typer-cache/test.t)
        (source_tree ./test-dirs/typer-cache)
@@ -1581,7 +1581,7 @@
 (alias (name runtest) (deps (alias typer-cache-test)))
 
 (alias
- (name warnings-backtrack)
+ (name warnings-backtrack)(locks  ../server)
  (package merlin)
  (deps (:t ./test-dirs/warnings/backtrack.t)
        (source_tree ./test-dirs/warnings)

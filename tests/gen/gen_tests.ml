@@ -8,7 +8,9 @@ let gen_rule dir file =
       try input_line ic
       with End_of_file -> ""
     in
-    if Std.String.is_prefixed line ~by:"(enabled_if" then
+    if (Std.String.is_prefixed line ~by:"(enabled_if"
+      || Std.String.is_prefixed line ~by:"(locks")
+    then
       line
     else
       ""

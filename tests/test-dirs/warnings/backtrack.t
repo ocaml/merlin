@@ -1,3 +1,5 @@
+(locks  ../server)
+
 If warnings are not backtracked properly, when reusing the same type checking
 environment in different queries, some warnings will be reported only once.
 
