@@ -1,3 +1,5 @@
+(locks  ../server)
+
 Instances of the typechecker are cached based on configuration 
 (values of type `Mconfig.t`).
 

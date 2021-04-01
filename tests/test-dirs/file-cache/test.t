@@ -1,3 +1,5 @@
+(locks  ../server)
+
 The server might already be running, we kill it to make sure we start from a
 clean slate:
 
