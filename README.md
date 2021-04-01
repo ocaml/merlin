@@ -133,7 +133,9 @@ External contributors have implemented modes for more editors:
 Next steps
 ==========
 
-To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file.
+To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file
+unless your project is built using dune.
+Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin. 
 
 Read more in the [wiki](https://github.com/ocaml/merlin/wiki) to learn how to make full use of Merlin in your projects.
 
