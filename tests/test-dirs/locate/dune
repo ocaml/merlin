@@ -1,0 +1,5 @@
+(cram
+ (applies_to looping-substitution mutually-recursive partial-cmt includes
+   issue802 issue845 issue1199 sig-substs)
+ (enabled_if
+  (<> %{os_type} Win32)))

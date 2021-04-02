@@ -1,0 +1,5 @@
+(cram
+ (applies_to f-all_local f-from_application f-generative f-included
+   f-missed_shadowing f-nested_applications)
+ (enabled_if
+  (<> %{os_type} Win32)))

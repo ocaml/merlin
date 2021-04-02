@@ -1,0 +1,4 @@
+(cram
+ (applies_to check-config)
+ (enabled_if
+  (<> %{os_type} Win32)))
