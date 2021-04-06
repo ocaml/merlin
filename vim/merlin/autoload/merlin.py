@@ -637,9 +637,14 @@ def vim_previous_hole():
       if (hline, hcol) < (line, col):
         vim.current.window.cursor = (hline, hcol)
         print(hole['type'])
-        break
+        return
+    if len(holes) > 0:
+      hline = holes[0]['start']['line']
+      hcol = holes[0]['start']['col']
+      vim.current.window.cursor = (hline, hcol)
+      print(holes[0]['type'])
 
-def vim_next_hole(min = 0, max = sys.maxint):
+def vim_next_hole(min = 0, max = float('inf')):
     line, col = vim.current.window.cursor
     holes = command_holes()
     for hole in holes:
@@ -648,7 +653,12 @@ def vim_next_hole(min = 0, max = sys.maxint):
       if hline >= min and (hline, hcol) > (line, col) and hline <= max:
         vim.current.window.cursor = (hline, hcol)
         print(hole['type'])
-        break
+        return
+    if max == float('inf') and len(holes) > 0:
+      hline = holes[0]['start']['line']
+      hcol = holes[0]['start']['col']
+      vim.current.window.cursor = (hline, hcol)
+      print(holes[0]['type'])
 
 def vim_type_enclosing():
     global enclosing_types
