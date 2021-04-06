@@ -205,16 +205,24 @@ let postprocess_config config =
     exclude_query_dir = config.exclude_query_dir;
   }
 
-type context = string * Configurator.t
+type context = {
+  workdir: string;
+  configurator: Configurator.t;
+  process_dir: string;
+}
 
 exception Process_exited
 exception End_of_input
 
-let get_config (dir, cfg) path_abs =
+let get_config { workdir; process_dir; configurator } path_abs =
   let log_query path =
-    log ~title:"get_config" "Querying %s for file: %s"
-      (Configurator.to_string cfg)
+    log
+      ~title:"get_config"
+      "Querying %s (inital cwd: %s) for file: %s.\nWorkdir: %s"
+      (Configurator.to_string configurator)
+      process_dir
       path
+      workdir
   in
   let query path (p : Configurator.Process.t) =
     log_query path;
@@ -225,7 +233,7 @@ let get_config (dir, cfg) path_abs =
     Dot_protocol.read ~in_channel:p.stdout
   in
   try
-    let p = Configurator.get_process ~dir cfg in
+    let p = Configurator.get_process ~dir:process_dir configurator in
     if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
       raise Process_exited;
 
@@ -260,7 +268,9 @@ let get_config (dir, cfg) path_abs =
 
     match answer with
     | Ok directives ->
-      let cfg, failures = prepend_config ~dir directives empty_config in
+      let cfg, failures =
+        prepend_config ~dir:workdir directives empty_config
+      in
       postprocess_config cfg, failures
     | Error (Dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
     | Error (Dot_protocol.Csexp_parse_error _) -> raise End_of_input
@@ -273,7 +283,7 @@ let get_config (dir, cfg) path_abs =
       let error = Printf.sprintf
         "A problem occured with merlin external configuration reader. %s If \
          the problem persists, please file an issue on Merlin's tracker."
-        (match cfg with
+        (match configurator with
         | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
         | Dune -> "Check that `dune` is installed and up-to-date.")
       in
@@ -285,7 +295,7 @@ let get_config (dir, cfg) path_abs =
         - the process stopped in the middle of its answer (which is very unlikely) *)
       let error = Printf.sprintf
         "Merlin could not load its configuration from the external reader. %s"
-        (match cfg with
+        (match configurator with
         | Dot_merlin -> "If the problem persists, please file an issue on \
           Merlin's tracker."
         | Dune -> "Building your project with `dune` might solve this issue.")
@@ -293,23 +303,46 @@ let get_config (dir, cfg) path_abs =
       empty_config, [ error ]
 
 let find_project_context start_dir =
-  let rec loop dir =
+  (* The workdir is the first directory we find which contains a [dune] file.
+    We need to keep track of this folder because [dune ocaml-merlin] might be
+    started from a folder that is a parent of the [workdir]. Thus we cannot
+    always use that starting folder as the workdir.  *)
+  let map_workdir dir = function
+    | Some dir -> Some dir
+    | None -> let fname = Filename.concat dir "dune" in
+      if Sys.file_exists fname && not (Sys.is_directory fname)
+      then Some dir else None
+  in
+
+  let rec loop workdir dir =
     try
       Some (
         List.find_map [
-            ".merlin" ; "dune-project"; "dune-workspace"
+            ".merlin"; "dune-project"; "dune-workspace"
           ]
           ~f:(fun f ->
             let fname = Filename.concat dir f in
             if Sys.file_exists fname && not (Sys.is_directory fname)
-            then Some ((dir, Option.get (Configurator.of_string_opt f)), fname)
+            then
+              (* When starting [dot-merlin-reader] from [dir]
+                the workdir is always [dir] *)
+              let workdir = if f = ".merlin" then None else workdir in
+              let workdir = Option.value ~default:dir workdir in
+              Some ({
+                workdir;
+                process_dir = dir;
+                configurator = Option.get (Configurator.of_string_opt f)
+              }, fname)
             else None
           )
     )
     with Not_found ->
       let parent = Filename.dirname dir in
       if parent <> dir
-      then loop parent
+      then
+        (* Was this directory the workdir ? *)
+        let workdir = map_workdir dir workdir in
+        loop workdir parent
       else None
   in
-  loop start_dir
+  loop None start_dir

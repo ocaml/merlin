@@ -221,6 +221,23 @@
 (alias (name runtest) (deps (alias config-symlinks.t-run)))
 
 (alias
+ (name config-workdir.t-run)
+ (package merlin)
+ (deps (:t ./test-dirs/config/workdir.t/run.t)
+       (source_tree ./test-dirs/config/workdir.t)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/config/workdir.t
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias config-workdir.t-run)))
+
+(alias
  (name deprecation-run)
  (package merlin)
  (deps (:t ./test-dirs/deprecation/run.t)
