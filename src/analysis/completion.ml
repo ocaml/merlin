@@ -276,6 +276,17 @@ let fold_variant_constructors ~env ~init ~f =
   in
   aux init
 
+let fold_sumtype_constructors ~env ~init ~f t =
+  let t = Ctype.repr t in
+  match t.desc with
+  | Tconstr (path, _, _) ->
+    begin match Env.find_type_descrs path env with
+    | exception Not_found -> init
+    | constrs, _ -> List.fold_right constrs ~init ~f
+    end
+  | _ ->
+    init
+
 let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env branch =
   let cstr_attributes c = c.Types.cstr_attributes in
   let val_attributes v = v.Types.val_attributes in
@@ -386,13 +397,23 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
 
       | `Constructor ->
         let type_check {Types. cstr_res; _} = type_check cstr_res in
-        fold_constructors (fun name v candidates ->
+        let consider_constr constr candidates =
+          let name = constr.Types.cstr_name in
           if not @@ validate `Lident `Cons name then candidates else
-          let priority = if is_internal name then 0 else type_check v in
-          make_weighted_candidate ~exact:(name=prefix) name (`Cons v) ~priority
-            ~attrs:(cstr_attributes v)
+          let priority = if is_internal name then 0 else type_check constr in
+          make_weighted_candidate ~exact:(name=prefix) name (`Cons constr)
+            ~priority ~attrs:(cstr_attributes constr)
           :: candidates
-        ) prefix_path env []
+        in
+        let in_scope_candidates =
+          Env.fold_constructors consider_constr prefix_path env []
+        in
+        begin match target_type with
+        | None -> in_scope_candidates
+        | Some ty ->
+          fold_sumtype_constructors ~env ~init:in_scope_candidates
+            ~f:consider_constr ty
+        end
 
       | `Types ->
         Env.fold_types (fun name path decl candidates ->

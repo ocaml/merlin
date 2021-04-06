@@ -2912,6 +2912,8 @@ and type_expect_
           exp_env = env }
       end
   | Pexp_record(lid_sexp_list, opt_sexp) ->
+    let saved_levels = save_levels () in
+    begin try
       assert (lid_sexp_list <> []);
       let opt_exp =
         match opt_sexp with
@@ -3049,6 +3051,19 @@ and type_expect_
         exp_type = instance ty_expected;
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
+    with exn ->
+      raise_error exn;
+      set_levels saved_levels;
+      re {
+        exp_desc = Texp_record {
+            fields = [||]; representation = Record_regular;
+            extended_expression = None;
+          };
+        exp_loc = loc; exp_extra = [];
+        exp_type = instance ty_expected;
+        exp_attributes = merlin_recovery_attributes sexp.pexp_attributes;
+        exp_env = env }
+    end
   | Pexp_field(srecord, lid) ->
       let (record, label, _) = type_label_access env srecord lid in
       let (_, ty_arg, ty_res) = instance_label false label in
