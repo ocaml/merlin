@@ -225,6 +225,9 @@ The association list can contain the following optional keys:
 (defvar-local merlin-buffer-packages nil
    "List of packages loaded in the buffer")
 
+(defvar-local merlin-buffer-packages-path nil
+   "List of path of packages loaded in the buffer")
+
 (defvar-local merlin-buffer-extensions nil
    "List of syntax extensions active in the buffer")
 
@@ -493,8 +496,8 @@ return (LOC1 . LOC2)."
                          merlin-logfile))
         (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
                                           merlin-buffer-extensions))
-        (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
-                                          merlin-buffer-packages))
+        (packages    (merlin--map-flatten (lambda (x) (cons "-I" x))
+                                          merlin-buffer-packages-path))
         (filename    (buffer-file-name (buffer-base-buffer))))
     ;; Update environment
     (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
@@ -1367,7 +1370,9 @@ strictly within, or nil if there is no such element."
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package."
-  (merlin/call "findlib-list"))
+  (let* ((packages-string (shell-command-to-string "ocamlfind list"))
+        (packages-list (split-string packages-string "\n")))
+    (mapcar 'car (mapcar 'split-string packages-list))))
 
 (defun merlin--project-get ()
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
@@ -1389,6 +1394,10 @@ loading"
             (mapconcat 'identity merlin-buffer-packages " ")))))
   (setq merlin-buffer-packages
         (delete-dups (merlin--map-flatten 'identity pkgs)))
+  (let* ((arguments (cons "ocamlfind query" merlin-buffer-packages))
+        (command (mapconcat 'identity arguments " "))
+        (paths (shell-command-to-string command)))
+    (setq merlin-buffer-packages-path (split-string paths "\n")))
   (merlin-error-reset)
   (merlin-configuration-check t))
 
