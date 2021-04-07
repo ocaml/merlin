@@ -9,10 +9,13 @@ Test 1
 
 Test 2
 
-  $ $MERLIN single case-analysis -start 4:2 -end 4:1 -filename nonode.ml <<EOF | grep -B 1 Query_commands.No_nodes \
+  $ $MERLIN single case-analysis -start 4:2 -end 4:1 -filename nonode.ml <<EOF \
   > let f (x : int option) = \
   >   match w with    \
   >  | _ -> ()        \
   > EOF
-    "class": "exception",
-    "value": "Query_commands.No_nodes
+  {
+    "class": "error",
+    "value": "Nothing to do",
+    "notifications": []
+  }
