@@ -164,11 +164,20 @@ function! merlin#Extensions(...)
 endfunction
 
 function! merlin#CompletePackages(ArgLead, CmdLine, CursorPos)
-  return s:MakeCompletionList("b:merlin_packages", "merlin.vim_findlib_list")
+  let l:all = map(systemlist("ocamlfind list"), "split(v:val)[0]")
+  if exists("b:merlin_packages")
+    let l:existing = copy(b:merlin_packages)
+    let l:all = filter(l:all, "index(l:existing, v:val) == -1")
+    call insert(l:all, join(map(l:existing, "fnameescape(v:val)"), " "))
+  endif
+  return join(l:all, "\n")
 endfunction
 
 function! merlin#Packages(...)
-  let b:merlin_packages = a:000
+  let b:merlin_packages = copy(a:000)
+  let arguments = join(map(b:merlin_packages, "shellescape(v:val)"), ' ')
+  let cmd = 'ocamlfind query ' . arguments
+  let b:merlin_packages_path = systemlist(cmd)
 endfunction
 
 function! merlin#CompleteFlags(ArgLead, CmdLine, CursorPos)
@@ -265,7 +274,7 @@ function! merlin#PolaritySearch(debug,query)
   let s:search_result = []
   MerlinPy merlin.vim_polarity_search(vim.eval("a:query"), "s:search_result")
   if a:debug != 1 && s:search_result != []
-    call feedkeys("i=merlin#PolarityComplete()","n")
+    call feedkeys("i=merlin#PolarityComplete()\<CR>","n")
   endif
 endfunction
 
@@ -510,6 +519,14 @@ function! merlin#Destruct()
   MerlinPy merlin.vim_case_analysis()
 endfunction
 
+function! merlin#PreviousHole()
+  MerlinPy merlin.vim_previous_hole()
+endfunction
+
+function! merlin#NextHole()
+  MerlinPy merlin.vim_next_hole()
+endfunction
+
 function! merlin#Restart()
   MerlinPy merlin.vim_restart()
 endfunction
@@ -581,6 +598,10 @@ function! merlin#Register()
 
   """ Destruct  ----------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
+
+  """ Holes  ---------------------------------------------------------------
+  command! -buffer -nargs=0 MerlinNextHole call merlin#NextHole()
+  command! -buffer -nargs=0 MerlinPreviousHole call merlin#PreviousHole()
 
   """ Locate  ------------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)

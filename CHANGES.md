@@ -1,5 +1,14 @@
+merlin 4.1
+==========
+Tue Feb 16 10:33:11 AM CET 2021
+
+  + merlin binary:
+    - fix windows paths canonicalization (#1254)
+    - fix hanging on windows (#1256, #1263)
+
 merlin 4.0
 ==========
+Tue Feb  2 03:13:37 PM CET 2021
 
   + ocaml support
     Detailled list of changes on
@@ -8,6 +17,7 @@ merlin 4.0
     - any revision of Merlin now only supports one version of OCaml. Support for
       other versions will be found in other branches
     - stopped actively supporting version older than 4.11
+    - add support for 4.12
   + merlin binary
     - add keyword completion (disabled by default) (#1243)
     - fix a bug which caused type-enclosing to sometimes look at an incorrect

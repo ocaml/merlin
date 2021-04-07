@@ -139,6 +139,7 @@ let dump (type a) : a t -> json =
       "start", mk_position pos_start;
       "end", mk_position pos_end;
     ]
+  | Holes -> mk "holes" []
   | Outline -> mk "outline" []
   | Errors { lexing; parsing; typing } ->
     let args =
@@ -380,6 +381,9 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       ]
     in
     `List [ assoc ; `String str ]
+  | Holes, locations ->
+    `List (List.map locations
+              ~f:(fun (loc, typ) -> with_location loc ["type", `String typ]))
   | Outline, outlines ->
     `List (json_of_outline outlines)
   | Shape _, shapes ->

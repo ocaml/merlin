@@ -221,6 +221,9 @@ The association list can contain the following optional keys:
 (defvar-local merlin-buffer-packages nil
    "List of packages loaded in the buffer")
 
+(defvar-local merlin-buffer-packages-path nil
+   "List of path of packages loaded in the buffer")
+
 (defvar-local merlin-buffer-extensions nil
    "List of syntax extensions active in the buffer")
 
@@ -487,8 +490,8 @@ return (LOC1 . LOC2)."
         ;;                  merlin-logfile))
         (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
                                           merlin-buffer-extensions))
-        (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
-                                          merlin-buffer-packages))
+        (packages    (merlin--map-flatten (lambda (x) (cons "-I" x))
+                                          merlin-buffer-packages-path))
         (filename    (buffer-file-name (buffer-base-buffer))))
     ;; Update environment
     (dolist (binding (merlin-lookup 'env merlin-buffer-configuration))
@@ -1252,6 +1255,69 @@ strictly within, or nil if there is no such element."
       (push-mark (merlin--point-of-pos (cdr (assoc 'end extents)))
                  t t))))
 
+;;;;;;;;;;;
+;; HOLES ;;
+;;;;;;;;;;;
+
+(defun merlin--holes ()
+  "Query the list of holes (and their types)"
+  (merlin/call "holes"))
+
+(defun merlin--first-hole-aux (holes current-point comp)
+  "Returns the first `hole` of the list such that
+    `(funcall comp hole current-point)`"
+  (when holes
+    (let* ((head (first holes))
+           (tail (rest holes))
+           (start (merlin-lookup 'start head))
+           (hole-point (merlin/make-point start)))
+      (if (funcall comp hole-point current-point)
+        head
+        (merlin--first-hole-aux tail current-point comp)))))
+
+(defun merlin--first-hole (holes current-point comp)
+  "Returns the first `hole` of the list that such that
+    `(funcall comp hole current-point)`. If no hole match
+    that condition the first one of the list is returned."
+  (let ((hole (merlin--first-hole-aux holes current-point comp)))
+    (if hole hole (car holes))))
+
+(defun merlin-previous-hole ()
+  "Jump to the previous hole and print its type"
+  (interactive)
+  (let* ((current-point (point))
+         (holes (reverse (merlin--holes)))
+         (hole (merlin--first-hole holes current-point '<)))
+    (when hole
+      (progn
+        (merlin--goto-point (merlin-lookup 'start hole))
+        (message "%s" (merlin-lookup 'type hole))))))
+
+(defun merlin--next-hole-between (pmin pmax)
+  "Jump to the next hole and print its type only if it is in the given range"
+  (let* ((current-point (point))
+         (hole (merlin--first-hole (merlin--holes) current-point '>)))
+    (when hole
+      (let* ((start (merlin-lookup 'start hole))
+             (typ (merlin-lookup 'type hole))
+             (hole-point (merlin/make-point start)))
+        (if (and
+              (>= hole-point pmin)
+              (<= hole-point pmax))
+          (progn
+            (merlin--goto-point start)
+            (message "%s" typ)))))))
+
+(defun merlin-next-hole ()
+  "Jump to the next hole and print its type"
+  (interactive)
+  (let* ((current-point (point))
+         (hole (merlin--first-hole (merlin--holes) current-point '>)))
+    (when hole
+      (progn
+        (merlin--goto-point (merlin-lookup 'start hole))
+        (message "%s" (merlin-lookup 'type hole))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DESTRUCT / CASE ANALYSIS ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1259,11 +1325,13 @@ strictly within, or nil if there is no such element."
 (defun merlin--replace-buff-portion (start stop txt)
   (let ((start (merlin--point-of-pos start))
         (stop  (merlin--point-of-pos stop)))
-    (save-excursion
-      (delete-region start stop)
-      (goto-char start)
-      (insert txt)
-      (indent-region start (point)))))
+    (progn
+      (save-excursion
+        (delete-region start stop)
+        (goto-char start)
+        (insert txt)
+        (indent-region start (point)))
+      (merlin--next-hole-between start (+ start (length txt))))))
 
 (defun merlin--destruct-bounds (bounds)
   "Execute a case analysis on BOUNDS"
@@ -1297,7 +1365,9 @@ strictly within, or nil if there is no such element."
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package."
-  (merlin-call "findlib-list"))
+  (let* ((packages-string (shell-command-to-string "ocamlfind list"))
+        (packages-list (split-string packages-string "\n")))
+    (mapcar 'car (mapcar 'split-string packages-list))))
 
 (defun merlin--project-get ()
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
@@ -1319,6 +1389,10 @@ loading"
             (mapconcat 'identity merlin-buffer-packages " ")))))
   (setq merlin-buffer-packages
         (delete-dups (merlin--map-flatten 'identity pkgs)))
+  (let* ((arguments (cons "ocamlfind query" merlin-buffer-packages))
+        (command (mapconcat 'identity arguments " "))
+        (paths (shell-command-to-string command)))
+    (setq merlin-buffer-packages-path (split-string paths "\n")))
   (merlin-error-reset)
   (merlin-configuration-check t))
 

@@ -610,7 +610,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     Destruct.log ~title:"nodes after" "%a"
       Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     begin match nodes with
-      | [] -> raise No_nodes
+      | [] -> raise Destruct.Nothing_to_do
       | (env,node) :: parents ->
         let source = Mpipeline.input_source pipeline in
         let config = Mpipeline.final_config pipeline in
@@ -618,6 +618,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
         Destruct.node config source node (List.map ~f:snd parents)
     end
+
+  | Holes ->
+    let typer = Mpipeline.typer_result pipeline in
+    let verbosity = verbosity pipeline in
+    let nodes = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    let ppf = Format.str_formatter in
+    let loc_and_types_of_holes node =
+      List.map (Browse_raw.all_holes node)
+        ~f:(fun (loc, env, type_expr) ->
+          Printtyp.wrap_printing_env env ~verbosity
+            (fun () ->
+              Type_utils.print_type_with_decl ~verbosity env ppf type_expr);
+          (loc, Format.flush_str_formatter ())
+        )
+    in
+    List.concat_map ~f:loc_and_types_of_holes nodes
 
   | Outline ->
     let typer = Mpipeline.typer_result pipeline in

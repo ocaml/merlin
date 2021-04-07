@@ -7,12 +7,12 @@ dev-repo: "git+https://github.com/ocaml/merlin.git"
 build: [
   ["dune" "subst"] {pinned}
   ["dune" "build" "-p" name "-j" jobs]
-  ["dune" "runtest" "-p" name "-j" "1"] {with-test & ocaml:version >= "4.03"}
+  ["dune" "runtest" "-p" "merlin,dot-merlin-reader" "-j" "1"] {with-test}
 ]
 depends: [
-  "ocaml" {>= "4.11.0" & < "4.12"}
+  "ocaml" {>= "4.12" & < "4.13"}
   "dune" {>= "2.7.0"}
-  "dot-merlin-reader" {= version}
+  "dot-merlin-reader" {>= "4.0"}
   "yojson" {>= "1.6.0"}
   "conf-jq" {with-test}
   "csexp" {>= "1.2.3"}

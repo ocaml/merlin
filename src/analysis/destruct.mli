@@ -33,14 +33,14 @@
 
           {[
             match e with
-            | p1 -> (??)
+            | p1 -> _
             | ...
           ]}
 
           This matching will be exhaustive.
 
           If [e] has a "package" type, it will be replaced by
-          [let module M = (val e) in (??)]
+          [let module M = (val e) in _]
 
       - a pattern context:
           Here two different behaviors can be observed:
@@ -74,6 +74,25 @@ exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
 exception Wrong_parent of string
+
+module Path_utils : sig
+  (** [to_shortest_lid ~env ~env_check path] will make a [Longident.t] from the
+  provided [Path.t] and attempt to use the shortest prefix possible given the
+  currently opened modules. The result is checked by looking it up in the
+  environnement using the [env_check : Longident.t -> Env.t -> 'a] function.
+
+  The check is needed because shadowing can cause subtle issues. A typical check
+  function would be [Env.find_constructor_by_name]. WHen the check fails the
+  function will return [Untypeast.lident_of_path path] instead of clever
+  prefix-less constructions.
+
+  Optionnaly a [name] can be provided that will be used as the last ident of the
+  path. *)
+  val to_shortest_lid :
+    env:Env.t ->
+    ?name:string ->
+    env_check:(Longident.t -> Env.t -> 'a) -> Path.t -> Longident.t
+end
 
 val node :
   Mconfig.t -> Msource.t -> Browse_raw.node ->

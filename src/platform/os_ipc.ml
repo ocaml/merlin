@@ -34,3 +34,7 @@ external context_close : context -> return_code:int -> unit =
 external merlin_set_environ : string -> unit =
   "ml_merlin_set_environ"
 (** completely replace the environment *)
+
+(* {1 Fixup for Windows process management} *)
+
+external merlin_dont_inherit_stdio : bool -> unit = "ml_merlin_dont_inherit_stdio"

@@ -115,8 +115,10 @@ module Configurator = struct
     | Dune -> "dune"
 
   module Process = struct
-    type t = {
+    type nonrec t = {
       pid : int;
+      kind : t;
+      initial_cwd : string;
       stdin: out_channel;
       stdout: in_channel;
       stderr: in_channel;
@@ -132,14 +134,33 @@ module Configurator = struct
           let prog = "dune" in
           prog, [| prog; "ocaml-merlin"; "--no-print-directory" |]
       in
-      log ~title:"get_config" "Using %s configuration provider." (to_string cfg);
       let cwd = Sys.getcwd () in
       let stdin_r, stdin_w = Unix.pipe () in
       let stdout_r, stdout_w = Unix.pipe () in
       let stderr_r, stderr_w = Unix.pipe () in
       Unix.chdir dir;
       Unix.set_close_on_exec stdin_w;
+      (* Set the windows equivalent of close on exec for and stdin stderr
+
+         Most processes spawned by merlin are supposed to inherit stderr to
+         output their debug information. This is fine because these processes
+         are short-lived.
+         However the dune helper we are about to spawn is long-lived, which can
+         cause issues with inherited descriptors because it will outlive
+         merlin's client process.
+         This is not an issue under Unix because file descriptors are replaced
+         (stdin/out/err are new), but under Windows, handle can accumulate.
+         This makes emacs block, synchronously waiting for the inherited (but
+         unused) stdout/stderr to be closed.
+
+         Os_ipc.merlin_dont_inherit_stdio is a no-op under Unix.
+      *)
+      Os_ipc.merlin_dont_inherit_stdio true;
+      log ~title:"get_config" "Starting %s configuration provider from dir %s."
+        (to_string cfg)
+        dir;
       let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
+      Os_ipc.merlin_dont_inherit_stdio false;
       Unix.chdir cwd;
       Unix.close stdin_r;
       Unix.close stdout_w;
@@ -147,7 +168,8 @@ module Configurator = struct
       let stdin = Unix.out_channel_of_descr stdin_w in
       let stdout = Unix.in_channel_of_descr stdout_r in
       let stderr = Unix.in_channel_of_descr stderr_r in
-      { pid; stdin; stdout; stderr }
+      let initial_cwd =  Misc.canonicalize_filename dir in
+      { pid; kind = cfg; initial_cwd; stdin; stdout; stderr }
   end
 
   let running_processes : (string * t, Process.t) Hashtbl.t = Hashtbl.create 0
@@ -183,23 +205,72 @@ let postprocess_config config =
     exclude_query_dir = config.exclude_query_dir;
   }
 
-type context = string * Configurator.t
+type context = {
+  workdir: string;
+  configurator: Configurator.t;
+  process_dir: string;
+}
 
 exception Process_exited
 exception End_of_input
 
-let get_config (dir, cfg) path =
-  try
-    let p = Configurator.get_process ~dir cfg in
-    if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
-      raise Process_exited;
+let get_config { workdir; process_dir; configurator } path_abs =
+  let log_query path =
+    log
+      ~title:"get_config"
+      "Querying %s (inital cwd: %s) for file: %s.\nWorkdir: %s"
+      (Configurator.to_string configurator)
+      process_dir
+      path
+      workdir
+  in
+  let query path (p : Configurator.Process.t) =
+    log_query path;
     Dot_protocol.Commands.send_file
       ~out_channel:p.stdin
       path;
     flush p.stdin;
-    match Dot_protocol.read ~in_channel:p.stdout with
+    Dot_protocol.read ~in_channel:p.stdout
+  in
+  try
+    let p = Configurator.get_process ~dir:process_dir configurator in
+    if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
+      raise Process_exited;
+
+    (* Both [p.initial_cwd] and [path_abs] have gone through
+    [canonicalize_filename] *)
+    let path_rel =
+      String.chop_prefix ~prefix:p.initial_cwd path_abs
+      |> Option.map ~f:(fun path ->
+        (* We need to remove the leading path separator after chopping.
+        There is one case where no separator is left: when [initial_cwd]
+        was the root of the filesystem *)
+        if String.length path > 0 && path.[0] = Filename.dir_sep.[0] then
+           String.drop 1 path
+        else path)
+    in
+
+    let path =
+      match p.kind, path_rel with
+      | Dune, Some path_rel -> path_rel
+      | _, _ -> path_abs
+    in
+
+    (* Starting with Dune 2.8.3 relative paths are prefered. However to maintain
+    compatibility with 2.8 <= Dune <= 2.8.2  we always retry with an absolute
+    path if using a relative one failed *)
+    let answer =
+      match query path p with
+      | Ok ([`ERROR_MSG _]) when p.kind = Dune ->
+        query path_abs p
+      | answer -> answer
+    in
+
+    match answer with
     | Ok directives ->
-      let cfg, failures = prepend_config ~dir directives empty_config in
+      let cfg, failures =
+        prepend_config ~dir:workdir directives empty_config
+      in
       postprocess_config cfg, failures
     | Error (Dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
     | Error (Dot_protocol.Csexp_parse_error _) -> raise End_of_input
@@ -212,7 +283,7 @@ let get_config (dir, cfg) path =
       let error = Printf.sprintf
         "A problem occured with merlin external configuration reader. %s If \
          the problem persists, please file an issue on Merlin's tracker."
-        (match cfg with
+        (match configurator with
         | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
         | Dune -> "Check that `dune` is installed and up-to-date.")
       in
@@ -224,7 +295,7 @@ let get_config (dir, cfg) path =
         - the process stopped in the middle of its answer (which is very unlikely) *)
       let error = Printf.sprintf
         "Merlin could not load its configuration from the external reader. %s"
-        (match cfg with
+        (match configurator with
         | Dot_merlin -> "If the problem persists, please file an issue on \
           Merlin's tracker."
         | Dune -> "Building your project with `dune` might solve this issue.")
@@ -232,23 +303,46 @@ let get_config (dir, cfg) path =
       empty_config, [ error ]
 
 let find_project_context start_dir =
-  let rec loop dir =
+  (* The workdir is the first directory we find which contains a [dune] file.
+    We need to keep track of this folder because [dune ocaml-merlin] might be
+    started from a folder that is a parent of the [workdir]. Thus we cannot
+    always use that starting folder as the workdir.  *)
+  let map_workdir dir = function
+    | Some dir -> Some dir
+    | None -> let fname = Filename.concat dir "dune" in
+      if Sys.file_exists fname && not (Sys.is_directory fname)
+      then Some dir else None
+  in
+
+  let rec loop workdir dir =
     try
       Some (
         List.find_map [
-            ".merlin" ; "dune-project"; "dune-workspace"
+            ".merlin"; "dune-project"; "dune-workspace"
           ]
           ~f:(fun f ->
             let fname = Filename.concat dir f in
             if Sys.file_exists fname && not (Sys.is_directory fname)
-            then Some ((dir, Option.get (Configurator.of_string_opt f)), fname)
+            then
+              (* When starting [dot-merlin-reader] from [dir]
+                the workdir is always [dir] *)
+              let workdir = if f = ".merlin" then None else workdir in
+              let workdir = Option.value ~default:dir workdir in
+              Some ({
+                workdir;
+                process_dir = dir;
+                configurator = Option.get (Configurator.of_string_opt f)
+              }, fname)
             else None
           )
     )
     with Not_found ->
       let parent = Filename.dirname dir in
       if parent <> dir
-      then loop parent
+      then
+        (* Was this directory the workdir ? *)
+        let workdir = map_workdir dir workdir in
+        loop workdir parent
       else None
   in
-  loop start_dir
+  loop None start_dir

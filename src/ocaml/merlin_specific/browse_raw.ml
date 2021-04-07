@@ -310,7 +310,7 @@ let of_method_call obj meth arg loc =
 
 let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
-  | Texp_variant (_,None) | Texp_new _ -> id_fold
+  | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
   | Texp_function { cases; _ } ->
@@ -894,3 +894,18 @@ let node_of_binary_part env part =
   | Partial_module_type x ->
     Module_type x
 
+let all_holes (env, node) =
+  let rec aux acc (env, node) =
+    let f env node acc = match node with
+      | Expression {
+          exp_desc = Texp_hole;
+          exp_loc;
+          exp_type;
+          exp_env;
+          _
+        } -> (exp_loc, exp_env, exp_type) :: acc
+      | _ -> aux acc (env, node)
+    in
+    fold_node f env node acc
+  in
+  aux [] (env, node) |> List.rev

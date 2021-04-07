@@ -53,7 +53,7 @@ let expr_tail_positions = function
   | Texp_construct _ | Texp_variant _ | Texp_record _
   | Texp_field _ | Texp_setfield _ | Texp_array _
   | Texp_while _ | Texp_for _ | Texp_send _ | Texp_new _
-  | Texp_unreachable | Texp_extension_constructor _ | Texp_letop _
+  | Texp_unreachable | Texp_extension_constructor _ | Texp_letop _ | Texp_hole
     -> []
   | Texp_match (_,cs,_)
     -> List.map cs ~f:(fun c -> Case c)

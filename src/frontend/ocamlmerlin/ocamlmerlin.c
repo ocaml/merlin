@@ -649,7 +649,7 @@ int main(int argc, char **argv)
   {
     argv[0] = ocamlmerlin_server;
 #ifdef _WIN32
-    int err = _spawnvp(_P_WAIT, merlin_path, argv);
+    int err = _spawnvp(_P_WAIT, merlin_path, (const char *const *)argv);
     if (err < 0)
       failwith_perror("spawnvp(ocamlmerlin-server)");
     else

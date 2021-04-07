@@ -20,13 +20,23 @@ opam user-setup install
 Manually building and installing Merlin
 =======================================
 
+Since version 4.0, merlin's repository has a dedicated branch per version of
+OCaml, and the branch name consist of the concatenation of OCaml major version
+and minor version. So, for instance, `OCaml 4.11.*` maps to branch `411`.
+The main branch is usually synchronized with the branch compatible with the
+latest (almost-)released version of OCaml.
+
+Note: if you're using an older version of OCaml (between 4.02 and 4.10) you will
+want to build the 3.4 branch, although it won't contain the most recent
+features.
+
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.02.3, ocamlfind, yojson >= 1.6.0, dune >= 1.8.
+Dependencies: ocamlfind, yojson >= 1.6.0, dune >= 2.7.
 
 ```shell
-dune build -p merlin
+dune build -p dot-merlin-reader,merlin
 ```
 
 Note: if you want to work on merlin, you'll want to avoid the `-p merlin`, to
@@ -39,7 +49,7 @@ Installation
 If you haven't encountered any errors in the previous step, just run:
 
 ```shell
-dune install -p merlin
+dune install -p dot-merlin-reader,merlin
 ```
 
 You can pass an explicit prefix to dune, using `--prefix`. It defaults to
@@ -123,7 +133,9 @@ External contributors have implemented modes for more editors:
 Next steps
 ==========
 
-To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file.
+To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file
+unless your project is built using dune.
+Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin. 
 
 Read more in the [wiki](https://github.com/ocaml/merlin/wiki) to learn how to make full use of Merlin in your projects.
 
