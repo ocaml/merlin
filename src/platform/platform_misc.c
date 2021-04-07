@@ -1,3 +1,10 @@
+#ifdef _WIN32
+#define CAML_NAME_SPACE
+#define CAML_INTERNALS
+#include <caml/misc.h>
+#include <caml/osdeps.h>
+#endif
+
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/alloc.h>
@@ -57,8 +64,6 @@ value ml_merlin_dont_inherit_stdio(value vstatus)
 
 /* Run ppx-command without opening a sub console */
 
-#define MAX_SYSTEM_PROGRAM 4096
-
 static int windows_system(const char *cmd)
 {
     PROCESS_INFORMATION p_info;
@@ -69,8 +74,8 @@ static int windows_system(const char *cmd)
     memset(&p_info, 0, sizeof(p_info));
     s_info.cb = sizeof(s_info);
 
-    wchar_t utf16cmd[MAX_SYSTEM_PROGRAM] = {0};
-    MultiByteToWideChar(CP_UTF8, 0, cmd, -1, utf16cmd, MAX_SYSTEM_PROGRAM);
+    char_os *utf16cmd;
+    utf16cmd = caml_stat_strdup_to_os(cmd);
     if (CreateProcessW(NULL, utf16cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &s_info, &p_info))
     {
         WaitForSingleObject(p_info.hProcess, INFINITE);
@@ -78,6 +83,7 @@ static int windows_system(const char *cmd)
         CloseHandle(p_info.hProcess);
         CloseHandle(p_info.hThread);
     }
+    caml_stat_free(utf16cmd);
     return ReturnValue;
 }
 
