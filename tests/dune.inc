@@ -357,6 +357,23 @@
 (alias (name runtest) (deps (alias destruct-from_val)))
 
 (alias
+ (name destruct-issue1300_since_408)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
+ (deps (:t ./test-dirs/destruct/issue1300_since_408.t)
+       (source_tree ./test-dirs/destruct)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/destruct
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias destruct-issue1300_since_408)))
+
+(alias
  (name destruct-issue596)
  (package merlin)
  (deps (:t ./test-dirs/destruct/issue596.t)

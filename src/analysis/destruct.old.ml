@@ -32,6 +32,7 @@ open Browse_raw
 exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
+exception Ill_typed
 exception Wrong_parent of string
 
 let {Logger. log} = Logger.for_section "destruct"
@@ -41,6 +42,9 @@ let () =
     | Not_allowed s  -> Some (Location.error ("Destruct not allowed on " ^ s))
     | Useless_refine -> Some (Location.error "Cannot refine an useless branch")
     | Nothing_to_do  -> Some (Location.error "Nothing to do")
+    | Ill_typed  -> Some (
+        Location.error "The node on which destruct was called is ill-typed"
+      )
     | _ -> None
   )
 
@@ -250,6 +254,9 @@ let rec get_every_pattern = function
     | Pattern _ ->
       (* We are still in the same branch, going up. *)
       get_every_pattern parents
+    | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
+      when Ident.name id = "*type-error*" ->
+        raise (Ill_typed)
     | Expression _ ->
       (* We are on the right node *)
       let patterns =

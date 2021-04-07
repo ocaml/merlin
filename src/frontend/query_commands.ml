@@ -605,7 +605,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     Destruct.log ~title:"nodes after" "%a"
       Logger.json (fun () -> `List (List.map nodes ~f:dump_node));
     begin match nodes with
-      | [] -> raise No_nodes
+      | [] -> raise Destruct.Nothing_to_do
       | (env,node) :: parents ->
         let source = Mpipeline.input_source pipeline in
         let config = Mpipeline.final_config pipeline in
