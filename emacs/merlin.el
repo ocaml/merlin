@@ -1257,6 +1257,69 @@ strictly within, or nil if there is no such element."
       (push-mark (merlin--point-of-pos (cdr (assoc 'end extents)))
                  t t))))
 
+;;;;;;;;;;;
+;; HOLES ;;
+;;;;;;;;;;;
+
+(defun merlin--holes ()
+  "Query the list of holes (and their types)"
+  (merlin/call "holes"))
+
+(defun merlin--first-hole-aux (holes current-point comp)
+  "Returns the first `hole` of the list such that
+    `(funcall comp hole current-point)`"
+  (when holes
+    (let* ((head (first holes))
+           (tail (rest holes))
+           (start (merlin-lookup 'start head))
+           (hole-point (merlin/make-point start)))
+      (if (funcall comp hole-point current-point)
+        head
+        (merlin--first-hole-aux tail current-point comp)))))
+
+(defun merlin--first-hole (holes current-point comp)
+  "Returns the first `hole` of the list that such that
+    `(funcall comp hole current-point)`. If no hole match
+    that condition the first one of the list is returned."
+  (let ((hole (merlin--first-hole-aux holes current-point comp)))
+    (if hole hole (car holes))))
+
+(defun merlin-previous-hole ()
+  "Jump to the previous hole and print its type"
+  (interactive)
+  (let* ((current-point (point))
+         (holes (reverse (merlin--holes)))
+         (hole (merlin--first-hole holes current-point '<)))
+    (when hole
+      (progn
+        (merlin--goto-point (merlin-lookup 'start hole))
+        (message "%s" (merlin-lookup 'type hole))))))
+
+(defun merlin--next-hole-between (pmin pmax)
+  "Jump to the next hole and print its type only if it is in the given range"
+  (let* ((current-point (point))
+         (hole (merlin--first-hole (merlin--holes) current-point '>)))
+    (when hole
+      (let* ((start (merlin-lookup 'start hole))
+             (typ (merlin-lookup 'type hole))
+             (hole-point (merlin/make-point start)))
+        (if (and
+              (>= hole-point pmin)
+              (<= hole-point pmax))
+          (progn
+            (merlin--goto-point start)
+            (message "%s" typ)))))))
+
+(defun merlin-next-hole ()
+  "Jump to the next hole and print its type"
+  (interactive)
+  (let* ((current-point (point))
+         (hole (merlin--first-hole (merlin--holes) current-point '>)))
+    (when hole
+      (progn
+        (merlin--goto-point (merlin-lookup 'start hole))
+        (message "%s" (merlin-lookup 'type hole))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DESTRUCT / CASE ANALYSIS ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1264,11 +1327,13 @@ strictly within, or nil if there is no such element."
 (defun merlin--replace-buff-portion (start stop txt)
   (let ((start (merlin--point-of-pos start))
         (stop  (merlin--point-of-pos stop)))
-    (save-excursion
-      (delete-region start stop)
-      (goto-char start)
-      (insert txt)
-      (indent-region start (point)))))
+    (progn
+      (save-excursion
+        (delete-region start stop)
+        (goto-char start)
+        (insert txt)
+        (indent-region start (point)))
+      (merlin--next-hole-between start (+ start (length txt))))))
 
 (defun merlin--destruct-bounds (bounds)
   "Execute a case analysis on BOUNDS"
