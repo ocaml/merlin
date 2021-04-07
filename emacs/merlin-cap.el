@@ -1,4 +1,4 @@
-;;; merlin-cap.el --- Merlin and completion-at-point integration.   -*- coding: utf-8 -*-
+;;; merlin-cap.el --- Merlin and completion-at-point integration.   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
@@ -49,24 +49,24 @@ trigger useless merlin calls.")
 
 (defun merlin-cap ()
   "Perform completion at point with merlin."
-  (lexical-let*
-      ((bounds       (merlin/completion-bounds))
+  (let*
+      ((bounds       (merlin-completion-bounds))
        (start        (car bounds))
        (end          (cdr bounds))
-       (prefix       (merlin/buffer-substring start end))
-       (compl-prefix (merlin/completion-prefix prefix)))
+       (prefix       (merlin-buffer-substring start end))
+       (compl-prefix (merlin-completion-prefix prefix)))
     (when (or (not merlin-cap--cache)
               (not (equal (cons prefix start) merlin-cap--cache)))
       (setq merlin-cap--cache (cons prefix start))
       (setq merlin-cap--table
             (mapcar
-              (lambda (a)
-                (cons (merlin/completion-entry-text compl-prefix a)
-                      (concat ": " (merlin/completion-entry-short-description a))))
-              (merlin/complete prefix))))
+             (lambda (a)
+               (cons (merlin-completion-entry-text compl-prefix a)
+                     (concat ": " (merlin-completion-entry-short-description a))))
+             (merlin-complete prefix))))
     (list start end #'merlin-cap--table
           . (:exit-function #'merlin-cap--lookup
-             :annotation-function #'merlin-cap--annotate))))
+                            :annotation-function #'merlin-cap--annotate))))
 
 (defalias 'merlin-completion-at-point 'merlin-cap)
 
@@ -77,7 +77,7 @@ trigger useless merlin calls.")
 (defun merlin-cap--setup ()
   (add-hook 'completion-at-point-functions #'merlin-completion-at-point nil 'local))
 
-(add-hook 'merlin-mode-hook 'merlin-cap--setup)
+(add-hook 'merlin-mode-hook #'merlin-cap--setup)
 (when merlin-mode (merlin-cap--setup))
 
 (provide 'merlin-cap)

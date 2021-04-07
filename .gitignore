@@ -6,6 +6,7 @@ dune-workspace
 *.tar.gz
 *.pyc
 *.cmly
+*.elc
 
 /ocamlmerlin
 /ocamlmerlin-server
