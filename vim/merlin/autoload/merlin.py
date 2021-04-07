@@ -321,6 +321,16 @@ def command_occurrences(pos):
     except MerlinExc as e:
         try_print_error(e)
 
+def command_holes():
+    try:
+        lst_or_err = command("holes")
+        if not isinstance(lst_or_err, list):
+            print(lst_or_err)
+        else:
+            return lst_or_err
+    except MerlinExc as e:
+        try_print_error(e)
+
 ######## VIM FRONTEND
 
 def vim_complete_prepare(str):
@@ -557,7 +567,7 @@ def vim_type_reset():
     enclosing_types = [] # reset
     current_enclosing = -1
 
-def replace_buffer_portion(start, end, txt):
+def replace_buffer_portion_and_jump_to_hole(start, end, txt):
     (encode,decode) = vim_codec()
 
     start_line = start['line'] - 1
@@ -581,7 +591,10 @@ def replace_buffer_portion(start, end, txt):
 
     # Properly reindent the modified lines
     vim.current.window.cursor = (start['line'], 0)
-    vim.command("call feedkeys('%d==', 'n')" % nb_lines)
+    vim.command('normal %d==' % nb_lines)
+
+    # We look for a hole to move the cursor to in the range we replaced
+    vim_next_hole(start_line, start_line + nb_lines)
 
 def vim_case_analysis():
     global enclosing_types
@@ -607,11 +620,49 @@ def vim_case_analysis():
                                           "-end", fmtpos(tmp['end']))
         tmp = result[0]
         txt = result[1]
-        replace_buffer_portion(tmp['start'], tmp['end'], txt)
+        replace_buffer_portion_and_jump_to_hole(tmp['start'], tmp['end'], txt)
+
     except MerlinExc as e:
         try_print_error(e)
 
     vim_type_reset()
+
+def vim_previous_hole():
+    line, col = vim.current.window.cursor
+    holes = command_holes()
+    holes.reverse()
+    for hole in holes:
+      hline = hole['start']['line']
+      hcol = hole['start']['col']
+      if (hline, hcol) < (line, col):
+        vim.current.window.cursor = (hline, hcol)
+        print(hole['type'])
+        return
+    # If no hole was found before the cursor we jump
+    # to the last hole of the file if any.
+    if len(holes) > 0:
+      hline = holes[0]['start']['line']
+      hcol = holes[0]['start']['col']
+      vim.current.window.cursor = (hline, hcol)
+      print(holes[0]['type'])
+
+def vim_next_hole(min = 0, max = float('inf')):
+    line, col = vim.current.window.cursor
+    holes = command_holes()
+    for hole in holes:
+      hline = hole['start']['line']
+      hcol = hole['start']['col']
+      if hline >= min and (hline, hcol) > (line, col) and hline <= max:
+        vim.current.window.cursor = (hline, hcol)
+        print(hole['type'])
+        return
+    # If no hole was found after the cursor we jump
+    # to the first hole of the file if any.
+    if max == float('inf') and len(holes) > 0:
+      hline = holes[0]['start']['line']
+      hcol = holes[0]['start']['col']
+      vim.current.window.cursor = (hline, hcol)
+      print(holes[0]['type'])
 
 def vim_type_enclosing():
     global enclosing_types
