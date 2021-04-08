@@ -39,7 +39,9 @@ let rewrite cfg parsetree =
   in
   (* add include path attribute to the parsetree *)
   with_include_dir (Mconfig.build_path cfg) @@ fun () ->
-  match Pparse.apply_rewriters ~ppx ~tool_name:"merlin" parsetree with
+  match
+    Pparse.apply_rewriters ~restore:false ~ppx ~tool_name:"merlin" parsetree
+  with
   | parsetree ->
     restore ();
     cfg, parsetree
