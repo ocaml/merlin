@@ -10,6 +10,12 @@
 ;; Package-Requires: ((emacs "25.1") (merlin "3") (iedit "0.9"))
 ;; URL: http://github.com/ocaml/merlin
 
+;;; Commentary:
+
+;; Provides the command `merlin-iedit-occurrences', which allows the
+;; user to edit all the occurrences of the identifier at point using
+;; `iedit'.
+
 ;;; Code:
 
 (require 'merlin)
