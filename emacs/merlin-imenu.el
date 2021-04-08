@@ -1,4 +1,4 @@
-;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
+;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: tddsg (Ta Quang Trung)
@@ -34,7 +34,7 @@
   (let* ((name (concat prefix name))
          (type (cond ((not (string= kind "Value")) "null")
                      ((not (string= type "null")) type)
-                     (t (let* ((types (merlin/call
+                     (t (let* ((types (merlin-call
                                        "type-enclosing"
                                        "-position" (format "%d:%d" line col)
                                        "-expression" name)))
@@ -70,7 +70,7 @@
         merlin-imenu--type-list nil
         merlin-imenu--exception-list nil)
   ;; Read outline tree
-  (merlin-imenu-parse-outline "" (merlin/call "outline"))
+  (merlin-imenu-parse-outline "" (merlin-call "outline"))
   (let ((index nil))
     (when merlin-imenu--value-list
       (push (cons "Value" merlin-imenu--value-list) index))
