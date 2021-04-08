@@ -1699,7 +1699,7 @@ Empty string defaults to jumping to all these."
         ((equal merlin-command 'opam)
          (with-temp-buffer
            (if (eq (call-process-shell-command
-                    "opam config var bin" nil (current-buffer) nil) 0)
+                    "opam var bin" nil (current-buffer) nil) 0)
                (let ((bin-path
                       (replace-regexp-in-string "\n$" "" (buffer-string))))
                  ;; the opam bin dir needs to be on the path, so if merlin
@@ -1715,7 +1715,7 @@ Empty string defaults to jumping to all these."
              ;; best effort if opam is not available, lookup for the binary in
              ;; the existing env
              (progn
-               (message "merlin-command: opam config failed (%S)"
+               (message "merlin-command: opam var failed (%S)"
                         (buffer-string))
                "ocamlmerlin"))))))
 

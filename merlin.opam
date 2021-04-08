@@ -32,7 +32,7 @@ post-messages: [
 Quick setup for VIM
 -------------------
 Append this to your .vimrc to add merlin to vim's runtime-path:
-  let g:opamshare = substitute(system('opam config var share'),'\\n$','','''')
+  let g:opamshare = substitute(system('opam var share'),'\\n$','','''')
   execute \"set rtp+=\" . g:opamshare . \"/merlin/vim\"
 
 Also run the following line in vim to index the documentation:

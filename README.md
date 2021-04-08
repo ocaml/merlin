@@ -57,8 +57,8 @@ To setup Emacs and Vim, you need to instruct them to run the appropriate script 
 
 In the rest of the document, \<SHARE\_DIR\> refers to the directory where Merlin data files are installed.
 
-It will usually be:  
-- printed by the command `opam config var share`, if you used opam  
+It will usually be:
+- printed by the command `opam var share`, if you used opam
 - "\<prefix\>/share" if you explicitly specified a prefix when configuring Merlin
 
 ### Vim setup
