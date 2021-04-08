@@ -1,4 +1,4 @@
-;;; merlin-ac.el --- Merlin and auto-complete integration.   -*- coding: utf-8 -*-
+;;; merlin-ac.el --- Merlin and auto-complete integration.   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
@@ -7,7 +7,10 @@
 ;; Created: 15 May 2015
 ;; Version: 0.1
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1") (merlin "3") (auto-complete "1.5"))
 ;; URL: http://github.com/ocaml/merlin
+
+;;; Code:
 
 (require 'merlin)
 (require 'auto-complete)
@@ -56,11 +59,11 @@ auto-complete"
 
 (defun merlin-ac--make-popup-item (data)
   "Create a popup item from data DATA."
-  (let ((desc (merlin/completion-entry-short-description data)))
+  (let ((desc (merlin-completion-entry-short-description data)))
     (popup-make-item
      ;; Note: ac refuses to display an item if merlin-ac--ac-prefix is not a
      ;; prefix the item. So "dwim" completion won't work with ac.
-     (merlin/completion-entry-text merlin-ac--prefix data)
+     (merlin-completion-entry-text merlin-ac--prefix data)
      :summary (when (and merlin-completion-types merlin-ac-use-summary) desc)
      :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
      :document (let ((doc (cdr-safe (assoc 'info data))))
@@ -68,10 +71,10 @@ auto-complete"
 
 (defun merlin-ac--source-refresh-cache ()
   "Refresh the cache of completion."
-  (setq merlin-ac--prefix (merlin/completion-prefix ac-prefix))
+  (setq merlin-ac--prefix (merlin-completion-prefix ac-prefix))
   (setq merlin-ac--ac-prefix ac-prefix)
   (setq merlin-ac--cache (mapcar #'merlin-ac--make-popup-item
-                                 (merlin/complete merlin-ac--prefix))))
+                                 (merlin-complete merlin-ac--prefix))))
 
 (defun merlin-ac--source-init ()
   "Initialize the cache for `auto-complete' completion.
@@ -82,7 +85,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--prefix ()
   "Retrieve the prefix for completion with merlin."
-  (let* ((bounds (merlin/completion-bounds))
+  (let* ((bounds (merlin-completion-bounds))
          (start  (car-safe bounds))
          (end    (cdr-safe bounds)))
     (unless (and bounds (< (- end start) merlin-ac-prefix-size))
@@ -90,7 +93,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--fetch-type ()
   "Prints the type of the selected candidate"
-  (let ((candidate (merlin/buffer-substring merlin-ac--point (point))))
+  (let ((candidate (merlin-buffer-substring merlin-ac--point (point))))
     (when merlin-completion-types
       (mapc (lambda (item)
               (when (string-equal candidate item)
@@ -100,16 +103,18 @@ variable `merlin-ac--cache')."
 (defun merlin-ac--candidates ()
   "Return the candidates for auto-completion with auto-complete. If the cache is
 wrong then recompute it."
-  (unless (and (equal (merlin/completion-prefix ac-prefix) merlin-ac--prefix)
+  (unless (and (equal (merlin-completion-prefix ac-prefix) merlin-ac--prefix)
                (string-prefix-p merlin-ac--ac-prefix ac-prefix))
     (merlin-ac--source-refresh-cache))
   merlin-ac--cache)
 
 ;; Public functions
 
+;;;###autoload
 (defun merlin-ac-setup-easy ()
   "Integrate merlin to auto-complete with sane defaults"
   (auto-complete-mode t)
+  (local-set-key (kbd "C-c C-l") 'ac-merlin-locate)
   (set (make-local-variable 'ac-auto-show-menu) t)
   (set (make-local-variable 'ac-auto-start) nil)
   (set (make-local-variable 'ac-delay) 0.0)
@@ -126,7 +131,7 @@ wrong then recompute it."
     (when (popup-hidden-p ac-menu)
       (ac-show-menu))
     (let ((merlin-locate-in-new-window 'always))
-      (merlin/locate (ac-selected-candidate)))
+      (merlin-locate (ac-selected-candidate)))
     (ac-show-menu)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -139,7 +144,6 @@ wrong then recompute it."
                            (prefix . merlin-ac--prefix)))
 
 (ac-define-source "merlin" merlin-ac-source)
-(define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate)
 
 (defun merlin-ac--setup ()
   (when merlin-ac-setup
@@ -148,7 +152,7 @@ wrong then recompute it."
       (auto-complete-mode t))
     (add-to-list 'ac-sources 'merlin-ac-source)))
 
-(add-hook 'merlin-mode-hook 'merlin-ac--setup)
+(add-hook 'merlin-mode-hook #'merlin-ac--setup)
 (when merlin-mode (merlin-ac--setup))
 
 (provide 'merlin-ac)

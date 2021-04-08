@@ -89,8 +89,8 @@ All you need to do is add the following to your .emacs:
 (push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
 (setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
 (autoload 'merlin-mode "merlin" "Merlin mode" t)
-(add-hook 'tuareg-mode-hook 'merlin-mode)
-(add-hook 'caml-mode-hook 'merlin-mode)
+(add-hook 'tuareg-mode-hook #'merlin-mode)
+(add-hook 'caml-mode-hook #'merlin-mode)
 ```
 
 `merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if it is installed.
