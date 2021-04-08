@@ -1261,7 +1261,7 @@ strictly within, or nil if there is no such element."
 
 (defun merlin--holes ()
   "Query the list of holes (and their types)"
-  (merlin/call "holes"))
+  (merlin-call "holes"))
 
 (defun merlin--first-hole-aux (holes current-point comp)
   "Returns the first `hole` of the list such that
@@ -1270,7 +1270,7 @@ strictly within, or nil if there is no such element."
     (let* ((head (first holes))
            (tail (rest holes))
            (start (merlin-lookup 'start head))
-           (hole-point (merlin/make-point start)))
+           (hole-point (merlin-make-point start)))
       (if (funcall comp hole-point current-point)
         head
         (merlin--first-hole-aux tail current-point comp)))))
@@ -1300,7 +1300,7 @@ strictly within, or nil if there is no such element."
     (when hole
       (let* ((start (merlin-lookup 'start hole))
              (typ (merlin-lookup 'type hole))
-             (hole-point (merlin/make-point start)))
+             (hole-point (merlin-make-point start)))
         (if (and
               (>= hole-point pmin)
               (<= hole-point pmax))
