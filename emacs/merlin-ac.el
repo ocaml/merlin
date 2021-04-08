@@ -153,7 +153,6 @@ wrong then recompute it."
     (add-to-list 'ac-sources 'merlin-ac-source)))
 
 (add-hook 'merlin-mode-hook #'merlin-ac--setup)
-(when merlin-mode (merlin-ac--setup))
 
 (provide 'merlin-ac)
 ;;; merlin-ac.el ends here
