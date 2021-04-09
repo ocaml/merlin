@@ -10,9 +10,7 @@
 ;; Package-Requires: ((emacs "25.1") (merlin "3") (company "0.9"))
 ;; URL: http://github.com/ocaml/merlin
 
-(require 'merlin)
-(require 'company)
-(require 'cl-lib)
+;;; Commentary:
 
 ;; (require 'merlin-company) should be enough to get merlin to work within
 ;; company.
@@ -21,9 +19,11 @@
 ;;   (add-hook 'after-init-hook #'global-company-mode)
 ;; in your .emacs.
 
+;;; Code:
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(require 'merlin)
+(require 'company)
+(require 'cl-lib)
 
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
 ;; to be used by other modules.
