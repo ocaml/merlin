@@ -23,3 +23,38 @@ FIXME refactor open rewriting the whole record instead of a field label
     ],
     "notifications": []
   }
+
+Refactor open for record disambiguation
+
+  $ $MERLIN single refactor-open -action qualify -position 1:6 <<EOF
+  > open Unix
+  > let f x = x.tms_stime, x.tms_utime
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 12
+        },
+        "end": {
+          "line": 2,
+          "col": 21
+        },
+        "content": "Unix.tms_stime"
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 25
+        },
+        "end": {
+          "line": 2,
+          "col": 34
+        },
+        "content": "Unix.tms_utime"
+      }
+    ],
+    "notifications": []
+  }
