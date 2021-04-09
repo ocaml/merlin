@@ -79,6 +79,8 @@ A more comprehensive documentation can be found on the [vim-from-scratch wiki](h
 
 ### Emacs setup
 
+#### Manual setup
+
 Merlin comes with an emacs library (file: emacs/merlin.el) that implements a minor-mode that is supposed to be used on top of tuareg-mode.
 
 All you need to do is add the following to your .emacs:
@@ -89,11 +91,33 @@ All you need to do is add the following to your .emacs:
 (autoload 'merlin-mode "merlin" "Merlin mode" t)
 (add-hook 'tuareg-mode-hook #'merlin-mode)
 (add-hook 'caml-mode-hook #'merlin-mode)
+;; Uncomment these lines if you want to enable integration with the corresponding packages
+;; (require 'merlin-iedit)       ; iedit.el editing of occurrences
+;; (require 'merlin-company)     ; company.el completion
+;; (require 'merlin-ac)          ; auto-complete.el completion
 ```
 
-`merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if it is installed.
-
 A more comprehensive documentation can be found on the [emacs-from-scratch wiki](https://github.com/ocaml/merlin/wiki/emacs-from-scratch).
+
+#### Setup via package.el
+
+An installable core `merlin` package is available via
+[MELPA](https://melpa.org), along with further small integration
+packages `merlin-company`, `merlin-iedit` and `merlin-ac` which users
+can install according to their needs.
+
+Having installed the required packages, the following code in your
+emacs startup file is sufficient:
+
+```el
+(setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
+(add-hook 'tuareg-mode-hook #'merlin-mode)
+(add-hook 'caml-mode-hook #'merlin-mode)
+;; Uncomment these lines if you want to enable integration with the corresponding packages
+;; (require 'merlin-iedit)       ; iedit.el editing of occurrences
+;; (require 'merlin-company)     ; company.el completion
+;; (require 'merlin-ac)          ; auto-complete.el completion
+```
 
 ### Other editors
 

@@ -10,6 +10,14 @@
 ;; Package-Requires: ((emacs "25.1") (merlin "3") (auto-complete "1.5"))
 ;; URL: http://github.com/ocaml/merlin
 
+;;; Commentary:
+
+;; To integrate this auto-complete backend with Merlin, just (require
+;; 'merlin-ac) in your Emacs configuration files.  When `merlin-mode'
+;; is subsequently enabled in buffers, auto-complete will be set up
+;; too.  Some auto-complete settings will be overridden: to avoid this
+;; for finer control, customize the variable `merlin-ac-setup'.
+
 ;;; Code:
 
 (require 'merlin)
@@ -153,7 +161,6 @@ wrong then recompute it."
     (add-to-list 'ac-sources 'merlin-ac-source)))
 
 (add-hook 'merlin-mode-hook #'merlin-ac--setup)
-(when merlin-mode (merlin-ac--setup))
 
 (provide 'merlin-ac)
 ;;; merlin-ac.el ends here
