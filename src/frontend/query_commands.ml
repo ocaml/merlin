@@ -481,17 +481,21 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     begin match Mbrowse.select_open_node (Mtyper.node_at typer pos) with
-      | None | Some (_, []) -> []
-      | Some (path, ((_, node) :: _)) ->
+      | None | Some (_, _, []) -> []
+      | Some (path, longident, ((_, node) :: _)) ->
         let paths =
           Browse_tree.all_occurrences_of_prefix ~strict_prefix:true path node in
         let paths = List.concat_map ~f:snd paths in
+        let leftmost_ident = Longident.flatten longident |> List.hd in
         let rec path_to_string acc (p : Path.t) =
           match p with
           | Pident ident ->
             String.concat ~sep:"." (Ident.name ident :: acc)
           | Pdot (path', s) when
               mode = `Unqualify && Path.same path path' ->
+            String.concat ~sep:"." (s :: acc)
+          | Pdot (path', s) when
+              mode = `Qualify && s = leftmost_ident ->
             String.concat ~sep:"." (s :: acc)
           | Pdot (path', s) ->
             path_to_string (s :: acc) path'

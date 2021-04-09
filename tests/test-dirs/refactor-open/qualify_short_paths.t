@@ -1,4 +1,4 @@
-FIXME refactor open qualify should use short paths
+refactor open qualify should use short paths
 
   $ $MERLIN single refactor-open -action qualify -position 7:6 <<EOF
   > module Dune__exe = struct
@@ -22,7 +22,7 @@ FIXME refactor open qualify should use short paths
           "line": 8,
           "col": 9
         },
-        "content": "Dune__exe.M.u"
+        "content": "M.u"
       }
     ],
     "notifications": []

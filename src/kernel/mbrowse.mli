@@ -47,7 +47,7 @@ val drop_leaf : t -> t option
 val deepest_before : Lexing.position -> t list -> t
 
 
-val select_open_node : t -> (Path.t * t) option
+val select_open_node : t -> (Path.t * Longident.t * t) option
 
 val enclosing : Lexing.position -> t list -> t
 

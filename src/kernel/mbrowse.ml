@@ -176,26 +176,26 @@ let rec select_open_node =
   function[@warning "-9"]
   | (_, ( Structure_item ({str_desc =
                              Tstr_open { open_expr =
-                                           { mod_desc = Tmod_ident (p, _) }}},
+                                           { mod_desc = Tmod_ident (p, {txt = longident}) }}},
                           _)))
     :: ancestors ->
-    Some (p, ancestors)
+    Some (p, longident, ancestors)
   | (_, ( Signature_item ({sig_desc = Tsig_open op}, _))) :: ancestors ->
-    Some (fst op.open_expr, ancestors)
+    let (p, { Asttypes.txt = longident; }) = op.open_expr in
+    Some (p, longident, ancestors)
+  | (_, Expression { exp_desc =
+          Texp_open ({ open_expr =
+                        { mod_desc = Tmod_ident (p, {txt = longident})}}, _); _})
+    :: _ as ancestors ->
+      Some (p, longident, ancestors)
   | (_, Pattern {pat_extra; _}) :: ancestors
     when List.exists pat_extra
-        ~f:(function (Tpat_open _, _ ,_) -> true | _ -> false) ->
-    let p = List.find_map pat_extra
-        ~f:(function | Tpat_open (p,_,_), _ ,_ -> Some p
+          ~f:(function (Tpat_open _, _ ,_) -> true | _ -> false) ->
+    let (p, longident) = List.find_map pat_extra
+        ~f:(function | Tpat_open (p,{ txt = longident; },_), _ ,_ -> Some (p, longident)
                      | _ -> None)
     in
-    Some (p, ancestors)
-  | (_, Expression { exp_desc =
-                       Texp_open ({ open_expr =
-                                      { mod_desc = Tmod_ident (p, _)}}, _);
-                     _
-                   }) :: _ as ancestors ->
-    Some (p, ancestors)
+    Some (p, longident, ancestors)
   | [] -> None
   | _ :: ancestors -> select_open_node ancestors
 
