@@ -82,9 +82,15 @@ static int windows_system(const char *cmd)
         GetExitCodeProcess(p_info.hProcess, &ReturnValue);
         CloseHandle(p_info.hProcess);
         CloseHandle(p_info.hThread);
+
+        caml_stat_free(utf16cmd);
+        return ReturnValue;
     }
-    caml_stat_free(utf16cmd);
-    return ReturnValue;
+    else
+    {
+        caml_stat_free(utf16cmd);
+        return -1;
+    }
 }
 
 value ml_merlin_system_command(value command)
