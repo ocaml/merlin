@@ -487,24 +487,27 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           Browse_tree.all_occurrences_of_prefix ~strict_prefix:true path node in
         let paths = List.concat_map ~f:snd paths in
         let leftmost_ident = Longident.flatten longident |> List.hd in
-        let rec path_to_string acc (p : Path.t) =
-          match p with
-          | Pident ident ->
-            String.concat ~sep:"." (Ident.name ident :: acc)
-          | Pdot (path', s) when
-              mode = `Unqualify && Path.same path path' ->
-            String.concat ~sep:"." (s :: acc)
-          | Pdot (path', s) when
-              mode = `Qualify && s = leftmost_ident ->
-            String.concat ~sep:"." (s :: acc)
-          | Pdot (path', s) ->
-            path_to_string (s :: acc) path'
-          | _ -> raise Not_found
+        let path_to_string p =
+          let rec aux acc (p : Path.t) =
+            match p with
+            | Pident ident ->
+              Ident.name ident :: acc
+            | Pdot (path', s) when
+                mode = `Unqualify && Path.same path path' ->
+              s :: acc
+            | Pdot (path', s) when
+                mode = `Qualify && s = leftmost_ident ->
+              s :: acc
+            | Pdot (path', s) ->
+              aux (s :: acc) path'
+            | _ -> raise Not_found
+          in
+          aux [] p |> String.concat ~sep:"."
         in
         List.filter_map paths ~f:(fun {Location. txt = path; loc} ->
             if not loc.Location.loc_ghost &&
                Location_aux.compare_pos pos loc <= 0 then
-              try Some (path_to_string [] path, loc)
+              try Some (path_to_string path, loc)
               with Not_found -> None
             else None
           )
