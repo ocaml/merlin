@@ -504,11 +504,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           in
           aux [] p |> String.concat ~sep:"."
         in
+        (* checks if the (un)qualified longident has a different length, i.e., has changed
+
+           XXX(Ulugbek): computes longident length using [loc_start] and [loc_end], hence
+           it doesn't work for multiline longidents because we can't compute their length *)
+        let same_longident new_lident { Location. loc_start; loc_end; _ } =
+          let old_longident_len = Lexing.column loc_end - Lexing.column loc_start in
+          loc_start.Lexing.pos_lnum = loc_end.Lexing.pos_lnum &&
+            String.length new_lident = old_longident_len
+        in
         List.filter_map paths ~f:(fun {Location. txt = path; loc} ->
             if not loc.Location.loc_ghost &&
                Location_aux.compare_pos pos loc <= 0 then
-              try Some (qual_or_unqual_path path, loc)
-              with Not_found -> None
+              match qual_or_unqual_path path with
+              | s when same_longident s loc -> None
+              | s -> Some (s, loc)
+              | exception Not_found -> None
             else None
           )
         |> List.sort_uniq

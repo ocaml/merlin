@@ -78,7 +78,7 @@ full path is different)
     "notifications": []
   }
 
-FIXME shouldn't return anything, as nothing to unqualify
+Shouldn't return anything, as nothing to unqualify
 
   $ $MERLIN single refactor-open -action unqualify -position 1:6 <<EOF
   > open Unix
@@ -86,23 +86,11 @@ FIXME shouldn't return anything, as nothing to unqualify
   > EOF
   {
     "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 2,
-          "col": 12
-        },
-        "end": {
-          "line": 2,
-          "col": 17
-        },
-        "content": "times"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
 
-FIXME shouldn't return anything, as nothing to unqualify for multiline paths
+Shouldn't return anything, as nothing to unqualify for multiline paths
 
   $ $MERLIN single refactor-open -action unqualify -position 1:6 <<EOF
   > open Unix
@@ -111,23 +99,11 @@ FIXME shouldn't return anything, as nothing to unqualify for multiline paths
   > EOF
   {
     "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 3,
-          "col": 12
-        },
-        "end": {
-          "line": 3,
-          "col": 21
-        },
-        "content": "tms_stime"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
 
-FIXME shouldn't return anything, as nothing to unqualify for multiline paths
+FIXME shouldn't return anything, as nothing to unqualify (for multi-line identifiers)
 
   $ $MERLIN single refactor-open -action unqualify -position 6:6 <<EOF
   > module M = struct
