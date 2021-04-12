@@ -1275,6 +1275,23 @@
 (alias (name runtest) (deps (alias short-paths-test_pre_410)))
 
 (alias
+ (name src-documentation.t-run)
+ (package merlin)
+ (deps (:t ./test-dirs/src-documentation.t/run.t)
+       (source_tree ./test-dirs/src-documentation.t)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/src-documentation.t
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias src-documentation.t-run)))
+
+(alias
  (name type-enclosing-constructors_and_paths-cons)
  (package merlin)
  (deps (:t ./test-dirs/type-enclosing/constructors_and_paths/cons.t)

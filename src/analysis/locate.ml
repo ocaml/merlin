@@ -832,7 +832,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   | `Found (loc, None) ->
     let comments =
       match File_switching.where_am_i () with
-      | None -> List.rev comments
+      | None -> comments
       | Some cmt_path ->
         let {Cmt_cache. cmt_infos; _ } = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
