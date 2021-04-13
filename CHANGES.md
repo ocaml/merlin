@@ -1,3 +1,39 @@
+merlin 3.5.0
+============
+Tue Apr 12 11:44:22 AM CET 2021
+
+  + merlin binary
+    - external configuration reading:
+      + use relative paths to communicate with Dune when possible. This solves
+        issues related to symlinks on Unix and improve Windows support (#1271,
+        fixes #1288)
+      + make the `workdir` configuration value when using the
+        `dune ocaml-merlin` configuration provider the same as when using
+        `dot-merlin-reader` so that ppxes behaves in the same way as before
+        (#1284, fixes ocaml/dune#4479, discussion in #1292)
+    - destruct:  make the destruct command more resilient to ill-typed
+      expressions and when called without nodes (#1304, fixes #1300)
+    - Mppx: don't restore cookies after invocation. Ppx are invoked only once
+      so there is no need to manage cookies. This small change should increase
+      performance and should not change any other behavior (#1309)
+    - windows:
+      + system command variant: do not open a window console when
+        launching a ppx (#1270, fixes #714)
+      + fix Emacs hanging when starting Merlin (#1263)
+      + fix path canonicalization (#1254)
+    - fix same file documentation bug (#1265 by @ulugbekna, fixes #1261)
+  + editor modes
+    - emacs:
+      + modernization of the elisp code and conformance with coding
+        guidelines (#1247, #1310 by Steve Purcell )
+      + use opam var where applicable (#1310)
+      + fix "wrong number of argument" (#1250 by @atharvashukla, fixes #1234)
+      + fix for Neovim's CursorMoved semantics (#1213 by @ddickstein)
+    - vim & emacs : new client-side "merlin use package" commands, restoring
+      previous behavior (#1272, fixes #1191)
+  + test suite
+    - cover the document fix (#1265, #1315)
+
 merlin 3.4.2
 ============
 Fri Nov 13 12:16:42 CEST 2020
