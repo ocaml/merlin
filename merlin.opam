@@ -3,9 +3,10 @@ maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
 homepage:     "https://github.com/ocaml/merlin"
 bug-reports:  "https://github.com/ocaml/merlin/issues"
-dev-repo: "git+https://github.com/ocaml/merlin.git"
+dev-repo:     "git+https://github.com/ocaml/merlin.git"
+license:      "MIT"
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   ["dune" "build" "-p" name "-j" jobs]
   ["dune" "runtest" "-p" "merlin,dot-merlin-reader" "-j" "1"] {with-test}
 ]
