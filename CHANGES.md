@@ -1,3 +1,45 @@
+merlin 4.2
+==========
+Tue Apr 12 11:44:22 AM CET 2021
+
+  + merlin binary
+    - external configuration reading:
+      + use relative paths to communicate with Dune when possible. This solves
+        issues related to symlinks on Unix and improve Windows support (#1271,
+        fixes #1288)
+      + make the `workdir` configuration value when using the
+        `dune ocaml-merlin` configuration provider the same as when using
+        `dot-merlin-reader` so that ppxes behaves in the same way as before
+        (#1284, fixes ocaml/dune#4479, discussion in #1292)
+    - destruct:
+      + improve prefixing of generated constructors in Destruct by filtering
+        opened modules (#1277)
+      + make the destruct command more resilient to ill-typed expressions and
+        when called without nodes (#1304, fixes #1300)
+    - reintroduce some record recovery and improve completion (#1276)
+    - introduce a new AST node for holes (`_`), allow correct typing of these
+      holes and add a new `holes` command that returns the locations of all
+      holes in the current file along with their types (#1242, #1289)
+    - Mppx: don't restore cookies after invocation. Ppx are invoked only once
+      so there is no need to manage cookies. This small change should increase
+      performance and should not change any other behavior (#1309)
+    - Windows: system command variant: do not open a window console when
+      launching a ppx (#1270, fixes #714)
+    - fix same file documentation bug (#1265 by @ulugbekna, fixes #1261)
+  + editor modes
+    - vim: Add `MerlinNextHole` and `MerlinPreviousHole` commands to navigate
+      between holes. Jump to the first hole after destruct (#1287, #1303)
+    - emacs: Add `merlin-next-hole` and `merlin-previous-hole` commands to
+      navigate holes. Jump to the first hole after calling destruct. (#1291)
+    - emacs: modernization of the elisp code and conformance with coding
+      guidelines (#1247, #1310 by Steve Purcell )
+    - vim & emacs : new client-side "merlin use package" commands, restoring
+      previous behavior (#1272, fixes #1191)
+  + test suite
+    - cover constructor disambiguation and record fields (#1276)
+    - cover the new `holes` command and AST node (#1242, #1289)
+    - cover the document fix (#1265, #1315)
+
 merlin 4.1
 ==========
 Tue Feb 16 10:33:11 AM CET 2021
