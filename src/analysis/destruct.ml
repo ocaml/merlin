@@ -282,37 +282,44 @@ let rec get_every_pattern = function
       get_every_pattern parents
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
       when Ident.name id = "*type-error*" ->
-        raise (Ill_typed)
+      raise (Ill_typed)
     | Expression _ ->
       (* We are on the right node *)
       let patterns : Typedtree.pattern list =
         Mbrowse.fold_node (fun env node acc ->
-          match node with
-          | Pattern _ -> (* Not expected here *) assert false
-          | Case _ ->
+            match node with
+            | Pattern _ -> (* Not expected here *) assert false
+            | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
-                 match node with
-              | Pattern p ->
-                begin match Typedtree.classify_pattern p with
-                | Value -> let p : Typedtree.pattern = p in p :: acc
-                | Computation -> let val_p, _ = Typedtree.split_pattern p in
-                  (* We ignore computation patterns *)
-                  begin match val_p with
-                  | Some val_p ->  val_p :: acc
-                  | None -> acc
-                  end
-                end
-              | _ -> acc
-              ) env node acc
-          | _ -> acc
-        ) Env.empty parent []
+                  match node with
+                  | Pattern p ->
+                    let ill_typed_pred : Typedtree.pattern_predicate =
+                      { f = fun p ->
+                            List.memq Typecore.merlin_incorrect_attribute
+                              p.pat_attributes }
+                    in
+                    if Typedtree.exists_general_pattern ill_typed_pred p then
+                      raise Ill_typed;
+                    begin match Typedtree.classify_pattern p with
+                      | Value -> let p : Typedtree.pattern = p in p :: acc
+                      | Computation -> let val_p, _ = Typedtree.split_pattern p in
+                        (* We ignore computation patterns *)
+                        begin match val_p with
+                          | Some val_p ->  val_p :: acc
+                          | None -> acc
+                        end
+                    end
+                  | _ -> acc
+                ) env node acc
+            | _ -> acc
+          ) Env.empty parent []
       in
       let loc =
         Mbrowse.fold_node (fun _ node acc ->
-          let open Location in
-          let loc = Mbrowse.node_loc node in
-          if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
-        ) Env.empty parent Location.none
+            let open Location in
+            let loc = Mbrowse.node_loc node in
+            if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
+          ) Env.empty parent Location.none
       in
       loc, patterns
     | _ ->

@@ -10,20 +10,8 @@ https://github.com/ocaml/merlin/issues/1300
   > | B -> 0
   > EOF
   {
-    "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 6,
-          "col": 2
-        },
-        "end": {
-          "line": 7,
-          "col": 3
-        }
-      },
-      "A _ |B _"
-    ],
+    "class": "error",
+    "value": "The node on which destruct was called is ill-typed",
     "notifications": []
   }
 
