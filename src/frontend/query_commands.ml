@@ -183,9 +183,23 @@ let dump pipeline = function
     let paths = Mconfig.build_path (Mpipeline.final_config pipeline) in
     `List (List.map paths ~f:(fun s -> `String s))
 
+  | [`String "typedtree"] ->
+    let tree =
+      Mpipeline.typer_result pipeline
+      |> Mtyper.get_typedtree
+    in
+    let ppf, to_string = Format.to_string () in
+    begin match tree with
+      | `Interface s -> Printtyped.interface ppf s
+      | `Implementation s -> Printtyped.implementation ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
+    `String (to_string ())
+
   | _ -> failwith "known dump commands: \
                    paths, exn, warnings, flags, tokens, browse, source, \
-                   parsetree, ppxed-source, ppxed-parsetree, \
+                   parsetree, ppxed-source, ppxed-parsetree, typedtree, \
                    env/fullenv (at {col:, line:})"
 
 let reconstruct_identifier pipeline pos = function
