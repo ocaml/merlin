@@ -47,7 +47,7 @@ and core_type type_expr =
     let type_expr = Btype.repr type_expr in
     let rec aux acc type_expr = match type_expr.desc with
       | Tnil -> acc, Asttypes.Closed
-      | Tvar None -> acc, Asttypes.Open
+      | Tvar None | Tunivar None -> acc, Asttypes.Open
       | Tfield ("*dummy method*", _, _, fields) -> aux acc fields
       | Tfield (name, _, type_expr, fields) ->
         let open Ast_helper in
