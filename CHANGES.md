@@ -1,3 +1,9 @@
+git version
+===========
+
+  + merlin binary
+    - recover ill-typed patterns (#1317)
+
 merlin 4.2
 ==========
 Tue Apr 12 11:44:22 AM CET 2021
