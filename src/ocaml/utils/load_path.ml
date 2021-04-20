@@ -18,7 +18,7 @@ module STbl = Misc.String.Tbl
 
 (* Mapping from basenames to full filenames *)
 type registry = string STbl.t
-  
+
 let files : registry ref = s_table STbl.create 42
 let files_uncap : registry ref = s_table STbl.create 42
 
