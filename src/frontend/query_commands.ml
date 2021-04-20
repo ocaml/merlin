@@ -283,22 +283,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> []
       | browse -> Browse_misc.annotate_tail_calls browse
     in
-    let exprs = reconstruct_identifier pipeline pos expro in
-
-    let () =
-      Logger.log ~section:Type_enclosing.log_section
-        ~title:"reconstruct identifier" "%a"
-        Logger.json (fun () ->
-          let lst =
-            List.map exprs ~f:(fun { Location.loc; txt } ->
-              `Assoc [ "start", Lexing.json_of_position loc.Location.loc_start
-                     ; "end",   Lexing.json_of_position loc.Location.loc_end
-                     ; "identifier", `String txt]
-            )
-          in
-          `List lst
-        )
-    in
 
     let result = Type_enclosing.from_nodes ~path in
 
