@@ -10,6 +10,7 @@ git version
     - handle `=` syntax in compiler flags (#1409)
     - fix superfluous break in error reporting (#1432)
     - recognise binding operators in locate and occurrences (#1398, @mattiase)
+    - improve load path performance (#1323)
   + editor modes
     - fix an issue in Neovim where the current line jumps to the top of the
       window on repeated calls to `MerlinTypeOf` (#1433 by @ddickstein, fixes
