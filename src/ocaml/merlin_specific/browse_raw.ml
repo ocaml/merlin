@@ -746,7 +746,7 @@ let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; pat_loc } =
     match (pat_desc : k pattern_desc) with
     | Tpat_construct ({Location. loc},{Types. cstr_name; cstr_res; _},_) ->
       fake_path cstr_res cstr_name loc
-    | Tpat_var (id,_) -> [mkloc (Path.Pident id) pat_loc]
+    | Tpat_var (id, {Location. loc}) -> [mkloc (Path.Pident id) loc]
     | Tpat_alias (_,id,loc) -> [reloc (Path.Pident id) loc]
     | _ -> []
   in

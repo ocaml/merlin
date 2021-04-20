@@ -14,11 +14,11 @@ This test demonstrates the handling of location of patterns. For a pattern like
       {
         "start": {
           "line": 3,
-          "col": 9
+          "col": 10
         },
         "end": {
           "line": 3,
-          "col": 14
+          "col": 13
         }
       },
       {
