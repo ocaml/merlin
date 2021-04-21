@@ -78,3 +78,57 @@ full path is different)
     "notifications": []
   }
 
+refactor open qualiafy use short paths - 2
+
+  $ $MERLIN single refactor-open -action qualify -position 8:6 <<EOF
+  > module L = struct
+  >   module M = struct
+  >     module N = struct
+  >       let u = ()
+  >     end
+  >   end
+  > end
+  > open L (* <- refactor open qualify causes this output:*)
+  > open M.N (* open L.L.M.N *)
+  > let () = u
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 9,
+          "col": 5
+        },
+        "end": {
+          "line": 9,
+          "col": 8
+        },
+        "content": "L.M.N"
+      },
+      {
+        "start": {
+          "line": 9,
+          "col": 5
+        },
+        "end": {
+          "line": 9,
+          "col": 8
+        },
+        "content": "L.M.N"
+      },
+      {
+        "start": {
+          "line": 10,
+          "col": 9
+        },
+        "end": {
+          "line": 10,
+          "col": 10
+        },
+        "content": "L.M.N.u"
+      }
+    ],
+    "notifications": []
+  }
+
