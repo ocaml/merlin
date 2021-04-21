@@ -508,7 +508,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               with Not_found -> None
             else None
           )
-        |> List.sort
+        |> List.sort_uniq
           ~cmp:(fun (_,l1) (_,l2) ->
               Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start)
     end
