@@ -10,6 +10,13 @@ git version
     - add new module holes that can replace module expressions (#1333)
     - add a new command `construct` that builds a list of possible terms when
       called on a typed hole (#1318)
+    - `refactor-open qualify` improvements (#1313)
+      - do not make paths absolute, simply prefix with the identifier under the cursor
+        ```ocaml
+        open Foo (* calling refactor-open qualify on this open *)
+        let _ = Foo.bar (* previously could result in [Dune__exe.Foo.bar] *)
+        ```
+      - does not return identical (duplicate) edits
   + editor modes
     - vim: add a simple interface to the new `construct` command:
       `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
