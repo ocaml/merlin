@@ -15,6 +15,35 @@
     }
   ]
 
+  $ $MERLIN single type-enclosing -position 2:14 -verbosity 1 \
+  > -filename ./test.ml < ./test.ml | tr '\r\n' ' ' | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 2,
+        "col": 2
+      },
+      "end": {
+        "line": 2,
+        "col": 24
+      },
+      "type": "int list  type 'a list = [] | (::) of 'a * 'a list",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 1,
+        "col": 8
+      },
+      "end": {
+        "line": 12,
+        "col": 3
+      },
+      "type": "< pop : int option; push : int -> unit >",
+      "tail": "no"
+    }
+  ]
+
   $ $MERLIN single type-enclosing -position 11:10 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
   [
