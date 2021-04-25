@@ -15,10 +15,21 @@
     }
   ]
 
-FIXME: not a very satisfying answer, we expect the type of the method
   $ $MERLIN single type-enclosing -position 11:10 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
   [
+    {
+      "start": {
+        "line": 11,
+        "col": 2
+      },
+      "end": {
+        "line": 11,
+        "col": 31
+      },
+      "type": "int -> unit",
+      "tail": "no"
+    },
     {
       "start": {
         "line": 1,

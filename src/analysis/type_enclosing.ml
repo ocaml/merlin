@@ -33,6 +33,11 @@ let from_nodes ~path =
     | Module_declaration_name {md_type = {mty_type = m}}
     | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
       ret (Modtype (env, m))
+    | Class_field
+        { cf_desc =
+            Tcf_method (_, _, Tcfk_concrete (_, {exp_type = { desc = Tarrow (_, _, t, _) } }))
+        } ->
+      ret (Type (env, t))
     | _ -> None
   in
   List.filter_map ~f:aux path
