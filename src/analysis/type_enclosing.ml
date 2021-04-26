@@ -35,23 +35,20 @@ let from_nodes ~path =
       ret (Modtype (env, m))
     | Class_field
         { cf_desc =
-            Tcf_method (_, _, Tcfk_concrete (_, {exp_type = { desc = Tarrow (_, _, t, _) } }))
-        } ->
+            Tcf_method
+              (_, _,
+               Tcfk_concrete
+                 (_, {exp_type = { desc = Tarrow (_, _, t, _) } })) } ->
       ret (Type (env, t))
     | Class_field
         { cf_desc =
-            Tcf_val (_, _, _, Tcfk_concrete (_, {exp_type = t }), _)
-        } ->
+            Tcf_val (_, _, _, Tcfk_concrete (_, {exp_type = t }), _) } ->
       ret (Type (env, t))
-    | Class_field
-        { cf_desc =
-            Tcf_method (_, _, Tcfk_virtual {ctyp_type = t })
-        } ->
+    | Class_field { cf_desc =
+                      Tcf_method (_, _, Tcfk_virtual {ctyp_type = t }) } ->
       ret (Type (env, t))
-    | Class_field
-        { cf_desc =
-            Tcf_val (_, _, _, Tcfk_virtual {ctyp_type = t }, _)
-        } ->
+    | Class_field { cf_desc =
+                      Tcf_val (_, _, _, Tcfk_virtual {ctyp_type = t }, _) } ->
       ret (Type (env, t))
     | _ -> None
   in
