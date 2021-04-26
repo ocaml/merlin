@@ -3,6 +3,7 @@ git version
 
   + merlin binary
     - recover ill-typed patterns (#1317)
+    - more accurate type-enclosing for methods (#1328, fixes #1124)
 
 merlin 4.2
 ==========
