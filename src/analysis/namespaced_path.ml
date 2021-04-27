@@ -108,7 +108,7 @@ let peal_head p =
   try Some (peal_head_exn p)
   with Invalid_argument _ -> None
 
-let rec equal p1 p2 = List.for_all2 ~f:equal_elt p1 p2
+let rec equal p1 p2 = List.equal ~eq:equal_elt p1 p2
 and equal_elt elt1 elt2 =
   match elt1, elt2 with
   | Ident (i1, ns1), Ident (i2, ns2) -> Id.equal i1 i2 && ns1 = ns2

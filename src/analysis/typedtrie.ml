@@ -677,15 +677,19 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
               inspect_node state node
             end
           | Apply { funct; arg } ->
-            log ~title:"functor application" "";
-            let functor_argument = inspect_functor_arg (snd arg) in
-            let state =
-              { state with
-                functor_arguments = functor_argument :: state.functor_arguments
-              }
-            in
-            inspect_functor (Namespaced_path.peal_head_exn path) state
-              (snd funct)
+            let path = Namespaced_path.peal_head_exn path in
+            begin match Namespaced_path.head path with
+            | None -> Found (loc, doc)
+            | Some _ ->
+              log ~title:"functor application" "";
+              let functor_argument = inspect_functor_arg (snd arg) in
+              let state =
+                { state with
+                  functor_arguments = functor_argument :: state.functor_arguments
+                }
+              in
+              inspect_functor path state (snd funct)
+            end
         in
         inspect_node state node
     with
