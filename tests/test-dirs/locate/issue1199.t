@@ -29,7 +29,7 @@ straight to the functor.
     "value": {
       "file": "$TESTCASE_ROOT/func.ml",
       "pos": {
-        "line": 1,
+        "line": 5,
         "col": 0
       }
     },
