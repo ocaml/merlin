@@ -6,7 +6,8 @@ git version
     - more accurate type-enclosing for methods (#1328, fixes #1124)
     - fix location of patterns in Occurrences (#1324, fixes
       ocaml/ocaml-lsp#375)
-    - fix location of module definitions done via functors (#1329, fixes #1199)
+    - fix location of module definitions done via functors and aliases (#1329,
+      #1331, fixes #1199, #1228)
     - fix -cmt-path dirs mistakenly added to build path (#1330)
 
 merlin 4.2
