@@ -892,6 +892,7 @@ and modexp : Typedtree.module_expr -> term_judg =
       coercion coe (fun m -> modexp mexp << m)
     | Tmod_unpack (e, _) ->
       expression e
+    | Tmod_hole -> fun _ -> Env.empty
 
 
 (* G |- pth : m *)

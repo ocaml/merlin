@@ -1591,6 +1591,7 @@ let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_alias p ->
       let p = best_module_type_path p in
       Omty_alias (tree_of_path Module p)
+  | Mty_for_hole -> Omty_hole
 
 and tree_of_signature sg =
   wrap_env (fun env -> env) (tree_of_signature_rec !printing_env false) sg

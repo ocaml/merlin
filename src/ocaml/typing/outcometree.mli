@@ -97,6 +97,7 @@ type out_module_type =
   | Omty_ident of out_ident
   | Omty_signature of out_sig_item list
   | Omty_alias of out_ident
+  | Omty_hole
 and out_sig_item =
   | Osig_class of
       bool * string * out_type_param list * out_class_type *

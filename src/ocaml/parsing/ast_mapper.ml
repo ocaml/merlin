@@ -347,6 +347,7 @@ module M = struct
                     (sub.module_type sub mty)
     | Pmod_unpack e -> unpack ~loc ~attrs (sub.expr sub e)
     | Pmod_extension x -> extension ~loc ~attrs (sub.extension sub x)
+    | Pmod_hole -> hole ~loc ~attrs ()
 
   let map_structure_item sub {pstr_loc = loc; pstr_desc = desc} =
     let open Str in

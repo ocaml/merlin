@@ -800,6 +800,8 @@ and module_expr i ppf x =
   | Pmod_extension (s, arg) ->
       line i ppf "Pmod_extension \"%s\"\n" s.txt;
       payload i ppf arg
+  | Pmod_hole ->
+      line i ppf "Pmod_hole"
 
 and structure i ppf x = list i structure_item ppf x
 

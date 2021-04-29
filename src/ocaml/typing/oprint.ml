@@ -541,6 +541,7 @@ and print_simple_out_module_type ppf =
   | Omty_alias id -> fprintf ppf "(module %a)" print_ident id
   | Omty_functor _ as non_simple ->
      fprintf ppf "(%a)" print_out_module_type non_simple
+  | Omty_hole -> fprintf ppf "_"
 and print_out_signature ppf =
   function
     [] -> ()

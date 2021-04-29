@@ -484,6 +484,7 @@ let rec modtype scoping s = function
                   modtype scoping (add_module id (Pident id') s) res)
   | Mty_alias p ->
       Mty_alias (module_path s p)
+  | Mty_for_hole -> Mty_for_hole
 
 and signature scoping s sg =
   (* Components of signature may be mutually recursive (e.g. type declarations

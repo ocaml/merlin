@@ -428,6 +428,7 @@ and of_module_expr_desc = function
     app (Module_type_constraint mtc)
   | Tmod_unpack (e,_) ->
     of_expression e
+  | Tmod_hole -> id_fold
 
 and of_structure_item_desc = function
   | Tstr_eval (e,_) ->

@@ -1739,6 +1739,7 @@ let rec components_of_module_maker
           fcomp_subst_cache = Hashtbl.create 17 })
   | Mty_ident _ -> Error No_components_abstract
   | Mty_alias p -> Error (No_components_alias p)
+  | Mty_for_hole -> Error No_components_abstract
 
 (* Insertion of bindings by identifier + path *)
 
@@ -2224,7 +2225,7 @@ let read_signature modname filename =
   let md = Lazy_backtrack.force subst_modtype_maker mda.mda_declaration in
   match md.md_type with
   | Mty_signature sg -> sg
-  | Mty_ident _ | Mty_functor _ | Mty_alias _ -> assert false
+  | Mty_ident _ | Mty_functor _ | Mty_alias _ | Mty_for_hole -> assert false
 
 let is_identchar_latin1 = function
   | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
@@ -3430,7 +3431,7 @@ let short_paths_class_type_desc clty =
 let short_paths_module_type_desc mty =
   let open Short_paths.Desc.Module_type in
   match mty with
-  | None -> Fresh
+  | None | Some Mty_for_hole -> Fresh
   | Some (Mty_ident path) -> Alias path
   | Some (Mty_signature _ | Mty_functor _) -> Fresh
   | Some (Mty_alias _) -> assert false
@@ -3469,6 +3470,7 @@ let rec short_paths_module_desc env mpath mty comp =
         short_paths_functor_components_desc env mpath comp path
       in
       Fresh (Functor apply)
+  | Mty_for_hole -> Fresh (Signature (lazy []))
 
 and short_paths_module_components_desc env mpath comp =
   match get_components comp with
