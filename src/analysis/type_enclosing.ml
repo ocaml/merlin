@@ -24,6 +24,7 @@ let from_nodes ~path =
       ret (Type (env, t))
     | Type_declaration { typ_id = id; typ_type = t} ->
       ret (Type_decl (env, id, t))
+    | Module_expr {mod_type = Types.Mty_for_hole} -> None
     | Module_expr {mod_type = m}
     | Module_type {mty_type = m}
     | Module_binding {mb_expr = {mod_type = m}}
