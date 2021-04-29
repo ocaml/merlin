@@ -10,6 +10,7 @@
   > let x : int option = _
   > let g x y = x * y
   > let f x y = g _ _
+  > module M : sig val f : int -> unit end = _
   > EOF
 
   $ $MERLIN single holes -filename h2.ml <h2.ml |
@@ -47,5 +48,16 @@
         "col": 17
       },
       "type": "int"
+    },
+    {
+      "start": {
+        "line": 4,
+        "col": 41
+      },
+      "end": {
+        "line": 4,
+        "col": 42
+      },
+      "type": "sig val f : int -> unit end"
     }
   ]
