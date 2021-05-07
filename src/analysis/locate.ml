@@ -831,13 +831,6 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   | `Found (_, Some doc) ->
     `Found doc
   | `Found (loc, None) ->
-    let comments =
-      match File_switching.where_am_i () with
-      | None -> comments
-      | Some cmt_path ->
-        let {Cmt_cache. cmt_infos; _ } = Cmt_cache.read cmt_path in
-        cmt_infos.Cmt_format.cmt_comments
-    in
     log ~title:"get_doc" "%a" Logger.fmt (fun fmt ->
         Format.fprintf fmt "looking around %a inside: [\n"
           Location.print_loc !last_location;
