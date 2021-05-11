@@ -191,6 +191,7 @@ let rec nondep_mty_with_presence env va ids pres mty =
                     nondep_mty res_env va ids res)
       in
       pres, mty
+  | Mty_for_hole -> pres, Mty_for_hole
 
 and nondep_mty env va ids mty =
   snd (nondep_mty_with_presence env va ids Mp_present mty)
@@ -290,6 +291,7 @@ let rec type_paths env p mty =
   | Mty_alias _ -> []
   | Mty_signature sg -> type_paths_sig env p sg
   | Mty_functor _ -> []
+  | Mty_for_hole -> []
 
 and type_paths_sig env p sg =
   match sg with
@@ -315,6 +317,7 @@ let rec no_code_needed_mod env pres mty =
       | Mty_signature sg -> no_code_needed_sig env sg
       | Mty_functor _ -> false
       | Mty_alias _ -> false
+      | Mty_for_hole -> true
     end
 
 and no_code_needed_sig env sg =
@@ -349,7 +352,8 @@ let rec contains_type env = function
       contains_type_sig env sg
   | Mty_functor (_, body) ->
       contains_type env body
-  | Mty_alias _ ->
+  | Mty_alias _
+  | Mty_for_hole ->
       ()
 
 and contains_type_sig env = List.iter (contains_type_item env)

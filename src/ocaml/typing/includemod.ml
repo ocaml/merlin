@@ -338,6 +338,8 @@ and try_modtypes ~loc env ~mark cxt subst mty1 mty2 =
           (Tcoerce_none, Tcoerce_none) -> Tcoerce_none
         | _ -> Tcoerce_functor(cc_arg, cc_res)
       end
+  | (Mty_for_hole, _mty) | (_mty, Mty_for_hole) ->
+    Tcoerce_none
   | (_, _) ->
       raise Dont_match
 

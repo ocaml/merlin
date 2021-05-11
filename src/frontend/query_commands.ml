@@ -622,14 +622,25 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let verbosity = verbosity pipeline in
     let nodes = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let ppf = Format.str_formatter in
+    let print ~nodes loc env type_ () =
+      match type_ with
+      | `Exp type_expr ->
+        Type_utils.print_type_with_decl ~verbosity env ppf type_expr
+      | `Mod module_type ->
+        (* For module_expr holes we need the type of the next enclosing
+          to get a useful result *)
+        match Mbrowse.enclosing (loc.Location.loc_start) [nodes] with
+        | _ :: (_, Browse_raw.Module_expr { mod_type; _}) :: _ ->
+          Printtyp.modtype env ppf mod_type
+        | _ ->
+          Printtyp.modtype env ppf module_type
+    in
     let loc_and_types_of_holes node =
-      List.map (Browse_raw.all_holes node)
-        ~f:(fun (loc, env, type_expr) ->
+      List.map (Browse_raw.all_holes node) ~f:(
+        fun (loc, env, type_) ->
           Printtyp.wrap_printing_env env ~verbosity
-            (fun () ->
-              Type_utils.print_type_with_decl ~verbosity env ppf type_expr);
-          (loc, Format.flush_str_formatter ())
-        )
+            (print ~nodes loc env type_);
+          (loc, Format.flush_str_formatter ()))
     in
     List.concat_map ~f:loc_and_types_of_holes nodes
 

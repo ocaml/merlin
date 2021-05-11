@@ -657,6 +657,7 @@ let module_expr sub mexpr =
           | Tmod_unpack (exp, _pack) ->
               Pmod_unpack (sub.expr sub exp)
               (* TODO , sub.package_type sub pack) *)
+          | Tmod_hole -> Pmod_hole
         in
         Mod.mk ~loc ~attrs desc
 

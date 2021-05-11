@@ -480,6 +480,7 @@ type module_type =
   | Mty_signature of signature
   | Mty_functor of functor_parameter * module_type
   | Mty_alias of Path.t
+  | Mty_for_hole
 
 and functor_parameter =
   | Unit

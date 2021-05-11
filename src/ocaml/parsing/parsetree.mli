@@ -880,6 +880,8 @@ and module_expr_desc =
         (* (val E) *)
   | Pmod_extension of extension
         (* [%id] *)
+  | Pmod_hole
+        (* _ *)
 
 and structure = structure_item list
 

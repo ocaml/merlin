@@ -656,8 +656,8 @@ let expr_of_lwt_bindings ~loc lbs body =
 
   let default_pattern () = Pat.any ~loc:!default_loc ()
 
-  let default_module_expr () = Mod.structure ~loc:!default_loc[]
-  let default_module_type () = Mty.signature ~loc:!default_loc[]
+  let default_module_expr () = Mod.structure ~loc:!default_loc []
+  let default_module_type () = Mty.signature ~loc:!default_loc []
 ]
 
 /* Tokens */
@@ -1341,6 +1341,9 @@ module_expr [@recovery default_module_expr ()]:
     | (* An extension. *)
       ex = extension
         { Pmod_extension ex }
+    | (* A hole. *)
+      UNDERSCORE
+        { Pmod_hole }
     )
     { $1 }
 ;

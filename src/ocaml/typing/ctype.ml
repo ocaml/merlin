@@ -811,7 +811,8 @@ let rec normalize_package_path env p =
   in
   match t with
   | Some (Mty_ident p) -> normalize_package_path env p
-  | Some (Mty_signature _ | Mty_functor _ | Mty_alias _) | None ->
+  | Some (Mty_signature _ | Mty_functor _ | Mty_alias _ | Mty_for_hole)
+  | None ->
       match p with
         Path.Pdot (p1, s) ->
           (* For module aliases *)
