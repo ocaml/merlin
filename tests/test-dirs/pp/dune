@@ -1,0 +1,4 @@
+(cram
+ (applies_to dot-pp-dot-ml simple-pp)
+ (enabled_if
+  (<> %{os_type} Win32)))

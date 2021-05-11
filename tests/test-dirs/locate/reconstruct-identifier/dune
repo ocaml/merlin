@@ -1,0 +1,4 @@
+(cram
+ (applies_to newlines off_by_one)
+ (enabled_if
+  (<> %{os_type} Win32)))

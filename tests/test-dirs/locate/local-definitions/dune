@@ -1,0 +1,4 @@
+(cram
+ (applies_to issue798 issue806)
+ (enabled_if
+  (<> %{os_type} Win32)))
