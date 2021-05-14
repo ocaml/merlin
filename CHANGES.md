@@ -3,6 +3,7 @@ git version
 
   + merlin binary
     - filter dups in source paths (#1218)
+    - improve load path performance (#1323)
 
 merlin 4.4
 ==========
