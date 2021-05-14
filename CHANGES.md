@@ -1,3 +1,9 @@
+merlin ???
+==========
+
+  + merlin binary
+    - improve load path performance (#1323)
+
 merlin 4.4
 ==========
 Mon Jul 26 11:12:21 PM CET 2021
