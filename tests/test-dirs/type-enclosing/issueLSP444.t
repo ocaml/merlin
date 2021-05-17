@@ -42,25 +42,4 @@ From ocaml-lsp#444 (https://github.com/ocaml/ocaml-lsp/issues/444)
 
   $ $MERLIN single errors -verbosity 0 \
   > -filename ./gadt.ml < ./gadt.ml | tr '\r\n' ' ' | jq ".value"
-  [
-    {
-      "type": "typer",
-      "sub": [],
-      "valid": true,
-      "message": "This pattern matches values of type [ `B ] t but a pattern was expected which matches values of type [ `A ] t Type [ `B ] is not compatible with type [ `A ]"
-    },
-    {
-      "start": {
-        "line": 6,
-        "col": 2
-      },
-      "end": {
-        "line": 7,
-        "col": 11
-      },
-      "type": "warning",
-      "sub": [],
-      "valid": true,
-      "message": "Warning 8: this pattern-matching is not exhaustive. Here is an example of a case that is not matched: _"
-    }
-  ]
+  []
