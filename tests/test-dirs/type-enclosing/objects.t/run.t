@@ -15,10 +15,50 @@
     }
   ]
 
-FIXME: not a very satisfying answer, we expect the type of the method
+  $ $MERLIN single type-enclosing -position 2:14 -verbosity 1 \
+  > -filename ./test.ml < ./test.ml | tr '\r\n' ' ' | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 2,
+        "col": 2
+      },
+      "end": {
+        "line": 2,
+        "col": 24
+      },
+      "type": "int list  type 'a list = [] | (::) of 'a * 'a list",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 1,
+        "col": 8
+      },
+      "end": {
+        "line": 12,
+        "col": 3
+      },
+      "type": "< pop : int option; push : int -> unit >",
+      "tail": "no"
+    }
+  ]
+
   $ $MERLIN single type-enclosing -position 11:10 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
   [
+    {
+      "start": {
+        "line": 11,
+        "col": 2
+      },
+      "end": {
+        "line": 11,
+        "col": 31
+      },
+      "type": "int -> unit",
+      "tail": "no"
+    },
     {
       "start": {
         "line": 1,
@@ -192,6 +232,40 @@ FIXME: same as before
         "col": 58
       },
       "type": "< pouet : string -> 'a > -> 'a",
+      "tail": "no"
+    }
+  ]
+
+  $ $MERLIN single type-enclosing -position 21:20 -verbosity 1 \
+  > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 21,
+        "col": 2
+      },
+      "end": {
+        "line": 21,
+        "col": 46
+      },
+      "type": "string -> char -> int",
+      "tail": "no"
+    }
+  ]
+
+  $ $MERLIN single type-enclosing -position 22:15 -verbosity 1 \
+  > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
+  [
+    {
+      "start": {
+        "line": 22,
+        "col": 2
+      },
+      "end": {
+        "line": 22,
+        "col": 46
+      },
+      "type": "string -> char -> int",
       "tail": "no"
     }
   ]

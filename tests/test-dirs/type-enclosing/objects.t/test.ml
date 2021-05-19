@@ -16,3 +16,8 @@ let r = s#push 3
 let poly obj = obj#pouet "a"
 
 let nopoly (obj : < pouet : string -> 'a>) = obj#pouet "a"
+
+class virtual foobar = object
+  method virtual virtu : string -> char -> int
+  val virtual virt_avl : string -> char -> int
+end
