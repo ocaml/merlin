@@ -1,8 +1,16 @@
-_ should be parsed as Pexp_hole, and Pexp_hole shouldn't be treated as a
-type error.
+_ should be parsed as Pexp_hole or Pmod_hole, and shouldn't be treated as a type
+error.
 
   $ echo "let () = _" | \
   > $MERLIN single errors -filename hole_0.ml
+  {
+    "class": "return",
+    "value": [],
+    "notifications": []
+  }
+
+  $ echo "module M = _" | \
+  > $MERLIN single errors -filename hole_2.ml
   {
     "class": "return",
     "value": [],
@@ -39,6 +47,56 @@ The hole is filled with merlin.hole.
   > $MERLIN single dump -what source -filename hole_1.ml | \
   > tr -d '\n' | jq '.value'
   "let _ = [%merlin.hole ]"
+
+  $ echo "module M : sig val f : int -> unit end =" |
+  > $MERLIN single errors -filename "module_recovery.ml"
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 40
+        },
+        "end": {
+          "line": 1,
+          "col": 40
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Signature mismatch:
+  Modules do not match: sig end is not included in sig val f : int -> unit end
+  The value `f' is required but not provided
+  File \"module_recovery.ml\", line 1, characters 15-34: Expected declaration"
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 0
+        },
+        "end": {
+          "line": 2,
+          "col": 0
+        },
+        "type": "parser",
+        "sub": [],
+        "valid": true,
+        "message": "Syntax error, expecting module_expr"
+      }
+    ],
+    "notifications": []
+  }
+
+  $ echo "module M =" |
+  > $MERLIN single dump -what source -filename "module_recovery.ml"
+  {
+    "class": "return",
+    "value": "module M = struct  end
+  
+  ",
+    "notifications": []
+  }
 
 A bit trickier: the recovery is tempted to put a ->. (unreachable), but the
 penalty should prevent it.

@@ -214,6 +214,7 @@ let remove_indir_me me =
   | Typedtree.Tmod_apply (me1, me2, _) -> `Apply (me1, me2)
   | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
   | Typedtree.Tmod_unpack _ -> `Unpack
+  | Typedtree.Tmod_hole -> `Hole
 
 let remove_indir_mty mty =
   match mty.Typedtree.mty_desc with
@@ -287,10 +288,13 @@ let rec build ~local_buffer ~trie browses : t =
       Apply { funct; arg }
     | `Unpack -> (* TODO! *)
       Leaf
+    | `Hole ->
+      Leaf
   and functor_ : _ -> Trie.functor_ = function
     | `Alias path
     | `Ident path -> Named (Namespaced_path.of_path ~namespace:`Mod path)
     | `Str _
+    | `Hole
     | `Sg _ -> assert false
     | `Mod_expr me -> functor_ (remove_indir_me me)
     | `Mod_type _ -> assert false
@@ -380,6 +384,7 @@ let rec build ~local_buffer ~trie browses : t =
           | `Sg  sg ->
             let sg = lazy (build ~local_buffer ~trie [of_signature sg]) in
             f (Included (Items sg))
+          | `Hole -> f Leaf
         in
         helper packed
       end

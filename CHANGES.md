@@ -8,6 +8,7 @@ git version
       ocaml/ocaml-lsp#375)
     - fix location of module definitions done via functors (#1329, fixes #1199)
     - fix -cmt-path dirs mistakenly added to build path (#1330)
+    - add new module holes that can replace module expressions (#1333)
 
 merlin 4.2
 ==========

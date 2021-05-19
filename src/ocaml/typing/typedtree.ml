@@ -254,6 +254,7 @@ and module_expr_desc =
   | Tmod_constraint of
       module_expr * Types.module_type * module_type_constraint * module_coercion
   | Tmod_unpack of expression * Types.module_type
+  | Tmod_hole
 
 and structure = {
   str_items : structure_item list;

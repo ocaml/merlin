@@ -408,6 +408,7 @@ let type_iterators =
   and it_module_type it = function
       Mty_ident p
     | Mty_alias p -> it.it_path p
+    | Mty_for_hole -> ()
     | Mty_signature sg -> it.it_signature it sg
     | Mty_functor (p, mt) ->
         it.it_functor_param it p;

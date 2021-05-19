@@ -1196,6 +1196,8 @@ and module_expr ctxt f x =
     | Pmod_unpack e ->
         pp f "(val@ %a)" (expression ctxt) e
     | Pmod_extension e -> extension ctxt f e
+    | Pmod_hole ->
+        pp f "_"
 
 and structure ctxt f x = list ~sep:"@\n" (structure_item ctxt) f x
 

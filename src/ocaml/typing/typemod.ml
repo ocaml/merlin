@@ -118,6 +118,7 @@ let rec path_concat head p =
 let extract_sig env loc mty =
   match Env.scrape_alias env mty with
     Mty_signature sg -> sg
+  | Mty_for_hole -> []
   | Mty_alias path ->
       raise(Error(loc, env, Cannot_scrape_alias path))
   | _ -> raise(Error(loc, env, Signature_expected))
@@ -125,6 +126,7 @@ let extract_sig env loc mty =
 let extract_sig_open env loc mty =
   match Env.scrape_alias env mty with
     Mty_signature sg -> sg
+  | Mty_for_hole -> []
   | Mty_alias path ->
       raise(Error(loc, env, Cannot_scrape_alias path))
   | mty -> raise(Error(loc, env, Structure_expected mty))
@@ -1726,6 +1728,7 @@ let path_of_module mexp =
 let rec closed_modtype env = function
     Mty_ident _ -> true
   | Mty_alias _ -> true
+  | Mty_for_hole -> true
   | Mty_signature sg ->
       let env = Env.add_signature sg env in
       List.for_all (closed_signature_item env) sg
@@ -2194,6 +2197,12 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_loc = smod.pmod_loc }
   | Pmod_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
+  | Pmod_hole ->
+      { mod_desc = Tmod_hole;
+        mod_type = Mty_for_hole;
+        mod_env = env;
+        mod_attributes = smod.pmod_attributes;
+        mod_loc = smod.pmod_loc }
 
 and type_open_decl ?used_slot ?toplevel funct_body names env sod =
   Builtin_attributes.warning_scope sod.popen_attributes
@@ -2611,7 +2620,8 @@ let transl_signature env sg = transl_signature env sg
 
 let rec normalize_modtype env = function
     Mty_ident _
-  | Mty_alias _ -> ()
+  | Mty_alias _
+  | Mty_for_hole -> ()
   | Mty_signature sg -> normalize_signature env sg
   | Mty_functor(_param, body) -> normalize_modtype env body
 
