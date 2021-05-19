@@ -606,7 +606,8 @@ module Namespace = struct
   let from_context : Context.t -> inferred list = function
     | Type          -> [ `Type ; `Mod ; `Modtype ; `Constr ; `Labels ; `Vals ]
     | Module_type   -> [ `Modtype ; `Mod ; `Type ; `Constr ; `Labels ; `Vals ]
-    | Expr          -> [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
+    | Expr | Constant ->
+      [ `Vals ; `Mod ; `Modtype ; `Constr ; `Labels ; `Type ]
     | Patt          -> [ `Mod ; `Modtype ; `Type ; `Constr ; `Labels ; `Vals ]
     | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
     | Label lbl     -> [ `This_label lbl ]
