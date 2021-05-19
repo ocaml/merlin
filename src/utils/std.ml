@@ -220,6 +220,12 @@ module List = struct
       let acc, xs' = fold_n_map ~f ~init:acc xs in
       acc, (x' :: xs')
 
+  let rec equal ~eq l1 l2 =
+    match l1, l2 with
+    | [], [] -> true
+    | [], _::_ | _::_, [] -> false
+    | a1::l1, a2::l2 -> eq a1 a2 && equal ~eq l1 l2
+
   module Lazy = struct
     type 'a t =
       | Nil
