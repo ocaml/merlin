@@ -1393,8 +1393,30 @@ let rec type_pat
         ~env sp expected_ty k ->
   Builtin_attributes.warning_scope sp.ppat_attributes
     (fun () ->
-       type_pat_aux category ~no_existentials ~mode
-         ~env sp expected_ty k
+       let saved = save_levels () in
+       try
+         type_pat_aux category ~no_existentials ~mode
+           ~env sp expected_ty k
+       with Error _ as exn ->
+         (* We only want to catch error, not internal exceptions such as
+            [Need_backtrack], etc. *)
+         Msupport.erroneous_type_register expected_ty;
+         raise_error exn;
+         set_levels saved;
+         let loc = sp.ppat_loc in
+         let pat =
+           {
+             pat_desc = Tpat_any;
+             pat_loc = loc;
+             pat_extra = [];
+             pat_type = expected_ty;
+             pat_env = !env;
+             pat_attributes = merlin_recovery_attributes [];
+           }
+         in
+         k (match category with
+             | Value -> pat
+             | Computation -> as_computation_pattern pat)
     )
 
 and type_pat_aux

@@ -237,3 +237,5 @@ val partial_pred :
   (label, label_description) Hashtbl.t ->
   Parsetree.pattern ->
   Typedtree.value Typedtree.pattern_desc Typedtree.pattern_data option
+
+val merlin_incorrect_attribute: Parsetree.attribute
