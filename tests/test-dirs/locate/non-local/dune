@@ -1,0 +1,4 @@
+(cram
+ (applies_to ignore-kept-locs preference)
+ (enabled_if
+  (<> %{os_type} Win32)))

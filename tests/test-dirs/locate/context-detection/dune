@@ -1,0 +1,4 @@
+(cram
+ (applies_to cd-field cd-from_a_pattern cd-label cd-mod_constr cd-test)
+ (enabled_if
+  (<> %{os_type} Win32)))

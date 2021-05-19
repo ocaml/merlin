@@ -1,0 +1,4 @@
+(cram
+ (applies_to invalid)
+ (enabled_if
+  (<> %{os_type} Win32)))

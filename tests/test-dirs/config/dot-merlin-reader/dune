@@ -1,0 +1,4 @@
+(cram
+ (applies_to erroneous-config quoting)
+ (enabled_if
+  (<> %{os_type} Win32)))
