@@ -537,6 +537,11 @@ static void compute_socketname(char socketname[PATHSZ], struct stat *st)
 
   if (!GetUserName(user, &dwBufSize))
     user[0] = '\0';
+   
+  for (int i = 0; user[i] != '\0' && i <= UNLEN; i++)
+     if (isspace(user[i]))
+        user[i] = '_';
+   
   // @@DRA Need to use Windows API functions to get meaningful values for st_dev and st_ino
   snprintf(eventname, PATHSZ,
       "ocamlmerlin_%s_%lx_%llx",
