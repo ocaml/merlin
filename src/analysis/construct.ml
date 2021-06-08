@@ -9,6 +9,7 @@ type what = Modtype | Mod
 exception Not_allowed of string
 exception Not_a_hole
 exception Modtype_not_found of what * string
+exception No_constraint
 
 let () =
   Location.register_error_of_exn (function
@@ -17,9 +18,13 @@ let () =
     | Modtype_not_found (Modtype, s) ->
       let txt = Format.sprintf "Module type not found: %s" s in
       Some (Location.error txt)
-      | Modtype_not_found (Mod, s) ->
-        let txt = Format.sprintf "Module not found: %s" s in
-        Some (Location.error txt)
+    | Modtype_not_found (Mod, s) ->
+      let txt = Format.sprintf "Module not found: %s" s in
+      Some (Location.error txt)
+    | No_constraint ->
+      Some (Location.error 
+        "Could not find a module type to construct from. \
+        Check that you used a correct constraint.")
     | _ -> None
   )
 module Util = struct
@@ -516,7 +521,15 @@ let node ?(depth = 1) ~keywords ~values_scope node =
       let idents_table = Util.idents_table ~keywords in
       Gen.expression ~idents_table values_scope ~depth exp_env exp_type
       |> List.map ~f:to_string_with_parentheses
-  | Browse_raw.Module_expr { mod_type; mod_env; _ } ->
+  | Browse_raw.Module_expr 
+      { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
+  | Browse_raw.Module_expr 
+      {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
       let m = Gen.module_ mod_env mod_type in
       [ Format.asprintf "%a" Pprintast.module_ m ]
+  | Browse_raw.Module_expr _
+  | Browse_raw.Module_binding _ -> 
+      (* Constructible modules have an explicit constraint or are functor
+        applications. In other cases we do not know what to construct.  *)
+      raise No_constraint
   | _ -> raise Not_a_hole
