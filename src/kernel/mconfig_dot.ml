@@ -106,7 +106,7 @@ module Configurator = struct
   let of_string_opt = function
     | ".merlin" ->
       Some Dot_merlin
-    | "dune-project" | "dune" ->
+    | "dune-project" | "dune-workspace" ->
       Some Dune
     | _ -> None
 
