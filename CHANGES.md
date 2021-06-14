@@ -9,6 +9,14 @@ git version
     - fix location of module definitions done via functors (#1329, fixes #1199)
     - fix -cmt-path dirs mistakenly added to build path (#1330)
     - add new module holes that can replace module expressions (#1333)
+    - add a new command `construct` that builds a list of possible terms when
+      called on a typed hole (#1318)
+  + editor modes
+    - vim: add a simple interface to the new `construct` command:
+      `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
+      to show more or less deep results. (#1318)
+  + test suite
+    - cover the new `construct` command (#1318)
 
 merlin 4.2
 ==========
