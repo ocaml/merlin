@@ -309,8 +309,10 @@ let find_project_context start_dir =
     always use that starting folder as the workdir.  *)
   let map_workdir dir = function
     | Some dir -> Some dir
-    | None -> let fname = Filename.concat dir "dune" in
-      if Sys.file_exists fname && not (Sys.is_directory fname)
+    | None -> 
+      let fnames = List.map ~f:(Filename.concat dir) ["dune"; "dune-file"] in
+      if List.exists ~f:(fun fname -> 
+        Sys.file_exists fname && not (Sys.is_directory fname)) fnames
       then Some dir else None
   in
 
