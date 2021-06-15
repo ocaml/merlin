@@ -297,7 +297,8 @@ let get_config { workdir; process_dir; configurator } path_abs =
          the problem persists, please file an issue on Merlin's tracker."
         (match configurator with
         | Dot_merlin_custom ->
-          Printf.sprintf "Check that `%s` is installed." Configurator.dot_merlin_custom
+          Printf.sprintf "Check that `%s` is installed."
+            Configurator.dot_merlin_custom
         | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
         | Dune -> "Check that `dune` is installed and up-to-date.")
       in
