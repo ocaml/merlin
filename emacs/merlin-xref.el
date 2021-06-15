@@ -22,7 +22,7 @@
    (merlin--occurrences)))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql merlin-xref)) symbol)
-  (let* ((loc (merlin-locate))
+  (let* ((loc (merlin-call-locate))
          (file (alist-get 'file loc))
          (pos (alist-get 'pos loc))
          (line (alist-get 'line pos))
