@@ -14,6 +14,8 @@ git version
     - vim: add a simple interface to the new `construct` command:
       `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
       to show more or less deep results. (#1318)
+    - emacs: add a simple interface to the new `construct` command:
+      `merlin-construct`. (#1352)
   + test suite
     - cover the new `construct` command (#1318)
 
