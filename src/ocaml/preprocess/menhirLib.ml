@@ -1509,7 +1509,8 @@ module Make (T : TABLE) = struct
 
     (* In the legacy strategy, we call [reduce] instead of [announce_reduce],
        apparently in an attempt to hide the reduction steps performed during
-       error handling. In the simplified strategy, all reductions steps are
+       error handling. This seems inconsistent, as the default reduction steps
+       are still announced. In the simplified strategy, all reductions are
        announced. *)
 
     match strategy with
@@ -1545,15 +1546,7 @@ module Make (T : TABLE) = struct
     else begin
 
       (* The stack is nonempty. Pop a cell, updating the current state
-         to the state [cell.state] found in the popped cell, and continue
-         error handling there. *)
-
-      (* I note that if the new state [cell.state] has a default reduction,
-         then it is ignored. It is unclear whether this is intentional. It
-         could be a good thing, as it avoids a scenario where the parser
-         diverges by repeatedly popping, performing a default reduction of
-         an epsilon production, popping, etc. Still, the question of whether
-         to obey default reductions while error handling seems obscure. *)
+         with that found in the popped cell, and try again. *)
 
       let env = { env with
         stack = next;
@@ -3792,5 +3785,5 @@ module MakeEngineTable (T : TableFormat.TABLES) = struct
 end
 end
 module StaticVersion = struct
-let require_20210419 = ()
+let require_20201216 = ()
 end
