@@ -2,10 +2,9 @@ git version
 ===========
 
   + merlin binary
-    - recover ill-typed patterns (#1317)
+    - recover ill-typed patterns (#1317, #1342)
     - more accurate type-enclosing for methods (#1328, fixes #1124)
-    - fix location of patterns in Occurrences (#1324, fixes
-      ocaml/ocaml-lsp#375)
+    - fix location of patterns in Occurrences (#1324, fixes ocaml/ocaml-lsp#375)
     - fix location of module definitions done via functors (#1329, fixes #1199)
     - fix -cmt-path dirs mistakenly added to build path (#1330)
     - add new module holes that can replace module expressions (#1333)
