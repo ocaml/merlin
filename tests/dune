@@ -1,3 +1,5 @@
+(data_only_dirs test-dirs)
+
 (rule
  (targets merlin-wrapper)
  (deps    merlin-wrapper-template)
