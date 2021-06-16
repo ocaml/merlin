@@ -253,7 +253,7 @@ let merlin_flags = [
   (
     "-cmt-path",
     marg_path (fun dir merlin ->
-        {merlin with build_path = dir :: merlin.cmt_path}),
+        {merlin with cmt_path = dir :: merlin.cmt_path}),
     "<dir> Add <dir> to merlin cmt path"
   );
   (

@@ -1,3 +1,9 @@
+git version
+===========
+
+  + merlin binary
+    - fix -cmt-path dirs mistakenly added to build path (#1330)
+
 merlin 3.5.0
 ============
 Tue Apr 12 11:44:22 AM CET 2021
