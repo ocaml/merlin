@@ -278,6 +278,11 @@ module Gen = struct
         (* else we return a hole *)
         [ Ast_helper.Exp.hole () ]
     in
+    let arrow_rhs env typ =
+      match (Ctype.repr typ).desc with
+      | Tarrow _ -> expression ~idents_table values_scope ~depth env typ
+      | _ -> exp_or_hole env typ
+    in
 
     (* [make_arg] tries to provide a nice default name for function args *)
     let make_arg =
@@ -442,7 +447,7 @@ module Gen = struct
             }
           in
           let env = Env.add_value (Ident.create_local name) value_description env in
-          let exps = exp_or_hole env tyright in
+          let exps = arrow_rhs env tyright in
           List.map exps ~f:(Ast_helper.Exp.fun_ label None argument)
         | Ttuple types ->
           let choices = List.map types ~f:(exp_or_hole env)
