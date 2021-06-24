@@ -242,6 +242,24 @@ Test 3.2
   > let x : v:string -> float -> mytype -> mytype -> int = _
   > EOF
 
+  $ $MERLIN single construct -position 2:55 \
+  > -filename c32.ml <c32.ml | jq ".value"
+  [
+    {
+      "start": {
+        "line": 2,
+        "col": 55
+      },
+      "end": {
+        "line": 2,
+        "col": 56
+      }
+    },
+    [
+      "(fun ~v float mytype mytype_1 -> _)"
+    ]
+  ]
+
   $ $MERLIN single construct -depth 4 -position 2:55 \
   > -filename c32.ml <c32.ml | jq ".value"
   [
@@ -256,7 +274,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v -> fun float -> fun mytype -> fun mytype_1 -> _)"
+      "(fun ~v float mytype mytype_1 -> 0)"
     ]
   ]
 
