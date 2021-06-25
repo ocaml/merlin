@@ -138,7 +138,8 @@ module Configurator = struct
         match cfg with
         | Dot_merlin_custom ->
           let prog = dot_merlin_custom in
-          prog, [| prog |]
+          let prog_name = Filename.basename prog in
+          prog, [| prog_name |]
         | Dot_merlin ->
           let prog = "dot-merlin-reader" in
           prog, [| prog |]
