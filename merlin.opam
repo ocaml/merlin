@@ -12,7 +12,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "4.12" & < "4.13"}
-  "dune" {>= "2.7.0"}
+  "dune" {>= "2.9.0"}
   "dot-merlin-reader" {>= "4.0"}
   "yojson" {>= "1.6.0"}
   "conf-jq" {with-test}
