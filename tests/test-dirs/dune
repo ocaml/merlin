@@ -3,7 +3,3 @@
    polarity-search typer-cache)
  (enabled_if
   (<> %{os_type} Win32)))
-
-(cram
- (applies_to typer-cache warnings/backtrack)
- (locks merlin-server))

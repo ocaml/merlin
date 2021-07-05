@@ -1,5 +1,3 @@
-FIXME: this test randomly (tm) fails with an abnormal termination exception
-
 Instances of the typechecker are cached based on configuration
 (values of type `Mconfig.t`).
 
@@ -11,11 +9,12 @@ For instance, `-package` and `-cmi-path` were ignored.
 
 The server might already be running, we kill it to make sure we start from a
 clean slate:
-
   $ $MERLIN server stop-server
 
 We build a dep which we will be revealed to Merlin later:
 
+  $ mkdir sub
+  $ touch sub/dep.ml
   $ $OCAMLC -c sub/dep.ml
 
 First try with dep hidden:
@@ -171,3 +170,5 @@ Reference:
 Now some cleanup.
 
   $ rm sub/dep.cm*
+
+  $ $MERLIN server stop-server

@@ -1,0 +1,5 @@
+
+(cram
+ (applies_to :whole_subtree)
+ (alias all-server-tests)
+ (locks merlin_server))

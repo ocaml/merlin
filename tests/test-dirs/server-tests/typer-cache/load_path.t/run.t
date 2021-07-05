@@ -9,7 +9,6 @@ For instance, `-package` and `-cmi-path` were ignored.
 
 The server might already be running, we kill it to make sure we start from a
 clean slate:
-
   $ $MERLIN server stop-server
 
 We build a dep which we will be revealed to Merlin later:
@@ -169,3 +168,5 @@ Reference:
 Now some cleanup.
 
   $ rm sub/dep.cm*
+
+  $ $MERLIN server stop-server
