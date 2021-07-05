@@ -1,7 +1,9 @@
+The server might already be running, we kill it to make sure we start from a
+clean slate:
+  $ $MERLIN server stop-server
+
 If warnings are not backtracked properly, when reusing the same type checking
 environment in different queries, some warnings will be reported only once.
-
-  $ $MERLIN server stop-server
 
   $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF
   > let f x = ()
