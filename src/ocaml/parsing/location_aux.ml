@@ -32,6 +32,12 @@ type t
   = Location.t
   = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
 
+let compare (l1: t) (l2: t) =
+  match Lexing.compare_pos l1.loc_start l2.loc_start with
+  | (-1 | 1) as r -> r
+  | 0 -> Lexing.compare_pos l1.loc_end l2.loc_end
+  | _ -> assert false
+
 let compare_pos pos loc =
   if Lexing.compare_pos pos loc.Location.loc_start < 0 then
     -1

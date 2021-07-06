@@ -522,9 +522,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
               | exception Not_found -> None
             else None
           )
-        |> List.sort_uniq
-          ~cmp:(fun (_,l1) (_,l2) ->
-              Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start)
+        |> List.sort_uniq ~cmp:(fun (_,l1) (_,l2) -> Location_aux.compare l1 l2)
     end
 
   | Document (patho, pos) ->
