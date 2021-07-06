@@ -1,4 +1,4 @@
-Works for in-file modules
+Can qualify module located in the same file
   $ $MERLIN single refactor-open -action qualify -position 4:6 <<EOF
   > module M = struct
   >   let u = ()
@@ -24,7 +24,7 @@ Works for in-file modules
     "notifications": []
   }
 
-Works for in-file nested modules
+Can qualify nested modules located in the same file
 
   $ $MERLIN single refactor-open -action qualify -position 6:6 <<EOF
   > module M = struct
@@ -53,8 +53,7 @@ Works for in-file nested modules
     "notifications": []
   }
 
-Works for stdlib modules (stdlib modules differ from other in-file modules because their
-full path is different)
+Can qualify a module from an external library
 
   $ $MERLIN single refactor-open -action qualify -position 1:6 <<EOF
   > open Unix
@@ -78,7 +77,8 @@ full path is different)
     "notifications": []
   }
 
-refactor open qualify use short paths - 2
+Can qualify nested modules from the same file, including open statements, and 
+does not return duplicate edits
 
   $ $MERLIN single refactor-open -action qualify -position 8:6 <<EOF
   > module L = struct
