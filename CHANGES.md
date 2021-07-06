@@ -16,7 +16,8 @@ git version
         open Foo (* calling refactor-open qualify on this open *)
         let _ = Foo.bar (* previously could result in [Dune__exe.Foo.bar] *)
         ```
-      - does not return identical (duplicate) edits
+      - do not return identical (duplicate) edits
+      - do not return unnecessary edits that when applied do not change the document
   + editor modes
     - vim: add a simple interface to the new `construct` command:
       `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
