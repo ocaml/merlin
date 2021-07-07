@@ -3,3 +3,7 @@
    polarity-search typer-cache)
  (enabled_if
   (<> %{os_type} Win32)))
+
+(cram
+ (applies_to typing-recovery)
+ (enabled_if (<> %{ocaml_version} 4.12.0+multicore)))
