@@ -815,24 +815,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let tnode =
-      let should_ignore_tnode = function
+    let enclosing = Mbrowse.enclosing pos [str] in
+    let curr_node =
+      let is_wildcard_pat = function
         | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
         | _ -> false
       in
-      let rec find = function
-        | [] -> Browse_tree.dummy
-        | (env, node)::rest ->
-          if should_ignore_tnode node
-          then find rest
-          else Browse_tree.of_node ~env node
-      in
-      find (Mbrowse.enclosing pos [str])
+      List.find_some enclosing ~f:(fun (_, node) -> 
+        (* it doesn't make sense to find occurrences of a wildcard pattern *)
+        not (is_wildcard_pat node))
+      |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)
+      |> Option.value ~default:Browse_tree.dummy
     in
     let str = Browse_tree.of_browse str in
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
-      let paths = Browse_raw.node_paths tnode.Browse_tree.t_node in
+      let paths = Browse_raw.node_paths curr_node.Browse_tree.t_node in
       let under_cursor p = Location_aux.compare_pos pos (get_loc p) = 0 in
       Logger.log ~section:"occurrences" ~title:"Occurrences paths" "%a"
         Logger.json (fun () ->
@@ -855,13 +853,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let loc (_t,paths) = List.map ~f:get_loc paths in
         List.concat_map ~f:loc ts
 
-    and constructor_occurrence d =
-      let ts = Browse_tree.all_constructor_occurrences (tnode,d) str in
+    in
+    let constructor_occurrence d =
+      let ts = Browse_tree.all_constructor_occurrences (curr_node,d) str in
       List.map ~f:get_loc ts
 
     in
     let locs =
-      match Browse_raw.node_is_constructor tnode.Browse_tree.t_node with
+      match Browse_raw.node_is_constructor curr_node.Browse_tree.t_node with
       | Some d -> constructor_occurrence d.Location.txt
       | None -> ident_occurrence ()
     in
