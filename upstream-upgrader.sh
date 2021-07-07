@@ -34,6 +34,11 @@ cp -r "${OCAML_SRC}"/parsing "upstream/ocaml_${VER}/"
 cp -r "${OCAML_SRC}"/typing "upstream/ocaml_${VER}/"
 cp -r "${OCAML_SRC}"/utils "upstream/ocaml_${VER}/"
 
+rm -f "upstream/ocaml_${VER}"/*/dune
+rm -f "upstream/ocaml_${VER}"/*/Makefile
+rm -f "upstream/ocaml_${VER}"/*/*.adoc
+rm -f "upstream/ocaml_${VER}"/*/*.md
+
 git -C "${OCAML_SRC}" show-ref --hash "refs/remotes/origin/${VERSION}" > "upstream/ocaml_${VER}/base-rev.txt"
 
 echo 'Done.'
