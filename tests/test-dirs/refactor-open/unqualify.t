@@ -1,4 +1,4 @@
-Works for in-file modules
+Can unqualify module located in the same file
   $ $MERLIN single refactor-open -action unqualify -position 4:6 <<EOF
   > module M = struct
   >   let u = ()
@@ -24,7 +24,7 @@ Works for in-file modules
     "notifications": []
   }
 
-Works for in-file nested modules
+Can unqualify nested modules located in the same file
 
   $ $MERLIN single refactor-open -action unqualify -position 6:6 <<EOF
   > module M = struct
@@ -53,44 +53,7 @@ Works for in-file nested modules
     "notifications": []
   }
 
-Works for stdlib modules (stdlib modules differ from other in-file modules because their
-full path is different)
-
-  $ $MERLIN single refactor-open -action unqualify -position 1:6 <<EOF
-  > open Unix
-  > let times = Unix.times ()
-  > EOF
-  {
-    "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 2,
-          "col": 12
-        },
-        "end": {
-          "line": 2,
-          "col": 22
-        },
-        "content": "times"
-      }
-    ],
-    "notifications": []
-  }
-
-Shouldn't return anything, as nothing to unqualify
-
-  $ $MERLIN single refactor-open -action unqualify -position 1:6 <<EOF
-  > open Unix
-  > let times = times ()
-  > EOF
-  {
-    "class": "return",
-    "value": [],
-    "notifications": []
-  }
-
-Shouldn't return anything, as nothing to unqualify for multiline paths
+Shouldn't return anything, as nothing to unqualify (for multiline identifiers)
 
   $ $MERLIN single refactor-open -action unqualify -position 1:6 <<EOF
   > open Unix
