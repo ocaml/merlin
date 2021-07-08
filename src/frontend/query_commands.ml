@@ -487,30 +487,42 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           Browse_tree.all_occurrences_of_prefix ~strict_prefix:true path node in
         let paths = List.concat_map ~f:snd paths in
         let leftmost_ident = Longident.flatten longident |> List.hd in
-        let rec path_to_string acc (p : Path.t) =
-          match p with
-          | Pident ident ->
-            String.concat ~sep:"." (Ident.name ident :: acc)
-          | Pdot (path', s) when
-              mode = `Unqualify && Path.same path path' ->
-            String.concat ~sep:"." (s :: acc)
-          | Pdot (path', s) when
-              mode = `Qualify && s = leftmost_ident ->
-            String.concat ~sep:"." (s :: acc)
-          | Pdot (path', s) ->
-            path_to_string (s :: acc) path'
-          | _ -> raise Not_found
+        let qual_or_unqual_path p =
+          let rec aux acc (p : Path.t) =
+            match p with
+            | Pident ident ->
+              Ident.name ident :: acc
+            | Pdot (path', s) when
+                mode = `Unqualify && Path.same path path' ->
+              s :: acc
+            | Pdot (path', s) when
+                mode = `Qualify && s = leftmost_ident ->
+              s :: acc
+            | Pdot (path', s) ->
+              aux (s :: acc) path'
+            | _ -> raise Not_found
+          in
+          aux [] p |> String.concat ~sep:"."
+        in
+        (* checks if the (un)qualified longident has a different length, i.e., has changed
+
+           XXX(Ulugbek): computes longident length using [loc_start] and [loc_end], hence
+           it doesn't work for multiline longidents because we can't compute their length *)
+        let same_longident new_lident { Location. loc_start; loc_end; _ } =
+          let old_longident_len = Lexing.column loc_end - Lexing.column loc_start in
+          loc_start.Lexing.pos_lnum = loc_end.Lexing.pos_lnum &&
+            String.length new_lident = old_longident_len
         in
         List.filter_map paths ~f:(fun {Location. txt = path; loc} ->
             if not loc.Location.loc_ghost &&
                Location_aux.compare_pos pos loc <= 0 then
-              try Some (path_to_string [] path, loc)
-              with Not_found -> None
+              match qual_or_unqual_path path with
+              | s when same_longident s loc -> None
+              | s -> Some (s, loc)
+              | exception Not_found -> None
             else None
           )
-        |> List.sort_uniq
-          ~cmp:(fun (_,l1) (_,l2) ->
-              Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start)
+        |> List.sort_uniq ~cmp:(fun (_,l1) (_,l2) -> Location_aux.compare l1 l2)
     end
 
   | Document (patho, pos) ->
@@ -815,24 +827,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let tnode =
-      let should_ignore_tnode = function
+    let enclosing = Mbrowse.enclosing pos [str] in
+    let curr_node =
+      let is_wildcard_pat = function
         | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
         | _ -> false
       in
-      let rec find = function
-        | [] -> Browse_tree.dummy
-        | (env, node)::rest ->
-          if should_ignore_tnode node
-          then find rest
-          else Browse_tree.of_node ~env node
-      in
-      find (Mbrowse.enclosing pos [str])
+      List.find_some enclosing ~f:(fun (_, node) -> 
+        (* it doesn't make sense to find occurrences of a wildcard pattern *)
+        not (is_wildcard_pat node))
+      |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)
+      |> Option.value ~default:Browse_tree.dummy
     in
     let str = Browse_tree.of_browse str in
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
-      let paths = Browse_raw.node_paths tnode.Browse_tree.t_node in
+      let paths = Browse_raw.node_paths curr_node.Browse_tree.t_node in
       let under_cursor p = Location_aux.compare_pos pos (get_loc p) = 0 in
       Logger.log ~section:"occurrences" ~title:"Occurrences paths" "%a"
         Logger.json (fun () ->
@@ -855,13 +865,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         let loc (_t,paths) = List.map ~f:get_loc paths in
         List.concat_map ~f:loc ts
 
-    and constructor_occurrence d =
-      let ts = Browse_tree.all_constructor_occurrences (tnode,d) str in
+    in
+    let constructor_occurrence d =
+      let ts = Browse_tree.all_constructor_occurrences (curr_node,d) str in
       List.map ~f:get_loc ts
 
     in
     let locs =
-      match Browse_raw.node_is_constructor tnode.Browse_tree.t_node with
+      match Browse_raw.node_is_constructor curr_node.Browse_tree.t_node with
       | Some d -> constructor_occurrence d.Location.txt
       | None -> ident_occurrence ()
     in

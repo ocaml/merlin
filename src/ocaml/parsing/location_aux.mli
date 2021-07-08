@@ -30,6 +30,9 @@ type t
   = Location.t
   = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
 
+(** [compare l1 l2] compares start positions, if equal compares end positions *)
+val compare : t -> t -> int
+
 val compare_pos: Lexing.position -> t -> int
 
 (** Return the smallest location covered by both arguments,
