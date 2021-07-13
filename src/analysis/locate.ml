@@ -703,8 +703,6 @@ end = struct
 end
 
 let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
-  File_switching.reset ();
-  Fallback.reset ();
   Preferences.set ml_or_mli;
   log ~title:"locate"
     "present in the environment, walking up the typedtree looking for '%s'"
@@ -740,6 +738,8 @@ let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
       locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
 
 let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
+  File_switching.reset ();
+  Fallback.reset ();
   let str_ident = Path.name path in
   if Utils.is_builtin_path path then
     `Builtin
@@ -761,6 +761,8 @@ let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
       | `Found (loc, _) -> find_source ~config loc str_ident
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
+  File_switching.reset ();
+  Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lazy_trie =
     lazy (Typedtrie.of_browses ~local_buffer:true
@@ -808,6 +810,8 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     | `Found (loc, _) -> find_source ~config loc path
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
+  File_switching.reset ();
+  Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [Browse_tree.of_browse browse]) in
