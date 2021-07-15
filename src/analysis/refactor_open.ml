@@ -24,9 +24,7 @@ let get_rewrites ~mode typer pos =
   match Mbrowse.select_open_node (Mtyper.node_at typer pos) with
   | None | Some (_, _, []) -> []
   | Some (orig_path, longident, ((_, node) :: _)) ->
-    let paths_and_lids =
-      Browse_tree.all_occurrences_of_prefix ~strict_prefix:true orig_path node
-    in
+    let paths_and_lids = Browse_tree.all_occurrences_of_prefix orig_path node in
     let leftmost_ident = Longident.flatten longident |> List.hd in
     List.filter_map paths_and_lids ~f:(fun ({Location. txt = path; loc}, lid) ->
       if loc.Location.loc_ghost || Location_aux.compare_pos pos loc > 0 then
