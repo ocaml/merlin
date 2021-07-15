@@ -55,4 +55,4 @@ val all_occurrences_of_prefix
   : strict_prefix:bool
   -> Path.t
   -> Browse_raw.node
-  -> (Browse_raw.node * (Path.t Location.loc * Longident.t) list) list
+  -> (Path.t Location.loc * Longident.t) list

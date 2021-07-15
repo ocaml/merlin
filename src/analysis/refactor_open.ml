@@ -26,7 +26,6 @@ let get_rewrites ~mode typer pos =
   | Some (orig_path, longident, ((_, node) :: _)) ->
     let paths_and_lids =
       Browse_tree.all_occurrences_of_prefix ~strict_prefix:true orig_path node
-      |> List.concat_map ~f:snd
     in
     let leftmost_ident = Longident.flatten longident |> List.hd in
     List.filter_map paths_and_lids ~f:(fun ({Location. txt = path; loc}, lid) ->

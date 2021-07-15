@@ -139,9 +139,9 @@ let all_occurrences_of_prefix ~strict_prefix path node =
           | Pdot (p, _) -> path_prefix ~prefix:path p
           | _ -> false
       in
-      match List.filter ~f:has_prefix paths_and_lids with
-      | [] -> acc
-      | paths -> (node, paths) :: acc
+      List.fold_right paths_and_lids ~init:acc ~f:(fun elt acc ->
+        if has_prefix elt then elt :: acc else acc
+      )
     in
     Browse_raw.fold_node aux env node acc
   in
