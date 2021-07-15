@@ -884,6 +884,11 @@ let node_paths_full =
   | _ -> []
 
 let node_paths t = List.map (node_paths_full t) ~f:fst
+let node_paths_and_longident t =
+  List.filter_map (node_paths_full t) ~f:(function
+    | _, None -> None
+    | p, Some lid -> Some (p, lid)
+  )
 
 let node_is_constructor = function
   | Constructor_declaration decl ->

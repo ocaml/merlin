@@ -132,14 +132,14 @@ let all_occurrences_of_prefix ~strict_prefix path node =
   in
   let rec aux env node acc =
     let acc =
-      let paths = Browse_raw.node_paths node in
-      let has_prefix {Location. txt; _} =
+      let paths_and_lids = Browse_raw.node_paths_and_longident node in
+      let has_prefix ({Location. txt; _}, _) =
         if not strict_prefix then path_prefix ~prefix:path txt
         else match txt with
           | Pdot (p, _) -> path_prefix ~prefix:path p
           | _ -> false
       in
-      match List.filter ~f:has_prefix paths with
+      match List.filter ~f:has_prefix paths_and_lids with
       | [] -> acc
       | paths -> (node, paths) :: acc
     in

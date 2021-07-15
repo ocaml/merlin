@@ -111,6 +111,7 @@ val node_attributes : node -> attribute list
 val string_of_node : node -> string
 
 val node_paths : node -> Path.t Location.loc list
+val node_paths_and_longident : node -> (Path.t Location.loc * Longident.t) list
 
 val node_is_constructor : node ->
   [ `Description of Types.constructor_description
