@@ -79,7 +79,8 @@ type node =
 
   | Method_call              of expression * meth * Location.t
   | Record_field             of [`Expression of expression | `Pattern of pattern]
-                                * Types.label_description * Location.t
+                                * Types.label_description
+                                * Longident.t Location.loc
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
@@ -116,7 +117,7 @@ let node_real_loc loc0 = function
   | Expression              {exp_loc = loc}
   | Pattern                 {pat_loc = loc}
   | Method_call             (_, _, loc)
-  | Record_field            (_, _, loc)
+  | Record_field            (_, _, {loc})
   | Class_expr              {cl_loc = loc}
   | Module_expr             {mod_loc = loc}
   | Structure_item          ({str_loc = loc}, _)
@@ -278,8 +279,8 @@ let of_record_field obj loc lbl =
   fun env (f : _ f0) acc ->
   app (Record_field (obj,lbl,loc)) env f acc
 
-let of_exp_record_field obj loc lbl =
-  of_record_field (`Expression obj) loc lbl
+let of_exp_record_field obj lid_loc lbl =
+  of_record_field (`Expression obj) lid_loc lbl
 
 let of_pat_record_field obj loc lbl =
   of_record_field (`Pattern obj) loc lbl
@@ -293,8 +294,8 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
     list_fold of_pattern ps
   | Tpat_record (ls,_) ->
-    list_fold (fun ({Location. txt = _; loc},desc,p) ->
-        of_pat_record_field p loc desc ** of_pattern p) ls
+    list_fold (fun (lid_loc,desc,p) ->
+        of_pat_record_field p lid_loc desc ** of_pattern p) ls
   | Tpat_or (p1,p2,_) ->
     of_pattern p1 ** of_pattern p2
 
@@ -336,14 +337,14 @@ let of_expression_desc loc = function
     option_fold of_expression extended_expression **
     let fold_field = function
       | (_,Typedtree.Kept _) -> id_fold
-      | (desc,Typedtree.Overridden (_,e)) ->
-        of_exp_record_field e loc desc ** of_expression e
+      | (desc,Typedtree.Overridden (lid_loc,e)) ->
+        of_exp_record_field e lid_loc desc ** of_expression e
     in
     array_fold fold_field fields
-  | Texp_field (e,{Location.loc},lbl) ->
-    of_expression e ** of_exp_record_field e loc lbl
-  | Texp_setfield (e1,{Location.loc},lbl,e2) ->
-    of_expression e1 ** of_expression e2 ** of_exp_record_field e1 loc lbl
+  | Texp_field (e,lid_loc,lbl) ->
+    of_expression e ** of_exp_record_field e lid_loc lbl
+  | Texp_setfield (e1,lid_loc,lbl,e2) ->
+    of_expression e1 ** of_expression e2 ** of_exp_record_field e1 lid_loc lbl
   | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
     of_expression e1 ** of_expression e2
@@ -727,107 +728,123 @@ let string_of_node = function
 let mkloc = Location.mkloc
 let reloc txt loc = {loc with Location. txt}
 
+let mk_lident x = Longident.Lident x
+
 let type_constructor_path = function
   | {Types.desc = Types.Tconstr (p,_,_)} -> p
   | _ -> raise Not_found
 
 (* Build a fake path for value constructors and labels *)
-let fake_path typ name loc =
-    begin match type_constructor_path typ with
-      | Path.Pdot (p, _) ->
-        [mkloc (Path.Pdot (p, name)) loc]
-      | Path.Pident _ ->
-        [mkloc (Path.Pident (Ident.create_persistent name)) loc]
-      | _ -> []
-      | exception Not_found -> []
-    end
+let fake_path {Location.loc ; txt = lid} typ name =
+  match type_constructor_path typ with
+  | Path.Pdot (p, _) ->
+    [mkloc (Path.Pdot (p, name)) loc, Some lid]
+  | Path.Pident _ ->
+    [mkloc (Path.Pident (Ident.create_persistent name)) loc, Some lid]
+  | _ | exception Not_found -> []
 
 let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
     match (pat_desc : k pattern_desc) with
-    | Tpat_construct ({Location. loc},{Types. cstr_name; cstr_res; _},_) ->
-      fake_path cstr_res cstr_name loc
-    | Tpat_var (id, {Location. loc}) -> [mkloc (Path.Pident id) loc]
-    | Tpat_alias (_,id,loc) -> [reloc (Path.Pident id) loc]
+    | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_) ->
+      fake_path lid_loc cstr_res cstr_name
+    | Tpat_var (id, {Location. loc; txt}) ->
+      [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
+    | Tpat_alias (_,id,loc) ->
+      [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
     | _ -> []
   in
   List.fold_left ~init pat_extra
     ~f:(fun acc (extra,_,_) ->
       match extra with
       | Tpat_open (path,loc,_) | Tpat_type (path,loc) ->
-        reloc path loc :: acc
+        (reloc path loc, Some loc.txt) :: acc
       | _ -> acc)
 
 let module_expr_paths { Typedtree. mod_desc } =
   match mod_desc with
-  | Tmod_ident (path, loc) -> [reloc path loc]
-  | Tmod_functor (Named (Some id, loc, _), _) -> [reloc (Path.Pident id) loc]
+  | Tmod_ident (path, loc) -> [reloc path loc, Some loc.txt]
+  | Tmod_functor (Named (Some id, loc, _), _) ->
+    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
   | _ -> []
 
 let expression_paths { Typedtree. exp_desc; _ } =
   match exp_desc with
-  | Texp_ident (path,loc,_) -> [reloc path loc]
-  | Texp_new (path,loc,_) -> [reloc path loc]
-  | Texp_instvar (_,path,loc)  -> [reloc path loc]
-  | Texp_setinstvar (_,path,loc,_) -> [reloc path loc]
+  | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]
+  | Texp_new (path,loc,_) -> [reloc path loc, Some loc.txt]
+  | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
+  | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
   | Texp_override (_,ps) ->
-    List.map ~f:(fun (path,loc,_) -> reloc path loc) ps
-  | Texp_letmodule (Some id,loc,_,_,_) -> [reloc (Path.Pident id) loc]
-  | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
-    [mkloc (Path.Pident id) loc]
-  | Texp_construct ({Location. loc}, {Types. cstr_name; cstr_res; _}, _) ->
-    fake_path cstr_res cstr_name loc
+    List.map ~f:(fun (path,loc,_) ->
+      reloc path loc, Some (Longident.Lident loc.txt)
+    ) ps
+  | Texp_letmodule (Some id,loc,_,_,_) ->
+    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+  | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
+    let lid =
+      match ppat_desc with
+      | Ppat_any -> None
+      | Ppat_var {txt} -> Some (Longident.Lident txt)
+      | _ -> assert false
+    in
+    [mkloc (Path.Pident id) loc, lid]
+  | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _) ->
+    fake_path lid_loc cstr_res cstr_name
   | Texp_open (od,_) -> module_expr_paths od.open_expr
   | _ -> []
 
 let core_type_paths { Typedtree. ctyp_desc } =
   match ctyp_desc with
-  | Ttyp_constr (path,loc,_) -> [reloc path loc]
-  | Ttyp_class (path,loc,_) -> [reloc path loc]
+  | Ttyp_constr (path,loc,_) -> [reloc path loc, Some loc.txt]
+  | Ttyp_class (path,loc,_) -> [reloc path loc, Some loc.txt]
   | _ -> []
 
 let class_expr_paths { Typedtree. cl_desc } =
   match cl_desc with
-  | Tcl_ident (path, loc, _) -> [reloc path loc]
+  | Tcl_ident (path, loc, _) -> [reloc path loc, Some loc.txt]
   | _ -> []
 
 let class_field_paths { Typedtree. cf_desc } =
   match cf_desc with
-  | Tcf_val (loc,_,id,_,_) -> [reloc (Path.Pident id) loc]
+  | Tcf_val (loc,_,id,_,_) ->
+    [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
   | _ -> []
 
 let structure_item_paths { Typedtree. str_desc } =
   match str_desc with
   | Tstr_class_type cls ->
-    List.map ~f:(fun (id,loc,_) -> reloc (Path.Pident id) loc) cls
+    List.map ~f:(fun (id,loc,_) ->
+      reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)
+    ) cls
   | Tstr_open od -> module_expr_paths od.open_expr
   | _ -> []
 
 let module_type_paths { Typedtree. mty_desc } =
   match mty_desc with
   | Tmty_ident (path, loc) | Tmty_alias (path, loc) ->
-    [reloc path loc]
+    [reloc path loc, Some loc.txt]
   | Tmty_functor (Named (Some id,loc,_),_) ->
-    [reloc (Path.Pident id) loc]
+    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
   | Tmty_with (_,ls) ->
-    List.map ~f:(fun (p,l,_) -> reloc p l) ls
+    List.map ~f:(fun (p,l,_) -> reloc p l, Some l.txt) ls
   | _ -> []
 
 let signature_item_paths { Typedtree. sig_desc } =
   match sig_desc with
   | Tsig_open { Typedtree. open_expr = (open_path, open_txt); _ } ->
-    [reloc open_path open_txt]
+    [reloc open_path open_txt, Some open_txt.txt]
   | _ -> []
 
 let with_constraint_paths = function
   | Twith_module (path,loc) | Twith_modsubst (path,loc) ->
-    [reloc path loc]
+    [reloc path loc, Some loc.txt]
   | _ -> []
 
 let ci_paths {Typedtree. ci_id_name; ci_id_class } =
-  [reloc (Path.Pident ci_id_class) ci_id_name]
+  [reloc (Path.Pident ci_id_class) ci_id_name,
+   Some (Longident.Lident ci_id_name.txt)]
 
-let node_paths =
+let node_paths_full =
   let open Typedtree in function
   | Pattern p -> pattern_paths p
   | Expression e -> expression_paths e
@@ -836,35 +853,42 @@ let node_paths =
   | Module_expr me -> module_expr_paths me
   | Structure_item (i,_) -> structure_item_paths i
   | Module_binding_name { mb_id = Some mb_id; mb_name } ->
-    [reloc (Path.Pident mb_id) mb_name]
+    [reloc (Path.Pident mb_id) mb_name, Option.map mk_lident mb_name.txt]
   | Module_type mt -> module_type_paths mt
   | Signature_item (i,_) -> signature_item_paths i
   | Module_declaration_name { md_id = Some md_id; md_name } ->
-    [reloc (Path.Pident md_id) md_name]
+    [reloc (Path.Pident md_id) md_name, Option.map mk_lident md_name.txt]
   | Module_type_declaration_name { mtd_id; mtd_name } ->
-    [reloc (Path.Pident mtd_id) mtd_name]
+    [reloc (Path.Pident mtd_id) mtd_name, Some (Lident mtd_name.txt) ]
   | With_constraint c -> with_constraint_paths c
   | Core_type ct -> core_type_paths ct
   | Package_type { pack_path; pack_txt } ->
-    [reloc pack_path pack_txt]
+    [reloc pack_path pack_txt, Some pack_txt.txt]
   | Value_description { val_id; val_name } ->
-    [reloc (Path.Pident val_id) val_name]
+    [reloc (Path.Pident val_id) val_name, Some (Lident val_name.txt)]
   | Type_declaration { typ_id; typ_name } ->
-    [reloc (Path.Pident typ_id) typ_name]
+    [reloc (Path.Pident typ_id) typ_name, Some (Lident typ_name.txt)]
   | Type_extension { tyext_path; tyext_txt } ->
-    [reloc tyext_path tyext_txt]
+    [reloc tyext_path tyext_txt, Some tyext_txt.txt]
   | Extension_constructor { ext_id; ext_name } ->
-    [reloc (Path.Pident ext_id) ext_name]
+    [reloc (Path.Pident ext_id) ext_name, Some (Lident ext_name.txt)]
   | Label_declaration { ld_id; ld_name } ->
-    [reloc (Path.Pident ld_id) ld_name]
+    [reloc (Path.Pident ld_id) ld_name, Some (Lident ld_name.txt)]
   | Constructor_declaration { cd_id; cd_name } ->
-    [reloc (Path.Pident cd_id) cd_name]
+    [reloc (Path.Pident cd_id) cd_name, Some (Lident cd_name.txt)]
   | Class_declaration ci -> ci_paths ci
   | Class_description ci -> ci_paths ci
   | Class_type_declaration ci -> ci_paths ci
-  | Record_field (_,{Types.lbl_res; lbl_name; _},loc) ->
-    fake_path lbl_res lbl_name loc
+  | Record_field (_,{Types.lbl_res; lbl_name; _},lid_loc) ->
+    fake_path lid_loc lbl_res lbl_name
   | _ -> []
+
+let node_paths t = List.map (node_paths_full t) ~f:fst
+let node_paths_and_longident t =
+  List.filter_map (node_paths_full t) ~f:(function
+    | _, None -> None
+    | p, Some lid -> Some (p, lid)
+  )
 
 let node_is_constructor = function
   | Constructor_declaration decl ->

@@ -123,7 +123,7 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
   in
   aux [] t
 
-let all_occurrences_of_prefix ~strict_prefix path node =
+let all_occurrences_of_prefix path node =
   let rec path_prefix ~prefix path =
     Path.same prefix path ||
     match path with
@@ -132,16 +132,15 @@ let all_occurrences_of_prefix ~strict_prefix path node =
   in
   let rec aux env node acc =
     let acc =
-      let paths = Browse_raw.node_paths node in
-      let has_prefix {Location. txt; _} =
-        if not strict_prefix then path_prefix ~prefix:path txt
-        else match txt with
-          | Pdot (p, _) -> path_prefix ~prefix:path p
-          | _ -> false
+      let paths_and_lids = Browse_raw.node_paths_and_longident node in
+      let has_prefix ({Location. txt; _}, _) =
+        match txt with
+        | Path.Pdot (p, _) -> path_prefix ~prefix:path p
+        | _ -> false
       in
-      match List.filter ~f:has_prefix paths with
-      | [] -> acc
-      | paths -> (node, paths) :: acc
+      List.fold_right paths_and_lids ~init:acc ~f:(fun elt acc ->
+        if has_prefix elt then elt :: acc else acc
+      )
     in
     Browse_raw.fold_node aux env node acc
   in

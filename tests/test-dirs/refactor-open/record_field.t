@@ -1,4 +1,5 @@
-FIXME refactor open rewriting the whole record instead of a field label
+Refactor open for record fields
+
   $ $MERLIN single refactor-open -action unqualify -position 4:7 <<EOF
   > module M = struct
   >   type r = {i: int}
@@ -12,11 +13,11 @@ FIXME refactor open rewriting the whole record instead of a field label
       {
         "start": {
           "line": 5,
-          "col": 8
+          "col": 9
         },
         "end": {
           "line": 5,
-          "col": 17
+          "col": 12
         },
         "content": "i"
       }
