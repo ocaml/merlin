@@ -1949,7 +1949,7 @@ Runs a merlin process in the background and perform queries on it.
 
 Short cuts:
 \\{merlin-mode-map}"
-  nil
+  :init-value nil
   :lighter (:eval (merlin-lighter))
   :keymap merlin-mode-map
   (if merlin-mode
