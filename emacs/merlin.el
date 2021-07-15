@@ -1494,7 +1494,7 @@ loading"
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
-      (error "%S" result))
+      (user-error "%s" result))
     result))
 
 (defun merlin--locate-result (result)
@@ -1520,7 +1520,7 @@ loading"
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
-      (error "%S" result))
+      (user-error "%s" result))
     (merlin--goto-file-and-point result)))
 
 (defun merlin-pop-stack ()
@@ -1549,7 +1549,7 @@ loading"
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
-      (error result))
+      (user-error "%s" result))
     result))
 
 (defun merlin-jump (&optional target)
