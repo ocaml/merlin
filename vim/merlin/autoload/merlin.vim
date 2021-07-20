@@ -393,6 +393,10 @@ function! merlin#Locate(...)
   endif
 endfunction
 
+function! merlin#LocateType()
+  MerlinPy merlin.vim_locate_type_at_cursor()
+endfunction
+
 function! merlin#LocateImpl(...)
   let l:pref = g:merlin_locate_preference
   let g:merlin_locate_preference = 'implementation'
@@ -596,7 +600,7 @@ function! merlin#Register()
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocateImpl call merlin#LocateImpl(<q-args>)
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocateIntf call merlin#LocateIntf(<q-args>)
   command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
-
+  command! -buffer -nargs=0 MerlinLocateType call merlin#LocateType()
 
   if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
     nmap <silent><buffer> gd  :MerlinLocate<return>

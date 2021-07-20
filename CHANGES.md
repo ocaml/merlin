@@ -3,6 +3,11 @@ git version
 
   + merlin binary
     - fix -cmt-path dirs mistakenly added to build path (#1330)
+  + editor modes
+      to show more or less deep results. (#1318)
+    - vim: add support for the `merlin-locate-type` command:
+      `MerlinLocateType` (#1359)
+    - emacs: add support for the `merlin-locate-type` command. (#1359)
 
 merlin 3.5.0
 ============

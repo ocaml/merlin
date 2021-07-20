@@ -250,6 +250,38 @@ def differs_from_current_file(path):
 def vim_fnameescape(s):
     return vim.eval("fnameescape('%s')" % s.replace("'","''"))
 
+def goto_file_and_point(pos_or_err):
+    if not isinstance(pos_or_err, dict):
+        print(pos_or_err)
+    else:
+        l = pos_or_err['pos']['line']
+        c = pos_or_err['pos']['col']
+        split_method = vim.eval('g:merlin_split_method')
+        # save the current position in the jump list
+        vim.command("normal! m'")
+        if "file" in pos_or_err and differs_from_current_file(pos_or_err['file']):
+            fname = vim_fnameescape(pos_or_err['file'])
+            if split_method == "never":
+                vim.command(":keepjumps e %s" % fname)
+            elif "tab" in split_method:
+                if "always" in split_method:
+                    vim.command(":keepjumps tab split %s" % fname)
+                else:
+                    vim.command(":keepjumps tab drop %s" % fname)
+            elif "vertical" in split_method:
+                vim.command(":keepjumps vsplit %s" % fname)
+            else:
+                vim.command(":keepjumps split %s" % fname)
+        elif "always" in split_method:
+            if "tab" in split_method:
+                vim.command(":tab split")
+            elif "vertical" in split_method:
+                vim.command(":vsplit")
+            else:
+                vim.command(":split")
+        # TODO: move the cursor using vimscript, so we can :keepjumps?
+        vim.current.window.cursor = (l, c)
+
 def command_locate(path, pos):
     try:
         choice = vim.eval('g:merlin_locate_preference')
@@ -260,36 +292,16 @@ def command_locate(path, pos):
                 pos_or_err = command("locate", "-look-for", choice, "-position", fmtpos(pos))
             else:
                 pos_or_err = command("locate", "-prefix", path, "-look-for", choice, "-position", fmtpos(pos))
-        if not isinstance(pos_or_err, dict):
-            print(pos_or_err)
-        else:
-            l = pos_or_err['pos']['line']
-            c = pos_or_err['pos']['col']
-            split_method = vim.eval('g:merlin_split_method')
-            # save the current position in the jump list
-            vim.command("normal! m'")
-            if "file" in pos_or_err and differs_from_current_file(pos_or_err['file']):
-                fname = vim_fnameescape(pos_or_err['file'])
-                if split_method == "never":
-                    vim.command(":keepjumps e %s" % fname)
-                elif "tab" in split_method:
-                    if "always" in split_method:
-                        vim.command(":keepjumps tab split %s" % fname)
-                    else:
-                        vim.command(":keepjumps tab drop %s" % fname)
-                elif "vertical" in split_method:
-                    vim.command(":keepjumps vsplit %s" % fname)
-                else:
-                    vim.command(":keepjumps split %s" % fname)
-            elif "always" in split_method:
-                if "tab" in split_method:
-                    vim.command(":tab split")
-                elif "vertical" in split_method:
-                    vim.command(":vsplit")
-                else:
-                    vim.command(":split")
-            # TODO: move the cursor using vimscript, so we can :keepjumps?
-            vim.current.window.cursor = (l, c)
+        goto_file_and_point(pos_or_err)
+    except MerlinExc as e:
+        try_print_error(e)
+
+
+def command_locate_type(pos):
+    try:
+        pos_or_err = command("locate-type", "-position", fmtpos(pos))
+        goto_file_and_point(pos_or_err)
+            
     except MerlinExc as e:
         try_print_error(e)
 
@@ -433,6 +445,9 @@ def vim_locate_at_cursor(path):
 
 def vim_locate_under_cursor():
     vim_locate_at_cursor(None)
+
+def vim_locate_type_at_cursor():
+    command_locate_type(vim.current.window.cursor)
 
 # Jump and Phrase motion
 def vim_jump_to(target):
