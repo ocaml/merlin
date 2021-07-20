@@ -408,6 +408,40 @@
 (alias (name runtest) (deps (alias destruct-refine)))
 
 (alias
+ (name document-src-documentation.t-run)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
+ (deps (:t ./test-dirs/document/src-documentation.t/run.t)
+       (source_tree ./test-dirs/document/src-documentation.t)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/document/src-documentation.t
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias document-src-documentation.t-run)))
+
+(alias
+ (name document-unattached-comment)(enabled_if (>= %{ocaml_version} 4.08.0))
+ (package merlin)
+ (deps (:t ./test-dirs/document/unattached-comment.t)
+       (source_tree ./test-dirs/document)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/document
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias document-unattached-comment)))
+
+(alias
  (name errors-alerts-test-pre-408)(enabled_if (< %{ocaml_version} 4.08.0))
  (package merlin)
  (deps (:t ./test-dirs/errors/alerts/test-pre-408.t)
@@ -1241,6 +1275,23 @@
 (alias (name runtest) (deps (alias recovery-test)))
 
 (alias
+ (name server-tests-locate-state-reset-file-switching)
+ (package merlin)
+ (deps (:t ./test-dirs/server-tests/locate-state/reset-file-switching.t)
+       (source_tree ./test-dirs/server-tests/locate-state)
+       %{bin:ocamlmerlin}
+       %{bin:ocamlmerlin-server}
+       %{bin:dot-merlin-reader})
+ (action
+   (chdir ./test-dirs/server-tests/locate-state
+     (setenv MERLIN %{exe:merlin-wrapper}
+     (setenv OCAMLC %{ocamlc}
+       (progn
+         (run %{bin:mdx} test --syntax=cram %{t})
+         (diff? %{t} %{t}.corrected)))))))
+(alias (name runtest) (deps (alias server-tests-locate-state-reset-file-switching)))
+
+(alias
  (name short-paths-test)(enabled_if (>= %{ocaml_version} 4.10.0))
  (package merlin)
  (deps (:t ./test-dirs/short-paths/test.t)
@@ -1273,23 +1324,6 @@
          (run %{bin:mdx} test --syntax=cram %{t})
          (diff? %{t} %{t}.corrected)))))))
 (alias (name runtest) (deps (alias short-paths-test_pre_410)))
-
-(alias
- (name src-documentation.t-run)
- (package merlin)
- (deps (:t ./test-dirs/src-documentation.t/run.t)
-       (source_tree ./test-dirs/src-documentation.t)
-       %{bin:ocamlmerlin}
-       %{bin:ocamlmerlin-server}
-       %{bin:dot-merlin-reader})
- (action
-   (chdir ./test-dirs/src-documentation.t
-     (setenv MERLIN %{exe:merlin-wrapper}
-     (setenv OCAMLC %{ocamlc}
-       (progn
-         (run %{bin:mdx} test --syntax=cram %{t})
-         (diff? %{t} %{t}.corrected)))))))
-(alias (name runtest) (deps (alias src-documentation.t-run)))
 
 (alias
  (name type-enclosing-constructors_and_paths-cons)

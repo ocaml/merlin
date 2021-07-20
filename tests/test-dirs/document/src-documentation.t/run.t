@@ -1,3 +1,7 @@
+(enabled_if (>= %{ocaml_version} 4.08.0))
+
+  $ $OCAMLC -bin-annot a.ml
+
 documentation for the last defined value (in the same file) is shown
   $ $MERLIN single document -position 7:10 -filename doc.ml < doc.ml | \
   > jq '.value'
@@ -16,8 +20,6 @@ documentation for the non-last defined value (in the same file) is show
   $ $MERLIN single document -position 9:22 -filename doc.ml < doc.ml | \
   > jq '.value'
   " List reversal. "
-
-  $ dune build --root=. ./doc.exe
 
   $ $MERLIN single document -position 11:12 -filename doc.ml < doc.ml | \
   > jq '.value'
