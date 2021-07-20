@@ -21,7 +21,7 @@ And that it also works outside of the current buffer:
   File "test.ml", line 1, characters 14-42:
   1 | let foo x y = (** incorrect doc for foo *)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  Warning 50 [unexpected-docstring]: unattached documentation comment (ignored)
+  Warning 50: unattached documentation comment (ignored)
 
   $ $MERLIN single document -position 1:18 -filename outside.ml << EOF
   > let bar = Test.foo
