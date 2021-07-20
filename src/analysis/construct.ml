@@ -117,7 +117,7 @@ module Util = struct
   generating function arguments in the same expression *)
   let idents_table ~keywords =
     let table = Hashtbl.create 50 in
-    (* we add keyworss to the table so they are always numbered *)
+    (* We add keywords to the table so they are always numbered *)
     List.iter keywords ~f:(fun k -> Hashtbl.add table k (-1));
     table
 
@@ -289,8 +289,8 @@ module Gen = struct
         Hashtbl.replace idents_table n i;
         Printf.sprintf "%s_%i" n i
       in
-      let uniq_name env id =
-        let n = Ident.name id in
+      let uniq_name env n =
+        let id = Ident.create_local n in
         try
           let i = Hashtbl.find idents_table n + 1 in
           make_i n i
@@ -308,7 +308,7 @@ module Gen = struct
             Ast_helper.Pat.var ( Location.mknoloc s), s
         | Nolabel -> begin match ty.desc with
           | Tconstr (path, _, _) ->
-            let name = uniq_name env (Path.head path) in
+            let name = uniq_name env (Path.last path) in
             Ast_helper.Pat.var (Location.mknoloc name), name
           | _ -> Ast_helper.Pat.any (), "_" end
     in
