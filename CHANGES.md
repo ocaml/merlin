@@ -31,6 +31,8 @@ git version
     - emacs: add a simple interface to the new `construct` command:
       `merlin-construct`. (#1352)
     - emacs: add support for the `merlin-locate-type` command. (#1359)
+  - emacs: fix issue with `merlin--highlight` and  various minor improvements
+      (#1367, @mattiase) 
   + test suite
     - cover the new `construct` command (#1318)
 
