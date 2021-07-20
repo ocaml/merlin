@@ -226,13 +226,14 @@ Entries is the list of possible completion. Each entry is made of:
 ### `construct -position <position> [ -with-values <none|local> -depth <int> ]`
 
     -position <position>      Position where construct should happen
-    -with-values <none|local> Use values from the environment (defaults to none)
+    -with-values <none|local> Use values from the environment 
+                              (experimental, defaults to none)
     -depth <int>              Depth of the search (defaults to 1)
 
 When the position determined by `-position` is a hole (`_`), this command
   returns a list of possible terms that could replace it given its type.
 When `-with-values` is set to local, values in the current environment will be
-  used in the constructed terms.
+  used in the constructed terms. This feature is still under development.
 
 ### `document -position <position> [ -identifier <string> ]`
 
