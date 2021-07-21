@@ -1,6 +1,6 @@
 (cram
  (applies_to no-escape type-expr environment_on_open locate-type
-   polarity-search typer-cache)
+   polarity-search)
  (enabled_if
   (<> %{os_type} Win32)))
 
