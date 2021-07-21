@@ -8,13 +8,10 @@
   > EOF
 
   $ $MERLIN single locate -look-for ml -position 5:11 -filename bar.ml <bar.ml |
-  > jq '.value'
+  > jq '.value.pos'
   {
-    "file": "$TESTCASE_ROOT/bar.ml",
-    "pos": {
-      "line": 3,
-      "col": 5
-    }
+    "line": 3,
+    "col": 5
   }
 
   $ $MERLIN single locate -look-for ml -position 6:11 -filename bar.ml <bar.ml |
