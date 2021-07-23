@@ -3,6 +3,7 @@ git version
 
   + merlin binary
     - fix -cmt-path dirs mistakenly added to build path (#1330)
+    - Windows: replace user name by its SID in socketnames (#1345, @ttamttam)
   + editor modes
       to show more or less deep results. (#1318)
     - vim: add support for the `merlin-locate-type` command:
