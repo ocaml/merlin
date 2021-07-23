@@ -22,6 +22,7 @@ git version
       - handle multi-line paths
     - Handle `Persistent_env.Error` in `Typemod.initial_env` (#1355)
     - locate: reset global state from all entry points (#1364)
+    - Windows: replace user names by their SID in socketnames (#1345, @ttamttam)
   + editor modes
     - vim: add a simple interface to the new `construct` command:
       `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
@@ -31,8 +32,8 @@ git version
     - emacs: add a simple interface to the new `construct` command:
       `merlin-construct`. (#1352)
     - emacs: add support for the `merlin-locate-type` command. (#1359)
-  - emacs: fix issue with `merlin--highlight` and  various minor improvements
-      (#1367, @mattiase) 
+    - emacs: fix issue with `merlin--highlight` and  various minor improvements
+        (#1367, @mattiase) 
   + test suite
     - cover the new `construct` command (#1318)
 
