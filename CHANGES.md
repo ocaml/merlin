@@ -10,7 +10,7 @@ git version
     - add new module holes that can replace module expressions (#1333)
     - add a new command `construct` that builds a list of possible terms when
       called on a typed hole (#1318)
-    - `refactor-open qualify` improvements (#1313, #1314, #1366)
+    - `refactor-open` improvements (#1313, #1314, #1366, #1372)
       - do not make paths absolute, simply prefix with the identifier under the cursor
         ```ocaml
         open Foo (* calling refactor-open qualify on this open *)
@@ -20,6 +20,7 @@ git version
       - do not return unnecessary edits that when applied do not change the document
       - handle record fields properly
       - handle multi-line paths
+      - `unqualify` should not qualify
     - Handle `Persistent_env.Error` in `Typemod.initial_env` (#1355)
     - locate: reset global state from all entry points (#1364)
   + editor modes
