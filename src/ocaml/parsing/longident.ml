@@ -25,6 +25,11 @@ let rec flat accu = function
 
 let flatten lid = flat [] lid
 
+let rec head = function
+    Lident s -> s
+  | Ldot(lid, _) -> head lid
+  | Lapply(_, _) -> assert false
+
 let last = function
     Lident s -> s
   | Ldot(_, s) -> s
