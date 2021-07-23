@@ -7,6 +7,8 @@ open Std
 
       `Qualify - returns [node_path] with its prefix equal to [open_lident]
 
+    Returns [None] if [node_lid] doesn't need changes.
+
     Note: by "prefix" we mean the leftmost consecutive part of a longident or a path. *)
 let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
   let open_lid_head = Longident.head open_lident in
@@ -28,10 +30,14 @@ let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
       make_new_node_lid (s :: acc) path'
     | _ -> raise Not_found
   in
-  let new_node_lid = make_new_node_lid [] node_path in
-  if String.equal node_lid_head (List.hd new_node_lid) (* if new lid = old lid *)
-  then None
-  else Some (String.concat ~sep:"." new_node_lid)
+  let same_longident node_lid_head new_node_lid = 
+    (* this works because [make_new_node_lid] changes only prefix of a longident *)
+    String.equal node_lid_head (List.hd new_node_lid)
+  in
+  match make_new_node_lid [] node_path with
+  | new_node_lid when not (same_longident node_lid_head new_node_lid) ->
+    Some (String.concat ~sep:"." new_node_lid)
+  | _ | exception Not_found -> None
 
 let get_rewrites ~mode typer pos =
   match Mbrowse.select_open_node (Mtyper.node_at typer pos) with
@@ -42,9 +48,6 @@ let get_rewrites ~mode typer pos =
       if loc.Location.loc_ghost || Location_aux.compare_pos pos loc > 0 then
         None
       else
-        match qual_or_unqual_path mode ~open_lident ~open_path path lid with
-        | Some new_lid -> Some (new_lid, loc)
-        | None 
-        | exception Not_found -> None
-    )
+        qual_or_unqual_path mode ~open_lident ~open_path path lid
+        |> Option.map ~f:(fun new_lid -> (new_lid, loc)))
     |> List.sort_uniq ~cmp:(fun (_,l1) (_,l2) -> Location_aux.compare l1 l2)
