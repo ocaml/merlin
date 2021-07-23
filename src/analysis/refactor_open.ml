@@ -1,13 +1,5 @@
 open Std
 
-(** [leftmost_lident lid] returns the leftmost part of [lid], e.g., 
-    given [String.Map.empty], [String] is returned *)
-let rec leftmost_lident (lid : Longident.t) = 
-  match lid with
-  | Lident s -> s
-  | Ldot(lid', _) -> leftmost_lident lid'
-  | Lapply(_, _) -> raise @@ Invalid_argument "leftmost_lident: don't support Lapply"
-
 (** [qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid] 
     if mode is 
       `Unqualify - returns [node_lid] or [node_lid] with prefix [open_lident] cut off, 
@@ -17,8 +9,8 @@ let rec leftmost_lident (lid : Longident.t) =
 
     Note: by "prefix" we mean the leftmost consecutive part of a longident or a path. *)
 let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
-  let open_leftmost_lident = leftmost_lident open_lident in
-  let node_leftmost_lident = leftmost_lident node_lid in
+  let open_lid_head = Longident.head open_lident in
+  let node_lid_head = Longident.head node_lid in
   let rec make_new_node_lid acc (p : Path.t) =
     match p with
     | Pident ident ->
@@ -26,18 +18,18 @@ let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
     | Pdot (path', s) when
         mode = `Unqualify && 
           (Path.same open_path path'
-          || String.equal s node_leftmost_lident (* unqualify shouldn't enlarge lident *)) 
+          || String.equal s node_lid_head (* unqualify shouldn't enlarge lident *)) 
       ->
       s :: acc
     | Pdot (path', s) when
-        mode = `Qualify && s = open_leftmost_lident ->
+        mode = `Qualify && s = open_lid_head ->
       s :: acc
     | Pdot (path', s) ->
       make_new_node_lid (s :: acc) path'
     | _ -> raise Not_found
   in
   let new_node_lid = make_new_node_lid [] node_path in
-  if String.equal node_leftmost_lident (List.hd new_node_lid) (* if new lid = old lid *)
+  if String.equal node_lid_head (List.hd new_node_lid) (* if new lid = old lid *)
   then None
   else Some (String.concat ~sep:"." new_node_lid)
 
