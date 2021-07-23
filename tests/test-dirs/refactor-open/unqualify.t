@@ -84,7 +84,7 @@ Shouldn't return anything, as nothing to unqualify (for multi-line identifiers)
     "notifications": []
   }
 
-FIXME unqualify should not qualify
+Unqualify should not qualify
 
   $ $MERLIN single refactor-open -action unqualify -position 6:6 <<EOF
   > module M = struct
@@ -97,18 +97,6 @@ FIXME unqualify should not qualify
   > EOF
   {
     "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 7,
-          "col": 14
-        },
-        "end": {
-          "line": 7,
-          "col": 17
-        },
-        "content": "N.Foo"
-      }
-    ],
+    "value": [],
     "notifications": []
   }

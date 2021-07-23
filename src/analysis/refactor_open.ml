@@ -16,14 +16,18 @@ let rec leftmost_lident (lid : Longident.t) =
       `Qualify - returns [node_path] with its prefix equal to [open_lident]
 
     Note: by "prefix" we mean the leftmost consecutive part of a longident or a path. *)
-let qual_or_unqual_path mode open_lident ~open_path node_path =
+let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
   let leftmost_open_lident = leftmost_lident open_lident in
+  let node_leftmost_lident = leftmost_lident node_lid in
   let rec aux acc (p : Path.t) =
     match p with
     | Pident ident ->
       Ident.name ident :: acc
     | Pdot (path', s) when
-        mode = `Unqualify && Path.same open_path path' ->
+        mode = `Unqualify && 
+          (Path.same open_path path'
+          || String.equal s node_leftmost_lident (* unqualify shouldn't enlarge lident *)) 
+      ->
       s :: acc
     | Pdot (path', s) when
         mode = `Qualify && s = leftmost_open_lident ->
@@ -46,7 +50,7 @@ let get_rewrites ~mode typer pos =
       if loc.Location.loc_ghost || Location_aux.compare_pos pos loc > 0 then
         None
       else
-        match qual_or_unqual_path mode open_lident ~open_path path with
+        match qual_or_unqual_path mode ~open_lident ~open_path path lid with
         | parts when same_longident parts lid -> None
         | parts -> Some (String.concat ~sep:"." parts, loc)
         | exception Not_found -> None
