@@ -33,6 +33,11 @@ val unflatten: string list -> t option
     [unflatten []] is [None].
 *)
 
+(** [head lid] returns the leftmost part of [lid], e.g., 
+    given [String.Map.empty], returns [String].
+    
+    @raise Assert_failure if encounters [Lapply] *)
+val head: t -> string
 val last: t -> string
 val parse: string -> t
   (* (* disabled in merlin. *)
