@@ -17,9 +17,9 @@ let rec leftmost_lident (lid : Longident.t) =
 
     Note: by "prefix" we mean the leftmost consecutive part of a longident or a path. *)
 let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
-  let leftmost_open_lident = leftmost_lident open_lident in
+  let open_leftmost_lident = leftmost_lident open_lident in
   let node_leftmost_lident = leftmost_lident node_lid in
-  let rec aux acc (p : Path.t) =
+  let rec make_new_node_lid acc (p : Path.t) =
     match p with
     | Pident ident ->
       Ident.name ident :: acc
@@ -30,16 +30,16 @@ let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
       ->
       s :: acc
     | Pdot (path', s) when
-        mode = `Qualify && s = leftmost_open_lident ->
+        mode = `Qualify && s = open_leftmost_lident ->
       s :: acc
     | Pdot (path', s) ->
-      aux (s :: acc) path'
+      make_new_node_lid (s :: acc) path'
     | _ -> raise Not_found
   in
-  aux [] node_path
-
-let same_longident new_lident old_lident =
-  List.length new_lident = List.length (Longident.flatten old_lident)
+  let new_node_lid = make_new_node_lid [] node_path in
+  if String.equal node_leftmost_lident (List.hd new_node_lid) (* if new lid = old lid *)
+  then None
+  else Some (String.concat ~sep:"." new_node_lid)
 
 let get_rewrites ~mode typer pos =
   match Mbrowse.select_open_node (Mtyper.node_at typer pos) with
@@ -51,8 +51,8 @@ let get_rewrites ~mode typer pos =
         None
       else
         match qual_or_unqual_path mode ~open_lident ~open_path path lid with
-        | parts when same_longident parts lid -> None
-        | parts -> Some (String.concat ~sep:"." parts, loc)
+        | Some new_lid -> Some (new_lid, loc)
+        | None 
         | exception Not_found -> None
     )
     |> List.sort_uniq ~cmp:(fun (_,l1) (_,l2) -> Location_aux.compare l1 l2)
