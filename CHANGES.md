@@ -1,15 +1,16 @@
-merlin 3.6.0
+merlin 3.6.1
 ============
-Mon Jul 26 11:13:37 AM CET 2021
+Mon Jul 26 04:43:37 PM CET 2021
 
   + merlin binary
     - fix -cmt-path dirs mistakenly added to build path (#1330)
     - Windows: replace user name by its SID in socketnames (#1345, @ttamttam)
   + editor modes
-      to show more or less deep results. (#1318)
     - vim: add support for the `merlin-locate-type` command:
       `MerlinLocateType` (#1359)
     - emacs: add support for the `merlin-locate-type` command. (#1359)
+  + test suite
+    - disable tests failing in Opam's CI due to nested dune projects
 
 merlin 3.5.0
 ============
