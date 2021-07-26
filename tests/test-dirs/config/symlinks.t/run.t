@@ -1,3 +1,4 @@
+(enabled_if false)
   $ export ROOT_DIR=$(pwd)
 
 We work in a directory which is a symlink to another

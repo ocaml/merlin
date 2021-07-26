@@ -204,7 +204,7 @@
 (alias (name runtest) (deps (alias config-path-expansion)))
 
 (alias
- (name config-symlinks.t-run)
+ (name config-symlinks.t-run)(enabled_if false)
  (package merlin)
  (deps (:t ./test-dirs/config/symlinks.t/run.t)
        (source_tree ./test-dirs/config/symlinks.t)
@@ -221,7 +221,7 @@
 (alias (name runtest) (deps (alias config-symlinks.t-run)))
 
 (alias
- (name config-workdir.t-run)
+ (name config-workdir.t-run)(enabled_if false)
  (package merlin)
  (deps (:t ./test-dirs/config/workdir.t/run.t)
        (source_tree ./test-dirs/config/workdir.t)

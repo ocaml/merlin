@@ -1,3 +1,5 @@
+(enabled_if false)
+
 % We check that:
 %   workdir = $TESTCASE_ROOT/src
 %   startdir = $TESTCASE_ROOT
