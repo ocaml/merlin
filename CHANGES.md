@@ -1,5 +1,6 @@
-git version
-===========
+merlin 3.6.0
+============
+Mon Jul 26 11:13:37 AM CET 2021
 
   + merlin binary
     - fix -cmt-path dirs mistakenly added to build path (#1330)
