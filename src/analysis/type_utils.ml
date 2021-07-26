@@ -99,17 +99,17 @@ module Printtyp = struct
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
 
-  let select_verbose a b env =
-    (if !verbosity = 0 then a else b env)
+  let select_by_verbosity a b env =
+    if !verbosity = 0 then a else b env
 
   let type_scheme env ppf ty =
-    select_verbose type_scheme verbose_type_scheme env ppf ty
+    select_by_verbosity type_scheme verbose_type_scheme env ppf ty
 
   let type_declaration env id ppf =
-    select_verbose type_declaration verbose_type_declaration env id ppf
+    select_by_verbosity type_declaration verbose_type_declaration env id ppf
 
   let modtype env ppf mty =
-    select_verbose modtype verbose_modtype env ppf mty
+    select_by_verbosity modtype verbose_modtype env ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
     let_ref verbosity v (fun () -> wrap_printing_env env f)
