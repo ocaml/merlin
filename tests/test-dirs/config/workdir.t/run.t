@@ -2,6 +2,15 @@ We need to set the MERLIN_LOG env variable for Merlin to log events prior
 to the reading of the configuration.
   $ export MERLIN_LOG=-
 
+  $ cat >dune-project <<EOF
+  > (lang dune 2.7)
+  > EOF
+
+  $ cat >src/dune <<EOF
+  > (executable
+  >  (name main))
+  > EOF
+
 % We check that:
 %   workdir = $TESTCASE_ROOT/src
 %   startdir = $TESTCASE_ROOT

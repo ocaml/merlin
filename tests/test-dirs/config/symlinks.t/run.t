@@ -1,5 +1,9 @@
   $ ROOT_DIR=$(pwd)
 
+  $ cat >real/dune-project <<EOF
+  > (lang dune 2.7)
+  > EOF
+
 We work in a directory which is a symlink to another
   $ ln -s real link
   $ cd link
