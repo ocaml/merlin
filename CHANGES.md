@@ -1,6 +1,6 @@
 merlin 4.3
 ===========
-Mon Jul 26 11:13:37 AM CET 2021
+Mon Jul 26 04:45:37 PM CET 2021
 
   + merlin binary
     - recover ill-typed patterns (#1317, #1342)
@@ -28,10 +28,10 @@ Mon Jul 26 11:13:37 AM CET 2021
     - locate: reset global state from all entry points (#1364)
     - Windows: replace user name by its SID in socketnames (#1345, @ttamttam)
   + editor modes
-    - vim: add a simple interface to the new `construct` command:
-      `MerlinConstruct`. When several results are suggested, 
-      `<c-i>` and `<c-u>`
-      to show more or less deep results. (#1318)
+    - vim: add a simple interface to the new `construct` command: 
+      `MerlinConstruct`. When several results are suggested, `<c-i>` 
+      and `<c-u>` can be use to change the depth of the recursive 
+      construction. (#1318)
     - vim: add support for the `merlin-locate-type` command:
       `MerlinLocateType` (#1359)
     - emacs: add a simple interface to the new `construct` command:
@@ -41,6 +41,7 @@ Mon Jul 26 11:13:37 AM CET 2021
         (#1367, @mattiase) 
   + test suite
     - cover the new `construct` command (#1318)
+    - disable tests failing in Opam's CI due to nested dune projects (#1373)
 
 merlin 4.2
 ==========
