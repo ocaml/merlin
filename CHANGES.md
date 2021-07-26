@@ -1,5 +1,6 @@
-git version
+merlin 4.3
 ===========
+Mon Jul 26 11:13:37 AM CET 2021
 
   + merlin binary
     - recover ill-typed patterns (#1317, #1342)
@@ -11,22 +12,25 @@ git version
     - add a new command `construct` that builds a list of possible terms when
       called on a typed hole (#1318)
     - `refactor-open` improvements (#1313, #1314, #1366, #1372)
-      - do not make paths absolute, simply prefix with the identifier under the cursor
+      - do not make paths absolute, simply prefix with the identifier under 
+      the cursor
         ```ocaml
         open Foo (* calling refactor-open qualify on this open *)
         let _ = Foo.bar (* previously could result in [Dune__exe.Foo.bar] *)
         ```
       - do not return identical (duplicate) edits
-      - do not return unnecessary edits that when applied do not change the document
+      - do not return unnecessary edits that when applied do not change
+        the document
       - handle record fields properly
       - handle multi-line paths
       - `unqualify` should not qualify
     - Handle `Persistent_env.Error` in `Typemod.initial_env` (#1355)
     - locate: reset global state from all entry points (#1364)
-    - Windows: replace user names by their SID in socketnames (#1345, @ttamttam)
+    - Windows: replace user name by its SID in socketnames (#1345, @ttamttam)
   + editor modes
     - vim: add a simple interface to the new `construct` command:
-      `MerlinConstruct`. When several results are suggested, `<c-i>` and `<c-u>`
+      `MerlinConstruct`. When several results are suggested, 
+      `<c-i>` and `<c-u>`
       to show more or less deep results. (#1318)
     - vim: add support for the `merlin-locate-type` command:
       `MerlinLocateType` (#1359)
