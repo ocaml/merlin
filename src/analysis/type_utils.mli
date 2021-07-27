@@ -28,7 +28,7 @@
 
 open Std
 
-val verbosity : int ref
+val verbosity : Mconfig.Verbosity.t ref
 
 module Printtyp : sig
   include module type of struct include Printtyp end
@@ -40,7 +40,7 @@ module Printtyp : sig
 
   val modtype : Env.t -> Format.formatter -> Types.module_type -> unit
 
-  val wrap_printing_env : Env.t -> verbosity:int -> (unit -> 'a) -> 'a
+  val wrap_printing_env : Env.t -> verbosity:Mconfig.Verbosity.t -> (unit -> 'a) -> 'a
 end
 
 val mod_smallerthan : int -> Types.module_type -> int option
@@ -49,13 +49,23 @@ val mod_smallerthan : int -> Types.module_type -> int option
     otherwise (module is bigger than threshold).
     Used to skip printing big modules in completion. *)
 
-val type_in_env : ?verbosity:int -> ?keywords:Lexer_raw.keywords ->
-  context: Context.t -> Env.t -> Format.formatter -> string -> bool
+val type_in_env : 
+     ?verbosity:Mconfig.Verbosity.t 
+  -> ?keywords:Lexer_raw.keywords 
+  -> context: Context.t 
+  -> Env.t 
+  -> Format.formatter 
+  -> string 
+  -> bool
 (** [type_in_env env ppf input] parses [input] and prints its type on [ppf].
     Returning true if it printed a type, false otherwise. *)
 
-val print_type_with_decl : verbosity:int ->
-  Env.t -> Format.formatter -> Types.type_expr -> unit
+val print_type_with_decl : 
+     verbosity:Mconfig.Verbosity.t 
+  -> Env.t 
+  -> Format.formatter 
+  -> Types.type_expr 
+  -> unit
 (** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
     type expression, except if it is a type constructor and verbosity is set then
     it also prints the type declaration. *)
@@ -70,5 +80,9 @@ val read_doc_attributes : Parsetree.attributes -> (string * Location.t) option
 
 val is_deprecated : Parsetree.attributes -> bool
 
-val print_constr : verbosity:int -> Env.t -> Format.formatter ->
-  Types.constructor_description -> unit
+val print_constr : 
+     verbosity:Mconfig.Verbosity.t 
+  -> Env.t 
+  -> Format.formatter 
+  -> Types.constructor_description 
+  -> unit

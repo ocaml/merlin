@@ -176,7 +176,9 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | `Mod m   ->
       begin try
           if not exact then raise Exit;
-          let verbosity = !Type_utils.verbosity in
+          let verbosity = 
+            Mconfig.Verbosity.to_int !Type_utils.verbosity ~for_smart:1
+          in
           if Type_utils.mod_smallerthan (1000 * verbosity) m = None then raise Exit;
           (`Module, `Modtype m)
         with Exit -> (`Module, `None)

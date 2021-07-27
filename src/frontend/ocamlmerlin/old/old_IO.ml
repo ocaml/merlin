@@ -299,7 +299,7 @@ let request_of_json = function
       else Some (to_list value |> document_of_json)
     in
     let printer_width = member "printer_width" json |> to_int_option in
-    let printer_verbosity = member "printer_verbosity" json |> to_int_option in
+    let printer_verbosity = member "printer_verbosity" json |> to_string_option in
     let context = {Context. document; printer_verbosity; printer_width} in
     let query = member "query" json |> to_list in
     request_of_json context query

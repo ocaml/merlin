@@ -50,6 +50,6 @@ val from_nodes :
 val from_reconstructed :
   nodes:(Env.t * Browse_raw.node) list ->
   cursor:Lexing.position ->
-  verbosity:int ->
+  verbosity:Mconfig.Verbosity.t ->
   string Location.loc list ->
   typed_enclosings

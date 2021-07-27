@@ -55,11 +55,24 @@ val dump_merlin : merlin -> json
 
 (** {1 Some flags affecting queries} *)
 
+module Verbosity : sig 
+  type t = Smart | Lvl of int
+
+  (** the default value for verbosity, i.e., [Lvl 0] *)
+  val default : t
+
+  (** @raise Invalid_argument if the given string isn't ["smart"] or [int] *)
+  val of_string : string -> t
+
+  (** [to_int t] returns [for_smart] if [t] is [Smart], returns [v] if [t] is [Lvl v] *)
+  val to_int : t -> for_smart:int -> int
+end
+
 type query = {
   filename  : string;
   directory : string;
   printer_width : int;
-  verbosity : int;
+  verbosity : Verbosity.t;
 }
 
 (** {1 Main configuration} *)
