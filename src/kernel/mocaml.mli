@@ -6,7 +6,8 @@ val with_state : typer_state -> (unit -> 'a) -> 'a
 val is_current_state : typer_state -> bool
 
 (* Build settings *)
-val setup_config : Mconfig.t -> unit
+val setup_reader_config : Mconfig.t -> unit
+val setup_typer_config : Mconfig.t -> unit
 
 (* Replace Outcome printer *)
 val default_printer :
