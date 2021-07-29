@@ -158,7 +158,7 @@ let process
   let reader = timed_lazy reader_time (lazy (
       let lazy source = source in
       let config = Mconfig.normalize config in
-      Mocaml.setup_config config;
+      Mocaml.setup_reader_config config;
       let result = Mreader.parse ?for_completion config source in
       result, config
     )) in
@@ -171,6 +171,7 @@ let process
     )) in
   let typer = timed_lazy typer_time (lazy (
       let lazy { Ppx. config; parsetree; _ } = ppx in
+      Mocaml.setup_typer_config config;
       let result = Mtyper.run config parsetree in
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
       { Typer. errors; result }
