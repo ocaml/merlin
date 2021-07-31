@@ -73,3 +73,29 @@ whole record expression (even though it's pointless):
     ],
     "notifications": []
   }
+
+
+Record fields in patterns should also be refinable:
+
+  $ $MERLIN single case-analysis -start 3:6 -end 3:13 -filename test.ml <<EOF
+  > let f (x : int ref) =
+  >   match x with
+  >   | { contents } -> ()
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 4
+        },
+        "end": {
+          "line": 3,
+          "col": 16
+        }
+      },
+      "{ contents = 0 } |{ contents = _ }"
+    ],
+    "notifications": []
+  }
