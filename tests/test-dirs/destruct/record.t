@@ -32,8 +32,20 @@ selected:
   >   x.contents
   > EOF
   {
-    "class": "error",
-    "value": "Destruct not allowed on record_field",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 2
+        },
+        "end": {
+          "line": 2,
+          "col": 12
+        }
+      },
+      "match x.contents with | 0 -> _ | _ -> _"
+    ],
     "notifications": []
   }
 
@@ -45,7 +57,19 @@ whole record expression (even though it's pointless):
   >   { contents = 3 }
   > EOF
   {
-    "class": "error",
-    "value": "Destruct not allowed on record_field",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 2
+        },
+        "end": {
+          "line": 2,
+          "col": 18
+        }
+      },
+      "match { contents = 3 } with | { contents } -> _"
+    ],
     "notifications": []
   }
