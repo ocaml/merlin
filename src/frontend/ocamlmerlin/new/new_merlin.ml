@@ -103,17 +103,20 @@ let run = function
             with
             | result ->
               ("return", result)
-            | exception (Failure str) ->
-              ("failure", `String str)
             | exception exn ->
               let trace = Printexc.get_backtrace () in
               log ~title:"run" "Command error backtrace: %s" trace;
-              match Location.error_of_exn exn with
-              | None | Some `Already_displayed ->
-                ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
-              | Some (`Ok err) ->
-                Location.print_main Format.str_formatter err;
-                ("error", `String (Format.flush_str_formatter ()))
+              match exn with
+              | Failure str ->
+                ("failure", `String str)
+              | _ -> begin
+                match Location.error_of_exn exn with
+                | None | Some `Already_displayed ->
+                  ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
+                | Some (`Ok err) ->
+                  Location.print_main Format.str_formatter err;
+                  ("error", `String (Format.flush_str_formatter ()))
+              end
           in
           let cpu_time = Misc.time_spent () -. start_cpu in
           let clock_time = Unix.gettimeofday () *. 1000. -. start_clock in
