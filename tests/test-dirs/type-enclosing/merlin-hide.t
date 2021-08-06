@@ -9,7 +9,32 @@ accessible:
   > end
   > EOF
   {
-    "class": "failure",
-    "value": "hd",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 11
+        },
+        "end": {
+          "line": 5,
+          "col": 3
+        },
+        "type": "sig val x : int end",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 0
+        },
+        "end": {
+          "line": 5,
+          "col": 3
+        },
+        "type": "sig val x : int end",
+        "tail": "no"
+      }
+    ],
     "notifications": []
   }
