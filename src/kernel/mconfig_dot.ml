@@ -98,7 +98,31 @@ let prepend_config ~dir:cwd (directives : directive list) config =
       config, str :: errors
   ) directives
 
-module Configurator = struct
+(* This module contains invariants around processes that need to be preserved *)
+module Configurator : sig
+  type t =
+    | Dot_merlin
+    | Dune
+
+  val of_string_opt : string -> t option
+  val to_string : t -> string
+
+  module Process : sig
+    type nonrec t = {
+      kind: t;
+      initial_cwd: string;
+      stdin: out_channel;
+      stdout: in_channel;
+      stderr: in_channel
+    }
+  end
+
+  (* [Some] if the process is live, [None] if the process died immediately after
+     spawning.  The check is a bit fragile, but is principally there to check if
+     `dot-merlin-reader` isn't installed or isn't on the PATH; it only needs to
+     be best-effort besides that. *)
+  val get_process : dir:string -> t -> Process.t option
+end = struct
   type t =
     | Dot_merlin
     | Dune
@@ -116,13 +140,19 @@ module Configurator = struct
 
   module Process = struct
     type nonrec t = {
-      pid : int;
       kind : t;
       initial_cwd : string;
       stdin: out_channel;
       stdout: in_channel;
       stderr: in_channel;
     }
+
+    module With_pid = struct
+      type nonrec t = {
+        pid: int;
+        process: t
+      }
+    end
 
     let start ~dir cfg =
       let prog, args =
@@ -169,12 +199,20 @@ module Configurator = struct
       let stdout = Unix.in_channel_of_descr stdout_r in
       let stderr = Unix.in_channel_of_descr stderr_r in
       let initial_cwd =  Misc.canonicalize_filename dir in
-      { pid; kind = cfg; initial_cwd; stdin; stdout; stderr }
+      With_pid.{
+        pid;
+        process = { kind = cfg; initial_cwd; stdin; stdout; stderr }
+      }
   end
 
-  let running_processes : (string * t, Process.t) Hashtbl.t = Hashtbl.create 0
+  (* Invariant: Every PID in this hashtable can be waited on.  This means it's
+     either running or hasn't been waited on yet.  To ensure this invariant is
+     preserved, we don't expose the PIDs outside of the [Configurator]
+     module. *)
+  let running_processes : (string * t, Process.With_pid.t) Hashtbl.t =
+    Hashtbl.create 0
 
-  let get_process ~dir configurator =
+  let get_process_with_pid ~dir configurator =
     try
       let p = Hashtbl.find running_processes (dir, configurator) in
       let i, _ = Unix.waitpid [ WNOHANG ] p.pid in
@@ -188,6 +226,15 @@ module Configurator = struct
       let p = Process.start ~dir configurator in
       Hashtbl.add running_processes (dir, configurator) p;
       p
+
+  let get_process ~dir configurator =
+    let p = get_process_with_pid ~dir configurator in
+    match Unix.waitpid [ WNOHANG ] p.pid with
+    | 0, _ -> Some p.process
+    | _    -> begin
+      Hashtbl.remove running_processes (dir, configurator);
+      None
+    end
 end
 
 let postprocess_config config =
@@ -233,10 +280,11 @@ let get_config { workdir; process_dir; configurator } path_abs =
     Dot_protocol.read ~in_channel:p.stdout
   in
   try
-    let p = Configurator.get_process ~dir:process_dir configurator in
-    if fst (Unix.waitpid [ WNOHANG ] p.pid) <> 0 then
-      raise Process_exited;
-
+    let p =
+      match Configurator.get_process ~dir:process_dir configurator with
+      | Some p -> p
+      | None -> raise Process_exited
+    in
     (* Both [p.initial_cwd] and [path_abs] have gone through
        [canonicalize_filename] *)
     let path_rel =
