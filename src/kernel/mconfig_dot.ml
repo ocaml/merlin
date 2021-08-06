@@ -238,15 +238,15 @@ let get_config { workdir; process_dir; configurator } path_abs =
       raise Process_exited;
 
     (* Both [p.initial_cwd] and [path_abs] have gone through
-    [canonicalize_filename] *)
+       [canonicalize_filename] *)
     let path_rel =
       String.chop_prefix ~prefix:p.initial_cwd path_abs
       |> Option.map ~f:(fun path ->
         (* We need to remove the leading path separator after chopping.
-        There is one case where no separator is left: when [initial_cwd]
-        was the root of the filesystem *)
+           There is one case where no separator is left: when [initial_cwd]
+           was the root of the filesystem *)
         if String.length path > 0 && path.[0] = Filename.dir_sep.[0] then
-           String.drop 1 path
+          String.drop 1 path
         else path)
     in
 
@@ -257,8 +257,8 @@ let get_config { workdir; process_dir; configurator } path_abs =
     in
 
     (* Starting with Dune 2.8.3 relative paths are prefered. However to maintain
-    compatibility with 2.8 <= Dune <= 2.8.2  we always retry with an absolute
-    path if using a relative one failed *)
+       compatibility with 2.8 <= Dune <= 2.8.2  we always retry with an absolute
+       path if using a relative one failed *)
     let answer =
       match query path p with
       | Ok ([`ERROR_MSG _]) when p.kind = Dune ->
@@ -309,9 +309,9 @@ let find_project_context start_dir =
     always use that starting folder as the workdir.  *)
   let map_workdir dir = function
     | Some dir -> Some dir
-    | None -> 
+    | None ->
       let fnames = List.map ~f:(Filename.concat dir) ["dune"; "dune-file"] in
-      if List.exists ~f:(fun fname -> 
+      if List.exists ~f:(fun fname ->
         Sys.file_exists fname && not (Sys.is_directory fname)) fnames
       then Some dir else None
   in
