@@ -1,7 +1,8 @@
-unreleased
-============
+git version
+===========
 
   + merlin binary
+    - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
     - enable `occurences` to work when looking for locally abstract types
       (#1382)
 
