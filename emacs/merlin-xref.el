@@ -13,16 +13,24 @@
     (goto-char loc)
     (buffer-substring (line-beginning-position) (line-end-position))))
 
-(cl-defmethod xref-backend-references ((_backend (eql merlin-xref)) _symbol)
+(cl-defmethod xref-backend-references ((_backend (eql merlin-xref)) symbol)
   (mapcar
    (lambda (loc)
      (let ((pt (merlin-make-point (alist-get 'start loc))))
        (xref-make (merlin-xref--line pt)
                   (xref-make-buffer-location (current-buffer) pt))))
-   (merlin--occurrences)))
+   (save-excursion
+     (let ((pt (get-text-property 0 'merlin-xref-point symbol)))
+       (when pt
+         (goto-char pt)))
+     (merlin--occurrences))))
 
-(cl-defmethod xref-backend-definitions ((_backend (eql merlin-xref)) _symbol)
-  (let* ((loc (merlin-call-locate))
+(cl-defmethod xref-backend-definitions ((_backend (eql merlin-xref)) symbol)
+  (let* ((loc (save-excursion
+                (let ((pt (get-text-property 0 'merlin-xref-point symbol)))
+                  (when pt
+                    (goto-char pt)))
+               (merlin-call-locate)))
          (file (alist-get 'file loc))
          (pos (alist-get 'pos loc))
          (line (alist-get 'line pos))
@@ -34,5 +42,11 @@
 
 (cl-defmethod xref-backend-identifier-completion-table ((_backend (eql merlin-xref)))
   nil)
+
+(cl-defmethod xref-backend-identifier-at-point ((_backend (eql merlin-xref)))
+  (let ((symbol (thing-at-point 'symbol)))
+    ;; Return a string with the buffer position in a property, in case
+    ;; point changes before the string is used by one of the methods above.
+    (and symbol (propertize symbol 'merlin-xref-point (point)))))
 
 (provide 'merlin-xref)
