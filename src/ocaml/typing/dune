@@ -4,3 +4,8 @@
   (flags -open Merlin_utils (:standard -w -9))
   (modules_without_implementation annot outcometree)
   (libraries merlin_utils parsing utils))
+
+(copy_files# ../file_formats/cmi_format.ml)
+(copy_files# ../file_formats/cmi_format.mli)
+(copy_files# ../file_formats/cmt_format.ml)
+(copy_files# ../file_formats/cmt_format.mli)

@@ -21,8 +21,6 @@ open Parsetree
 open Types
 open Format
 
-let () = Includemod_errorprinter.register ()
-
 module String = Misc.String
 
 module Sig_component_kind = struct

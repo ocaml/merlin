@@ -49,9 +49,6 @@ val explain: 'a list ->
   (prev:'a option -> 'a -> 'b option) ->
   'b option
 
-(** merlin specific *)
-val map_types : (type_expr -> type_expr) -> t -> t
-
 (* Type indices *)
 type unification = private Unification
 type comparison  = private Comparison
@@ -117,3 +114,6 @@ module Subtype : sig
 
   val map : (desc -> desc) -> desc elt list -> desc elt list
 end
+
+(** merlin specific *)
+val map_types : (type_expr -> type_expr) -> 'a t -> 'a t

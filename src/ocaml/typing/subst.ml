@@ -105,6 +105,8 @@ let modtype_path s path =
       | Mty_ident p -> p
       | Mty_alias _ | Mty_signature _ | Mty_functor _ ->
          fatal_error "Subst.modtype_path"
+      | Mty_for_hole ->
+         fatal_error "Subst.modtype_path"
       | exception Not_found ->
          match path with
          | Pdot(p, n) ->
