@@ -172,7 +172,10 @@ let deep_copy () =
     let ty = repr ty in
     try TypeHash.find table ty
     with Not_found ->
-      let ty' = {ty with desc = ty.desc} in
+      let ty' =
+        let copy : 'a -> 'a = fun x -> Obj.obj (Obj.dup (Obj.repr x)) in
+        copy ty
+      in
       TypeHash.add table ty ty';
       let desc =
         match ty.desc with
@@ -189,16 +192,18 @@ let deep_copy () =
           Tobject (copy t1, ref r)
         | Tfield (s,fk,t1,t2) -> Tfield (s, fk, copy t1, copy t2)
         | Tpoly (t,tl) -> Tpoly (copy t, List.map copy tl)
-        | Tpackage (p,l,tl) -> Tpackage (p,l,List.map copy tl)
+        | Tpackage (p,fl) -> Tpackage (p,List.map (fun (id, ty) -> (id, copy ty)) fl)
         | Tlink _ | Tsubst _ -> assert false
       in
-      ty'.desc <- desc;
+      Types.Private_type_expr.set_desc ty' desc;
       ty'
   in
   copy
 
 let trace_copy ?(copy=deep_copy ()) tr =
-  Unification_trace.map_types copy tr
+  Errortrace.map_types copy tr
+let trace_sub_copy ?(copy=deep_copy ()) tr =
+  Errortrace.Subtype.map_types copy tr
 
 let error (loc, env, err) =
   let err = match err with
@@ -224,7 +229,7 @@ let error (loc, env, err) =
       Private_label (li, deep_copy () t)
     | Not_subtype (t1, t2) ->
       let copy = deep_copy () in
-      Not_subtype (trace_copy ~copy t1, trace_copy ~copy t2)
+      Not_subtype (trace_sub_copy ~copy t1, trace_copy ~copy t2)
     | Coercion_failure (t1, t2, ts, b) ->
       let copy = deep_copy () in
       Coercion_failure (copy t1, copy t2, trace_copy ~copy ts, b)
@@ -4182,7 +4187,7 @@ and type_label_access env srecord usage lid =
     with Not_found -> None
   in
   try
-    let labels = Env.lookup_all_labels ~loc:lid.loc lid.txt env in
+    let labels = Env.lookup_all_labels ~loc:lid.loc usage lid.txt env in
     let label =
       wrap_disambiguate "This expression has" (mk_expected ty_exp)
         (Label.disambiguate usage lid env expected_type) labels in

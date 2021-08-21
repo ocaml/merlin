@@ -160,6 +160,7 @@ module Subtype = struct
     | Diff x -> Diff (map_diff f x)
 
   let map f t = List.map (map_elt f) t
+  let map_types f = map (map_desc f)
 
   let flatten f t = map (flatten_desc f) t
 end

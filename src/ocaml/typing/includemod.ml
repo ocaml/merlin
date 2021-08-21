@@ -351,6 +351,7 @@ let retrieve_functor_params env mty =
         end
     | Mty_functor (p, res) -> retrieve_functor_params (p :: before) env res
     | Mty_signature _ as res -> List.rev before, res
+    | Mty_for_hole -> assert false (* TODO *)
   in
   retrieve_functor_params [] env mty
 
@@ -456,6 +457,8 @@ and try_modtypes ~loc env ~mark subst mty1 mty2 =
       Error Error.(Functor (Params d))
   | _, Mty_alias _ ->
       Error (Error.Mt_core Error.Not_an_alias)
+  | (Mty_for_hole, _) | (_, Mty_for_hole) ->
+      assert false (* TODO *)
 
 (* Functor parameters *)
 
@@ -482,8 +485,6 @@ and functor_param ~loc env ~mark subst param1 param2 = match param1, param2 with
             env, subst
       in
       cc_arg, env, subst
-  | (Mty_for_hole, _mty) | (_mty, Mty_for_hole) ->
-    Tcoerce_none
   | _, _ ->
       Error (Error.Incompatible_params (param1, param2)), env, subst
 
@@ -829,6 +830,7 @@ module Functor_inclusion_diff = struct
   let keep_expansible_param = function
     | Mty_ident _ | Mty_alias _ as mty -> Some mty
     | Mty_signature _ | Mty_functor _ -> None
+    | Mty_for_hole -> assert false (* TODO *)
 
   let lookup_expansion { env ; res ; _ } = match res with
     | None -> None
