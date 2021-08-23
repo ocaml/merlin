@@ -3780,7 +3780,7 @@ and short_paths_functor_components_desc env mpath comp path =
           mty
       in
       let loc = Location.(in_file !input_name) in
-      let comps = components_of_functor_appl ~loc f env mpath path in
+      let comps = components_of_functor_appl ~loc ~f_path:mpath ~f_comp:f ~arg:path env in
       let mpath = Papply(mpath, path) in
       short_paths_module_desc env mpath mty comps
 
