@@ -197,7 +197,7 @@ let rec mktailpat nilloc = let open Location in function
       let pat_pl, el_loc = mktailpat nilloc pl in
       let loc = (p1.ppat_loc.loc_start, snd el_loc) in
       let arg = ghpat ~loc (Ppat_tuple [p1; ghpat ~loc:el_loc pat_pl]) in
-      ghpat_cons_desc loc arg, loc
+      ghpat_cons_desc loc ([], arg), loc
 
 let mkstrexp e attrs =
   { pstr_desc = Pstr_eval (e, attrs); pstr_loc = e.pexp_loc }
@@ -2807,7 +2807,7 @@ pattern_no_exn:
 
 %inline pattern_(self):
   | self COLONCOLON pattern
-      { mkpat_cons ~loc:$sloc $loc($2) (ghpat ~loc:$sloc (Ppat_tuple[$1;$3])) }
+      { mkpat_cons ~loc:$sloc $loc($2) ([], ghpat ~loc:$sloc (Ppat_tuple[$1;$3])) }
   | self attribute
       { Pat.attr $1 $2 }
   | pattern_gen
@@ -2833,7 +2833,7 @@ pattern_gen:
       { $1 }
   | mkpat(
       mkrhs(constr_longident) pattern %prec prec_constr_appl
-        { Ppat_construct($1, Some $2) }
+        { Ppat_construct($1, Some ([], $2)) }
     | name_tag pattern %prec prec_constr_appl
         { Ppat_variant($1, Some $2) }
     ) { $1 }
