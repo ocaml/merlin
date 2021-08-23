@@ -2806,7 +2806,6 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
             (extract_sig_open env smodl.pmod_loc modl.mod_type) env in
         let new_env = Env.update_short_paths new_env in
         Signature_group.iter (Signature_names.check_sig_item names loc) sg;
-        List.iter (Signature_names.check_sig_item names loc) sg;
         let incl =
           { incl_mod = modl;
             incl_type = sg;
