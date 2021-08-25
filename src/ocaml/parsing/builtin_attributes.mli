@@ -12,7 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (** Support for some of the builtin attributes
 
     - ocaml.deprecated
@@ -33,26 +32,38 @@
 
 *)
 
-val check_alerts: Location.t -> Parsetree.attributes -> string -> unit
-val check_alerts_inclusion:
-  def:Location.t -> use:Location.t -> Location.t -> Parsetree.attributes ->
-  Parsetree.attributes -> string -> unit
-val alerts_of_attrs: Parsetree.attributes -> Misc.alerts
-val alerts_of_sig: Parsetree.signature -> Misc.alerts
-val alerts_of_str: Parsetree.structure -> Misc.alerts
+val check_alerts : Location.t -> Parsetree.attributes -> string -> unit
 
-val check_deprecated_mutable:
-    Location.t -> Parsetree.attributes -> string -> unit
-val check_deprecated_mutable_inclusion:
-  def:Location.t -> use:Location.t -> Location.t -> Parsetree.attributes ->
-  Parsetree.attributes -> string -> unit
+val check_alerts_inclusion
+  :  def:Location.t
+  -> use:Location.t
+  -> Location.t
+  -> Parsetree.attributes
+  -> Parsetree.attributes
+  -> string
+  -> unit
 
-val check_no_alert: Parsetree.attributes -> unit
+val alerts_of_attrs : Parsetree.attributes -> Misc.alerts
+val alerts_of_sig : Parsetree.signature -> Misc.alerts
+val alerts_of_str : Parsetree.structure -> Misc.alerts
 
-val error_of_extension: Parsetree.extension -> Location.error
+val check_deprecated_mutable
+  :  Location.t -> Parsetree.attributes -> string -> unit
 
-val warning_attribute: ?ppwarning:bool -> Parsetree.attribute -> unit
-  (** Apply warning settings from the specified attribute.
+val check_deprecated_mutable_inclusion
+  :  def:Location.t
+  -> use:Location.t
+  -> Location.t
+  -> Parsetree.attributes
+  -> Parsetree.attributes
+  -> string
+  -> unit
+
+val check_no_alert : Parsetree.attributes -> unit
+val error_of_extension : Parsetree.extension -> Location.error
+
+val warning_attribute : ?ppwarning:bool -> Parsetree.attribute -> unit
+(** Apply warning settings from the specified attribute.
       "ocaml.warning"/"ocaml.warnerror" (and variants without the prefix)
       are processed and other attributes are ignored.
 
@@ -60,10 +71,9 @@ val warning_attribute: ?ppwarning:bool -> Parsetree.attribute -> unit
       passed).
   *)
 
-val warning_scope:
-  ?ppwarning:bool ->
-  Parsetree.attributes -> (unit -> 'a) -> 'a
-  (** Execute a function in a new scope for warning settings.  This
+val warning_scope
+  :  ?ppwarning:bool -> Parsetree.attributes -> (unit -> 'a) -> 'a
+(** Execute a function in a new scope for warning settings.  This
       means that the effect of any call to [warning_attribute] during
       the execution of this function will be discarded after
       execution.
@@ -73,12 +83,9 @@ val warning_scope:
       is executed.
   *)
 
-val warn_on_literal_pattern: Parsetree.attributes -> bool
-val explicit_arity: Parsetree.attributes -> bool
-
-
-val immediate: Parsetree.attributes -> bool
-val immediate64: Parsetree.attributes -> bool
-
-val has_unboxed: Parsetree.attributes -> bool
-val has_boxed: Parsetree.attributes -> bool
+val warn_on_literal_pattern : Parsetree.attributes -> bool
+val explicit_arity : Parsetree.attributes -> bool
+val immediate : Parsetree.attributes -> bool
+val immediate64 : Parsetree.attributes -> bool
+val has_unboxed : Parsetree.attributes -> bool
+val has_boxed : Parsetree.attributes -> bool

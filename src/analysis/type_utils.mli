@@ -25,23 +25,21 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
 val verbosity : int ref
 
 module Printtyp : sig
   include module type of struct include Printtyp end
-
-  val type_declaration :
-    Env.t -> Ident.t -> Format.formatter -> Types.type_declaration -> unit
-
+  
+  val type_declaration
+    :  Env.t -> Ident.t -> Format.formatter -> Types.type_declaration -> unit
+  
   val type_scheme : Env.t -> Format.formatter -> Types.type_expr -> unit
-
   val modtype : Env.t -> Format.formatter -> Types.module_type -> unit
-
   val wrap_printing_env : Env.t -> verbosity:int -> (unit -> 'a) -> 'a
 end
+  
 
 val mod_smallerthan : int -> Types.module_type -> int option
 (** Check if module is smaller (= has less definition, counting nested ones)
@@ -49,19 +47,25 @@ val mod_smallerthan : int -> Types.module_type -> int option
     otherwise (module is bigger than threshold).
     Used to skip printing big modules in completion. *)
 
-val type_in_env : ?verbosity:int -> ?keywords:Lexer_raw.keywords ->
-  context: Context.t -> Env.t -> Format.formatter -> string -> bool
+val type_in_env
+  :  ?verbosity:int
+  -> ?keywords:Lexer_raw.keywords
+  -> context:Context.t
+  -> Env.t
+  -> Format.formatter
+  -> string
+  -> bool
 (** [type_in_env env ppf input] parses [input] and prints its type on [ppf].
     Returning true if it printed a type, false otherwise. *)
 
-val print_type_with_decl : verbosity:int ->
-  Env.t -> Format.formatter -> Types.type_expr -> unit
+val print_type_with_decl
+  :  verbosity:int -> Env.t -> Format.formatter -> Types.type_expr -> unit
 (** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
     type expression, except if it is a type constructor and verbosity is set then
     it also prints the type declaration. *)
 
-val lookup_module : Longident.t ->
-  Env.t -> Path.t * Types.module_type * Parsetree.attributes
+val lookup_module
+  :  Longident.t -> Env.t -> Path.t * Types.module_type * Parsetree.attributes
 (** [lookup_module] is a fancier version of [Env.lookup_module] that also
     returns the module type. *)
 
@@ -70,5 +74,9 @@ val read_doc_attributes : Parsetree.attributes -> (string * Location.t) option
 
 val is_deprecated : Parsetree.attributes -> bool
 
-val print_constr : verbosity:int -> Env.t -> Format.formatter ->
-  Types.constructor_description -> unit
+val print_constr
+  :  verbosity:int
+  -> Env.t
+  -> Format.formatter
+  -> Types.constructor_description
+  -> unit

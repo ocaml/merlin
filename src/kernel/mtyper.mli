@@ -9,19 +9,15 @@
 
 type result
 
-type typedtree = [
-  | `Interface of Typedtree.signature
-  | `Implementation of Typedtree.structure
-]
+type typedtree =
+  [ `Interface of Typedtree.signature | `Implementation of Typedtree.structure ]
 
 val run : Mconfig.t -> Mreader.parsetree -> result
-
 val get_env : ?pos:Msource.position -> result -> Env.t
-
 val get_typedtree : result -> typedtree
-
 val get_errors : result -> exn list
 
+val node_at : ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
  *  2. Check if there is an invalid construct between found env and cursor :
@@ -36,5 +32,3 @@ val get_errors : result -> exn list
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
  *)
-val node_at :
-  ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t

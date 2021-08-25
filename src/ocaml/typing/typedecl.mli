@@ -12,57 +12,64 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (* Typing of type definitions and primitive definitions *)
-
 open Types
 open Format
 
-val transl_type_decl:
-    Env.t -> Asttypes.rec_flag -> Parsetree.type_declaration list ->
-    Typedtree.type_declaration list * Env.t
+val transl_type_decl
+  :  Env.t
+  -> Asttypes.rec_flag
+  -> Parsetree.type_declaration list
+  -> Typedtree.type_declaration list * Env.t
 
-val transl_exception:
-    Env.t -> Parsetree.extension_constructor ->
-    Typedtree.extension_constructor * Env.t
+val transl_exception
+  :  Env.t
+  -> Parsetree.extension_constructor
+  -> Typedtree.extension_constructor * Env.t
 
-val transl_type_exception:
-    Env.t ->
-    Parsetree.type_exception -> Typedtree.type_exception * Env.t
+val transl_type_exception
+  :  Env.t -> Parsetree.type_exception -> Typedtree.type_exception * Env.t
 
-val transl_type_extension:
-    bool -> Env.t -> Location.t -> Parsetree.type_extension ->
-    Typedtree.type_extension * Env.t
+val transl_type_extension
+  :  bool
+  -> Env.t
+  -> Location.t
+  -> Parsetree.type_extension
+  -> Typedtree.type_extension * Env.t
 
-val transl_value_decl:
-    Env.t -> Location.t ->
-    Parsetree.value_description -> Typedtree.value_description * Env.t
+val transl_value_decl
+  :  Env.t
+  -> Location.t
+  -> Parsetree.value_description
+  -> Typedtree.value_description * Env.t
 
-val transl_with_constraint:
-    Ident.t -> Path.t option ->
-    sig_env:Env.t -> sig_decl:Types.type_declaration ->
-    outer_env:Env.t -> Parsetree.type_declaration ->
-    Typedtree.type_declaration
+val transl_with_constraint
+  :  Ident.t
+  -> Path.t option
+  -> sig_env:Env.t
+  -> sig_decl:Types.type_declaration
+  -> outer_env:Env.t
+  -> Parsetree.type_declaration
+  -> Typedtree.type_declaration
 
-val abstract_type_decl: injective:bool -> int -> type_declaration
-val approx_type_decl:
-    Parsetree.type_declaration list ->
-                                  (Ident.t * type_declaration) list
-val check_recmod_typedecl:
-    Env.t -> Location.t -> Ident.t list -> Path.t -> type_declaration -> unit
-val check_coherence:
-    Env.t -> Location.t -> Path.t -> type_declaration -> unit
+val abstract_type_decl : injective:bool -> int -> type_declaration
 
+val approx_type_decl
+  :  Parsetree.type_declaration list -> (Ident.t * type_declaration) list
+
+val check_recmod_typedecl
+  :  Env.t -> Location.t -> Ident.t list -> Path.t -> type_declaration -> unit
+
+val check_coherence : Env.t -> Location.t -> Path.t -> type_declaration -> unit
 (* for fixed types *)
 val is_fixed_type : Parsetree.type_declaration -> bool
-
 (* for typeopt.ml *)
-val get_unboxed_type_representation: Env.t -> type_expr -> type_expr option
+val get_unboxed_type_representation : Env.t -> type_expr -> type_expr option
 
 type native_repr_kind = Unboxed | Untagged
 
 type error =
-    Repeated_parameter
+  | Repeated_parameter
   | Duplicate_constructor of string
   | Too_many_constructors
   | Duplicate_label of string
@@ -72,12 +79,13 @@ type error =
   | Constraint_failed of type_expr * type_expr
   | Inconsistent_constraint of Env.t * Ctype.Unification_trace.t
   | Type_clash of Env.t * Ctype.Unification_trace.t
-  | Non_regular of {
-      definition: Path.t;
-      used_as: type_expr;
-      defined_as: type_expr;
-      expansions: (type_expr * type_expr) list;
-    }
+  | Non_regular of
+      {
+        definition : Path.t;
+        used_as : type_expr;
+        defined_as : type_expr;
+        expansions : (type_expr * type_expr) list
+      }
   | Null_arity_external
   | Missing_native_external
   | Unbound_type_var of type_expr * type_declaration
@@ -103,4 +111,4 @@ type error =
 
 exception Error of Location.t * error
 
-val report_error: formatter -> error -> unit
+val report_error : formatter -> error -> unit

@@ -25,14 +25,14 @@
   in the Software.
 
 )* }}} *)
-
 type t =
   | Constructor of Types.constructor_description * Location.t
-    (* We attach the constructor description here so in the case of
-      disambiguated constructors we actually directly look for the type
-      path (cf. #486, #794). *)
+  (* We attach the constructor description here so in the case of
+    disambiguated constructors we actually directly look for the type
+    path (cf. #486, #794). *)
   | Expr
-  | Label of Types.label_description (* Similar to constructors. *)
+  | Label of Types.label_description
+  (* Similar to constructors. *)
   | Module_path
   | Module_type
   | Patt
@@ -42,6 +42,8 @@ type t =
 
 val to_string : t -> string
 
+val inspect_browse_tree
+  :  cursor:Std.Lexing.position -> Longident.t -> Mbrowse.t list -> t option
 (**
   [inspect_browse_tree lid ~cursor mbrowse] tries to provide contextual
   information given the selected identifier, the position of the cursor and the
@@ -54,5 +56,3 @@ val to_string : t -> string
   FIXME: when cursor at (M.|A 3), the enclosing node returned is const 3, thus
   breaking the context inference.
 *)
-val inspect_browse_tree :
-  cursor:Std.Lexing.position -> Longident.t -> Mbrowse.t list -> t option

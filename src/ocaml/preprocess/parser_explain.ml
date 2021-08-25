@@ -1,9 +1,10 @@
 open Parser_raw
-let named_item_at = function
-  | _ -> raise Not_found
+
+let named_item_at = function _ -> raise Not_found
 
 let nullable (type a) : a MenhirInterpreter.nonterminal -> bool =
-  let open MenhirInterpreter in function
+  let open MenhirInterpreter in
+  function
   | N_virtual_flag -> true
   | N_type_variance -> true
   | N_type_parameters -> true

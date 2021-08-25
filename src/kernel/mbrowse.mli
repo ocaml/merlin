@@ -25,52 +25,55 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
 type node = Browse_raw.node
 type t = (Env.t * node) list
 
-val fold_node : (Env.t -> Browse_raw.node -> 'a -> 'a) ->
-                 Env.t -> Browse_raw.node -> 'a -> 'a
+val fold_node
+  :  (Env.t -> Browse_raw.node -> 'a -> 'a)
+  -> Env.t
+  -> Browse_raw.node
+  -> 'a
+  -> 'a
+
 val node_loc : Browse_raw.node -> Location.t
 val leaf_node : t -> Env.t * node
 val drop_leaf : t -> t option
-
 (* Navigate through tree *)
 
+val deepest_before : Lexing.position -> t list -> t
 (** The deepest context inside or before the node, for instance, navigating
  * through:
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
-val deepest_before : Lexing.position -> t list -> t
-
 
 val select_open_node : t -> (Path.t * Longident.t * t) option
-
 val enclosing : Lexing.position -> t list -> t
-
 val of_structure : Typedtree.structure -> t
 val of_signature : Typedtree.signature -> t
 
-val of_typedtree :
-  [ `Implementation of Typedtree.structure
-  | `Interface of Typedtree.signature ] -> t
+val of_typedtree
+  :  [ `Implementation of Typedtree.structure
+     | `Interface of Typedtree.signature
+     ]
+  -> t
 
 val node_of_binary_part : Env.t -> Cmt_format.binary_part -> node
 
-(** Identify nodes introduced by recovery *)
 val is_recovered_expression : Typedtree.expression -> bool
+(** Identify nodes introduced by recovery *)
+
 val is_recovered : Browse_raw.node -> bool
 
+val optional_label_sugar
+  :  Typedtree.expression_desc -> Typedtree.expression option
 (** When an optional argument is applied with labelled syntax
     sugar (~a:v instead of ?a:(Some v)), the frontend will have
     wrapped it in [Some _].
     [optional_label_sugar exp] returns [Some exp'] with the sugar
     removed in that case. *)
-val optional_label_sugar :
-  Typedtree.expression_desc -> Typedtree.expression option
 
 (** {1 Dump} *)
 

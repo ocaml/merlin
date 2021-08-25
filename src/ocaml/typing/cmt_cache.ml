@@ -25,19 +25,19 @@
   in the Software.
 
 )* }}} *)
-
-type cmt_item = {
-  cmt_infos : Cmt_format.cmt_infos ;
-  mutable location_trie : exn;
-}
-
-include File_cache.Make (struct
-  type t = cmt_item
-
-  let read file = {
-    cmt_infos = Cmt_format.read_cmt file ;
-    location_trie = Not_found;
+type cmt_item =
+  {
+    cmt_infos : Cmt_format.cmt_infos;
+    mutable location_trie : exn
   }
 
+include
+File_cache.Make
+(struct
+  type t = cmt_item
+  
+  let read file =
+    { cmt_infos = Cmt_format.read_cmt file; location_trie = Not_found }
+  
   let cache_name = "Cmt_cache"
 end)

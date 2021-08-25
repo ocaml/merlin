@@ -25,26 +25,28 @@
   in the Software.
 
 )* }}} *)
-
 val log : 'a Logger.printf
 
 module Namespace : sig
   type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
 end
+  
 
 val from_path
-  : config:Mconfig.t
+  :  config:Mconfig.t
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
   -> namespace:Namespaced_path.Namespace.t
   -> [ `ML | `MLI ]
   -> Path.t
-  -> [> `File_not_found of string
-     | `Found of string option * Lexing.position
-     | `Builtin
-     | `Not_in_env of string
-     | `Not_found of string * string option ]
+  ->
+  [> `File_not_found of string
+   | `Found of string option * Lexing.position
+   | `Builtin
+   | `Not_in_env of string
+   | `Not_found of string * string option
+   ]
 
 val from_string
   :  config:Mconfig.t
@@ -54,13 +56,15 @@ val from_string
   -> ?namespaces:Namespace.t list
   -> [ `ML | `MLI ]
   -> string
-  -> [> `File_not_found of string
-      | `Found of string option * Lexing.position
-      | `Builtin of string
-      | `Missing_labels_namespace
-      | `Not_found of string * string option
-      | `Not_in_env of string
-      | `At_origin ]
+  ->
+  [> `File_not_found of string
+   | `Found of string option * Lexing.position
+   | `Builtin of string
+   | `Missing_labels_namespace
+   | `Not_found of string * string option
+   | `Not_in_env of string
+   | `At_origin
+   ]
 
 val get_doc
   :  config:Mconfig.t
@@ -68,11 +72,15 @@ val get_doc
   -> local_defs:Mtyper.typedtree
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
-  -> [ `User_input of string
-     | `Completion_entry of (Namespaced_path.Namespace.t * Path.t * Location.t) ]
-  -> [> `File_not_found of string
-      | `Found of string
-      | `Builtin of string
-      | `Not_found of string * string option
-      | `Not_in_env of string
-      | `No_documentation ]
+  ->
+  [ `User_input of string
+  | `Completion_entry of Namespaced_path.Namespace.t * Path.t * Location.t
+  ]
+  ->
+  [> `File_not_found of string
+   | `Found of string
+   | `Builtin of string
+   | `Not_found of string * string option
+   | `Not_in_env of string
+   | `No_documentation
+   ]

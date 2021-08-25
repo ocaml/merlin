@@ -25,14 +25,11 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
 exception Unknown
-
 (* Adjust typing environment for syntax extensions.
  * See [Fake] for AST part *)
-
 (* Extension environment is composed of two part:
  * - private definitions, not exposed to user but accessed by AST rewriters,
  * - public definitions, those are made available to user in default scope,
@@ -41,35 +38,33 @@ exception Unknown
  *)
 
 (** Definition of an extension (as seen from Lexer and Typer) *)
-type t = {
-  name : string;
-  private_def : string list;
-  public_def : string list;
-  packages : string list;
-  keywords : (string * Parser_raw.token) list;
-}
-
+type t =
+  {
+    name : string;
+    private_def : string list;
+    public_def : string list;
+    packages : string list;
+    keywords : (string * Parser_raw.token) list
+  }
 (* Private definitions are put in a fake module named "_" with the following
  * ident. Use it to test or find private definitions. *)
+
 val ident : Ident.t
 
 (** Set of extension name *)
 type set = string list
-
 (* Lexer keywords needed by extensions *)
+
 val keywords : set -> Lexer_raw.keywords
 (* Register extensions in typing environment *)
 val register : set -> Env.t -> Env.t
-
 (* Known extensions *)
 val all : set
 val registry : t String.Map.t
 val lookup : string -> t option
-
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" package is loaded by user. *)
 val from : extensions:string list -> packages:string list -> set
-
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
 val empty : set

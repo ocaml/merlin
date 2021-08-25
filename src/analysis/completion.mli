@@ -25,9 +25,7 @@
   in the Software.
 
 )* }}} *)
-
 open Query_protocol
-
 (* TODO: document all the following functions *)
 
 type raw_info =
@@ -41,19 +39,22 @@ type raw_info =
   | `Variant of string * Types.type_expr option
   ]
 
-val raw_info_printer : raw_info ->
+val raw_info_printer
+  :  raw_info
+  ->
   [ `String of string
   | `Print of Extend_protocol.Reader.outcometree
   | `Concat of string * Extend_protocol.Reader.outcometree
   ]
 
-val map_entry : ('a -> 'b) ->
-  'a Compl.raw_entry -> 'b Compl.raw_entry
+val map_entry : ('a -> 'b) -> 'a Compl.raw_entry -> 'b Compl.raw_entry
 
 val branch_complete
   :  Mconfig.t
-  -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
-               -> [> `Found of string ])
+  ->
+  ?get_doc:
+  ([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
+   -> [> `Found of string ])
   -> ?target_type:Types.type_expr
   -> ?kinds:Compl.kind list
   -> keywords:string list
@@ -62,11 +63,15 @@ val branch_complete
   -> raw_info Compl.raw_entry list
 
 val expand_prefix
-  : global_modules:string list
+  :  global_modules:string list
   -> ?kinds:Compl.kind list
-  -> Env.t -> string
+  -> Env.t
+  -> string
   -> raw_info Compl.raw_entry list
 
-val application_context : prefix:Asttypes.label -> Mbrowse.t ->
-  Types.type_expr option *
-  [> `Application of Compl.application_context | `Unknown ]
+val application_context
+  :  prefix:Asttypes.label
+  -> Mbrowse.t
+  ->
+  Types.type_expr option
+  * [> `Application of Compl.application_context | `Unknown ]

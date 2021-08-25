@@ -25,7 +25,6 @@
   in the Software.
 
 )* }}} *)
-
 (** Log module
   *
   * 1. Provide functions to log arbitrary messages, filtered according to a
@@ -35,24 +34,19 @@
   *
   **)
 
-val log
-  : section:string -> title:string -> ('b, unit, string, unit) format4 -> 'b
-
-val fmt  : unit -> (Format.formatter -> unit) -> string
+val log : section:string -> title:string -> ('b,unit,string,unit) format4 -> 'b
+val fmt : unit -> (Format.formatter -> unit) -> string
 val json : unit -> (unit -> Std.json) -> string
-val exn  : unit -> exn -> string
-
+val exn : unit -> exn -> string
 val log_flush : unit -> unit
 
-type notification = {
-  section: string;
-  msg: string;
-}
+type notification = { section : string; msg : string }
 
-val notify : section:string -> ('b, unit, string, unit) format4 -> 'b
+val notify : section:string -> ('b,unit,string,unit) format4 -> 'b
 val with_notifications : notification list ref -> (unit -> 'a) -> 'a
 val with_log_file : string option -> ?sections:string list -> (unit -> 'a) -> 'a
 
-type 'a printf = title:string -> ('a, unit, string, unit) format4 -> 'a
+type 'a printf = title:string -> ('a,unit,string,unit) format4 -> 'a
 type logger = { log : 'a. 'a printf }
+
 val for_section : string -> logger

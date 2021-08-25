@@ -25,5 +25,4 @@
   in the Software.
 
 )* }}} *)
-
-val token: Lexing.lexbuf -> Parser_raw.token
+val token : Lexing.lexbuf -> Parser_raw.token

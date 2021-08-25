@@ -25,7 +25,6 @@
   in the Software.
 
 )* }}} *)
-
 type t
 
 val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
@@ -42,19 +41,15 @@ val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
 *)
 
 type state
-
-type context =
-  | Initial of Lexing.position
-  | Resume of state
+type context = Initial of Lexing.position | Resume of state
 
 type result =
-  | Found of Location.t * string option
-    (** Found at location *)
+  | Found of Location.t * string option (** Found at location *)
   | Resolves_to of Namespaced_path.t * state
     (** Not found in trie, look for [path] in loadpath. *)
 
 val find
-   : remember_loc:(Location.t -> unit)
+  :  remember_loc:(Location.t -> unit)
   -> context:context
   -> t
   -> Namespaced_path.t
@@ -67,6 +62,6 @@ val find
 
     @param remember_loc is used to capture a trace of the indirections that we
     traverse. *)
-
 (* For debugging purposes. *)
+
 val dump : Format.formatter -> t -> unit

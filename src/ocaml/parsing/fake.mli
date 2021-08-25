@@ -25,31 +25,40 @@
   in the Software.
 
 )* }}} *)
-
 (* Definitions to help generating or rewriting pieces of AST,
  * used to simulate some CamlP4 extensions. *)
-
 (* Generate AST faking value application *)
-val app : Parsetree.expression ->
-  Parsetree.expression -> Parsetree.expression
-val pat_app : Parsetree.expression ->
-  ('a * Parsetree.expression) -> ('a * Parsetree.expression )
+val app : Parsetree.expression -> Parsetree.expression -> Parsetree.expression
 
+val pat_app
+  :  Parsetree.expression
+  -> ('a * Parsetree.expression)
+  -> 'a * Parsetree.expression
 (* Lwt extension *)
+
 module Lwt : sig
-  val un_lwt     : Parsetree.expression
-  val to_lwt     : Parsetree.expression
-  val in_lwt     : Parsetree.expression
-  val unit_lwt   : Parsetree.expression
-  val un_stream  : Parsetree.expression
-  val finally_   : Parsetree.expression
+  val un_lwt : Parsetree.expression
+  val to_lwt : Parsetree.expression
+  val in_lwt : Parsetree.expression
+  val unit_lwt : Parsetree.expression
+  val un_stream : Parsetree.expression
+  val finally_ : Parsetree.expression
   val raise_lwt_ : Longident.t
 end
-
+  
 (* MetaOCaml support *)
+
 module Meta : sig
-  val code : Lexing.position -> Lexing.position ->
-    Parsetree.expression -> Parsetree.expression
-  val uncode : Lexing.position -> Lexing.position ->
-    Parsetree.expression -> Parsetree.expression
+  val code
+    :  Lexing.position
+    -> Lexing.position
+    -> Parsetree.expression
+    -> Parsetree.expression
+  
+  val uncode
+    :  Lexing.position
+    -> Lexing.position
+    -> Parsetree.expression
+    -> Parsetree.expression
 end
+  

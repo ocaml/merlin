@@ -1,9 +1,10 @@
 open Parsetree
 
+val syntax_error : string -> Location.t -> extension
 (** Generate an extension node that will be reported as a syntax error by
     Merlin. *)
-val syntax_error : string -> Location.t -> extension
 
+val relaxed_location : Location.t -> attribute
 (** Physical locations might be too precise for some features.
 
     For instance in:
@@ -23,8 +24,8 @@ val syntax_error : string -> Location.t -> extension
               [ ]        [ ]  -- physical locations for f and y nodes
               [     ][     ]  -- relaxed locations for f and y nodes
 *)
-val relaxed_location : Location.t -> attribute
 
+val hide_node : attribute
 (** If some code should be ignored by merlin when reporting information to
     the user, put a hide_node attribute.
 
@@ -32,8 +33,8 @@ val relaxed_location : Location.t -> attribute
     anything in concrete syntax (example use-case: encoding of some
     js_of_ocaml constructs).
 *)
-val hide_node : attribute
 
+val focus_node : attribute
 (** The converse: when merlin should focus on a specific node of the AST.
     The main use case is also for js_of_ocaml.
 
@@ -51,16 +52,12 @@ val hide_node : attribute
     To make merlin focus on [M.code] and ignore the boilerplate ([M.prolog]
     and [M.epilog]), add a [focus_node] attribute to the [M.code] item.
 *)
-val focus_node : attribute
-
 (* Projections for merlin attributes and extensions *)
 
-val classify_extension : extension ->
-  [`Other | `Syntax_error]
-
+val classify_extension : extension -> [ `Other | `Syntax_error ]
 val extract_syntax_error : extension -> string * Location.t
 
-val classify_attribute : attribute ->
-  [`Other | `Relaxed_location | `Hide | `Focus]
+val classify_attribute
+  :  attribute -> [ `Other | `Relaxed_location | `Hide | `Focus ]
 
 val extract_relaxed_location : attribute -> Location.t

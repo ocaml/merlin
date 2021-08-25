@@ -25,74 +25,66 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
 type protocol_version =
-  [ `V2 (* First version to support versioning ! *)
-  | `V3 (* Responses are now assoc {class:string, value:..., notifications:string list} *)
+  [ `V2
+  (* First version to support versioning ! *)
+  | `V3
+  (* Responses are now assoc {class:string, value:..., notifications:string list} *)
   ]
 
-module Context =
-struct
-  type document = {
-    kind: [`ML | `MLI | `Auto ];
-    path: string option;
-    dot_merlins: string list option;
-  }
-
-  type t = {
-    document: document option;
-    printer_width: int option;
-    printer_verbosity: int option;
-  }
+module Context = struct
+  type document =
+    {
+      kind : [ `ML | `MLI | `Auto ];
+      path : string option;
+      dot_merlins : string list option
+    }
+  
+  type t =
+    {
+      document : document option;
+      printer_width : int option;
+      printer_verbosity : int option
+    }
 end
+  
 
 type _ sync_command =
-  | Tell
-    : Msource.position * Msource.position * string
-    -> unit sync_command
-  | Refresh
-    :  unit sync_command
+  | Tell : Msource.position * Msource.position * string -> unit sync_command
+  | Refresh : unit sync_command
   | Flags_set
-    :  string list
-    -> [ `Ok | `Failures of (string * exn) list ] sync_command
+      : string list
+      -> [ `Ok | `Failures of (string * exn) list ] sync_command
   | Findlib_use
-    :  string list
-    -> [`Ok | `Failures of (string * exn) list] sync_command
+      : string list
+      -> [ `Ok | `Failures of (string * exn) list ] sync_command
   | Extension_set
-    :  [`Enabled|`Disabled] * string list
-    -> [`Ok | `Failures of (string * exn) list] sync_command
+      : [ `Enabled | `Disabled ] * string list
+      -> [ `Ok | `Failures of (string * exn) list ] sync_command
   | Path
-    :  [`Build|`Source]
-     * [`Add|`Rem]
-     * string list
-    -> unit sync_command
-  | Path_reset
-    :  unit sync_command
+      : [ `Build | `Source ] * [ `Add | `Rem ] * string list
+      -> unit sync_command
+  | Path_reset : unit sync_command
   | Protocol_version
-    : int option
-    -> ([`Selected of protocol_version] *
-        [`Latest of protocol_version] *
-        string) sync_command
-  | Checkout
-    : Context.document
-    -> unit sync_command
-  | Idle_job
-    : bool sync_command
-  | Flags_get
-    :  string list sync_command
+      : int option
+      ->
+        ([ `Selected of protocol_version ]
+         * [ `Latest of protocol_version ]
+         * string)
+        sync_command
+  | Checkout : Context.document -> unit sync_command
+  | Idle_job : bool sync_command
+  | Flags_get : string list sync_command
   | Project_get
-    :  (string list * [`Ok | `Failures of string list]) sync_command
+      : (string list * [ `Ok | `Failures of string list ]) sync_command
 
-type 'a command =
-  | Query of 'a Query_protocol.t
-  | Sync  of 'a sync_command
-
+type 'a command = Query of 'a Query_protocol.t | Sync of 'a sync_command
 type request = Request : Context.t * 'a command -> request
 
 type response =
-  | Return    : 'a command * 'a -> response
-  | Failure   : string -> response
-  | Error     : Json.t -> response
+  | Return : 'a command * 'a -> response
+  | Failure : string -> response
+  | Error : Json.t -> response
   | Exception : exn -> response

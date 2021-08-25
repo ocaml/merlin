@@ -11,9 +11,7 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 exception Illegal_expr
 
 val is_valid_recursive_expression : Ident.t list -> Typedtree.expression -> bool
-
 val is_valid_class_expr : Ident.t list -> Typedtree.class_expr -> bool

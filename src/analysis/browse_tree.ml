@@ -25,74 +25,77 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
 let default_loc = Location.none
 let default_env = Env.empty
 
-type t = {
-  t_node: Mbrowse.node;
-  t_loc : Location.t;
-  t_env : Env.t;
-  t_children: t list lazy_t;
-}
+type t =
+  {
+    t_node : Mbrowse.node;
+    t_loc : Location.t;
+    t_env : Env.t;
+    t_children : t list lazy_t
+  }
 
 let of_node ?(env=default_env) node =
   let rec one t_env t_node =
     let t_loc = Mbrowse.node_loc t_node in
-    let rec t = {t_node; t_env; t_loc; t_children = lazy (aux t)} in
+    let rec t = { t_node; t_env; t_loc; t_children = lazy (aux t) } in
     t
   and aux t =
-    Mbrowse.fold_node (fun env node acc -> one env node :: acc)
-      t.t_env t.t_node []
+    Mbrowse.fold_node (fun env node acc -> one env node :: acc) t.t_env t.t_node
+      []
   in
   one (Browse_raw.node_update_env env node) node
 
 let of_browse b =
-  let env, node = Mbrowse.leaf_node b in
+  let (env, node) = Mbrowse.leaf_node b in
   of_node ~env node
 
-let dummy = {
-  t_node = Browse_raw.Dummy;
-  t_loc = default_loc;
-  t_env = default_env;
-  t_children = lazy []
-}
+let dummy =
+  {
+    t_node = Browse_raw.Dummy;
+    t_loc = default_loc;
+    t_env = default_env;
+    t_children = lazy []
+  }
 
-let rec normalize_type_expr env = function
-  | {Types.desc = Types.Tconstr (path,_,_); _ } ->
+let rec normalize_type_expr env =
+  function
+  | { Types.desc = Types.Tconstr (path, _, _); _ } ->
     normalize_type_decl env (Env.find_type path env)
   | _ -> raise Not_found
 
-and normalize_type_decl env decl = match decl.Types.type_manifest with
+and normalize_type_decl env decl =
+  match decl.Types.type_manifest with
   | Some expr -> normalize_type_expr env expr
   | None -> decl
 
 let id_of_constr_decl c = c.Types.cd_id
 
 let same_constructor env a b =
-  let name = function
+  let name =
+    function
     | `Description d -> d.Types.cstr_name
     | `Declaration d -> Ident.name d.Typedtree.cd_id
   in
-  if name a <> name b then false
-  else begin
-    let get_decls = function
+  if name a <> name b then
+    false
+  else
+    let get_decls =
+      function
       | `Description d ->
         let ty = normalize_type_expr env d.Types.cstr_res in
         begin match ty.Types.type_kind with
-        | Types.Type_variant decls ->
-          List.map decls ~f:id_of_constr_decl
+        | Types.Type_variant decls -> List.map decls ~f:id_of_constr_decl
         | _ -> assert false
         end
-      | `Declaration d ->
-        [d.Typedtree.cd_id]
+      | `Declaration d -> [ d.Typedtree.cd_id ]
     in
     let a = get_decls a in
     let b = get_decls b in
     List.exists a ~f:(fun id -> List.exists b ~f:(Ident.same id))
-  end
 
 let all_occurrences path =
   let rec aux acc t =
@@ -107,16 +110,18 @@ let all_occurrences path =
   in
   aux []
 
-let all_constructor_occurrences ({t_env = env; _},d) t =
+let all_constructor_occurrences ({ t_env = env; _ }, d) t =
   let rec aux acc t =
     let acc =
       match Browse_raw.node_is_constructor t.t_node with
-      | Some d' when (
+      | Some d'
+        when
           (* Don't try this at home kids. *)
-          try same_constructor env d d'.Location.txt
-          with Not_found -> same_constructor t.t_env d d'.Location.txt
-        ) ->
-        {d' with Location.txt = t} :: acc
+          (try same_constructor env d d'.Location.txt
+           with
+           | Not_found -> same_constructor t.t_env d d'.Location.txt)
+        ->
+        { d' with  Location.txt = t } :: acc
       | _ -> acc
     in
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
@@ -126,14 +131,12 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
 let all_occurrences_of_prefix path node =
   let rec path_prefix ~prefix path =
     Path.same prefix path ||
-    match path with
-    | Pdot (p,_) -> path_prefix ~prefix p
-    | _ -> false
+      match path with Pdot (p, _) -> path_prefix ~prefix p | _ -> false
   in
   let rec aux env node acc =
     let acc =
       let paths_and_lids = Browse_raw.node_paths_and_longident node in
-      let has_prefix ({Location. txt; _}, _) =
+      let has_prefix ({ Location.txt; _ }, _) =
         match txt with
         | Path.Pdot (p, _) -> path_prefix ~prefix:path p
         | _ -> false

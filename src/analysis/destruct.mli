@@ -25,7 +25,6 @@
   in the Software.
 
 )* }}} *)
-
 (** Destruct at the moment works in two contexts:
 
       - an expression context:
@@ -67,7 +66,6 @@
         buffer will sometimes be wrong).
 
 *)
-
 (* TODO: document the following *)
 
 exception Not_allowed of string
@@ -76,6 +74,12 @@ exception Nothing_to_do
 exception Wrong_parent of string
 
 module Path_utils : sig
+  val to_shortest_lid
+    :  env:Env.t
+    -> ?name:string
+    -> env_check:(Longident.t -> Env.t -> 'a)
+    -> Path.t
+    -> Longident.t
   (** [to_shortest_lid ~env ~env_check path] will make a [Longident.t] from the
   provided [Path.t] and attempt to use the shortest prefix possible given the
   currently opened modules. The result is checked by looking it up in the
@@ -88,18 +92,18 @@ module Path_utils : sig
 
   Optionnaly a [name] can be provided that will be used as the last ident of the
   path. *)
-  val to_shortest_lid :
-    env:Env.t ->
-    ?name:string ->
-    env_check:(Longident.t -> Env.t -> 'a) -> Path.t -> Longident.t
-
   (* Return wheter the given path is opened in the given environment *)
-  val is_opened : Env.t -> Path.t -> bool 
+  
+  val is_opened : Env.t -> Path.t -> bool
 end
+  
 
-val node :
-  Mconfig.t -> Msource.t -> Browse_raw.node ->
-  Browse_raw.node list -> Location.t * string
+val node
+  :  Mconfig.t
+  -> Msource.t
+  -> Browse_raw.node
+  -> Browse_raw.node list
+  -> Location.t * string
 (** [node ~env parents current_node] returns a location indicating which
     portion of the buffer must be replaced and the string to replace it with. *)
 

@@ -25,7 +25,5 @@
   in the Software.
 
 )* }}} *)
-
 val default_config : Mconfig.t ref
-
 val dispatch : Old_protocol.Context.t -> 'a Old_protocol.command -> 'a

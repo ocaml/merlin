@@ -25,14 +25,10 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
 let time = ref 0.0
-
-let delta_time () =
-  Sys.time () -. !time
-
+let delta_time () = Sys.time () -. !time
 let destination = ref None
 let selected_sections = ref None
 
@@ -44,24 +40,18 @@ let is_section_enabled section =
 let output_section oc section title =
   Printf.fprintf oc "# %2.2f %s - %s\n" (delta_time ()) section title
 
-let log_flush () =
-  match !destination with
-  | None -> ()
-  | Some oc -> flush oc
+let log_flush () = match !destination with None -> () | Some oc -> flush oc
 
 let log ~section ~title fmt =
   match !destination with
   | Some oc when is_section_enabled section ->
     Printf.ksprintf (fun str ->
-        output_section oc section title;
-        if str <> "" then (
-          output_string oc str;
-          if str.[String.length str - 1] <> '\n' then
-            output_char oc '\n'
-        )
-      ) fmt
-  | None | Some _ ->
-    Printf.ifprintf () fmt
+      output_section oc section title;
+      if str <> "" then
+        (output_string oc str;
+         if str.[String.length str - 1] <> '\n' then output_char oc '\n')
+    ) fmt
+  | None | Some _ -> Printf.ifprintf () fmt
 
 let fmt_buffer = Buffer.create 128
 let fmt_handle = Format.formatter_of_buffer fmt_buffer
@@ -71,42 +61,35 @@ let fmt () f =
   begin match f fmt_handle with
   | () -> ()
   | exception exn ->
-    Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn);
+    Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn)
   end;
   Format.pp_print_flush fmt_handle ();
   let msg = Buffer.contents fmt_buffer in
-  Buffer.reset fmt_buffer;
-  msg
+  Buffer.reset fmt_buffer; msg
 
 let json () f =
   match f () with
   | json -> Json.pretty_to_string json
-  | exception exn ->
-    Printf.sprintf "Exception: %s" (Printexc.to_string exn)
+  | exception exn -> Printf.sprintf "Exception: %s" (Printexc.to_string exn)
 
 let exn () exn = Printexc.to_string exn
 
-type notification = {
-  section: string;
-  msg: string;
-}
+type notification = { section : string; msg : string }
 
 let notifications : notification list ref option ref = ref None
 
 let notify ~section =
   let tell msg =
     log ~section ~title:"notify" "%s" msg;
-    match !notifications with
-    | None -> ()
-    | Some r -> r := {section; msg} :: !r
+    match !notifications with None -> () | Some r -> r := { section; msg } :: !r
   in
   Printf.ksprintf tell
 
-let with_notifications r f =
-  let_ref notifications (Some r) f
+let with_notifications r f = let_ref notifications (Some r) f
 
 let with_sections sections f =
-  let sections = match sections with
+  let sections =
+    match sections with
     | [] -> None
     | sections ->
       let table = Hashtbl.create (List.length sections) in
@@ -124,29 +107,28 @@ let with_log_file file ?(sections=[]) f =
   | None -> with_sections sections f
   | Some file ->
     log_flush ();
-    let destination', release = match file with
-      | "" -> (None, ignore)
-      | "-" -> (Some stderr, ignore)
+    let (destination', release) =
+      match file with
+      | "" -> None, ignore
+      | "-" -> Some stderr, ignore
       | filename ->
-        match open_out filename with
+        begin match open_out filename with
         | exception exn ->
-          Printf.eprintf "cannot open %S for logging: %s"
-            filename (Printexc.to_string exn);
-          (None, ignore)
-        | oc ->
-          (Some oc, (fun () -> close_out_noerr oc))
+          Printf.eprintf "cannot open %S for logging: %s" filename
+            (Printexc.to_string exn);
+          None, ignore
+        | oc -> Some oc, (fun () -> close_out_noerr oc)
+        end
     in
     let destination0 = !destination in
     destination := destination';
-    let release () =
-      log_flush ();
-      destination := destination0;
-      release ()
-    in
-    match with_sections sections f with
+    let release () = log_flush (); destination := destination0; release () in
+    begin match with_sections sections f with
     | v -> release (); v
     | exception exn -> release (); reraise exn
+    end
 
-type 'a printf = title:string -> ('a, unit, string, unit) format4 -> 'a
+type 'a printf = title:string -> ('a,unit,string,unit) format4 -> 'a
 type logger = { log : 'a. 'a printf }
+
 let for_section section = { log = (fun ~title fmt -> log ~section ~title fmt) }

@@ -12,16 +12,10 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
+val pretty_const : Asttypes.constant -> string
+val top_pretty : Format.formatter -> 'k Typedtree.general_pattern -> unit
+val pretty_pat : 'k Typedtree.general_pattern -> unit
+val pretty_line : Format.formatter -> 'k Typedtree.general_pattern list -> unit
 
-
-
-val pretty_const
-    : Asttypes.constant -> string
-val top_pretty
-    : Format.formatter -> 'k Typedtree.general_pattern -> unit
-val pretty_pat
-    : 'k Typedtree.general_pattern -> unit
-val pretty_line
-    : Format.formatter -> 'k Typedtree.general_pattern list -> unit
 val pretty_matrix
-    : Format.formatter -> 'k Typedtree.general_pattern list list -> unit
+  :  Format.formatter -> 'k Typedtree.general_pattern list list -> unit

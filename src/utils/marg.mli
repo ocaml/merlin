@@ -12,45 +12,49 @@
 type 'acc t = string list -> 'acc -> string list * 'acc
 
 (** A table mapping a flag to the corresponding action *)
-type 'acc table = (string, 'acc t) Hashtbl.t
+type 'acc table = (string,'acc t) Hashtbl.t
 
 (** {1 Combinators for building actions} *)
 
-(** Action updating state and not consuming any argument *)
 val unit : ('acc -> 'acc) -> 'acc t
+(** Action updating state and not consuming any argument *)
 
-(** Action consuming a single argument *)
 val param : string -> (string -> 'acc -> 'acc) -> 'acc t
+(** Action consuming a single argument *)
 
-(** Action consuming a boolean argument *)
 val bool : (bool -> 'acc -> 'acc) -> 'acc t
+(** Action consuming a boolean argument *)
 
-(** Action doing nothing *)
-val unit_ignore : 'acc t
+val unit_ignore : 'acc t (** Action doing nothing *)
 
-(** Action doing nothing and dropping one argument *)
-val param_ignore : 'acc t
+val param_ignore : 'acc t (** Action doing nothing and dropping one argument *)
+
 
 (** {1 Parsing of argument lists} *)
 
 type docstring = string
+type 'a spec = string * docstring * 'a t
 
-type 'a spec = (string * docstring * 'a t)
-
+val parse_one
+  :  warning:(string -> unit)
+  -> 'global table
+  -> 'local spec list
+  -> string list
+  -> 'global
+  -> 'local
+  -> (string list * 'global * 'local) option
 (** Consume at most one flag from the list, returning updated state or
     [None] in case of failure.
     Warning function is called with an error message in case of incorrect
     use.  *)
-val parse_one :
-  warning:(string -> unit) ->
-  'global table -> 'local spec list ->
-  string list -> 'global -> 'local ->
-  (string list * 'global * 'local) option
 
+val parse_all
+  :  warning:(string -> unit)
+  -> 'global table
+  -> 'local spec list
+  -> string list
+  -> 'global
+  -> 'local
+  -> 'global * 'local
 (** Consume all arguments from the input list, calling warning for incorrect
     ones and resuming parsing after. *)
-val parse_all :
-  warning:(string -> unit) ->
-  'global table -> 'local spec list ->
-  string list -> 'global -> 'local ->
-  'global * 'local

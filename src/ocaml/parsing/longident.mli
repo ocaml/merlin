@@ -12,7 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (** Long identifiers, used in parsetree.
 
   {b Warning:} this module is unstable and part of
@@ -20,27 +19,27 @@
 
 *)
 
-type t =
-    Lident of string
-  | Ldot of t * string
-  | Lapply of t * t
+type t = Lident of string | Ldot of t * string | Lapply of t * t
 
-val flatten: t -> string list
-val unflatten: string list -> t option
+val flatten : t -> string list
+
+val unflatten : string list -> t option
 (** For a non-empty list [l], [unflatten l] is [Some lid] where [lid] is
     the long identifier created by concatenating the elements of [l]
     with [Ldot].
     [unflatten []] is [None].
 *)
 
+val head : t -> string
 (** [head lid] returns the leftmost part of [lid], e.g., 
     given [String.Map.empty], returns [String].
     
     @raise Assert_failure if encounters [Lapply] *)
-val head: t -> string
-val last: t -> string
-val parse: string -> t
-  (* (* disabled in merlin. *)
+
+val last : t -> string
+
+val parse : string -> t
+(* (* disabled in merlin. *)
 [@@deprecated "this function may misparse its input,\n\
 use \"Parse.longident\" or \"Longident.unflatten\""]
      *)
@@ -61,11 +60,8 @@ use \"Parse.longident\" or \"Longident.unflatten\""]
 
 *)
 
-
-
 (** To print a longident, see {!Pprintast.longident}, using
     {!Format.asprintf} to convert to a string. *)
-
 (* Merlin specific. *)
 
 val keep_suffix : t -> t * bool

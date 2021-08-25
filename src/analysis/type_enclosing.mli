@@ -43,13 +43,13 @@ type type_info =
 type typed_enclosings =
   (Location.t * type_info * Query_protocol.is_tail_position) list
 
-val from_nodes :
-  path:(Env.t * Browse_raw.node * Query_protocol.is_tail_position) list ->
-  typed_enclosings
+val from_nodes
+  :  path:(Env.t * Browse_raw.node * Query_protocol.is_tail_position) list
+  -> typed_enclosings
 
-val from_reconstructed :
-  nodes:(Env.t * Browse_raw.node) list ->
-  cursor:Lexing.position ->
-  verbosity:int ->
-  string Location.loc list ->
-  typed_enclosings
+val from_reconstructed
+  :  nodes:(Env.t * Browse_raw.node) list
+  -> cursor:Lexing.position
+  -> verbosity:int
+  -> string Location.loc list
+  -> typed_enclosings

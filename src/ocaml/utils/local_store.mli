@@ -12,7 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (** This module provides some facilities for creating references (and hash
     tables) which can easily be snapshoted and restored to an arbitrary version.
 

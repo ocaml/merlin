@@ -12,7 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (** Auxiliary type for reporting syntax errors
 
   {b Warning:} this module is unstable and part of
@@ -21,7 +20,7 @@
 *)
 
 type error =
-    Unclosed of Location.t * string * Location.t * string
+  | Unclosed of Location.t * string * Location.t * string
   | Expecting of Location.t * string
   | Not_expecting of Location.t * string
   | Applicative_path of Location.t
@@ -33,5 +32,5 @@ type error =
 exception Error of error
 exception Escape_error
 
-val location_of_error: error -> Location.t
-val ill_formed_ast: Location.t -> string -> 'a
+val location_of_error : error -> Location.t
+val ill_formed_ast : Location.t -> string -> 'a

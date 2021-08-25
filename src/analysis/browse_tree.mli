@@ -25,31 +25,35 @@
   in the Software.
 
 )* }}} *)
-
-type t = {
-  t_node     : Mbrowse.node;
-  t_loc      : Location.t;
-  t_env      : Env.t;
-  t_children : t list lazy_t;
-}
+type t =
+  {
+    t_node : Mbrowse.node;
+    t_loc : Location.t;
+    t_env : Env.t;
+    t_children : t list lazy_t
+  }
 
 val default_loc : Location.t
 val default_env : Env.t
 
+val of_node : ?env:Env.t -> Mbrowse.node -> t
 (** [of_node ?loc ?env node] produces a tree from [node], using [loc] and [env]
   * as default annotation when nothing can be inferred from the [node].
   * If they are not specified, annotations from child are used for approximation.
   *)
-val of_node : ?env:Env.t -> Mbrowse.node -> t
+
 val of_browse : Mbrowse.t -> t
-
 val dummy : t
-
 val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
-val all_constructor_occurrences :
-  t * [ `Description of Types.constructor_description
-      | `Declaration of Typedtree.constructor_declaration ]
-  -> t -> t Location.loc list
 
-val all_occurrences_of_prefix :
-  Path.t -> Browse_raw.node -> (Path.t Location.loc * Longident.t) list
+val all_constructor_occurrences
+  :  (t
+      *
+      [ `Description of Types.constructor_description
+      | `Declaration of Typedtree.constructor_declaration
+      ])
+  -> t
+  -> t Location.loc list
+
+val all_occurrences_of_prefix
+  :  Path.t -> Browse_raw.node -> (Path.t Location.loc * Longident.t) list

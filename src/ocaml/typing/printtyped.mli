@@ -12,15 +12,14 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
+open Typedtree
+open Format
 
-open Typedtree;;
-open Format;;
+val interface : formatter -> signature -> unit
+val implementation : formatter -> structure -> unit
 
-val interface : formatter -> signature -> unit;;
-val implementation : formatter -> structure -> unit;;
-
-val implementation_with_coercion :
-    formatter -> (structure * module_coercion) -> unit;;
-
+val implementation_with_coercion
+  :  formatter -> (structure * module_coercion) -> unit
 (* Added by merlin for debugging purposes *)
+
 val pattern : int -> formatter -> _ general_pattern -> unit

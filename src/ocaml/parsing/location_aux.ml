@@ -25,70 +25,77 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
-type t
-  = Location.t
-  = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
+type t =
+  Location.t
+  =
+  {
+    loc_start : Lexing.position;
+    loc_end : Lexing.position;
+    loc_ghost : bool
+  }
 
-let compare (l1: t) (l2: t) =
+let compare (l1 : t) (l2 : t) =
   match Lexing.compare_pos l1.loc_start l2.loc_start with
-  | (-1 | 1) as r -> r
+  | ((-1) | 1) as r -> r
   | 0 -> Lexing.compare_pos l1.loc_end l2.loc_end
   | _ -> assert false
 
 let compare_pos pos loc =
   if Lexing.compare_pos pos loc.Location.loc_start < 0 then
-    -1
+    (-1)
   else if Lexing.compare_pos pos loc.Location.loc_end > 0 then
     1
   else
     0
 
 let union l1 l2 =
-  if l1 = Location.none then l2
-  else if l2 = Location.none then l1
-  else {
-    Location.
-    loc_start = Lexing.min_pos l1.Location.loc_start l2.Location.loc_start;
-    loc_end   = Lexing.max_pos l1.Location.loc_end l2.Location.loc_end;
-    loc_ghost = l1.Location.loc_ghost && l2.Location.loc_ghost;
-  }
+  if l1 = Location.none then
+    l2
+  else if l2 = Location.none then
+    l1
+  else
+    {
+      Location.loc_start =
+        Lexing.min_pos l1.Location.loc_start l2.Location.loc_start;
+      loc_end = Lexing.max_pos l1.Location.loc_end l2.Location.loc_end;
+      loc_ghost = l1.Location.loc_ghost && l2.Location.loc_ghost
+    }
 
 let extend l1 l2 =
-  if l1 = Location.none then l2
-  else if l2 = Location.none then l1
-  else {
-    Location.
-    loc_start = Lexing.min_pos l1.Location.loc_start l2.Location.loc_start;
-    loc_end   = Lexing.max_pos l1.Location.loc_end l2.Location.loc_end;
-    loc_ghost = l1.Location.loc_ghost;
-  }
+  if l1 = Location.none then
+    l2
+  else if l2 = Location.none then
+    l1
+  else
+    {
+      Location.loc_start =
+        Lexing.min_pos l1.Location.loc_start l2.Location.loc_start;
+      loc_end = Lexing.max_pos l1.Location.loc_end l2.Location.loc_end;
+      loc_ghost = l1.Location.loc_ghost
+    }
 
 (** Filter valid errors, log invalid ones *)
 let prepare_errors exns =
-  List.filter_map exns
-    ~f:(fun exn ->
-        match Location.error_of_exn exn with
-        | None ->
-          Logger.log ~section:"Mreader" ~title:"errors"
-            "Location.error_of_exn (%a) = None"
-            (fun () -> Printexc.to_string) exn;
-          None
-        | Some `Already_displayed ->  None
-        | Some (`Ok err) -> Some err
-      )
+  List.filter_map exns ~f:(fun exn ->
+    match Location.error_of_exn exn with
+    | None ->
+      Logger.log ~section:"Mreader" ~title:"errors"
+        "Location.error_of_exn (%a) = None" (fun () -> Printexc.to_string) exn;
+      None
+    | Some `Already_displayed -> None
+    | Some (`Ok err) -> Some err
+  )
 
-let print () {Location. loc_start; loc_end; loc_ghost}  =
-  let l1, c1 = Lexing.split_pos loc_start in
-  let l2, c2 = Lexing.split_pos loc_end in
-  sprintf "%d:%d-%d:%d%s"
-    l1 c1 l2 c2 (if loc_ghost then "{ghost}" else "")
+let print () { Location.loc_start; loc_end; loc_ghost } =
+  let (l1, c1) = Lexing.split_pos loc_start in
+  let (l2, c2) = Lexing.split_pos loc_end in
+  sprintf "%d:%d-%d:%d%s" l1 c1 l2 c2 (if loc_ghost then "{ghost}" else "")
 
-let print_loc f () {Location. txt; loc} =
-  sprintf "%a@%a" f txt print loc
+let print_loc f () { Location.txt; loc } = sprintf "%a@%a" f txt print loc
 
-let is_relaxed_location = function
-  | { Location. txt = "merlin.relaxed-location" | "merlin.loc"; _ } -> true
+let is_relaxed_location =
+  function
+  | { Location.txt = ("merlin.relaxed-location" | "merlin.loc"); _ } -> true
   | _ -> false

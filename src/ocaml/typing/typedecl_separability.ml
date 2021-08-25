@@ -13,7 +13,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 open Types
 
 type type_definition = type_declaration
@@ -25,12 +24,14 @@ type type_definition = type_declaration
 (** assuming that a datatype has a single constructor/label with
    a single argument, [argument_to_unbox] represents the
    information we need to check the argument for separability. *)
-type argument_to_unbox = {
-  kind: parameter_kind; (* for error messages *)
-  mutability: Asttypes.mutable_flag;
-  argument_type: type_expr;
-  result_type_parameter_instances: type_expr list;
-  (** result_type_parameter_instances represents the domain of the
+type argument_to_unbox =
+  {
+    kind : parameter_kind;
+    (* for error messages *)
+    mutability : Asttypes.mutable_flag;
+    argument_type : type_expr;
+    result_type_parameter_instances : type_expr list;
+    (** result_type_parameter_instances represents the domain of the
      constructor; usually it is just a list of the datatype parameter
      ('a, 'b, ...), but when using GADTs or constraints it could
      contain arbitrary type expressions.
@@ -38,8 +39,9 @@ type argument_to_unbox = {
      For example, [type 'a t = 'b constraint 'a = 'b * int] has
      [['b * int]] as [result_type_parameter_instances], and so does
      [type _ t = T : 'b -> ('b * int) t]. *)
-  location : Location.t;
-}
+    location : Location.t
+  }
+
 and parameter_kind =
   | Record_field
   | Constructor_parameter
@@ -47,14 +49,12 @@ and parameter_kind =
 
 (** ['a multiplicity] counts the number of ['a] in
     a structure in which expect to see only one ['a]. *)
-type 'a multiplicity =
-  | Zero
-  | One of 'a
-  | Several
+type 'a multiplicity = Zero | One of 'a | Several
 
 type arity = argument_to_unbox multiplicity (**how many parameters?*)
 
 type branching = arity multiplicity (**how many constructors?*)
+
 
 (** Summarize the right-hand-side of a type declaration,
     for separability-checking purposes. See {!structure} below. *)
@@ -64,74 +64,76 @@ type type_structure =
   | Open
   | Algebraic of branching
 
-let demultiply_list
-  : type a b. a list -> (a -> b) -> b multiplicity
-  = fun li f -> match li with
-  | [] -> Zero
-  | [v] -> One (f v)
-  | _::_::_ -> Several
+let demultiply_list : type a b. a list -> (a -> b) -> b multiplicity =
+  fun li f ->
+    match li with [] -> Zero | [ v ] -> One (f v) | _ :: _ :: _ -> Several
 
-let structure : type_definition -> type_structure = fun def ->
-  match def.type_kind with
-  | Type_open -> Open
-  | Type_abstract ->
+let structure : type_definition -> type_structure =
+  fun def ->
+    match def.type_kind with
+    | Type_open -> Open
+    | Type_abstract ->
       begin match def.type_manifest with
       | None -> Abstract
       | Some type_expr -> Synonym type_expr
       end
-  | Type_record (labels, _) ->
-      Algebraic (One (
-        demultiply_list labels @@ fun ld -> {
-          location = ld.ld_loc;
-          kind = Record_field;
-          mutability = ld.ld_mutable;
-          argument_type = ld.ld_type;
-          result_type_parameter_instances = def.type_params;
-        }
-      ))
-  | Type_variant constructors ->
-      Algebraic (demultiply_list constructors @@ fun cd ->
-        let result_type_parameter_instances =
-          match cd.cd_res with
-          (* cd_res is the optional return type (in a GADT);
-             if None, just use the type parameters *)
-          | None -> def.type_params
-          | Some ret_type ->
-              begin match Ctype.repr ret_type with
-              | {desc=Tconstr (_, tyl, _)} ->
-                  List.map Ctype.repr tyl
-              | _ -> assert false
-              end
-        in
-        begin match cd.cd_args with
-        | Cstr_tuple tys ->
-            demultiply_list tys @@ fun argument_type -> {
-              location = cd.cd_loc;
-              kind = Constructor_parameter;
-              mutability = Asttypes.Immutable;
-              argument_type;
-              result_type_parameter_instances;
-            }
-        | Cstr_record labels ->
-            demultiply_list labels @@ fun ld ->
-              let argument_type = ld.ld_type in
-              {
-                location = ld.ld_loc;
-                kind = Constructor_field;
-                mutability = ld.ld_mutable;
-                argument_type;
-                result_type_parameter_instances;
-              }
-        end)
+    | Type_record (labels, _) ->
+      Algebraic
+        (One
+           (demultiply_list labels @@
+              fun ld ->
+                {
+                  location = ld.ld_loc;
+                  kind = Record_field;
+                  mutability = ld.ld_mutable;
+                  argument_type = ld.ld_type;
+                  result_type_parameter_instances = def.type_params
+                }))
+    | Type_variant constructors ->
+      Algebraic
+        (demultiply_list constructors @@
+           fun cd ->
+             let result_type_parameter_instances =
+               match cd.cd_res with
+               (* cd_res is the optional return type (in a GADT);
+                  if None, just use the type parameters *)
+               | None -> def.type_params
+               | Some ret_type ->
+                 begin match Ctype.repr ret_type with
+                 | { desc = Tconstr (_, tyl, _) } -> List.map Ctype.repr tyl
+                 | _ -> assert false
+                 end
+             in
+             match cd.cd_args with
+             | Cstr_tuple tys ->
+               demultiply_list tys @@
+                 (fun argument_type ->
+                    {
+                      location = cd.cd_loc;
+                      kind = Constructor_parameter;
+                      mutability = Asttypes.Immutable;
+                      argument_type;
+                      result_type_parameter_instances
+                    })
+             | Cstr_record labels ->
+               demultiply_list labels @@
+                 (fun ld ->
+                    let argument_type = ld.ld_type in
+                    {
+                      location = ld.ld_loc;
+                      kind = Constructor_field;
+                      mutability = ld.ld_mutable;
+                      argument_type;
+                      result_type_parameter_instances
+                    }))
 
-
-type error =
-  | Non_separable_evar of string option
+type error = Non_separable_evar of string option
 
 exception Error of Location.t * error
-
 (* see the .mli file for explanations on the modes *)
-module Sep = Types.Separability
+
+module Sep = Types.Separability 
+
 type mode = Sep.t = Ind | Sep | Deepsep
 
 let rank = Sep.rank
@@ -144,27 +146,30 @@ let max_mode = Sep.max
 
     This operation differs from [max_mode]: [max_mode Ind Sep] is [Sep],
     but [compose Ind Sep] is [Ind]. *)
-let compose
-  : mode -> mode -> mode
-  = fun m1 m2 ->
-  match m1 with
-  | Deepsep -> Deepsep
-  | Sep -> m2
-  | Ind -> Ind
+let compose : mode -> mode -> mode =
+  fun m1 m2 -> match m1 with Deepsep -> Deepsep | Sep -> m2 | Ind -> Ind
 
-type type_var = {
-  text: string option; (** the user name of the type variable, None for '_' *)
-  id: int; (** the identifier of the type node (type_expr.id) of the variable *)
-}
+type type_var =
+  {
+    text : string option;
+    (** the user name of the type variable, None for '_' *)
+    id : int;
+    (** the identifier of the type node (type_expr.id) of the variable *)
+  }
 
-module TVarMap = Map.Make(struct
+module TVarMap =
+  Map.Make
+  (struct
     type t = type_var
+    
     let compare v1 v2 = compare v1.id v2.id
   end)
-type context = mode TVarMap.t
-let (++) = TVarMap.union (fun _ m1 m2 -> Some(max_mode m1 m2))
-let empty = TVarMap.empty
+  
 
+type context = mode TVarMap.t
+
+let (++) = TVarMap.union (fun _ m1 m2 -> Some (max_mode m1 m2))
+let empty = TVarMap.empty
 
 (** [immediate_subtypes ty] returns the list of all the
    immediate sub-type-expressions of [ty]. They represent the biggest
@@ -173,53 +178,49 @@ let empty = TVarMap.empty
    are [int] and [bool * 'a].
 
    Smaller components are extracted recursively in [check_type]. *)
-let rec immediate_subtypes : type_expr -> type_expr list = fun ty ->
-  (* Note: Btype.fold_type_expr is not suitable here:
-     - it does not do the right thing on Tpoly, iterating on type
-       parameters as well as the subtype
-     - it performs a shallow traversal of object types,
-       while our implementation collects all method types *)
-  match (Ctype.repr ty).desc with
-  (* these are the important cases,
-     on which immediate_subtypes is called from [check_type] *)
-  | Tarrow(_,ty1,ty2,_) ->
-      [ty1; ty2]
-  | Ttuple(tys)
-  | Tpackage(_,_,tys) ->
-      tys
-  | Tobject(row,class_ty) ->
-      let class_subtys =
-        match !class_ty with
-        | None        -> []
-        | Some(_,tys) -> tys
+let rec immediate_subtypes : type_expr -> type_expr list =
+  fun ty ->
+    (* Note: Btype.fold_type_expr is not suitable here:
+       - it does not do the right thing on Tpoly, iterating on type
+         parameters as well as the subtype
+       - it performs a shallow traversal of object types,
+         while our implementation collects all method types *)
+    match (Ctype.repr ty).desc with
+    (* these are the important cases,
+       on which immediate_subtypes is called from [check_type] *)
+    | Tarrow (_, ty1, ty2, _) -> [ ty1; ty2 ]
+    | Ttuple tys | Tpackage (_, _, tys) -> tys
+    | Tobject (row, class_ty) ->
+      let class_subtys = match !class_ty with None -> [] | Some (_, tys) -> tys
       in
       immediate_subtypes_object_row class_subtys row
-  | Tvariant(row) ->
-      immediate_subtypes_variant_row [] row
-
-  (* the cases below are not called from [check_type],
-     they are here for completeness *)
-  | Tnil | Tfield _ ->
+    | Tvariant row -> immediate_subtypes_variant_row [] row
+    (* the cases below are not called from [check_type],
+       they are here for completeness *)
+    | Tnil | Tfield _ ->
       (* these should only occur under Tobject and not at the toplevel,
          but "better safe than sorry" *)
       immediate_subtypes_object_row [] ty
-  | Tlink _ | Tsubst _ -> assert false (* impossible due to Ctype.repr *)
-  | Tvar _ | Tunivar _ -> []
-  | Tpoly (pty, _) -> [pty]
-  | Tconstr (_path, tys, _) -> tys
+    | Tlink _ | Tsubst _ -> assert false
+    (* impossible due to Ctype.repr *)
+    | Tvar _ | Tunivar _ -> []
+    | Tpoly (pty, _) -> [ pty ]
+    | Tconstr (_path, tys, _) -> tys
 
-and immediate_subtypes_object_row acc ty = match (Ctype.repr ty).desc with
+and immediate_subtypes_object_row acc ty =
+  match (Ctype.repr ty).desc with
   | Tnil -> acc
   | Tfield (_label, _kind, ty, rest) ->
-      let acc = ty :: acc in
-      immediate_subtypes_object_row acc rest
+    let acc = ty :: acc in
+    immediate_subtypes_object_row acc rest
   | _ -> ty :: acc
 
 and immediate_subtypes_variant_row acc desc =
   let add_subtypes acc =
-    let add_subtype acc (_l, rf) =
-      immediate_subtypes_variant_row_field acc rf in
-    List.fold_left add_subtype acc desc.row_fields in
+    let add_subtype acc (_l, rf) = immediate_subtypes_variant_row_field acc rf
+    in
+    List.fold_left add_subtype acc desc.row_fields
+  in
   let add_row acc =
     let row = Ctype.repr desc.row_more in
     match row.desc with
@@ -228,25 +229,24 @@ and immediate_subtypes_variant_row acc desc =
   in
   add_row (add_subtypes acc)
 
-and immediate_subtypes_variant_row_field acc = function
-  | Rpresent(None)
-  | Rabsent            -> acc
-  | Rpresent(Some(ty)) -> ty :: acc
-  | Reither(_,field_types,_,r) ->
-      let acc = List.rev_append field_types acc in
-      begin match !r with
-      | None -> acc
-      | Some rf -> immediate_subtypes_variant_row_field acc rf
-      end
+and immediate_subtypes_variant_row_field acc =
+  function
+  | Rpresent None | Rabsent -> acc
+  | Rpresent (Some ty) -> ty :: acc
+  | Reither (_, field_types, _, r) ->
+    let acc = List.rev_append field_types acc in
+    begin match !r with
+    | None -> acc
+    | Some rf -> immediate_subtypes_variant_row_field acc rf
+    end
 
 let free_variables ty =
-  Ctype.free_variables (Ctype.repr ty)
-  |> List.map (fun {desc; id; _} ->
+  Ctype.free_variables (Ctype.repr ty) |>
+    List.map (fun { desc; id; _ } ->
       match desc with
-      | Tvar text -> {text; id}
-      | _ ->
-          (* Ctype.free_variables only returns Tvar nodes *)
-          assert false)
+      | Tvar text -> { text; id }
+      | _ -> (* Ctype.free_variables only returns Tvar nodes *) assert false
+    )
 
 (** Coinductive hypotheses to handle equi-recursive types
 
@@ -366,17 +366,20 @@ let free_variables ty =
     we can recursively check (foo : Ind) with (foo t : m) marked
     as "safe", rather than "unsafe".
 *)
-module TypeMap = Btype.TypeMap
-module ModeSet = Set.Make(Types.Separability)
+module TypeMap = Btype.TypeMap 
 
-type coinductive_hyps = {
-  safe: ModeSet.t TypeMap.t;
-  unsafe: ModeSet.t TypeMap.t;
-  poison: ModeSet.t TypeMap.t;
-}
+module ModeSet = Set.Make(Types.Separability) 
+
+type coinductive_hyps =
+  {
+    safe : ModeSet.t TypeMap.t;
+    unsafe : ModeSet.t TypeMap.t;
+    poison : ModeSet.t TypeMap.t
+  }
 
 module Hyps : sig
   type t = coinductive_hyps
+  
   val empty : t
   val add : type_expr -> mode -> t -> t
   val guard : t -> t
@@ -385,49 +388,39 @@ module Hyps : sig
   val unsafe : type_expr -> mode -> t -> bool
 end = struct
   type t = coinductive_hyps
-
-  let empty = {
-    safe = TypeMap.empty;
-    unsafe = TypeMap.empty;
-    poison = TypeMap.empty;
-  }
-
-  let of_opt = function
-    | Some ms -> ms
-    | None -> ModeSet.empty
-
+  
+  let empty =
+    { safe = TypeMap.empty; unsafe = TypeMap.empty; poison = TypeMap.empty }
+  
+  let of_opt = function Some ms -> ms | None -> ModeSet.empty
+  
   let merge map1 map2 =
     TypeMap.merge (fun _k ms1 ms2 ->
-        Some (ModeSet.union (of_opt ms1) (of_opt ms2))
-      ) map1 map2
-
-  let guard {safe; unsafe; poison;} = {
-    safe = merge safe unsafe;
-    unsafe = TypeMap.empty;
-    poison;
-  }
-
-  let poison {safe; unsafe; poison;} = {
-    safe;
-    unsafe = TypeMap.empty;
-    poison = merge poison unsafe;
-  }
-
+      Some (ModeSet.union (of_opt ms1) (of_opt ms2))
+    ) map1 map2
+  
+  let guard { safe; unsafe; poison } =
+    { safe = merge safe unsafe; unsafe = TypeMap.empty; poison }
+  
+  let poison { safe; unsafe; poison } =
+    { safe; unsafe = TypeMap.empty; poison = merge poison unsafe }
+  
   let add ty m hyps =
     let m_map = TypeMap.singleton ty (ModeSet.singleton m) in
-    { hyps with unsafe = merge m_map hyps.unsafe; }
-
+    { hyps with  unsafe = merge m_map hyps.unsafe }
+  
   let find ty map = try TypeMap.find ty map with Not_found -> ModeSet.empty
-
+  
   let safe ty m hyps =
     match ModeSet.max_elt_opt (find ty hyps.safe) with
     | None -> false
     | Some best_safe -> rank best_safe >= rank m
-
-  let unsafe ty m {safe = _; unsafe; poison} =
+  
+  let unsafe ty m { safe = _; unsafe; poison } =
     let in_map s = ModeSet.mem m (find ty s) in
-    List.exists in_map [unsafe; poison]
+    List.exists in_map [ unsafe; poison ]
 end
+  
 
 (** For a type expression [ty] (without constraints and existentials),
     any mode checking [ty : m] is satisfied in the "worse case" context
@@ -437,48 +430,52 @@ let worst_case ty =
   let add ctx tvar = TVarMap.add tvar Deepsep ctx in
   List.fold_left add TVarMap.empty (free_variables ty)
 
-
 (** [check_type env sigma ty m] returns the most permissive context [gamma]
     such that [ty] is separable at mode [m] in [gamma], under
     the signature [sigma]. *)
-let check_type
-  : Env.t -> type_expr -> mode -> context
-  = fun env ty m ->
-  let rec check_type hyps ty m =
-    let ty = Ctype.repr ty in
-    if Hyps.safe ty m hyps then empty
-    else if Hyps.unsafe ty m hyps then worst_case ty
-    else
-    let hyps = Hyps.add ty m hyps in
-    match (ty.desc, m) with
-    (* Impossible case due to the call to [Ctype.repr]. *)
-    | (Tlink _            , _      ) -> assert false
-    (* Impossible case (according to comment in [typing/types.mli]. *)
-    | (Tsubst(_)          , _      ) -> assert false
-    (* "Indifferent" case, the empty context is sufficient. *)
-    | (_                  , Ind    ) -> empty
-    (* Variable case, add constraint. *)
-    | (Tvar(alpha)        , m      ) ->
-        TVarMap.singleton {text = alpha; id = ty.Types.id} m
-    (* "Separable" case for constructors with known memory representation. *)
-    | (Tarrow _           , Sep    )
-    | (Ttuple _           , Sep    )
-    | (Tvariant(_)        , Sep    )
-    | (Tobject(_,_)       , Sep    )
-    | ((Tnil | Tfield _)  , Sep    )
-    | (Tpackage(_,_,_)    , Sep    ) -> empty
-    (* "Deeply separable" case for these same constructors. *)
-    | (Tarrow _           , Deepsep)
-    | (Ttuple _           , Deepsep)
-    | (Tvariant(_)        , Deepsep)
-    | (Tobject(_,_)       , Deepsep)
-    | ((Tnil | Tfield _)  , Deepsep)
-    | (Tpackage(_,_,_)    , Deepsep) ->
-        let tys = immediate_subtypes ty in
-        let on_subtype context ty =
-          context ++ check_type (Hyps.guard hyps) ty Deepsep in
-        List.fold_left on_subtype empty tys
-    (* Polymorphic type, and corresponding polymorphic variable.
+let check_type : Env.t -> type_expr -> mode -> context =
+  fun env ty m ->
+    let rec check_type hyps ty m =
+      let ty = Ctype.repr ty in
+      if Hyps.safe ty m hyps then
+        empty
+      else if Hyps.unsafe ty m hyps then
+        worst_case ty
+      else
+        let hyps = Hyps.add ty m hyps in
+        match ty.desc, m with
+        (* Impossible case due to the call to [Ctype.repr]. *)
+        | Tlink _, _ -> assert false
+        (* Impossible case (according to comment in [typing/types.mli]. *)
+        | Tsubst _, _ -> assert false
+        (* "Indifferent" case, the empty context is sufficient. *)
+        | _, Ind -> empty
+        (* Variable case, add constraint. *)
+        | Tvar alpha, m ->
+          TVarMap.singleton { text = alpha; id = ty.Types.id } m
+        (* "Separable" case for constructors with known memory representation. *)
+        | Tarrow _, Sep
+        | Ttuple _, Sep
+        | Tvariant _, Sep
+        | Tobject (_, _), Sep
+        | (Tnil | Tfield _), Sep
+        | Tpackage (_, _, _), Sep
+          ->
+          empty
+        (* "Deeply separable" case for these same constructors. *)
+        | Tarrow _, Deepsep
+        | Ttuple _, Deepsep
+        | Tvariant _, Deepsep
+        | Tobject (_, _), Deepsep
+        | (Tnil | Tfield _), Deepsep
+        | Tpackage (_, _, _), Deepsep
+          ->
+          let tys = immediate_subtypes ty in
+          let on_subtype context ty =
+            context ++ check_type (Hyps.guard hyps) ty Deepsep
+          in
+          List.fold_left on_subtype empty tys
+        (* Polymorphic type, and corresponding polymorphic variable.
 
        In theory, [Tpoly] (forall alpha. tau) would add a new variable
        (alpha) in scope, check its body (tau) recursively, and then
@@ -491,28 +488,30 @@ let check_type
        (instead of (alpha : m) in the [Tunivar] case: the constraint
        on the variable is removed/ignored at the variable occurrence
        site, rather than at the variable-introduction site. *)
-    (* Note: that we are semantically incomplete in the Deepsep case
-       (following the syntactic typing rules): the semantics only
-       requires that *closed* sub-type-expressions be (deeply)
-       separable; sub-type-expressions containing the quantified
-       variable cannot be extracted by constraints (this would be
-       a scope violation), so they could be ignored if they occur
-       under a separating type constructor. *)
-    | (Tpoly(pty,_)       , m      ) ->
-        check_type hyps pty m
-    | (Tunivar(_)         , _      ) -> empty
-    (* Type constructor case. *)
-    | (Tconstr(path,tys,_), m      ) ->
-        let msig = (Env.find_type path env).type_separability in
-        let on_param context (ty, m_param) =
-          let hyps = match m_param with
-            | Ind -> Hyps.guard hyps
-            | Sep -> hyps
-            | Deepsep -> Hyps.poison hyps in
-          context ++ check_type hyps ty (compose m m_param) in
-        List.fold_left on_param empty (List.combine tys msig)
-  in
-  check_type Hyps.empty ty m
+        (* Note: that we are semantically incomplete in the Deepsep case
+           (following the syntactic typing rules): the semantics only
+           requires that *closed* sub-type-expressions be (deeply)
+           separable; sub-type-expressions containing the quantified
+           variable cannot be extracted by constraints (this would be
+           a scope violation), so they could be ignored if they occur
+           under a separating type constructor. *)
+        | Tpoly (pty, _), m -> check_type hyps pty m
+        | Tunivar _, _ -> empty
+        (* Type constructor case. *)
+        | Tconstr (path, tys, _), m ->
+          let msig = (Env.find_type path env).type_separability in
+          let on_param context (ty, m_param) =
+            let hyps =
+              match m_param with
+              | Ind -> Hyps.guard hyps
+              | Sep -> hyps
+              | Deepsep -> Hyps.poison hyps
+            in
+            context ++ check_type hyps ty (compose m m_param)
+          in
+          List.fold_left on_param empty (List.combine tys msig)
+    in
+    check_type Hyps.empty ty m
 
 let best_msig decl = List.map (fun _ -> Ind) decl.type_params
 let worst_msig decl = List.map (fun _ -> Deepsep) decl.type_params
@@ -564,8 +563,9 @@ let msig_of_external_type decl =
    Sometimes no such universal context exists, as an existential type
    cannot be safely introduced, then this function raises an [Error]
    exception with a [Non_separable_evar] payload.  *)
-let msig_of_context : decl_loc:Location.t -> parameters:type_expr list
-    -> context -> Sep.signature =
+let msig_of_context :
+  decl_loc:Location.t -> parameters:type_expr list -> context -> Sep.signature
+=
   fun ~decl_loc ~parameters context ->
     let handle_equation (acc, context) param_instance =
       (* In the theory, GADT equations are of the form
@@ -588,27 +588,27 @@ let msig_of_context : decl_loc:Location.t -> parameters:type_expr list
          an accumulator variable [acc], setting existential variables
          to Ind as we go. *)
       let param_instance = Ctype.repr param_instance in
-      let get context var =
-        try TVarMap.find var context with Not_found -> Ind in
-      let set_ind context var =
-        TVarMap.add var Ind context in
-      let is_ind context var = match get context var with
-        | Ind -> true
-        | Sep | Deepsep -> false in
+      let get context var = try TVarMap.find var context with Not_found -> Ind
+      in
+      let set_ind context var = TVarMap.add var Ind context in
+      let is_ind context var =
+        match get context var with Ind -> true | Sep | Deepsep -> false
+      in
       match param_instance.desc with
       | Tvar text ->
-          let var = {text; id = param_instance.Types.id} in
-          (get context var) :: acc, (set_ind context var)
+        let var = { text; id = param_instance.Types.id } in
+        get context var :: acc, set_ind context var
       | _ ->
-          let instance_exis = free_variables param_instance in
-          if List.for_all (is_ind context) instance_exis then
-            Ind :: acc, context
-          else
-            Deepsep :: acc, List.fold_left set_ind context instance_exis
+        let instance_exis = free_variables param_instance in
+        if List.for_all (is_ind context) instance_exis then
+          Ind :: acc, context
+        else
+          Deepsep :: acc, List.fold_left set_ind context instance_exis
     in
-    let mode_signature, context =
+    let (mode_signature, context) =
       let (mode_signature_rev, ctx) =
-        List.fold_left handle_equation ([], context) parameters in
+        List.fold_left handle_equation ([], context) parameters
+      in
       (* Note: our inference system is not principal, because the
          inference result depends on the order in which those
          equations are processed. (To our knowledge this is the only
@@ -644,7 +644,8 @@ let msig_of_context : decl_loc:Location.t -> parameters:type_expr list
          needs a List.rev on the accumulated modes, but it gives
          a more predictable/natural (non-principal) behavior.
   *)
-      (List.rev mode_signature_rev, ctx) in
+      List.rev mode_signature_rev, ctx
+    in
     (* After all variables determined by the parameters have been set to Ind
        by [handle_equation], all variables remaining in the context are
        purely existential and should not require a stronger mode than Ind. *)
@@ -652,8 +653,7 @@ let msig_of_context : decl_loc:Location.t -> parameters:type_expr list
       if rank mode > rank Ind then
         raise (Error (decl_loc, Non_separable_evar evar.text))
     in
-    TVarMap.iter check_existential context;
-    mode_signature
+    TVarMap.iter check_existential context; mode_signature
 
 (** [check_def env def] returns the signature required
     for the type definition [def] in the typing environment [env].
@@ -662,31 +662,29 @@ let msig_of_context : decl_loc:Location.t -> parameters:type_expr list
     no such signature exists -- the definition will always be invalid.
     This only happens when the definition is marked to be unboxed. *)
 
-let check_def
-  : Env.t -> type_definition -> Sep.signature
-  = fun env def ->
-  let boxed = not def.type_unboxed.unboxed in
-  match structure def with
-  | Abstract ->
-      assert boxed;
-      msig_of_external_type def
-  | Synonym type_expr ->
-      check_type env type_expr Sep
-      |> msig_of_context ~decl_loc:def.type_loc ~parameters:def.type_params
-  | Open | Algebraic (Zero | Several | One (Zero | Several)) ->
-      assert boxed;
-      best_msig def
-  | Algebraic (One (One constructor)) ->
-    if boxed then best_msig def
-    else
-      check_type env constructor.argument_type Sep
-      |> msig_of_context ~decl_loc:def.type_loc
-           ~parameters:constructor.result_type_parameter_instances
+let check_def : Env.t -> type_definition -> Sep.signature =
+  fun env def ->
+    let boxed = not def.type_unboxed.unboxed in
+    match structure def with
+    | Abstract -> assert boxed; msig_of_external_type def
+    | Synonym type_expr ->
+      check_type env type_expr Sep |>
+        msig_of_context ~decl_loc:def.type_loc ~parameters:def.type_params
+    | Open | Algebraic (Zero | Several | One (Zero | Several)) ->
+      assert boxed; best_msig def
+    | Algebraic (One (One constructor)) ->
+      if boxed then
+        best_msig def
+      else
+        check_type env constructor.argument_type Sep |>
+          msig_of_context ~decl_loc:def.type_loc
+            ~parameters:constructor.result_type_parameter_instances
 
 let compute_decl env decl =
-  if Config.flat_float_array then check_def env decl
+  if Config.flat_float_array then
+    check_def env decl
   else
-    (* Hack: in -no-flat-float-array mode, instead of always returning
+  (* Hack: in -no-flat-float-array mode, instead of always returning
        [best_msig], we first compute the separability signature --
        falling back to [best_msig] if it fails.
 
@@ -702,30 +700,33 @@ let compute_decl env decl =
        when trying to build a -no-flat-float-array system from
        a bootstrap compiler itself using -flat-float-array. See #9291.
        *)
-    try check_def env decl with
+    try check_def env decl
+    with
     | Error _ ->
-       (* It could be nice to emit a warning here, so that users know
-          that their definition would be rejected in -flat-float-array mode *)
-       best_msig decl
+      (* It could be nice to emit a warning here, so that users know
+         that their definition would be rejected in -flat-float-array mode *)
+      best_msig decl
 
 (** Separability as a generic property *)
 type prop = Types.Separability.signature
 
-let property : (prop, unit) Typedecl_properties.property =
+let property : (prop,unit) Typedecl_properties.property =
   let open Typedecl_properties in
   let eq ts1 ts2 =
-    List.length ts1 = List.length ts2
-    && List.for_all2 Sep.eq ts1 ts2 in
+    List.length ts1 = List.length ts2 && List.for_all2 Sep.eq ts1 ts2
+  in
   let merge ~prop:_ ~new_prop =
     (* the update function is monotonous: ~new_prop is always
        more informative than ~prop, which can be ignored *)
-    new_prop in
+    new_prop
+  in
   let default decl = best_msig decl in
   let compute env decl () = compute_decl env decl in
-  let update_decl decl type_separability = { decl with type_separability } in
-  let check _env _id _decl () = () in (* FIXME run final check? *)
-  { eq; merge; default; compute; update_decl; check; }
-
+  let update_decl decl type_separability = { decl with  type_separability } in
+  let check _env _id _decl () = () in
+  (* FIXME run final check? *)
+  { eq; merge; default; compute; update_decl; check }
 (* Definition using the fixpoint infrastructure. *)
+
 let update_decls env decls =
   Typedecl_properties.compute_property_noreq property env decls

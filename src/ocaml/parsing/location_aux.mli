@@ -25,29 +25,32 @@
   in the Software.
 
 )* }}} *)
+type t =
+  Location.t
+  =
+  {
+    loc_start : Lexing.position;
+    loc_end : Lexing.position;
+    loc_ghost : bool
+  }
 
-type t
-  = Location.t
-  = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
-
-(** [compare l1 l2] compares start positions, if equal compares end positions *)
 val compare : t -> t -> int
+(** [compare l1 l2] compares start positions, if equal compares end positions *)
 
-val compare_pos: Lexing.position -> t -> int
+val compare_pos : Lexing.position -> t -> int
 
+val union : t -> t -> t
 (** Return the smallest location covered by both arguments,
     ghost if both are ghosts *)
-val union : t -> t -> t
 
-(** Like location_union, but keep loc_ghost'ness of first argument *)
 val extend : t -> t -> t
+(** Like location_union, but keep loc_ghost'ness of first argument *)
 
-(** Filter valid errors, log invalid ones *)
 val prepare_errors : exn list -> Location.error list
+(** Filter valid errors, log invalid ones *)
 
 (** {1 Dump} *)
 
 val print : unit -> t -> string
 val print_loc : (unit -> 'a -> string) -> unit -> 'a Location.loc -> string
-
 val is_relaxed_location : string Location.loc -> bool

@@ -25,30 +25,32 @@
   in the Software.
 
 )* }}} *)
-
 open Parsetree
 
 let app a b =
   let loc =
-    if a.pexp_loc.Location.loc_ghost
-    then {b.pexp_loc with Location.loc_ghost = true}
-    else b.pexp_loc
+    if a.pexp_loc.Location.loc_ghost then
+      { b.pexp_loc with  Location.loc_ghost = true }
+    else
+      b.pexp_loc
   in
-  Ast_helper.Exp.apply ~loc a [Ast_helper.no_label, b]
+  Ast_helper.Exp.apply ~loc a [ Ast_helper.no_label, b ]
 
-let pat_app f (pat,expr) = pat, app f expr
-
+let pat_app f (pat, expr) = pat, app f expr
 let prim_ident prim = Longident.parse ("_." ^ prim)
+
 let prim ?(ghost=true) prim =
   let open Location in
   let ident = mknoloc (prim_ident prim) in
-  let ident = if ghost
-    then ident
-    else {ident with loc = {ident.loc with loc_ghost = false}}
+  let ident =
+    if ghost then
+      ident
+    else
+      { ident with  loc = { ident.loc with  loc_ghost = false } }
   in
   Ast_helper.Exp.ident ~loc:ident.loc ident
-
 (* Lwt extension *)
+
 module Lwt = struct
   let un_lwt = prim "Lwt.un_lwt"
   let to_lwt = prim "Lwt.to_lwt"
@@ -58,17 +60,19 @@ module Lwt = struct
   let finally_ = prim "Lwt.finally'"
   let raise_lwt_ = prim_ident "Lwt.raise_lwt'"
 end
-
+  
 (* MetaOCaml support *)
+
 module Meta = struct
   let prim_code = prim "Meta.code"
   let prim_uncode = prim "Meta.uncode"
-
+  
   let code loc_start loc_end expr =
-    let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
-    Ast_helper.Exp.apply ~loc prim_code [Ast_helper.no_label, expr]
-
+    let loc = { expr.pexp_loc with  Location.loc_start; loc_end } in
+    Ast_helper.Exp.apply ~loc prim_code [ Ast_helper.no_label, expr ]
+  
   let uncode loc_start loc_end expr =
-    let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
-    Ast_helper.Exp.apply ~loc prim_uncode [Ast_helper.no_label, expr]
+    let loc = { expr.pexp_loc with  Location.loc_start; loc_end } in
+    Ast_helper.Exp.apply ~loc prim_uncode [ Ast_helper.no_label, expr ]
 end
+  

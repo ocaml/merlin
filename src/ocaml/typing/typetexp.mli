@@ -12,39 +12,39 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (* Typechecking of type expressions for the core language *)
-
 open Types
 
 val valid_tyvar_name : string -> bool
 
-val transl_simple_type:
-        Env.t -> bool -> Parsetree.core_type -> Typedtree.core_type
-val transl_simple_type_univars:
-        Env.t -> Parsetree.core_type -> Typedtree.core_type
+val transl_simple_type
+  :  Env.t -> bool -> Parsetree.core_type -> Typedtree.core_type
+
+val transl_simple_type_univars
+  :  Env.t -> Parsetree.core_type -> Typedtree.core_type
+
 val transl_simple_type_delayed
   :  Env.t
   -> Parsetree.core_type
   -> Typedtree.core_type * type_expr * (unit -> unit)
-        (* Translate a type, but leave type variables unbound. Returns
-           the type, an instance of the corresponding type_expr, and a
-           function that binds the type variable. *)
-val transl_type_scheme:
-        Env.t -> Parsetree.core_type -> Typedtree.core_type
-val reset_type_variables: unit -> unit
-val type_variable: Location.t -> string -> type_expr
-val transl_type_param:
-  Env.t -> Parsetree.core_type -> Typedtree.core_type
+(* Translate a type, but leave type variables unbound. Returns
+   the type, an instance of the corresponding type_expr, and a
+   function that binds the type variable. *)
+
+val transl_type_scheme : Env.t -> Parsetree.core_type -> Typedtree.core_type
+val reset_type_variables : unit -> unit
+val type_variable : Location.t -> string -> type_expr
+val transl_type_param : Env.t -> Parsetree.core_type -> Typedtree.core_type
 
 type variable_context
-val narrow: unit -> variable_context
-val widen: variable_context -> unit
+
+val narrow : unit -> variable_context
+val widen : variable_context -> unit
 
 exception Already_bound
 
 type error =
-    Unbound_type_variable of string
+  | Unbound_type_variable of string
   | Undefined_type_constructor of Path.t
   | Type_arity_mismatch of Longident.t * int * int
   | Bound_type_variable of string
@@ -66,14 +66,21 @@ type error =
 
 exception Error of Location.t * Env.t * error
 
-val report_error: Env.t -> Format.formatter -> error -> unit
-
+val report_error : Env.t -> Format.formatter -> error -> unit
 (* Support for first-class modules. *)
-val transl_modtype_longident:  (* from Typemod *)
-    (Location.t -> Env.t -> Longident.t -> Path.t) ref
-val transl_modtype: (* from Typemod *)
-    (Env.t -> Parsetree.module_type -> Typedtree.module_type) ref
-val create_package_mty:
-    Location.t -> Env.t -> Parsetree.package_type ->
-    (Longident.t Asttypes.loc * Parsetree.core_type) list *
-      Parsetree.module_type
+
+val transl_modtype_longident
+  :
+  (* from Typemod *)  (Location.t -> Env.t -> Longident.t -> Path.t) ref
+
+val transl_modtype
+  :
+  (* from Typemod *)  (Env.t -> Parsetree.module_type -> Typedtree.module_type)
+  ref
+
+val create_package_mty
+  :  Location.t
+  -> Env.t
+  -> Parsetree.package_type
+  ->
+  (Longident.t Asttypes.loc * Parsetree.core_type) list * Parsetree.module_type

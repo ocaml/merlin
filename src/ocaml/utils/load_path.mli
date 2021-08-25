@@ -11,7 +11,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (** Management of include directories.
 
     This module offers a high level interface to locating files in the
@@ -22,14 +21,12 @@
     doesn't change during the execution of the compiler.
 *)
 
-val add_dir : string -> unit
-(** Add a directory to the load path *)
+val add_dir : string -> unit (** Add a directory to the load path *)
 
-val remove_dir : string -> unit
-(** Remove a directory from the load path *)
+val remove_dir : string -> unit (** Remove a directory from the load path *)
 
-val reset : unit -> unit
-(** Remove all directories *)
+val reset : unit -> unit (** Remove all directories *)
+
 
 val init : string list -> unit
 (** [init l] is the same as [reset (); List.iter add_dir (List.rev l)] *)
@@ -48,17 +45,17 @@ val find_uncap : string -> string
     name is Foo.ml, allow /path/Foo.ml and /path/foo.ml to match. *)
 
 module Dir : sig
-  type t
-  (** Represent one directory in the load path. *)
-
+  type t (** Represent one directory in the load path. *)
+  
+  
   val create : string -> t
-
   val path : t -> string
-
+  
   val files : t -> string list
   (** All the files in that directory. This doesn't include files in
       sub-directories of this directory. *)
 end
+  
 
 val add : Dir.t -> unit
 

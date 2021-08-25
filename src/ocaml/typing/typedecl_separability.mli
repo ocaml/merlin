@@ -13,7 +13,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 (** The OCaml runtime assumes for type-directed optimizations that all types
     are "separable". A type is "separable" if either all its inhabitants
     (the values of this type) are floating-point numbers, or none of them are.
@@ -68,14 +67,20 @@
    is the following: a concrete instance [(foo, bar) t] of the type is
    separable if [foo] has mode [m1] and [bar] has mode [m2]. *)
 
-type error =
-  | Non_separable_evar of string option
-exception Error of Location.t * error
-(** Exception raised when a type declaration is not separable, or when its
-    separability cannot be established. *)
+type error = Non_separable_evar of string option
 
-type mode = Types.Separability.t = Ind | Sep | Deepsep
-(** The mode [Sep] ("separable") characterizes types that are indeed separable:
+exception
+  Error of Location.t * error
+  (** Exception raised when a type declaration is not separable, or when its
+      separability cannot be established. *)
+
+type mode =
+  Types.Separability.t
+  =
+  | Ind
+  | Sep
+  | Deepsep
+    (** The mode [Sep] ("separable") characterizes types that are indeed separable:
     either they only contain floating-point values, or none of the values
     at this type are floating-point values.
     On a type parameter, it indicates that this parameter must be
@@ -125,8 +130,10 @@ val compute_decl : Env.t -> Types.type_declaration -> mode list
 (** Property interface (see {!Typedecl_properties}). These functions
     rely on {!compute_decl} and raise the {!Error} exception on error. *)
 type prop = Types.Separability.signature
-val property : (prop, unit) Typedecl_properties.property
-val update_decls :
-  Env.t ->
-  (Ident.t * Typedecl_properties.decl) list ->
-  (Ident.t * Typedecl_properties.decl) list
+
+val property : (prop,unit) Typedecl_properties.property
+
+val update_decls
+  :  Env.t
+  -> (Ident.t * Typedecl_properties.decl) list
+  -> (Ident.t * Typedecl_properties.decl) list

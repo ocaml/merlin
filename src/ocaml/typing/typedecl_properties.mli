@@ -13,7 +13,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
 type decl = Types.type_declaration
 
 (** An abstract interface for properties of type definitions, such as
@@ -23,16 +22,15 @@ type decl = Types.type_declaration
    computation, and then (optionally) check that the result is
    consistent with the declaration or user expectations. *)
 
-type ('prop, 'req) property = {
-  eq : 'prop -> 'prop -> bool;
-  merge : prop:'prop -> new_prop:'prop -> 'prop;
-
-  default : decl -> 'prop;
-  compute : Env.t -> decl -> 'req -> 'prop;
-  update_decl : decl -> 'prop -> decl;
-
-  check : Env.t -> Ident.t -> decl -> 'req -> unit;
-}
+type ('prop, 'req) property =
+  {
+    eq : 'prop -> 'prop -> bool;
+    merge : prop:'prop -> new_prop:'prop -> 'prop;
+    default : decl -> 'prop;
+    compute : Env.t -> decl -> 'req -> 'prop;
+    update_decl : decl -> 'prop -> decl;
+    check : Env.t -> Ident.t -> decl -> 'req -> unit
+  }
 (** ['prop] represents the type of property values
     ({!Types.Variance.t}, just 'bool' for immediacy, etc).
 
@@ -43,13 +41,19 @@ type ('prop, 'req) property = {
     their requirement is global, or already stored in
     [type_declaration]; they can just use [unit] as ['req] parameter. *)
 
-
+val compute_property
+  :  ('prop,'req) property
+  -> Env.t
+  -> (Ident.t * decl) list
+  -> 'req list
+  -> (Ident.t * decl) list
 (** [compute_property prop env decls req] performs a fixpoint computation
     to determine the final values of a property on a set of mutually-recursive
     type declarations. The [req] argument must be a list of the same size as
     [decls], providing the user requirement for each declaration. *)
-val compute_property : ('prop, 'req) property -> Env.t ->
-  (Ident.t * decl) list -> 'req list -> (Ident.t * decl) list
 
-val compute_property_noreq : ('prop, unit) property -> Env.t ->
-  (Ident.t * decl) list -> (Ident.t * decl) list
+val compute_property_noreq
+  :  ('prop,unit) property
+  -> Env.t
+  -> (Ident.t * decl) list
+  -> (Ident.t * decl) list

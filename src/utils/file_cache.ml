@@ -25,69 +25,65 @@
   in the Software.
 
 )* }}} *)
-
-module Make(Input : sig
-  type t
-  val read : string -> t
-  val cache_name : string
-end) = struct
-  let {Logger. log} = Logger.for_section ("File_cache("^Input.cache_name^")")
-
-  let cache : (string, File_id.t * float ref * Input.t) Hashtbl.t
-            = Hashtbl.create 17
-
+module Make
+    (Input :
+      sig
+        type t
+        
+        val read : string -> t
+        val cache_name : string
+      end)
+= struct
+  let { Logger.log } =
+    Logger.for_section ("File_cache(" ^ Input.cache_name ^ ")")
+  
+  let cache : (string,File_id.t * float ref * Input.t) Hashtbl.t =
+    Hashtbl.create 17
+  
   let get_cached_entry ~title fid filename =
-    let fid', latest_use, file = Hashtbl.find cache filename in
-    if (File_id.check fid fid') then
-      log ~title "reusing %S" filename
-    else (
-      log ~title "%S was updated on disk" filename;
-      raise Not_found;
-    );
-    latest_use := Unix.time ();
-    file
-
+    let (fid', latest_use, file) = Hashtbl.find cache filename in
+    (if File_id.check fid fid' then
+       log ~title "reusing %S" filename
+     else
+       (log ~title "%S was updated on disk" filename; raise Not_found));
+    latest_use := Unix.time (); file
+  
   let read filename =
     let fid = File_id.get filename in
     let title = "read" in
     try get_cached_entry ~title fid filename
-    with Not_found ->
-    try
-      log ~title "reading %S from disk" filename;
-      let file = Input.read filename in
-      Hashtbl.replace cache filename (fid, ref (Unix.time ()), file);
-      file
-    with exn ->
-      log ~title "failed to read %S (%t)"
-        filename (fun () -> Printexc.to_string exn);
-      Hashtbl.remove cache filename;
-      raise exn
-
+    with
+    | Not_found ->
+      (try
+         log ~title "reading %S from disk" filename;
+         let file = Input.read filename in
+         Hashtbl.replace cache filename (fid, ref (Unix.time ()), file); file
+       with
+       | exn ->
+         log ~title "failed to read %S (%t)" filename (fun () ->
+           Printexc.to_string exn
+         );
+         Hashtbl.remove cache filename; raise exn)
+  
   let get_cached_entry filename =
     let fid = File_id.get filename in
     let title = "get_cached_entry" in
     get_cached_entry ~title fid filename
-
+  
   let flush ?older_than () =
     let title = "flush" in
-    let limit = match older_than with
-      | None -> -.max_float
-      | Some dt -> Unix.time () -. dt
+    let limit =
+      match older_than with None -> ~-.max_float | Some dt -> Unix.time () -. dt
     in
     let add_invalid filename (fid, latest_use, _) invalids =
-      if !latest_use > limit &&
-         File_id.check (File_id.get filename) fid
-      then (
-        log ~title "keeping %S" filename;
-        invalids
-      ) else (
-        log ~title "removing %S" filename;
-        filename :: invalids
-      )
+      if !latest_use > limit && File_id.check (File_id.get filename) fid then
+        (log ~title "keeping %S" filename; invalids)
+      else
+        (log ~title "removing %S" filename; filename :: invalids)
     in
     let invalid = Hashtbl.fold add_invalid cache [] in
     List.iter (Hashtbl.remove cache) invalid
-
-  let clear () =
-    Hashtbl.clear cache
+  
+  let clear () = Hashtbl.clear cache
 end
+  

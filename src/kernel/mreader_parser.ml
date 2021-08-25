@@ -25,187 +25,164 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
-module I = Parser_raw.MenhirInterpreter
+module I = Parser_raw.MenhirInterpreter 
 
-type kind =
-  | ML
-  | MLI
-  (*| MLL | MLY*)
+type kind = ML | MLI
+(*| MLL | MLY*)
 
 module Dump = struct
   let symbol () = Parser_printer.print_symbol
 end
+  
 
-module R = Mreader_recover.Make
-    (I)
-    (struct
-      include Parser_recover
+module R =
+  Mreader_recover.Make
+  (I)
+  (struct
+    include Parser_recover
+    
+    let default_value loc x = Default.default_loc := loc; default_value x
+    
+    let guide (type a) : a I.symbol -> bool =
+      function I.T I.T_BEGIN -> true | _ -> false
+    
+    let token_of_terminal = Parser_printer.token_of_terminal
+    let nullable = Parser_explain.nullable
+  end)
+  (Dump)
+  
 
-      let default_value loc x =
-        Default.default_loc := loc;
-        default_value x
+type 'a step = Correct of 'a I.checkpoint | Recovering of 'a R.candidates
 
-      let guide (type a) : a I.symbol -> bool = function
-        | I.T I.T_BEGIN -> true
-        | _ -> false
+type tree =
+  [ `Interface of Parsetree.signature | `Implementation of Parsetree.structure ]
 
-      let token_of_terminal = Parser_printer.token_of_terminal
-
-      let nullable = Parser_explain.nullable
-    end)
-   (Dump)
-
-type 'a step =
-  | Correct of 'a I.checkpoint
-  | Recovering of 'a R.candidates
-
-type tree = [
-  | `Interface of Parsetree.signature
-  | `Implementation of Parsetree.structure
-]
-
-type steps =[
-  | `Signature of (Parsetree.signature step * Mreader_lexer.triple) list
+type steps =
+  [ `Signature of (Parsetree.signature step * Mreader_lexer.triple) list
   | `Structure of (Parsetree.structure step * Mreader_lexer.triple) list
-]
+  ]
 
-type t = {
-  kind: kind;
-  tree: tree;
-  steps: steps;
-  errors: exn list;
-  lexer: Mreader_lexer.t;
-}
+type t =
+  {
+    kind : kind;
+    tree : tree;
+    steps : steps;
+    errors : exn list;
+    lexer : Mreader_lexer.t
+  }
 
-let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
-
+let eof_token = Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos
 let errors_ref = ref []
 
 let resume_parse =
-  let rec normal acc tokens = function
+  let rec normal acc tokens =
+    function
     | I.InputNeeded env as checkpoint ->
-      let token, tokens = match tokens with
-        | token :: tokens -> token, tokens
-        | [] -> eof_token, []
+      let (token, tokens) =
+        match tokens with token :: tokens -> token, tokens | [] -> eof_token, []
       in
       check_for_error acc token tokens env (I.offer checkpoint token)
-
-    | I.Shifting (_,env,_) | I.AboutToReduce (env,_) as checkpoint ->
+    | (I.Shifting (_, env, _) | I.AboutToReduce (env, _)) as checkpoint ->
       begin match I.resume checkpoint with
-        | checkpoint' -> normal acc tokens checkpoint'
-        | exception exn ->
-          Msupport.raise_error exn;
-          let token = match acc with
-            | [] -> assert false
-            (* Parser raised error before parsing anything *)
-            | (_, token) :: _ -> token
-          in
-          enter_error acc token tokens env
+      | checkpoint' -> normal acc tokens checkpoint'
+      | exception exn ->
+        Msupport.raise_error exn;
+        let token =
+          match acc with
+          | [] -> assert false
+          (* Parser raised error before parsing anything *)
+          | (_, token) :: _ -> token
+        in
+        enter_error acc token tokens env
       end
-
     | I.Accepted v -> acc, v
-
-    | I.Rejected | I.HandlingError _ ->
-      assert false
-
-  and check_for_error acc token tokens env = function
-    | I.HandlingError _ ->
-      enter_error acc token tokens env
-
-    | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
+    | I.Rejected | I.HandlingError _ -> assert false
+  and check_for_error acc token tokens env =
+    function
+    | I.HandlingError _ -> enter_error acc token tokens env
+    | (I.Shifting _ | I.AboutToReduce _) as checkpoint ->
       begin match I.resume checkpoint with
-        | checkpoint' -> check_for_error acc token tokens env checkpoint'
-        | exception exn ->
-          Msupport.raise_error exn;
-          enter_error acc token tokens env
+      | checkpoint' -> check_for_error acc token tokens env checkpoint'
+      | exception exn ->
+        Msupport.raise_error exn; enter_error acc token tokens env
       end
-
     | checkpoint ->
       normal ((Correct checkpoint, token) :: acc) tokens checkpoint
-
   and enter_error acc token tokens env =
     let candidates = R.generate env in
     let explanation =
-      Mreader_explain.explain env token
-        candidates.R.popped candidates.R.shifted
+      Mreader_explain.explain env token candidates.R.popped candidates.R.shifted
     in
     errors_ref := Mreader_explain.Syntax_explanation explanation :: !errors_ref;
     recover acc (token :: tokens) candidates
-
   and recover acc tokens candidates =
-    let token, tokens = match tokens with
-      | token :: tokens -> token, tokens
-      | [] -> eof_token, []
+    let (token, tokens) =
+      match tokens with token :: tokens -> token, tokens | [] -> eof_token, []
     in
-    let acc' = ((Recovering candidates, token) :: acc) in
+    let acc' = (Recovering candidates, token) :: acc in
     match R.attempt candidates token with
     | `Fail ->
       if tokens = [] then
-        match candidates.R.final with
+        begin match candidates.R.final with
         | None -> failwith "Empty file"
         | Some v -> acc', v
+        end
       else
         recover acc tokens candidates
     | `Accept v -> acc', v
     | `Ok (checkpoint, _) ->
       normal ((Correct checkpoint, token) :: acc) tokens checkpoint
   in
-  fun acc tokens -> function
-  | Correct checkpoint -> normal acc tokens checkpoint
-  | Recovering candidates -> recover acc tokens candidates
+  fun acc tokens ->
+    function
+    | Correct checkpoint -> normal acc tokens checkpoint
+    | Recovering candidates -> recover acc tokens candidates
 
 let seek_step steps tokens =
-  let rec aux acc = function
-    | (step :: steps), (token :: tokens) when snd step = token ->
+  let rec aux acc =
+    function
+    | step :: steps, token :: tokens when snd step = token ->
       aux (step :: acc) (steps, tokens)
     | _, tokens -> acc, tokens
   in
   aux [] (steps, tokens)
 
 let parse initial steps tokens initial_pos =
-  let acc, tokens = seek_step steps tokens in
+  let (acc, tokens) = seek_step steps tokens in
   let step =
-    match acc with
-    | (step, _) :: _ -> step
-    | [] -> Correct (initial initial_pos)
+    match acc with (step, _) :: _ -> step | [] -> Correct (initial initial_pos)
   in
-  let acc, result = resume_parse acc tokens step in
+  let (acc, result) = resume_parse acc tokens step in
   List.rev acc, result
 
 let run_parser warnings lexer previous kind =
-  Msupport.catch_errors warnings errors_ref @@ fun () ->
-  let tokens = Mreader_lexer.tokens lexer in
-  let initial_pos = Mreader_lexer.initial_position lexer in
-  match kind with
-  | ML  ->
-    let steps = match previous with
-      | `Structure steps -> steps
-      | _ -> []
-    in
-    let steps, result =
-      let state = Parser_raw.Incremental.implementation in
-      parse state steps tokens initial_pos in
-    `Structure steps, `Implementation result
-  | MLI ->
-    let steps = match previous with
-      | `Signature steps -> steps
-      | _ -> []
-    in
-    let steps, result =
-      let state = Parser_raw.Incremental.interface in
-      parse state steps tokens initial_pos in
-    `Signature steps, `Interface result
+  Msupport.catch_errors warnings errors_ref @@
+    fun () ->
+      let tokens = Mreader_lexer.tokens lexer in
+      let initial_pos = Mreader_lexer.initial_position lexer in
+      match kind with
+      | ML ->
+        let steps = match previous with `Structure steps -> steps | _ -> [] in
+        let (steps, result) =
+          let state = Parser_raw.Incremental.implementation in
+          parse state steps tokens initial_pos
+        in
+        `Structure steps, `Implementation result
+      | MLI ->
+        let steps = match previous with `Signature steps -> steps | _ -> [] in
+        let (steps, result) =
+          let state = Parser_raw.Incremental.interface in
+          parse state steps tokens initial_pos
+        in
+        `Signature steps, `Interface result
 
 let make warnings lexer kind =
   errors_ref := [];
-  let steps, tree = run_parser warnings lexer `None kind in
+  let (steps, tree) = run_parser warnings lexer `None kind in
   let errors = !errors_ref in
-  errors_ref := [];
-  {kind; steps; tree; errors; lexer}
+  errors_ref := []; { kind; steps; tree; errors; lexer }
 
 let result t = t.tree
-
 let errors t = t.errors

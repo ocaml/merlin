@@ -1,4 +1,3 @@
-
 (* {{{ COPYING *(
 
   This file is part of Merlin, an helper for ocaml editors
@@ -26,7 +25,6 @@
   in the Software.
 
 )* }}} *)
-
 exception No_nodes
 
 val dispatch : Mpipeline.t -> 'a Query_protocol.t -> 'a

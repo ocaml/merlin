@@ -25,21 +25,14 @@
   in the Software.
 
 )* }}} *)
-
-type kind =
-  | ML
-  | MLI
-  (*| MLL | MLY*)
-
+type kind = ML | MLI
+(*| MLL | MLY*)
 type t
 
 val make : Warnings.state -> Mreader_lexer.t -> kind -> t
 
-type tree = [
-  | `Interface of Parsetree.signature
-  | `Implementation of Parsetree.structure
-]
+type tree =
+  [ `Interface of Parsetree.signature | `Implementation of Parsetree.structure ]
 
 val result : t -> tree
-
 val errors : t -> exn list

@@ -25,21 +25,21 @@
   in the Software.
 
 )* }}} *)
-
 open Std
 
-type config = {
-  build_path   : string list;
-  source_path  : string list;
-  cmi_path     : string list;
-  cmt_path     : string list;
-  flags        : string list with_workdir list;
-  extensions   : string list;
-  suffixes     : (string * string) list;
-  stdlib       : string option;
-  reader       : string list;
-  exclude_query_dir : bool;
-}
+type config =
+  {
+    build_path : string list;
+    source_path : string list;
+    cmi_path : string list;
+    cmt_path : string list;
+    flags : string list with_workdir list;
+    extensions : string list;
+    suffixes : (string * string) list;
+    stdlib : string option;
+    reader : string list;
+    exclude_query_dir : bool
+  }
 
 type context
 
