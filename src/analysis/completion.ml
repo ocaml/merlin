@@ -269,7 +269,7 @@ let fold_variant_constructors ~env ~init ~f =
       in
       aux acc row_more
     | Types.Tconstr _ ->
-      let t' = try Ctype.full_expand env t with _ -> t in
+      let t' = try Ctype.full_expand ~may_forget_scope:false env t with _ -> t in
       if Types.TypeOps.equal t t' then
         acc
       else
@@ -285,8 +285,8 @@ let fold_sumtype_constructors ~env ~init ~f t =
     log ~title:"fold_sumtype_constructors" "node type: %s"
       (Path.name path);
     begin match Env.find_type_descrs path env with
-    | exception Not_found -> init
-    | constrs, _ -> List.fold_right constrs ~init ~f
+    | Type_variant (constrs, _) -> List.fold_right constrs ~init ~f
+    | _ | exception Not_found -> init
     end
   | _ ->
     init
@@ -735,7 +735,7 @@ let labels_of_application ~prefix = function
       | Types.Tarrow (label, lhs, rhs, _) ->
         (label, lhs) :: labels rhs
       | _ ->
-        let t' = Ctype.full_expand exp_env t in
+        let t' = Ctype.full_expand ~may_forget_scope:false exp_env t in
         if Types.TypeOps.equal t t' then
           []
         else

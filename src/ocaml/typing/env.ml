@@ -3769,7 +3769,7 @@ and short_paths_functor_components_desc env mpath comp path =
           let mty =
             let subst =
               match f.fcomp_arg with
-              | Unit 
+              | Unit
               | Named (None, _) -> Subst.identity
               | Named (Some id, _) -> Subst.add_module id path Subst.identity
             in

@@ -64,7 +64,7 @@ and core_type type_expr =
     Typ.object_ fields closed
   | Tfield _ ->  failwith "Found object field outside of object."
   | Tnil -> Typ.object_ [] Closed
-  | Tlink type_expr | Tsubst type_expr -> core_type type_expr
+  | Tlink type_expr | Tsubst (type_expr, _) -> core_type type_expr
   | Tvariant { row_fields; row_closed; row_name; _ } ->
     let field (label, row_field) =
       let label = Location.mknoloc label in
@@ -83,15 +83,15 @@ and core_type type_expr =
     (* TODO NOT ALWAYS NONE *)
     Typ.variant fields closed None
   | Tpoly (type_expr, type_exprs) ->
-    let names = List.map (fun v -> match v.desc with
+    let names = List.map ~f:(fun v -> match v.desc with
       | Tunivar (Some name) | Tvar (Some name) -> mknoloc name
       | _ -> failwith "poly: not a var")
       type_exprs
     in
     Typ.poly names @@ core_type type_expr
-  | Tpackage (path, lids, type_exprs) ->
+  | Tpackage (path, fl) ->
     let loc = mknoloc (Untypeast.lident_of_path path) in
-    let args = List.map2 lids type_exprs
+    let args = List.map fl
       ~f:(fun id t -> mknoloc id, core_type t)
     in
     Typ.package loc args

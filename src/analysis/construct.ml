@@ -22,7 +22,7 @@ let () =
       let txt = Format.sprintf "Module not found: %s" s in
       Some (Location.error txt)
     | No_constraint ->
-      Some (Location.error 
+      Some (Location.error
         "Could not find a module type to construct from. \
         Check that you used a correct constraint.")
     | _ -> None
@@ -70,17 +70,17 @@ module Util = struct
     Printtyp.type_expr (Format.str_formatter) t;
     Format.flush_str_formatter ()
 
-  let unifiable env type_expr type_expected = 
+  let unifiable env type_expr type_expected =
     let snap = Btype.snapshot () in
     try
       Ctype.unify_gadt
         ~equations_level:0
         ~allow_recursive:true
         (ref env) type_expected type_expr
-      |> ignore; 
+      |> ignore;
       Some snap
-    with Ctype.Unify _  -> 
-      (* Unification failure *) 
+    with Ctype.Unify _  ->
+      (* Unification failure *)
       Btype.backtrack snap;
       None
 
@@ -99,7 +99,7 @@ module Util = struct
               See c-simple, test 6.2b for an example *)
           Btype.backtrack snap;
           Some params
-        | None -> 
+        | None ->
           begin match type_expr.desc with
           | Tarrow (arg_label, _, te, _) -> check_type te (arg_label::params)
           | _ -> None
@@ -321,7 +321,7 @@ module Gen = struct
       (* [make_constr] builds the PAST repr of a type constructor applied
       to holes *)
       let make_constr env path type_expr cstr_descr =
-        let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
+        let ty_args, ty_res, _ = Ctype.instance_constructor cstr_descr in
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
           let lid =
@@ -412,7 +412,7 @@ module Gen = struct
     fun env typ ->
       log ~title:"construct expr" "Looking for expressions of type %s"
         (Util.type_to_string typ);
-      let rtyp = Ctype.full_expand env typ |> Btype.repr in
+      let rtyp = Ctype.full_expand ~may_forget_scope:false env typ |> Btype.repr in
       let constructed_from_type = match rtyp.desc with
         | Tlink _ | Tsubst _ ->
           assert false
@@ -455,11 +455,11 @@ module Gen = struct
           in
           List.map choices  ~f:Ast_helper.Exp.tuple
         | Tvariant row_desc -> variant env rtyp row_desc
-        | Tpackage (path, lids, args) -> begin
+        | Tpackage (path, fl) -> begin
           let open Ast_helper in
           try
             let ty =
-              Typemod.modtype_of_package env Location.none path lids args
+              Typemod.modtype_of_package env Location.none path fl
             in
             let ast =
               Exp.constraint_
@@ -513,8 +513,8 @@ let needs_parentheses e = match e.Parsetree.pexp_desc with
   -> true
   | _ -> false
 
-let to_string_with_parentheses exp = 
-  let f : _ format6 = 
+let to_string_with_parentheses exp =
+  let f : _ format6 =
     if needs_parentheses exp then "(%a)"
     else "%a"
   in
@@ -526,14 +526,14 @@ let node ?(depth = 1) ~keywords ~values_scope node =
       let idents_table = Util.idents_table ~keywords in
       Gen.expression ~idents_table values_scope ~depth exp_env exp_type
       |> List.map ~f:to_string_with_parentheses
-  | Browse_raw.Module_expr 
+  | Browse_raw.Module_expr
       { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
-  | Browse_raw.Module_expr 
+  | Browse_raw.Module_expr
       {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
       let m = Gen.module_ mod_env mod_type in
       [ Format.asprintf "%a" Pprintast.module_ m ]
   | Browse_raw.Module_expr _
-  | Browse_raw.Module_binding _ -> 
+  | Browse_raw.Module_binding _ ->
       (* Constructible modules have an explicit constraint or are functor
         applications. In other cases we do not know what to construct.  *)
       raise No_constraint
