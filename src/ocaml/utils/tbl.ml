@@ -12,7 +12,7 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-type ('k, 'v) t = Empty | Node of ('k,'v) t * 'k * 'v * ('k,'v) t * int
+type ('k, 'v) t = Empty | Node of ('k, 'v) t * 'k * 'v * ('k, 'v) t * int
 
 let empty = Empty
 let height = function Empty -> 0 | Node (_, _, _, _, h) -> h

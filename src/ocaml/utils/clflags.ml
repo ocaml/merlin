@@ -22,8 +22,7 @@ let unsafe_string =
       ->
       true
     | _ -> false
-    end
-(* -safe-string became the new default in 4.06 *)
+    end (* -safe-string became the new default in 4.06 *)
 
 let nopervasives = ref false
 let strict_formats = ref false

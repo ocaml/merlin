@@ -28,7 +28,7 @@ val transl_exception
   -> Typedtree.extension_constructor * Env.t
 
 val transl_type_exception
-  :  Env.t -> Parsetree.type_exception -> Typedtree.type_exception * Env.t
+  : Env.t -> Parsetree.type_exception -> Typedtree.type_exception * Env.t
 
 val transl_type_extension
   :  bool
@@ -55,10 +55,10 @@ val transl_with_constraint
 val abstract_type_decl : injective:bool -> int -> type_declaration
 
 val approx_type_decl
-  :  Parsetree.type_declaration list -> (Ident.t * type_declaration) list
+  : Parsetree.type_declaration list -> (Ident.t * type_declaration) list
 
 val check_recmod_typedecl
-  :  Env.t -> Location.t -> Ident.t list -> Path.t -> type_declaration -> unit
+  : Env.t -> Location.t -> Ident.t list -> Path.t -> type_declaration -> unit
 
 val check_coherence : Env.t -> Location.t -> Path.t -> type_declaration -> unit
 (* for fixed types *)

@@ -18,19 +18,19 @@ open Types
 val valid_tyvar_name : string -> bool
 
 val transl_simple_type
-  :  Env.t -> bool -> Parsetree.core_type -> Typedtree.core_type
+  : Env.t -> bool -> Parsetree.core_type -> Typedtree.core_type
 
 val transl_simple_type_univars
-  :  Env.t -> Parsetree.core_type -> Typedtree.core_type
+  : Env.t -> Parsetree.core_type -> Typedtree.core_type
 
 val transl_simple_type_delayed
   :  Env.t
   -> Parsetree.core_type
   -> Typedtree.core_type * type_expr * (unit -> unit)
+
 (* Translate a type, but leave type variables unbound. Returns
    the type, an instance of the corresponding type_expr, and a
    function that binds the type variable. *)
-
 val transl_type_scheme : Env.t -> Parsetree.core_type -> Typedtree.core_type
 val reset_type_variables : unit -> unit
 val type_variable : Location.t -> string -> type_expr
@@ -67,20 +67,20 @@ type error =
 exception Error of Location.t * Env.t * error
 
 val report_error : Env.t -> Format.formatter -> error -> unit
-(* Support for first-class modules. *)
 
+(* Support for first-class modules. *)
 val transl_modtype_longident
-  :
-  (* from Typemod *)  (Location.t -> Env.t -> Longident.t -> Path.t) ref
+  : (* from Typemod *) (Location.t -> Env.t -> Longident.t -> Path.t) ref
 
 val transl_modtype
-  :
-  (* from Typemod *)  (Env.t -> Parsetree.module_type -> Typedtree.module_type)
+  : (* from Typemod *)  (Env.t
+   -> Parsetree.module_type
+   -> Typedtree.module_type)
   ref
 
 val create_package_mty
   :  Location.t
   -> Env.t
   -> Parsetree.package_type
-  ->
-  (Longident.t Asttypes.loc * Parsetree.core_type) list * Parsetree.module_type
+  -> (Longident.t Asttypes.loc * Parsetree.core_type) list
+     * Parsetree.module_type

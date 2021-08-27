@@ -14,27 +14,25 @@
 (**************************************************************************)
 open Location
 (* Docstrings *)
+
 (* A docstring is "attached" if it has been inserted in the AST. This
    is used for generating unexpected docstring warnings. *)
-
 type ds_attached =
-  | Unattached
-  (* Not yet attached anything.*)
+  | Unattached (* Not yet attached anything.*)
   | Info
-  (* Attached to a field or constructor. *)
-  | Docs
-(* Attached to an item or as floating text. *)
+  | (* Attached to a field or constructor. *)
+  Docs (* Attached to an item or as floating text. *)
+
 (* A docstring is "associated" with an item if there are no blank lines between
    them. This is used for generating docstring ambiguity warnings. *)
-
 type ds_associated =
   | Zero
-  (* Not associated with an item *)
-  | One
-  (* Associated with one item *)
-  | Many
-(* Associated with multiple items (ambiguity) *)
+  | (* Not associated with an item *)
+  One
+  | (* Associated with one item *)
+  Many
 
+(* Associated with multiple items (ambiguity) *)
 type docstring =
   {
     ds_body : string;
@@ -42,11 +40,11 @@ type docstring =
     mutable ds_attached : ds_attached;
     mutable ds_associated : ds_associated
   }
+
 (* List of docstrings *)
-
 let docstrings : docstring list ref = ref []
-(* Warn for unused and ambiguous docstrings *)
 
+(* Warn for unused and ambiguous docstrings *)
 let warn_bad_docstrings () =
   if Warnings.is_active (Warnings.Unexpected_docstring true) then
     List.iter (fun ds ->
@@ -60,8 +58,8 @@ let warn_bad_docstrings () =
         | Many -> prerr_warning ds.ds_loc (Warnings.Unexpected_docstring false)
         end
     ) (List.rev !docstrings)
-(* Docstring constructors and destructors *)
 
+(* Docstring constructors and destructors *)
 let docstring body loc =
   let ds =
     {
@@ -76,8 +74,8 @@ let docstring body loc =
 let register ds = docstrings := ds :: !docstrings
 let docstring_body ds = ds.ds_body
 let docstring_loc ds = ds.ds_loc
-(* Docstrings attached to items *)
 
+(* Docstrings attached to items *)
 type docs = { docs_pre : docstring option; docs_post : docstring option }
 
 let empty_docs = { docs_pre = None; docs_post = None }
@@ -110,8 +108,8 @@ let add_docs_attrs docs attrs =
     | Some ds -> attrs @ [ docs_attr ds ]
   in
   attrs
-(* Docstrings attached to constructors or fields *)
 
+(* Docstrings attached to constructors or fields *)
 type info = docstring option
 
 let empty_info = None
@@ -121,8 +119,8 @@ let add_info_attrs info attrs =
   match info with
   | None | Some { ds_body = ""; _ } -> attrs
   | Some ds -> attrs @ [ info_attr ds ]
-(* Docstrings not attached to a specific item *)
 
+(* Docstrings not attached to a specific item *)
 type text = docstring list
 
 let empty_text = []
@@ -147,8 +145,8 @@ let text_attr ds =
 let add_text_attrs dsl attrs =
   let fdsl = List.filter (function { ds_body = "" } -> false | _ -> true) dsl in
   List.map text_attr fdsl @ attrs
-(* Find the first non-info docstring in a list, attach it and return it *)
 
+(* Find the first non-info docstring in a list, attach it and return it *)
 let get_docstring ~info dsl =
   let rec loop =
     function
@@ -157,8 +155,8 @@ let get_docstring ~info dsl =
     | ds :: _ -> ds.ds_attached <- (if info then Info else Docs); Some ds
   in
   loop dsl
-(* Find all the non-info docstrings in a list, attach them and return them *)
 
+(* Find all the non-info docstrings in a list, attach them and return them *)
 let get_docstrings dsl =
   let rec loop acc =
     function
@@ -167,17 +165,17 @@ let get_docstrings dsl =
     | ds :: rest -> ds.ds_attached <- Docs; loop (ds :: acc) rest
   in
   loop [] dsl
-(* "Associate" all the docstrings in a list *)
 
+(* "Associate" all the docstrings in a list *)
 let associate_docstrings dsl =
   List.iter (fun ds ->
     match ds.ds_associated with
     | Zero -> ds.ds_associated <- One
     | One | Many -> ds.ds_associated <- Many
   ) dsl
-(* Map from positions to pre docstrings *)
 
-let pre_table : (Lexing.position,docstring list) Hashtbl.t = Hashtbl.create 50
+(* Map from positions to pre docstrings *)
+let pre_table : (Lexing.position, docstring list) Hashtbl.t = Hashtbl.create 50
 let set_pre_docstrings pos dsl = if dsl <> [] then Hashtbl.add pre_table pos dsl
 
 let get_pre_docs pos =
@@ -193,9 +191,9 @@ let mark_pre_docs pos =
     associate_docstrings dsl
   with
   | Not_found -> ()
-(* Map from positions to post docstrings *)
 
-let post_table : (Lexing.position,docstring list) Hashtbl.t = Hashtbl.create 50
+(* Map from positions to post docstrings *)
+let post_table : (Lexing.position, docstring list) Hashtbl.t = Hashtbl.create 50
 
 let set_post_docstrings pos dsl =
   if dsl <> [] then Hashtbl.add post_table pos dsl
@@ -220,9 +218,9 @@ let get_info pos =
     get_docstring ~info:true dsl
   with
   | Not_found -> None
-(* Map from positions to floating docstrings *)
 
-let floating_table : (Lexing.position,docstring list) Hashtbl.t =
+(* Map from positions to floating docstrings *)
+let floating_table : (Lexing.position, docstring list) Hashtbl.t =
   Hashtbl.create 50
 
 let set_floating_docstrings pos dsl =
@@ -241,9 +239,9 @@ let get_post_text pos =
     get_docstrings dsl
   with
   | Not_found -> []
-(* Maps from positions to extra docstrings *)
 
-let pre_extra_table : (Lexing.position,docstring list) Hashtbl.t =
+(* Maps from positions to extra docstrings *)
+let pre_extra_table : (Lexing.position, docstring list) Hashtbl.t =
   Hashtbl.create 50
 
 let set_pre_extra_docstrings pos dsl =
@@ -256,7 +254,7 @@ let get_pre_extra_text pos =
   with
   | Not_found -> []
 
-let post_extra_table : (Lexing.position,docstring list) Hashtbl.t =
+let post_extra_table : (Lexing.position, docstring list) Hashtbl.t =
   Hashtbl.create 50
 
 let set_post_extra_docstrings pos dsl =
@@ -268,8 +266,8 @@ let get_post_extra_text pos =
     get_docstrings dsl
   with
   | Not_found -> []
-(* Docstrings from parser actions *)
 
+(* Docstrings from parser actions *)
 module WithParsing = struct
   let symbol_docs () =
     {
@@ -357,8 +355,8 @@ module WithMenhir = struct
   let rhs_post_extra_text pos = get_post_extra_text pos
 end
   
-(* (Re)Initialise all comment state *)
 
+(* (Re)Initialise all comment state *)
 let init () =
   docstrings := [];
   Hashtbl.reset pre_table;

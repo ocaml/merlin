@@ -23,8 +23,8 @@ end
   
 
 type t
-(* = private elt list *)
 
+(* = private elt list *)
 and elt = private Ident of Id.t * Namespace.t | Applied_to of t
 
 val to_string : t -> string

@@ -26,8 +26,7 @@ type type_definition = type_declaration
    information we need to check the argument for separability. *)
 type argument_to_unbox =
   {
-    kind : parameter_kind;
-    (* for error messages *)
+    kind : parameter_kind; (* for error messages *)
     mutability : Asttypes.mutable_flag;
     argument_type : type_expr;
     result_type_parameter_instances : type_expr list;
@@ -130,8 +129,8 @@ let structure : type_definition -> type_structure =
 type error = Non_separable_evar of string option
 
 exception Error of Location.t * error
-(* see the .mli file for explanations on the modes *)
 
+(* see the .mli file for explanations on the modes *)
 module Sep = Types.Separability 
 
 type mode = Sep.t = Ind | Sep | Deepsep
@@ -201,8 +200,7 @@ let rec immediate_subtypes : type_expr -> type_expr list =
       (* these should only occur under Tobject and not at the toplevel,
          but "better safe than sorry" *)
       immediate_subtypes_object_row [] ty
-    | Tlink _ | Tsubst _ -> assert false
-    (* impossible due to Ctype.repr *)
+    | Tlink _ | Tsubst _ -> assert false (* impossible due to Ctype.repr *)
     | Tvar _ | Tunivar _ -> []
     | Tpoly (pty, _) -> [ pty ]
     | Tconstr (_path, tys, _) -> tys
@@ -245,7 +243,9 @@ let free_variables ty =
     List.map (fun { desc; id; _ } ->
       match desc with
       | Tvar text -> { text; id }
-      | _ -> (* Ctype.free_variables only returns Tvar nodes *) assert false
+      | _ ->
+        (* Ctype.free_variables only returns Tvar nodes *)
+        assert false
     )
 
 (** Coinductive hypotheses to handle equi-recursive types
@@ -683,8 +683,7 @@ let check_def : Env.t -> type_definition -> Sep.signature =
 let compute_decl env decl =
   if Config.flat_float_array then
     check_def env decl
-  else
-  (* Hack: in -no-flat-float-array mode, instead of always returning
+  else(* Hack: in -no-flat-float-array mode, instead of always returning
        [best_msig], we first compute the separability signature --
        falling back to [best_msig] if it fails.
 
@@ -700,6 +699,7 @@ let compute_decl env decl =
        when trying to build a -no-flat-float-array system from
        a bootstrap compiler itself using -flat-float-array. See #9291.
        *)
+  
     try check_def env decl
     with
     | Error _ ->
@@ -710,7 +710,7 @@ let compute_decl env decl =
 (** Separability as a generic property *)
 type prop = Types.Separability.signature
 
-let property : (prop,unit) Typedecl_properties.property =
+let property : (prop, unit) Typedecl_properties.property =
   let open Typedecl_properties in
   let eq ts1 ts2 =
     List.length ts1 = List.length ts2 && List.for_all2 Sep.eq ts1 ts2
@@ -723,10 +723,9 @@ let property : (prop,unit) Typedecl_properties.property =
   let default decl = best_msig decl in
   let compute env decl () = compute_decl env decl in
   let update_decl decl type_separability = { decl with  type_separability } in
-  let check _env _id _decl () = () in
-  (* FIXME run final check? *)
+  let check _env _id _decl () = () in (* FIXME run final check? *)
   { eq; merge; default; compute; update_decl; check }
-(* Definition using the fixpoint infrastructure. *)
 
+(* Definition using the fixpoint infrastructure. *)
 let update_decls env decls =
   Typedecl_properties.compute_property_noreq property env decls

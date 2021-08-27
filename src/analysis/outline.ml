@@ -107,8 +107,7 @@ let rec summarize node =
               let deprecated = Type_utils.is_deprecated ld.ld_attributes in
               mk `Label None ld.ld_id ~deprecated ~location:ld.ld_loc
             | _ -> assert false
-          )
-        (* ! *)
+          ) (* ! *)
         | _ -> []
       )
     in

@@ -155,7 +155,7 @@ module Make (G : GRAMMAR) (A : Recover_attrib.S with module G = G) :
       Fix.Make
       (struct
         type key = variable
-        type 'a t = (key,'a) Hashtbl.t
+        type 'a t = (key, 'a) Hashtbl.t
         
         let create () = Hashtbl.create 7
         let find k tbl = Hashtbl.find tbl k

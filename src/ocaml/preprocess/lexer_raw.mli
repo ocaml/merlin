@@ -10,8 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 open Std
-(* Possible errors *)
 
+(* Possible errors *)
 type error =
   | Illegal_character of char
   | Illegal_escape of string * string option
@@ -23,16 +23,16 @@ type error =
   | Invalid_literal of string
 
 exception Error of error * Location.t
-(* Keywords, manipulated by extensions *)
 
+(* Keywords, manipulated by extensions *)
 type keywords
 
 val keywords : (string * Parser_raw.token) list -> keywords
 val list_keywords : keywords -> string list
 (* [list_keywords kws] not only lists the keys of [kw], but also OCaml's
    keywords. *)
-(* Monad in which the lexer evaluates *)
 
+(* Monad in which the lexer evaluates *)
 type 'a result =
   | Return of 'a
   | Refill of (unit -> 'a result)
@@ -54,11 +54,11 @@ val make : ?preprocessor:preprocessor -> keywords -> state
 (* The lexical analyzer *)
 val skip_sharp_bang : state -> Lexing.lexbuf -> Parser_raw.token result
 val token : state -> Lexing.lexbuf -> Parser_raw.token result
+
 (* Comments are filtered out from the token rule and stored in a global
    variable. *)
-
 type comment = string * Location.t
+
 (* If you want to get the raw output, including comments, from the lexer, use
    the [token_with_comments] entry point. *)
-
 val token_without_comments : state -> Lexing.lexbuf -> Parser_raw.token result

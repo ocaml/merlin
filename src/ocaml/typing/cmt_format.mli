@@ -94,8 +94,8 @@ val save_cmt
   -> (* if a .cmi was generated *) unit
 (** [save_cmt filename modname binary_annots sourcefile initial_env cmi]
     writes a cmt(i) file.  *)
-(* Miscellaneous functions *)
 
+(* Miscellaneous functions *)
 val read_magic_number : in_channel -> string
 val clear : unit -> unit
 val add_saved_type : binary_part -> unit
@@ -103,7 +103,7 @@ val get_saved_types : unit -> binary_part list
 val set_saved_types : binary_part list -> unit
 
 val record_value_dependency
-  :  Types.value_description -> Types.value_description -> unit
+  : Types.value_description -> Types.value_description -> unit
 (*
 
   val is_magic_number : string -> bool

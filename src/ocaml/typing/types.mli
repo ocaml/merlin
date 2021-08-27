@@ -146,8 +146,7 @@ and row_desc =
   {
     row_fields : (label * row_field) list;
     row_more : type_expr;
-    row_bound : unit;
-    (* kept for compatibility *)
+    row_bound : unit; (* kept for compatibility *)
     row_closed : bool;
     row_fixed : fixed_explanation option;
     row_name : (Path.t * type_expr list) option
@@ -163,9 +162,9 @@ and row_field =
   | Rpresent of type_expr option
   | Reither of bool * type_expr list * bool * row_field option ref
   (* 1st true denotes a constant constructor *)
-  (* 2nd true denotes a tag in a pattern matching, and
-     is erased later *)
-  | Rabsent
+  | (* 2nd true denotes a tag in a pattern matching, and
+       is erased later *)
+  Rabsent
 
 (** [abbrev_memo] allows one to keep track of different expansions of a type
     alias. This is done for performance purposes.
@@ -225,8 +224,8 @@ module TypeOps : sig
   val hash : t -> int
 end
   
-(* *)
 
+(* *)
 module Uid : sig
   type t
   
@@ -240,16 +239,16 @@ module Uid : sig
   include Identifiable.S with type t := t
 end
   
-(* Maps of methods and instance variables *)
 
+(* Maps of methods and instance variables *)
 module Meths : Map.S with type key = string 
 module Vars : Map.S with type key = string 
-(* Value descriptions *)
 
+(* Value descriptions *)
 type value_description =
   {
-    val_type : type_expr;
-    (* Type of the value *)
+    val_type : type_expr;(* Type of the value *)
+    
     val_kind : value_kind;
     val_loc : Location.t;
     val_attributes : Parsetree.attributes;
@@ -258,40 +257,38 @@ type value_description =
 
 and value_kind =
   | Val_reg
-  (* Regular value *)
-  | Val_prim of Primitive.description
-  (* Primitive *)
-  | Val_ivar of mutable_flag * string
-  (* Instance variable (mutable ?) *)
+  | (* Regular value *)
+  Val_prim of Primitive.description (* Primitive *)
+  | Val_ivar of mutable_flag * string (* Instance variable (mutable ?) *)
   | Val_self of
       (Ident.t * type_expr) Meths.t ref
       * (Ident.t * mutable_flag * virtual_flag * type_expr) Vars.t ref
       * string
       * type_expr
-  (* Self *)
-  | Val_anc of (string * Ident.t) list * string
+  | (* Self *)
+  Val_anc of (string * Ident.t) list * string
+
 (* Ancestor *)
 (* Variance *)
-
 module Variance : sig
   type t
   
   type f =
     | May_pos
-    (* allow positive occurrences *)
-    | May_neg
-    (* allow negative occurrences *)
-    | May_weak
-    (* allow occurrences under a negative position *)
-    | Inj
-    (* type is injective in this parameter *)
-    | Pos
-    (* there is a positive occurrence *)
-    | Neg
-    (* there is a negative occurrence *)
-    | Inv
-  (* both negative and positive occurrences *)
+    | (* allow positive occurrences *)
+    May_neg
+    | (* allow negative occurrences *)
+    May_weak
+    | (* allow occurrences under a negative position *)
+    Inj
+    | (* type is injective in this parameter *)
+    Pos
+    | (* there is a positive occurrence *)
+    Neg
+    | (* there is a negative occurrence *)
+    Inv
   
+  (* both negative and positive occurrences *)
   val null : t
   (* no occurrence *)
   val full : t
@@ -311,8 +308,8 @@ module Variance : sig
   val get_upper : t -> bool * bool
   (* may_pos, may_neg   *)
   val get_lower : t -> bool * bool * bool * bool
-  (* pos, neg, inv, inj *)
   
+  (* pos, neg, inv, inj *)
   val unknown_signature : injective:bool -> arity:int -> t list
   (** The most pessimistic variance for a completely unknown type. *)
 end
@@ -351,8 +348,8 @@ module Separability : sig
   (** The most pessimistic separability for a completely unknown type. *)
 end
   
-(* Type definitions *)
 
+(* Type definitions *)
 type type_declaration =
   {
     type_params : type_expr list;
@@ -360,8 +357,8 @@ type type_declaration =
     type_kind : type_kind;
     type_private : private_flag;
     type_manifest : type_expr option;
-    type_variance : Variance.t list;
-    (* covariant, contravariant, weakly contravariant, injective *)
+    type_variance : Variance.t list;(* covariant, contravariant, weakly contravariant, injective *)
+    
     type_separability : Separability.t list;
     type_is_newtype : bool;
     type_expansion_scope : int;
@@ -380,16 +377,15 @@ and type_kind =
 
 and record_representation =
   | Record_regular
-  (* All fields are boxed / tagged *)
-  | Record_float
-  (* All fields are floats *)
-  | Record_unboxed of bool
-  (* Unboxed single-field record, inlined or not *)
+  | (* All fields are boxed / tagged *)
+  Record_float
+  | (* All fields are floats *)
+  Record_unboxed of bool (* Unboxed single-field record, inlined or not *)
   | Record_inlined of int
-  (* Inlined record *)
-  | Record_extension of Path.t
-(* Inlined record under extension *)
+  | (* Inlined record *)
+  Record_extension of Path.t
 
+(* Inlined record under extension *)
 and label_declaration =
   {
     ld_id : Ident.t;
@@ -422,8 +418,7 @@ and unboxed_status =
   {
     unboxed : bool;
     default : bool
-  }
-(* True for unannotated unboxable types. *)
+  } (* True for unannotated unboxable types. *)
 
 val unboxed_false_default_false : unboxed_status
 val unboxed_false_default_true : unboxed_status
@@ -444,13 +439,12 @@ type extension_constructor =
 
 and type_transparence =
   | Type_public
-  (* unrestricted expansion *)
-  | Type_new
-  (* "new" type *)
-  | Type_private
-(* private type *)
-(* Type expressions for the class language *)
+  | (* unrestricted expansion *)
+  Type_new
+  | (* "new" type *)
+  Type_private (* private type *)
 
+(* Type expressions for the class language *)
 module Concr : Set.S with type elt = string 
 
 type class_type =
@@ -489,8 +483,8 @@ type class_type_declaration =
     clty_attributes : Parsetree.attributes;
     clty_uid : Uid.t
   }
-(* Type expressions for the module language *)
 
+(* Type expressions for the module language *)
 type visibility = Exported | Hidden
 
 type module_type =
@@ -530,8 +524,7 @@ and module_declaration =
 
 and modtype_declaration =
   {
-    mtd_type : module_type option;
-    (* None: abstract *)
+    mtd_type : module_type option; (* None: abstract *)
     mtd_attributes : Parsetree.attributes;
     mtd_loc : Location.t;
     mtd_uid : Uid.t
@@ -539,45 +532,44 @@ and modtype_declaration =
 
 and rec_status =
   | Trec_not
-  (* first in a nonrecursive group *)
-  | Trec_first
-  (* first in a recursive group *)
-  | Trec_next
-(* not first in a recursive/nonrecursive group *)
+  | (* first in a nonrecursive group *)
+  Trec_first
+  | (* first in a recursive group *)
+  Trec_next
 
+(* not first in a recursive/nonrecursive group *)
 and ext_status =
   | Text_first
-  (* first constructor in an extension *)
-  | Text_next
-  (* not first constructor in an extension *)
-  | Text_exception
+  | (* first constructor in an extension *)
+  Text_next
+  | (* not first constructor in an extension *)
+  Text_exception
+
 (* Constructor and record label descriptions inserted held in typing
    environments *)
-
 type constructor_description =
   {
-    cstr_name : string;
-    (* Constructor name *)
-    cstr_res : type_expr;
-    (* Type of the result *)
-    cstr_existentials : type_expr list;
-    (* list of existentials *)
-    cstr_args : type_expr list;
-    (* Type of the arguments *)
-    cstr_arity : int;
-    (* Number of arguments *)
-    cstr_tag : constructor_tag;
-    (* Tag for heap blocks *)
-    cstr_consts : int;
-    (* Number of constant constructors *)
-    cstr_nonconsts : int;
-    (* Number of non-const constructors *)
-    cstr_normal : int;
-    (* Number of non generalized constrs *)
-    cstr_generalized : bool;
-    (* Constrained return type? *)
-    cstr_private : private_flag;
-    (* Read-only constructor? *)
+    cstr_name : string;(* Constructor name *)
+    
+    cstr_res : type_expr;(* Type of the result *)
+    
+    cstr_existentials : type_expr list; (* list of existentials *)
+    cstr_args : type_expr list;(* Type of the arguments *)
+    
+    cstr_arity : int;(* Number of arguments *)
+    
+    cstr_tag : constructor_tag;(* Tag for heap blocks *)
+    
+    cstr_consts : int;(* Number of constant constructors *)
+    
+    cstr_nonconsts : int;(* Number of non-const constructors *)
+    
+    cstr_normal : int;(* Number of non generalized constrs *)
+    
+    cstr_generalized : bool;(* Constrained return type? *)
+    
+    cstr_private : private_flag;(* Read-only constructor? *)
+    
     cstr_loc : Location.t;
     cstr_attributes : Parsetree.attributes;
     cstr_inlined : type_declaration option;
@@ -586,40 +578,38 @@ type constructor_description =
 
 and constructor_tag =
   | Cstr_constant of int
-  (* Constant constructor (an int) *)
-  | Cstr_block of int
-  (* Regular constructor (a block) *)
-  | Cstr_unboxed
-  (* Constructor of an unboxed type *)
-  | Cstr_extension of Path.t * bool
+  | (* Constant constructor (an int) *)
+  Cstr_block of int
+  | (* Regular constructor (a block) *)
+  Cstr_unboxed
+  | (* Constructor of an unboxed type *)
+  Cstr_extension of Path.t * bool
 (* Extension constructor
    true if a constant false if a block*)
+
 (* Constructors are the same *)
-
 val equal_tag : constructor_tag -> constructor_tag -> bool
-(* Constructors may be the same, given potential rebinding *)
 
+(* Constructors may be the same, given potential rebinding *)
 val may_equal_constr
-  :  constructor_description -> constructor_description -> bool
+  : constructor_description -> constructor_description -> bool
 
 type label_description =
   {
-    lbl_name : string;
-    (* Short name *)
-    lbl_res : type_expr;
-    (* Type of the result *)
-    lbl_arg : type_expr;
-    (* Type of the argument *)
-    lbl_mut : mutable_flag;
-    (* Is this a mutable field? *)
-    lbl_pos : int;
-    (* Position in block *)
-    lbl_all : label_description array;
-    (* All the labels in this type *)
-    lbl_repres : record_representation;
-    (* Representation for this record *)
-    lbl_private : private_flag;
-    (* Read-only field? *)
+    lbl_name : string;(* Short name *)
+    
+    lbl_res : type_expr;(* Type of the result *)
+    
+    lbl_arg : type_expr;(* Type of the argument *)
+    
+    lbl_mut : mutable_flag;(* Is this a mutable field? *)
+    
+    lbl_pos : int;(* Position in block *)
+    
+    lbl_all : label_description array; (* All the labels in this type *)
+    lbl_repres : record_representation; (* Representation for this record *)
+    lbl_private : private_flag;(* Read-only field? *)
+    
     lbl_loc : Location.t;
     lbl_attributes : Parsetree.attributes;
     lbl_uid : Uid.t

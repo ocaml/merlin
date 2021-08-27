@@ -40,9 +40,9 @@ type t =
   }
 
 type set = string list
+
 (* Private definitions are put in a fake module named "_" with the following
  * ident. Use it to test or find private definitions. *)
-
 let ident = Ident.create_persistent "_"
 
 (** Definition of each extension *)
@@ -92,8 +92,8 @@ let ext_meta =
     keywords = [ ">.", GREATERDOT ];
     packages = []
   }
-(* Known extensions *)
 
+(* Known extensions *)
 let registry = [ ext_lwt; ext_meta ]
 
 let registry =
@@ -104,9 +104,9 @@ let registry =
 let all = String.Map.keys registry
 let lookup s = try Some (String.Map.find s registry) with Not_found -> None
 let empty = []
+
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" is loaded by user. *)
-
 let from ~extensions ~packages =
   String.Map.fold registry ~init:[] ~f:(fun ~key:name ~data:ext set ->
     if
@@ -117,25 +117,25 @@ let from ~extensions ~packages =
     else
       set
   )
+
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-
 let default =
   match My_config.ocamlversion with
   | `OCaml_4_02_2 | `OCaml_4_03_0 -> [ ext_nonrec ]
   | _ -> []
 
 let default_kw = List.concat_map ~f:(fun ext -> ext.keywords) default
-(* Lexer keywords needed by extensions *)
 
+(* Lexer keywords needed by extensions *)
 let keywords set =
   let add_kw kws ext =
     match lookup ext with None -> kws | Some def -> def.keywords @ kws
   in
   let all = List.fold_left set ~init:default_kw ~f:add_kw in
   Lexer_raw.keywords all
-(* Register extensions in typing environment *)
 
+(* Register extensions in typing environment *)
 let parse_sig =
   let keywords = Lexer_raw.keywords [] in
   fun str ->
@@ -153,6 +153,7 @@ let parse_sig =
 let type_sig env sg =
   let sg = Typemod.transl_signature env sg in
   sg.Typedtree.sig_type
+
 (*
 let add_hidden_signature env sign =
   let add_item env comp =
@@ -167,7 +168,6 @@ let add_hidden_signature env sign =
   in
   List.fold_left ~f:add_item ~init:env sign
 *)
-
 let register exts env =
   (* Log errors ? *)
   let try_type sg' = try type_sig env sg' with _exn -> [] in

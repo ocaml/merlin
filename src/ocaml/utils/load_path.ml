@@ -14,8 +14,8 @@
 open Local_store
 
 module SMap = Misc.String.Map 
-(* Mapping from basenames to full filenames *)
 
+(* Mapping from basenames to full filenames *)
 type registry = string SMap.t ref
 
 let files : registry = s_ref SMap.empty
@@ -26,10 +26,10 @@ module Dir = struct
   
   let path t = t.path
   let files t = t.files
+  
   (* For backward compatibility reason, simulate the behavior of
      [Misc.find_in_path]: silently ignore directories that don't exist
      + treat [""] as the current directory. *)
-  
   let readdir_compat dir =
     try Sys.readdir (if dir = "" then Filename.current_dir_name else dir)
     with
@@ -54,11 +54,11 @@ let add_to_maps fn basenames files files_uncap =
     SMap.add base fn files,
     SMap.add (String.uncapitalize_ascii base) fn files_uncap
   ) (files, files_uncap) basenames
+
 (* Optimized version of [add] below, for use in [init] and [remove_dir]: since
    we are starting from an empty cache, we can avoid checking whether a unit
    name already exists in the cache simply by adding entries in reverse
    order. *)
-
 let add dir =
   assert (not Config.merlin || Local_store.is_bound ());
   let (new_files, new_files_uncap) =
@@ -73,10 +73,10 @@ let remove_dir dir =
   let new_dirs = List.filter (fun d -> Dir.path d <> dir) !dirs in
   if List.compare_lengths new_dirs !dirs <> 0 then
     (reset (); List.iter add new_dirs; dirs := new_dirs)
+
 (* General purpose version of function to add a new entry to load path: We only
    add a basename to the cache if it is not already present in the cache, in
    order to enforce left-to-right precedence. *)
-
 let add dir =
   assert (not Config.merlin || Local_store.is_bound ());
   let (new_files, new_files_uncap) =

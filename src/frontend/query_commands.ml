@@ -162,8 +162,7 @@ let dump pipeline =
     `Assoc [ "user", user; "applied", applied ]
   | [ `String "warnings" ] ->
     let _typer = Mpipeline.typer_result pipeline in
-    Warnings.dump ()
-  (*TODO*)
+    Warnings.dump () (*TODO*)
   | [ `String "exn" ] ->
     let exns =
       Mpipeline.reader_lexer_errors pipeline @
@@ -307,10 +306,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       let normalize ({ Location.loc_start; loc_end; _ }, text, _tail) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text
       in
-      List.merge_cons ~f:(fun a b ->
-        (* Tail position is computed only on result, and result comes last
-           As an approximation, when two items are similar, we returns the
-           rightmost one *)
+      List.merge_cons ~f:(fun a b ->(* Tail position is computed only on result, and result comes last
+                                       As an approximation, when two items are similar, we returns the
+                                       rightmost one *)
+        
         if compare (normalize a) (normalize b) = 0 then Some b else None
       ) (small_enclosings @ result)
     in
@@ -524,8 +523,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | `Missing_labels_namespace ->
         (* Can't happen because we haven't passed a namespace as input. *)
         assert false
-      | (`Not_found
-         _
+      | (`Not_found _
          | `At_origin
          | `Not_in_env _
          | `File_not_found _
@@ -787,8 +785,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | Browse_raw.Pattern { pat_desc = Typedtree.Tpat_any; _ } -> true
         | _ -> false
       in
-      List.find_some enclosing ~f:(fun (_, node) ->
-        (* it doesn't make sense to find occurrences of a wildcard pattern *)
+      List.find_some enclosing ~f:(fun (_, node) ->(* it doesn't make sense to find occurrences of a wildcard pattern *)
+        
         not (is_wildcard_pat node)
       ) |>
         Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node) |>

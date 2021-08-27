@@ -20,8 +20,8 @@
 *)
 
 open Asttypes
-(* Value expressions for the core language *)
 
+(* Value expressions for the core language *)
 type partial = Partial | Total
 
 (** {1 Extension points} *)
@@ -309,14 +309,14 @@ and binding_op =
     bop_op_path : Path.t;
     bop_op_name : string loc;
     bop_op_val : Types.value_description;
-    bop_op_type : Types.type_expr;
-    (* This is the type at which the operator was used.
-       It is always an instance of [bop_op_val.val_type] *)
+    bop_op_type : Types.type_expr;(* This is the type at which the operator was used.
+                                     It is always an instance of [bop_op_val.val_type] *)
+    
     bop_exp : expression;
     bop_loc : Location.t
   }
-(* Value expressions for the class language *)
 
+(* Value expressions for the class language *)
 and class_expr =
   {
     cl_desc : class_expr_desc;
@@ -376,14 +376,14 @@ and class_field_desc =
       * string option
       * (string * Ident.t) list
       * (string * Ident.t) list
-  (* Inherited instance variables and concrete methods *)
-  | Tcf_val of string loc * mutable_flag * Ident.t * class_field_kind * bool
+  | (* Inherited instance variables and concrete methods *)
+  Tcf_val of string loc * mutable_flag * Ident.t * class_field_kind * bool
   | Tcf_method of string loc * private_flag * class_field_kind
   | Tcf_constraint of core_type * core_type
   | Tcf_initializer of expression
   | Tcf_attribute of attribute
-(* Value expressions for the module language *)
 
+(* Value expressions for the module language *)
 and module_expr =
   {
     mod_desc : module_expr_desc;
@@ -512,8 +512,7 @@ and signature =
 and signature_item =
   {
     sig_desc : signature_item_desc;
-    sig_env : Env.t;
-    (* BINANNOT ADDED *)
+    sig_env : Env.t; (* BINANNOT ADDED *)
     sig_loc : Location.t
   }
 
@@ -600,8 +599,7 @@ and core_type =
     (** mutable because of [Typeclass.declare_method] *)
     mutable ctyp_type : Types.type_expr;
     (** mutable because of [Typeclass.declare_method] *)
-    ctyp_env : Env.t;
-    (* BINANNOT ADDED *)
+    ctyp_env : Env.t; (* BINANNOT ADDED *)
     ctyp_loc : Location.t;
     ctyp_attributes : attributes
   }
@@ -812,7 +810,7 @@ type pattern_transformation =
   }
 
 val shallow_map_pattern_desc
-  :  pattern_transformation -> 'k pattern_desc -> 'k pattern_desc
+  : pattern_transformation -> 'k pattern_desc -> 'k pattern_desc
 
 val iter_general_pattern : pattern_action -> 'k general_pattern -> unit
 val iter_pattern : (pattern -> unit) -> pattern -> unit
@@ -824,10 +822,10 @@ val exists_pattern : (pattern -> bool) -> pattern -> bool
 val let_bound_idents : value_binding list -> Ident.t list
 
 val let_bound_idents_full
-  :  value_binding list -> (Ident.t * string loc * Types.type_expr) list
+  : value_binding list -> (Ident.t * string loc * Types.type_expr) list
 
 val alpha_pat
-  :  (Ident.t * Ident.t) list -> 'k general_pattern -> 'k general_pattern
+  : (Ident.t * Ident.t) list -> 'k general_pattern -> 'k general_pattern
 (** Alpha conversion of patterns *)
 
 val mknoloc : 'a -> 'a Asttypes.loc
@@ -835,12 +833,12 @@ val mkloc : 'a -> Location.t -> 'a Asttypes.loc
 val pat_bound_idents : 'k general_pattern -> Ident.t list
 
 val pat_bound_idents_full
-  :  'k general_pattern -> (Ident.t * string loc * Types.type_expr) list
+  : 'k general_pattern -> (Ident.t * string loc * Types.type_expr) list
 
 val split_pattern
-  :  computation general_pattern -> pattern option * pattern option
+  : computation general_pattern -> pattern option * pattern option
 (** Splits an or pattern into its value (left) and exception (right) parts. *)
-(* Merlin specific *)
 
+(* Merlin specific *)
 val unpack_functor_me : module_expr -> functor_parameter * module_expr
 val unpack_functor_mty : module_type -> functor_parameter * module_type

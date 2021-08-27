@@ -357,8 +357,8 @@ module Rewrite_loc = struct
     | Pext_rebind loc -> Pext_rebind (u_loc loc)
   
   (** {2 Class language} *)
-  (* Type expressions for the class language *)
   
+  (* Type expressions for the class language *)
   and u_class_type { pcty_desc; pcty_loc; pcty_attributes } =
     enter ();
     let pcty_desc = u_class_type_desc pcty_desc in

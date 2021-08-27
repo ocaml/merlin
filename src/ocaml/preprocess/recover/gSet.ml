@@ -18,8 +18,8 @@ module type S =
     type element
     (* Sets. *)
     type t
-    (* The empty set. *)
     
+    (* The empty set. *)
     val empty : t
     (* [is_empty s] tells whether [s] is the empty set. *)
     val is_empty : t -> bool

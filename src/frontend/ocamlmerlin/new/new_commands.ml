@@ -574,9 +574,9 @@ around the specified position."
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
         run buffer (Query_protocol.Type_expr (expr, pos))
-    );
-  (* Implemented without support from Query_protocol.  This command might be
-     refactored if it proves useful for old protocol too.  *)
+    );(* Implemented without support from Query_protocol.  This command might be
+         refactored if it proves useful for old protocol too.  *)
+  
     command "check-configuration" ~spec:[]
       ~doc:
       "This command checks that merlin project and options are correct.
@@ -605,8 +605,8 @@ The return value has the shape:
             end;
           "failures",
           `List (List.map ~f:Json.string Mconfig.(config.merlin.failures)) ]
-    );
-  (* Used only for testing *)
+    );(* Used only for testing *)
+  
     command "dump"
       ~spec:
       [
@@ -617,8 +617,8 @@ The return value has the shape:
       ~default:"" ~doc:"Not for the casual user, used for debugging merlin"
       (fun pipeline what ->
       run pipeline (Query_protocol.Dump [ `String what ])
-    );
-  (* Used only for testing *)
+    );(* Used only for testing *)
+  
     command "dump-configuration" ~spec:[] ~default:()
       ~doc:"Not for the casual user, used for merlin tests" (fun pipeline () ->
       Mconfig.dump (Mpipeline.final_config pipeline)

@@ -88,9 +88,9 @@ module Head : sig
           cstr_row : row_desc ref;
           type_row : unit -> row_desc
         }
-    (* the row of the type may evolve if [close_variant] is called,
-       hence the (unit -> ...) delay *)
-    | Array of int
+    | (* the row of the type may evolve if [close_variant] is called,
+         hence the (unit -> ...) delay *)
+    Array of int
     | Lazy
   
   type t = desc pattern_data

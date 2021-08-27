@@ -34,8 +34,8 @@ val pat_app
   :  Parsetree.expression
   -> ('a * Parsetree.expression)
   -> 'a * Parsetree.expression
-(* Lwt extension *)
 
+(* Lwt extension *)
 module Lwt : sig
   val un_lwt : Parsetree.expression
   val to_lwt : Parsetree.expression
@@ -46,8 +46,8 @@ module Lwt : sig
   val raise_lwt_ : Longident.t
 end
   
-(* MetaOCaml support *)
 
+(* MetaOCaml support *)
 module Meta : sig
   val code
     :  Lexing.position

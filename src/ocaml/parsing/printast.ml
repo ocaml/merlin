@@ -89,8 +89,7 @@ let fmt_private_flag f x =
   match x with Public -> fprintf f "Public" | Private -> fprintf f "Private"
 
 let line i f s (*...*) =
-  fprintf f "%s" (String.make (2 * i mod 72) ' '); fprintf f s
-(*...*)
+  fprintf f "%s" (String.make (2 * i mod 72) ' '); fprintf f s (*...*)
 
 let list i f ppf l =
   match l with

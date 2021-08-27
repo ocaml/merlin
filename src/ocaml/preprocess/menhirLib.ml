@@ -5,14 +5,14 @@ module General = struct
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* --------------------------------------------------------------------------- *)
 (* Lists. *)
+
   let rec take n xs =
     match n, xs with
     | 0, _ | _, [] -> []
@@ -31,17 +31,17 @@ module General = struct
   let uniq cmp xs = match xs with [] -> [] | x :: xs -> x :: uniq1 cmp x xs
   let weed cmp xs = uniq cmp (List.sort cmp xs)
   (* --------------------------------------------------------------------------- *)
-  (* Streams. *)
   
+  (* Streams. *)
   type 'a stream = 'a head Lazy.t
   
   and 'a head = Nil | Cons of 'a * 'a stream
-  (* The length of a stream. *)
   
+  (* The length of a stream. *)
   let rec length xs =
     match Lazy.force xs with Nil -> 0 | Cons (_, xs) -> 1 + length xs
-  (* Folding over a stream. *)
   
+  (* Folding over a stream. *)
   let rec foldr f xs accu =
     match Lazy.force xs with Nil -> accu | Cons (x, xs) -> f x (foldr f xs accu)
 end
@@ -55,8 +55,7 @@ module Convert = struct
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -65,13 +64,14 @@ module Convert = struct
    to the lexing buffer itself, where it reads position information. *)
 (* This traditional API is convenient when used with ocamllex, but
    inelegant when used with other lexer generators. *)
+
   type ('token, 'semantic_value) traditional =
     (Lexing.lexbuf -> 'token) -> Lexing.lexbuf -> 'semantic_value
+  
   (* This revised API is independent of any lexer generator. Here, the
      parser only requires access to the lexer, and the lexer takes no
      parameters. The tokens returned by the lexer may contain position
      information. *)
-  
   type ('token, 'semantic_value) revised = (unit -> 'token) -> 'semantic_value
   (* --------------------------------------------------------------------------- *)
   (* Converting a traditional parser, produced by ocamlyacc or Menhir,
@@ -79,19 +79,19 @@ module Convert = struct
   (* A token of the revised lexer is essentially a triple of a token
      of the traditional lexer (or raw token), a start position, and
      and end position. The three [get] functions are accessors. *)
+  
   (* We do not require the type ['token] to actually be a triple type.
      This enables complex applications where it is a record type with
      more than three fields. It also enables simple applications where
      positions are of no interest, so ['token] is just ['raw_token]
      and [get_startp] and [get_endp] return dummy positions. *)
-  
   let traditional2revised
       (get_raw_token : 'token -> 'raw_token)
       (get_startp : 'token -> Lexing.position)
       (get_endp : 'token -> Lexing.position)
-      (parser : ('raw_token,'semantic_value) traditional)
+      (parser : ('raw_token, 'semantic_value) traditional)
     :
-    ('token,'semantic_value) revised
+    ('token, 'semantic_value) revised
   =
     (* Accept a revised lexer. *)
     fun (lexer : unit -> 'token) ->
@@ -108,13 +108,13 @@ module Convert = struct
       (* Invoke the traditional parser. *)
       parser lexer lexbuf
   (* --------------------------------------------------------------------------- *)
-  (* Converting a revised parser back to a traditional parser. *)
   
+  (* Converting a revised parser back to a traditional parser. *)
   let revised2traditional
       (make_token : 'raw_token -> Lexing.position -> Lexing.position -> 'token)
-      (parser : ('token,'semantic_value) revised)
+      (parser : ('token, 'semantic_value) revised)
     :
-    ('raw_token,'semantic_value) traditional
+    ('raw_token, 'semantic_value) traditional
   =
     (* Accept a traditional lexer and a lexing buffer. *)
     fun (lexer : Lexing.lexbuf -> 'raw_token) (lexbuf : Lexing.lexbuf) ->
@@ -126,8 +126,8 @@ module Convert = struct
       (* Invoke the revised parser. *)
       parser lexer
   (* --------------------------------------------------------------------------- *)
-  (* Simplified versions of the above, where concrete triples are used. *)
   
+  (* Simplified versions of the above, where concrete triples are used. *)
   module Simplified = struct
     let traditional2revised parser =
       traditional2revised (fun (token, _, _) -> token) (fun (_, startp, _) ->
@@ -147,20 +147,20 @@ module IncrementalEngine = struct
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   type position = Lexing.position
   
   open General
   (* This signature describes the incremental LR engine. *)
+  
   (* In this mode, the user controls the lexer, and the parser suspends
      itself when it needs to read a new token. *)
-  
   module type INCREMENTAL_ENGINE =
     sig
       type token
@@ -207,17 +207,18 @@ module IncrementalEngine = struct
         | HandlingError of 'a env
         | Accepted of 'a
         | Rejected
+      
       (* [offer] allows the user to resume the parser after it has suspended
          itself with a checkpoint of the form [InputNeeded env]. [offer] expects
          the old checkpoint as well as a new token and produces a new checkpoint.
          It does not raise any exception. *)
-      
       val offer
-        :  'a checkpoint -> (token * position * position) -> 'a checkpoint
+        : 'a checkpoint -> (token * position * position) -> 'a checkpoint
       (* [resume] allows the user to resume the parser after it has suspended
          itself with a checkpoint of the form [AboutToReduce (env, prod)] or
          [HandlingError env]. [resume] expects the old checkpoint and produces a
          new checkpoint. It does not raise any exception. *)
+      
       (* The optional argument [strategy] influences the manner in which [resume]
      deals with checkpoints of the form [ErrorHandling _]. Its default value
      is [`Legacy]. It can be briefly described as follows:
@@ -233,31 +234,31 @@ module IncrementalEngine = struct
        should be selected.
 
      More details on these strategies appear in the file [Engine.ml]. *)
-      
       type strategy = [ `Legacy | `Simplified ]
       
       val resume : ?strategy:strategy -> 'a checkpoint -> 'a checkpoint
+      
       (* A token supplier is a function of no arguments which delivers a new token
          (together with its start and end positions) every time it is called. *)
-      
       type supplier = unit -> token * position * position
+      
       (* A pair of a lexer and a lexing buffer can be easily turned into a
          supplier. *)
-      
       val lexer_lexbuf_to_supplier
-        :  (Lexing.lexbuf -> token) -> Lexing.lexbuf -> supplier
+        : (Lexing.lexbuf -> token) -> Lexing.lexbuf -> supplier
       (* The functions [offer] and [resume] are sufficient to write a parser loop.
          One can imagine many variations (which is why we expose these functions
          in the first place!). Here, we expose a few variations of the main loop,
          ready for use. *)
+      
       (* [loop supplier checkpoint] begins parsing from [checkpoint], reading
          tokens from [supplier]. It continues parsing until it reaches a
          checkpoint of the form [Accepted v] or [Rejected]. In the former case, it
          returns [v]. In the latter case, it raises the exception [Error].
          The optional argument [strategy], whose default value is [Legacy],
          is passed to [resume] and influences the error-handling strategy. *)
-      
       val loop : ?strategy:strategy -> supplier -> 'a checkpoint -> 'a
+      
       (* [loop_handle succeed fail supplier checkpoint] begins parsing from
      [checkpoint], reading tokens from [supplier]. It continues parsing until
      it reaches a checkpoint of the form [Accepted v] or [HandlingError env]
@@ -269,13 +270,13 @@ module IncrementalEngine = struct
      to run. For this reason, there is no [strategy] parameter. Instead, the
      user can implement her own error handling code, in the [fail]
      continuation. *)
-      
       val loop_handle
         :  ('a -> 'answer)
         -> ('a checkpoint -> 'answer)
         -> supplier
         -> 'a checkpoint
         -> 'answer
+      
       (* [loop_handle_undo] is analogous to [loop_handle], except it passes a pair
      of checkpoints to the failure continuation.
 
@@ -288,7 +289,6 @@ module IncrementalEngine = struct
 
      [loop_handle_undo] must initially be applied to an [InputNeeded] checkpoint.
      The parser's initial checkpoints satisfy this constraint. *)
-      
       val loop_handle_undo
         :  ('a -> 'answer)
         -> ('a checkpoint -> 'a checkpoint -> 'answer)
@@ -302,9 +302,9 @@ module IncrementalEngine = struct
          If the parser decides to shift, then [Some env] is returned, where [env]
          is the parser's state just before shifting. Otherwise, [None] is
          returned. *)
+      
       (* It is desirable that the semantic actions be side-effect free, or that
          their side-effects be harmless (replayable). *)
-      
       val shifts : 'a checkpoint -> 'a env option
       (* The function [acceptable] allows testing, after an error has been
          detected, which tokens would have been accepted at this point. It is
@@ -319,24 +319,24 @@ module IncrementalEngine = struct
          hypothetical token, and may be picked up by the semantic actions. We
          suggest using the position where the error was detected. *)
       val acceptable : 'a checkpoint -> token -> position -> bool
+      
       (* The abstract type ['a lr1state] describes the non-initial states of the
          LR(1) automaton. The index ['a] represents the type of the semantic value
          associated with this state's incoming symbol. *)
-      
       type 'a lr1state
-      (* The states of the LR(1) automaton are numbered (from 0 and up). *)
       
+      (* The states of the LR(1) automaton are numbered (from 0 and up). *)
       val number : _ lr1state -> int
       (* Productions are numbered. *)
       (* [find_production i] requires the index [i] to be valid. Use with care. *)
       val production_index : production -> int
       val find_production : int -> production
+      
       (* An element is a pair of a non-initial state [s] and a semantic value [v]
          associated with the incoming symbol of this state. The idea is, the value
          [v] was pushed onto the stack just before the state [s] was entered. Thus,
          for some type ['a], the state [s] has type ['a lr1state] and the value [v]
          has type ['a]. In other words, the type [element] is an existential type. *)
-      
       type element = Element : 'a lr1state * 'a * position * position -> element
       (* The parser's stack is (or, more precisely, can be viewed as) a stream of
          elements. The type [stream] is defined by the module [General]. *)
@@ -344,13 +344,12 @@ module IncrementalEngine = struct
          are DEPRECATED. They might be removed in the future. An alternative way
          of inspecting the stack is via the functions [top] and [pop]. *)
       type stack = (* DEPRECATED *) element stream
+      
       (* This is the parser's stack, a stream of elements. This stream is empty if
          the parser is in an initial state; otherwise, it is non-empty.  The LR(1)
          automaton's current state is the one found in the top element of the
          stack. *)
-      
-      val stack : 'a env -> stack
-      (* DEPRECATED *)
+      val stack : 'a env -> stack (* DEPRECATED *)
       (* [top env] returns the parser's top stack element. The state contained in
          this stack element is the current state of the automaton. If the stack is
          empty, [None] is returned. In that case, the current state of the
@@ -418,10 +417,10 @@ module IncrementalEngine = struct
          reach an error state for which no error message has been prepared. *)
       val input_needed : 'a env -> 'a checkpoint
     end
+  
   (* This signature is a fragment of the inspection API that is made available
      to the user when [--inspection] is used. This fragment contains type
      definitions for symbols. *)
-  
   module type SYMBOLS =
     sig
       (* The type ['a terminal] represents a terminal symbol. The type ['a
@@ -440,15 +439,15 @@ module IncrementalEngine = struct
          is not statically known. *)
       type xsymbol = X : 'a symbol -> xsymbol
     end
+  
   (* This signature describes the inspection API that is made available to the
      user when [--inspection] is used. *)
-  
   module type INSPECTION =
     sig
       (* The types of symbols are described above. *)
       include SYMBOLS
-      (* The type ['a lr1state] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       
+      (* The type ['a lr1state] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       type 'a lr1state
       (* The type [production] is meant to be the same as in [INCREMENTAL_ENGINE].
          It represents a production of the grammar. A production can be examined
@@ -458,8 +457,8 @@ module IncrementalEngine = struct
          this production. That is, if the length of [rhs prod] is [n], then [i] is
          comprised between 0 and [n], inclusive. *)
       type item = production * int
-      (* Ordering functions. *)
       
+      (* Ordering functions. *)
       val compare_terminals : _ terminal -> _ terminal -> int
       val compare_nonterminals : _ nonterminal -> _ nonterminal -> int
       val compare_symbols : xsymbol -> xsymbol -> int
@@ -498,9 +497,10 @@ module IncrementalEngine = struct
          [error]. *)
       val foreach_terminal : (xsymbol -> 'a -> 'a) -> 'a -> 'a
       val foreach_terminal_but_error : (xsymbol -> 'a -> 'a) -> 'a -> 'a
-      (* The type [env] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       
+      (* The type [env] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       type 'a env
+      
       (* [feed symbol startp semv endp env] causes the parser to consume the
          (terminal or nonterminal) symbol [symbol], accompanied with the semantic
          value [semv] and with the start and end positions [startp] and [endp].
@@ -508,11 +508,10 @@ module IncrementalEngine = struct
          stack grows by one cell. This operation is permitted only if the current
          state (as determined by [env]) has an outgoing transition labeled with
          [symbol]. Otherwise, [Invalid_argument _] is raised. *)
-      
       val feed : 'a symbol -> position -> 'a -> position -> 'b env -> 'b env
     end
-  (* This signature combines the incremental API and the inspection API. *)
   
+  (* This signature combines the incremental API and the inspection API. *)
   module type EVERYTHING =
     sig
       include INCREMENTAL_ENGINE
@@ -535,8 +534,7 @@ module EngineTypes = struct
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
-(*                                                                            *)
+(*  special exception on linking, as described in the file LICENSE.           *)(*                                                                            *)
 (******************************************************************************)
 (* This file defines several types and module types that are used in the
    specification of module [Engine]. *)
@@ -548,6 +546,7 @@ module EngineTypes = struct
 (* A stack is a linked list of cells. A sentinel cell -- which is its own
    successor -- is used to mark the bottom of the stack. The sentinel cell
    itself is not significant -- it contains dummy values. *)
+
   type ('state, 'semantic_value) stack =
     (* The state that we should go back to if we pop this stack cell. *)
     (* This convention means that the state contained in the top stack cell is
@@ -555,54 +554,54 @@ module EngineTypes = struct
        within the sentinel is a dummy -- it is never consulted. This convention
        is the same as that adopted by the code-based back-end. *)
     {
-      state : 'state;
-      (* The semantic value associated with the chunk of input that this cell
-         represents. *)
-      semv : 'semantic_value;
-      (* The start and end positions of the chunk of input that this cell
-         represents. *)
+      state : 'state;(* The semantic value associated with the chunk of input that this cell
+                        represents. *)
+      
+      semv : 'semantic_value;(* The start and end positions of the chunk of input that this cell
+                                represents. *)
+      
       startp : Lexing.position;
-      endp : Lexing.position;
-      (* The next cell down in the stack. If this is a self-pointer, then this
-         cell is the sentinel, and the stack is conceptually empty. *)
-      next : ('state,'semantic_value) stack
+      endp : Lexing.position;(* The next cell down in the stack. If this is a self-pointer, then this
+                                cell is the sentinel, and the stack is conceptually empty. *)
+      
+      next : ('state, 'semantic_value) stack
     }
   (* --------------------------------------------------------------------------- *)
+  
   (* A parsing environment contains all of the parser's state (except for the
      current program point). *)
-  
   type ('state, 'semantic_value, 'token) env =
     (* If this flag is true, then the first component of [env.triple] should
        be ignored, as it has been logically overwritten with the [error]
        pseudo-token. *)
     {
-      error : bool;
-      (* The last token that was obtained from the lexer, together with its start
-         and end positions. Warning: before the first call to the lexer has taken
-         place, a dummy (and possibly invalid) token is stored here. *)
-      triple : 'token * Lexing.position * Lexing.position;
-      (* The stack. In [CodeBackend], it is passed around on its own,
-         whereas, here, it is accessed via the environment. *)
-      stack : ('state,'semantic_value) stack;
-      (* The current state. In [CodeBackend], it is passed around on its
-         own, whereas, here, it is accessed via the environment. *)
+      error : bool;(* The last token that was obtained from the lexer, together with its start
+                      and end positions. Warning: before the first call to the lexer has taken
+                      place, a dummy (and possibly invalid) token is stored here. *)
+      
+      triple : 'token * Lexing.position * Lexing.position;(* The stack. In [CodeBackend], it is passed around on its own,
+                                                             whereas, here, it is accessed via the environment. *)
+      
+      stack : ('state, 'semantic_value) stack;(* The current state. In [CodeBackend], it is passed around on its
+                                                 own, whereas, here, it is accessed via the environment. *)
+      
       current : 'state
     }
   (* --------------------------------------------------------------------------- *)
+  
   (* This signature describes the parameters that must be supplied to the LR
      engine. *)
-  
   module type TABLE =
     sig
       (* The type of automaton states. *)
       type state
-      (* States are numbered. *)
       
+      (* States are numbered. *)
       val number : state -> int
+      
       (* The type of tokens. These can be thought of as real tokens, that is,
          tokens returned by the lexer. They carry a semantic value. This type
          does not include the [error] pseudo-token. *)
-      
       type token
       (* The type of terminal symbols. These can be thought of as integer codes.
          They do not carry a semantic value. This type does include the [error]
@@ -612,9 +611,9 @@ module EngineTypes = struct
       type nonterminal
       (* The type of semantic values. *)
       type semantic_value
+      
       (* A token is conceptually a pair of a (non-[error]) terminal symbol and
          a semantic value. The following two functions are the pair projections. *)
-      
       val token2terminal : token -> terminal
       val token2value : token -> semantic_value
       (* Even though the [error] pseudo-token is not a real token, it is a
@@ -624,8 +623,8 @@ module EngineTypes = struct
       val error_value : semantic_value
       (* [foreach_terminal] allows iterating over all terminal symbols. *)
       val foreach_terminal : (terminal -> 'a -> 'a) -> 'a -> 'a
-      (* The type of productions. *)
       
+      (* The type of productions. *)
       type production
       
       val production_index : production -> int
@@ -634,10 +633,10 @@ module EngineTypes = struct
          entering [s], the automaton should reduce [prod] without consulting the
          lookahead token. The following function allows determining which states
          have default reductions. *)
+      
       (* Instead of returning a value of a sum type -- either [DefRed prod], or
          [NoDefRed] -- it accepts two continuations, and invokes just one of
          them. This mechanism allows avoiding a memory allocation. *)
-      
       val default_reduction
         :  state
         -> ('env -> production -> 'answer)
@@ -659,6 +658,7 @@ module EngineTypes = struct
          shift/nodiscard, reduce, or fail -- this function accepts three
          continuations, and invokes just one them. This mechanism allows avoiding
          a memory allocation. *)
+      
       (* In summary, the parameters to [action] are as follows:
 
      - the first two parameters, a state and a terminal symbol, are used to
@@ -679,7 +679,6 @@ module EngineTypes = struct
 
      - the last parameter is the environment; it is not used, only passed
        along to the selected continuation. *)
-      
       val action
         :  state
         -> terminal
@@ -692,13 +691,13 @@ module EngineTypes = struct
       (* This is the automaton's goto table. This table maps a pair of a state
          and a nonterminal symbol to a new state. By extension, it also maps a
          pair of a state and a production to a new state. *)
+      
       (* The function [goto_nt] can be applied to [s] and [nt] ONLY if the state
          [s] has an outgoing transition labeled [nt]. Otherwise, its result is
          undefined. Similarly, the call [goto_prod prod s] is permitted ONLY if
          the state [s] has an outgoing transition labeled with the nonterminal
          symbol [lhs prod]. The function [maybe_goto_nt] involves an additional
          dynamic check and CAN be called even if there is no outgoing transition. *)
-      
       val goto_nt : state -> nonterminal -> state
       val goto_prod : state -> production -> state
       val maybe_goto_nt : state -> nonterminal -> state option
@@ -722,12 +721,12 @@ module EngineTypes = struct
      off the stack by this interpreter, then the calling convention for
      semantic actions would be variadic: not all semantic actions would have
      the same number of arguments. The rest follows rather naturally. *)
-      (* Semantic actions are allowed to raise [Error]. *)
       
+      (* Semantic actions are allowed to raise [Error]. *)
       exception Error
       
       type semantic_action =
-        (state,semantic_value,token) env -> (state,semantic_value) stack
+        (state, semantic_value, token) env -> (state, semantic_value) stack
       
       val semantic_action : production -> semantic_action
       (* [may_reduce state prod] tests whether the state [state] is capable of
@@ -743,8 +742,8 @@ module EngineTypes = struct
          If it is [true], then they are called. *)
       val log : bool
       
-      module Log : sig
-      (* State %d: *)
+      module Log : sig(* State %d: *)
+      
         val state : state -> unit
         (* Shifting (<terminal>) to state <state> *)
         val shift : terminal -> state -> unit
@@ -755,7 +754,7 @@ module EngineTypes = struct
         val reduce_or_accept : production -> unit
         (* Lookahead token is now <terminal> (<pos>-<pos>) *)
         val lookahead_token
-          :  terminal -> Lexing.position -> Lexing.position -> unit
+          : terminal -> Lexing.position -> Lexing.position -> unit
         (* Initiating error handling *)
         val initiating_error_handling : unit -> unit
         (* Resuming error handling *)
@@ -766,23 +765,23 @@ module EngineTypes = struct
         
     end
   (* --------------------------------------------------------------------------- *)
+  
   (* This signature describes the monolithic (traditional) LR engine. *)
   (* In this interface, the parser controls the lexer. *)
-  
   module type MONOLITHIC_ENGINE =
     sig
       type state
       type token
       type semantic_value
+      
       (* An entry point to the engine requires a start state, a lexer, and a lexing
          buffer. It either succeeds and produces a semantic value, or fails and
          raises [Error]. *)
-      
       exception Error
       
       val entry
-        :
-        (* strategy: *)  [ `Legacy | `Simplified ]
+        :  (* strategy: *)
+        [ `Legacy | `Simplified ]
         -> (* see [IncrementalEngine] *) state
         -> (Lexing.lexbuf -> token)
         -> Lexing.lexbuf
@@ -791,11 +790,11 @@ module EngineTypes = struct
   (* --------------------------------------------------------------------------- *)
   (* The following signatures describe the incremental LR engine. *)
   (* First, see [INCREMENTAL_ENGINE] in the file [IncrementalEngine.ml]. *)
+  
   (* The [start] function is set apart because we do not wish to publish
      it as part of the generated [parser.mli] file. Instead, the table
      back-end will publish specialized versions of it, with a suitable
      type cast. *)
-  
   module type INCREMENTAL_ENGINE_START =
     sig
       (* [start] is an entry point. It requires a start state and a start position
@@ -816,9 +815,9 @@ module EngineTypes = struct
       val start : state -> Lexing.position -> semantic_value checkpoint
     end
   (* --------------------------------------------------------------------------- *)
+  
   (* This signature describes the LR engine, which combines the monolithic
      and incremental interfaces. *)
-  
   module type ENGINE =
     sig
       include MONOLITHIC_ENGINE
@@ -842,29 +841,29 @@ module Engine = struct
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   type position = Lexing.position
   
   open EngineTypes
   (* The LR parsing engine. *)
+  
   (* This module is used:
 
    - at compile time, if so requested by the user, via the --interpret options;
    - at run time, in the table-based back-end. *)
+  module Make (T : TABLE) = struct(* This propagates type and exception definitions. The functions [number],
+                                     [production_index], [find_production], too, are defined by this [include]
+                                     declaration. *)
   
-  module Make (T : TABLE) = struct
-  (* This propagates type and exception definitions. The functions [number],
-     [production_index], [find_production], too, are defined by this [include]
-     declaration. *)
     include T
     
-    type 'a env = (state,semantic_value,token) EngineTypes.env
+    type 'a env = (state, semantic_value, token) EngineTypes.env
     (* ------------------------------------------------------------------------ *)
     (* The type [checkpoint] represents an intermediate or final result of the
        parser. See [EngineTypes]. *)
@@ -873,11 +872,11 @@ module Engine = struct
        checkpoints (i.e., continuations) that do not make sense. (Such
        continuations could potentially violate the LR invariant and lead to
        crashes.) *)
+    
     (* 2017/03/29 Although [checkpoint] is a private type, we now expose a
        constructor function, [input_needed]. This function allows manufacturing
        a checkpoint out of an environment. For this reason, the type [env] must
        also be parameterized with ['a]. *)
-    
     type 'a checkpoint =
       | InputNeeded of 'a env
       | Shifting of 'a env * 'a env * bool
@@ -915,6 +914,7 @@ module Engine = struct
 
      - If neither action is possible and if the stack is empty, then the
        parse dies with a [Reject] checkpoint. *)
+    
     (* The simplified strategy differs from the legacy strategy as follows:
 
      - When shifting, a [Shifting] checkpoint is produced, whose field
@@ -944,13 +944,13 @@ module Engine = struct
     (* Let us note that it is also possible to perform no error handling at
        all, or to perform customized error handling, by stopping as soon as
        the first [ErrorHandling] checkpoint appears. *)
-    
     type strategy = [ `Legacy | `Simplified ]
     (* ------------------------------------------------------------------------ *)
     (* In the code-based back-end, the [run] function is sometimes responsible
        for pushing a new cell on the stack. This is motivated by code sharing
        concerns. In this interpreter, there is no such concern; [run]'s caller
        is always responsible for updating the stack. *)
+    
     (* In the code-based back-end, there is a [run] function for each state
      [s]. This function can behave in two slightly different ways, depending
      on when it is invoked, or (equivalently) depending on [s].
@@ -975,7 +975,6 @@ module Engine = struct
        checkpoint of type [semantic_value checkpoint], and cannot raise an
        exception. A semantic action can raise [Error], but this exception is
        immediately caught within [reduce]. *)
-    
     let rec run env please_discard : semantic_value checkpoint =
       (* Log the fact that we just entered this state. *)
       (if log then Log.state env.current);
@@ -988,10 +987,10 @@ module Engine = struct
         InputNeeded env
       else
         check_for_default_reduction env
+    
     (* [discard env triple] stores [triple] into [env], overwriting the previous
        token. It is invoked by [offer], which itself is invoked by the user in
        response to an [InputNeeded] checkpoint. *)
-    
     and discard env triple =
       (if log then
          let (token, startp, endp) = triple in
@@ -1003,9 +1002,8 @@ module Engine = struct
       (* Examine what situation we are in. This case analysis is analogous to
          that performed in [CodeBackend.gettoken], in the sub-case where we do
          not have a terminal incoming symbol. *)
-      T.default_reduction env.current announce_reduce
-      (* there is a default reduction; perform it *) check_for_error_token
-      (* there is none; continue below *) env
+      T.default_reduction env.current announce_reduce(* there is a default reduction; perform it *)
+       check_for_error_token (* there is none; continue below *) env
     
     and check_for_error_token env =
       (* There is no default reduction. Consult the current lookahead token
@@ -1025,18 +1023,18 @@ module Engine = struct
         (* We consult the two-dimensional action table, indexed by the
            current state and the current lookahead token, in order to
            determine which action should be taken. *)
-        T.action env.current
-        (* determines a row *) (T.token2terminal token)
-        (* determines a column *) (T.token2value token) shift
-        (* shift continuation *) announce_reduce
-        (* reduce continuation *) initiate
-        (* failure continuation *) env
+        T.action env.current(* determines a row *)
+         (T.token2terminal token) (* determines a column *)
+          (T.token2value token) shift(* shift continuation *)
+         announce_reduce(* reduce continuation *)
+         initiate(* failure continuation *)
+         env
     (* ------------------------------------------------------------------------ *)
+    
     (* This function takes care of shift transitions along a terminal symbol.
        (Goto transitions are taken care of within [reduce] below.) The symbol
        can be either an actual token or the [error] pseudo-token. *)
     (* Here, the lookahead token CAN be [error]. *)
-    
     and shift
         env (please_discard : bool) (terminal : terminal)
         (value : semantic_value) (s' : state)
@@ -1061,17 +1059,17 @@ module Engine = struct
     (* ------------------------------------------------------------------------ *)
     (* The function [announce_reduce] stops the parser and returns a checkpoint
        which allows the parser to be resumed by calling [reduce]. *)
+    
     (* Only ordinary productions are exposed to the user. Start productions
        are not exposed to the user. Reducing a start production simply leads
        to the successful termination of the parser. *)
-    
     and announce_reduce env (prod : production) =
       if T.is_start prod then accept env prod else AboutToReduce (env, prod)
     (* The function [reduce] takes care of reductions. It is invoked by
        [resume] after an [AboutToReduce] event has been produced. *)
+    
     (* Here, the lookahead token CAN be [error]. *)
     (* The production [prod] CANNOT be a start production. *)
-    
     and reduce env (prod : production) =
       (* Log a reduction event. *)
       (if log then Log.reduce_or_accept prod);
@@ -1105,25 +1103,25 @@ module Engine = struct
       Accepted v
     (* ------------------------------------------------------------------------ *)
     (* The following functions deal with errors. *)
+    
     (* [initiate] initiates or resumes error handling. *)
     (* Here, the lookahead token CAN be [error]. *)
-    
     and initiate env =
       (if log then Log.initiating_error_handling ());
       let env = { env with  error = true } in
       HandlingError env
-    (* [error] handles errors. *)
     
+    (* [error] handles errors. *)
     and error ~strategy env =
       assert env.error;
       (* Consult the column associated with the [error] pseudo-token in the
          action table. *)
-      T.action env.current
-      (* determines a row *) T.error_terminal
-      (* determines a column *) T.error_value (error_shift ~strategy)
-      (* shift continuation *) (error_reduce ~strategy)
-      (* reduce continuation *) (error_fail ~strategy)
-      (* failure continuation *) env
+      T.action env.current(* determines a row *)
+       T.error_terminal(* determines a column *)
+       T.error_value (error_shift ~strategy)(* shift continuation *)
+       (error_reduce ~strategy)(* reduce continuation *)
+       (error_fail ~strategy)(* failure continuation *)
+       env
     
     and error_shift ~strategy env please_discard terminal value s' =
       assert (terminal = T.error_terminal && value = T.error_value);
@@ -1164,19 +1162,19 @@ module Engine = struct
         let cell = env.stack in
         let next = cell.next in
         if next == cell then
-        (* The stack is empty. Die. *)
+          (* The stack is empty. Die. *)
           Rejected
-        else
-        (* The stack is nonempty. Pop a cell, updating the current state
-           with that found in the popped cell, and try again. *)
+        else(* The stack is nonempty. Pop a cell, updating the current state
+               with that found in the popped cell, and try again. *)
+        
           let env = { env with  stack = next; current = cell.state } in
           HandlingError env
     (* End of the nest of tail recursive functions. *)
     (* ------------------------------------------------------------------------ *)
+    
     (* ------------------------------------------------------------------------ *)
     (* The incremental interface. See [EngineTypes]. *)
     (* [start s] begins the parsing process. *)
-    
     let start (s : state) (initial : position) : semantic_value checkpoint =
       (* Build an empty stack. This is a dummy cell, which is its own successor.
          Its [next] field WILL be accessed by [error_fail] if an error occurs and
@@ -1185,12 +1183,12 @@ module Engine = struct
          when the stack is empty. *)
       let rec empty =
         {
-          state = s;
-          (* dummy *)
-          semv = T.error_value;
-          (* dummy *)
-          startp = initial;
-          (* dummy *)
+          state = s;(* dummy *)
+          
+          semv = T.error_value;(* dummy *)
+          
+          startp = initial;(* dummy *)
+          
           endp = initial;
           next = empty
         }
@@ -1206,8 +1204,7 @@ module Engine = struct
       let env =
         {
           error = false;
-          triple = dummy_token, initial, initial;
-          (* dummy *)
+          triple = dummy_token, initial, initial; (* dummy *)
           stack = empty;
           current = s
         }
@@ -1230,6 +1227,7 @@ module Engine = struct
        The choice of [semantic_value] is forced by the fact that this is the
        parameter of the checkpoint [Accepted]. *)
     (* We change this as follows. *)
+    
     (* We change the argument and result type of [offer] and [resume] from
        [semantic_value checkpoint] to ['a checkpoint]. This is safe, in this
        case, because we give the user access to values of type [t checkpoint]
@@ -1240,7 +1238,6 @@ module Engine = struct
        back-end goes further than this and produces versions of [start] composed
        with a suitable cast, which give the user access to a value of type
        [t checkpoint] where [t] is the type of the start symbol.) *)
-    
     let offer :
       'a. 'a checkpoint -> (token * position * position) -> 'a checkpoint
     =
@@ -1258,10 +1255,10 @@ module Engine = struct
           invalid_arg "resume expects HandlingError | Shifting | AboutToReduce"
     (* ------------------------------------------------------------------------ *)
     (* ------------------------------------------------------------------------ *)
+    
     (* The traditional interface. See [EngineTypes]. *)
     (* ------------------------------------------------------------------------ *)
     (* Wrapping a lexer and lexbuf as a token supplier. *)
-    
     type supplier = unit -> token * position * position
     
     let lexer_lexbuf_to_supplier
@@ -1280,12 +1277,12 @@ module Engine = struct
        checkpoint is obtained. This allows implementing the monolithic interface
        ([entry]) in terms of the incremental interface ([start], [offer],
        [handle], [reduce]). *)
+    
     (* By convention, acceptance is reported by returning a semantic value,
        whereas rejection is reported by raising [Error]. *)
     (* [loop] is polymorphic in ['a]. No cheating is involved in achieving this.
        All of the cheating resides in the types assigned to [offer] and [handle]
        above. *)
-    
     let rec loop : 'a. ?strategy:strategy -> supplier -> 'a checkpoint -> 'a =
       fun ?(strategy=`Legacy) read checkpoint ->
         match checkpoint with
@@ -1313,10 +1310,10 @@ module Engine = struct
       let initial = lexbuf.Lexing.lex_curr_p in
       loop ~strategy (lexer_lexbuf_to_supplier lexer lexbuf) (start s initial)
     (* ------------------------------------------------------------------------ *)
+    
     (* [loop_handle] stops if it encounters an error, and at this point, invokes
        its failure continuation, without letting Menhir do its own traditional
        error-handling (which involves popping the stack, etc.). *)
-    
     let rec loop_handle succeed fail read checkpoint =
       match checkpoint with
       | InputNeeded _ ->
@@ -1336,6 +1333,7 @@ module Engine = struct
            success continuation. *)
         succeed v
     (* ------------------------------------------------------------------------ *)
+    
     (* [loop_handle_undo] is analogous to [loop_handle], except it passes a pair
      of checkpoints to the failure continuation.
 
@@ -1345,7 +1343,6 @@ module Engine = struct
      Going back to the first checkpoint can be thought of as undoing any
      reductions that were performed after seeing the problematic token. (These
      reductions must be default reductions or spurious reductions.) *)
-    
     let rec loop_handle_undo succeed fail read (inputneeded, checkpoint) =
       match checkpoint with
       | InputNeeded _ ->
@@ -1364,12 +1361,12 @@ module Engine = struct
     (* For simplicity, we publish a version of [loop_handle_undo] that takes a
        single checkpoint as an argument, instead of a pair of checkpoints. We
        check that the argument is [InputNeeded _], and duplicate it. *)
+    
     (* The parser cannot accept or reject before it asks for the very first
        character of input. (Indeed, we statically reject a symbol that
        generates the empty language or the singleton language {epsilon}.)
        So, the [start] checkpoint must match [InputNeeded _]. Hence, it is
        permitted to call [loop_handle_undo] with a [start] checkpoint. *)
-    
     let loop_handle_undo succeed fail read checkpoint =
       assert
         begin match checkpoint with
@@ -1377,8 +1374,8 @@ module Engine = struct
         | _ -> false
         end;
       loop_handle_undo succeed fail read (checkpoint, checkpoint)
-    (* ------------------------------------------------------------------------ *)
     
+    (* ------------------------------------------------------------------------ *)
     let rec shifts checkpoint =
       match checkpoint with
       | Shifting (env, _, _) ->
@@ -1409,12 +1406,12 @@ module Engine = struct
     (* The type ['a lr1state] describes the (non-initial) states of the LR(1)
        automaton. The index ['a] represents the type of the semantic value
        associated with the state's incoming symbol. *)
+    
     (* The type ['a lr1state] is defined as an alias for [state], which itself
        is usually defined as [int] (see [TableInterpreter]). So, ['a lr1state]
        is technically a phantom type, but should really be thought of as a GADT
        whose data constructors happen to be represented as integers. It is
        presented to the user as an abstract type (see [IncrementalEngine]). *)
-    
     type 'a lr1state = state
     (* ------------------------------------------------------------------------ *)
     (* Stack inspection. *)
@@ -1430,10 +1427,10 @@ module Engine = struct
     open General
     
     type stack = element stream
+    
     (* If [current] is the current state and [cell] is the top stack cell,
        then [stack cell current] is a view of the parser's state as a stream
        of elements. *)
-    
     let rec stack cell current : element stream =
       lazy
         (* The stack is empty iff the top stack cell is its own successor. In
@@ -1443,23 +1440,23 @@ module Engine = struct
         (let next = cell.next in
          if next == cell then
            Nil
-         else
-         (* Construct an element containing the current state [current] as well
-            as the semantic value contained in the top stack cell. This semantic
-            value is associated with the incoming symbol of this state, so it
-            makes sense to pair them together. The state has type ['a state] and
-            the semantic value has type ['a], for some type ['a]. Here, the OCaml
-            type-checker thinks ['a] is [semantic_value] and considers this code
-            well-typed. Outside, we will use magic to provide the user with a way
-            of inspecting states and recovering the value of ['a]. *)
+         else(* Construct an element containing the current state [current] as well
+                as the semantic value contained in the top stack cell. This semantic
+                value is associated with the incoming symbol of this state, so it
+                makes sense to pair them together. The state has type ['a state] and
+                the semantic value has type ['a], for some type ['a]. Here, the OCaml
+                type-checker thinks ['a] is [semantic_value] and considers this code
+                well-typed. Outside, we will use magic to provide the user with a way
+                of inspecting states and recovering the value of ['a]. *)
+         
            let element = Element (current, cell.semv, cell.startp, cell.endp) in
            Cons (element, stack next cell.state))
     
     let stack env : element stream = stack env.stack env.current
+    
     (* As explained above, the function [top] allows access to the top stack
        element only if the stack is nonempty, i.e., only if the current state
        is not an initial state. *)
-    
     let top env : element option =
       let cell = env.stack in
       let next = cell.next in
@@ -1470,12 +1467,12 @@ module Engine = struct
     (* [equal] compares the stacks for physical equality, and compares the
        current states via their numbers (this seems cleaner than using OCaml's
        polymorphic equality). *)
+    
     (* The two fields that are not compared by [equal], namely [error] and
        [triple], are overwritten by the function [discard], which handles
        [InputNeeded] checkpoints. Thus, if [equal env1 env2] holds, then the
        checkpoints [input_needed env1] and [input_needed env2] are
        equivalent: they lead the parser to behave in the same way. *)
-    
     let equal env1 env2 =
       env1.stack == env2.stack && number env1.current = number env2.current
     
@@ -1487,11 +1484,11 @@ module Engine = struct
     (* Access to information about default reductions. *)
     (* This can be a function of states, or a function of environments.
        We offer both. *)
+    
     (* Instead of a Boolean result, we could return a [production option].
        However, we would have to explicitly test whether [prod] is a start
        production, and in that case, return [None], I suppose. Indeed, we
        have decided not to expose the start productions. *)
-    
     let state_has_default_reduction (state : _ lr1state) : bool =
       T.default_reduction state (fun _env _prod -> true) (fun _env -> false) ()
     
@@ -1505,28 +1502,28 @@ module Engine = struct
        production. The function [feed] causes the automaton to progress into the
        future by pretending that a (terminal or nonterminal) symbol has been
        read. *)
+    
     (* The function [feed] would ideally be defined here. However, for this
        function to be type-safe, the GADT ['a symbol] is needed. For this
        reason, we move its definition to [InspectionTableInterpreter], where
        the inspection API is available. *)
     (* [pop] pops one stack cell. It cannot go wrong. *)
-    
     let pop (env : 'a env) : 'a env option =
       let cell = env.stack in
       let next = cell.next in
       if next == cell then
-      (* The stack is empty. *)
+        (* The stack is empty. *)
         None
-      else
-      (* The stack is nonempty. Pop off one cell. *)
+      else(* The stack is nonempty. Pop off one cell. *)
+      
         Some { env with  stack = next; current = cell.state }
     (* [force_reduction] is analogous to [reduce], except that it does not
        continue by calling [run env] or [initiate env]. Instead, it returns
        [env] to the user. *)
+    
     (* [force_reduction] is dangerous insofar as it executes a semantic action.
        This semantic action could have side effects: nontermination, state,
        exceptions, input/output, etc. *)
-    
     let force_reduction prod (env : 'a env) : 'a env =
       (* Check if this reduction is permitted. This check is REALLY important.
          The stack must have the correct shape: that is, it must be sufficiently
@@ -1541,15 +1538,16 @@ module Engine = struct
       if not (T.may_reduce env.current prod) then
         invalid_arg
           "force_reduction: this reduction is not permitted in this state"
-      else
-      (* We do not expose the start productions to the user, so this cannot be
-         a start production. Hence, it has a semantic action. *)
+      else(* We do not expose the start productions to the user, so this cannot be
+             a start production. Hence, it has a semantic action. *)
+      
         (assert (not (T.is_start prod));
          (* Invoke the semantic action. *)
          let stack = T.semantic_action prod env in
          (* Perform a goto transition. *)
          let current = T.goto_prod stack.state prod in
          { env with  stack; current })
+    
     (* The environment manipulation functions -- [pop] and [force_reduction]
        above, plus [feed] -- manipulate the automaton's stack and current state,
        but do not affect the automaton's lookahead symbol. When the function
@@ -1566,10 +1564,9 @@ module Engine = struct
        [input_needed] only in a state [s] where an input symbol is normally
        demanded, that is, a state [s] whose incoming symbol is a terminal symbol
        and which does not have a default reduction on [#]. *)
-    
     let input_needed (env : 'a env) : 'a checkpoint = InputNeeded env
-    (* The following functions are compositions of [top] and [pop]. *)
     
+    (* The following functions are compositions of [top] and [pop]. *)
     let rec pop_many i env =
       if i = 0 then
         Some env
@@ -1589,18 +1586,18 @@ module ErrorReports = struct
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* -------------------------------------------------------------------------- *)
 (* A two-place buffer stores zero, one, or two elements. *)
+
   type 'a content = Zero | One of 'a | Two of 'a * (* most recent: *) 'a
   type 'a buffer = 'a content ref
-  (* [update buffer x] pushes [x] into [buffer], causing the buffer to slide. *)
   
+  (* [update buffer x] pushes [x] into [buffer], causing the buffer to slide. *)
   let update buffer x =
     buffer :=
       match !buffer, x with
@@ -1643,8 +1640,8 @@ module ErrorReports = struct
     (fun () ->
        let (_token, pos1, pos2 as triple) = supplier () in
        update buffer (pos1, pos2); triple)
-  (* -------------------------------------------------------------------------- *)
   
+  (* -------------------------------------------------------------------------- *)
   let extract text (pos1, pos2) : string =
     let ofs1 = pos1.pos_cnum
     and ofs2 = pos2.pos_cnum
@@ -1659,6 +1656,7 @@ module ErrorReports = struct
   
   let sanitize text =
     String.map (fun c -> if Char.code c < 32 then ' ' else c) text
+  
   (* If we were willing to depend on [Str], we could implement [compress] as
    follows:
 
@@ -1666,7 +1664,6 @@ module ErrorReports = struct
      Str.global_replace (Str.regexp "[ \t\n\r]+") " " text
 
  *)
-  
   let rec compress n b i j skipping =
     if j < n then
       let (c, j) = Bytes.get b j, j + 1 in
@@ -1732,13 +1729,13 @@ module LexerUtil = struct
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   open Lexing
   open Printf
   
@@ -1768,8 +1765,7 @@ module LexerUtil = struct
       let file = pos1.pos_fname in
       let line = pos1.pos_lnum in
       let char1 = pos1.pos_cnum - pos1.pos_bol in
-      let char2 = pos2.pos_cnum - pos1.pos_bol in
-      (* yes, [pos1.pos_bol] *)
+      let char2 = pos2.pos_cnum - pos1.pos_bol in (* yes, [pos1.pos_bol] *)
       sprintf "File \"%s\", line %d, characters %d-%d:\n" file line char1 char2
 (* use [char1 + 1] and [char2 + 1] if *not* using Caml mode *)
 end
@@ -1781,13 +1777,13 @@ module Printers = struct
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   module Make
       (I : IncrementalEngine.EVERYTHING)
       (User :
@@ -1804,10 +1800,10 @@ module Printers = struct
     
     open User
     open I
+    
     (* Printing a list of symbols. An optional dot is printed at offset
        [i] into the list [symbols], if this offset lies between [0] and
        the length of the list (included). *)
-    
     let rec print_symbols i symbols =
       if i = 0 then
         (print dot; print space; print_symbols (-1) symbols)
@@ -1816,22 +1812,22 @@ module Printers = struct
         | [] -> ()
         | symbol :: symbols ->
           print_symbol symbol; print space; print_symbols (i - 1) symbols
-    (* Printing an element as a symbol. *)
     
+    (* Printing an element as a symbol. *)
     let print_element_as_symbol element =
       match element with
       | Element (s, _, _, _) -> print_symbol (X (incoming_symbol s))
+    
     (* Some of the functions that follow need an element printer. They use
        [print_element] if provided by the user; otherwise they use
        [print_element_as_symbol]. *)
-    
     let print_element =
       match print_element with
       | Some print_element -> print_element
       | None -> print_element_as_symbol
+    
     (* Printing a stack as a list of symbols. Stack bottom on the left,
        stack top on the right. *)
-    
     let rec print_stack env =
       match top env, pop env with
       | Some element, Some env ->
@@ -1839,24 +1835,23 @@ module Printers = struct
       | _, _ -> ()
     
     let print_stack env = print_stack env; print newline
-    (* Printing an item. *)
     
+    (* Printing an item. *)
     let print_item (prod, i) =
       print_symbol (lhs prod);
       print arrow; print_symbols i (rhs prod); print newline
-    (* Printing a list of symbols (public version). *)
     
+    (* Printing a list of symbols (public version). *)
     let print_symbols symbols = print_symbols (-1) symbols
     (* Printing a production (without a dot). *)
     let print_production prod = print_item (prod, (-1))
-    (* Printing the current LR(1) state. *)
     
+    (* Printing the current LR(1) state. *)
     let print_current_state env =
       print "Current LR(1) state: ";
       match top env with
       | None ->
-        print "<some initial state>";
-        (* TEMPORARY unsatisfactory *)
+        print "<some initial state>"; (* TEMPORARY unsatisfactory *)
         print newline
       | Some (Element (current, _, _, _)) ->
         print (string_of_int (number current));
@@ -1874,21 +1869,20 @@ module InfiniteArray = struct
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   (** This module implements infinite arrays, that is, arrays that grow
       transparently upon demand. *)
   
   type 'a t = { default : 'a; mutable table : 'a array; mutable extent : int }
   (* the index of the greatest [set] ever, plus one *)
   
-  let default_size = 16384
-  (* must be non-zero *)
+  let default_size = 16384 (* must be non-zero *)
   let make x = { default = x; table = Array.make default_size x; extent = 0 }
   
   let rec new_length length i =
@@ -1923,8 +1917,7 @@ module PackedIntArray = struct
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
-(*                                                                            *)
+(*  special exception on linking, as described in the file LICENSE.           *)(*                                                                            *)
 (******************************************************************************)
 (* A packed integer array is represented as a pair of an integer [k] and
    a string [s]. The integer [k] is the number of bits per integer that we
@@ -1935,32 +1928,32 @@ module PackedIntArray = struct
    the latter are dynamically allocated. (This is rather arbitrary.) In the
    context of Menhir's table-based back-end, where compact, immutable
    integer arrays are needed, ocaml strings are preferable to ocaml arrays. *)
+
   type t = int * string
+  
   (* The magnitude [k] of an integer [v] is the number of bits required
      to represent [v]. It is rounded up to the nearest power of two, so
      that [k] divides [Sys.word_size]. *)
-  
   let magnitude (v : int) =
     if v < 0 then
       Sys.word_size
     else
-      let rec check k max =
-        (* [max] equals [2^k] *)
+      let rec check k max = (* [max] equals [2^k] *)
         if max <= 0 || v < max then
-          k
-        (* if [max] just overflew, then [v] requires a full ocaml
-           integer, and [k] is the number of bits in an ocaml integer
-           plus one, that is, [Sys.word_size]. *)
+          k(* if [max] just overflew, then [v] requires a full ocaml
+              integer, and [k] is the number of bits in an ocaml integer
+              plus one, that is, [Sys.word_size]. *)
+        
         else
           check (2 * k) (max * max)
       in
       check 1 2
   (* [pack a] turns an array of integers into a packed integer array. *)
+  
   (* Because the sign bit is the most significant bit, the magnitude of
      any negative number is the word size. In other words, [pack] does
      not achieve any space savings as soon as [a] contains any negative
      numbers, even if they are ``small''. *)
-  
   let pack (a : int array) : t =
     let m = Array.length a in
     (* Compute the maximum magnitude of the array elements. This tells
@@ -1972,7 +1965,7 @@ module PackedIntArray = struct
        then we must use multiple characters to represent a single array
        entry. *)
     if k <= 8 then
-    (* [w] is the number of array entries that we pack in a character. *)
+      (* [w] is the number of array entries that we pack in a character. *)
       (assert (8 mod k = 0);
        let w = 8 / k in
        (* [n] is the length of the string that we allocate. *)
@@ -1984,8 +1977,7 @@ module PackedIntArray = struct
        let next () =
          let ii = !i in
          if ii = m then
-           0
-         (* ran off the end, pad with zeroes *)
+           0 (* ran off the end, pad with zeroes *)
          else
            let v = a.(ii) in
            (i := ii + 1; v)
@@ -1998,9 +1990,8 @@ module PackedIntArray = struct
        done;
        (* Done. *)
        k, Bytes.unsafe_to_string s)
-    else
-    (* k > 8 *)
-    (* [w] is the number of characters that we use to encode an array entry. *)
+    else (* k > 8 *)(* [w] is the number of characters that we use to encode an array entry. *)
+    
       (assert (k mod 8 = 0);
        let w = k / 8 in
        (* [n] is the length of the string that we allocate. *)
@@ -2015,22 +2006,22 @@ module PackedIntArray = struct
        done;
        (* Done. *)
        k, Bytes.unsafe_to_string s)
-  (* Access to a string. *)
   
+  (* Access to a string. *)
   let read (s : string) (i : int) : int = Char.code (String.unsafe_get s i)
+  
   (* [get1 t i] returns the integer stored in the packed array [t] at index [i].
      It assumes (and does not check) that the array's bit width is [1]. The
      parameter [t] is just a string. *)
-  
   let get1 (s : string) (i : int) : int =
     let c = read s (i lsr 3) in
     let c = c lsr (lnot i land 0b111) in
     let c = c land 0b1 in
     c
   (* [get t i] returns the integer stored in the packed array [t] at index [i]. *)
+  
   (* Together, [pack] and [get] satisfy the following property: if the index [i]
      is within bounds, then [get (pack a) i] equals [a.(i)]. *)
-  
   let get (k, s : t) (i : int) : int =
     match k with
     | 1 -> get1 s i
@@ -2049,17 +2040,16 @@ module PackedIntArray = struct
       let j = 2 * i in
       read s j lsl 8 + read s (j + 1)
     | _ ->
-      assert (k = 32);
-      (* 64 bits unlikely, not supported *)
+      assert (k = 32); (* 64 bits unlikely, not supported *)
       let j = 4 * i in
       ((read s j lsl 8 + read s (j + 1)) lsl 8 + read s (j + 2)) lsl 8 +
         read s (j + 3)
+  
   (* [unflatten1 (n, data) i j] accesses the two-dimensional bitmap
      represented by [(n, data)] at indices [i] and [j]. The integer
      [n] is the width of the bitmap; the string [data] is the second
      component of the packed array obtained by encoding the table as
      a one-dimensional array. *)
-  
   let unflatten1 (n, data) i j = get1 data (n * i + j)
 end
   
@@ -2073,8 +2063,7 @@ module RowDisplacement = struct
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*  terms of the GNU Library General Public License version 2, with a         *)(*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* This module compresses a two-dimensional table, where some values
@@ -2085,20 +2074,20 @@ module RowDisplacement = struct
    ``Optimization of Parser Tables for Portable Compilers'' (1984). *)
 (* A compressed table is represented as a pair of arrays. The
    displacement array is an array of offsets into the data array. *)
-  type 'a table = int array * (* displacement *) 'a array
-  (* data *)
+
+  type 'a table = int array * (* displacement *) 'a array (* data *)
   (* In a natural version of this algorithm, displacements would be greater
      than (or equal to) [-n]. However, in the particular setting of Menhir,
      both arrays are intended to be compressed with [PackedIntArray], which
      does not efficiently support negative numbers. For this reason, we are
      careful not to produce negative displacements. *)
+  
   (* In order to avoid producing negative displacements, we simply use the
      least significant bit as the sign bit. This is implemented by [encode]
      and [decode] below. *)
   (* One could also think, say, of adding [n] to every displacement, so as
      to ensure that all displacements are nonnegative. This would work, but
      would require [n] to be published, for use by the decoder. *)
-  
   let encode (displacement : int) : int =
     if displacement >= 0 then displacement lsl 1 else ~-displacement lsl 1 + 1
   
@@ -2107,21 +2096,21 @@ module RowDisplacement = struct
       displacement lsr 1
     else
       ~-(displacement lsr 1)
+  
   (* It is reasonable to assume that, as matrices grow large, their
      density becomes low, i.e., they have many insignificant entries.
      As a result, it is important to work with a sparse data structure
      for rows. We internally represent a row as a list of its
      significant entries, where each entry is a pair of a [j] index and
      an element. *)
-  
   type 'a row = (int * 'a) list
+  
   (* [compress equal insignificant dummy m n t] turns the two-dimensional table
      [t] into a compressed table. The parameter [equal] is equality of data
      values. The parameter [wildcard] tells which data values are insignificant,
      and can thus be overwritten with other values. The parameter [dummy] is
      used to fill holes in the data array. [m] and [n] are the integer
      dimensions of the table [t]. *)
-  
   let compress
       (equal : 'a -> 'a -> bool) (insignificant : 'a -> bool) (dummy : 'a)
       (m : int) (n : int) (t : 'a array array)
@@ -2136,8 +2125,7 @@ module RowDisplacement = struct
        significant entries, that is, the length of the row-as-a-list. *)
     let sparse (i : int) (line : 'a array) :
       int * int * 'a row
-    (* index, rank, row *)
-    =
+    (* index, rank, row *) =
       let rec loop (j : int) (rank : int) (row : 'a row) =
         if j < 0 then
           i, rank, row
@@ -2151,8 +2139,7 @@ module RowDisplacement = struct
       loop (n - 1) 0 []
     in
     (* Construct an array of all rows, together with their index and rank. *)
-    let rows : (int * int * 'a row) array =
-      (* index, rank, row *)
+    let rows : (int * int * 'a row) array = (* index, rank, row *)
       Array.mapi sparse t
     in
     (* Sort this array by decreasing rank. This does not have any impact
@@ -2185,11 +2172,11 @@ module RowDisplacement = struct
              fits. *)
           assert (k + j >= 0);
           if k + j >= d then
-            true
-          (* We now know that [k + j] is within bounds of the data
-             array. Check whether it is compatible with the element [y] found
-             there. If it is, continue. If it isn't, stop -- the row does not
-             fit. *)
+            true(* We now know that [k + j] is within bounds of the data
+                   array. Check whether it is compatible with the element [y] found
+                   there. If it is, continue. If it isn't, stop -- the row does not
+                   fit. *)
+          
           else
             let y = InfiniteArray.get data (k + j) in
             if insignificant y || equal x y then loop row else false
@@ -2228,10 +2215,10 @@ module RowDisplacement = struct
      compressed table [ct]. This function call is permitted only if the
      value found at indices [i] and [j] in the original table is
      significant -- otherwise, it could fail abruptly. *)
+  
   (* Together, [compress] and [get] have the property that, if the value
      found at indices [i] and [j] in an uncompressed table [t] is
      significant, then [get (compress t) i j] is equal to that value. *)
-  
   let get (displacement, data) i j =
     assert (0 <= i && i < Array.length displacement);
     let k = decode displacement.(i) in
@@ -2240,9 +2227,9 @@ module RowDisplacement = struct
        insignificant element that happens to be mapped out of the bounds
        of the [data] array. *)
     data.(k + j)
+  
   (* [getget] is a variant of [get] which only requires read access,
      via accessors, to the two components of the table. *)
-  
   let getget get_displacement get_data (displacement, data) i j =
     let k = decode (get_displacement displacement i) in
     get_data data (k + j)
@@ -2257,8 +2244,7 @@ module LinearizedArray = struct
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -2266,6 +2252,7 @@ module LinearizedArray = struct
    elements if the original (unencoded) array has [n] elements. The value
    of [entry.(n)] is the length of the [data] array. This convention is
    natural and allows avoiding a special case. *)
+
   type 'a t = (* data: *) 'a array * (* entry: *) int array
   
   let make (a : 'a array array) : 'a t =
@@ -2324,20 +2311,20 @@ module TableFormat = struct
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* This signature defines the format of the parse tables. It is used as
    an argument to [TableInterpreter.Make]. *)
+
   module type TABLES =
     sig
       (* This is the parser's type of tokens. *)
       type token
-      (* This maps a token to its internal (generation-time) integer code. *)
       
+      (* This maps a token to its internal (generation-time) integer code. *)
       val token2terminal : token -> int
       (* This is the integer code for the error pseudo-token. *)
       val error_terminal : int
@@ -2409,23 +2396,24 @@ module TableFormat = struct
          number of start symbols. A nonterminal symbol [nt] is a start
          symbol if and only if [nt < start] holds. *)
       val start : int
+      
       (* A one-dimensional semantic action table maps productions to semantic
          actions. The calling convention for semantic actions is described in
          [EngineTypes]. This table contains ONLY NON-START PRODUCTIONS, so the
          indexing is off by [start]. Be careful. *)
-      
       val semantic_action
-        :  ((int,Obj.t,token) EngineTypes.env -> (int,Obj.t) EngineTypes.stack)
+        :  ((int, Obj.t, token) EngineTypes.env
+         -> (int, Obj.t) EngineTypes.stack)
         array
+      
       (* The parser defines its own [Error] exception. This exception can be
          raised by semantic actions and caught by the engine, and raised by the
          engine towards the final user. *)
-      
       exception Error
+      
       (* The parser indicates whether to generate a trace. Generating a
          trace requires two extra tables, which respectively map a
          terminal symbol and a production to a string. *)
-      
       val trace : (string array * string array) option
     end
 end
@@ -2439,8 +2427,7 @@ module InspectionTableFormat = struct
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -2448,18 +2435,19 @@ module InspectionTableFormat = struct
    addition to the tables described in [TableFormat]) when the command line
    switch [--inspection] is enabled. It is used as an argument to
    [InspectionTableInterpreter.Make]. *)
+
   module type TABLES =
     sig
       (* The types of symbols. *)
       include IncrementalEngine.SYMBOLS
+      
       (* The type ['a lr1state] describes an LR(1) state. The generated parser defines
          it internally as [int]. *)
-      
       type 'a lr1state
+      
       (* Some of the tables that follow use encodings of (terminal and
          nonterminal) symbols as integers. So, we need functions that
          map the integer encoding of a symbol to its algebraic encoding. *)
-      
       val terminal : int -> xsymbol
       val nonterminal : int -> xsymbol
       (* The left-hand side of every production already appears in the
@@ -2497,14 +2485,14 @@ module InspectionTableInterpreter = struct
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* -------------------------------------------------------------------------- *)
 (* The type functor. *)
+
   module Symbols
       (T :
         sig
@@ -2513,9 +2501,9 @@ module InspectionTableInterpreter = struct
         end)
   = struct
     open T
+    
     (* This should be the only place in the whole library (and generator!)
        where these types are defined. *)
-    
     type 'a symbol =
       | T : 'a terminal -> 'a symbol
       | N : 'a nonterminal -> 'a symbol
@@ -2523,8 +2511,8 @@ module InspectionTableInterpreter = struct
   end
     
   (* -------------------------------------------------------------------------- *)
-  (* The code functor. *)
   
+  (* The code functor. *)
   module Make
       (TT : TableFormat.TABLES)
       (IT : InspectionTableFormat.TABLES with type 'a lr1state = int)
@@ -2533,15 +2521,16 @@ module InspectionTableInterpreter = struct
            and type nonterminal = int
            and type semantic_value = Obj.t)
       (E :
-        sig type 'a env = (ET.state,ET.semantic_value,ET.token) EngineTypes.env
+        sig
+          type 'a env = (ET.state, ET.semantic_value, ET.token) EngineTypes.env
         end)
-  = struct
-  (* Including [IT] is an easy way of inheriting the definitions of the types
-     [symbol] and [xsymbol]. *)
+  = struct(* Including [IT] is an easy way of inheriting the definitions of the types
+             [symbol] and [xsymbol]. *)
+  
     include IT
+    
     (* This auxiliary function decodes a packed linearized array, as created by
        [TableBackend.linearize_and_marshal1]. Here, we read a row all at once. *)
-    
     let read_packed_linearized
         (data, entry : PackedIntArray.t * PackedIntArray.t) (i : int)
       :
@@ -2549,9 +2538,9 @@ module InspectionTableInterpreter = struct
     =
       LinearizedArray.read_row_via (PackedIntArray.get data)
         (PackedIntArray.get entry) i
+    
     (* This auxiliary function decodes a symbol. The encoding was done by
        [encode_symbol] or [encode_symbol_option] in the table back-end. *)
-    
     let decode_symbol (symbol : int) : IT.xsymbol =
       (* If [symbol] is 0, then we have no symbol. This could mean e.g.
          that the function [incoming_symbol] has been applied to an
@@ -2561,13 +2550,13 @@ module InspectionTableInterpreter = struct
       let kind = symbol land 1 in
       let symbol = symbol lsr 1 in
       if kind = 0 then IT.terminal (symbol - 1) else IT.nonterminal symbol
+    
     (* These auxiliary functions convert a symbol to its integer code. For speed
        and for convenience, we use an unsafe type cast. This relies on the fact
        that the data constructors of the [terminal] and [nonterminal] GADTs are
        declared in an order that reflects their internal code. In the case of
        nonterminal symbols, we add [start] to account for the presence of the
        start symbols. *)
-    
     let n2i (nt : 'a IT.nonterminal) : int =
       let answer = TT.start + Obj.magic nt in
       (* For safety, check that the above cast produced a correct result. *)
@@ -2577,8 +2566,8 @@ module InspectionTableInterpreter = struct
       let answer = Obj.magic t in
       (* For safety, check that the above cast produced a correct result. *)
       assert (IT.terminal answer = X (T t)); answer
-    (* Ordering functions. *)
     
+    (* Ordering functions. *)
     let compare_terminals t1 t2 =
       (* Subtraction is safe because overflow is impossible. *)
       t2i t1 - t2i t2
@@ -2602,29 +2591,29 @@ module InspectionTableInterpreter = struct
       let c = compare_productions prod1 prod2 in
       (* Subtraction is safe because overflow is impossible. *)
       if c <> 0 then c else index1 - index2
+    
     (* The function [incoming_symbol] goes through the tables [IT.lr0_core] and
        [IT.lr0_incoming]. This yields a representation of type [xsymbol], out of
        which we strip the [X] quantifier, so as to get a naked symbol. This last
        step is ill-typed and potentially dangerous. It is safe only because this
        function is used at type ['a lr1state -> 'a symbol], which forces an
        appropriate choice of ['a]. *)
-    
     let incoming_symbol (s : 'a IT.lr1state) : 'a IT.symbol =
       let core = PackedIntArray.get IT.lr0_core s in
       let symbol = decode_symbol (PackedIntArray.get IT.lr0_incoming core) in
       match symbol with IT.X symbol -> Obj.magic symbol
+    
     (* The function [lhs] reads the table [TT.lhs] and uses [IT.nonterminal]
        to decode the symbol. *)
-    
     let lhs prod = IT.nonterminal (PackedIntArray.get TT.lhs prod)
     (* The function [rhs] reads the table [IT.rhs] and uses [decode_symbol]
        to decode the symbol. *)
     let rhs prod = List.map decode_symbol (read_packed_linearized IT.rhs prod)
+    
     (* The function [items] maps the LR(1) state [s] to its LR(0) core,
        then uses [core] as an index into the table [IT.lr0_items]. The
        items are then decoded by the function [export] below, which is
        essentially a copy of [Item.export]. *)
-    
     type item = int * int
     
     let low_bits = 10
@@ -2636,15 +2625,15 @@ module InspectionTableInterpreter = struct
       let core = PackedIntArray.get IT.lr0_core s in
       (* Now use [core] to look up the table [IT.lr0_items]. *)
       List.map export (read_packed_linearized IT.lr0_items core)
+    
     (* The function [nullable] maps the nonterminal symbol [nt] to its
        integer code, which it uses to look up the array [IT.nullable].
        This yields 0 or 1, which we map back to a Boolean result. *)
-    
     let decode_bool i = assert (i = 0 || i = 1); i = 1
     let nullable nt = decode_bool (PackedIntArray.get1 IT.nullable (n2i nt))
+    
     (* The function [first] maps the symbols [nt] and [t] to their integer
        codes, which it uses to look up the matrix [IT.first]. *)
-    
     let first nt t =
       decode_bool (PackedIntArray.unflatten1 IT.first (n2i nt) (t2i t))
     
@@ -2652,10 +2641,10 @@ module InspectionTableInterpreter = struct
       match symbol with
       | X (T t') -> compare_terminals t t' = 0
       | X (N nt) -> first nt t
+    
     (* The function [foreach_terminal] exploits the fact that the
        first component of [TT.error] is [Terminal.n - 1], i.e., the
        number of terminal symbols, including [error] but not [#]. *)
-    
     let rec foldij i j f accu =
       if i = j then accu else foldij (i + 1) j f (f i accu)
     
@@ -2669,27 +2658,27 @@ module InspectionTableInterpreter = struct
         if i = TT.error_terminal then accu else f (IT.terminal i) accu
       ) accu
     (* ------------------------------------------------------------------------ *)
+    
     (* The following is the implementation of the function [feed]. This function
        is logically part of the LR engine, so it would be nice if it were placed
        in the module [Engine], but it must be placed here because, to ensure
        type safety, its arguments must be a symbol of type ['a symbol] and a
        semantic value of type ['a]. The type ['a symbol] is not available in
        [Engine]. It is available here. *)
-    
     open EngineTypes
     open ET
     open E
+    
     (* [feed] fails if the current state does not have an outgoing transition
        labeled with the desired symbol. This check is carried out at runtime. *)
-    
     let feed_failure () = invalid_arg "feed: outgoing transition does not exist"
+    
     (* Feeding a nonterminal symbol [nt]. Here, [nt] has type [nonterminal],
        which is a synonym for [int], and [semv] has type [semantic_value],
        which is a synonym for [Obj.t]. This type is unsafe, because pushing
        a semantic value of arbitrary type into the stack can later cause a
        semantic action to crash and burn. The function [feed] is given a safe
        type below. *)
-    
     let feed_nonterminal
         (nt : nonterminal) startp (semv : semantic_value) endp (env : 'b env)
       :
@@ -2720,16 +2709,16 @@ module InspectionTableInterpreter = struct
          This is done by consulting the [action] table. *)
       let source = env.current in
       ET.action source terminal semv
-        (fun env _please_discard _terminal semv target ->
-        (* There is indeed a transition toward the state [target].
-           Push a new cell onto the stack and move to the target state. *)
+        (fun env _please_discard _terminal semv target ->(* There is indeed a transition toward the state [target].
+                                                            Push a new cell onto the stack and move to the target state. *)
+        
         let stack = { state = source; semv; startp; endp; next = env.stack } in
         { env with  stack; current = target }
       ) reduce initiate env
+    
     (* The type assigned to [feed] ensures that the type of the semantic value
        [semv] is appropriate: it must be the semantic-value type of the symbol
        [symbol]. *)
-    
     let feed (symbol : 'a symbol) startp (semv : 'a) endp env =
       let semv : semantic_value = Obj.repr semv in
       match symbol with
@@ -2746,13 +2735,13 @@ module TableInterpreter = struct
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   module MakeEngineTable (T : TableFormat.TABLES) = struct
     type state = int
     
@@ -2770,10 +2759,10 @@ module TableInterpreter = struct
     (* The function [foreach_terminal] exploits the fact that the
        first component of [T.error] is [Terminal.n - 1], i.e., the
        number of terminal symbols, including [error] but not [#]. *)
+    
     (* There is similar code in [InspectionTableInterpreter]. The
        code there contains an additional conversion of the type
        [terminal] to the type [xsymbol]. *)
-    
     let rec foldij i j f accu =
       if i = j then accu else foldij (i + 1) j f (f i accu)
     
@@ -2782,9 +2771,9 @@ module TableInterpreter = struct
       foldij 0 n (fun i accu -> f i accu) accu
     
     type production = int
+    
     (* In principle, only non-start productions are exposed to the user,
        at type [production] or at type [int]. This is checked dynamically. *)
-    
     let non_start_production i =
       assert (T.start <= i && i - T.start < Array.length T.semantic_action)
     
@@ -2796,9 +2785,9 @@ module TableInterpreter = struct
       if code = 0 then nodefred env else defred env (code - 1)
     
     let is_start prod = prod < T.start
+    
     (* This auxiliary function helps access a compressed, two-dimensional
        matrix, like the action and goto tables. *)
-    
     let unmarshal2 table i j =
       RowDisplacement.getget PackedIntArray.get PackedIntArray.get table i j
     
@@ -2810,13 +2799,13 @@ module TableInterpreter = struct
         and param = action lsr 2
         in
         if opcode >= 0b10 then
-        (* 0b10 : shift/discard *)
-        (* 0b11 : shift/nodiscard *)
+          (* 0b10 : shift/discard *)
+          (* 0b11 : shift/nodiscard *)
           let please_discard = opcode = 0b10 in
           shift env please_discard terminal value param
         else
-        (* 0b01 : reduce *)
-        (* 0b00 : cannot happen *)
+        (* 0b01 : reduce *)(* 0b00 : cannot happen *)
+        
           reduce env param
       | c -> assert (c = 0); fail env
     
@@ -2836,8 +2825,8 @@ module TableInterpreter = struct
     exception Error = T.Error
     
     type semantic_action =
-      (state,semantic_value,token) EngineTypes.env
-      -> (state,semantic_value) EngineTypes.stack
+      (state, semantic_value, token) EngineTypes.env
+      -> (state, semantic_value) EngineTypes.stack
     
     let semantic_action prod =
       (* Indexing into the array [T.semantic_action] is off by [T.start],
@@ -2851,27 +2840,25 @@ module TableInterpreter = struct
        function is not normally used by the LR engine anyway; it is supposed
        to be used only by programmers who wish to develop error recovery
        strategies. *)
+    
     (* In the future, if desired, we could memoize this function, so as
        to pay the cost in (memory) space only if and where this function
        is actually used. We could also replace [foreach_terminal] with a
        function [exists_terminal] which stops as soon as the accumulator
        is [true]. *)
-    
     let may_reduce state prod =
       (* Test if there is a default reduction of [prod]. *)
-      default_reduction state (fun () prod' -> prod = prod') (fun () ->
-        (* If not, then for each terminal [t], ... *)
+      default_reduction state (fun () prod' -> prod = prod') (fun () ->(* If not, then for each terminal [t], ... *)
+        
         foreach_terminal (fun t accu ->
           accu ||
             (* ... test if there is a reduction of [prod] on [t]. *)
-            action state t ()
-            (* shift:  *) (fun () _ _ () _ -> false)
-            (* reduce: *) (fun () prod' -> prod = prod')
-            (* fail:   *) (fun () -> false) ()
+            action state t ()(* shift:  *)  (fun () _ _ () _ -> false)(* reduce: *)
+             (fun () prod' -> prod = prod')(* fail:   *)  (fun () -> false) ()
         ) false
       ) ()
-    (* If [T.trace] is [None], then the logging functions do nothing. *)
     
+    (* If [T.trace] is [None], then the logging functions do nothing. *)
     let log = match T.trace with Some _ -> true | None -> false
     
     module Log = struct

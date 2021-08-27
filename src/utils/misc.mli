@@ -15,7 +15,7 @@
 (** Miscellaneous useful types and functions *)
 
 val fatal_error : string -> 'a
-val fatal_errorf : ('a,Format.formatter,unit,'b) format4 -> 'a
+val fatal_errorf : ('a, Format.formatter, unit, 'b) format4 -> 'a
 
 exception Fatal_error of string * Printexc.raw_backtrace
 
@@ -98,13 +98,13 @@ val find_in_path_uncap : ?fallback:string -> string list -> string -> string
    if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
    to match. *)
 val canonicalize_filename : ?cwd:string -> string -> string
-(* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)
 
+(* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)
 val expand_glob
-  :  ?filter:(string -> bool) -> string -> string list -> string list
+  : ?filter:(string -> bool) -> string -> string list -> string list
+
 (* [expand_glob ~filter pattern acc] adds all filenames matching
    [pattern] and satistfying the [filter] predicate to [acc]*)
-
 val split_path : string -> string list -> string list
 (* [split_path path tail] prepends all components of [path] to [tail],
            including implicit "." if path is not absolute.
@@ -117,7 +117,7 @@ val remove_file : string -> unit
 val expand_directory : string -> string -> string
 (* [expand_directory alt file] eventually expands a [+] at the
    beginning of file into [alt] (an alternate root directory) *)
-val create_hashtable : int -> ('a * 'b) list -> ('a,'b) Hashtbl.t
+val create_hashtable : int -> ('a * 'b) list -> ('a, 'b) Hashtbl.t
 (* Create a hashtable of the given size and fills it with the
    given bindings. *)
 val copy_file : in_channel -> out_channel -> unit
@@ -128,18 +128,18 @@ val copy_file_chunk : in_channel -> out_channel -> int -> unit
    them to [oc]. It raises [End_of_file] when encountering
    EOF on [ic]. *)
 val string_of_file : in_channel -> string
+
 (* [string_of_file ic] reads the contents of file [ic] and copies
    them to a string. It stops when encountering EOF on [ic]. *)
-
 val output_to_file_via_temporary
-  :  ?mode:open_flag list -> string -> (string -> out_channel -> 'a) -> 'a
+  : ?mode:open_flag list -> string -> (string -> out_channel -> 'a) -> 'a
+
 (* Produce output in temporary file, then rename it
    (as atomically as possible) to the desired output file name.
    [output_to_file_via_temporary filename fn] opens a temporary file
    which is passed to [fn] (name + output channel).  When [fn] returns,
    the channel is closed and the temporary file is renamed to
    [filename]. *)
-
 val input_bytes : in_channel -> int -> bytes
 (* [input_bytes ic n] reads [n] bytes from [ic] and returns them
    in a new string.  It raises [End_of_file] if EOF is encountered
@@ -160,9 +160,9 @@ val no_overflow_mul : int -> int -> bool
 (* [no_overflow_mul n1 n2] returns [true] if the computation of
    [n1 * n2] does not overflow. *)
 val no_overflow_lsl : int -> int -> bool
+
 (* [no_overflow_lsl n k] returns [true] if the computation of
    [n lsl k] does not overflow. *)
-
 module Int_literal_converter : sig
   val int : string -> int
   val int32 : string -> int32

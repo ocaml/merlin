@@ -221,7 +221,7 @@ module rec Type : sig
   val base : Origin.t -> Ident.t -> Desc.Type.t option -> Desc.deprecated -> t
   
   val child
-    :  Module.normalized -> string -> Desc.Type.t option -> Desc.deprecated -> t
+    : Module.normalized -> string -> Desc.Type.t option -> Desc.deprecated -> t
   
   val declare : Origin.t -> Ident.t -> t
   val declaration : t -> Origin.t option
@@ -351,7 +351,7 @@ and Class_type : sig
   type t
   
   val base
-    :  Origin.t -> Ident.t -> Desc.Class_type.t option -> Desc.deprecated -> t
+    : Origin.t -> Ident.t -> Desc.Class_type.t option -> Desc.deprecated -> t
   
   val child
     :  Module.normalized
@@ -484,7 +484,7 @@ and Module_type : sig
   type t
   
   val base
-    :  Origin.t -> Ident.t -> Desc.Module_type.t option -> Desc.deprecated -> t
+    : Origin.t -> Ident.t -> Desc.Module_type.t option -> Desc.deprecated -> t
   
   val child
     :  Module.normalized
@@ -596,7 +596,7 @@ and Module : sig
   
   val base : Origin.t -> Ident.t -> Desc.Module.t option -> Desc.deprecated -> t
   val child
-    :  normalized -> string -> Desc.Module.t option -> Desc.deprecated -> t
+    : normalized -> string -> Desc.Module.t option -> Desc.deprecated -> t
   val application : normalized -> t -> Desc.Module.t option -> t
   val declare : Origin.t -> Ident.t -> t
   val declaration : t -> Origin.t option

@@ -3,7 +3,7 @@ open Std
 (** {1 Flag parsing utils} *)
 
 type 'a t = string list -> 'a -> string list * 'a
-type 'a table = (string,'a t) Hashtbl.t
+type 'a table = (string, 'a t) Hashtbl.t
 
 let unit f : 'a t = fun args acc -> args, f acc
 

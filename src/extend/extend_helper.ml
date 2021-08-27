@@ -67,8 +67,8 @@ let hide_node : attribute =
 *)
 let focus_node : attribute =
   Ast_helper.Attr.mk (Location.mknoloc "merlin.focus") (PStr [])
-(* Projections for merlin attributes and extensions *)
 
+(* Projections for merlin attributes and extensions *)
 let classify_extension (id, _ : extension) : [ `Other | `Syntax_error ] =
   match id.Location.txt with
   | "merlin.syntax-error" -> `Syntax_error

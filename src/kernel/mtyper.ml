@@ -42,9 +42,9 @@ type result =
     initial_snapshot : Btype.snapshot;
     typedtree :
       [ `Interface of
-          (Parsetree.signature_item,Typedtree.signature_item) item list
+          (Parsetree.signature_item, Typedtree.signature_item) item list
       | `Implementation of
-          (Parsetree.structure_item,Typedtree.structure_item) item list
+          (Parsetree.structure_item, Typedtree.structure_item) item list
       ]
   }
 

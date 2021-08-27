@@ -51,11 +51,11 @@ let record ti =
     annotations := ti :: !annotations
 
 let record_phrase loc = if !Clflags.annotations then phrases := loc :: !phrases
+
 (* comparison order:
    the intervals are sorted by order of increasing upper bound
    same upper bound -> sorted by decreasing lower bound
 *)
-
 let cmp_loc_inner_first loc1 loc2 =
   match compare loc1.loc_end.pos_cnum loc2.loc_end.pos_cnum with
   | 0 -> compare loc2.loc_start.pos_cnum loc1.loc_start.pos_cnum
@@ -116,8 +116,8 @@ let print_ident_annot pp str k =
     output_char pp ' '; print_location pp l; output_char pp '\n'
   | Iref_external ->
     output_string pp "ext_ref "; output_string pp str; output_char pp '\n'
-(* The format of the annotation file is documented in emacs/caml-types.el. *)
 
+(* The format of the annotation file is documented in emacs/caml-types.el. *)
 let print_info pp prev_loc ti =
   match ti with
   | Ti_class _ | Ti_mod _ -> prev_loc

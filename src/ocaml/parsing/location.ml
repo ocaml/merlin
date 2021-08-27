@@ -68,8 +68,8 @@ let rhs_interval m n =
     loc_end = Parsing.rhs_end_pos n;
     loc_ghost = false
   }
-(* return file, line, char from the given position *)
 
+(* return file, line, char from the given position *)
 let get_pos_info pos = pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol
 
 type 'a loc = { txt : 'a; loc : t }
@@ -94,12 +94,12 @@ let num_loc_lines = ref 0
 let reset () = num_loc_lines := 0
 (* This is used by the toplevel *)
 let echo_eof () = print_newline (); incr num_loc_lines
+
 (* Code printing errors and warnings must be wrapped using this function, in
    order to update [num_loc_lines].
 
    [print_updating_num_loc_lines ppf f arg] is equivalent to calling [f ppf
    arg], and additionally updates [num_loc_lines]. *)
-
 let print_updating_num_loc_lines ppf f arg =
   let open Format in
   let out_functions = pp_get_formatter_out_functions ppf () in
@@ -119,8 +119,8 @@ let print_updating_num_loc_lines ppf f arg =
   f ppf arg;
   pp_print_flush ppf (); pp_set_formatter_out_functions ppf out_functions
 (******************************************************************************)
-(* Printing locations, e.g. 'File "foo.ml", line 3, characters 10-12' *)
 
+(* Printing locations, e.g. 'File "foo.ml", line 3, characters 10-12' *)
 let rewrite_absolute_path path =
   (*
   match Misc.get_build_path_prefix_map () with
@@ -129,8 +129,7 @@ let rewrite_absolute_path path =
   *)
   path
 
-let absolute_path s =
-  (* This function could go into Filename *)
+let absolute_path s = (* This function could go into Filename *)
   let open Filename in
   let s =
     if not (is_relative s) then
@@ -154,17 +153,16 @@ let absolute_path s =
   aux s
 
 let show_filename file =
-  (* if !Clflags.absname then absolute_path file else *)
-  file
+  (* if !Clflags.absname then absolute_path file else *) file
 
 let print_filename ppf file = Format.pp_print_string ppf (show_filename file)
+
 (* Best-effort printing of the text describing a location, of the form
    'File "foo.ml", line 3, characters 10-12'.
 
    Some of the information (filename, line number or characters numbers) in the
    location might be invalid; in which case we do not print it.
  *)
-
 let print_loc ppf loc =
   let file_valid =
     function
@@ -206,8 +204,8 @@ let print_loc ppf loc =
      (comma ();
       Format.fprintf ppf "%s %i-%i" (capitalize "characters") startchar endchar));
   Format.fprintf ppf "@}"
-(* Print a comma-separated list of locations *)
 
+(* Print a comma-separated list of locations *)
 let print_locs ppf locs =
   Format.pp_print_list ~pp_sep:(fun ppf () -> Format.fprintf ppf ",@ ")
     print_loc ppf locs
@@ -342,6 +340,7 @@ type input_line = {
 
    This is not always the case, typically if lexer line directives are
    involved... *)
+
 (*
 let infer_line_numbers
     (lines: (int option * input_line) list):
@@ -482,7 +481,6 @@ let lines_around_from_current_input ~start_pos ~end_pos =
 *)
 (******************************************************************************)
 (* Reporting errors and warnings *)
-
 type msg = (Format.formatter -> unit) loc
 
 let msg ?(loc=none) fmt = Format.kdprintf (fun txt -> { loc; txt }) fmt
@@ -542,6 +540,7 @@ let is_dummy_loc loc =
      valid. *)
   loc.loc_start.pos_cnum = -1 || loc.loc_end.pos_cnum = -1
 *)
+
 (* It only makes sense to highlight (i.e. quote or underline the corresponding
    source code) locations that originate from the current input.
 
@@ -570,7 +569,6 @@ let error_style () =
   | Some Contextual | None -> Contextual
   | Some Short -> Short
                                  *)
-
 let batch_mode_printer : report_printer =
   let pp_loc _self _report _ppf _loc =
     (*
@@ -640,8 +638,8 @@ let batch_mode_printer : report_printer =
     pp_submsg_loc;
     pp_submsg_txt
   }
-(* Creates a printer for the current input *)
 
+(* Creates a printer for the current input *)
 let default_report_printer () : report_printer = batch_mode_printer
 let report_printer = ref default_report_printer
 
@@ -649,8 +647,8 @@ let print_report ppf report =
   let printer = !report_printer () in
   printer.pp printer ppf report
 (******************************************************************************)
-(* Reporting errors *)
 
+(* Reporting errors *)
 type error = report
 
 let report_error ppf err = print_report ppf err
@@ -670,9 +668,9 @@ let error_of_printer ?(loc=none) ?(sub=[]) ?(source=Typer) pp x =
 let error_of_printer_file ?source print x =
   error_of_printer ?source ~loc:(in_file !input_name) print x
 (******************************************************************************)
+
 (* Reporting warnings: generating a report from a warning number using the
    information in [Warnings] + convenience functions. *)
-
 let default_warning_alert_reporter ?(source=Typer) report mk (loc : t) w :
   report option
 =
@@ -731,8 +729,8 @@ let alert ?(def=none) ?(use=none) ~kind loc message =
 let deprecated ?def ?use loc message =
   alert ?def ?use ~kind:"deprecated" loc message
 (******************************************************************************)
-(* Reporting errors on exceptions *)
 
+(* Reporting errors on exceptions *)
 let error_of_exn : (exn -> error option) list ref = ref []
 let register_error_of_exn f = error_of_exn := f :: !error_of_exn
 

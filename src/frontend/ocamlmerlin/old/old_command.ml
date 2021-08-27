@@ -102,8 +102,7 @@ let configure (state : buffer) =
   in
   let config =
     match state.dot_merlins with
-    | Some (first :: _) ->
-      (* ignore anything but the first one... *)
+    | Some (first :: _) -> (* ignore anything but the first one... *)
       Mconfig.get_external_config first config
     | None | Some [] ->
       begin match state.path with
@@ -201,7 +200,7 @@ let dispatch_sync config state (type a) : a sync_command -> a =
 
 let default_state = lazy (new_state (None, None))
 
-let document_states : (string option * string list option,state) Hashtbl.t =
+let document_states : (string option * string list option, state) Hashtbl.t =
   Hashtbl.create 7
 
 let dispatch (type a) (context : Context.t) (cmd : a command) : a =

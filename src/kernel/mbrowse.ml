@@ -157,8 +157,8 @@ let deepest_before pos roots =
       | Some (env, _, node) -> aux ((env, node) :: path)
     in
     aux root
-(* Select open nodes *)
 
+(* Select open nodes *)
 let rec select_open_node =
   function[@warning ;; "-9"]
   | (_,
@@ -227,14 +227,17 @@ let optional_label_sugar =
   | _ -> None
 
 let rec is_recovered_expression e =
-  match e.Typedtree.exp_desc with
-  (* Recovery on arbitrary expressions *)
+  match e.Typedtree.exp_desc with(* Recovery on arbitrary expressions *)
+  
   | Texp_tuple [ _ ] -> true
-  (* Recovery on unbound identifier *)
-  | Texp_ident (Path.Pident id, _, _) when Ident.name id = "*type-error*" ->
+  | (* Recovery on unbound identifier *) Texp_ident (Path.Pident id, _, _)
+    when Ident.name id = "*type-error*" ->
     true
-  (* Recovery on desugared optional label application *)
-  | Texp_construct _ as cstr when is_recovered_Texp_construct cstr -> true
+  | (* Recovery on desugared optional label application *) Texp_construct _
+      as
+      cstr
+    when is_recovered_Texp_construct cstr ->
+    true
   | _ -> false
 
 and is_recovered_Texp_construct cstr =

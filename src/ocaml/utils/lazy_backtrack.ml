@@ -1,8 +1,8 @@
-type ('a, 'b) t = ('a,'b) eval ref
+type ('a, 'b) t = ('a, 'b) eval ref
 
 and ('a, 'b) eval = Done of 'b | Raise of exn | Thunk of 'a
 
-type undo = Nil | Cons : ('a,'b) t * 'a * undo -> undo
+type undo = Nil | Cons : ('a, 'b) t * 'a * undo -> undo
 type log = undo ref
 
 let force f x =
@@ -22,8 +22,7 @@ let create_failed e = ref (Raise e)
 let log () = ref Nil
 
 let force_logged log f x =
-  let open! Result_compat in
-  (* merlin *)
+  let open! Result_compat in (* merlin *)
   match !x with
   | Done x -> x
   | Raise e -> raise e
@@ -40,12 +39,12 @@ let backtrack log =
     function Nil -> () | Cons (x, e, rest) -> x := Thunk e; loop rest
   in
   loop !log
-(* For compatibility with 4.02 and 4.03 *)
 
+(* For compatibility with 4.02 and 4.03 *)
 let is_val t = match !t with Done _ -> true | Raise _ | Thunk _ -> false
 let view t = !t
-(* For compatibility with 4.08 and 4.09 *)
 
+(* For compatibility with 4.08 and 4.09 *)
 let force_logged_408 log f x =
   match !x with
   | Done x -> x

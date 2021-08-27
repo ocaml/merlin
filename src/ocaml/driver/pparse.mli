@@ -36,4 +36,4 @@ val apply_rewriters
   -> Mreader.parsetree
 
 val apply_pp
-  :  workdir:string -> filename:string -> source:string -> pp:string -> string
+  : workdir:string -> filename:string -> source:string -> pp:string -> string

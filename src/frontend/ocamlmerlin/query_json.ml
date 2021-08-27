@@ -233,8 +233,7 @@ let json_of_error (error : Location.error) =
     | Location.Typer -> "typer"
     | Location.Warning ->
       if String.is_prefixed ~by:"Error" msg then
-        "typer"
-      (* Handle warn-error (since 4.08) *)
+        "typer" (* Handle warn-error (since 4.08) *)
       else
         "warning"
     | Location.Unknown -> "unknown"

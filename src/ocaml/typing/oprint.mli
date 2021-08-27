@@ -21,7 +21,7 @@ val out_label : (formatter -> (string * bool * out_type) -> unit) ref
 val out_type : (formatter -> out_type -> unit) ref
 
 val out_constr
-  :  (formatter -> (string * out_type list * out_type option) -> unit) ref
+  : (formatter -> (string * out_type list * out_type option) -> unit) ref
 
 val out_class_type : (formatter -> out_class_type -> unit) ref
 val out_module_type : (formatter -> out_module_type -> unit) ref

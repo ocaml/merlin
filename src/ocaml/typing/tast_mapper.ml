@@ -14,9 +14,9 @@
 (**************************************************************************)
 open Asttypes
 open Typedtree
+
 (* TODO: add 'methods' for location, attribute, extension,
    include_declaration, include_description *)
-
 type mapper =
   {
     binding_op : mapper -> binding_op -> binding_op;

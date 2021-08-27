@@ -6,29 +6,29 @@ val module_type : Types.module_type -> Parsetree.module_type
 val core_type : Types.type_expr -> Parsetree.core_type
 
 val modtype_declaration
-  :  Ident.t -> Types.modtype_declaration -> Parsetree.module_type_declaration
+  : Ident.t -> Types.modtype_declaration -> Parsetree.module_type_declaration
 
 val module_declaration
-  :  Ident.t -> Types.module_declaration -> Parsetree.module_declaration
+  : Ident.t -> Types.module_declaration -> Parsetree.module_declaration
 
 val signature_item : Types.signature_item -> Parsetree.signature_item
 
 val extension_constructor
-  :  Ident.t -> Types.extension_constructor -> Parsetree.extension_constructor
+  : Ident.t -> Types.extension_constructor -> Parsetree.extension_constructor
 
 val value_description
-  :  Ident.t -> Types.value_description -> Parsetree.value_description
+  : Ident.t -> Types.value_description -> Parsetree.value_description
 
 val label_declaration : Types.label_declaration -> Parsetree.label_declaration
 
 val constructor_arguments
-  :  Types.constructor_arguments -> Parsetree.constructor_arguments
+  : Types.constructor_arguments -> Parsetree.constructor_arguments
 
 val constructor_declaration
-  :  Types.constructor_declaration -> Parsetree.constructor_declaration
+  : Types.constructor_declaration -> Parsetree.constructor_declaration
 
 val type_declaration
-  :  Ident.t -> Types.type_declaration -> Parsetree.type_declaration
+  : Ident.t -> Types.type_declaration -> Parsetree.type_declaration
 
 val signature : Types.signature -> Parsetree.signature
 

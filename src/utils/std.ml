@@ -140,10 +140,10 @@ module List = struct
     | [], [] -> true
     | hd1 :: tl1, hd2 :: tl2 when f hd1 hd2 -> same ~f tl1 tl2
     | _, _ -> false
+  
   (* [length_lessthan n l] returns
    *   Some (List.length l) if List.length l <= n
    *   None otherwise *)
-  
   let length_lessthan n l =
     let rec aux i =
       function _ :: xs when i < n -> aux (succ i) xs | [] -> Some i | _ -> None
@@ -246,8 +246,8 @@ module List = struct
       end
   
   let group_by pred xs = match group_by pred [] [] xs with [] :: xs | xs -> xs
-  (* Merge sorted lists *)
   
+  (* Merge sorted lists *)
   let rec merge ~cmp l1 l2 =
     match l1, l2 with
     | l, [] | [], l -> l
@@ -291,7 +291,7 @@ end
   
 
 module Result = struct
-  type ('a, 'e) t = ('a,'e) Result.result = Ok of 'a | Error of 'e
+  type ('a, 'e) t = ('a, 'e) Result.result = Ok of 'a | Error of 'e
 end
   
 
@@ -317,8 +317,8 @@ module String = struct
         aux (succ i)
     in
     aux 0
-  (* [is_prefixed ~by s] returns [true] iff [by] is a prefix of [s] *)
   
+  (* [is_prefixed ~by s] returns [true] iff [by] is a prefix of [s] *)
   let is_prefixed ~by =
     let l = String.length by in
     fun s ->
@@ -329,8 +329,8 @@ module String = struct
           true
         with
         | Not_found -> false
-  (* Drop characters from beginning of string *)
   
+  (* Drop characters from beginning of string *)
   let drop n s = sub s ~pos:n ~len:(length s - n)
   
   module Set = struct
@@ -534,8 +534,8 @@ module Lexing = struct
     in
     let buf = from_function lex_fun in
     Option.iter ~f:(move buf) position; buf
-  (* Manipulating position *)
   
+  (* Manipulating position *)
   let make_pos ?(pos_fname="") (pos_lnum, pos_cnum) =
     { pos_fname; pos_lnum; pos_cnum; pos_bol = 0 }
   
@@ -551,9 +551,9 @@ module Lexing = struct
   let print_position () p =
     let (l1, c1) = split_pos p in
     sprintf "%d:%d" l1 c1
+  
   (* Current position in lexer, even if the buffer is in the middle of a refill
      operation *)
-  
   let immediate_pos buf =
     { buf.lex_curr_p with  pos_cnum = buf.lex_abs_pos + buf.lex_curr_pos }
   
@@ -686,12 +686,12 @@ module Shell = struct
     flush (); List.rev !comps
 end
   
+
 (* [modules_in_path ~ext path] lists ocaml modules corresponding to
    * filenames with extension [ext] in given [path]es.
    * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
    * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
    * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-
 let modules_in_path ~ext path =
   let seen = Hashtbl.create 7 in
   List.fold_left ~init:[] path ~f:(fun results dir ->

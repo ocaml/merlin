@@ -58,8 +58,8 @@ val highest_scope : int
 val reinit : unit -> unit
 
 type 'a tbl
-(* Association tables from identifiers to type 'a. *)
 
+(* Association tables from identifiers to type 'a. *)
 val empty : 'a tbl
 val add : t -> 'a -> 'a tbl -> 'a tbl
 val find_same : t -> 'a tbl -> 'a
@@ -71,7 +71,7 @@ val iter : (t -> 'a -> unit) -> 'a tbl -> unit
 val remove : t -> 'a tbl -> 'a tbl
 (* Idents for sharing keys *)
 val make_key_generator : unit -> t -> t
-(* merlin *)
 
+(* merlin *)
 val rename_no_exn : t -> t
 (** Like [rename], but does not fail on persistent/predef idents. *)

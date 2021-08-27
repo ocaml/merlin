@@ -15,8 +15,8 @@
 module CamlString = String 
 
 open Std
-(* Errors *)
 
+(* Errors *)
 exception Fatal_error of string * Printexc.raw_backtrace
 
 let () =
@@ -36,8 +36,8 @@ let fatal_errorf fmt =
   ignore (Format.flush_str_formatter ());
   Format.kfprintf (fun _ppf -> fatal_error (Format.flush_str_formatter ()))
     Format.str_formatter fmt
-(* Exceptions *)
 
+(* Exceptions *)
 let try_finally ?(always=(fun () -> ())) ?(exceptionally=(fun () -> ())) work =
   match work () with
   | result ->
@@ -78,8 +78,8 @@ let protect_refs =
     match f () with
     | x -> set_refs backup; x
     | exception e -> set_refs backup; raise e
-(* List functions *)
 
+(* List functions *)
 let map_end f l1 l2 = List.map_end ~f l1 l2
 
 let rec map_left_right f =
@@ -100,8 +100,8 @@ let rec split_last =
   | hd :: tl ->
     let (lst, last) = split_last tl in
     hd :: lst, last
-(* Options *)
 
+(* Options *)
 let may f x = Option.iter ~f x
 let may_map f x = Option.map ~f x
 (* File functions *)
@@ -116,21 +116,21 @@ let rec split_path path acc =
         not Sys.unix &&
           String.length dir > 2 && is_letter dir.[0] && dir.[1] = ':'
       then
-      (* We do two things here:
-          - We use an uppercase letter to match Dune's behavior
-          - We also add the separator ousrselves because [Filename.concat]
-          does not if its first argument is of the form ["C:"] *)
+        (* We do two things here:
+            - We use an uppercase letter to match Dune's behavior
+            - We also add the separator ousrselves because [Filename.concat]
+            does not if its first argument is of the form ["C:"] *)
         Printf.sprintf "%c:%s" (Char.uppercase_ascii dir.[0]) Filename.dir_sep
       else
         dir
     in
     dir :: acc
   | dir -> split_path dir (Filename.basename path :: acc)
+
 (* Deal with case insensitive FS *)
-
 external fs_exact_case : string -> string = "ml_merlin_fs_exact_case"
-(* A replacement for sys_file_exists that makes use of stat_cache *)
 
+(* A replacement for sys_file_exists that makes use of stat_cache *)
 module Exists_in_directory =
   File_cache.Make
   (struct
@@ -190,8 +190,7 @@ let canonicalize_filename ?cwd path =
 let rec expand_glob ~filter acc root =
   function
   | [] -> root :: acc
-  | Glob.Wildwild :: _tl ->
-    (* FIXME: why is tl not used? *)
+  | Glob.Wildwild :: _tl -> (* FIXME: why is tl not used? *)
     let rec append acc root =
       let items = try Sys.readdir root with Sys_error _ -> [| |] in
       let process acc dir =
@@ -285,21 +284,21 @@ let find_in_path_uncap ?(fallback="") path name =
        else
          None
      ))
+
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
-
 let expand_directory alt s =
   if String.length s > 0 && s.[0] = '+' then
     Filename.concat alt (String.sub s ~pos:1 ~len:(String.length s - 1))
   else
     s
-(* Hashtable functions *)
 
+(* Hashtable functions *)
 let create_hashtable size init =
   let tbl = Hashtbl.create size in
   List.iter ~f:(fun (key, data) -> Hashtbl.add tbl key data) init; tbl
-(* File copy *)
 
+(* File copy *)
 let copy_file ic oc =
   let buff = Bytes.create 0x1000 in
   let rec copy () =
@@ -333,9 +332,8 @@ let string_of_file ic =
 
 let output_to_file_via_temporary ?(mode=[ Open_text ]) filename fn =
   let (temp_filename, oc) =
-    Filename.open_temp_file ~mode
-    (*~perms:0o666*) ~temp_dir:(Filename.dirname filename)
-      (Filename.basename filename) ".tmp"
+    Filename.open_temp_file ~mode(*~perms:0o666*)
+     ~temp_dir:(Filename.dirname filename) (Filename.basename filename) ".tmp"
   in
   (* The 0o666 permissions will be modified by the umask.  It's just
      like what [open_out] and [open_out_bin] do.
@@ -353,13 +351,13 @@ let output_to_file_via_temporary ?(mode=[ Open_text ]) filename fn =
      with
      | exn -> remove_file temp_filename; raise exn)
   | exception exn -> close_out oc; remove_file temp_filename; raise exn
-(* Reading from a channel *)
 
+(* Reading from a channel *)
 let input_bytes ic n =
   let result = Bytes.create n in
   really_input ic result 0 n; result
-(* Integer operations *)
 
+(* Integer operations *)
 let rec log2 n = if n <= 1 then 0 else 1 + log2 (n asr 1)
 let align n a = if n >= 0 then (n + a - 1) land ~-a else n land ~-a
 let no_overflow_add a b = a lxor b lor (a lxor lnot (a + b)) < 0
@@ -370,8 +368,8 @@ let no_overflow_mul a b = not (a = min_int && b < 0 || b <> 0 && a * b / b <> a)
 let no_overflow_lsl a k =
   0 <= k && k < Sys.word_size - 1 && min_int asr k <= a && a <= max_int asr k
 
-module Int_literal_converter = struct
-(* To convert integer literals, allowing max_int + 1 (PR#4210) *)
+module Int_literal_converter = struct(* To convert integer literals, allowing max_int + 1 (PR#4210) *)
+
   let cvt_int_aux str neg of_string =
     if String.length str = 0 || str.[0] = '-' then
       of_string str
@@ -384,8 +382,8 @@ module Int_literal_converter = struct
   let nativeint s = cvt_int_aux s Nativeint.neg Nativeint.of_string
 end
   
-(* String operations *)
 
+(* String operations *)
 let chop_extension_if_any fname =
   try Filename.chop_extension fname with Invalid_argument _ -> fname
 
@@ -527,10 +525,10 @@ let edit_distance a b cutoff =
   in
   if abs (la - lb) > cutoff then
     None
-  else
-  (* initialize with 'cutoff + 1' so that not-yet-written-to cases have
-     the worst possible cost; this is useful when computing the cost of
-     a case just at the boundary of the cutoff diagonal. *)
+  else(* initialize with 'cutoff + 1' so that not-yet-written-to cases have
+         the worst possible cost; this is useful when computing the cost of
+         a case just at the boundary of the cutoff diagonal. *)
+  
     let m = Array.make_matrix (la + 1) (lb + 1) (cutoff + 1) in
     (m.(0).(0) <- 0;
      for i = 1 to la do m.(i).(0) <- i done;
@@ -617,12 +615,12 @@ let unitname filename =
     | Not_found -> filename
   in
   String.capitalize unitname
+
 (* [modules_in_path ~ext path] lists ocaml modules corresponding to
                     * filenames with extension [ext] in given [path]es.
                     * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
                     * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
                     * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-
 let modules_in_path ~ext path =
   let seen = Hashtbl.create 7 in
   List.fold_left ~init:[] path ~f:(fun results dir ->

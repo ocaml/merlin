@@ -130,16 +130,16 @@ let to_subst_by_type_function s p =
   | Path _ -> false
   | Type_function _ -> true
   | exception Not_found -> false
-(* Special type ids for saved signatures *)
 
+(* Special type ids for saved signatures *)
 let new_id = s_ref (-1)
 let reset_for_saving () = new_id := (-1)
 
 let newpersty desc =
   decr new_id;
   { desc; level = generic_level; scope = Btype.lowest_level; id = !new_id }
-(* ensure that all occurrences of 'Tvar None' are physically shared *)
 
+(* ensure that all occurrences of 'Tvar None' are physically shared *)
 let tvar_none = Tvar None
 let tunivar_none = Tunivar None
 
@@ -147,8 +147,8 @@ let norm =
   function Tvar None -> tvar_none | Tunivar None -> tunivar_none | d -> d
 
 let ctype_apply_env_empty = ref (fun _ -> assert false)
-(* Similar to [Ctype.nondep_type_rec]. *)
 
+(* Similar to [Ctype.nondep_type_rec]. *)
 let rec typexp copy_scope s ty =
   let ty = repr ty in
   match ty.desc with
@@ -186,8 +186,7 @@ let rec typexp copy_scope s ty =
     ty.desc <- Tsubst ty';
     ty'.desc <-
       (if has_fixed_row then
-         match tm.desc with
-         (* PR#7348 *)
+         match tm.desc with (* PR#7348 *)
          | Tconstr (Pdot (m, i), tl, _abbrev) ->
            let i' = String.sub i 0 (String.length i - 4) in
            Tconstr (type_path s (Pdot (m, i')), tl, ref Mnil)
@@ -270,11 +269,11 @@ let rec typexp copy_scope s ty =
            Tlink (typexp copy_scope s t2)
          | _ -> copy_type_desc (typexp copy_scope s) desc);
     ty'
+
 (*
    Always make a copy of the type. If this is not done, type levels
    might not be correct.
 *)
-
 let type_expr s ty =
   For_copy.with_scope (fun copy_scope -> typexp copy_scope s ty)
 
@@ -535,9 +534,9 @@ and modtype_declaration scoping s decl =
     mtd_loc = loc s decl.mtd_loc;
     mtd_uid = decl.mtd_uid
   }
+
 (* For every binding k |-> d of m1, add k |-> f d to m2
    and return resulting merged map. *)
-
 let merge_tbls f m1 m2 =
   Ident.Map.fold (fun k d accu -> Ident.Map.add k (f d) accu) m1 m2
 
@@ -553,9 +552,9 @@ let type_replacement s =
       let body = typexp copy_scope s body in
       Type_function { params; body }
     )
+
 (* Composition of substitutions:
      apply (compose s1 s2) x = apply s2 (apply s1 x) *)
-
 let compose s1 s2 =
   {
     types = merge_path_maps (type_replacement s2) s1.types s2.types;

@@ -789,16 +789,16 @@ module Shortest = struct
       let sections = expand t height in
       let section = Height.Array.get sections height in
       Section.add_module graph section md path
-    (* returns [true] if there might be updated paths at a greater height. *)
     
+    (* returns [true] if there might be updated paths at a greater height. *)
     let iter_updates ~type_ ~class_type ~module_type ~module_ t height id =
       match get t height with
       | Some section ->
         Section.iter_updates ~type_ ~class_type ~module_type ~module_ section id;
         true
       | None -> false
-    (* returns [true] if there might be forward paths at a greater height. *)
     
+    (* returns [true] if there might be forward paths at a greater height. *)
     let iter_forwards ~type_ ~class_type ~module_type ~module_ t height id =
       let all_initialised =
         match t.initialised with

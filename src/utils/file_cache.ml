@@ -37,7 +37,7 @@ module Make
   let { Logger.log } =
     Logger.for_section ("File_cache(" ^ Input.cache_name ^ ")")
   
-  let cache : (string,File_id.t * float ref * Input.t) Hashtbl.t =
+  let cache : (string, File_id.t * float ref * Input.t) Hashtbl.t =
     Hashtbl.create 17
   
   let get_cached_entry ~title fid filename =

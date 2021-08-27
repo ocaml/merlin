@@ -56,14 +56,14 @@ type pers_struct =
   }
 
 module String = Misc.String 
+
 (* If a .cmi file is missing (or invalid), we
    store it as Missing in the cache. *)
-
 type 'a pers_struct_info = Missing | Found of pers_struct * 'a
 
 type 'a t =
   {
-    persistent_structures : (string,'a pers_struct_info) Hashtbl.t;
+    persistent_structures : (string, 'a pers_struct_info) Hashtbl.t;
     imported_units : String.Set.t ref;
     imported_opaque_units : String.Set.t ref;
     crc_units : Consistbl.t;
@@ -249,8 +249,8 @@ let find_pers_struct penv val_of_pers_sig short_path_comps check name =
       in
       ps, pm
     end
-(* Emits a warning if there is no valid cmi for name *)
 
+(* Emits a warning if there is no valid cmi for name *)
 let check_pers_struct penv f1 f2 ~loc name =
   try ignore (find_pers_struct penv f1 f2 false name)
   with
@@ -286,9 +286,9 @@ let find penv f1 f2 name = snd (find_pers_struct penv f1 f2 true name)
 let check penv f1 f2 ~loc name =
   let { persistent_structures; _ } = penv in
   if not (Hashtbl.mem persistent_structures name) then
-  (* PR#6843: record the weak dependency ([add_import]) regardless of
-     whether the check succeeds, to help make builds more
-     deterministic. *)
+    (* PR#6843: record the weak dependency ([add_import]) regardless of
+       whether the check succeeds, to help make builds more
+       deterministic. *)
     (add_import penv name;
      if Warnings.is_active (Warnings.No_cmi_file ("", None)) then
        !add_delayed_check_forward (fun () ->
@@ -331,9 +331,8 @@ let save_cmi penv psig pm =
       cmi
     in
     let crc =
-      output_to_file_via_temporary
-      (* see MPR#7472, MPR#4991 *) ~mode:[ Open_binary ] filename
-        (fun temp_filename oc ->
+      output_to_file_via_temporary (* see MPR#7472, MPR#4991 *)
+        ~mode:[ Open_binary ] filename (fun temp_filename oc ->
         output_cmi temp_filename oc cmi
       )
     in
@@ -376,8 +375,8 @@ let () =
     | Error err -> Some (Location.error_of_printer_file report_error err)
     | _ -> None
   )
-(* helper for merlin *)
 
+(* helper for merlin *)
 let with_cmis penv f x =
   Misc.(protect_refs [ R (penv.can_load_cmis, Can_load_cmis) ] (fun () -> f x))
 

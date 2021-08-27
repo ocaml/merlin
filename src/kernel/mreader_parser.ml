@@ -30,8 +30,8 @@ open Std
 module I = Parser_raw.MenhirInterpreter 
 
 type kind = ML | MLI
-(*| MLL | MLY*)
 
+(*| MLL | MLY*)
 module Dump = struct
   let symbol () = Parser_printer.print_symbol
 end

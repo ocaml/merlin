@@ -69,8 +69,7 @@ let keep_suffix =
         end
       else
         None
-    | t -> Some (t, false)
-  (* Can be improved... *)
+    | t -> Some (t, false) (* Can be improved... *)
   in
   function
   | Lident s -> Lident s, false

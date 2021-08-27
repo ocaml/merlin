@@ -19,7 +19,7 @@ val get_lexing_pos : t -> filename:string -> [< position ] -> Lexing.position
 (** {1 Managing content} *)
 
 val substitute
-  :  t -> [< position ] -> [< position | `Length of int ] -> string -> t
+  : t -> [< position ] -> [< position | `Length of int ] -> string -> t
 (** Updating content *)
 
 val text : t -> string (** Source code of the file *)

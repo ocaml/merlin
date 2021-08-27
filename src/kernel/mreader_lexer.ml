@@ -63,7 +63,9 @@ let get_tokens keywords pos text =
   | [] ->
     (* First line: skip #! ... *)
     aux [] (Lexer_raw.skip_sharp_bang state lexbuf)
-  | items -> (* Resume *) continue items
+  | items ->
+    (* Resume *)
+    continue items
 
 let initial_position config =
   {
@@ -146,6 +148,7 @@ let is_operator =
   | COLONEQUAL -> Some ":="
   | PLUSEQ -> Some "+="
   | _ -> None
+
 (* [reconstruct_identifier] is impossible to read at the moment, here is a
    pseudo code version of the function:
    (many thanks to Gabriel for this contribution)
@@ -218,7 +221,6 @@ let is_operator =
         type f, defined in Module1 and aliased in Module2, pfffff).
      »
 *)
-
 let reconstruct_identifier_from_tokens tokens pos =
   let rec look_for_component acc =
     function

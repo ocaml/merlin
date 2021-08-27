@@ -26,14 +26,13 @@ type native_repr =
 
 type description =
   {
-    prim_name : string;
-    (* Name of primitive  or C function *)
-    prim_arity : int;
-    (* Number of arguments *)
-    prim_alloc : bool;
-    (* Does it allocates or raise? *)
-    prim_native_name : string;
-    (* Name of C function for the nat. code gen. *)
+    prim_name : string;(* Name of primitive  or C function *)
+    
+    prim_arity : int;(* Number of arguments *)
+    
+    prim_alloc : bool;(* Does it allocates or raise? *)
+    
+    prim_native_name : string; (* Name of C function for the nat. code gen. *)
     prim_native_repr_args : native_repr list;
     prim_native_repr_res : native_repr
   }

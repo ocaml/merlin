@@ -23,8 +23,8 @@ type cmi_infos =
     cmi_crcs : crcs;
     cmi_flags : pers_flags list
   }
-(* write the magic + the cmi information *)
 
+(* write the magic + the cmi information *)
 val output_cmi : string -> out_channel -> cmi_infos -> Digest.t
 (* read the cmi information (the magic is supposed to have already been read) *)
 val input_cmi : in_channel -> cmi_infos

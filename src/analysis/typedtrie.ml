@@ -30,8 +30,8 @@ open Browse_tree
 open Browse_raw
 
 let { Logger.log } = Logger.for_section "typedtrie"
-(* That's probably overkill, using a list would probably be just fine *)
 
+(* That's probably overkill, using a list would probably be just fine *)
 module StampMap =
   Map.Make
   (struct
@@ -74,9 +74,9 @@ module Trie : sig
       funct : Location.t * functor_;
       arg : Location.t * node
     }
+  
   (* The day where we want to support aliasing of functor arguments then arg
      should be [elt] instead of [node] *)
-  
   and functor_ =
     | Apply of functor_application
     | Funct of functor_parameter * node
@@ -90,7 +90,7 @@ module Trie : sig
   val get : Namespaced_path.Id.t -> t -> elt list
   
   val find_some
-    :  (string -> int -> elt -> bool) -> t -> (string * int * elt) option
+    : (string -> int -> elt -> bool) -> t -> (string * int * elt) option
 end = struct
   [@@@ocaml.warning ;; "-30"]
   
@@ -103,13 +103,13 @@ end = struct
       namespace : Namespaced_path.Namespace.t;
       node : node
     }
+  
   (* This sort of merges [Types.module_type] and [Types.signature_item].
      [Mty_ident] and [Mty_alias] are merged (into [Alias])) because from the
      point of view of locate there's no difference between them.
      [Included] is used to remember the origin of things
      Most of the constructors of [signature_item] are represented by a [Leaf]
      node. *)
-  
   and node =
     | Leaf
     | Internal of t Lazy.t
@@ -118,8 +118,7 @@ end = struct
     | Functor of functor_parameter * node
     | Apply of functor_application
   
-  and include_ =
-    (* simply a subset of node. *)
+  and include_ = (* simply a subset of node. *)
     | Named of Namespaced_path.t
     | Items of t Lazy.t
     | Apply of functor_application
@@ -233,10 +232,8 @@ let sig_item_idns item =
     | Sig_typext _ -> `Type
     | Sig_module _ -> `Mod
     | Sig_modtype _ -> `Modtype
-    | Sig_class _ -> `Vals
-    (* that's just silly *)
-    | Sig_class_type _ -> `Type
-  (* :_D *)
+    | Sig_class _ -> `Vals (* that's just silly *)
+    | Sig_class_type _ -> `Type (* :_D *)
   in
   signature_item_id item, ns
 
@@ -328,7 +325,9 @@ let rec build ~local_buffer ~trie browses : t =
       if doc = "" then None else Some doc
     in
     match t.t_node with
-    | Signature _ | Structure _ -> (* Removed by [get_top_items] *) assert false
+    | Signature _ | Structure _ ->
+      (* Removed by [get_top_items] *)
+      assert false
     | Signature_item _ | Structure_item _ ->
       begin match
         match t.t_node with
@@ -469,8 +468,8 @@ type substitution =
     new_prefix : Namespaced_path.t;
     scopes : scopes
   }
-(* See mli for documentation. *)
 
+(* See mli for documentation. *)
 type result =
   | Found of Location.t * string option
   | Resolves_to of Namespaced_path.t * state
@@ -518,8 +517,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
   in
   let try_next_scope () =
     match scopes with
-    | [] -> Resolves_to (path, state)
-    (* no englobing scope, give up *)
+    | [] -> Resolves_to (path, state) (* no englobing scope, give up *)
     | (trie, before) :: scopes ->
       follow ~remember_loc ~state scopes ?before trie path
   in
@@ -558,8 +556,8 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
            )
        in
        match
-         List.sort lst ~cmp:(fun { Trie.loc = l1; _ } { loc = l2; _ } ->
-           (* We wants the ones closed last to be at the beginning of the list. *)
+         List.sort lst ~cmp:(fun { Trie.loc = l1; _ } { loc = l2; _ } ->(* We wants the ones closed last to be at the beginning of the list. *)
+           
            Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end
          )
        with
@@ -567,15 +565,13 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
        | { loc; doc; node; namespace = _ } :: _ ->
          let inspect_functor_arg : Trie.node -> _ =
            function
-           | Leaf -> Noop
-           (* fuck it eh. *)
+           | Leaf -> Noop (* fuck it eh. *)
            | Internal (lazy trie) ->
              let scopes =
                (trie, None) :: (trie, Some loc.Location.loc_start) :: scopes
              in
              Handled (Namespaced_path.empty, scopes)
-           | Included _ -> assert false
-           (* that surely can't happen *)
+           | Included _ -> assert false (* that surely can't happen *)
            | Alias path ->
              let scopes = (trie, Some loc.Location.loc_start) :: scopes in
              Handled (path, scopes)
@@ -584,7 +580,9 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
              log ~title:"inspect_functor_arg"
                "NOT HANDLED: functor given as functor argument";
              Noop
-           | Apply _ -> (* TODO *) Noop
+           | Apply _ ->
+             (* TODO *)
+             Noop
          in
          let rec inspect_functor path state : Trie.functor_ -> _ =
            function
@@ -595,8 +593,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
              follow ~remember_loc ~state ~before:loc.Location.loc_start scopes
                trie path
            | Unpack -> log ~title:"inspect_functor" "Unpack"; Found (loc, doc)
-           | Funct _ -> assert false
-           (* TODO *)
+           | Funct _ -> assert false (* TODO *)
            | Apply { funct; arg } ->
              log ~title:"inspect_functor" "functor application";
              let functor_argument = inspect_functor_arg (snd arg) in
@@ -674,8 +671,7 @@ let rec follow ~remember_loc ~state scopes ?before trie path =
                  | Handled (new_prefix, scopes) :: functor_arguments ->
                    let id =
                      match param with
-                     | None | Some (None, _, _) -> assert false
-                     (* sigh. *)
+                     | None | Some (None, _, _) -> assert false (* sigh. *)
                      | Some (Some id, _, _) -> id
                    in
                    let subst =

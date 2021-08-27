@@ -42,7 +42,7 @@ type ('prop, 'req) property =
     [type_declaration]; they can just use [unit] as ['req] parameter. *)
 
 val compute_property
-  :  ('prop,'req) property
+  :  ('prop, 'req) property
   -> Env.t
   -> (Ident.t * decl) list
   -> 'req list
@@ -53,7 +53,7 @@ val compute_property
     [decls], providing the user requirement for each declaration. *)
 
 val compute_property_noreq
-  :  ('prop,unit) property
+  :  ('prop, unit) property
   -> Env.t
   -> (Ident.t * decl) list
   -> (Ident.t * decl) list

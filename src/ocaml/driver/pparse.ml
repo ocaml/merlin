@@ -14,9 +14,9 @@ open Std
 let { Logger.log } = Logger.for_section "Pparse"
 
 type error = CannotRun of string | WrongMagic of string
+
 (* Note: some of the functions here should go to Ast_mapper instead,
    which would encapsulate the "binary AST" protocol. *)
-
 let write_ast magic ast =
   let fn = Filename.temp_file "camlppx" "" in
   let oc = open_out_bin fn in
@@ -55,8 +55,8 @@ let apply_rewriter magic ppx (fn_in, failures) =
       Some (CannotRun comm)
     else if not (Sys.file_exists fn_out) then
       Some (WrongMagic comm)
-    else
-    (* check magic before passing to the next ppx *)
+    else(* check magic before passing to the next ppx *)
+    
       let ic = open_in_bin fn_out in
       let buffer =
         try really_input_string ic (String.length magic) with End_of_file -> ""
@@ -83,8 +83,7 @@ let read_ast magic fn =
   let ic = open_in_bin fn in
   try
     let buffer = really_input_string ic (String.length magic) in
-    assert (buffer = magic);
-    (* already checked by apply_rewriter *)
+    assert (buffer = magic); (* already checked by apply_rewriter *)
     Location.input_name := input_value ic;
     let ast = input_value ic in
     close_in ic; Misc.remove_file fn; ast
@@ -123,8 +122,8 @@ let apply_rewriters ~ppx ?restore ~tool_name =
 
 let pp_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s 1>%s" cmd (Filename.quote fn_in) (Filename.quote fn_out)
-(* FIXME: remove this once we drop support for 4.02 *)
 
+(* FIXME: remove this once we drop support for 4.02 *)
 type ('a, 'b) res = Ok of 'a | Error of 'b
 
 let apply_pp ~workdir ~filename ~source ~pp =

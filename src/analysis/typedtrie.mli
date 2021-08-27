@@ -62,6 +62,6 @@ val find
 
     @param remember_loc is used to capture a trace of the indirections that we
     traverse. *)
-(* For debugging purposes. *)
 
+(* For debugging purposes. *)
 val dump : Format.formatter -> t -> unit

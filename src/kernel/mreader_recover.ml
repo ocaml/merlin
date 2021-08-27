@@ -58,12 +58,12 @@ module Make
     external inj : 'a checkpoint -> 'a Parser.checkpoint = "%identity"
   end
     
+  
   (*let env_state env =
     match Parser.top env with
     | None -> -1
     | Some (Parser.Element (state, _, _, _)) ->
       Parser.number state*)
-  
   let feed_token ~allow_reduction token env =
     let rec aux allow_reduction =
       function
@@ -148,8 +148,7 @@ module Make
     let rec nth_state env n =
       if n = 0 then
         match Parser.top env with
-        | None -> (-1)
-        (*allow giving up recovery on empty files*)
+        | None -> (-1) (*allow giving up recovery on empty files*)
         | Some (Parser.Element (state, _, _, _)) -> Parser.number state
       else
         match Parser.pop env with

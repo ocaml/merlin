@@ -24,6 +24,7 @@ let explore ?(global_modules=[]) env =
   let add_module' name _ _ l = add_module l name in
   List.fold_left ~f:add_module global_modules
     ~init:(Env.fold_modules add_module' None env [])
+
 (* This is a hacked up heuristic spell checking function.
    It checks only the prefix of the key.
    A proper damerau-levenshtein might be better but certainly not urgent.
@@ -31,14 +32,13 @@ let explore ?(global_modules=[]) env =
    Implementation is a fork of
    https://github.com/c-cube/spelll/blob/master/src/spelll.ml
    Thanks companion-cube :) *)
-
 let optimal_string_prefix_alignment key cutoff =
   let equal_char : char -> char -> bool = (=) in
   let min_int x y : int = if x < y then x else y in
   if String.length key = 0 then
     (fun str -> String.length str)
-  else
-  (* distance vectors (v0=previous, v1=current) *)
+  else(* distance vectors (v0=previous, v1=current) *)
+  
     let v0 = Array.make (String.length key + 1) 0 in
     let v1 = Array.make (String.length key + 1) 0 in
     (fun str ->
@@ -48,12 +48,12 @@ let optimal_string_prefix_alignment key cutoff =
        else if str = key then
          0
        else
-         try
-         (* initialize v0: v0(i) = A(0)(i) = delete i chars from t *)
+         try(* initialize v0: v0(i) = A(0)(i) = delete i chars from t *)
+         
            for i = 0 to String.length key do v0.(i) <- i done;
            (* main loop for the bottom up dynamic algorithm *)
-           for i = 0 to l1 - 1 do
-           (* first edit distance is the deletion of i+1 elements from s *)
+           for i = 0 to l1 - 1 do(* first edit distance is the deletion of i+1 elements from s *)
+           
              v1.(0) <- i + 1;
              let min = ref (i + 1) in
              (* try add/delete/replace operations *)

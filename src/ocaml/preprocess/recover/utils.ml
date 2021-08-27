@@ -10,8 +10,8 @@ let group_assoc l =
     | (k', v') :: xs -> aux k' v' [] (cons k (v :: vs) acc) xs
   in
   match List.sort compare l with [] -> [] | (k, v) :: xs -> aux k v [] [] xs
-(* negation to put nan as the max *)
 
+(* negation to put nan as the max *)
 let compare_float a b = ~-(compare ~-.a ~-.b)
 let min_float a b = if compare_float a b > 0 then b else a
 let arg_min_float f a b = if compare_float (f a) (f b) <= 0 then a else b

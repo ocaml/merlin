@@ -16,8 +16,8 @@
 open Asttypes
 open Types
 open Typedtree
-(* useful pattern auxiliary functions *)
 
+(* useful pattern auxiliary functions *)
 let omega =
   {
     pat_desc = Tpat_any;
@@ -38,10 +38,10 @@ module Non_empty_row = struct
   let map_first f (p, patl) = f p, patl
 end
   
+
 (* "views" on patterns are polymorphic variants
    that allow to restrict the set of pattern constructors
    statically allowed at a particular place *)
-
 module Simple = struct
   type view =
     [ `Any
@@ -117,8 +117,8 @@ module General = struct
     | #Half_simple.view as view -> { p with  pat_desc = view }
 end
   
-(* the head constructor of a simple pattern *)
 
+(* the head constructor of a simple pattern *)
 module Head : sig
   type desc =
     | Any
@@ -161,9 +161,9 @@ end = struct
           cstr_row : row_desc ref;
           type_row : unit -> row_desc
         }
-    (* the row of the type may evolve if [close_variant] is called,
-       hence the (unit -> ...) delay *)
-    | Array of int
+    | (* the row of the type may evolve if [close_variant] is called,
+         hence the (unit -> ...) delay *)
+    Array of int
     | Lazy
   
   type t = desc pattern_data

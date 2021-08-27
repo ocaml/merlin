@@ -25,147 +25,127 @@ type loc =
 
 type t =
   | Comment_start
-  (*  1 *)
-  | Comment_not_end
-  (*  2 *)
-  (*| Deprecated --> alert "deprecated" *)
+  | (*  1 *)
+  Comment_not_end (*  2 *)
+  | (*| Deprecated --> alert "deprecated" *)
   (*  3 *)
-  | Fragile_match of string
-  (*  4 *)
-  | Ignored_partial_application
-  (*  5 *)
-  | Labels_omitted of string list
-  (*  6 *)
-  | Method_override of string list
-  (*  7 *)
-  | Partial_match of string
-  (*  8 *)
-  | Missing_record_field_pattern of string
-  (*  9 *)
+  Fragile_match of string
+  | (*  4 *)
+  Ignored_partial_application
+  | (*  5 *)
+  Labels_omitted of string list
+  | (*  6 *)
+  Method_override of string list
+  | (*  7 *)
+  Partial_match of string
+  | (*  8 *)
+  Missing_record_field_pattern of string (*  9 *)
   | Non_unit_statement
-  (* 10 *)
-  | Redundant_case
-  (* 11 *)
-  | Redundant_subpat
-  (* 12 *)
-  | Instance_variable_override of string list
-  (* 13 *)
+  | (* 10 *)
+  Redundant_case
+  | (* 11 *)
+  Redundant_subpat
+  | (* 12 *)
+  Instance_variable_override of string list (* 13 *)
   | Illegal_backslash
-  (* 14 *)
-  | Implicit_public_methods of string list
-  (* 15 *)
+  | (* 14 *)
+  Implicit_public_methods of string list (* 15 *)
   | Unerasable_optional_argument
-  (* 16 *)
-  | Undeclared_virtual_method of string
-  (* 17 *)
-  | Not_principal of string
-  (* 18 *)
-  | Non_principal_labels of string
-  (* 19 *)
-  | Ignored_extra_argument
-  (* 20 *)
-  | Nonreturning_statement
-  (* 21 *)
-  | Preprocessor of string
-  (* 22 *)
-  | Useless_record_with
-  (* 23 *)
-  | Bad_module_name of string
-  (* 24 *)
-  | All_clauses_guarded
-  (* 8, used to be 25 *)
-  | Unused_var of string
-  (* 26 *)
-  | Unused_var_strict of string
-  (* 27 *)
-  | Wildcard_arg_to_constant_constr
-  (* 28 *)
-  | Eol_in_string
-  (* 29 *)
-  | Duplicate_definitions of string * string * string * string
-  (*30 *)
-  | Module_linked_twice of string * string * string
-  (* 31 *)
+  | (* 16 *)
+  Undeclared_virtual_method of string
+  | (* 17 *)
+  Not_principal of string
+  | (* 18 *)
+  Non_principal_labels of string
+  | (* 19 *)
+  Ignored_extra_argument
+  | (* 20 *)
+  Nonreturning_statement
+  | (* 21 *)
+  Preprocessor of string
+  | (* 22 *)
+  Useless_record_with
+  | (* 23 *)
+  Bad_module_name of string
+  | (* 24 *)
+  All_clauses_guarded
+  | (* 8, used to be 25 *)
+  Unused_var of string
+  | (* 26 *)
+  Unused_var_strict of string
+  | (* 27 *)
+  Wildcard_arg_to_constant_constr
+  | (* 28 *)
+  Eol_in_string
+  | (* 29 *)
+  Duplicate_definitions of string * string * string * string (*30 *)
+  | Module_linked_twice of string * string * string (* 31 *)
   | Unused_value_declaration of string
-  (* 32 *)
-  | Unused_open of string
-  (* 33 *)
-  | Unused_type_declaration of string
-  (* 34 *)
-  | Unused_for_index of string
-  (* 35 *)
-  | Unused_ancestor of string
-  (* 36 *)
-  | Unused_constructor of string * bool * bool
-  (* 37 *)
-  | Unused_extension of string * bool * bool * bool
-  (* 38 *)
+  | (* 32 *)
+  Unused_open of string
+  | (* 33 *)
+  Unused_type_declaration of string
+  | (* 34 *)
+  Unused_for_index of string
+  | (* 35 *)
+  Unused_ancestor of string
+  | (* 36 *)
+  Unused_constructor of string * bool * bool (* 37 *)
+  | Unused_extension of string * bool * bool * bool (* 38 *)
   | Unused_rec_flag
-  (* 39 *)
-  | Name_out_of_scope of string * string list * bool
-  (* 40 *)
-  | Ambiguous_name of string list * string list * bool * string
-  (* 41 *)
+  | (* 39 *)
+  Name_out_of_scope of string * string list * bool (* 40 *)
+  | Ambiguous_name of string list * string list * bool * string (* 41 *)
   | Disambiguated_name of string
-  (* 42 *)
-  | Nonoptional_label of string
-  (* 43 *)
-  | Open_shadow_identifier of string * string
-  (* 44 *)
-  | Open_shadow_label_constructor of string * string
-  (* 45 *)
+  | (* 42 *)
+  Nonoptional_label of string
+  | (* 43 *)
+  Open_shadow_identifier of string * string (* 44 *)
+  | Open_shadow_label_constructor of string * string (* 45 *)
   | Bad_env_variable of string * string
-  (* 46 *)
-  | Attribute_payload of string * string
-  (* 47 *)
-  | Eliminated_optional_arguments of string list
-  (* 48 *)
-  | No_cmi_file of string * string option
-  (* 49 *)
+  | (* 46 *)
+  Attribute_payload of string * string (* 47 *)
+  | Eliminated_optional_arguments of string list (* 48 *)
+  | No_cmi_file of string * string option (* 49 *)
   | Unexpected_docstring of bool
-  (* 50 *)
-  | Wrong_tailcall_expectation of bool
-  (* 51 *)
-  | Fragile_literal_pattern
-  (* 52 *)
-  | Misplaced_attribute of string
-  (* 53 *)
-  | Duplicated_attribute of string
-  (* 54 *)
-  | Inlining_impossible of string
-  (* 55 *)
-  | Unreachable_case
-  (* 56 *)
-  | Ambiguous_var_in_pattern_guard of string list
-  (* 57 *)
+  | (* 50 *)
+  Wrong_tailcall_expectation of bool
+  | (* 51 *)
+  Fragile_literal_pattern
+  | (* 52 *)
+  Misplaced_attribute of string
+  | (* 53 *)
+  Duplicated_attribute of string
+  | (* 54 *)
+  Inlining_impossible of string
+  | (* 55 *)
+  Unreachable_case
+  | (* 56 *)
+  Ambiguous_var_in_pattern_guard of string list (* 57 *)
   | No_cmx_file of string
-  (* 58 *)
-  | Flambda_assignment_to_non_mutable_value
-  (* 59 *)
+  | (* 58 *)
+  Flambda_assignment_to_non_mutable_value (* 59 *)
   | Unused_module of string
-  (* 60 *)
-  | Unboxable_type_in_prim_decl of string
-  (* 61 *)
+  | (* 60 *)
+  Unboxable_type_in_prim_decl of string (* 61 *)
   | Constraint_on_gadt
-  (* 62 *)
-  | Erroneous_printed_signature of string
-  (* 63 *)
+  | (* 62 *)
+  Erroneous_printed_signature of string (* 63 *)
   | Unsafe_array_syntax_without_parsing
-  (* 64 *)
-  | Redefining_unit of string
-  (* 65 *)
-  | Unused_open_bang of string
-  (* 66 *)
-  | Unused_functor_parameter of string
-  (* 67 *)
-  | Match_on_mutable_state_prevent_uncurry
-(* 68 *)
+  | (* 64 *)
+  Redefining_unit of string
+  | (* 65 *)
+  Unused_open_bang of string
+  | (* 66 *)
+  Unused_functor_parameter of string
+  | (* 67 *)
+  Match_on_mutable_state_prevent_uncurry (* 68 *)
+
 (* If you remove a warning, leave a hole in the numbering.  NEVER change
    the numbers of existing warnings.
    If you add a new warning, add it at the end with a new number;
    do NOT reuse one of the holes.
 *)
-
 type alert = { kind : string; message : string; def : loc; use : loc }
 
 let number =
@@ -193,8 +173,7 @@ let number =
   | Preprocessor _ -> 22
   | Useless_record_with -> 23
   | Bad_module_name _ -> 24
-  | All_clauses_guarded -> 8
-  (* used to be 25 *)
+  | All_clauses_guarded -> 8 (* used to be 25 *)
   | Unused_var _ -> 26
   | Unused_var_strict _ -> 27
   | Wildcard_arg_to_constant_constr -> 28
@@ -240,11 +219,11 @@ let number =
   | Match_on_mutable_state_prevent_uncurry -> 68
 
 let last_warning_number = 68
+
 (* Third component of each tuple is the list of names for each warning. The
    first element of the list is the current name, any following ones are
    deprecated. The current name should always be derived mechanically from the
    constructor name. *)
-
 let descriptions =
   [ 1, "Suspicious-looking start-of-comment mark.", [ "comment-start" ];
     2, "Suspicious-looking end-of-comment mark.", [ "comment-not-end" ];
@@ -379,8 +358,8 @@ let name_to_number =
     List.iter (fun name -> Hashtbl.add h name num) names
   ) descriptions;
   fun s -> Hashtbl.find_opt h s
-(* Must be the max number returned by the [number] function. *)
 
+(* Must be the max number returned by the [number] function. *)
 let letter =
   function
   | 'a' ->
@@ -417,22 +396,18 @@ type state =
   {
     active : bool array;
     error : bool array;
-    alerts : Std.String.Set.t * bool;
-    (* false:set complement *)
+    alerts : Std.String.Set.t * bool; (* false:set complement *)
     alert_errors : Std.String.Set.t * bool
-  }
-(* false:set complement *)
+  } (* false:set complement *)
 
 let current =
   ref
     {
       active = Array.make (last_warning_number + 1) true;
       error = Array.make (last_warning_number + 1) false;
-      alerts = Std.String.Set.empty, false;
-      (* all enabled *)
+      alerts = Std.String.Set.empty, false; (* all enabled *)
       alert_errors = Std.String.Set.empty, true
-    }
-(* all soft *)
+    } (* all soft *)
 
 let disabled = ref false
 let without_warnings f = Misc.protect_refs [ Misc.R (disabled, true) ] f
@@ -602,8 +577,8 @@ let parse_options errflag s =
   let error = Array.copy !current.error in
   let active = Array.copy !current.active in
   parse_opt error active errflag s; current := { !current with  error; active }
-(* If you change these, don't forget to change them in man/ocamlc.m *)
 
+(* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67-68"
 let defaults_warn_error = "-a+31"
 let () = parse_options false defaults_w
@@ -931,8 +906,8 @@ let help_warnings () =
         (String.concat ", " (List.map Int.to_string l))
   done;
   exit 0
-(* merlin *)
 
+(* merlin *)
 let dump ?(verbose=false) () =
   let open Std in
   let actives arr =

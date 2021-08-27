@@ -184,7 +184,7 @@ module type S =
       val of_set : (key -> 'a) -> Make_set(T).t -> 'a t
       val transpose_keys_and_data : key t -> key t
       val print
-        :  (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
+        : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
     end
       
     

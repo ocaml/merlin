@@ -323,8 +323,7 @@ let prepend_config ~cwd ~cfg =
     match d with
     | (`B _ | `S _ | `CMI _ | `CMT _) as directive ->
       { cfg with  to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
-    | (`EXT
-       _
+    | (`EXT _
        | `SUFFIX _
        | `FLG _
        | `READER _
@@ -407,9 +406,9 @@ module Import_from_dune = struct
   let quote s =
     let s =
       if Sys.win32 then
-      (* We need this hack because merlin unescapes backslashes (except when
-         protected by single quotes). It is only a problem on windows because
-         Filename.quote is using double quotes. *)
+        (* We need this hack because merlin unescapes backslashes (except when
+           protected by single quotes). It is only a problem on windows because
+           Filename.quote is using double quotes. *)
         escape_only '\\' s
       else
         s

@@ -7,8 +7,7 @@ module General : sig
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*  terms of the GNU Library General Public License version 2, with a         *)(*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* This module offers general-purpose functions on lists and streams. *)
@@ -19,6 +18,7 @@ module General : sig
 (* [take n xs] returns the [n] first elements of the list [xs]. It is
    acceptable  for the list [xs] to have length less than [n], in
    which case [xs] itself is returned. *)
+
   val take : int -> 'a list -> 'a list
   (* [drop n xs] returns the list [xs], deprived of its [n] first elements.
      It is acceptable for the list [xs] to have length less than [n], in
@@ -31,13 +31,13 @@ module General : sig
   (* [weed cmp xs] returns the list [xs] deprived of any duplicate elements. *)
   val weed : ('a -> 'a -> int) -> 'a list -> 'a list
   (* --------------------------------------------------------------------------- *)
-  (* A stream is a list whose elements are produced on demand. *)
   
+  (* A stream is a list whose elements are produced on demand. *)
   type 'a stream = 'a head Lazy.t
   
   and 'a head = Nil | Cons of 'a * 'a stream
-  (* The length of a stream. *)
   
+  (* The length of a stream. *)
   val length : 'a stream -> int
   (* Folding over a stream. *)
   val foldr : ('a -> 'b -> 'b) -> 'a stream -> 'b -> 'b
@@ -52,8 +52,7 @@ module Convert : sig
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -62,13 +61,14 @@ module Convert : sig
    to the lexing buffer itself, where it reads position information. *)
 (* This traditional API is convenient when used with ocamllex, but
    inelegant when used with other lexer generators. *)
+
   type ('token, 'semantic_value) traditional =
     (Lexing.lexbuf -> 'token) -> Lexing.lexbuf -> 'semantic_value
+  
   (* This revised API is independent of any lexer generator. Here, the
      parser only requires access to the lexer, and the lexer takes no
      parameters. The tokens returned by the lexer may contain position
      information. *)
-  
   type ('token, 'semantic_value) revised = (unit -> 'token) -> 'semantic_value
   (* --------------------------------------------------------------------------- *)
   (* Converting a traditional parser, produced by ocamlyacc or Menhir,
@@ -76,36 +76,36 @@ module Convert : sig
   (* A token of the revised lexer is essentially a triple of a token
      of the traditional lexer (or raw token), a start position, and
      and end position. The three [get] functions are accessors. *)
+  
   (* We do not require the type ['token] to actually be a triple type.
      This enables complex applications where it is a record type with
      more than three fields. It also enables simple applications where
      positions are of no interest, so ['token] is just ['raw_token]
      and [get_startp] and [get_endp] return dummy positions. *)
-  
   val traditional2revised
     :  ('token -> 'raw_token)
     -> ('token -> Lexing.position)
     -> ('token -> Lexing.position)
-    -> ('raw_token,'semantic_value) traditional
-    -> ('token,'semantic_value) revised
+    -> ('raw_token, 'semantic_value) traditional
+    -> ('token, 'semantic_value) revised
   (* --------------------------------------------------------------------------- *)
-  (* Converting a revised parser back to a traditional parser. *)
   
+  (* Converting a revised parser back to a traditional parser. *)
   val revised2traditional
     :  ('raw_token -> Lexing.position -> Lexing.position -> 'token)
-    -> ('token,'semantic_value) revised
-    -> ('raw_token,'semantic_value) traditional
+    -> ('token, 'semantic_value) revised
+    -> ('raw_token, 'semantic_value) traditional
   (* --------------------------------------------------------------------------- *)
-  (* Simplified versions of the above, where concrete triples are used. *)
   
+  (* Simplified versions of the above, where concrete triples are used. *)
   module Simplified : sig
     val traditional2revised
-      :  ('token,'semantic_value) traditional
-      -> ('token * Lexing.position * Lexing.position,'semantic_value) revised
+      :  ('token, 'semantic_value) traditional
+      -> ('token * Lexing.position * Lexing.position, 'semantic_value) revised
     
     val revised2traditional
-      :  ('token * Lexing.position * Lexing.position,'semantic_value) revised
-      -> ('token,'semantic_value) traditional
+      :  ('token * Lexing.position * Lexing.position, 'semantic_value) revised
+      -> ('token, 'semantic_value) traditional
   end
     
 end
@@ -117,20 +117,20 @@ module IncrementalEngine : sig
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   type position = Lexing.position
   
   open General
   (* This signature describes the incremental LR engine. *)
+  
   (* In this mode, the user controls the lexer, and the parser suspends
      itself when it needs to read a new token. *)
-  
   module type INCREMENTAL_ENGINE =
     sig
       type token
@@ -177,17 +177,18 @@ module IncrementalEngine : sig
         | HandlingError of 'a env
         | Accepted of 'a
         | Rejected
+      
       (* [offer] allows the user to resume the parser after it has suspended
          itself with a checkpoint of the form [InputNeeded env]. [offer] expects
          the old checkpoint as well as a new token and produces a new checkpoint.
          It does not raise any exception. *)
-      
       val offer
-        :  'a checkpoint -> (token * position * position) -> 'a checkpoint
+        : 'a checkpoint -> (token * position * position) -> 'a checkpoint
       (* [resume] allows the user to resume the parser after it has suspended
          itself with a checkpoint of the form [AboutToReduce (env, prod)] or
          [HandlingError env]. [resume] expects the old checkpoint and produces a
          new checkpoint. It does not raise any exception. *)
+      
       (* The optional argument [strategy] influences the manner in which [resume]
      deals with checkpoints of the form [ErrorHandling _]. Its default value
      is [`Legacy]. It can be briefly described as follows:
@@ -203,31 +204,31 @@ module IncrementalEngine : sig
        should be selected.
 
      More details on these strategies appear in the file [Engine.ml]. *)
-      
       type strategy = [ `Legacy | `Simplified ]
       
       val resume : ?strategy:strategy -> 'a checkpoint -> 'a checkpoint
+      
       (* A token supplier is a function of no arguments which delivers a new token
          (together with its start and end positions) every time it is called. *)
-      
       type supplier = unit -> token * position * position
+      
       (* A pair of a lexer and a lexing buffer can be easily turned into a
          supplier. *)
-      
       val lexer_lexbuf_to_supplier
-        :  (Lexing.lexbuf -> token) -> Lexing.lexbuf -> supplier
+        : (Lexing.lexbuf -> token) -> Lexing.lexbuf -> supplier
       (* The functions [offer] and [resume] are sufficient to write a parser loop.
          One can imagine many variations (which is why we expose these functions
          in the first place!). Here, we expose a few variations of the main loop,
          ready for use. *)
+      
       (* [loop supplier checkpoint] begins parsing from [checkpoint], reading
          tokens from [supplier]. It continues parsing until it reaches a
          checkpoint of the form [Accepted v] or [Rejected]. In the former case, it
          returns [v]. In the latter case, it raises the exception [Error].
          The optional argument [strategy], whose default value is [Legacy],
          is passed to [resume] and influences the error-handling strategy. *)
-      
       val loop : ?strategy:strategy -> supplier -> 'a checkpoint -> 'a
+      
       (* [loop_handle succeed fail supplier checkpoint] begins parsing from
      [checkpoint], reading tokens from [supplier]. It continues parsing until
      it reaches a checkpoint of the form [Accepted v] or [HandlingError env]
@@ -239,13 +240,13 @@ module IncrementalEngine : sig
      to run. For this reason, there is no [strategy] parameter. Instead, the
      user can implement her own error handling code, in the [fail]
      continuation. *)
-      
       val loop_handle
         :  ('a -> 'answer)
         -> ('a checkpoint -> 'answer)
         -> supplier
         -> 'a checkpoint
         -> 'answer
+      
       (* [loop_handle_undo] is analogous to [loop_handle], except it passes a pair
      of checkpoints to the failure continuation.
 
@@ -258,7 +259,6 @@ module IncrementalEngine : sig
 
      [loop_handle_undo] must initially be applied to an [InputNeeded] checkpoint.
      The parser's initial checkpoints satisfy this constraint. *)
-      
       val loop_handle_undo
         :  ('a -> 'answer)
         -> ('a checkpoint -> 'a checkpoint -> 'answer)
@@ -272,9 +272,9 @@ module IncrementalEngine : sig
          If the parser decides to shift, then [Some env] is returned, where [env]
          is the parser's state just before shifting. Otherwise, [None] is
          returned. *)
+      
       (* It is desirable that the semantic actions be side-effect free, or that
          their side-effects be harmless (replayable). *)
-      
       val shifts : 'a checkpoint -> 'a env option
       (* The function [acceptable] allows testing, after an error has been
          detected, which tokens would have been accepted at this point. It is
@@ -289,24 +289,24 @@ module IncrementalEngine : sig
          hypothetical token, and may be picked up by the semantic actions. We
          suggest using the position where the error was detected. *)
       val acceptable : 'a checkpoint -> token -> position -> bool
+      
       (* The abstract type ['a lr1state] describes the non-initial states of the
          LR(1) automaton. The index ['a] represents the type of the semantic value
          associated with this state's incoming symbol. *)
-      
       type 'a lr1state
-      (* The states of the LR(1) automaton are numbered (from 0 and up). *)
       
+      (* The states of the LR(1) automaton are numbered (from 0 and up). *)
       val number : _ lr1state -> int
       (* Productions are numbered. *)
       (* [find_production i] requires the index [i] to be valid. Use with care. *)
       val production_index : production -> int
       val find_production : int -> production
+      
       (* An element is a pair of a non-initial state [s] and a semantic value [v]
          associated with the incoming symbol of this state. The idea is, the value
          [v] was pushed onto the stack just before the state [s] was entered. Thus,
          for some type ['a], the state [s] has type ['a lr1state] and the value [v]
          has type ['a]. In other words, the type [element] is an existential type. *)
-      
       type element = Element : 'a lr1state * 'a * position * position -> element
       (* The parser's stack is (or, more precisely, can be viewed as) a stream of
          elements. The type [stream] is defined by the module [General]. *)
@@ -314,13 +314,12 @@ module IncrementalEngine : sig
          are DEPRECATED. They might be removed in the future. An alternative way
          of inspecting the stack is via the functions [top] and [pop]. *)
       type stack = (* DEPRECATED *) element stream
+      
       (* This is the parser's stack, a stream of elements. This stream is empty if
          the parser is in an initial state; otherwise, it is non-empty.  The LR(1)
          automaton's current state is the one found in the top element of the
          stack. *)
-      
-      val stack : 'a env -> stack
-      (* DEPRECATED *)
+      val stack : 'a env -> stack (* DEPRECATED *)
       (* [top env] returns the parser's top stack element. The state contained in
          this stack element is the current state of the automaton. If the stack is
          empty, [None] is returned. In that case, the current state of the
@@ -388,10 +387,10 @@ module IncrementalEngine : sig
          reach an error state for which no error message has been prepared. *)
       val input_needed : 'a env -> 'a checkpoint
     end
+  
   (* This signature is a fragment of the inspection API that is made available
      to the user when [--inspection] is used. This fragment contains type
      definitions for symbols. *)
-  
   module type SYMBOLS =
     sig
       (* The type ['a terminal] represents a terminal symbol. The type ['a
@@ -410,15 +409,15 @@ module IncrementalEngine : sig
          is not statically known. *)
       type xsymbol = X : 'a symbol -> xsymbol
     end
+  
   (* This signature describes the inspection API that is made available to the
      user when [--inspection] is used. *)
-  
   module type INSPECTION =
     sig
       (* The types of symbols are described above. *)
       include SYMBOLS
-      (* The type ['a lr1state] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       
+      (* The type ['a lr1state] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       type 'a lr1state
       (* The type [production] is meant to be the same as in [INCREMENTAL_ENGINE].
          It represents a production of the grammar. A production can be examined
@@ -428,8 +427,8 @@ module IncrementalEngine : sig
          this production. That is, if the length of [rhs prod] is [n], then [i] is
          comprised between 0 and [n], inclusive. *)
       type item = production * int
-      (* Ordering functions. *)
       
+      (* Ordering functions. *)
       val compare_terminals : _ terminal -> _ terminal -> int
       val compare_nonterminals : _ nonterminal -> _ nonterminal -> int
       val compare_symbols : xsymbol -> xsymbol -> int
@@ -468,9 +467,10 @@ module IncrementalEngine : sig
          [error]. *)
       val foreach_terminal : (xsymbol -> 'a -> 'a) -> 'a -> 'a
       val foreach_terminal_but_error : (xsymbol -> 'a -> 'a) -> 'a -> 'a
-      (* The type [env] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       
+      (* The type [env] is meant to be the same as in [INCREMENTAL_ENGINE]. *)
       type 'a env
+      
       (* [feed symbol startp semv endp env] causes the parser to consume the
          (terminal or nonterminal) symbol [symbol], accompanied with the semantic
          value [semv] and with the start and end positions [startp] and [endp].
@@ -478,11 +478,10 @@ module IncrementalEngine : sig
          stack grows by one cell. This operation is permitted only if the current
          state (as determined by [env]) has an outgoing transition labeled with
          [symbol]. Otherwise, [Invalid_argument _] is raised. *)
-      
       val feed : 'a symbol -> position -> 'a -> position -> 'b env -> 'b env
     end
-  (* This signature combines the incremental API and the inspection API. *)
   
+  (* This signature combines the incremental API and the inspection API. *)
   module type EVERYTHING =
     sig
       include INCREMENTAL_ENGINE
@@ -505,8 +504,7 @@ module EngineTypes : sig
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
-(*                                                                            *)
+(*  special exception on linking, as described in the file LICENSE.           *)(*                                                                            *)
 (******************************************************************************)
 (* This file defines several types and module types that are used in the
    specification of module [Engine]. *)
@@ -518,6 +516,7 @@ module EngineTypes : sig
 (* A stack is a linked list of cells. A sentinel cell -- which is its own
    successor -- is used to mark the bottom of the stack. The sentinel cell
    itself is not significant -- it contains dummy values. *)
+
   type ('state, 'semantic_value) stack =
     (* The state that we should go back to if we pop this stack cell. *)
     (* This convention means that the state contained in the top stack cell is
@@ -525,54 +524,54 @@ module EngineTypes : sig
        within the sentinel is a dummy -- it is never consulted. This convention
        is the same as that adopted by the code-based back-end. *)
     {
-      state : 'state;
-      (* The semantic value associated with the chunk of input that this cell
-         represents. *)
-      semv : 'semantic_value;
-      (* The start and end positions of the chunk of input that this cell
-         represents. *)
+      state : 'state;(* The semantic value associated with the chunk of input that this cell
+                        represents. *)
+      
+      semv : 'semantic_value;(* The start and end positions of the chunk of input that this cell
+                                represents. *)
+      
       startp : Lexing.position;
-      endp : Lexing.position;
-      (* The next cell down in the stack. If this is a self-pointer, then this
-         cell is the sentinel, and the stack is conceptually empty. *)
-      next : ('state,'semantic_value) stack
+      endp : Lexing.position;(* The next cell down in the stack. If this is a self-pointer, then this
+                                cell is the sentinel, and the stack is conceptually empty. *)
+      
+      next : ('state, 'semantic_value) stack
     }
   (* --------------------------------------------------------------------------- *)
+  
   (* A parsing environment contains all of the parser's state (except for the
      current program point). *)
-  
   type ('state, 'semantic_value, 'token) env =
     (* If this flag is true, then the first component of [env.triple] should
        be ignored, as it has been logically overwritten with the [error]
        pseudo-token. *)
     {
-      error : bool;
-      (* The last token that was obtained from the lexer, together with its start
-         and end positions. Warning: before the first call to the lexer has taken
-         place, a dummy (and possibly invalid) token is stored here. *)
-      triple : 'token * Lexing.position * Lexing.position;
-      (* The stack. In [CodeBackend], it is passed around on its own,
-         whereas, here, it is accessed via the environment. *)
-      stack : ('state,'semantic_value) stack;
-      (* The current state. In [CodeBackend], it is passed around on its
-         own, whereas, here, it is accessed via the environment. *)
+      error : bool;(* The last token that was obtained from the lexer, together with its start
+                      and end positions. Warning: before the first call to the lexer has taken
+                      place, a dummy (and possibly invalid) token is stored here. *)
+      
+      triple : 'token * Lexing.position * Lexing.position;(* The stack. In [CodeBackend], it is passed around on its own,
+                                                             whereas, here, it is accessed via the environment. *)
+      
+      stack : ('state, 'semantic_value) stack;(* The current state. In [CodeBackend], it is passed around on its
+                                                 own, whereas, here, it is accessed via the environment. *)
+      
       current : 'state
     }
   (* --------------------------------------------------------------------------- *)
+  
   (* This signature describes the parameters that must be supplied to the LR
      engine. *)
-  
   module type TABLE =
     sig
       (* The type of automaton states. *)
       type state
-      (* States are numbered. *)
       
+      (* States are numbered. *)
       val number : state -> int
+      
       (* The type of tokens. These can be thought of as real tokens, that is,
          tokens returned by the lexer. They carry a semantic value. This type
          does not include the [error] pseudo-token. *)
-      
       type token
       (* The type of terminal symbols. These can be thought of as integer codes.
          They do not carry a semantic value. This type does include the [error]
@@ -582,9 +581,9 @@ module EngineTypes : sig
       type nonterminal
       (* The type of semantic values. *)
       type semantic_value
+      
       (* A token is conceptually a pair of a (non-[error]) terminal symbol and
          a semantic value. The following two functions are the pair projections. *)
-      
       val token2terminal : token -> terminal
       val token2value : token -> semantic_value
       (* Even though the [error] pseudo-token is not a real token, it is a
@@ -594,8 +593,8 @@ module EngineTypes : sig
       val error_value : semantic_value
       (* [foreach_terminal] allows iterating over all terminal symbols. *)
       val foreach_terminal : (terminal -> 'a -> 'a) -> 'a -> 'a
-      (* The type of productions. *)
       
+      (* The type of productions. *)
       type production
       
       val production_index : production -> int
@@ -604,10 +603,10 @@ module EngineTypes : sig
          entering [s], the automaton should reduce [prod] without consulting the
          lookahead token. The following function allows determining which states
          have default reductions. *)
+      
       (* Instead of returning a value of a sum type -- either [DefRed prod], or
          [NoDefRed] -- it accepts two continuations, and invokes just one of
          them. This mechanism allows avoiding a memory allocation. *)
-      
       val default_reduction
         :  state
         -> ('env -> production -> 'answer)
@@ -629,6 +628,7 @@ module EngineTypes : sig
          shift/nodiscard, reduce, or fail -- this function accepts three
          continuations, and invokes just one them. This mechanism allows avoiding
          a memory allocation. *)
+      
       (* In summary, the parameters to [action] are as follows:
 
      - the first two parameters, a state and a terminal symbol, are used to
@@ -649,7 +649,6 @@ module EngineTypes : sig
 
      - the last parameter is the environment; it is not used, only passed
        along to the selected continuation. *)
-      
       val action
         :  state
         -> terminal
@@ -662,13 +661,13 @@ module EngineTypes : sig
       (* This is the automaton's goto table. This table maps a pair of a state
          and a nonterminal symbol to a new state. By extension, it also maps a
          pair of a state and a production to a new state. *)
+      
       (* The function [goto_nt] can be applied to [s] and [nt] ONLY if the state
          [s] has an outgoing transition labeled [nt]. Otherwise, its result is
          undefined. Similarly, the call [goto_prod prod s] is permitted ONLY if
          the state [s] has an outgoing transition labeled with the nonterminal
          symbol [lhs prod]. The function [maybe_goto_nt] involves an additional
          dynamic check and CAN be called even if there is no outgoing transition. *)
-      
       val goto_nt : state -> nonterminal -> state
       val goto_prod : state -> production -> state
       val maybe_goto_nt : state -> nonterminal -> state option
@@ -692,12 +691,12 @@ module EngineTypes : sig
      off the stack by this interpreter, then the calling convention for
      semantic actions would be variadic: not all semantic actions would have
      the same number of arguments. The rest follows rather naturally. *)
-      (* Semantic actions are allowed to raise [Error]. *)
       
+      (* Semantic actions are allowed to raise [Error]. *)
       exception Error
       
       type semantic_action =
-        (state,semantic_value,token) env -> (state,semantic_value) stack
+        (state, semantic_value, token) env -> (state, semantic_value) stack
       
       val semantic_action : production -> semantic_action
       (* [may_reduce state prod] tests whether the state [state] is capable of
@@ -713,8 +712,8 @@ module EngineTypes : sig
          If it is [true], then they are called. *)
       val log : bool
       
-      module Log : sig
-      (* State %d: *)
+      module Log : sig(* State %d: *)
+      
         val state : state -> unit
         (* Shifting (<terminal>) to state <state> *)
         val shift : terminal -> state -> unit
@@ -725,7 +724,7 @@ module EngineTypes : sig
         val reduce_or_accept : production -> unit
         (* Lookahead token is now <terminal> (<pos>-<pos>) *)
         val lookahead_token
-          :  terminal -> Lexing.position -> Lexing.position -> unit
+          : terminal -> Lexing.position -> Lexing.position -> unit
         (* Initiating error handling *)
         val initiating_error_handling : unit -> unit
         (* Resuming error handling *)
@@ -736,23 +735,23 @@ module EngineTypes : sig
         
     end
   (* --------------------------------------------------------------------------- *)
+  
   (* This signature describes the monolithic (traditional) LR engine. *)
   (* In this interface, the parser controls the lexer. *)
-  
   module type MONOLITHIC_ENGINE =
     sig
       type state
       type token
       type semantic_value
+      
       (* An entry point to the engine requires a start state, a lexer, and a lexing
          buffer. It either succeeds and produces a semantic value, or fails and
          raises [Error]. *)
-      
       exception Error
       
       val entry
-        :
-        (* strategy: *)  [ `Legacy | `Simplified ]
+        :  (* strategy: *)
+        [ `Legacy | `Simplified ]
         -> (* see [IncrementalEngine] *) state
         -> (Lexing.lexbuf -> token)
         -> Lexing.lexbuf
@@ -761,11 +760,11 @@ module EngineTypes : sig
   (* --------------------------------------------------------------------------- *)
   (* The following signatures describe the incremental LR engine. *)
   (* First, see [INCREMENTAL_ENGINE] in the file [IncrementalEngine.ml]. *)
+  
   (* The [start] function is set apart because we do not wish to publish
      it as part of the generated [parser.mli] file. Instead, the table
      back-end will publish specialized versions of it, with a suitable
      type cast. *)
-  
   module type INCREMENTAL_ENGINE_START =
     sig
       (* [start] is an entry point. It requires a start state and a start position
@@ -786,9 +785,9 @@ module EngineTypes : sig
       val start : state -> Lexing.position -> semantic_value checkpoint
     end
   (* --------------------------------------------------------------------------- *)
+  
   (* This signature describes the LR engine, which combines the monolithic
      and incremental interfaces. *)
-  
   module type ENGINE =
     sig
       include MONOLITHIC_ENGINE
@@ -812,22 +811,22 @@ module Engine : sig
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   open EngineTypes
-  (* The LR parsing engine. *)
   
+  (* The LR parsing engine. *)
   module Make (T : TABLE) :
     ENGINE with type state = T.state
        and type token = T.token
        and type semantic_value = T.semantic_value
        and type production = T.production
-       and type 'a env = (T.state,T.semantic_value,T.token) EngineTypes.env
+       and type 'a env = (T.state, T.semantic_value, T.token) EngineTypes.env
     
 (* We would prefer not to expose the definition of the type [env].
    However, it must be exposed because some of the code in the
@@ -846,8 +845,7 @@ module ErrorReports : sig
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -855,26 +853,27 @@ module ErrorReports : sig
 (* The following functions help keep track of the start and end positions of
    the last two tokens in a two-place buffer. This is used to nicely display
    where a syntax error took place. *)
+
   type 'a buffer
   (* [wrap lexer] returns a pair of a new (initially empty) buffer and a lexer
      which internally relies on [lexer] and updates [buffer] on the fly whenever
      a token is demanded. *)
+  
   (* The type of the buffer is [(position * position) buffer], which means that
      it stores two pairs of positions, which are the start and end positions of
      the last two tokens. *)
-  
   open Lexing
   
   val wrap
-    :  (lexbuf -> 'token) -> (position * position) buffer * (lexbuf -> 'token)
+    : (lexbuf -> 'token) -> (position * position) buffer * (lexbuf -> 'token)
   
   val wrap_supplier
     :  (unit -> 'token * position * position)
     -> (position * position) buffer * (unit -> 'token * position * position)
+  
   (* [show f buffer] prints the contents of the buffer, producing a string that
      is typically of the form "after '%s' and before '%s'". The function [f] is
      used to print an element. The buffer MUST be nonempty. *)
-  
   val show : ('a -> string) -> 'a buffer -> string
   (* [last buffer] returns the last element of the buffer. The buffer MUST be
      nonempty. *)
@@ -906,18 +905,18 @@ module LexerUtil : sig
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   open Lexing
+  
   (* [init filename lexbuf] initializes the lexing buffer [lexbuf] so
      that the positions that are subsequently read from it refer to the
      file [filename]. It returns [lexbuf]. *)
-  
   val init : string -> lexbuf -> lexbuf
   (* [read filename] reads the entire contents of the file [filename] and
      returns a pair of this content (a string) and a lexing buffer that
@@ -943,14 +942,14 @@ module Printers : sig
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* This module is part of MenhirLib. *)
+
   module Make
       (I : IncrementalEngine.EVERYTHING)
       (User :
@@ -966,8 +965,8 @@ module Printers : sig
         end)
   : sig
     open I
-    (* Printing a list of symbols. *)
     
+    (* Printing a list of symbols. *)
     val print_symbols : xsymbol list -> unit
     (* Printing an element as a symbol. This prints just the symbol
        that this element represents; nothing more. *)
@@ -998,13 +997,13 @@ module InfiniteArray : sig
 (*                                   Menhir                                   *)
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
+(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)(*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
+
   (** This module implements infinite arrays. **)
   type 'a t
   
@@ -1041,8 +1040,7 @@ module PackedIntArray : sig
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
-(*                                                                            *)
+(*  special exception on linking, as described in the file LICENSE.           *)(*                                                                            *)
 (******************************************************************************)
 (* A packed integer array is represented as a pair of an integer [k] and
    a string [s]. The integer [k] is the number of bits per integer that we
@@ -1053,13 +1051,14 @@ module PackedIntArray : sig
    the latter are dynamically allocated. (This is rather arbitrary.) In the
    context of Menhir's table-based back-end, where compact, immutable
    integer arrays are needed, ocaml strings are preferable to ocaml arrays. *)
+
   type t = int * string
   (* [pack a] turns an array of integers into a packed integer array. *)
+  
   (* Because the sign bit is the most significant bit, the magnitude of
      any negative number is the word size. In other words, [pack] does
      not achieve any space savings as soon as [a] contains any negative
      numbers, even if they are ``small''. *)
-  
   val pack : int array -> t
   (* [get t i] returns the integer stored in the packed array [t] at index [i]. *)
   (* Together, [pack] and [get] satisfy the following property: if the index [i]
@@ -1086,8 +1085,7 @@ module RowDisplacement : sig
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -1095,15 +1093,15 @@ module RowDisplacement : sig
    are considered insignificant, via row displacement. *)
 (* A compressed table is represented as a pair of arrays. The
    displacement array is an array of offsets into the data array. *)
-  type 'a table = int array * (* displacement *) 'a array
-  (* data *)
+
+  type 'a table = int array * (* displacement *) 'a array (* data *)
+  
   (* [compress equal insignificant dummy m n t] turns the two-dimensional table
      [t] into a compressed table. The parameter [equal] is equality of data
      values. The parameter [wildcard] tells which data values are insignificant,
      and can thus be overwritten with other values. The parameter [dummy] is
      used to fill holes in the data array. [m] and [n] are the integer
      dimensions of the table [t]. *)
-  
   val compress
     :  ('a -> 'a -> bool)
     -> ('a -> bool)
@@ -1116,14 +1114,14 @@ module RowDisplacement : sig
      compressed table [ct]. This function call is permitted only if the
      value found at indices [i] and [j] in the original table is
      significant -- otherwise, it could fail abruptly. *)
+  
   (* Together, [compress] and [get] have the property that, if the value
      found at indices [i] and [j] in an uncompressed table [t] is
      significant, then [get (compress t) i j] is equal to that value. *)
-  
   val get : 'a table -> int -> int -> 'a
+  
   (* [getget] is a variant of [get] which only requires read access,
      via accessors, to the two components of the table. *)
-  
   val getget
     :  ('displacement -> int -> int)
     -> ('data -> int -> 'a)
@@ -1141,8 +1139,7 @@ module LinearizedArray : sig
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
@@ -1150,9 +1147,10 @@ module LinearizedArray : sig
 (* An array of arrays (of possibly different lengths!) can be ``linearized'',
    i.e., encoded as a data array (by concatenating all of the little arrays)
    and an entry array (which contains offsets into the data array). *)
+
   type 'a t = (* data: *) 'a array * (* entry: *) int array
-  (* [make a] turns the array of arrays [a] into a linearized array. *)
   
+  (* [make a] turns the array of arrays [a] into a linearized array. *)
   val make : 'a array array -> 'a t
   (* [read la i j] reads the linearized array [la] at indices [i] and [j].
      Thus, [read (make a) i j] is equivalent to [a.(i).(j)]. *)
@@ -1170,23 +1168,32 @@ module LinearizedArray : sig
   (* [read_row la i] reads the row at index [i], producing a list. Thus,
      [read_row (make a) i] is equivalent to [Array.to_list a.(i)]. *)
   val read_row : 'a t -> int -> 'a list
+  
   (* The following variants read the linearized array via accessors
      [get_data : int -> 'a] and [get_entry : int -> int]. *)
-  val row_length_via : (* get_entry: *) (int -> int) -> (* i: *) int -> int
+  val row_length_via
+    :  (* get_entry: *)
+    (int -> int)
+    ->
+    (* i: *) int
+    -> int
   
   val read_via
-    :
-    (* get_data: *)  (int -> 'a)
-    -> (* get_entry: *) (int -> int)
-    -> (* i: *) int
-    -> (* j: *) int
+    :  (* get_data: *)
+    (int -> 'a)
+    ->(* get_entry: *)  (int -> int)
+    ->
+    (* i: *) int
+    ->
+    (* j: *) int
     -> 'a
   
   val read_row_via
-    :
-    (* get_data: *)  (int -> 'a)
-    -> (* get_entry: *) (int -> int)
-    -> (* i: *) int
+    :  (* get_data: *)
+    (int -> 'a)
+    ->(* get_entry: *)  (int -> int)
+    ->
+    (* i: *) int
     -> 'a list
 end
   
@@ -1198,20 +1205,20 @@ module TableFormat : sig
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* This signature defines the format of the parse tables. It is used as
    an argument to [TableInterpreter.Make]. *)
+
   module type TABLES =
     sig
       (* This is the parser's type of tokens. *)
       type token
-      (* This maps a token to its internal (generation-time) integer code. *)
       
+      (* This maps a token to its internal (generation-time) integer code. *)
       val token2terminal : token -> int
       (* This is the integer code for the error pseudo-token. *)
       val error_terminal : int
@@ -1283,23 +1290,24 @@ module TableFormat : sig
          number of start symbols. A nonterminal symbol [nt] is a start
          symbol if and only if [nt < start] holds. *)
       val start : int
+      
       (* A one-dimensional semantic action table maps productions to semantic
          actions. The calling convention for semantic actions is described in
          [EngineTypes]. This table contains ONLY NON-START PRODUCTIONS, so the
          indexing is off by [start]. Be careful. *)
-      
       val semantic_action
-        :  ((int,Obj.t,token) EngineTypes.env -> (int,Obj.t) EngineTypes.stack)
+        :  ((int, Obj.t, token) EngineTypes.env
+         -> (int, Obj.t) EngineTypes.stack)
         array
+      
       (* The parser defines its own [Error] exception. This exception can be
          raised by semantic actions and caught by the engine, and raised by the
          engine towards the final user. *)
-      
       exception Error
+      
       (* The parser indicates whether to generate a trace. Generating a
          trace requires two extra tables, which respectively map a
          terminal symbol and a production to a string. *)
-      
       val trace : (string array * string array) option
     end
 end
@@ -1313,8 +1321,7 @@ module InspectionTableFormat : sig
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
+(*  Copyright Inria. All rights reserved. This file is distributed under the  *)(*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
@@ -1322,18 +1329,19 @@ module InspectionTableFormat : sig
    addition to the tables described in [TableFormat]) when the command line
    switch [--inspection] is enabled. It is used as an argument to
    [InspectionTableInterpreter.Make]. *)
+
   module type TABLES =
     sig
       (* The types of symbols. *)
       include IncrementalEngine.SYMBOLS
+      
       (* The type ['a lr1state] describes an LR(1) state. The generated parser defines
          it internally as [int]. *)
-      
       type 'a lr1state
+      
       (* Some of the tables that follow use encodings of (terminal and
          nonterminal) symbols as integers. So, we need functions that
          map the integer encoding of a symbol to its algebraic encoding. *)
-      
       val terminal : int -> xsymbol
       val nonterminal : int -> xsymbol
       (* The left-hand side of every production already appears in the
@@ -1371,8 +1379,7 @@ module InspectionTableInterpreter : sig
 (*                                                                            *)
 (*                       François Pottier, Inria Paris                        *)
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
+(*                                                                            *)(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
 (*  terms of the GNU Library General Public License version 2, with a         *)
 (*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
@@ -1380,6 +1387,7 @@ module InspectionTableInterpreter : sig
 (* This functor is invoked inside the generated parser, in [--table] mode. It
    produces no code! It simply constructs the types [symbol] and [xsymbol] on
    top of the generated types [terminal] and [nonterminal]. *)
+
   module Symbols
       (T :
         sig
@@ -1390,10 +1398,10 @@ module InspectionTableInterpreter : sig
     IncrementalEngine.SYMBOLS with type 'a terminal := 'a T.terminal
        and type 'a nonterminal := 'a T.nonterminal
     
+  
   (* This functor is invoked inside the generated parser, in [--table] mode. It
      constructs the inspection API on top of the inspection tables described in
      [InspectionTableFormat]. *)
-  
   module Make
       (TT : TableFormat.TABLES)
       (IT : InspectionTableFormat.TABLES with type 'a lr1state = int)
@@ -1402,7 +1410,8 @@ module InspectionTableInterpreter : sig
            and type nonterminal = int
            and type semantic_value = Obj.t)
       (E :
-        sig type 'a env = (ET.state,ET.semantic_value,ET.token) EngineTypes.env
+        sig
+          type 'a env = (ET.state, ET.semantic_value, ET.token) EngineTypes.env
         end)
   :
     IncrementalEngine.INSPECTION with type 'a terminal := 'a IT.terminal
@@ -1423,8 +1432,7 @@ module TableInterpreter : sig
 (*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
 (*                                                                            *)
 (*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*  terms of the GNU Library General Public License version 2, with a         *)(*  special exception on linking, as described in the file LICENSE.           *)
 (*                                                                            *)
 (******************************************************************************)
 (* This module provides a thin decoding layer for the generated tables, thus
@@ -1435,6 +1443,7 @@ module TableInterpreter : sig
    its own, distinct [Error] exception. This is consistent with the code-based
    back-end. *)
 (* This functor is invoked by the generated parser. *)
+
   module MakeEngineTable (T : TableFormat.TABLES) :
     EngineTypes.TABLE with type state = int
        and type token = T.token

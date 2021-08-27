@@ -5,8 +5,8 @@
     [Graph.t] is pure and doesn't hook into the [Env.t].
     Context has to be rebuilt by outside code using [Graph.add].
 *)
-(* Generic definitions *)
 
+(* Generic definitions *)
 module String_map : Map.S with type key = string 
 
 module Ident : sig
@@ -32,8 +32,8 @@ end
 
 module Path_map : Map.S with type key = Path.t 
 module Path_set : Set.S with type elt = Path.t 
-(* Subset of the type algebra that is relevant to short path *)
 
+(* Subset of the type algebra that is relevant to short path *)
 module Desc : sig
   type deprecated = Deprecated | Not_deprecated
   

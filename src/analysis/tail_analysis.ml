@@ -97,9 +97,9 @@ let tail_positions =
   | Expression expr -> expr_tail_positions expr.exp_desc
   | Case case -> [ Expression case.c_rhs ]
   | _ -> []
+
 (* If the expression is a function, return all of its entry-points (which are
    in tail-positions). Returns an empty list otherwise *)
-
 let expr_entry_points =
   function
   | Texp_function { cases; _ } -> List.map cases ~f:(fun c -> Case c)
@@ -107,8 +107,8 @@ let expr_entry_points =
 
 let entry_points =
   function Expression expr -> expr_entry_points expr.exp_desc | _ -> []
+
 (* FIXME: what about method call? It should be translated to a Texp_apply,
    but I am not sure *)
-
 let is_call =
   function Expression { exp_desc = Texp_apply _; _ } -> true | _ -> false

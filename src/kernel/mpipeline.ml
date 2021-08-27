@@ -18,6 +18,7 @@ let timed_lazy r x =
 
 module Cache = struct
   let cache = ref []
+  
   (* Values from configuration that are used as a key for the cache.
      These values should:
      - allow to maximize reuse; associating a single typechecker instance to a
@@ -34,7 +35,6 @@ module Cache = struct
      in the type checker behavior accross the different versions of OCaml.
      It is simpler to create new instances upfront.
   *)
-  
   let key config =
     Mconfig.(
       config.query.filename,

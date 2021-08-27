@@ -32,6 +32,7 @@ module type IMPERATIVE_MAPS =
 (* Properties must form a partial order, equipped with a least element, and
    must satisfy the ascending chain condition: every monotone sequence
    eventually stabilizes. *)
+
 (* [is_maximal] determines whether a property [p] is maximal with respect to
    the partial order. Only a conservative check is required: in any event, it
    is permitted for [is_maximal p] to return [false]. If [is_maximal p]
@@ -39,7 +40,6 @@ module type IMPERATIVE_MAPS =
    particular, if properties form a lattice, then [p] must be the top
    element. This feature, not described in the paper, enables a couple of
    minor optimizations. *)
-
 module type PROPERTY =
   sig
     type property
@@ -50,23 +50,23 @@ module type PROPERTY =
   end
 (* -------------------------------------------------------------------------- *)
 (* The dynamic dependency graph. *)
+
 (* An edge from [node1] to [node2] means that [node1] depends on [node2], or
    (equivalently) that [node1] observes [node2]. Then, an update of the
    current property at [node2] causes a signal to be sent to [node1]. A node
    can observe itself. *)
 (* This module could be placed in a separate file, but is included here in
    order to make [Fix] self-contained. *)
+module Graph : sig(* This module provides a data structure for maintaining and modifying
+                     a directed graph. Each node is allowed to carry a piece of client
+                     data. There are functions for creating a new node, looking up a
+                     node's data, looking up a node's predecessors, and setting or
+                     clearing a node's successors (all at once). *)
 
-module Graph : sig
-(* This module provides a data structure for maintaining and modifying
-   a directed graph. Each node is allowed to carry a piece of client
-   data. There are functions for creating a new node, looking up a
-   node's data, looking up a node's predecessors, and setting or
-   clearing a node's successors (all at once). *)
   type 'data node
+  
   (* [create data] creates a new node, with no incident edges, with
      client information [data]. Time complexity: constant. *)
-  
   val create : 'data -> 'data node
   (* [data node] returns the client information associated with
      the node [node]. Time complexity: constant. *)
@@ -85,27 +85,27 @@ module Graph : sig
      Time complexity: linear in the number of edges that are removed. *)
   val clear_successors : 'data node -> unit
 (* That's it. *)
-end = struct
-(* Using doubly-linked adjacency lists, one could implement [predecessors]
-   in worst-case linear time with respect to the length of the output list,
-   [set_successors] in worst-case linear time with respect to the length of
-   the input list, and [clear_successors] in worst-case linear time with
-   respect to the number of edges that are removed. We use a simpler
-   implementation, based on singly-linked adjacency lists, with deferred
-   removal of edges. It achieves the same complexity bounds, except
-   [predecessors] only offers an amortized complexity bound. This is good
-   enough for our purposes, and, in practice, is more efficient by a
-   constant factor. This simplification was suggested by Arthur
-   Charguéraud. *)
+end = struct(* Using doubly-linked adjacency lists, one could implement [predecessors]
+               in worst-case linear time with respect to the length of the output list,
+               [set_successors] in worst-case linear time with respect to the length of
+               the input list, and [clear_successors] in worst-case linear time with
+               respect to the number of edges that are removed. We use a simpler
+               implementation, based on singly-linked adjacency lists, with deferred
+               removal of edges. It achieves the same complexity bounds, except
+               [predecessors] only offers an amortized complexity bound. This is good
+               enough for our purposes, and, in practice, is more efficient by a
+               constant factor. This simplification was suggested by Arthur
+               Charguéraud. *)
+
   type 'data node =
     (* The client information associated with this node. *)
     {
-      data : 'data;
-      (* This node's incoming and outgoing edges. *)
+      data : 'data;(* This node's incoming and outgoing edges. *)
+      
       mutable outgoing : 'data edge list;
-      mutable incoming : 'data edge list;
-      (* A transient mark, always set to [false], except when checking
-         against duplicate elements in a successor list. *)
+      mutable incoming : 'data edge list;(* A transient mark, always set to [false], except when checking
+                                            against duplicate elements in a successor list. *)
+      
       mutable marked : bool
     }
   
@@ -117,9 +117,9 @@ end = struct
        destroyed. *)
     {
       node1 : 'data node;
-      node2 : 'data node;
-      (* Edges that are destroyed are marked as such, but are not
-         immediately removed from the adjacency lists. *)
+      node2 : 'data node;(* Edges that are destroyed are marked as such, but are not
+                            immediately removed from the adjacency lists. *)
+      
       mutable destroyed : bool
     }
   
@@ -127,27 +127,27 @@ end = struct
     { data = data; outgoing = []; incoming = []; marked = false }
   
   let data (node : 'data node) : 'data = node.data
+  
   (* [follow src edge] returns the node that is connected to [src]
      by [edge]. Time complexity: constant. *)
-  
   let follow src edge =
     if edge.node1 == src then
       edge.node2
     else
       (assert (edge.node2 == src); edge.node1)
+  
   (* The [predecessors] function removes edges that have been marked
      destroyed. The cost of removing these has already been paid for,
      so the amortized time complexity of [predecessors] is linear in
      the length of the output list. *)
-  
   let predecessors (node : 'data node) : 'data node list =
     let predecessors =
       List.filter (fun edge -> not edge.destroyed) node.incoming
     in
     node.incoming <- predecessors; List.map (follow node) predecessors
+  
   (* [link src dst] creates a new edge from [src] to [dst], together
      with its reverse edge. Time complexity: constant. *)
-  
   let link (src : 'data node) (dst : 'data node) : unit =
     let edge = { node1 = src; node2 = dst; destroyed = false } in
     src.outgoing <- edge :: src.outgoing; dst.incoming <- edge :: dst.incoming
@@ -159,8 +159,7 @@ end = struct
       | [] -> ()
       | dst :: dsts ->
         if dst.marked then
-          loop dsts
-        (* skip duplicate elements *)
+          loop dsts (* skip duplicate elements *)
         else
           (dst.marked <- true; link src dst; loop dsts; dst.marked <- false)
     in
@@ -173,9 +172,9 @@ end = struct
 end
   
 (* -------------------------------------------------------------------------- *)
+
 (* The code is parametric in an implementation of maps over variables and in
    an implementation of properties. *)
-
 module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
   type variable = M.key
   type property = P.property
@@ -184,9 +183,9 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
   type equations = variable -> rhs
   (* -------------------------------------------------------------------------- *)
   (* Data. *)
+  
   (* Each node in the dependency graph carries information about a fixed
      variable [v]. *)
-  
   type node = data Graph.node
   
   and data =
@@ -194,39 +193,39 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
        must be stored in order to guarantee that this application is performed
        at most once. *)
     {
-      rhs : rhs;
-      (* This is the current property at [v]. It evolves monotonically with
-         time. *)
+      rhs : rhs;(* This is the current property at [v]. It evolves monotonically with
+                   time. *)
+      
       mutable property : property
     }
   (* That's it! *)
-  (* [property node] returns the current property at [node]. *)
   
+  (* [property node] returns the current property at [node]. *)
   let property node = (Graph.data node).property
   (* -------------------------------------------------------------------------- *)
+  
   (* Many definitions must be made within the body of the function [lfp].
      For greater syntactic convenience, we place them in a local module. *)
-  
   let lfp (eqs : equations) : valuation =
     let module LFP = struct
     (* -------------------------------------------------------------------------- *)
     (* The workset. *)
-    (* When the algorithm is inactive, the workset is empty. *)
-    (* Our workset is based on a Queue, but it could just as well be based on a
-       Stack. A textual replacement is possible. It could also be based on a
-       priority queue, provided a sensible way of assigning priorities could
-       be found. *)
-      module Workset : sig
-      (* [insert node] inserts [node] into the workset. [node] must have no
-         successors. *)
+    (* When the algorithm is inactive, the workset is empty. *)(* Our workset is based on a Queue, but it could just as well be based on a
+                                                                  Stack. A textual replacement is possible. It could also be based on a
+                                                                  priority queue, provided a sensible way of assigning priorities could
+                                                                  be found. *)
+    
+      module Workset : sig(* [insert node] inserts [node] into the workset. [node] must have no
+                             successors. *)
+      
         val insert : node -> unit
         (* [repeat f] repeatedly applies [f] to a node extracted out of the
            workset, until the workset becomes empty. [f] is allowed to use
            [insert]. *)
         val repeat : (node -> unit) -> unit
       (* That's it! *)
-      end = struct
-      (* Initialize the workset. *)
+      end = struct(* Initialize the workset. *)
+      
         let workset = Queue.create ()
         let insert node = Queue.push node workset
         let repeat f =
@@ -238,11 +237,11 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
       (* A node in the workset has no successors. (It can have predecessors.)  In
          other words, a predecessor (an observer) of some node is never in the
          workset. Furthermore, a node never appears twice in the workset. *)
+      
       (* When a variable broadcasts a signal, all of its predecessors (observers)
          receive the signal. Any variable that receives the signal loses all of its
          successors (that is, it ceases to observe anything) and is inserted into
          the workset. This preserves the above invariant. *)
-      
       let signal subject =
         List.iter (fun observer ->
           Graph.clear_successors observer; Workset.insert observer
@@ -250,10 +249,10 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
       (* At this point, [subject] has no predecessors. This plays no role in
          the correctness proof, though. *)
       (* -------------------------------------------------------------------------- *)
+      
       (* Tables. *)
       (* The permanent table maps variables that have reached a fixed point
          to properties. It persists forever. *)
-      
       let permanent : property M.t = M.create ()
       (* The transient table maps variables that have not yet reached a
          fixed point to nodes. (A node contains not only a property, but
@@ -261,10 +260,10 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
          beginning of a run, it is empty. It fills up during a run. At the
          end of a run, it is copied into the permanent table and cleared. *)
       let transient : node M.t = M.create ()
+      
       (* [freeze()] copies the transient table into the permanent table, and
          empties the transient table. This allows all nodes to be reclaimed
          by the garbage collector. *)
-      
       let freeze () =
         M.iter (fun v node -> M.add v (property node) permanent) transient;
         M.clear transient
@@ -277,12 +276,12 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
          is invoked by [node_for], [node] is newly created; when [solve] is invoked by
          [Workset.repeat], [node] has just been extracted out of the workset, and a
          node in the workset has no subjects. *)
+      
       (* [node] must not be in the workset. *)
       (* In short, when [solve node] is invoked, [node] is neither awake nor asleep.
          When [solve node] finishes, [node] is either awake or asleep again. (Chances
          are, it is asleep, unless it is its own observer; then, it is awakened by the
          final call to [signal node].) *)
-      
       let rec solve (node : node) : unit =
         (* Retrieve the data record carried by this node. *)
         let data = Graph.data node in
@@ -347,6 +346,7 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
          transient table is grown. The new node can either be inserted into the
          workset (it is then awake) or handled immediately via a recursive call to
          [solve] (it is then asleep, unless it observes itself). *)
+      
       (* The recursive call to [solve node] can be replaced, if desired, by a call
          to [Workset.insert node]. Using a recursive call to [solve] permits eager
          top-down discovery of new nodes. This can save a constant factor, because
@@ -357,7 +357,6 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
          back up, and runs without ever inserting a node into the workset!
          Unfortunately, this causes the stack to grow as deep as the longest path in
          the dependency graph, which can blow up the stack. *)
-      
       and node_for (v : variable) : node =
         try M.find v transient
         with
@@ -368,9 +367,9 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) = struct
              an infinite number of nodes for the same variable. *)
           M.add v node transient; solve node; (* or: Workset.insert node *) node
       (* -------------------------------------------------------------------------- *)
+      
       (* Invocations of [get] trigger the fixed point computation. *)
       (* The flag [inactive] prevents reentrant calls by the client. *)
-      
       let inactive = ref true
       
       let get (v : variable) : property =

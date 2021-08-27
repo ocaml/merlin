@@ -1,7 +1,7 @@
 open Std
 open Local_store
-(* Instance of environment cache & btype unification log  *)
 
+(* Instance of environment cache & btype unification log  *)
 type typer_state = Local_store.store
 
 let current_state = s_ref None
@@ -19,8 +19,8 @@ let with_state state f =
 
 let is_current_state state =
   match !current_state with Some state' -> state == state' | None -> false
-(* Build settings *)
 
+(* Build settings *)
 let setup_config config =
   assert Local_store.(is_bound ());
   let open Mconfig in
@@ -85,11 +85,11 @@ let default_printer ppf =
   | Out_phrase x -> default_out_phrase ppf x
 
 let with_printer printer f = let_ref replacement_printer (Some printer) f
-(* Cleanup caches *)
 
+(* Cleanup caches *)
 let clear_caches () =
   Cmi_cache.clear (); Cmt_cache.clear (); Directory_content_cache.clear ()
-(* Flush cache *)
 
+(* Flush cache *)
 let flush_caches ?older_than () =
   Cmi_cache.flush ?older_than (); Cmt_cache.flush ?older_than ()

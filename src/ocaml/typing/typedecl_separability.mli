@@ -131,7 +131,7 @@ val compute_decl : Env.t -> Types.type_declaration -> mode list
     rely on {!compute_decl} and raise the {!Error} exception on error. *)
 type prop = Types.Separability.signature
 
-val property : (prop,unit) Typedecl_properties.property
+val property : (prop, unit) Typedecl_properties.property
 
 val update_decls
   :  Env.t

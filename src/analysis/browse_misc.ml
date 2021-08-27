@@ -108,8 +108,7 @@ let signature_of_env ?(ignore_extensions=true) env =
   in
   aux (Env.summary env);
   (* Since 4.08 one can't simply call [simplify]. *)
-  (* Typemod.simplify_signature *)
-  !sg
+  (* Typemod.simplify_signature *) !sg
 
 let dump_browse node =
   let attr attr =

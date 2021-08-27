@@ -100,9 +100,9 @@ module Reader = struct
         This works on outcometree and is used for displaying answers to queries.
         (type errors, signatures of modules in environment, completion candidates, etc).
     *)
+      
       (* This one works on parsetree and is used for case destruction
          (merlin-destruct) *)
-      
       val pretty_print : Format.formatter -> pretty_parsetree -> unit
     end
   
@@ -124,8 +124,8 @@ module Reader = struct
     | Res_pretty_print of string
 end
   
-(* Name of the extension *)
 
+(* Name of the extension *)
 type description = { name : string; version : string }
 (* Services an extension can provide *)
 type capabilities = { reader : bool }

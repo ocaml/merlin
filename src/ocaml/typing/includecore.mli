@@ -95,7 +95,7 @@ val class_types:
 *)
 
 val report_type_mismatch
-  :  string -> string -> string -> Format.formatter -> type_mismatch -> unit
+  : string -> string -> string -> Format.formatter -> type_mismatch -> unit
 
 val report_extension_constructor_mismatch
   :  string

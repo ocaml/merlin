@@ -26,8 +26,8 @@
 
 )* }}} *)
 open Query_protocol
-(* TODO: document all the following functions *)
 
+(* TODO: document all the following functions *)
 type raw_info =
   [ `Constructor of Types.constructor_description
   | `Modtype of Types.module_type
@@ -41,20 +41,18 @@ type raw_info =
 
 val raw_info_printer
   :  raw_info
-  ->
-  [ `String of string
-  | `Print of Extend_protocol.Reader.outcometree
-  | `Concat of string * Extend_protocol.Reader.outcometree
-  ]
+  -> [ `String of string
+     | `Print of Extend_protocol.Reader.outcometree
+     | `Concat of string * Extend_protocol.Reader.outcometree
+     ]
 
 val map_entry : ('a -> 'b) -> 'a Compl.raw_entry -> 'b Compl.raw_entry
 
 val branch_complete
   :  Mconfig.t
-  ->
-  ?get_doc:
-  ([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
-   -> [> `Found of string ])
+  -> ?get_doc:
+       ([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
+        -> [> `Found of string ])
   -> ?target_type:Types.type_expr
   -> ?kinds:Compl.kind list
   -> keywords:string list
@@ -72,6 +70,5 @@ val expand_prefix
 val application_context
   :  prefix:Asttypes.label
   -> Mbrowse.t
-  ->
-  Types.type_expr option
-  * [> `Application of Compl.application_context | `Unknown ]
+  -> Types.type_expr option
+     * [> `Application of Compl.application_context | `Unknown ]

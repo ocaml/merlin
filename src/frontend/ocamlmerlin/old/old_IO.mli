@@ -34,7 +34,7 @@ val default_context : Old_protocol.Context.t
 val request_of_json : Json.t -> Old_protocol.request
 
 val json_of_response
-  :  Logger.notification list -> Old_protocol.response -> Json.t
+  : Logger.notification list -> Old_protocol.response -> Json.t
 
 val make_json
   :  ?on_read:(Unix.file_descr -> unit)

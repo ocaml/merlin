@@ -48,8 +48,8 @@ module Reader = struct
 end
   
 
-module Utils = struct
-(* Postpone messages until ready *)
+module Utils = struct(* Postpone messages until ready *)
+
   let (send, set_ready) =
     let is_ready = ref false in
     let postponed = ref [] in

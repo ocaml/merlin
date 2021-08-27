@@ -49,8 +49,8 @@ let prim ?(ghost=true) prim =
       { ident with  loc = { ident.loc with  loc_ghost = false } }
   in
   Ast_helper.Exp.ident ~loc:ident.loc ident
-(* Lwt extension *)
 
+(* Lwt extension *)
 module Lwt = struct
   let un_lwt = prim "Lwt.un_lwt"
   let to_lwt = prim "Lwt.to_lwt"
@@ -61,8 +61,8 @@ module Lwt = struct
   let raise_lwt_ = prim_ident "Lwt.raise_lwt'"
 end
   
-(* MetaOCaml support *)
 
+(* MetaOCaml support *)
 module Meta = struct
   let prim_code = prim "Meta.code"
   let prim_uncode = prim "Meta.uncode"

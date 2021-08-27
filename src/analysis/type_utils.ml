@@ -50,12 +50,11 @@ module Printtyp = struct
   
   let expand_type env ty =
     Env.with_cmis @@
-      fun () ->
-        (* ?? Not sure *)
+      fun () -> (* ?? Not sure *)
         if !verbosity = 0 then
           ty
-        else
-        (* Fresh copy of the type to mutilate *)
+        else(* Fresh copy of the type to mutilate *)
+        
           let ty = Subst.type_expr Subst.identity ty in
           let marks = Hashtbl.create 7 in
           let mark ty =
@@ -116,11 +115,11 @@ let si_modtype_opt =
   | Types.Sig_modtype (_, m, _) -> m.mtd_type
   | Types.Sig_module (_, _, m, _, _) -> Some m.md_type
   | _ -> None
+
 (* Check if module is smaller (= has less definition, counting nested ones)
  * than a particular threshold. Return (Some n) if module has size n, or None
  * otherwise (module is bigger than threshold).
  * Used to skip printing big modules in completion. *)
-
 let rec mod_smallerthan n m =
   if n < 0 then
     None
@@ -177,7 +176,7 @@ let print_type_with_decl ~verbosity env ppf typ =
       (if print_expr then Printtyp.type_scheme env ppf typ);
       (* If not abstract, also print the declaration *)
       if not is_abstract then
-      (* Separator if expression was printed *)
+        (* Separator if expression was printed *)
         ((if print_expr then
             (Format.pp_print_newline ppf (); Format.pp_print_newline ppf ()));
          let ident =
@@ -275,13 +274,13 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
                     (try print_modpath ppf verbosity env longident; true
                      with
                      | _ ->
-                       (try
-                        (* TODO: useless according to test suite *)
+                       (try(* TODO: useless according to test suite *)
+                        
                           print_modtype ppf verbosity env longident; true
                         with
                         | _ ->
-                          (try
-                           (* TODO: useless according to test suite *)
+                          (try(* TODO: useless according to test suite *)
+                           
                              print_constr ppf env longident; true
                            with
                            | _ -> print_exn ppf exn; false)))))
@@ -291,9 +290,9 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
 
 let print_constr ~verbosity env ppf cd =
   Printtyp.wrap_printing_env env ~verbosity @@ fun () -> print_cstr_desc ppf cd
+
 (* From doc-ock
    https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml *)
-
 let read_doc_attributes attrs =
   let rec loop =
     function

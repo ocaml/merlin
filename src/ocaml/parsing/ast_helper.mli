@@ -47,7 +47,7 @@ module Const : sig
   val char : char -> constant
   
   val string
-    :  ?quotation_delimiter:string -> ?loc:Location.t -> string -> constant
+    : ?quotation_delimiter:string -> ?loc:Location.t -> string -> constant
   
   val integer : ?suffix:char -> string -> constant
   val int : ?suffix:char -> int -> constant
@@ -86,7 +86,7 @@ module Typ : sig
   val constr : ?loc:loc -> ?attrs:attrs -> lid -> core_type list -> core_type
   
   val object_
-    :  ?loc:loc -> ?attrs:attrs -> object_field list -> closed_flag -> core_type
+    : ?loc:loc -> ?attrs:attrs -> object_field list -> closed_flag -> core_type
   
   val class_ : ?loc:loc -> ?attrs:attrs -> lid -> core_type list -> core_type
   val alias : ?loc:loc -> ?attrs:attrs -> core_type -> string -> core_type
@@ -102,7 +102,7 @@ module Typ : sig
   val poly : ?loc:loc -> ?attrs:attrs -> str list -> core_type -> core_type
   
   val package
-    :  ?loc:loc -> ?attrs:attrs -> lid -> (lid * core_type) list -> core_type
+    : ?loc:loc -> ?attrs:attrs -> lid -> (lid * core_type) list -> core_type
   
   val extension : ?loc:loc -> ?attrs:attrs -> extension -> core_type
   val force_poly : core_type -> core_type
@@ -132,11 +132,7 @@ module Pat : sig
   val variant : ?loc:loc -> ?attrs:attrs -> label -> pattern option -> pattern
   
   val record
-    :  ?loc:loc
-    -> ?attrs:attrs
-    -> (lid * pattern) list
-    -> closed_flag
-    -> pattern
+    : ?loc:loc -> ?attrs:attrs -> (lid * pattern) list -> closed_flag -> pattern
   
   val array : ?loc:loc -> ?attrs:attrs -> pattern list -> pattern
   val or_ : ?loc:loc -> ?attrs:attrs -> pattern -> pattern -> pattern
@@ -188,10 +184,10 @@ module Exp : sig
   val tuple : ?loc:loc -> ?attrs:attrs -> expression list -> expression
   
   val construct
-    :  ?loc:loc -> ?attrs:attrs -> lid -> expression option -> expression
+    : ?loc:loc -> ?attrs:attrs -> lid -> expression option -> expression
   
   val variant
-    :  ?loc:loc -> ?attrs:attrs -> label -> expression option -> expression
+    : ?loc:loc -> ?attrs:attrs -> label -> expression option -> expression
   
   val record
     :  ?loc:loc
@@ -203,7 +199,7 @@ module Exp : sig
   val field : ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression
   
   val setfield
-    :  ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression -> expression
+    : ?loc:loc -> ?attrs:attrs -> expression -> lid -> expression -> expression
   
   val array : ?loc:loc -> ?attrs:attrs -> expression list -> expression
   
@@ -216,10 +212,10 @@ module Exp : sig
     -> expression
   
   val sequence
-    :  ?loc:loc -> ?attrs:attrs -> expression -> expression -> expression
+    : ?loc:loc -> ?attrs:attrs -> expression -> expression -> expression
   
   val while_
-    :  ?loc:loc -> ?attrs:attrs -> expression -> expression -> expression
+    : ?loc:loc -> ?attrs:attrs -> expression -> expression -> expression
   
   val for_
     :  ?loc:loc
@@ -240,13 +236,13 @@ module Exp : sig
     -> expression
   
   val constraint_
-    :  ?loc:loc -> ?attrs:attrs -> expression -> core_type -> expression
+    : ?loc:loc -> ?attrs:attrs -> expression -> core_type -> expression
   
   val send : ?loc:loc -> ?attrs:attrs -> expression -> str -> expression
   val new_ : ?loc:loc -> ?attrs:attrs -> lid -> expression
   val setinstvar : ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
   val override
-    :  ?loc:loc -> ?attrs:attrs -> (str * expression) list -> expression
+    : ?loc:loc -> ?attrs:attrs -> (str * expression) list -> expression
   
   val letmodule
     :  ?loc:loc
@@ -275,14 +271,14 @@ module Exp : sig
   val lazy_ : ?loc:loc -> ?attrs:attrs -> expression -> expression
   
   val poly
-    :  ?loc:loc -> ?attrs:attrs -> expression -> core_type option -> expression
+    : ?loc:loc -> ?attrs:attrs -> expression -> core_type option -> expression
   
   val object_ : ?loc:loc -> ?attrs:attrs -> class_structure -> expression
   val newtype : ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
   val pack : ?loc:loc -> ?attrs:attrs -> module_expr -> expression
   
   val open_
-    :  ?loc:loc -> ?attrs:attrs -> open_declaration -> expression -> expression
+    : ?loc:loc -> ?attrs:attrs -> open_declaration -> expression -> expression
   
   val letop
     :  ?loc:loc
@@ -441,10 +437,10 @@ module Mod : sig
     -> module_expr
   
   val apply
-    :  ?loc:loc -> ?attrs:attrs -> module_expr -> module_expr -> module_expr
+    : ?loc:loc -> ?attrs:attrs -> module_expr -> module_expr -> module_expr
   
   val constraint_
-    :  ?loc:loc -> ?attrs:attrs -> module_expr -> module_type -> module_expr
+    : ?loc:loc -> ?attrs:attrs -> module_expr -> module_type -> module_expr
   
   val unpack : ?loc:loc -> ?attrs:attrs -> expression -> module_expr
   val extension : ?loc:loc -> ?attrs:attrs -> extension -> module_expr
@@ -599,7 +595,7 @@ module Cty : sig
   val extension : ?loc:loc -> ?attrs:attrs -> extension -> class_type
   
   val open_
-    :  ?loc:loc -> ?attrs:attrs -> open_description -> class_type -> class_type
+    : ?loc:loc -> ?attrs:attrs -> open_description -> class_type -> class_type
 end
   
 
@@ -634,7 +630,7 @@ module Ctf : sig
     -> class_type_field
   
   val constraint_
-    :  ?loc:loc -> ?attrs:attrs -> core_type -> core_type -> class_type_field
+    : ?loc:loc -> ?attrs:attrs -> core_type -> core_type -> class_type_field
   
   val extension : ?loc:loc -> ?attrs:attrs -> extension -> class_type_field
   val attribute : ?loc:loc -> attribute -> class_type_field
@@ -674,19 +670,19 @@ module Cl : sig
     -> class_expr
   
   val constraint_
-    :  ?loc:loc -> ?attrs:attrs -> class_expr -> class_type -> class_expr
+    : ?loc:loc -> ?attrs:attrs -> class_expr -> class_type -> class_expr
   
   val extension : ?loc:loc -> ?attrs:attrs -> extension -> class_expr
   
   val open_
-    :  ?loc:loc -> ?attrs:attrs -> open_description -> class_expr -> class_expr
+    : ?loc:loc -> ?attrs:attrs -> open_description -> class_expr -> class_expr
 end
   
 
 (** Class fields *)
 module Cf : sig
   val mk
-    :  ?loc:loc -> ?attrs:attrs -> ?docs:docs -> class_field_desc -> class_field
+    : ?loc:loc -> ?attrs:attrs -> ?docs:docs -> class_field_desc -> class_field
   
   val attr : class_field -> attribute -> class_field
   
@@ -715,7 +711,7 @@ module Cf : sig
     -> class_field
   
   val constraint_
-    :  ?loc:loc -> ?attrs:attrs -> core_type -> core_type -> class_field
+    : ?loc:loc -> ?attrs:attrs -> core_type -> core_type -> class_field
   
   val initializer_ : ?loc:loc -> ?attrs:attrs -> expression -> class_field
   val extension : ?loc:loc -> ?attrs:attrs -> extension -> class_field
@@ -774,7 +770,7 @@ module Of : sig
   val mk : ?loc:loc -> ?attrs:attrs -> object_field_desc -> object_field
   
   val tag
-    :  ?loc:loc -> ?attrs:attrs -> label with_loc -> core_type -> object_field
+    : ?loc:loc -> ?attrs:attrs -> label with_loc -> core_type -> object_field
   
   val inherit_ : ?loc:loc -> core_type -> object_field
 end
@@ -799,7 +795,7 @@ type let_bindings =
     lbs_extension : string Asttypes.loc option;
     lbs_loc : Location.t
   }
-(* merlin specific *)
 
+(* merlin specific *)
 val no_label : arg_label
 val extract_str_payload : payload -> (string * Location.t) option

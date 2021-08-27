@@ -12,7 +12,7 @@
 type 'acc t = string list -> 'acc -> string list * 'acc
 
 (** A table mapping a flag to the corresponding action *)
-type 'acc table = (string,'acc t) Hashtbl.t
+type 'acc table = (string, 'acc t) Hashtbl.t
 
 (** {1 Combinators for building actions} *)
 

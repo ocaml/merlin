@@ -16,10 +16,10 @@ val to_string : t -> string
 val of_string : string -> t
 
 val of_file_descr
-  :  ?on_read:(Unix.file_descr -> unit) -> Unix.file_descr -> unit -> t option
+  : ?on_read:(Unix.file_descr -> unit) -> Unix.file_descr -> unit -> t option
 
 val of_channel
-  :  ?on_read:(Unix.file_descr -> unit) -> in_channel -> unit -> t option
+  : ?on_read:(Unix.file_descr -> unit) -> in_channel -> unit -> t option
 
 val of_json : json -> t
 val to_json : t -> json

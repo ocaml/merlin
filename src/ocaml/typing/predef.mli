@@ -60,17 +60,17 @@ val ident_nil : Ident.t
 val ident_cons : Ident.t
 val ident_none : Ident.t
 val ident_some : Ident.t
+
 (* To build the initial environment. Since there is a nasty mutual
    recursion between predef and env, we break it by parameterizing
    over Env.t, Env.add_type and Env.add_extension. *)
-
 val build_initial_env
   :  (Ident.t -> type_declaration -> 'a -> 'a)
   -> (Ident.t -> extension_constructor -> 'a -> 'a)
   -> 'a
   -> 'a * 'a
-(* To initialize linker tables *)
 
+(* To initialize linker tables *)
 val builtin_values : (string * Ident.t) list
 val builtin_idents : (string * Ident.t) list
 

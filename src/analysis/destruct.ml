@@ -131,8 +131,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
-  | Tlink _ -> assert false
-  (* impossible after [Btype.repr] *)
+  | Tlink _ -> assert false (* impossible after [Btype.repr] *)
   | Tvar _ -> raise (Not_allowed "non-immediate type")
   | Tarrow _ -> raise (Not_allowed "arrow type")
   | Tobject _ -> raise (Not_allowed "object type")
@@ -482,8 +481,7 @@ let rec qualify_constructors ~unmangling_tables f pat =
             { lid with  Asttypes.txt }
           | _ -> lid
           end
-        | _ -> lid
-      (* already qualified *)
+        | _ -> lid (* already qualified *)
       in
       Tpat_construct (lid, cstr_desc, List.map ps ~f:(qualify_constructors f))
     | Tpat_array ps -> Tpat_array (List.map ps ~f:(qualify_constructors f))
@@ -570,8 +568,8 @@ let rec node config source selected_node parents =
     begin match Parmatch.complete_partial ~pred pss with
     | _ :: _ as patterns ->
       let cases =
-        List.map patterns ~f:(fun (pat, unmangling_tables) ->
-          (* Unmangling and prefixing *)
+        List.map patterns ~f:(fun (pat, unmangling_tables) ->(* Unmangling and prefixing *)
+          
           let pat =
             qualify_constructors ~unmangling_tables Printtyp.shorten_type_path
               pat
@@ -598,8 +596,7 @@ let rec node config source selected_node parents =
         else
           let ty = patt.Typedtree.pat_type in
           begin match gen_patterns patt.Typedtree.pat_env ty with
-          | [] -> assert false
-          (* we raise Not_allowed, but never return [] *)
+          | [] -> assert false (* we raise Not_allowed, but never return [] *)
           | [ more_precise ] ->
             (* If only one pattern is generated, then we're only refining the
               current pattern, not generating new branches. *)

@@ -15,13 +15,13 @@
 (* Basic operations on core types *)
 open Asttypes
 open Types
-(**** Sets, maps and hashtables of types ****)
 
+(**** Sets, maps and hashtables of types ****)
 module TypeSet : Set.S with type elt = type_expr 
 module TypeMap : Map.S with type key = type_expr 
 module TypeHash : Hashtbl.S with type key = type_expr 
-(**** Levels ****)
 
+(**** Levels ****)
 val generic_level : int
 val newty2 : int -> type_desc -> type_expr
 (* Create a type *)
@@ -90,8 +90,8 @@ val iter_row : (type_expr -> unit) -> row_desc -> unit
 (* Iteration on types in a row *)
 val fold_row : ('a -> type_expr -> 'a) -> 'a -> row_desc -> 'a
 val iter_abbrev : (type_expr -> unit) -> abbrev_memo -> unit
-(* Iteration on types in an abbreviation list *)
 
+(* Iteration on types in an abbreviation list *)
 type type_iterators =
   {
     it_signature : type_iterators -> signature -> unit;
@@ -116,12 +116,12 @@ val type_iterators : type_iterators
 (* Iteration on arbitrary type information.
    [it_type_expr] calls [mark_type_node] to avoid loops. *)
 val unmark_iterators : type_iterators
+
 (* Unmark any structure containing types. See [unmark_type] below. *)
-
 val copy_type_desc
-  :  ?keep_names:bool -> (type_expr -> type_expr) -> type_desc -> type_desc
-(* Copy on types *)
+  : ?keep_names:bool -> (type_expr -> type_expr) -> type_desc -> type_desc
 
+(* Copy on types *)
 val copy_row
   :  (type_expr -> type_expr)
   -> bool
@@ -134,12 +134,12 @@ val copy_kind : field_kind -> field_kind
 
 module For_copy : sig
   type copy_scope
+  
   (* The private state that the primitives below are mutating, it should
            remain scoped within a single [with_scope] call.
 
            While it is possible to circumvent that discipline in various
            ways, you should NOT do that. *)
-  
   val save_desc : copy_scope -> type_expr -> type_desc -> unit
   (* Save a type description *)
   val dup_kind : copy_scope -> field_kind option ref -> unit
@@ -170,14 +170,14 @@ val unmark_class_signature : class_signature -> unit
 val find_expans : private_flag -> Path.t -> abbrev_memo -> type_expr option
 (* Look up a memorized abbreviation *)
 val cleanup_abbrev : unit -> unit
+
 (* Flush the cache of abbreviation expansions.
    When some types are saved (using [output_value]), this
    function MUST be called just before. *)
-
 val memorize_abbrev
-  :  abbrev_memo ref -> private_flag -> Path.t -> type_expr -> type_expr -> unit
-(* Add an expansion in the cache *)
+  : abbrev_memo ref -> private_flag -> Path.t -> type_expr -> type_expr -> unit
 
+(* Add an expansion in the cache *)
 val forget_abbrev : abbrev_memo ref -> Path.t -> unit
 (* Remove an abbreviation from the cache *)
 (**** Utilities for labels ****)
@@ -194,11 +194,11 @@ val extract_label
    value,
    whether (label, value) was at the head of the list,
    list without the extracted (label, value) *)
+
 (**** Utilities for backtracking ****)
-
 type snapshot
-(* A snapshot for backtracking *)
 
+(* A snapshot for backtracking *)
 val snapshot : unit -> snapshot
 (* Make a snapshot for later backtracking. Costs nothing *)
 val backtrack : snapshot -> unit
@@ -234,10 +234,10 @@ val print_raw : (Format.formatter -> type_expr -> unit) ref
 val iter_type_expr_kind : (type_expr -> unit) -> type_kind -> unit
 
 val iter_type_expr_cstr_args
-  :  (type_expr -> unit) -> constructor_arguments -> unit
+  : (type_expr -> unit) -> constructor_arguments -> unit
 
 val map_type_expr_cstr_args
-  :  (type_expr -> type_expr) -> constructor_arguments -> constructor_arguments
+  : (type_expr -> type_expr) -> constructor_arguments -> constructor_arguments
 
 val is_valid : snapshot -> bool
 (** merlin: check if a snapshot has been invalidated *)

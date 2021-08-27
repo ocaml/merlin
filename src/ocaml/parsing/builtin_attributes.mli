@@ -48,7 +48,7 @@ val alerts_of_sig : Parsetree.signature -> Misc.alerts
 val alerts_of_str : Parsetree.structure -> Misc.alerts
 
 val check_deprecated_mutable
-  :  Location.t -> Parsetree.attributes -> string -> unit
+  : Location.t -> Parsetree.attributes -> string -> unit
 
 val check_deprecated_mutable_inclusion
   :  def:Location.t
@@ -72,7 +72,7 @@ val warning_attribute : ?ppwarning:bool -> Parsetree.attribute -> unit
   *)
 
 val warning_scope
-  :  ?ppwarning:bool -> Parsetree.attributes -> (unit -> 'a) -> 'a
+  : ?ppwarning:bool -> Parsetree.attributes -> (unit -> 'a) -> 'a
 (** Execute a function in a new scope for warning settings.  This
       means that the effect of any call to [warning_attribute] during
       the execution of this function will be discarded after

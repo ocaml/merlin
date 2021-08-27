@@ -85,7 +85,7 @@ type read_error = Unexpected_output of string | Csexp_parse_error of string
 
 val read
   :  in_channel:in_channel
-  -> (directive list,read_error) Merlin_utils.Std.Result.t
+  -> (directive list, read_error) Merlin_utils.Std.Result.t
 (** [read inc] reads one csexp from the channel [inc] and returns the list of
   directives it represents *)
 

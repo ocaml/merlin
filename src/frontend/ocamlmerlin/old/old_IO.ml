@@ -127,8 +127,7 @@ let request_of_json context =
   | `String "type" :: `String "expression" :: `String expr :: opt_pos ->
     request (Query (Type_expr (expr, mandatory_position opt_pos)))
   | [ `String "type"; `String "enclosing";
-      `Assoc
-      [ "expr", `String expr; "offset", `Int offset ]; jpos ]
+      `Assoc [ "expr", `String expr; "offset", `Int offset ]; jpos ]
     ->
     request
       (Query (Type_enclosing (Some (expr, offset), pos_of_json jpos, None)))
@@ -144,8 +143,7 @@ let request_of_json context =
     request
       (Query (Complete_prefix (prefix, pos_of_json jpos, [], false, true)))
   | [ `String "complete"; `String "prefix"; `String prefix; `String "at"; jpos;
-      `String
-      "with"; `String "doc" ]
+      `String "with"; `String "doc" ]
     ->
     request (Query (Complete_prefix (prefix, pos_of_json jpos, [], true, true)))
   | [ `String "expand"; `String "prefix"; `String prefix; `String "at"; jpos ]
@@ -204,11 +202,8 @@ let request_of_json context =
   | [ `String "path"; `String "list"; `String (("source" | "build") as var) ] ->
     request (Query (Path_list (source_or_build var)))
   | [ `String "path"; `String "reset" ] -> request (Sync Path_reset)
-  | `String
-    "path" ::
-      `String
-      (("add"
-        | "remove") as action) ::
+  | `String "path" ::
+      `String (("add" | "remove") as action) ::
         `String (("source" | "build") as var) :: (`List pathes :: [] | pathes)
     ->
     request

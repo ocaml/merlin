@@ -62,8 +62,8 @@ use \"Parse.longident\" or \"Longident.unflatten\""]
 
 (** To print a longident, see {!Pprintast.longident}, using
     {!Format.asprintf} to convert to a string. *)
-(* Merlin specific. *)
 
+(* Merlin specific. *)
 val keep_suffix : t -> t * bool
 (** if [li', b = keep_suffix li] then:
     - the prefix of [li'] is a module path

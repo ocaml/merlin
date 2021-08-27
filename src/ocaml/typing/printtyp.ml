@@ -25,8 +25,8 @@ open Asttypes
 open Types
 open Btype
 open Outcometree
-(* Print a long identifier *)
 
+(* Print a long identifier *)
 let rec longident ppf =
   function
   | Lident s -> pp_print_string ppf s
@@ -34,16 +34,16 @@ let rec longident ppf =
   | Lapply (p1, p2) -> fprintf ppf "%a(%a)" longident p1 longident p2
 
 let () = Env.print_longident := longident
-(* Print an identifier avoiding name collisions *)
 
+(* Print an identifier avoiding name collisions *)
 module Out_name = struct
   let create x = { printed_name = x }
   let print x = x.printed_name
   let set out_name x = out_name.printed_name <- x
 end
   
-(* printing environment for path shortening and naming *)
 
+(* printing environment for path shortening and naming *)
 let printing_env = ref Env.empty
 (* When printing, it is important to only observe the
    current printing environment, without reading any new
@@ -336,8 +336,8 @@ let reset_naming_context = Naming_context.reset
 let ident ppf id =
   pp_print_string ppf
     (Out_name.print (Naming_context.ident_name_simple Other id))
-(* Print a path *)
 
+(* Print a path *)
 let ident_stdlib = Ident.create_persistent "Stdlib"
 
 let non_shadowed_pervasive =
@@ -361,9 +361,9 @@ let rec module_path_is_an_alias_of env path ~alias_of =
     Path.same path' alias_of || module_path_is_an_alias_of env path' ~alias_of
   | _ -> false
   | exception Not_found -> false
+
 (* Simple heuristic to print Foo__bar.* as Foo.Bar.* when Foo.Bar is an alias
    for Foo__bar. This pattern is used by the stdlib. *)
-
 let rec rewrite_double_underscore_paths env p =
   match p with
   | Pdot (p, s) -> Pdot (rewrite_double_underscore_paths env p, s)
@@ -416,15 +416,15 @@ let strings_of_paths namespace p =
   List.map (Format.asprintf "%a" !Oprint.out_ident) trees
 
 let () = Env.print_path := path
-(* Print a recursive annotation *)
 
+(* Print a recursive annotation *)
 let tree_of_rec =
   function
   | Trec_not -> Orec_not
   | Trec_first -> Orec_first
   | Trec_next -> Orec_next
-(* Print a raw type expression, with sharing *)
 
+(* Print a raw type expression, with sharing *)
 let raw_list pr ppf =
   function
   | [] -> fprintf ppf "[]"
@@ -631,8 +631,8 @@ let best_class_type_path_simple p =
     p
   else
     Short_paths.find_class_type_simple (Env.short_paths !printing_env) p
-(* Print a type expression *)
 
+(* Print a type expression *)
 let names = ref ([] : (type_expr * string) list)
 let name_counter = ref 0
 let named_vars = ref ([] : string list)
@@ -692,7 +692,9 @@ let name_of_type name_generator t =
              current_name := name ^ Int.to_string !i; i := !i + 1
            done;
            !current_name
-         | _ -> (* No name available, create a new one *) name_generator ()
+         | _ ->
+           (* No name available, create a new one *)
+           name_generator ()
        in
        (* Exception for type declarations *)
        (if name <> "_" then names := (t, name) :: !names); name)
@@ -794,8 +796,8 @@ let reset_and_mark_loops ty = reset_except_context (); mark_loops ty
 
 let reset_and_mark_loops_list tyl =
   reset_except_context (); List.iter mark_loops tyl
-(* Disabled in classic mode when printing an unification error *)
 
+(* Disabled in classic mode when printing an unification error *)
 let print_labels = ref true
 
 let rec tree_of_typexp sch ty =
@@ -920,8 +922,7 @@ and tree_of_row_field sch (l, f) =
       l, true, tree_of_typlist sch tyl
     else
       l, false, tree_of_typlist sch tyl
-  | Rabsent -> l, false, []
-(* actually, an error *)
+  | Rabsent -> l, false, [] (* actually, an error *)
 
 and tree_of_typlist sch tyl = List.map (tree_of_typexp sch) tyl
 
@@ -983,15 +984,15 @@ let type_path ppf p =
   let p = best_class_type_path_simple p in
   let t = tree_of_path Type p in
   !Oprint.out_ident ppf t
-(* Maxence *)
 
+(* Maxence *)
 let type_scheme_max ?(b_reset_names=true) ppf ty =
   (if b_reset_names then reset_names ()); typexp true ppf ty
 (* End Maxence *)
 
 let tree_of_type_scheme ty = reset_and_mark_loops ty; tree_of_typexp true ty
-(* Print one type declaration *)
 
+(* Print one type declaration *)
 let tree_of_constraints params =
   List.fold_right (fun ty list ->
     let ty' = unalias ty in
@@ -1081,8 +1082,7 @@ let rec tree_of_type_decl id decl =
               Variance.mem Inj v &&
                 match decl.type_manifest with
                 | None -> true
-                | Some ty ->
-                  (* only abstract or private row types *)
+                | Some ty -> (* only abstract or private row types *)
                   decl.type_private = Private &&
                     Btype.is_constr_row ~allow_ident:true (Btype.row_of_type ty)
           and (co, cn) = Variance.get_upper v
@@ -1169,8 +1169,8 @@ let type_declaration id ppf decl =
 let constructor_arguments ppf a =
   let tys = tree_of_constructor_arguments a in
   !Oprint.out_type ppf (Otyp_tuple tys)
-(* Print an extension declaration *)
 
+(* Print an extension declaration *)
 let extension_constructor_args_and_ret_type_subtree ext_args ext_ret_type =
   match ext_ret_type with
   | None -> tree_of_constructor_arguments ext_args, None
@@ -1229,8 +1229,8 @@ let extension_only_constructor id ppf ext =
       ext.ext_ret_type
   in
   Format.fprintf ppf "@[<hv>%a@]" !Oprint.out_constr (name, args, ret)
-(* Print a value declaration *)
 
+(* Print a value declaration *)
 let tree_of_value_description id decl =
   (* Format.eprintf "@[%a@]@." raw_type_expr decl.val_type; *)
   let id = Ident.name id in
@@ -1244,8 +1244,8 @@ let tree_of_value_description id decl =
 
 let value_description id ppf decl =
   !Oprint.out_sig_item ppf (tree_of_value_description id decl)
-(* Print a class type *)
 
+(* Print a class type *)
 let method_type (_, kind, ty) =
   match field_kind_repr kind, repr ty with
   | Fpresent, { desc = Tpoly (ty, tyl) } -> ty, tyl
@@ -1417,8 +1417,8 @@ let tree_of_cltype_declaration id cl rs =
 
 let cltype_declaration id ppf cl =
   !Oprint.out_sig_item ppf (tree_of_cltype_declaration id cl Trec_first)
-(* Print a module type *)
 
+(* Print a module type *)
 let wrap_env fenv ftree arg =
   let env = !printing_env in
   let env' = Env.update_short_paths (fenv env) in
@@ -1585,8 +1585,8 @@ let modtype ppf mty = !Oprint.out_module_type ppf (tree_of_modtype mty)
 let modtype_declaration id ppf decl =
   !Oprint.out_sig_item ppf (tree_of_modtype_declaration id decl)
 (* For the toplevel: merge with tree_of_signature? *)
-(* Refresh weak variable map in the toplevel *)
 
+(* Refresh weak variable map in the toplevel *)
 let refresh_weak () =
   let refresh t name (m, s) =
     if is_non_gen true (repr t) then
@@ -1617,14 +1617,14 @@ let print_items showval env x =
         print showval in_type_group (Env.add_signature (item :: sg) env) rem
   in
   print showval false env x
-(* Print a signature body (used by -i when compiling a .ml) *)
 
+(* Print a signature body (used by -i when compiling a .ml) *)
 let print_signature ppf tree =
   fprintf ppf "@[<v>%a@]" !Oprint.out_signature tree
 
 let signature ppf sg = fprintf ppf "%a" print_signature (tree_of_signature sg)
-(* Print a signature body (used by -i when compiling a .ml) *)
 
+(* Print a signature body (used by -i when compiling a .ml) *)
 let printed_signature sourcefile ppf sg =
   (* we are tracking any collision event for warning 63 *)
   Conflicts.reset ();
@@ -1639,8 +1639,8 @@ let printed_signature sourcefile ppf sg =
         (Warnings.Erroneous_printed_signature conflicts);
       Warnings.check_fatal ()));
   fprintf ppf "%a" print_signature t
-(* Print an unification error *)
 
+(* Print an unification error *)
 let same_path t t' =
   let t = repr t
   and t' = repr t'
@@ -1737,8 +1737,7 @@ let prepare_trace f tr =
   in
   match Trace.flatten f tr with
   | [] -> []
-  | elt :: rem ->
-    (* the first element is always kept *)
+  | elt :: rem -> (* the first element is always kept *)
     elt :: List.fold_right clean_trace rem []
 
 (** Keep elements that are not [Diff _ ] and take the decision
@@ -1754,8 +1753,8 @@ let rec filter_trace keep_last =
 let type_path_list =
   Format.pp_print_list ~pp_sep:(fun ppf () -> Format.pp_print_break ppf 2 0)
     type_path_expansion
-(* Hide variant name and var, to force printing the expanded type *)
 
+(* Hide variant name and var, to force printing the expanded type *)
 let hide_variant_name t =
   match repr t with
   | { desc = Tvariant row } as t when (row_repr row).row_name <> None ->
@@ -1845,7 +1844,9 @@ let explain_variant =
     Some
       (dprintf "@,@[%t,@ %a@]" (explain_fixed_row pos e) explain_fixed_row_case
          k)
-  | Trace.Fixed_row (_, _, Rigid) -> (* this case never happens *) None
+  | Trace.Fixed_row (_, _, Rigid) ->
+    (* this case never happens *)
+    None
 
 let explain_escape intro prev ctx e =
   let pre =
@@ -1912,11 +1913,11 @@ let explanation intro prev env =
          a non-variable after the occur check. *)
       Some ignore
     end
+
 (* There is no need to search further for an explanation, but
               we don't want to print a message of the form:
                 {[ The type int occurs inside int list -> 'a |}
            *)
-
 let mismatch intro env trace =
   Trace.explain trace (fun ~prev h -> explanation intro prev env h)
 
@@ -2044,8 +2045,8 @@ let report_ambiguous_type_error ppf env tp0 tpl txt1 txt2 txt3 =
          @]" txt2 type_path_list (List.map trees_of_type_path_expansion tpl)
         txt3 type_path_expansion tp0
   )
-(* Adapt functions to exposed interface *)
 
+(* Adapt functions to exposed interface *)
 let tree_of_path = tree_of_path Other
 let tree_of_modtype = tree_of_modtype ~ellipsis:false
 
@@ -2053,10 +2054,10 @@ let type_expansion ty ppf ty' =
   type_expansion ppf (trees_of_type_expansion (ty, ty'))
 
 let tree_of_type_declaration id td rs =
-  Naming_context.with_hidden id
-  (* for disambiguation *)
-    (wrap_env (hide [ id ])
-     (* for short-path *) (fun () -> tree_of_type_declaration id td rs))
+  Naming_context.with_hidden id (* for disambiguation *)
+    (wrap_env (hide [ id ]) (* for short-path *) (fun () ->
+       tree_of_type_declaration id td rs
+     ))
 
 let shorten_type_path env p =
   wrap_printing_env env (fun () -> best_type_path_simple p)

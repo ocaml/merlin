@@ -32,8 +32,8 @@ type error =
   | Varying_anonymous
 
 exception Error of Location.t * error
-(* Compute variance *)
 
+(* Compute variance *)
 let get_variance ty visited =
   try TypeMap.find ty !visited with Not_found -> Variance.null
 
@@ -173,7 +173,7 @@ let compute_variance_type env ~check (required, loc) decl tyl =
          try check ty; compute_variance env tvl injective ty with Exit -> ()
      ) params);
   (if check then
-   (* Check variance of parameters *)
+     (* Check variance of parameters *)
      let pos = ref 0 in
      (List.iter2 (fun ty (c, n, i) ->
         incr pos;
@@ -253,11 +253,9 @@ let compute_variance_type env ~check (required, loc) decl tyl =
     let concr = decl.type_kind <> Type_abstract (*|| tr = Type_new*) in
     let (p, n) =
       if tr = Private || not (Btype.is_Tvar ty) then
-        p, n
-      (* set *)
+        p, n (* set *)
       else
-        false, false
-    (* only check *)
+        false, false (* only check *)
     and i = concr || i && tr = Private
     in
     let v = union v (make p n i) in
@@ -279,9 +277,9 @@ let compute_variance_type env ~check (required, loc) decl tyl =
   ) params required
 
 let add_false = List.map (fun ty -> false, ty)
+
 (* A parameter is constrained if it is either instantiated,
    or it is a variable appearing in another parameter *)
-
 let constrained vars ty =
   match ty.desc with
   | Tvar _ -> List.exists (fun tl -> List.memq ty tl) vars
@@ -385,7 +383,7 @@ let check_decl env decl req =
 type prop = Variance.t list
 type req = surface_variance list
 
-let property : (prop,req) Typedecl_properties.property =
+let property : (prop, req) Typedecl_properties.property =
   let open Typedecl_properties in
   let eq li1 li2 = try List.for_all2 Variance.eq li1 li2 with _ -> false in
   let merge ~prop ~new_prop = List.map2 Variance.union prop new_prop in

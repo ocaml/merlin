@@ -55,8 +55,7 @@ let match_query env query t =
       decr pos_fun;
       traverse neg neg_fun pos pos_fun t2; traverse pos pos_fun neg neg_fun t1
     | Types.Ttuple ts -> List.iter ~f:(traverse neg neg_fun pos pos_fun) ts
-    | Types.Tvar _ | Types.Tunivar _ -> decr cost
-    (* Favor polymorphic defs *)
+    | Types.Tvar _ | Types.Tunivar _ -> decr cost (* Favor polymorphic defs *)
     | _ -> ()
   in
   let neg = ref query.negative
@@ -111,12 +110,12 @@ let directories ~global_modules env =
     | exception _ -> l
     | _ -> Trie (name, lident, lazy (explore lident env)) :: l
   ) ~init:[] global_modules
+
 (*Env.fold_modules (fun name _ _ l ->
     ignore (seen name);
     let lident = Longident.Lident name in
     Trie (name, lident, lazy (explore lident env)) :: l
   ) None env []*)
-
 let execute_query query env dirs =
   let direct dir acc =
     Env.fold_values (fun _ path desc acc ->

@@ -18,8 +18,7 @@ open Typedtree
 open Types
 
 type symptom =
-  | Missing_field of Ident.t * Location.t * string
-  (* kind *)
+  | Missing_field of Ident.t * Location.t * string (* kind *)
   | Value_descriptions of Ident.t * value_description * value_description
   | Type_declarations of
       Ident.t
@@ -76,8 +75,8 @@ let mark_positive =
 (* All functions "blah env x1 x2" check that x1 is included in x2,
    i.e. that x1 is the type of an implementation that fulfills the
    specification x2. If not, Error is raised with a backtrace of the error. *)
-(* Inclusion between value descriptions *)
 
+(* Inclusion between value descriptions *)
 let value_descriptions ~loc env ~mark cxt subst id vd1 vd2 =
   Cmt_format.record_value_dependency vd1 vd2;
   (if mark_positive mark then Env.mark_value_used vd1.val_uid);
@@ -86,8 +85,8 @@ let value_descriptions ~loc env ~mark cxt subst id vd1 vd2 =
   with
   | Includecore.Dont_match ->
     raise (Error [ cxt, env, Value_descriptions (id, vd1, vd2) ])
-(* Inclusion between type declarations *)
 
+(* Inclusion between type declarations *)
 let type_declarations ~loc env ~mark ?old_env:_ cxt subst id decl1 decl2 =
   let mark = mark_positive mark in
   (if mark then Env.mark_type_used decl1.type_uid);
@@ -99,8 +98,8 @@ let type_declarations ~loc env ~mark ?old_env:_ cxt subst id decl1 decl2 =
   | None -> ()
   | Some err ->
     raise (Error [ cxt, env, Type_declarations (id, decl1, decl2, err) ])
-(* Inclusion between extension constructors *)
 
+(* Inclusion between extension constructors *)
 let extension_constructors ~loc env ~mark cxt subst id ext1 ext2 =
   let mark = mark_positive mark in
   let ext2 = Subst.extension_constructor subst ext2 in
@@ -108,8 +107,8 @@ let extension_constructors ~loc env ~mark cxt subst id ext1 ext2 =
   | None -> ()
   | Some err ->
     raise (Error [ cxt, env, Extension_constructors (id, ext1, ext2, err) ])
-(* Inclusion between class declarations *)
 
+(* Inclusion between class declarations *)
 let class_type_declarations ~loc ~old_env:_ env cxt subst id decl1 decl2 =
   let decl2 = Subst.cltype_declaration subst decl2 in
   match Includeclass.class_type_declarations ~loc env decl1 decl2 with
@@ -124,8 +123,8 @@ let class_declarations ~old_env:_ env cxt subst id decl1 decl2 =
   | [] -> ()
   | reason ->
     raise (Error [ cxt, env, Class_declarations (id, decl1, decl2, reason) ])
-(* Expand a module type identifier when possible *)
 
+(* Expand a module type identifier when possible *)
 exception Dont_match
 
 let try_expand_modtype_path env path =
@@ -135,8 +134,8 @@ let expand_module_alias env cxt path =
   try (Env.find_module path env).md_type
   with
   | Not_found -> raise (Error [ cxt, env, Unbound_module_path path ])
-(* Extract name, kind and ident from a signature item *)
 
+(* Extract name, kind and ident from a signature item *)
 type field_desc =
   | Field_value of string
   | Field_type of string
@@ -203,8 +202,8 @@ let is_runtime_component =
   | Sig_class (_, _, _, _)
     ->
     true
-(* Print a coercion *)
 
+(* Print a coercion *)
 let rec print_list pr ppf =
   function
   | [] -> ()
@@ -233,8 +232,8 @@ and print_coercion2 ppf (n, c) =
 
 and print_coercion3 ppf (i, n, c) =
   Format.fprintf ppf "@[%s, %d,@ %a@]" (Ident.unique_name i) n print_coercion c
-(* Simplify a structure coercion *)
 
+(* Simplify a structure coercion *)
 let equal_module_paths env p1 subst p2 =
   Path.same p1 p2 ||
     Path.same (Env.normalize_module_path None env p1)
@@ -256,10 +255,10 @@ let simplify_structure_coercion cc id_pos_list =
     Tcoerce_none
   else
     Tcoerce_structure (cc, id_pos_list)
+
 (* Inclusion between module types.
    Return the restriction that transforms a value of the smaller type
    into a value of the bigger type. *)
-
 let rec modtypes ~loc env ~mark cxt subst mty1 mty2 =
   try try_modtypes ~loc env ~mark cxt subst mty1 mty2
   with
@@ -354,8 +353,8 @@ and strengthened_module_decl ~loc ~aliasable env ~mark cxt subst md1 path1 md2 =
   | _, _ ->
     let md1 = Mtype.strengthen_decl ~aliasable env md1 path1 in
     modtypes ~loc env ~mark cxt subst md1.md_type md2.md_type
-(* Inclusion between signatures *)
 
+(* Inclusion between signatures *)
 and signatures ~loc env ~mark cxt subst sig1 sig2 =
   (* Environment used to check inclusion of components *)
   let new_env = Env.add_signature sig1 (Env.in_signature true env) in
@@ -383,8 +382,7 @@ and signatures ~loc env ~mark cxt subst sig1 sig2 =
         rem
       ->
       let pos = if is_runtime_component item then pos + 1 else pos in
-      build_component_table pos tbl rem
-    (* do not pair private items. *)
+      build_component_table pos tbl rem (* do not pair private items. *)
     | item :: rem ->
       let (id, _loc, name) = item_ident_name item in
       let (pos, nextpos) =
@@ -411,8 +409,7 @@ and signatures ~loc env ~mark cxt subst sig1 sig2 =
           signature_components ~loc env ~mark new_env cxt subst
             (List.rev paired)
         in
-        if len1 = len2 then
-        (* see PR#5098 *)
+        if len1 = len2 then (* see PR#5098 *)
           simplify_structure_coercion cc id_pos_list
         else
           Tcoerce_structure (cc, id_pos_list)
@@ -454,8 +451,8 @@ and signatures ~loc env ~mark cxt subst sig1 sig2 =
   in
   (* Do the pairing and checking, and return the final coercion *)
   pair_components subst [] [] sig2
-(* Inclusion between signature components *)
 
+(* Inclusion between signature components *)
 and signature_components ~loc old_env ~mark env cxt subst paired =
   let comps_rec rem = signature_components ~loc old_env ~mark env cxt subst rem
   in
@@ -508,8 +505,8 @@ and module_declarations ~loc env ~mark cxt subst id1 md1 md2 =
   (if mark_positive mark then Env.mark_module_used md1.md_uid);
   strengthened_modtypes ~loc ~aliasable:true env ~mark (Module id1 :: cxt) subst
     md1.md_type p1 md2.md_type
-(* Inclusion between module type specifications *)
 
+(* Inclusion between module type specifications *)
 and modtype_infos ~loc env ~mark cxt subst id info1 info2 =
   Builtin_attributes.check_alerts_inclusion ~def:info1.mtd_loc
     ~use:info2.mtd_loc loc info1.mtd_attributes info2.mtd_attributes
@@ -537,8 +534,8 @@ and check_modtype_equiv ~loc env ~mark cxt mty1 mty2 =
     (* Format.eprintf "@[c1 = %a@ c2 = %a@]@."
       print_coercion _c1 print_coercion _c2; *)
     raise (Error [ cxt, env, Modtype_permutation (mty1, c1) ])
-(* Simplified inclusion check between module types (for Env) *)
 
+(* Simplified inclusion check between module types (for Env) *)
 let can_alias env path =
   let rec no_apply =
     function
@@ -564,9 +561,9 @@ let () =
           raise (Apply_error (loc, path1, path2, errs))
         else
           raise Not_found
+
 (* Check that an implementation of a compilation unit meets its
    interface. *)
-
 let compunit env ~mark impl_name impl_sig intf_name intf_sig =
   try
     signatures ~loc:(Location.in_file impl_name) env ~mark [] Subst.identity
@@ -576,8 +573,8 @@ let compunit env ~mark impl_name impl_sig intf_name intf_sig =
     raise
       (Error
          (([], Env.empty, Interface_mismatch (impl_name, intf_name)) :: reasons))
-(* Hide the context and substitution parameters to the outside world *)
 
+(* Hide the context and substitution parameters to the outside world *)
 let modtypes ~loc env ~mark mty1 mty2 =
   modtypes ~loc env ~mark [] Subst.identity mty1 mty2
 
@@ -598,8 +595,8 @@ let modtypes env m1 m2 =
     print_coercion c;
   c
 *)
-(* Error report *)
 
+(* Error report *)
 module Illegal_permutation = struct
   (** Extraction of information in case of illegal permutation
       in a module type *)
@@ -623,8 +620,8 @@ module Illegal_permutation = struct
       (* these coercions are not inversible, and raise an error earlier when
          checking for module type equivalence *)
       assert false
-  (* we search the first point which is not invariant at the current level *)
   
+  (* we search the first point which is not invariant at the current level *)
   and not_fixpoint path pos =
     function
     | [] -> None
@@ -633,8 +630,8 @@ module Illegal_permutation = struct
         not_fixpoint path (pos + 1) q
       else
         Some (List.rev path, pos, n)
-  (* we search the first item with a non-identity inner coercion *)
   
+  (* we search the first item with a non-identity inner coercion *)
   and first_non_id path pos =
     function
     | [] -> None
@@ -656,9 +653,9 @@ module Illegal_permutation = struct
         item
       else
         runtime_item (k - 1) q
+  
   (* Find module type at position [path] and convert the [coerce_pos] path to
      a [pos] path *)
-  
   let rec find env ctx path mt =
     match mt, path with
     | (Mty_ident p | Mty_alias p), _ ->
@@ -693,8 +690,7 @@ module Illegal_permutation = struct
          in the expected and actual module types.@]@]" ctx_printer ctx pp_item
         (item mt k) pp_item (item mt l)
     with
-    | Not_found ->
-      (* this should not happen *)
+    | Not_found -> (* this should not happen *)
       Format.fprintf ppf
         "Illegal permutation of runtime components in a module type."
 end
@@ -870,9 +866,9 @@ let report_error ppf errs =
 let report_apply_error p1 p2 ppf errs =
   fprintf ppf "@[The type of %a does not match %a's parameter@ %a@]"
     Printtyp.path p1 Printtyp.path p2 report_error errs
+
 (* We could do a better job to split the individual error items
    as sub-messages of the main interface mismatch on the whole unit. *)
-
 let () =
   Location.register_error_of_exn (function
     | Error err -> Some (Location.error_of_printer_file report_error err)

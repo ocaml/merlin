@@ -15,8 +15,8 @@ let print_position () =
   | `End -> "end"
 
 let make text = { text }
-(* Position management *)
 
+(* Position management *)
 type position = [ `Start | `Offset of int | `Logical of int * int | `End ]
 
 exception Found of int
@@ -126,6 +126,6 @@ let substitute t starting ending text =
       text ^ String.sub t.text ~pos:ending ~len:(len - ending)
   in
   { text }
-(* Accessing content *)
 
+(* Accessing content *)
 let text t = t.text

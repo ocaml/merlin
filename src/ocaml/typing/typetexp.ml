@@ -51,8 +51,8 @@ exception Error_forward of Location.error
 module TyVarMap = Misc.String.Map 
 
 type variable_context = int * type_expr TyVarMap.t
-(* Support for first-class modules. *)
 
+(* Support for first-class modules. *)
 let transl_modtype_longident = ref (fun _ -> assert false)
 let transl_modtype = ref (fun _ -> assert false)
 
@@ -81,8 +81,8 @@ let create_package_mty fake loc env (p, l) =
     Ast_helper.Mty.mk ~loc
       (Pmty_with (mty, [ Pwith_type ({ txt = s.txt; loc }, d) ]))
   ) (Ast_helper.Mty.mk ~loc (Pmty_ident p)) l
-(* Translation of type expressions *)
 
+(* Translation of type expressions *)
 let type_variables = ref (TyVarMap.empty : type_expr TyVarMap.t)
 let univars = ref ([] : (string * type_expr) list)
 let pre_univars = ref ([] : type_expr list)
@@ -639,8 +639,8 @@ and transl_fields env policy o fields =
       ty_init fields
   in
   ty, object_fields
-(* Make the rows "fixed" in this type, to make universal check easier *)
 
+(* Make the rows "fixed" in this type, to make universal check easier *)
 let rec make_fixed_univars ty =
   let ty = repr ty in
   if ty.level >= Btype.lowest_level then
@@ -748,8 +748,8 @@ let transl_type_scheme env styp =
   begin_def ();
   let typ = transl_simple_type env false styp in
   end_def (); generalize typ.ctyp_type; typ
-(* Error report *)
 
+(* Error report *)
 open Format
 open Printtyp
 

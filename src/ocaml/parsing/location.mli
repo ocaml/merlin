@@ -99,7 +99,7 @@ val print_locs : formatter -> t list -> unit
 
 type msg = (Format.formatter -> unit) loc
 
-val msg : ?loc:t -> ('a,Format.formatter,unit,msg) format4 -> 'a
+val msg : ?loc:t -> ('a, Format.formatter, unit, msg) format4 -> 'a
 
 type report_kind =
   | Report_error
@@ -239,7 +239,7 @@ val errorf
   :  ?loc:t
   -> ?sub:msg list
   -> ?source:error_source
-  -> ('a,Format.formatter,unit,error) format4
+  -> ('a, Format.formatter, unit, error) format4
   -> 'a
 
 val error_of_printer
@@ -251,7 +251,7 @@ val error_of_printer
   -> error
 
 val error_of_printer_file
-  :  ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
+  : ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
 
 (** {1 Automatically reporting errors for raised exceptions} *)
 
@@ -279,7 +279,7 @@ val raise_errorf
   :  ?loc:t
   -> ?sub:msg list
   -> ?source:error_source
-  -> ('a,Format.formatter,unit,'b) format4
+  -> ('a, Format.formatter, unit, 'b) format4
   -> 'a
 
 val report_exception : formatter -> exn -> unit

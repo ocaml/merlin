@@ -76,10 +76,10 @@ val check
   -> loc:Location.t
   -> modname
   -> unit
+
 (* [looked_up penv md] checks if one has already tried
    to read the signature for [md] in the environment
    [penv] (it may have failed) *)
-
 val looked_up : 'a t -> modname -> bool
 (* [is_imported penv md] checks if [md] has been successfully
    imported in the environment [penv] *)
@@ -92,7 +92,7 @@ val is_imported_opaque : 'a t -> modname -> bool
 val register_import_as_opaque : 'a t -> modname -> unit
 
 val make_cmi
-  :  'a t -> modname -> Types.signature -> alerts -> Cmi_format.cmi_infos
+  : 'a t -> modname -> Types.signature -> alerts -> Cmi_format.cmi_infos
 
 val save_cmi : 'a t -> Persistent_signature.t -> 'a -> unit
 val can_load_cmis : 'a t -> can_load_cmis
@@ -104,16 +104,16 @@ val without_cmis : 'a t -> ('b -> 'c) -> 'b -> 'c
 val import_crcs : 'a t -> source:filepath -> crcs -> unit
 (* Return the set of compilation units imported, with their CRC *)
 val imports : 'a t -> crcs
-(* Return the CRC of the interface of the given compilation unit *)
 
+(* Return the CRC of the interface of the given compilation unit *)
 val crc_of_unit
   :  'a t
   -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> modname
   -> Digest.t
-(* Forward declaration to break mutual recursion with Typecore. *)
 
+(* Forward declaration to break mutual recursion with Typecore. *)
 val add_delayed_check_forward : ((unit -> unit) -> unit) ref
 (* helper for merlin *)
 val with_cmis : 'a t -> ('b -> 'c) -> 'b -> 'c

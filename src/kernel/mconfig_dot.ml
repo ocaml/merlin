@@ -60,12 +60,12 @@ let empty_config =
   }
 
 let white_regexp = Str.regexp "[ \t]+"
+
 (* Parses suffixes pairs that were supplied as whitespace separated pairs
    designating implementation/interface suffixes. These would be supplied in
    the .merlin file as:
 
    SUFFIX .sfx .sfxi   *)
-
 let parse_suffix str =
   let trimmed = String.trim str in
   let split_on_white = Str.split white_regexp trimmed in
@@ -170,7 +170,7 @@ module Configurator = struct
   end
     
   
-  let running_processes : (string * t,Process.t) Hashtbl.t = Hashtbl.create 0
+  let running_processes : (string * t, Process.t) Hashtbl.t = Hashtbl.create 0
   
   let get_process ~dir configurator =
     try
@@ -231,10 +231,10 @@ let get_config { workdir; process_dir; configurator } path_abs =
     [canonicalize_filename] *)
     let path_rel =
       String.chop_prefix ~prefix:p.initial_cwd path_abs |>
-        Option.map ~f:(fun path ->
-          (* We need to remove the leading path separator after chopping.
+        Option.map ~f:(fun path ->(* We need to remove the leading path separator after chopping.
         There is one case where no separator is left: when [initial_cwd]
         was the root of the filesystem *)
+          
           if String.length path > 0 && path.[0] = Filename.dir_sep.[0] then
             String.drop 1 path
           else
@@ -320,8 +320,8 @@ let find_project_context start_dir =
            ~f:(fun f ->
            let fname = Filename.concat dir f in
            if Sys.file_exists fname && not (Sys.is_directory fname) then
-           (* When starting [dot-merlin-reader] from [dir]
-             the workdir is always [dir] *)
+             (* When starting [dot-merlin-reader] from [dir]
+               the workdir is always [dir] *)
              let workdir = if f = ".merlin" then None else workdir in
              let workdir = Option.value ~default:dir workdir in
              Some
@@ -338,7 +338,7 @@ let find_project_context start_dir =
     | Not_found ->
       let parent = Filename.dirname dir in
       if parent <> dir then
-      (* Was this directory the workdir ? *)
+        (* Was this directory the workdir ? *)
         let workdir = map_workdir dir workdir in
         loop workdir parent
       else

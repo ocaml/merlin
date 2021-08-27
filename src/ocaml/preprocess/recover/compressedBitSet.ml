@@ -28,17 +28,19 @@ let add i s =
   in
   let rec add =
     function
-    | N -> (* Insert at end. *) C (iaddr, imask, N)
+    | N ->
+      (* Insert at end. *)
+      C (iaddr, imask, N)
     | C (addr, ss, qs) as s ->
       if iaddr < addr then
-      (* Insert in front. *)
+        (* Insert in front. *)
         C (iaddr, imask, s)
       else if iaddr = addr then
-      (* Found appropriate cell, update bit field. *)
+        (* Found appropriate cell, update bit field. *)
         let ss' = ss lor imask in
         (if ss' = ss then s else C (addr, ss', qs))
-      else
-      (* Not there yet, continue. *)
+      else(* Not there yet, continue. *)
+      
         let qs' = add qs in
         if qs == qs' then s else C (addr, ss, qs')
   in
@@ -58,11 +60,11 @@ let remove i s =
       if iaddr < addr then
         s
       else if iaddr = addr then
-      (* Found appropriate cell, update bit field. *)
+        (* Found appropriate cell, update bit field. *)
         let ss' = ss land lnot imask in
         (if ss' = 0 then qs else if ss' = ss then s else C (addr, ss', qs))
-      else
-      (* Not there yet, continue. *)
+      else(* Not there yet, continue. *)
+      
         let qs' = remove qs in
         if qs == qs' then s else C (addr, ss, qs')
   in
@@ -74,10 +76,10 @@ let rec fold f s accu =
 and loop f qs i ss accu =
   if ss = 0 then
     fold f qs accu
-  else
-  (* One could in principle check whether [ss land 0x3] is zero and if
-     so move to [i + 2] and [ss lsr 2], and similarly for various sizes.
-     In practice, this does not seem to make a measurable difference. *)
+  else(* One could in principle check whether [ss land 0x3] is zero and if
+         so move to [i + 2] and [ss lsr 2], and similarly for various sizes.
+         In practice, this does not seem to make a measurable difference. *)
+  
     loop f qs (i + 1) (ss lsr 1) (if ss land 1 = 1 then f i accu else accu)
 
 let iter f s = fold (fun x () -> f x) s ()

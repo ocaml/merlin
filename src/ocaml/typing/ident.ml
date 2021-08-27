@@ -24,8 +24,8 @@ type t =
   | Predef of { name : string; stamp : int }
 (* the stamp is here only for fast comparison, but the name of
    predefined identifiers is always unique. *)
-(* A stamp of 0 denotes a persistent identifier *)
 
+(* A stamp of 0 denotes a persistent identifier *)
 let currentstamp = s_ref 0
 let predefstamp = s_ref 0
 
@@ -132,12 +132,12 @@ type 'a tbl = Empty | Node of 'a tbl * 'a data * 'a tbl * int
 and 'a data = { ident : t; data : 'a; previous : 'a data option }
 
 let empty = Empty
+
 (* Inline expansion of height for better speed
  * let height = function
  *     Empty -> 0
  *   | Node(_,_,_,h) -> h
  *)
-
 let mknode l d r =
   let hl = match l with Empty -> 0 | Node (_, _, _, h) -> h
   and hr = match r with Empty -> 0 | Node (_, _, _, h) -> h
@@ -287,15 +287,15 @@ let rec fold_data f d accu =
   | Some k -> f k.ident k.data (fold_data f k.previous accu)
 
 let fold_all f tbl accu = fold_aux (fun k -> fold_data f (Some k)) [] accu tbl
-(* let keys tbl = fold_name (fun k _ accu -> k::accu) tbl [] *)
 
+(* let keys tbl = fold_name (fun k _ accu -> k::accu) tbl [] *)
 let rec iter f =
   function
   | Empty -> ()
   | Node (l, k, r, _) -> iter f l; f k.ident k.data; iter f r
 (* Idents for sharing keys *)
-(* They should be 'totally fresh' -> neg numbers *)
 
+(* They should be 'totally fresh' -> neg numbers *)
 let key_name = ""
 
 let make_key_generator () =

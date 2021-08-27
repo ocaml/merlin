@@ -35,7 +35,7 @@ val le_pats : pattern list -> pattern list -> bool
 module Compat :
   sig
     val equal
-      :  Types.constructor_description -> Types.constructor_description -> bool
+      : Types.constructor_description -> Types.constructor_description -> bool
   end
   ->
   sig
@@ -90,18 +90,18 @@ type ppat_of_type =
   | PT_pattern of
       pat_explosion
       * Parsetree.pattern
-      * (string,constructor_description) Hashtbl.t
-      * (string,label_description) Hashtbl.t
+      * (string, constructor_description) Hashtbl.t
+      * (string, label_description) Hashtbl.t
 
 val ppat_of_type : Env.t -> type_expr -> ppat_of_type
 val pressure_variants : Env.t -> pattern list -> unit
 
 val pressure_variants_in_computation_pattern
-  :  Env.t -> computation general_pattern list -> unit
+  : Env.t -> computation general_pattern list -> unit
 
 val check_partial
-  :  ((string,constructor_description) Hashtbl.t
-      -> (string,label_description) Hashtbl.t
+  :  ((string, constructor_description) Hashtbl.t
+      -> (string, label_description) Hashtbl.t
       -> Parsetree.pattern
       -> pattern option)
   -> Location.t
@@ -117,14 +117,14 @@ val check_partial
 
 val check_unused
   :  (bool
-      -> (string,constructor_description) Hashtbl.t
-      -> (string,label_description) Hashtbl.t
+      -> (string, constructor_description) Hashtbl.t
+      -> (string, label_description) Hashtbl.t
       -> Parsetree.pattern
       -> pattern option)
   -> value case list
   -> unit
-(* Irrefutability tests *)
 
+(* Irrefutability tests *)
 val irrefutable : pattern -> bool
 
 val inactive : partial:partial -> pattern -> bool
@@ -132,29 +132,28 @@ val inactive : partial:partial -> pattern -> bool
     erased or delayed without change in observable behavior of the program.
     Patterns containing (lazy _) subpatterns or reads of mutable fields are
     active. *)
-(* Ambiguous bindings *)
 
+(* Ambiguous bindings *)
 val check_ambiguous_bindings : value case list -> unit
 (* The tag used for open polymorphic variant types with an abstract row *)
 val some_private_tag : label
 (*******************)
+
 (* Merlin specific *)
 (*******************)
-
 val complete_partial
   :  pred:
-  ((label,constructor_description) Hashtbl.t
-   -> (label,label_description) Hashtbl.t
-   -> Parsetree.pattern
-   -> pattern option)
+       ((label, constructor_description) Hashtbl.t
+        -> (label, label_description) Hashtbl.t
+        -> Parsetree.pattern
+        -> pattern option)
   -> pattern list list
-  ->
-  (pattern
-   *
-   ((label,constructor_description) Hashtbl.t
-    * (label,label_description) Hashtbl.t)
-   option)
-  list
+  -> (pattern
+      *
+      ((label, constructor_description) Hashtbl.t
+       * (label, label_description) Hashtbl.t)
+      option)
+     list
 
 val return_unused
   :  pattern list

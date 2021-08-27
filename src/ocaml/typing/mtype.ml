@@ -128,10 +128,10 @@ let scrape_for_type_of env pres mty =
     | _ -> mty
   in
   make_aliases_absent pres (loop env None mty)
+
 (* In nondep_supertype, env is only used for the type it assigns to id.
    Hence there is no need to keep env up-to-date by adding the bindings
    traversed. *)
-
 type variance = Co | Contra | Strict
 
 let rec nondep_mty_with_presence env va ids pres mty =
@@ -332,15 +332,14 @@ and no_code_needed_sig env sg =
   | (Sig_typext _ | Sig_class _) :: _ -> false
 
 let no_code_needed env mty = no_code_needed_mod env Mp_present mty
-(* Check whether a module type may return types *)
 
+(* Check whether a module type may return types *)
 let rec contains_type env =
   function
   | Mty_ident path ->
     (try
        match (Env.find_modtype path env).mtd_type with
-       | None -> raise Exit
-       (* PR#6427 *)
+       | None -> raise Exit (* PR#6427 *)
        | Some mty -> contains_type env mty
      with
      | Not_found -> raise Exit)
@@ -372,8 +371,8 @@ and contains_type_item env =
     ()
 
 let contains_type env mty = try contains_type env mty; false with Exit -> true
-(* Remove module aliases from a signature *)
 
+(* Remove module aliases from a signature *)
 let rec get_prefixes =
   function
   | Pident _ -> Path.Set.empty
@@ -499,8 +498,8 @@ let scrape_for_type_of ~remove_aliases env mty =
   else
     let (_, mty) = scrape_for_type_of env Mp_present mty in
     mty
-(* Lower non-generalizable type variables *)
 
+(* Lower non-generalizable type variables *)
 let lower_nongen nglev mty =
   let open Btype in
   let it_type_expr it ty =

@@ -39,8 +39,8 @@
   * the recursive structure of the [TypedTree] node.
   *
   *)
-(* Compatibility with previous versions of OCaml *)
 
+(* Compatibility with previous versions of OCaml *)
 type constructor_declaration = Typedtree.constructor_declaration
 
 open Typedtree
@@ -58,8 +58,8 @@ type node =
   | Module_type_constraint of module_type_constraint
   | Structure of structure
   | Signature of signature
-  (* Items come with their final environment *)
-  | Structure_item of structure_item * Env.t
+  | (* Items come with their final environment *)
+  Structure_item of structure_item * Env.t
   | Signature_item of signature_item * Env.t
   | Module_binding of module_binding
   | Value_binding of value_binding
@@ -110,17 +110,17 @@ val node_paths_and_longident : node -> (Path.t Location.loc * Longident.t) list
 
 val node_is_constructor
   :  node
-  ->
-  [ `Description of Types.constructor_description
-  | `Declaration of Typedtree.constructor_declaration
-  ]
-  Location.loc
-  option
+  -> [ `Description of Types.constructor_description
+     | `Declaration of Typedtree.constructor_declaration
+     ]
+     Location.loc
+     option
 
 val node_of_binary_part : Env.t -> Cmt_format.binary_part -> node
 
 val all_holes
   :  (Env.t * node)
-  ->
-  (Location.t * Env.t * [ `Exp of Types.type_expr | `Mod of Types.module_type ])
-  list
+  -> (Location.t
+      * Env.t
+      * [ `Exp of Types.type_expr | `Mod of Types.module_type ])
+     list

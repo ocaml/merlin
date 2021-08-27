@@ -27,7 +27,7 @@ val variance_of_sdecl : Parsetree.type_declaration -> surface_variance list
 type prop = Variance.t list
 type req = surface_variance list
 
-val property : (Variance.t list,req) property
+val property : (Variance.t list, req) property
 
 type variance_error =
   | Variance_not_satisfied of int
@@ -58,18 +58,16 @@ val update_decls
 
 val update_class_decls
   :  Env.t
-  ->
-  (Ident.t
-   * Typedecl_properties.decl
-   * Types.type_declaration
-   * Types.class_declaration
-   * Types.class_type_declaration
-   * 'a Typedtree.class_infos)
-  list
-  ->
-  (Typedecl_properties.decl
-   * Types.type_declaration
-   * Types.class_declaration
-   * Types.class_type_declaration)
-  list
+  -> (Ident.t
+      * Typedecl_properties.decl
+      * Types.type_declaration
+      * Types.class_declaration
+      * Types.class_type_declaration
+      * 'a Typedtree.class_infos)
+     list
+  -> (Typedecl_properties.decl
+      * Types.type_declaration
+      * Types.class_declaration
+      * Types.class_type_declaration)
+     list
 (* FIXME: improve this horrible interface *)

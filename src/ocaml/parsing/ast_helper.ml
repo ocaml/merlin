@@ -653,12 +653,12 @@ type let_bindings =
     lbs_extension : string Asttypes.loc option;
     lbs_loc : Location.t
   }
-(* merlin specific *)
 
+(* merlin specific *)
 let no_label = Nolabel
+
 (* Can't be put in Raw_compat because that module depends on library "parsing",
    but we need that function in this library *)
-
 let extract_str_payload =
   function
   | PStr

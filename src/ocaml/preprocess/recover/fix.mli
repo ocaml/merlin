@@ -33,6 +33,7 @@ module type IMPERATIVE_MAPS =
 (* Properties must form a partial order, equipped with a least element, and
    must satisfy the ascending chain condition: every monotone sequence
    eventually stabilizes. *)
+
 (* [is_maximal] determines whether a property [p] is maximal with respect to
    the partial order. Only a conservative check is required: in any event, it
    is permitted for [is_maximal p] to return [false]. If [is_maximal p]
@@ -40,7 +41,6 @@ module type IMPERATIVE_MAPS =
    particular, if properties form a lattice, then [p] must be the top
    element. This feature, not described in the paper, enables a couple of
    minor optimizations. *)
-
 module type PROPERTY =
   sig
     type property
@@ -50,9 +50,9 @@ module type PROPERTY =
     val is_maximal : property -> bool
   end
 (* -------------------------------------------------------------------------- *)
+
 (* The code is parametric in an implementation of maps over variables and in
    an implementation of properties. *)
-
 module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) : sig
   type variable = M.key
   type property = P.property
@@ -73,11 +73,11 @@ module Make (M : IMPERATIVE_MAPS) (P : PROPERTY) : sig
      application is, in general, evaluated multiple times). This guarantee can
      be used to perform costly pre-computation, or memory allocation, when [eqs]
      is applied to its first argument. *)
+  
   (* When [lfp] is applied to a system of equations [eqs], it performs no
      actual computation. It produces a valuation, [get], which represents
      the least solution of the system of equations. The actual fixed point
      computation takes place, on demand, when [get] is applied. *)
-  
   val lfp : equations -> valuation
 end
   

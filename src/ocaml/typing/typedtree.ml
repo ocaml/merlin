@@ -15,8 +15,8 @@
 (* Abstract syntax tree after typing *)
 open Asttypes
 open Types
-(* Value expressions for the core language *)
 
+(* Value expressions for the core language *)
 type partial = Partial | Total
 type attribute = Parsetree.attribute
 type attributes = attribute list
@@ -189,8 +189,8 @@ and binding_op =
     bop_exp : expression;
     bop_loc : Location.t
   }
-(* Value expressions for the class language *)
 
+(* Value expressions for the class language *)
 and class_expr =
   {
     cl_desc : class_expr_desc;
@@ -221,8 +221,8 @@ and class_expr_desc =
       * string list
       * string list
       * Concr.t
-  (* Visible instance variables, methods and concrete methods *)
-  | Tcl_open of open_description * class_expr
+  | (* Visible instance variables, methods and concrete methods *)
+  Tcl_open of open_description * class_expr
 
 and class_structure =
   {
@@ -250,14 +250,14 @@ and class_field_desc =
       * string option
       * (string * Ident.t) list
       * (string * Ident.t) list
-  (* Inherited instance variables and concrete methods *)
-  | Tcf_val of string loc * mutable_flag * Ident.t * class_field_kind * bool
+  | (* Inherited instance variables and concrete methods *)
+  Tcf_val of string loc * mutable_flag * Ident.t * class_field_kind * bool
   | Tcf_method of string loc * private_flag * class_field_kind
   | Tcf_constraint of core_type * core_type
   | Tcf_initializer of expression
   | Tcf_attribute of attribute
-(* Value expressions for the module language *)
 
+(* Value expressions for the module language *)
 and module_expr =
   {
     mod_desc : module_expr_desc;
@@ -361,8 +361,8 @@ and module_type_desc =
   | Tmty_with of module_type * (Path.t * Longident.t loc * with_constraint) list
   | Tmty_typeof of module_expr
   | Tmty_alias of Path.t * Longident.t loc
-(* Keep primitive type information for type-based lambda-code specialization *)
 
+(* Keep primitive type information for type-based lambda-code specialization *)
 and primitive_coercion =
   {
     pc_desc : Primitive.description;
@@ -381,8 +381,7 @@ and signature =
 and signature_item =
   {
     sig_desc : signature_item_desc;
-    sig_env : Env.t;
-    (* BINANNOT ADDED *)
+    sig_env : Env.t; (* BINANNOT ADDED *)
     sig_loc : Location.t
   }
 
@@ -468,8 +467,7 @@ and core_type =
   {
     mutable ctyp_desc : core_type_desc;
     mutable ctyp_type : type_expr;
-    ctyp_env : Env.t;
-    (* BINANNOT ADDED *)
+    ctyp_env : Env.t; (* BINANNOT ADDED *)
     ctyp_loc : Location.t;
     ctyp_attributes : attribute list
   }
@@ -659,8 +657,8 @@ and 'a class_infos =
     ci_loc : Location.t;
     ci_attributes : attribute list
   }
-(* Auxiliary functions over the a.s.t. *)
 
+(* Auxiliary functions over the a.s.t. *)
 let as_computation_pattern (p : pattern) : computation general_pattern =
   {
     pat_desc = Tpat_value p;
@@ -771,8 +769,8 @@ let exists_pattern (f : pattern -> bool) =
         (fun (type k) (p : k general_pattern) ->
            match classify_pattern p with Value -> f p | Computation -> false)
     }
-(* List the identifiers bound by a pattern or a let *)
 
+(* List the identifiers bound by a pattern or a let *)
 let rec iter_bound_idents : type k. _ -> k general_pattern -> _ =
   fun f pat ->
     match pat.pat_desc with
@@ -808,8 +806,7 @@ let alpha_var env id = List.assoc id env
 let rec alpha_pat : type k. _ -> k general_pattern -> k general_pattern =
   fun env p ->
     match p.pat_desc with
-    | Tpat_var (id, s) ->
-      (* note the ``Not_found'' case *)
+    | Tpat_var (id, s) -> (* note the ``Not_found'' case *)
       { p with
       
         pat_desc =
@@ -848,14 +845,14 @@ let split_pattern pat =
     | Tpat_or (cp1, cp2, _) ->
       let (vals1, exns1) = split_pattern cp1 in
       let (vals2, exns2) = split_pattern cp2 in
-      combine_opts (into cpat) vals1 vals2
+      combine_opts (into cpat) vals1 vals2,
       (* We could change the pattern type for exception patterns to
-         [Predef.exn], but it doesn't really matter. *),
+         [Predef.exn], but it doesn't really matter. *)
       combine_opts (into cpat) exns1 exns2
   in
   split_pattern pat
-(* Merlin specific *)
 
+(* Merlin specific *)
 let unpack_functor_me me =
   match me.mod_desc with
   | Tmod_functor (fp, mty) -> fp, mty

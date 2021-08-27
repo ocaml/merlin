@@ -103,16 +103,14 @@ type _ _bool = bool
 
 type _ t =
   | Type_expr (* *) : string * Msource.position -> string t
-  | Type_enclosing
-    (* *)
+  | Type_enclosing (* *)
       : (string * int) option * Msource.position * int option
       ->
         (Location.t * [ `String of string | `Index of int ] * is_tail_position)
         list
         t
   | Enclosing (* *) : Msource.position -> Location.t list t
-  | Complete_prefix
-    (* *)
+  | Complete_prefix (* *)
       :
         string
         * Msource.position
@@ -120,16 +118,14 @@ type _ t =
         * [ `with_documentation ] _bool
         * [ `with_types ] _bool
       -> completions t
-  | Expand_prefix
-    (* *)
+  | Expand_prefix (* *)
       : string * Msource.position * Compl.kind list * [ `with_types ] _bool
       -> completions t
   | Polarity_search : string * Msource.position -> completions t
   | Refactor_open
       : [ `Qualify | `Unqualify ] * Msource.position
       -> (string * Location.t) list t
-  | Document
-    (* *)
+  | Document (* *)
       : string option * Msource.position
       ->
         [ `Found of string
@@ -153,8 +149,7 @@ type _ t =
         | `At_origin
         ]
         t
-  | Locate
-    (* *)
+  | Locate (* *)
       : string option * [ `ML | `MLI ] * Msource.position
       ->
         [ `Found of string option * Lexing.position
@@ -166,13 +161,11 @@ type _ t =
         | `At_origin
         ]
         t
-  | Jump
-    (* *)
+  | Jump (* *)
       : string * Msource.position
       -> [ `Found of Lexing.position | `Error of string ] t
   | Phrase (* *) : [ `Next | `Prev ] * Msource.position -> Lexing.position t
-  | Case_analysis
-    (* *)
+  | Case_analysis (* *)
       : Msource.position * Msource.position
       -> (Location.t * string) t
   | Holes (* *) : (Location.t * string) list t

@@ -5,13 +5,13 @@ let menhir = "MenhirInterpreter"
 (* Generation scheme doing checks and failing at runtime, or not ... *)
 let safe = false
 
-module Codeconsing (S : Synthesis.S) (R : Recovery.S with module G = S.G) : sig
-(* Step 1: record all definitions *)
+module Codeconsing (S : Synthesis.S) (R : Recovery.S with module G = S.G) : sig(* Step 1: record all definitions *)
+
   val record_item : R.item -> unit
   
   type instr = Nil | Cons of instr S.paction * instr | Ref of int ref * instr
-  (* Step 2: get prelude maximizing & serialization function *)
   
+  (* Step 2: get prelude maximizing & serialization function *)
   val normalize : unit -> instr list * (R.item -> instr)
 end = struct
   open S

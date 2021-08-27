@@ -126,27 +126,27 @@ val label : formatter -> label_declaration -> unit
 val constructor : formatter -> constructor_declaration -> unit
 
 val tree_of_type_declaration
-  :  Ident.t -> type_declaration -> rec_status -> out_sig_item
+  : Ident.t -> type_declaration -> rec_status -> out_sig_item
 
 val type_declaration : Ident.t -> formatter -> type_declaration -> unit
 
 val tree_of_extension_constructor
-  :  Ident.t -> extension_constructor -> ext_status -> out_sig_item
+  : Ident.t -> extension_constructor -> ext_status -> out_sig_item
 
 val extension_constructor
-  :  Ident.t -> formatter -> extension_constructor -> unit
+  : Ident.t -> formatter -> extension_constructor -> unit
 (* Prints extension constructor with the type signature:
      type ('a, 'b) bar += A of float
 *)
 
 val extension_only_constructor
-  :  Ident.t -> formatter -> extension_constructor -> unit
+  : Ident.t -> formatter -> extension_constructor -> unit
 (* Prints only extension constructor without type signature:
      A of float
 *)
 
 val tree_of_module
-  :  Ident.t -> ?ellipsis:bool -> module_type -> rec_status -> out_sig_item
+  : Ident.t -> ?ellipsis:bool -> module_type -> rec_status -> out_sig_item
 
 val modtype : formatter -> module_type -> unit
 val signature : formatter -> signature -> unit
@@ -158,12 +158,12 @@ val modtype_declaration : Ident.t -> formatter -> modtype_declaration -> unit
 val class_type : formatter -> class_type -> unit
 
 val tree_of_class_declaration
-  :  Ident.t -> class_declaration -> rec_status -> out_sig_item
+  : Ident.t -> class_declaration -> rec_status -> out_sig_item
 
 val class_declaration : Ident.t -> formatter -> class_declaration -> unit
 
 val tree_of_cltype_declaration
-  :  Ident.t -> class_type_declaration -> rec_status -> out_sig_item
+  : Ident.t -> class_type_declaration -> rec_status -> out_sig_item
 
 val cltype_declaration : Ident.t -> formatter -> class_type_declaration -> unit
 val type_expansion : type_expr -> Format.formatter -> type_expr -> unit
@@ -203,16 +203,16 @@ val report_ambiguous_type_error
   -> (formatter -> unit)
   -> (formatter -> unit)
   -> unit
-(* for toploop *)
 
+(* for toploop *)
 val print_items
   :  (Env.t -> signature_item -> 'a option)
   -> Env.t
   -> signature_item list
   -> (out_sig_item * 'a option) list
+
 (* Simple heuristic to rewrite Foo__bar.* as Foo.Bar.* when Foo.Bar is an alias
    for Foo__bar. This pattern is used by the stdlib. *)
-
 val rewrite_double_underscore_paths : Env.t -> Path.t -> Path.t
 
 val printed_signature : string -> formatter -> signature -> unit

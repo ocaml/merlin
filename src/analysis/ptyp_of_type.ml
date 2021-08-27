@@ -181,8 +181,7 @@ and signature_item (str_item : Types.signature_item) =
       | Trec_first -> Asttypes.Recursive
       | Trec_next -> Asttypes.Recursive
       | Trec_not -> Nonrecursive
-    in
-    (* mutually recursive types are really handled by [signature] *)
+    in (* mutually recursive types are really handled by [signature] *)
     Sig.type_ rec_flag [ type_declaration id type_decl ]
   | Sig_modtype (id, modtype_decl, _visibility) ->
     Sig.modtype @@ modtype_declaration id modtype_decl

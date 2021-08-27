@@ -16,17 +16,17 @@
 open Asttypes
 open Types
 open Local_store
-(**** Sets, maps and hashtables of types ****)
 
+(**** Sets, maps and hashtables of types ****)
 module TypeSet = Set.Make(TypeOps) 
 module TypeMap = Map.Make(TypeOps) 
 module TypeHash = Hashtbl.Make(TypeOps) 
-(**** Forward declarations ****)
 
+(**** Forward declarations ****)
 let print_raw =
   ref (fun _ -> assert false : Format.formatter -> type_expr -> unit)
-(**** Type level management ****)
 
+(**** Type level management ****)
 let generic_level = Ident.highest_scope
 (* Used to mark a type during a traversal. *)
 let lowest_level = Ident.lowest_scope
@@ -52,8 +52,8 @@ let is_Tvar = function { desc = Tvar _ } -> true | _ -> false
 let is_Tunivar = function { desc = Tunivar _ } -> true | _ -> false
 let is_Tconstr = function { desc = Tconstr _ } -> true | _ -> false
 let dummy_method = "*dummy method*"
-(**** Definitions for backtracking ****)
 
+(**** Definitions for backtracking ****)
 type change =
   | Ctype of type_expr * type_desc
   | Ccompress of type_expr * type_desc * type_desc
@@ -81,8 +81,8 @@ let log_change ch =
   | Some r ->
     let r' = ref Unchanged in
     r := Change (ch, r'); Weak.set !trail 0 (Some r')
-(**** Representative of a type ****)
 
+(**** Representative of a type ****)
 let rec field_kind_repr =
   function Fvar { contents = Some kind } -> field_kind_repr kind | kind -> kind
 
@@ -201,8 +201,8 @@ let proxy ty =
     in
     proxy_obj ty
   | _ -> ty0
-(**** Utilities for fixed row private types ****)
 
+(**** Utilities for fixed row private types ****)
 let row_of_type t =
   match (repr t).desc with
   | Tobject (t, _) ->
@@ -227,9 +227,9 @@ let is_constr_row ~allow_ident t =
   | Tconstr (Path.Pdot (_, s), _, _) -> is_row_name s
   | _ -> false
 (**********************************)
+
 (*  Utilities for type traversal  *)
 (**********************************)
-
 let rec fold_row f init row =
   let result =
     List.fold_left (fun init (_, fi) ->
@@ -448,9 +448,9 @@ let rec copy_kind =
   | Fabsent -> assert false
 
 let copy_commu c = if commu_repr c = Cok then Cok else Clink (ref Cunknown)
+
 (* Since univars may be used as row variables, we need to do some
    encoding during substitution *)
-
 let rec norm_univar ty =
   match ty.desc with
   | Tunivar _ | Tsubst _ -> ty
@@ -467,22 +467,19 @@ let rec copy_type_desc ?(keep_names=false) f =
   | Tobject (ty, { contents = Some (p, tl) }) ->
     Tobject (f ty, ref (Some (p, List.map f tl)))
   | Tobject (ty, _) -> Tobject (f ty, ref None)
-  | Tvariant _ -> assert false
-  (* too ambiguous *)
-  | Tfield (p, k, ty1, ty2) ->
-    (* the kind is kept shared *)
+  | Tvariant _ -> assert false (* too ambiguous *)
+  | Tfield (p, k, ty1, ty2) -> (* the kind is kept shared *)
     Tfield (p, field_kind_repr k, f ty1, f ty2)
   | Tnil -> Tnil
   | Tlink ty -> copy_type_desc f ty.desc
   | Tsubst _ -> assert false
-  | Tunivar _ as ty -> ty
-  (* always keep the name *)
+  | Tunivar _ as ty -> ty (* always keep the name *)
   | Tpoly (ty, tyl) ->
     let tyl = List.map (fun x -> norm_univar (f x)) tyl in
     Tpoly (f ty, tyl)
   | Tpackage (p, n, l) -> Tpackage (p, n, List.map f l)
-(* Utilities for copying *)
 
+(* Utilities for copying *)
 module For_copy : sig
   type copy_scope
   
@@ -509,8 +506,8 @@ end = struct
       (copy_scope.saved_kinds <- r :: copy_scope.saved_kinds;
        let r' = ref None in
        copy_scope.new_kinds <- r' :: copy_scope.new_kinds; r := Some (Fvar r'))
-  (* Restore type descriptions. *)
   
+  (* Restore type descriptions. *)
   let cleanup { saved_desc; saved_kinds; _ } =
     List.iter (fun (ty, desc) -> ty.desc <- desc) saved_desc;
     List.iter (fun r -> r := None) saved_kinds
@@ -521,8 +518,8 @@ end = struct
     cleanup scope; res
 end
   
-(* Mark a type. *)
 
+(* Mark a type. *)
 let rec mark_type ty =
   let ty = repr ty in
   if ty.level >= lowest_level then
@@ -541,8 +538,8 @@ let type_iterators =
       (mark_type_node ty; it.it_do_type_expr it ty)
   in
   { type_iterators with  it_type_expr }
-(* Remove marks from a type. *)
 
+(* Remove marks from a type. *)
 let rec unmark_type ty =
   let ty = repr ty in
   if ty.level < lowest_level then
@@ -567,11 +564,10 @@ let unmark_class_signature sign =
 let unmark_class_type cty = unmark_iterators.it_class_type unmark_iterators cty
 (*******************************************)
 (*  Memorization of abbreviation expansion *)
+
 (*******************************************)
 (* Search whether the expansion has been memorized. *)
-
-let lte_public p1 p2 =
-  (* Private <= Public *)
+let lte_public p1 p2 = (* Private <= Public *)
   match p1, p2 with Private, _ | _, Public -> true | Public, Private -> false
 
 let rec find_expans priv p1 =
@@ -582,6 +578,7 @@ let rec find_expans priv p1 =
     Some ty
   | Mcons (_, _, _, _, rem) -> find_expans priv p1 rem
   | Mlink { contents = rem } -> find_expans priv p1 rem
+
 (* debug: check for cycles in abbreviation. only works with -principal
 let rec check_expans visited ty =
   let ty = repr ty in
@@ -594,10 +591,9 @@ let rec check_expans visited ty =
       end
   | _ -> ()
 *)
-
 let memo = s_ref []
-(* Contains the list of saved abbreviation expansions. *)
 
+(* Contains the list of saved abbreviation expansions. *)
 let cleanup_abbrev () =
   (* Remove all memorized abbreviation expansions. *)
   List.iter (fun abbr -> abbr := Mnil) !memo; memo := []
@@ -629,10 +625,10 @@ let rec check_abbrev_rec = function
 let check_memorized_abbrevs () =
   List.for_all (fun mem -> check_abbrev_rec !mem) !memo
 *)
+
 (**********************************)
 (*  Utilities for labels          *)
 (**********************************)
-
 let is_optional = function Optional _ -> true | _ -> false
 let label_name = function Nolabel -> "" | Labelled s | Optional s -> s
 
@@ -650,9 +646,9 @@ let rec extract_label_aux hd l =
 
 let extract_label l ls = extract_label_aux [] l ls
 (**********************************)
+
 (*  Utilities for backtracking    *)
 (**********************************)
-
 let undo_change =
   function
   | Ctype (ty, desc) -> ty.desc <- desc
@@ -696,8 +692,8 @@ let link_type ty ty' =
     end
   | _ -> ()
 (* ; assert (check_memorized_abbrevs ()) *)
-(*  ; check_expans [] ty' *)
 
+(*  ; check_expans [] ty' *)
 let set_type_desc ty td = if td != ty.desc then (log_type ty; ty.desc <- td)
 
 let set_level ty level =

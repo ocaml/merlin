@@ -32,8 +32,7 @@ val rewrite_loc
      | `sg of Parsetree.signature
      | `fake of Parsetree.structure
      ]
-  ->
-  [ `str of Parsetree.structure
-  | `sg of Parsetree.signature
-  | `fake of Parsetree.structure
-  ]
+  -> [ `str of Parsetree.structure
+     | `sg of Parsetree.signature
+     | `fake of Parsetree.structure
+     ]

@@ -83,8 +83,7 @@ exception Warning of Location.t * string
 
 let prerr_warning loc w =
   match !errors with
-  | None -> ()
-  (*Location.print_warning loc Format.err_formatter w*)
+  | None -> () (*Location.print_warning loc Format.err_formatter w*)
   | Some (l, _) ->
     let (ppf, to_string) = Format.to_string () in
     Location.print_warning loc ppf w;
@@ -95,8 +94,7 @@ let prerr_warning loc w =
 
 let prerr_alert loc w =
   match !errors with
-  | None -> ()
-  (*Location.print_warning loc Format.err_formatter w*)
+  | None -> () (*Location.print_warning loc Format.err_formatter w*)
   | Some (l, _) ->
     let (ppf, to_string) = Format.to_string () in
     Location.print_alert loc ppf w;

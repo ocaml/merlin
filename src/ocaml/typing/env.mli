@@ -57,7 +57,7 @@ type type_descriptions = constructor_description list * label_description list
 type iter_cont
 
 val iter_types
-  :  (Path.t -> (Path.t * type_declaration) -> unit) -> t -> iter_cont
+  : (Path.t -> (Path.t * type_declaration) -> unit) -> t -> iter_cont
 
 val run_iter_cont : iter_cont list -> (Path.t * iter_cont) list
 val same_types : t -> t -> bool
@@ -115,8 +115,8 @@ type constructor_usage = Positive | Pattern | Privatize
 val mark_constructor_used : constructor_usage -> constructor_declaration -> unit
 val mark_extension_used : constructor_usage -> extension_constructor -> unit
 (* Lookup by long identifiers *)
-(* Lookup errors *)
 
+(* Lookup errors *)
 type unbound_value_hint = No_hint | Missing_rec of Location.t
 
 type lookup_error =
@@ -142,6 +142,7 @@ type lookup_error =
   | Cannot_scrape_alias of Longident.t * Path.t
 
 val lookup_error : Location.t -> t -> lookup_error -> 'a
+
 (* The [lookup_foo] functions will emit proper error messages (by
    raising [Error]) if the identifier cannot be found, whereas the
    [find_foo_by_name] functions will raise [Not_found] instead.
@@ -153,7 +154,6 @@ val lookup_error : Location.t -> t -> lookup_error -> 'a
    [Longident.t]s in the program source should be looked up using
    [lookup_foo ~use:true] exactly one time -- otherwise warnings may be
    emitted the wrong number of times. *)
-
 val lookup_value
   :  ?use:bool
   -> loc:Location.t
@@ -162,11 +162,7 @@ val lookup_value
   -> Path.t * value_description
 
 val lookup_type
-  :  ?use:bool
-  -> loc:Location.t
-  -> Longident.t
-  -> t
-  -> Path.t * type_declaration
+  : ?use:bool -> loc:Location.t -> Longident.t -> t -> Path.t * type_declaration
 
 val lookup_module
   :  ?use:bool
@@ -197,7 +193,7 @@ val lookup_cltype
   -> Path.t * class_type_declaration
 
 val lookup_module_path
-  :  ?use:bool -> loc:Location.t -> load:bool -> Longident.t -> t -> Path.t
+  : ?use:bool -> loc:Location.t -> load:bool -> Longident.t -> t -> Path.t
 
 val lookup_constructor
   :  ?use:bool
@@ -213,9 +209,9 @@ val lookup_all_constructors
   -> constructor_usage
   -> Longident.t
   -> t
-  ->
-  ((constructor_description * (unit -> unit)) list,Location.t * t * lookup_error)
-  result
+  -> ((constructor_description * (unit -> unit)) list,
+      Location.t * t * lookup_error)
+     result
 
 val lookup_all_constructors_from_type
   :  ?use:bool
@@ -226,16 +222,16 @@ val lookup_all_constructors_from_type
   -> (constructor_description * (unit -> unit)) list
 
 val lookup_label
-  :  ?use:bool -> loc:Location.t -> Longident.t -> t -> label_description
+  : ?use:bool -> loc:Location.t -> Longident.t -> t -> label_description
 
 val lookup_all_labels
   :  ?use:bool
   -> loc:Location.t
   -> Longident.t
   -> t
-  ->
-  ((label_description * (unit -> unit)) list,Location.t * t * lookup_error)
-  result
+  -> ((label_description * (unit -> unit)) list,
+      Location.t * t * lookup_error)
+     result
 
 val lookup_all_labels_from_type
   :  ?use:bool
@@ -267,18 +263,18 @@ val bound_modtype : string -> t -> bool
 val bound_class : string -> t -> bool
 val bound_cltype : string -> t -> bool
 val make_copy_of_types : t -> t -> t
-(* Insertion by identifier *)
 
+(* Insertion by identifier *)
 val add_value
-  :  ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
+  : ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
 
 val add_type : check:bool -> Ident.t -> type_declaration -> t -> t
 
 val add_extension
-  :  check:bool -> rebind:bool -> Ident.t -> extension_constructor -> t -> t
+  : check:bool -> rebind:bool -> Ident.t -> extension_constructor -> t -> t
 
 val add_module
-  :  ?arg:bool -> Ident.t -> module_presence -> module_type -> t -> t
+  : ?arg:bool -> Ident.t -> module_presence -> module_type -> t -> t
 
 val add_module_declaration
   :  ?arg:bool
@@ -311,10 +307,10 @@ val filter_non_loaded_persistent : (Ident.t -> bool) -> t -> t
 (* Insertion of all fields of a signature. *)
 val add_item : signature_item -> t -> t
 val add_signature : signature -> t -> t
+
 (* Insertion of all fields of a signature, relative to the given path.
    Used to implement open. Returns None if the path refers to a functor,
    not a structure. *)
-
 val open_signature
   :  ?used_slot:bool ref
   -> ?loc:Location.t
@@ -322,11 +318,11 @@ val open_signature
   -> Asttypes.override_flag
   -> Path.t
   -> t
-  -> (t,[ `Not_found | `Functor ]) result
+  -> (t, [ `Not_found | `Functor ]) result
 
-val open_pers_signature : string -> t -> (t,[ `Not_found ]) result
+val open_pers_signature : string -> t -> (t, [ `Not_found ]) result
+
 (* Insertion by name *)
-
 val enter_value
   :  ?check:(string -> Warnings.t)
   -> string
@@ -363,15 +359,15 @@ val enter_module_declaration
   -> Ident.t * t
 
 val enter_modtype
-  :  scope:int -> string -> modtype_declaration -> t -> Ident.t * t
+  : scope:int -> string -> modtype_declaration -> t -> Ident.t * t
 
 val enter_class : scope:int -> string -> class_declaration -> t -> Ident.t * t
 
 val enter_cltype
-  :  scope:int -> string -> class_type_declaration -> t -> Ident.t * t
+  : scope:int -> string -> class_type_declaration -> t -> Ident.t * t
+
 (* Same as [add_signature] but refreshes (new stamp) and rescopes bound idents
    in the process. *)
-
 val enter_signature : scope:int -> signature -> t -> signature * t
 val enter_unbound_value : string -> value_unbound_reason -> t -> t
 val enter_unbound_module : string -> module_unbound_reason -> t -> t
@@ -384,12 +380,12 @@ val set_unit_name : string -> unit
 val get_unit_name : unit -> string
 (* Read, save a signature to/from a file *)
 val read_signature : modname -> filepath -> signature
+
 (* Arguments: module name, file name. Results: signature. *)
-
 val save_signature
-  :  alerts:alerts -> signature -> modname -> filepath -> Cmi_format.cmi_infos
-(* Arguments: signature, module name, file name. *)
+  : alerts:alerts -> signature -> modname -> filepath -> Cmi_format.cmi_infos
 
+(* Arguments: signature, module name, file name. *)
 val save_signature_with_imports
   :  alerts:alerts
   -> signature
@@ -399,8 +395,8 @@ val save_signature_with_imports
   -> Cmi_format.cmi_infos
 (* Arguments: signature, module name, file name,
    imported units with their CRCs. *)
-(* Return the CRC of the interface of the given compilation unit *)
 
+(* Return the CRC of the interface of the given compilation unit *)
 val crc_of_unit : modname -> Digest.t
 (* Return the set of compilation units imported, with their CRC *)
 val imports : unit -> crcs
@@ -422,8 +418,8 @@ val env_of_only_summary : (summary -> Subst.t -> t) -> t -> t
 val update_short_paths : t -> t
 (* Return the short paths table *)
 val short_paths : t -> Short_paths.t
-(* Error report *)
 
+(* Error report *)
 type error =
   | Missing_module of Location.t * Path.t * Path.t
   | Illegal_value_name of Location.t * string
@@ -440,9 +436,9 @@ val is_in_signature : t -> bool
 val set_value_used_callback : value_description -> (unit -> unit) -> unit
 
 val set_type_used_callback
-  :  type_declaration -> ((unit -> unit) -> unit) -> unit
-(* Forward declaration to break mutual recursion with Includemod. *)
+  : type_declaration -> ((unit -> unit) -> unit) -> unit
 
+(* Forward declaration to break mutual recursion with Includemod. *)
 val check_functor_application
   :  (errors:bool
    -> loc:Location.t
@@ -453,19 +449,19 @@ val check_functor_application
    -> Path.t
    -> unit)
   ref
+
 (* Forward declaration to break mutual recursion with Typemod. *)
-
 val check_well_formed_module
-  :  (t -> Location.t -> string -> module_type -> unit) ref
+  : (t -> Location.t -> string -> module_type -> unit) ref
+
 (* Forward declaration to break mutual recursion with Typecore. *)
-
 val add_delayed_check_forward : ((unit -> unit) -> unit) ref
+
 (* Forward declaration to break mutual recursion with Mtype. *)
-
 val strengthen
-  :  (aliasable:bool -> t -> module_type -> Path.t -> module_type) ref
-(* Forward declaration to break mutual recursion with Ctype. *)
+  : (aliasable:bool -> t -> module_type -> Path.t -> module_type) ref
 
+(* Forward declaration to break mutual recursion with Ctype. *)
 val same_constr : (t -> type_expr -> type_expr -> bool) ref
 (* Forward declaration to break mutual recursion with Printtyp. *)
 val print_longident : (Format.formatter -> Longident.t -> unit) ref
@@ -492,14 +488,10 @@ val fold_types
   -> 'a
 
 val fold_constructors
-  :  (constructor_description -> 'a -> 'a)
-  -> Longident.t option
-  -> t
-  -> 'a
-  -> 'a
+  : (constructor_description -> 'a -> 'a) -> Longident.t option -> t -> 'a -> 'a
 
 val fold_labels
-  :  (label_description -> 'a -> 'a) -> Longident.t option -> t -> 'a -> 'a
+  : (label_description -> 'a -> 'a) -> Longident.t option -> t -> 'a -> 'a
 
 val fold_modules
   :  (string -> Path.t -> module_declaration -> 'a -> 'a)

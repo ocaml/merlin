@@ -52,12 +52,12 @@ val focus_node : attribute
     To make merlin focus on [M.code] and ignore the boilerplate ([M.prolog]
     and [M.epilog]), add a [focus_node] attribute to the [M.code] item.
 *)
-(* Projections for merlin attributes and extensions *)
 
+(* Projections for merlin attributes and extensions *)
 val classify_extension : extension -> [ `Other | `Syntax_error ]
 val extract_syntax_error : extension -> string * Location.t
 
 val classify_attribute
-  :  attribute -> [ `Other | `Relaxed_location | `Hide | `Focus ]
+  : attribute -> [ `Other | `Relaxed_location | `Hide | `Focus ]
 
 val extract_relaxed_location : attribute -> Location.t

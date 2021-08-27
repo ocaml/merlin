@@ -15,6 +15,7 @@
 (* Type inference for the core language *)
 open Asttypes
 open Types
+
 (* This variant is used to print improved error messages, and does not affect
    the behavior of the typechecker itself.
 
@@ -23,7 +24,6 @@ open Types
    then-branch to be of type unit if there is no else branch; "for" requires
    indices to be of type int, and the body to be of type unit.
 *)
-
 type type_forcing_context =
   | If_conditional
   | If_no_else_branch
@@ -35,12 +35,12 @@ type type_forcing_context =
   | Assert_condition
   | Sequence_left_hand_side
   | When_guard
+
 (* The combination of a type and a "type forcing context". The intent is that it
    describes a type that is "expected" (required) by the context. If unifying
    with such a type fails, then the "explanation" field explains why it was
    required, in order to display a more enlightening error message.
 *)
-
 type type_expected =
   private
   {
@@ -49,7 +49,7 @@ type type_expected =
   }
 
 val mk_expected
-  :  ?explanation:type_forcing_context -> type_expr -> type_expected
+  : ?explanation:type_forcing_context -> type_expr -> type_expected
 
 val is_nonexpansive : Typedtree.expression -> bool
 
@@ -108,15 +108,15 @@ val type_self_pattern
   -> Env.t
   -> Env.t
   -> Parsetree.pattern
-  ->
-  Typedtree.pattern
-  * (Ident.t * type_expr) Meths.t ref
-  *
-  (Ident.t * Asttypes.mutable_flag * Asttypes.virtual_flag * type_expr) Vars.t
-  ref
-  * Env.t
-  * Env.t
-  * Env.t
+  -> Typedtree.pattern
+     * (Ident.t * type_expr) Meths.t ref
+     *
+     (Ident.t * Asttypes.mutable_flag * Asttypes.virtual_flag * type_expr)
+     Vars.t
+     ref
+     * Env.t
+     * Env.t
+     * Env.t
 
 val check_partial
   :  ?lev:int
@@ -228,11 +228,11 @@ exception Error_forward of Location.error
 
 val report_error : loc:Location.t -> Env.t -> error -> Location.error
 (** @deprecated.  Use {!Location.error_of_exn}, {!Location.print_report}. *)
+
 (* Forward declaration, to be filled in by Typemod.type_module *)
-
 val type_module : (Env.t -> Parsetree.module_expr -> Typedtree.module_expr) ref
-(* Forward declaration, to be filled in by Typemod.type_open *)
 
+(* Forward declaration, to be filled in by Typemod.type_open *)
 val type_open
   :  (?used_slot:bool ref
    -> override_flag
@@ -241,16 +241,16 @@ val type_open
    -> Longident.t loc
    -> Path.t * Env.t)
   ref
-(* Forward declaration, to be filled in by Typemod.type_open_decl *)
 
+(* Forward declaration, to be filled in by Typemod.type_open_decl *)
 val type_open_decl
   :  (?used_slot:bool ref
    -> Env.t
    -> Parsetree.open_declaration
    -> Typedtree.open_declaration * Types.signature * Env.t)
   ref
-(* Forward declaration, to be filled in by Typeclass.class_structure *)
 
+(* Forward declaration, to be filled in by Typeclass.class_structure *)
 val type_object
   :  (Env.t
    -> Location.t
@@ -272,20 +272,20 @@ val create_package_type
   -> (Longident.t * (Longident.t * Parsetree.core_type) list)
   -> Path.t * (Longident.t * Typedtree.core_type) list * Types.type_expr
 
-val constant : Parsetree.constant -> (Asttypes.constant,error) result
+val constant : Parsetree.constant -> (Asttypes.constant, error) result
 val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
 
 val check_recursive_class_bindings
-  :  Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
-(* Merlin specific *)
+  : Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
 
+(* Merlin specific *)
 val partial_pred
   :  lev:int
   -> ?explode:int
   -> Env.t
   -> type_expr
-  -> (label,constructor_description) Hashtbl.t
-  -> (label,label_description) Hashtbl.t
+  -> (label, constructor_description) Hashtbl.t
+  -> (label, label_description) Hashtbl.t
   -> Parsetree.pattern
   -> Typedtree.value Typedtree.pattern_desc Typedtree.pattern_data option
 

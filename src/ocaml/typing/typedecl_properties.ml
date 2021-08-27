@@ -37,7 +37,7 @@ let add_types_to_env decls env =
     env
 
 let compute_property :
-  ('prop,'req) property
+  ('prop, 'req) property
   -> Env.t
   -> (Ident.t * decl) list
   -> 'req list

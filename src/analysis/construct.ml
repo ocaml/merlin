@@ -70,7 +70,9 @@ module Util = struct
     let snap = Btype.snapshot () in
     try Ctype.unify env type_expected type_expr |> ignore; Some snap
     with
-    | Ctype.Unify _ -> (* Unification failure *) Btype.backtrack snap; None
+    | Ctype.Unify _ ->
+      (* Unification failure *)
+      Btype.backtrack snap; None
   
   let is_in_stdlib path = Path.head path |> Ident.name = "Stdlib"
   
@@ -105,9 +107,9 @@ module Util = struct
     let init = fold_values None Path.Map.empty in
     Env.fold_modules (fun name path _module_decl acc ->
       if not (is_in_stdlib path) && not (is_opened env path) then
-      (* We ignore opened modules. That means that is a value of an opened
-        module has been shadowed we won't suggest the one in the opened
-        module. *)
+        (* We ignore opened modules. That means that is a value of an opened
+          module has been shadowed we won't suggest the one in the opened
+          module. *)
         fold_values (Some (Untypeast.lident_of_path path)) acc
       else
         acc
@@ -119,6 +121,7 @@ module Util = struct
     let table = Hashtbl.create 50 in
     (* We add keywords to the table so they are always numbered *)
     List.iter keywords ~f:(fun k -> Hashtbl.add table k (-1)); table
+  
   (* Given a list [l] of n elements which are lists of choices,
     [combination l] is a list of all possible combinations of
     these choices (cartesian product). For example:
@@ -132,7 +135,6 @@ module Util = struct
     If the input is the empty list, the result is
     the empty list singleton list.
     *)
-  
   let combinations l =
     List.fold_left l ~init:[ [] ] ~f:(fun acc_l choices_for_arg_i ->
       List.fold_left choices_for_arg_i ~init:[] ~f:(fun acc choice_arg_i ->
@@ -152,9 +154,9 @@ module Util = struct
       | a :: tl1, b :: tl2 -> aux (a :: b :: acc) tl1 tl2
     in
     aux [] l1 l2
+  
   (* Given a list [l] of n lists, [panache l] flattens the list
     by starting with the first element of each, then the second one etc. *)
-  
   let panache l = List.fold_left ~init:[] ~f:panache2 l
 end
   
@@ -163,8 +165,8 @@ module Gen = struct
   open Types
   
   let hole = Ast_helper.Exp.hole ()
-  (* [make_value] generates the PAST repr of a value applied to holes *)
   
+  (* [make_value] generates the PAST repr of a value applied to holes *)
   let make_value env (path, (name, value_description, params)) =
     let open Ast_helper in
     let env_check = Env.find_value_by_name in
@@ -174,8 +176,8 @@ module Gen = struct
       Exp.(apply (ident lid) params)
     else
       Exp.ident lid
-  (* We never perform deep search when constructing modules *)
   
+  (* We never perform deep search when constructing modules *)
   let rec module_ env =
     let open Ast_helper in
     function
@@ -222,8 +224,7 @@ module Gen = struct
         match rec_flag with
         | Trec_first | Trec_next -> Asttypes.Recursive
         | Trec_not -> Nonrecursive
-      in
-      (* mutually recursive types are really handled by [structure] *)
+      in (* mutually recursive types are really handled by [structure] *)
       Str.type_ rec_flag [ td ]
     | Sig_modtype (id, { mtd_type; _ }, _visibility) ->
       let mtd =
@@ -267,16 +268,16 @@ module Gen = struct
       | Ptyp_of_type.Type (rec_flag, type_decls) ->
         Ast_helper.Str.type_ rec_flag type_decls
     )
+  
   (* [expression values_scope ~depth env ty] generates a list of PAST
     expressions that could fill a hole of type [ty] in the environment [env].
     [depth] regulates the deep construction of recursive values. If
     [values_scope] is set to [Local] the returned list will also contains
     local values to choose from *)
-  
   let rec expression ~idents_table values_scope ~depth =
     let exp_or_hole env typ =
       if depth > 1 then
-      (* If max_depth has not been reached we recurse *)
+        (* If max_depth has not been reached we recurse *)
         expression ~idents_table values_scope ~depth:(depth - 1) env typ
       else
       (* else we return a hole *)

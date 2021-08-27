@@ -109,12 +109,12 @@ module Make (G : GRAMMAR) (S : Synthesis.S with module G = G) :
     Lr1.tabulate (fun st ->
       List.fold_left (fun acc (prod, pos) ->
         if pos = 0 then
-        (*if prod.p_kind = `START then ( *)
-        (* pos = 0 means we are on an initial state *)
-        (*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*)
+          (*if prod.p_kind = `START then ( *)
+          (* pos = 0 means we are on an initial state *)
+          (*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*)
           acc
-        else
-        (*report "adding %s at depth %d\n" prod.p_lhs.n_name pos;*)
+        else(*report "adding %s at depth %d\n" prod.p_lhs.n_name pos;*)
+        
           add_item (S.cost_of (S.Tail (st, prod, pos))) (st, prod, pos) acc
       ) [] (Lr0.items (Lr1.lr0 st))
     )
@@ -177,7 +177,7 @@ module Make (G : GRAMMAR) (S : Synthesis.S with module G = G) :
       | states ->
         let select_expansion ((st, _sts), trace') =
           if trace' = [] then
-          (* Reached stack bottom *)
+            (* Reached stack bottom *)
             None, select_trace (snd trace)
           else
             Some st, select_trace trace'

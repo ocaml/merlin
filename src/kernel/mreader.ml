@@ -15,8 +15,8 @@ type result =
     parsetree : parsetree;
     no_labels_for_completion : bool
   }
-(* Normal entry point *)
 
+(* Normal entry point *)
 let normal_parse ?for_completion config source =
   let kind =
     let filename = Mconfig.(config.query.filename) in
@@ -65,8 +65,8 @@ let normal_parse ?for_completion config source =
     parsetree;
     no_labels_for_completion
   }
-(* Pretty-printing *)
 
+(* Pretty-printing *)
 type pretty_parsetree = Extend_protocol.Reader.pretty_parsetree
 type outcometree = Extend_protocol.Reader.outcometree
 
@@ -169,8 +169,8 @@ let reconstruct_identifier config source pos =
   with
   | None | Some [] -> Mreader_lexer.reconstruct_identifier config source pos
   | Some result -> result
-(* Entry point *)
 
+(* Entry point *)
 let parse ?for_completion config source =
   match
     try_with_reader config source (Mreader_extend.parse ?for_completion)
@@ -189,6 +189,7 @@ let parse ?for_completion config source =
     }
   | None -> normal_parse ?for_completion config source
 (* Update config after parse *)
+
 (*
 let apply_directives config tree =
   let config = ref config in
@@ -215,5 +216,4 @@ let apply_directives config tree =
   end;
   !config
 *)
-
 let apply_directives config _tree = config

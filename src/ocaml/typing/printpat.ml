@@ -64,8 +64,7 @@ let rec pretty_val : type k. _ -> k general_pattern -> _ =
       | Tpat_record (lvs, _) ->
         let filtered_lvs =
           List.filter (function
-            | _, _, { pat_desc = Tpat_any } -> false
-            (* do not show lbl=_ *)
+            | _, _, { pat_desc = Tpat_any } -> false (* do not show lbl=_ *)
             | _ -> true
           ) lvs
         in

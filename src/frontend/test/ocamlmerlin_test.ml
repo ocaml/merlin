@@ -1,6 +1,6 @@
 open Std
-(* Poor man's test framework *)
 
+(* Poor man's test framework *)
 type name = string
 type test = Single of name * (unit -> unit) | Group of name * test list
 
@@ -17,8 +17,8 @@ let () =
   )
 
 let str_match ~re str = Str.string_match (Str.regexp (re ^ "$")) str 0
-(* Setting up merlin *)
 
+(* Setting up merlin *)
 module M = Mpipeline 
 
 let process ?(with_config=(fun x -> x)) ?for_completion filename text =
@@ -31,8 +31,8 @@ let process ?(with_config=(fun x -> x)) ?for_completion filename text =
   match for_completion with
   | None -> pipeline
   | Some pos -> M.for_completion pos pipeline
-(* All tests *)
 
+(* All tests *)
 let assert_errors
     ?with_config filename ?(lexer=0) ?(parser=0) ?(typer=0) ?(config=0) source
 =
@@ -89,8 +89,8 @@ let validate_output ?with_config filename source query pred =
       in
       raise (Detail (exn, Json.pretty_to_string info))
   )
-(* FIXME: this sucks. improve. *)
 
+(* FIXME: this sucks. improve. *)
 let validate_failure ?with_config filename source query pred =
   test filename (fun () ->
     let pipeline = process ?with_config filename source in
@@ -162,8 +162,8 @@ let tests =
              [ "a b c", [ "a"; "b"; "c" ]; "a'b'c", [ "abc" ];
                "a 'b c'", [ "a"; "b c" ]; "a\"b'c\"", [ "ab'c" ];
                "a\\\"b'c'", [ "a\"bc" ] ]) ] ]
-(* Driver *)
 
+(* Driver *)
 let passed = ref 0
 let failed = ref 0
 

@@ -85,8 +85,8 @@ let rec find_map ~f =
 
 exception No_matching_target
 exception No_predicate of string
-(* Returns first node on the list matching a predicate *)
 
+(* Returns first node on the list matching a predicate *)
 let rec find_node preds nodes =
   match nodes with
   | [] -> raise No_matching_target
@@ -95,8 +95,8 @@ let rec find_node preds nodes =
     | Some node -> node
     | None -> find_node preds tail
     end
-(* Skip all nodes that won't advance cursor's position *)
 
+(* Skip all nodes that won't advance cursor's position *)
 let rec skip_non_moving pos =
   function
   | node :: tail as all ->

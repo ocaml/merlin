@@ -25,7 +25,7 @@ module Violation : sig
 end
   
 
-val coerce : t -> as_:t -> (unit,Violation.t) result
+val coerce : t -> as_:t -> (unit, Violation.t) result
 (** [coerce t ~as_] returns [Ok ()] iff [t] can be seen as type
     immediacy [as_]. For instance, [Always] can be seen as
     [Always_on_64bits] but the opposite is not true. Return [Error _]

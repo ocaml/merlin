@@ -45,7 +45,7 @@ let compute_decl env tdecl =
   | Type_abstract, None -> Type_immediacy.of_attributes tdecl.type_attributes
   | _ -> Type_immediacy.Unknown
 
-let property : (Type_immediacy.t,unit) Typedecl_properties.property =
+let property : (Type_immediacy.t, unit) Typedecl_properties.property =
   let open Typedecl_properties in
   let eq = (=) in
   let merge ~prop:_ ~new_prop = new_prop in

@@ -27,6 +27,6 @@ val class_type_declarations
   -> class_match_failure list
 
 val class_declarations
-  :  Env.t -> class_declaration -> class_declaration -> class_match_failure list
+  : Env.t -> class_declaration -> class_declaration -> class_match_failure list
 
 val report_error : formatter -> class_match_failure list -> unit

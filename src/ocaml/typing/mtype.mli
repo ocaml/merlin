@@ -20,19 +20,19 @@ val scrape : Env.t -> module_type -> module_type
    till hitting a "hard" module type (signature, functor,
    or abstract module type ident. *)
 val scrape_for_functor_arg : Env.t -> module_type -> module_type
+
 (* Remove aliases in a functor argument type *)
-
 val scrape_for_type_of
-  :  remove_aliases:bool -> Env.t -> module_type -> module_type
-(* Process type for module type of *)
+  : remove_aliases:bool -> Env.t -> module_type -> module_type
 
+(* Process type for module type of *)
 val freshen : scope:int -> module_type -> module_type
 (* Return an alpha-equivalent copy of the given module type
    where bound identifiers are fresh. *)
 val strengthen : aliasable:bool -> Env.t -> module_type -> Path.t -> module_type
+
 (* Strengthen abstract type components relative to the
    given path. *)
-
 val strengthen_decl
   :  aliasable:bool
   -> Env.t
@@ -56,7 +56,7 @@ val no_code_needed_sig : Env.t -> signature -> bool
 val enrich_modtype : Env.t -> Path.t -> module_type -> module_type
 
 val enrich_typedecl
-  :  Env.t -> Path.t -> Ident.t -> type_declaration -> type_declaration
+  : Env.t -> Path.t -> Ident.t -> type_declaration -> type_declaration
 
 val type_paths : Env.t -> Path.t -> module_type -> Path.t list
 val contains_type : Env.t -> module_type -> bool

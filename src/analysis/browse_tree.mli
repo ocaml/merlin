@@ -56,4 +56,4 @@ val all_constructor_occurrences
   -> t Location.loc list
 
 val all_occurrences_of_prefix
-  :  Path.t -> Browse_raw.node -> (Path.t Location.loc * Longident.t) list
+  : Path.t -> Browse_raw.node -> (Path.t Location.loc * Longident.t) list

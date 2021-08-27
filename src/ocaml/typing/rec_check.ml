@@ -116,9 +116,9 @@ let is_ref : Types.value_description -> bool =
     ->
     true
   | _ -> false
+
 (* See the note on abstracted arguments in the documentation for
     Typedtree.Texp_apply *)
-
 let is_abstracted_arg : (arg_label * expression option) -> bool =
   function _, None -> true | _, Some _ -> false
 
@@ -294,12 +294,12 @@ module Mode = struct
           of usage, it cannot be defined mutually-recursively with its context. *)
   
   let equal = ((=) : t -> t -> bool)
+  
   (* Lower-ranked modes demand/use less of the variable/expression they qualify
      -- so they allow more recursive definitions.
 
      Ignore < Delay < Guard < Return < Dereference
   *)
-  
   let rank =
     function
     | Ignore -> 0
@@ -307,13 +307,14 @@ module Mode = struct
     | Guard -> 2
     | Return -> 3
     | Dereference -> 4
+  
   (* Returns the more conservative (highest-ranking) mode of the two
      arguments.
 
      In judgments we write (m + m') for (join m m').
   *)
-  
   let join m m' = if rank m >= rank m' then m else m'
+  
   (* If x is used with the mode m in e[x], and e[x] is used with mode
      m' in e'[e[x]], then x is used with mode m'[m] (our notation for
      "compose m' m") in e'[e[x]].
@@ -322,7 +323,6 @@ module Mode = struct
 
      Composition is associative and [Ignore] is a zero/annihilator for
      it: (compose Ignore m) and (compose m Ignore) are both Ignore. *)
-  
   let compose m' m =
     match m', m with
     | Ignore, _ | _, Ignore -> Ignore
@@ -413,6 +413,7 @@ end
 
 let remove_pat pat env = Env.remove_list (pat_bound_idents pat) env
 let remove_patlist pats env = List.fold_right remove_pat pats env
+
 (* Usage mode judgments.
 
    There are two main groups of judgment functions:
@@ -452,7 +453,6 @@ let remove_patlist pats env = List.fold_right remove_pat pats env
 
      We write [... -> bind_judg] in this case.
 *)
-
 type term_judg = Mode.t -> Env.t
 type bind_judg = Mode.t -> Env.t -> Env.t
 
@@ -479,25 +479,25 @@ let join : term_judg list -> term_judg =
   fun li m -> Env.join_list (List.map (fun f -> f m) li)
 
 let empty = fun _ -> Env.empty
+
 (* A judgment [judg] takes a mode from the context as input, and
    returns an environment. The judgment [judg << m], given a mode [m']
    from the context, evaluates [judg] in the composed mode [m'[m]]. *)
-
 let (<<) : term_judg -> Mode.t -> term_judg =
   fun f inner_mode outer_mode -> f (Mode.compose outer_mode inner_mode)
+
 (* A binding judgment [binder] expects a mode and an inner environment,
    and returns an outer environment. [binder >> judg] computes
    the inner environment as the environment returned by [judg]
    in the ambient mode. *)
-
 let (>>) : bind_judg -> term_judg -> term_judg =
   fun binder term mode -> binder mode (term mode)
+
 (* Expression judgment:
      G |- e : m
    where (m) is an input of the code and (G) is an output;
    in the Prolog mode notation, this is (+G |- -e : -m).
 *)
-
 let rec expression : Typedtree.expression -> term_judg =
   fun exp ->
     match exp.exp_desc with
@@ -558,9 +558,9 @@ let rec expression : Typedtree.expression -> term_judg =
       let arg (_, eo) = option expression eo in
       let app_mode =
         if List.exists is_abstracted_arg args then
-        (* see the comment on Texp_apply in typedtree.mli;
-           the non-abstracted arguments are bound to local
-           variables, which corresponds to a Guard mode. *)
+          (* see the comment on Texp_apply in typedtree.mli;
+             the non-abstracted arguments are bound to local
+             variables, which corresponds to a Guard mode. *)
           Guard
         else
           Dereference
@@ -828,8 +828,8 @@ and modexp : Typedtree.module_expr -> term_judg =
       coercion coe (fun m -> modexp mexp << m)
     | Tmod_unpack (e, _) -> expression e
     | Tmod_hole -> (fun _ -> Env.empty)
-(* G |- pth : m *)
 
+(* G |- pth : m *)
 and path : Path.t -> term_judg =
   (*
     ------------
@@ -850,8 +850,8 @@ and path : Path.t -> term_judg =
     | Path.Pdot (t, _) -> path t << Dereference
     | Path.Papply (f, p) ->
       join [ path f << Dereference; path p << Dereference ]
-(* G |- struct ... end : m *)
 
+(* G |- struct ... end : m *)
 and structure : Typedtree.structure -> term_judg =
   (*
     G1, {x: _, x in vars(G1)} |- item1: G2 + ... + Gn in m
@@ -864,9 +864,9 @@ and structure : Typedtree.structure -> term_judg =
   fun s m ->
     List.fold_right (fun it env -> structure_item it m env) s.str_items
       Env.empty
+
 (* G |- <structure item> : m -| G'
    where G is an output and m, G' are inputs *)
-
 and structure_item : Typedtree.structure_item -> bind_judg =
   fun s m env ->
     match s.str_desc with
@@ -913,8 +913,8 @@ and structure_item : Typedtree.structure_item -> bind_judg =
     | Tstr_include { incl_mod = mexp; incl_type = mty; _ } ->
       let included_ids = List.map Types.signature_item_id mty in
       Env.join (modexp mexp m) (Env.remove_list included_ids env)
-(* G |- module M = E : m -| G *)
 
+(* G |- module M = E : m -| G *)
 and module_binding : (Ident.t option * Typedtree.module_expr) -> bind_judg =
   fun (id, mexp) m env ->
     (*
@@ -976,8 +976,8 @@ and extension_constructor : Typedtree.extension_constructor -> term_judg =
     match ec.ext_kind with
     | Text_decl _ -> empty
     | Text_rebind (pth, _lid) -> path pth
-(* G |- let (rec?) (pi = ei)^i : m -| G' *)
 
+(* G |- let (rec?) (pi = ei)^i : m -| G' *)
 and value_bindings : rec_flag -> Typedtree.value_binding list -> bind_judg =
   fun rec_flag bindings mode bound_env ->
     let all_bound_pats = List.map (fun vb -> vb.vb_pat) bindings in
@@ -1066,13 +1066,13 @@ and value_bindings : rec_flag -> Typedtree.value_binding list -> bind_judg =
         Env.join_list env'_i
     in
     Env.join bindings_env outer_env
+
 (* G; m' |- (p -> e) : m
    with outputs G, m' and input m
 
    m' is the mode under which the scrutinee of p
    (the value matched against p) is placed.
 *)
-
 and case : 'k. 'k Typedtree.case -> mode -> Env.t * mode =
   fun { Typedtree.c_lhs; c_guard; c_rhs } ->
     (*
@@ -1087,12 +1087,12 @@ and case : 'k. 'k Typedtree.case -> mode -> Env.t * mode =
     fun m ->
       let env = judg m in
       remove_pat c_lhs env, Mode.compose m (pattern c_lhs env)
+
 (* p : m -| G
    with output m and input G
 
    m is the mode under which the scrutinee of p is placed.
 *)
-
 and pattern : type k. k general_pattern -> Env.t -> mode =
   fun pat env ->
     (*
@@ -1132,8 +1132,7 @@ let is_valid_recursive_expression idlist expr =
   match
     Env.unguarded ty idlist, Env.dependent ty idlist, classify_expression expr
   with
-  | _ :: _, _, _
-  (* The expression inspects rec-bound variables *)
+  | _ :: _, _, _ (* The expression inspects rec-bound variables *)
   | [], _ :: _, Dynamic
     ->
     (* The expression depends on rec-bound variables
@@ -1143,6 +1142,7 @@ let is_valid_recursive_expression idlist expr =
     (* The expression has unknown size,
        but does not depend on rec-bound variables *)
     true
+
 (* A class declaration may contain let-bindings. If they are recursive,
    their validity will already be checked by [is_valid_recursive_expression]
    during type-checking. This function here prevents a different kind of
@@ -1153,7 +1153,6 @@ let is_valid_recursive_expression idlist expr =
    {|class a = let x () = new a in object ... end|}
    is allowed.
 *)
-
 let is_valid_class_expr idlist ce =
   let rec class_expr : mode -> Typedtree.class_expr -> Env.t =
     fun mode ce ->

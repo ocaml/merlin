@@ -81,7 +81,7 @@ module File : sig
   val with_ext : ?src_suffix_pair:(string * string) -> t -> string
   
   val explain_not_found
-    :  ?doc_from:string -> string -> t -> [> `File_not_found of string ]
+    : ?doc_from:string -> string -> t -> [> `File_not_found of string ]
 end = struct
   type t =
     | ML of string
@@ -214,6 +214,7 @@ module Utils = struct
     | _ -> false
   
   let is_ghost_loc { Location.loc_ghost; _ } = loc_ghost
+  
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
      This is only used when looking for ml files, not cmts. Indeed for cmts we
@@ -222,7 +223,6 @@ module Utils = struct
      not the case for the "source path" however.
      We therefore get all matching files and use an heuristic at the call site
      to choose the appropriate file. *)
-  
   let find_all_in_path_uncap ?src_suffix_pair ~with_fallback path file =
     let name = File.with_ext ?src_suffix_pair file in
     let uname = String.uncapitalize name in
@@ -335,8 +335,7 @@ let trie_of_cmt root =
 type locate_result =
   | Found of Location.t * string option
   | File_not_found of File.t
-  | Other_error
-(* FIXME *)
+  | Other_error (* FIXME *)
 
 let rec locate ~config ~context path trie : locate_result =
   match Typedtrie.find ~remember_loc:Fallback.set ~context trie path with
@@ -354,8 +353,7 @@ let rec locate ~config ~context path trie : locate_result =
         Typedtrie.dump fmt trie
       );
       Other_error
-    end
-(* incorrect path *)
+    end (* incorrect path *)
 
 and from_path ~config ~context path : locate_result =
   log ~title:"from_path" "%s" (Namespaced_path.to_unique_string path);
@@ -443,7 +441,9 @@ let find_source ~config loc =
   let file =
     match File.of_filename fname with
     | Some file -> file
-    | None -> (* no extension? we have to decide. *) Preferences.src fname
+    | None ->
+      (* no extension? we have to decide. *)
+      Preferences.src fname
   in
   let filename = File.name file in
   let initial_path =
@@ -531,11 +531,11 @@ let find_source ~config loc =
        | (_, s) :: _ -> Found s
        | _ -> assert false
        end)
+
 (* Well, that's just another hack.
    [find_source] doesn't like the "-o" option of the compiler. This hack handles
    Jane Street specific use case where "-o" is used to prefix a unit name by the
    name of the library which contains it. *)
-
 let find_source ~config loc path =
   let result =
     match find_source ~config loc with
@@ -576,8 +576,7 @@ let recover _ =
 module Namespace = struct
   type under_type = [ `Constr | `Labels ]
   
-  type t =
-    (* TODO: share with [Namespaced_path.Namespace.t] *)
+  type t = (* TODO: share with [Namespaced_path.Namespace.t] *)
     [ `Type | `Mod | `Modtype | `Vals | under_type ]
   
   type inferred =
@@ -713,8 +712,8 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   with
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-(* Only used to retrieve documentation *)
 
+(* Only used to retrieve documentation *)
 let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
   let str_ident = Path.name path in
   let tagged_path = Namespaced_path.of_path ~namespace path in

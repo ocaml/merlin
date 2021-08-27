@@ -20,8 +20,8 @@
 (** in config.mlbuild                                                 **)
 (**                                                                   **)
 (***********************************************************************)
-(* The main OCaml version string has moved to ../VERSION *)
 
+(* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 let flambda = false
 
@@ -42,8 +42,8 @@ and ast_impl_magic_number = "Caml1999M029"
 and ast_intf_magic_number = "Caml1999N029"
 
 and cmxs_magic_number = "Caml1999D029"
-(* cmxs_magic_number is duplicated in otherlibs/dynlink/natdynlink.ml *)
 
+(* cmxs_magic_number is duplicated in otherlibs/dynlink/natdynlink.ml *)
 and cmt_magic_number = "Caml1999T029"
 
 let interface_suffix = ref ".mli"

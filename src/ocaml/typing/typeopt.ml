@@ -51,14 +51,13 @@ let maybe_pointer_type env ty =
   else
     Immediate
 *)
-(* let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type *)
 
+(* let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type *)
 type classification =
   | Int
   | Float
   | Lazy
-  | Addr
-  (* anything except a float or a lazy *)
+  | Addr (* anything except a float or a lazy *)
   | Any
 
 let classify env ty =
@@ -94,20 +93,19 @@ let classify env ty =
            Any)
     | Tarrow _ | Ttuple _ | Tpackage _ | Tobject _ | Tnil | Tvariant _ -> Addr
     | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ -> assert false
+
 (*
 let function_return_value_kind env ty =
   match is_function_type env ty with
   | Some (_lhs, rhs) -> value_kind env rhs
   | None -> Pgenval
 *)
-
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.
     if the value can be represented as a float/forward/lazy *)
 let lazy_val_requires_forward env ty =
   match classify env ty with
   | Any | Lazy -> true
-  | Float -> false
-  (* TODO: Config.flat_float_array *)
+  | Float -> false (* TODO: Config.flat_float_array *)
   | Addr | Int -> false
 
 (** The compilation of the expression [lazy e] depends on the form of e:
@@ -115,12 +113,11 @@ let lazy_val_requires_forward env ty =
     taken into account when determining whether a recursive binding is safe. *)
 let classify_lazy_argument :
   Typedtree.expression
-  ->
-  [ `Constant_or_function
-  | `Float_that_cannot_be_shortcut
-  | `Identifier of [ `Forward_value | `Other ]
-  | `Other
-  ]
+  -> [ `Constant_or_function
+     | `Float_that_cannot_be_shortcut
+     | `Identifier of [ `Forward_value | `Other ]
+     | `Other
+     ]
 =
   fun e ->
     match e.exp_desc with

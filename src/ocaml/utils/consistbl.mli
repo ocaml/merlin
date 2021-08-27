@@ -56,16 +56,16 @@ module Make
      if the latter has an associated CRC in [tbl].
      Raise [Not_found] otherwise. *)
   val extract
-    :  Module_name.t list -> t -> (Module_name.t * Digest.t option) list
+    : Module_name.t list -> t -> (Module_name.t * Digest.t option) list
   (* [extract tbl names] returns an associative list mapping each string
      in [names] to the CRC associated with it in [tbl]. If no CRC is
      associated with a name then it is mapped to [None]. *)
   val extract_map : Module_name.Set.t -> t -> Digest.t option Module_name.Map.t
   (* Like [extract] but with a more sophisticated type. *)
   val filter : (Module_name.t -> bool) -> t -> unit
+  
   (* [filter pred tbl] removes from [tbl] table all (name, CRC) pairs
      such that [pred name] is [false]. *)
-  
   exception
     Inconsistency of
       {
@@ -73,8 +73,8 @@ module Make
         inconsistent_source : string;
         original_source : string
       }
-  (* Raised by [check] when a CRC mismatch is detected. *)
   
+  (* Raised by [check] when a CRC mismatch is detected. *)
   exception Not_available of Module_name.t
 (* Raised by [check_noadd] when a name doesn't have an associated
    CRC. *)

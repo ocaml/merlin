@@ -31,13 +31,11 @@ let rec print_ident ppf =
     fprintf ppf "%a(%a)" print_ident id1 print_ident id2
 
 let out_ident = ref print_ident
-(* Check a character matches the [identchar_latin1] class from the lexer *)
 
+(* Check a character matches the [identchar_latin1] class from the lexer *)
 let is_ident_char c =
   match c with
-  | 'A'
-    ..
-    'Z'
+  | 'A' .. 'Z'
   | 'a' .. 'z'
   | '_'
   | '\192' .. '\214'
@@ -68,8 +66,8 @@ let value_ident ppf name =
     fprintf ppf "( %s )" name
   else
     pp_print_string ppf name
-(* Values *)
 
+(* Values *)
 let valid_float_lexeme s =
   let l = String.length s in
   let rec loop i =
@@ -232,8 +230,8 @@ let print_out_value ppf tree =
   cautious print_tree_1 ppf tree
 
 let out_value = ref print_out_value
-(* Types *)
 
+(* Types *)
 let rec print_list_init pr sep ppf =
   function [] -> () | a :: l -> sep ppf; pr ppf a; print_list_init pr sep ppf l
 
@@ -380,8 +378,8 @@ and print_out_label ppf (name, mut, arg) =
 
 let out_label = ref print_out_label
 let out_type = ref print_out_type
-(* Class types *)
 
+(* Class types *)
 let print_type_parameter ppf s =
   if s = "_" then fprintf ppf "_" else pr_var ppf s
 
@@ -460,10 +458,10 @@ let out_type_extension = ref (fun _ -> failwith "Oprint.out_type_extension")
    gets printed as
      S1 -> S2 -> functor (Y : S3) -> S4 -> S5 -> sig end
 *)
+
 (* take a module type that may be a functor type,
    and return the longest prefix list of arguments
    that should be printed in long form. *)
-
 let collect_functor_arguments mty =
   let rec collect_args acc =
     function
@@ -718,8 +716,8 @@ let _ = out_module_type := print_out_module_type
 let _ = out_signature := print_out_signature
 let _ = out_sig_item := print_out_sig_item
 let _ = out_type_extension := print_out_type_extension
-(* Phrases *)
 
+(* Phrases *)
 let print_out_exception ppf exn outv =
   match exn with
   | Sys.Break -> fprintf ppf "Interrupted.@."

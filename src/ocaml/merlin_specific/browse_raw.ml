@@ -438,8 +438,7 @@ and of_class_field_desc =
     app (Class_field_kind cfk)
   | Tcf_constraint (ct1, ct2) -> of_core_type ct1 ** of_core_type ct2
   | Tcf_initializer e -> of_expression e
-  | Tcf_attribute _ -> id_fold
-(*TODO*)
+  | Tcf_attribute _ -> id_fold (*TODO*)
 
 and of_module_expr_desc =
   function
@@ -502,7 +501,9 @@ and of_signature_item_desc =
   | Tsig_typesubst tds ->
     (* FIXME: shitty approximation *)
     list_fold (fun td -> app (Type_declaration td)) tds
-  | Tsig_modsubst _ms -> (* TODO. *) id_fold
+  | Tsig_modsubst _ms ->
+    (* TODO. *)
+    id_fold
 
 and of_core_type_desc =
   function
@@ -684,8 +685,8 @@ let mk_lident x = Longident.Lident x
 
 let type_constructor_path =
   function { Types.desc = Types.Tconstr (p, _, _) } -> p | _ -> raise Not_found
-(* Build a fake path for value constructors and labels *)
 
+(* Build a fake path for value constructors and labels *)
 let fake_path { Location.loc; txt = lid } typ name =
   match type_constructor_path typ with
   | Path.Pdot (p, _) -> [ mkloc (Path.Pdot (p, name)) loc, Some lid ]

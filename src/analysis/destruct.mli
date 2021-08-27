@@ -66,8 +66,8 @@
         buffer will sometimes be wrong).
 
 *)
-(* TODO: document the following *)
 
+(* TODO: document the following *)
 exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
@@ -92,8 +92,8 @@ module Path_utils : sig
 
   Optionnaly a [name] can be provided that will be used as the last ident of the
   path. *)
-  (* Return wheter the given path is opened in the given environment *)
   
+  (* Return wheter the given path is opened in the given environment *)
   val is_opened : Env.t -> Path.t -> bool
 end
   

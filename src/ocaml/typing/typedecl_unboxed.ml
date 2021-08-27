@@ -16,9 +16,9 @@
 open Types
 
 type t = Unavailable | This of type_expr | Only_on_64_bits of type_expr
+
 (* We use the Ctype.expand_head_opt version of expand_head to get access
    to the manifest type of private abbreviations. *)
-
 let rec get_unboxed_type_representation env ty fuel =
   if fuel < 0 then
     Unavailable
@@ -47,8 +47,7 @@ let rec get_unboxed_type_representation env ty fuel =
       (* This case can occur when checking a recursive unboxed type
          declaration. *)
       | _ -> assert false
-      end
-    (* only the above can be unboxed *)
+      end (* only the above can be unboxed *)
     | _ -> This ty
 
 let get_unboxed_type_representation env ty =

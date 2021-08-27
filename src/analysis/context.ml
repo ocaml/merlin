@@ -31,12 +31,11 @@ let { Logger.log } = Logger.for_section "context"
 
 type t =
   | Constructor of Types.constructor_description * Location.t
-  (* We attach the constructor description here so in the case of
-    disambiguated constructors we actually directly look for the type
-    path (cf. #486, #794). *)
-  | Expr
-  | Label of Types.label_description
-  (* Similar to constructors. *)
+  | (* We attach the constructor description here so in the case of
+      disambiguated constructors we actually directly look for the type
+      path (cf. #486, #794). *)
+  Expr
+  | Label of Types.label_description (* Similar to constructors. *)
   | Module_path
   | Module_type
   | Patt
@@ -55,8 +54,8 @@ let to_string =
   | Constant -> "constant"
   | Type -> "type"
   | Unknown -> "unknown"
-(* Distinguish between "Mo[d]ule.something" and "Module.some[t]hing" *)
 
+(* Distinguish between "Mo[d]ule.something" and "Module.some[t]hing" *)
 let cursor_on_longident_end
     ~cursor:cursor_pos ~lid_loc:{ Asttypes.loc; txt = lid } name
 =
@@ -107,11 +106,11 @@ let inspect_expression ~cursor ~lid e : t =
   | Texp_ident (p, lid_loc, _) ->
     let name = Path.last p in
     if name = "*type-error*" then
-    (* For type_enclosing: it is enough to return Module_path here.
-       - If the cursor was on the end of the lid typing should fail anyway
-       - If the cursor is on a segment of the path it should be typed ad a
-       Module_path
-       TODO: double check that this is correct-enough behavior for Locate *)
+      (* For type_enclosing: it is enough to return Module_path here.
+         - If the cursor was on the end of the lid typing should fail anyway
+         - If the cursor is on a segment of the path it should be typed ad a
+         Module_path
+         TODO: double check that this is correct-enough behavior for Locate *)
       Module_path
     else if cursor_on_longident_end ~cursor ~lid_loc name then
       Expr

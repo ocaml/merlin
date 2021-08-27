@@ -18,7 +18,7 @@ type error = Bad_immediacy_attribute of Type_immediacy.Violation.t
 exception Error of Location.t * error
 
 val compute_decl : Env.t -> Types.type_declaration -> Type_immediacy.t
-val property : (Type_immediacy.t,unit) Typedecl_properties.property
+val property : (Type_immediacy.t, unit) Typedecl_properties.property
 
 val update_decls
   :  Env.t

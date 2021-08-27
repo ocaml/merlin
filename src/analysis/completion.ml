@@ -62,10 +62,10 @@ let raw_info_printer : raw_info -> _ =
     | Some te ->
       `Concat (label ^ " of ", Out_type (Printtyp.tree_of_type_scheme te))
     end
+
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop
    with permission from Jeremie Dimino. *)
-
 let lookup_env f x env = try Some (f x env) with Not_found | Env.Error _ -> None
 
 let parenthesize_name name =
@@ -186,7 +186,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
        | Exit -> `Module, `None)
     | `ModType m ->
       if exact then
-        `Modtype, `Modtype_declaration (ident (*verbose_sig env*), m)
+        `Modtype, `Modtype_declaration (ident, (*verbose_sig env*) m)
       else
         `Modtype, `None
     | `Typ t -> `Type, `Type_declaration (ident, t)
@@ -210,8 +210,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | None, Some get_doc, kind ->
       begin match path, loc with
       | Some p, Some loc ->
-        let namespace =
-          (* FIXME: that's just terrible *)
+        let namespace = (* FIXME: that's just terrible *)
           match kind with `Value -> `Vals | `Type -> `Type | _ -> assert false
         in
         begin match get_doc (`Completion_entry (namespace, p, loc)) with
@@ -350,8 +349,7 @@ let get_candidates
     in
     let of_kind =
       function
-      | `Keywords -> []
-      (* cannot happen after a dot. *)
+      | `Keywords -> [] (* cannot happen after a dot. *)
       | `Variants ->
         let add_variant name param candidates =
           if not @@ validate `Variant `Variant name then
@@ -648,8 +646,8 @@ let complete_prefix
           find ~is_label (String.concat ~sep:"." @@ Longident.flatten prefix)
       with
       | Not_found -> []
-(* Propose completion from a particular node *)
 
+(* Propose completion from a particular node *)
 let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
   function
   | [] -> []

@@ -17,8 +17,8 @@ open Asttypes
 open Path
 open Types
 open Typedtree
-(* Inclusion between value descriptions *)
 
+(* Inclusion between value descriptions *)
 exception Dont_match
 
 let value_descriptions
@@ -45,16 +45,16 @@ let value_descriptions
     | _, _ -> Tcoerce_none
   else
     raise Dont_match
-(* Inclusion between "private" annotations *)
 
+(* Inclusion between "private" annotations *)
 let private_flags decl1 decl2 =
   match decl1.type_private, decl2.type_private with
   | Private, Public ->
     decl2.type_kind = Type_abstract &&
       (decl2.type_manifest = None || decl1.type_kind <> Type_abstract)
   | _, _ -> true
-(* Inclusion between manifest types (particularly for private row types) *)
 
+(* Inclusion between manifest types (particularly for private row types) *)
 let is_absrow env ty =
   match ty.desc with
   | Tconstr (Pident _, _, _) ->
@@ -132,8 +132,8 @@ let type_manifest env ty1 params1 ty2 params2 priv2 =
           | Ctype.Cannot_expand -> false
     in
     check_super ty1
-(* Inclusion between type declarations *)
 
+(* Inclusion between type declarations *)
 type position = Ctype.Unification_trace.position = First | Second
 
 let choose ord first second = match ord with First -> first | Second -> second
@@ -291,8 +291,8 @@ let rec compare_constructor_arguments ~loc env params1 params2 arg1 arg2 =
   | Types.Cstr_tuple arg1, Types.Cstr_tuple arg2 ->
     if List.length arg1 <> List.length arg2 then
       Some (Arity : constructor_mismatch)
-    else if
-    (* Ctype.equal must be called on all arguments at once, cf. PR#7378 *)
+    else if(* Ctype.equal must be called on all arguments at once, cf. PR#7378 *)
+    
       Ctype.equal env true (params1 @ arg1) (params2 @ arg2)
     then
       None
@@ -512,8 +512,8 @@ let type_declarations ?(equality=false) ~loc env ~mark name decl1 path decl2 =
                 None
               else
                 Some Variance
-(* Inclusion between extension constructors *)
 
+(* Inclusion between extension constructors *)
 let extension_constructors ~loc env ~mark id ext1 ext2 =
   (if mark then
      let usage =
