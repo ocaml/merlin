@@ -766,7 +766,7 @@ let module_expr_paths { Typedtree. mod_desc } =
   match mod_desc with
   | Tmod_ident (path, loc) -> [reloc path loc, Some loc.txt]
   | Tmod_functor (Named (Some id, loc, _), _) ->
-    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+    [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
   | _ -> []
 
 let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
@@ -781,7 +781,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
         reloc path loc, Some (Longident.Lident loc.txt)
       ) ps
     | Texp_letmodule (Some id,loc,_,_,_) ->
-      [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+      [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
     | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
       let lid =
         match ppat_desc with
@@ -835,7 +835,7 @@ let module_type_paths { Typedtree. mty_desc } =
   | Tmty_ident (path, loc) | Tmty_alias (path, loc) ->
     [reloc path loc, Some loc.txt]
   | Tmty_functor (Named (Some id,loc,_),_) ->
-    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+    [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
   | Tmty_with (_,ls) ->
     List.map ~f:(fun (p,l,_) -> reloc p l, Some l.txt) ls
   | _ -> []
@@ -864,11 +864,11 @@ let node_paths_full =
   | Module_expr me -> module_expr_paths me
   | Structure_item (i,_) -> structure_item_paths i
   | Module_binding_name { mb_id = Some mb_id; mb_name } ->
-    [reloc (Path.Pident mb_id) mb_name, Option.map mk_lident mb_name.txt]
+    [reloc (Path.Pident mb_id) mb_name, Option.map ~f:mk_lident mb_name.txt]
   | Module_type mt -> module_type_paths mt
   | Signature_item (i,_) -> signature_item_paths i
   | Module_declaration_name { md_id = Some md_id; md_name } ->
-    [reloc (Path.Pident md_id) md_name, Option.map mk_lident md_name.txt]
+    [reloc (Path.Pident md_id) md_name, Option.map ~f:mk_lident md_name.txt]
   | Module_type_declaration_name { mtd_id; mtd_name } ->
     [reloc (Path.Pident mtd_id) mtd_name, Some (Lident mtd_name.txt) ]
   | With_constraint c -> with_constraint_paths c
