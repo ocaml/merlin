@@ -301,7 +301,7 @@ let bigarray_untuplify = function
 
 let builtin_arraylike_name loc _ ~assign paren_kind n =
   let opname = if assign then "set" else "get" in
-  let opname = if !Clflags.unsafe then "unsafe_" ^ opname else opname in
+  let opname = if false then "unsafe_" ^ opname else opname in
   let prefix = match paren_kind with
     | Paren -> Lident "Array"
     | Bracket -> Lident "String"
