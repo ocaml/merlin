@@ -178,7 +178,7 @@ let deep_copy () =
   copy
 
 let trace_copy ?(copy=deep_copy ()) tr =
-  Unification_trace.map_types copy tr
+  Errortrace.map_types copy tr
 
 let error (loc, env, err) =
   let err = match err with
