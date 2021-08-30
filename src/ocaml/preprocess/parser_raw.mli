@@ -424,6 +424,7 @@ module MenhirInterpreter : sig
     | N_mutable_virtual_flags : (Asttypes.mutable_flag * Asttypes.virtual_flag) nonterminal
     | N_mutable_flag : (Asttypes.mutable_flag) nonterminal
     | N_mty_longident : (Longident.t) nonterminal
+    | N_module_type_subst : (Parsetree.module_type_declaration * string Location.loc option) nonterminal
     | N_module_type_declaration : (Parsetree.module_type_declaration * string Location.loc option) nonterminal
     | N_module_type : (Parsetree.module_type) nonterminal
     | N_module_subst : (Parsetree.module_substitution * string Location.loc option) nonterminal
@@ -437,7 +438,7 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_longident_LIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
-    | N_mk_longident_mod_ext_longident___anonymous_36_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident___anonymous_41_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_LIDENT_ : (Longident.t) nonterminal
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *
@@ -467,7 +468,8 @@ module MenhirInterpreter : sig
     | N_let_pattern : (Parsetree.pattern) nonterminal
     | N_let_bindings_no_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
-    | N_let_binding_body : (Parsetree.pattern * Parsetree.expression) nonterminal
+    | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression) nonterminal
+    | N_let_binding_body : (Parsetree.pattern * Parsetree.expression * bool) nonterminal
     | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal
