@@ -27,7 +27,7 @@ Initially from issue https://github.com/ocaml/merlin/issues/1125
         "line": 3,
         "col": 7
       },
-      "type": "(module Stdlib__int)",
+      "type": "(module Stdlib__Int)",
       "tail": "no"
     },
     {

@@ -5,7 +5,22 @@ classic and labels
   > EOF
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 26
+        },
+        "end": {
+          "line": 1,
+          "col": 27
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Warning 6: label x was omitted in the application of this function."
+      }
+    ],
     "notifications": []
   }
 
