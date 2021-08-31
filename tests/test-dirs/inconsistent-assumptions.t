@@ -36,16 +36,16 @@ And assume it is being built with dune:
   > module Foo = My_lib__Foo
   > module Import = My_lib__Import
   > EOF
-  $ $OCAMLC -c -no-alias-deps -w @a-40-41-42-49 -short-paths my_lib__.ml
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Import import.ml
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Bar bar.ml
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Foo foo.mli
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Foo foo.ml
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ my_lib.ml
+  $ $OCAMLC -c -no-alias-deps -w @a-40-41-42-49-70 -short-paths my_lib__.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Import import.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Bar bar.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Foo foo.mli
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Foo foo.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ my_lib.ml
   $ cd ..
   $ cat > .merlin <<EOF
   > EXCLUDE_QUERY_DIR
-  > FLG -w @a-40-41-42-49 -short-paths -open My_lib__
+  > FLG -w @a-40-41-42-49-70 -short-paths -open My_lib__
   > B _build
   > S .
   > EOF
@@ -64,9 +64,9 @@ Do an update that breaks the build:
   $ echo "let x = if x > 2 then 'c' else 'd'" >> import.ml
   $ cp *.ml *.mli _build/
   $ cd _build
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Import import.ml
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Bar bar.ml
-  $ $OCAMLC -c -w @a-40-41-42-49 -short-paths -open My_lib__ -o my_lib__Foo foo.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Import import.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Bar bar.ml
+  $ $OCAMLC -c -w @a-40-41-42-49-70 -short-paths -open My_lib__ -o my_lib__Foo foo.ml
   File "foo.ml", line 4, characters 11-12:
   4 | let x, _ = x + 1, Bar.b
                  ^
