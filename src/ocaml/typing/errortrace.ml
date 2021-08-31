@@ -162,4 +162,11 @@ module Subtype = struct
   let map f t = List.map (map_elt f) t
 
   let flatten f t = map (flatten_desc f) t
+
+  let map_desc f { t; expanded } =
+    let t = f t in
+    let expanded = Std.Option.map ~f expanded in
+    { t; expanded }  
+
+  let map_types f = map (map_desc f)
 end
