@@ -117,4 +117,7 @@ module Subtype : sig
   val flatten : (type_expr -> type_expr -> 'a) -> t -> 'a elt list
 
   val map : (desc -> desc) -> desc elt list -> desc elt list
+
+  (** merlin specific *)
+  val map_types : (type_expr -> type_expr) -> t -> t  
 end
