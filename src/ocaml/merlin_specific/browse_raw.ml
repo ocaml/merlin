@@ -292,7 +292,7 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
-  | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
+  | Tpat_tuple ps | Tpat_construct (_,_,ps,_) | Tpat_array ps ->
     list_fold of_pattern ps
   | Tpat_record (ls,_) ->
     list_fold (fun (lid_loc,desc,p) ->
@@ -506,6 +506,9 @@ and of_signature_item_desc = function
   | Tsig_modsubst _ms ->
     (* TODO. *)
     id_fold
+  | Tsig_modtypesubst _mts ->
+    (* TODO. *)
+    id_fold
 
 and of_core_type_desc = function
   | Ttyp_any | Ttyp_var _ -> id_fold
@@ -606,6 +609,8 @@ let of_node = function
     app (Type_declaration td)
   | With_constraint (Twith_module _ | Twith_modsubst _) ->
     id_fold
+  | With_constraint (Twith_modtype mt | Twith_modtypesubst mt) ->
+    of_module_type mt
   | Core_type { ctyp_desc } ->
     of_core_type_desc ctyp_desc
   | Package_type { pack_fields } ->
@@ -747,7 +752,7 @@ let fake_path {Location.loc ; txt = lid} typ name =
 let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
     match (pat_desc : k pattern_desc) with
-    | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_) ->
+    | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
       fake_path lid_loc cstr_res cstr_name
     | Tpat_var (id, {Location. loc; txt}) ->
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
@@ -906,7 +911,7 @@ let node_is_constructor = function
     Some {decl.cd_name with Location.txt = `Declaration decl}
   | Expression {exp_desc = Texp_construct (loc, desc, _)} ->
     Some {loc with Location.txt = `Description desc}
-  | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
+  | Pattern {pat_desc = Tpat_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None
 
