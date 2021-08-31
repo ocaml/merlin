@@ -397,7 +397,7 @@ let ocaml_warnings_spec ~error =
       let b' = Warnings.backup () in
       Warnings.restore ocaml.warnings;
       Misc.try_finally (fun () ->
-          Warnings.parse_options error spec;
+          ignore @@ Warnings.parse_options error spec;
           { ocaml with warnings = Warnings.backup () })
         ~always:(fun () -> Warnings.restore b'))
 

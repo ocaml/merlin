@@ -25,8 +25,9 @@ module Pat = struct
     let pat_desc = Tpat_tuple lst in
     { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
 
-  let construct ?(loc=Location.none) pat_env pat_type lid cstr_desc args =
-    let pat_desc = Tpat_construct (lid, cstr_desc, args) in
+  let construct ?(loc=Location.none) 
+    pat_env pat_type lid cstr_desc args locs_coretype =
+    let pat_desc = Tpat_construct (lid, cstr_desc, args, locs_coretype) in
     { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
 
   let pat_or ?(loc=Location.none) ?row_desc pat_env pat_type p1 p2 =
