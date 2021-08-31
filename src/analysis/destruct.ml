@@ -146,10 +146,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
     [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
-    | [], [] ->
-      if recurse then from_type_decl env path type_expr else
-      raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
-    | [], labels ->
+    | Type_record (labels, _) ->
       let lst =
         List.map labels ~f:(fun lbl_descr ->
           let lidloc = mk_id lbl_descr.lbl_name in
@@ -158,7 +155,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         )
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
-    | constructors, _ ->
+    | Type_variant (constructors, _) ->
       let prefix =
         let path = Printtyp.shorten_type_path env path in
         fun name ->
@@ -197,8 +194,12 @@ let rec gen_patterns ?(recurse=true) env type_expr =
               Patterns.omegas cstr_descr.cstr_arity
           in
           let lidl = Location.mknoloc (prefix cstr_descr.cstr_name) in
-          Some (Tast_helper.Pat.construct env type_expr lidl cstr_descr args)
+          Some (
+            Tast_helper.Pat.construct env type_expr lidl cstr_descr args None)
       )
+    | _ ->
+      if recurse then from_type_decl env path type_expr else
+      raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
     end
   | Tvariant row_desc ->
     List.filter_map row_desc.row_fields ~f:(function
@@ -263,7 +264,8 @@ let rec get_match = function
         m, (match typ.desc with
         | Tarrow (_, te, _, _) -> te
         | Tconstr _ ->
-          (match (Ctype.full_expand m.exp_env typ |> Ctype.repr).desc with
+          (match (Ctype.full_expand ~may_forget_scope:true m.exp_env typ
+            |> Ctype.repr).desc with
           | Tarrow (_, te, _, _) -> te
           | _ -> assert false)
         | _ -> assert false)
@@ -300,7 +302,7 @@ let rec get_every_pattern = function
                     let ill_typed_pred : Typedtree.pattern_predicate =
                       { f = fun p ->
                             List.memq Typecore.merlin_incorrect_attribute
-                              p.pat_attributes }
+                            ~set:p.pat_attributes }
                     in
                     if Typedtree.exists_general_pattern ill_typed_pred p then
                       raise Ill_typed;
@@ -373,8 +375,8 @@ let rec subst_patt initial ~by patt =
     { patt with pat_desc = Tpat_alias (f p, x, y) }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f) }
-  | Tpat_construct (lid, cd, lst) ->
-    { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f) }
+  | Tpat_construct (lid, cd, lst, lco) ->
+    { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
     { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
   | Tpat_record (sub, flg) ->
@@ -400,8 +402,8 @@ let rec rm_sub patt sub =
     { patt with pat_desc = Tpat_alias (f p, x, y)  }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f) }
-  | Tpat_construct (lid, cd, lst) ->
-    { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f) }
+  | Tpat_construct (lid, cd, lst, lco) ->
+    { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f, lco) }
   | Tpat_variant (lbl, pat_opt, row_desc) ->
     { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
   | Tpat_record (sub, flg) ->
@@ -452,7 +454,7 @@ let rec qualify_constructors ~unmangling_tables f pat  =
         else closed
       in
       Tpat_record (labels, closed)
-    | Tpat_construct (lid, cstr_desc, ps) ->
+    | Tpat_construct (lid, cstr_desc, ps, lco) ->
       let lid =
         match lid.Asttypes.txt with
         | Longident.Lident name ->
@@ -474,7 +476,8 @@ let rec qualify_constructors ~unmangling_tables f pat  =
           end
         | _ -> lid (* already qualified *)
       in
-      Tpat_construct (lid, cstr_desc, List.map ps ~f:(qualify_constructors f))
+      Tpat_construct
+        (lid, cstr_desc, List.map ps ~f:(qualify_constructors f), lco)
     | Tpat_array ps -> Tpat_array (List.map ps ~f:(qualify_constructors f))
     | Tpat_or (p1, p2, row_desc) ->
       Tpat_or (qualify_constructors f p1, qualify_constructors f p2, row_desc)
@@ -497,7 +500,7 @@ let find_branch patterns sub =
       | Tpat_lazy p ->
         is_sub_patt p ~sub
       | Tpat_tuple lst
-      | Tpat_construct (_, _, lst)
+      | Tpat_construct (_, _, lst, _)
       | Tpat_array lst ->
         List.exists lst ~f:(is_sub_patt ~sub)
       | Tpat_record (subs, _) ->
@@ -594,16 +597,18 @@ let rec node config source selected_node parents =
           let _patt : Typedtree.value Typedtree.general_pattern = patt in
           if not (destructible patt) then raise Nothing_to_do else
             let ty = patt.Typedtree.pat_type in
+            (* Printf.eprintf "pouet cp \n%!" ; *)
             begin match gen_patterns patt.Typedtree.pat_env ty with
             | [] -> assert false (* we raise Not_allowed, but never return [] *)
             | [ more_precise ] ->
+              (* Printf.eprintf "one cp \n%!" ; *)
               (* If only one pattern is generated, then we're only refining the
                 current pattern, not generating new branches. *)
               let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
               let str = Mreader.print_pretty
                   config source (Pretty_pattern ppat) in
               patt.Typedtree.pat_loc, str
-            | sub_patterns ->
+            | h::_ as sub_patterns ->
               let rev_before, after, top_patt =
                 find_branch patterns patt
               in
@@ -628,6 +633,7 @@ let rec node config source selected_node parents =
                     )
                 )
               in
+              (* List.iter ~f:(Format.eprintf "multi cp %a \n%!" (Printtyped.pattern 0)) new_branches ; *)
               match new_branches with
               | [] -> raise Useless_refine
               | p :: ps ->
@@ -637,9 +643,12 @@ let rec node config source selected_node parents =
                       top_patt.Typedtree.pat_type acc p
                   )
                 in
+                (* Format.eprintf "por %a \n%!" (Printtyped.pattern 0) p; *)
                 let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
+                (* Format.eprintf "ppor %a \n%!" (Pprintast.pattern) ppat; *)
                 let str = Mreader.print_pretty
                     config source (Pretty_pattern ppat) in
+                (* Format.eprintf "STR: %s \n %!" str; *)
                 top_patt.Typedtree.pat_loc, str
             end
         end

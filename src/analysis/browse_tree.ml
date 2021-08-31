@@ -82,7 +82,7 @@ let same_constructor env a b =
       | `Description d ->
         let ty = normalize_type_expr env d.Types.cstr_res in
         begin match ty.Types.type_kind with
-        | Types.Type_variant decls ->
+        | Types.Type_variant (decls, _) ->
           List.map decls ~f:id_of_constr_decl
         | _ -> assert false
         end
