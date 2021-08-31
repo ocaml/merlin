@@ -2409,13 +2409,12 @@ and type_one_application ~ctx:(apply_loc,md_f,args) funct_body env funct
           Includemod.modtypes
             ~loc:app_view.arg.mod_loc ~mark:Mark_both env
             app_view.arg.mod_type mty_param
-        with Includemod.Error _ ->
-          let args = List.map simplify_app_summary args in
-          let mty_f = md_f.mod_type in
-          let lid_app = None in
+        with Includemod.Error msg ->
+          let _args = List.map simplify_app_summary args in
+          let _mty_f = md_f.mod_type in
+          let _lid_app = None in
           Msupport.raise_error(
-            Error(app_view.arg.mod_loc, env, 
-              Includemod.Apply_error {loc=apply_loc;env;lid_app;mty_f;args}));
+            Error(app_view.arg.mod_loc, env, Not_included msg));
           Tcoerce_none
       in
       let mty_appl =
