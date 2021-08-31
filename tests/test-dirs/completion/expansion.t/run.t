@@ -2,6 +2,20 @@
   > -filename expansion.ml < expansion1.ml | jq ".value.entries | sort_by(.name)"
   [
     {
+      "name": "Lazy.map",
+      "kind": "Value",
+      "desc": "",
+      "info": "",
+      "deprecated": false
+    },
+    {
+      "name": "Lazy.map_val",
+      "kind": "Value",
+      "desc": "",
+      "info": "",
+      "deprecated": false
+    },
+    {
       "name": "List.map",
       "kind": "Value",
       "desc": "",
