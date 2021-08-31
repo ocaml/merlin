@@ -347,6 +347,8 @@ let pattern : type k . _ -> k T.general_pattern -> _ = fun sub pat ->
           match tyo, arg with
           | Some ty, Some arg ->
               Some (vl, Pat.mk ~loc (Ppat_constraint (arg, ty)))
+          | None, Some arg ->
+              Some (vl, arg)
           | _ -> None)
     | Tpat_variant (label, pato, _) ->
         Ppat_variant (label, Option.map (sub.pat sub) pato)
