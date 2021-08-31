@@ -301,7 +301,7 @@ let bigarray_untuplify = function
 
 let builtin_arraylike_name loc _ ~assign paren_kind n =
   let opname = if assign then "set" else "get" in
-  let opname = if false then "unsafe_" ^ opname else opname in
+  let opname = if !Clflags.fast then "unsafe_" ^ opname else opname in
   let prefix = match paren_kind with
     | Paren -> Lident "Array"
     | Bracket -> Lident "String"
@@ -2471,9 +2471,9 @@ let_pattern [@recovery default_pattern ()]:
       { mk_indexop_expr builtin_indexing_operators ~loc:$sloc $1 }
   | indexop_expr(qualified_dotop, expr_semi_list, { None })
       { mk_indexop_expr user_indexing_operators ~loc:$sloc $1 }
-(* 
+(*
   | indexop_error (DOT, seq_expr) { $1 }
-  | indexop_error (qualified_dotop, expr_semi_list) { $1 } 
+  | indexop_error (qualified_dotop, expr_semi_list) { $1 }
 *)
   | simple_expr_attrs
     { let desc, attrs = $1 in
