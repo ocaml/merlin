@@ -24,7 +24,7 @@ jobs:
           - ubuntu-latest
           - windows-latest
         ocaml-version:
-          - 4.12.0
+          - 4.13.0
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -38,12 +38,17 @@ jobs:
           # A directory to store and save the cache
           path: ~/.opam
           # An explicit key for restoring and saving the cache
-          key: ${{ matrix.os }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}-build
-      - name: Set up OCaml ${{ matrix.ocaml-version }}
+          key: ${{ matrix.os }}-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}-build
+
+      - name: Set up OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
           # Version of the OCaml compiler to initialise
-          ocaml-compiler: ${{ matrix.ocaml-version }}
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-repositories: |
+            default: https://github.com/ocaml/opam-repository.git
+            beta: https://github.com/ocaml/ocaml-beta-repository.git
 
+      - run: opam depext conf-jq --yes # opam depext bug
       - run: opam install . --deps-only --with-test
       - run: opam exec -- dune runtest -p merlin,dot-merlin-reader
