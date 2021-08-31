@@ -8,11 +8,11 @@ A few simple tests that show all the things we want to preserve or improve:
   > -position 1:0 -filename test.ml | \
   > jq '.value.entries[] | del(.info) | del(.kind) | del(.deprecated)'
   {
-    "name": "Stdlib__int64.bits_of_float",
+    "name": "Stdlib__Int64.bits_of_float",
     "desc": "float -> int64"
   }
   {
-    "name": "Stdlib__int64.of_float",
+    "name": "Stdlib__Int64.of_float",
     "desc": "float -> int64"
   }
 

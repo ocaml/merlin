@@ -38,7 +38,7 @@
         "sub": [],
         "valid": true,
         "message": "This variant pattern is expected to have type t
-  The constructor C does not belong to type t"
+  There is no constructor C within type t"
       },
       {
         "start": {
@@ -117,6 +117,7 @@
                         pattern (test.ml[4,46+4]..test.ml[4,46+5])
                           Tpat_construct \"A\"
                           []
+                          None
                       expression (test.ml[4,46+9]..test.ml[4,46+11])
                         attribute \"merlin.loc\"
                           []
@@ -128,6 +129,7 @@
                         pattern (test.ml[5,58+4]..test.ml[5,58+5])
                           Tpat_construct \"B\"
                           []
+                          None
                       expression (test.ml[5,58+9]..test.ml[5,58+10])
                         attribute \"merlin.incorrect\"
                           []
@@ -196,7 +198,7 @@
         "sub": [],
         "valid": true,
         "message": "This variant pattern is expected to have type t
-  The constructor C does not belong to type t"
+  There is no constructor C within type t"
       },
       {
         "start": {
