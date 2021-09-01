@@ -1,3 +1,10 @@
+unreleased
+============
+
+  + merlin binary
+    - enable `occurences` to work when looking for locally abstract types
+      (#1382)
+
 merlin 4.3.1
 ============
 Mon Jul 26 04:45:37 PM CET 2021
@@ -12,7 +19,7 @@ Mon Jul 26 04:45:37 PM CET 2021
     - add a new command `construct` that builds a list of possible terms when
       called on a typed hole (#1318)
     - `refactor-open` improvements (#1313, #1314, #1366, #1372)
-      - do not make paths absolute, simply prefix with the identifier under 
+      - do not make paths absolute, simply prefix with the identifier under
       the cursor
         ```ocaml
         open Foo (* calling refactor-open qualify on this open *)
@@ -28,9 +35,9 @@ Mon Jul 26 04:45:37 PM CET 2021
     - locate: reset global state from all entry points (#1364)
     - Windows: replace user name by its SID in socketnames (#1345, @ttamttam)
   + editor modes
-    - vim: add a simple interface to the new `construct` command: 
-      `MerlinConstruct`. When several results are suggested, `<c-i>` 
-      and `<c-u>` can be use to change the depth of the recursive 
+    - vim: add a simple interface to the new `construct` command:
+      `MerlinConstruct`. When several results are suggested, `<c-i>`
+      and `<c-u>` can be use to change the depth of the recursive
       construction. (#1318)
     - vim: add support for the `merlin-locate-type` command:
       `MerlinLocateType` (#1359)
@@ -38,7 +45,7 @@ Mon Jul 26 04:45:37 PM CET 2021
       `merlin-construct`. (#1352)
     - emacs: add support for the `merlin-locate-type` command. (#1359)
     - emacs: fix issue with `merlin--highlight` and  various minor improvements
-        (#1367, @mattiase) 
+        (#1367, @mattiase)
   + test suite
     - cover the new `construct` command (#1318)
     - disable tests failing in Opam's CI due to nested dune projects (#1373)
