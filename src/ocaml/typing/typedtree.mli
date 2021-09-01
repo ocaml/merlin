@@ -169,12 +169,12 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of string
         (** fun (type t) ->  *)
-    (* FIXME let-def: This is different from OCaml typechecker which uses
-       [Texp_newtype of string].
-       This was changed in https://github.com/ocaml/merlin/pull/1382.
-       It should be fine, unless we access a Texp_newtype from an
-       unmarshalled cmt. I am not sure if that can happen.
-    *)
+  | Texp_newtype' of Ident.t * label loc
+  (** merlin-specific: keep enough information to correctly implement
+      occurrences for local-types.
+      Merlin typechecker uses [Texp_newtype'] constructor, while upstream
+      OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
+      files. By adding a new constructor, we can still safely uses these. *)
 
 and expression_desc =
     Texp_ident of Path.t * Longident.t loc * Types.value_description
