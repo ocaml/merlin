@@ -224,8 +224,8 @@ let mkpat_opt_constraint ~loc p = function
   | Some typ -> ghpat ~loc (Ppat_constraint(p, typ))
 
 
-let syntax_error () =
-  raise Syntaxerr.Escape_error
+(*let syntax_error () =
+  raise Syntaxerr.Escape_error*)
 
 
 (* Using the function [not_expecting] in a semantic action means that this
@@ -527,7 +527,12 @@ let mklb first ~loc (p, e, is_pun) attrs =
   }
 
 let addlb lbs lb =
-  if lb.lb_is_pun && lbs.lbs_extension = None then syntax_error ();
+  if lb.lb_is_pun && lbs.lbs_extension = None then (
+    let err =
+      Syntaxerr.Expecting (lb.lb_loc, "let-extension (with punning)")
+    in
+    raise_error (Syntaxerr.Error err)
+  );
   { lbs with lbs_bindings = lb :: lbs.lbs_bindings }
 
 let mklbs ext rf lb =
@@ -2351,14 +2356,14 @@ let_pattern [@recovery default_pattern ()]:
     { array, d, Bracket, i, r }
 ;
 
-%inline indexop_error(dot, index):
+(*%inline indexop_error(dot, index):
   | simple_expr dot _p=LPAREN index  _e=error
     { indexop_unclosed_error $loc(_p)  Paren $loc(_e) }
   | simple_expr dot _p=LBRACE index  _e=error
     { indexop_unclosed_error $loc(_p) Brace $loc(_e) }
   | simple_expr dot _p=LBRACKET index  _e=error
     { indexop_unclosed_error $loc(_p) Bracket $loc(_e) }
-;
+;*)
 
 %inline qualified_dotop: ioption(DOT mod_longident {$2}) DOTOP { $1, $2 };
 
