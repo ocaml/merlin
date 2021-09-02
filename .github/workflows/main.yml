@@ -40,11 +40,10 @@ jobs:
           # An explicit key for restoring and saving the cache
           key: ${{ matrix.os }}-${{ matrix.ocaml-version }}-${{ hashFiles('*.opam') }}-build
       - name: Set up OCaml ${{ matrix.ocaml-version }}
-        uses: avsm/setup-ocaml@v1
+        uses: ocaml/setup-ocaml@v2
         with:
           # Version of the OCaml compiler to initialise
-          ocaml-version: ${{ matrix.ocaml-version }}
+          ocaml-compiler: ${{ matrix.ocaml-version }}
 
-      - run: opam depext conf-jq --yes # opam depext bug
       - run: opam install . --deps-only --with-test
       - run: opam exec -- dune runtest -p merlin,dot-merlin-reader
