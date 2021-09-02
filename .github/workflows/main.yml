@@ -42,11 +42,22 @@ jobs:
 
       - name: Set up OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
+        if: runner.os != 'Windows'
         with:
           # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-repositories: |
             default: https://github.com/ocaml/opam-repository.git
+            beta: https://github.com/ocaml/ocaml-beta-repository.git
+
+      - name: Set up OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        if: runner.os == 'Windows'
+        with:
+          # Version of the OCaml compiler to initialise
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-repositories: |
+            default: https://github.com/fdopen/opam-repository-mingw.git#opam2
             beta: https://github.com/ocaml/ocaml-beta-repository.git
 
       - run: opam depext conf-jq --yes # opam depext bug
