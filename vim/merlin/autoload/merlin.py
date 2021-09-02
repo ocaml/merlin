@@ -88,6 +88,9 @@ def concat_map(f, args):
 
 def current_context():
     filename = vim.eval("expand('%:p')")
+    if platform == "cygwin":
+        cygpath = os.popen('cygpath -m /').read().strip()
+        filename = cygpath + filename
     content = "\n".join(vim.current.buffer) + "\n"
     return (filename, content)
 
