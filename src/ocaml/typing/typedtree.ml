@@ -93,7 +93,7 @@ and exp_extra =
   | Texp_constraint of core_type
   | Texp_coerce of core_type option * core_type
   | Texp_poly of core_type option
-  | Texp_newtype of string
+  | Texp_newtype of Ident.t * label loc
 
 and expression_desc =
     Texp_ident of Path.t * Longident.t loc * Types.value_description
