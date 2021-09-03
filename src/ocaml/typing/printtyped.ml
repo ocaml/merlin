@@ -308,8 +308,8 @@ and expression_extra i ppf x attrs =
       line i ppf "Texp_poly\n";
       attributes i ppf attrs;
       option i core_type ppf cto;
-  | Texp_newtype s ->
-      line i ppf "Texp_newtype \"%s\"\n" s;
+  | Texp_newtype (id, _) ->
+      line i ppf "Texp_newtype \"%a\"\n" fmt_ident id;
       attributes i ppf attrs;
 
 and expression i ppf x =
