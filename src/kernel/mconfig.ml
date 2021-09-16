@@ -439,7 +439,8 @@ let ocaml_flags = [
   );
   (
     "-short-paths",
-    Marg.unit (fun ocaml -> {ocaml with real_paths = false}),
+    (* TODO Reactivate short paths when fixed *)
+    Marg.unit (fun ocaml -> {ocaml with real_paths = true}),
     " Shorten paths in types"
   );
   (
