@@ -18,6 +18,7 @@
 (defvar-local merlin-imenu--value-list nil)
 (defvar-local merlin-imenu--type-list nil)
 (defvar-local merlin-imenu--exception-list nil)
+(defvar-local merlin-imenu--module-list nil)
 
 (defun merlin-imenu-compute-position (line col)
   "Get location of the item."
@@ -59,7 +60,9 @@
             ((string= kind "Type")
              (setq merlin-imenu--type-list (cons marker merlin-imenu--type-list)))
             ((string= kind "Exn")
-             (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list))))
+             (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list)))
+            ((string= kind "Module")
+             (setq merlin-imenu--module-list (cons marker merlin-imenu--module-list))))
       (when sub-trees
         (merlin-imenu-parse-outline (concat prefix entry ".") sub-trees)))))
 
@@ -68,7 +71,8 @@
   ;; Reset local vars
   (setq merlin-imenu--value-list nil
         merlin-imenu--type-list nil
-        merlin-imenu--exception-list nil)
+        merlin-imenu--exception-list nil
+        merlin-imenu--module-list nil)
   ;; Read outline tree
   (merlin-imenu-parse-outline "" (merlin-call "outline"))
   (let ((index nil))
@@ -78,6 +82,8 @@
       (push (cons "Exception" merlin-imenu--exception-list) index))
     (when merlin-imenu--type-list
       (push (cons "Type" merlin-imenu--type-list) index))
+    (when merlin-imenu--module-list
+      (push (cons "Module" merlin-imenu--module-list) index))
     index))
 
 ;;;###autoload
