@@ -96,8 +96,65 @@
 (cl-defmethod xref-backend-identifier-completion-table ((_backend (eql merlin-xref)))
   nil)
 
+(defconst merlin-xref--operator-regexp
+  (eval-when-compile
+    (let* ((core-operator-char
+            `(or "$" "&" "*" "+" "-" "/" "=" ">" "@" "^" "|"))
+           (operator-char `(or "~" "!" "?" ,core-operator-char "%" "<" ":" "."))
+           (prefix-symbol `(or (seq "!" (* ,operator-char))
+                               (seq (or "?" "~") (+ ,operator-char))))
+           (infix-symbol `(or (seq (or ,core-operator-char "%" "<")
+                                   (* ,operator-char))
+                              (seq "#" (+ ,operator-char))))
+           (infix-op `(or ,infix-symbol
+                          ":="
+                          ;; Already handled as part of `infix-symbol':
+                          ;; "*" "+" "-" "-." "=" "!=" "<" ">" "||" "&" "&&"
+                          ;; Treated as normal symbols:
+                          ;; "or" "mod" "land" "lor" "lxor" "lsl" "lsr" "asr"
+                          ))
+           (operator-name `(or ,prefix-symbol ,infix-op)))
+      (rx-to-string operator-name t))))
+
+(defconst merlin-xref--binding-operator-regexp
+  (eval-when-compile
+    (let* ((core-operator-char
+            `(or "$" "&" "*" "+" "-" "/" "=" ">" "@" "^" "|"))
+           (dot-operator-char
+            `(or "!" "?" ,core-operator-char "%" ":"))
+           (binding-suffix
+            `(seq (or ,core-operator-char "<") (* ,dot-operator-char)))
+           (binding-operator
+            `(seq symbol-start (or "let" "and") ,binding-suffix)))
+      (rx-to-string binding-operator t))))
+
+(defconst merlin-xref--identifier-regexp
+  (rx symbol-start (in "A-Za-z_") (* (in "A-Za-z0-9_'"))))
+
 (cl-defmethod xref-backend-identifier-at-point ((_backend (eql merlin-xref)))
-  (let ((symbol (thing-at-point 'symbol)))
+  (let ((symbol
+         (and
+          (or
+           ;; binding operator starting at point
+           (looking-at merlin-xref--binding-operator-regexp)
+           ;; ... before point
+           (and (save-excursion
+                  (skip-chars-backward "letand$&*+/=<>@^|!?%:-")
+                  (looking-at merlin-xref--binding-operator-regexp))
+                (<= (point) (match-end 0)))
+           ;; ordinary name starting at point
+           (looking-at merlin-xref--identifier-regexp)
+           ;; operator starting at or before point
+           (and (save-excursion
+                  (skip-chars-backward "$&*+/=<>@^|!?%:.~#-")
+                  (looking-at merlin-xref--operator-regexp))
+                (<= (point) (match-end 0)))
+           ;; ordinary name starting before point
+           (and (save-excursion
+                  (skip-chars-backward "A-Za-z0-9_'")
+                  (looking-at merlin-xref--identifier-regexp))
+                (<= (point) (match-end 0))))
+          (match-string 0))))
     ;; Return a string with the buffer position in a property, in case
     ;; point changes before the string is used by one of the methods above.
     (and symbol (propertize symbol 'merlin-xref-point (point)))))
