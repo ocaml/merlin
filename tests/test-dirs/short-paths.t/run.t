@@ -177,6 +177,7 @@
     "notifications": []
   }
 
+FIXME WHEN SHORTPATH WILL BE AVALABLE AGAIN
   $ $MERLIN single errors -filename test.ml -short-paths < test.ml
   {
     "class": "return",
@@ -310,7 +311,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type N.O.t but an expression was expected of type unit"
+        "message": "This expression has type t = M.t but an expression was expected of type unit"
       },
       {
         "start": {
@@ -332,7 +333,7 @@
   Values do not match:
     val foo : 'a -> string
   is not included in
-    val foo : t -> t
+    val foo : int -> t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
   File \"test.ml\", line 85, characters 8-11: Actual declaration"
       },
@@ -348,7 +349,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type Dep.t"
+        "message": "This expression has type int but an expression was expected of type Dep.M.t"
       }
     ],
     "notifications": []

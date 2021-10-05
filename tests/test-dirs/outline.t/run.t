@@ -239,6 +239,7 @@
   $ $MERLIN single outline < path.ml | jq '.value[].type'
   "A.a"
   null
+FIXME WHEN SHORTPATH WILL BE AVALABLE AGAIN
   $ $MERLIN single outline -short-paths < path.ml | jq '.value[].type'
-  "a"
+  "A.a"
   null
