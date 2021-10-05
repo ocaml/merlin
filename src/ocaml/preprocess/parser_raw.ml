@@ -744,12 +744,12 @@ let mklb first ~loc (p, e, is_pun) attrs =
   }
 
 let addlb lbs lb =
-  (*if lb.lb_is_pun && lbs.lbs_extension = None then (
+  if lb.lb_is_pun && lbs.lbs_extension = None then (
     let err =
       Syntaxerr.Expecting (lb.lb_loc, "let-extension (with punning)")
     in
     raise_error (Syntaxerr.Error err)
-  );*)
+  );
   { lbs with lbs_bindings = lb :: lbs.lbs_bindings }
 
 let mklbs ext rf lb =
