@@ -422,7 +422,7 @@ let backup () = !current
 let restore x = current := x
 
 (* Some warnings are not properly implemented in merlin, just disable *)
-let is_disabled x = Config.merlin && ((x >= 32 && x <= 39) || x = 60)
+let is_disabled x = Config.merlin && ((x >= 32 && x <= 39) || x = 60 || x = 69)
 
 let is_active x =
   not !disabled &&
