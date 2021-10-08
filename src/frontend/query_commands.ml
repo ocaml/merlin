@@ -506,7 +506,13 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
+    let env, n = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
+    let str_item =
+      let nodes = Mbrowse.enclosing pos [ Mbrowse.of_typedtree local_defs ] in
+      List.find_map nodes ~f:(fun (env, node) -> match node with
+        | Browse_raw.Structure_item (str_item, _) -> Some str_item
+        |_ -> None)
+    in
     let path =
       match patho with
       | Some p -> p
@@ -522,7 +528,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     begin match
       Locate.from_string
         ~config:(Mpipeline.final_config pipeline)
-        ~env ~local_defs ~pos ml_or_mli path
+        ~env ~local_defs ~local_shapes:str_item.str_shape
+        ~pos ml_or_mli path
     with
     | `Found (file, pos) ->
       Locate.log ~title:"result"
@@ -790,7 +797,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
         | _ -> false
       in
-      List.find_some enclosing ~f:(fun (_, node) -> 
+      List.find_some enclosing ~f:(fun (_, node) ->
         (* it doesn't make sense to find occurrences of a wildcard pattern *)
         not (is_wildcard_pat node))
       |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)

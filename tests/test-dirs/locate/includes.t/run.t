@@ -1,12 +1,13 @@
 We include another unit, compiled with -no-keep-locs, so there are no locations
 in the environment to fallback to:
 
-  $ $OCAMLC -c -bin-annot -no-keep-locs foo.ml
+  $ $OCAMLC -c -shapes -no-keep-locs foo.ml
 
 Test when the include is a name, this should directly redirect us to the right
 thing.
 
-  $ $MERLIN single locate -look-for mli -position 4:17 -filename test.ml < test.ml
+  $ $MERLIN single locate -look-for mli -position 4:17 \
+  > -filename test.ml < test.ml
   {
     "class": "return",
     "value": {
@@ -34,4 +35,3 @@ the structure, but the stamp will have changed:
     },
     "notifications": []
   }
-

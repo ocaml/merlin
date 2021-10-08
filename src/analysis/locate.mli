@@ -50,6 +50,7 @@ val from_string
   :  config:Mconfig.t
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
+  -> local_shapes:Shape.Map.t
   -> pos:Lexing.position
   -> ?namespaces:Namespace.t list
   -> [ `ML | `MLI ]

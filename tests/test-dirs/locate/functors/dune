@@ -3,3 +3,7 @@
    f-missed_shadowing f-nested_applications)
  (enabled_if
   (<> %{os_type} Win32)))
+
+(cram
+ (applies_to :whole_subtree)
+ (alias all-locate-functors-tests))

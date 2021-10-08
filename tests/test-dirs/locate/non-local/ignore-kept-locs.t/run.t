@@ -1,6 +1,6 @@
 Setup the test context:
 
-  $ $OCAMLC -c -bin-annot -keep-locs a.ml
+  $ $OCAMLC -c -shapes -keep-locs a.ml
 
 Make sure that we do not use locations coming from the cmi:
 
@@ -41,6 +41,22 @@ The fallback here is ok, it points to the local buffer (to the include line
 actually), not to a.ml
 
   $ grep -A1 Fallback log | grep -v Fallback
-  File "b.ml", line 3, characters 0-9
+  [1]
 
   $ rm log
+
+
+
+  $ $MERLIN single locate -look-for ml -log-section locate -log-file log \
+  > -position 17:13 -filename ./b.ml < ./b.ml
+  {
+    "class": "return",
+    "value": {
+      "file": "$TESTCASE_ROOT/a.ml",
+      "pos": {
+        "line": 3,
+        "col": 22
+      }
+    },
+    "notifications": []
+  }

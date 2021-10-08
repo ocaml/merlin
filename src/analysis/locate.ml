@@ -627,7 +627,7 @@ module Env_lookup : sig
      : Namespace.inferred list
     -> Longident.t
     -> Env.t
-    -> (Path.t * Namespaced_path.t * Location.t) option
+    -> (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t) option
 
 end = struct
 
@@ -647,53 +647,65 @@ end = struct
     with
       Not_found -> None
 
-  exception Found of (Path.t * Namespaced_path.t * Location.t)
+  exception Found of
+    (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t)
 
   let in_namespaces (nss : Namespace.inferred list) ident env =
+    let open Shape.Sig_component_kind in
     try
       List.iter nss ~f:(fun namespace ->
         try
           match namespace with
+          | `This_cstr ({ Types.cstr_tag = Cstr_extension _; _ } as cd) ->
+            log ~title:"lookup"
+              "got extension constructor";
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, Extension_constructor, cd.cstr_uid, loc))
           | `This_cstr cd ->
             log ~title:"lookup"
               "got constructor, fetching path and loc in type namespace";
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type, cd.cstr_uid,loc))
           | `Constr ->
             log ~title:"lookup" "lookup in constructor namespace" ;
             let cd = Env.find_constructor_by_name ident env in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type,cd.cstr_uid, loc))
           | `Mod ->
             log ~title:"lookup" "lookup in module namespace" ;
             let path, md = Env.find_module_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Mod path, md.Types.md_loc))
+            raise (Found (path, Module, md.md_uid, md.Types.md_loc))
           | `Modtype ->
             log ~title:"lookup" "lookup in module type namespace" ;
             let path, mtd = Env.find_modtype_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Modtype path, mtd.Types.mtd_loc))
+            raise (Found (path, Module_type, mtd.mtd_uid, mtd.Types.mtd_loc))
           | `Type ->
             log ~title:"lookup" "lookup in type namespace" ;
             let path, typ_decl = Env.find_type_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, typ_decl.Types.type_loc))
+            raise (
+              Found (path, Type, typ_decl.type_uid, typ_decl.Types.type_loc)
+            )
           | `Vals ->
             log ~title:"lookup" "lookup in value namespace" ;
             let path, val_desc = Env.find_value_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Vals path, val_desc.Types.val_loc))
+            raise (
+              Found (path, Value, val_desc.val_uid, val_desc.Types.val_loc)
+            )
           | `This_label lbl ->
             log ~title:"lookup"
               "got label, fetching path and loc in type namespace";
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type, lbl.lbl_uid, loc))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace" ;
             let lbl = Env.find_label_by_name ident env in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type, lbl.lbl_uid, loc))
         with Not_found -> ()
       ) ;
       log ~title:"lookup" "   ... not in the environment" ;
@@ -727,15 +739,18 @@ let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
   locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
     ~lazy_trie
 
-let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
+let from_longident
+  ~config ~local_shapes ~env ~lazy_trie ~pos nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
-  | Some (path, tagged_path, loc) ->
+  | Some (path, namespace, uid, loc) ->
     if Utils.is_builtin_path path then
       `Builtin
     else
-      locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
+      Locate_with_shapes.from_path
+        ~env ~local_shapes ~ml_or_mli uid loc path namespace
+      (* locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc *)
 
 let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
   File_switching.reset ();
@@ -760,7 +775,8 @@ let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
       | `File_not_found _ as err -> err
       | `Found (loc, _) -> find_source ~config loc str_ident
 
-let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
+let from_string ~config ~env ~local_defs ~local_shapes
+  ~pos ?namespaces switch path =
   File_switching.reset ();
   Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
@@ -804,7 +820,9 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
     let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
-    match from_longident ~config ~pos ~env ~lazy_trie nss switch ident with
+    match from_longident
+      ~config ~local_shapes ~pos ~env ~lazy_trie nss switch ident
+    with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found (loc, _) -> find_source ~config loc path
@@ -829,7 +847,8 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       | Some ctxt ->
         let nss = Namespace.from_context ctxt in
         log ~title:"get_doc" "looking for the doc of '%s'" path ;
-        from_longident ~config ~pos ~env ~lazy_trie nss `MLI lid
+        let local_shapes = Shape.Map.empty in
+        from_longident ~config ~local_shapes ~pos ~env ~lazy_trie nss `MLI lid
       end
   with
   | `Found (_, Some doc) ->

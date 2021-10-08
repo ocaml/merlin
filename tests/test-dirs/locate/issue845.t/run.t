@@ -6,14 +6,15 @@ And we also do not want to use a functor from the stdlib, because locations,
 paths, etc. will change between versions of OCaml, so we define and compile a
 module containing a functor locally:
 
-  $ $OCAMLC -c -bin-annot local_map.mli
-  $ $OCAMLC -c -bin-annot local_map.ml
+  $ $OCAMLC -c -shapes local_map.mli
+  $ $OCAMLC -c -shapes local_map.ml
 
 Test jumping to impl:
 
 FIXME: this jumps to the .mli...
 
-  $ $MERLIN single locate -look-for ml -position 1:24 -filename test.ml <<EOF
+  $ $MERLIN single locate -look-for ml -position 1:24 \
+  > -filename test.ml <<EOF
   > module SM = Local_map.Make(String)
   > EOF
   {
@@ -29,7 +30,6 @@ FIXME: this jumps to the .mli...
   }
 
 Test jumping to intf:
-
   $ $MERLIN single locate -look-for mli -position 1:24 -filename test.ml <<EOF
   > module SM = Local_map.Make(String)
   > EOF
@@ -45,3 +45,36 @@ Test jumping to intf:
     "notifications": []
   }
 
+  $ $MERLIN single locate -look-for ml -position 2:15 \
+  > -filename test.ml <<EOF
+  > module Make(X : Map.OrderedType) : sig include X end = struct include X end
+  > module SM = Make(String)
+  > EOF
+  {
+    "class": "return",
+    "value": {
+      "file": "test.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single locate -look-for mli -position 2:15 \
+  > -filename test.ml <<EOF
+  > module Make(X : Map.OrderedType) : sig include X end = struct include X end
+  > module SM = Make(String)
+  > EOF
+  {
+    "class": "return",
+    "value": {
+      "file": "test.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
+    "notifications": []
+  }

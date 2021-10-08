@@ -39,6 +39,8 @@ val ast_impl_magic_number: string
         (* Magic number for file holding an implementation syntax tree *)
 val cmxs_magic_number: string
         (* Magic number for dynamically-loadable plugins *)
+val cms_magic_number: string
+        (* Magic number for shape files *)
 val cmt_magic_number: string
         (* Magic number for compiled interface files *)
 

@@ -46,6 +46,7 @@ and cmxa_magic_number =
 and ast_impl_magic_number = "Caml1999M030"
 and ast_intf_magic_number = "Caml1999N030"
 and cmxs_magic_number = "Caml1999D030"
+and cms_magic_number = "Caml1999S030"
 and cmt_magic_number = "Caml1999T030"
 and linear_magic_number = "Caml1999L030"
 

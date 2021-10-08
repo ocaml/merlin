@@ -32,7 +32,7 @@ Trying them all:
     "value": {
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
-        "line": 3,
+        "line": 7,
         "col": 0
       }
     },
@@ -115,7 +115,8 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
     "notifications": []
   }
 
-  $ $MERLIN single locate -look-for ml -position 18:15 -filename ./test.ml < ./test.ml
+  $ $MERLIN single locate -look-for ml -position 18:15 \
+  > -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {

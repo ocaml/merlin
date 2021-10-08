@@ -4,7 +4,7 @@ Create a well typed a.ml and a.mli and compile them
   $ echo "type t = A | B" > a.ml
   $ echo "type t = A | B" > a.mli
   $ $OCAMLC -c a.mli
-  $ $OCAMLC -c -bin-annot a.ml
+  $ $OCAMLC -c -shapes a.ml
   $ test -f a.cmi & test -f a.cmt & test ! -f a.cmti
 
 Jump:
@@ -24,12 +24,12 @@ Jump:
 
 Remove the cmt:
 
-  $ rm a.cmt
+  $ rm a.cms
 
 Introduce a type error in a.ml:
 
   $ echo "let () = 3" >> a.ml
-  $ env OCAML_ERROR_STYLE=short $OCAMLC -c -bin-annot a.ml
+  $ env OCAML_ERROR_STYLE=short $OCAMLC -c -shapes a.ml
   File "a.ml", line 2, characters 9-10:
   Error: This expression has type int but an expression was expected of type
            unit
@@ -41,16 +41,16 @@ failed to find/read the cmt and we're fallbacking to the location we got from
 the environment (as we explicitly asked locate to jump to the .ml).
 That is: if the file is a.mli then the test is broken:
 
+FIXME We don't have any information in CMS when typing fails
   $ $MERLIN single locate -look-for ml -position 1:11 -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {
-      "file": "$TESTCASE_ROOT/a.ml",
+      "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 9
       }
     },
     "notifications": []
   }
-

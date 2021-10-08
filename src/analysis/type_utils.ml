@@ -244,7 +244,7 @@ let print_constr ppf env lid =
 exception Fallback
 let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
   let print_expr expression =
-    let (str, _sg, _) =
+    let (str, _sg, _shape, _) =
       Env.with_cmis @@ fun () ->
       Typemod.type_toplevel_phrase env
         [Ast_helper.Str.eval expression]

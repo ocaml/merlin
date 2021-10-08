@@ -2,9 +2,9 @@
 
 Compile the various units as dune would:
 
-  $ $OCAMLC -c -no-alias-deps -w -49 -bin-annot mylib__.ml
-  $ $OCAMLC -c -no-alias-deps -bin-annot -open Mylib__ -o Mylib__Error error.ml
-  $ $OCAMLC -c -no-alias-deps -bin-annot -open Mylib__ -o Mylib__A a.ml
+  $ $OCAMLC -c -no-alias-deps -w -49 -shapes mylib__.ml
+  $ $OCAMLC -c -no-alias-deps -shapes -open Mylib__ -o Mylib__Error error.ml
+  $ $OCAMLC -c -no-alias-deps -shapes -open Mylib__ -o Mylib__A a.ml
 
 Test jumping from a normal constructor:
 
@@ -23,7 +23,8 @@ Test jumping from a normal constructor:
 
 From an exception:
 
-  $ $MERLIN single locate -look-for ml -position 3:21 -filename ./a.ml < ./a.ml
+  $ $MERLIN single locate -look-for ml -position 3:21 \
+  > -filename ./a.ml < ./a.ml
   {
     "class": "return",
     "value": {
@@ -37,8 +38,8 @@ From an exception:
   }
 
 From an extension constructor:
-
-  $ $MERLIN single locate -look-for ml -position 7:16 -filename ./a.ml < ./a.ml
+  $ $MERLIN single locate -look-for ml -position 7:16 \
+  > -filename ./a.ml < ./a.ml
   {
     "class": "return",
     "value": {

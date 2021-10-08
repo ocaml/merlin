@@ -23,6 +23,7 @@ val open_modules         : string list ref
     Ignored by merlin but kept for compatibility with upstream code. *)
 val annotations          : bool ref
 val binary_annotations   : bool ref
+val shapes               : bool ref
 val print_types          : bool ref
 val native_code          : bool ref
 val dont_write_files     : bool ref

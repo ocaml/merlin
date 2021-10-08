@@ -65,7 +65,7 @@ let compatible_prefix result_items tree_items =
 
 let rec type_structure caught env = function
   | parsetree_item :: rest ->
-    let items, _, part_env =
+    let items, _, shape, part_env =
       Typemod.merlin_type_structure env [parsetree_item]
     in
     let typedtree_items =

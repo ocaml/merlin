@@ -24,6 +24,8 @@
 (** Asttypes exposes basic definitions shared both by Parsetree and Types. *)
 open Asttypes
 
+module Uid = Shape.Uid
+
 (** Type expressions for the core language.
 
     The [type_desc] variant defines all the possible type expressions one can
@@ -248,23 +250,6 @@ module TypeOps : sig
   val compare : t -> t -> int
   val equal : t -> t -> bool
   val hash : t -> int
-end
-
-(* *)
-
-module Uid : sig
-  type t
-
-  val reinit : unit -> unit
-
-  val mk : current_unit:string -> t
-  val of_compilation_unit_id : Ident.t -> t
-  val of_predef_id : Ident.t -> t
-  val internal_not_actually_unique : t
-
-  val for_actual_declaration : t -> bool
-
-  include Identifiable.S with type t := t
 end
 
 (* Maps of methods and instance variables *)

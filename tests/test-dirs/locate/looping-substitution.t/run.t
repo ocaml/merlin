@@ -1,8 +1,8 @@
 Setup the test environment:
 
-  $ $OCAMLC -c -bin-annot -o Foo_test test.ml
-  $ $OCAMLC -c -bin-annot foo.ml
-  $ $OCAMLC -c -bin-annot bar.ml
+  $ $OCAMLC -c -shapes -o Foo_test test.ml
+  $ $OCAMLC -c -shapes foo.ml
+  $ $OCAMLC -c -shapes bar.ml
 
 Do the thing:
 

@@ -406,7 +406,8 @@ and structure = {
 and structure_item =
   { str_desc : structure_item_desc;
     str_loc : Location.t;
-    str_env : Env.t
+    str_env : Env.t;
+    str_shape : Shape.Map.t;
   }
 
 and structure_item_desc =

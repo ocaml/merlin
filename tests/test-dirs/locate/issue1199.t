@@ -23,7 +23,9 @@ straight to the functor.
     },
     "notifications": []
   }
-  $ $MERLIN single locate -look-for ml -position 7:9 -filename ./func.ml < ./func.ml
+
+  $ $MERLIN single locate -look-for ml -position 7:9 \
+  > -filename ./func.ml < ./func.ml
   {
     "class": "return",
     "value": {
