@@ -1,7 +1,7 @@
 all: build ocamlmerlin ocamlmerlin-server dot-merlin-reader
 
 build:
-	dune build --always-show-command-line
+	dune build --always-show-command-line @install
 
 ocamlmerlin ocamlmerlin-server dot-merlin-reader:
 	ln -s _build/install/default/bin/$@ ./$@
