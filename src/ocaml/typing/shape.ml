@@ -222,17 +222,18 @@ and subst var ~arg t =
 
 
 module Make_reduce(Params : sig
+  type env
   val fuel : int
   val read_unit_shape : unit_name:string -> t option
-  val find_shape : Ident.t -> t
+  val find_shape : env -> Ident.t -> t
 end) = struct
-  let rec reduce fuel t =
+  let rec reduce env fuel t =
     let reduce_if_gas =
       if fuel > 0
-      then reduce (fuel -1)
+      then reduce env (fuel -1)
       else Fun.id
     in
-    let reduce = reduce fuel in
+    let reduce = reduce env fuel in
     match t.desc with
     | Comp_unit unit_name ->
         begin match Params.read_unit_shape ~unit_name with
@@ -250,7 +251,7 @@ end) = struct
         { t with desc = Abs(var, reduce body) }
     | Var id ->
         begin try
-          let res = Params.find_shape id in
+          let res = Params.find_shape env id in
           if res = t then
             raise Not_found
           else
@@ -260,7 +261,7 @@ end) = struct
     | _ ->
         t
 
-  let reduce = reduce Params.fuel
+  let reduce env = reduce env Params.fuel
 end
 
 let dummy_mod = { uid = None; desc = Struct Item.Map.empty }

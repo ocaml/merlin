@@ -130,10 +130,14 @@ val of_path :
 val set_uid_if_none : t -> Uid.t -> t
 
 (* TODO: doc *)
-module Make_reduce(_ : sig
-    val fuel : int
-    val read_unit_shape : unit_name:string -> t option
-    val find_shape : Ident.t -> t
-  end) : sig
-  val reduce : t -> t
+module Make_reduce(Context : sig
+  type env
+
+  val fuel : int
+
+  val read_unit_shape : unit_name:string -> t option
+
+  val find_shape : env -> Ident.t -> t
+end) : sig
+  val reduce : Context.env -> t -> t
 end
