@@ -292,8 +292,10 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
-  | Tpat_tuple ps | Tpat_construct (_,_,ps,_) | Tpat_array ps ->
+  | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array ps ->
     list_fold of_pattern ps
+  | Tpat_construct (_,_,ps,Some (_, ct)) ->
+    list_fold of_pattern ps ** of_core_type ct
   | Tpat_record (ls,_) ->
     list_fold (fun (lid_loc,desc,p) ->
         of_pat_record_field p lid_loc desc ** of_pattern p) ls
