@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*                          Ulysse Gérard, Tarides                        *)
+(*                Ulysse Gérard, Thomas Refis, Tarides                    *)
 (*                                                                        *)
 (*   Copyright 2021 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
@@ -266,20 +266,19 @@ end
 
 let dummy_mod = { uid = None; desc = Struct Item.Map.empty }
 
-let rec of_path ~find_shape ?(ns = Sig_component_kind.Module) =
-  let ns_mod = Sig_component_kind.Module in
-  function
-  | Path.Pident id -> find_shape ns id
-  | Path.Pdot (path, name) ->
-      let t = of_path ~find_shape ~ns:ns_mod path in
-      proj t (name, ns)
-  | Path.Papply (p1, p2) ->
-      app (of_path ~find_shape ~ns:ns_mod p1)
-        ~arg:(of_path ~find_shape ~ns:ns_mod p2)
+let of_path ~find_shape ?(ns = Sig_component_kind.Module) =
+  let rec aux : Sig_component_kind.t -> Path.t -> t = fun ns -> function
+    | Pident id -> find_shape ns id
+    | Pdot (path, name) -> proj (aux Module path) (name, ns)
+    | Papply (p1, p2) -> app (aux Module p1) ~arg:(aux Module p2)
+  in
+  aux ns
 
 let for_persistent_unit s =
   { uid = Some (Uid.of_compilation_unit_id (Ident.create_persistent s));
     desc = Comp_unit s }
+
+let leaf_for_unpack = { uid = None; desc = Leaf }
 
 let set_uid_if_none t uid =
   match t.uid with

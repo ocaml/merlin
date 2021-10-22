@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*                          Thomas Refis, Tarides                         *)
+(*                Ulysse Gérard, Thomas Refis, Tarides                    *)
 (*                                                                        *)
 (*   Copyright 2021 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
@@ -19,10 +19,10 @@ let read_magic_number ic =
 
 type cms_infos = {
   cms_loadpath : string list;
-  cms_sourcefile : string;
-  cms_source_digest : Digest.t;
+  cms_sourcefile : string option; (* None for packs *)
+  cms_source_digest : Digest.t option; (* None for packs *)
   cms_uid_to_loc : Location.t Shape.Uid.Tbl.t;
-  cms_impl_shape : Shape.t option;
+  cms_impl_shape : Shape.t option; (* None for mli *)
 }
 
 let input_cms ic = (input_value ic : cms_infos)
@@ -45,14 +45,14 @@ let read_cms filename =
       raise(Error(Not_shapes filename))
   )
 
-let save_shape filename sourcefile shape =
+let save_shape filename ~source_file shape =
   if !Clflags.shapes && not !Clflags.print_types then
     Misc.output_to_file_via_temporary
        ~mode:[Open_binary] filename
        (fun _temp_file_name oc ->
-         let source_digest = Digest.file sourcefile in
+         let source_digest = Option.map Digest.file source_file in
          let cms = {
-           cms_sourcefile = sourcefile;
+           cms_sourcefile = source_file;
            cms_impl_shape = shape;
            cms_loadpath = Load_path.get_paths ();
            cms_source_digest = source_digest;

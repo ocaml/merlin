@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*                          Ulysse Gérard, Tarides                        *)
+(*                Ulysse Gérard, Thomas Refis, Tarides                    *)
 (*                                                                        *)
 (*   Copyright 2021 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
@@ -14,7 +14,7 @@
 (**************************************************************************)
 
 module Uid : sig
-  type t =
+  type t = private
     | Compilation_unit of string
     | Item of { comp_unit: string; id: int }
     | Internal
@@ -90,6 +90,7 @@ val proj : ?uid:Uid.t -> t -> Item.t -> t
 val leaf : Uid.t -> t
 
 val for_persistent_unit : string -> t
+val leaf_for_unpack : t
 
 module Map : sig
   type shape = t

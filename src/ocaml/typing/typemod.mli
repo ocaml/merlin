@@ -65,7 +65,7 @@ val save_signature:
 
 val package_units:
   Env.t -> string list -> string -> string ->
-  Typedtree.module_coercion * Shape.t
+  Typedtree.module_coercion
 
 (* Should be in Envaux, but it breaks the build of the debugger *)
 val initial_env:

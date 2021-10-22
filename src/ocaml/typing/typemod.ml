@@ -1619,12 +1619,12 @@ and transl_signature ?(keep_warnings = false) env sg =
           end
         | Psig_modtype pmtd ->
           begin match transl_modtype_decl env pmtd with
-          | newenv, mtd, id, decl ->
+          | newenv, mtd, decl ->
             Signature_names.check_modtype names pmtd.pmtd_loc mtd.mtd_id;
             Env.register_uid decl.mtd_uid mtd.mtd_loc;
             let (trem, rem, final_env) = transl_sig newenv srem in
             mksig (Tsig_modtype mtd) env loc :: trem,
-            Sig_modtype (id, decl, Exported) :: rem,
+            Sig_modtype (mtd.mtd_id, decl, Exported) :: rem,
             final_env
           | exception exn ->
             Msupport.raise_error exn;
@@ -1632,7 +1632,7 @@ and transl_signature ?(keep_warnings = false) env sg =
           end
         | Psig_modtypesubst pmtd ->
           begin match transl_modtype_decl env pmtd with
-          | newenv, mtd, _id, decl ->
+          | newenv, mtd, decl ->
             let info =
               let mty = match mtd.mtd_type with
                 | Some tmty -> tmty.mty_type
@@ -1707,7 +1707,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               Signature_names.check_class names loc cls.cls_id;
               Signature_names.check_class_type names loc cls.cls_ty_id;
               Signature_names.check_type names loc cls.cls_typesharp_id;
-              Env.register_uid cls.cls_decl.cty_uid cls.cls_decl.cty_loc
+              Env.register_uid cls.cls_decl.cty_uid cls.cls_decl.cty_loc;
             ) classes;
             res
           with
@@ -1745,7 +1745,7 @@ and transl_signature ?(keep_warnings = false) env sg =
               Signature_names.check_type names loc decl.clsty_typesharp_id;
               Env.register_uid
                 decl.clsty_ty_decl.clty_uid
-                decl.clsty_ty_decl.clty_loc
+                decl.clsty_ty_decl.clty_loc;
             ) classes;
             res
           with
@@ -1820,7 +1820,7 @@ and transl_modtype_decl_aux env
      mtd_loc=pmtd_loc;
     }
   in
-  newenv, mtd, id, decl
+  newenv, mtd, decl
 
 and transl_recmodule_modtypes env sdecls =
   let make_env curr =
@@ -2153,10 +2153,7 @@ let package_subtype env p1 fl1 p2 fl2 =
   | exception Error(_, _, Cannot_scrape_package_type _) -> false
   | mty1, mty2 ->
     let loc = Location.none in
-    (* FIXME *)
-    match
-      Includemod.modtypes ~loc ~mark:Mark_both env mty1 mty2
-    with
+    match Includemod.modtypes ~loc ~mark:Mark_both env mty1 mty2 with
     | Tcoerce_none, _shape -> true
     | _ | exception Includemod.Error _ -> false
 
@@ -2375,7 +2372,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
-      Shape.dummy_mod (* TODO @ulysse Pmod_unpack*)
+      Shape.leaf_for_unpack
   | Pmod_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
   | Pmod_hole ->
@@ -2819,12 +2816,13 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body
         newenv
     | Pstr_modtype pmtd ->
         (* check that it is non-abstract *)
-        let newenv, mtd, id, decl = transl_modtype_decl env pmtd in
+        let newenv, mtd, decl = transl_modtype_decl env pmtd in
         let newenv = Env.update_short_paths newenv in
         Signature_names.check_modtype names pmtd.pmtd_loc mtd.mtd_id;
         Env.register_uid decl.mtd_uid decl.mtd_loc;
-        let shape_map = Shape.Map.add_module_type shape_map id decl.mtd_uid in
-        Tstr_modtype mtd, [Sig_modtype (id, decl, Exported)], shape_map, newenv
+        let id = mtd.mtd_id in
+        let map = Shape.Map.add_module_type shape_map id decl.mtd_uid in
+        Tstr_modtype mtd, [Sig_modtype (id, decl, Exported)], map, newenv
     | Pstr_open sod ->
         let (od, sg, newenv) =
           type_open_decl ~toplevel funct_body shape_map names env sod
@@ -3158,6 +3156,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           );
         { structure = str;
           coercion = Tcoerce_none;
+          shape;
           signature = simple_sg
         } (* result is ignored by Compile.implementation *)
       end else begin
@@ -3175,7 +3174,8 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
             Includemod.compunit initial_env ~mark:Mark_positive
               sourcefile sg intf_file dclsig shape
           in
-          Cms_format.save_shape (outputprefix ^ ".cms") sourcefile (Some shape);
+          Cms_format.save_shape (outputprefix ^ ".cms") (Some shape)
+            ~source_file:(Some sourcefile);
           Typecore.force_delayed_checks ();
           (* It is important to run these checks after the inclusion test above,
              so that value declarations which are not used internally but
@@ -3185,6 +3185,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
             annots (Some sourcefile) initial_env None;
           { structure = str;
             coercion;
+            shape;
             signature = dclsig
           }
         end else begin
@@ -3207,14 +3208,15 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
               Env.save_signature ~alerts
                 simple_sg modulename (outputprefix ^ ".cmi")
             in
-            Cms_format.save_shape (outputprefix ^ ".cms") sourcefile
-              (Some shape);
+            Cms_format.save_shape (outputprefix ^ ".cms") (Some shape)
+              ~source_file:(Some sourcefile);
             let annots = Cmt_format.Implementation str in
             Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
               annots (Some sourcefile) initial_env (Some cmi)
           end;
           { structure = str;
             coercion;
+            shape;
             signature = simple_sg
           }
         end
@@ -3232,7 +3234,8 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
 let save_signature modname tsg outputprefix source_file initial_env cmi =
   Cmt_format.save_cmt  (outputprefix ^ ".cmti") modname
     (Cmt_format.Interface tsg) (Some source_file) initial_env (Some cmi);
-  Cms_format.save_shape (outputprefix ^  ".cmsi") source_file None
+  Cms_format.save_shape (outputprefix ^  ".cmsi")
+    ~source_file:(Some source_file) None
 
 let type_interface env ast =
   transl_signature env ast
@@ -3287,8 +3290,17 @@ let package_units initial_env objfiles cmifile modulename =
   (* Compute signature of packaged unit *)
   Ident.reinit();
   let sg = package_signatures units in
-  (* See if explicit interface is provided *)
+  (* Compute the shape of the package *)
   let prefix = Filename.remove_extension cmifile in
+  let pack_uid = Uid.of_compilation_unit_id (Ident.create_persistent prefix) in
+  let shape =
+    List.fold_left (fun map (name, _sg) ->
+      let id = Ident.create_persistent name in
+      Shape.Map.add_module map id (Shape.for_persistent_unit name)
+    ) Shape.Map.empty units
+    |> Shape.str ~uid:pack_uid
+  in
+  (* See if explicit interface is provided *)
   let mlifile = prefix ^ !Config.interface_suffix in
   if Sys.file_exists mlifile then begin
     if not (Sys.file_exists cmifile) then begin
@@ -3298,8 +3310,12 @@ let package_units initial_env objfiles cmifile modulename =
     let dclsig = Env.read_signature modulename cmifile in
     Cmt_format.save_cmt  (prefix ^ ".cmt") modulename
       (Cmt_format.Packed (sg, objfiles)) None initial_env  None ;
-    Includemod.compunit initial_env ~mark:Mark_both
-      "(obtained by packing)" sg mlifile dclsig Shape.dummy_mod (* FIXME *)
+    let cc, shape =
+      Includemod.compunit initial_env ~mark:Mark_both
+        "(obtained by packing)" sg mlifile dclsig shape
+    in
+    Cms_format.save_shape (prefix ^ ".cms") ~source_file:None (Some shape);
+    cc
   end else begin
     (* Determine imports *)
     let unit_names = List.map fst units in
@@ -3316,9 +3332,10 @@ let package_units initial_env objfiles cmifile modulename =
       in
       Cmt_format.save_cmt (prefix ^ ".cmt")  modulename
         (Cmt_format.Packed (cmi.Cmi_format.cmi_sign, objfiles)) None initial_env
-        (Some cmi)
+        (Some cmi);
+      Cms_format.save_shape (prefix ^ ".cms") ~source_file:None (Some shape);
     end;
-    Tcoerce_none, Shape.dummy_mod (* FIXME: TODO *)
+    Tcoerce_none
   end
 
 
