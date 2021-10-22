@@ -233,8 +233,6 @@ module Utils = struct
     | Path.Pident id -> Ident.is_predef id
     | _ -> false
 
-  let is_ghost_loc { Location. loc_ghost; _ } = loc_ghost
-
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
      This is only used when looking for ml files, not cmts. Indeed for cmts we
@@ -306,6 +304,118 @@ module Utils = struct
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
         | CMT _ | CMTI _         -> !loadpath
 end
+
+let rec load_shapes comp_unit cmwhat =
+  match Load_path.find_uncap (comp_unit ^ cmwhat) with
+  | filename ->
+    let cms = Cms_cache.read filename in
+    let pos_fname = cms.cms_sourcefile in
+    Ok (pos_fname, cms)
+  | exception Not_found ->
+    if cmwhat = ".cmsi" then load_shapes comp_unit ".cms"
+    else Error ()
+
+module Shape_reduce =
+  Shape.Make_reduce (struct
+    type env = Env.t
+
+    let fuel = 1
+
+    let read_unit_shape ~unit_name =
+      match Load_path.find_uncap (unit_name ^ ".cms") with
+      | filename -> (Cms_cache.read filename).cms_impl_shape
+      | exception Not_found ->
+        log ~title:"read_unit_shape"
+          "failed to find %s.cms" unit_name;
+        None
+
+    let find_shape env id = Env.shape_of_path env (Pident id)
+  end)
+
+let locate ~env ~ml_or_mli uid loc path ns =
+  let uid, cmwhat = match ml_or_mli with
+    | `ML -> begin
+        log ~title:"locate_with_shape" "From path: %a\n%!"
+          Logger.fmt (fun fmt -> Path.print fmt path);
+        let shape = Env.shape_of_path ~ns env path in
+        log ~title:"locate_with_shape" "Shape of path: %a\n"
+          Logger.fmt (fun fmt -> Shape.print fmt shape);
+        let r = Shape_reduce.reduce env shape in
+        log ~title:"locate_with_shape" "Wich reduces to %a\n"
+          Logger.fmt (fun fmt -> Shape.print fmt r);
+        r.uid
+      end, ".cms"
+    | `MLI ->
+      log ~title:"locate_with_shape" "Looking for the location of uid: %a\n%!"
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+      Some uid, ".cmsi"
+  in
+  match uid with
+  | Some (Shape.Uid.Item { comp_unit; id } as uid) ->
+    let fileopt, locopt =
+      if Env.get_unit_name () = comp_unit then begin
+          log ~title:"locate_with_shape"
+            "We look for %a in the current compilation unit."
+           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+          let tbl = Env.get_uid_to_loc_tbl () in
+          let loc = match Shape.Uid.Tbl.find_opt tbl uid with
+            | Some loc ->
+              log ~title:"locate_with_shape" "Found location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              loc
+            | None ->
+              log ~title:"locate_with_shape" "Uid not found in the local environment. Fallbacking to the node's location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              loc
+          in
+          Some comp_unit,
+          Some loc
+      end else begin
+        log ~title:"locate_with_shape"
+          "Loading the shapes for unit %S" comp_unit;
+        match load_shapes comp_unit cmwhat with
+        | Ok (_fname, cms) ->
+          log ~title:"locate_with_shape"
+            "Shapes succesfully loaded, looking for %a"
+            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+          let loc = match Shape.Uid.Tbl.find_opt cms.cms_uid_to_loc uid with
+            | Some loc ->
+              log ~title:"locate_with_shape" "Found location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              Some loc
+            | None ->
+              log ~title:"locate_with_shape"
+                "Uid not found in the loaded shape.";
+              None
+            in
+          Some comp_unit,
+          loc
+        | Error () ->
+          log ~title:"locate_with_shape"
+            "Failed to load the shapes";
+          None, None
+      end
+    in
+    let res = Option.map ~f:(fun loc -> fileopt, loc) locopt in
+    (match res with
+    | Some (f, l) -> `Found( l, f)
+    | _ -> `Not_found ("todo1", None) (* TODO fallback ?*) )
+  | Some (Compilation_unit comp_unit) ->
+    begin
+      match load_shapes comp_unit cmwhat with
+      | Ok (pos_fname, cms) ->
+        let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
+        let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
+        `Found(loc, Some comp_unit)
+      | Error () ->
+        log ~title:"locate_with_shape"
+          "Failed to load the shapes";
+        `Not_found ("todo2", None) (* TODO fallback ?*)
+    end
+  | _ ->
+    log ~title:"locate_with_shape"
+      "No UID found in the shape, fallback to lookup location.";
+    `Found (loc, None)
 
 let path_and_loc_of_cstr desc _ =
   let open Types in
@@ -597,8 +707,7 @@ end
 
 (* Only used to retrieve documentation *)
 let from_completion_entry ~env ~config ~pos (namespace, path, loc) =
-  Locate_with_shapes.from_path
-    ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
+  locate ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
     path namespace
 
 let from_longident
@@ -610,26 +719,21 @@ let from_longident
     if Utils.is_builtin_path path then
       `Builtin
     else
-      Locate_with_shapes.from_path
-        ~env ~ml_or_mli uid loc path namespace
-      (* locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc *)
+      locate ~env ~ml_or_mli uid loc path namespace
 
 let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
   File_switching.reset ();
   Fallback.reset ();
-  let str_ident = Path.name path in
   if Utils.is_builtin_path path then
     `Builtin
   else
     match Env_lookup.loc path namespace env with
-    | None -> `Not_in_env str_ident
+    | None -> `Not_in_env (Path.name path)
     | Some (loc, uid, namespace) ->
-      match
-        Locate_with_shapes.from_path ~env ~ml_or_mli uid loc path namespace
-      with
+      match locate ~env ~ml_or_mli uid loc path namespace with
       | `Not_found _
       | `File_not_found _ as err -> err
-      | `Found (loc, _) -> find_source ~config loc str_ident
+      | `Found (loc, _) -> find_source ~config loc (Path.name path)
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
