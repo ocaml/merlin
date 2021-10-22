@@ -50,7 +50,6 @@ val from_string
   :  config:Mconfig.t
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
-  -> local_shapes:Shape.Map.t
   -> pos:Lexing.position
   -> ?namespaces:Namespace.t list
   -> [ `ML | `MLI ]
@@ -70,7 +69,7 @@ val get_doc
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> [ `User_input of string
-     | `Completion_entry of (Namespaced_path.Namespace.t * Path.t * Location.t) ]
+     | `Completion_entry of (Shape.Sig_component_kind.t * Path.t * Location.t) ]
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string

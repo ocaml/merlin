@@ -134,7 +134,7 @@ let print fmt =
     match uid with
     | None -> print_desc fmt desc
     | Some uid ->
-        Format.fprintf fmt "%a:@ %a"
+        Format.fprintf fmt "(%a:@ %a)"
           Uid.print uid
           print_desc desc
   and print_desc fmt = function
@@ -276,7 +276,9 @@ let rec of_path ~find_shape ?(ns = Sig_component_kind.Module) =
       app (of_path ~find_shape ~ns:ns_mod p1)
         ~arg:(of_path ~find_shape ~ns:ns_mod p2)
 
-let for_persistent_unit s = { uid = None; desc = Comp_unit s }
+let for_persistent_unit s =
+  { uid = Some (Uid.of_compilation_unit_id (Ident.create_persistent s));
+    desc = Comp_unit s }
 
 let set_uid_if_none t uid =
   match t.uid with

@@ -507,12 +507,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, n = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
-    let str_item =
-      let nodes = Mbrowse.enclosing pos [ Mbrowse.of_typedtree local_defs ] in
-      List.find_map nodes ~f:(fun (env, node) -> match node with
-        | Browse_raw.Structure_item (str_item, _) -> Some str_item
-        |_ -> None)
-    in
     let path =
       match patho with
       | Some p -> p
@@ -528,7 +522,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     begin match
       Locate.from_string
         ~config:(Mpipeline.final_config pipeline)
-        ~env ~local_defs ~local_shapes:str_item.str_shape
+        ~env ~local_defs
         ~pos ml_or_mli path
     with
     | `Found (file, pos) ->

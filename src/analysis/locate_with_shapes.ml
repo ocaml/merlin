@@ -3,7 +3,7 @@ let {Logger. log} = Logger.for_section "locate"
 let rec load_shapes ?(fallback = true) comp_unit cmwhat =
   match Load_path.find_uncap (comp_unit ^ cmwhat) with
   | filename ->
-    let cms = Cms_format.read_cms filename in
+    let cms = Cms_cache.read filename in
     let pos_fname = cms.cms_sourcefile in
     Ok (pos_fname, cms)
   | exception Not_found ->
@@ -11,13 +11,16 @@ let rec load_shapes ?(fallback = true) comp_unit cmwhat =
     else Error ()
 
 
-let from_path ~env ~local_shapes ~ml_or_mli uid loc path ns =
+let from_path ~env ~ml_or_mli uid loc path ns =
   let module Shape_reduce = Shape.Make_reduce (struct
       let fuel = 1
       let read_unit_shape ~unit_name =
         match Load_path.find_uncap (unit_name ^ ".cms") with
-        | filename -> (Cms_format.read_cms filename).cms_impl_shape
-        | exception Not_found -> None
+        | filename -> (Cms_cache.read filename).cms_impl_shape
+        | exception Not_found ->
+          log ~title:"read_unit_shape"
+            "failed to find %s.cms" unit_name;
+          None
       let find_shape id = Env.shape_of_path env (Pident id)
     end)
   in
