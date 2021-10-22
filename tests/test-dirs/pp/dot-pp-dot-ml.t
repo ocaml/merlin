@@ -49,12 +49,12 @@ and libb with dune cached way:
   $ cp -r liba libb test.ml _build
 
   $ cd _build/liba
-  $ $OCAMLC -c -pp ../prep.exe -bin-annot -o libaDep.cmo dep.ml
+  $ $OCAMLC -c -pp ../prep.exe -shapes -o libaDep.cmo dep.ml
   $ cd ..
 
   $ cd libb
   $ ../prep.exe -dump-to-file ./dep.ml
-  $ $OCAMLC -c -bin-annot -o libbDep.cmo dep.pp.ml
+  $ $OCAMLC -c -shapes -o libbDep.cmo dep.pp.ml
   $ cd ..
 
   $ $OCAMLC -I liba -I libb -c test.ml
