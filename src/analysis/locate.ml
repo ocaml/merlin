@@ -330,11 +330,16 @@ module Shape_reduce =
     let fuel = 1
 
     let read_unit_shape ~unit_name =
-      match Load_path.find_uncap (unit_name ^ ".cms") with
-      | filename -> (Cms_cache.read filename).cms_impl_shape
+      let fn = File.(with_ext (cms unit_name)) in
+      log ~title:"read_unit_shape" "inspecting %s" unit_name;
+      match Load_path.find_uncap fn with
+      | filename ->
+        let cms_infos = Cms_cache.read filename in
+        Option.iter cms_infos.cms_source_digest
+          ~f:(fun digest -> File_switching.move_to ~digest filename);
+        cms_infos.cms_impl_shape
       | exception Not_found ->
-        log ~title:"read_unit_shape"
-          "failed to find %s.cms" unit_name;
+        log ~title:"read_unit_shape" "failed to find %s" fn;
         None
 
     let find_shape env id = Env.shape_of_path env (Pident id)
