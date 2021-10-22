@@ -73,13 +73,13 @@ module File : sig
     | ML   of string
     | MLL  of string
     | MLI  of string
-    | CMT  of string
-    | CMTI of string
+    | CMS  of string
+    | CMSI of string
 
   val ml : string -> t
   val mli : string -> t
-  val cmt : string -> t
-  val cmti : string -> t
+  val cms : string -> t
+  val cmsi : string -> t
 
   val of_filename : string -> t option
 
@@ -96,8 +96,8 @@ end = struct
     | ML   of string
     | MLL  of string
     | MLI  of string
-    | CMT  of string
-    | CMTI of string
+    | CMS  of string
+    | CMSI of string
 
   let file_path_to_mod_name f =
     Misc.unitname (Filename.basename f)
@@ -105,8 +105,8 @@ end = struct
   let ml   s = ML   (file_path_to_mod_name s)
   let mll  s = MLL  (file_path_to_mod_name s)
   let mli  s = MLI  (file_path_to_mod_name s)
-  let cmt  s = CMT  (file_path_to_mod_name s)
-  let cmti s = CMTI (file_path_to_mod_name s)
+  let cms  s = CMS  (file_path_to_mod_name s)
+  let cmsi s = CMSI (file_path_to_mod_name s)
 
   let of_filename fn =
     match Misc.rev_string_split ~on:'.' fn with
@@ -116,8 +116,8 @@ end = struct
       let ext = String.lowercase ext in
       Some (
         match ext with
-        | "cmti" -> cmti fn
-        | "cmt"  -> cmt fn
+        | "cmsi" -> cmsi fn
+        | "cms"  -> cms fn
         | "mll"  -> mll fn
         | _ -> if Filename.check_suffix ext "i" then mli fn else ml fn
       )
@@ -126,22 +126,22 @@ end = struct
     | ML  s
     | MLL s -> MLI s
     | MLI s -> ML s
-    | CMT s  -> CMTI s
-    | CMTI s -> CMT s
+    | CMS s  -> CMSI s
+    | CMSI s -> CMS s
 
   let name = function
     | ML name
     | MLL name
     | MLI name
-    | CMT name
-    | CMTI name -> name
+    | CMS name
+    | CMSI name -> name
 
   let ext src_suffix_pair = function
     | ML _  -> fst src_suffix_pair
     | MLI _  -> snd src_suffix_pair
     | MLL _ -> ".mll"
-    | CMT _ -> ".cmt"
-    | CMTI _ -> ".cmti"
+    | CMS _ -> ".cms"
+    | CMSI _ -> ".cmsi"
 
   let with_ext ?(src_suffix_pair=(".ml",".mli")) t =
     name t ^ ext src_suffix_pair t
@@ -158,13 +158,13 @@ end = struct
       | MLI file ->
         sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
                  found" str_ident file
-      | CMT file ->
-        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
+      | CMS file ->
+        sprintf "Needed cms file of module '%s' to locate '%s' but it is not \
                  present" file str_ident
-      | CMTI file when file <> doc_from ->
-        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
+      | CMSI file when file <> doc_from ->
+        sprintf "Needed cmsi file of module '%s' to locate '%s' but it is not \
                  present" file str_ident
-      | CMTI _ ->
+      | CMSI _ ->
         sprintf "The documentation for '%s' originates in the current file, \
                  but no cmt is available" str_ident
     in
@@ -188,7 +188,7 @@ end = struct
       | _ -> false
 
   let src   file = if !prioritize_impl then File.ml  file else File.mli  file
-  let build file = if !prioritize_impl then File.cmt file else File.cmti file
+  let build file = if !prioritize_impl then File.cms file else File.cmsi file
 
   let is_preferred fn =
     match File.of_filename fn with
@@ -302,18 +302,26 @@ module Utils = struct
     find_file_with_path ~config ?with_fallback file @@
         match file with
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
-        | CMT _ | CMTI _         -> !loadpath
+        | CMS _ | CMSI _         -> !loadpath
 end
 
-let rec load_shapes comp_unit cmwhat =
-  match Load_path.find_uncap (comp_unit ^ cmwhat) with
+let rec load_shapes comp_unit ml_or_mli =
+  let fn =
+    Preferences.set ml_or_mli;
+    Preferences.build comp_unit
+  in
+  match Load_path.find_uncap (File.with_ext fn) with
   | filename ->
     let cms = Cms_cache.read filename in
     let pos_fname = cms.cms_sourcefile in
     Ok (pos_fname, cms)
   | exception Not_found ->
-    if cmwhat = ".cmsi" then load_shapes comp_unit ".cms"
-    else Error ()
+    if ml_or_mli = `MLI then
+      (* there might not have been an mli (so no cmsi), so the decl comes from
+         the .ml, and the corresponding .cms *)
+      load_shapes comp_unit `ML
+    else 
+      Error ()
 
 module Shape_reduce =
   Shape.Make_reduce (struct
@@ -332,67 +340,59 @@ module Shape_reduce =
     let find_shape env id = Env.shape_of_path env (Pident id)
   end)
 
-let locate ~env ~ml_or_mli uid loc path ns =
-  let uid, cmwhat = match ml_or_mli with
-    | `ML -> begin
-        log ~title:"locate_with_shape" "From path: %a\n%!"
-          Logger.fmt (fun fmt -> Path.print fmt path);
-        let shape = Env.shape_of_path ~ns env path in
-        log ~title:"locate_with_shape" "Shape of path: %a\n"
-          Logger.fmt (fun fmt -> Shape.print fmt shape);
-        let r = Shape_reduce.reduce env shape in
-        log ~title:"locate_with_shape" "Wich reduces to %a\n"
-          Logger.fmt (fun fmt -> Shape.print fmt r);
-        r.uid
-      end, ".cms"
-    | `MLI ->
-      log ~title:"locate_with_shape" "Looking for the location of uid: %a\n%!"
-        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
-      Some uid, ".cmsi"
+let locate ~env ~ml_or_mli decl_uid loc path ns =
+  let uid =
+    match ml_or_mli with
+    | `MLI -> Some decl_uid
+    | `ML ->
+      let shape = Env.shape_of_path ~ns env path in
+      log ~title:"shape_of_path" "initial:@ %a"
+        Logger.fmt (fun fmt -> Shape.print fmt shape);
+      let r = Shape_reduce.reduce env shape in
+      log ~title:"shape_of_path" "reduced:@ %a"
+        Logger.fmt (fun fmt -> Shape.print fmt r);
+      r.uid
   in
   match uid with
   | Some (Shape.Uid.Item { comp_unit; id } as uid) ->
     let fileopt, locopt =
       if Env.get_unit_name () = comp_unit then begin
-          log ~title:"locate_with_shape"
-            "We look for %a in the current compilation unit."
+          log ~title:"locate" "We look for %a in the current compilation unit."
            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           let tbl = Env.get_uid_to_loc_tbl () in
-          let loc = match Shape.Uid.Tbl.find_opt tbl uid with
+          let loc =
+            match Shape.Uid.Tbl.find_opt tbl uid with
             | Some loc ->
-              log ~title:"locate_with_shape" "Found location: %a"
+              log ~title:"locate" "Found location: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
               loc
             | None ->
-              log ~title:"locate_with_shape" "Uid not found in the local environment. Fallbacking to the node's location: %a"
+              log ~title:"locate"
+                "Uid not found in the local environment.@.\
+                 Fallbacking to the node's location: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
               loc
           in
-          Some comp_unit,
-          Some loc
+          Some comp_unit, Some loc
       end else begin
-        log ~title:"locate_with_shape"
-          "Loading the shapes for unit %S" comp_unit;
-        match load_shapes comp_unit cmwhat with
-        | Ok (_fname, cms) ->
-          log ~title:"locate_with_shape"
-            "Shapes succesfully loaded, looking for %a"
+        log ~title:"locate" "Loading the shapes for unit %S" comp_unit;
+        match load_shapes comp_unit ml_or_mli with
+        | Ok (Some pos_fname, cms) ->
+          log ~title:"locate" "Shapes succesfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           let loc = match Shape.Uid.Tbl.find_opt cms.cms_uid_to_loc uid with
             | Some loc ->
-              log ~title:"locate_with_shape" "Found location: %a"
+              log ~title:"locate" "Found location: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
               Some loc
             | None ->
-              log ~title:"locate_with_shape"
-                "Uid not found in the loaded shape.";
+              log ~title:"locate" "Uid not found in the loaded shape.";
               None
             in
           Some comp_unit,
           loc
-        | Error () ->
-          log ~title:"locate_with_shape"
-            "Failed to load the shapes";
+        | _ ->
+          log ~title:"locate" "Failed to load the shapes";
           None, None
       end
     in
@@ -402,18 +402,17 @@ let locate ~env ~ml_or_mli uid loc path ns =
     | _ -> `Not_found ("todo1", None) (* TODO fallback ?*) )
   | Some (Compilation_unit comp_unit) ->
     begin
-      match load_shapes comp_unit cmwhat with
-      | Ok (pos_fname, cms) ->
+      match load_shapes comp_unit ml_or_mli with
+      | Ok (Some pos_fname, cms) ->
         let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
         `Found(loc, Some comp_unit)
-      | Error () ->
-        log ~title:"locate_with_shape"
-          "Failed to load the shapes";
+      | _ ->
+        log ~title:"locate" "Failed to load the shapes";
         `Not_found ("todo2", None) (* TODO fallback ?*)
     end
   | _ ->
-    log ~title:"locate_with_shape"
+    log ~title:"locate"
       "No UID found in the shape, fallback to lookup location.";
     `Found (loc, None)
 
