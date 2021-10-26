@@ -686,7 +686,7 @@ let link_type ty ty' =
   (match desc with
    | Tvar _ -> incr linked_variables
    | _ -> ());
-   Private_type_expr.set_desc ty (Tlink ty');
+  Private_type_expr.set_desc ty (Tlink ty');
   (* Name is a user-supplied name for this unification variable (obtained
    * through a type annotation for instance). *)
   match desc, ty'.desc with

@@ -335,7 +335,7 @@ let simplify_structure_coercion cc id_pos_list =
   if is_identity_coercion 0 cc
   then Tcoerce_none
   else Tcoerce_structure (cc, id_pos_list)
-  
+
 let retrieve_functor_params env mty =
   let rec retrieve_functor_params before env =
     function
