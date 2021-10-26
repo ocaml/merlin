@@ -55,7 +55,7 @@ open Asttypes
 
     Note on mutability: TBD.
  *)
-type type_expr =
+type type_expr = private
   { mutable desc: type_desc;
     mutable level: int;
     mutable scope: int;

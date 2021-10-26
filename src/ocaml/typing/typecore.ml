@@ -160,7 +160,10 @@ let deep_copy () =
     let ty = repr ty in
     try TypeHash.find table ty
     with Not_found ->
-      let ty' = {ty with desc = ty.desc} in
+      let ty' =
+        let {Types. level; id; desc; scope} = ty in
+        Types.Private_type_expr.create ~level ~id ~scope desc
+      in
       TypeHash.add table ty ty';
       let desc =
         match ty.desc with
@@ -177,11 +180,11 @@ let deep_copy () =
           Tobject (copy t1, ref r)
         | Tfield (s,fk,t1,t2) -> Tfield (s, fk, copy t1, copy t2)
         | Tpoly (t,tl) -> Tpoly (copy t, List.map copy tl)
-        | Tpackage (p,ltl) -> 
+        | Tpackage (p,ltl) ->
           Tpackage (p, List.map (fun (l, tl) -> l, copy tl) ltl)
         | Tlink _ | Tsubst _ -> assert false
       in
-      ty'.desc <- desc;
+      Types.Private_type_expr.set_desc ty' desc;
       ty'
   in
   copy
