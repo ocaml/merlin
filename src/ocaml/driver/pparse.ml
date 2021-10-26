@@ -176,9 +176,9 @@ let apply_pp ~workdir ~filename ~source ~pp =
 
 let decode_potential_ast source =
   let decoder =
-    if String.starts_with ~prefix:Config.ast_impl_magic_number source then
+    if Std.String.is_prefixed ~by:Config.ast_impl_magic_number source then
       Some (fun x -> `Implementation (Obj.obj x : Parsetree.structure))
-    else if String.starts_with ~prefix:Config.ast_intf_magic_number source then
+    else if Std.String.is_prefixed ~by:Config.ast_intf_magic_number source then
       Some (fun x -> `Interface (Obj.obj x : Parsetree.signature))
     else
       None
