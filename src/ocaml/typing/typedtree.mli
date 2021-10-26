@@ -169,6 +169,12 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of Ident.t * label loc
         (** fun (type t) ->  *)
+    (* FIXME let-def: This is different from OCaml typechecker which uses
+       [Texp_newtype of string].
+       This was changed in https://github.com/ocaml/merlin/pull/1382.
+       It should be fine, unless we access a Texp_newtype from an
+       unmarshalled cmt. I am not sure if that can happen.
+    *)
 
 and expression_desc =
     Texp_ident of Path.t * Longident.t loc * Types.value_description
