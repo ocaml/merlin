@@ -174,9 +174,27 @@ let apply_pp ~workdir ~filename ~source ~pp =
     close_in ic;
     Ok result
 
+let decode_potential_ast source =
+  let decoder =
+    if String.starts_with ~prefix:Config.ast_impl_magic_number source then
+      Some (fun x -> `Implementation (Obj.obj x : Parsetree.structure))
+    else if String.starts_with ~prefix:Config.ast_intf_magic_number source then
+      Some (fun x -> `Interface (Obj.obj x : Parsetree.signature))
+    else
+      None
+  in
+  match decoder with
+  | None -> `Source source
+  | Some inj ->
+    let offset = String.length Config.ast_impl_magic_number in
+    Location.input_name := Marshal.from_string source offset;
+    let offset = offset + Marshal.total_size (Bytes.unsafe_of_string source) offset in
+    let ast = Marshal.from_string source offset in
+    inj ast
+
 let apply_pp ~workdir ~filename ~source ~pp =
   match apply_pp ~workdir ~filename ~source ~pp with
-  | Ok result -> result
+  | Ok result -> decode_potential_ast result
   | Error err ->
     report_error err;
-    source
+    `Source source
