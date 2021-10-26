@@ -96,7 +96,7 @@ let escape_exn kind = Escape (escape kind)
 let scope_escape_exn ty = escape_exn (Equation (short ty))
 let raise_escape_exn kind = raise (escape_exn kind)
 let raise_scope_escape_exn ty = raise (scope_escape_exn ty)
-  
+
 exception Tags of label * label
 
 let () =

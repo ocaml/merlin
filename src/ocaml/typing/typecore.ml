@@ -191,7 +191,7 @@ let trace_copy ?(copy=deep_copy ()) tr =
 
 let trace_subtype_copy ?(copy=deep_copy ()) tr =
   Errortrace.Subtype.map_types copy tr
-  
+
 let error (loc, env, err) =
   let err = match err with
     | Label_mismatch (li, trace) ->
@@ -3965,7 +3965,7 @@ and type_expect_
       let (od, _, newenv) = !type_open_decl env od in
       let exp = type_expect newenv e ty_expected_explained in
       (* Force the return type to be well-formed in the original
-         environment *)
+         environment. *)
       unify_var newenv tv exp.exp_type;
       re {
         exp_desc = Texp_open (od, exp);
@@ -4149,8 +4149,8 @@ and type_function ?(in_function : (Location.t * type_expr) option)
     with Unify _ ->
       match expand_head env ty_expected with
         {desc = Tarrow _} as ty ->
-          raise(
-            error(loc, env, Abstract_wrong_label(arg_label, ty, explanation)))
+          raise(error(loc, env,
+                      Abstract_wrong_label(arg_label, ty, explanation)))
       | _ ->
           raise(error(loc_fun, env,
                       Too_many_arguments (in_function <> None,
@@ -4690,9 +4690,9 @@ and type_application env funct sargs =
                 Msupport.resume_raise
                   (error(funct.exp_loc, env, Incoherent_label_order))
           | _ ->
-            Msupport.resume_raise
-              (error(funct.exp_loc, env,
-                     Apply_non_function (expand_head env funct.exp_type)))
+              Msupport.resume_raise
+                (error(funct.exp_loc, env, Apply_non_function
+                            (expand_head env funct.exp_type)))
     with Msupport.Resume ->
       newvar(), ty_fun
     in
@@ -5005,7 +5005,7 @@ and type_cases
            ?in_function:_ -> _ -> _ -> _ -> _ -> _ -> Parsetree.case list ->
            k case list * partial
     = fun category ?in_function env
-      ty_arg ty_res_explained partial_flag loc caselist ->
+        ty_arg ty_res_explained partial_flag loc caselist ->
   let has_errors = Msupport.monitor_errors () in
   (* ty_arg is _fully_ generalized *)
   let { ty = ty_res; explanation } = ty_res_explained in
@@ -5450,9 +5450,9 @@ and type_let
             so we do it anyway. *)
          generalize exp.exp_type
        | Some vars ->
-         if maybe_expansive exp then
-           lower_contravariant env exp.exp_type;
-         generalize_and_check_univars env "definition" exp pat.pat_type vars)
+           if maybe_expansive exp then
+             lower_contravariant env exp.exp_type;
+           generalize_and_check_univars env "definition" exp pat.pat_type vars)
     pat_list exp_list;
   let l = List.combine pat_list exp_list in
   let l =

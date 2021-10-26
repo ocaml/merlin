@@ -410,8 +410,8 @@ let rec tree_of_path namespace = function
       Oide_ident (Naming_context.pervasives_name namespace s)
   | Pdot(Pident t, s)
     when namespace=Type && not (Path.is_uident (Ident.name t)) ->
-    (* [t.A]: inline record of the constructor [A] from type [t] *)
-    Oide_dot (Oide_ident (ident_name Type t), s)
+      (* [t.A]: inline record of the constructor [A] from type [t] *)
+      Oide_dot (Oide_ident (ident_name Type t), s)
   | Pdot(p, s) ->
       Oide_dot (tree_of_path Module p, s)
   | Papply(p1, p2) ->
@@ -498,7 +498,7 @@ let rec raw_type ppf ty =
   let ty = safe_repr [] ty in
   if List.memq ty !visited then fprintf ppf "{id=%d}" ty.id else begin
     visited := ty :: !visited;
-    fprintf ppf "@[<1>{id=%d;scope=%d;level=%d;desc=@,%a}@]" ty.id ty.level
+    fprintf ppf "@[<1>{id=%d;level=%d;scope=%d;desc=@,%a}@]" ty.id ty.level
       ty.scope raw_type_desc ty.desc
   end
 and raw_type_list tl = raw_list raw_type tl
@@ -1168,7 +1168,7 @@ let rec tree_of_type_decl id decl =
             (if not cn then Covariant else
              if not co then Contravariant else NoVariance),
             (if inj then Injective else NoInjectivity)
-          else (NoVariance,NoInjectivity))
+          else (NoVariance, NoInjectivity))
         decl.type_params decl.type_variance
     in
     (Ident.name id,
@@ -1524,10 +1524,16 @@ let wrap_env fenv ftree arg =
   tree
 
 let dummy =
-  { type_params = []; type_arity = 0; type_kind = Type_abstract;
-    type_private = Public; type_manifest = None; type_variance = [];
+  {
+    type_params = [];
+    type_arity = 0;
+    type_kind = Type_abstract;
+    type_private = Public;
+    type_manifest = None;
+    type_variance = [];
     type_separability = [];
-    type_is_newtype = false; type_expansion_scope = Btype.lowest_level;
+    type_is_newtype = false;
+    type_expansion_scope = Btype.lowest_level;
     type_loc = Location.none;
     type_attributes = [];
     type_immediate = Unknown;
@@ -1602,54 +1608,54 @@ and tree_of_functor_parameter = function
 
 and tree_of_signature sg =
   wrap_env (fun env -> env)(fun sg ->
-    let tree_groups = tree_of_signature_rec !printing_env sg in
-    List.concat_map (fun (_env,l) -> List.map snd l) tree_groups
-  ) sg
+      let tree_groups = tree_of_signature_rec !printing_env sg in
+      List.concat_map (fun (_env,l) -> List.map snd l) tree_groups
+    ) sg
 
 and tree_of_signature_rec env' sg =
   let structured = List.of_seq (Signature_group.seq sg) in
   let collect_trees_of_rec_group group =
-  let env = !printing_env in
-  let env', group_trees =
-    Naming_context.with_ctx
-      (fun () -> trees_of_recursive_sigitem_group env group)
-  in
-  set_printing_env env';
-  (env, group_trees) in
+    let env = !printing_env in
+    let env', group_trees =
+      Naming_context.with_ctx
+        (fun () -> trees_of_recursive_sigitem_group env group)
+    in
+    set_printing_env env';
+    (env, group_trees) in
   set_printing_env env';
   List.map collect_trees_of_rec_group structured
 
 and trees_of_recursive_sigitem_group env
-  (syntactic_group: Signature_group.rec_group) =
+    (syntactic_group: Signature_group.rec_group) =
   let display (x:Signature_group.sig_item) = x.src, tree_of_sigitem x.src in
   let env = Env.add_signature syntactic_group.pre_ghosts env in
   match syntactic_group.group with
   | Not_rec x -> add_sigitem env x, [display x]
   | Rec_group items ->
-    let ids = List.map (fun x -> ident_sigitem x.Signature_group.src) items in
-    List.fold_left add_sigitem env items,
-    with_hidden_items ids (fun () -> List.map display items)
+      let ids = List.map (fun x -> ident_sigitem x.Signature_group.src) items in
+      List.fold_left add_sigitem env items,
+      with_hidden_items ids (fun () -> List.map display items)
 
 and tree_of_sigitem = function
   | Sig_value(id, decl, _) ->
-    tree_of_value_description id decl
+      tree_of_value_description id decl
   | Sig_type(id, decl, rs, _) ->
-    tree_of_type_declaration id decl rs
+      tree_of_type_declaration id decl rs
   | Sig_typext(id, ext, es, _) ->
-    tree_of_extension_constructor id ext es
+      tree_of_extension_constructor id ext es
   | Sig_module(id, _, md, rs, _) ->
-    let ellipsis =
-      List.exists (function
-        | Parsetree.{attr_name = {txt="..."}; attr_payload = PStr []} -> true
-        | _ -> false)
-        md.md_attributes in
-    tree_of_module id md.md_type rs ~ellipsis
+      let ellipsis =
+        List.exists (function
+          | Parsetree.{attr_name = {txt="..."}; attr_payload = PStr []} -> true
+          | _ -> false)
+          md.md_attributes in
+      tree_of_module id md.md_type rs ~ellipsis
   | Sig_modtype(id, decl, _) ->
-    tree_of_modtype_declaration id decl
+      tree_of_modtype_declaration id decl
   | Sig_class(id, decl, rs, _) ->
-    tree_of_class_declaration id decl rs
+      tree_of_class_declaration id decl rs
   | Sig_class_type(id, decl, rs, _) ->
-    tree_of_cltype_declaration id decl rs
+      tree_of_cltype_declaration id decl rs
 
 and tree_of_modtype_declaration id decl =
   let mty =

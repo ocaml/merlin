@@ -1904,7 +1904,7 @@ and store_value ?check id addr decl env =
   { env with
     values = IdTbl.add id (Val_bound vda) env.values;
     summary = Env_value(env.summary, id, decl) }
-  
+
 and store_constructor ~check type_decl type_id cstr_id cstr env =
   if check && not type_decl.type_loc.Location.loc_ghost
      && Warnings.is_active (Warnings.Unused_constructor ("", Unused))
