@@ -74,7 +74,7 @@ module Printtyp = struct
                 Tobject (ty, ref None)
               | desc -> desc
             in
-            ty0.desc <- desc;
+            Types.Private_type_expr.set_desc ty0 desc;
             if d > 0 then
               Btype.iter_type_expr (iter (pred d)) ty0
           end
