@@ -776,40 +776,29 @@ let module_expr_paths { Typedtree. mod_desc } =
   | _ -> []
 
 let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
-  let init =
-    match exp_desc with
-    | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]
-    | Texp_new (path,loc,_) -> [reloc path loc, Some loc.txt]
-    | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
-    | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
-    | Texp_override (_,ps) ->
-      List.map ~f:(fun (path,loc,_) ->
-        reloc path loc, Some (Longident.Lident loc.txt)
-      ) ps
-    | Texp_letmodule (Some id,loc,_,_,_) ->
-      [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
-    | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
-      let lid =
-        match ppat_desc with
-        | Ppat_any -> None
-        | Ppat_var {txt} -> Some (Longident.Lident txt)
-        | _ -> assert false
-      in
-      [mkloc (Path.Pident id) loc, lid]
-    | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _) ->
-      fake_path lid_loc cstr_res cstr_name
-    | Texp_open (od,_) -> module_expr_paths od.open_expr
-    | _ -> []
-  in
-  List.fold_left ~init exp_extra
-    ~f:(fun acc (extra, _, _) ->
-      match extra with
-      | Texp_newtype (id, label_loc) ->
-        let path = Path.Pident id in
-        let lid = Longident.Lident (label_loc.txt) in
-        (mkloc path label_loc.loc, Some lid) :: acc
-      | _ -> acc)
-
+  match exp_desc with
+  | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]
+  | Texp_new (path,loc,_) -> [reloc path loc, Some loc.txt]
+  | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
+  | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
+  | Texp_override (_,ps) ->
+    List.map ~f:(fun (path,loc,_) ->
+      reloc path loc, Some (Longident.Lident loc.txt)
+    ) ps
+  | Texp_letmodule (Some id,loc,_,_,_) ->
+    [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
+  | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
+    let lid =
+      match ppat_desc with
+      | Ppat_any -> None
+      | Ppat_var {txt} -> Some (Longident.Lident txt)
+      | _ -> assert false
+    in
+    [mkloc (Path.Pident id) loc, lid]
+  | Texp_construct (lid_loc, {Types. cstr_name; cstr_res; _}, _) ->
+    fake_path lid_loc cstr_res cstr_name
+  | Texp_open (od,_) -> module_expr_paths od.open_expr
+  | _ -> []
 
 let core_type_paths { Typedtree. ctyp_desc } =
   match ctyp_desc with

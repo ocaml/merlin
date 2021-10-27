@@ -167,7 +167,7 @@ and exp_extra =
          *)
   | Texp_poly of core_type option
         (** Used for method bodies. *)
-  | Texp_newtype of Ident.t * label loc
+  | Texp_newtype of string
         (** fun (type t) ->  *)
     (* FIXME let-def: This is different from OCaml typechecker which uses
        [Texp_newtype of string].
