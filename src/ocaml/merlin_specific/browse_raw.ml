@@ -251,6 +251,7 @@ let of_exp_extra (exp,_,_) = match exp with
     of_core_type ct ** option_fold of_core_type cto
   | Texp_poly cto ->
     option_fold of_core_type cto
+  | Texp_newtype' _
   | Texp_newtype _ ->
     id_fold
 let of_expression e = app (Expression e) ** list_fold of_exp_extra e.exp_extra
@@ -797,12 +798,11 @@ let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
   List.fold_left ~init exp_extra
     ~f:(fun acc (extra, _, _) ->
       match extra with
-      | Texp_newtype (id, label_loc) ->
+      | Texp_newtype' (id, label_loc) ->
         let path = Path.Pident id in
         let lid = Longident.Lident (label_loc.txt) in
         (mkloc path label_loc.loc, Some lid) :: acc
       | _ -> acc)
-
 
 let core_type_paths { Typedtree. ctyp_desc } =
   match ctyp_desc with

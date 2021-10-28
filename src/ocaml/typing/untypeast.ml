@@ -366,7 +366,8 @@ let exp_extra sub (extra, loc, attrs) sexp =
     | Texp_constraint cty ->
         Pexp_constraint (sexp, sub.typ sub cty)
     | Texp_poly cto -> Pexp_poly (sexp, Option.map (sub.typ sub) cto)
-    | Texp_newtype (_id, label_loc) -> Pexp_newtype (label_loc, sexp)
+    | Texp_newtype s -> Pexp_newtype (mkloc s loc, sexp)
+    | Texp_newtype' (_id, label_loc) -> Pexp_newtype (label_loc, sexp)
   in
   Exp.mk ~loc ~attrs desc
 
