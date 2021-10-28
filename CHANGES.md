@@ -1,7 +1,8 @@
 unreleased
-==========
+============
 
   + merlin binary
+    - make `occurences` work when looking for locally abstract types (#1382)
     - improve destruct calls on record fields (#1375)
 
 merlin 4.3.1

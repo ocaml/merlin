@@ -3636,7 +3636,7 @@ and type_expect_
       in
       re { exp with exp_extra =
              (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
-  | Pexp_newtype({txt=name}, sbody) ->
+  | Pexp_newtype({txt=name} as label_loc, sbody) ->
       let ty =
         if Typetexp.valid_tyvar_name name then
           newvar ~name ()
@@ -3690,7 +3690,7 @@ and type_expect_
          any new extra node in the typed AST. *)
       rue { body with exp_loc = loc; exp_type = ety;
             exp_extra =
-            (Texp_newtype name, loc, sexp.pexp_attributes) :: body.exp_extra }
+            (Texp_newtype' (id, label_loc), loc, sexp.pexp_attributes) :: body.exp_extra }
   | Pexp_pack m ->
       let (p, nl) =
         match Ctype.expand_head env (instance ty_expected) with
