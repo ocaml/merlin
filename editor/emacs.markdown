@@ -1,0 +1,125 @@
+---
+# Feel free to add content and custom Front Matter to this file.
+# To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
+
+layout: main
+toc: true
+---
+# Emacs reference
+## Completion at point
+
+`M-x completion-at-point` <kbd>M-tab</kbd>
+
+Provides completion hints using the native completion engine of Emacs.
+For advanced form of completion see [Advanced features](#advanced-features).
+<video autoplay loop width="100%">
+  <source src="/assets/videos/completion-at-point.mp4" type="video/mp4">
+</video>
+
+## Type of an expression
+
+`M-x merlin-type-enclosing` <kbd>C-c C-t</kbd> (<kbd>C-↑</kbd> <kbd>C-↓</kbd>)
+
+Gets the type of ident under the cursor. It will highlight the ident and display
+its type. You can then call <kbd>C-↑</kbd> (and <kbd>C-↓</kbd>) to
+climb the typed tree and see type of bigger expressions surrounding the cursor.
+
+## Locate an identifier
+
+- `M-x merlin-locate` <kbd>C-c C-l</kbd> \
+Locates the identifier under the cursor
+
+- `M-x merlin-locate-ident` \
+Asks for an identifier and locates it
+
+- You can choose if you want locate to jump the the definition or the
+  declaration  of identifiers by setting the `merlin-locate-preference` variable
+  with `ml` or `mli
+
+## Case analysis
+
+`M-x merlin-destruct` <kbd>C-d</kbd>
+
+When called on:
+- an expression it replaces it by a pattern matching over it's constructors
+
+- a wildcard pattern in a matching it will refine it if possible
+
+- a pattern of a non-exhaustive matching it will make the pattern matching
+  exhaustive by adding missing cases
+
+<video autoplay loop width="100%">
+  <source src="/assets/videos/destruct.mp4" type="video/mp4">
+</video>
+
+## Expression construction
+
+- `M-x merlin-construct` \
+Provides valid type-based constructions when the cursor is on a typed hole (`_`) that
+could fill this hole. Can be used in alternance with `destruct`.
+
+- `M-x merlin-next-hole` and `M-x merlin-previous-hole` \
+Navigates to the next or previous typed hole (`_`) in the buffer.
+
+<video autoplay loop width="100%">
+  <source src="/assets/videos/construct.mp4" type="video/mp4">
+</video>
+
+## Source browsing
+
+- `M-x merlin-phrase-next` <kbd>C-c C-n</kbd> and
+`M-x merlin-phrase-prev` <kbd>C-c C-p</kbd> \
+Navigates between phrases (toplevel definitions) of your buffer.
+
+- `M-x merlin-switch-to-ml` and `M-x merlin-switch-to-mli` \
+Prompts you for a (toplevel) module name, and will then open the associated ml(i) file.
+
+## Errors
+
+- `M-x merlin-error-prev` and `M-x merlin-error-next` \
+Navigates between errors in the current buffer.
+
+- `M-x merlin-toggle-view-errors` \
+Toggles the viewing of errors in the buffer.
+
+## Advanced features
+
+### Auto-complete
+
+By default, if auto-complete is installed, merlin will only register a source
+named `merlin-ac-source` and do nothing about it. If you issue:
+
+```
+(setq merlin-ac-setup 'easy)
+```
+
+it will enable auto-complete in merlin buffers and add the merlin source to the
+default sources. You can now use auto-complete as you usually do, or run `M-x auto-complete`.
+If you have not configured auto-complete, see [its documentation](https://github.com/auto-complete/auto-complete).
+
+### Company mode
+
+To use the [company mode](http://company-mode.github.io/) plugins, you just have
+to issue:
+
+```
+; Make company aware of merlin
+(with-eval-after-load 'company
+  (add-to-list 'company-backends 'merlin-company-backend))
+; Enable company on merlin managed buffers
+(add-hook 'merlin-mode-hook 'company-mode)
+; Or enable it globally:
+; (add-hook 'after-init-hook 'global-company-mode)
+```
+
+See the [documentation of company mode](https://company-mode.github.io/) for more information.
+
+### iedit
+
+`M-x merlin-iedit-occurrences`
+
+Edit occurrences of identifier under cursor using `iedit`.
+
+### imenu and xref
+
+Merlin also provides integration with the `imenu` and `xref` tools
