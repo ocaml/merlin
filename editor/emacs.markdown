@@ -13,7 +13,10 @@ toc: true
 Provides completion hints using the native completion engine of Emacs.
 For advanced form of completion see [Advanced features](#advanced-features).
 <video autoplay loop width="100%">
-  <source src="/assets/videos/completion-at-point.mp4" type="video/mp4">
+  <source
+    src="{{ "/assets/videos/completion-at-point.mp4"
+      | prepend: site.baseurl }}"
+    type="video/mp4">
 </video>
 
 ## Type of an expression
@@ -49,7 +52,9 @@ When called on:
   exhaustive by adding missing cases
 
 <video autoplay loop width="100%">
-  <source src="/assets/videos/destruct.mp4" type="video/mp4">
+  <source
+    src="{{ "/assets/videos/destruct.mp4" | prepend: site.baseurl }}"
+    type="video/mp4">
 </video>
 
 ## Expression construction
@@ -62,7 +67,9 @@ could fill this hole. Can be used in alternance with `destruct`.
 Navigates to the next or previous typed hole (`_`) in the buffer.
 
 <video autoplay loop width="100%">
-  <source src="/assets/videos/construct.mp4" type="video/mp4">
+  <source
+    src="{{ "/assets/videos/construct.mp4" | prepend: site.baseurl }}"
+    type="video/mp4">
 </video>
 
 ## Source browsing

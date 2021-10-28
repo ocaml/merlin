@@ -43,8 +43,8 @@ Learn about all Merlin's commands in the dedicated Emacs and VIM pages:
 
 
 <div class="center">
-<a href="{{ site.base-url }}/editor/emacs" class="btn">Emacs reference</a>
-<a href="{{ site.base-url }}/editor/vim" class="btn">VIM reference</a>
+<a href="{{ "/editor/emacs" | prepend: site.baseurl }}" class="btn">Emacs reference</a>
+<a href="{{ "/editor/vim" | prepend: site.baseurl }}" class="btn">VIM reference</a>
 </div>
 
 # Merlin for Visual Studio Code

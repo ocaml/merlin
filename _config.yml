@@ -21,8 +21,8 @@
 title: OCaml - Merlin
 email: ulysse@tarides.com
 description: An editor service that provides advanced IDE features for OCaml.
-#baseurl: "/merlin" # the subpath of your site, e.g. /blog
-#url: "https://voodoos.github.io"
+baseurl: "/merlin" # the subpath of your site, e.g. /blog
+url: "https://voodoos.github.io"
 # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb
 github_username:  voodoos
