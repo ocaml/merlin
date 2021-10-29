@@ -13,10 +13,7 @@ toc: true
 Provides completion hints using the native completion engine of Emacs.
 For advanced form of completion see [Advanced features](#advanced-features).
 <video autoplay loop width="100%">
-  <source
-    src="{{ "/assets/videos/completion-at-point.mp4"
-      | prepend: site.baseurl }}"
-    type="video/mp4">
+  <source src="completion-at-point.mp4" type="video/mp4">
 </video>
 
 ## Type of an expression
@@ -39,6 +36,19 @@ Asks for an identifier and locates it
   declaration  of identifiers by setting the `merlin-locate-preference` variable
   with `ml` or `mli
 
+
+## Source browsing
+
+- `M-x merlin-phrase-next` <kbd>C-c C-n</kbd> and
+`M-x merlin-phrase-prev` <kbd>C-c C-p</kbd> \
+Navigates between phrases (toplevel definitions) of your buffer.
+
+- `M-x merlin-switch-to-ml` and `M-x merlin-switch-to-mli` \
+Prompts you for a (toplevel) module name, and will then open the associated ml(i) file.
+
+- `M-x merlin-jump fun / let / module / match` \
+Jump to the begining of the closest `fun` /`let` / `module` or `match`parent.
+
 ## Case analysis
 
 `M-x merlin-destruct` <kbd>C-d</kbd>
@@ -52,9 +62,7 @@ When called on:
   exhaustive by adding missing cases
 
 <video autoplay loop width="100%">
-  <source
-    src="{{ "/assets/videos/destruct.mp4" | prepend: site.baseurl }}"
-    type="video/mp4">
+  <source src="destruct.mp4" type="video/mp4">
 </video>
 
 ## Expression construction
@@ -67,19 +75,8 @@ could fill this hole. Can be used in alternance with `destruct`.
 Navigates to the next or previous typed hole (`_`) in the buffer.
 
 <video autoplay loop width="100%">
-  <source
-    src="{{ "/assets/videos/construct.mp4" | prepend: site.baseurl }}"
-    type="video/mp4">
+  <source src="construct.mp4" type="video/mp4">
 </video>
-
-## Source browsing
-
-- `M-x merlin-phrase-next` <kbd>C-c C-n</kbd> and
-`M-x merlin-phrase-prev` <kbd>C-c C-p</kbd> \
-Navigates between phrases (toplevel definitions) of your buffer.
-
-- `M-x merlin-switch-to-ml` and `M-x merlin-switch-to-mli` \
-Prompts you for a (toplevel) module name, and will then open the associated ml(i) file.
 
 ## Errors
 
