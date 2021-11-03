@@ -400,3 +400,66 @@ FIXME
     },
     "notifications": []
   }
+
+
+  $ $MERLIN single locate -look-for ml -position 6:24 \
+  >  -filename ./test.ml <<EOF
+  > module rec A: sig
+  >   type t = int * float
+  > end = struct
+  >   type t = A.t
+  > end
+  > let _ = ((3, 4.12) : A.t)
+  > EOF
+  {
+    "class": "return",
+    "value": {
+      "file": "test.ml",
+      "pos": {
+        "line": 4,
+        "col": 2
+      }
+    },
+    "notifications": []
+  }
+
+
+  $ $MERLIN single locate -look-for ml -position 4:14 -filename ./test.ml <<EOF
+  > module rec A: sig
+  >   type t = int * float
+  > end = struct
+  >   type t = A.t
+  > end
+  > EOF
+  {
+    "class": "return",
+    "value": {
+      "file": "test.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single locate -look-for ml -position 7:11 -filename ./test.ml <<EOF
+  > module rec A
+  >  : sig val x : int -> int end
+  >  = struct include B end
+  > and B
+  >  : sig val x : int -> int end
+  >  = struct include A end
+  >  let _ = A.x
+  > EOF
+  {
+    "class": "return",
+    "value": {
+      "file": "test.ml",
+      "pos": {
+        "line": 2,
+        "col": 7
+      }
+    },
+    "notifications": []
+  }

@@ -2768,26 +2768,22 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body
             decls sbind in
         let newenv = (* allow aliasing recursive modules from outside *)
           List.fold_left
-            (fun env (md, uid, shape_opt) ->
-               match md.md_id with
+            (fun env (id_opt, _, mty, _, _, attrs, loc, shape, uid) ->
+               match id_opt with
                | None -> env
                | Some id ->
                    let mdecl =
                      {
-                       md_type = md.md_type.mty_type;
-                       md_attributes = md.md_attributes;
-                       md_loc = md.md_loc;
+                       md_type = mty.mty_type;
+                       md_attributes = attrs;
+                       md_loc = loc;
                        md_uid = uid;
                      }
-                   in
-                   let shape =
-                     (* Only None when we don't have an id. *)
-                     Option.get shape_opt
                    in
                    Env.add_module_declaration ~check:true ~shape
                      id Mp_present mdecl env
             )
-            env decls
+            env bindings1
         in
         let newenv = Env.update_short_paths newenv in
         let bindings2 =

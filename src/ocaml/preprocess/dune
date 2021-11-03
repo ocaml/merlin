@@ -39,10 +39,10 @@
     (with-stdout-to %{targets}
        (run %{exe:./printer/gen_printer.exe} %{deps}))))
 
-(rule
- (targets menhirLib.ml menhirLib.mli)
- (mode promote)
- (action
-  (progn
-   (copy %{lib:menhirLib:menhirLib.ml}  menhirLib.ml)
-   (copy %{lib:menhirLib:menhirLib.mli} menhirLib.mli))))
+;(rule
+; (targets menhirLib.ml menhirLib.mli)
+; (mode promote)
+; (action
+;  (progn
+;   (copy %{lib:menhirLib:menhirLib.ml}  menhirLib.ml)
+;   (copy %{lib:menhirLib:menhirLib.mli} menhirLib.mli))))

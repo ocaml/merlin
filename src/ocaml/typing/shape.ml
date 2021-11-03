@@ -221,47 +221,59 @@ and subst var ~arg t =
       t
 
 
+let {Logger. log} = Logger.for_section "locate"
+
 module Make_reduce(Params : sig
   type env
   val fuel : int
   val read_unit_shape : unit_name:string -> t option
   val find_shape : env -> Ident.t -> t
 end) = struct
-  let rec reduce env fuel t =
-    let reduce_if_gas =
-      if fuel > 0
-      then reduce env (fuel -1)
-      else Fun.id
-    in
-    let reduce = reduce env fuel in
-    match t.desc with
-    | Comp_unit unit_name ->
+  let fuel = ref (-1)
+  let rec reduce env t =
+    if !fuel < 0 then
+      t
+    else
+      match t.desc with
+      | Comp_unit unit_name ->
         begin match Params.read_unit_shape ~unit_name with
-        | Some t -> reduce t
-        | None -> t
+          | Some t -> reduce env t
+          | None -> t
         end
-    | App(f, arg) ->
-        app ?uid:t.uid (reduce f) ~arg:(reduce arg)
-    | Proj(str, item) ->
-        let r = proj ?uid:t.uid (reduce str) item in
+      | App(f, arg) ->
+        app ?uid:t.uid (reduce env f) ~arg:(reduce env arg)
+      | Proj(str, item) ->
+        let r = proj ?uid:t.uid (reduce env str) item in
         if r = t
         then t
-        else reduce r
-    | Abs(var, body) ->
-        { t with desc = Abs(var, reduce body) }
-    | Var id ->
+        else reduce env r
+      | Abs(var, body) ->
+        { t with desc = Abs(var, reduce env body) }
+      | Var id ->
+        log ~title:"reduce" "Var %a"
+          Logger.fmt (fun fmt -> Ident.print fmt id);
         begin try
-          let res = Params.find_shape env id in
-          if res = t then
-            raise Not_found
-          else
-            reduce_if_gas res
-        with Not_found -> { t with desc = Leaf } (* avoid loops. *)
+            let res =
+              try Params.find_shape env id
+              with exn ->
+                log ~title:"reduce" "   ... raised";
+                raise exn
+            in
+            if res = t then
+              let () = log ~title:"reduce" " ... got the Var shape" in
+              raise Not_found
+            else
+              let () = log ~title:"reduce" "recursing" in
+              decr fuel;
+              reduce env res
+          with Not_found -> { t with desc = Leaf } (* avoid loops. *)
         end
-    | _ ->
+      | _ ->
         t
 
-  let reduce env = reduce env Params.fuel
+  let reduce env t =
+    fuel := Params.fuel;
+    reduce env t
 end
 
 let dummy_mod = { uid = None; desc = Struct Item.Map.empty }
