@@ -945,8 +945,15 @@ let dump ?(verbose=false) () =
     done;
     List.rev !acc
   in
+  let alerts (set, enabled) =
+    `Assoc
+      [ "alerts", Json.list Json.string (String.Set.elements set);
+        "complement", Json.bool (not enabled) ]
+  in
   `Assoc [
     "actives", `List (actives !current.active);
     "warn_error", `List (actives !current.error);
+    "alerts", alerts !current.alerts;
+    "alerts_error", alerts !current.alert_errors;
   ]
 ;;

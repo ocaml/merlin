@@ -4,6 +4,7 @@ unreleased
   + merlin binary
     - enable `occurences` to work when looking for locally abstract types
       (#1382)
+    - handle `-alert` compiler flag
 
 merlin 4.3.1
 ============
