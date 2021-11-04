@@ -42,7 +42,7 @@ documentation for the non-last defined value (in the same file) is show
   > jq '.value'
   " List reversal. "
 
-  $ dune build --root=. ./doc.exe
+  $ dune build --root=. ./doc.exe 2> /dev/null
   $ cat >.merlin <<EOF
   > B _build/default/.doc.eobjs/byte
   > S .
