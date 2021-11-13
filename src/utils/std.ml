@@ -279,17 +279,6 @@ module List = struct
      be adjacent. *)
   let sort_uniq ~cmp l = dedup_adjacent ~cmp (sort ~cmp l)
 
-  let uniq (type t) ~cmp l =
-    let module Set = Set.Make (struct type nonrec t = t let compare = cmp end) in
-    let rec uniq ~cmp ~seen = function
-      | [] -> []
-      | x :: xs ->
-        match Set.mem x seen with
-        | true -> uniq ~cmp ~seen xs
-        | false -> x :: uniq ~cmp ~seen:(Set.add x seen) xs
-    in
-    uniq ~cmp ~seen:Set.empty l
-
   let print f () l =
     "[ " ^ String.concat "; " (List.map (f ()) l) ^ " ]"
 end
