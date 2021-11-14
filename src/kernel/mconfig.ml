@@ -668,7 +668,7 @@ let source_path config =
     [[config.query.directory];
      stdlib;
      config.merlin.source_path]
-  |> List.dedup_adjacent ~cmp:String.compare
+  |> List.filter_dup
 
 let build_path config = (
   let dirs =
