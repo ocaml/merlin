@@ -12,4 +12,5 @@ ocamlmerlin "$@" \
     | jq 'del(.timing)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\
-:g'
+:g' \
+    | sed -e "s:$TMPDIR:\$TMPDIR:g"

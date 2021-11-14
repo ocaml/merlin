@@ -319,10 +319,13 @@ let move_to_root root cmt_infos =
     let sourcefile = Option.get cmt_infos.Cmt_format.cmt_sourcefile in
     match String.split_on_char ~sep:'.' sourcefile |> List.rev with
     | ext :: "pp" :: rev_path ->
-       (* If the source file was a post-processed file (.pp.mli?), use the regular
-          .mli? file for locate. *)
-       let sourcefile = (ext :: rev_path) |> List.rev |> String.concat ~sep:"." in
-       Digest.file (cmt_infos.cmt_builddir ^ "/" ^ sourcefile)
+      (* If the source file was a post-processed file (.pp.mli?), use the regular
+         .mli? file for locate. *)
+      let builddir = cmt_infos.cmt_builddir in
+      let sourcefile = (ext :: rev_path) |> List.rev |> String.concat ~sep:"." in
+      (match Misc.exact_file_exists ~dirname:builddir ~basename:sourcefile with
+       | true -> Digest.file (Filename.concat builddir sourcefile)
+       | false -> Option.get cmt_infos.cmt_source_digest)
     | _ -> Option.get cmt_infos.cmt_source_digest
   in
   File_switching.move_to ~digest root;

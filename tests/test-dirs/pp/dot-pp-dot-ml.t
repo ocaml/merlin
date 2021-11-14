@@ -29,11 +29,11 @@ Then our test files:
   $ mkdir liba libb
 
   $ cat >liba/dep.ml <<EOF
-  > let x = ()
+  > let x = "A"
   > EOF
 
   $ cat >libb/dep.ml <<EOF
-  > let x = ()
+  > let x = "B"
   > EOF
 
   $ cat >test.ml <<EOF
