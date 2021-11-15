@@ -45,7 +45,7 @@ Then our test files:
   $ cat >libb/dune <<EOF
   > (library
   >  (name libb)
-  >  (preprocess (action (system "./prep.exe %{input-file}"))))
+  >  (preprocess (action (system "$TMPDIR/project/prep.exe %{input-file}"))))
   > EOF
 
   $ cat >dune <<EOF
