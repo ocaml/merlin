@@ -32,28 +32,6 @@
   $ $MERLIN single errors -filename main.ml < main.ml
   {
     "class": "return",
-    "value": [
-      {
-        "type": "config",
-        "sub": [],
-        "valid": true,
-        "message": "unknown flag -alert"
-      },
-      {
-        "start": {
-          "line": 2,
-          "col": 8
-        },
-        "end": {
-          "line": 2,
-          "col": 12
-        },
-        "type": "warning",
-        "sub": [],
-        "valid": true,
-        "message": "Alert deprecated: Lib.sqrt
-  I am deprecated"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
