@@ -22,3 +22,16 @@
     ],
     "notifications": []
   }
+
+  $ cat > .merlin <<EOF
+  > S .
+  > B .
+  > FLG -nopervasives -alert -deprecated
+  > EOF
+
+  $ $MERLIN single errors -filename main.ml < main.ml
+  {
+    "class": "return",
+    "value": [],
+    "notifications": []
+  }
