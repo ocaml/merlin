@@ -1,0 +1,3 @@
+(cram
+ (applies_to src-documentation)
+ (enabled_if (<> %{architecture} "86_32")))
