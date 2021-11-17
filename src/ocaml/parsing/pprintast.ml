@@ -1711,7 +1711,6 @@ let signature = signature reset_ctxt
 let structure = structure reset_ctxt
 let module_expr = module_expr reset_ctxt
 let case_list = case_list reset_ctxt
-let module_ = module_expr (* for merlin *)
 
 let prepare_error err =
   let source = Location.Parser in

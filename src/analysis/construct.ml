@@ -445,7 +445,7 @@ module Gen = struct
             match def with
             | Type_variant (constrs, _) -> constructor env rtyp path constrs
             | Type_record (labels, _) -> record env rtyp path labels
-            | _ -> []
+            | Type_abstract | Type_open -> []
           end
         | Tarrow (label, tyleft, tyright, _) ->
           let argument, name = make_arg env label tyleft in
@@ -542,7 +542,7 @@ let node ?(depth = 1) ~keywords ~values_scope node =
   | Browse_raw.Module_expr
       {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
       let m = Gen.module_ mod_env mod_type in
-      [ Format.asprintf "%a" Pprintast.module_ m ]
+      [ Format.asprintf "%a" Pprintast.module_expr m ]
   | Browse_raw.Module_expr _
   | Browse_raw.Module_binding _ ->
       (* Constructible modules have an explicit constraint or are functor

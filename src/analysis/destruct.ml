@@ -608,7 +608,7 @@ let rec node config source selected_node parents =
               let str = Mreader.print_pretty
                   config source (Pretty_pattern ppat) in
               patt.Typedtree.pat_loc, str
-            | h::_ as sub_patterns ->
+            | sub_patterns ->
               let rev_before, after, top_patt =
                 find_branch patterns patt
               in

@@ -168,13 +168,13 @@ and exp_extra =
   | Texp_poly of core_type option
         (** Used for method bodies. *)
   | Texp_newtype of string
-      (** fun (type t) ->  *)
+        (** fun (type t) ->  *)
   | Texp_newtype' of Ident.t * label loc
-      (** merlin-specific: keep enough information to correctly implement
-  occurrences for local-types.
-  Merlin typechecker uses [Texp_newtype'] constructor, while upstream
-  OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
-  files. By adding a new constructor, we can still safely uses these. *)
+  (** merlin-specific: keep enough information to correctly implement
+      occurrences for local-types.
+      Merlin typechecker uses [Texp_newtype'] constructor, while upstream
+      OCaml still uses [Texp_newtype]. Those can appear when unmarshaling cmt
+      files. By adding a new constructor, we can still safely uses these. *)
 
 and expression_desc =
     Texp_ident of Path.t * Longident.t loc * Types.value_description
