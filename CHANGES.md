@@ -5,7 +5,7 @@ git version
     - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
     - enable `occurences` to work when looking for locally abstract types
       (#1382)
-    - handle `-alert` compiler flag
+    - handle `-alert` compiler flag (#1401)
 
 merlin 4.3.1
 ============
