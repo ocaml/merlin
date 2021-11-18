@@ -81,7 +81,7 @@ type t = {
   config : Mconfig.t;
   state  : Mocaml.typer_state;
   raw_source : Msource.t;
-  source : Msource.t lazy_t;
+  source : (Msource.t * Mreader.parsetree option) lazy_t;
   reader : (Mreader.result * Mconfig.t) lazy_t;
   ppx    : Ppx.t lazy_t;
   typer  : Typer.t lazy_t;
@@ -96,7 +96,7 @@ type t = {
 let raw_source t = t.raw_source
 
 let input_config t = t.config
-let input_source t = Lazy.force t.source
+let input_source t = fst (Lazy.force t.source)
 
 let with_pipeline t f =
   Mocaml.with_state t.state @@ fun () ->
@@ -143,15 +143,17 @@ let process
   in
   let source = timed_lazy pp_time (lazy (
       match Mconfig.(config.ocaml.pp) with
-      | None -> raw_source
+      | None -> raw_source, None
       | Some { workdir; workval } ->
         let source = Msource.text raw_source in
-        let source =
+        match
           Pparse.apply_pp
             ~workdir ~filename:Mconfig.(config.query.filename)
             ~source ~pp:workval
-        in
-        Msource.make source
+        with
+        | `Source source -> Msource.make source, None
+        | (`Interface _ | `Implementation _) as ast ->
+          raw_source, Some ast
     )) in
   let reader = timed_lazy reader_time (lazy (
       let lazy source = source in

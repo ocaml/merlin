@@ -162,17 +162,24 @@ let reconstruct_identifier config source pos =
 
 (* Entry point *)
 
-let parse ?for_completion config source =
-  match
-    try_with_reader config source
-      (Mreader_extend.parse ?for_completion)
-  with
-  | Some (`No_labels no_labels_for_completion, parsetree) ->
+let parse ?for_completion config = function
+  | (source, None) ->
+    begin match
+        try_with_reader config source
+          (Mreader_extend.parse ?for_completion)
+      with
+      | Some (`No_labels no_labels_for_completion, parsetree) ->
+        let (lexer_errors, parser_errors, comments) = ([], [], []) in
+        let lexer_keywords = [] (* TODO? *) in
+        { config; lexer_keywords; lexer_errors; parser_errors; comments;
+          parsetree; no_labels_for_completion; }
+      | None -> normal_parse ?for_completion config source
+    end
+  | (_, Some parsetree) ->
     let (lexer_errors, parser_errors, comments) = ([], [], []) in
-    let lexer_keywords = [] (* TODO? *) in
-    { config; lexer_keywords; lexer_errors; parser_errors; comments; parsetree;
-      no_labels_for_completion; }
-  | None -> normal_parse ?for_completion config source
+    let lexer_keywords = [] in
+    { config; lexer_keywords; lexer_errors; parser_errors; comments;
+      parsetree; no_labels_for_completion = false; }
 
 (* Update config after parse *)
 
