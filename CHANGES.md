@@ -11,6 +11,7 @@ git version
     - log the backtrace even when the exception is a Failure (#1377, @antalsz)
     - ignore `-error-style` compiler flag (#1402, @nojb)
     - fix handling of record field expressions (#1375)
+    - allow -pp to return an AST (#1394)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
