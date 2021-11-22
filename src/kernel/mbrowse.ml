@@ -88,7 +88,10 @@ let select_leafs pos root =
   let branches = ref [] in
   let rec select_child branch env node has_selected =
     let loc = node_merlin_loc node in
-    if Location_aux.compare_pos pos loc = 0 then
+    let attrs = Browse_raw.node_attributes node in
+    if Location_aux.compare_pos pos loc = 0 &&
+       not (has_attr "merlin.hide" attrs)
+    then
       (traverse ((env, node) :: branch); true)
     else
       has_selected

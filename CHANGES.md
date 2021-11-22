@@ -2,6 +2,7 @@ unreleased
 ============
 
   + merlin binary
+    - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
     - make `occurences` work when looking for locally abstract types (#1382)
     - improve destruct calls on record fields (#1375)
     - avoid a race condition when the process started to read a configuration
