@@ -4,6 +4,7 @@ unreleased
   + merlin binary
     - make `occurences` work when looking for locally abstract types (#1382)
     - improve destruct calls on record fields (#1375)
+    - log the backtrace even when the exception is a Failure (#1377, @antalsz)
 
 merlin 4.3.1
 ============
