@@ -6,12 +6,13 @@ git version
     - enable `occurences` to work when looking for locally abstract types
       (#1382)
     - handle `-alert` compiler flag (#1401)
-    - avoid a race condition when the process started to read a configuration 
+    - avoid a race condition when the process started to read a configuration
       file crashes/is not found (#1378, @antalsz)
     - log the backtrace even when the exception is a Failure (#1377, @antalsz)
     - ignore `-error-style` compiler flag (#1402, @nojb)
     - fix handling of record field expressions (#1375)
     - allow -pp to return an AST (#1394)
+    - fix merlin crashing due to short-paths (#1334, fixes #1322)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
