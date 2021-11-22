@@ -3,6 +3,8 @@ unreleased
 
   + merlin binary
     - ignore `-error-style` compiler flag (#1402, @nojb)
+    - avoid a race condition when the process started to read a configuration
+      file crashes/is not found (#1378, @antalsz)
 
 merlin 3.6.1
 ============
