@@ -8,6 +8,7 @@ unreleased
     - avoid a race condition when the process started to read a configuration
       file crashes/is not found (#1378, @antalsz)
     - log the backtrace even when the exception is a Failure (#1377, @antalsz)
+    - allow -pp to return an AST (#1394)
 
 merlin 4.3.1
 ============

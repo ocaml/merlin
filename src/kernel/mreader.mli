@@ -29,7 +29,7 @@ val with_ambient_reader : Mconfig.t -> Msource.t -> (unit -> 'a) -> 'a
 (* Main functions *)
 
 val parse :
-  ?for_completion:Msource.position -> Mconfig.t -> Msource.t -> result
+  ?for_completion:Msource.position -> Mconfig.t -> Msource.t * parsetree option -> result
 
 val print_pretty :
   Mconfig.t -> Msource.t -> pretty_parsetree -> string
