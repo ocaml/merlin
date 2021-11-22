@@ -1,3 +1,9 @@
+unreleased
+============
+
+  + merlin binary
+    - ignore `-error-style` compiler flag (#1402, @nojb)
+
 merlin 3.6.1
 ============
 Mon Jul 26 04:43:37 PM CET 2021
