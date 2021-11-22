@@ -9,6 +9,7 @@ unreleased
       file crashes/is not found (#1378, @antalsz)
     - log the backtrace even when the exception is a Failure (#1377, @antalsz)
     - allow -pp to return an AST (#1394)
+    - ignore `-error-style` compiler flag (#1402, @nojb)
     - fix handling of record field expressions (#1375)
   + test suite
     - improve record field destruction testing (#1375)
