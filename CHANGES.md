@@ -1,12 +1,12 @@
-git version
-===========
+merlin 4.4
+==========
 
   + merlin binary
     - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
     - enable `occurences` to work when looking for locally abstract types
       (#1382)
     - handle `-alert` compiler flag (#1401)
-    - avoid a race condition when the process started to read a configuration 
+    - avoid a race condition when the process started to read a configuration
       file crashes/is not found (#1378, @antalsz)
     - log the backtrace even when the exception is a Failure (#1377, @antalsz)
     - ignore `-error-style` compiler flag (#1402, @nojb)
