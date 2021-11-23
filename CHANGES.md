@@ -13,6 +13,7 @@ Mon Jul 26 11:12:21 PM CET 2021
     - ignore `-error-style` compiler flag (#1402, @nojb)
     - fix handling of record field expressions (#1375)
     - allow -pp to return an AST (#1394)
+    - fix merlin crashing due to short-paths (#1334, fixes #1322)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
