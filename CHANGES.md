@@ -1,4 +1,4 @@
-unreleased
+merlin 3.7.0
 ============
 
   + merlin binary
