@@ -63,7 +63,7 @@ module Printtyp = struct
         let ty' = Ctype.repr ty0 in
         if mark ty' then
           let open Types in
-          let ty'' = Ctype.full_expand env ty' in
+          let ty'' = Ctype.full_expand ~may_forget_scope:true env ty' in
           if ty''.desc == ty'.desc then
             Btype.iter_type_expr (iter d) ty0
           else begin
@@ -74,7 +74,7 @@ module Printtyp = struct
                 Tobject (ty, ref None)
               | desc -> desc
             in
-            ty0.desc <- desc;
+            Types.Private_type_expr.set_desc ty0 desc;
             if d > 0 then
               Btype.iter_type_expr (iter (pred d)) ty0
           end

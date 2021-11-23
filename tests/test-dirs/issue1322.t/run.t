@@ -28,9 +28,5 @@
     "notifications": []
   }
 
-  $ $MERLIN single errors -filename nasty.ml < nasty.ml
-  {
-    "class": "return",
-    "value": [],
-    "notifications": []
-  }
+FIXME (appears undeterministic)
+$ $MERLIN single errors -filename nasty.ml < nasty.ml

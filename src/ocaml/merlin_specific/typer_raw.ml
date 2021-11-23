@@ -147,7 +147,8 @@ module Rewrite_loc = struct
     | Ppat_var l -> Ppat_var (u_loc l)
     | Ppat_alias (p, l) -> Ppat_alias (u_pattern p, u_loc l)
     | Ppat_tuple ps -> Ppat_tuple (List.map ~f:u_pattern ps)
-    | Ppat_construct (loc, po) -> Ppat_construct (u_loc loc, u_option u_pattern po)
+    | Ppat_construct (loc, po) -> Ppat_construct (u_loc loc, u_option
+        (fun (locs, p) -> locs, u_pattern p) po)
     | Ppat_variant (lbl, po) -> Ppat_variant (lbl, u_option u_pattern po)
     | Ppat_record (fields, flag) -> Ppat_record (List.map ~f:(fun (l,p) -> (u_loc l, u_pattern p)) fields, flag)
     | Ppat_array ps -> Ppat_array (List.map ~f:u_pattern ps)
@@ -452,6 +453,7 @@ module Rewrite_loc = struct
     | Psig_extension (ext, attrs) -> Psig_extension (u_extension ext, u_attributes attrs)
     | Psig_typesubst tds -> Psig_typesubst (List.map ~f:u_type_declaration tds)
     | Psig_modsubst ms -> Psig_modsubst (u_module_substitution ms)
+    | Psig_modtypesubst mtd -> Psig_modtype (u_module_type_declaration mtd)
 
   and u_type_exception {ptyexn_constructor; ptyexn_loc; ptyexn_attributes } =
     { ptyexn_constructor = u_extension_constructor ptyexn_constructor
@@ -508,8 +510,12 @@ module Rewrite_loc = struct
   and u_with_constraint = function
     | Pwith_type (loc, td) -> Pwith_type (u_loc loc, u_type_declaration td)
     | Pwith_module (loc1, loc2) -> Pwith_module (u_loc loc1, u_loc loc2)
-    | Pwith_typesubst (loc, td) -> Pwith_typesubst (u_loc loc, u_type_declaration td)
+    | Pwith_typesubst (loc, td) ->
+      Pwith_typesubst (u_loc loc, u_type_declaration td)
     | Pwith_modsubst (loc1, loc2) -> Pwith_modsubst (u_loc loc1, u_loc loc2)
+    | Pwith_modtype (loc, mt) -> Pwith_modtype (u_loc loc, u_module_type mt)
+    | Pwith_modtypesubst (loc, mt) ->
+      Pwith_modtypesubst (u_loc loc, u_module_type mt)
 
   and u_module_expr {pmod_desc; pmod_loc; pmod_attributes} =
     enter ();

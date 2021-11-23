@@ -205,7 +205,7 @@ unused case after
         "sub": [],
         "valid": true,
         "message": "This variant pattern is expected to have type t
-  The constructor Bb does not belong to type t"
+  There is no constructor Bb within type t"
       }
     ],
     "notifications": []

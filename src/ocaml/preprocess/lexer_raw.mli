@@ -20,6 +20,7 @@ type error =
   | Unterminated_comment of Location.t
   | Unterminated_string
   | Unterminated_string_in_comment of Location.t * Location.t
+  | Empty_character_literal
   | Keyword_as_label of string
   | Invalid_literal of string
 exception Error of error * Location.t

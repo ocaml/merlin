@@ -29,7 +29,7 @@
 open Std
 
 let dummy_type_scheme desc =
-  { Types. level = 0 ; id = 0 ; scope = Btype.generic_level ; desc }
+  Types.Private_type_expr.create desc ~level:0 ~id:0 ~scope:Btype.generic_level
 
 let print_constructor c =
   let open Types in

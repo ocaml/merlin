@@ -292,8 +292,10 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
-  | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
+  | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array ps ->
     list_fold of_pattern ps
+  | Tpat_construct (_,_,ps,Some (_, ct)) ->
+    list_fold of_pattern ps ** of_core_type ct
   | Tpat_record (ls,_) ->
     list_fold (fun (lid_loc,desc,p) ->
         of_pat_record_field p lid_loc desc ** of_pattern p) ls
@@ -506,6 +508,9 @@ and of_signature_item_desc = function
   | Tsig_modsubst _ms ->
     (* TODO. *)
     id_fold
+  | Tsig_modtypesubst _mts ->
+    (* TODO. *)
+    id_fold
 
 and of_core_type_desc = function
   | Ttyp_any | Ttyp_var _ -> id_fold
@@ -606,6 +611,8 @@ let of_node = function
     app (Type_declaration td)
   | With_constraint (Twith_module _ | Twith_modsubst _) ->
     id_fold
+  | With_constraint (Twith_modtype mt | Twith_modtypesubst mt) ->
+    of_module_type mt
   | Core_type { ctyp_desc } ->
     of_core_type_desc ctyp_desc
   | Package_type { pack_fields } ->
@@ -747,7 +754,7 @@ let fake_path {Location.loc ; txt = lid} typ name =
 let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
     match (pat_desc : k pattern_desc) with
-    | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_) ->
+    | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
       fake_path lid_loc cstr_res cstr_name
     | Tpat_var (id, {Location. loc; txt}) ->
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
@@ -766,7 +773,7 @@ let module_expr_paths { Typedtree. mod_desc } =
   match mod_desc with
   | Tmod_ident (path, loc) -> [reloc path loc, Some loc.txt]
   | Tmod_functor (Named (Some id, loc, _), _) ->
-    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+    [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
   | _ -> []
 
 let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
@@ -781,7 +788,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
         reloc path loc, Some (Longident.Lident loc.txt)
       ) ps
     | Texp_letmodule (Some id,loc,_,_,_) ->
-      [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+      [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
     | Texp_for (id,{Parsetree.ppat_loc = loc; ppat_desc},_,_,_,_) ->
       let lid =
         match ppat_desc with
@@ -835,7 +842,7 @@ let module_type_paths { Typedtree. mty_desc } =
   | Tmty_ident (path, loc) | Tmty_alias (path, loc) ->
     [reloc path loc, Some loc.txt]
   | Tmty_functor (Named (Some id,loc,_),_) ->
-    [reloc (Path.Pident id) loc, Option.map mk_lident loc.txt]
+    [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
   | Tmty_with (_,ls) ->
     List.map ~f:(fun (p,l,_) -> reloc p l, Some l.txt) ls
   | _ -> []
@@ -864,11 +871,11 @@ let node_paths_full =
   | Module_expr me -> module_expr_paths me
   | Structure_item (i,_) -> structure_item_paths i
   | Module_binding_name { mb_id = Some mb_id; mb_name } ->
-    [reloc (Path.Pident mb_id) mb_name, Option.map mk_lident mb_name.txt]
+    [reloc (Path.Pident mb_id) mb_name, Option.map ~f:mk_lident mb_name.txt]
   | Module_type mt -> module_type_paths mt
   | Signature_item (i,_) -> signature_item_paths i
   | Module_declaration_name { md_id = Some md_id; md_name } ->
-    [reloc (Path.Pident md_id) md_name, Option.map mk_lident md_name.txt]
+    [reloc (Path.Pident md_id) md_name, Option.map ~f:mk_lident md_name.txt]
   | Module_type_declaration_name { mtd_id; mtd_name } ->
     [reloc (Path.Pident mtd_id) mtd_name, Some (Lident mtd_name.txt) ]
   | With_constraint c -> with_constraint_paths c
@@ -906,7 +913,7 @@ let node_is_constructor = function
     Some {decl.cd_name with Location.txt = `Declaration decl}
   | Expression {exp_desc = Texp_construct (loc, desc, _)} ->
     Some {loc with Location.txt = `Description desc}
-  | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
+  | Pattern {pat_desc = Tpat_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None
 

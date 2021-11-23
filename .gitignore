@@ -1,4 +1,5 @@
 _build
+_opam
 .merlin
 jbuild-workspace
 dune-workspace

@@ -113,7 +113,8 @@ module Pat:
     val constant: ?loc:loc -> ?attrs:attrs -> constant -> pattern
     val interval: ?loc:loc -> ?attrs:attrs -> constant -> constant -> pattern
     val tuple: ?loc:loc -> ?attrs:attrs -> pattern list -> pattern
-    val construct: ?loc:loc -> ?attrs:attrs -> lid -> pattern option -> pattern
+    val construct: ?loc:loc -> ?attrs:attrs ->
+      lid -> (str list * pattern) option -> pattern
     val variant: ?loc:loc -> ?attrs:attrs -> label -> pattern option -> pattern
     val record: ?loc:loc -> ?attrs:attrs -> (lid * pattern) list -> closed_flag
                 -> pattern
@@ -295,6 +296,7 @@ module Sig:
     val mod_subst: ?loc:loc -> module_substitution -> signature_item
     val rec_module: ?loc:loc -> module_declaration list -> signature_item
     val modtype: ?loc:loc -> module_type_declaration -> signature_item
+    val modtype_subst: ?loc:loc -> module_type_declaration -> signature_item
     val open_: ?loc:loc -> open_description -> signature_item
     val include_: ?loc:loc -> include_description -> signature_item
     val class_: ?loc:loc -> class_description list -> signature_item
@@ -503,6 +505,7 @@ module Of:
 type let_binding =
   { lb_pattern: pattern;
     lb_expression: expression;
+    lb_is_pun: bool;
     lb_attributes: attributes;
     lb_docs: docs Lazy.t;
     lb_text: text Lazy.t;
@@ -511,8 +514,7 @@ type let_binding =
 type let_bindings =
   { lbs_bindings: let_binding list;
     lbs_rec: rec_flag;
-    lbs_extension: string Asttypes.loc option;
-    lbs_loc: Location.t }
+    lbs_extension: string Asttypes.loc option }
 
 
 (* merlin specific *)
