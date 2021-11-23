@@ -1,5 +1,6 @@
-unreleased
-============
+merlin 4.4
+==========
+Tue Nov 23 11:45:21 PM CET 2021
 
   + merlin binary
     - Mbrowse.select_leaf: correctly ignore merlin.hide (#1376)
