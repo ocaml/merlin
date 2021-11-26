@@ -2,4 +2,5 @@
  (name      merlin_extend)
  (wrapped   false)
  (modules   (:standard \ extend_helper))
- (libraries parsing typing unix utils))
+ (flags -open Ocaml_utils -open Ocaml_parsing -open Ocaml_typing)
+ (libraries ocaml_parsing ocaml_typing unix ocaml_utils))

@@ -3,8 +3,8 @@
 (library
   (name preprocess)
   (wrapped false)
-  (flags -open Merlin_utils)
-  (libraries parsing utils merlin_utils))
+  (flags -open Ocaml_parsing -open Ocaml_utils -open Merlin_utils)
+  (libraries ocaml_parsing ocaml_utils merlin_utils))
 
 (menhir
  (modules parser_raw)
