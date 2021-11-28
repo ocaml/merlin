@@ -30,11 +30,6 @@ open Std
 
 module I = Parser_raw.MenhirInterpreter
 
-type kind =
-  | ML
-  | MLI
-  (*| MLL | MLY*)
-
 module Dump = struct
   let symbol () = Parser_printer.print_symbol
 end
@@ -58,24 +53,15 @@ module R = Mreader_recover.Make
     end)
    (Dump)
 
+type 'a entrypoint = Lexing.position -> 'a I.checkpoint
+
 type 'a step =
   | Correct of 'a I.checkpoint
   | Recovering of 'a R.candidates
 
-type tree = [
-  | `Interface of Parsetree.signature
-  | `Implementation of Parsetree.structure
-]
-
-type steps =[
-  | `Signature of (Parsetree.signature step * Mreader_lexer.triple) list
-  | `Structure of (Parsetree.structure step * Mreader_lexer.triple) list
-]
-
-type t = {
-  kind: kind;
-  tree: tree;
-  steps: steps;
+type 'a t = {
+  tree: 'a;
+  steps: ('a step * Mreader_lexer.triple) list;
   errors: exn list;
   lexer: Mreader_lexer.t;
 }
@@ -165,46 +151,25 @@ let seek_step steps tokens =
   in
   aux [] (steps, tokens)
 
-let parse initial steps tokens initial_pos =
+let run_parser warnings lexer steps entrypoint =
+  Msupport.catch_errors warnings errors_ref @@ fun () ->
+  let tokens = Mreader_lexer.tokens lexer in
+  let initial_pos = Mreader_lexer.initial_position lexer in
   let acc, tokens = seek_step steps tokens in
   let step =
     match acc with
     | (step, _) :: _ -> step
-    | [] -> Correct (initial initial_pos)
+    | [] -> Correct (entrypoint initial_pos)
   in
   let acc, result = resume_parse acc tokens step in
   List.rev acc, result
 
-let run_parser warnings lexer previous kind =
-  Msupport.catch_errors warnings errors_ref @@ fun () ->
-  let tokens = Mreader_lexer.tokens lexer in
-  let initial_pos = Mreader_lexer.initial_position lexer in
-  match kind with
-  | ML  ->
-    let steps = match previous with
-      | `Structure steps -> steps
-      | _ -> []
-    in
-    let steps, result =
-      let state = Parser_raw.Incremental.implementation in
-      parse state steps tokens initial_pos in
-    `Structure steps, `Implementation result
-  | MLI ->
-    let steps = match previous with
-      | `Signature steps -> steps
-      | _ -> []
-    in
-    let steps, result =
-      let state = Parser_raw.Incremental.interface in
-      parse state steps tokens initial_pos in
-    `Signature steps, `Interface result
-
-let make warnings lexer kind =
+let make warnings lexer entrypoint =
   errors_ref := [];
-  let steps, tree = run_parser warnings lexer `None kind in
+  let steps, tree = run_parser warnings lexer [] entrypoint in
   let errors = !errors_ref in
   errors_ref := [];
-  {kind; steps; tree; errors; lexer}
+  {steps; tree; errors; lexer}
 
 let result t = t.tree
 

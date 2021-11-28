@@ -30,8 +30,8 @@ let normal_parse ?for_completion config source =
       "extension(%S) = %S" filename extension;
     if List.exists ~f:(fun (_impl,intf) -> intf = extension)
         Mconfig.(config.merlin.suffixes)
-    then Mreader_parser.MLI
-    else Mreader_parser.ML
+    then `MLI
+    else `ML
   in
   let lexer =
     let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
@@ -45,15 +45,24 @@ let normal_parse ?for_completion config source =
       in
       Mreader_lexer.for_completion lexer pos
   in
-  let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
-  let lexer_keywords = Mreader_lexer.keywords lexer
-  and lexer_errors = Mreader_lexer.errors lexer
-  and parser_errors = Mreader_parser.errors parser
-  and parsetree = Mreader_parser.result parser
-  and comments = Mreader_lexer.comments lexer
-  in
-  { lexer_keywords; lexer_errors; parser_errors; comments; parsetree;
-    no_labels_for_completion; }
+  let parse e = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer e in
+  let return inj parser = {
+    lexer_keywords = Mreader_lexer.keywords lexer;
+    lexer_errors = Mreader_lexer.errors lexer;
+    parser_errors = Mreader_parser.errors parser;
+    comments = Mreader_lexer.comments lexer;
+    parsetree = inj (Mreader_parser.result parser);
+    no_labels_for_completion;
+  } in
+  match kind with
+  | `ML ->
+    return
+      (fun x -> `Implementation x)
+      (parse Parser_raw.Incremental.implementation)
+  | `MLI ->
+    return
+      (fun x -> `Interface x)
+      (parse Parser_raw.Incremental.interface)
 
 (* Pretty-printing *)
 

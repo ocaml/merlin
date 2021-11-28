@@ -26,20 +26,12 @@
 
 )* }}} *)
 
-type kind =
-  | ML
-  | MLI
-  (*| MLL | MLY*)
+type 'a t
 
-type t
+type 'a entrypoint = Lexing.position -> 'a Parser_raw.MenhirInterpreter.checkpoint
 
-val make : Warnings.state -> Mreader_lexer.t -> kind -> t
+val make : Warnings.state -> Mreader_lexer.t -> 'a entrypoint -> 'a t
 
-type tree = [
-  | `Interface of Parsetree.signature
-  | `Implementation of Parsetree.structure
-]
+val result : 'a t -> 'a
 
-val result : t -> tree
-
-val errors : t -> exn list
+val errors : 'a t -> exn list
