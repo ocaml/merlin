@@ -316,15 +316,24 @@ let move_to_root root cmt_infos =
   let digest =
     (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
        pack. *)
-    let sourcefile = Option.get cmt_infos.Cmt_format.cmt_sourcefile in
-    match String.split_on_char ~sep:'.' sourcefile |> List.rev with
+    let sourcefile_in_builddir =
+      Filename.concat
+        (cmt_infos.Cmt_format.cmt_builddir)
+        (Option.get cmt_infos.cmt_sourcefile)
+    in
+    match sourcefile_in_builddir |> String.split_on_char ~sep:'.' |> List.rev with
     | ext :: "pp" :: rev_path ->
-      (* If the source file was a post-processed file (.pp.mli?), use the regular
-         .mli? file for locate. *)
-      let builddir = cmt_infos.cmt_builddir in
-      let sourcefile = (ext :: rev_path) |> List.rev |> String.concat ~sep:"." in
-      (match Misc.exact_file_exists ~dirname:builddir ~basename:sourcefile with
-       | true -> Digest.file (Filename.concat builddir sourcefile)
+      (* If the source file was a post-processed file (.pp.mli?), use the
+         regular .mli? file for locate. *)
+      let sourcefile_in_builddir =
+        (ext :: rev_path) |> List.rev |> String.concat ~sep:"."
+      in
+      (match
+         Misc.exact_file_exists
+           ~dirname:(Filename.dirname sourcefile_in_builddir)
+           ~basename:(Filename.basename sourcefile_in_builddir)
+       with
+       | true -> Digest.file sourcefile_in_builddir
        | false -> Option.get cmt_infos.cmt_source_digest)
     | _ -> Option.get cmt_infos.cmt_source_digest
   in
