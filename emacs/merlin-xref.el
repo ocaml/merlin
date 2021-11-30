@@ -26,14 +26,19 @@
       (widen)
       (let ((locations
              ;; Transform the result into a list of (START END START-LINE).
-             (mapcar
+             (mapcan
               (lambda (loc)
                 (let* ((start-line-col (cdr (assq 'start loc)))
-                       (start-line (cdr (assq 'line start-line-col)))
-                       (end-line-col (cdr (assq 'end loc)))
-                       (start (merlin-xref--line-col-to-pos start-line-col))
-                       (end (merlin-xref--line-col-to-pos end-line-col)))
-                  (list start end start-line)))
+                       (start-line (cdr (assq 'line start-line-col))))
+                  ;; We sometimes get bogus locations (line 0, col -1)
+                  ;; in the reply. That should be fixed, but meanwhile
+                  ;; filter them out (issue #1410).
+                  (and (> start-line 0)
+                       (let* ((end-line-col (cdr (assq 'end loc)))
+                              (start
+                               (merlin-xref--line-col-to-pos start-line-col))
+                              (end (merlin-xref--line-col-to-pos end-line-col)))
+                         (list (list start end start-line))))))
               (let ((pt (get-text-property 0 'merlin-xref-point symbol)))
                 (when pt
                   (goto-char pt))
