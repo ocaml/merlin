@@ -1,3 +1,9 @@
+git version
+===========
+
+  + merlin binary
+    - filter dups in source paths (#1218)
+
 merlin 4.4
 ==========
 Mon Jul 26 11:12:21 PM CET 2021
