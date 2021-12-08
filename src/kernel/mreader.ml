@@ -18,51 +18,76 @@ type result = {
 
 (* Normal entry point *)
 
-let normal_parse ?for_completion config source =
-  let kind =
-    let filename = Mconfig.(config.query.filename) in
-    let extension =
-      match String.rindex filename '.' with
-      | exception Not_found -> ""
-      | pos -> String.sub ~pos ~len:(String.length filename - pos) filename
-    in
-    Logger.log ~section:"Mreader" ~title:"run"
-      "extension(%S) = %S" filename extension;
-    if List.exists ~f:(fun (_impl,intf) -> intf = extension)
-        Mconfig.(config.merlin.suffixes)
-    then `MLI
+let file_kind config =
+  let filename = Mconfig.(config.query.filename) in
+  let extension =
+    match String.rindex filename '.' with
+    | exception Not_found -> ""
+    | pos -> String.sub ~pos ~len:(String.length filename - pos) filename
+  in
+  Logger.log ~section:"Mreader" ~title:"run"
+    "extension(%S) = %S" filename extension;
+  match List.find_map
+          ~f:(fun (impl,intf) ->
+              if impl = extension
+              then Some `ML
+              else if intf = extension
+              then Some `MLI
+              else None
+            )
+          config.Mconfig.merlin.suffixes
+  with
+  | kind -> kind
+  | exception Not_found ->
+    if String.ends_with ~suffix:"ll" extension
+    then `MLL
     else `ML
-  in
-  let lexer =
-    let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
-    Mreader_lexer.make Mconfig.(config.ocaml.warnings) keywords config source
-  in
-  let no_labels_for_completion, lexer = match for_completion with
-    | None -> false, lexer
-    | Some pos ->
-      let pos = Msource.get_lexing_pos source
-          ~filename:(Mconfig.filename config) pos
-      in
-      Mreader_lexer.for_completion lexer pos
-  in
-  let parse e = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer e in
-  let return inj parser = {
-    lexer_keywords = Mreader_lexer.keywords lexer;
-    lexer_errors = Mreader_lexer.errors lexer;
-    parser_errors = Mreader_parser.errors parser;
-    comments = Mreader_lexer.comments lexer;
-    parsetree = inj (Mreader_parser.result parser);
-    no_labels_for_completion;
-  } in
-  match kind with
-  | `ML ->
-    return
-      (fun x -> `Implementation x)
-      (parse Parser_raw.Incremental.implementation)
-  | `MLI ->
-    return
-      (fun x -> `Interface x)
-      (parse Parser_raw.Incremental.interface)
+
+let normal_parse ?for_completion config source =
+  match file_kind config with
+  | (`ML | `MLI) as kind ->
+    let lexer =
+      let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
+      Mreader_lexer.make Mconfig.(config.ocaml.warnings) keywords config source
+    in
+    let no_labels_for_completion, lexer = match for_completion with
+      | None -> false, lexer
+      | Some pos ->
+        let pos = Msource.get_lexing_pos source
+            ~filename:(Mconfig.filename config) pos
+        in
+        Mreader_lexer.for_completion lexer pos
+    in
+    let parse e =
+      Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer e
+    in
+    let return inj parser = {
+      lexer_keywords = Mreader_lexer.keywords lexer;
+      lexer_errors = Mreader_lexer.errors lexer;
+      parser_errors = Mreader_parser.errors parser;
+      comments = Mreader_lexer.comments lexer;
+      parsetree = inj (Mreader_parser.result parser);
+      no_labels_for_completion;
+    } in
+    begin match kind with
+      | `ML ->
+        return
+          (fun x -> `Implementation x)
+          (parse Parser_raw.Incremental.implementation)
+      | `MLI ->
+        return
+          (fun x -> `Interface x)
+          (parse Parser_raw.Incremental.interface)
+    end
+  | `MLL ->
+    {
+      lexer_keywords = [];
+      lexer_errors  = [];
+      parser_errors = [];
+      comments      = [];
+      parsetree     = `Implementation (Mreader_ocamllex.read config source);
+      no_labels_for_completion = false;
+    }
 
 (* Pretty-printing *)
 

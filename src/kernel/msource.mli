@@ -34,3 +34,5 @@ val text : t -> string
 val dump : t -> Std.json
 
 val print_position : unit -> [< position] -> string
+
+val sub : t -> offset:int -> length:int -> t

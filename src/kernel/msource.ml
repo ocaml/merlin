@@ -147,3 +147,6 @@ let substitute t starting ending text =
 (* Accessing content *)
 
 let text t = t.text
+
+let sub t ~offset ~length =
+  {text = String.sub t.text ~pos:offset ~len:length}

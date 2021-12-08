@@ -39,6 +39,7 @@ type item =
 
 type t = {
   keywords: keywords;
+  offset: Lexing.position;
   config: Mconfig.t;
   source: Msource.t;
   items: item list;
@@ -73,23 +74,22 @@ let get_tokens keywords pos text =
     (* Resume *)
     continue items
 
-let initial_position config =
-  { Lexing.
-    pos_fname = (Mconfig.filename config);
-    pos_lnum = 1;
-    pos_bol = 0;
-    pos_cnum = 0;
-  }
+let initial_position offset config =
+  let pos_fname = Mconfig.filename config in
+  if offset == Lexing.dummy_pos then
+    { Lexing. pos_fname; pos_lnum = 1; pos_bol = 0; pos_cnum = 0 }
+  else
+    { offset with pos_fname }
 
-let make warnings keywords config source =
+let make ?(offset=Lexing.dummy_pos) warnings keywords config source =
   Msupport.catch_errors warnings (ref []) @@ fun () ->
   let items =
     get_tokens keywords
-    (initial_position config)
+    (initial_position offset config)
     (Msource.text source)
     []
   in
-  { keywords; items; config; source }
+  { offset; keywords; items; config; source }
 
 let item_start = function
   | Triple (_,s,_) -> s
@@ -102,7 +102,7 @@ let item_end = function
     l.Location.loc_end
 
 let initial_position t =
-  initial_position t.config
+  initial_position t.offset t.config
 
 let rev_filter_map ~f lst =
   let rec aux acc = function

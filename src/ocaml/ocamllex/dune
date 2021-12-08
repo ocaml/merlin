@@ -1,0 +1,13 @@
+(ocamllex ocamllex_lexer)
+(menhir (modules ocamllex_parser))
+(library
+  (name ocamllex)
+  (modules ocamllex_lexer ocamllex_parser ocamllex_syntax)
+  (libraries parsing)
+  (wrapped false))
+
+(executable
+  (name lex_driver)
+  (modules lex_driver)
+  (libraries parsing ocamllex))
+
