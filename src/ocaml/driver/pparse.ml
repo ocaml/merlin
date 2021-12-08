@@ -38,11 +38,29 @@ let report_error = function
     log ~title:"report_error"
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
-external merlin_system_command : string -> int = "ml_merlin_system_command"
-
 let ppx_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s %s 1>&2"
-    cmd (Filename.quote fn_in) (Filename.quote fn_out)
+  if Sys.win32 then
+    Printf.sprintf "%s %s %s"
+      cmd fn_in fn_out
+  else
+    Printf.sprintf "%s %s %s 1>&2"
+      cmd (Filename.quote fn_in) (Filename.quote fn_out)
+
+external merlin_ppx_command :
+  cmd:string -> fd_in:Unix.file_descr -> fd_out:Unix.file_descr -> int =
+  "ml_merlin_ppx_command"
+
+let merlin_system_command ~cmd ~fn_in ~fn_out =
+  if Sys.win32 then
+    let fd_in = Unix.openfile fn_in [Unix.O_RDONLY; Unix.O_KEEPEXEC] 0o0 in
+    let fd_out =
+      try Unix.openfile fn_out [Unix.O_RDONLY; Unix.O_KEEPEXEC] 0o0
+      with exn -> Unix.close fd_in; raise exn
+    in
+    (* file descriptors are closed in the C code *)
+    merlin_ppx_command ~cmd ~fd_in ~fd_out
+  else
+    Sys.command (ppx_commandline cmd fn_in fn_out)
 
 let apply_rewriter magic ppx (fn_in, failures) =
   let title = "apply_rewriter" in
@@ -56,7 +74,7 @@ let apply_rewriter magic ppx (fn_in, failures) =
   end;
   let comm = ppx_commandline ppx.workval fn_in fn_out in
   let failure =
-    let ok = merlin_system_command comm = 0 in
+    let ok = merlin_system_command ~cmd:ppx.workval ~fn_in ~fn_out = 0 in
     if not ok then Some (CannotRun comm)
     else if not (Sys.file_exists fn_out) then
       Some (WrongMagic comm)
@@ -161,7 +179,7 @@ let apply_pp ~workdir ~filename ~source ~pp =
   end;
   let fn_out = fn_in ^ ".out" in
   let comm = pp_commandline pp fn_in fn_out in
-  let ok = merlin_system_command comm = 0 in
+  let ok = merlin_system_command  ~cmd:pp ~fn_in ~fn_out = 0 in
   Misc.remove_file fn_in;
   if not ok then begin
     Misc.remove_file fn_out;

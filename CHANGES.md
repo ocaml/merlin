@@ -3,6 +3,7 @@ git version
 
   + merlin binary
     - filter dups in source paths (#1218)
+    - Windows: fix ppx command output redirection (#????, follow-up to #1270)
 
 merlin 4.4
 ==========

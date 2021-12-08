@@ -3,6 +3,7 @@
 #define CAML_INTERNALS
 #include <caml/misc.h>
 #include <caml/osdeps.h>
+#include <caml/unixsupport.h>
 #endif
 
 #include <caml/mlvalues.h>
@@ -64,38 +65,46 @@ value ml_merlin_dont_inherit_stdio(value vstatus)
 
 /* Run ppx-command without opening a sub console */
 
-static int windows_system(const char *cmd)
+static int windows_ppx_command(char_os *cmd, HANDLE fd_in, HANDLE fd_out)
 {
     PROCESS_INFORMATION p_info;
     STARTUPINFOW s_info;
-    DWORD ReturnValue;
+    DWORD flags, ret;
 
+    flags = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
     memset(&s_info, 0, sizeof(s_info));
     memset(&p_info, 0, sizeof(p_info));
     s_info.cb = sizeof(s_info);
+    s_info.dwFlags = STARTF_USESTDHANDLES;
+    s_info.hStdInput = fd_in;
+    s_info.hStdOutput = fd_out;
+    s_info.hStdError = fd_out;
 
-    char_os *utf16cmd;
-    utf16cmd = caml_stat_strdup_to_os(cmd);
-    if (CreateProcessW(NULL, utf16cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &s_info, &p_info))
-    {
+    ret = CreateProcessW(NULL, cmd, NULL, NULL, TRUE, flags, NULL, NULL, &s_info, &p_info);
+    CloseHandle(fd_in);
+    CloseHandle(fd_out);
+
+    if (ret) {
         WaitForSingleObject(p_info.hProcess, INFINITE);
-        GetExitCodeProcess(p_info.hProcess, &ReturnValue);
+        GetExitCodeProcess(p_info.hProcess, &ret);
         CloseHandle(p_info.hProcess);
         CloseHandle(p_info.hThread);
-
-        caml_stat_free(utf16cmd);
-        return ReturnValue;
+        return ret;
     }
-    else
-    {
-        caml_stat_free(utf16cmd);
-        return -1;
-    }
+    return -1;
 }
 
-value ml_merlin_system_command(value command)
+value ml_merlin_ppx_command(value vcmd, value vfd_in, value vfd_out)
 {
-  return Val_int(windows_system(String_val(command)));
+  char_os *cmd;
+  HANDLE fd_in = Handle_val(vfd_in), fd_out = Handle_val(vfd_out);
+  int ret;
+
+  cmd = caml_stat_strdup_to_os(String_val(vcmd));
+  ret = windows_ppx_command(cmd, fd_in, fd_out);
+  caml_stat_free(cmd);
+
+  return Val_int(ret);
 }
 
 #else
@@ -106,9 +115,12 @@ value ml_merlin_dont_inherit_stdio(value vstatus)
   return Val_unit;
 }
 
-value ml_merlin_system_command(value command)
+value ml_merlin_ppx_command(value vcmd, value vfd_in, value vfd_out)
 {
-  return Val_int(system(String_val(command)));
+  (void)vcmd;
+  (void)vfd_in;
+  (void)vfd_out;
+  return Val_int(1);
 }
 
 #endif
