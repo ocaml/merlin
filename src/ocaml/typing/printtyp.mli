@@ -103,7 +103,7 @@ val reset_and_mark_loops: type_expr -> unit
 val reset_and_mark_loops_list: type_expr list -> unit
 
 val type_expr: formatter -> type_expr -> unit
-val marked_type_expr: formatter -> type_expr -> unit
+val prepared_type_expr: formatter -> type_expr -> unit
 (** The function [type_expr] is the safe version of the pair
     [(typed_expr, marked_type_expr)]:
     it takes care of marking loops in the type expression and resetting
