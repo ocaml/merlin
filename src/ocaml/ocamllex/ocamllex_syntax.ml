@@ -47,9 +47,10 @@ type ('global_action, 'refill_action, 'local_action) raw_chunk =
   | And_rule of 'local_action rule
   | Let_regexp of string loc * regexp loc
   | Refill_handler of 'refill_action
+  | Syntax_error of Location.t
 
-type source_chunk = 
+type source_chunk =
   (Location.t, Location.t, Location.t) raw_chunk
 
-type parsed_chunk = 
+type parsed_chunk =
   (Parsetree.structure, Parsetree.expression, Parsetree.expression) raw_chunk

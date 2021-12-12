@@ -28,4 +28,7 @@ let () =
       | Ocamllex_syntax.Refill_handler l ->
         let (sl, sc), (el, ec) = split_loc l in
         Printf.printf "Refill_handler %d:%d-%d:%d\n" sl sc el ec
+      | Ocamllex_syntax.Syntax_error l ->
+        let (sl, sc), (el, ec) = split_loc l in
+        Printf.printf "Syntax_error %d:%d-%d:%d\n" sl sc el ec
     ) chunks

@@ -59,12 +59,7 @@ lexer_chunks:
 | Trefill Taction lexer_chunks
     { Refill_handler $2 :: $3 }
 | error lexer_chunks
-    { (* TODO: Report error location *)
-      let pos = $startpos($1) in
-      Printf.eprintf "error line %d col %d\n"
-        pos.Lexing.pos_lnum
-        (pos.Lexing.pos_cnum - pos.Lexing.pos_bol);
-      $2 }
+    { Syntax_error (mk_loc $startpos($1) $endpos($1)) :: $2 }
 | Tend
     { [] }
 ;
