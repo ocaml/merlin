@@ -52,5 +52,9 @@ type ('global_action, 'refill_action, 'local_action) raw_chunk =
 type source_chunk =
   (Location.t, Location.t, Location.t) raw_chunk
 
+type 'a or_loc = ('a, Location.t) result
+
 type parsed_chunk =
-  (Parsetree.structure, Parsetree.expression, Parsetree.expression) raw_chunk
+  (Parsetree.structure or_loc,
+   Parsetree.expression or_loc,
+   Parsetree.expression or_loc) raw_chunk

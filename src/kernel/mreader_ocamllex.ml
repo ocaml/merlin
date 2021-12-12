@@ -1,3 +1,4 @@
+open Std
 open Ocamllex_syntax
 
 let parse config warnings keywords source entry
@@ -9,9 +10,6 @@ let parse config warnings keywords source entry
       (Msource.sub source ~offset:startp ~length:(endp - startp))
   in
   Mreader_parser.make warnings lexer entry
-
-let global_action = Parser_raw.Incremental.implementation
-let local_action = Parser_raw.Incremental.parse_expression
 
 (* Checks:
    - all named regexps are bound by a "let"
@@ -25,23 +23,39 @@ let parse_chunks config source chunks =
   let warnings = Mconfig.(config.ocaml.warnings) in
   let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
   let parse entry loc =
-    Mreader_parser.result
-      (parse config warnings keywords source entry loc)
+    match
+      Mreader_parser.result
+        (parse config warnings keywords source entry loc)
+    with
+    | result -> Ok result
+    | exception exn ->
+      Logger.log ~section:"ocamllex" ~title:"exception while parsing"
+        "%a" Logger.exn exn;
+      Error loc;
+  in
+  let parse_local_action loc =
+    match parse Parser_raw.Incremental.parse_optional_expression loc with
+    | Ok (Some exp) -> Ok exp
+    | Ok None ->
+      Ok (Ast_helper.Exp.construct ~loc
+            {Location.loc; txt=Longident.Lident "()"} None)
+    | Error _ as result -> result
   in
   let parse_clause {pattern; action} =
-    {pattern; action = parse local_action action}
+    {pattern; action = parse_local_action action}
   in
   let parse_rule rule =
-    {rule with clauses = List.map parse_clause rule.clauses}
+    {rule with clauses = List.map ~f:parse_clause rule.clauses}
   in
   let parse_chunk = function
-    | Action action -> Action (parse global_action action)
+    | Action action ->
+      Action (parse Parser_raw.Incremental.implementation action)
     | Rule rule -> Rule (parse_rule rule)
     | And_rule rule -> And_rule (parse_rule rule)
-    | Refill_handler action -> Refill_handler (parse local_action action)
+    | Refill_handler action -> Refill_handler (parse_local_action action)
     | Let_regexp _ | Syntax_error _ as x -> x
   in
-  List.map parse_chunk chunks
+  List.map ~f:parse_chunk chunks
 
 let rec collect_rules = function
   | And_rule rule :: rest ->
@@ -55,8 +69,15 @@ type typ =
   | T_char
   | T_string
   | T_unknown
+  | T_option of typ
 
-let join t1 t2 = match t1, t2 with
+let t_option = function
+  | T_option _ as t -> t
+  | t -> T_option t
+
+let rec join t1 t2 = match t1, t2 with
+  | T_option t1, t2 -> t_option (join t1 t2)
+  | t1, T_option t2 -> t_option (join t1 t2)
   | T_unknown, x | x, T_unknown -> x
   | T_char, T_char -> T_char
   | T_string, _ | _, T_string -> T_string
@@ -76,128 +97,186 @@ type named_regexp = {
   location: Location.t;
   mutable used: bool;
   typ: typ;
+  bindings: typ Location.loc String.Map.t;
 }
 
 let add_named named def =
   let defs, index = !named in
-  named := (def :: defs, Std.String.Map.add ~key:def.name ~data:def index)
+  named := (def :: defs, String.Map.add ~key:def.name ~data:def index)
 
 let find_named named name =
   let _, index = !named in
-  Std.String.Map.find_opt name index
+  String.Map.find_opt name index
 
-let type_regexp named bindings errors =
+let type_regexp named errors =
   let rec visit = function
-    | Characters -> T_char
-    | Epsilon | String | Eof -> T_string
+    | Characters -> (String.Map.empty, T_char)
+    | Epsilon | String | Eof -> (String.Map.empty, T_string)
     | Named {Location. txt; loc} ->
       begin match find_named named txt with
         | None ->
           push_front errors
             (mk_error loc ("Regexp `" ^ txt ^ "' has not been defined"));
-          add_named named {name=txt; location=loc; used=true; typ=T_unknown};
-          T_unknown
+          add_named named { name=txt; location=loc; used=true;
+                           typ=T_unknown; bindings=String.Map.empty };
+          (String.Map.empty, T_unknown)
         | Some named ->
           named.used <- true;
-          named.typ
+          (named.bindings, named.typ)
       end
     | Sequence (e1, e2) ->
-      let _ = visit e2 in
-      let _ = visit e1 in
-      T_string
+      let b2, _t2 = visit e2 in
+      let b1, _t1 = visit e1 in
+      let bindings =
+        String.Map.union ~f:(fun name t1 t2 ->
+            push_front errors
+              (mk_error t2.Location.loc
+                 ("Capture `" ^ name ^ "' is already defined"));
+            Some t1
+          ) b1 b2
+      in
+      (bindings, T_string)
     | Hash (e1, e2, loc) ->
-      let t2 = visit e2 in
-      let t1 = visit e1 in
+      let b2, t2 = visit e2 in
+      let b1, t1 = visit e1 in
       begin match t1, t2 with
-        | T_string, _ | _, T_string ->
+        | (T_string | T_option _), _
+        | _, (T_string | T_option _) ->
           push_front errors
             (mk_error loc "Operator # expects characters sets");
         | _ -> ()
       end;
-      T_char
-    | Alternative (e1, e2) ->
-      let t2 = visit e2 in
-      let t1 = visit e1 in
-      join t1 t2
-    | Star e1 | Plus e1 ->
-      let _ = visit e1 in
-      T_string
-    | Bind (e1, name) ->
-      let t1 = visit e1 in
-      begin match bindings with
-        | Some bindings -> push_front bindings (name, t1)
-        | None ->
-          let loc = name.loc in
+      begin match
+          Option.plus
+            (String.Map.choose_opt b1)
+            (String.Map.choose_opt b2)
+        with
+        | None -> ()
+        | Some (_, {Location. loc; _}) ->
           push_front errors
-            (mk_error loc "Operator `as' cannot be used in regexp definitions")
+            (mk_error loc "Captures are not allowed under #");
       end;
-      t1
+      (String.Map.empty, T_char)
+    | Alternative (e1, e2) ->
+      let b2, t2 = visit e2 in
+      let b1, t1 = visit e1 in
+      let merge name t1 t2 =
+        Some (
+          match t1, t2 with
+          | Some t, None | None, Some t ->
+            {t with Location.txt = t_option t.Location.txt}
+          | Some t1, Some t2 ->
+            {Location.
+              loc = t1.Location.loc;
+              txt = join t1.txt t2.txt}
+          | None, None -> assert false
+        )
+      in
+      (String.Map.merge ~f:merge b1 b2, join t1 t2)
+    | Star e1 ->
+      let b1, _ = visit e1 in
+      let optional t = {t with Location.txt = t_option t.Location.txt} in
+      (String.Map.map ~f:optional b1, T_string)
+    | Plus e1 ->
+      let b1, _ = visit e1 in
+      (b1, T_string)
+    | Bind (e1, name) ->
+      let b1, t1 = visit e1 in
+      let b1 =
+        String.Map.add ~key:name.txt ~data:{Location.txt=t1; loc=name.loc} b1
+      in
+      (b1, t1)
   in
   visit
 
 let false_ = Exp.construct (Location.mknoloc (Longident.Lident "false")) None
+let some_ x = Exp.construct (Location.mknoloc (Longident.Lident "Some")) (Some x)
 
-let mk_const = function
+let rec mk_const = function
   | T_char -> Ast_helper.Exp.constant (Const.char ' ')
   | T_string -> Ast_helper.Exp.constant (Const.string "")
   | T_unknown -> Ast_helper.Exp.assert_ false_
+  | T_option t -> some_ (mk_const t)
 
 let elaborate_clause named {pattern; action} =
-  let names = ref [] in
   let errors = ref [] in
-  let _ = type_regexp named (Some names) errors pattern.Location.txt in
+  let bindings, _ = type_regexp named errors pattern.Location.txt in
   let bind_error ext body =
     Exp.sequence (Exp.extension ext) body
   in
-  let bind_name (name, typ) body =
-    Exp.let_ Nonrecursive [Vb.mk (Pat.var name) (mk_const typ)] body
+  let bind_name ~key:name ~data:{Location. loc; txt=typ} body =
+    Exp.let_ Nonrecursive
+      [Vb.mk (Pat.var {Location. txt=name; loc}) (mk_const typ)] body
   in
-  List.fold_right bind_error !errors
-    (List.fold_right bind_name !names action)
+  let action = match action with
+    | Ok action -> action
+    | Error loc -> Ast_helper.Exp.extension (mk_error loc "Syntax error")
+  in
+  List.fold_right ~f:bind_error !errors
+    ~init:(Std.String.Map.fold ~f:bind_name bindings ~init:action)
+
+let lexing_lexbuf_ =
+  Typ.constr
+    (Location.mknoloc Longident.(Ldot (Lident "Lexing", "lexbuf"))) []
 
 let elaborate_rule named rule =
-  let clauses = List.map (elaborate_clause named) rule.clauses in
+  let clauses = List.map ~f:(elaborate_clause named) rule.clauses in
   let add_clause clause body =
     Exp.try_ clause [Exp.case (Pat.any ()) body]
   in
-  let body = List.fold_right add_clause clauses (Exp.assert_ false_) in
+  let body = List.fold_right ~f:add_clause clauses ~init:(Exp.assert_ false_) in
   let bind_arg arg body =
     Exp.fun_ Asttypes.Nolabel None (Pat.var arg) body
   in
-  let lexing_lexbuf_ =
-    Location.mknoloc Longident.(Ldot (Lident "Lexing", "lexbuf"))
-  in
   let body =
     Exp.fun_ Asttypes.Nolabel None
-      (Pat.constraint_
-         (Pat.var (Location.mknoloc "lexbuf"))
-         (Typ.constr lexing_lexbuf_ []))
+      (Pat.constraint_ (Pat.var (Location.mknoloc "lexbuf")) lexing_lexbuf_)
       body
   in
-  Vb.mk (Pat.var rule.name) (List.fold_right bind_arg rule.args body)
+  Vb.mk (Pat.var rule.name) (List.fold_right ~f:bind_arg rule.args ~init:body)
 
-let rec elaborate_chunks named = function
+let rec elaborate_chunks named : Ocamllex_syntax.parsed_chunk list -> _ =
+  function
   | [] -> []
   | Let_regexp (name, regexp) :: rest ->
     let errors = ref [] in
-    let typ = type_regexp named None errors regexp.txt in
+    let bindings, typ = type_regexp named errors regexp.txt in
     let def = {
       name = name.txt;
       location = name.loc;
       used = false;
-      typ
+      typ;
+      bindings;
     } in
     add_named named def;
     elaborate_chunks named rest
-  | Refill_handler _ :: rest ->
-    elaborate_chunks named rest
+  | Refill_handler action :: rest ->
+    begin match action with
+      | Ok exp ->
+        let lexbuf_arrow =
+          Typ.arrow Asttypes.Nolabel lexing_lexbuf_ (Typ.any ())
+        in
+        Ast_helper.Str.value Asttypes.Nonrecursive [
+          Ast_helper.Vb.mk
+            (Ast_helper.Pat.constraint_
+               (Ast_helper.Pat.any ())
+               (Typ.arrow Asttypes.Nolabel lexbuf_arrow lexbuf_arrow))
+            exp
+        ]
+      | Error loc ->
+        Ast_helper.Str.extension (mk_error loc "Syntax error")
+    end :: elaborate_chunks named rest
   | Action action :: rest ->
-    action @ elaborate_chunks named rest
+    begin match action with
+      | Ok action -> action
+      | Error loc ->
+        [Ast_helper.Str.extension (mk_error loc "Syntax error")]
+    end @ elaborate_chunks named rest
   | (Rule rule | And_rule rule) :: rest ->
     let rules, rest = collect_rules rest in
     let rules = rule :: rules in
     Ast_helper.Str.value Asttypes.Recursive
-      (List.map (elaborate_rule named) rules)
+      (List.map ~f:(elaborate_rule named) rules)
     :: elaborate_chunks named rest
   | Syntax_error loc :: rest ->
     Ast_helper.Str.extension (mk_error loc "Syntax error")
@@ -206,7 +285,7 @@ let rec elaborate_chunks named = function
 let read config source =
   let lexbuf = Lexing.from_string ~with_positions:true (Msource.text source) in
   let chunks = Ocamllex_parser.lexer_chunks Ocamllex_lexer.main lexbuf in
-  let named = ref ([], Std.String.Map.empty) in
+  let named = ref ([], String.Map.empty) in
   let result = elaborate_chunks named (parse_chunks config source chunks) in
   let warn_unused def result =
     if def.used then result else (
@@ -215,5 +294,5 @@ let read config source =
       :: result
     )
   in
-  List.fold_right warn_unused (fst !named) result
+  List.fold_right ~f:warn_unused (fst !named) ~init:result
 
