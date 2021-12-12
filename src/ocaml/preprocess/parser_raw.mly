@@ -948,6 +948,8 @@ The precedences must be listed from low to high.
 %type <Parsetree.core_type> parse_core_type
 %start parse_expression
 %type <Parsetree.expression> parse_expression
+%start parse_optional_expression
+%type <Parsetree.expression option> parse_optional_expression
 %start parse_pattern
 %type <Parsetree.pattern> parse_pattern
 %start parse_constr_longident
@@ -1300,6 +1302,11 @@ parse_core_type:
 
 parse_expression:
   seq_expr EOF
+    { $1 }
+;
+
+parse_optional_expression:
+  seq_expr? EOF
     { $1 }
 ;
 

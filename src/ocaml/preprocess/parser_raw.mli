@@ -150,6 +150,8 @@ val parse_val_longident: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Longident
 
 val parse_pattern: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.pattern)
 
+val parse_optional_expression: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.expression option)
+
 val parse_mty_longident: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Longident.t)
 
 val parse_mod_longident: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Longident.t)
@@ -395,6 +397,7 @@ module MenhirInterpreter : sig
     | N_pattern : (Parsetree.pattern) nonterminal
     | N_parse_val_longident : (Longident.t) nonterminal
     | N_parse_pattern : (Parsetree.pattern) nonterminal
+    | N_parse_optional_expression : (Parsetree.expression option) nonterminal
     | N_parse_mty_longident : (Longident.t) nonterminal
     | N_parse_mod_longident : (Longident.t) nonterminal
     | N_parse_mod_ext_longident : (Longident.t) nonterminal
@@ -405,6 +408,7 @@ module MenhirInterpreter : sig
     | N_paren_module_expr : (Parsetree.module_expr) nonterminal
     | N_optlabel : (string) nonterminal
     | N_option_type_constraint_ : ((Parsetree.core_type option * Parsetree.core_type option) option) nonterminal
+    | N_option_seq_expr_ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_seq_expr__ : (Parsetree.expression option) nonterminal
     | N_option_preceded_EQUAL_pattern__ : (Parsetree.pattern option) nonterminal
     | N_option_preceded_EQUAL_module_type__ : (Parsetree.module_type option) nonterminal
@@ -557,6 +561,8 @@ module Incremental : sig
   val parse_val_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
   
   val parse_pattern: Lexing.position -> (Parsetree.pattern) MenhirInterpreter.checkpoint
+  
+  val parse_optional_expression: Lexing.position -> (Parsetree.expression option) MenhirInterpreter.checkpoint
   
   val parse_mty_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
   
