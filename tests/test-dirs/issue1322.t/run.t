@@ -20,7 +20,8 @@
     type 'a t = 'a t constraint 'a = int
   is not included in
     type 'a t
-  Their constraints differ.
+  Their parameters differ
+  The type int is not equal to the type 'a
   File \"foo.ml\", line 2, characters 2-11: Expected declaration
   File \"foo.ml\", line 6, characters 9-54: Actual declaration"
       }
