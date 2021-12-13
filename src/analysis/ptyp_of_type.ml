@@ -31,8 +31,7 @@ let rec module_type =
 and core_type type_expr =
   let open Ast_helper in
   let open Parsetree in
-  let type_expr = Btype.repr type_expr in
-  match type_expr.desc with
+  match Types.get_desc type_expr with
   | Tvar None | Tunivar None -> Typ.any ()
   | Tvar (Some s) | Tunivar (Some s) -> Typ.var s
   | Tarrow (label, type_expr, type_expr_out, _commutable) ->
@@ -44,8 +43,7 @@ and core_type type_expr =
     let loc = Untypeast.lident_of_path path |> Location.mknoloc in
     Typ.constr loc @@ List.map ~f:core_type type_exprs
   | Tobject (type_expr, class_) ->
-    let type_expr = Btype.repr type_expr in
-    let rec aux acc type_expr = match type_expr.desc with
+    let rec aux acc type_expr = match get_desc type_expr with
       | Tnil -> acc, Asttypes.Closed
       | Tvar None | Tunivar None -> acc, Asttypes.Open
       | Tfield ("*dummy method*", _, _, fields) -> aux acc fields
@@ -65,16 +63,18 @@ and core_type type_expr =
   | Tfield _ ->  failwith "Found object field outside of object."
   | Tnil -> Typ.object_ [] Closed
   | Tlink type_expr | Tsubst (type_expr, _) -> core_type type_expr
-  | Tvariant { row_fields; row_closed; row_name; _ } ->
+  | Tvariant row ->
+    let row_fields = row_fields row in
+    let row_closed = row_closed row in
     let field (label, row_field) =
       let label = Location.mknoloc label in
-      match row_field with
-      | Rpresent None | Reither (true, _, _, _) ->
+      match row_field_repr row_field with
+      | Rpresent None | Reither (true, _, _) ->
         Rf.tag label true []
       | Rpresent (Some type_expr) ->
         let core_type = core_type type_expr in
         Rf.tag label false [ core_type ]
-      | Reither (false, type_exprs, _, _) ->
+      | Reither (false, type_exprs, _) ->
         Rf.tag label false @@ List.map ~f:core_type type_exprs
       | Rabsent -> assert false
     in
@@ -83,7 +83,7 @@ and core_type type_expr =
     (* TODO NOT ALWAYS NONE *)
     Typ.variant fields closed None
   | Tpoly (type_expr, type_exprs) ->
-    let names = List.map ~f:(fun v -> match v.desc with
+    let names = List.map ~f:(fun v -> match get_desc v with
       | Tunivar (Some name) | Tvar (Some name) -> mknoloc name
       | _ -> failwith "poly: not a var")
       type_exprs

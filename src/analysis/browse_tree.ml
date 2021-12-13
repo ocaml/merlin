@@ -60,8 +60,9 @@ let dummy = {
   t_children = lazy []
 }
 
-let rec normalize_type_expr env = function
-  | {Types.desc = Types.Tconstr (path,_,_); _ } ->
+let rec normalize_type_expr env type_expr =
+  match Types.get_desc type_expr with
+  | Types.Tconstr (path,_,_) ->
     normalize_type_decl env (Env.find_type path env)
   | _ -> raise Not_found
 
