@@ -231,7 +231,7 @@ let first_column simplified_matrix =
 *)
 
 
-let is_absent tag row = Btype.row_field tag !row = Rabsent
+let is_absent tag row = row_field_repr (get_row_field tag !row) = Rabsent
 
 let is_absent_pat d =
   match d.pat_desc with
@@ -339,12 +339,12 @@ exception Empty (* Empty pattern *)
 
 (* May need a clean copy, cf. PR#4745 *)
 let clean_copy ty =
-  if ty.level = Btype.generic_level then ty
+  if get_level ty = Btype.generic_level then ty
   else Subst.type_expr Subst.identity ty
 
 let get_constructor_type_path ty tenv =
-  let ty = Ctype.repr (Ctype.expand_head tenv (clean_copy ty)) in
-  match ty.desc with
+  let ty = Ctype.expand_head tenv (clean_copy ty) in
+  match get_desc ty with
   | Tconstr (path,_,_) -> path
   | _ -> assert false
 
@@ -717,23 +717,26 @@ let mark_partial =
   )
 
 let close_variant env row =
-  let row = Btype.row_repr row in
-  let nm =
+  let Row {fields; more; name=orig_name; closed; fixed} = row_repr row in
+  let name, static =
     List.fold_left
-      (fun nm (_tag,f) ->
-        match Btype.row_field_repr f with
-        | Reither(_, _, false, e) ->
-            (* m=false means that this tag is not explicitly matched *)
-            Btype.set_row_field e Rabsent;
-            None
-        | Rabsent | Reither (_, _, true, _) | Rpresent _ -> nm)
-      row.row_name row.row_fields in
-  if not row.row_closed || nm != row.row_name then begin
+      (fun (nm, static) (_tag,f) ->
+        match row_field_repr f with
+        | Reither(_, _, false) ->
+            (* fixed=false means that this tag is not explicitly matched *)
+            link_row_field_ext ~inside:f rf_absent;
+            (None, static)
+        | Reither (_, _, true) -> (nm, false)
+        | Rabsent | Rpresent _ -> (nm, static))
+      (orig_name, true) fields in
+  if not closed || name != orig_name then begin
+    let more' = if static then Btype.newgenty Tnil else Btype.newgenvar () in
     (* this unification cannot fail *)
-    Ctype.unify env row.row_more
+    Ctype.unify env more
       (Btype.newgenty
-         (Tvariant {row with row_fields = []; row_more = Btype.newgenvar();
-                    row_closed = true; row_name = nm}))
+         (Tvariant
+            (create_row ~fields:[] ~more:more'
+               ~closed:true ~name ~fixed)))
   end
 
 (*
@@ -759,22 +762,22 @@ let full_match closing env =  match env with
           env
       in
       let row = type_row () in
-      if closing && not (Btype.row_fixed row) then
+      if closing && not (Btype.has_fixed_explanation row) then
         (* closing=true, we are considering the variant as closed *)
         List.for_all
           (fun (tag,f) ->
-            match Btype.row_field_repr f with
-              Rabsent | Reither(_, _, false, _) -> true
-            | Reither (_, _, true, _)
+            match row_field_repr f with
+              Rabsent | Reither(_, _, false) -> true
+            | Reither (_, _, true)
                 (* m=true, do not discard matched tags, rather warn *)
             | Rpresent _ -> List.mem tag fields)
-          row.row_fields
+          (row_fields row)
       else
-        row.row_closed &&
+        row_closed row &&
         List.for_all
           (fun (tag,f) ->
-            Btype.row_field_repr f = Rabsent || List.mem tag fields)
-          row.row_fields
+            row_field_repr f = Rabsent || List.mem tag fields)
+          (row_fields row)
   | Constant Const_char _ ->
       List.length env = 256
   | Constant _
@@ -822,7 +825,7 @@ let pat_of_constrs ex_pat cstrs =
 
 let pats_of_type ?(always=false) env ty =
   let ty' = Ctype.expand_head env ty in
-  match ty'.desc with
+  match get_desc ty' with
   | Tconstr (path, _, _) ->
       begin match Env.find_type_descrs path env with
       | exception Not_found -> [omega]
@@ -844,7 +847,7 @@ let pats_of_type ?(always=false) env ty =
   | _ -> [omega]
 
 let rec get_variant_constructors env ty =
-  match (Ctype.repr ty).desc with
+  match get_desc ty with
   | Tconstr (path,_,_) -> begin
       try match Env.find_type path env, Env.find_type_descrs path env with
       | _, Type_variant (cstrs,_) -> cstrs
@@ -949,16 +952,16 @@ let build_other ext env =
               List.fold_left
                 (fun others (tag,f) ->
                   if List.mem tag tags then others else
-                  match Btype.row_field_repr f with
+                  match row_field_repr f with
                     Rabsent (* | Reither _ *) -> others
                   (* This one is called after erasing pattern info *)
-                  | Reither (c, _, _, _) -> make_other_pat tag c :: others
+                  | Reither (c, _, _) -> make_other_pat tag c :: others
                   | Rpresent arg -> make_other_pat tag (arg = None) :: others)
-                [] row.row_fields
+                [] (row_fields row)
             with
               [] ->
                 let tag =
-                  if Btype.row_fixed row then some_private_tag else
+                  if Btype.has_fixed_explanation row then some_private_tag else
                   let rec mktag tag =
                     if List.mem tag tags then mktag (tag ^ "'") else tag in
                   mktag "AnyOtherTag"
@@ -1434,7 +1437,7 @@ let rec pressure_variants tdefs = function
                 match d.pat_desc with
                 | Variant { type_row; _ } ->
                   let row = type_row () in
-                  if Btype.row_fixed row
+                  if Btype.has_fixed_explanation row
                   || pressure_variants None default then ()
                   else close_variant env row
                 | _ -> ()
