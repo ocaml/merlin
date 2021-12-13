@@ -142,6 +142,8 @@ and core_type_desc =
            - As the pld_type field of a label_declaration.
 
            - As a core_type of a Ptyp_object node.
+
+           - As the pval_type field of a value_description.
          *)
 
   | Ptyp_package of package_type
@@ -174,7 +176,7 @@ and row_field_desc =
             (see 4.2 in the manual)
         *)
   | Rinherit of core_type
-        (* [ | T ] *)
+        (* [ | t ] *)
 
 and object_field = {
   pof_desc : object_field_desc;
@@ -379,7 +381,7 @@ and expression_desc =
   | Pexp_open of open_declaration * expression
         (* M.(E)
            let open M in E
-           let! open M in E *)
+           let open! M in E *)
   | Pexp_letop of letop
         (* let* P = E in E
            let* P = E and* P = E in E *)
@@ -478,6 +480,7 @@ and label_declaration =
 and constructor_declaration =
     {
      pcd_name: string loc;
+     pcd_vars: string loc list;
      pcd_args: constructor_arguments;
      pcd_res: core_type option;
      pcd_loc: Location.t;
@@ -527,11 +530,12 @@ and type_exception =
   }
 
 and extension_constructor_kind =
-    Pext_decl of constructor_arguments * core_type option
+    Pext_decl of string loc list * constructor_arguments * core_type option
       (*
-         | C of T1 * ... * Tn     ([T1; ...; Tn], None)
-         | C: T0                  ([], Some T0)
-         | C: T1 * ... * Tn -> T0 ([T1; ...; Tn], Some T0)
+         | C of T1 * ... * Tn     ([], [T1; ...; Tn], None)
+         | C: T0                  ([], [], Some T0)
+         | C: T1 * ... * Tn -> T0 ([], [T1; ...; Tn], Some T0)
+         | C: 'a... . T1... -> T0 (['a;...]; [T1;...], Some T0)
        *)
   | Pext_rebind of Longident.t loc
       (*
