@@ -926,7 +926,6 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
     mda_shape;
   }
 
-
 let read_sign_of_cmi = sign_of_cmi ~freshen:true
 
 let save_sign_of_cmi = sign_of_cmi ~freshen:false
@@ -2324,16 +2323,18 @@ let enter_value ?check name desc env =
   let env = store_value ?check id addr desc (Shape.leaf desc.val_uid) env in
   (id, env)
 
-let enter_type ~scope ~predef name info env =
+let enter_type ~scope name info env =
   let id = Ident.create_scoped ~scope name in
-  let env = store_type ~check:true ~predef id info (Shape.leaf info.type_uid) env in
+  let env = store_type ~check:true ~predef:false
+    id info (Shape.leaf info.type_uid) env
+  in
   (id, env)
 
 let enter_extension ~scope ~rebind name ext env =
   let id = Ident.create_scoped ~scope name in
   let addr = extension_declaration_address env id ext in
   let shape = Shape.leaf ext.ext_uid in
-  let env = store_extension ~checÒk:true ~rebind id addr ext shape env in
+  let env = store_extension ~check:true ~rebind id addr ext shape env in
   (id, env)
 
 let enter_module_declaration ~scope ?arg ?shape s presence md env =
@@ -2411,8 +2412,10 @@ let enter_signature ?mod_shape ~scope sg env =
       mod_shape sg env
   in
   sg, env
+
 let enter_signature_and_shape ~scope ~parent_shape mod_shape sg env =
   enter_signature_and_shape ~scope ~parent_shape (Some mod_shape) sg env
+
 let add_value = add_value ?shape:None
 let add_type = add_type ?shape:None
 let add_extension = add_extension ?shape:None
@@ -2749,7 +2752,8 @@ let set_type_used_callback td callback =
       try Types.Uid.Tbl.find !type_declarations td.type_uid
       with Not_found -> ignore
     in
-    Types.Uid.Tbl.replace !type_declarations td.type_uid (fun () -> callback old)
+    Types.Uid.Tbl.replace !type_declarations td.type_uid
+      (fun () -> callback old)
 
 (* Lookup by name *)
 
@@ -3657,7 +3661,7 @@ let report_lookup_error _loc env ppf = function
       spellcheck ppf extract_types env lid;
   | Unbound_module lid -> begin
       fprintf ppf "Unbound module %a" !print_longident lid;
-      match find_modtype_by_name lid env with
+       match find_modtype_by_name lid env with
       | exception Not_found -> spellcheck ppf extract_modules env lid;
       | _ ->
          fprintf ppf
