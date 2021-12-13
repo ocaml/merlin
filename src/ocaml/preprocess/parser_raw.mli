@@ -152,6 +152,10 @@ val parse_pattern: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.patte
 
 val parse_mty_longident: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Longident.t)
 
+val parse_module_type: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.module_type)
+
+val parse_module_expr: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.module_expr)
+
 val parse_mod_longident: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Longident.t)
 
 val parse_mod_ext_longident: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Longident.t)
@@ -396,6 +400,8 @@ module MenhirInterpreter : sig
     | N_parse_val_longident : (Longident.t) nonterminal
     | N_parse_pattern : (Parsetree.pattern) nonterminal
     | N_parse_mty_longident : (Longident.t) nonterminal
+    | N_parse_module_type : (Parsetree.module_type) nonterminal
+    | N_parse_module_expr : (Parsetree.module_expr) nonterminal
     | N_parse_mod_longident : (Longident.t) nonterminal
     | N_parse_mod_ext_longident : (Longident.t) nonterminal
     | N_parse_expression : (Parsetree.expression) nonterminal
@@ -486,13 +492,14 @@ module MenhirInterpreter : sig
   Parsetree.type_declaration) nonterminal
     | N_generic_type_declaration_no_nonrec_flag_type_subst_kind_ : ((Asttypes.rec_flag * string Location.loc option) *
   Parsetree.type_declaration) nonterminal
-    | N_generic_constructor_declaration_epsilon_ : (Ocaml_parsing.Ast_helper.str * Parsetree.constructor_arguments *
-  Parsetree.core_type option * Parsetree.attributes * Location.t *
-  Ocaml_parsing.Docstrings.info) nonterminal
-    | N_generic_constructor_declaration_BAR_ : (Ocaml_parsing.Ast_helper.str * Parsetree.constructor_arguments *
-  Parsetree.core_type option * Parsetree.attributes * Location.t *
-  Ocaml_parsing.Docstrings.info) nonterminal
-    | N_generalized_constructor_arguments : (Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
+    | N_generic_constructor_declaration_epsilon_ : (Ocaml_parsing.Ast_helper.str * Ocaml_parsing.Ast_helper.str list *
+  Parsetree.constructor_arguments * Parsetree.core_type option *
+  Parsetree.attributes * Location.t * Ocaml_parsing.Docstrings.info) nonterminal
+    | N_generic_constructor_declaration_BAR_ : (Ocaml_parsing.Ast_helper.str * Ocaml_parsing.Ast_helper.str list *
+  Parsetree.constructor_arguments * Parsetree.core_type option *
+  Parsetree.attributes * Location.t * Ocaml_parsing.Docstrings.info) nonterminal
+    | N_generalized_constructor_arguments : (Ocaml_parsing.Ast_helper.str list * Parsetree.constructor_arguments *
+  Parsetree.core_type option) nonterminal
     | N_functor_args : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_functor_arg : (Lexing.position * Parsetree.functor_parameter) nonterminal
     | N_function_type : (Parsetree.core_type) nonterminal
@@ -559,6 +566,10 @@ module Incremental : sig
   val parse_pattern: Lexing.position -> (Parsetree.pattern) MenhirInterpreter.checkpoint
   
   val parse_mty_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
+  
+  val parse_module_type: Lexing.position -> (Parsetree.module_type) MenhirInterpreter.checkpoint
+  
+  val parse_module_expr: Lexing.position -> (Parsetree.module_expr) MenhirInterpreter.checkpoint
   
   val parse_mod_longident: Lexing.position -> (Longident.t) MenhirInterpreter.checkpoint
   

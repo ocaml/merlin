@@ -218,7 +218,8 @@ module Type:
       type_declaration
 
     val constructor: ?loc:loc -> ?attrs:attrs -> ?info:info ->
-      ?args:constructor_arguments -> ?res:core_type -> str ->
+      ?vars:str list -> ?args:constructor_arguments -> ?res:core_type ->
+      str ->
       constructor_declaration
     val field: ?loc:loc -> ?attrs:attrs -> ?info:info ->
       ?mut:mutable_flag -> str -> core_type -> label_declaration
@@ -228,8 +229,8 @@ module Type:
 module Te:
   sig
     val mk: ?loc:loc -> ?attrs:attrs -> ?docs:docs ->
-      ?params:(core_type * (variance * injectivity)) list -> ?priv:private_flag ->
-      lid -> extension_constructor list -> type_extension
+      ?params:(core_type * (variance * injectivity)) list ->
+      ?priv:private_flag -> lid -> extension_constructor list -> type_extension
 
     val mk_exception: ?loc:loc -> ?attrs:attrs -> ?docs:docs ->
       extension_constructor -> type_exception
@@ -238,7 +239,8 @@ module Te:
       str -> extension_constructor_kind -> extension_constructor
 
     val decl: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?info:info ->
-      ?args:constructor_arguments -> ?res:core_type -> str ->
+      ?vars:str list -> ?args:constructor_arguments -> ?res:core_type ->
+      str ->
       extension_constructor
     val rebind: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?info:info ->
       str -> lid -> extension_constructor
