@@ -93,7 +93,7 @@ Test 3.1
   >   | None -> ()
   >   | Some _ -> ()
   > EOF
-  "Some (A.B) |Some (A.C)"
+  "Some (A.B) | Some (A.C)"
 
 Test 3.2
   $ $MERLIN single case-analysis -start 6:9 -end 6:10 -filename refine_pattern.ml <<EOF | \
@@ -105,4 +105,4 @@ Test 3.2
   >   | None -> ()
   >   | Some _ -> ()
   > EOF
-  "Some (B) |Some (C)"
+  "Some (B) | Some (C)"

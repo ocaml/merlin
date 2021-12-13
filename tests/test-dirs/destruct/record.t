@@ -95,7 +95,7 @@ Record fields in patterns should also be refinable:
           "col": 16
         }
       },
-      "{ contents = 0 } |{ contents = _ }"
+      "{ contents = 0 } | { contents = _ }"
     ],
     "notifications": []
   }

@@ -37,7 +37,7 @@ https://github.com/ocaml/merlin/issues/1300
           "col": 5
         }
       },
-      "A 0 |B x |A _"
+      "A 0 | B x | A _"
     ],
     "notifications": []
   }
