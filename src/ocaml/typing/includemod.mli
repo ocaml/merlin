@@ -45,7 +45,8 @@ module Error: sig
     | Unit
 
   type core_sigitem_symptom =
-    | Value_descriptions of Types.value_description core_diff
+    | Value_descriptions of
+        (Types.value_description, Includecore.value_mismatch) diff
     | Type_declarations of
         (Types.type_declaration, Includecore.type_mismatch) diff
     | Extension_constructors of
@@ -149,6 +150,10 @@ val modtypes:
   loc:Location.t -> Env.t -> mark:mark ->
   module_type -> module_type -> module_coercion
 
+val modtypes_with_shape:
+  shape:Shape.t -> loc:Location.t -> Env.t -> mark:mark ->
+  module_type -> module_type -> module_coercion * Shape.t
+
 val strengthened_module_decl:
   loc:Location.t -> aliasable:bool -> Env.t -> mark:mark ->
   module_declaration -> Path.t -> module_declaration -> module_coercion
@@ -168,7 +173,7 @@ val signatures: Env.t -> mark:mark ->
 
 val compunit:
       Env.t -> mark:mark -> string -> signature ->
-      string -> signature -> module_coercion
+      string -> signature -> Shape.t -> module_coercion * Shape.t
 
 val type_declarations:
   loc:Location.t -> Env.t -> mark:mark ->
@@ -213,25 +218,33 @@ exception Apply_error of {
     args : (Error.functor_arg_descr * Types.module_type)  list ;
   }
 
-val expand_module_alias: Env.t -> Path.t -> Types.module_type
+val expand_module_alias: strengthen:bool -> Env.t -> Path.t -> Types.module_type
 
 module Functor_inclusion_diff: sig
+  module Defs: sig
+    type left = Types.functor_parameter
+    type right = left
+    type eq = Typedtree.module_coercion
+    type diff = (Types.functor_parameter, unit) Error.functor_param_symptom
+    type state
+  end
   val diff: Env.t ->
-           Types.functor_parameter list * Types.module_type ->
-           Types.functor_parameter list * Types.module_type ->
-           (Types.functor_parameter, Types.functor_parameter,
-            Typedtree.module_coercion,
-            (Types.functor_parameter, 'c) Error.functor_param_symptom)
-           Diffing.patch
+    Types.functor_parameter list * Types.module_type ->
+    Types.functor_parameter list * Types.module_type ->
+    Diffing.Define(Defs).patch
 end
 
 module Functor_app_diff: sig
+  module Defs: sig
+    type left = Error.functor_arg_descr * Types.module_type
+    type right = Types.functor_parameter
+    type eq = Typedtree.module_coercion
+    type diff = (Error.functor_arg_descr, unit) Error.functor_param_symptom
+    type state
+  end
   val diff:
     Env.t ->
     f:Types.module_type ->
     args:(Error.functor_arg_descr * Types.module_type) list ->
-    (Error.functor_arg_descr * Types.module_type,
-     Types.functor_parameter, Typedtree.module_coercion,
-     (Error.functor_arg_descr, 'a) Error.functor_param_symptom)
-      Diffing.patch
+    Diffing.Define(Defs).patch
 end
