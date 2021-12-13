@@ -20,8 +20,8 @@ The fix is to save and restore levels when attempting a recoverable typing.
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type 'a option but an expression was expected of type
-    a -> string"
+        "message": "This expression should not be a constructor, the expected type is
+  a -> string"
       }
     ],
     "notifications": []
