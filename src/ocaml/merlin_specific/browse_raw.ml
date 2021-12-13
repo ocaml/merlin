@@ -302,13 +302,10 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_or (p1,p2,_) ->
     of_pattern p1 ** of_pattern p2
 
-let of_method_call obj meth arg loc =
+let of_method_call obj meth loc =
   fun env (f : _ f0) acc ->
   let loc_start = obj.exp_loc.Location.loc_end in
-  let loc_end = match arg with
-    | None -> loc.Location.loc_end
-    | Some e -> e.exp_loc.Location.loc_start
-  in
+  let loc_end = loc.Location.loc_end in
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
@@ -353,10 +350,9 @@ let of_expression_desc loc = function
     of_expression e1 ** of_expression e2
   | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
     of_expression e1 ** of_expression e2 ** of_expression e3
-  | Texp_send (e,meth,eo) ->
+  | Texp_send (e,meth) ->
     of_expression e **
-    of_method_call e meth eo loc **
-    option_fold of_expression eo
+    of_method_call e meth loc (* TODO ulysse CHECK*)
   | Texp_override (_,ls) ->
     list_fold (fun (_,_,e) -> of_expression e) ls
   | Texp_letmodule (mb_id, mb_name, mb_presence, mb_expr, e) ->
@@ -639,7 +635,7 @@ let of_node = function
   | Type_extension { tyext_params; tyext_constructors } ->
     list_fold of_typ_param tyext_params **
     list_fold (fun ec -> app (Extension_constructor ec)) tyext_constructors
-  | Extension_constructor { ext_kind = Text_decl (carg,cto) } ->
+  | Extension_constructor { ext_kind = Text_decl (_, carg,cto) } ->
     option_fold of_core_type cto **
     of_constructor_arguments carg
   | Extension_constructor { ext_kind = Text_rebind _ } ->
@@ -738,8 +734,9 @@ let reloc txt loc = {loc with Location. txt}
 
 let mk_lident x = Longident.Lident x
 
-let type_constructor_path = function
-  | {Types.desc = Types.Tconstr (p,_,_)} -> p
+let type_constructor_path typ =
+  match Types.get_desc typ with
+  | Types.Tconstr (p,_,_) -> p
   | _ -> raise Not_found
 
 (* Build a fake path for value constructors and labels *)
@@ -784,8 +781,8 @@ let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
     | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
     | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
     | Texp_override (_,ps) ->
-      List.map ~f:(fun (path,loc,_) ->
-        reloc path loc, Some (Longident.Lident loc.txt)
+      List.map ~f:(fun (id,loc,_) ->
+        reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)
       ) ps
     | Texp_letmodule (Some id,loc,_,_,_) ->
       [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
