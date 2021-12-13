@@ -76,11 +76,13 @@ let uncatch_errors f =
   let_ref errors None f
 
 let erroneous_type_register te =
+  let te = Types.Transient_expr.repr te in
   match !errors with
   | Some (_,h) -> Btype.TypeHash.replace h te ()
   | None -> ()
 
 let erroneous_type_check te =
+  let te = Types.Transient_expr.repr te in
   match !errors with
   | Some (_,h) -> Btype.TypeHash.mem h te
   | _ -> false
