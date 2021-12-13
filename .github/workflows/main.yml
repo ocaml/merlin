@@ -23,7 +23,7 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
-        ocaml-version:
+        ocaml-compiler:
           - ocaml-variants.4.14.0+trunk
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
