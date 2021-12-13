@@ -252,6 +252,7 @@ let constructor_declaration sub cd =
   let loc = sub.location sub cd.cd_loc in
   let attrs = sub.attributes sub cd.cd_attributes in
   Type.constructor ~loc ~attrs
+    ~vars:cd.cd_vars
     ~args:(constructor_arguments sub cd.cd_args)
     ?res:(Option.map (sub.typ sub) cd.cd_res)
     (map_loc sub cd.cd_name)
@@ -283,8 +284,8 @@ let extension_constructor sub ext =
   Te.constructor ~loc ~attrs
     (map_loc sub ext.ext_name)
     (match ext.ext_kind with
-      | Text_decl (args, ret) ->
-          Pext_decl (constructor_arguments sub args,
+      | Text_decl (vs, args, ret) ->
+          Pext_decl (vs, constructor_arguments sub args,
                      Option.map (sub.typ sub) ret)
       | Text_rebind (_p, lid) -> Pext_rebind (map_loc sub lid)
     )
@@ -473,10 +474,11 @@ let expression sub exp =
         Pexp_for (name,
           sub.expr sub exp1, sub.expr sub exp2,
           dir, sub.expr sub exp3)
-    | Texp_send (exp, meth, _) ->
+    | Texp_send (exp, meth) ->
         Pexp_send (sub.expr sub exp, match meth with
             Tmeth_name name -> mkloc name loc
-          | Tmeth_val id -> mkloc (Ident.name id) loc)
+          | Tmeth_val id -> mkloc (Ident.name id) loc
+          | Tmeth_ancestor(id, _) -> mkloc (Ident.name id) loc)
     | Texp_new (_path, lid, _) -> Pexp_new (map_loc sub lid)
     | Texp_instvar (_, path, name) ->
       Pexp_ident ({loc = sub.location sub name.loc ; txt = lident_of_path path})
