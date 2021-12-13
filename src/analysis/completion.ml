@@ -87,7 +87,7 @@ let parenthesize_name name =
 
 let rec methods_of_type env ?(acc=[]) type_expr =
   let open Types in
-  match type_expr.desc with
+  match get_desc type_expr with
   | Tlink type_expr | Tobject (type_expr, _) | Tpoly (type_expr, _) ->
     methods_of_type env ~acc type_expr
   | Tfield (name, _, ty, rest) ->
@@ -173,13 +173,13 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | `Label label_descr ->
       let desc =
         Types.(Tarrow (Ast_helper.no_label,
-                       label_descr.lbl_res, label_descr.lbl_arg, Cok))
+                       label_descr.lbl_res, label_descr.lbl_arg, commu_ok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Label_decl (ty,label_decl) ->
       let desc =
         Types.(Tarrow (Ast_helper.no_label,
-                       ty, label_decl.ld_type, Cok))
+                       ty, label_decl.ld_type, commu_ok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))
     | `Mod m   ->
@@ -249,14 +249,16 @@ let fold_constructors f id env acc =
 
 let fold_variant_constructors ~env ~init ~f =
   let rec aux acc t =
-    let t = Ctype.repr t in
-    match t.Types.desc with
-    | Types.Tvariant { Types. row_fields; row_more; _ } ->
+    match Types.get_desc t with
+    | Types.Tvariant row ->
+      let row_fields = Types.row_fields row in
+      let row_more = Types.row_more row in
       let acc =
         let keep_if_present acc (lbl, row_field) =
+          let row_field = Types.row_field_repr row_field in
           match row_field with
           | Types.Rpresent arg when lbl <> "" -> f ("`" ^ lbl) arg acc
-          | Types.Reither (_, lst, _, _) when lbl <> "" ->
+          | Types.Reither (_, lst, _) when lbl <> "" ->
             let arg =
               match lst with
               | [ well_typed ] -> Some well_typed
@@ -270,7 +272,10 @@ let fold_variant_constructors ~env ~init ~f =
       aux acc row_more
     | Types.Tconstr _ ->
       let t' = try Ctype.full_expand env ~may_forget_scope:true t with _ -> t in
-      if Types.TypeOps.equal t t' then
+      if Types.TransientTypeOps.equal
+        (Types.Transient_expr.repr t)
+        (Types.Transient_expr.repr t')
+      then
         acc
       else
         aux acc t'
@@ -279,7 +284,7 @@ let fold_variant_constructors ~env ~init ~f =
   aux init
 
 let fold_sumtype_constructors ~env ~init ~f t =
-  let t = Ctype.repr t in
+  let t = Types.Transient_expr.repr t in
   match t.desc with
   | Tconstr (path, _, _) ->
     log ~title:"fold_sumtype_constructors" "node type: %s"
@@ -325,13 +330,13 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
   let items =
     let snap = Btype.snapshot () in
     let rec arrow_arity n t =
-      match (Ctype.repr t).Types.desc with
+      match Types.get_desc t with
       | Types.Tarrow (_,_,rhs,_) -> arrow_arity (n + 1) rhs
       | _ -> n
     in
     let rec nth_arrow n t =
       if n <= 0 then t else
-      match (Ctype.repr t).Types.desc with
+      match Types.get_desc t with
       | Types.Tarrow (_,_,rhs,_) -> nth_arrow (n - 1) rhs
       | _ -> t
     in
@@ -350,7 +355,7 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
         let arity = arrow_arity 0 ty in
         fun scheme ->
         let cost =
-          let c = Btype.linked_variables in
+          let c = Types.linked_variables in
           try
             let c' = c () in
             Ctype.unify_var env ty (Ctype.instance scheme);
@@ -626,7 +631,7 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
     | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record _ ; pat_type = t ; _ }
     | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; exp_type = t ; _ } ->
       let is_label =
-        try match t.Types.desc with
+        try match Types.get_desc t with
           | Types.Tconstr (p, _, _) ->
             (match (Env.find_type p env).Types.type_kind with
              | Types.Type_record (labels, _) ->
@@ -648,12 +653,11 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
                 | `Expression e -> e.Typedtree.exp_type
                 | `Pattern p -> p.Typedtree.pat_type
               in
-              let p, _, decl = Ctype.extract_concrete_typedecl env ty in
-              (ty, p, decl)
+              let decl = Ctype.extract_concrete_typedecl env ty in
+              (ty, decl)
             with
-            | exception _ -> `Maybe
-            | (ty, p, decl) ->
-              try
+            | (ty, Typedecl (p, _, decl)) ->
+              begin try
                 let lbls = Datarepr.labels_of_type p decl in
                 let labels = List.map lbls ~f:(fun (_,lbl) ->
                     try
@@ -670,10 +674,12 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
                   ) in
                 `Description labels
               with _ ->
-              match decl.Types.type_kind with
-              | Types.Type_record (lbls, _) ->
-                `Declaration (ty, lbls)
-              | _ -> `Maybe
+                match decl.Types.type_kind with
+                | Types.Type_record (lbls, _) ->
+                  `Declaration (ty, lbls)
+                | _ -> `Maybe
+                end
+            | _ | exception _ -> `Maybe
           end
         | lbls ->
           `Description (Array.to_list lbls)
@@ -732,13 +738,15 @@ open Typedtree
 let labels_of_application ~prefix = function
   | {exp_desc = Texp_apply (f, args); exp_env; _} ->
     let rec labels t =
-      let t = Ctype.repr t in
-      match t.Types.desc with
+      match Types.get_desc t with
       | Types.Tarrow (label, lhs, rhs, _) ->
         (label, lhs) :: labels rhs
       | _ ->
         let t' = Ctype.full_expand ~may_forget_scope:true exp_env t in
-        if Types.TypeOps.equal t t' then
+        if Types.TransientTypeOps.equal
+          (Types.Transient_expr.repr t)
+          (Types.Transient_expr.repr t')
+        then
           []
         else
           labels t'
@@ -759,7 +767,7 @@ let labels_of_application ~prefix = function
         | label when List.exists ~f:(is_application_of label) args -> None
         | Asttypes.Labelled str -> Some ("~" ^ str, ty)
         | Asttypes.Optional str ->
-          let ty = match (Ctype.repr ty).Types.desc with
+          let ty = match Types.get_desc ty with
             | Types.Tconstr (path, [ty], _)
               when Path.same path Predef.path_option -> ty
             | _ -> ty
