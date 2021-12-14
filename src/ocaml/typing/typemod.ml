@@ -3219,6 +3219,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           check_nongen_signature finalenv simple_sg;
           normalize_signature simple_sg;
           Typecore.force_delayed_checks ();
+          let shape = Shape.local_reduce shape in
           (* See comment above. Here the target signature contains all
              the value being exported. We can still capture unused
              declarations like "let x = true;; let x = 1;;", because in this
