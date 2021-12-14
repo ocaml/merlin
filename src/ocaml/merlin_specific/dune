@@ -1,5 +1,9 @@
 (library
   (name merlin_specific)
   (wrapped false)
-  (flags -open Merlin_utils)
-  (libraries merlin_utils parsing preprocess typing utils))
+  (flags
+   -open Ocaml_utils
+   -open Ocaml_parsing
+   -open Ocaml_typing
+   -open Merlin_utils)
+  (libraries merlin_utils ocaml_parsing preprocess ocaml_typing ocaml_utils))

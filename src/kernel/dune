@@ -4,8 +4,12 @@
 (library
  (name merlin_kernel)
  (wrapped false)
- (flags -open Merlin_utils)
- (libraries config os_ipc parsing preprocess typing utils
+ (flags
+  -open Ocaml_utils
+  -open Merlin_utils
+  -open Ocaml_parsing
+  -open Ocaml_typing)
+ (libraries config os_ipc ocaml_parsing preprocess ocaml_typing ocaml_utils
             merlin_extend merlin_specific merlin_utils merlin_dot_protocol))
 
 (rule

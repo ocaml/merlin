@@ -1,14 +1,18 @@
 (library
  (name merlin_analysis)
- (flags -open Merlin_utils)
+ (flags
+  -open Ocaml_utils
+  -open Ocaml_parsing
+  -open Ocaml_typing
+  -open Merlin_utils)
  (libraries
   config
   merlin_specific
   merlin_extend
   merlin_kernel
   merlin_utils
-  parsing
+  ocaml_parsing
   preprocess
   query_protocol
-  typing
-  utils))
+  ocaml_typing
+  ocaml_utils))

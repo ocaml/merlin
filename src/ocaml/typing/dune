@@ -1,6 +1,9 @@
 (library
-  (name typing)
-  (wrapped false)
-  (flags -open Merlin_utils (:standard -w -9))
+  (name ocaml_typing)
+  (flags
+   -open Ocaml_utils
+   -open Ocaml_parsing
+   -open Merlin_utils
+   (:standard -w -9))
   (modules_without_implementation annot outcometree)
-  (libraries merlin_utils parsing utils))
+  (libraries merlin_utils ocaml_parsing ocaml_utils))

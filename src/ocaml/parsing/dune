@@ -2,8 +2,7 @@
 (rule (copy# ../../extend/extend_helper.mli extend_helper.mli))
 
 (library
-  (name parsing)
-  (wrapped false)
-  (flags -open Merlin_utils (:standard -w -9))
+  (name ocaml_parsing)
+  (flags -open Ocaml_utils -open Merlin_utils (:standard -w -9))
   (modules_without_implementation asttypes parsetree)
-  (libraries merlin_utils utils))
+  (libraries merlin_utils ocaml_utils))
