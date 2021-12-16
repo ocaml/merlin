@@ -111,6 +111,11 @@ module Item = struct
       Ident.name id, Sig_component_kind.Class
     let class_type id =
       Ident.name id, Sig_component_kind.Class_type
+
+    let print fmt (name, ns) =
+      Format.fprintf fmt "%S[%s]"
+        name
+        (Sig_component_kind.to_string ns)
   end
 
   include T
@@ -145,27 +150,24 @@ let print fmt =
           print_uid_opt uid
     | Leaf ->
         Format.fprintf fmt "<%a>" (Format.pp_print_option Uid.print) uid
-    | Proj (t, (name, ns)) ->
+    | Proj (t, item) ->
         begin match uid with
         | None ->
-            Format.fprintf fmt "@[%a@ .@ %S[%s]@]"
+            Format.fprintf fmt "@[%a@ .@ %a@]"
               aux t
-              name
-              (Sig_component_kind.to_string ns)
+              Item.print item
         | Some uid ->
-            Format.fprintf fmt "@[(%a@ .@ %S[%s])<%a>@]"
+            Format.fprintf fmt "@[(%a@ .@ %a)<%a>@]"
               aux t
-              name
-              (Sig_component_kind.to_string ns)
+              Item.print item
               Uid.print uid
         end
     | Comp_unit name -> Format.fprintf fmt "CU %s" name
     | Struct map ->
         let print_map fmt =
-          Item.Map.iter (fun (name, ns) t ->
-              Format.fprintf fmt "@[<hv 4>(%S, %s) ->@ %a;@]@,"
-                name
-                (Sig_component_kind.to_string ns)
+          Item.Map.iter (fun item t ->
+              Format.fprintf fmt "@[<hv 4>%a ->@ %a;@]@,"
+                Item.print item
                 aux t
             )
         in
@@ -219,13 +221,13 @@ module Make_reduce(Params : sig
   val find_shape : env -> Ident.t -> t
 end) = struct
   type strategy = Weak | Strong
-  type local_env = t Ident.tbl
+  type local_env = t option Ident.tbl
 
   type env = {
     fuel: int ref;
     global_env: Params.env;
     local_env: local_env;
-    memo_table: (strategy * local_env * t, t) Hashtbl.t;
+    memo_table: (strategy * local_env * t, local_env * t) Hashtbl.t;
   }
 
   let bind env var shape =
@@ -243,72 +245,90 @@ end) = struct
 
   and reduce__ strategy ({fuel; global_env; local_env; _} as env) t =
     let reduce env t = reduce_ strategy env t in
+    let return t = local_env, t in
     if !fuel < 0 then
-      t
+      return t
     else
       match t.desc with
       | Comp_unit unit_name ->
           begin match Params.read_unit_shape ~unit_name with
           | Some t -> reduce env t
-          | None -> t
+          | None -> return t
           end
       | App(f, arg) ->
-          let f = reduce_ Weak env f in
-          let arg = reduce_ Strong env arg in
+          let lenv_f, f = reduce_ Weak env f in
+          let _, arg = reduce_ Strong env arg in
+          let env = { env with local_env = lenv_f } in
           begin match f.desc with
           | Abs(var, body) ->
               (* we only add Strong normal forms
                  to the environment. *)
-              reduce (bind env var arg) body
-              |> improve_uid t.uid
+              let env = bind env var (Some arg) in
+              let lenv_v, v = reduce env body in
+              lenv_v, improve_uid t.uid v
           | _ ->
-              { t with desc = App(f, arg) }
+              (* If f is well-typed at a function type, its Weak
+                 normal forms are either Abs or a Strong normal form. *)
+              return { t with desc = App(f, arg) }
           end
       | Proj(str, item) ->
-          let str = reduce env str in
-          let nored = { t with desc = Proj(str, item) } in
+          let lenv_str, str = reduce_ Weak env str in
+          let env = { env with local_env = lenv_str } in
+          let nored () = return { t with desc = Proj(str, item) } in
           begin match str.desc with
           | Struct items ->
               begin match Item.Map.find item items with
-              | exception Not_found -> nored
-              | item -> item
+              | exception Not_found -> nored ()
+              | item ->
+                  reduce env item
               end
-          | _ -> nored
+          | _ ->
+              (* If [str] is well-typed at a function type, its Weak
+                 normal forms are either Abs or a Strong normal form. *)
+              nored ()
           end
       | Abs(var, body) ->
           begin match strategy with
-          | Weak -> t
+          | Weak -> return t
           | Strong ->
-              let env = bind env var { uid = None; desc = Var var } in
-              let vbody = reduce env body in
-              { t with desc = Abs(var, vbody) }
+              let env = bind env var None in
+              let _, v = reduce env body in
+              return { t with desc = Abs(var, v) }
           end
       | Var id ->
           begin match Ident.find_same id local_env with
-          | def ->
-              if def.desc = Var id then t else def (* already in Strong normal form *)
+          (* local_env bindings are already in Strong normal form *)
+          | None -> return t
+          | Some def -> return def
           | exception Not_found ->
           match Params.find_shape global_env id with
           | res ->
               if res = t then
                 (* reducing here would loop forever *)
-                t
+                return t
               else begin
                 decr fuel;
                 reduce env res
               end
           | exception Not_found ->
-              t
+              return t
           end
-      | Leaf -> t
+      | Leaf -> return t
       | Struct m ->
-          { t with desc = Struct (Item.Map.map (reduce env) m) }
+          begin match strategy with
+          | Weak -> return t
+          | Strong ->
+              let reduce_item t = snd (reduce env t) in
+              return { t with desc = Struct (Item.Map.map reduce_item m) }
+          end
 
   let reduce global_env t =
     let fuel = ref Params.fuel in
     let memo_table = Hashtbl.create 42 in
     let local_env = Ident.empty in
-    reduce_ Strong { fuel; global_env; memo_table; local_env } t
+    let _env, v =
+      reduce_ Strong { fuel; global_env; memo_table; local_env } t in
+    v
 end
 
 module Local_reduce =
