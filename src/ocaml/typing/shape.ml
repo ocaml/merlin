@@ -222,6 +222,11 @@ module Make_reduce(Params : sig
 end) = struct
   type strategy = Weak | Strong
   type local_env = t option Ident.tbl
+  (* Local environments carry an optional strong normal form: when
+     reducing in the body of an abstraction [Abs(x, body)], we bind
+     [x] to [None] in the environment. [Some v] is used for actual
+     substitutions, for example in [App(Abs(x, body), t)], when [v] is
+     the strong normal form of [v]. *)
 
   type env = {
     fuel: int ref;
@@ -233,18 +238,145 @@ end) = struct
   let bind env var shape =
     { env with local_env = Ident.add var shape env.local_env }
 
-  let rec reduce_ strategy env t =
+  (* # Note on the implementation of strong reduction.
+
+     ## Simple version
+
+     The general idea is to reduce under abstractions
+     (and within structures). This could be implemented with code
+     looking as follows:
+
+     let rec reduce_strong env = function
+     | ...
+     | Abs (x, body) ->
+       let env' = bind env x None in
+       Abs (x, reduce_strong env' body)
+     | App(t, u) ->
+       let f = reduce_strong env t in
+       let v = reduce_strong env u in
+       begin match f with
+       | Abs(x, body) ->
+         let env' = bind env x (Some v) in
+         reduce_strong env' body
+       | other -> App(other, v)
+       end
+
+
+     ## Mixing Weak|Strong for efficiency
+
+     A problem with this approach is that the body of `t` is traversed twice:
+     - once when computing `let f = reduce_strong env t`, which goes under abstractions
+     - a second time when computing `reduce_strong (bind env x v) body`
+
+     Traversing the input twice can lead to an exponential blowup, consider for example
+       (\x2. (\x1. (\x0. large_normal_form) y0) y1) y2
+     which comes naturally as a desugaring of
+       let x2 = y2 in let x1 = y1 in let x0 = y0 in large_normal_form
+     and whose reduction following the rule would traverse `large_normal_form` 8 times.
+
+     To avoid this problem, we mix strong reductions as above with "weak" reductions,
+     that stop on abstractions and returns a partially-evaluated value.
+
+     let rec reduce strategy env = function
+     | ...
+     | Abs(x, t) ->
+       begin match strategy with
+       | Weak -> Abs(x, t)
+       | Strong ->
+         let env' = bind env x None in
+         Abs(x, reduce_strong env' t)
+       end
+     | App(t, u) ->
+       let f = reduce Weak env t in
+       let v = reduce Strong env u in
+       begin match f with
+       | Abs(x, body) ->
+         let env' = bind env x (Some v) in
+         reduce strategy env' body
+       | other -> App(other, v)
+       end
+
+     With this version, on `App(t, u)` we first perform a Weak
+     reduction of `t`, which stops at the first Abs(x, body) without
+     traversing the body, which is only traversed during the reduction
+     `reduce strategy env' body` that follows -- whether that
+     reduction is Weak or Strong depends on the caller.
+
+     Notice that even when the strategy is `Weak`, the function
+     argument `u` is reduced strongly: only the "main" part of the
+     code, the one whose evaluation will give the final result,
+     is reduced weakly. This corresponds to the "code" argument
+     in an abstract machine -- as opposed to the continuation and
+     environments, where we only store strong values.
+
+     This choice of reducing strongly outside the "main" subexpression
+     gives us the following guarantee: at function types, a normal
+     form for the Weak strategy must be either an Abs(x,t) or
+     (if evaluation got stuck on free variables) a Strong normal form:
+     in the
+       | other -> App(other, v)
+     case of application, we can assume that `other` is in strong
+     normal form, and `App(other, v)` is also a strong normal form
+     because `v` is.
+
+
+     ### Returning environments
+
+     A final problem remains with this second version: it has a bug.
+     The problem is that the weak value corresponding to Abs(x, t)
+     should not be
+       Abs(x, t)
+     but a closure
+       Clos(local_env, x, t)
+     Indeed `t` was not traversed yet and it may contain variables bound
+     in the environment, so returning just `Abs(x, t)` returns unbound
+     identifier.
+
+     On the other hand, when we have a Strong normal form Abs(x, t),
+     we do not need the environment anymore: `t` was fully traversed
+     and all variables from the local environment have been substituted.
+
+     Morally the type of "return value" should be different for
+     the Weak and Strong strategies; we could represent this using
+     a GADT, but it would make everything more complex, in particular
+     the memoization code.
+
+     Instead of introducing a notion of closures, we make our
+     strategy-generic function [reduce_strat] return a pair of the
+     local environment and the value (weak or strong). Then we have
+     two helpers, [reduce_strong] which throws this local environment
+     away and [reduce_weak] which returns it.
+
+     (We could also introduce Let-bindings to be able to reify the
+     local environment back into the term, but that would change the
+     syntax observable from outside this module.)
+
+     Scoping invariants about [reduce_strat strategy env]:
+     - we assume that [env] only contains closed strong normal forms
+     - then it returns a pair [(env', t)] where:
+       + [env'] is an extension of [env]
+       + if [strategy = Weak], [t] may contain variables bound in [env']
+       + if [strategy = Strong], [t] is a closed strong normal form
+  *)
+  let rec reduce_weak env t =
+    reduce_strat Weak env t
+
+  and reduce_strong env t =
+    let (_result_env, normal_form) = reduce_strat Strong env t in
+    normal_form
+
+  and reduce_strat strategy env t =
     let {fuel = _; global_env = _; local_env; memo_table} = env in
     let memo_key = (strategy, local_env, t) in
     match Hashtbl.find memo_table memo_key with
     | result -> result
     | exception Not_found ->
-        let result = reduce__ strategy env t in
+        let result = reduce_ strategy env t in
         Hashtbl.replace memo_table memo_key result;
         result
 
-  and reduce__ strategy ({fuel; global_env; local_env; _} as env) t =
-    let reduce env t = reduce_ strategy env t in
+  and reduce_ strategy ({fuel; global_env; local_env; _} as env) t =
+    let reduce env t = reduce_strat strategy env t in
     let return t = local_env, t in
     if !fuel < 0 then
       return t
@@ -256,13 +388,12 @@ end) = struct
           | None -> return t
           end
       | App(f, arg) ->
-          let lenv_f, f = reduce_ Weak env f in
-          let _, arg = reduce_ Strong env arg in
+          let lenv_f, f = reduce_weak env f in
+          let arg = reduce_strong env arg in
           let env = { env with local_env = lenv_f } in
           begin match f.desc with
           | Abs(var, body) ->
-              (* we only add Strong normal forms
-                 to the environment. *)
+              (* we only add Strong normal forms to the environment. *)
               let env = bind env var (Some arg) in
               let lenv_v, v = reduce env body in
               lenv_v, improve_uid t.uid v
@@ -272,7 +403,7 @@ end) = struct
               return { t with desc = App(f, arg) }
           end
       | Proj(str, item) ->
-          let lenv_str, str = reduce_ Weak env str in
+          let lenv_str, str = reduce_weak env str in
           let env = { env with local_env = lenv_str } in
           let nored () = return { t with desc = Proj(str, item) } in
           begin match str.desc with
@@ -318,17 +449,15 @@ end) = struct
           begin match strategy with
           | Weak -> return t
           | Strong ->
-              let reduce_item t = snd (reduce env t) in
-              return { t with desc = Struct (Item.Map.map reduce_item m) }
+              return { t with desc = Struct (Item.Map.map (reduce_strong env) m) }
           end
 
   let reduce global_env t =
     let fuel = ref Params.fuel in
     let memo_table = Hashtbl.create 42 in
     let local_env = Ident.empty in
-    let _env, v =
-      reduce_ Strong { fuel; global_env; memo_table; local_env } t in
-    v
+    let env = { fuel; global_env; memo_table; local_env} in
+    reduce_strong env t
 end
 
 module Local_reduce =
