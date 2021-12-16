@@ -13,7 +13,8 @@ Trying them all:
     "notifications": []
   }
 
-  $ $MERLIN single locate -look-for ml -position 7:17 -filename ./test.ml < ./test.ml
+  $ $MERLIN single locate -look-for ml -position 7:17 \
+  > -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {
@@ -26,13 +27,14 @@ Trying them all:
     "notifications": []
   }
 
-  $ $MERLIN single locate -look-for ml -position 9:12 -filename ./test.ml < ./test.ml
+  $ $MERLIN single locate -look-for ml -position 9:12 \
+  > -filename ./test.ml < ./test.ml
   {
     "class": "return",
     "value": {
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
-        "line": 3,
+        "line": 7,
         "col": 0
       }
     },

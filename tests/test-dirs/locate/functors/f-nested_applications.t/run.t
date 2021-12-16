@@ -1,4 +1,4 @@
-
+# Identity(Identity(Simple)).t
   $ $MERLIN single locate -look-for ml -position 17:14 \
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
@@ -6,13 +6,14 @@
     "value": {
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
-        "line": 5,
-        "col": 0
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
   }
 
+# Apply(Identity)(Simple).t
   $ $MERLIN single locate -look-for ml -position 19:14 \
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
@@ -27,6 +28,7 @@
     "notifications": []
   }
 
+# Alternative_apply(Identity)(Simple).t
   $ $MERLIN single locate -look-for ml -position 25:14 \
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
@@ -41,6 +43,7 @@
     "notifications": []
   }
 
+# Alternative_apply(functor(X : S) -> X)(Simple).t
   $ $MERLIN single locate -look-for ml -position 29:14 \
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
@@ -48,13 +51,14 @@
     "value": {
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
-        "line": 21,
-        "col": 54
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
   }
 
+# Identity((functor(X : S) -> X)(Simple)).t
   $ $MERLIN single locate -look-for ml -position 33:14 \
   > -filename ./nested_applications.ml < ./nested_applications.ml
   {
@@ -62,10 +66,9 @@
     "value": {
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
-        "line": 5,
-        "col": 0
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
   }
-
