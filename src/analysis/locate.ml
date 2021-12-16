@@ -337,6 +337,7 @@ module Shape_reduce =
         let cmt_infos = (Cmt_cache.read filename).cmt_infos in
         Option.iter cmt_infos.cmt_source_digest
           ~f:(fun digest -> File_switching.move_to ~digest filename);
+        log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
         cmt_infos.cmt_impl_shape
       | exception Not_found ->
         log ~title:"read_unit_shape" "failed to find %s" fn;
