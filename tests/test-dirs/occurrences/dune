@@ -1,4 +1,4 @@
 (cram
- (applies_to lissue1404)
+ (applies_to issue1404)
  (enabled_if
   (<> %{os_type} Win32)))
