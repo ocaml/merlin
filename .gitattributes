@@ -2,3 +2,11 @@ configure eol=lf
 *.sh eol=lf
 *.patch eol=lf
 tests/merlin-wrapper eol=lf
+
+src/ocaml/preprocess/menhirLib.ml text eol=lf
+src/ocaml/preprocess/menhirLib.mli text eol=lf
+src/ocaml/preprocess/parser_explain.ml text eol=lf
+src/ocaml/preprocess/parser_printer.ml text eol=lf
+src/ocaml/preprocess/parser_raw.ml text eol=lf
+src/ocaml/preprocess/parser_raw.mli text eol=lf
+src/ocaml/preprocess/parser_recover.ml text eol=lf
