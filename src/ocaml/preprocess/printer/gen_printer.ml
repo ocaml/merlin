@@ -114,9 +114,6 @@ let print_token_of_terminal () =
   Terminal.iter case
 
 let () =
-  if Sys.win32 then
-    (* Don't convert LF to CRLF line endings. *)
-    set_binary_mode_out stdout true;
   print_header ();
   print_newline ();
   print_symbol ();

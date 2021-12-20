@@ -46,9 +46,6 @@ let print_nullable () =
   printf "  | _ -> false\n"
 
 let () =
-  if Sys.win32 then
-    (* Don't convert LF to CRLF line endings. *)
-    set_binary_mode_out stdout true;
   print_header ();
   print_named_items ();
   print_nullable ()

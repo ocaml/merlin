@@ -24,11 +24,6 @@ module G = Cmly_read.Read (struct let filename = !name end)
 module A = Recover_attrib.Make(G)
 
 let () =
-  if Sys.win32 then begin
-    (* Don't convert LF to CRLF line endings. *)
-    set_binary_mode_out stdout true;
-    set_binary_mode_out stderr true;
-  end;
   let open Format in
   let ppf = Format.err_formatter in
   if !verbose then begin

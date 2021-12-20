@@ -4,7 +4,6 @@ git version
   + merlin binary
     - filter dups in source paths (#1218)
     - improve load path performance (#1323)
-    - output generated parser files in LF line endings on Windows (#1418)
 
 merlin 4.4
 ==========
