@@ -461,6 +461,7 @@ let postprocess cfg =
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
     ; List.map failures ~f:(fun s -> `ERROR_MSG s)
+    ; Option.to_list cfg.stdlib |> List.map ~f:(fun std -> `STDLIB std)
     ]
 
 let load dot_merlin_file =
