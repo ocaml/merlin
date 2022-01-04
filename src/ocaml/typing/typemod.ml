@@ -1947,7 +1947,7 @@ let path_of_module mexp =
 let rec nongen_modtype env = function
     Mty_ident _ -> false
   | Mty_alias _ -> false
-  | Mty_for_hole -> true
+  | Mty_for_hole -> false
   | Mty_signature sg ->
       let env = Env.add_signature sg env in
       List.exists (nongen_signature_item env) sg
