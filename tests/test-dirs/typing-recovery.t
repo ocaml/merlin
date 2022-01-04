@@ -260,14 +260,12 @@
                 pattern (test2.ml[2,15+7]..test2.ml[2,15+8])
                   attribute \"merlin.incorrect\"
                     []
-                  Tpat_extra_constraint
-                  core_type (test2.ml[2,15+11]..test2.ml[2,15+12])
-                    Ttyp_constr \"t/81\"
-                    []
-                  pattern (test2.ml[2,15+7]..test2.ml[2,15+8])
-                    attribute \"merlin.incorrect\"
+                  extra
+                    Tpat_extra_constraint
+                    core_type (test2.ml[2,15+11]..test2.ml[2,15+12])
+                      Ttyp_constr \"t/273\"
                       []
-                    Tpat_any
+                  Tpat_any
                 expression (test2.ml[2,15+22]..test2.ml[2,15+24])
                   attribute \"merlin.incorrect\"
                     []
