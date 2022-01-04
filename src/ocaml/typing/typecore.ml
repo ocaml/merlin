@@ -184,19 +184,16 @@ exception Error_forward of Location.error
    backtracking *)
 let deep_copy () =
   let table = TypeHash.create 7 in
-  let rec copy ty =
-    let ty = Transient_expr.repr ty in
-    try TypeHash.find table (Transient_expr.type_expr ty)
+  let rec copy ty : type_expr =
+    try TypeHash.find table ty
     with Not_found ->
       let ty' =
-        let {Types. level; id; desc; scope} = ty in
-        Transient_expr.create ~level ~id ~scope desc
+        let {Types. level; id; desc; scope} = Transient_expr.repr ty in
+        create_expr ~level ~id ~scope desc
       in
-      TypeHash.add table
-        (Transient_expr.type_expr ty)
-        (Transient_expr.type_expr ty');
+      TypeHash.add table ty ty';
       let desc =
-        match ty.desc with
+        match get_desc ty with
         | Tvar _ | Tnil | Tunivar _ as desc -> desc
         | Tvariant _ as desc -> (* fixme *) desc
         | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
@@ -214,20 +211,25 @@ let deep_copy () =
           Tpackage (p, List.map (fun (l, tl) -> l, copy tl) ltl)
         | Tlink _ | Tsubst _ -> assert false
       in
-      Transient_expr.set_desc ty' desc;
-      Transient_expr.type_expr ty'
+      Transient_expr.(set_desc (repr ty') desc);
+      ty'
   in
   copy
 
-let trace_copy ?(copy=deep_copy ())
-  (unification_error : Errortrace.unification_error) =
-  let trace = unification_error.Errortrace.trace in
-  let trace = Errortrace.map_types copy trace in
-  Errortrace.unification_error ~trace
+let trace_copy_raw ?(copy=deep_copy ())
+  (trace : Errortrace.unification Errortrace.error) =
+  Errortrace.map_types copy trace
+
+let trace_copy ?copy
+  ({ trace } : Errortrace.unification_error) =
+  Errortrace.unification_error ~trace:(trace_copy_raw ?copy trace)
 
 let trace_subtype_copy ?(copy=deep_copy ())
   (error_trace : Errortrace.Subtype.error_trace) =
   Errortrace.Subtype.map_types copy error_trace
+
+let copy_expanded_type copy ({ ty; expanded } : Errortrace.expanded_type) =
+  Errortrace.{ ty = copy ty; expanded = copy expanded }
 
 let error (loc, env, err) =
   let err = match err with
@@ -254,22 +256,16 @@ let error (loc, env, err) =
     | Not_subtype { trace; unification_trace} ->
       let copy = deep_copy () in
       let trace = trace_subtype_copy ~copy trace in
-      let unification_trace =
-        (Errortrace.unification_error ~trace:unification_trace
-        |> trace_copy ~copy).trace
-      in
-      let error = Errortrace.Subtype.error ~trace ~unification_trace in
-      Not_subtype error
-    | (Coercion_failure _ as x) (*->
-       TODO ulysse let copy = deep_copy () in
-      Coercion_failure (copy t1, copy t2, trace_copy ~copy ts, b) *)
-    | (Too_many_arguments _ as x) (*->
-      TODO ulysse Too_many_arguments (b, deep_copy () t, ctx_opt)
-      *)
-    | (Abstract_wrong_label _ as x) (* ->
-      TODO ulysse Abstract_wrong_label (l, deep_copy () t, ctx_opt)
-      *)
-      -> x
+      let unification_trace = trace_copy_raw ~copy unification_trace in
+      Not_subtype (Errortrace.Subtype.error ~trace ~unification_trace)
+    | Coercion_failure (exptype, ts, b) ->
+      let copy = deep_copy () in
+      Coercion_failure (copy_expanded_type copy exptype, trace_copy ~copy ts, b)
+    | Too_many_arguments (t, ctx_opt) ->
+      Too_many_arguments (deep_copy () t, ctx_opt)
+    | Abstract_wrong_label ({ expected_type; _} as awl) ->
+      Abstract_wrong_label
+        { awl with expected_type = deep_copy () expected_type }
     | Scoping_let_module (s, t) ->
       Scoping_let_module (s, deep_copy () t)
     | Less_general (s, tr) ->
