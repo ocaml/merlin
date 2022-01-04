@@ -5039,7 +5039,7 @@ and type_statement ?explanation env sexp =
   let exp = type_exp env sexp in
   end_def();
   let ty = expand_head env exp.exp_type and tv = newvar() in
-  if is_Tvar ty && get_level ty > get_level tv then
+  if is_Tvar ty && get_level ty > get_level tv && not !has_errors then
     Location.prerr_warning
       (final_subexpression exp).exp_loc
       Warnings.Nonreturning_statement;
