@@ -49,9 +49,13 @@ Prompts you for a (toplevel) module name, and will then open the associated ml(i
 - `M-x merlin-jump fun / let / module / match` \
 Jump to the begining of the closest `fun` /`let` / `module` or `match`parent.
 
-## Case analysis
+## Case analysis (destruct)
 
-`M-x merlin-destruct` <kbd>C-d</kbd>
+Destruct is a powerful feature of Merlin that allows one to generate and
+manipulate pattern matching expressions.
+
+The main command, `M-x merlin-destruct` <kbd>C-d</kbd>, behaves differently
+depending on the cursor's context.
 
 When called on:
 - an expression it replaces it by a pattern matching over it's constructors
@@ -67,9 +71,13 @@ When called on:
 
 ## Expression construction
 
+Merlin provides commands to browse and fill typed holes (`_`). Such holes
+sometimes appear in the result of other commands like `destruct` and can also
+also be inserted manually in the source code to get access to code generation.
+
 - `M-x merlin-construct` \
 Provides valid type-based constructions when the cursor is on a typed hole (`_`) that
-could fill this hole. Can be used in alternance with `destruct`.
+could fill this hole. Can be used in alternation with `destruct`.
 
 - `M-x merlin-next-hole` and `M-x merlin-previous-hole` \
 Navigates to the next or previous typed hole (`_`) in the buffer.

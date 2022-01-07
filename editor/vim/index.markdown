@@ -6,6 +6,21 @@ layout: main
 toc: true
 ---
 # vim reference
+
+The minimum vim configuration to enable merlin when using opam is:
+
+```
+syntax on
+filetype plugin on
+filetype indent on
+
+let g:opamshare = substitute(system('opam var share'),'\n$','','''')
+execute "set rtp+=" . g:opamshare . "/merlin/vim"
+```
+
+The first three lines are not specific to Merlin but might be necessary to
+enable "advanced" features of viM.
+
 ## Completion at point
 
 <kbd>&lt;C-x&gt; &lt;C-o&gt;</kbd>
@@ -56,9 +71,13 @@ Jump to the begining of the current `module`.
 - `:MerlinJump match` \
 Jump to the begining of the current `match`.
 
-## Case analysis
+## Case analysis (destruct)
 
-`:MerlinDestruct`
+Destruct is a powerful feature of Merlin that allows one to generate and
+manipulate pattern matching expressions.
+
+The main command, `:MerlinDestruct`, behaves differently depending on the
+cursor's context.
 
 When called on:
 - an expression it replaces it by a pattern matching over it's constructors
@@ -70,10 +89,13 @@ When called on:
 
 ## Expression construction
 
+Merlin provides commands to browse and fill typed holes (`_`). Such holes
+sometimes appear in the result of other commands like `destruct` and can also
+also be inserted manually in the source code to get access to code generation.
+
 - `:MerlinConstruct` \
 Provides valid type-based constructions when the cursor is on a typed hole (`_`) that
 could fill this hole. Can be used in alternance with `destruct`.
-
 
 - `:MerlinNextHole` and `:MerlinPreviousHole` \
 Navigates to the next or previous typed hole (`_`) in the buffer.
