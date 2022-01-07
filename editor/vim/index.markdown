@@ -9,7 +9,7 @@ toc: true
 
 The minimum vim configuration to enable merlin when using opam is:
 
-```
+```viml
 syntax on
 filetype plugin on
 filetype indent on
