@@ -1527,10 +1527,16 @@ loading"
   (interactive "s> ")
   (merlin--locate-result (merlin-call-locate ident)))
 
-(defun merlin-locate ()
+(defun merlin-locate (prefix)
   "Locate the identifier under point"
-  (interactive)
-  (merlin--locate-result (merlin-call-locate)))
+  (interactive "P")
+  (cl-letf ((merlin-locate-in-new-window
+    (cond
+     ((equal prefix '(4)) 'never)
+     ((equal prefix '(16)) 'always)
+     (t 'merlin-locate-in-new-window)
+     )))
+    (merlin--locate-result (merlin-call-locate))))
 
 (defun merlin-locate-type ()
   "Locate the type of the expression under point."
