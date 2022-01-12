@@ -12,7 +12,7 @@ module Server = struct
   let process_request {Os_ipc. wd; environ; argv; context = _}  =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit
-    | args -> New_merlin.run environ (Some wd) args
+    | args -> New_merlin.run ~new_env:(Some environ) (Some wd) args
 
   let process_client client =
     let context = client.Os_ipc.context in
@@ -73,7 +73,7 @@ let main () =
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run ("PATH=" ^ Unix.getenv "PATH" ^ "\000") None args)
+  | "single" :: args -> exit (New_merlin.run ~new_env:None None args)
   | "old-protocol" :: args -> Old_merlin.run args
   | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->

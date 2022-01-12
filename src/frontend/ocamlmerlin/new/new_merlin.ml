@@ -147,9 +147,12 @@ let run = function
         prerr_endline ("Exception: " ^ Printexc.to_string exn);
         1
 
-let run env wd args =
-  Os_ipc.merlin_set_environ env;
-  Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
+let run ~new_env wd args =
+  begin match new_env with
+  | Some env ->
+    Os_ipc.merlin_set_environ env;
+    Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
+  | None -> () end;
   let wd_msg = match wd with
     | None -> "No working directory specified"
     | Some wd ->
