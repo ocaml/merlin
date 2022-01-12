@@ -25,6 +25,8 @@ module Handshake : sig
     cmt_magic_number : string;
   }
 
+  exception Error of string
+
   val versions : versions
 
   val negotiate_driver : string -> in_channel -> out_channel -> capabilities
