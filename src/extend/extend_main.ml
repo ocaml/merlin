@@ -104,6 +104,15 @@ module Handshake = struct
       prerr_endline "Unexpected value after handshake.";
       exit 1
 
+  exception Error of string
+
+  let () =
+    Printexc.register_printer (function
+        | Error msg ->
+          Some (Printf.sprintf "Extend_main.Handshake.Error %S" msg)
+        | _ -> None
+      )
+
   let negotiate_driver ext_name i o =
     let magic' = really_input_string i (String.length magic_number) in
     if magic' <> magic_number then (
@@ -111,7 +120,7 @@ module Handshake = struct
           "Extension %s has incompatible protocol version %S (expected %S)"
           ext_name magic' magic_number
       in
-      failwith msg
+      raise (Error msg)
     );
     let versions' : versions = input_value i in
     let check_v prj name =
@@ -120,7 +129,7 @@ module Handshake = struct
             "Extension %s %s has incompatible version %S (expected %S)"
             ext_name name (prj versions') (prj versions)
         in
-        failwith msg
+        raise (Error msg)
     in
     check_v (fun x -> x.ast_impl_magic_number) "implementation AST";
     check_v (fun x -> x.ast_intf_magic_number) "interface AST";
