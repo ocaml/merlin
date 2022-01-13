@@ -2,9 +2,9 @@
 
 export PATH=$(dirname dot-merlin-reader):$PATH
 
-# tests using the dune configuration reader should export the USE_DUNE_READER
-# environment variable. If not we write a generic `.merlin` file.
-if [ -z "$USE_DUNE_READER" ]; then
+# If no dune-project of .merlin file are present in the test we write a default
+# `.merlin` file to force the use of dot-merlin-reader
+if [ ! -f dune-project ]; then
   touch .merlin
 fi
 
