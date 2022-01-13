@@ -1,10 +1,3 @@
-Running `dune build` will not work properly inside the testcase root, so we run
-this test in a separate directory under $TMPDIR.
-
-  $ mkdir "$TMPDIR/project"
-  $ trap "rm -rf $TMPDIR/project" EXIT
-  $ cd "$TMPDIR/project"
-
 First, prepare our preprocessor:
 
   $ cat >prep.ml <<EOF
@@ -45,7 +38,7 @@ Then our test files:
   $ cat >libb/dune <<EOF
   > (library
   >  (name libb)
-  >  (preprocess (action (system "$TMPDIR/project/prep.exe %{input-file}"))))
+  >  (preprocess (action (system "./prep.exe %{input-file}"))))
   > EOF
 
   $ cat >dune <<EOF
@@ -80,13 +73,11 @@ Now build with dune:
 And confirm that locate works on both deps:
 
   $ $MERLIN single locate -look-for ml -position 1:15 \
-  > -build-path _build/default/liba -source-path liba \
-  > -build-path _build/default/libb -source-path libb \
   > -filename test.ml < ./test.ml
   {
     "class": "return",
     "value": {
-      "file": "$TMPDIR/project/liba/dep.ml",
+      "file": "$TESTCASE_ROOT/liba/dep.ml",
       "pos": {
         "line": 1,
         "col": 0
@@ -96,17 +87,9 @@ And confirm that locate works on both deps:
   }
 
   $ $MERLIN single locate -look-for ml -position 2:15 \
-  > -build-path _build/default/liba -source-path liba \
-  > -build-path _build/default/libb -source-path libb \
   > -filename test.ml < ./test.ml
   {
     "class": "return",
-    "value": {
-      "file": "$TMPDIR/project/libb/dep.ml",
-      "pos": {
-        "line": 1,
-        "col": 0
-      }
-    },
+    "value": "Several source files in your path have the same name, and merlin doesn't know which is the right one: $TESTCASE_ROOT/libb/dep.ml, $TESTCASE_ROOT/liba/dep.ml",
     "notifications": []
   }
