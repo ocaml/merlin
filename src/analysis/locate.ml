@@ -230,13 +230,8 @@ end
 
 module Utils = struct
   let is_builtin_path = function
-    | Path.Pident id ->
-      let f (_, i) = Ident.same i id in
-      List.exists Predef.builtin_idents ~f
-      || List.exists Predef.builtin_values ~f
+    | Path.Pident id -> Ident.is_predef id
     | _ -> false
-
-  let is_ghost_loc { Location. loc_ghost; _ } = loc_ghost
 
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
@@ -310,9 +305,27 @@ module Utils = struct
         | CMT _ | CMTI _         -> !loadpath
 end
 
-exception Cmt_cache_store of Typedtrie.t
+let rec load_shapes comp_unit ml_or_mli =
+  let fn =
+    Preferences.set ml_or_mli;
+    Preferences.build comp_unit
+  in
+  match Load_path.find_uncap (File.with_ext fn) with
+  | filename ->
+    let cmt = (Cmt_cache.read filename).cmt_infos in
+    let pos_fname = cmt.cmt_sourcefile in
+    Option.iter cmt.cmt_source_digest
+      ~f:(fun digest -> File_switching.move_to ~digest filename);
+    Ok (pos_fname, cmt)
+  | exception Not_found ->
+    if ml_or_mli = `MLI then
+      (* there might not have been an mli (so no cmti), so the decl comes from
+         the .ml, and the corresponding .cmt *)
+      load_shapes comp_unit `ML
+    else
+      Error ()
 
-let move_to_root root cmt_infos =
+let move_to filename cmt_infos =
   let digest =
     (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
        pack. *)
@@ -337,122 +350,105 @@ let move_to_root root cmt_infos =
        | false -> Option.get cmt_infos.cmt_source_digest)
     | _ -> Option.get cmt_infos.cmt_source_digest
   in
-  File_switching.move_to ~digest root;
-;;
+  File_switching.move_to ~digest filename
 
-let trie_of_cmt root =
-  let open Cmt_format in
-  let cached = Cmt_cache.read root in
-  log ~title:"browse_cmts" "inspecting %s" root ;
-  begin match cached.Cmt_cache.location_trie with
-  | Cmt_cache_store _ ->
-    move_to_root root cached.cmt_infos;
-    log ~title:"browse_cmts" "trie already cached"
-  | Not_found ->
-    let trie_of_nodes nodes =
-      move_to_root root cached.cmt_infos;
-      let trie =
-        Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes)
-      in
-      cached.location_trie <- Cmt_cache_store trie
+module Shape_reduce =
+  Shape.Make_reduce (struct
+    type env = Env.t
+
+    let fuel = 10
+
+    let read_unit_shape ~unit_name =
+      let fn = File.(with_ext (cmt unit_name)) in
+      log ~title:"read_unit_shape" "inspecting %s" unit_name;
+      match Load_path.find_uncap fn with
+      | filename ->
+        let cmt_infos = (Cmt_cache.read filename).cmt_infos in
+        move_to filename cmt_infos;
+        log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
+        cmt_infos.cmt_impl_shape
+      | exception Not_found ->
+        log ~title:"read_unit_shape" "failed to find %s" fn;
+        None
+
+    let find_shape env id = Env.shape_of_path 
+      ~namespace:Shape.Sig_component_kind.Module env (Pident id)
+  end)
+
+let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
+  match ml_or_mli with
+  | `MLI -> Some decl_uid
+  | `ML ->
+    let shape = Env.shape_of_path ~namespace:ns env path in
+    log ~title:"shape_of_path" "initial: %a"
+      Logger.fmt (fun fmt -> Shape.print fmt shape);
+    let r = Shape_reduce.reduce env shape in
+    log ~title:"shape_of_path" "reduced: %a"
+      Logger.fmt (fun fmt -> Shape.print fmt r);
+    r.uid
+
+let from_uid ~ml_or_mli uid loc path =
+  match uid with
+  | Some (Shape.Uid.Item { comp_unit; id } as uid)->
+    let locopt =
+      if Env.get_unit_name () = comp_unit then begin
+        log ~title:"locate" "We look for %a in the current compilation unit."
+          Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+        let tbl = Env.get_uid_to_loc_tbl () in
+        match Shape.Uid.Tbl.find_opt tbl uid with
+        | Some loc ->
+          log ~title:"locate" "Found location: %a"
+            Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+          Some loc
+        | None -> 
+          log ~title:"locate"
+            "Uid not found.@.\
+            Fallbacking to the node's location: %a"
+          Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+          Some loc
+      end else begin
+        log ~title:"locate" "Loading the shapes for unit %S" comp_unit;
+        match load_shapes comp_unit ml_or_mli with
+        | Ok (Some pos_fname, cmt) ->
+          log ~title:"locate" "Shapes succesfully loaded, looking for %a"
+            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+          begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
+            | Some loc ->
+              log ~title:"locate" "Found location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              Some loc
+            | None ->
+              log ~title:"locate" "Uid not found in the loaded shape.";
+            None 
+          end
+        | _ ->
+          log ~title:"locate" "Failed to load the shapes";
+          None
+      end
     in
-    Option.iter ~f:trie_of_nodes (
-      match cached.Cmt_cache.cmt_infos.cmt_annots with
-      | Packed (_, _)       -> None
-      | Interface intf      -> Some [Browse_raw.Signature intf]
-      | Implementation impl -> Some [Browse_raw.Structure impl]
-      | Partial_interface parts
-      | Partial_implementation parts ->
-        log ~title:"browse_cmt" "working from partial cmt(i)";
-        let env = cached.cmt_infos.cmt_initial_env in
-        let nodes =
-          Array.to_list parts
-          |> List.map ~f:(Mbrowse.node_of_binary_part env)
-        in
-        Some nodes
-    )
-  | _ -> assert false
-  end;
-  cached.cmt_infos, cached.location_trie
-
-type locate_result =
-  | Found of Location.t * string option
-  | File_not_found of File.t
-  | Other_error (* FIXME *)
-
-let rec locate ~config ~context path trie : locate_result =
-  match Typedtrie.find ~remember_loc:Fallback.set ~context trie path with
-  | Typedtrie.Found (loc, doc_opt) -> Found (loc, doc_opt)
-  | Typedtrie.Resolves_to (new_path, state) ->
-    begin match Namespaced_path.head_exn new_path with
-    | Ident (_, `Mod) ->
-      log ~title:"locate" "resolves to %s" (Namespaced_path.to_unique_string new_path);
-      from_path ~config ~context:(Typedtrie.Resume state) new_path
-    | _ ->
-      log ~title:"locate" "new path (%s) is not a real path"
-        (Namespaced_path.to_unique_string new_path);
-      log ~title:"locate (typedtrie dump)" "%a"
-        Logger.fmt (fun fmt -> Typedtrie.dump fmt trie);
-      Other_error (* incorrect path *)
+    begin match locopt with
+    | Some loc -> `Found loc
+    | None -> `Not_found (Path.name path, None)
     end
-
-and from_path ~config ~context path : locate_result =
-  log ~title:"from_path" "%s" (Namespaced_path.to_unique_string path) ;
-  match Namespaced_path.head_exn path with
-  | Ident (fname, `Mod) ->
-    let path = Namespaced_path.peal_head_exn path in
-    let fname = Namespaced_path.Id.name fname in
-    let file = Preferences.build fname in
-    let browse_cmt cmt_file =
-      let cmt_infos, trie = trie_of_cmt cmt_file in
-      match trie, Namespaced_path.head path with
-      | Not_found, None ->
-        Other_error (* Trying to stop on a packed module... *)
-      | Not_found, Some _ ->
-        log ~title:"from_path" "Saw packed module => erasing loadpath" ;
-        erase_loadpath ~cwd:(Filename.dirname cmt_file)
-          ~new_path:cmt_infos.cmt_loadpath
-          (fun () -> from_path ~context ~config path)
-      | Cmt_cache_store _, None ->
-        (* We found the module we were looking for, we can stop here. *)
-        let pos_fname =
-          match cmt_infos.cmt_sourcefile with
-          | None   -> fname
-          | Some f -> f
-        in
-        let pos = Lexing.make_pos ~pos_fname (1, 0) in
-        let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-        (* TODO: retrieve "ocaml.text" floating attributes? *)
-        Found (loc, None)
-      | Cmt_cache_store trie, Some _ ->
-        locate ~config ~context path trie
-      | _, _ -> assert false
-    in
-    begin match Utils.find_file ~config ~with_fallback:true file with
-    | Some cmt_file -> browse_cmt cmt_file
-    | None ->
-      (* The following is ugly, and deserves some explanations:
-           As can be seen above, when encountering packed modules we override
-           the loadpath by the one used to create the pack.
-           This means that if the cmt files haven't been moved, we have access
-           to the cmt file of every unit included in the pack.
-           However, we might not have access to any other cmt (e.g. if others
-           paths in the loadpath reference only cmis of packs).
-           (Note that if we had access to other cmts, there might be conflicts,
-           and the paths order would matter unless we have reliable digests...)
-           Assuming we are in such a situation, if we do not find something in
-           our "erased" loadpath, it could mean that we are looking for a
-           persistent unit, and that's why we restore the initial loadpath. *)
-      restore_loadpath ~config (fun () ->
-        match Utils.find_file ~config ~with_fallback:true file with
-        | Some cmt_file -> browse_cmt cmt_file
-        | None ->
-          log ~title:"from_path" "failed to locate the cmt[i] of '%s'" fname;
-          File_not_found file
-      )
+  | Some (Compilation_unit comp_unit) ->
+    begin
+      match load_shapes comp_unit ml_or_mli with
+      | Ok (Some pos_fname, cmt) ->
+        let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
+        let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
+        `Found loc
+      | _ ->
+        log ~title:"locate" "Failed to load the shapes";
+        `Not_found (Path.name path, None)
     end
-  | _ ->
-    Other_error (* type error, [from_path] should only be called on modules *)
+  | Some (Predef _ | Internal) -> assert false
+  | None -> 
+      log ~title:"locate" "No UID found, fallbacking to lookup location.";
+      `Found loc
+
+let locate ~env ~ml_or_mli decl_uid loc path ns =
+  let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path ns in
+  from_uid ~ml_or_mli uid loc path
 
 let path_and_loc_of_cstr desc _ =
   let open Types in
@@ -611,7 +607,7 @@ let find_source ~config loc path =
 let recover _ =
   match Fallback.get () with
   | None -> assert false
-  | Some loc -> `Found (loc, None)
+  | Some loc -> `Found loc
 
 module Namespace = struct
   type under_type = [ `Constr | `Labels ]
@@ -642,13 +638,13 @@ module Env_lookup : sig
     : Path.t
     -> Namespaced_path.Namespace.t
     -> Env.t
-    -> Location.t option
+    -> (Location.t * Shape.Uid.t * Shape.Sig_component_kind.t) option
 
   val in_namespaces
      : Namespace.inferred list
     -> Longident.t
     -> Env.t
-    -> (Path.t * Namespaced_path.t * Location.t) option
+    -> (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t) option
 
 end = struct
 
@@ -658,63 +654,84 @@ end = struct
         match namespace with
         | `Unknown
         | `Apply
-        | `Vals -> (Env.find_value path env).val_loc
+        | `Vals ->
+          let vd = Env.find_value path env in
+          vd.val_loc, vd.val_uid, Shape.Sig_component_kind.Value
         | `Constr
         | `Labels
-        | `Type -> (Env.find_type path env).type_loc
+        | `Type ->
+          let td = Env.find_type path env in
+          td.type_loc, td.type_uid, Shape.Sig_component_kind.Type
         | `Functor
-        | `Mod -> (Env.find_module path env).md_loc
-        | `Modtype -> (Env.find_modtype path env).mtd_loc)
+        | `Mod ->
+          let md = Env.find_module path env in
+          md.md_loc, md.md_uid, Shape.Sig_component_kind.Module
+        | `Modtype ->
+          let mtd = Env.find_modtype path env in
+          mtd.mtd_loc, mtd.mtd_uid, Shape.Sig_component_kind.Module_type
+      )
     with
       Not_found -> None
 
-  exception Found of (Path.t * Namespaced_path.t * Location.t)
+  exception Found of
+    (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t)
 
   let in_namespaces (nss : Namespace.inferred list) ident env =
+    let open Shape.Sig_component_kind in
     try
       List.iter nss ~f:(fun namespace ->
         try
           match namespace with
+          | `This_cstr ({ Types.cstr_tag = Cstr_extension _; _ } as cd) ->
+            log ~title:"lookup"
+              "got extension constructor";
+            let path, loc = path_and_loc_of_cstr cd env in
+            (* TODO: Use [`Constr] here instead of [`Type] *)
+            raise (Found (path, Extension_constructor, cd.cstr_uid, loc))
           | `This_cstr cd ->
             log ~title:"lookup"
               "got constructor, fetching path and loc in type namespace";
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type, cd.cstr_uid,loc))
           | `Constr ->
             log ~title:"lookup" "lookup in constructor namespace" ;
             let cd = Env.find_constructor_by_name ident env in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type,cd.cstr_uid, loc))
           | `Mod ->
             log ~title:"lookup" "lookup in module namespace" ;
             let path, md = Env.find_module_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Mod path, md.Types.md_loc))
+            raise (Found (path, Module, md.md_uid, md.Types.md_loc))
           | `Modtype ->
             log ~title:"lookup" "lookup in module type namespace" ;
             let path, mtd = Env.find_modtype_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Modtype path, mtd.Types.mtd_loc))
+            raise (Found (path, Module_type, mtd.mtd_uid, mtd.Types.mtd_loc))
           | `Type ->
             log ~title:"lookup" "lookup in type namespace" ;
             let path, typ_decl = Env.find_type_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, typ_decl.Types.type_loc))
+            raise (
+              Found (path, Type, typ_decl.type_uid, typ_decl.Types.type_loc)
+            )
           | `Vals ->
             log ~title:"lookup" "lookup in value namespace" ;
             let path, val_desc = Env.find_value_by_name ident env in
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Vals path, val_desc.Types.val_loc))
+            raise (
+              Found (path, Value, val_desc.val_uid, val_desc.Types.val_loc)
+            )
           | `This_label lbl ->
             log ~title:"lookup"
               "got label, fetching path and loc in type namespace";
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type, lbl.lbl_uid, loc))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace" ;
             let lbl = Env.find_label_by_name ident env in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Namespaced_path.of_path ~namespace:`Type path, loc))
+            raise (Found (path, Type, lbl.lbl_uid, loc))
         with Not_found -> ()
       ) ;
       log ~title:"lookup" "   ... not in the environment" ;
@@ -723,72 +740,46 @@ end = struct
       Some x
 end
 
-let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
-  Preferences.set ml_or_mli;
-  log ~title:"locate"
-    "present in the environment, walking up the typedtree looking for '%s'"
-    (Namespaced_path.to_unique_string path);
-  try
-    if not (Utils.is_ghost_loc loc) then Fallback.set loc;
-    let lazy trie = lazy_trie in
-    match locate ~config ~context:(Initial pos) path trie with
-    | Found (loc, doc) -> `Found (loc, doc)
-    | Other_error
-    | File_not_found _ when Fallback.is_set () -> recover str_ident
-    | Other_error -> `Not_found (str_ident, File_switching.where_am_i ())
-    | File_not_found f -> File.explain_not_found str_ident f
-  with
-  | _ when Fallback.is_set () -> recover str_ident
-  | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-
 (* Only used to retrieve documentation *)
-let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
-  let str_ident = Path.name path in
-  let tagged_path = Namespaced_path.of_path ~namespace path in
-  locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
-    ~lazy_trie
+let from_completion_entry ~env ~config ~pos (namespace, path, loc) =
+  locate ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
+    path namespace
 
-let from_longident ~config ~env ~lazy_trie ~pos nss ml_or_mli ident =
+let uid_from_longident
+  ~config ~env ~pos nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
-  | Some (path, tagged_path, loc) ->
+  | Some (path, namespace, decl_uid, loc) ->
     if Utils.is_builtin_path path then
       `Builtin
     else
-      locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
+      let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path namespace in
+      `Uid (uid, loc, path)
+
+let from_longident ~config ~env ~pos nss ml_or_mli ident =
+  match uid_from_longident ~config ~env ~pos nss ml_or_mli ident with
+  | `Uid (uid, loc, path) -> from_uid ~ml_or_mli uid loc path
+  | (`Builtin | `Not_in_env _) as v -> v
 
 let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
   File_switching.reset ();
   Fallback.reset ();
-  let str_ident = Path.name path in
   if Utils.is_builtin_path path then
     `Builtin
   else
-    let browse = Mbrowse.of_typedtree local_defs in
-    let lazy_trie =
-      lazy (Typedtrie.of_browses ~local_buffer:true
-              [Browse_tree.of_browse browse])
-    in
-    let nss_path = Namespaced_path.of_path ~namespace path in
     match Env_lookup.loc path namespace env with
-    | None -> `Not_in_env str_ident
-    | Some loc ->
-      match
-        locate ~config ~ml_or_mli ~path:nss_path ~lazy_trie ~pos ~str_ident loc
-      with
+    | None -> `Not_in_env (Path.name path)
+    | Some (loc, uid, namespace) ->
+      match locate ~env ~ml_or_mli uid loc path namespace with
       | `Not_found _
       | `File_not_found _ as err -> err
-      | `Found (loc, _) -> find_source ~config loc str_ident
+      | `Found loc -> find_source ~config loc (Path.name path)
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
   Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
-  let lazy_trie =
-    lazy (Typedtrie.of_browses ~local_buffer:true
-            [Browse_tree.of_browse browse])
-  in
   let lid = Longident.parse path in
   let ident, is_label = Longident.keep_suffix lid in
   match
@@ -825,41 +816,38 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
     let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
-    match from_longident ~config ~pos ~env ~lazy_trie nss switch ident with
+    match from_longident ~config ~pos ~env nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
-    | `Found (loc, _) -> find_source ~config loc path
+    | `Found loc -> find_source ~config loc path
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
   Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
-  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
-                          [Browse_tree.of_browse browse]) in
   fun path ->
   let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
   let_ref last_location Location.none @@ fun () ->
   match
     match path with
-    | `Completion_entry entry -> from_completion_entry ~config ~pos ~lazy_trie entry
+    | `Completion_entry entry -> from_completion_entry ~env ~config ~pos entry
     | `User_input path ->
       let lid = Longident.parse path in
       begin match Context.inspect_browse_tree ~cursor:pos lid [browse] with
       | None ->
-        `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
+        `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
       | Some ctxt ->
         let nss = Namespace.from_context ctxt in
         log ~title:"get_doc" "looking for the doc of '%s'" path ;
-        from_longident ~config ~pos ~env ~lazy_trie nss `MLI lid
+        from_longident ~config ~pos ~env nss `MLI lid
       end
   with
-  | `Found (_, Some doc) ->
-    `Found doc
-  | `Found (loc, None) ->
+  | `Found loc ->
     let comments =
       match File_switching.where_am_i () with
       | None -> comments
       | Some cmt_path ->
+        log ~title:"get_doc" "File switeching: actually in %s" cmt_path;
         let {Cmt_cache. cmt_infos; _ } = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
     in
