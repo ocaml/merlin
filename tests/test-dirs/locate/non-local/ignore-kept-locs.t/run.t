@@ -37,10 +37,7 @@ Make sure that we do not use locations coming from the cmi:
     "notifications": []
   }
 
-The fallback here is ok, it points to the local buffer (to the include line
-actually), not to a.ml
-
   $ grep -A1 Fallback log | grep -v Fallback
-  File "b.ml", line 3, characters 0-9
+  [1]
 
   $ rm log
