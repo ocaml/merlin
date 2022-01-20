@@ -18,8 +18,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "test with several
-  words"
+        "message": "test with several words"
       }
     ],
     "notifications": []
