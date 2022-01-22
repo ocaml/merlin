@@ -68,7 +68,7 @@ Then our test files:
 
 Now build with dune:
 
-  $ BUILD_PATH_PREFIX_MAP= dune build
+  $ BUILD_PATH_PREFIX_MAP= dune build 2>/dev/null
 
 And confirm that locate works on both deps:
 
