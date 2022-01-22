@@ -68,7 +68,7 @@ Then our test files:
 
 Now build with dune:
 
-  $ dune build
+  $ BUILD_PATH_PREFIX_MAP= dune build
 
 And confirm that locate works on both deps:
 
@@ -90,6 +90,12 @@ And confirm that locate works on both deps:
   > -filename test.ml < ./test.ml
   {
     "class": "return",
-    "value": "Several source files in your path have the same name, and merlin doesn't know which is the right one: $TESTCASE_ROOT/libb/dep.ml, $TESTCASE_ROOT/liba/dep.ml",
+    "value": {
+      "file": "$TESTCASE_ROOT/libb/dep.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
     "notifications": []
   }
