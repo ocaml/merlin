@@ -8,14 +8,8 @@ if [ ! -f dune-project ]; then
   touch .merlin
 fi
 
-if [[ "$(uname -s)" == "Darwin" ]]; then
-  # On MacOS, $TMPDIR is /var/folders/... but /var is a symlink to /private/var.
-  TMPDIR="/private$TMPDIR"
-fi
-
 ocamlmerlin "$@" \
     | jq 'del(.timing)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\
-:g' \
-    | sed -e "s:$TMPDIR:\$TMPDIR:g"
+:g'
