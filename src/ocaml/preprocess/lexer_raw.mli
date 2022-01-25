@@ -27,6 +27,7 @@ exception Error of error * Location.t
 (* Keywords, manipulated by extensions *)
 type keywords
 val keywords: (string * Parser_raw.token) list -> keywords
+val as_keyword : Parser_raw.token -> string option
 
 val list_keywords : keywords -> string list
 (* [list_keywords kws] not only lists the keys of [kw], but also OCaml's
