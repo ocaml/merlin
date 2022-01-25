@@ -143,6 +143,13 @@ let keyword_table : keywords =
 
 let keywords l = create_hashtable 11 l
 
+let as_keyword k =
+  let exception Found of string in
+  let find t k' = if k = k' then raise (Found t) in
+  match Hashtbl.iter find keyword_table with
+  | () -> None
+  | exception Found msg -> Some msg
+
 let list_keywords =
   let add_kw str _tok kws = str :: kws in
   let init = Hashtbl.fold add_kw keyword_table [] in
