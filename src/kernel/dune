@@ -5,7 +5,7 @@
  (name merlin_kernel)
  (wrapped false)
  (flags :standard -open Merlin_utils)
- (libraries config os_ipc parsing preprocess typing utils
+ (libraries config os_ipc parsing preprocess typing utils lrgrep.runtime
             merlin_extend merlin_specific merlin_utils merlin_dot_protocol))
 
 (rule

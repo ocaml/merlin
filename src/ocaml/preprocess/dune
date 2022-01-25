@@ -4,7 +4,7 @@
   (name preprocess)
   (wrapped false)
   (flags :standard -open Merlin_utils)
-  (libraries parsing utils merlin_utils))
+  (libraries parsing utils merlin_utils lrgrep.runtime))
 
 (menhir
  (modules parser_raw)
@@ -46,3 +46,11 @@
   (progn
    (copy %{lib:menhirLib:menhirLib.ml}  menhirLib.ml)
    (copy %{lib:menhirLib:menhirLib.mli} menhirLib.mli))))
+
+(rule
+  (targets parse_errors.ml)
+  (deps    parser_raw.cmly parse_errors.mlyl)
+  (action
+    (with-stdout-to %{targets}
+       (run %{exe:../../../vendor/lrgrep/src/main.exe} parse_errors.mlyl -g parser_raw.cmly
+            -o parse_errors.ml))))
