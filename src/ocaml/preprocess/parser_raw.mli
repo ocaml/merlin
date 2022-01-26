@@ -373,7 +373,7 @@ module MenhirInterpreter : sig
     | N_reversed_nonempty_llist_name_tag_ : (string list) nonterminal
     | N_reversed_nonempty_llist_labeled_simple_expr_ : ((Asttypes.arg_label * Parsetree.expression) list) nonterminal
     | N_reversed_nonempty_llist_functor_arg_ : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
-    | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Warnings.loc) list) nonterminal
+    | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
     | N_reversed_bar_llist_extension_constructor_declaration_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_extension_constructor_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_constructor_declaration_ : (Parsetree.constructor_declaration list) nonterminal
@@ -415,8 +415,8 @@ module MenhirInterpreter : sig
     | N_option_BAR_ : (unit option) nonterminal
     | N_opt_ampersand : (bool) nonterminal
     | N_operator : (string) nonterminal
-    | N_open_description : (Parsetree.open_description * string Location.loc option) nonterminal
-    | N_open_declaration : (Parsetree.open_declaration * string Location.loc option) nonterminal
+    | N_open_description : (Longident.t Location.loc Parsetree.open_infos * string Location.loc option) nonterminal
+    | N_open_declaration : (Parsetree.module_expr Parsetree.open_infos * string Location.loc option) nonterminal
     | N_nonempty_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal
     | N_nonempty_list_raw_string_ : (string list) nonterminal
     | N_nonempty_list_mkrhs_LIDENT__ : (string Location.loc list) nonterminal
@@ -460,9 +460,9 @@ module MenhirInterpreter : sig
     | N_list_attribute_ : (Parsetree.attributes) nonterminal
     | N_list_and_module_declaration_ : (Parsetree.module_declaration list) nonterminal
     | N_list_and_module_binding_ : (Parsetree.module_binding list) nonterminal
-    | N_list_and_class_type_declaration_ : (Parsetree.class_type_declaration list) nonterminal
-    | N_list_and_class_description_ : (Parsetree.class_description list) nonterminal
-    | N_list_and_class_declaration_ : (Parsetree.class_declaration list) nonterminal
+    | N_list_and_class_type_declaration_ : (Parsetree.class_type Parsetree.class_infos list) nonterminal
+    | N_list_and_class_description_ : (Parsetree.class_type Parsetree.class_infos list) nonterminal
+    | N_list_and_class_declaration_ : (Parsetree.class_expr Parsetree.class_infos list) nonterminal
     | N_letop_bindings : (Parsetree.pattern * Parsetree.expression * Parsetree.binding_op list) nonterminal
     | N_letop_binding_body : (Parsetree.pattern * Parsetree.expression) nonterminal
     | N_let_pattern : (Parsetree.pattern) nonterminal
@@ -486,12 +486,12 @@ module MenhirInterpreter : sig
   Parsetree.type_declaration) nonterminal
     | N_generic_type_declaration_no_nonrec_flag_type_subst_kind_ : ((Asttypes.rec_flag * string Location.loc option) *
   Parsetree.type_declaration) nonterminal
-    | N_generic_constructor_declaration_epsilon_ : (Ast_helper.str * Parsetree.constructor_arguments *
-  Parsetree.core_type option * Parsetree.attributes * Warnings.loc *
-  Docstrings.info) nonterminal
-    | N_generic_constructor_declaration_BAR_ : (Ast_helper.str * Parsetree.constructor_arguments *
-  Parsetree.core_type option * Parsetree.attributes * Warnings.loc *
-  Docstrings.info) nonterminal
+    | N_generic_constructor_declaration_epsilon_ : (Ocaml_parsing.Ast_helper.str * Parsetree.constructor_arguments *
+  Parsetree.core_type option * Parsetree.attributes * Location.t *
+  Ocaml_parsing.Docstrings.info) nonterminal
+    | N_generic_constructor_declaration_BAR_ : (Ocaml_parsing.Ast_helper.str * Parsetree.constructor_arguments *
+  Parsetree.core_type option * Parsetree.attributes * Location.t *
+  Ocaml_parsing.Docstrings.info) nonterminal
     | N_generalized_constructor_arguments : (Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
     | N_functor_args : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_functor_arg : (Lexing.position * Parsetree.functor_parameter) nonterminal
