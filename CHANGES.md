@@ -7,6 +7,7 @@ git version
     - fix handlink of ppx's under Windows (#1413)
     - locate: look for original source files before looking for preprocessed
       files (#1219 by @ddickstein, fixes #894)
+    - handle `=` syntax in compiler flags (#1409)
 
 merlin 4.4
 ==========
