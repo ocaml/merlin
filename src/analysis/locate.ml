@@ -822,6 +822,69 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     | `Builtin -> `Builtin path
     | `Found loc -> find_source ~config loc path
 
+let doc_from_uid ~comp_unit uid =
+  let exception Found of Typedtree.attributes in
+  let test elt_uid attributes =
+    if Shape.Uid.equal uid elt_uid then raise (Found attributes)
+  in
+  let iterator env = { Tast_iterator.default_iterator with
+
+      value_description = (fun sub ({ val_val; val_attributes; _ } as vd) ->
+        test val_val.val_uid val_attributes;
+        Tast_iterator.default_iterator.value_description sub vd);
+
+      type_declaration = (fun sub ({ typ_type; typ_attributes; _ } as td) ->
+        test typ_type.type_uid typ_attributes;
+        Tast_iterator.default_iterator.type_declaration sub td);
+
+      value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
+        match vb_pat.pat_desc with
+        | Tpat_var (id, _) ->
+            begin try 
+              let vd = Env.find_value (Pident id) env in
+              test vd.val_uid vb_attributes
+            with Not_found -> () end  
+        | _ -> ();
+        Tast_iterator.default_iterator.value_binding sub vb)
+    }
+  in
+  let parse_attributes attrs =
+    let open Parsetree in
+    try Some (List.find_map attrs ~f:(fun attr -> 
+      if attr.attr_name.txt = "ocaml.doc" then
+        Ast_helper.extract_str_payload attr.attr_payload
+      else None))
+    with Not_found -> None
+  in
+  let typedtree = 
+    log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
+    match load_cmt comp_unit `MLI with
+    | Ok (_, cmt_infos) -> 
+      log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
+      begin match cmt_infos.cmt_annots with
+      | Interface s -> Some (`Interface { s with
+          sig_final_env = Envaux.env_of_only_summary s.sig_final_env})
+      | Implementation str -> Some (`Implementation { str with
+          str_final_env = Envaux.env_of_only_summary str.str_final_env})
+      | _ -> None
+      end
+    | Error _ -> None
+  in
+  try match typedtree with
+    | Some (`Interface s) -> 
+        let iterator = iterator s.sig_final_env in
+        iterator.signature iterator s;
+        `No_documentation
+    | Some (`Implementation str) -> 
+        let iterator = iterator str.str_final_env in
+        iterator.structure iterator str;
+        `No_documentation
+    | _ -> `No_documentation
+  with Found attrs ->
+    match parse_attributes attrs with
+    | Some (doc, _) -> `Found (doc |> String.trim)
+    | None -> `No_documentation
+
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
   Fallback.reset ();
@@ -833,17 +896,31 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     match path with
     | `Completion_entry entry -> from_completion_entry ~env ~config ~pos entry
     | `User_input path ->
+      log ~title:"get_doc" "looking for the doc of '%s'" path;
       let lid = Longident.parse path in
       begin match Context.inspect_browse_tree ~cursor:pos lid [browse] with
       | None ->
         `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
       | Some ctxt ->
         let nss = Namespace.from_context ctxt in
-        log ~title:"get_doc" "looking for the doc of '%s'" path ;
-        from_longident ~config ~pos ~env nss `MLI lid
+        log ~title:"get_doc" "use shapes to compute the declaration's uid";
+        match uid_from_longident ~config ~pos ~env nss `MLI lid with
+        | `Uid (Some (Shape.Uid.Item { comp_unit; id:_ } as uid), loc, _)
+            when Env.get_unit_name () <> comp_unit -> 
+              log ~title:"get_doc" "the doc you're looking for is in another 
+                compilation unit (%s)" comp_unit;
+              (match  doc_from_uid ~comp_unit uid with
+              | `Found doc -> `Found_doc doc
+              | `No_documentation -> `Found loc) 
+        | `Uid (_, loc, _) -> `Found loc
+        | (`Not_in_env _ | `Builtin) as otherwise -> otherwise
       end
   with
+  | `Found_doc doc -> `Found doc
   | `Found loc ->
+    (* When the doc we look for is in the current buffer or if search by uid
+      has failed we use an alternative heuristic since Merlin's pure parser 
+      does not poulates doc attributes in the typedtree. *)
     let comments =
       match File_switching.where_am_i () with
       | None -> comments
