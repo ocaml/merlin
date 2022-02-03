@@ -60,6 +60,17 @@ jobs:
             default: https://github.com/fdopen/opam-repository-mingw.git#opam2
             beta: https://github.com/ocaml/ocaml-beta-repository.git
 
-      - run: opam depext conf-jq --yes # opam depext bug
-      - run: opam install . --deps-only --with-test
-      - run: opam exec -- dune runtest -p merlin,dot-merlin-reader
+      - name: Install dependencies
+        run: |
+          opam depext conf-jq --yes # opam depext bug
+          opam pin menhirLib 20201216
+          opam install . --deps-only --with-test
+
+      - name: Build and test in release mode
+        run: opam exec -- dune runtest -p merlin,dot-merlin-reader
+
+      - name: Build in dev mode to check parser changes
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          opam exec -- dune build
+          git diff --exit-code
