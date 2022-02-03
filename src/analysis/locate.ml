@@ -305,7 +305,7 @@ module Utils = struct
         | CMT _ | CMTI _         -> !loadpath
 end
 
-let rec load_shapes comp_unit ml_or_mli =
+let rec load_cmt comp_unit ml_or_mli =
   let fn =
     Preferences.set ml_or_mli;
     Preferences.build comp_unit
@@ -318,11 +318,12 @@ let rec load_shapes comp_unit ml_or_mli =
       ~f:(fun digest -> File_switching.move_to ~digest filename);
     Ok (pos_fname, cmt)
   | exception Not_found ->
-    if ml_or_mli = `MLI then
+    if ml_or_mli = `MLI then begin
       (* there might not have been an mli (so no cmti), so the decl comes from
          the .ml, and the corresponding .cmt *)
-      load_shapes comp_unit `ML
-    else
+      log ~title:"load" "Failed to load cmti file, retrying with cmt";
+      load_cmt comp_unit `ML
+    end else
       Error ()
 
 let move_to filename cmt_infos =
@@ -408,7 +409,7 @@ let from_uid ~ml_or_mli uid loc path =
           Some loc
       end else begin
         log ~title:"locate" "Loading the shapes for unit %S" comp_unit;
-        match load_shapes comp_unit ml_or_mli with
+        match load_cmt comp_unit ml_or_mli with
         | Ok (Some pos_fname, cmt) ->
           log ~title:"locate" "Shapes succesfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
@@ -432,7 +433,7 @@ let from_uid ~ml_or_mli uid loc path =
     end
   | Some (Compilation_unit comp_unit) ->
     begin
-      match load_shapes comp_unit ml_or_mli with
+      match load_cmt comp_unit ml_or_mli with
       | Ok (Some pos_fname, cmt) ->
         let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
         let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
