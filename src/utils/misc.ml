@@ -265,7 +265,13 @@ let find_in_path_uncap ?(fallback="") path name =
         then Some (Filename.concat dirname uname)
         else if exact_file_exists ~dirname ~basename:name
         then Some (Filename.concat dirname name)
-        else if has_fallback && exact_file_exists ~dirname ~basename:ufallback
+        else 
+          let () = Logger.log 
+            ~section:"locate" 
+            ~title:"find_in_path_uncap"
+            "Failed to load %s/%s" dirname name
+          in
+          if has_fallback && exact_file_exists ~dirname ~basename:ufallback
         then Some (Filename.concat dirname ufallback)
         else if has_fallback && exact_file_exists ~dirname ~basename:fallback
         then Some (Filename.concat dirname fallback)
