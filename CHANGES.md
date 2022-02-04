@@ -8,6 +8,8 @@ git version
     - locate: look for original source files before looking for preprocessed
       files (#1219 by @ddickstein, fixes #894)
     - handle `=` syntax in compiler flags (#1409)
+  + test suite
+    - cover locate calls on module aliases with and without dune
 
 merlin 4.4
 ==========
