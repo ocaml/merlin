@@ -737,7 +737,11 @@ end = struct
       ) ;
       log ~title:"lookup" "   ... not in the environment" ;
       None
-    with Found x ->
+    with Found ((path, namespace, decl_uid, loc) as x) ->
+      log ~title:"env_lookup" "found: '%a' in namespace %s with uid %a" 
+        Logger.fmt (fun fmt -> Path.print fmt path)
+        (Shape.Sig_component_kind.to_string namespace)
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
       Some x
 end
 
@@ -874,10 +878,12 @@ let doc_from_uid ~comp_unit uid =
     | Some (`Interface s) -> 
         let iterator = iterator s.sig_final_env in
         iterator.signature iterator s;
+        log ~title:"doc_from_uid" "uid not found in the tree";
         `No_documentation
     | Some (`Implementation str) -> 
         let iterator = iterator str.str_final_env in
         iterator.structure iterator str;
+        log ~title:"doc_from_uid" "uid not found in the tree";
         `No_documentation
     | _ -> `No_documentation
   with Found attrs ->
@@ -907,9 +913,10 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
         match uid_from_longident ~config ~pos ~env nss `MLI lid with
         | `Uid (Some (Shape.Uid.Item { comp_unit; id:_ } as uid), loc, _)
             when Env.get_unit_name () <> comp_unit -> 
-              log ~title:"get_doc" "the doc you're looking for is in another 
-                compilation unit (%s)" comp_unit;
-              (match  doc_from_uid ~comp_unit uid with
+              log ~title:"get_doc" "the doc (%a) you're looking for is in another 
+                compilation unit (%s)" 
+                Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
+              (match doc_from_uid ~comp_unit uid with
               | `Found doc -> `Found_doc doc
               | `No_documentation -> `Found loc) 
         | `Uid (_, loc, _) -> `Found loc
