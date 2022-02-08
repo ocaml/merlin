@@ -100,7 +100,7 @@ Record fields in patterns should also be refinable:
     "notifications": []
   }
 
-FIXME: Destructing a record field should leave the field name 
+Destructing a record field should leave the field name in place
 
   $ $MERLIN single case-analysis -start 3:10 -end 3:10 -filename test.ml <<EOF
   > type r = { x : int } 
@@ -120,7 +120,7 @@ FIXME: Destructing a record field should leave the field name
           "col": 10
         }
       },
-      "{ x }"
+      "r = { x }"
     ],
     "notifications": []
   }

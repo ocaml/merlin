@@ -605,8 +605,14 @@ let rec node config source selected_node parents =
               (* If only one pattern is generated, then we're only refining the
                 current pattern, not generating new branches. *)
               let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
-              let str = Mreader.print_pretty
-                  config source (Pretty_pattern ppat) in
+              let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
+              let str = (* { r<|> } should result in { r = <destructed value> } *)
+                match patt, parents with
+                | { pat_desc = Tpat_var (_, {txt; _ })},
+                    (Pattern { pat_desc = Typedtree.Tpat_record _; _ }) :: _ ->
+                  txt ^ " = " ^ str
+                | _ -> str
+              in
               patt.Typedtree.pat_loc, str
             | sub_patterns ->
               let rev_before, after, top_patt =
