@@ -99,3 +99,53 @@ Record fields in patterns should also be refinable:
     ],
     "notifications": []
   }
+
+FIXME: Destructing a record field should leave the field name 
+
+  $ $MERLIN single case-analysis -start 3:10 -end 3:10 -filename test.ml <<EOF
+  > type r = { x : int } 
+  > type r_out = { r : r ; y : string } 
+  > let f ({ r ; y } : r_out) = ()
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 9
+        },
+        "end": {
+          "line": 3,
+          "col": 10
+        }
+      },
+      "{ x }"
+    ],
+    "notifications": []
+  }
+
+Destructing a record field (variant)
+
+  $ $MERLIN single case-analysis -start 3:10 -end 3:10 -filename test.ml <<EOF
+  > type v = A | B of int 
+  > type r = { v : v ; y:string } 
+  > let f ({ v ; y } : r) = ()
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 7
+        },
+        "end": {
+          "line": 3,
+          "col": 16
+        }
+      },
+      "({ v = A; y } : r) |({ v = B _; y } : r)"
+    ],
+    "notifications": []
+  }
