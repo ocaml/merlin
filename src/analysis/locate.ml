@@ -372,7 +372,7 @@ module Shape_reduce =
         log ~title:"read_unit_shape" "failed to find %s" fn;
         None
 
-    let find_shape env id = Env.shape_of_path 
+    let find_shape env id = Env.shape_of_path
       ~namespace:Shape.Sig_component_kind.Module env (Pident id)
   end)
 
@@ -738,7 +738,7 @@ end = struct
       log ~title:"lookup" "   ... not in the environment" ;
       None
     with Found ((path, namespace, decl_uid, loc) as x) ->
-      log ~title:"env_lookup" "found: '%a' in namespace %s with uid %a" 
+      log ~title:"env_lookup" "found: '%a' in namespace %s with uid %a"
         Logger.fmt (fun fmt -> Path.print fmt path)
         (Shape.Sig_component_kind.to_string namespace)
         Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
@@ -746,12 +746,11 @@ end = struct
 end
 
 (* Only used to retrieve documentation *)
-let from_completion_entry ~env ~config ~pos (namespace, path, loc) =
+let from_completion_entry ~env ~config (namespace, path, loc) =
   locate ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
     path namespace
 
-let uid_from_longident
-  ~config ~env ~pos nss ml_or_mli ident =
+let uid_from_longident ~env nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
@@ -762,12 +761,12 @@ let uid_from_longident
       let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path namespace in
       `Uid (uid, loc, path)
 
-let from_longident ~config ~env ~pos nss ml_or_mli ident =
-  match uid_from_longident ~config ~env ~pos nss ml_or_mli ident with
+let from_longident ~env nss ml_or_mli ident =
+  match uid_from_longident ~env nss ml_or_mli ident with
   | `Uid (uid, loc, path) -> from_uid ~ml_or_mli uid loc path
   | (`Builtin | `Not_in_env _) as v -> v
 
-let from_path ~config ~env ~local_defs ~pos ~namespace ml_or_mli path =
+let from_path ~config ~env ~local_defs ~namespace ml_or_mli path =
   File_switching.reset ();
   Fallback.reset ();
   if Utils.is_builtin_path path then
@@ -821,7 +820,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
     let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
-    match from_longident ~config ~pos ~env nss switch ident with
+    match from_longident ~env nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found loc -> find_source ~config loc path
@@ -844,17 +843,17 @@ let doc_from_uid ~comp_unit uid =
       value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
         match vb_pat.pat_desc with
         | Tpat_var (id, _) ->
-            begin try 
+            begin try
               let vd = Env.find_value (Pident id) env in
               test vd.val_uid vb_attributes
-            with Not_found -> () end  
+            with Not_found -> () end
         | _ -> ();
         Tast_iterator.default_iterator.value_binding sub vb)
     }
   in
   let parse_attributes attrs =
     let open Parsetree in
-    try Some (List.find_map attrs ~f:(fun attr -> 
+    try Some (List.find_map attrs ~f:(fun attr ->
       if attr.attr_name.txt = "ocaml.doc" then
         Ast_helper.extract_str_payload attr.attr_payload
       else None))
@@ -875,7 +874,7 @@ let doc_from_uid ~comp_unit uid =
     | Error _ -> None
   in
   try match typedtree with
-    | Some (`Interface s) -> 
+    | Some (`Interface s) ->
         let iterator = iterator s.sig_final_env in
         iterator.signature iterator s;
         log ~title:"doc_from_uid" "uid not found in the tree";
@@ -900,7 +899,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   let_ref last_location Location.none @@ fun () ->
   match
     match path with
-    | `Completion_entry entry -> from_completion_entry ~env ~config ~pos entry
+    | `Completion_entry entry -> from_completion_entry ~env ~config entry
     | `User_input path ->
       log ~title:"get_doc" "looking for the doc of '%s'" path;
       let lid = Longident.parse path in
@@ -910,7 +909,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       | Some ctxt ->
         let nss = Namespace.from_context ctxt in
         log ~title:"get_doc" "use shapes to compute the declaration's uid";
-        match uid_from_longident ~config ~pos ~env nss `MLI lid with
+        match uid_from_longident ~config ~env nss `MLI lid with
         | `Uid (Some (Shape.Uid.Item { comp_unit; id:_ } as uid), loc, _)
             when Env.get_unit_name () <> comp_unit -> 
               log ~title:"get_doc" "the doc (%a) you're looking for is in another 
@@ -926,7 +925,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   | `Found_doc doc -> `Found doc
   | `Found loc ->
     (* When the doc we look for is in the current buffer or if search by uid
-      has failed we use an alternative heuristic since Merlin's pure parser 
+      has failed we use an alternative heuristic since Merlin's pure parser
       does not poulates doc attributes in the typedtree. *)
     let comments =
       match File_switching.where_am_i () with

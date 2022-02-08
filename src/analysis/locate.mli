@@ -36,7 +36,6 @@ val from_path
   : config:Mconfig.t
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
-  -> pos:Lexing.position
   -> namespace:Namespaced_path.Namespace.t
   -> [ `ML | `MLI ]
   -> Path.t

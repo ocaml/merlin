@@ -390,7 +390,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         match Locate.from_path
                 ~env
                 ~config:(Mpipeline.final_config pipeline)
-                ~local_defs ~pos ~namespace:`Type `MLI
+                ~local_defs ~namespace:`Type `MLI
                 path with
         | `Builtin -> `Builtin (Path.name path)
         | `Not_in_env _ as s -> s
