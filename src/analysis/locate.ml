@@ -987,6 +987,26 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
   Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
+  let from_uid ~loc uid =
+    begin match uid with
+    | Some (Shape.Uid.Item { comp_unit } as uid)
+    | Some (Shape.Uid.Compilation_unit comp_unit as uid)
+        when Env.get_unit_name () <> comp_unit ->
+          log ~title:"get_doc" "the doc (%a) you're looking for is in another
+            compilation unit (%s)"
+            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
+          (match doc_from_uid ~comp_unit uid with
+          | `Found doc -> `Found_doc doc
+          | `No_documentation ->
+              (* We fallback on the legacy heuristic to handle some unproper
+                 doc placement. See test [unattached-comment.t] *)
+              `Found loc)
+    | _ ->
+      (* Uid based search doesn't works in the current CU since Merlin's parser
+         does not attach doc comments to the typedtree *)
+      `Found loc
+    end
+  in
   fun path ->
   let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
   let_ref last_location Location.none @@ fun () ->
@@ -1000,19 +1020,15 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       | None ->
         `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
       | Some ctxt ->
-        let nss = Namespace.from_context ctxt in
-        log ~title:"get_doc" "use shapes to compute the declaration's uid";
-        match uid_from_longident ~config ~env nss `MLI lid with
-        | `Uid (Some (Shape.Uid.Item { comp_unit; id:_ } as uid), loc, _)
-            when Env.get_unit_name () <> comp_unit -> 
-              log ~title:"get_doc" "the doc (%a) you're looking for is in another 
-                compilation unit (%s)" 
-                Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
-              (match doc_from_uid ~comp_unit uid with
-              | `Found doc -> `Found_doc doc
-              | `No_documentation -> `Found loc) 
-        | `Uid (_, loc, _) -> `Found loc
-        | (`Not_in_env _ | `Builtin) as otherwise -> otherwise
+        begin match from_string ~config ~env ~local_defs ~pos `MLI path with
+        | `Found (uid, _, id_loc) ->
+          let loc : Location.t =
+            { loc_start = id_loc; loc_end = id_loc; loc_ghost = true }
+          in
+          from_uid ~loc uid
+        | `At_origin | `Missing_labels_namespace -> `No_documentation
+        | `Builtin _ -> `Builtin
+        | (`Not_in_env _ | `Not_found _ |`File_not_found _ ) as otherwise -> otherwise  end
       end
   with
   | `Found_doc doc -> `Found doc
@@ -1024,7 +1040,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       match File_switching.where_am_i () with
       | None -> comments
       | Some cmt_path ->
-        log ~title:"get_doc" "File switeching: actually in %s" cmt_path;
+        log ~title:"get_doc" "File switching: actually in %s" cmt_path;
         let {Cmt_cache. cmt_infos; _ } = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
     in
@@ -1049,4 +1065,5 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     end
   | `File_not_found _
   | `Not_found _
+  | `No_documentation
   | `Not_in_env _ as otherwise -> otherwise
