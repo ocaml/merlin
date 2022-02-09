@@ -524,7 +524,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         ~config:(Mpipeline.final_config pipeline)
         ~env ~local_defs ~pos ml_or_mli path
     with
-    | `Found (file, pos) ->
+    | `Found (_, file, pos) ->
       Locate.log ~title:"result"
         "found: %s" (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)

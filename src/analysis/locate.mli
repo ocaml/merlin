@@ -54,7 +54,7 @@ val from_string
   -> [ `ML | `MLI ]
   -> string
   -> [> `File_not_found of string
-      | `Found of string option * Lexing.position
+      | `Found of Shape.Uid.t option * string option * Lexing.position
       | `Builtin of string
       | `Missing_labels_namespace
       | `Not_found of string * string option

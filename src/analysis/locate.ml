@@ -448,13 +448,13 @@ let from_uid ~ml_or_mli uid loc path =
         | Some loc ->
           log ~title:"locate" "Found location: %a"
             Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-          Some loc
-        | None -> 
+          Some (uid, loc)
+        | None ->
           log ~title:"locate"
             "Uid not found.@.\
             Fallbacking to the node's location: %a"
           Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-          Some loc
+          Some (uid, loc)
       end else begin
         log ~title:"locate" "Loading the shapes for unit %S" comp_unit;
         match load_cmt comp_unit ml_or_mli with
@@ -473,15 +473,16 @@ let from_uid ~ml_or_mli uid loc path =
                 log ~title:"locate"
                   "The alias points to another compilation unit %s" comp_unit;
                 loc_of_comp_unit comp_unit
-                |> Option.map ~f:(fun loc -> loc)
-              | _ -> Some loc end
+                |> Option.map ~f:(fun loc -> uid, loc)
+              | _ -> Some (uid, loc)
+              end
             | Some loc ->
               log ~title:"locate" "Found location: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-              Some loc
+              Some (uid, loc)
             | None ->
               log ~title:"locate" "Uid not found in the loaded shape.";
-            None 
+            None
           end
         | _ ->
           log ~title:"locate" "Failed to load the shapes";
@@ -489,20 +490,19 @@ let from_uid ~ml_or_mli uid loc path =
       end
     in
     begin match locopt with
-    | Some loc -> `Found loc
+    | Some (uid, loc) -> `Found (Some uid, loc)
     | None -> `Not_found (Path.name path, None)
     end
-  | Some (Compilation_unit comp_unit) ->
+  | Some (Compilation_unit comp_unit as uid) ->
     begin
       match loc_of_comp_unit comp_unit with
-      | Some loc -> `Found loc
+      | Some loc -> `Found (Some uid, loc)
       | _ -> log ~title:"locate" "Failed to load the shapes";
         `Not_found (Path.name path, None)
     end
   | Some (Predef _ | Internal) -> assert false
-  | None -> 
-      log ~title:"locate" "No UID found, fallbacking to lookup location.";
-      `Found loc
+  | None -> log ~title:"locate" "No UID found, fallbacking to lookup location.";
+      `Found (None, loc)
 
 let locate ~env ~ml_or_mli decl_uid loc path ns =
   let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path ns in
@@ -804,8 +804,12 @@ end
 
 (* Only used to retrieve documentation *)
 let from_completion_entry ~env ~config (namespace, path, loc) =
-  locate ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
-    path namespace
+  match
+    locate ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
+      path namespace
+  with
+  | `Found (_, loc) -> `Found loc
+  | `Not_found _ as otherwise -> otherwise
 
 let uid_from_longident ~env nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
@@ -835,7 +839,7 @@ let from_path ~config ~env ~local_defs ~namespace ml_or_mli path =
       match locate ~env ~ml_or_mli uid loc path namespace with
       | `Not_found _
       | `File_not_found _ as err -> err
-      | `Found loc -> find_source ~config loc (Path.name path)
+      | `Found (_, loc) -> find_source ~config loc (Path.name path)
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
@@ -880,7 +884,10 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     match from_longident ~env nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
-    | `Found loc -> find_source ~config loc path
+    | `Found (uid, loc) ->
+      match find_source ~config loc path with
+      | `Found (file, loc) -> `Found (uid, file, loc)
+      | `File_not_found _ as otherwise -> otherwise
 
 let doc_from_uid ~comp_unit uid =
   let exception Found of Typedtree.attributes in
