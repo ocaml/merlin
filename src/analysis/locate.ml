@@ -429,6 +429,14 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
     Option.map ~f:(fun uid -> uid, path) shape.uid
 
 let from_uid ~ml_or_mli uid loc path =
+  let loc_of_comp_unit comp_unit =
+    match load_cmt comp_unit ml_or_mli with
+    | Ok (Some pos_fname, cmt) ->
+      let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
+      let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
+      Some loc
+    | _ -> None
+  in
   match uid with
   | Some (Shape.Uid.Item { comp_unit; id } as uid)->
     let locopt =
@@ -454,6 +462,19 @@ let from_uid ~ml_or_mli uid loc path =
           log ~title:"locate" "Shapes succesfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
+            | Some loc when
+              String.ends_with ~suffix:"ml-gen" loc.loc_start.pos_fname ->
+              log ~title:"locate" "Found location in generated file: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              (* This notably happens when using Dune. In that case we
+                 try to resolve the alias immediately. *)
+              begin match module_aliasing ~bin_annots:cmt.cmt_annots uid with
+              | Some (Shape.Uid.Compilation_unit comp_unit as uid, _path) ->
+                log ~title:"locate"
+                  "The alias points to another compilation unit %s" comp_unit;
+                loc_of_comp_unit comp_unit
+                |> Option.map ~f:(fun loc -> loc)
+              | _ -> Some loc end
             | Some loc ->
               log ~title:"locate" "Found location: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
@@ -473,13 +494,9 @@ let from_uid ~ml_or_mli uid loc path =
     end
   | Some (Compilation_unit comp_unit) ->
     begin
-      match load_cmt comp_unit ml_or_mli with
-      | Ok (Some pos_fname, cmt) ->
-        let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
-        let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
-        `Found loc
-      | _ ->
-        log ~title:"locate" "Failed to load the shapes";
+      match loc_of_comp_unit comp_unit with
+      | Some loc -> `Found loc
+      | _ -> log ~title:"locate" "Failed to load the shapes";
         `Not_found (Path.name path, None)
     end
   | Some (Predef _ | Internal) -> assert false
