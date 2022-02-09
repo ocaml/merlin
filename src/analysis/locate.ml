@@ -389,6 +389,45 @@ let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
       Logger.fmt (fun fmt -> Shape.print fmt r);
     r.uid
 
+(** [module_aliasing] iterates on a typedtree to check if the provided uid
+  corresponds to a module alias. If it does the function returns the uid of the
+  aliased module. If not it returns None.
+  The intended use of this function is to traverse dune-generated aliases. *)
+let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
+  let exception Found of Path.t * Env.t in
+  let iterator env = { Tast_iterator.default_iterator with
+    module_binding = (fun sub mb -> match mb with
+      | { mb_id = Some id; mb_expr = { mod_desc = Tmod_ident (path, _) } } ->
+          let md = Env.find_module (Pident id) env in
+          if Shape.Uid.equal uid md.md_uid then raise (Found (path, env))
+          else Tast_iterator.default_iterator.module_binding sub mb
+      | _ -> Tast_iterator.default_iterator.module_binding sub mb)
+    }
+  in
+  try
+    begin match bin_annots with
+    | Interface s ->
+        let sig_final_env = Envaux.env_of_only_summary s.sig_final_env in
+        let iterator = iterator sig_final_env in
+        iterator.signature iterator { s with sig_final_env }
+    | Implementation str ->
+      let str_final_env = Envaux.env_of_only_summary str.str_final_env in
+      let iterator = iterator str_final_env in
+      iterator.structure iterator { str with str_final_env }
+    | _ -> () end;
+    None
+  with Found (path, env) ->
+    let namespace = Shape.Sig_component_kind.Module in
+    let shape = Env.shape_of_path ~namespace env path in
+    log ~title:"locate" "Uid %a corresponds to an alias of %a
+      which has the shape %a and the uid %a"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt uid)
+      Logger.fmt (fun fmt -> Path.print fmt path)
+      Logger.fmt (fun fmt -> Shape.print fmt shape)
+      Logger.fmt (fun fmt ->
+        Format.pp_print_option Shape.Uid.print fmt shape.uid);
+    Option.map ~f:(fun uid -> uid, path) shape.uid
+
 let from_uid ~ml_or_mli uid loc path =
   match uid with
   | Some (Shape.Uid.Item { comp_unit; id } as uid)->
