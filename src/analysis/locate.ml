@@ -889,12 +889,38 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
       | `Found (file, loc) -> `Found (uid, file, loc)
       | `File_not_found _ as otherwise -> otherwise
 
+(** When we look for docstring in external compilation unit we can perform
+    a uid-based search and return the attached comment in the attributes.
+    This is a more sound way to get documentation than resorting on the
+    [Ocamldoc.associate_comment] heuristic *)
 let doc_from_uid ~comp_unit uid =
   let exception Found of Typedtree.attributes in
   let test elt_uid attributes =
     if Shape.Uid.equal uid elt_uid then raise (Found attributes)
   in
-  let iterator env = { Tast_iterator.default_iterator with
+  let iterator =
+    let first_item = ref true in
+    let uid_is_comp_unit = match uid with
+      | Shape.Uid.Compilation_unit _ -> true
+      | _ -> false
+    in
+    fun env -> { Tast_iterator.default_iterator with
+
+      (* Needed to return top-level module doc (when the uid is a compunit).
+         The module docstring must be the first signature or structure item *)
+      signature_item = (fun sub ({ sig_desc; _} as si) ->
+        match sig_desc, !first_item, uid_is_comp_unit with
+        | Tsig_attribute attr, true, true -> raise (Found [attr])
+        | _, false, true -> raise Not_found
+        | _, _, _ -> first_item := false;
+            Tast_iterator.default_iterator.signature_item sub si);
+
+      structure_item = (fun sub ({ str_desc; _} as sti) ->
+        match str_desc, !first_item, uid_is_comp_unit with
+        | Tstr_attribute attr, true, true -> raise (Found [attr])
+        | _, false, true -> raise Not_found
+        | _, _, _ -> first_item := false;
+            Tast_iterator.default_iterator.structure_item sub sti);
 
       value_description = (fun sub ({ val_val; val_attributes; _ } as vd) ->
         test val_val.val_uid val_attributes;
@@ -918,15 +944,16 @@ let doc_from_uid ~comp_unit uid =
   let parse_attributes attrs =
     let open Parsetree in
     try Some (List.find_map attrs ~f:(fun attr ->
-      if attr.attr_name.txt = "ocaml.doc" then
-        Ast_helper.extract_str_payload attr.attr_payload
+      if List.exists ["ocaml.doc"; "ocaml.text"]
+        ~f:(String.equal attr.attr_name.txt)
+      then Ast_helper.extract_str_payload attr.attr_payload
       else None))
     with Not_found -> None
   in
-  let typedtree = 
+  let typedtree =
     log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
     match load_cmt comp_unit `MLI with
-    | Ok (_, cmt_infos) -> 
+    | Ok (_, cmt_infos) ->
       log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
       begin match cmt_infos.cmt_annots with
       | Interface s -> Some (`Interface { s with
@@ -937,22 +964,24 @@ let doc_from_uid ~comp_unit uid =
       end
     | Error _ -> None
   in
-  try match typedtree with
+  try begin match typedtree with
     | Some (`Interface s) ->
         let iterator = iterator s.sig_final_env in
         iterator.signature iterator s;
-        log ~title:"doc_from_uid" "uid not found in the tree";
-        `No_documentation
-    | Some (`Implementation str) -> 
+        log ~title:"doc_from_uid" "uid not found in the signature"
+    | Some (`Implementation str) ->
         let iterator = iterator str.str_final_env in
         iterator.structure iterator str;
-        log ~title:"doc_from_uid" "uid not found in the tree";
-        `No_documentation
-    | _ -> `No_documentation
-  with Found attrs ->
-    match parse_attributes attrs with
-    | Some (doc, _) -> `Found (doc |> String.trim)
-    | None -> `No_documentation
+        log ~title:"doc_from_uid" "uid not found in the implementation"
+    | _ -> () end;
+    `No_documentation
+  with
+    | Found attrs ->
+       log ~title:"doc_from_uid" "Found attributes for this uid";
+        begin match parse_attributes attrs with
+        | Some (doc, _) -> `Found (doc |> String.trim)
+        | None -> `No_documentation end
+    | Not_found -> `No_documentation
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
