@@ -305,27 +305,6 @@ module Utils = struct
         | CMT _ | CMTI _         -> !loadpath
 end
 
-let rec load_cmt comp_unit ml_or_mli =
-  let fn =
-    Preferences.set ml_or_mli;
-    Preferences.build comp_unit
-  in
-  match Load_path.find_uncap (File.with_ext fn) with
-  | filename ->
-    let cmt = (Cmt_cache.read filename).cmt_infos in
-    let pos_fname = cmt.cmt_sourcefile in
-    Option.iter cmt.cmt_source_digest
-      ~f:(fun digest -> File_switching.move_to ~digest filename);
-    Ok (pos_fname, cmt)
-  | exception Not_found ->
-    if ml_or_mli = `MLI then begin
-      (* there might not have been an mli (so no cmti), so the decl comes from
-         the .ml, and the corresponding .cmt *)
-      log ~title:"load" "Failed to load cmti file, retrying with cmt";
-      load_cmt comp_unit `ML
-    end else
-      Error ()
-
 let move_to filename cmt_infos =
   let digest =
     (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
@@ -352,6 +331,28 @@ let move_to filename cmt_infos =
     | _ -> Option.get cmt_infos.cmt_source_digest
   in
   File_switching.move_to ~digest filename
+
+
+let rec load_cmt comp_unit ml_or_mli =
+  let fn =
+    Preferences.set ml_or_mli;
+    Preferences.build comp_unit
+  in
+  match Load_path.find_uncap (File.with_ext fn) with
+  | filename ->
+    let cmt = (Cmt_cache.read filename).cmt_infos in
+    let pos_fname = cmt.cmt_sourcefile in
+    Option.iter cmt.cmt_source_digest
+      ~f:(fun digest -> move_to filename cmt);
+    Ok (pos_fname, cmt)
+  | exception Not_found ->
+    if ml_or_mli = `MLI then begin
+      (* there might not have been an mli (so no cmti), so the decl comes from
+          the .ml, and the corresponding .cmt *)
+      log ~title:"load" "Failed to load cmti file, retrying with cmt";
+      load_cmt comp_unit `ML
+    end else
+      Error ()
 
 module Shape_reduce =
   Shape.Make_reduce (struct
