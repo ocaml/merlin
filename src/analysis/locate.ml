@@ -839,7 +839,10 @@ let from_path ~config ~env ~local_defs ~namespace ml_or_mli path =
       match locate ~env ~ml_or_mli uid loc path namespace with
       | `Not_found _
       | `File_not_found _ as err -> err
-      | `Found (_, loc) -> find_source ~config loc (Path.name path)
+      | `Found (uid, loc) ->
+        match find_source ~config loc (Path.name path) with
+        | `Found (file, loc) -> `Found (uid, file, loc)
+        | `File_not_found _ as otherwise -> otherwise
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
@@ -1012,7 +1015,19 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   let_ref last_location Location.none @@ fun () ->
   match
     match path with
-    | `Completion_entry entry -> from_completion_entry ~env ~config entry
+    | `Completion_entry (namespace, path, _loc) ->
+      log ~title:"get_doc" "completion: looking for the doc of '%a'"
+        Logger.fmt (fun fmt -> Path.print fmt path) ;
+      let from_path = from_path ~config ~env ~local_defs ~namespace `MLI path in
+      begin match from_path with
+      | `Found (uid, _, pos) ->
+        let loc : Location.t =
+          { loc_start = pos; loc_end = pos; loc_ghost = true }
+        in
+        from_uid ~loc uid
+      | (`Builtin |`Not_in_env _|`File_not_found _|`Not_found _)
+        as otherwise -> otherwise
+      end
     | `User_input path ->
       log ~title:"get_doc" "looking for the doc of '%s'" path;
       let lid = Longident.parse path in
@@ -1021,14 +1036,16 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
         `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
       | Some ctxt ->
         begin match from_string ~config ~env ~local_defs ~pos `MLI path with
-        | `Found (uid, _, id_loc) ->
+        | `Found (uid, _, pos) ->
           let loc : Location.t =
-            { loc_start = id_loc; loc_end = id_loc; loc_ghost = true }
+            { loc_start = pos; loc_end = pos; loc_ghost = true }
           in
           from_uid ~loc uid
         | `At_origin | `Missing_labels_namespace -> `No_documentation
         | `Builtin _ -> `Builtin
-        | (`Not_in_env _ | `Not_found _ |`File_not_found _ ) as otherwise -> otherwise  end
+        | (`Not_in_env _ | `Not_found _ |`File_not_found _ )
+          as otherwise -> otherwise
+        end
       end
   with
   | `Found_doc doc -> `Found doc

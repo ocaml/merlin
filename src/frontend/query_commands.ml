@@ -395,7 +395,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | `Builtin -> `Builtin (Path.name path)
         | `Not_in_env _ as s -> s
         | `Not_found _ as s -> s
-        | `Found _ as s -> s
+        | `Found (_uid, file, pos) -> `Found (file, pos)
         | `File_not_found _ as s -> s
     end
 

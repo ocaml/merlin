@@ -40,7 +40,7 @@ val from_path
   -> [ `ML | `MLI ]
   -> Path.t
   -> [> `File_not_found of string
-     | `Found of string option * Lexing.position
+     | `Found of Shape.Uid.t option * string option * Lexing.position
      | `Builtin
      | `Not_in_env of string
      | `Not_found of string * string option ]
@@ -69,7 +69,7 @@ val get_doc
   -> pos:Lexing.position
   -> [ `User_input of string
      | `Completion_entry of
-        Shape.Sig_component_kind.t * Path.t * Location.t ]
+        Namespaced_path.Namespace.t * Path.t * Location.t ]
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string
