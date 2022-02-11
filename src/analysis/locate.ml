@@ -396,12 +396,14 @@ let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
 let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
   let exception Found of Path.t * Env.t in
   let iterator env = { Tast_iterator.default_iterator with
-    module_binding = (fun sub mb -> match mb with
+    module_binding = (fun sub mb ->
+      begin match mb with
       | { mb_id = Some id; mb_expr = { mod_desc = Tmod_ident (path, _) } } ->
           let md = Env.find_module (Pident id) env in
-          if Shape.Uid.equal uid md.md_uid then raise (Found (path, env))
-          else Tast_iterator.default_iterator.module_binding sub mb
-      | _ -> Tast_iterator.default_iterator.module_binding sub mb)
+          if Shape.Uid.equal uid md.md_uid then
+            raise (Found (path, env))
+      | _ -> () end;
+      Tast_iterator.default_iterator.module_binding sub mb)
     }
   in
   try
@@ -912,18 +914,18 @@ let doc_from_uid ~comp_unit uid =
       (* Needed to return top-level module doc (when the uid is a compunit).
          The module docstring must be the first signature or structure item *)
       signature_item = (fun sub ({ sig_desc; _} as si) ->
-        match sig_desc, !first_item, uid_is_comp_unit with
+        begin match sig_desc, !first_item, uid_is_comp_unit with
         | Tsig_attribute attr, true, true -> raise (Found [attr])
         | _, false, true -> raise Not_found
-        | _, _, _ -> first_item := false;
-            Tast_iterator.default_iterator.signature_item sub si);
+        | _, _, _ -> first_item := false end;
+        Tast_iterator.default_iterator.signature_item sub si);
 
       structure_item = (fun sub ({ str_desc; _} as sti) ->
-        match str_desc, !first_item, uid_is_comp_unit with
+        begin match str_desc, !first_item, uid_is_comp_unit with
         | Tstr_attribute attr, true, true -> raise (Found [attr])
         | _, false, true -> raise Not_found
-        | _, _, _ -> first_item := false;
-            Tast_iterator.default_iterator.structure_item sub sti);
+        | _, _, _ -> first_item := false end;
+        Tast_iterator.default_iterator.structure_item sub sti);
 
       value_description = (fun sub ({ val_val; val_attributes; _ } as vd) ->
         test val_val.val_uid val_attributes;
@@ -934,13 +936,13 @@ let doc_from_uid ~comp_unit uid =
         Tast_iterator.default_iterator.type_declaration sub td);
 
       value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
-        match vb_pat.pat_desc with
+        begin match vb_pat.pat_desc with
         | Tpat_var (id, _) ->
             begin try
               let vd = Env.find_value (Pident id) env in
               test vd.val_uid vb_attributes
             with Not_found -> () end
-        | _ -> ();
+        | _ -> () end;
         Tast_iterator.default_iterator.value_binding sub vb)
     }
   in
