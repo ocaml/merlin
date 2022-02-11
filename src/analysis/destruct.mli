@@ -73,6 +73,7 @@
 exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
+exception Ill_typed
 exception Wrong_parent of string
 
 module Path_utils : sig
