@@ -59,7 +59,6 @@ let is_base_type env ty base_ty_path =
   | Tconstr(p, _, _) -> Path.same p base_ty_path
   | _ -> false
 
-(*
 let is_immediate = function
   | Type_immediacy.Unknown -> false
   | Type_immediacy.Always -> true
@@ -67,14 +66,6 @@ let is_immediate = function
       (* In bytecode, we don't know at compile time whether we are
          targeting 32 or 64 bits. *)
       !Clflags.native_code && Sys.word_size = 64
-
-let maybe_pointer_type env ty =
-  let ty = scrape_ty env ty in
-  if is_immediate (Ctype.immediacy env ty) then Immediate
-  else Pointer
-*)
-
-(* let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type *)
 
 type classification =
   | Int
@@ -85,7 +76,7 @@ type classification =
 
 let classify env ty =
   let ty = scrape_ty env ty in
-  if not (Ctype.maybe_pointer_type env ty) then Int
+  if is_immediate (Ctype.immediacy env ty) then Int
   else match get_desc ty with
   | Tvar _ | Tunivar _ ->
       Any

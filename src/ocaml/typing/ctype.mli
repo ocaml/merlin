@@ -425,6 +425,3 @@ val package_subtype :
 (* Raises [Incompatible] *)
 val mcomp : Env.t -> type_expr -> type_expr -> unit
 
-(*merlin*)
-val maybe_pointer_type : Env.t -> type_expr -> bool
-       (* True if type is possibly pointer, false if definitely not a pointer *)
