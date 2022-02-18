@@ -328,6 +328,21 @@ Possible values are:
 ==============================================================================
 EXTRAS                                                         *merlin-extras*
 
+Type-on-hover~
+
+To display the type of the ocaml expression at the current mouse cursor, use Vim's |ballon-eval|
+functionality: >
+    au FileType ocaml setlocal balloonexpr=merlin#TypeAtBalloon()
+displays the type in a small popup. Alternatively, >
+    au FileType ocaml setlocal balloonexpr=merlin#ShowTypeAtBalloon()
+displays the type in the status line, similar to |MerlinTypeOf|. To switch
+this feature on, use >
+    set balloonveval
+when using a GUI version of Vim or >
+    set balloonvevalterm 
+in a terminal.
+
+
 Syntastic ~
 
 To use merlin with syntastic set the following option: >
@@ -350,7 +365,7 @@ for automatic completion can be enabled with: >
 Neocomplete ~
 
 Integration with [neocomplete](https://github.com/Shougo/neocomplete) for
-automatic completion can be enabled with:
+automatic completion can be enabled with: >
 
     if !exists('g:neocomplete#sources#omni#input_patterns')
       let g:neocomplete#sources#omni#input_patterns = {}
