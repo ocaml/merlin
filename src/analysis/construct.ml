@@ -347,7 +347,10 @@ module Gen = struct
       (* [make_constr] builds the PAST repr of a type constructor applied
       to holes *)
       let make_constr env path type_expr cstr_descr =
-        let ty_args, ty_res, _ = Ctype.instance_constructor cstr_descr in
+        let ty_args, ty_res, _ = Ctype.instance_constructor
+          Keep_existentials_flexible
+          cstr_descr
+        in
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
           let lid =

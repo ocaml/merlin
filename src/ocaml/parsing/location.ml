@@ -16,21 +16,21 @@
 open Lexing
 
 type t = Warnings.loc =
-  { loc_start: position; loc_end: position; loc_ghost: bool };;
+  { loc_start: position; loc_end: position; loc_ghost: bool }
 
 let in_file name =
   let loc = { dummy_pos with pos_fname = name } in
   { loc_start = loc; loc_end = loc; loc_ghost = true }
-;;
 
-let none = in_file "_none_";;
-let is_none l = (l = none);;
+
+let none = in_file "_none_"
+let is_none l = (l = none)
 
 let curr lexbuf = {
   loc_start = lexbuf.lex_start_p;
   loc_end = lexbuf.lex_curr_p;
   loc_ghost = false
-};;
+}
 
 let init lexbuf fname =
   lexbuf.lex_curr_p <- {
@@ -39,36 +39,36 @@ let init lexbuf fname =
     pos_bol = 0;
     pos_cnum = 0;
   }
-;;
+
 
 let symbol_rloc () = {
   loc_start = Parsing.symbol_start_pos ();
   loc_end = Parsing.symbol_end_pos ();
   loc_ghost = false;
-};;
+}
 
 let symbol_gloc () = {
   loc_start = Parsing.symbol_start_pos ();
   loc_end = Parsing.symbol_end_pos ();
   loc_ghost = true;
-};;
+}
 
 let rhs_loc n = {
   loc_start = Parsing.rhs_start_pos n;
   loc_end = Parsing.rhs_end_pos n;
   loc_ghost = false;
-};;
+}
 
 let rhs_interval m n = {
   loc_start = Parsing.rhs_start_pos m;
   loc_end = Parsing.rhs_end_pos n;
   loc_ghost = false;
-};;
+}
 
 (* return file, line, char from the given position *)
 let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
-;;
+
 
 type 'a loc = {
   txt : 'a;
@@ -735,7 +735,7 @@ let print_warning loc ppf w =
   | Some report -> print_report ppf report
 
 let prerr_warning_ref =
-  ref (fun loc w -> print_warning loc !formatter_for_warnings w);;
+  ref (fun loc w -> print_warning loc !formatter_for_warnings w)
 let prerr_warning loc w = !prerr_warning_ref loc w
 
 let default_alert_reporter =

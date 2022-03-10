@@ -45,7 +45,6 @@ val cmt_magic_number: string
 val max_tag: int
         (* Biggest tag that can be stored in the header of a regular block. *)
 
-val safe_string: bool
 val flat_float_array: bool
 
 (**/**)

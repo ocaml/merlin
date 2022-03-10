@@ -6,6 +6,7 @@
 
 (** {1 Relevant settings}
     Parameters from OCaml compiler which affect Merlin behavior. *)
+val cmi_file             : string option ref
 val include_dirs         : string list ref
 val fast                 : bool ref
 val classic              : bool ref
@@ -14,7 +15,6 @@ val real_paths           : bool ref
 val recursive_types      : bool ref
 val strict_sequence      : bool ref
 val applicative_functors : bool ref
-val unsafe_string        : bool ref
 val nopervasives         : bool ref
 val strict_formats       : bool ref
 val open_modules         : string list ref
