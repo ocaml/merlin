@@ -13,7 +13,6 @@ type ocaml = {
   recursive_types      : bool;
   strict_sequence      : bool;
   applicative_functors : bool;
-  unsafe_string        : bool;
   nopervasives         : bool;
   strict_formats       : bool;
   open_modules         : string list;

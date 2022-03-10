@@ -271,9 +271,9 @@ let find_in_path_uncap ?(fallback="") path name =
         then Some (Filename.concat dirname uname)
         else if exact_file_exists ~dirname ~basename:name
         then Some (Filename.concat dirname name)
-        else 
-          let () = Logger.log 
-            ~section:"locate" 
+        else
+          let () = Logger.log
+            ~section:"locate"
             ~title:"find_in_path_uncap"
             "Failed to load %s/%s" dirname name
           in
@@ -640,7 +640,6 @@ module Color = struct
     | Magenta
     | Cyan
     | White
-  ;;
 
   type style =
     | FG of color (* foreground *)

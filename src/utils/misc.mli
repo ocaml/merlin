@@ -139,7 +139,7 @@ val output_to_file_via_temporary:
            the channel is closed and the temporary file is renamed to
            [filename]. *)
 
-val input_bytes : in_channel -> int -> bytes;;
+val input_bytes : in_channel -> int -> bytes
         (* [input_bytes ic n] reads [n] bytes from [ic] and returns them
            in a new string.  It raises [End_of_file] if EOF is encountered
            before all the bytes are read. *)
@@ -326,7 +326,6 @@ module Color : sig
     | Magenta
     | Cyan
     | White
-  ;;
 
   type style =
     | FG of color (* foreground *)

@@ -13,14 +13,14 @@
 (*                                                                        *)
 (**************************************************************************)
 
-open Typedtree;;
-open Format;;
+open Typedtree
+open Format
 
-val interface : formatter -> signature -> unit;;
-val implementation : formatter -> structure -> unit;;
+val interface : formatter -> signature -> unit
+val implementation : formatter -> structure -> unit
 
 val implementation_with_coercion :
-  formatter -> Typedtree.implementation -> unit;;
+  formatter -> Typedtree.implementation -> unit
 
 (* Added by merlin for debugging purposes *)
 val pattern : int -> formatter -> _ general_pattern -> unit

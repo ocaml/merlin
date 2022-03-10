@@ -243,8 +243,11 @@ let hidden_name name =
     with Exit -> true
 
 let hidden_ident id =
-  if !Clflags.unsafe_string && Ident.equal id Predef.ident_bytes then true
-  else hidden_name (Ident.name id)
+  (* if !Clflags.unsafe_string && Ident.equal id Predef.ident_bytes then true
+  else
+
+    Since 5.0.0 unsafe_string is always false *)
+ hidden_name (Ident.name id)
 
 let hidden_definition deprecated name =
   match deprecated with

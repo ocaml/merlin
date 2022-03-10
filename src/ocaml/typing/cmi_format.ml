@@ -19,7 +19,6 @@ type pers_flags =
   | Rectypes
   | Alerts of alerts
   | Opaque
-  | Unsafe_string
 
 (* these type abbreviations are not exported;
    they are used to provide consistency across

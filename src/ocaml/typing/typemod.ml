@@ -115,14 +115,9 @@ let type_open_ ?used_slot ?toplevel ovf env loc lid =
       ignore (extract_sig_open env lid.loc md.md_type);
       assert false
 
-let initial_env ~loc ~safe_string ~initially_opened_module
+let initial_env ~loc ~initially_opened_module
     ~open_implicit_modules =
-  let env =
-    if safe_string then
-      Env.initial_safe_string
-    else
-      Env.initial_unsafe_string
-  in
+  let env = Env.initial in
   let open_module env m =
     let open Asttypes in
     let lid = {loc; txt = Longident.parse m } in
@@ -452,7 +447,6 @@ let type_decl_is_alias sdecl = (* assuming no explicit constraint *)
        | () -> Some lid
      end
   | _ -> None
-;;
 
 let params_are_constrained =
   let rec loop = function
@@ -463,7 +457,6 @@ let params_are_constrained =
        | _ -> true
   in
   loop
-;;
 
 type with_info =
   | With_type of Parsetree.type_declaration
@@ -3191,13 +3184,17 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       end else begin
         let sourceintf =
           Filename.remove_extension sourcefile ^ !Config.interface_suffix in
-        if Sys.file_exists sourceintf then begin
+        if !Clflags.cmi_file <> None || Sys.file_exists sourceintf then begin
           let intf_file =
-            try
-              Load_path.find_uncap (modulename ^ ".cmi")
-            with Not_found ->
-              raise(Error(Location.in_file sourcefile, Env.empty,
-                          Interface_not_compiled sourceintf)) in
+            match !Clflags.cmi_file with
+            | None ->
+              (try
+                Load_path.find_uncap (modulename ^ ".cmi")
+              with Not_found ->
+                raise(Error(Location.in_file sourcefile, Env.empty,
+                      Interface_not_compiled sourceintf)))
+            | Some cmi_file -> cmi_file
+          in
           let dclsig = Env.read_signature modulename intf_file in
           let coercion, shape =
             Includemod.compunit initial_env ~mark:Mark_positive
@@ -3227,7 +3224,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
           normalize_signature simple_sg;
           Typecore.force_delayed_checks ();
           (* See comment above. Here the target signature contains all
-             the value being exported. We can still capture unused
+             the values being exported. We can still capture unused
              declarations like "let x = true;; let x = 1;;", because in this
              case, the inferred signature contains only the last declaration. *)
           let shape = Shape.local_reduce shape in
@@ -3307,7 +3304,7 @@ let package_units initial_env objfiles cmifile modulename =
          let modname = String.capitalize_ascii(Filename.basename pref) in
          let sg = Env.read_signature modname (pref ^ ".cmi") in
          if Filename.check_suffix f ".cmi" &&
-            not(Mtype.no_code_needed_sig Env.initial_safe_string sg)
+            not(Mtype.no_code_needed_sig Env.initial sg)
          then raise(Error(Location.none, Env.empty,
                           Implementation_is_required f));
          (modname, Env.read_signature modname (pref ^ ".cmi")))
