@@ -450,11 +450,11 @@ module String = struct
      [_ascii] version. *)
   [@@@ocaml.warning "-3"]
 
-  let capitalize = capitalize
-  let uncapitalize = uncapitalize
+  let capitalize = capitalize_ascii
+  let uncapitalize = uncapitalize_ascii
 
-  let lowercase = lowercase
-  let uppercase = uppercase
+  let lowercase = lowercase_ascii
+  let uppercase = uppercase_ascii
 
   let split_on_char_ c s =
     match String.index s c with
@@ -620,8 +620,8 @@ module Char = struct
   [@@@ocaml.warning "-3"]
 
   include Char
-  let is_lowercase c = lowercase c = c
-  let is_uppercase c = uppercase c = c
+  let is_lowercase c = lowercase_ascii c = c
+  let is_uppercase c = uppercase_ascii c = c
   let is_strictly_lowercase c = not (is_uppercase c)
   let is_strictly_uppercase c = not (is_lowercase c)
 end
