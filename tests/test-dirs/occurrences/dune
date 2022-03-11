@@ -2,3 +2,7 @@
  (applies_to issue1404)
  (enabled_if
   (<> %{os_type} Win32)))
+
+(cram
+ (applies_to occ-with-ppx)
+ (enabled_if false))
