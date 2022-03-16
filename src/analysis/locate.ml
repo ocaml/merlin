@@ -477,6 +477,8 @@ type find_source_result =
   | Multiple_matches of string list
 
 let find_source ~config loc =
+  log ~title:"find_source" "attempt to find %S"
+  loc.Location.loc_start.Lexing.pos_fname ;
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
   let file =
