@@ -4,6 +4,7 @@ unreleased
 
   + merlin binary
     - Update internal typer to match OCaml 4.14.1 release. (#1557)
+    - fix locate calls on infix operators (#1445, fixes #949)
 
 merlin 4.7
 ==========
