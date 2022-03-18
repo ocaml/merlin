@@ -11,6 +11,8 @@ git version
     - expose all destruct exceptions in the api (#1437)
   + test suite
     - cover locate calls on module aliases with and without dune
+    - Add a test expliciting the interaction between locate and Dune's generated
+      source files (#1444)
 
 merlin 4.4
 ==========
@@ -37,7 +39,7 @@ Mon Jul 26 11:12:21 PM CET 2021
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
     - improve record field destruction testing (#1375)
-    - make `merlin-wrapper` create a default `.merlin` file  only when there is 
+    - make `merlin-wrapper` create a default `.merlin` file  only when there is
       no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
 
 merlin 4.3.1
