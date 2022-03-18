@@ -9,6 +9,7 @@ git version
       files (#1219 by @ddickstein, fixes #894)
     - handle `=` syntax in compiler flags (#1409)
     - expose all destruct exceptions in the api (#1437)
+    - fix superfluous break in error reporting (#1432)
   + test suite
     - cover locate calls on module aliases with and without dune
     - Add a test expliciting the interaction between locate and Dune's generated
