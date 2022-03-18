@@ -5,7 +5,7 @@
   (<> %{os_type} Win32)))
 
 (cram
- (applies_to issue1424 module-aliases)
+ (applies_to issue1424 module-aliases in-generated-file)
  (enabled_if
   (and
    (<> %{architecture} i386)
