@@ -794,7 +794,7 @@ let from_path ~config ~env ~namespace ml_or_mli path =
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
-  let lid = Longident.parse path in
+  let lid = Misc_utils.parse_longident path in
   let ident, is_label = Longident.keep_suffix lid in
   match
     match namespaces with

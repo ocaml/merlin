@@ -48,7 +48,6 @@ end = struct
       maybe_replace_name ?name (Untypeast.lident_of_path path)
 end
 
-
 let parenthesize_name name =
   (* Qualified operators need parentheses *)
   if name = "" || not (Oprint.parenthesized_ident name) then name else (
@@ -57,3 +56,10 @@ let parenthesize_name name =
     else
       "(" ^ name ^ ")"
   )
+
+let parse_longident name =
+  let l =
+    if name.[String.length name - 1] = '.' then [name]
+    else String.split_on_char ~sep:'.' name
+  in
+  Longident.unflatten l |> Option.get

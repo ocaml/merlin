@@ -22,3 +22,7 @@ end
 
 (* Add parenthesis to qualified operators *)
 val parenthesize_name : string -> string
+
+(* Uses [Longident.unflatten] to parse a longident while preserving infix
+   identifiers *)
+val parse_longident : string -> Longident.t

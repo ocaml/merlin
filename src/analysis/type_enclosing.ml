@@ -84,7 +84,7 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
   let get_context lident =
     Context.inspect_browse_tree
       ~cursor
-      (Longident.parse lident)
+      (Misc_utils.parse_longident lident)
       [nodes]
   in
 
