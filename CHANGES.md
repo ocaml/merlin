@@ -12,6 +12,8 @@ git version
     - fix superfluous break in error reporting (#1432)
   + editor modes
     - add module, module type, and class imenu items for emacs (#1244, @ivg)
+    - add prefix argument to force or prevent opening in a new buffer in locate
+      command (#1426, @panglesd)
   + test suite
     - cover locate calls on module aliases with and without dune
     - Add a test expliciting the interaction between locate and Dune's generated
