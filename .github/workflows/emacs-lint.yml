@@ -1,6 +1,12 @@
 name: Emacs lint
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'emacs/**'
+  pull_request:
+    paths:
+      - 'emacs/**'
 
 jobs:
   build:
