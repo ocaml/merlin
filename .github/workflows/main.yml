@@ -7,8 +7,22 @@ name: CI
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.git*'
+      - 'doc/**'
+      - 'emacs/**'
+      - 'vim/**'
   pull_request:
     branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.git*'
+      - 'doc/**'
+      - 'emacs/**'
+      - 'vim/**'
   schedule:
     - cron: '0 12 */6 * *'
 
