@@ -799,8 +799,7 @@ let application_context ~prefix path =
       Printtyp.reset ();
       let pr t =
         let ppf, to_string = Format.to_string () in
-        Printtyp.mark_loops t;
-        Printtyp.type_sch ppf t;
+        Printtyp.shared_type_scheme ppf t;
         to_string ()
       in
       (* Special case for optional arguments applied with ~,

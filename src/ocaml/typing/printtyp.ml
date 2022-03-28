@@ -569,8 +569,6 @@ let () = Btype.print_raw := raw_type_expr
 
 (* Normalize paths *)
 
-let same_type t t' = Transient_expr.repr t == Transient_expr.repr t'
-
 let set_printing_env env =
   printing_env :=
     if !Clflags.real_paths then Env.empty

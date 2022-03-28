@@ -159,7 +159,7 @@ let print_info pp prev_loc ti =
       printtyp_reset_maybe loc;
       Format.pp_print_string Format.str_formatter "  ";
       Printtyp.wrap_printing_env ~error:false env
-                       (fun () -> Printtyp.type_sch Format.str_formatter typ);
+        (fun () -> Printtyp.shared_type_scheme Format.str_formatter typ);
       (* (fun () -> Printtyp.shared_type_scheme Format.str_formatter typ); *)
       Format.pp_print_newline Format.str_formatter ();
       let s = Format.flush_str_formatter () in
