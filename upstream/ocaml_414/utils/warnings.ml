@@ -966,17 +966,24 @@ let message = function
   | Inlining_impossible reason ->
       Printf.sprintf "Cannot inline: %s" reason
   | Ambiguous_var_in_pattern_guard vars ->
-      let msg =
-        let vars = List.sort String.compare vars in
+      let vars = List.sort String.compare vars in
+      let vars_explanation =
+        let in_different_places =
+          "in different places in different or-pattern alternatives"
+        in
         match vars with
         | [] -> assert false
-        | [x] -> "variable " ^ x
+        | [x] -> "variable " ^ x ^ " appears " ^ in_different_places
         | _::_ ->
-            "variables " ^ String.concat "," vars in
+            let vars = String.concat ", " vars in
+            "variables " ^ vars ^ " appear " ^ in_different_places
+      in
       Printf.sprintf
         "Ambiguous or-pattern variables under guard;\n\
-         %s may match different arguments. %t"
-        msg ref_manual_explanation
+         %s.\n\
+         Only the first match will be used to evaluate the guard expression.\n\
+         %t"
+        vars_explanation ref_manual_explanation
   | No_cmx_file name ->
       Printf.sprintf
         "no cmx file was found in path for module %s, \
@@ -1028,16 +1035,16 @@ let message = function
   | Missing_mli ->
     "Cannot find interface file."
   | Unused_tmc_attribute ->
-      "This function is marked @tail_mod_cons but is never applied in \
-       TMC position."
+      "This function is marked @tail_mod_cons\n\
+       but is never applied in TMC position."
   | Tmc_breaks_tailcall ->
-      "This call is in tail-modulo-cons position in a TMC function,\n\
+      "This call\n\
+       is in tail-modulo-cons positionin a TMC function,\n\
        but the function called is not itself specialized for TMC,\n\
        so the call will not be transformed into a tail call.\n\
-       Please either mark the called function with\n\
-       the [@tail_mod_cons] attribute, or mark this call with\n\
-       the [@tailcall false] attribute to make its non-tailness \
-       explicit."
+       Please either mark the called function with the [@tail_mod_cons]\n\
+       attribute, or mark this call with the [@tailcall false] attribute\n\
+       to make its non-tailness explicit."
 ;;
 
 let nerrors = ref 0;;
