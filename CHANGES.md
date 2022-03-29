@@ -8,6 +8,10 @@ git version
       files (#1219 by @ddickstein, fixes #894)
     - fix handlink of ppx's under Windows (#1413)
     - handle `=` syntax in compiler flags (#1409)
+  + editor modes
+    - fix an issue in Neovim where the current line jumps to the top of the
+      window on repeated calls to `MerlinTypeOf` (#1433 by @ddickstein, fixes
+      #1221)
   + test suite
     - make `merlin-wrapper` create a default `.merlin` file  only when there is
       no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
