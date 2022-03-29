@@ -6,6 +6,7 @@ git version
       parent environement is forwarded the the child processes (#1425)
     - locate: look for original source files before looking for preprocessed
       files (#1219 by @ddickstein, fixes #894)
+    - fix handling of ppx's under Windows (#1413)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
