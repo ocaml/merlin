@@ -1,3 +1,9 @@
+git version
+===========
+
+  + editor modes
+    - update quick setup instructions for emacs (#1380, @ScriptDevil)
+
 merlin 4.4
 ==========
 Tue Nov 23 11:45:21 PM CET 2021
