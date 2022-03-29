@@ -2,7 +2,13 @@
 
 export PATH=$(dirname dot-merlin-reader):$PATH
 
-touch .merlin && ocamlmerlin "$@" \
+# tests using the dune configuration reader should export the USE_DUNE_READER
+# environment variable. If not we write a generic `.merlin` file.
+if [ -z "$USE_DUNE_READER" ]; then
+  touch .merlin
+fi
+
+ocamlmerlin "$@" \
     | jq 'del(.timing)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\
