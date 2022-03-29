@@ -3,3 +3,10 @@
    issue802 issue845 issue1199 sig-substs)
  (enabled_if
   (<> %{os_type} Win32)))
+
+(cram
+ (applies_to issue1424)
+ (enabled_if
+  (and
+   (<> %{architecture} i386)
+   (<> %{os_type} Win32))))

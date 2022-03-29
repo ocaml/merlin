@@ -7,9 +7,8 @@ git version
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
-    - make `merlin-wrapper` check that the environement variable USE_DUNE_READER
-      is not set before creating a default `.merlin` file to allow tests to use
-      dune's configuration reader. (#1425)
+    - make `merlin-wrapper` create a default `.merlin` file  only when there is
+      no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
 
 merlin 4.4
 ==========
