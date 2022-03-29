@@ -255,8 +255,7 @@ let json_of_error (error : Location.error) =
   in
   let loc = Location.loc_of_report error in
   let msg =
-    Location.print_main Format.str_formatter error;
-    String.trim (Format.flush_str_formatter ())
+    Format.asprintf "@[%a@]" Location.print_main error |> String.trim
   in
   let typ =
     match error.source with
