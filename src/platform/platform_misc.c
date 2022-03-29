@@ -3,6 +3,7 @@
 #define CAML_INTERNALS
 #include <caml/misc.h>
 #include <caml/osdeps.h>
+#include <caml/unixsupport.h>
 #endif
 
 #include <caml/mlvalues.h>
@@ -68,29 +69,59 @@ static int windows_system(const char *cmd)
 {
     PROCESS_INFORMATION p_info;
     STARTUPINFOW s_info;
-    DWORD ReturnValue;
+    HANDLE hp, p_stderr;
+    DWORD handleInfo, flags, ret, err = ERROR_SUCCESS;
 
     memset(&s_info, 0, sizeof(s_info));
     memset(&p_info, 0, sizeof(p_info));
     s_info.cb = sizeof(s_info);
+    s_info.dwFlags = STARTF_USESTDHANDLES;
 
-    char_os *utf16cmd;
-    utf16cmd = caml_stat_strdup_to_os(cmd);
-    if (CreateProcessW(NULL, utf16cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &s_info, &p_info))
-    {
+    s_info.hStdInput = INVALID_HANDLE_VALUE;
+
+    /* If needed, duplicate stderr to make sure it is inheritable */
+    p_stderr = GetStdHandle(STD_ERROR_HANDLE);
+    if (p_stderr == INVALID_HANDLE_VALUE) {
+        err = GetLastError(); goto ret;
+    }
+    if (! GetHandleInformation(p_stderr, &handleInfo)) {
+        err = GetLastError(); goto ret;
+    }
+    if (! (handleInfo & HANDLE_FLAG_INHERIT)) {
+        hp = GetCurrentProcess();
+        if (! DuplicateHandle(hp, p_stderr, hp, &(s_info.hStdError),
+                              0, TRUE, DUPLICATE_SAME_ACCESS)) {
+            err = GetLastError(); goto ret;
+        }
+    } else {
+        s_info.hStdError = p_stderr;
+    }
+
+    /* Redirect stdout to stderr */
+    s_info.hStdOutput = s_info.hStdError;
+
+    flags = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
+    WCHAR *utf16cmd = caml_stat_strdup_to_utf16(cmd);
+    if (! CreateProcessW(NULL, utf16cmd, NULL, NULL,
+                         TRUE, flags, NULL, NULL, &s_info, &p_info)) {
+        err = GetLastError();
+    }
+    caml_stat_free(utf16cmd);
+
+    /* Close the handle if we duplicated it above. */
+    if (! (handleInfo & HANDLE_FLAG_INHERIT))
+        CloseHandle(s_info.hStdError);
+
+    if (err == ERROR_SUCCESS) {
         WaitForSingleObject(p_info.hProcess, INFINITE);
-        GetExitCodeProcess(p_info.hProcess, &ReturnValue);
+        GetExitCodeProcess(p_info.hProcess, &ret);
         CloseHandle(p_info.hProcess);
         CloseHandle(p_info.hThread);
-
-        caml_stat_free(utf16cmd);
-        return ReturnValue;
+        return ret;
     }
-    else
-    {
-        caml_stat_free(utf16cmd);
-        return -1;
-    }
+ ret:
+    win32_maperr(err);
+    uerror("windows_system", Nothing);
 }
 
 value ml_merlin_system_command(value command)

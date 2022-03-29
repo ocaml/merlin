@@ -6,6 +6,7 @@ git version
       parent environement is forwarded the the child processes (#1425)
     - locate: look for original source files before looking for preprocessed
       files (#1219 by @ddickstein, fixes #894)
+    - fix handlink of ppx's under Windows (#1413)
   + test suite
     - make `merlin-wrapper` create a default `.merlin` file  only when there is
       no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
