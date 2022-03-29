@@ -30,7 +30,7 @@ open Std
 
 let version_spec =
   Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s"
-    My_config.version Sys.ocaml_version
+    Merlin_config.version Sys.ocaml_version
 
 let ocamlmerlin_args = [
   (
@@ -54,7 +54,7 @@ let ocamlmerlin_args = [
     "-vnum",
     " Print version number and exit",
     Marg.unit (fun _ ->
-        Printf.printf "%s\n" My_config.version;
+        Printf.printf "%s\n" Merlin_config.version;
         exit 0
       )
   );

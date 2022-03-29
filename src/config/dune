@@ -1,5 +1,5 @@
 (rule
- (targets my_config.ml)
+ (targets merlin_config.ml)
  (deps gen_config.ml)
  (action (with-stdout-to %{targets}
           (run %{ocaml} gen_config.ml %{ocaml_version}))))
@@ -7,4 +7,4 @@
 (library
  (name config)
  (wrapped false)
- (modules my_config))
+ (modules merlin_config))

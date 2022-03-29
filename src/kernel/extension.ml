@@ -125,7 +125,7 @@ let from ~extensions ~packages =
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default = match My_config.ocamlversion with
+let default = match Merlin_config.ocamlversion with
               | `OCaml_4_02_2 | `OCaml_4_03_0 -> [ext_nonrec]
               | _ -> []
 

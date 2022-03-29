@@ -47,10 +47,10 @@ let run = function
     1
   | "-version" :: _ ->
     Printf.printf "The Merlin toolkit version %s, for Ocaml %s\n"
-      My_config.version Sys.ocaml_version;
+      Merlin_config.version Sys.ocaml_version;
     0
   | "-vnum" :: _ ->
-    Printf.printf "%s\n" My_config.version;
+    Printf.printf "%s\n" Merlin_config.version;
     0
   | "-warn-help" :: _ ->
     Warnings.help_warnings ();
