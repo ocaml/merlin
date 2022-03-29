@@ -8,6 +8,7 @@ git version
       files (#1219 by @ddickstein, fixes #894)
     - fix handlink of ppx's under Windows (#1413)
     - handle `=` syntax in compiler flags (#1409)
+    - fix superfluous break in error reporting (#1432)
   + editor modes
     - fix an issue in Neovim where the current line jumps to the top of the
       window on repeated calls to `MerlinTypeOf` (#1433 by @ddickstein, fixes
