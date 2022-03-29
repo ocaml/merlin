@@ -312,26 +312,45 @@ end
 
 exception Cmt_cache_store of Typedtrie.t
 
+let move_to_root root cmt_infos =
+  let digest =
+    (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
+       pack. *)
+    let sourcefile_in_builddir =
+      Filename.concat
+        (cmt_infos.Cmt_format.cmt_builddir)
+        (Option.get cmt_infos.cmt_sourcefile)
+    in
+    match sourcefile_in_builddir |> String.split_on_char ~sep:'.' |> List.rev with
+    | ext :: "pp" :: rev_path ->
+      (* If the source file was a post-processed file (.pp.mli?), use the
+         regular .mli? file for locate. *)
+      let sourcefile_in_builddir =
+        (ext :: rev_path) |> List.rev |> String.concat ~sep:"."
+      in
+      (match
+         Misc.exact_file_exists
+           ~dirname:(Filename.dirname sourcefile_in_builddir)
+           ~basename:(Filename.basename sourcefile_in_builddir)
+       with
+       | true -> Digest.file sourcefile_in_builddir
+       | false -> Option.get cmt_infos.cmt_source_digest)
+    | _ -> Option.get cmt_infos.cmt_source_digest
+  in
+  File_switching.move_to ~digest root;
+;;
+
 let trie_of_cmt root =
   let open Cmt_format in
   let cached = Cmt_cache.read root in
   log ~title:"browse_cmts" "inspecting %s" root ;
   begin match cached.Cmt_cache.location_trie with
   | Cmt_cache_store _ ->
-    let digest =
-      (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
-         pack. *)
-      Option.get cached.cmt_infos.cmt_source_digest
-    in
-    File_switching.move_to ~digest root;
+    move_to_root root cached.cmt_infos;
     log ~title:"browse_cmts" "trie already cached"
   | Not_found ->
     let trie_of_nodes nodes =
-      let digest =
-        (* [None] only for packs. *)
-        Option.get cached.cmt_infos.cmt_source_digest
-      in
-      File_switching.move_to ~digest root;
+      move_to_root root cached.cmt_infos;
       let trie =
         Typedtrie.of_browses (List.map ~f:Browse_tree.of_node nodes)
       in
