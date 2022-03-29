@@ -9,6 +9,7 @@ git version
     - fix handling of ppx's under Windows (#1413)
     - handle `=` syntax in compiler flags (#1409)
     - fix superfluous break in error reporting (#1432)
+    - recognise binding operators in locate and occurrences (#1398, @mattiase)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
     - fix an issue in Neovim where the current line jumps to the top of the
