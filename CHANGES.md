@@ -1,8 +1,15 @@
 git version
 ===========
 
+  + merlin binary
+    - don't reset the environment when running merlin in single mode so that the
+      parent environement is forwarded the the child processes (#1425)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
+  + test suite
+    - make `merlin-wrapper` check that the environement variable USE_DUNE_READER
+      is not set before creating a default `.merlin` file to allow tests to use
+      dune's configuration reader. (#1425)
 
 merlin 4.4
 ==========
