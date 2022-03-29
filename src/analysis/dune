@@ -4,7 +4,8 @@
   -open Ocaml_utils
   -open Ocaml_parsing
   -open Ocaml_typing
-  -open Merlin_utils)
+  -open Merlin_utils
+  -open Merlin_kernel)
  (libraries
   config
   merlin_specific
