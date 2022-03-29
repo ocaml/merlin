@@ -4,6 +4,8 @@ git version
   + merlin binary
     - don't reset the environment when running merlin in single mode so that the
       parent environement is forwarded the the child processes (#1425)
+    - locate: look for original source files before looking for preprocessed
+      files (#1219 by @ddickstein, fixes #894)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
@@ -143,7 +145,7 @@ merlin 4.0
     - emacs: add missing mandatory argument for define-obsolete-function-alias
       (#1250, by Atharva Shukla, fixes #1234)
     - emacs: use "opam var" instead of "opam config var" (#1249, by Raja Boujbel)
-    - vim: fix CursorMoved semantics (#1213, by Daniel Dickstein)
+    - vim: fix CursorMoved semantics (#1213, by @ddickstein)
     - vim: add :MerlinLocateImpl and :MerlinLocateIntf (#1208 by Matthew Ryan)
   + test suite
     - replace mdx usage by dune's cram mechanism
