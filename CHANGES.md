@@ -12,6 +12,9 @@ git version
     - fix superfluous break in error reporting (#1432)
     - recognise binding operators in locate and occurrences (#1398, @mattiase)
   + editor modes
+    - fix an issue in Neovim where the current line jumps to the top of the
+      window on repeated calls to `MerlinTypeOf` (#1433 by @ddickstein, fixes
+      #1221)
     - add module, module type, and class imenu items for emacs (#1244, @ivg)
     - add prefix argument to force or prevent opening in a new buffer in locate
       command (#1426, @panglesd)
