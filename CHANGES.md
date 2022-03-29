@@ -10,6 +10,7 @@ git version
     - handle `=` syntax in compiler flags (#1409)
     - expose all destruct exceptions in the api (#1437)
     - fix superfluous break in error reporting (#1432)
+    - recognise binding operators in locate and occurrences (#1398, @mattiase)
   + editor modes
     - add module, module type, and class imenu items for emacs (#1244, @ivg)
     - add prefix argument to force or prevent opening in a new buffer in locate

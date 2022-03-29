@@ -776,10 +776,17 @@ let module_expr_paths { Typedtree. mod_desc } =
     [reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt]
   | _ -> []
 
+let bindop_path { bop_op_name; bop_op_path } =
+  let loc = bop_op_name in
+  let path = bop_op_path in
+  (reloc path loc, Some (Longident.Lident loc.txt))
+
 let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
   let init =
     match exp_desc with
     | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]
+    | Texp_letop {let_; ands} ->
+      bindop_path let_ :: List.map ~f:bindop_path ands
     | Texp_new (path,loc,_) -> [reloc path loc, Some loc.txt]
     | Texp_instvar (_,path,loc)  -> [reloc path loc, Some (Lident loc.txt)]
     | Texp_setinstvar (_,path,loc,_) -> [reloc path loc, Some (Lident loc.txt)]
