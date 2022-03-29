@@ -6,6 +6,7 @@
   -open Ocaml_preprocess
   -open Ocaml_typing
   -open Merlin_utils
+  -open Merlin_specific
   -open Merlin_kernel)
  (libraries
   config

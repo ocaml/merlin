@@ -1,6 +1,5 @@
 (library
   (name merlin_specific)
-  (wrapped false)
   (flags
    -open Ocaml_utils
    -open Ocaml_parsing
