@@ -1,5 +1,3 @@
-open! Result_compat (* merlin *)
-
 type ('a,'b) t
 
 type log
