@@ -128,6 +128,10 @@ a call to `merlin-occurrences'."
   "The name of the buffer storing module signatures."
   :group 'merlin :type 'string)
 
+(defcustom merlin-error-buffer-name "*merlin-errors*"
+  "The name of the buffer storing module signatures."
+  :group 'merlin :type 'string)
+
 (defcustom merlin-log-buffer-name "*merlin-log*"
   "The name of the buffer storing log messages and debug information.
 See `merlin-debug'."
@@ -230,8 +234,7 @@ The association list can contain the following optional keys:
 
 - `name': a short name for this configuration, displayed in user notifications.
 
-- `do-not-cache-config': if set, refreshes the config on every command"
-)
+- `do-not-cache-config': if set, refreshes the config on every command")
 
 (defvar-local merlin-buffer-packages nil
    "List of packages loaded in the buffer")
@@ -630,6 +633,53 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
   (merlin-switch-to name '(".mli" ".ml")))
 
 ;;;;;;;;;;;;;;;;;;
+;; ERROR BUFFER ;;
+;;;;;;;;;;;;;;;;;;
+
+(defun merlin--error-is-short (text)
+  (let ((count 0)
+        (pos   0))
+    (save-match-data
+      (while (and (<= count 8)
+                  (string-match "\n" text pos))
+        (setq pos (match-end 0))
+        (setq count (1+ count))))
+    (<= count 8)))
+
+(defvar merlin-error-buffer-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map special-mode-map)
+    (define-key map "g" nil)
+    map)
+  "Keymap for error buffer.")
+
+(defun merlin-display-in-error-buffer (text)
+  "Change content of error-buffer."
+  (let ((curr-dir default-directory))
+    (with-current-buffer (get-buffer-create merlin-error-buffer-name)
+      (read-only-mode 0)
+      (erase-buffer)
+      (insert text)
+      (goto-char (point-min))
+      (read-only-mode 1)
+      (use-local-map merlin-error-buffer-map)
+      ;; finally make sure that the error buffer directory is the same as the
+      ;; last (ml) buffer we were in.
+      ;; Indeed if people move to that buffer and start looking for a file we
+      ;; want them to be in the directory they were in when they last requested a
+      ;; type, not in the directory they were in when they first requested a
+      ;; type (for long lived emacs sessions that directory might not even exist
+      ;; anymore).
+      (setq default-directory curr-dir))))
+
+(defun merlin--error-display (err)
+  "Display the error ERR."
+  (if (not err)
+      (message "<no information>")
+    (merlin-display-in-error-buffer err)
+    (message "%s" err)))
+
+;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
 ;;;;;;;;;;;;;;;;;;
 
@@ -669,7 +719,7 @@ If there is no error, do nothing."
                          (= (point) (cdr merlin--last-edit)))))
         (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
         (setq err (merlin--error-at-position (point) errors))
-        (when err (message "%s" (cdr (assoc 'message err))))))))
+        (when err (merlin--error-display (cdr (assoc 'message err))))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set.
@@ -1938,8 +1988,7 @@ Empty string defaults to jumping to all these."
       '(menu-item "Version" merlin-version
                   :help "Print version of the merlin binary."))
     (define-key merlin-map [menu-bar merlin] (cons "Merlin" merlin-menu-map))
-    merlin-map
-    ))
+    merlin-map))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."

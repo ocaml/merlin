@@ -19,6 +19,8 @@ git version
     - add prefix argument to force or prevent opening in a new buffer in locate
       command (#1426, @panglesd)
     - add type-on-hover functionality for vim (#1439, @nilsbecker)
+    - add a dedicated buffer `*merlin-errors*` containing the last viewed error
+      (#1414, @panglesd)
   + test suite
     - cover locate calls on module aliases with and without dune
     - Add a test expliciting the interaction between locate and Dune's generated
