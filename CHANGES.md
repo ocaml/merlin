@@ -11,6 +11,7 @@ git version
     - expose all destruct exceptions in the api (#1437)
     - fix superfluous break in error reporting (#1432)
     - recognise binding operators in locate and occurrences (#1398, @mattiase)
+    - remove dependency on Result (#1441, @kit-ty-kate)
   + editor modes
     - fix an issue in Neovim where the current line jumps to the top of the
       window on repeated calls to `MerlinTypeOf` (#1433 by @ddickstein, fixes
