@@ -1,5 +1,4 @@
 (library
   (name ocaml_utils)
   (libraries config merlin_utils)
-  (flags (-open Merlin_utils))
-  (modules_without_implementation result_compat))
+  (flags (-open Merlin_utils)))
