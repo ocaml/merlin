@@ -18,6 +18,7 @@ git version
     - add module, module type, and class imenu items for emacs (#1244, @ivg)
     - add prefix argument to force or prevent opening in a new buffer in locate
       command (#1426, @panglesd)
+    - add type-on-hover functionality for vim (#1439, @nilsbecker)
   + test suite
     - make `merlin-wrapper` create a default `.merlin` file  only when there is
       no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
