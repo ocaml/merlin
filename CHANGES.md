@@ -19,6 +19,8 @@ git version
     - add prefix argument to force or prevent opening in a new buffer in locate
       command (#1426, @panglesd)
     - add type-on-hover functionality for vim (#1439, @nilsbecker)
+    - add a dedicated buffer `*merlin-errors*` containing the last viewed error
+      (#1414, @panglesd)
   + test suite
     - make `merlin-wrapper` create a default `.merlin` file  only when there is
       no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
