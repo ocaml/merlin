@@ -37,22 +37,15 @@ jobs:
           - macos-latest
           - ubuntu-latest
           - windows-latest
-        ocaml-version:
-          - 4.13.0
+        ocaml-compiler:
+          - 4.13.x
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          # A directory to store and save the cache
-          path: ~/.opam
-          # An explicit key for restoring and saving the cache
-          key: ${{ matrix.os }}-${{ matrix.ocaml-compiler }}-${{ hashFiles('*.opam') }}-build
+      - uses: actions/checkout@v3
 
       - name: Set up OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
