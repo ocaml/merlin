@@ -234,8 +234,7 @@ The association list can contain the following optional keys:
 
 - `name': a short name for this configuration, displayed in user notifications.
 
-- `do-not-cache-config': if set, refreshes the config on every command"
-)
+- `do-not-cache-config': if set, refreshes the config on every command")
 
 (defvar-local merlin-buffer-packages nil
    "List of packages loaded in the buffer")
@@ -657,8 +656,8 @@ return (LOC1 . LOC2)."
       (goto-char (point-min))
       (read-only-mode 1)
       (use-local-map merlin-error-buffer-map)
-      ;; finally make sure that the error buffer directory is the same as the last
-      ;; (ml) buffer we were in.
+      ;; finally make sure that the error buffer directory is the same as the
+      ;; last (ml) buffer we were in.
       ;; Indeed if people move to that buffer and start looking for a file we
       ;; want them to be in the directory they were in when they last requested a
       ;; type, not in the directory they were in when they first requested a
@@ -1981,8 +1980,7 @@ Empty string defaults to jumping to all these."
       '(menu-item "Version" merlin-version
                   :help "Print version of the merlin binary."))
     (define-key merlin-map [menu-bar merlin] (cons "Merlin" merlin-menu-map))
-    merlin-map
-    ))
+    merlin-map))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
