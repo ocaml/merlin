@@ -18,6 +18,7 @@ git version
     - add module, module type, and class imenu items for emacs (#1244, @ivg)
     - add prefix argument to force or prevent opening in a new buffer in locate
       command (#1426, @panglesd)
+    - add type-on-hover functionality for vim (#1439, @nilsbecker)
     - add a dedicated buffer `*merlin-errors*` containing the last viewed error
       (#1414, @panglesd)
   + test suite
