@@ -33,7 +33,8 @@ trigger useless merlin calls.")
     (if ret (message "%s%s" (car ret) (cdr ret)))))
 
 (defun merlin-cap--annotate (candidate)
-  "Retrieve the annotation for candidate CANDIDATE in `merlin-completion-annotate-table'."
+  "Retrieve the annotation for candidate CANDIDATE in
+`merlin-completion-annotate-table'."
   (cdr (assoc candidate merlin-cap--table)))
 
 (defun merlin-cap--table (string pred action)
