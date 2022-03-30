@@ -301,14 +301,16 @@ The association list can contain the following optional keys:
 ;;;;;;;;;;;
 
 (defun merlin--completion-map-with-space (&optional map)
-  "Return a map suitable for `minibuffer-local-completion-map' but not overriding SPC binding"
+  "Return a map suitable for `minibuffer-local-completion-map'
+but not overriding SPC binding."
   (unless map (setq map minibuffer-local-completion-map ))
   (setq map (make-composed-keymap nil map))
   (define-key map (kbd "SPC") nil)
   map)
 
 (defun merlin-debug (message &rest args)
-  "Output S to `merlin-log-buffer-name' if `merlin-debug' is non-nil in the current buffer."
+  "Output S to `merlin-log-buffer-name' if `merlin-debug' is non-nil
+in the current buffer."
   (when merlin-debug
     (with-current-buffer (get-buffer-create merlin-log-buffer-name)
       (goto-char (point-max))
@@ -339,7 +341,8 @@ The association list can contain the following optional keys:
              (mapconcat 'identity buf "\n"))))
 
 (defun merlin-buffer-substring (start end)
-  "Return content of buffer between two points or empty string if points are not valid"
+  "Return content of buffer between two points or empty string
+if points are not valid."
   (if (< start end) (buffer-substring-no-properties start end) ""))
 
 (defsubst merlin-lookup (key list &optional default)
@@ -414,7 +417,8 @@ containing fields file, line and col."
 
 (defun merlin--goto-point (data)
   "Go to the point indicated by DATA which must be an assoc list with fields
-line and col. If narrowing is in effect, widen if DATA is outside the visible region."
+line and col. If narrowing is in effect, widen if DATA is outside the visible
+region."
   (let ((target-pos (merlin--point-of-pos data)))
     ;; If our target position is outside the narrowed region, we'll
     ;; have to widen.
@@ -494,7 +498,8 @@ return (LOC1 . LOC2)."
       result)))
 
 (defun merlin--call-merlin (command &rest args)
-  "Invoke merlin binary with the proper setup to execute the command passed as argument (lookup appropriate binary, setup logging, pass global settings)"
+  "Invoke merlin binary with the proper setup to execute the command passed as
+argument (lookup appropriate binary, setup logging, pass global settings)"
   ;; Really start process
   (let ((binary      (merlin-command))
         ;; (flags       (merlin-lookup 'flags merlin-buffer-configuration))
@@ -611,13 +616,15 @@ return (LOC1 . LOC2)."
     (when file (merlin-find-file file))))
 
 (defun merlin-switch-to-ml (name)
-  "Switch to the ML file corresponding to the module NAME (fallback to MLI if no ML is provided)."
+  "Switch to the ML file corresponding to the module NAME
+(fallback to MLI if no ML is provided)."
   (interactive (list (ido-completing-read "Module: "
                                           (merlin-switch-list-by-ext '(".ml" ".mli")))))
   (merlin-switch-to name '(".ml" ".mli")))
 
 (defun merlin-switch-to-mli (name)
-  "Switch to the MLI file corresponding to the module NAME (fallback to ML if no MLI is provided)."
+  "Switch to the MLI file corresponding to the module NAME
+(fallback to ML if no MLI is provided)."
   (interactive (list (ido-completing-read "Module: "
                                           (merlin-switch-list-by-ext '(".mli" ".ml")))))
   (merlin-switch-to name '(".mli" ".ml")))
@@ -875,7 +882,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
           (message "%sNo errors" prefix))))))
 
 (defun merlin-error-after-save ()
-  "Determine whether the buffer should be checked for errors depending on the value of merlin-error-after-save setting."
+  "Determine whether the buffer should be checked for errors depending on
+the value of merlin-error-after-save setting."
   (cond
     ((equal merlin-error-after-save t) t)
     ((equal merlin-error-after-save nil) nil)
