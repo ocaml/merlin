@@ -270,6 +270,16 @@ function! merlin#TypeOfSel()
   call merlin#TypeOf(s:get_visual_selection())
 endfunction
 
+function! merlin#TypeAtBalloon()
+	MerlinPy vim.command("let l:type = " + merlin.vim_type_enclosing_at_mouse())
+	return get(l:type, 'type', '')
+endfunction
+
+function! merlin#ShowTypeAtBalloon()
+	echo merlin#TypeAtBalloon()
+	return ''
+endfunction
+
 function! merlin#PolaritySearch(debug,query)
   let s:search_result = []
   MerlinPy merlin.vim_polarity_search(vim.eval("a:query"), "s:search_result")
