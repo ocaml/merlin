@@ -40,7 +40,6 @@ let log () =
   ref Nil
 
 let force_logged log f x =
-  let open! Result_compat in (* merlin *)
   match !x with
   | Done x -> x
   | Raise e -> raise e
