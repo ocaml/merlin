@@ -16,7 +16,8 @@
     }
 
     #editor {
-      width: 30%;
+      min-width: 30rem;
+      width: 50%;
       height: 500px;
       border: 1px solid #ddd;
       border-radius: 0.5rem;
@@ -25,6 +26,14 @@
       margin-top: 2rem;
       background-color: white;
     }
+
+    @media (max-width: 1200px) {
+      #editor {
+        min-width: none;
+        width: 90%;
+      }
+    }
+
 
     .cm-editor {
       height: 100%;
