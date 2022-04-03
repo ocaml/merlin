@@ -1,0 +1,28 @@
+(executable
+ (name merlin_worker)
+ (promote (until-clean))
+ (modes js)
+ ; (js_of_ocaml
+ ; (flags (:standard --target-env=browser)))
+ ; (flags (:standard --source-map-inline)))
+ (libraries
+  static_files
+  merlin_kernel
+  merlin_utils
+  query_protocol
+  query_commands
+  ocaml_parsing
+  brr
+  js_of_ocaml))
+
+ (rule
+  (deps
+   merlin_worker.bc.js
+   client/merlin_client.bc.js
+   index.jsx
+   package.json
+   yarn.lock
+   (source_tree node_modules))
+  (targets index.js)
+  (mode (promote (until-clean)))
+  (action (run yarn build)))

@@ -1,0 +1,15 @@
+{
+  "name": "merlin-js",
+  "version": "0.0.1",
+  "description": "A version of Merlin for the web",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@codemirror/basic-setup": "^0.19.3",
+    "@codemirror/legacy-modes": "^0.19.1",
+    "esbuild": "^0.14.29"
+  },
+  "scripts": {
+    "build": "./node_modules/esbuild/bin/esbuild index.jsx --bundle --outfile=index.js"
+  }
+}

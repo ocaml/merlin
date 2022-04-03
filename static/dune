@@ -1,0 +1,13 @@
+(data_only_dirs stdlib)
+
+(library
+ (name static_files)
+ (modules static_files)
+ (preprocess (pps ppx_blob))
+ (preprocessor_deps
+  (glob_files stdlib/*.cmi)))
+
+(rule
+ (target static_files.ml)
+ (deps (glob_files stdlib/*.cmi))
+ (action (run ocaml %{dep:gen_static.ml})))

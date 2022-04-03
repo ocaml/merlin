@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <script type="text/javascript" defer src="client/merlin_client.bc.js"></script>
+  <script type="text/javascript" defer src="index.js"></script>
+  <title>Merlin the web</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+    body {
+      background-color: #4c4956;
+      font-family: 'Fira Code', monospace
+    }
+
+    #editor {
+      width: 30%;
+      height: 500px;
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      margin: auto;
+      margin-top: 2rem;
+      background-color: white;
+    }
+
+    .cm-editor {
+      height: 100%;
+    }
+
+    .cm-tooltip,
+    .cm-completionLabel,
+    .cm-completionMatchedText,
+    .cm-completionDetail {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+    }
+
+    .cm-editor .cm-tooltip {
+      border-radius: 0.25rem;
+      overflow: hidden;
+    }
+
+    .cm-editor .cm-tooltip-hover {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
+
+    .cm-editor .cm-content {
+      font-family: 'Fira Code', monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <noscript>Sorry, you need to enable JavaScript to see this page.</noscript>
+  <div id="editor"></div>
+</body>
+
+</html>
