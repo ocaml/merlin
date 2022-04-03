@@ -27,7 +27,7 @@ let make_worker url =
   worker
 
 (* todo share that with worker *)
-type action = Completion | Type_enclosing
+type action = Completion | Type_enclosing | Errors
 
 let query ~action worker source cursor_offset ((*todo: other queries*)) =
   let open Fut.Syntax in
@@ -39,20 +39,26 @@ let query ~action worker source cursor_offset ((*todo: other queries*)) =
   (* El.(set_prop p_innerHTML (Jstr.of_string data) results_div); *)
   Ok data
 
+let query_to_js ~action worker source cursor_offset =
+  let source = Jv.to_string source in
+  Fut.to_promise ~ok:Fun.id @@
+    query ~action worker source cursor_offset ()
+
 let make_worker () = make_worker "merlin_worker.bc.js"
 let () = Jv.set Jv.global "make_worker" (Jv.repr make_worker)
 
 let query_completion worker source cursor_offset =
-  let source = Jv.to_string source in
-  Fut.to_promise ~ok:Fun.id @@
-    query ~action:Completion worker source cursor_offset ()
+  query_to_js ~action:Completion worker source cursor_offset
 
 let query_type_enclosing worker source cursor_offset =
-  let source = Jv.to_string source in
-  Fut.to_promise ~ok:Fun.id @@
-    query ~action:Type_enclosing worker source cursor_offset ()
+  query_to_js ~action:Type_enclosing worker source cursor_offset
+
+let query_errors worker source cursor_offset =
+  query_to_js ~action:Errors worker source cursor_offset
 
 let () = Jv.set Jv.global "query_worker_completion" @@
   Jv.repr query_completion
 let () = Jv.set Jv.global "query_worker_type_enclosing" @@
   Jv.repr query_type_enclosing
+  let () = Jv.set Jv.global "query_worker_errors" @@
+  Jv.repr query_errors

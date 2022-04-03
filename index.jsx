@@ -1,6 +1,7 @@
 import { EditorState, EditorView, basicSetup } from "@codemirror/basic-setup"
 import { autocompletion, completeFromList, CompletionContext } from "@codemirror/autocomplete"
-import {hoverTooltip} from "@codemirror/tooltip"
+import { hoverTooltip } from "@codemirror/tooltip"
+import { linter, lintGutter } from "@codemirror/lint"
 import { StreamLanguage } from "@codemirror/stream-parser"
 import { oCaml } from "@codemirror/legacy-modes/mode/mllike"
 
@@ -29,8 +30,9 @@ function merlin_prefix_completion(context /*: CompletionContext */) {
   })
 }
 
-const wordHover = hoverTooltip((view, pos, side) => {
+const type_on_hover = hoverTooltip((view, pos, side) => {
   let fulltext = view.state.doc.toJSON().join(view.state.lineBreak)
+  console.log (query_worker_errors(merlin_worker, fulltext, pos))
   let result =
     query_worker_type_enclosing(merlin_worker, fulltext, pos)
   return result.then(enclosings => {
@@ -46,6 +48,21 @@ const wordHover = hoverTooltip((view, pos, side) => {
       }
     }
   })
+})
+
+const errors = linter(view => {
+  let fulltext = view.state.doc.toJSON().join(view.state.lineBreak)
+  let result =
+    query_worker_errors(merlin_worker, fulltext, 0)
+  return result.then(result => result.map(error => {
+      return {
+        from: view.state.doc.line(error.start.line).from + error.start.col,
+        to: view.state.doc.line(error.end.line).from + error.end.col,
+        message: error.message,
+        severity: "error",
+        source: error.type
+      }
+    }))
 })
 
 let ocaml = StreamLanguage.define(oCaml)
@@ -66,7 +83,9 @@ new EditorView({
   state: EditorState.create({ extensions: [
     basicSetup,
     ocaml,
-    wordHover,
+    type_on_hover,
+    errors,
+    // lintGutter(),
     autocompletion({override: [
       merlin_prefix_completion,
       completeFromList(keywords)]})] }),

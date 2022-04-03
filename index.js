@@ -16284,6 +16284,11 @@
       baseTheme9
     ]));
   }
+  function setDiagnostics(state, diagnostics) {
+    return {
+      effects: maybeEnableLint(state, [setDiagnosticsEffect.of(diagnostics)])
+    };
+  }
   var setDiagnosticsEffect = /* @__PURE__ */ StateEffect.define();
   var togglePanel2 = /* @__PURE__ */ StateEffect.define();
   var movePanelSelection = /* @__PURE__ */ StateEffect.define();
@@ -16374,6 +16379,62 @@
     { key: "Mod-Shift-m", run: openLintPanel },
     { key: "F8", run: nextDiagnostic }
   ];
+  var lintPlugin = /* @__PURE__ */ ViewPlugin.fromClass(class {
+    constructor(view) {
+      this.view = view;
+      this.timeout = -1;
+      this.set = true;
+      let { delay } = view.state.facet(lintSource);
+      this.lintTime = Date.now() + delay;
+      this.run = this.run.bind(this);
+      this.timeout = setTimeout(this.run, delay);
+    }
+    run() {
+      let now = Date.now();
+      if (now < this.lintTime - 10) {
+        setTimeout(this.run, this.lintTime - now);
+      } else {
+        this.set = false;
+        let { state } = this.view, { sources } = state.facet(lintSource);
+        Promise.all(sources.map((source) => Promise.resolve(source(this.view)))).then((annotations) => {
+          let all = annotations.reduce((a, b) => a.concat(b));
+          if (this.view.state.doc == state.doc)
+            this.view.dispatch(setDiagnostics(this.view.state, all));
+        }, (error) => {
+          logException(this.view.state, error);
+        });
+      }
+    }
+    update(update) {
+      let source = update.state.facet(lintSource);
+      if (update.docChanged || source != update.startState.facet(lintSource)) {
+        this.lintTime = Date.now() + source.delay;
+        if (!this.set) {
+          this.set = true;
+          this.timeout = setTimeout(this.run, source.delay);
+        }
+      }
+    }
+    force() {
+      if (this.set) {
+        this.lintTime = Date.now();
+        this.run();
+      }
+    }
+    destroy() {
+      clearTimeout(this.timeout);
+    }
+  });
+  var lintSource = /* @__PURE__ */ Facet.define({
+    combine(input) {
+      return { sources: input.map((i) => i.source), delay: input.length ? Math.max(...input.map((i) => i.delay)) : 750 };
+    },
+    enables: lintPlugin
+  });
+  function linter(source, config2 = {}) {
+    var _a2;
+    return lintSource.of({ source, delay: (_a2 = config2.delay) !== null && _a2 !== void 0 ? _a2 : 750 });
+  }
   function assignKeys(actions) {
     let assigned = [];
     if (actions)
@@ -17508,8 +17569,9 @@
       };
     });
   }
-  var wordHover = hoverTooltip((view, pos, side) => {
+  var type_on_hover = hoverTooltip((view, pos, side) => {
     let fulltext = view.state.doc.toJSON().join(view.state.lineBreak);
+    console.log(query_worker_errors(merlin_worker, fulltext, pos));
     let result = query_worker_type_enclosing(merlin_worker, fulltext, pos);
     return result.then((enclosings) => {
       let first_enclosing = enclosings.at(0);
@@ -17524,6 +17586,19 @@
         }
       };
     });
+  });
+  var errors = linter((view) => {
+    let fulltext = view.state.doc.toJSON().join(view.state.lineBreak);
+    let result = query_worker_errors(merlin_worker, fulltext, 0);
+    return result.then((result2) => result2.map((error) => {
+      return {
+        from: view.state.doc.line(error.start.line).from + error.start.col,
+        to: view.state.doc.line(error.end.line).from + error.end.col,
+        message: error.message,
+        severity: "error",
+        source: error.type
+      };
+    }));
   });
   var ocaml = StreamLanguage.define(oCaml);
   var keywords = [
@@ -17580,7 +17655,8 @@
     state: EditorState.create({ extensions: [
       basicSetup,
       ocaml,
-      wordHover,
+      type_on_hover,
+      errors,
       autocompletion({ override: [
         merlin_prefix_completion,
         completeFromList(keywords)

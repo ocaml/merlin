@@ -26,10 +26,6 @@ let dispatch source query  =
     |> Query_json.json_of_response query
     |> Json.to_string
 
-let type_enclosing source position =
-  let query = Query_protocol.Type_enclosing (None, position, None) in
-  dispatch source query
-
 
 module Completion = struct
   (* Prefixing code from ocaml-lsp-server *)
@@ -144,7 +140,7 @@ let dump_config () =
 
 
 (* todo share that with worker *)
-type action = Completion | Type_enclosing
+type action = Completion | Type_enclosing | Errors
 [@@ocaml.warning "-37"]
 
 let on_message e =
@@ -163,7 +159,18 @@ let on_message e =
           |> Stdlib.Result.get_ok in
         Jv.obj [| ("from", Jv.of_int from); ("to", Jv.of_int to_); ("entries", Jv.get entries "entries") |] end
     | Type_enclosing ->
-      let result_string = type_enclosing source position in
+      let query = Query_protocol.Type_enclosing (None, position, None) in
+      let result_string = dispatch source query in
+      Brr.Json.decode @@ Jstr.of_string result_string
+          |> Stdlib.Result.get_ok
+    | Errors ->
+      let query = Query_protocol.Errors {
+          lexing = true;
+          parsing = true;
+          typing = true;
+        }
+      in
+      let result_string = dispatch source query in
       Brr.Json.decode @@ Jstr.of_string result_string
           |> Stdlib.Result.get_ok
   in
