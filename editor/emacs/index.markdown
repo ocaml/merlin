@@ -72,11 +72,9 @@ The main command, `M-x merlin-destruct` <kbd>C-d</kbd>, behaves differently
 depending on the cursor's context.
 
 When called on:
-- an expression it replaces it by a pattern matching over it's constructors
-
-- a wildcard pattern in a matching it will refine it if possible
-
-- a pattern of a non-exhaustive matching it will make the pattern matching
+- an expression: it replaces it by a pattern matching over it's constructors
+- a wildcard pattern: it will refine it if possible
+- a pattern of a non-exhaustive matching: it will make the pattern matching
   exhaustive by adding missing cases
 
 <video autoplay loop width="100%">
