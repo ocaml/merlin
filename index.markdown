@@ -13,19 +13,20 @@ Completion, Typing, Navigation, Refactoring, Code&nbsp;generation
 
 # Installation for Emacs and VIM users
 
-- You need a working [opam](https://opam.ocaml.org/) (the OCaml package manager)
-installation.
+First of all, you need a working [opam](https://opam.ocaml.org/) (the OCaml
+package manager) installation. Follow the instructions
+[here](https://opam.ocaml.org/doc/Install.html).
 
-- You can then install Merlin running the following commands in a terminal:
+Then you can install Merlin by running the following commands:
 ```shell
 opam install tuareg       # For Emacs only
 opam install merlin       # Install merlin and it's dependencies
-opam user-setup install   # Basic Emacs and VIM configuration
+opam user-setup install   # (optional) Basic Emacs and VIM configuration
 ```
 [opam-user-setup](https://github.com/OCamlPro/opam-user-setup) takes care of
 configuring Emacs and Vim to make best use of your current setup.
 
-- Merlin works best with [Dune](https://github.com/ocaml/dune). Just run `dune
+Merlin works best with [Dune](https://github.com/ocaml/dune). Just run `dune
 build` once and Merlin will find its configuration automatically. You
 can now start editing OCaml code with rich IDE-like features.
 
