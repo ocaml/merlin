@@ -35,21 +35,20 @@ For advanced form of completion see [Advanced features](#advanced-features).
 `M-x merlin-type-enclosing` <kbd>C-c C-t</kbd> (<kbd>C-↑</kbd> <kbd>C-↓</kbd>)
 
 Gets the type of ident under the cursor. It will highlight the ident and display
-its type. You can then call <kbd>C-↑</kbd> (and <kbd>C-↓</kbd>) to
-climb the typed tree and see type of bigger expressions surrounding the cursor.
+its type. You can then call <kbd>C-↑</kbd> (and <kbd>C-↓</kbd>) to climb the
+typed-tree and display the type of bigger expressions surrounding the cursor.
 
 ## Locate an identifier
 
 - `M-x merlin-locate` <kbd>C-c C-l</kbd> \
-Locates the identifier under the cursor
+Locates the identifier under the cursor.
 
 - `M-x merlin-locate-ident` \
-Asks for an identifier and locates it
+Asks for an identifier and locates it.
 
 - You can choose if you want locate to jump the the definition or the
   declaration  of identifiers by setting the `merlin-locate-preference` variable
   with `ml` or `mli
-
 
 ## Source browsing
 
@@ -58,10 +57,11 @@ Asks for an identifier and locates it
 Navigates between phrases (toplevel definitions) of your buffer.
 
 - `M-x merlin-switch-to-ml` and `M-x merlin-switch-to-mli` \
-Prompts you for a (toplevel) module name, and will then open the associated ml(i) file.
+Prompts you for a (toplevel) module name, and will then open the associated
+ml(i) file.
 
 - `M-x merlin-jump fun / let / module / match` \
-Jump to the begining of the closest `fun` /`let` / `module` or `match`parent.
+Jumps to the begining of the closest `fun` /`let` / `module` or `match` parent.
 
 ## Case analysis (destruct)
 
@@ -86,12 +86,12 @@ When called on:
 ## Expression construction
 
 Merlin provides commands to browse and fill typed holes (`_`). Such holes
-sometimes appear in the result of other commands like `destruct` and can also
-also be inserted manually in the source code to get access to code generation.
+sometimes appear in the result of other commands like `destruct` and can also be
+inserted manually in the source.
 
 - `M-x merlin-construct` \
-Provides valid type-based constructions when the cursor is on a typed hole (`_`) that
-could fill this hole. Can be used in alternation with `destruct`.
+Provides valid type-based constructions when the cursor is on a typed hole (`_`)
+that could fill this hole. Can be used in alternation with `destruct`.
 
 - `M-x merlin-next-hole` and `M-x merlin-previous-hole` \
 Navigates to the next or previous typed hole (`_`) in the buffer.
@@ -113,7 +113,7 @@ Toggles the viewing of errors in the buffer.
 ### Auto-complete
 
 By default, if auto-complete is installed, merlin will only register a source
-named `merlin-ac-source` and do nothing about it. If you issue:
+named `merlin-ac-source` and do nothing about it. If you add to your config:
 
 ```
 (setq merlin-ac-setup 'easy)
@@ -126,7 +126,7 @@ If you have not configured auto-complete, see [its documentation](https://github
 ### Company mode
 
 To use the [company mode](http://company-mode.github.io/) plugins, you just have
-to issue:
+to add:
 
 ```
 ; Make company aware of merlin

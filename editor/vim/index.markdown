@@ -7,7 +7,8 @@ toc: true
 ---
 # vim reference
 
-The minimum vim configuration to enable merlin when using opam is:
+If you did not use `opam user setup` but still have an opam-based version of
+Merlin the minimum vim configuration to enable merlin is:
 
 ```viml
 syntax on
@@ -25,51 +26,51 @@ enable "advanced" features of viM.
 
 <kbd>&lt;C-x&gt; &lt;C-o&gt;</kbd>
 
-Trigger the standard vim _omnicompletion_. Given a prefix it will suggest all
-the elements of the current environment matching the given prefix and display
-their type.
+Triggers the standard vim _omnicompletion_. It will suggest all the elements of
+the current environment matching the given prefix and display their type.
 
 ![vim completion](complete.png)
 
-See [Advanced features](#advanced-features) for more plugin integration.
+See [Advanced features](#advanced-features) for integration with other plugins.
 
 ## Type of an expression
 
 - `:MerlinTypeOf` <kbd>&lt;Localleader&gt; t</kbd> (see `:h localleader`) \
-Display the type in the command line, and highlight the considered expression.
+Highlights the considered expression and displays it's type.
 
 - `:MerlinGrowEnclosing` <kbd>&lt;Localleader&gt; n</kbd> and
 `:MerlinShrinkEnclosing` <kbd>&lt;Localleader&gt; p</kbd>\
-Grow or shrink the expression you want to type.
+Climb the typed-tree and display the type of bigger expressions surrounding the
+cursor.
 
 - `:MerlinTypeOf <expr>` \
-Display the type of the expression given in argument.
+Displays the type of the expression given in argument.
 
 ## Locate an identifier
 
 - `:MerlinLocate` \
-Jump to the definition of the identifier under the cursor.
+Jumps to the definition of the identifier under the cursor.
 
 - `:MerlinLocate <expr>` \
-Jump to the definition of the given identifier.
+Jumps to the definition of the given identifier.
 
 
 ## Source browsing
 
 - `:ML <module_name>` and `:MLI <module_name>` \
-Open the corresponding file.
+Opens the corresponding file.
 
 - `:MerlinJump fun` \
-Jump to the begining of the current function.
+Jumps to the begining of the current function.
 
 - `:MerlinJump let` \
-Jump to the begining of the current `let`.
+Jumps to the begining of the current `let`.
 
 - `:MerlinJump module` \
-Jump to the begining of the current `module`.
+Jumps to the begining of the current `module`.
 
 - `:MerlinJump match` \
-Jump to the begining of the current `match`.
+Jumps to the begining of the current `match`.
 
 ## Case analysis (destruct)
 
@@ -90,8 +91,8 @@ When called on:
 ## Expression construction
 
 Merlin provides commands to browse and fill typed holes (`_`). Such holes
-sometimes appear in the result of other commands like `destruct` and can also
-also be inserted manually in the source code to get access to code generation.
+sometimes appear in the result of other commands like `destruct` and can also be
+inserted manually in the source.
 
 - `:MerlinConstruct` \
 Provides valid type-based constructions when the cursor is on a typed hole (`_`) that
