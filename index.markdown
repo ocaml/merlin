@@ -6,9 +6,9 @@ layout: main
 ---
 
 <div class="hero">
-Completion, type information, code navigation, code refactoring, type-based
-code generation...<br/>Merlin is an editor service
-that provides advanced IDE features for OCaml.
+Completion, Typing, Navigation, Refactoring, Code&nbsp;generation
+<br/>
+<span class="hero-subtitle">Merlin is an editor service that provides advanced IDE features for OCaml.</span>
 </div>
 
 # Installation for Emacs and VIM users
@@ -54,11 +54,11 @@ Learn about all Merlin's commands in the dedicated Emacs and VIM pages:
 
 # Merlin for Visual Studio Code
 
-When using with Visual Studio Code Merlin is hidden behind another frontend
-named OCaml LSP that relies on the Language Server Protocol. You will need the
+When using Visual Studio Code, Merlin is hidden behind another frontend named
+OCaml LSP that implements on the Language Server Protocol. You will need the
 [OCaml
 Platform](https://marketplace.visualstudio.com/items?itemName=ocamllabs.ocaml-platform)
 vscode extension and the [ocaml-lsp-server](https://github.com/ocaml/ocaml-lsp)
 opam package to get started. Instruction for installing both of these can be
 found in the [extension's
-readme](https://github.com/ocamllabs/vscode-ocaml-platform#readme.
+readme](https://github.com/ocamllabs/vscode-ocaml-platform#readme).
