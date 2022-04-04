@@ -7,8 +7,8 @@ layout: main
 
 <div class="hero">
 Completion, type information, code navigation, code refactoring, type-based
-code generation... Merlin is an editor service
-that provides advanced IDE features for OCaml with bindings to Emacs, VIM and Visual Studio Code.
+code generation...<br/>Merlin is an editor service
+that provides advanced IDE features for OCaml.
 </div>
 
 # Installation for Emacs and VIM users
@@ -29,13 +29,13 @@ configuring Emacs and Vim to make best use of your current setup.
 
 Merlin works best with [Dune](https://github.com/ocaml/dune). Merlin will work
 out-of-the-box with any project built with Dune. Just run `dune build` once and
-Merlin will find its configuration automatically.
+Merlin will find its configuration automatically. That's it, you can now start
+editing OCaml code with rich IDE like features !
 
-When using other build systems manual project configuration is required. More
-details can be found
+When using other build systems manual project configuration is required. The
+syntax of the configuration files is described here
 [here](https://github.com/ocaml/merlin/wiki/Project-configuration).
 
-That's it, you can now start editing OCaml code with rich IDE like features !
 
 If you have an unusual setup and need instructions for building and configuring
 Merlin manually you should give a look to the github
