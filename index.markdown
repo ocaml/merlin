@@ -19,12 +19,10 @@ package manager) installation. Follow the instructions
 
 Then you can install Merlin by running the following commands:
 ```shell
-opam install tuareg       # For Emacs only
-opam install merlin       # Install merlin and it's dependencies
-opam user-setup install   # (optional) Basic Emacs and VIM configuration
+opam install tuareg     # For Emacs only
+opam install merlin     # Install merlin and it's dependencies
+opam user-setup install # (optional) Emacs and VIM configuration
 ```
-[opam-user-setup](https://github.com/OCamlPro/opam-user-setup) takes care of
-configuring Emacs and Vim to make best use of your current setup.
 
 Merlin works best with [Dune](https://github.com/ocaml/dune). Just run `dune
 build` once and Merlin will find its configuration automatically. You
