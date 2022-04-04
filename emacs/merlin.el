@@ -636,16 +636,6 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
 ;; ERROR BUFFER ;;
 ;;;;;;;;;;;;;;;;;;
 
-(defun merlin--error-is-short (text)
-  (let ((count 0)
-        (pos   0))
-    (save-match-data
-      (while (and (<= count 8)
-                  (string-match "\n" text pos))
-        (setq pos (match-end 0))
-        (setq count (1+ count))))
-    (<= count 8)))
-
 (defvar merlin-error-buffer-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map special-mode-map)
@@ -1462,9 +1452,9 @@ strictly within, or nil if there is no such element."
       (if (= (length results) 1)
         (insert-choice 0 0 (car results))
         (with-output-to-temp-buffer "*Constructions*"
-          (progn 
+          (progn
             (with-current-buffer "*Constructions*"
-              (setq-local 
+              (setq-local
                 completion-list-insert-choice-function
                 #'insert-choice))
             (display-completion-list results)))))))
@@ -1472,7 +1462,7 @@ strictly within, or nil if there is no such element."
 (defun merlin--construct-point (point)
   "Execute a construct on POINT"
   (progn
-    (ignore point) ; Without this Emacs bytecode compiler complains about an    
+    (ignore point) ; Without this Emacs bytecode compiler complains about an
                    ; unused variable. This may be a bug in the compiler
     (let ((result (merlin-call "construct"
                               "-position" (merlin-unmake-point (point)))))
