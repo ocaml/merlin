@@ -2,6 +2,8 @@ git version
 ===========
 
   + merlin binary
+    - don't reset the environment when running merlin in single mode so that the
+      parent environement is forwarded the the child processes (#1425)
     - filter dups in source paths (#1218)
     - improve load path performance (#1323)
     - fix handlink of ppx's under Windows (#1413)
@@ -23,6 +25,8 @@ git version
     - add a dedicated buffer `*merlin-errors*` containing the last viewed error
       (#1414, @panglesd)
   + test suite
+    - make `merlin-wrapper` create a default `.merlin` file  only when there is
+      no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
     - cover locate calls on module aliases with and without dune
     - Add a test expliciting the interaction between locate and Dune's generated
       source files (#1444)
@@ -46,14 +50,10 @@ Mon Jul 26 11:12:21 PM CET 2021
     - fix handling of record field expressions (#1375)
     - allow -pp to return an AST (#1394)
     - fix merlin crashing due to short-paths (#1334, fixes #1322)
-    - don't reset the environment when running merlin in single mode so that the
-      parent environement is forwarded the the child processes (#1425)
   + editor modes
     - update quick setup instructions for emacs (#1380, @ScriptDevil)
   + test suite
     - improve record field destruction testing (#1375)
-    - make `merlin-wrapper` create a default `.merlin` file  only when there is
-      no `dune-project` to let tests use `dune ocaml-merlin` reader. (#1425)
 
 merlin 4.3.1
 ============
