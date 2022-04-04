@@ -126,7 +126,7 @@ If you have not configured auto-complete, see [its documentation](https://github
 To use the [company mode](http://company-mode.github.io/) plugins, you just have
 to add:
 
-```
+```lisp
 ; Make company aware of merlin
 (with-eval-after-load 'company
   (add-to-list 'company-backends 'merlin-company-backend))

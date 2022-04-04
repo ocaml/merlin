@@ -109,7 +109,7 @@ Shows the list of syntax and type errors of your code
 - Merlin also supports the use of
   [Syntastic](https://github.com/scrooloose/syntastic). Simply add the following line
   to you `.vimrc`:
-```
+```viml
 let g:syntastic_ocaml_checkers = ['merlin']
 ```
 
