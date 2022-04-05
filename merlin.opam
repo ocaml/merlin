@@ -17,7 +17,6 @@ depends: [
   "yojson" {>= "1.6.0"}
   "conf-jq" {with-test}
   "csexp" {>= "1.2.3"}
-  "result" {>= "1.5"}
   "menhir" {dev}
   "menhirLib" {dev}
   "menhirSdk" {dev}
@@ -41,7 +40,7 @@ Also run the following line in vim to index the documentation:
 Quick setup for EMACS
 -------------------
 Add opam emacs directory to your load-path by appending this to your .emacs:
-  (let ((opam-share (ignore-errors (car (process-lines \"opam\" \"config\" \"var\" \"share\")))))
+  (let ((opam-share (ignore-errors (car (process-lines \"opam\" \"var\" \"share\")))))
    (when (and opam-share (file-directory-p opam-share))
     ;; Register Merlin
     (add-to-list 'load-path (expand-file-name \"emacs/site-lisp\" opam-share))

@@ -137,6 +137,7 @@ open Parser_raw
 
 let is_operator = function
   | PREFIXOP s
+  | LETOP s | ANDOP s
   | INFIXOP0 s | INFIXOP1 s | INFIXOP2 s | INFIXOP3 s | INFIXOP4 s -> Some s
   | BANG -> Some "!"
   | PERCENT -> Some "%"

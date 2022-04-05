@@ -237,7 +237,7 @@ function! s:ShowTypeEnclosing(type)
 
   let g:merlin_latest_type = a:type['type']
 
-  if g:merlin_type_history_height <= 0 || (!has("nvim") && (v:version <= 703 || !has("patch-7.4.424")))
+  if g:merlin_type_history_height <= 0 || v:version <= 703 || !has("patch-7.4.424")
     echo a:type['type'] . a:type['tail_info']
     return
   endif
@@ -268,6 +268,16 @@ endfunction
 
 function! merlin#TypeOfSel()
   call merlin#TypeOf(s:get_visual_selection())
+endfunction
+
+function! merlin#TypeAtBalloon()
+	MerlinPy vim.command("let l:type = " + merlin.vim_type_enclosing_at_mouse())
+	return get(l:type, 'type', '')
+endfunction
+
+function! merlin#ShowTypeAtBalloon()
+	echo merlin#TypeAtBalloon()
+	return ''
 endfunction
 
 function! merlin#PolaritySearch(debug,query)

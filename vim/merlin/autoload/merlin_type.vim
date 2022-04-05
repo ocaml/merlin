@@ -64,15 +64,6 @@ function! s:RecordType(type)
 
   " vimscript can't append to a buffer without a refresh (?!)
   MerlinPy << EOF
-
-# Vim cursor is a global state that will leak.
-# Nvim will complain the cursor is outside of buffer (using cursor from
-# current buffer in the type buffer).
-# So put it to origin and restore it later.
-cw = vim.current.window
-cursor = cw.cursor
-cw.cursor = (1,0)
-
 idx = int(vim.eval("g:merlin_type_history"))
 typ = vim.eval("a:type")
 buf = None
@@ -95,7 +86,7 @@ else:
 
 # Note that this leaves a blank line at the beginning of the buffer, but
 # it is apparently the desired behavior.
-cw.cursor = cursor
+
 EOF
 
   call winrestview(l:view)

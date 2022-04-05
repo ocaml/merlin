@@ -27,7 +27,8 @@
   "merlin-iedit-occurrences")
 
 (defun merlin-iedit--make-occurrences-overlays (occurrences)
-  "Stub substituting `iedit-make-occurrences-overlays' during merlin-iedit-occurrences."
+  "Stub substituting `iedit-make-occurrences-overlays' during
+merlin-iedit-occurrences."
   (setq iedit-aborting nil)
   (setq iedit-occurrences-overlays nil)
   (setq iedit-read-only-occurrences-overlays nil)
