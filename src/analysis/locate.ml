@@ -53,21 +53,6 @@ let restore_loadpath ~config k =
   log ~title:"restore_loadpath" "Restored load path";
   let_ref loadpath (Mconfig.cmt_path config) k
 
-module Fallback = struct
-  let fallback = ref None
-
-  let get () = !fallback
-
-  let set loc =
-    log ~title:"Fallback.set"
-      "%a" Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-    fallback := Some loc
-
-  let reset () = fallback := None
-
-  let is_set () = !fallback <> None
-end
-
 module File : sig
   type t = private
     | ML   of string
@@ -664,11 +649,6 @@ let find_source ~config loc path =
                merlin doesn't know which is the right one: %s"
         matches)
 
-let recover _ =
-  match Fallback.get () with
-  | None -> assert false
-  | Some loc -> `Found loc
-
 module Namespace = struct
   type under_type = [ `Constr | `Labels ]
 
@@ -831,7 +811,6 @@ let from_longident ~env nss ml_or_mli ident =
 
 let from_path ~config ~env ~local_defs ~namespace ml_or_mli path =
   File_switching.reset ();
-  Fallback.reset ();
   if Utils.is_builtin_path path then
     `Builtin
   else
@@ -848,7 +827,6 @@ let from_path ~config ~env ~local_defs ~namespace ml_or_mli path =
 
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
-  Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let lid = Longident.parse path in
   let ident, is_label = Longident.keep_suffix lid in
@@ -990,7 +968,6 @@ let doc_from_uid ~comp_unit uid =
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
-  Fallback.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
   let from_uid ~loc uid =
     begin match uid with
