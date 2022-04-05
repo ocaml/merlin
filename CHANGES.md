@@ -1,5 +1,6 @@
-git version
-===========
+merlin 4.5
+==========
+Tue Apr  5 20:59:42 CEST 2020
 
   + merlin binary
     - don't reset the environment when running merlin in single mode so that the
