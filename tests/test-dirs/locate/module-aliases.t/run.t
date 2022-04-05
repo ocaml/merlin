@@ -64,11 +64,13 @@ Jump to an aliased module `A|.f`:
     }
   }
 
-Jump to the declaration of an aliased module `A|.f`:
+Jump to the declaration of an aliased module `A|.f`.
+With the new shape implementation it is expected that we jump to the 
+declaration of the alias and not to the aliased module itself.
   $ $MERLIN single locate -look-for mli -position 5:2 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   {
-    "file": "$TESTCASE_ROOT/anothermod.mli",
+    "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
       "line": 1,
       "col": 0
@@ -120,6 +122,29 @@ Jump to an element of an aliased module `A.|f`:
     }
   }
 
+Jump from to another module value decl `Anothermod.|a`:
+  $ $MERLIN single locate -look-for mli -position 3:21 \
+  > -filename ./main.ml < ./main.ml | jq '.value'
+  {
+    "file": "$TESTCASE_ROOT/anothermod.mli",
+    "pos": {
+      "line": 2,
+      "col": 0
+    }
+  }
+
+Jump from to another module value def `Anothermod.|a`:
+  $ $MERLIN single locate -look-for ml -position 3:21 \
+  > -filename ./main.ml < ./main.ml | jq '.value'
+  {
+    "file": "$TESTCASE_ROOT/anothermod.ml",
+    "pos": {
+      "line": 2,
+      "col": 0
+    }
+  }
+
+
 Jump to the declaration of an element of an alisaed module `A.|f`:
   $ $MERLIN single locate -look-for mli -position 5:7 \
   > -filename ./main.ml < ./main.ml | jq '.value'
@@ -143,10 +168,12 @@ Jump to an aliased module `A|.f`:
   }
 
 Jump to the declaration of an aliased module `A|.f`:
+With the new shape implementation it is expected that we jump to the
+declaration of the alias and not to the aliased module itself.
   $ $MERLIN single locate -look-for mli -position 5:2 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   {
-    "file": "$TESTCASE_ROOT/anothermod.mli",
+    "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
       "line": 1,
       "col": 0

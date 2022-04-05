@@ -6,8 +6,8 @@
     "value": {
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
-        "line": 5,
-        "col": 0
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
@@ -48,8 +48,8 @@
     "value": {
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
-        "line": 21,
-        "col": 54
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
@@ -62,10 +62,9 @@
     "value": {
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
-        "line": 5,
-        "col": 0
+        "line": 10,
+        "col": 2
       }
     },
     "notifications": []
   }
-

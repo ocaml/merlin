@@ -44,10 +44,9 @@ we trigger the bug
   $ $MERLIN server document -position 24:15 -filename lib_doc < lib_doc.ml
   {
     "class": "return",
-    "value": " [map f [a1; ...; an]] applies function [f] to [a1, ..., an],
+    "value": "[map f [a1; ...; an]] applies function [f] to [a1, ..., an],
      and builds the list [[f a1; ...; f an]]
-     with the results returned by [f]. Not tail-recursive.
-   ",
+     with the results returned by [f]. Not tail-recursive.",
     "notifications": []
   }
 

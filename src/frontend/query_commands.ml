@@ -390,12 +390,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         match Locate.from_path
                 ~env
                 ~config:(Mpipeline.final_config pipeline)
-                ~local_defs ~pos ~namespace:`Type `MLI
+                ~local_defs ~namespace:`Type `MLI
                 path with
         | `Builtin -> `Builtin (Path.name path)
         | `Not_in_env _ as s -> s
         | `Not_found _ as s -> s
-        | `Found _ as s -> s
+        | `Found (_uid, file, pos) -> `Found (file, pos)
         | `File_not_found _ as s -> s
     end
 
@@ -524,7 +524,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         ~config:(Mpipeline.final_config pipeline)
         ~env ~local_defs ~pos ml_or_mli path
     with
-    | `Found (file, pos) ->
+    | `Found (_, file, pos) ->
       Locate.log ~title:"result"
         "found: %s" (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)

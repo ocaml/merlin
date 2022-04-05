@@ -13,9 +13,10 @@ Check that we can jump locally inside the functor:
     "notifications": []
   }
 
-Check that we can jump from inside the functor to the (sig of the) parameter:
+Check that we can jump from inside the functor to the argument
 
-  $ $MERLIN single locate -look-for ml -position 12:11 -filename ./all_local.ml < ./all_local.ml
+  $ $MERLIN single locate -look-for ml -position 10:13 \
+  > -filename ./all_local.ml < ./all_local.ml
   {
     "class": "return",
     "value": {
@@ -23,6 +24,21 @@ Check that we can jump from inside the functor to the (sig of the) parameter:
       "pos": {
         "line": 9,
         "col": 12
+      }
+    },
+    "notifications": []
+  }
+
+Check that we can jump from inside the functor to the (sig of the) parameter:
+
+  $ $MERLIN single locate -look-for ml -position 12:11 -filename ./all_local.ml < ./all_local.ml \
+  {
+    "class": "return",
+    "value": {
+      "file": "$TESTCASE_ROOT/all_local.ml",
+      "pos": {
+        "line": 2,
+        "col": 2
       }
     },
     "notifications": []

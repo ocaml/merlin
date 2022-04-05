@@ -2,7 +2,8 @@ Setup the test context:
 
   $ $OCAMLC -c -bin-annot -keep-locs a.ml
 
-Make sure that we do not use locations coming from the cmi:
+Make sure that we do not use locations coming from the cmi when the cmt is
+available:
 
   $ $MERLIN single locate -look-for ml -log-section locate -log-file log \
   > -position 1:12 -filename ./b.ml < ./b.ml
@@ -18,8 +19,10 @@ Make sure that we do not use locations coming from the cmi:
     "notifications": []
   }
 
-  $ grep -A1 Fallback log | grep -v Fallback
-  [1]
+  $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
+  Loading the shapes for unit "A"
+  Shapes succesfully loaded, looking for A.0
+  Found location: File "a.ml", line 1, characters 4-9
 
   $ rm log
 
@@ -37,10 +40,32 @@ Make sure that we do not use locations coming from the cmi:
     "notifications": []
   }
 
-The fallback here is ok, it points to the local buffer (to the include line
-actually), not to a.ml
+  $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
+  Loading the shapes for unit "A"
+  Shapes succesfully loaded, looking for A.0
+  Found location: File "a.ml", line 1, characters 4-9
 
-  $ grep -A1 Fallback log | grep -v Fallback
-  File "b.ml", line 3, characters 0-9
+  $ rm log
+
+In the absence of cmt though, fallbacking to the cmi loc makes sense:
+
+  $ rm a.cmt
+
+  $ $MERLIN single locate -look-for ml -log-section locate -log-file log \
+  > -position 1:12 -filename ./b.ml < ./b.ml
+  {
+    "class": "return",
+    "value": {
+      "file": "$TESTCASE_ROOT/a.ml",
+      "pos": {
+        "line": 1,
+        "col": 4
+      }
+    },
+    "notifications": []
+  }
+
+  $ grep -A1 from_uid log | grep -v from_uid
+  No UID found, fallbacking to lookup location.
 
   $ rm log

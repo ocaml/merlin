@@ -40,7 +40,7 @@ documentation for the non-last defined value (in the same file) is show
 
   $ $MERLIN single document -position 9:22 -filename doc.ml < doc.ml |
   > jq '.value'
-  " List reversal. "
+  "List reversal."
 
   $ dune build --root=. ./doc.exe 2> /dev/null
   $ cat >.merlin <<EOF
@@ -50,4 +50,4 @@ documentation for the non-last defined value (in the same file) is show
 
   $ $MERLIN single document -position 11:12 -filename doc.ml < doc.ml |
   > jq '.value'
-  " A function "
+  "A function"

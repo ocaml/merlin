@@ -36,12 +36,11 @@ val from_path
   : config:Mconfig.t
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
-  -> pos:Lexing.position
   -> namespace:Namespaced_path.Namespace.t
   -> [ `ML | `MLI ]
   -> Path.t
   -> [> `File_not_found of string
-     | `Found of string option * Lexing.position
+     | `Found of Shape.Uid.t option * string option * Lexing.position
      | `Builtin
      | `Not_in_env of string
      | `Not_found of string * string option ]
@@ -55,7 +54,7 @@ val from_string
   -> [ `ML | `MLI ]
   -> string
   -> [> `File_not_found of string
-      | `Found of string option * Lexing.position
+      | `Found of Shape.Uid.t option * string option * Lexing.position
       | `Builtin of string
       | `Missing_labels_namespace
       | `Not_found of string * string option
@@ -69,7 +68,8 @@ val get_doc
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> [ `User_input of string
-     | `Completion_entry of (Namespaced_path.Namespace.t * Path.t * Location.t) ]
+     | `Completion_entry of
+        Namespaced_path.Namespace.t * Path.t * Location.t ]
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string
