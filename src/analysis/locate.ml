@@ -424,55 +424,56 @@ let from_uid ~ml_or_mli uid loc path =
       Some loc
     | _ -> None
   in
+  let title = "from_uid" in
   match uid with
   | Some (Shape.Uid.Item { comp_unit; id } as uid)->
     let locopt =
       if Env.get_unit_name () = comp_unit then begin
-        log ~title:"locate" "We look for %a in the current compilation unit."
+        log ~title "We look for %a in the current compilation unit."
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
         let tbl = Env.get_uid_to_loc_tbl () in
         match Shape.Uid.Tbl.find_opt tbl uid with
         | Some loc ->
-          log ~title:"locate" "Found location: %a"
+          log ~title "Found location: %a"
             Logger.fmt (fun fmt -> Location.print_loc fmt loc);
           Some (uid, loc)
         | None ->
-          log ~title:"locate"
+          log ~title
             "Uid not found.@.\
             Fallbacking to the node's location: %a"
           Logger.fmt (fun fmt -> Location.print_loc fmt loc);
           Some (uid, loc)
       end else begin
-        log ~title:"locate" "Loading the shapes for unit %S" comp_unit;
+        log ~title "Loading the shapes for unit %S" comp_unit;
         match load_cmt comp_unit ml_or_mli with
         | Ok (Some pos_fname, cmt) ->
-          log ~title:"locate" "Shapes succesfully loaded, looking for %a"
+          log ~title "Shapes succesfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
             | Some loc when
               String.ends_with ~suffix:"ml-gen" loc.loc_start.pos_fname ->
-              log ~title:"locate" "Found location in generated file: %a"
+              log ~title "Found location in generated file: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
               (* This notably happens when using Dune. In that case we
                  try to resolve the alias immediately. *)
               begin match module_aliasing ~bin_annots:cmt.cmt_annots uid with
               | Some (Shape.Uid.Compilation_unit comp_unit as uid, _path) ->
-                log ~title:"locate"
+                log ~title
                   "The alias points to another compilation unit %s" comp_unit;
                 loc_of_comp_unit comp_unit
                 |> Option.map ~f:(fun loc -> uid, loc)
               | _ -> Some (uid, loc)
               end
             | Some loc ->
-              log ~title:"locate" "Found location: %a"
+              log ~title "Found location: %a"
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
               Some (uid, loc)
             | None ->
-              log ~title:"locate" "Uid not found in the loaded shape.";
+              log ~title "Uid not found in the loaded shape.";
             None
           end
         | _ ->
-          log ~title:"locate" "Failed to load the shapes";
+          log ~title "Failed to load the shapes";
           None
       end
     in
@@ -484,11 +485,11 @@ let from_uid ~ml_or_mli uid loc path =
     begin
       match loc_of_comp_unit comp_unit with
       | Some loc -> `Found (Some uid, loc)
-      | _ -> log ~title:"locate" "Failed to load the shapes";
+      | _ -> log ~title "Failed to load the shapes";
         `Not_found (Path.name path, None)
     end
   | Some (Predef _ | Internal) -> assert false
-  | None -> log ~title:"locate" "No UID found, fallbacking to lookup location.";
+  | None -> log ~title "No UID found, fallbacking to lookup location.";
       `Found (None, loc)
 
 let locate ~env ~ml_or_mli decl_uid loc path ns =
