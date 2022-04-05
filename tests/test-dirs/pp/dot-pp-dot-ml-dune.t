@@ -20,13 +20,30 @@ First, prepare our preprocessor:
   >     output_to_stdout in_file str
   > EOF
 
-  $ mkdir -p _build
-  $ cp prep.ml _build
-  $ (cd _build; $OCAMLC -I +compiler-libs ocamlcommon.cma -o prep.exe prep.ml)
+  $ $OCAMLC -I +compiler-libs ocamlcommon.cma -o prep.exe prep.ml
+  $ rm prep.cm* prep.ml
 
 Then our test files:
 
   $ mkdir liba libb
+
+  $ cat >dune-project <<EOF
+  > (lang dune 2.7)
+  > EOF
+
+  $ cat >liba/dune <<EOF
+  > (library (name liba))
+  > EOF
+
+  $ cat >libb/dune <<EOF
+  > (library
+  >  (name libb)
+  >  (preprocess (action (system "./prep.exe %{input-file}"))))
+  > EOF
+
+  $ cat >dune <<EOF
+  > (library (name test) (libraries liba libb))
+  > EOF
 
   $ cat >liba/dep.ml <<EOF
   > let x = "A"
@@ -36,35 +53,26 @@ Then our test files:
   > let x = "B"
   > EOF
 
-  $ cat >test.ml <<EOF
-  > let _ = LibaDep.x
-  > let _ = LibbDep.x
+  $ cat >liba/liba.ml <<EOF
+  > module Dep = Dep
   > EOF
 
-----------------------------------------------------------
+  $ cat >libb/libb.ml <<EOF
+  > module Dep = Dep
+  > EOF
 
-Build the files in _build as dune would, preprocessing liba in the "usual" way
-and libb with dune cached way:
+  $ cat >test.ml <<EOF
+  > let _ = Liba.Dep.x
+  > let _ = Libb.Dep.x
+  > EOF
 
-  $ cp -r liba libb test.ml _build
+Now build with dune:
 
-  $ cd _build/liba
-  $ $OCAMLC -c -pp ../prep.exe -bin-annot -o libaDep.cmo dep.ml
-  $ cd ..
-
-  $ cd libb
-  $ ../prep.exe -dump-to-file ./dep.ml
-  $ $OCAMLC -c -bin-annot -o libbDep.cmo dep.pp.ml
-  $ cd ..
-
-  $ $OCAMLC -I liba -I libb -c test.ml
-  $ cd ..
+  $ BUILD_PATH_PREFIX_MAP= dune build 2>/dev/null
 
 And confirm that locate works on both deps:
 
-  $ $MERLIN single locate -look-for ml -position 1:11 \
-  > -build-path _build/liba -source-path liba \
-  > -build-path _build/libb -source-path libb \
+  $ $MERLIN single locate -look-for ml -position 1:15 \
   > -filename test.ml < ./test.ml
   {
     "class": "return",
@@ -78,12 +86,16 @@ And confirm that locate works on both deps:
     "notifications": []
   }
 
-  $ $MERLIN single locate -look-for ml -position 2:11 \
-  > -build-path _build/liba -source-path liba \
-  > -build-path _build/libb -source-path libb \
+  $ $MERLIN single locate -look-for ml -position 2:15 \
   > -filename test.ml < ./test.ml
   {
     "class": "return",
-    "value": "Several source files in your path have the same name, and merlin doesn't know which is the right one: $TESTCASE_ROOT/liba/dep.ml, $TESTCASE_ROOT/libb/dep.ml",
+    "value": {
+      "file": "$TESTCASE_ROOT/libb/dep.ml",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
     "notifications": []
   }

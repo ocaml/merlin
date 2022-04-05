@@ -644,15 +644,14 @@ def vim_case_analysis():
 
     vim_type_reset()
 
-def vim_type_enclosing():
+def type_enclosing_at_pos(to_line, to_col):
     global enclosing_types
     global current_enclosing
     vim_type_reset()
     try:
-        to_line, to_col = vim.current.window.cursor
         enclosing_types = command2(
                 ["type-enclosing",
-                 "-position", fmtpos((to_line,to_col)),
+                 "-position", fmtpos((to_line, to_col)),
                  "-index", "0"
                 ],
                 track_verbosity=True
@@ -669,6 +668,18 @@ def vim_type_enclosing():
     except MerlinExc as e:
         try_print_error(e)
         return '{}'
+
+def vim_type_enclosing_at_mouse():
+    bufnr = vim.vvars['beval_bufnr']
+    if bufnr != vim.current.buffer.number:
+        return '{}'
+    line = vim.vvars['beval_lnum']
+    col = vim.vvars['beval_col']
+    return type_enclosing_at_pos(line, col)
+
+def vim_type_enclosing():
+    to_line, to_col = vim.current.window.cursor
+    return type_enclosing_at_pos(to_line, to_col)
 
 def move_cursor_and_type(line, col):
     vim.current.window.cursor = (line, col)

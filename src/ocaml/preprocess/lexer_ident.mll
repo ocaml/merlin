@@ -59,6 +59,10 @@ let float_literal =
   ['0'-'9'] ['0'-'9' '_']*
   ('.' ['0'-'9' '_']* )?
   (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
+let dotsymbolchar =
+  ['!' '$' '%' '&' '*' '+' '-' '/' ':' '=' '>' '?' '@' '^' '|']
+let kwdopchar =
+  ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
 
 rule token = parse
   | "_" { EOL }
@@ -77,6 +81,8 @@ rule token = parse
       { OPTLABEL label }
   | "?" (lowercase_latin1 identchar_latin1 *) as label ':'
       { OPTLABEL label }
+  | ("let" kwdopchar dotsymbolchar *) as op { LETOP op }
+  | ("and" kwdopchar dotsymbolchar *) as op { ANDOP op }
   | (lowercase identchar *) as ident
     { LIDENT ident }
   | (lowercase_latin1 identchar_latin1 *) as ident

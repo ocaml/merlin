@@ -136,10 +136,14 @@ let type_interface config caught parsetree =
 
 let run config parsetree =
   if not (Env.check_state_consistency ()) then (
+    (* Resetting the local store will clear the load_path cache.
+       Save it now, reset the store and then restore the path. *)
+    let load_path = Load_path.get_paths () in
     Mocaml.flush_caches ();
     Local_store.reset ();
+    Load_path.reset ();
+    Load_path.init load_path;
   );
-  Mocaml.setup_config config;
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();

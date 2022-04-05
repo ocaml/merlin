@@ -76,9 +76,16 @@ let parse_all ~warning global_spec local_spec =
     match parse_one ~warning global_spec local_spec args global local with
     | Some (args, global, local) -> normal_parsing args global local
     | None -> match args with
-      | arg :: args ->
-        warning ("unknown flag " ^ arg);
-        resume_parsing args global local
+      | arg :: args -> begin
+        (* We split on the first '=' to check if the argument was
+           of the form name=value *)
+        try
+          let name, value = Misc.cut_at arg '=' in
+          normal_parsing (name::value::args) global local
+        with Not_found ->
+          warning ("unknown flag " ^ arg);
+          resume_parsing args global local
+        end
       | [] -> (global, local)
   and resume_parsing args global local =
     let args = match args with

@@ -2,7 +2,13 @@
 
 export PATH=$(dirname dot-merlin-reader):$PATH
 
-touch .merlin && ocamlmerlin "$@" \
+# If no dune-project of .merlin file are present in the test we write a default
+# `.merlin` file to force the use of dot-merlin-reader
+if [ ! -f dune-project ]; then
+  touch .merlin
+fi
+
+ocamlmerlin "$@" \
     | jq 'del(.timing)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\
