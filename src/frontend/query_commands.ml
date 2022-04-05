@@ -376,7 +376,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           | Pattern {pat_type = ty; _}
           | Core_type {ctyp_type = ty; _}
           | Value_description { val_desc = { ctyp_type = ty; _ }; _ } ->
-            begin match (Ctype.repr ty).desc with
+            begin match Types.get_desc ty with
               | Tconstr (path, _, _) -> Some (env, path)
               | _ -> None
             end
@@ -790,7 +790,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
         | _ -> false
       in
-      List.find_some enclosing ~f:(fun (_, node) -> 
+      List.find_some enclosing ~f:(fun (_, node) ->
         (* it doesn't make sense to find occurrences of a wildcard pattern *)
         not (is_wildcard_pat node))
       |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)

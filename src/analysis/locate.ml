@@ -459,13 +459,13 @@ let path_and_loc_of_cstr desc _ =
   match desc.cstr_tag with
   | Cstr_extension (path, _) -> path, desc.cstr_loc
   | _ ->
-    match desc.cstr_res.desc with
+    match get_desc desc.cstr_res with
     | Tconstr (path, _, _) -> path, desc.cstr_loc
     | _ -> assert false
 
 let path_and_loc_from_label desc env =
   let open Types in
-  match desc.lbl_res.desc with
+  match get_desc desc.lbl_res with
   | Tconstr (path, _, _) ->
     let typ_decl = Env.find_type path env in
     path, typ_decl.Types.type_loc

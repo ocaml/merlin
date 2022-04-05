@@ -80,6 +80,7 @@ What about other places where Module_expr are allowed ?
     "notifications": []
   }
 
+In includes:
   $ $MERLIN single type-enclosing -position 1:6 -filename hole.ml <<EOF
   > include _
   > EOF
@@ -89,6 +90,7 @@ What about other places where Module_expr are allowed ?
     "notifications": []
   }
 
+In module type of:
   $ $MERLIN single type-enclosing -verbosity 2 -position 1:12 -filename hole.ml <<EOF
   > module type Hole = module type of _
   > EOF
@@ -123,6 +125,7 @@ What about other places where Module_expr are allowed ?
     "notifications": []
   }
 
+In module coercions:
   $ $MERLIN single type-enclosing -position 2:16 -filename hole.ml <<EOF
   > module type Hole = module type of _
   > let m = (module _ : Hole)

@@ -230,6 +230,8 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_val_longident) -> "parse_val_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_pattern) -> "parse_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_mty_longident) -> "parse_mty_longident"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_module_type) -> "parse_module_type"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_module_expr) -> "parse_module_expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_mod_longident) -> "parse_mod_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_mod_ext_longident) -> "parse_mod_ext_longident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_expression) -> "parse_expression"
@@ -575,6 +577,8 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_parse_val_longident -> (fun _ -> "parse_val_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_pattern -> (fun _ -> "parse_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_mty_longident -> (fun _ -> "parse_mty_longident")
+  | MenhirInterpreter.N MenhirInterpreter.N_parse_module_type -> (fun _ -> "parse_module_type")
+  | MenhirInterpreter.N MenhirInterpreter.N_parse_module_expr -> (fun _ -> "parse_module_expr")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_mod_longident -> (fun _ -> "parse_mod_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_mod_ext_longident -> (fun _ -> "parse_mod_ext_longident")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_expression -> (fun _ -> "parse_expression")

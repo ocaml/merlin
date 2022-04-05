@@ -29,13 +29,15 @@ module Signature_names : sig
 end
 
 val type_module:
-        Env.t -> Parsetree.module_expr -> Typedtree.module_expr
+        Env.t -> Parsetree.module_expr -> Typedtree.module_expr * Shape.t
 val type_structure:
   Env.t -> Parsetree.structure ->
-  Typedtree.structure * Types.signature * Signature_names.t * Env.t
+  Typedtree.structure * Types.signature * Signature_names.t * Shape.t *
+  Env.t
 val type_toplevel_phrase:
   Env.t -> Parsetree.structure ->
-  Typedtree.structure * Types.signature * (* Signature_names.t * *) Env.t
+  Typedtree.structure * Types.signature * (* Signature_names.t * *) Shape.t *
+  Env.t
 val type_implementation:
   string -> string -> string -> Env.t ->
   Parsetree.structure -> Typedtree.implementation
@@ -43,7 +45,7 @@ val type_interface:
         Env.t -> Parsetree.signature -> Typedtree.signature
 val transl_signature:
         Env.t -> Parsetree.signature -> Typedtree.signature
-val check_nongen_schemes:
+val check_nongen_signature:
         Env.t -> Types.signature -> unit
         (*
 val type_open_:
@@ -115,7 +117,6 @@ type error =
   | With_cannot_remove_constrained_type
   | Repeated_name of Sig_component_kind.t * string
   | Non_generalizable of type_expr
-  | Non_generalizable_class of Ident.t * class_declaration
   | Non_generalizable_module of module_type
   | Implementation_is_required of string
   | Interface_not_compiled of string

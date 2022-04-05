@@ -268,14 +268,15 @@ module Rewrite_loc = struct
     let pld_loc = leave pld_loc in
     {pld_name; pld_mutable; pld_type; pld_loc; pld_attributes}
 
-  and u_constructor_declaration {pcd_name; pcd_args; pcd_res; pcd_loc; pcd_attributes} =
+  and u_constructor_declaration {pcd_name; pcd_vars; pcd_args; pcd_res; pcd_loc; pcd_attributes} =
     enter ();
     let pcd_name = u_loc pcd_name in
+    let pcd_vars = List.map ~f:u_loc pcd_vars in
     let pcd_args = u_constructor_arguments pcd_args in
     let pcd_res = u_option u_core_type pcd_res in
     let pcd_attributes = u_attributes pcd_attributes in
     let pcd_loc = leave pcd_loc in
-    {pcd_name; pcd_args; pcd_res; pcd_loc; pcd_attributes}
+    {pcd_name; pcd_vars; pcd_args; pcd_res; pcd_loc; pcd_attributes}
 
   and u_constructor_arguments = function
     | Pcstr_tuple cts -> Pcstr_tuple (List.map ~f:u_core_type cts)
@@ -300,8 +301,10 @@ module Rewrite_loc = struct
     {pext_name; pext_kind; pext_loc; pext_attributes}
 
   and u_extension_constructor_kind = function
-    | Pext_decl (cargs, cto) ->
-      Pext_decl (u_constructor_arguments cargs, u_option u_core_type cto)
+    | Pext_decl (locs, cargs, cto) ->
+      Pext_decl (List.map ~f:u_loc locs,
+        u_constructor_arguments cargs,
+        u_option u_core_type cto)
     | Pext_rebind loc -> Pext_rebind (u_loc loc)
 
   (** {2 Class language} *)

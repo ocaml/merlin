@@ -90,9 +90,9 @@ module Util = struct
     let aux name path value_description acc =
       (* [check_type| checks return type compatibility and lists parameters *)
       let rec check_type type_expr params =
-        let type_expr = Btype.repr type_expr in
+        let type_expr = Transient_expr.repr type_expr in
         (* TODO is this test general enough ? *)
-        match unifiable env type_expr typ with
+        match unifiable env (Transient_expr.type_expr type_expr) typ with
         | Some snap ->
           (* This will be called multiple times so we need to backtrack
               See c-simple, test 6.2b for an example *)
@@ -288,7 +288,7 @@ module Gen = struct
         [ Ast_helper.Exp.hole () ]
     in
     let arrow_rhs env typ =
-      match (Ctype.repr typ).desc with
+      match (Transient_expr.repr typ).desc with
       | Tarrow _ -> expression ~idents_table values_scope ~depth env typ
       | _ -> exp_or_hole env typ
     in
@@ -316,7 +316,7 @@ module Gen = struct
         | Labelled s | Optional s ->
             (* Pun for labelled arguments *)
             Ast_helper.Pat.var ( Location.mknoloc s), s
-        | Nolabel -> begin match ty.desc with
+        | Nolabel -> begin match get_desc ty with
           | Tconstr (path, _, _) ->
             let name = uniq_name env (Path.last path) in
             Ast_helper.Pat.var (Location.mknoloc name), name
@@ -368,19 +368,19 @@ module Gen = struct
     let variant env typ row_desc =
       let fields =
         List.filter
-          ~f:(fun (lbl, row_field) -> match row_field with
+          ~f:(fun (lbl, row_field) -> match row_field_repr row_field with
             | Rpresent _
-            | Reither (true, [], _, _)
-            | Reither (false, [_], _, _) -> true
+            | Reither (true, [], _)
+            | Reither (false, [_], _) -> true
             | _ -> false)
-          row_desc.row_fields
+          (row_fields row_desc)
       in
       match fields with
       | [] -> raise (Not_allowed "empty variant type")
       | row_descrs ->
         List.map row_descrs ~f:(fun (lbl, row_field) ->
-          (match row_field with
-            | Reither (false, [ty], _, _) | Rpresent (Some ty) ->
+          (match row_field_repr row_field with
+            | Reither (false, [ty], _) | Rpresent (Some ty) ->
               List.map ~f:(fun s -> Some s) (exp_or_hole env ty)
             | _ -> [None])
             |> List.map ~f:(fun e ->
@@ -422,9 +422,9 @@ module Gen = struct
       log ~title:"construct expr" "Looking for expressions of type %s"
         (Util.type_to_string typ);
       let rtyp =
-        Ctype.full_expand ~may_forget_scope:true env typ |> Btype.repr
+        Ctype.full_expand ~may_forget_scope:true env typ
       in
-      let constructed_from_type = match rtyp.desc with
+      let constructed_from_type = match get_desc rtyp with
         | Tlink _ | Tsubst _ ->
           assert false
         | Tpoly (texp, _)  ->
@@ -483,7 +483,7 @@ module Gen = struct
             raise (Modtype_not_found (Modtype, name)) end
         | Tobject (fields, _) ->
           let rec aux acc fields =
-            match fields.desc with
+            match get_desc fields with
             | Tnil -> acc
             | Tvar _ | Tunivar _ -> acc
             | Tfield ("*dummy method*", _, _, fields) -> aux acc fields

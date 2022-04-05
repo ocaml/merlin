@@ -29,18 +29,18 @@
 open Std
 
 let dummy_type_scheme desc =
-  Types.Private_type_expr.create desc ~level:0 ~id:0 ~scope:Btype.generic_level
+  Types.create_expr desc ~level:0 ~id:0 ~scope:Btype.generic_level
 
 let print_constructor c =
   let open Types in
   match c.cstr_args with
   | [] ->
     Printtyp.tree_of_type_scheme
-      (dummy_type_scheme c.cstr_res.desc)
+      (dummy_type_scheme (get_desc c.cstr_res))
   | args ->
     let desc = Tarrow (Ast_helper.no_label,
                        dummy_type_scheme (Ttuple args),
-                       c.cstr_res, Cok)
+                       c.cstr_res, commu_ok)
     in
     Printtyp.tree_of_type_scheme (dummy_type_scheme desc)
 

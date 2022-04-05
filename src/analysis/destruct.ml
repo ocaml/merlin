@@ -134,8 +134,7 @@ let placeholder =
 
 let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
-  let type_expr = Btype.repr type_expr in
-  match type_expr.desc with
+  match get_desc type_expr with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tvar _     -> raise (Not_allowed "non-immediate type")
   | Tarrow _   -> raise (Not_allowed "arrow type")
@@ -202,7 +201,8 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
     end
   | Tvariant row_desc ->
-    List.filter_map row_desc.row_fields ~f:(function
+    List.filter_map (row_fields row_desc) ~f:(fun (lbl, row_field) ->
+      match lbl, row_field_repr row_field with
       | lbl, Rpresent param_opt ->
         let popt = Option.map param_opt ~f:(fun _ -> Patterns.omega) in
         Some (Tast_helper.Pat.variant env type_expr lbl popt (ref row_desc))
@@ -258,14 +258,16 @@ let rec get_match = function
     (match m.Typedtree.exp_desc with
     | Typedtree.Texp_match (e, _, _) -> m, e.exp_type
     | Typedtree.Texp_function _ ->
-      let typ = Ctype.repr m.exp_type in
+      let typ = m.exp_type in
         (* Function must have arrow type. This arrow type
            might be hidden behind type constructors *)
-        m, (match typ.desc with
+        m, (match Types.get_desc typ with
         | Tarrow (_, te, _, _) -> te
         | Tconstr _ ->
-          (match (Ctype.full_expand ~may_forget_scope:true m.exp_env typ
-            |> Ctype.repr).desc with
+          (match
+            Ctype.full_expand ~may_forget_scope:true m.exp_env typ
+            |> Types.get_desc
+          with
           | Tarrow (_, te, _, _) -> te
           | _ -> assert false)
         | _ -> assert false)
@@ -466,7 +468,7 @@ let rec qualify_constructors ~unmangling_tables f pat  =
               | None -> name)
             | None -> name
           in
-          begin match (Btype.repr pat.pat_type).Types.desc with
+          begin match Types.get_desc pat.pat_type with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
             let env_check = Env.find_constructor_by_name in
@@ -534,7 +536,7 @@ let rec node config source selected_node parents =
     log ~title:"node_expression" "%a"
       Logger.fmt (fun fmt -> Printast.expression 0 fmt pexp);
     let needs_parentheses, result =
-      if is_package ty then (
+      if is_package (Types.Transient_expr.repr ty) then (
         let mode = Ast_helper.Mod.unpack pexp in
         false, Ast_helper.Exp.letmodule_no_opt "M" mode placeholder
       ) else (

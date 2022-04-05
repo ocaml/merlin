@@ -309,6 +309,12 @@ type crcs = (modname * Digest.t option) list
 
 type alerts = string String.Map.t
 
+val ordinal_suffix : int -> string
+(** [ordinal_suffix n] is the appropriate suffix to append to the numeral [n] as
+    an ordinal number: [1] -> ["st"], [2] -> ["nd"], [3] -> ["rd"],
+    [4] -> ["th"], and so on.  Handles larger numbers (e.g., [42] -> ["nd"]) and
+    the numbers 11--13 (which all get ["th"]) correctly. *)
+
 (* Color handling *)
 module Color : sig
   type color =

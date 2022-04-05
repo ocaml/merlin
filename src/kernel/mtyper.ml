@@ -6,7 +6,7 @@ let {Logger. log} = Logger.for_section "Mtyper"
 type ('p,'t) item = {
   parsetree_item: 'p;
   typedtree_items: 't list * Types.signature_item list;
-  part_snapshot  : Btype.snapshot;
+  part_snapshot  : Types.snapshot;
   part_env       : Env.t;
   part_errors    : exn list;
   part_checks    : Typecore.delayed_check list;
@@ -28,7 +28,7 @@ let fresh_env config =
 
 let get_cache config =
   match !cache with
-  | Some (env0, snap0, items) when Btype.is_valid snap0 ->
+  | Some (env0, snap0, items) when Types.is_valid snap0 ->
     env0, snap0, Some items
   | Some _ | None ->
     let env0, snap0 = fresh_env config in
@@ -41,7 +41,7 @@ let return_and_cache status =
 type result = {
   config : Mconfig.t;
   initial_env : Env.t;
-  initial_snapshot : Btype.snapshot;
+  initial_snapshot : Types.snapshot;
   typedtree : [
     | `Interface of
         (Parsetree.signature_item, Typedtree.signature_item) item list
@@ -53,7 +53,7 @@ type result = {
 let compatible_prefix result_items tree_items =
   let rec aux acc = function
     | (ritem :: ritems, pitem :: pitems)
-      when Btype.is_valid ritem.part_snapshot
+      when Types.is_valid ritem.part_snapshot
         && compare ritem.parsetree_item pitem = 0 ->
       aux (ritem :: acc) (ritems, pitems)
     | (_, pitems) ->

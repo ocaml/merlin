@@ -56,25 +56,24 @@ module Printtyp = struct
       let ty = Subst.type_expr Subst.identity ty in
       let marks = Hashtbl.create 7 in
       let mark ty =
-        if Hashtbl.mem marks ty.Types.id then false
-        else (Hashtbl.add marks ty.Types.id (); true)
+        if Hashtbl.mem marks (Types.get_id ty) then false
+        else (Hashtbl.add marks (Types.get_id ty)  (); true)
       in
       let rec iter d ty0 =
-        let ty' = Ctype.repr ty0 in
-        if mark ty' then
+        if mark ty0 then
           let open Types in
-          let ty'' = Ctype.full_expand ~may_forget_scope:true env ty' in
-          if ty''.desc == ty'.desc then
+          let ty' = Ctype.full_expand ~may_forget_scope:true env ty0 in
+          if get_desc ty' == get_desc ty0 then
             Btype.iter_type_expr (iter d) ty0
           else begin
-            let desc = match ty''.desc with
+            let desc = match get_desc ty' with
               | Tvariant row ->
-                Tvariant {row with row_name = None}
+                Tvariant (set_row_name row None)
               | Tobject (ty, _) ->
                 Tobject (ty, ref None)
               | desc -> desc
             in
-            Types.Private_type_expr.set_desc ty0 desc;
+            Types.Transient_expr.(set_desc (repr ty0) desc);
             if d > 0 then
               Btype.iter_type_expr (iter (pred d)) ty0
           end
@@ -171,7 +170,7 @@ let print_short_modtype verbosity env ppf md  =
 
 let print_type_with_decl ~verbosity env ppf typ =
   if verbosity > 0 then
-    match (Ctype.repr typ).Types.desc with
+    match Types.get_desc typ with
     | Types.Tconstr (path, params, _) ->
       let decl =
         Env.with_cmis @@ fun () ->
@@ -244,7 +243,7 @@ let print_constr ppf env lid =
 exception Fallback
 let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
   let print_expr expression =
-    let (str, _sg, _) =
+    let (str, _sg, _shape, _) =
       Env.with_cmis @@ fun () ->
       Typemod.type_toplevel_phrase env
         [Ast_helper.Str.eval expression]

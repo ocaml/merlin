@@ -25,7 +25,7 @@ let rec normalize_path env path =
     match decl.Types.type_manifest with
     | Some body when decl.Types.type_private = Asttypes.Public
                   || decl.Types.type_kind <> Types.Type_abstract ->
-      begin match (Ctype.repr body).Types.desc with
+      begin match Types.get_desc body with
       | Types.Tconstr (path, _, _) -> normalize_path env path
       | _ -> path
       end
@@ -36,7 +36,7 @@ let match_query env query t =
   let rec traverse neg neg_fun pos pos_fun t =
     incr cost;
     incr cost;
-    match (Ctype.repr t).Types.desc with
+    match Types.get_desc t with
     | Types.Tconstr (path, params, _) ->
       remove cost pos (normalize_path env path);
       begin match Env.find_type path env with
