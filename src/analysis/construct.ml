@@ -114,7 +114,7 @@ module Util = struct
       We also exclude the Stdlib modules from the search. *)
     let fold_values path acc = Env.fold_values aux path env acc in
     let init = fold_values None Path.Map.empty in
-    Env.fold_modules (fun name path _module_decl acc ->
+    Env.fold_modules (fun _name path _module_decl acc ->
       if not (is_in_stdlib path) && not (is_opened env path) then
         (* We ignore opened modules. That means that is a value of an opened
           module has been shadowed we won't suggest the one in the opened
@@ -175,10 +175,8 @@ end
 module Gen = struct
   open Types
 
-  let hole = Ast_helper.Exp.hole ()
-
   (* [make_value] generates the PAST repr of a value applied to holes *)
-  let make_value env (path, (name, value_description, params)) =
+  let make_value env (path, (name, _value_description, params)) =
     let open Ast_helper in
     let env_check = Env.find_value_by_name in
     let lid = Location.mknoloc (Util.prefix env ~env_check path name) in
@@ -225,7 +223,7 @@ module Gen = struct
   and structure_item env =
     let open Ast_helper in
     function
-    | Sig_value (id, vd, _visibility) ->
+    | Sig_value (id, _vd, _visibility) ->
       let vb = Vb.mk (Pat.var (Util.var_of_id id)) (Exp.hole ()) in
       Str.value Nonrecursive [ vb ]
     | Sig_type (id, type_declaration, rec_flag, _visibility) ->
@@ -259,11 +257,11 @@ module Gen = struct
         ~priv:ext_constructor.ext_private
         lid
         [Ptyp_of_type.extension_constructor id ext_constructor]
-    | Sig_class_type (id, class_type_decl, _, _) ->
+    | Sig_class_type (id, _class_type_decl, _, _) ->
       let str = Format.asprintf "Construct does not handle class types yet. \
       Please replace this comment by [%s]'s definition." (Ident.name id) in
       Str.text [ Docstrings.docstring str Location.none ] |> List.hd
-    | Sig_class (id, class_decl, _, _) ->
+    | Sig_class (id, _class_decl, _, _) ->
       let str = Format.asprintf "Construct does not handle classes yet. \
       Please replace this comment by [%s]'s definition." (Ident.name id) in
       Str.text [ Docstrings.docstring str Location.none ] |> List.hd
@@ -365,10 +363,10 @@ module Gen = struct
       |> Util.panache
     in
 
-    let variant env typ row_desc =
+    let variant env _typ row_desc =
       let fields =
         List.filter
-          ~f:(fun (lbl, row_field) -> match row_field_repr row_field with
+          ~f:(fun (_lbl, row_field) -> match row_field_repr row_field with
             | Rpresent _
             | Reither (true, [], _)
             | Reither (false, [_], _) -> true
@@ -436,7 +434,7 @@ module Gen = struct
           (* Special case for lazy *)
           let exps = exp_or_hole env texp in
           List.map exps ~f:Ast_helper.Exp.lazy_
-        | Tconstr (path, params, _) ->
+        | Tconstr (path, _params, _) ->
           (* If this is a "basic" type we propose a default value *)
           begin try
             [ Hashtbl.find Util.predef_types path ]

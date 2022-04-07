@@ -523,7 +523,7 @@ let rec node config source selected_node parents =
   match selected_node with
   | Record_field (`Expression _, _, _) ->
     begin match parents with
-    | Expression { exp_desc = Texp_field _ } as parent :: rest ->
+    | Expression { exp_desc = Texp_field _; _ } as parent :: rest ->
       node config source parent rest
     | Expression e :: rest ->
       node config source (Expression e) rest

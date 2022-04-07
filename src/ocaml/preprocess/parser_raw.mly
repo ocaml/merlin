@@ -244,9 +244,11 @@ let mkpat_opt_constraint ~loc p = function
 let not_expecting loc nonterm =
   raise_error Syntaxerr.(Error(Not_expecting(make_loc loc, nonterm)))
 
+(*
 let unclosed opening_name opening_loc closing_name closing_loc =
   raise(Syntaxerr.Error(Syntaxerr.Unclosed(make_loc opening_loc, opening_name,
                                            make_loc closing_loc, closing_name)))
+*)
 
 let expecting loc nonterm =
     raise_error Syntaxerr.(Error(Expecting(make_loc loc, nonterm)))
@@ -373,9 +375,11 @@ let mk_indexop_expr array_indexing_operator ~loc
   let args = (Nolabel,array) :: index @ set_arg in
   mkexp ~loc (Pexp_apply(ghexp ~loc (Pexp_ident fn), args))
 
+  (*
 let indexop_unclosed_error loc_s s loc_e =
   let left, right = paren_to_strings s in
   unclosed left loc_s right loc_e
+  *)
 
 let lapply ~loc p1 p2 =
   if !Clflags.applicative_functors
