@@ -11,22 +11,35 @@ Completion, Typing, Navigation, Refactoring, Code&nbsp;generation
 <span class="hero-subtitle">Merlin is an editor service that provides advanced IDE features for OCaml.</span>
 </div>
 
-# Installation for Emacs and VIM users
+# Installation for Emacs and VIM
+### Opam installation (jump to the next section if you already have opam)
 
-First of all, you need a working [opam](https://opam.ocaml.org/) (the OCaml
-package manager) installation. Follow the instructions
-[here](https://opam.ocaml.org/doc/Install.html).
+First of all, you need a working installation of
+[opam](https://opam.ocaml.org/), the OCaml package manager. You can follow the
+instructions [here](https://opam.ocaml.org/doc/Install.html).
+
+> ⚠ If you chose to install opam via a package manager and not the install script,
+> don't forget to run `opam init` afterward. (This requires common build tools
+> such as the ones present in the `build-essential` package of most
+> distributions.)
+
+### Merlin installation with opam
 
 Then you can install Merlin by running the following commands:
 ```shell
+opam update             # (optional) check latests releases
 opam install tuareg     # For Emacs only
 opam install merlin     # Install merlin and it's dependencies
-opam user-setup install # (optional) Emacs and VIM configuration
+opam user-setup install # Emacs and VIM auto-configuration
 ```
 
-Merlin works best with [Dune](https://github.com/ocaml/dune). Just run `dune
-build` once and Merlin will find its configuration automatically. You
-can now start editing OCaml code with rich IDE-like features.
+After that, the Merlin mode should start automatically when a `.ml` or `.mli`
+file is opened.
+
+### Project configuration
+
+Merlin works best with [Dune](https://dune.build). Just run `dune
+build` once and Merlin will find its configuration automatically.
 
 # Up your wizard 🧙 skills
 
