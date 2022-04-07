@@ -1,4 +1,4 @@
 (library
   (name ocaml_utils)
   (libraries config merlin_utils)
-  (flags (-open Merlin_utils)))
+  (flags :standard -open Merlin_utils))
