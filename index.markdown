@@ -12,29 +12,30 @@ Completion, Typing, Navigation, Refactoring, Code&nbsp;generation
 </div>
 
 # Installation for Emacs and VIM
-### Opam installation (jump to the next section if you already have opam)
+### 1. Opam installation (jump to the next section if you already have opam)
 
 First of all, you need a working installation of
 [opam](https://opam.ocaml.org/), the OCaml package manager. You can follow the
-instructions [here](https://opam.ocaml.org/doc/Install.html).
+instructions [here](https://opam.ocaml.org/doc/Install.html). Running the
+install script is usually the simplest way to go.
 
 > ⚠ If you chose to install opam via a package manager and not the install script,
 > don't forget to run `opam init` afterward. (This requires common build tools
 > such as the ones present in the `build-essential` package of most
 > distributions.)
 
-### Merlin installation with opam
+### 2. Merlin installation with opam
 
 Then you can install Merlin by running the following commands:
 ```shell
-opam update             # (optional) check latests releases
-opam install tuareg     # For Emacs only
-opam install merlin     # Install merlin and it's dependencies
+opam update           # (optional) check latests releases
+opam install tuareg      # For Emacs only
+opam install merlin      # Install merlin and it's dependencies
 opam user-setup install # Emacs and VIM auto-configuration
 ```
 
 After that, the Merlin mode should start automatically when a `.ml` or `.mli`
-file is opened.
+file is opened. You're ready to go !
 
 ### Project configuration
 
