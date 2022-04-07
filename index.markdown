@@ -35,12 +35,13 @@ opam user-setup install # Emacs and VIM auto-configuration
 ```
 
 After that, the Merlin mode should start automatically when a `.ml` or `.mli`
-file is opened. You're ready to go !
+file is opened.
 
-### Project configuration
+### 3. Project configuration
 
 Merlin works best with [Dune](https://dune.build). Just run `dune
 build` once and Merlin will find its configuration automatically.
+ You're ready to go !
 
 # Up your wizard 🧙 skills
 
