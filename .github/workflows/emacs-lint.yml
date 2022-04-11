@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - 'emacs/**'
+      - '**/emacs-lint.yml'
   pull_request:
     paths:
       - 'emacs/**'
+      - '**/emacs-lint.yml'
 
 jobs:
   build:
