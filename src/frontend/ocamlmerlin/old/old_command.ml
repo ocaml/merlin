@@ -190,7 +190,7 @@ let dispatch_sync config state (type a) : a sync_command -> a = function
     (`Selected !Old_IO.current_version,
      `Latest Old_IO.latest_version,
      Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
-       My_config.version Sys.ocaml_version)
+       Merlin_config.version Sys.ocaml_version)
 
   | Flags_get ->
     let pipeline = make_pipeline config state in

@@ -1,7 +1,7 @@
 (library
  (name      query_protocol)
  (modules   query_protocol)
- (flags -open Merlin_utils -open Ocaml_parsing)
+ (flags -open Merlin_utils -open Merlin_kernel -open Ocaml_parsing -open Merlin_kernel)
  (libraries merlin_kernel merlin_utils ocaml_parsing))
 
 (library
@@ -12,7 +12,9 @@
   -open Ocaml_parsing
   -open Ocaml_typing
   -open Merlin_utils
-  -open Merlin_analysis)
+  -open Merlin_specific
+  -open Merlin_analysis
+  -open Merlin_kernel)
  (libraries
   merlin_utils
   merlin_kernel

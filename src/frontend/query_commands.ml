@@ -839,4 +839,4 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
-      My_config.version Sys.ocaml_version;
+      Merlin_config.version Sys.ocaml_version;

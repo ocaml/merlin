@@ -30,7 +30,7 @@ open Std
 
 let {Logger. log} = Logger.for_section "Mconfig_dot"
 
-type directive = Dot_protocol.directive
+type directive = Merlin_dot_protocol.directive
 
 type config = {
   build_path   : string list;
@@ -273,11 +273,11 @@ let get_config { workdir; process_dir; configurator } path_abs =
   in
   let query path (p : Configurator.Process.t) =
     log_query path;
-    Dot_protocol.Commands.send_file
+    Merlin_dot_protocol.Commands.send_file
       ~out_channel:p.stdin
       path;
     flush p.stdin;
-    Dot_protocol.read ~in_channel:p.stdout
+    Merlin_dot_protocol.read ~in_channel:p.stdout
   in
   try
     let p =
@@ -320,8 +320,8 @@ let get_config { workdir; process_dir; configurator } path_abs =
         prepend_config ~dir:workdir directives empty_config
       in
       postprocess_config cfg, failures
-    | Error (Dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
-    | Error (Dot_protocol.Csexp_parse_error _) -> raise End_of_input
+    | Error (Merlin_dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
+    | Error (Merlin_dot_protocol.Csexp_parse_error _) -> raise End_of_input
   with
     | Process_exited ->
       (* This can happen

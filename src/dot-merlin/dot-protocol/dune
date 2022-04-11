@@ -1,4 +1,3 @@
 (library
  (name merlin_dot_protocol)
- (wrapped false)
  (libraries merlin_utils csexp))

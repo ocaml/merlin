@@ -11,7 +11,7 @@ let applicative_functors = ref true
 
 let unsafe_string =
   ref (
-    match My_config.ocamlversion with
+    match Merlin_config.ocamlversion with
     | `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3
     | `OCaml_4_03_0
     | `OCaml_4_04_0

@@ -3,8 +3,11 @@
  (flags
   -open Ocaml_utils
   -open Ocaml_parsing
+  -open Ocaml_preprocess
   -open Ocaml_typing
-  -open Merlin_utils)
+  -open Merlin_utils
+  -open Merlin_specific
+  -open Merlin_kernel)
  (libraries
   config
   merlin_specific
@@ -12,7 +15,7 @@
   merlin_kernel
   merlin_utils
   ocaml_parsing
-  preprocess
+  ocaml_preprocess
   query_protocol
   ocaml_typing
   ocaml_utils))
