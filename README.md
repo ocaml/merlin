@@ -154,6 +154,19 @@ External contributors have implemented modes for more editors:
 - [nuclide for Atom](https://nuclide.io/) includes Merlin support
 - [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)
 
+
+Merlin as a library
+===================
+
+Merlin can also be used a library. Exemplary projects that use Merlin's libraries are:
+
+- [OCaml LSP](https://github.com/ocaml/ocaml-lsp) - The official OCaml's Language Server Protocol implementation
+
+If you're building editor tools, you might also want to use Merlin as a library!
+
+Note, however, that Merlin's public API is not stable and we don't garentee backward-compatibility between releases.
+If you're a Merlin user and depend on a public API, we recommend that you contact us or open an issue.
+
 Next steps
 ==========
 

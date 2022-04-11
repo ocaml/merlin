@@ -2,5 +2,6 @@
 
 (library
  (name merlin_utils)
+ (public_name merlin.utils)
  (libraries str yojson unix)
  (foreign_stubs (language c) (names platform_misc)))

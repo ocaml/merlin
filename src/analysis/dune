@@ -1,5 +1,6 @@
 (library
  (name merlin_analysis)
+ (public_name merlin.analysis)
  (flags
   -open Ocaml_utils
   -open Ocaml_parsing
@@ -7,9 +8,10 @@
   -open Ocaml_typing
   -open Merlin_utils
   -open Merlin_specific
+  -open Merlin_extend
   -open Merlin_kernel)
  (libraries
-  config
+  merlin_config
   merlin_specific
   merlin_extend
   merlin_kernel

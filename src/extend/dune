@@ -1,6 +1,6 @@
 (library
  (name      merlin_extend)
- (wrapped   false)
+ (public_name      merlin.extend)
  (modules   (:standard \ extend_helper))
  (flags -open Ocaml_utils -open Ocaml_parsing -open Ocaml_typing)
  (libraries ocaml_parsing ocaml_typing unix ocaml_utils))

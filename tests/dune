@@ -8,5 +8,6 @@
  (applies_to :whole_subtree)
  (deps
   %{bin:merlin-wrapper}
-  (package merlin)
-  (package dot-merlin-reader)))
+  %{bin:ocamlmerlin-server}
+  %{bin:ocamlmerlin}
+  %{bin:dot-merlin-reader}))
