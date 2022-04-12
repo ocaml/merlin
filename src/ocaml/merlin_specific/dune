@@ -1,6 +1,6 @@
 (library
   (name merlin_specific)
-  (public_name merlin.specific)
+  (public_name merlin-lib.ocaml_merlin_specific)
   (flags
    -open Ocaml_utils
    -open Ocaml_parsing
