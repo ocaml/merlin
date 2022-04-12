@@ -8,18 +8,18 @@ license:      "MIT"
 build: [
   ["dune" "subst"] {dev}
   ["dune" "build" "-p" name "-j" jobs]
-  ["dune" "runtest" "-p" "merlin,dot-merlin-reader" "-j" "1"] {with-test}
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
 depends: [
   "ocaml" {>= "4.14" & < "4.15"}
   "dune" {>= "2.9.0"}
-  "dot-merlin-reader" {>= "4.0"}
+  "merlin-lib" {= version}
+  "dot-merlin-reader" {= version}
   "yojson" {>= "1.6.0"}
   "conf-jq" {with-test}
-  "csexp" {>= "1.2.3"}
-  "menhir" {dev}
-  "menhirLib" {dev}
-  "menhirSdk" {dev}
+]
+conflicts: [
+  "base-effects"
 ]
 synopsis:
   "Editor helper, provides completion, typing and source browsing in Vim and Emacs"

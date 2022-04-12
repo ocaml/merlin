@@ -11,11 +11,11 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "ocaml" {>= "4.06.1" }
-  "dune" {>= "2.7.0"}
-  "yojson" {>= "1.6.0"}
+  "ocaml" {>= "4.08" }
+  "dune" {>= "2.9.0"}
+  "merlin-lib" {= version}
   "ocamlfind" {>= "1.6.0"}
-  "csexp" {>= "1.2.3"}
 ]
 description:
-  "Helper process: reads .merlin files and gives the normalized content to merlin"
+  "Helper process: reads .merlin files and outputs the normalized content to
+  stdout."
