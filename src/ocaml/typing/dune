@@ -1,5 +1,6 @@
 (library
   (name ocaml_typing)
+  (public_name merlin.ocaml_typing)
   (flags
    -open Ocaml_utils
    -open Ocaml_parsing

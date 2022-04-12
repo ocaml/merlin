@@ -5,6 +5,6 @@
           (run %{ocaml} gen_config.ml %{ocaml_version}))))
 
 (library
- (name config)
- (wrapped false)
+ (name merlin_config)
+ (public_name merlin.config)
  (modules merlin_config))

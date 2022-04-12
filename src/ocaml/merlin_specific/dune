@@ -1,9 +1,11 @@
 (library
   (name merlin_specific)
+  (public_name merlin.specific)
   (flags
    -open Ocaml_utils
    -open Ocaml_parsing
    -open Ocaml_preprocess
    -open Ocaml_typing
+   -open Ocaml_preprocess
    -open Merlin_utils)
   (libraries merlin_utils ocaml_parsing ocaml_preprocess ocaml_typing ocaml_utils))
