@@ -5,6 +5,7 @@
   (OCAMLC ocamlc))))
 
 (cram
+ (package merlin)
  (applies_to :whole_subtree)
  (deps
   %{bin:merlin-wrapper}
