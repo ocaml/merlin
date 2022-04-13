@@ -92,6 +92,7 @@ let main () =
   | args -> Old_merlin.run args
 
 let () =
+  Std.Json.pretty_to_string := Yojson.Basic.pretty_to_string;
   let log_file =
     match Sys.getenv "MERLIN_LOG" with
     | exception Not_found -> None
