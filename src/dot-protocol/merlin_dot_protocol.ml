@@ -63,7 +63,7 @@ end
 type directive = Directive.Processed.t
 
 module Sexp = struct
-  type t = Atom of string | List of t list
+  type t = Csexp.t = Atom of string | List of t list
 
   let atoms_of_strings = List.map ~f:(fun s -> Atom s)
 
@@ -127,8 +127,6 @@ module Sexp = struct
     List (List.map ~f directives)
 end
 
-module Csexp = Csexp.Make (Sexp)
-
 module Commands = struct
   type t = File of string | Halt | Unknown
 
@@ -163,3 +161,40 @@ let read ~in_channel =
 
 let write ~out_channel (directives : directive list) =
   directives |> Sexp.from_directives |> Csexp.to_channel out_channel
+
+module Make (IO : sig
+  type 'a t
+
+  module O : sig
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  end
+end) (Chan : sig
+  type t
+
+  val read : t -> Csexp.t option IO.t
+
+  val write : t -> Csexp.t -> unit IO.t
+end) = struct
+  let read chan =
+    let open IO.O in
+    let+ res = Chan.read chan in
+    match res with
+    | None ->
+        Error (Unexpected_output "Eof")
+    | Some (Sexp.List directives) ->
+        Ok (List.map directives ~f:Sexp.to_directive)
+    | Some sexp ->
+      let msg = Printf.sprintf
+        "A list of directives was expected, instead got: \"%s\""
+        (Sexp.to_string sexp)
+      in
+      Error (Unexpected_output msg)
+
+  module Commands = struct
+    let send_file chan path =
+      Chan.write chan Sexp.(List [Atom "File"; Atom path])
+
+    let halt chan =
+      Chan.write chan (Sexp.Atom "Halt")
+  end
+end

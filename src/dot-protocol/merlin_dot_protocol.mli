@@ -90,3 +90,25 @@ type read_error =
 val read : in_channel:in_channel -> (directive list, read_error) Merlin_utils.Std.Result.t
 
 val write : out_channel:out_channel -> directive list -> unit
+
+module Make (IO : sig
+  type 'a t
+
+  module O : sig
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  end
+end) (Chan : sig
+  type t
+
+  val read : t -> Csexp.t option IO.t
+
+  val write : t -> Csexp.t -> unit IO.t
+end) : sig
+  val read : Chan.t -> (directive list, read_error) Merlin_utils.Std.Result.t IO.t
+
+  module Commands : sig
+    val send_file : Chan.t -> string -> unit IO.t
+
+    val halt : Chan.t -> unit IO.t
+  end
+end
