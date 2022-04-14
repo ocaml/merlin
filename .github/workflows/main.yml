@@ -49,35 +49,29 @@ jobs:
 
       - name: Set up OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
-        if: runner.os != 'Windows'
         with:
           # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          opam-repositories: |
-            default: https://github.com/ocaml/opam-repository.git
-            beta: https://github.com/ocaml/ocaml-beta-repository.git
-
-      - name: Set up OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
-        if: runner.os == 'Windows'
-        with:
-          # Version of the OCaml compiler to initialise
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          opam-repositories: |
-            default: https://github.com/fdopen/opam-repository-mingw.git#opam2
-            beta: https://github.com/ocaml/ocaml-beta-repository.git
 
       - name: Install dependencies
         run: |
           opam depext conf-jq --yes # opam depext bug
-          opam pin menhirLib 20201216
-          opam install . --deps-only --with-test
+          opam pin menhirLib 20201216 --no-action
+          opam install . --deps-only --with-test --yes
 
-      - name: Build and test in release mode
-        run: opam exec -- dune runtest -p merlin,dot-merlin-reader
+      - name: Build and test in release mode (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,merlin
+
+      - name: Build and test in release mode (macos/linux)
+        if: matrix.os != 'windows-latest'
+        run: |
+          opam install . --with-test --yes
 
       - name: Build in dev mode to check parser changes
         if: matrix.os == 'ubuntu-latest'
         run: |
+          opam exec -- dune clean
           opam exec -- dune build
           git diff --exit-code

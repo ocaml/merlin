@@ -138,7 +138,7 @@ let run = function
         log ~title:"run(result)" "%a" Logger.json (fun () -> json);
         begin match Mconfig.(config.merlin.protocol) with
           | `Sexp -> Sexp.tell_sexp print_string (Sexp.of_json json)
-          | `Json -> Std.Json.to_channel stdout json
+          | `Json ->  Yojson.Basic.to_channel stdout json
         end;
         print_newline ()
       end with

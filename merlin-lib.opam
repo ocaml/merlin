@@ -1,7 +1,6 @@
 opam-version: "2.0"
 maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
-synopsis:     "Reads config files for merlin"
 homepage:     "https://github.com/ocaml/merlin"
 bug-reports:  "https://github.com/ocaml/merlin/issues"
 dev-repo:     "git+https://github.com/ocaml/merlin.git"
@@ -11,11 +10,16 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "ocaml" {>= "4.08" }
+  "ocaml" {>= "4.14" & < "4.15"}
   "dune" {>= "2.9.0"}
-  "merlin-lib" {= version}
-  "ocamlfind" {>= "1.6.0"}
+  "csexp" {>= "1.5.1"}
+  "menhir" {dev}
+  "menhirLib" {dev}
+  "menhirSdk" {dev}
 ]
+synopsis:
+  "Merlin's libraries"
 description:
-  "Helper process: reads .merlin files and outputs the normalized content to
-  stdout."
+  "These libraries provides access to low-level compiler interfaces and the
+  standard higher-level merlin protocol. The library is provided as-is, is not
+  thoroughly documented, and its public API might break with any new release."

@@ -1,13 +1,13 @@
 (library
  (name        query_protocol)
- (public_name merlin.query_protocol)
+ (public_name merlin-lib.query_protocol)
  (modules     query_protocol)
  (flags -open Merlin_utils -open Merlin_kernel -open Ocaml_parsing -open Merlin_kernel)
  (libraries merlin_kernel merlin_utils ocaml_parsing))
 
 (library
  (name        query_commands)
- (public_name merlin.query_commands)
+ (public_name merlin-lib.query_commands)
  (modules     query_commands)
  (flags
   -open Ocaml_utils

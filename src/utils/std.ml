@@ -26,8 +26,18 @@
 
 )* }}} *)
 
+type json =
+[ `Assoc of (string * json) list
+| `Bool of bool
+| `Float of float
+| `Int of int
+| `List of json list
+| `Null
+| `String of string ]
+
 module Json = struct
-  include Yojson.Basic
+  type t = json
+
   let string x = `String x
   let int x = `Int x
   let bool x = `Bool x
@@ -39,19 +49,13 @@ module Json = struct
   let list f x =
     `List (List.map f x)
 
-  let print f () x =
-    pretty_to_string (f x)
-
+  let pretty_to_string : (t -> string) ref = ref @@ fun _ ->
+    Printf.sprintf
+      "Logger error: `Std.Json.pretty_to_string` \
+        is not set. You should initialize that reference with the \
+        pretifier of your choice to enable json logging. \
+        A common one is `Yojson.Basic.pretty_to_string`."
 end
-
-type json =
-  [ `Assoc of (string * json) list
-  | `Bool of bool
-  | `Float of float
-  | `Int of int
-  | `List of json list
-  | `Null
-  | `String of string ]
 
 module Hashtbl = struct
   include Hashtbl

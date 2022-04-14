@@ -80,7 +80,7 @@ let fmt () f =
 
 let json () f =
   match f () with
-  | json -> Json.pretty_to_string json
+  | json -> !Json.pretty_to_string json
   | exception exn ->
     Printf.sprintf "Exception: %s" (Printexc.to_string exn)
 

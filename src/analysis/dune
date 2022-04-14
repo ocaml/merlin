@@ -1,6 +1,6 @@
 (library
  (name merlin_analysis)
- (public_name merlin.analysis)
+ (public_name merlin-lib.analysis)
  (flags
   -open Ocaml_utils
   -open Ocaml_parsing

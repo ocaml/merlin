@@ -1,3 +1,12 @@
+unreleased
+==========
+
+  + merlin binary
+    - make most library public and split merlin in two packages: the
+      `merlin-lib` package that exposes merlin's internals and the `merlin`
+      package with the frontend. (#1448, #1455, #1457, @rgrinberg, @tmattio,
+      @kit-ty-kate)
+
 merlin 4.5
 ==========
 Tue Apr  5 20:51:42 CEST 2022

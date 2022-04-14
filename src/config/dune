@@ -6,5 +6,5 @@
 
 (library
  (name merlin_config)
- (public_name merlin.config)
+ (public_name merlin-lib.config)
  (modules merlin_config))

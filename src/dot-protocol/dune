@@ -1,4 +1,4 @@
 (library
  (name merlin_dot_protocol)
- (public_name dot-merlin-reader.merlin_dot_protocol)
+ (public_name merlin-lib.dot_protocol)
  (libraries merlin_utils csexp))

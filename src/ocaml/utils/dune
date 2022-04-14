@@ -1,5 +1,5 @@
 (library
   (name ocaml_utils)
-  (public_name merlin.ocaml_utils)
+  (public_name merlin-lib.ocaml_utils)
   (libraries merlin_config merlin_utils)
   (flags (-open Merlin_utils)))
