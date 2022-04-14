@@ -2,6 +2,7 @@
  (name merlin_analysis)
  (public_name merlin-lib.analysis)
  (flags
+  :standard
   -open Ocaml_utils
   -open Ocaml_parsing
   -open Ocaml_preprocess
