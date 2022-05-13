@@ -2,4 +2,4 @@
  (package dot-merlin-reader)
  (name dot_merlin_reader)
  (public_name dot-merlin-reader)
- (libraries findlib merlin-lib.utils merlin-lib.dot_protocol))
+ (libraries findlib merlin-lib.utils merlin-lib.dot_protocol str unix))
