@@ -26,7 +26,7 @@
 
 )* }}} *)
 
-(* Assuming an expression (or other constructs occuring inside expressions,
+(* Assuming an expression (or other constructs occurring inside expressions,
    like cases of a match statement) is in tail-position, returns all
    sub-expression that will be evaluated in tail-position too *)
 val tail_positions: Browse_raw.node -> Browse_raw.node list

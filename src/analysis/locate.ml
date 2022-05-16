@@ -447,7 +447,7 @@ let from_uid ~ml_or_mli uid loc path =
         log ~title "Loading the shapes for unit %S" comp_unit;
         match load_cmt comp_unit ml_or_mli with
         | Ok (Some pos_fname, cmt) ->
-          log ~title "Shapes succesfully loaded, looking for %a"
+          log ~title "Shapes successfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
             | Some loc when

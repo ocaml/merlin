@@ -13,7 +13,7 @@ Tue Apr  5 20:51:42 CEST 2022
 
   + merlin binary
     - don't reset the environment when running merlin in single mode so that the
-      parent environement is forwarded the the child processes (#1425)
+      parent environment is forwarded the the child processes (#1425)
     - filter dups in source paths (#1218)
     - improve load path performance (#1323)
     - fix handlink of ppx's under Windows (#1413)
@@ -167,7 +167,7 @@ merlin 4.0
 Tue Feb  2 03:13:37 PM CET 2021
 
   + ocaml support
-    Detailled list of changes on
+    Detailed list of changes on
     https://tarides.com/blog/2021-01-26-recent-and-upcoming-changes-to-merlin#dropping-support-for-old-versions-of-ocaml
     Summary:
     - any revision of Merlin now only supports one version of OCaml. Support for

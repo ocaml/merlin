@@ -304,7 +304,7 @@ let get_config { workdir; process_dir; configurator } path_abs =
       | _, _ -> path_abs
     in
 
-    (* Starting with Dune 2.8.3 relative paths are prefered. However to maintain
+    (* Starting with Dune 2.8.3 relative paths are preferred. However to maintain
        compatibility with 2.8 <= Dune <= 2.8.2  we always retry with an absolute
        path if using a relative one failed *)
     let answer =
@@ -329,7 +329,7 @@ let get_config { workdir; process_dir; configurator } path_abs =
         files
       - There was a bug in the external reader causing a crash *)
       let error = Printf.sprintf
-        "A problem occured with merlin external configuration reader. %s If \
+        "A problem occurred with merlin external configuration reader. %s If \
          the problem persists, please file an issue on Merlin's tracker."
         (match configurator with
         | Dot_merlin -> "Check that `dot-merlin-reader` is installed."

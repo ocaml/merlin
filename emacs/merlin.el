@@ -1571,7 +1571,7 @@ loading"
   (when merlin-type-after-locate (merlin-type-enclosing)))
 
 (defun merlin-locate-ident (ident)
-  "Locate the inputed identifier"
+  "Locate the inputted identifier"
   (interactive "s> ")
   (merlin--locate-result (merlin-call-locate ident)))
 

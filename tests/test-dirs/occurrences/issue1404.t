@@ -1,7 +1,7 @@
-FIXME there is a discrepency on the detection of the expression under the cursor
-between locate and occurences.
+FIXME there is a discrepancy on the detection of the expression under the cursor
+between locate and occurrences.
 
-occurences identifier-at 2:0 returns the occurences of [x]
+occurrences identifier-at 2:0 returns the occurrences of [x]
   $ $MERLIN single occurrences -identifier-at 2:0 -filename opt.ml <<EOF | \
   > jq '.value'
   > let x = 3 and y = 4 + 2 in
@@ -30,7 +30,7 @@ occurences identifier-at 2:0 returns the occurences of [x]
     }
   ]
 
-FIXME occurences identifier-at 2:1 returns the occurences of [x] (should be [+])
+FIXME occurrences identifier-at 2:1 returns the occurrences of [x] (should be [+])
   $ $MERLIN single occurrences -identifier-at 2:1 -filename opt.ml <<EOF | \
   > jq '.value'
   > let x = 3 and y = 4 + 2 in

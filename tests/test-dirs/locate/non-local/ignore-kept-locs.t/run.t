@@ -21,7 +21,7 @@ available:
 
   $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
   Loading the shapes for unit "A"
-  Shapes succesfully loaded, looking for A.0
+  Shapes successfully loaded, looking for A.0
   Found location: File "a.ml", line 1, characters 4-9
 
   $ rm log
@@ -42,7 +42,7 @@ available:
 
   $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
   Loading the shapes for unit "A"
-  Shapes succesfully loaded, looking for A.0
+  Shapes successfully loaded, looking for A.0
   Found location: File "a.ml", line 1, characters 4-9
 
   $ rm log
