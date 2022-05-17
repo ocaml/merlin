@@ -126,7 +126,7 @@ The return value has the shape \
             ));
     ]
 ~doc:"The construct command returns a list of expressions that could fill a
-hole at '-position' given its infered type. The '-depth' parameter allows to
+hole at '-position' given its inferred type. The '-depth' parameter allows to
 recursively construct terms. Note that when '-depth' > 1 partial results of
 inferior depth will not be returned."
     ~default:(`Offset (-1), None, None)

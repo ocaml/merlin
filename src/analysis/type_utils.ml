@@ -288,7 +288,7 @@ let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
           end;
           true
         with _ ->
-        (* Fallback to contextless typing attemps *)
+        (* Fallback to contextless typing attempts *)
         try
           print_expr e;
           true

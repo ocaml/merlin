@@ -562,7 +562,7 @@ endfunction
 
 function! merlin#ConstructDone()
   if b:merlin_construct_done
-    " After the subtitution we try to go to the the next hole
+    " After the substitution we try to go to the the next hole
     " TODO Don't if no substitution happened and rewrite the hole
     call setpos('.', b:construct_saved_pos)
     let start_line = b:construct_saved_pos[1]
