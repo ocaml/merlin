@@ -1,0 +1,27 @@
+(env
+ (dev
+  (flags
+   (:standard
+    -warn-error
+    -9-27-39
+    ;-dsource
+    ))))
+
+(library
+ (name predefined)
+ (modules Predefined))
+
+(library
+ (name lib1)
+ (modules lib1)
+ (libraries predefined)
+ (flags
+  (:standard
+   -open
+   Predefined
+   ; When the test will be properly merged, we could remove -dparseetree to make it less breakable
+   -dparsetree))
+ (preprocess
+  (per_module
+   ((pps ppx_fresh)
+    Lib1))))
