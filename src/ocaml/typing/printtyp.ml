@@ -1773,7 +1773,7 @@ let rec tree_of_modtype ?(ellipsis=false) = function
       let res = wrap_env env (tree_of_modtype ~ellipsis) ty_res in
       Omty_functor (param, res)
   | Mty_alias p ->
-      let p = best_module_type_path p in
+      let p = best_module_path p in
       Omty_alias (tree_of_path Module p)
   | Mty_for_hole -> Omty_hole
 
