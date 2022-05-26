@@ -1,0 +1,13 @@
+(ocamllex menhir_lexer)
+(menhir (modules menhir_parser))
+(library
+  (name menhir_front)
+  (modules menhir_def menhir_lexer menhir_parser menhir_syntax)
+  (libraries parsing)
+  (wrapped false))
+
+(executable
+  (name menhir_driver)
+  (modules menhir_driver)
+  (libraries parsing menhir_front))
+
