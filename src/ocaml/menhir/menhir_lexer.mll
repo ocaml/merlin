@@ -69,7 +69,7 @@ let overwrite content offset c1 c2 =
 type monster = {
 
   (* The position of the monster. *)
-  pos: position * position;
+  pos: Positions.t;
 
   (* This method is passed an array of (optional) names for the producers,
      that is, the elements of the production's right-hand side. It is also
@@ -291,14 +291,14 @@ let mk_stretch pos1 pos2 parenthesize monsters =
     else
       (String.make (pos1.pos_cnum - pos1.pos_bol) ' ') ^ content
   in
-  Stretch.({
-    stretch_filename = InputFile.get_input_file_name();
-    stretch_linenum = pos1.pos_lnum;
-    stretch_linecount = pos2.pos_lnum - pos1.pos_lnum;
-    stretch_content = content;
-    stretch_raw_content = raw_content;
-    stretch_keywords = List.filter_map (fun monster -> monster.keyword) monsters
-  })
+  { Stretch.
+    filename = InputFile.get_input_file_name();
+    linenum = pos1.pos_lnum;
+    linecount = pos2.pos_lnum - pos1.pos_lnum;
+    content = content;
+    raw_content = raw_content;
+    keywords = List.filter_map (fun monster -> monster.keyword) monsters
+  }
 
 (* Creating a stretch from a located identifier. (This does not require the
    input file to be currently opened.) In this variant, [parenthesize] is
@@ -312,14 +312,14 @@ let stretch_of_id (id : string located) =
   assert (pos1 != Lexing.dummy_pos);
   let padding = pos1.pos_cnum - pos1.pos_bol in
   let content = String.make padding ' ' ^ raw_content in
-  Stretch.({
-    stretch_filename = filename;
-    stretch_linenum = pos1.pos_lnum;
-    stretch_linecount = pos2.pos_lnum - pos1.pos_lnum;
-    stretch_content = content;
-    stretch_raw_content = raw_content;
-    stretch_keywords = []
-  })
+  { Stretch.
+    filename = filename;
+    linenum = pos1.pos_lnum;
+    linecount = pos2.pos_lnum - pos1.pos_lnum;
+    content = content;
+    raw_content = raw_content;
+    keywords = []
+  }
 
 (* ------------------------------------------------------------------------ *)
 
@@ -516,10 +516,10 @@ rule main = parse
     { if Hashtbl.mem reserved id then
         error2 lexbuf "this is an OCaml reserved word."
       else
-        LID (with_pos (cpos lexbuf) id)
+        LID (with_cpos lexbuf id)
     }
 | (uppercase identchar *) as id
-    { UID (with_pos (cpos lexbuf) id) }
+    { UID (with_cpos lexbuf id) }
 (* Quoted strings are used as aliases for tokens. *)
 (* A quoted string is stored as is -- with the quotes
    and with its escape sequences. *)
@@ -529,7 +529,7 @@ rule main = parse
       let content = record_string openingpos buffer lexbuf in
       let id = Printf.sprintf "\"%s\"" content in
       let pos = import (openingpos, lexbuf.lex_curr_p) in
-      QID (with_pos pos id) }
+      QID (with_loc pos id) }
 | "//" [^ '\010' '\013']* newline (* skip C++ style comment *)
 | newline
     { new_line lexbuf; main lexbuf }
@@ -582,10 +582,10 @@ rule main = parse
       let attr = mk_stretch stretchpos closingpos false [] in
       if percent = "" then
         (* No [%] sign: this is a normal attribute. *)
-        ATTRIBUTE (Positions.with_pos pos id, attr)
+        ATTRIBUTE (Positions.with_loc pos id, attr)
       else
         (* A [%] sign is present: this is a grammar-wide attribute. *)
-        GRAMMARATTRIBUTE (Positions.with_pos pos id, attr)
+        GRAMMARATTRIBUTE (Positions.with_loc pos id, attr)
     }
 | eof
     { EOF }
@@ -617,7 +617,7 @@ and ocamltype openingpos = parse
 | "[>"
     { ocamltype openingpos lexbuf }
 | '>'
-    { OCAMLTYPE (Stretch.Declared (mk_stretch openingpos (lexeme_start_p lexbuf) true [])) }
+    { OCAMLTYPE (mk_stretch openingpos (lexeme_start_p lexbuf) true []) }
 | "(*"
     { ocamlcomment (lexeme_start_p lexbuf) lexbuf; ocamltype openingpos lexbuf }
 | newline

@@ -24,18 +24,6 @@ open Menhir_def
 open Menhir_syntax
 open Positions
 
-(* An injection of symbol expressions into choice expressions. *)
-
-let inject (e : symbol_expression located) : expression =
-  Positions.pmap (fun pos e ->
-    let branch =
-      Branch (
-          Positions.with_pos pos (ESingleton e)
-      )
-    in
-    EChoice [ branch ]
-  ) e
-
 (* When a stretch has been created by [Lexer.mk_stretch] with [parenthesize]
    set to [true], it includes parentheses. In some (rare) cases, this is
    undesirable. The following function removes the parentheses a posteriori.
@@ -72,6 +60,19 @@ let unparenthesize (o : Stretch.t option) : Stretch.t option =
 
 *)
 
+let parameters_app symbol = function
+  | [] -> PVar symbol
+  | xs -> PApp (symbol, xs)
+
+let parameters_with_pos param =
+  let pos = match param with
+    | PVar x | PApp (x, _) -> Positions.position x
+    | PAnonymous xs -> Positions.position xs
+  in
+  Positions.with_loc pos param
+
+let parameters_map f p =
+  Positions.map f (parameters_with_pos p)
 %}
 
 (* ------------------------------------------------------------------------- *)
@@ -110,7 +111,7 @@ let unparenthesize (o : Stretch.t option) : Stretch.t option =
 %token <Menhir_def.Stretch.t>
   HEADER           "%{ header %}"
 
-%token <Menhir_def.Stretch.ocamltype>
+%token <Menhir_def.Stretch.t>
   OCAMLTYPE        "<unit>"
 
 %token <Menhir_def.Stretch.t Lazy.t>
@@ -149,7 +150,7 @@ let unparenthesize (o : Stretch.t option) : Stretch.t option =
    The new rule syntax does not have this possibility, and has no ambiguity. *)
 
 %nonassoc no_optional_bar
-%nonassoc BAR
+%nonassoc "|"
 
 (* ------------------------------------------------------------------------- *)
 (* On-error-reduce declarations. *)
@@ -158,15 +159,54 @@ let unparenthesize (o : Stretch.t option) : Stretch.t option =
    thus reduce the number of syntax error messages that we have to write in
    parserMessages.messages. *)
 
+(* TODO
 %on_error_reduce old_rule
 %on_error_reduce list(ATTRIBUTE)
 %on_error_reduce action_expression
-%on_error_reduce separated_nonempty_list(COMMA,symbol)
-%on_error_reduce separated_nonempty_list(COMMA,pattern)
-%on_error_reduce loption(delimited(LPAREN,separated_nonempty_list(COMMA,lax_actual),RPAREN))
-%on_error_reduce loption(delimited(LPAREN,separated_nonempty_list(COMMA,expression),RPAREN))
+%on_error_reduce separated_nonempty_list(",",symbol)
+%on_error_reduce separated_nonempty_list(",",pattern)
+%on_error_reduce loption(delimited("(",separated_nonempty_list(",",lax_actual),")"))
+%on_error_reduce loption(delimited("(",separated_nonempty_list(",",expression),")"))
+*)
 
 %%
+
+(* -------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
+
+(* Generic definitions. *)
+
+(* ------------------------------------------------------------------------- *)
+
+(* Formal and actual parameter lists can be absent. When present, they must
+   be nonempty, and are delimited with parentheses and separated with commas. *)
+
+%inline plist(X):
+  params = loption(delimited("(", separated_nonempty_list(",", X), ")"))
+    { params }
+
+(* ------------------------------------------------------------------------- *)
+(* Our lists of symbols are separated with optional commas. Order is
+   irrelevant. *)
+
+%inline clist(X):
+| xs=separated_nonempty_list(","?, X)
+  { xs }
+;
+
+(* -------------------------------------------------------------------------- *)
+
+(* [located(X)] recognizes the same language as [X] and converts the resulting
+   value from type ['a] to type ['a located]. *)
+
+located(X):
+  x = X
+    { with_pos $loc x }
+
+(* -------------------------------------------------------------------------- *)
+(* -------------------------------------------------------------------------- *)
+
+(**** ENTRY POINT ****)
 
 (* ------------------------------------------------------------------------- *)
 (* A grammar consists of declarations and rules, followed by an optional
@@ -174,7 +214,7 @@ let unparenthesize (o : Stretch.t option) : Stretch.t option =
 
 grammar:
   ds = flatten(declaration*)
-  PERCENTPERCENT
+  "%%"
   rs = rule*
   t = postlude
     {
@@ -186,6 +226,15 @@ grammar:
       }
     }
 
+
+(* ------------------------------------------------------------------------- *)
+(* A postlude is announced by %%, but is optional. *)
+
+postlude:
+| EOF { None }
+| p = "%%" (* followed by actual postlude *) { Some (Lazy.force p) }
+;
+
 (* ------------------------------------------------------------------------- *)
 (* A declaration is an %{ OCaml header %}, or a %token, %start,
    %type, %left, %right, or %nonassoc declaration. *)
@@ -193,51 +242,48 @@ grammar:
 declaration:
 
 | h = HEADER (* lexically delimited by %{ ... %} *)
-    { [ with_loc $loc (DCode h) ] }
+  { [ with_pos $loc (DCode h) ] }
 
-| TOKEN ty = OCAMLTYPE? ts = clist(terminal_alias_attrs)
-    { List.map (Positions.map (fun (terminal, alias, attrs) ->
-        DToken (ty, terminal, alias, attrs)
-      )) ts }
+| "%token" ty = OCAMLTYPE? ts = clist(terminal_alias_attrs)
+  { List.map (Positions.map (fun (terminal, alias, attrs) ->
+      DToken (ty, terminal, alias, attrs)
+    )) ts
+  }
 
-| START t = OCAMLTYPE? nts = clist(nonterminal)
-    (* %start <ocamltype> foo is syntactic sugar for %start foo %type <ocamltype> foo *)
-    {
-      match t with
-      | None ->
-          List.map (Positions.map (fun nonterminal -> DStart nonterminal)) nts
-      | Some _t ->
-          failwith "TODO"
-          (* Misc.mapd (fun ntloc ->
-            Positions.mapd (fun nt -> DStart nt, DType (t, ParameterVar ntloc)) ntloc) nts *)
-    }
+| "%start" t = OCAMLTYPE? nts = clist(nonterminal)
+  (* %start <ocamltype> foo is syntactic sugar for %start foo %type <ocamltype> foo *)
+  { match t with
+    | None ->
+      List.map (Positions.map (fun nonterminal -> DStart nonterminal)) nts
+    | Some t ->
+      List.concat_map (fun ntloc ->
+        let a, b =
+          Positions.mapd (fun nt -> DStart nt, DType (t, PVar ntloc)) ntloc
+        in
+        [a; b]
+      ) nts
+  }
 
-| TYPE _t = OCAMLTYPE _ss = clist(strict_actual)
-    { failwith "TODO" }
-    (* List.map (Positions.map (fun nt -> DType (t, nt)))
-         (List.map Parameters.with_pos ss) *)
+| "%type" t = OCAMLTYPE ss = clist(strict_actual)
+  { List.map (parameters_map (fun nt -> DType (t, nt))) ss
+  }
 
-| _k = priority_keyword _ss = clist(symbol)
-    { failwith "TODO" }
-    (* let prec = ParserAux.new_precedence_level $loc(k) in
-       List.map (Positions.map (fun symbol -> DTokenProperties (symbol, k, prec))) ss *)
+| _k=priority_keyword ss=clist(symbol)
+  { List.map (Positions.map (fun symbol -> DTokenProperties symbol)) ss }
 
-| PARAMETER t = OCAMLTYPE
-    { [ with_loc $loc (DParameter t) ] }
+| "%parameter" t=OCAMLTYPE
+    { [ with_pos $loc (DParameter t) ] }
 
-| attr = GRAMMARATTRIBUTE
-    { [ with_loc $loc (DGrammarAttribute attr) ] }
+| attr=GRAMMARATTRIBUTE
+    { [ with_pos $loc (DGrammarAttribute attr) ] }
 
-| PERCENTATTRIBUTE actuals = clist(strict_actual) attrs = ATTRIBUTE+
-    { [ with_loc $loc (DSymbolAttributes (actuals, attrs)) ] }
+| "%attribute" actuals=clist(strict_actual) attrs=ATTRIBUTE+
+    { [ with_pos $loc (DSymbolAttributes (actuals, attrs)) ] }
 
-| ON_ERROR_REDUCE _ss = clist(strict_actual)
-    { failwith "TODO" }
-    (* let prec = ParserAux.new_on_error_reduce_level() in
-       List.map (Positions.map (fun nt -> DOnErrorReduce (nt, prec)))
-         (List.map Parameters.with_pos ss) *)
+| "%on_error_reduce" ss=clist(strict_actual)
+    { List.map (parameters_map (fun nt -> DOnErrorReduce nt)) ss }
 
-| SEMI
+| ";"
     { [] }
 
 (* This production recognizes tokens that are valid in the rules section,
@@ -252,185 +298,17 @@ declaration:
     }
 
 priority_keyword:
-  LEFT
-    { LeftAssoc }
-| RIGHT
-    { RightAssoc }
-| NONASSOC
-    { NonAssoc }
+| "%left"     { () (*LeftAssoc*) }
+| "%right"    { () (*RightAssoc*) }
+| "%nonassoc" { () (*NonAssoc*) }
 
 %inline rule_specific_token:
-| PUBLIC
-| INLINE
-| COLON
-| LET
+| "%public"
+| "%inline"
+| ":"
+| "let"
 | EOF
-    { () }
-
-(* ------------------------------------------------------------------------- *)
-(* Our lists of symbols are separated with optional commas. Order is
-   irrelevant. *)
-
-%inline clist(X):
-  xs = separated_nonempty_list(COMMA?, X)
-    { xs }
-
-(* ------------------------------------------------------------------------- *)
-(* A symbol is a terminal or nonterminal symbol. *)
-
-(* One would like to require nonterminal symbols to begin with a lowercase
-   letter, so as to lexically distinguish them from terminal symbols, which
-   must begin with an uppercase letter. However, for compatibility with
-   ocamlyacc, this is impossible. It can be required only for nonterminal
-   symbols that are also start symbols. *)
-
-(* We also accept token aliases in place of ordinary terminal symbols.
-   Token aliases are quoted strings. *)
-
-symbol:
-  id = LID
-| id = UID
-| id = QID
-    { id }
-
-(* ------------------------------------------------------------------------- *)
-(* Terminals must begin with an uppercase letter. Nonterminals that are
-   declared to be start symbols must begin with a lowercase letter. *)
-
-(* In declarations, terminals must be UIDs, but we may also declare
-   token aliases, which are QIDs. *)
-
-%inline terminal_alias_attrs:
-  id = UID alias = QID? attrs = ATTRIBUTE*
-    { let alias = Option.map Positions.value alias in
-      Positions.map (fun uid -> uid, alias, attrs) id }
-
-%inline nonterminal:
-  id = LID
-    { id }
-
-(* ------------------------------------------------------------------------- *)
-(* A rule is expressed either in the traditional (yacc-style) syntax or in
-   the new syntax. *)
-
-%inline rule:
-  old_rule
-    { $1 }
-| new_rule
-    (* The new syntax is converted on the fly to the old syntax. *)
-    { failwith "TODO" (*NewRuleSyntax.rule $1*) }
-
-(* ------------------------------------------------------------------------- *)
-(* A rule defines a symbol. It is optionally declared %public, and optionally
-   carries a number of formal parameters. The right-hand side of the definition
-   consists of a list of productions. *)
-
-old_rule:
-  flags = flags            (* flags *)
-  symbol = symbol          (* the symbol that is being defined *)
-  attributes = ATTRIBUTE*
-  params = plist(symbol)   (* formal parameters *)
-  COLON
-  optional_bar
-  branches = branches
-  SEMI*
-    {
-      let public, inline = flags in
-      let rule = {
-        pr_public_flag = public;
-        pr_inline_flag = inline;
-        pr_nt          = Positions.value symbol;
-        pr_positions   = [ Positions.position symbol ];
-        pr_attributes  = attributes;
-        pr_parameters  = List.map Positions.value params;
-        pr_branches    = branches
-      }
-      in rule
-    }
-
-%inline branches:
-  prods = separated_nonempty_list(BAR, production_group)
-    { List.flatten prods }
-
-flags:
-  (* epsilon *)
-    { false, false }
-| PUBLIC
-    { true, false }
-| INLINE
-    { false, true }
-| PUBLIC INLINE
-| INLINE PUBLIC
-    { true, true }
-
-optional_bar:
-  (* epsilon *) %prec no_optional_bar
-| BAR
-    { () }
-
-(* ------------------------------------------------------------------------- *)
-(* A production group consists of a list of productions, followed by a
-   semantic action and an optional precedence specification. *)
-
-production_group:
-  _productions = separated_nonempty_list(BAR, production)
-  _action = ACTION
-  _oprec2 = ioption(precedence)
-  { failwith "TODO" }
-      (*
-        (* If multiple productions share a single semantic action, check
-           that all of them bind the same names. *)
-        ParserAux.check_production_group productions;
-        (* Then, *)
-        List.map (fun (producers, oprec1, level, pos) ->
-          (* Replace [$i] with [_i]. *)
-          let pr_producers = ParserAux.normalize_producers producers in
-          (* Distribute the semantic action. Also, check that every [$i]
-             is within bounds. *)
-          let names = ParserAux.producer_names producers in
-          let pr_action = action Settings.dollars names in
-          {
-            pr_producers;
-            pr_action;
-            pr_branch_prec_annotation   = ParserAux.override pos oprec1 oprec2;
-            pr_branch_production_level  = level;
-            pr_branch_position          = pos
-          })
-        productions
-      *)
-
-precedence:
-  PREC symbol = symbol
-    { symbol }
-
-(* ------------------------------------------------------------------------- *)
-(* A production is a list of producers, optionally followed by a
-   precedence declaration. *)
-
-production:
-  producers = producer* oprec = ioption(precedence)
-    { producers,
-      oprec,
-      (*ParserAux.new_production_level(),*)
-      Positions.import $loc
-    }
-
-(* ------------------------------------------------------------------------- *)
-(* A producer is an actual parameter, possibly preceded by a
-   binding, and possibly followed with attributes.
-
-   Because both [ioption] and [terminated] are defined as inlined by
-   the standard library, this definition expands to two productions,
-   one of which begins with id = LID, the other of which begins with
-   p = actual. The token LID is in FIRST(actual),
-   but the LR(1) formalism can deal with that. If [option] was used
-   instead of [ioption], an LR(1) conflict would arise -- looking
-   ahead at LID would not allow determining whether to reduce an
-   empty [option] or to shift. *)
-
-producer:
-| id = ioption(terminated(LID, EQUAL)) p = actual attrs = ATTRIBUTE* SEMI*
-    { position (with_loc $loc ()), id, p, attrs }
+  { () }
 
 (* ------------------------------------------------------------------------- *)
 (* The ideal syntax of actual parameters includes:
@@ -455,55 +333,190 @@ producer:
 *)
 
 %inline generic_actual(A, B):
-(* 1- *)
-  _symbol = symbol _actuals = plist(A)
-    { failwith "TODO" (*Parameters.app symbol actuals*) }
-(* 2- *)
-| p = B m = located(modifier)
-    { ParameterApp (m, [ p ]) }
+| (*1-*) symbol=symbol actuals=plist(A)
+  { parameters_app symbol actuals }
+| (*2-*) p=B m=located(modifier)
+  { parameters_app m [p] }
+;
 
 strict_actual:
-  p = generic_actual(strict_actual, strict_actual)
-    { p }
+| p=generic_actual(strict_actual, strict_actual)
+  { p }
+;
 
 actual:
-  p = generic_actual(lax_actual, actual)
-    { p }
+| p=generic_actual(lax_actual, actual)
+  { p }
+;
 
 lax_actual:
-  p = generic_actual(lax_actual, (* cannot be lax_ *) actual)
-    { p }
-(* 3- *)
-| (* leading bar disallowed *)
-  branches = located(branches)
-    { ParameterAnonymous branches }
-    (* 2016/05/18: we used to eliminate anonymous rules on the fly during
-       parsing. However, when an anonymous rule appears in a parameterized
-       definition, the fresh nonterminal symbol that is created should be
-       parameterized. This was not done, and is not easy to do on the fly,
-       as it requires inherited attributes (or a way of simulating them).
-       We now use explicit abstract syntax for anonymous rules. *)
+| _p=generic_actual(lax_actual, (* cannot be lax_ *) actual)
+  { () }
+| (* 3- *) (* leading bar disallowed *) branches=located(branches)
+  { PAnonymous branches }
+  (* 2016/05/18: we used to eliminate anonymous rules on the fly during
+     parsing. However, when an anonymous rule appears in a parameterized
+     definition, the fresh nonterminal symbol that is created should be
+     parameterized. This was not done, and is not easy to do on the fly,
+     as it requires inherited attributes (or a way of simulating them).
+     We now use explicit abstract syntax for anonymous rules. *)
+;
 
 (* ------------------------------------------------------------------------- *)
 (* The "?", "+", and "*" modifiers are short-hands for applications of
    certain parameterized nonterminals, defined in the standard library. *)
 
 modifier:
-  QUESTION
-    { "option" }
-| PLUS
-    { "nonempty_list" }
-| STAR
-    { "list" }
+| "?" { "option" }
+| "+" { "nonempty_list" }
+| "*" { "list" }
+;
 
 (* ------------------------------------------------------------------------- *)
-(* A postlude is announced by %%, but is optional. *)
+(* A rule is expressed either in the traditional (yacc-style) syntax or in
+   the new syntax. *)
 
-postlude:
-  EOF
-    { None }
-| p = PERCENTPERCENT (* followed by actual postlude *)
-    { Some (Lazy.force p) }
+%inline rule:
+| old_rule
+  { $1 }
+(*| new_rule TODO
+  (* The new syntax is converted on the fly to the old syntax. *)
+  { failwith "TODO" (*NewRuleSyntax.rule $1*) } *)
+
+(* ------------------------------------------------------------------------- *)
+(* A rule defines a symbol. It is optionally declared %public, and optionally
+   carries a number of formal parameters. The right-hand side of the definition
+   consists of a list of productions. *)
+
+old_rule:
+| flags=flags            (* flags *)
+  symbol=symbol          (* the symbol that is being defined *)
+  attributes=ATTRIBUTE*
+  params=plist(symbol)   (* formal parameters *)
+  ":"
+  optional_bar
+  branches = branches
+  ";"*
+  { let public, inline = flags in
+    {
+      pr_public_flag = public;
+      pr_inline_flag = inline;
+      pr_nt          = Positions.value symbol;
+      pr_positions   = [ Positions.position symbol ];
+      pr_attributes  = attributes;
+      pr_parameters  = List.map Positions.value params;
+      pr_branches    = branches
+    }
+  }
+;
+
+%inline branches:
+| prods=separated_nonempty_list("|", production_group)
+  { prods }
+;
+
+flags:
+| (* epsilon *) { false, false }
+| "%public"     { true, false }
+| "%inline"     { false, true }
+| "%public" "%inline"
+| "%inline" "%public" { true, true }
+
+optional_bar:
+| (* epsilon *) %prec no_optional_bar { () }
+| "|" { () }
+
+(* ------------------------------------------------------------------------- *)
+(* A production group consists of a list of productions, followed by a
+   semantic action and an optional precedence specification. *)
+
+production_group:
+  _productions=separated_nonempty_list("|", production)
+  _action=ACTION
+  _oprec2=ioption(precedence)
+  { failwith "TODO" }
+      (*
+        (* If multiple productions share a single semantic action, check
+           that all of them bind the same names. *)
+        ParserAux.check_production_group productions;
+        (* Then, *)
+        List.map (fun (producers, oprec1, level, pos) ->
+          (* Replace [$i] with [_i]. *)
+          let pr_producers = ParserAux.normalize_producers producers in
+          (* Distribute the semantic action. Also, check that every [$i]
+             is within bounds. *)
+          let names = ParserAux.producer_names producers in
+          let pr_action = action Settings.dollars names in
+          {
+            pr_producers;
+            pr_action;
+            pr_branch_prec_annotation   = ParserAux.override pos oprec1 oprec2;
+            pr_branch_production_level  = level;
+            pr_branch_position          = pos
+          })
+        productions
+      *)
+
+precedence:
+| "%prec" symbol=symbol
+  { symbol }
+
+(* ------------------------------------------------------------------------- *)
+(* A symbol is a terminal or nonterminal symbol. *)
+
+(* One would like to require nonterminal symbols to begin with a lowercase
+   letter, so as to lexically distinguish them from terminal symbols, which
+   must begin with an uppercase letter. However, for compatibility with
+   ocamlyacc, this is impossible. It can be required only for nonterminal
+   symbols that are also start symbols. *)
+
+(* We also accept token aliases in place of ordinary terminal symbols.
+   Token aliases are quoted strings. *)
+
+symbol:
+| id=LID | id=UID | id=QID
+  { id }
+
+(* In declarations, terminals must be UIDs, but we may also declare
+   token aliases, which are QIDs. *)
+
+%inline terminal_alias_attrs:
+| id=UID alias=QID? attrs=ATTRIBUTE*
+    { let alias = Option.map Positions.value alias in
+      Positions.map (fun uid -> uid, alias, attrs) id }
+;
+
+%inline nonterminal:
+| id=LID { id }
+;
+
+(* ------------------------------------------------------------------------- *)
+(* A production is a list of producers, optionally followed by a
+   precedence declaration. *)
+
+production:
+| (*producers=producer**) oprec=ioption(precedence)
+{ [](*producers TODO*), oprec, Positions.import $loc }
+
+/*
+
+(* ------------------------------------------------------------------------- *)
+(* A producer is an actual parameter, possibly preceded by a
+   binding, and possibly followed with attributes.
+
+   Because both [ioption] and [terminated] are defined as inlined by
+   the standard library, this definition expands to two productions,
+   one of which begins with id = LID, the other of which begins with
+   p = actual. The token LID is in FIRST(actual),
+   but the LR(1) formalism can deal with that. If [option] was used
+   instead of [ioption], an LR(1) conflict would arise -- looking
+   ahead at LID would not allow determining whether to reduce an
+   empty [option] or to shift. *)
+
+producer:
+| _id=ioption(terminated(LID, "=")) _p=actual _attrs=ATTRIBUTE* ";"*
+  { () }
+;
 
 (* -------------------------------------------------------------------------- *)
 (* -------------------------------------------------------------------------- *)
@@ -521,39 +534,28 @@ postlude:
    give rise to a shift/reduce conflict that we would not be able to solve. *)
 
 new_rule:
-| rule_public     = boption(PUBLIC)
-  LET
-  rule_lhs        = LID
-  rule_attributes = ATTRIBUTE*
-  rule_formals    = plist(symbol)
-  rule_inline     = equality_symbol
-  rule_rhs        = expression
-    {{
-       rule_public;
-       rule_inline;
-       rule_lhs;
-       rule_attributes;
-       rule_formals;
-       rule_rhs;
-    }}
+| boption("%public")
+  "let" lhs=LID attributes=ATTRIBUTE*
+    formals=plist(symbol) equality_symbol rhs=expression
+  { () }
+;
 
 (* A new rule is written [let foo := ...] or [let foo == ...].
    In the former case, we get an ordinary nonterminal symbol;
    in the latter case, we get an %inline nonterminal symbol. *)
 
 equality_symbol:
-  COLONEQUAL
-    { false }
-| EQUALEQUAL
-    { true  }
+| ":=" { false }
+| "==" { true  }
+;
 
 (* The right-hand side of a new rule is an expression. *)
 
 (* An expression is a choice expression. *)
 
 expression:
-  e = located(choice_expression)
-    { e }
+  _e = located(choice_expression)
+    { () }
 
 (* A choice expression is a bar-separated list of alternatives, with an
    optional leading bar, which is ignored. Each alternative is a sequence
@@ -567,12 +569,12 @@ expression:
    happens to begin with [y]. *)
 
 %inline choice_expression:
-  branches = preceded_or_separated_nonempty_llist(BAR, branch)
-    { EChoice branches }
+  _branches = preceded_or_separated_nonempty_llist("|", branch)
+    { () }
 
 %inline branch:
-  e = seq_expression
-    { Branch e (* ParserAux.new_production_level() *) }
+  _e = seq_expression
+    { () }
 
 (* A sequence expression takes one of the following forms:
 
@@ -607,19 +609,19 @@ expression:
     { e }
 
 raw_seq_expression:
-|                    e1 = symbol_expression e2 = continuation
-    { ECons (SemPatWildcard, e1, e2) }
-| p1 = pattern EQUAL e1 = symbol_expression e2 = continuation
-    { ECons (p1, e1, e2) }
-| e = symbol_expression
-    { ESingleton e }
-| e = action_expression
-    { e }
+| _e1 = symbol_expression _e2 = continuation
+    { () }
+| _p1 = pattern "=" _e1 = symbol_expression _e2 = continuation
+    { () }
+| _e = symbol_expression
+    { () }
+| _e = action_expression
+    { () }
 
 %inline continuation:
-  SEMI e2 = seq_expression
+| ";" _e = seq_expression
 (* |   e2 = action_expression *)
-    { e2 }
+  { () }
 
 (* A symbol expression takes one of the following forms:
 
@@ -637,23 +639,23 @@ raw_seq_expression:
 
 symbol_expression:
 | symbol = symbol es = plist(expression) attrs = ATTRIBUTE*
-    { ESymbol (symbol, es, attrs) }
+    { () }
 | e = located(symbol_expression) m = located(modifier) attrs = ATTRIBUTE*
     (* We are forced by syntactic considerations to require a symbol expression
        in a position where an expression is expected. As a result, an injection
        must be applied. *)
-    { ESymbol (m, [ inject e ], attrs) }
+    { () }
 
 (* An action expression is a semantic action, optionally preceded or followed
    with a precedence annotation. *)
 
 action_expression:
-| action = action
-    { EAction (action, None) }
-| prec = precedence action = action
-    { EAction (action, Some prec) }
-| action = action prec = precedence
-    { EAction (action, Some prec) }
+| _action = action
+    { () }
+| _prec = precedence _action = action
+    { () }
+| _action = action _prec = precedence
+    { () }
 
 (* A semantic action is either a traditional semantic action (an OCaml
    expression between curly braces) or a point-free semantic action (an
@@ -688,27 +690,14 @@ action:
 pattern:
 | x = LID
     { SemPatVar x }
-| UNDERSCORE
+| "_"
     { SemPatWildcard }
-| TILDE
+| "~"
     { SemPatTilde (Positions.import $loc) }
-| LPAREN ps = separated_list(COMMA, pattern) RPAREN
+| "(" ps = separated_list(",", pattern) ")"
     { SemPatTuple ps }
 
 (* -------------------------------------------------------------------------- *)
-(* -------------------------------------------------------------------------- *)
-
-(* Generic definitions. *)
-
-(* ------------------------------------------------------------------------- *)
-
-(* Formal and actual parameter lists can be absent. When present, they must
-   be nonempty, and are delimited with parentheses and separated with commas. *)
-
-%inline plist(X):
-  params = loption(delimited(LPAREN, separated_nonempty_list(COMMA, X), RPAREN))
-    { params }
-
 (* -------------------------------------------------------------------------- *)
 
 (* [reversed_preceded_or_separated_nonempty_llist(delimiter, X)] recognizes a
@@ -742,13 +731,5 @@ preceded_or_separated_llist(delimiter, X):
 | xs = preceded_or_separated_nonempty_llist(delimiter, X)
     { xs }
 
-(* -------------------------------------------------------------------------- *)
-
-(* [located(X)] recognizes the same language as [X] and converts the resulting
-   value from type ['a] to type ['a located]. *)
-
-located(X):
-  x = X
-    { with_loc $loc x }
-
+*/
 %%

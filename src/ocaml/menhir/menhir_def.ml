@@ -125,84 +125,60 @@ module Stretch = struct
      See [Lexer.mk_stretch] and its various call sites in [Lexer]. *)
 
   type t = {
-      stretch_filename    : string;
-      stretch_linenum     : int;
-      stretch_linecount   : int;
-      stretch_raw_content : string;
-      stretch_content     : string;
-      stretch_keywords    : Keyword.keyword list
+      filename    : string;
+      linenum     : int;
+      linecount   : int;
+      raw_content : string;
+      content     : string;
+      keywords    : Keyword.keyword list;
     }
-
-  (* An OCaml type is either a stretch (if it was found in some
-     source file) or a string (if it was inferred via [Infer]). *)
-
-  type ocamltype =
-    | Declared of t
-    | Inferred of string
 end
 
 module Positions = struct
   open Lexing
 
-  type t =
-    (* Start and end positions. *)
-    position * position
-
-  type 'a located = {
-    value    : 'a;
-    position : t;
+  type t = Location.t = {
+    loc_start: position;
+    loc_end: position;
+    loc_ghost: bool;
   }
 
-  let value l = l.value
+  type 'a located = 'a Location.loc = {
+    txt: 'a;
+    loc: t;
+  }
 
-  let position l = l.position
+  let value l = l.txt
 
-  let decompose { value; position } =
-    (value, position)
+  let position l = l.loc
 
-  let with_pos p v =
-    {
-      value     = v;
-      position  = p;
-    }
+  let decompose {txt; loc} = (txt, loc)
 
-  let with_loc =
-    (* The location is converted from the type [position * position]
+  let with_loc loc txt = {txt; loc}
+  (* The location is converted from the type [position * position]
        to the type [t]. *)
-    with_pos
 
-  let map f v =
-    {
-      value     = f v.value;
-      position  = v.position;
-    }
+  let with_pos (loc_start, loc_end) txt =
+    let loc = {loc_start; loc_end; loc_ghost=false} in
+    {txt; loc}
 
-  let pmap f v =
-    {
-      value     = f v.position v.value;
-      position  = v.position
-    }
+  let map f v = {txt = f v.txt; loc = v.loc}
 
-  let iter f l = f l.value
+  let pmap f v = {txt = f v.loc v.txt; loc = v.loc}
 
-  let mapd f v =
-    let w1, w2 = f v.value in
-    let pos = v.position in
-    { value = w1; position = pos },
-    { value = w2; position = pos }
+  let iter f l = f l.txt
 
-  let dummy =
-    (dummy_pos, dummy_pos)
+  let mapd f {txt; loc} =
+    let t1, t2 = f txt in
+    ({txt = t1; loc}, {txt = t2; loc})
 
-  let unknown_pos v =
-    {
-      value     = v;
-      position  = dummy
-    }
+  let dummy = Location.none
 
-  let start_of_position (p, _) = p
+  let unknown_pos txt = {txt; loc = dummy}
 
-  let end_of_position (_, p) = p
+  let start_of_position t = t.loc_start
+
+  let end_of_position t = t.loc_end
 
   let filename_of_position p =
     (start_of_position p).pos_fname
@@ -216,24 +192,22 @@ module Positions = struct
   let characters p1 p2 =
     (column p1, p2.pos_cnum - p1.pos_bol) (* intentionally [p1.pos_bol] *)
 
-  let join x1 x2 =
-  (
-    start_of_position (if x1 = dummy then x2 else x1),
-    end_of_position   (if x2 = dummy then x1 else x2)
-  )
+  let join x1 x2 = {
+    loc_start = start_of_position (if x1 = dummy then x2 else x1);
+    loc_end = end_of_position (if x2 = dummy then x1 else x2);
+    loc_ghost = false;
+  }
 
-  let import x =
-    x
+  let import (x, y) = {loc_start = x; loc_end = y; loc_ghost = false}
 
-  let join_located l1 l2 f =
-    {
-      value    = f l1.value l2.value;
-      position = join l1.position l2.position;
-    }
+  let join_located l1 l2 f = {
+    txt = f l1.txt l2.txt;
+    loc = join l1.loc l2.loc;
+  }
 
   let string_of_lex_pos p =
     let c = p.pos_cnum - p.pos_bol in
-    (string_of_int p.pos_lnum)^":"^(string_of_int c)
+    (string_of_int p.pos_lnum ^ ":" ^ string_of_int c)
 
   let string_of_pos p =
     let filename = filename_of_position p in
@@ -246,11 +220,14 @@ module Positions = struct
     | None -> dummy
     | Some x -> x
 
-  let cpos lexbuf =
-    (lexeme_start_p lexbuf, lexeme_end_p lexbuf)
+  let cpos lexbuf = {
+    loc_start = lexeme_start_p lexbuf;
+    loc_end = lexeme_end_p lexbuf;
+    loc_ghost = false;
+  }
 
   let with_cpos lexbuf v =
-    with_pos (cpos lexbuf) v
+    with_loc (cpos lexbuf) v
 
   let string_of_cpos lexbuf =
     string_of_pos (cpos lexbuf)
@@ -261,17 +238,15 @@ module Positions = struct
   let ljoinf f =
     List.fold_left (fun p t -> join p (f t)) dummy
 
-  let join_located_list ls f =
-    {
-      value     = f (List.map (fun l -> l.value) ls);
-      position  = ljoinf (fun x -> x.position) ls
-    }
+  let join_located_list ls f = {
+    txt = f (List.map (fun l -> l.txt) ls);
+    loc = ljoinf (fun x -> x.loc) ls
+  }
 
   (* The functions that print error messages and warnings require a list of
      positions. The following auxiliary functions help build such lists. *)
 
-  type positions =
-      t list
+  type positions = t list
 
   let one (pos : position) : positions =
     [ import (pos, pos) ]
@@ -282,10 +257,7 @@ module Positions = struct
   let print (pos : position) =
     Printf.printf
       "{ pos_fname = \"%s\"; pos_lnum = %d; pos_bol = %d; pos_cnum = %d }\n"
-        pos.pos_fname
-        pos.pos_lnum
-        pos.pos_bol
-        pos.pos_cnum
+        pos.pos_fname pos.pos_lnum pos.pos_bol pos.pos_cnum
 end
 
 module Error = struct
@@ -366,8 +338,7 @@ module Error = struct
 
   (* Certain warnings about the grammar can optionally be treated as errors. *)
 
-  let grammatical_error =
-    new_category()
+  let grammatical_error = new_category()
 end
 
 module InputFile = struct
