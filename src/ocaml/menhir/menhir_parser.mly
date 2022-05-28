@@ -159,13 +159,13 @@ let parameters_map f p =
    thus reduce the number of syntax error messages that we have to write in
    parserMessages.messages. *)
 
-(* TODO
 %on_error_reduce old_rule
 %on_error_reduce list(ATTRIBUTE)
-%on_error_reduce action_expression
 %on_error_reduce separated_nonempty_list(",",symbol)
-%on_error_reduce separated_nonempty_list(",",pattern)
 %on_error_reduce loption(delimited("(",separated_nonempty_list(",",lax_actual),")"))
+(* TODO
+%on_error_reduce action_expression
+%on_error_reduce separated_nonempty_list(",",pattern)
 %on_error_reduce loption(delimited("(",separated_nonempty_list(",",expression),")"))
 *)
 
@@ -350,8 +350,8 @@ actual:
 ;
 
 lax_actual:
-| _p=generic_actual(lax_actual, (* cannot be lax_ *) actual)
-  { () }
+| p=generic_actual(lax_actual, (* cannot be lax_ *) actual)
+  { p }
 | (* 3- *) (* leading bar disallowed *) branches=located(branches)
   { PAnonymous branches }
   (* 2016/05/18: we used to eliminate anonymous rules on the fly during
@@ -495,10 +495,8 @@ symbol:
    precedence declaration. *)
 
 production:
-| (*producers=producer**) oprec=ioption(precedence)
-{ [](*producers TODO*), oprec, Positions.import $loc }
-
-/*
+| producers=producer* oprec=ioption(precedence)
+{ producers, oprec, Positions.import $loc }
 
 (* ------------------------------------------------------------------------- *)
 (* A producer is an actual parameter, possibly preceded by a
@@ -514,9 +512,11 @@ production:
    empty [option] or to shift. *)
 
 producer:
-| _id=ioption(terminated(LID, "=")) _p=actual _attrs=ATTRIBUTE* ";"*
-  { () }
+| id=ioption(terminated(LID, "=")) p=actual attrs=ATTRIBUTE* ";"*
+  { import $loc, id, p, attrs }
 ;
+
+/*
 
 (* -------------------------------------------------------------------------- *)
 (* -------------------------------------------------------------------------- *)
