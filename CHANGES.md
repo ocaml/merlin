@@ -6,6 +6,8 @@ unreleased
       `merlin-lib` package that exposes merlin's internals and the `merlin`
       package with the frontend. (#1448, #1455, #1457, @rgrinberg, @tmattio,
       @kit-ty-kate)
+    - Attempt at finding the 'real' capitalization of files on windows (#1462 by
+      @mlasson)
 
 merlin 4.5
 ==========
