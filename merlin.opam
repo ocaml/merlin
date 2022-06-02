@@ -15,7 +15,7 @@ depends: [
   "dune" {>= "2.9.0"}
   "merlin-lib" {= version}
   "dot-merlin-reader" {= version}
-  "yojson" {>= "1.6.0"}
+  "yojson" {>= "2.0.0"}
   "conf-jq" {with-test}
 ]
 conflicts: [

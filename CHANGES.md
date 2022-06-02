@@ -8,6 +8,8 @@ unreleased
       @kit-ty-kate)
     - Attempt at finding the 'real' capitalization of files on windows (#1462 by
       @mlasson)
+    - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
+      deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
 
 merlin 4.5
 ==========

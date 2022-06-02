@@ -314,8 +314,7 @@ let make_json ?(on_read=ignore) ~input ~output () =
       read buf len
   in
   let lexbuf  = Lexing.from_function read in
-  let input   = Yojson.Basic.(stream_from_lexbuf (init_lexer ()) lexbuf) in
-  let input () = try Some (Stream.next input) with Stream.Failure -> None in
+  let input   = Seq.to_dispenser (Yojson.Basic.(seq_from_lexbuf (init_lexer ()) lexbuf)) in
   let output  = Unix.out_channel_of_descr output in
   let output' = Yojson.Basic.to_channel output in
   let output json =
