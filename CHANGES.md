@@ -16,6 +16,9 @@ unreleased
       implementation. (#1488)
   + editor modes
     - add method imenu items for emacs (#1481, @mndrix)
+    - emacs: Make the prefix argument to `merlin-locate` optional, both for
+      consistency with Emacs convention and for backwards compatibility. (#1476,
+      @antalsz)
 
 merlin 4.5
 ==========
