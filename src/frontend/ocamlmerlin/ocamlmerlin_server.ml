@@ -93,9 +93,7 @@ let main () =
 
 let () =
   Std.Json.pretty_to_string := Yojson.Basic.pretty_to_string;
-  let log_file =
-    match Sys.getenv "MERLIN_LOG" with
-    | exception Not_found -> None
-    | file -> Some file
+  let `Log_file_path log_file, `Log_sections sections =
+    Log_info.get ()
   in
-  Logger.with_log_file log_file main
+  Logger.with_log_file log_file ~sections main
