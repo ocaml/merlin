@@ -18,4 +18,7 @@ preprocess:
 promote:
 	dune promote
 
-.PHONY: all build dev clean test promote
+bench:
+	cd ../irmin && ../merlin/tests/bench.sh
+
+.PHONY: all build dev clean test promote bench
