@@ -1699,7 +1699,8 @@ let rec type_pat
       type_expr -> (k general_pattern -> r) -> r
   = fun category ~no_existentials ~mode
         ~env sp expected_ty k ->
-  Builtin_attributes.warning_scope sp.ppat_attributes
+  Msupport.with_saved_types
+    ~warning_attribute:sp.ppat_attributes ?save_part:None
     (fun () ->
        let saved = save_levels () in
        try

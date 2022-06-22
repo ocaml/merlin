@@ -140,7 +140,7 @@
                             structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pstr_eval
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (2,None)
+                                Pexp_constant PConst_int (1,None)
                           ]
                         Texp_ident \"*type-error*/279\"
                     <case>
@@ -149,13 +149,6 @@
                         pattern (test.ml[6,69+4]..test.ml[6,69+5])
                           attribute \"merlin.incorrect\"
                             []
-                          attribute \"merlin.saved-parts\"
-                            [
-                              structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pstr_eval
-                                expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                  Pexp_constant PConst_int (1,None)
-                            ]
                           Tpat_any
                       expression (test.ml[6,69+9]..test.ml[6,69+12])
                         attribute \"merlin.incorrect\"
@@ -165,7 +158,7 @@
                             structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pstr_eval
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (3,None)
+                                Pexp_constant PConst_int (2,None)
                           ]
                         Texp_ident \"*type-error*/280\"
                   ]
