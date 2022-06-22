@@ -95,9 +95,9 @@
       },
       "end": {
         "line": 8,
-        "col": 9
+        "col": 17
       },
-      "type": "t",
+      "type": "unit",
       "tail": "no"
     }
   ]
@@ -124,9 +124,9 @@
       },
       "end": {
         "line": 8,
-        "col": 9
+        "col": 17
       },
-      "type": "type t = { mutable b : float; }",
+      "type": "type unit = ()",
       "tail": "no"
     }
   ]

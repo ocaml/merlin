@@ -3,22 +3,10 @@
   > let b = g 1
   > EOF
 
-FIXME we could filter the second result out as stated in issue #1477
-  $ $MERLIN single type-enclosing -position 2:8 -filename test.ml < test.ml |
+  $ $MERLIN single type-enclosing -position 2:8 \
+  > -filename test.ml < test.ml |
   > jq '.value'
   [
-    {
-      "start": {
-        "line": 2,
-        "col": 8
-      },
-      "end": {
-        "line": 2,
-        "col": 9
-      },
-      "type": "int -> int",
-      "tail": "no"
-    },
     {
       "start": {
         "line": 2,
