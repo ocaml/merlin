@@ -320,8 +320,6 @@ First a simple case:
     "notifications": []
   }
 
-FIXME: foo2 is dropped
-
   $ $MERLIN single dump -what typedtree -filename test.mli < test.mli
   {
     "class": "return",
@@ -333,9 +331,22 @@ FIXME: foo2 is dropped
           Ttyp_constr \"int/1!\"
           []
         []
+    signature_item (test.mli[3,16+0]..test.mli[3,16+21])
+      Tsig_value
+      value_description foo2/274 (test.mli[3,16+0]..test.mli[3,16+21])
+        core_type (test.mli[3,16+11]..test.mli[3,16+21])
+          Ttyp_tuple
+          [
+            core_type (test.mli[3,16+11]..test.mli[3,16+14])
+              Ttyp_constr \"int/1!\"
+              []
+            core_type (test.mli[3,16+17]..test.mli[3,16+21])
+              Ttyp_any
+          ]
+        []
     signature_item (test.mli[5,39+0]..test.mli[5,39+21])
       Tsig_value
-      value_description foo3/274 (test.mli[5,39+0]..test.mli[5,39+21])
+      value_description foo3/275 (test.mli[5,39+0]..test.mli[5,39+21])
         core_type (test.mli[5,39+11]..test.mli[5,39+21])
           Ttyp_tuple
           [
@@ -393,8 +404,6 @@ And now, with an error deep in a submodule:
     "notifications": []
   }
 
-FIXME: foo212 is dropped
-
   $ $MERLIN single dump -what typedtree -filename test2.mli < test2.mli
   {
     "class": "return",
@@ -407,7 +416,7 @@ FIXME: foo212 is dropped
           []
         []
     signature_item (test2.mli[3,16+0]..test2.mli[10,149+3])
-      Tsig_module \"M/278\"
+      Tsig_module \"M/279\"
       module_type (test2.mli[3,16+11]..test2.mli[10,149+3])
         Tmty_signature
         [
@@ -419,7 +428,7 @@ FIXME: foo212 is dropped
                 []
               []
           signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
-            Tsig_module \"N/277\"
+            Tsig_module \"N/278\"
             module_type (test2.mli[5,49+13]..test2.mli[9,143+5])
               Tmty_signature
               [
@@ -430,9 +439,22 @@ FIXME: foo212 is dropped
                       Ttyp_constr \"int/1!\"
                       []
                     []
+                signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
+                  Tsig_value
+                  value_description foo212/276 (test2.mli[7,87+4]..test2.mli[7,87+27])
+                    core_type (test2.mli[7,87+17]..test2.mli[7,87+27])
+                      Ttyp_tuple
+                      [
+                        core_type (test2.mli[7,87+17]..test2.mli[7,87+20])
+                          Ttyp_constr \"int/1!\"
+                          []
+                        core_type (test2.mli[7,87+23]..test2.mli[7,87+27])
+                          Ttyp_any
+                      ]
+                    []
                 signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
                   Tsig_value
-                  value_description foo213/276 (test2.mli[8,115+4]..test2.mli[8,115+27])
+                  value_description foo213/277 (test2.mli[8,115+4]..test2.mli[8,115+27])
                     core_type (test2.mli[8,115+17]..test2.mli[8,115+27])
                       Ttyp_tuple
                       [
@@ -448,7 +470,7 @@ FIXME: foo212 is dropped
         ]
     signature_item (test2.mli[12,154+0]..test2.mli[12,154+21])
       Tsig_value
-      value_description foo3/279 (test2.mli[12,154+0]..test2.mli[12,154+21])
+      value_description foo3/280 (test2.mli[12,154+0]..test2.mli[12,154+21])
         core_type (test2.mli[12,154+11]..test2.mli[12,154+21])
           Ttyp_tuple
           [
@@ -527,6 +549,45 @@ make sure we also handle that correctly in structures:
                 []
             Texp_constant Const_int 3
       ]
+    structure_item (test_ct.ml[3,20+0]..test_ct.ml[3,20+28])
+      Tstr_value Nonrec
+      [
+        <def>
+          pattern (test_ct.ml[3,20+4]..test_ct.ml[3,20+8])
+            extra
+              Tpat_extra_constraint
+              core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21]) ghost
+                Ttyp_poly
+                core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
+                  Ttyp_tuple
+                  [
+                    core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
+                      Ttyp_constr \"int/1!\"
+                      []
+                    core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
+                      Ttyp_any
+                  ]
+            Tpat_var \"foo2/274\"
+          expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
+            extra
+              Texp_constraint
+              core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
+                Ttyp_tuple
+                [
+                  core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
+                    Ttyp_constr \"int/1!\"
+                    []
+                  core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
+                    Ttyp_any
+                ]
+            Texp_tuple
+            [
+              expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+25])
+                Texp_constant Const_int 3
+              expression (test_ct.ml[3,20+27]..test_ct.ml[3,20+28])
+                Texp_constant Const_int 4
+            ]
+      ]
     structure_item (test_ct.ml[5,50+0]..test_ct.ml[5,50+27])
       Tstr_value Nonrec
       [
@@ -546,7 +607,7 @@ make sure we also handle that correctly in structures:
                       Ttyp_constr \"int/1!\"
                       []
                   ]
-            Tpat_var \"foo3/274\"
+            Tpat_var \"foo3/275\"
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
