@@ -372,7 +372,7 @@ let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
     let shape = Env.shape_of_path ~namespace:ns env path in
     log ~title:"shape_of_path" "initial: %a"
       Logger.fmt (fun fmt -> Shape.print fmt shape);
-    let r = Shape_reduce.reduce env shape in
+    let r = Shape_reduce.weak_reduce env shape in
     log ~title:"shape_of_path" "reduced: %a"
       Logger.fmt (fun fmt -> Shape.print fmt r);
     r.uid
