@@ -88,7 +88,7 @@
 
 ;; Public functions
 ;;;###autoload
-(defun merlin-company-backend (command &optional arg &rest ignored)
+(defun merlin-company-backend (command &optional arg &rest _ignored)
   (interactive (list 'interactive))
   (when merlin-mode
     (cl-case command
