@@ -1193,28 +1193,32 @@ let existential_name cstr ty =
   | Tvar (Some name) -> "$" ^ cstr.cstr_name ^ "_'" ^ name
   | _ -> "$" ^ cstr.cstr_name
 
-let instance_constructor ?in_pattern cstr =
+type existential_treatment =
+  | Keep_existentials_flexible
+  | Make_existentials_abstract of { env: Env.t ref; scope: int }
+
+let instance_constructor existential_treatment cstr =
   For_copy.with_scope (fun scope ->
-    begin match in_pattern with
-    | None -> ()
-    | Some (env, fresh_constr_scope) ->
-        let process existential =
-          let decl = new_local_type () in
-          let name = existential_name cstr existential in
-          let (id, new_env) =
-            Env.enter_type (get_new_abstract_name name) decl !env
-              ~scope:fresh_constr_scope in
-          env := new_env;
-          let to_unify = newty (Tconstr (Path.Pident id,[],ref Mnil)) in
-          let tv = copy scope existential in
-          assert (is_Tvar tv);
-          link_type tv to_unify
-        in
-        List.iter process cstr.cstr_existentials
-    end;
+    let copy_existential =
+      match existential_treatment with
+      | Keep_existentials_flexible -> copy scope
+      | Make_existentials_abstract {env; scope = fresh_constr_scope} ->
+          fun existential ->
+            let decl = new_local_type () in
+            let name = existential_name cstr existential in
+            let (id, new_env) =
+              Env.enter_type (get_new_abstract_name name) decl !env
+                ~scope:fresh_constr_scope in
+            env := new_env;
+            let to_unify = newty (Tconstr (Path.Pident id,[],ref Mnil)) in
+            let tv = copy scope existential in
+            assert (is_Tvar tv);
+            link_type tv to_unify;
+            tv
+    in
+    let ty_ex = List.map copy_existential cstr.cstr_existentials in
     let ty_res = copy scope cstr.cstr_res in
     let ty_args = List.map (copy scope) cstr.cstr_args in
-    let ty_ex = List.map (copy scope) cstr.cstr_existentials in
     (ty_args, ty_res, ty_ex)
   )
 
@@ -1772,7 +1776,8 @@ let occur env ty0 ty =
   try
     while
       type_changed := false;
-      occur_rec env allow_recursive TypeSet.empty ty0 ty;
+      if not (eq_type ty0 ty) then
+        occur_rec env allow_recursive TypeSet.empty ty0 ty;
       !type_changed
     do () (* prerr_endline "changed" *) done;
     merge type_changed old
@@ -2702,7 +2707,7 @@ and unify3 env t1 t1' t2 t2' =
   | _ ->
     begin match !umode with
     | Expression ->
-        occur_for Unify !env t1' t2';
+        occur_for Unify !env t1' t2;
         link_type t1' t2
     | Pattern ->
         add_type_equality t1' t2'
