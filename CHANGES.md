@@ -11,6 +11,8 @@ unreleased
     - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
       deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
     - unify parsing of `MERLIN_LOG` (#1480 by @ulugbekna)
+  + editor modes
+    - add method imenu items for emacs (#1481, @mndrix)
 
 merlin 4.5
 ==========
