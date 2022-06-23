@@ -10,7 +10,7 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 depends: [
-  "ocaml" {>= "4.14" & < "4.15"}
+  "ocaml" {>= "5.0" & < "5.1"}
   "dune" {>= "2.9.0"}
   "csexp" {>= "1.5.1"}
   "menhir" {dev}
