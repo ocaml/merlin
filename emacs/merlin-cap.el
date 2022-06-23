@@ -1,4 +1,4 @@
-;;; merlin-cap.el --- Merlin and completion-at-point integration.   -*- coding: utf-8; lexical-binding: t -*-
+;;; merlin-cap.el --- Merlin and completion-at-point integration   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
