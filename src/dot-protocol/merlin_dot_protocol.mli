@@ -56,7 +56,10 @@ module Directive : sig
   module Processed : sig
     type acceptable_in_input = [ include_path | no_processing_required ]
 
-    type t = [ acceptable_in_input | `ERROR_MSG of string ]
+    type t =
+      [  acceptable_in_input
+      | `ERROR_MSG of string
+      | `UNKNOWN_TAG of string ]
   end
 
   module Raw : sig
