@@ -26,6 +26,9 @@ type loc = {
   loc_ghost: bool;
 }
 
+val ghost_loc_in_file : string -> loc
+(** Return an empty ghost range located in a given file *)
+
 type field_usage_warning =
   | Unused
   | Not_read
@@ -157,7 +160,8 @@ val mk_lazy: (unit -> 'a) -> 'a Lazy.t
 type description =
   { number : int;
     names : string list;
-    description : string; }
+    description : string;
+    since : Sys.ocaml_release_info option; }
 
 val descriptions : description list
 
