@@ -27,9 +27,9 @@ Refactor open for record fields
 
 Refactor open for record disambiguation
 
-  $ $MERLIN single refactor-open -action qualify -position 1:6 <<EOF
-  > open Unix
-  > let f x = x.tms_stime, x.tms_utime
+  $ $MERLIN single refactor-open -action qualify -I +unix -position 1:6 <<EOF
+  > open Sys
+  > let f x = x.patchlevel, x.major
   > EOF
   {
     "class": "return",
@@ -41,20 +41,20 @@ Refactor open for record disambiguation
         },
         "end": {
           "line": 2,
-          "col": 21
+          "col": 22
         },
-        "content": "Unix.tms_stime"
+        "content": "Sys.patchlevel"
       },
       {
         "start": {
           "line": 2,
-          "col": 25
+          "col": 26
         },
         "end": {
           "line": 2,
-          "col": 34
+          "col": 31
         },
-        "content": "Unix.tms_utime"
+        "content": "Sys.major"
       }
     ],
     "notifications": []
