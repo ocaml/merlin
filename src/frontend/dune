@@ -29,4 +29,5 @@
   merlin_specific
   merlin_config
   merlin_analysis
-  query_protocol))
+  query_protocol
+  str))
