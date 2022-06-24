@@ -144,7 +144,7 @@ let run config parsetree =
     Mocaml.flush_caches ();
     Local_store.reset ();
     Load_path.reset ();
-    Load_path.init load_path;
+    Load_path.(init ~auto_include:no_auto_include load_path);
   );
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
