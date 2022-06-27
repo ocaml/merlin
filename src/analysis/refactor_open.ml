@@ -23,8 +23,7 @@ let qual_or_unqual_path mode ~open_lident ~open_path node_path node_lid =
           || String.equal s node_lid_head (* unqualify shouldn't enlarge lident *)) 
       ->
       s :: acc
-    | Pdot (path', s) when
-        mode = `Qualify && s = open_lid_head ->
+    | Pdot (_, s) when mode = `Qualify && s = open_lid_head ->
       s :: acc
     | Pdot (path', s) ->
       make_new_node_lid (s :: acc) path'
