@@ -446,10 +446,6 @@ module String = struct
 
   let print () s = Printf.sprintf "%S" s
 
-  (* FIXME: Remove once we drop support for 4.02 and replace the calls by their
-     [_ascii] version. *)
-  [@@@ocaml.warning "-3"]
-
   let capitalize = capitalize_ascii
   let uncapitalize = uncapitalize_ascii
 
