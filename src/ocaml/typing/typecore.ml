@@ -23,15 +23,6 @@ open Typedtree
 open Btype
 open Ctype
 
-let merlin_incorrect_attribute =
-  Ast_helper.Attr.mk (Location.mknoloc "merlin.incorrect") (Parsetree.PStr [])
-
-let merlin_recovery_attributes attrs =
-  let attrs' = merlin_incorrect_attribute :: Msupport.flush_saved_types () in
-  match attrs with
-  | [] -> attrs'
-  | attrs -> attrs' @ attrs
-
 let raise_error = Msupport.raise_error
 
 type type_forcing_context =
@@ -1699,7 +1690,8 @@ let rec type_pat
       type_expr -> (k general_pattern -> r) -> r
   = fun category ~no_existentials ~mode
         ~env sp expected_ty k ->
-  Builtin_attributes.warning_scope sp.ppat_attributes
+  Msupport.with_saved_types
+    ~warning_attribute:sp.ppat_attributes ?save_part:None
     (fun () ->
        let saved = save_levels () in
        try
@@ -1719,7 +1711,7 @@ let rec type_pat
              pat_extra = [];
              pat_type = expected_ty;
              pat_env = !env;
-             pat_attributes = merlin_recovery_attributes [];
+             pat_attributes = Msupport.recovery_attributes sp.ppat_attributes;
            }
          in
          k (match category with
@@ -2994,7 +2986,7 @@ and type_expect ?in_function ?recarg env sexp ty_expected_explained =
             exp_extra = [];
             exp_type = ty_expected_explained.ty;
             exp_env = env;
-            exp_attributes = merlin_recovery_attributes [];
+            exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
           })
 
 and type_expect_
@@ -3439,7 +3431,7 @@ and type_expect_
           };
         exp_loc = loc; exp_extra = [];
         exp_type = instance ty_expected;
-        exp_attributes = merlin_recovery_attributes sexp.pexp_attributes;
+        exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
         exp_env = env }
     end
   | Pexp_field(srecord, lid) ->
@@ -3788,7 +3780,7 @@ and type_expect_
           exp_desc = Texp_send(obj, Tmeth_name met);
           exp_loc = loc; exp_extra = [];
           exp_type = ty_expected;
-          exp_attributes = merlin_recovery_attributes sexp.pexp_attributes;
+          exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
           exp_env = env;
         }
       end

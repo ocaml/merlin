@@ -14,6 +14,7 @@ unreleased
     - Fix type deduplication in `type-enclosing` results (#1483, fixes #1477)
     - Only weakly reduce the shapes to speed up the new Merlin locate
       implementation. (#1488)
+    - typing recovery: recover at the granularity of `core_type` (#1484)
   + editor modes
     - add method imenu items for emacs (#1481, @mndrix)
     - emacs: Make the prefix argument to `merlin-locate` optional, both for

@@ -1,3 +1,5 @@
+# Recovery in structures
+
   $ cat >test.ml <<EOF
   > type t = A | B
   > let f (x : t) =
@@ -138,8 +140,10 @@
                             structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pstr_eval
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (2,None)
+                                Pexp_constant PConst_int (1,None)
                           ]
+                        attribute \"merlin.loc\"
+                          []
                         Texp_ident \"*type-error*/279\"
                     <case>
                       pattern (test.ml[6,69+4]..test.ml[6,69+5])
@@ -147,13 +151,6 @@
                         pattern (test.ml[6,69+4]..test.ml[6,69+5])
                           attribute \"merlin.incorrect\"
                             []
-                          attribute \"merlin.saved-parts\"
-                            [
-                              structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pstr_eval
-                                expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                  Pexp_constant PConst_int (1,None)
-                            ]
                           Tpat_any
                       expression (test.ml[6,69+9]..test.ml[6,69+12])
                         attribute \"merlin.incorrect\"
@@ -163,8 +160,10 @@
                             structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pstr_eval
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (3,None)
+                                Pexp_constant PConst_int (2,None)
                           ]
+                        attribute \"merlin.loc\"
+                          []
                         Texp_ident \"*type-error*/280\"
                   ]
             ]
@@ -282,6 +281,356 @@
                       Ttyp_constr \"int/1!\"
                       []
                   Texp_ident \"*type-error*/278\"
+            ]
+      ]
+  ]
+  
+  
+  ",
+    "notifications": []
+  }
+
+# Recovery in signatures
+
+First a simple case:
+
+  $ cat >test.mli <<EOF
+  > val foo1 : int
+  > 
+  > val foo2 : int * toto
+  > 
+  > val foo3 : int * char
+  > EOF
+
+  $ $MERLIN single errors -filename test.mli < test.mli
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 17
+        },
+        "end": {
+          "line": 3,
+          "col": 21
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound type constructor toto"
+      }
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single dump -what typedtree -filename test.mli < test.mli
+  {
+    "class": "return",
+    "value": "[
+    signature_item (test.mli[1,0+0]..test.mli[1,0+14])
+      Tsig_value
+      value_description foo1/273 (test.mli[1,0+0]..test.mli[1,0+14])
+        core_type (test.mli[1,0+11]..test.mli[1,0+14])
+          Ttyp_constr \"int/1!\"
+          []
+        []
+    signature_item (test.mli[3,16+0]..test.mli[3,16+21])
+      Tsig_value
+      value_description foo2/274 (test.mli[3,16+0]..test.mli[3,16+21])
+        core_type (test.mli[3,16+11]..test.mli[3,16+21])
+          Ttyp_tuple
+          [
+            core_type (test.mli[3,16+11]..test.mli[3,16+14])
+              Ttyp_constr \"int/1!\"
+              []
+            core_type (test.mli[3,16+17]..test.mli[3,16+21])
+              Ttyp_any
+          ]
+        []
+    signature_item (test.mli[5,39+0]..test.mli[5,39+21])
+      Tsig_value
+      value_description foo3/275 (test.mli[5,39+0]..test.mli[5,39+21])
+        core_type (test.mli[5,39+11]..test.mli[5,39+21])
+          Ttyp_tuple
+          [
+            core_type (test.mli[5,39+11]..test.mli[5,39+14])
+              Ttyp_constr \"int/1!\"
+              []
+            core_type (test.mli[5,39+17]..test.mli[5,39+21])
+              Ttyp_constr \"char/2!\"
+              []
+          ]
+        []
+  ]
+  
+  
+  ",
+    "notifications": []
+  }
+
+And now, with an error deep in a submodule:
+
+  $ cat >test2.mli <<EOF
+  > val foo1 : int
+  > 
+  > module M : sig
+  >   val foo21 : int
+  >   module N : sig
+  >     val foo211 : int
+  >     val foo212 : int * toto
+  >     val foo213 : int * char
+  >   end
+  > end
+  > 
+  > val foo3 : int * char
+  > EOF
+
+  $ $MERLIN single errors -filename test2.mli < test2.mli
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 7,
+          "col": 23
+        },
+        "end": {
+          "line": 7,
+          "col": 27
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound type constructor toto"
+      }
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single dump -what typedtree -filename test2.mli < test2.mli
+  {
+    "class": "return",
+    "value": "[
+    signature_item (test2.mli[1,0+0]..test2.mli[1,0+14])
+      Tsig_value
+      value_description foo1/273 (test2.mli[1,0+0]..test2.mli[1,0+14])
+        core_type (test2.mli[1,0+11]..test2.mli[1,0+14])
+          Ttyp_constr \"int/1!\"
+          []
+        []
+    signature_item (test2.mli[3,16+0]..test2.mli[10,149+3])
+      Tsig_module \"M/279\"
+      module_type (test2.mli[3,16+11]..test2.mli[10,149+3])
+        Tmty_signature
+        [
+          signature_item (test2.mli[4,31+2]..test2.mli[4,31+17])
+            Tsig_value
+            value_description foo21/274 (test2.mli[4,31+2]..test2.mli[4,31+17])
+              core_type (test2.mli[4,31+14]..test2.mli[4,31+17])
+                Ttyp_constr \"int/1!\"
+                []
+              []
+          signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
+            Tsig_module \"N/278\"
+            module_type (test2.mli[5,49+13]..test2.mli[9,143+5])
+              Tmty_signature
+              [
+                signature_item (test2.mli[6,66+4]..test2.mli[6,66+20])
+                  Tsig_value
+                  value_description foo211/275 (test2.mli[6,66+4]..test2.mli[6,66+20])
+                    core_type (test2.mli[6,66+17]..test2.mli[6,66+20])
+                      Ttyp_constr \"int/1!\"
+                      []
+                    []
+                signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
+                  Tsig_value
+                  value_description foo212/276 (test2.mli[7,87+4]..test2.mli[7,87+27])
+                    core_type (test2.mli[7,87+17]..test2.mli[7,87+27])
+                      Ttyp_tuple
+                      [
+                        core_type (test2.mli[7,87+17]..test2.mli[7,87+20])
+                          Ttyp_constr \"int/1!\"
+                          []
+                        core_type (test2.mli[7,87+23]..test2.mli[7,87+27])
+                          Ttyp_any
+                      ]
+                    []
+                signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
+                  Tsig_value
+                  value_description foo213/277 (test2.mli[8,115+4]..test2.mli[8,115+27])
+                    core_type (test2.mli[8,115+17]..test2.mli[8,115+27])
+                      Ttyp_tuple
+                      [
+                        core_type (test2.mli[8,115+17]..test2.mli[8,115+20])
+                          Ttyp_constr \"int/1!\"
+                          []
+                        core_type (test2.mli[8,115+23]..test2.mli[8,115+27])
+                          Ttyp_constr \"char/2!\"
+                          []
+                      ]
+                    []
+              ]
+        ]
+    signature_item (test2.mli[12,154+0]..test2.mli[12,154+21])
+      Tsig_value
+      value_description foo3/280 (test2.mli[12,154+0]..test2.mli[12,154+21])
+        core_type (test2.mli[12,154+11]..test2.mli[12,154+21])
+          Ttyp_tuple
+          [
+            core_type (test2.mli[12,154+11]..test2.mli[12,154+14])
+              Ttyp_constr \"int/1!\"
+              []
+            core_type (test2.mli[12,154+17]..test2.mli[12,154+21])
+              Ttyp_constr \"char/2!\"
+              []
+          ]
+        []
+  ]
+  
+  
+  ",
+    "notifications": []
+  }
+
+# Recovery for core types
+
+Actually the most likely error for signatures is an error in a core type, let's
+make sure we also handle that correctly in structures:
+
+  $ cat >test_ct.ml <<EOF
+  > let foo1 : int = 3
+  > 
+  > let foo2 : int * toto = 3, 4
+  > 
+  > let foo3 : int * int = 3, 4
+  > EOF
+
+  $ $MERLIN single errors -filename test_ct.ml < test_ct.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 17
+        },
+        "end": {
+          "line": 3,
+          "col": 21
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound type constructor toto"
+      }
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single dump -what typedtree -filename test_ct.ml < test_ct.ml
+  {
+    "class": "return",
+    "value": "[
+    structure_item (test_ct.ml[1,0+0]..test_ct.ml[1,0+18])
+      Tstr_value Nonrec
+      [
+        <def>
+          pattern (test_ct.ml[1,0+4]..test_ct.ml[1,0+8])
+            extra
+              Tpat_extra_constraint
+              core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14]) ghost
+                Ttyp_poly
+                core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
+                  Ttyp_constr \"int/1!\"
+                  []
+            Tpat_var \"foo1/273\"
+          expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
+            extra
+              Texp_constraint
+              core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
+                Ttyp_constr \"int/1!\"
+                []
+            Texp_constant Const_int 3
+      ]
+    structure_item (test_ct.ml[3,20+0]..test_ct.ml[3,20+28])
+      Tstr_value Nonrec
+      [
+        <def>
+          pattern (test_ct.ml[3,20+4]..test_ct.ml[3,20+8])
+            extra
+              Tpat_extra_constraint
+              core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21]) ghost
+                Ttyp_poly
+                core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
+                  Ttyp_tuple
+                  [
+                    core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
+                      Ttyp_constr \"int/1!\"
+                      []
+                    core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
+                      Ttyp_any
+                  ]
+            Tpat_var \"foo2/274\"
+          expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
+            extra
+              Texp_constraint
+              core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+21])
+                Ttyp_tuple
+                [
+                  core_type (test_ct.ml[3,20+11]..test_ct.ml[3,20+14])
+                    Ttyp_constr \"int/1!\"
+                    []
+                  core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
+                    Ttyp_any
+                ]
+            Texp_tuple
+            [
+              expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+25])
+                Texp_constant Const_int 3
+              expression (test_ct.ml[3,20+27]..test_ct.ml[3,20+28])
+                Texp_constant Const_int 4
+            ]
+      ]
+    structure_item (test_ct.ml[5,50+0]..test_ct.ml[5,50+27])
+      Tstr_value Nonrec
+      [
+        <def>
+          pattern (test_ct.ml[5,50+4]..test_ct.ml[5,50+8])
+            extra
+              Tpat_extra_constraint
+              core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20]) ghost
+                Ttyp_poly
+                core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20])
+                  Ttyp_tuple
+                  [
+                    core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+14])
+                      Ttyp_constr \"int/1!\"
+                      []
+                    core_type (test_ct.ml[5,50+17]..test_ct.ml[5,50+20])
+                      Ttyp_constr \"int/1!\"
+                      []
+                  ]
+            Tpat_var \"foo3/275\"
+          expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
+            extra
+              Texp_constraint
+              core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+20])
+                Ttyp_tuple
+                [
+                  core_type (test_ct.ml[5,50+11]..test_ct.ml[5,50+14])
+                    Ttyp_constr \"int/1!\"
+                    []
+                  core_type (test_ct.ml[5,50+17]..test_ct.ml[5,50+20])
+                    Ttyp_constr \"int/1!\"
+                    []
+                ]
+            Texp_tuple
+            [
+              expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+24])
+                Texp_constant Const_int 3
+              expression (test_ct.ml[5,50+26]..test_ct.ml[5,50+27])
+                Texp_constant Const_int 4
             ]
       ]
   ]
