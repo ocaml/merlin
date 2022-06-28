@@ -266,23 +266,29 @@ let find_in_path_uncap ?(fallback="") path name =
   begin
     let uname = String.uncapitalize name in
     let ufallback = String.uncapitalize fallback in
-    List.find_map path ~f:(fun dirname ->
-        if exact_file_exists ~dirname ~basename:uname
-        then Some (Filename.concat dirname uname)
-        else if exact_file_exists ~dirname ~basename:name
-        then Some (Filename.concat dirname name)
-        else 
-          let () = Logger.log 
-            ~section:"locate" 
-            ~title:"find_in_path_uncap"
-            "Failed to load %s/%s" dirname name
-          in
-          if has_fallback && exact_file_exists ~dirname ~basename:ufallback
-        then Some (Filename.concat dirname ufallback)
-        else if has_fallback && exact_file_exists ~dirname ~basename:fallback
-        then Some (Filename.concat dirname fallback)
-        else None
-      )
+    try
+      let file = List.find_map path ~f:(fun dirname ->
+          if exact_file_exists ~dirname ~basename:uname
+          then Some (Filename.concat dirname uname)
+          else if exact_file_exists ~dirname ~basename:name
+          then Some (Filename.concat dirname name)
+          else if has_fallback && exact_file_exists ~dirname ~basename:ufallback
+          then Some (Filename.concat dirname ufallback)
+          else if has_fallback && exact_file_exists ~dirname ~basename:fallback
+          then Some (Filename.concat dirname fallback)
+          else None)
+      in
+      let () = Logger.log ~section:"locate" ~title:"find_in_path_uncap"
+        "Found file %s" file
+      in
+      file
+    with Not_found ->
+      let () = Logger.log
+        ~section:"locate"
+        ~title:"find_in_path_uncap"
+        "File not found in path."
+      in
+      raise Not_found
   end
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
