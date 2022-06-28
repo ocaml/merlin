@@ -152,6 +152,7 @@ module Make_reduce(Context : sig
     val find_shape : env -> Ident.t -> t
   end) : sig
   val reduce : Context.env -> t -> t
+  val weak_reduce : Context.env -> t -> t
 end
 
 val local_reduce : t -> t
