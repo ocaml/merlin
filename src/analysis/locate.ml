@@ -28,21 +28,14 @@
 
 open Std
 
-(* FIXME @ulysse: [loadpath] doesn't seem used anymore. Perhaps that's intended
-   and OK, but I'm not sure.
-   Can you have a look and explain what's going on nowadays?
-
-   Please remove the next line once you're done. *)
-[@@@ocaml.warning "-32"]
-
 let loadpath     = ref []
 
 let last_location = ref Location.none
 
 let {Logger. log} = Logger.for_section "locate"
 
-let erase_loadpath ~cwd ~new_path k =
-  let str_path_list =
+let erase_loadpath ~cwd ~new_path =
+  loadpath :=
     List.map new_path ~f:(function
       | "" ->
         (* That's the cwd at the time of the generation of the cmt, I'm
@@ -53,8 +46,6 @@ let erase_loadpath ~cwd ~new_path k =
         log ~title:"erase_loadpath" "%s" x;
         x
     )
-  in
-  let_ref loadpath str_path_list k
 
 let restore_loadpath ~config k =
   log ~title:"restore_loadpath" "Restored load path";
@@ -319,53 +310,72 @@ let move_to filename cmt_infos =
   File_switching.move_to ~digest filename
 
 
-let rec load_cmt comp_unit ml_or_mli =
+let rec load_cmt ~config comp_unit ml_or_mli =
   let fn =
     Preferences.set ml_or_mli;
     Preferences.build comp_unit
   in
-  match Load_path.find_uncap (File.with_ext fn) with
+  match Misc.find_in_path_uncap !loadpath (File.with_ext fn) with
   | filename ->
     let cmt = (Cmt_cache.read filename).cmt_infos in
     let pos_fname = cmt.cmt_sourcefile in
-    (* FIXME @ulysse: is the [Option.iter] still necessary with the new
-       implementation of [move_to]? *)
-    Option.iter cmt.cmt_source_digest
-      ~f:(fun _digest -> move_to filename cmt);
+    move_to filename cmt;
     Ok (pos_fname, cmt)
   | exception Not_found ->
-    if ml_or_mli = `MLI then begin
-      (* there might not have been an mli (so no cmti), so the decl comes from
-          the .ml, and the corresponding .cmt *)
-      log ~title:"load" "Failed to load cmti file, retrying with cmt";
-      load_cmt comp_unit `ML
-    end else
-      Error ()
+    restore_loadpath ~config @@ fun () ->
+    match Misc.find_in_path_uncap !loadpath (File.with_ext fn) with
+    | filename ->
+      let cmt = (Cmt_cache.read filename).cmt_infos in
+      let pos_fname = cmt.cmt_sourcefile in
+      move_to filename cmt;
+      Ok (pos_fname, cmt)
+    | exception Not_found ->
+      if ml_or_mli = `MLI then begin
+        (* there might not have been an mli (so no cmti), so the decl comes from
+            the .ml, and the corresponding .cmt *)
+        log ~title:"load" "Failed to load cmti file, retrying with cmt";
+        load_cmt ~config comp_unit `ML
+      end else
+        Error ()
 
-module Shape_reduce =
-  Shape.Make_reduce (struct
-    type env = Env.t
 
-    let fuel = 10
 
-    let read_unit_shape ~unit_name =
-      let fn = File.(with_ext (cmt unit_name)) in
-      log ~title:"read_unit_shape" "inspecting %s" unit_name;
-      match Load_path.find_uncap fn with
-      | filename ->
+let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
+  let module Shape_reduce = Shape.Make_reduce (struct
+      type env = Env.t
+
+      let fuel = 10
+
+      let shape_from_cmt unit_name filename =
         let cmt_infos = (Cmt_cache.read filename).cmt_infos in
-        move_to filename cmt_infos;
-        log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
+        log ~title:"read_unit_shape" "shapes for %s loaded from %s"
+          unit_name filename;
+        begin match cmt_infos.cmt_annots with
+        | Packed _ ->
+            erase_loadpath ~cwd:(Filename.dirname filename)
+              ~new_path:cmt_infos.cmt_loadpath
+        | _ -> ()
+        end;
         cmt_infos.cmt_impl_shape
-      | exception Not_found ->
-        log ~title:"read_unit_shape" "failed to find %s" fn;
-        None
 
-    let find_shape env id = Env.shape_of_path
-      ~namespace:Shape.Sig_component_kind.Module env (Pident id)
-  end)
+      let read_unit_shape ~unit_name =
+        let fn = File.(with_ext (cmt unit_name)) in
+        log ~title:"read_unit_shape" "inspecting %s" unit_name;
+        match Misc.find_in_path_uncap !loadpath fn with
+        | filename -> shape_from_cmt unit_name filename
+        | exception Not_found ->
+          restore_loadpath ~config (fun () ->
+            match Misc.find_in_path_uncap !loadpath fn with
+            | filename -> shape_from_cmt unit_name filename
+            | exception Not_found ->
+              log ~title:"read_unit_shape" "failed to find %s" fn;
+              None
+          )
 
-let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
+      let find_shape env id = Env.shape_of_path
+        ~namespace:Shape.Sig_component_kind.Module env (Pident id)
+    end)
+  in
   match ml_or_mli with
   | `MLI -> Some decl_uid
   | `ML ->
@@ -419,9 +429,9 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
         Format.pp_print_option Shape.Uid.print fmt shape.uid);
     Option.map ~f:(fun uid -> uid, path) shape.uid
 
-let from_uid ~ml_or_mli uid loc path =
+let from_uid ~config ~ml_or_mli uid loc path =
   let loc_of_comp_unit comp_unit =
-    match load_cmt comp_unit ml_or_mli with
+    match load_cmt ~config comp_unit ml_or_mli with
     | Ok (Some pos_fname, _cmt) ->
       let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
       let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
@@ -449,7 +459,7 @@ let from_uid ~ml_or_mli uid loc path =
           Some (uid, loc)
       end else begin
         log ~title "Loading the shapes for unit %S" comp_unit;
-        match load_cmt comp_unit ml_or_mli with
+        match load_cmt ~config comp_unit ml_or_mli with
         | Ok (Some _pos_fname, cmt) ->
           log ~title "Shapes successfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
@@ -496,9 +506,10 @@ let from_uid ~ml_or_mli uid loc path =
   | None -> log ~title "No UID found, fallbacking to lookup location.";
       `Found (None, loc)
 
-let locate ~env ~ml_or_mli decl_uid loc path ns =
-  let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path ns in
-  from_uid ~ml_or_mli uid loc path
+let locate ~config ~env ~ml_or_mli decl_uid loc path ns =
+  let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
+  let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns in
+  from_uid ~config ~ml_or_mli uid loc path
 
 let path_and_loc_of_cstr desc _ =
   let open Types in
@@ -789,7 +800,7 @@ end = struct
       Some x
 end
 
-let uid_from_longident ~env nss ml_or_mli ident =
+let uid_from_longident ~config ~env nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
@@ -797,12 +808,12 @@ let uid_from_longident ~env nss ml_or_mli ident =
     if Utils.is_builtin_path path then
       `Builtin
     else
-      let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path namespace in
+      let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace in
       `Uid (uid, loc, path)
 
-let from_longident ~env nss ml_or_mli ident =
-  match uid_from_longident ~env nss ml_or_mli ident with
-  | `Uid (uid, loc, path) -> from_uid ~ml_or_mli uid loc path
+let from_longident ~config ~env nss ml_or_mli ident =
+  match uid_from_longident ~config ~env nss ml_or_mli ident with
+  | `Uid (uid, loc, path) -> from_uid ~config ~ml_or_mli uid loc path
   | (`Builtin | `Not_in_env _) as v -> v
 
 let from_path ~config ~env ~namespace ml_or_mli path =
@@ -813,7 +824,7 @@ let from_path ~config ~env ~namespace ml_or_mli path =
     match Env_lookup.loc path namespace env with
     | None -> `Not_in_env (Path.name path)
     | Some (loc, uid, namespace) ->
-      match locate ~env ~ml_or_mli uid loc path namespace with
+      match locate ~config ~env ~ml_or_mli uid loc path namespace with
       | `Not_found _
       | `File_not_found _ as err -> err
       | `Found (uid, loc) ->
@@ -860,7 +871,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
     let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
-    match from_longident ~env nss switch ident with
+    match from_longident ~config ~env nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found (uid, loc) ->
@@ -872,7 +883,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     a uid-based search and return the attached comment in the attributes.
     This is a more sound way to get documentation than resorting on the
     [Ocamldoc.associate_comment] heuristic *)
-let doc_from_uid ~comp_unit uid =
+let doc_from_uid ~config ~comp_unit uid =
   let exception Found of Typedtree.attributes in
   let test elt_uid attributes =
     if Shape.Uid.equal uid elt_uid then raise (Found attributes)
@@ -931,7 +942,7 @@ let doc_from_uid ~comp_unit uid =
   in
   let typedtree =
     log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
-    match load_cmt comp_unit `MLI with
+    match load_cmt ~config comp_unit `MLI with
     | Ok (_, cmt_infos) ->
       log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
       begin match cmt_infos.cmt_annots with
@@ -964,7 +975,6 @@ let doc_from_uid ~comp_unit uid =
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
-  let browse = Mbrowse.of_typedtree local_defs in
   let from_uid ~loc uid =
     begin match uid with
     | Some (Shape.Uid.Item { comp_unit; _ } as uid)
@@ -973,7 +983,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
           log ~title:"get_doc" "the doc (%a) you're looking for is in another
             compilation unit (%s)"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
-          (match doc_from_uid ~comp_unit uid with
+          (match doc_from_uid ~config ~comp_unit uid with
           | `Found doc -> `Found_doc doc
           | `No_documentation ->
               (* We fallback on the legacy heuristic to handle some unproper
