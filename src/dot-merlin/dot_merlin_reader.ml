@@ -107,8 +107,7 @@ module Cache = File_cache.Make (struct
           else if String.is_prefixed ~by:"#" line then
             ()
           else
-            Logger.notify ~section:".merlin"
-              "%s: unexpected directive \"%s\"" path line;
+            tell (`UNKNOWN_TAG (String.split_on_char ~sep:' ' line |> List.hd));
           aux ()
         in
         aux ()
@@ -326,7 +325,7 @@ let prepend_config ~cwd ~cfg =
     | `B _ | `S _ | `CMI _ | `CMT _  as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
-    | `EXCLUDE_QUERY_DIR as directive ->
+    | (`EXCLUDE_QUERY_DIR | `UNKNOWN_TAG _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }

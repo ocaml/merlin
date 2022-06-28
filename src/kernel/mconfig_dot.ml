@@ -74,30 +74,6 @@ let parse_suffix str =
     if String.get first 0 != '.' || String.get second 0 != '.' then []
     else [(first, second)]
 
-let prepend_config ~dir:cwd (directives : directive list) config =
-  List.fold_left ~init:(config, []) ~f:(fun (config, errors) ->
-    function
-    | `B path -> {config with build_path = path :: config.build_path}, errors
-    | `S path -> {config with source_path = path :: config.source_path}, errors
-    | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
-    | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
-    | `EXT exts ->
-      {config with extensions = exts @ config.extensions}, errors
-    | `SUFFIX suffix ->
-      {config with suffixes = (parse_suffix suffix) @ config.suffixes}, errors
-    | `FLG flags ->
-      let flags = {workdir = cwd; workval = flags} in
-      {config with flags = flags :: config.flags}, errors
-    | `STDLIB path ->
-      {config with stdlib = Some path}, errors
-    | `READER reader ->
-      {config with reader}, errors
-    | `EXCLUDE_QUERY_DIR ->
-      {config with exclude_query_dir = true}, errors
-    | `ERROR_MSG str ->
-      config, str :: errors
-  ) directives
-
 (* This module contains invariants around processes that need to be preserved *)
 module Configurator : sig
   type t =
@@ -237,6 +213,37 @@ end = struct
     end
 end
 
+let prepend_config ~dir:cwd configurator (directives : directive list) config =
+  List.fold_left ~init:(config, []) ~f:(fun (config, errors) ->
+    function
+    | `B path -> {config with build_path = path :: config.build_path}, errors
+    | `S path -> {config with source_path = path :: config.source_path}, errors
+    | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
+    | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
+    | `EXT exts ->
+      {config with extensions = exts @ config.extensions}, errors
+    | `SUFFIX suffix ->
+      {config with suffixes = (parse_suffix suffix) @ config.suffixes}, errors
+    | `FLG flags ->
+      let flags = {workdir = cwd; workval = flags} in
+      {config with flags = flags :: config.flags}, errors
+    | `STDLIB path ->
+      {config with stdlib = Some path}, errors
+    | `READER reader ->
+      {config with reader}, errors
+    | `EXCLUDE_QUERY_DIR ->
+      {config with exclude_query_dir = true}, errors
+    | `ERROR_MSG str ->
+      config, str :: errors
+    | `UNKNOWN_TAG _ when configurator = Configurator.Dune ->
+      (* For easier forward compatibility we ignore unknown configuration tags
+         when they are provided by dune *)
+      config, errors
+    | `UNKNOWN_TAG tag  ->
+      let error =  Printf.sprintf "Unknown configuration tag \"%s\"" tag in
+      config, error :: errors
+  ) directives
+
 let postprocess_config config =
   let clean list = List.rev (List.filter_dup list) in
   {
@@ -317,7 +324,7 @@ let get_config { workdir; process_dir; configurator } path_abs =
     match answer with
     | Ok directives ->
       let cfg, failures =
-        prepend_config ~dir:workdir directives empty_config
+        prepend_config ~dir:workdir configurator directives empty_config
       in
       postprocess_config cfg, failures
     | Error (Merlin_dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
