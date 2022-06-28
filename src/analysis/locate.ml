@@ -28,38 +28,9 @@
 
 open Std
 
-(* FIXME @ulysse: [loadpath] doesn't seem used anymore. Perhaps that's intended
-   and OK, but I'm not sure.
-   Can you have a look and explain what's going on nowadays?
-
-   Please remove the next line once you're done. *)
-[@@@ocaml.warning "-32"]
-
-let loadpath     = ref []
-
 let last_location = ref Location.none
 
 let {Logger. log} = Logger.for_section "locate"
-
-let erase_loadpath ~cwd ~new_path k =
-  let str_path_list =
-    List.map new_path ~f:(function
-      | "" ->
-        (* That's the cwd at the time of the generation of the cmt, I'm
-            guessing/hoping it will be the directory where we found it *)
-        log ~title:"erase_loadpath" "%s" cwd;
-        cwd
-      | x ->
-        log ~title:"erase_loadpath" "%s" x;
-        x
-    )
-  in
-  let_ref loadpath str_path_list k
-
-let restore_loadpath ~config k =
-  log ~title:"restore_loadpath" "Restored load path";
-  let_ref loadpath (Mconfig.cmt_path config) k
-
 module File : sig
   type t = private
     | ML   of string
@@ -226,13 +197,13 @@ module Utils = struct
     | _ -> false
 
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
-     matching, instead of the first one.
-     This is only used when looking for ml files, not cmts. Indeed for cmts we
-     know that the load path will only ever contain files with uniq names (in
-     the presence of packed modules we refine the loadpath as we go); this in
-     not the case for the "source path" however.
-     We therefore get all matching files and use an heuristic at the call site
-     to choose the appropriate file. *)
+     matching, instead of the first one. This is only used when looking for ml
+     files, not cmts. Indeed for cmts we know that the load path will only ever
+     contain files with uniq names; this in not the case for the "source path"
+     however. We therefore get all matching files and use an heuristic at the
+     call site to choose the appropriate file.
+
+     Note: We do not refine the load path for module path as we used too. *)
   let find_all_in_path_uncap ?src_suffix_pair ~with_fallback path file =
     let name = File.with_ext ?src_suffix_pair file in
     let uname = String.uncapitalize name in
@@ -859,7 +830,6 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     log ~title:"from_string"
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
-    let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
     match from_longident ~env nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
@@ -986,7 +956,6 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     end
   in
   fun path ->
-  let_ref loadpath (Mconfig.cmt_path config) @@ fun () ->
   let_ref last_location Location.none @@ fun () ->
   match
     match path with
