@@ -1015,24 +1015,16 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       end
     | `User_input path ->
       log ~title:"get_doc" "looking for the doc of '%s'" path;
-      let lid = Longident.parse path in
-      begin match Context.inspect_browse_tree ~cursor:pos lid [browse] with
-      | None ->
-        `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
-      | Some _ ->
-        (* FIXME @ulysse: Why are we looking at the context if we're not using
-           the information?  *)
-        begin match from_string ~config ~env ~local_defs ~pos `MLI path with
-        | `Found (uid, _, pos) ->
-          let loc : Location.t =
-            { loc_start = pos; loc_end = pos; loc_ghost = true }
-          in
-          from_uid ~loc uid
-        | `At_origin | `Missing_labels_namespace -> `No_documentation
-        | `Builtin _ -> `Builtin
-        | (`Not_in_env _ | `Not_found _ |`File_not_found _ )
-          as otherwise -> otherwise
-        end
+      begin match from_string ~config ~env ~local_defs ~pos `MLI path with
+      | `Found (uid, _, pos) ->
+        let loc : Location.t =
+          { loc_start = pos; loc_end = pos; loc_ghost = true }
+        in
+        from_uid ~loc uid
+      | `At_origin | `Missing_labels_namespace -> `No_documentation
+      | `Builtin _ -> `Builtin
+      | (`Not_in_env _ | `Not_found _ |`File_not_found _ )
+        as otherwise -> otherwise
       end
   with
   | `Found_doc doc -> `Found doc
