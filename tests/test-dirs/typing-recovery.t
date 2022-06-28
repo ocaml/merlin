@@ -142,6 +142,8 @@
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
                                 Pexp_constant PConst_int (1,None)
                           ]
+                        attribute \"merlin.loc\"
+                          []
                         Texp_ident \"*type-error*/279\"
                     <case>
                       pattern (test.ml[6,69+4]..test.ml[6,69+5])
@@ -160,6 +162,8 @@
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
                                 Pexp_constant PConst_int (2,None)
                           ]
+                        attribute \"merlin.loc\"
+                          []
                         Texp_ident \"*type-error*/280\"
                   ]
             ]

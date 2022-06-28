@@ -1711,7 +1711,7 @@ let rec type_pat
              pat_extra = [];
              pat_type = expected_ty;
              pat_env = !env;
-             pat_attributes = Msupport.recovery_attributes [];
+             pat_attributes = Msupport.recovery_attributes sp.ppat_attributes;
            }
          in
          k (match category with
@@ -2986,7 +2986,7 @@ and type_expect ?in_function ?recarg env sexp ty_expected_explained =
             exp_extra = [];
             exp_type = ty_expected_explained.ty;
             exp_env = env;
-            exp_attributes = Msupport.recovery_attributes [];
+            exp_attributes = Msupport.recovery_attributes sexp.pexp_attributes;
           })
 
 and type_expect_
