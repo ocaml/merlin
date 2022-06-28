@@ -1,7 +1,6 @@
 open Std
 open Typedtree
 open Types
-let {Logger. log} = Logger.for_section "ptyp of type"
 
 let var_of_id id = Location.mknoloc @@ Ident.name id
 
@@ -30,7 +29,6 @@ let rec module_type =
     Mty.functor_ param out
 and core_type type_expr =
   let open Ast_helper in
-  let open Parsetree in
   match Types.get_desc type_expr with
   | Tvar None | Tunivar None -> Typ.any ()
   | Tvar (Some s) | Tunivar (Some s) -> Typ.var s
@@ -42,7 +40,7 @@ and core_type type_expr =
   | Tconstr (path, type_exprs, _abbrev) ->
     let loc = Untypeast.lident_of_path path |> Location.mknoloc in
     Typ.constr loc @@ List.map ~f:core_type type_exprs
-  | Tobject (type_expr, class_) ->
+  | Tobject (type_expr, _class_) ->
     let rec aux acc type_expr = match get_desc type_expr with
       | Tnil -> acc, Asttypes.Closed
       | Tvar None | Tunivar None -> acc, Asttypes.Open
@@ -117,7 +115,7 @@ and extension_constructor id {
     ~args:(constructor_arguments ext_args)
     ?res:(Option.map ~f:core_type ext_ret_type)
     (var_of_id id)
-and value_description id { val_type; val_kind; val_loc; val_attributes; _ } =
+and value_description id { val_type; val_kind=_; val_loc; val_attributes; _ } =
   let type_ = core_type val_type in
   {
     Parsetree.pval_name = var_of_id id;
@@ -154,7 +152,7 @@ and type_declaration id {
   =
   let params = List.map2 type_params type_variance ~f:(fun type_ variance ->
     let core_type = core_type type_ in
-    let pos, neg, inv, inj = Types.Variance.get_lower variance in
+    let pos, neg, _inv, inj = Types.Variance.get_lower variance in
     let v = if pos then  Asttypes.Covariant
       else (if neg then Contravariant
       else NoVariance)

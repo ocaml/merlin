@@ -242,11 +242,6 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
 let item_for_global_module name =
   {name; kind = `Module; desc = `None; info = `None; deprecated = false}
 
-let fold_constructors f id env acc =
-  Env.fold_constructors
-    (fun constr acc -> f constr.Types.cstr_name constr acc)
-    id env acc
-
 let fold_variant_constructors ~env ~init ~f =
   let rec aux acc t =
     match Types.get_desc t with

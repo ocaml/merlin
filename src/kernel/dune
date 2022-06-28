@@ -5,6 +5,7 @@
  (name merlin_kernel)
  (public_name merlin-lib.kernel)
  (flags
+  :standard
   -open Ocaml_utils
   -open Merlin_utils
   -open Ocaml_parsing
