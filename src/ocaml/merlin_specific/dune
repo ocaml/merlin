@@ -2,6 +2,7 @@
   (name merlin_specific)
   (public_name merlin-lib.ocaml_merlin_specific)
   (flags
+   :standard
    -open Ocaml_utils
    -open Ocaml_parsing
    -open Ocaml_preprocess

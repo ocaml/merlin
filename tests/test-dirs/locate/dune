@@ -10,3 +10,7 @@
   (and
    (<> %{architecture} i386)
    (<> %{os_type} Win32))))
+
+(cram
+ (applies_to :whole_subtree)
+ (alias all-locate-tests))

@@ -748,7 +748,7 @@ let fake_path {Location.loc ; txt = lid} typ name =
     [mkloc (Path.Pident (Ident.create_persistent name)) loc, Some lid]
   | _ | exception Not_found -> []
 
-let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; pat_loc } =
+let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; _ } =
   let init =
     match (pat_desc : k pattern_desc) with
     | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
@@ -778,7 +778,7 @@ let bindop_path { bop_op_name; bop_op_path } =
   let path = bop_op_path in
   (reloc path loc, Some (Longident.Lident loc.txt))
 
-let expression_paths { Typedtree. exp_desc; exp_extra; exp_env; _ } =
+let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
   let init =
     match exp_desc with
     | Texp_ident (path,loc,_) -> [reloc path loc, Some loc.txt]

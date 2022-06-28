@@ -28,6 +28,13 @@
 
 open Std
 
+(* FIXME @ulysse: [loadpath] doesn't seem used anymore. Perhaps that's intended
+   and OK, but I'm not sure.
+   Can you have a look and explain what's going on nowadays?
+
+   Please remove the next line once you're done. *)
+[@@@ocaml.warning "-32"]
+
 let loadpath     = ref []
 
 let last_location = ref Location.none
@@ -282,12 +289,6 @@ module Utils = struct
         Some (List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search)
       with Not_found ->
         None
-
-  let find_file ~config ?with_fallback (file : File.t) =
-    find_file_with_path ~config ?with_fallback file @@
-        match file with
-        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
-        | CMT _ | CMTI _         -> !loadpath
 end
 
 let move_to filename cmt_infos =
@@ -327,8 +328,10 @@ let rec load_cmt comp_unit ml_or_mli =
   | filename ->
     let cmt = (Cmt_cache.read filename).cmt_infos in
     let pos_fname = cmt.cmt_sourcefile in
+    (* FIXME @ulysse: is the [Option.iter] still necessary with the new
+       implementation of [move_to]? *)
     Option.iter cmt.cmt_source_digest
-      ~f:(fun digest -> move_to filename cmt);
+      ~f:(fun _digest -> move_to filename cmt);
     Ok (pos_fname, cmt)
   | exception Not_found ->
     if ml_or_mli = `MLI then begin
@@ -369,7 +372,7 @@ let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
     let shape = Env.shape_of_path ~namespace:ns env path in
     log ~title:"shape_of_path" "initial: %a"
       Logger.fmt (fun fmt -> Shape.print fmt shape);
-    let r = Shape_reduce.reduce env shape in
+    let r = Shape_reduce.weak_reduce env shape in
     log ~title:"shape_of_path" "reduced: %a"
       Logger.fmt (fun fmt -> Shape.print fmt r);
     r.uid
@@ -383,7 +386,8 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
   let iterator env = { Tast_iterator.default_iterator with
     module_binding = (fun sub mb ->
       begin match mb with
-      | { mb_id = Some id; mb_expr = { mod_desc = Tmod_ident (path, _) } } ->
+      | { mb_id = Some id; mb_expr = { mod_desc = Tmod_ident (path, _); _ }; _ }
+        ->
           let md = Env.find_module (Pident id) env in
           if Shape.Uid.equal uid md.md_uid then
             raise (Found (path, env))
@@ -418,7 +422,7 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
 let from_uid ~ml_or_mli uid loc path =
   let loc_of_comp_unit comp_unit =
     match load_cmt comp_unit ml_or_mli with
-    | Ok (Some pos_fname, cmt) ->
+    | Ok (Some pos_fname, _cmt) ->
       let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
       let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
       Some loc
@@ -426,7 +430,7 @@ let from_uid ~ml_or_mli uid loc path =
   in
   let title = "from_uid" in
   match uid with
-  | Some (Shape.Uid.Item { comp_unit; id } as uid)->
+  | Some (Shape.Uid.Item { comp_unit; _ } as uid)->
     let locopt =
       if Env.get_unit_name () = comp_unit then begin
         log ~title "We look for %a in the current compilation unit."
@@ -446,7 +450,7 @@ let from_uid ~ml_or_mli uid loc path =
       end else begin
         log ~title "Loading the shapes for unit %S" comp_unit;
         match load_cmt comp_unit ml_or_mli with
-        | Ok (Some pos_fname, cmt) ->
+        | Ok (Some _pos_fname, cmt) ->
           log ~title "Shapes successfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
@@ -777,22 +781,13 @@ end = struct
       ) ;
       log ~title:"lookup" "   ... not in the environment" ;
       None
-    with Found ((path, namespace, decl_uid, loc) as x) ->
+    with Found ((path, namespace, decl_uid, _loc) as x) ->
       log ~title:"env_lookup" "found: '%a' in namespace %s with uid %a"
         Logger.fmt (fun fmt -> Path.print fmt path)
         (Shape.Sig_component_kind.to_string namespace)
         Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
       Some x
 end
-
-(* Only used to retrieve documentation *)
-let from_completion_entry ~env ~config (namespace, path, loc) =
-  match
-    locate ~env ~ml_or_mli:`MLI Types.Uid.internal_not_actually_unique loc
-      path namespace
-  with
-  | `Found (_, loc) -> `Found loc
-  | `Not_found _ as otherwise -> otherwise
 
 let uid_from_longident ~env nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
@@ -810,7 +805,7 @@ let from_longident ~env nss ml_or_mli ident =
   | `Uid (uid, loc, path) -> from_uid ~ml_or_mli uid loc path
   | (`Builtin | `Not_in_env _) as v -> v
 
-let from_path ~config ~env ~local_defs ~namespace ml_or_mli path =
+let from_path ~config ~env ~namespace ml_or_mli path =
   File_switching.reset ();
   if Utils.is_builtin_path path then
     `Builtin
@@ -972,7 +967,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   let browse = Mbrowse.of_typedtree local_defs in
   let from_uid ~loc uid =
     begin match uid with
-    | Some (Shape.Uid.Item { comp_unit } as uid)
+    | Some (Shape.Uid.Item { comp_unit; _ } as uid)
     | Some (Shape.Uid.Compilation_unit comp_unit as uid)
         when Env.get_unit_name () <> comp_unit ->
           log ~title:"get_doc" "the doc (%a) you're looking for is in another
@@ -998,7 +993,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     | `Completion_entry (namespace, path, _loc) ->
       log ~title:"get_doc" "completion: looking for the doc of '%a'"
         Logger.fmt (fun fmt -> Path.print fmt path) ;
-      let from_path = from_path ~config ~env ~local_defs ~namespace `MLI path in
+      let from_path = from_path ~config ~env ~namespace `MLI path in
       begin match from_path with
       | `Found (uid, _, pos) ->
         let loc : Location.t =
@@ -1014,7 +1009,9 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       begin match Context.inspect_browse_tree ~cursor:pos lid [browse] with
       | None ->
         `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
-      | Some ctxt ->
+      | Some _ ->
+        (* FIXME @ulysse: Why are we looking at the context if we're not using
+           the information?  *)
         begin match from_string ~config ~env ~local_defs ~pos `MLI path with
         | `Found (uid, _, pos) ->
           let loc : Location.t =

@@ -314,20 +314,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
           small_enclosings
       );
 
-    let all_items =
-      let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
-        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
-      List.merge_cons
-        ~f:(fun a b ->
-            (* Tail position is computed only on result, and result comes last
-               As an approximation, when two items are similar, we returns the
-               rightmost one *)
-            if compare (normalize a) (normalize b) = 0 then Some b else None)
-
-        (small_enclosings @ result)
-    in
     let ppf = Format.str_formatter in
-    List.mapi all_items
+    let all_results = List.mapi (small_enclosings @ result)
       ~f:(fun i (loc,text,tail) ->
           let print = match index with None -> true | Some index -> index = i in
           let ret x = (loc, x, tail) in
@@ -347,6 +335,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
             ret (`String (Format.flush_str_formatter ()))
           | _ -> ret (`Index i)
         )
+    in
+    let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
+      Lexing.split_pos loc_start, Lexing.split_pos loc_end, text
+    in
+    (* We remove duplicates from the list. Duplicates can appear when the type
+       from the reconstructed identifier is the same as the one stored in the
+       typedtree *)
+    List.merge_cons
+      ~f:(fun a b ->
+          if compare (normalize a) (normalize b) = 0 then Some b else None)
+      all_results
 
   | Enclosing pos ->
     let typer = Mpipeline.typer_result pipeline in
@@ -386,11 +385,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | None -> `Invalid_context
       | Some (env, path) ->
         Locate.log ~title:"debug" "found type: %s" (Path.name path);
-        let local_defs = Mtyper.get_typedtree typer in
         match Locate.from_path
                 ~env
                 ~config:(Mpipeline.final_config pipeline)
-                ~local_defs ~namespace:`Type `MLI
+                ~namespace:`Type `MLI
                 path with
         | `Builtin -> `Builtin (Path.name path)
         | `Not_in_env _ as s -> s
@@ -630,14 +628,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       [Mbrowse.of_typedtree typedtree] in
     begin match structures with
     | (_, (Browse_raw.Module_expr { mod_desc = Tmod_hole; _ } as node_for_loc))
-      :: (_, node) :: parents ->
+      :: (_, node) :: _parents ->
         let loc = Mbrowse.node_loc node_for_loc in
         (loc, Construct.node ~keywords ?depth ~values_scope node)
     | (_,  (Browse_raw.Expression { exp_desc = Texp_hole; _ } as node))
-      :: parents ->
+      :: _parents ->
       let loc = Mbrowse.node_loc node in
       (loc, Construct.node ~keywords ?depth ~values_scope node)
-    | (_, node) :: _ -> raise Construct.Not_a_hole
+    | _ :: _ -> raise Construct.Not_a_hole
     | [] -> raise No_nodes
     end
 
