@@ -39,15 +39,15 @@ module Directive = struct
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list
-    | `EXCLUDE_QUERY_DIR ]
+    | `EXCLUDE_QUERY_DIR
+    | `UNKNOWN_TAG of string ]
 
   module Processed = struct
     type acceptable_in_input = [ include_path | no_processing_required ]
 
     type t =
       [ acceptable_in_input
-      | `ERROR_MSG of string
-      | `UNKNOWN_TAG of string ]
+      | `ERROR_MSG of string ]
   end
 
   module Raw = struct
@@ -119,7 +119,7 @@ module Sexp = struct
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
         | `EXCLUDE_QUERY_DIR -> ("EXCLUDE_QUERY_DIR", [])
         | `UNKNOWN_TAG tag -> ("ERROR", single @@
-            Printf.sprintf "Unknown tag: %s" tag)
+            Printf.sprintf "Unknown tag in .merlin: %s" tag)
         | `ERROR_MSG s -> ("ERROR", single s)
       in
       List (Atom tag :: body)
