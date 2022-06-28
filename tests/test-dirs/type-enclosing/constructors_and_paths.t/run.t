@@ -15,24 +15,8 @@ Various parts of the cons.ml:
       },
       "type": "t",
       "tail": "no"
-    },
-    {
-      "start": {
-        "line": 4,
-        "col": 13
-      },
-      "end": {
-        "line": 4,
-        "col": 14
-      },
-      "type": "t",
-      "tail": "no"
     }
   ]
-
-Note: the output is duplicated because it is the result of the concatenation
-of both the ast-based and the small_enclosings (source based) heuristics.
-We aim to fix that in the future.
 
 - The pattern:
 
@@ -53,14 +37,14 @@ We aim to fix that in the future.
     },
     {
       "start": {
-        "line": 8,
-        "col": 4
+        "line": 7,
+        "col": 2
       },
       "end": {
         "line": 8,
-        "col": 5
+        "col": 11
       },
-      "type": "t",
+      "type": "unit",
       "tail": "no"
     }
   ]
@@ -143,13 +127,13 @@ We aim to fix that in the future.
     {
       "start": {
         "line": 15,
-        "col": 12
+        "col": 6
       },
       "end": {
         "line": 15,
-        "col": 15
+        "col": 22
       },
-      "type": "M.t",
+      "type": "unit -> M.t",
       "tail": "no"
     }
   ]
@@ -249,18 +233,6 @@ the expression reconstructed from  (M|.A 3).
   $ $MERLIN single type-enclosing -position 26:11 -verbosity 0 \
   > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
   [
-    {
-      "start": {
-        "line": 26,
-        "col": 8
-      },
-      "end": {
-        "line": 26,
-        "col": 11
-      },
-      "type": "int",
-      "tail": "no"
-    },
     {
       "start": {
         "line": 26,

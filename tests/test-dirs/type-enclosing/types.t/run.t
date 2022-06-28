@@ -41,18 +41,6 @@
       },
       "type": "type x = Foo",
       "tail": "no"
-    },
-    {
-      "start": {
-        "line": 5,
-        "col": 10
-      },
-      "end": {
-        "line": 5,
-        "col": 11
-      },
-      "type": "type x = Foo",
-      "tail": "no"
     }
   ]
 
