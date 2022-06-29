@@ -3,6 +3,8 @@ merlin 4.6
 
   + merlin binary
     - Type printing: use `best_module_path` for paths from `Mty_alias` (#1470)
+    - Attempt at finding the 'real' capitalization of files on windows (#1462 by
+      @mlasson)
   + editor modes
     - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
       fixes #1460)
