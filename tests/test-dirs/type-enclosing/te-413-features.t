@@ -21,13 +21,13 @@ Named existentials in patterns
     {
       "start": {
         "line": 3,
-        "col": 59
+        "col": 51
       },
       "end": {
         "line": 3,
-        "col": 60
+        "col": 65
       },
-      "type": "a",
+      "type": "unit",
       "tail": "no"
     }
   ]

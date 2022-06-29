@@ -30,18 +30,6 @@ in the presence of underscores.
         "line": 3,
         "col": 6
       },
-      "type": "float",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 2
-      },
-      "end": {
-        "line": 3,
-        "col": 6
-      },
       "type": "int",
       "tail": "no"
     },
@@ -67,18 +55,6 @@ in the presence of underscores.
   >   _foo
   > EOF
   [
-    {
-      "start": {
-        "line": 3,
-        "col": 2
-      },
-      "end": {
-        "line": 3,
-        "col": 6
-      },
-      "type": "float",
-      "tail": "no"
-    },
     {
       "start": {
         "line": 3,
@@ -147,18 +123,6 @@ We try several places in the identifier to check the result stability
         "line": 3,
         "col": 9
       },
-      "type": "float",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 2
-      },
-      "end": {
-        "line": 3,
-        "col": 9
-      },
       "type": "int",
       "tail": "no"
     },
@@ -184,18 +148,6 @@ We try several places in the identifier to check the result stability
   >   foo_bar
   > EOF
   [
-    {
-      "start": {
-        "line": 3,
-        "col": 2
-      },
-      "end": {
-        "line": 3,
-        "col": 9
-      },
-      "type": "float",
-      "tail": "no"
-    },
     {
       "start": {
         "line": 3,
@@ -263,18 +215,6 @@ We try several places in the identifier to check the result stability
         "line": 3,
         "col": 9
       },
-      "type": "float",
-      "tail": "no"
-    },
-    {
-      "start": {
-        "line": 3,
-        "col": 2
-      },
-      "end": {
-        "line": 3,
-        "col": 9
-      },
       "type": "int",
       "tail": "no"
     },
@@ -301,18 +241,6 @@ We try several places in the identifier to check the result stability
   {
     "class": "return",
     "value": [
-      {
-        "start": {
-          "line": 3,
-          "col": 2
-        },
-        "end": {
-          "line": 3,
-          "col": 9
-        },
-        "type": "float",
-        "tail": "no"
-      },
       {
         "start": {
           "line": 3,
