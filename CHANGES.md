@@ -9,6 +9,8 @@ merlin 4.6
       deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
     - unify parsing of `MERLIN_LOG` (#1480 by @ulugbekna)
     - Fix type deduplication in `type-enclosing` results (#1483, fixes #1477)
+    - Ignore unknown configuration tags from dune configuration provider but not
+      from dot-merlin-reader (#1486)
   + editor modes
     - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
       fixes #1460)
