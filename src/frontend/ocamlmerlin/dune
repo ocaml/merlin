@@ -5,6 +5,7 @@
  (package merlin)
  (public_name ocamlmerlin-server)
  (flags
+  :standard
   -open Ocaml_utils
   -open Ocaml_parsing
   -open Ocaml_typing

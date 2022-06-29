@@ -630,14 +630,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       [Mbrowse.of_typedtree typedtree] in
     begin match structures with
     | (_, (Browse_raw.Module_expr { mod_desc = Tmod_hole; _ } as node_for_loc))
-      :: (_, node) :: parents ->
+      :: (_, node) :: _parents ->
         let loc = Mbrowse.node_loc node_for_loc in
         (loc, Construct.node ~keywords ?depth ~values_scope node)
     | (_,  (Browse_raw.Expression { exp_desc = Texp_hole; _ } as node))
-      :: parents ->
+      :: _parents ->
       let loc = Mbrowse.node_loc node in
       (loc, Construct.node ~keywords ?depth ~values_scope node)
-    | (_, node) :: _ -> raise Construct.Not_a_hole
+    | _ :: _ -> raise Construct.Not_a_hole
     | [] -> raise No_nodes
     end
 
@@ -790,7 +790,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
         | _ -> false
       in
-      List.find_some enclosing ~f:(fun (_, node) -> 
+      List.find_some enclosing ~f:(fun (_, node) ->
         (* it doesn't make sense to find occurrences of a wildcard pattern *)
         not (is_wildcard_pat node))
       |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)
