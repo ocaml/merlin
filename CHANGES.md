@@ -8,6 +8,7 @@ merlin 4.6
     - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
       deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
     - unify parsing of `MERLIN_LOG` (#1480 by @ulugbekna)
+    - Fix type deduplication in `type-enclosing` results (#1483, fixes #1477)
   + editor modes
     - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
       fixes #1460)
