@@ -51,12 +51,15 @@ module Directive : sig
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list
-    | `EXCLUDE_QUERY_DIR ]
+    | `EXCLUDE_QUERY_DIR
+    | `UNKNOWN_TAG of string ]
 
   module Processed : sig
     type acceptable_in_input = [ include_path | no_processing_required ]
 
-    type t = [ acceptable_in_input | `ERROR_MSG of string ]
+    type t =
+      [  acceptable_in_input
+      | `ERROR_MSG of string ]
   end
 
   module Raw : sig
