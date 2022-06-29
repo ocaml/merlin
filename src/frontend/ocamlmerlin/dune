@@ -8,7 +8,7 @@
  (modules (:standard \ gen_ccflags))
  (libraries config yojson merlin_analysis merlin_kernel
             merlin_utils os_ipc parsing query_protocol query_commands
-            typing utils))
+            typing utils seq))
 
 (executable
  (name      gen_ccflags)
