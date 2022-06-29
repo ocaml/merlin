@@ -61,6 +61,12 @@ val erroneous_expr_check: Typedtree.expression -> bool
 (** Turn saved types from Cmt_format into attributes *)
 val flush_saved_types : unit -> Parsetree.attributes
 
+val incorrect_attribute: Parsetree.attribute
+
+(** Extend the given attributes with an incorrect attribute and the saved types
+    after turning them into attributes *)
+val recovery_attributes : Parsetree.attributes -> Parsetree.attributes
+
 (** Retrieve saved types that were turned into attributes *)
 val get_saved_types_from_attributes : Parsetree.attributes -> Cmt_format.binary_part list
 

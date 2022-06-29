@@ -11,10 +11,14 @@ merlin 4.6
     - Fix type deduplication in `type-enclosing` results (#1483, fixes #1477)
     - Ignore unknown configuration tags from dune configuration provider but not
       from dot-merlin-reader (#1486)
+    - typing recovery: recover at the granularity of `core_type` (#1484)
   + editor modes
     - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
       fixes #1460)
     - add method imenu items for emacs (#1481, @mndrix)
+    - emacs: Make the prefix argument to `merlin-locate` optional, both for
+      consistency with Emacs convention and for backwards compatibility. (#1476,
+      @antalsz)
 
 merlin 4.5
 ==========

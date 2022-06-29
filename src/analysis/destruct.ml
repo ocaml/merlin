@@ -301,7 +301,7 @@ let rec get_every_pattern = function
                   | Pattern p ->
                     let ill_typed_pred : Typedtree.pattern_predicate =
                       { f = fun p ->
-                            List.memq Typecore.merlin_incorrect_attribute
+                            List.memq Msupport.incorrect_attribute
                             ~set:p.pat_attributes }
                     in
                     if Typedtree.exists_general_pattern ill_typed_pred p then
