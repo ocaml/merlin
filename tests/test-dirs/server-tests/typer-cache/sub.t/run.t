@@ -90,7 +90,7 @@ Well behaving versions of Merlin (>= 3.3.4) of should return the same answer as
 reference.
 
 We should check in the other direction too. Starting from a visible dep and
-hidding it.  Older versions of the typechecker (before the 4.08 revamp of Env)
+hiding it.  Older versions of the typechecker (before the 4.08 revamp of Env)
 would accumulate dependencies and forget to flush the cache when a dependency
 disappeared.
 

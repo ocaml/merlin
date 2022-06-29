@@ -108,7 +108,7 @@ annotations, printing ...)
 
 `locate.ml`: implement a jump-to-definition/declaration feature
 
-`jump.ml`: implement convenient nagivation commands
+`jump.ml`: implement convenient navigation commands
 
 ### src/ocaml/support
 

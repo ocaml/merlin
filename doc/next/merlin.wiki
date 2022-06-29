@@ -1,6 +1,6 @@
 @let-def: this design document gathers requirements and ideas for the next
   version of merlin.  The purpose is to consolidate features that were added
-  lately and cleanup legacy crufts.
+  lately and cleanup legacy cruft.
 
 == TL;DR ==
 

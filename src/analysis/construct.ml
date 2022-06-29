@@ -417,7 +417,7 @@ module Gen = struct
 
     (* Given a typed hole, there is two possible forms of constructions:
       - Use the type's definition to propose the correct type constructors,
-      - Look for values in the environnement with compatible return type. *)
+      - Look for values in the environment with compatible return type. *)
     fun env typ ->
       log ~title:"construct expr" "Looking for expressions of type %s"
         (Util.type_to_string typ);

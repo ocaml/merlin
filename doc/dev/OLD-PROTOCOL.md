@@ -408,7 +408,7 @@ Returns a string describing Merlin version.
 ### Debugging Merlin
 
 Dump command allow to observe internal structures of Merlin.
-Result is an arbitratry json object, targeted toward human readers.
+Result is an arbitrary json object, targeted toward human readers.
 
 ```javascript
 ["dump","env"]
