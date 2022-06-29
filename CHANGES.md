@@ -11,6 +11,7 @@ merlin 4.6
   + editor modes
     - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
       fixes #1460)
+    - add method imenu items for emacs (#1481, @mndrix)
 
 merlin 4.5
 ==========
