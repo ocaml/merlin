@@ -102,7 +102,7 @@ module Sexp = struct
         | tag -> make_error tag
       end
     | List [ Atom "EXCLUDE_QUERY_DIR" ] -> `EXCLUDE_QUERY_DIR
-    | _ -> `ERROR_MSG "Unexpect output from external config reader"
+    | _ -> `ERROR_MSG "Unexpected output from external config reader"
 
   let from_directives (directives : Directive.Processed.t list) =
     let f t =

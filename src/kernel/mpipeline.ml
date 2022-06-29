@@ -35,7 +35,7 @@ module Cache = struct
      let the typechecker figure which part of its internal state should be
      invalidated).
      However we already had many bug related to that.  There are subtle changes
-     in the type checker behavior accross the different versions of OCaml.
+     in the type checker behavior across the different versions of OCaml.
      It is simpler to create new instances upfront.
   *)
 
