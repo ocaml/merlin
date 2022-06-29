@@ -13,7 +13,7 @@
  (modules (:standard \ gen_ccflags))
  (libraries config yojson merlin_analysis merlin_kernel
             merlin_utils os_ipc ocaml_parsing query_protocol query_commands
-            ocaml_typing ocaml_utils))
+            ocaml_typing ocaml_utils seq))
 
 (executable
  (name      gen_ccflags)

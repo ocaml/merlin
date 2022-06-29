@@ -5,6 +5,8 @@ merlin 4.6
     - Type printing: use `best_module_path` for paths from `Mty_alias` (#1470)
     - Attempt at finding the 'real' capitalization of files on windows (#1462 by
       @mlasson)
+    - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
+      deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
   + editor modes
     - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
       fixes #1460)

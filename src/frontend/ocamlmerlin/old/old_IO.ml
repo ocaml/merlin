@@ -314,8 +314,17 @@ let make_json ?(on_read=ignore) ~input ~output () =
       read buf len
   in
   let lexbuf  = Lexing.from_function read in
-  let input   = Json.stream_from_lexbuf (Json.init_lexer ()) lexbuf in
-  let input () = try Some (Stream.next input) with Stream.Failure -> None in
+  let input   =
+    (* This code is the compiler's implementation of `to_dispenser`.
+       Original: 0c249195f84fbc0ef475c1334594b53aaf5a3de7/stdlib/seq.ml#L669 *)
+    let s = ref (Yojson.Basic.(seq_from_lexbuf (init_lexer ()) lexbuf)) in
+    fun () ->
+      match (!s)() with
+      | Nil -> None
+      | Cons (x, xs) ->
+          s := xs;
+          Some x
+  in
   let output  = Unix.out_channel_of_descr output in
   let output' = Json.to_channel output in
   let output json =
