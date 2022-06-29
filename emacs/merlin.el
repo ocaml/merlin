@@ -1582,7 +1582,7 @@ loading"
     (cond
      ((equal prefix '(4)) 'never)
      ((equal prefix '(16)) 'always)
-     (t 'merlin-locate-in-new-window))))
+     (t merlin-locate-in-new-window))))
     (merlin--locate-result (merlin-call-locate))))
 
 (defun merlin-locate-type ()

@@ -1,3 +1,11 @@
+merlin 4.6
+==========
+
+  + merlin binary
+  + editor modes
+    - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
+      fixes #1460)
+
 merlin 4.5
 ==========
 Tue Apr  5 21:12:42 CEST 2022
