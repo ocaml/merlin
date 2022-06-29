@@ -21,6 +21,7 @@
 (defvar-local merlin-imenu--module-list nil)
 (defvar-local merlin-imenu--signature-list nil)
 (defvar-local merlin-imenu--class-list nil)
+(defvar-local merlin-imenu--method-list nil)
 
 (defun merlin-imenu-compute-position (line col)
   "Get location of the item."
@@ -67,6 +68,8 @@
              (setq merlin-imenu--signature-list (cons marker merlin-imenu--signature-list)))
             ((string= kind "Class")
              (setq merlin-imenu--class-list (cons marker merlin-imenu--class-list)))
+            ((string= kind "Method")
+             (setq merlin-imenu--method-list (cons marker merlin-imenu--method-list)))
             ((string= kind "Exn")
              (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list))))
       (when sub-trees
@@ -80,6 +83,7 @@
         merlin-imenu--module-list nil
         merlin-imenu--signature-list nil
         merlin-imenu--class-list nil
+        merlin-imenu--method-list nil
         merlin-imenu--exception-list nil)
   ;; Read outline tree
   (merlin-imenu-parse-outline "" (merlin-call "outline"))
@@ -96,6 +100,8 @@
       (push (cons "Signature" merlin-imenu--signature-list) index))
     (when merlin-imenu--class-list
       (push (cons "Class" merlin-imenu--class-list) index))
+    (when merlin-imenu--method-list
+      (push (cons "Method" merlin-imenu--method-list) index))
     index))
 
 ;;;###autoload
