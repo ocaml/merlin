@@ -1,5 +1,6 @@
-unreleased
+merlin 4.6
 ==========
+Thu Jun 30 14:51:42 CEST 2022
 
   + merlin binary
     - make most library public and split merlin in two packages: the
