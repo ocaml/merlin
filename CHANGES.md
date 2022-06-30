@@ -20,6 +20,7 @@ unreleased
     - emacs: Make the prefix argument to `merlin-locate` optional, both for
       consistency with Emacs convention and for backwards compatibility. (#1476,
       @antalsz)
+    - emacs: fix duplicated prefix path in imenu entries (#1495, @bcc32)
 
 merlin 4.5
 ==========
