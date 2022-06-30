@@ -6,6 +6,7 @@ unreleased
       `merlin-lib` package that exposes merlin's internals and the `merlin`
       package with the frontend. (#1448, #1455, #1457, #1497, @rgrinberg,
       @tmattio, @kit-ty-kate)
+    - Type printing: use best_module_path for paths from Mty_alias (#1470)
     - Attempt at finding the 'real' capitalization of files on windows (#1462 by
       @mlasson)
     - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
@@ -14,6 +15,8 @@ unreleased
     - Fix type deduplication in `type-enclosing` results (#1483, fixes #1477)
     - Only weakly reduce the shapes to speed up the new Merlin locate
       implementation. (#1488)
+    - Ignore unknown configuration tags from dune configuration provider but not
+      from dot-merlin-reader (#1486)
     - typing recovery: recover at the granularity of `core_type` (#1484)
   + editor modes
     - add method imenu items for emacs (#1481, @mndrix)
