@@ -76,15 +76,6 @@ let lookup_env f x env =
   try Some (f x env)
   with Not_found | Env.Error _ -> None
 
-let parenthesize_name name =
-  (* Qualified operators need parentheses *)
-  if name = "" || not (Oprint.parenthesized_ident name) then name else (
-    if name.[0] = '*' || name.[String.length name - 1] = '*' then
-      "( " ^ name ^ " )"
-    else
-      "(" ^ name ^ ")"
-  )
-
 let rec methods_of_type env ?(acc=[]) type_expr =
   let open Types in
   match get_desc type_expr with
@@ -209,7 +200,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
   let name =
     match prefix_path with
     | None -> name
-    | Some _ -> parenthesize_name name
+    | Some _ -> Misc_utils.parenthesize_name name
   in
   let desc =
     match kind with
@@ -724,7 +715,7 @@ let expand_prefix ~global_modules ?(kinds=[]) env prefix =
       let lident = Longident.flatten lident in
       let lident = String.concat ~sep:"." lident ^ "." in
       List.concat_map candidates ~f:(List.map ~f:(fun c ->
-          { c with name = lident ^ parenthesize_name c.name }))
+          { c with name = lident ^ Misc_utils.parenthesize_name c.name }))
   in
   List.concat_map ~f:process_prefix_path lidents
 

@@ -50,6 +50,8 @@ type result = {
   ];
 }
 
+let initial_env res = res.initial_env
+
 let compatible_prefix result_items tree_items =
   let rec aux acc = function
     | (ritem :: ritems, pitem :: pitems)

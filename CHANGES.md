@@ -4,8 +4,8 @@ unreleased
   + merlin binary
     - make most library public and split merlin in two packages: the
       `merlin-lib` package that exposes merlin's internals and the `merlin`
-      package with the frontend. (#1448, #1455, #1457, @rgrinberg, @tmattio,
-      @kit-ty-kate)
+      package with the frontend. (#1448, #1455, #1457, #1497, @rgrinberg,
+      @tmattio, @kit-ty-kate)
     - Attempt at finding the 'real' capitalization of files on windows (#1462 by
       @mlasson)
     - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the

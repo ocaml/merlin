@@ -28,7 +28,7 @@ let () =
     | _ -> None
   )
 module Util = struct
-  open Destruct.Path_utils
+  open Misc_utils.Path
   open Types
 
   let predef_types =
