@@ -1,13 +1,13 @@
 (library
  (name      query_protocol)
  (modules   query_protocol)
- (flags -open Merlin_utils)
+ (flags :standard -open Merlin_utils)
  (libraries merlin_kernel merlin_utils parsing))
 
 (library
  (name      query_commands)
  (modules   query_commands)
- (flags -open Merlin_utils -open Merlin_analysis)
+ (flags :standard -open Merlin_utils -open Merlin_analysis)
  (libraries
   merlin_utils
   merlin_kernel

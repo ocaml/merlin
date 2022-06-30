@@ -1,5 +1,5 @@
 (library
   (name merlin_specific)
   (wrapped false)
-  (flags -open Merlin_utils)
+  (flags :standard -open Merlin_utils)
   (libraries merlin_utils parsing preprocess typing utils))

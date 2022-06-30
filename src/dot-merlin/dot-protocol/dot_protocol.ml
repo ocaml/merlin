@@ -39,12 +39,15 @@ module Directive = struct
     | `STDLIB of string
     | `SUFFIX of string
     | `READER of string list
-    | `EXCLUDE_QUERY_DIR ]
+    | `EXCLUDE_QUERY_DIR
+    | `UNKNOWN_TAG of string ]
 
   module Processed = struct
     type acceptable_in_input = [ include_path | no_processing_required ]
 
-    type t = [ acceptable_in_input | `ERROR_MSG of string ]
+    type t =
+      [ acceptable_in_input
+      | `ERROR_MSG of string ]
   end
 
   module Raw = struct
@@ -73,10 +76,6 @@ module Sexp = struct
     ( List.concat [["("]; List.map ~f:to_string l;[")"]])
 
   let to_directive sexp =
-    let make_error str =
-      let str = Printf.sprintf "Unknown configuration tag \"%s\"" str in
-      `ERROR_MSG str
-    in
     match sexp with
     | List [ Atom tag; Atom value ] ->
       begin match tag with
@@ -91,7 +90,7 @@ module Sexp = struct
             (* This means merlin asked dune 2.6 for configuration.
               But the protocole evolved, only dune 2.8 should be used *)
             `ERROR_MSG "No .merlin file found. Try building the project."
-        | tag -> make_error tag
+        | tag -> `UNKNOWN_TAG tag
       end
     | List [ Atom tag; List l ] ->
         let value = strings_of_atoms l in
@@ -99,10 +98,10 @@ module Sexp = struct
         | "EXT" -> `EXT value
         | "FLG" -> `FLG value
         | "READER" -> `READER value
-        | tag -> make_error tag
+        | tag -> `UNKNOWN_TAG tag
       end
     | List [ Atom "EXCLUDE_QUERY_DIR" ] -> `EXCLUDE_QUERY_DIR
-    | _ -> `ERROR_MSG "Unexpect output from external config reader"
+    | _ -> `ERROR_MSG "Unexpected output from external config reader"
 
   let from_directives (directives : Directive.Processed.t list) =
     let f t =
@@ -119,6 +118,8 @@ module Sexp = struct
         | `SUFFIX s -> ("SUFFIX", single s)
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
         | `EXCLUDE_QUERY_DIR -> ("EXCLUDE_QUERY_DIR", [])
+        | `UNKNOWN_TAG tag -> ("ERROR", single @@
+            Printf.sprintf "Unknown tag in .merlin: %s" tag)
         | `ERROR_MSG s -> ("ERROR", single s)
       in
       List (Atom tag :: body)

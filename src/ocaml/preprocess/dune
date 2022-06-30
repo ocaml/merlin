@@ -3,7 +3,7 @@
 (library
   (name preprocess)
   (wrapped false)
-  (flags -open Merlin_utils)
+  (flags :standard -open Merlin_utils)
   (libraries parsing utils merlin_utils))
 
 (menhir

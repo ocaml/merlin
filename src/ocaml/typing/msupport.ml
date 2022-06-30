@@ -169,3 +169,12 @@ let with_saved_types ?warning_attribute ?save_part f =
     let saved_types'= Cmt_format.get_saved_types () in
     Cmt_format.set_saved_types (saved_types' @ saved_types);
     reraise exn
+
+let incorrect_attribute =
+  Ast_helper.Attr.mk (Location.mknoloc "merlin.incorrect") (Parsetree.PStr [])
+
+let recovery_attributes attrs =
+  let attrs' = incorrect_attribute :: flush_saved_types () in
+  match attrs with
+  | [] -> attrs'
+  | attrs -> attrs' @ attrs

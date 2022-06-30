@@ -199,7 +199,7 @@ let is_operator = function
                      got in the previous step.
 
 
-   Additionnaly, the message of commit fc0b152 explains what we consider is an
+   Additionally, the message of commit fc0b152 explains what we consider is an
    identifier:
 
      «

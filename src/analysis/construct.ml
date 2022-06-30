@@ -22,7 +22,7 @@ let () =
       let txt = Format.sprintf "Module not found: %s" s in
       Some (Location.error txt)
     | No_constraint ->
-      Some (Location.error 
+      Some (Location.error
         "Could not find a module type to construct from. \
         Check that you used a correct constraint.")
     | _ -> None
@@ -62,7 +62,7 @@ module Util = struct
     in
     tbl
 
-  let prefix env ~env_check path name = 
+  let prefix env ~env_check path name =
     to_shortest_lid ~env ~env_check ~name path
 
   let var_of_id id = Location.mknoloc @@ Ident.name id
@@ -71,18 +71,18 @@ module Util = struct
     Printtyp.type_expr (Format.str_formatter) t;
     Format.flush_str_formatter ()
 
-  let unifiable env type_expr type_expected = 
+  let unifiable env type_expr type_expected =
     let snap = Btype.snapshot () in
     try
-      Ctype.unify env type_expected type_expr |> ignore; 
+      Ctype.unify env type_expected type_expr |> ignore;
       Some snap
-    with Ctype.Unify _  -> 
-      (* Unification failure *) 
+    with Ctype.Unify _  ->
+      (* Unification failure *)
       Btype.backtrack snap;
       None
-  
+
   let is_in_stdlib path =
-    Path.head path |> Ident.name = "Stdlib" 
+    Path.head path |> Ident.name = "Stdlib"
 
   (** [find_values_for_type env typ] searches the environment [env] for
   {i values} with a return type compatible with [typ] *)
@@ -98,7 +98,7 @@ module Util = struct
               See c-simple, test 6.2b for an example *)
           Btype.backtrack snap;
           Some params
-        | None -> 
+        | None ->
           begin match type_expr.desc with
           | Tarrow (arg_label, _, te, _) -> check_type te (arg_label::params)
           | _ -> None
@@ -114,14 +114,14 @@ module Util = struct
       We also exclude the Stdlib modules from the search. *)
     let fold_values path acc = Env.fold_values aux path env acc in
     let init = fold_values None Path.Map.empty in
-    Env.fold_modules (fun name path _module_decl acc ->
-      if not (is_in_stdlib path) && not (is_opened env path) then 
+    Env.fold_modules (fun _name path _module_decl acc ->
+      if not (is_in_stdlib path) && not (is_opened env path) then
         (* We ignore opened modules. That means that is a value of an opened
           module has been shadowed we won't suggest the one in the opened
-          module. *) 
+          module. *)
         fold_values (Some (Untypeast.lident_of_path path)) acc
       else acc) None env init
-      
+
 
   (** The idents_table is used to keep track of already used names when
   generating function arguments in the same expression *)
@@ -175,10 +175,8 @@ end
 module Gen = struct
   open Types
 
-  let hole = Ast_helper.Exp.hole ()
-
   (* [make_value] generates the PAST repr of a value applied to holes *)
-  let make_value env (path, (name, value_description, params)) =
+  let make_value env (path, (name, _value_description, params)) =
     let open Ast_helper in
     let env_check = Env.find_value_by_name in
     let lid = Location.mknoloc (Util.prefix env ~env_check path name) in
@@ -225,7 +223,7 @@ module Gen = struct
   and structure_item env =
     let open Ast_helper in
     function
-    | Sig_value (id, vd, _visibility) ->
+    | Sig_value (id, _vd, _visibility) ->
       let vb = Vb.mk (Pat.var (Util.var_of_id id)) (Exp.hole ()) in
       Str.value Nonrecursive [ vb ]
     | Sig_type (id, type_declaration, rec_flag, _visibility) ->
@@ -259,11 +257,11 @@ module Gen = struct
         ~priv:ext_constructor.ext_private
         lid
         [Ptyp_of_type.extension_constructor id ext_constructor]
-    | Sig_class_type (id, class_type_decl, _, _) ->
+    | Sig_class_type (id, _class_type_decl, _, _) ->
       let str = Format.asprintf "Construct does not handle class types yet. \
       Please replace this comment by [%s]'s definition." (Ident.name id) in
       Str.text [ Docstrings.docstring str Location.none ] |> List.hd
-    | Sig_class (id, class_decl, _, _) ->
+    | Sig_class (id, _class_decl, _, _) ->
       let str = Format.asprintf "Construct does not handle classes yet. \
       Please replace this comment by [%s]'s definition." (Ident.name id) in
       Str.text [ Docstrings.docstring str Location.none ] |> List.hd
@@ -365,10 +363,10 @@ module Gen = struct
       |> Util.panache
     in
 
-    let variant env typ row_desc =
+    let variant env _typ row_desc =
       let fields =
         List.filter
-          ~f:(fun (lbl, row_field) -> match row_field with
+          ~f:(fun (_lbl, row_field) -> match row_field with
             | Rpresent _
             | Reither (true, [], _, _)
             | Reither (false, [_], _, _) -> true
@@ -417,7 +415,7 @@ module Gen = struct
 
     (* Given a typed hole, there is two possible forms of constructions:
       - Use the type's definition to propose the correct type constructors,
-      - Look for values in the environnement with compatible return type. *)
+      - Look for values in the environment with compatible return type. *)
     fun env typ ->
       log ~title:"construct expr" "Looking for expressions of type %s"
         (Util.type_to_string typ);
@@ -434,7 +432,7 @@ module Gen = struct
           (* Special case for lazy *)
           let exps = exp_or_hole env texp in
           List.map exps ~f:Ast_helper.Exp.lazy_
-        | Tconstr (path, params, _) ->
+        | Tconstr (path, _params, _) ->
           (* If this is a "basic" type we propose a default value *)
           begin try
             [ Hashtbl.find Util.predef_types path ]
@@ -522,8 +520,8 @@ let needs_parentheses e = match e.Parsetree.pexp_desc with
   -> true
   | _ -> false
 
-let to_string_with_parentheses exp = 
-  let f : _ format6 = 
+let to_string_with_parentheses exp =
+  let f : _ format6 =
     if needs_parentheses exp then "(%a)"
     else "%a"
   in
@@ -535,14 +533,14 @@ let node ?(depth = 1) ~keywords ~values_scope node =
       let idents_table = Util.idents_table ~keywords in
       Gen.expression ~idents_table values_scope ~depth exp_env exp_type
       |> List.map ~f:to_string_with_parentheses
-  | Browse_raw.Module_expr 
+  | Browse_raw.Module_expr
       { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
-  | Browse_raw.Module_expr 
+  | Browse_raw.Module_expr
       {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
       let m = Gen.module_ mod_env mod_type in
       [ Format.asprintf "%a" Pprintast.module_ m ]
   | Browse_raw.Module_expr _
-  | Browse_raw.Module_binding _ -> 
+  | Browse_raw.Module_binding _ ->
       (* Constructible modules have an explicit constraint or are functor
         applications. In other cases we do not know what to construct.  *)
       raise No_constraint
