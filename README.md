@@ -24,7 +24,7 @@ Manually building and installing Merlin
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.02.3, ocamlfind, yojson >= 1.6.0, dune >= 1.8.
+Dependencies: ocaml >= 4.02.3, ocamlfind, yojson >= 2.0.0, dune >= 1.8.
 
 ```shell
 dune build -p merlin
@@ -121,15 +121,15 @@ emacs startup file is sufficient:
 
 ### Other editors
 
-The wiki also contains pages for:  
-- [Acme](https://github.com/ocaml/merlin/wiki/acme-from-scratch)  
-- [Atom](https://github.com/ocaml/merlin/wiki/atom-from-scratch)  
+The wiki also contains pages for:
+- [Acme](https://github.com/ocaml/merlin/wiki/acme-from-scratch)
+- [Atom](https://github.com/ocaml/merlin/wiki/atom-from-scratch)
 - [Spacemacs](https://github.com/ocaml/merlin/wiki/spacemacs-from-scratch)
 
-External contributors have implemented modes for more editors:  
-* [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)  
-* [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)  
-* [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)  
+External contributors have implemented modes for more editors:
+* [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)
+* [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)
+* [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)
 * [nuclide for Atom](https://nuclide.io/) includes Merlin support
 
 Next steps
@@ -188,17 +188,17 @@ When you encounter an issue, please report it with as much detail as possible. A
 
 Check that our issue database doesn't already include that problem/suggestion. You can click "subscribe" on issues to follow their progress and updates.
 
-When reporting issues, please include:  
-- steps to reproduce the problem, if possible with some code triggering the issue,  
+When reporting issues, please include:
+- steps to reproduce the problem, if possible with some code triggering the issue,
 - version of the tools you are using: operating system, editor, OCaml.
 
-Try to be as specific as possible:  
-- avoid generic phrasing such as "doesn't work", explain why it is not working (editor is freezing, you got an error message, the answer is not what was expected, ...)  
+Try to be as specific as possible:
+- avoid generic phrasing such as "doesn't work", explain why it is not working (editor is freezing, you got an error message, the answer is not what was expected, ...)
 - include the content of error messages.
 
-If it seems relevant, also include information about your development environment:  
-- the Opam version and switch in use,  
-- other toolchains involved (OCaml flavors, cygwin, C compiler, shell, ...),  
+If it seems relevant, also include information about your development environment:
+- the Opam version and switch in use,
+- other toolchains involved (OCaml flavors, cygwin, C compiler, shell, ...),
 - how the editor was setup.
 
 ### Pull Requests

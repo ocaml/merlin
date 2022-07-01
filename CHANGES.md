@@ -1,3 +1,11 @@
+merlin 3.8.0
+============
+Thu Jun 30 16:51:42 CEST 2022
+
+  + merlin binary
+    - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
+      deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
+
 merlin 3.7.0
 ============
 
