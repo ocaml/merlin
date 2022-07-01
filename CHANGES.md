@@ -1,5 +1,6 @@
 merlin 4.6
 ==========
+Fri Jul  1 12:51:42 CEST 2022
 
   + merlin binary
     - Type printing: use `best_module_path` for paths from `Mty_alias` (#1470)
