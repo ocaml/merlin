@@ -14,13 +14,14 @@ depends: [
   "ocaml" {>= "4.13" & < "4.14"}
   "dune" {>= "2.9.0"}
   "dot-merlin-reader" {>= "4.0"}
-  "yojson" {>= "1.6.0"}
+  "yojson" {>= "2.0.0"}
   "conf-jq" {with-test}
   "csexp" {>= "1.2.3"}
   "menhir" {dev}
   "menhirLib" {dev}
   "menhirSdk" {dev}
 ]
+conflicts: "seq" {!= "base"}
 synopsis:
   "Editor helper, provides completion, typing and source browsing in Vim and Emacs"
 description:

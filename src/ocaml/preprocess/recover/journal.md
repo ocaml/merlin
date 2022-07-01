@@ -45,7 +45,7 @@ Option 2:
 Decide non locally. In second state, compute nth predecessors, and decide
 according to nth predecessors.
 
-Long term, 2 is needed. We should work on the full LR(1) automaton where not all transision exists, analysis needed for 2 is an intermediate step.
+Long term, 2 is needed. We should work on the full LR(1) automaton where not all transition exists, analysis needed for 2 is an intermediate step.
 
 Statically detecting this problem:
 ----------------------------------

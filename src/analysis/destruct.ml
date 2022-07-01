@@ -301,7 +301,7 @@ let rec get_every_pattern = function
                   | Pattern p ->
                     let ill_typed_pred : Typedtree.pattern_predicate =
                       { f = fun p ->
-                            List.memq Typecore.merlin_incorrect_attribute
+                            List.memq Msupport.incorrect_attribute
                             ~set:p.pat_attributes }
                     in
                     if Typedtree.exists_general_pattern ill_typed_pred p then
@@ -521,7 +521,7 @@ let rec node config source selected_node parents =
   match selected_node with
   | Record_field (`Expression _, _, _) ->
     begin match parents with
-    | Expression { exp_desc = Texp_field _ } as parent :: rest ->
+    | Expression { exp_desc = Texp_field _; _ } as parent :: rest ->
       node config source parent rest
     | Expression e :: rest ->
       node config source (Expression e) rest

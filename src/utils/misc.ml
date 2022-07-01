@@ -137,6 +137,7 @@ let rec split_path path acc =
 (* Deal with case insensitive FS *)
 
 external fs_exact_case : string -> string = "ml_merlin_fs_exact_case"
+external fs_exact_case_basename: string -> string option = "ml_merlin_fs_exact_case_basename"
 
 (* A replacement for sys_file_exists that makes use of stat_cache *)
 module Exists_in_directory = File_cache.Make(struct
@@ -160,8 +161,13 @@ module Exists_in_directory = File_cache.Make(struct
 let exact_file_exists ~dirname ~basename =
   Exists_in_directory.read dirname basename &&
   let path = Filename.concat dirname basename in
-  let path' = fs_exact_case path in
-  path == path' || basename = Filename.basename path'
+  match fs_exact_case_basename path with
+  | None ->
+    let path' = fs_exact_case path in
+    path == path' || (* only on macos *) basename = Filename.basename path'
+  | Some bn ->
+    (* only on windows *)
+    basename = bn
 
 let canonicalize_filename ?cwd path =
   let parts =

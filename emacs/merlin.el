@@ -1571,18 +1571,26 @@ loading"
   (when merlin-type-after-locate (merlin-type-enclosing)))
 
 (defun merlin-locate-ident (ident)
-  "Locate the inputed identifier"
+  "Locate the inputted identifier"
   (interactive "s> ")
   (merlin--locate-result (merlin-call-locate ident)))
 
-(defun merlin-locate (prefix)
-  "Locate the identifier under point"
+(defun merlin-locate (&optional in-new-window)
+  "Locate the identifier at point.
+
+Whether the result appears in a new window is controlled by
+`merlin-locate-in-new-window', but can be overridden with a
+prefix argument (IN-NEW-WINDOW): if prefixed once with
+\\[universal-argument], the result appears in the current window;
+if prefixed twice with \\[universal-argument], the result appears
+in a new window; otherwise, `merlin-locate-in-new-window' is
+obeyed."
   (interactive "P")
   (cl-letf ((merlin-locate-in-new-window
     (cond
-     ((equal prefix '(4)) 'never)
-     ((equal prefix '(16)) 'always)
-     (t 'merlin-locate-in-new-window))))
+     ((equal in-new-window '(4)) 'never)
+     ((equal in-new-window '(16)) 'always)
+     (t merlin-locate-in-new-window))))
     (merlin--locate-result (merlin-call-locate))))
 
 (defun merlin-locate-type ()

@@ -1,5 +1,5 @@
 This test demonstrates the handling of location of patterns. For a pattern like
-(x), the occurence location should reflect only the identifier.
+(x), the occurrence location should reflect only the identifier.
 
   $ cat >pat.ml <<EOF
   > let f x =

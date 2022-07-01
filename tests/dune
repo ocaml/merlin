@@ -6,6 +6,7 @@
 
 (cram
  (applies_to :whole_subtree)
+ (package merlin)
  (deps
   %{bin:merlin-wrapper}
   (package merlin)

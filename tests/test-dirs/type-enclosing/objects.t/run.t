@@ -112,9 +112,9 @@
       },
       "end": {
         "line": 14,
-        "col": 9
+        "col": 14
       },
-      "type": "< pop : int option; push : int -> unit >",
+      "type": "int -> unit",
       "tail": "no"
     }
   ]
@@ -195,13 +195,13 @@
     {
       "start": {
         "line": 18,
-        "col": 12
+        "col": 11
       },
       "end": {
         "line": 18,
-        "col": 15
+        "col": 58
       },
-      "type": "< pouet : string -> 'a >",
+      "type": "< pouet : string -> 'a > -> 'a",
       "tail": "no"
     }
   ]

@@ -1,4 +1,4 @@
-When going to the defintion of a module defined by a functor, merlin jumps
+When going to the definition of a module defined by a functor, merlin jumps
 straight to the functor.
 
   $ cat > func.ml <<EOF

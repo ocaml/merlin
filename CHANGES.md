@@ -1,10 +1,34 @@
+merlin 4.6
+==========
+Fri Jul  1 12:51:42 CEST 2022
+
+  + merlin binary
+    - Type printing: use `best_module_path` for paths from `Mty_alias` (#1470)
+    - Attempt at finding the 'real' capitalization of files on windows (#1462 by
+      @mlasson)
+    - Use newer `Seq`-based API of Yojson 2.0, avoiding the need for the
+      deprecated `Stream` module (#1475 by @Leonidas-from-XIV)
+    - unify parsing of `MERLIN_LOG` (#1480 by @ulugbekna)
+    - Fix type deduplication in `type-enclosing` results (#1483, fixes #1477)
+    - Ignore unknown configuration tags from dune configuration provider but not
+      from dot-merlin-reader (#1486)
+    - typing recovery: recover at the granularity of `core_type` (#1484)
+  + editor modes
+    - Fix `merlin-locate-in-new-window` is ignored (#1461 by @emturner,
+      fixes #1460)
+    - add method imenu items for emacs (#1481, @mndrix)
+    - emacs: Make the prefix argument to `merlin-locate` optional, both for
+      consistency with Emacs convention and for backwards compatibility. (#1476,
+      @antalsz)
+    - emacs: fix duplicated prefix path in imenu entries (#1495, @bcc32)
+
 merlin 4.5
 ==========
 Tue Apr  5 20:59:42 CEST 2022
 
   + merlin binary
     - don't reset the environment when running merlin in single mode so that the
-      parent environement is forwarded the the child processes (#1425)
+      parent environment is forwarded the the child processes (#1425)
     - filter dups in source paths (#1218)
     - improve load path performance (#1323)
     - fix handlink of ppx's under Windows (#1413)
@@ -156,7 +180,7 @@ merlin 4.0
 Tue Feb  2 03:13:37 PM CET 2021
 
   + ocaml support
-    Detailled list of changes on
+    Detailed list of changes on
     https://tarides.com/blog/2021-01-26-recent-and-upcoming-changes-to-merlin#dropping-support-for-old-versions-of-ocaml
     Summary:
     - any revision of Merlin now only supports one version of OCaml. Support for
