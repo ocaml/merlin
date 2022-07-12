@@ -151,7 +151,7 @@ let prepend_dir dir =
 
 let is_basename fn = Filename.basename fn = fn
 
-let auto_include_libs libs alert find_in_dir fn =
+(* let auto_include_libs libs alert find_in_dir fn =
   let scan (lib, lazy dir) =
     let file = find_in_dir dir fn in
     let alert_and_add_dir _ =
@@ -163,7 +163,7 @@ let auto_include_libs libs alert find_in_dir fn =
   in
   match List.find_map scan libs with
   | Some base -> base
-  | None -> raise Not_found
+  | None -> raise Not_found *)
 
 (* let auto_include_otherlibs =
   (* Ensure directories are only ever scanned once *)
