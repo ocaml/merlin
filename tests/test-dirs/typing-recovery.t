@@ -330,14 +330,14 @@ First a simple case:
     "value": "[
     signature_item (test.mli[1,0+0]..test.mli[1,0+14])
       Tsig_value
-      value_description foo1/273 (test.mli[1,0+0]..test.mli[1,0+14])
+      value_description foo1/274 (test.mli[1,0+0]..test.mli[1,0+14])
         core_type (test.mli[1,0+11]..test.mli[1,0+14])
           Ttyp_constr \"int/1!\"
           []
         []
     signature_item (test.mli[3,16+0]..test.mli[3,16+21])
       Tsig_value
-      value_description foo2/274 (test.mli[3,16+0]..test.mli[3,16+21])
+      value_description foo2/275 (test.mli[3,16+0]..test.mli[3,16+21])
         core_type (test.mli[3,16+11]..test.mli[3,16+21])
           Ttyp_tuple
           [
@@ -350,7 +350,7 @@ First a simple case:
         []
     signature_item (test.mli[5,39+0]..test.mli[5,39+21])
       Tsig_value
-      value_description foo3/275 (test.mli[5,39+0]..test.mli[5,39+21])
+      value_description foo3/276 (test.mli[5,39+0]..test.mli[5,39+21])
         core_type (test.mli[5,39+11]..test.mli[5,39+21])
           Ttyp_tuple
           [
@@ -414,38 +414,38 @@ And now, with an error deep in a submodule:
     "value": "[
     signature_item (test2.mli[1,0+0]..test2.mli[1,0+14])
       Tsig_value
-      value_description foo1/273 (test2.mli[1,0+0]..test2.mli[1,0+14])
+      value_description foo1/274 (test2.mli[1,0+0]..test2.mli[1,0+14])
         core_type (test2.mli[1,0+11]..test2.mli[1,0+14])
           Ttyp_constr \"int/1!\"
           []
         []
     signature_item (test2.mli[3,16+0]..test2.mli[10,149+3])
-      Tsig_module \"M/279\"
+      Tsig_module \"M/280\"
       module_type (test2.mli[3,16+11]..test2.mli[10,149+3])
         Tmty_signature
         [
           signature_item (test2.mli[4,31+2]..test2.mli[4,31+17])
             Tsig_value
-            value_description foo21/274 (test2.mli[4,31+2]..test2.mli[4,31+17])
+            value_description foo21/275 (test2.mli[4,31+2]..test2.mli[4,31+17])
               core_type (test2.mli[4,31+14]..test2.mli[4,31+17])
                 Ttyp_constr \"int/1!\"
                 []
               []
           signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
-            Tsig_module \"N/278\"
+            Tsig_module \"N/279\"
             module_type (test2.mli[5,49+13]..test2.mli[9,143+5])
               Tmty_signature
               [
                 signature_item (test2.mli[6,66+4]..test2.mli[6,66+20])
                   Tsig_value
-                  value_description foo211/275 (test2.mli[6,66+4]..test2.mli[6,66+20])
+                  value_description foo211/276 (test2.mli[6,66+4]..test2.mli[6,66+20])
                     core_type (test2.mli[6,66+17]..test2.mli[6,66+20])
                       Ttyp_constr \"int/1!\"
                       []
                     []
                 signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
                   Tsig_value
-                  value_description foo212/276 (test2.mli[7,87+4]..test2.mli[7,87+27])
+                  value_description foo212/277 (test2.mli[7,87+4]..test2.mli[7,87+27])
                     core_type (test2.mli[7,87+17]..test2.mli[7,87+27])
                       Ttyp_tuple
                       [
@@ -458,7 +458,7 @@ And now, with an error deep in a submodule:
                     []
                 signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
                   Tsig_value
-                  value_description foo213/277 (test2.mli[8,115+4]..test2.mli[8,115+27])
+                  value_description foo213/278 (test2.mli[8,115+4]..test2.mli[8,115+27])
                     core_type (test2.mli[8,115+17]..test2.mli[8,115+27])
                       Ttyp_tuple
                       [
@@ -474,7 +474,7 @@ And now, with an error deep in a submodule:
         ]
     signature_item (test2.mli[12,154+0]..test2.mli[12,154+21])
       Tsig_value
-      value_description foo3/280 (test2.mli[12,154+0]..test2.mli[12,154+21])
+      value_description foo3/281 (test2.mli[12,154+0]..test2.mli[12,154+21])
         core_type (test2.mli[12,154+11]..test2.mli[12,154+21])
           Ttyp_tuple
           [
@@ -544,7 +544,7 @@ make sure we also handle that correctly in structures:
                 core_type (test_ct.ml[1,0+11]..test_ct.ml[1,0+14])
                   Ttyp_constr \"int/1!\"
                   []
-            Tpat_var \"foo1/273\"
+            Tpat_var \"foo1/274\"
           expression (test_ct.ml[1,0+17]..test_ct.ml[1,0+18])
             extra
               Texp_constraint
@@ -571,7 +571,7 @@ make sure we also handle that correctly in structures:
                     core_type (test_ct.ml[3,20+17]..test_ct.ml[3,20+21])
                       Ttyp_any
                   ]
-            Tpat_var \"foo2/274\"
+            Tpat_var \"foo2/275\"
           expression (test_ct.ml[3,20+24]..test_ct.ml[3,20+28])
             extra
               Texp_constraint
@@ -611,7 +611,7 @@ make sure we also handle that correctly in structures:
                       Ttyp_constr \"int/1!\"
                       []
                   ]
-            Tpat_var \"foo3/275\"
+            Tpat_var \"foo3/276\"
           expression (test_ct.ml[5,50+23]..test_ct.ml[5,50+27])
             extra
               Texp_constraint
