@@ -17,6 +17,7 @@ depends: [
   "dot-merlin-reader" {>= "4.6"}
   "yojson" {>= "2.0.0"}
   "conf-jq" {with-test}
+  "ppxlib" {with-test}
 ]
 conflicts: [
   "seq" {!= "base"}
