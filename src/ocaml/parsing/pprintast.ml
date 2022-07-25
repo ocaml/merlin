@@ -762,6 +762,8 @@ and expression ctxt f x =
           (binding_op ctxt) let_
           (list ~sep:"@," (binding_op ctxt)) ands
           (expression ctxt) body
+    | Pexp_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
+        pp f "%a" (simple_expr ctxt) x
     | Pexp_extension e -> extension ctxt f e
     | Pexp_unreachable -> pp f "."
     | _ -> expression1 ctxt f x
@@ -835,8 +837,8 @@ and simple_expr ctxt f x =
         let expression = expression ctxt in
         pp f fmt (pattern ctxt) s expression e1 direction_flag
           df expression e2 expression e3
-    | Pexp_hole ->
-      pp f "_"
+    | Pexp_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
+        pp f "_"
     | _ ->  paren true (expression ctxt) f x
 
 and attributes ctxt f l =
@@ -1239,9 +1241,9 @@ and module_expr ctxt f x =
         (* Cf: #7200 *)
     | Pmod_unpack e ->
         pp f "(val@ %a)" (expression ctxt) e
-    | Pmod_extension e -> extension ctxt f e
-    | Pmod_hole ->
+    | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
         pp f "_"
+    | Pmod_extension e -> extension ctxt f e
 
 and structure ctxt f x = list ~sep:"@\n" (structure_item ctxt) f x
 

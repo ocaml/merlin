@@ -704,7 +704,7 @@ let expr_of_lwt_bindings ~loc lbs body =
   let default_loc = ref Location.none
 
   let default_expr () =
-    let id = Location.mkloc "merlin.hole" !default_loc in
+    let id = Location.mkloc Ast_helper.hole_txt !default_loc in
     Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
 
   let default_pattern () = Pat.any ~loc:!default_loc ()
@@ -1435,7 +1435,8 @@ module_expr [@recovery default_module_expr ()]:
         { Pmod_extension ex }
     | (* A hole. *)
       UNDERSCORE
-        { Pmod_hole }
+        { let id = mkrhs Ast_helper.hole_txt $loc in
+          Pmod_extension (id, PStr []) }
     )
     { $1 }
 ;
@@ -2569,7 +2570,8 @@ let_pattern [@recovery default_pattern ()]:
   | extension
       { Pexp_extension $1 }
   | UNDERSCORE
-      { Pexp_hole }
+      { let id = mkrhs Ast_helper.hole_txt $loc in
+        Pexp_extension (id, PStr []) }
   | od=open_dot_declaration DOT mkrhs(LPAREN RPAREN {Lident "()"})
       { Pexp_open(od, mkexp ~loc:($loc($3)) (Pexp_construct($3, None))) }
   (*

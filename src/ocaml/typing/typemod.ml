@@ -2360,17 +2360,18 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
       with exn ->
        (* [merlin] For better Construct error messages we need to keep holes
           in the recovered typedtree *)
-        if sarg.pmod_desc = Pmod_hole then begin
-          Msupport.raise_error exn;
-          {
-            mod_desc = Tmod_hole;
-            mod_type = Mty_for_hole;
-            mod_loc = sarg.pmod_loc;
-            mod_env = env;
-            mod_attributes = sarg.pmod_attributes;
-          },
-        Shape.dummy_mod end
-        else raise exn
+        match sarg.pmod_desc with
+        | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
+            Msupport.raise_error exn;
+            {
+              mod_desc = Tmod_hole;
+              mod_type = Mty_for_hole;
+              mod_loc = sarg.pmod_loc;
+              mod_env = env;
+              mod_attributes = sarg.pmod_attributes;
+            },
+            Shape.dummy_mod
+        | _ -> raise exn
       end
   | Pmod_unpack sexp ->
       if !Clflags.principal then Ctype.begin_def ();
@@ -2405,15 +2406,15 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
       Shape.leaf_for_unpack
-  | Pmod_extension ext ->
-      raise (Error_forward (Builtin_attributes.error_of_extension ext))
-  | Pmod_hole ->
+  | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
       { mod_desc = Tmod_hole;
         mod_type = Mty_for_hole;
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
         mod_loc = smod.pmod_loc },
       Shape.dummy_mod
+  | Pmod_extension ext ->
+      raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
 and type_application loc strengthen funct_body env smod =
   let rec extract_application funct_body env sargs smod =
