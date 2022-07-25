@@ -1,3 +1,4 @@
+The ppx works as expected without any typed-hole:
   $ cat >main.ml <<EOF
   > match Some 3 with
   > | None -> ()
@@ -15,6 +16,7 @@
     "notifications": []
   }
 
+and with type-holes (since #1503)
   $ cat >main.ml <<EOF
   > match Some 3 with
   > | None -> _
@@ -25,22 +27,6 @@
   > -filename main.ml < main.ml 
   {
     "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 2,
-          "col": 2
-        },
-        "end": {
-          "line": 2,
-          "col": 6
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "This match case could not be refuted.
-  Here is an example of a value that would reach it: None"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
