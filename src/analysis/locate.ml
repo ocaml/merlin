@@ -414,7 +414,7 @@ let from_uid ~ml_or_mli uid loc path =
           Some (uid, loc)
         | None ->
           log ~title
-            "Uid not found.@.\
+            "Uid not found in the local table.\
             Fallbacking to the node's location: %a"
           Logger.fmt (fun fmt -> Location.print_loc fmt loc);
           Some (uid, loc)
@@ -444,8 +444,10 @@ let from_uid ~ml_or_mli uid loc path =
                 Logger.fmt (fun fmt -> Location.print_loc fmt loc);
               Some (uid, loc)
             | None ->
-              log ~title "Uid not found in the loaded shape.";
-            None
+              log ~title "Uid not found in the cmt table. \
+                Fallbacking to the node's location: %a"
+                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+              Some (uid, loc)
           end
         | _ ->
           log ~title "Failed to load the shapes";

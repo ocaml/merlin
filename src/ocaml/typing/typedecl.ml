@@ -232,12 +232,14 @@ let transl_labels env univars closed lbls =
       (fun ld ->
          let ty = ld.ld_type.ctyp_type in
          let ty = match get_desc ty with Tpoly(t,[]) -> t | _ -> ty in
+         let ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+         Env.register_uid ld_uid ld.ld_loc;
          {Types.ld_id = ld.ld_id;
           ld_mutable = ld.ld_mutable;
           ld_type = ty;
           ld_loc = ld.ld_loc;
           ld_attributes = ld.ld_attributes;
-          ld_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+          ld_uid;
          }
       )
       lbls in
