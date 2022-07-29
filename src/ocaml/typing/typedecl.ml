@@ -402,12 +402,14 @@ let transl_declaration env sdecl (id, uid) =
               cd_attributes = scstr.pcd_attributes }
           in
           let cstr =
+            let cd_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+            Env.register_uid cd_uid scstr.pcd_loc;
             { Types.cd_id = name;
               cd_args = args;
               cd_res = ret_type;
               cd_loc = scstr.pcd_loc;
               cd_attributes = scstr.pcd_attributes;
-              cd_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) }
+              cd_uid; }
           in
             tcstr, cstr
         in
