@@ -2,12 +2,13 @@ merlin 4.7
 ==========
 undefined
 
-
   + merlin binary
     - Replace custom "holes" AST nodes by extensions. This restores binary
       compatibility and fixes issues with PPXs when using typed-holes.
       (#1503)
     - Do not change temporarily Merlin's cwd when starting a PPX (#1521)
+    - Fix a parsing issue when declaring the `(??)` custom prefix operator.
+      (#1507, fixes #1506)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite
