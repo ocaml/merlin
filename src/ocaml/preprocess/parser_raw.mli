@@ -30,7 +30,6 @@ type token =
   | QUOTED_STRING_ITEM of (string * Location.t * string * Location.t * string option)
   | QUOTED_STRING_EXPR of (string * Location.t * string * Location.t * string option)
   | QUOTE
-  | QUESTIONQUESTION
   | QUESTION
   | PRIVATE
   | PREFIXOP of (string)
@@ -211,7 +210,6 @@ module MenhirInterpreter : sig
     | T_QUOTED_STRING_ITEM : (string * Location.t * string * Location.t * string option) terminal
     | T_QUOTED_STRING_EXPR : (string * Location.t * string * Location.t * string option) terminal
     | T_QUOTE : unit terminal
-    | T_QUESTIONQUESTION : unit terminal
     | T_QUESTION : unit terminal
     | T_PRIVATE : unit terminal
     | T_PREFIXOP : (string) terminal
