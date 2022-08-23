@@ -6,7 +6,6 @@
   > end
   > EOF
 
-FIXME: A is not a child of B ! This is likely due to the typing recovery.
   $ $MERLIN single outline -filename test.ml <test.ml
   {
     "class": "return",
@@ -51,23 +50,7 @@ FIXME: A is not a child of B ! This is likely due to the typing recovery.
             "name": "B",
             "kind": "Module",
             "type": null,
-            "children": [
-              {
-                "start": {
-                  "line": 2,
-                  "col": 2
-                },
-                "end": {
-                  "line": 2,
-                  "col": 23
-                },
-                "name": "A",
-                "kind": "Module",
-                "type": null,
-                "children": [],
-                "deprecated": false
-              }
-            ],
+            "children": [],
             "deprecated": false
           },
           {
