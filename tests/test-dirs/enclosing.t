@@ -6,7 +6,6 @@
   > end
   > EOF
 
-FIXME There is a handful of duplicate and not very useful enclosings
   $ $MERLIN single enclosing -position 3:32 -filename main.ml <main.ml
   {
     "class": "return",
@@ -64,16 +63,6 @@ FIXME There is a handful of duplicate and not very useful enclosings
       {
         "start": {
           "line": 3,
-          "col": 9
-        },
-        "end": {
-          "line": 3,
-          "col": 33
-        }
-      },
-      {
-        "start": {
-          "line": 3,
           "col": 3
         },
         "end": {
@@ -85,26 +74,6 @@ FIXME There is a handful of duplicate and not very useful enclosings
         "start": {
           "line": 3,
           "col": 3
-        },
-        "end": {
-          "line": 4,
-          "col": 8
-        }
-      },
-      {
-        "start": {
-          "line": 2,
-          "col": 1
-        },
-        "end": {
-          "line": 4,
-          "col": 8
-        }
-      },
-      {
-        "start": {
-          "line": 2,
-          "col": 1
         },
         "end": {
           "line": 4,
@@ -125,26 +94,6 @@ FIXME There is a handful of duplicate and not very useful enclosings
         "start": {
           "line": 1,
           "col": 11
-        },
-        "end": {
-          "line": 5,
-          "col": 3
-        }
-      },
-      {
-        "start": {
-          "line": 1,
-          "col": 0
-        },
-        "end": {
-          "line": 5,
-          "col": 3
-        }
-      },
-      {
-        "start": {
-          "line": 1,
-          "col": 0
         },
         "end": {
           "line": 5,
