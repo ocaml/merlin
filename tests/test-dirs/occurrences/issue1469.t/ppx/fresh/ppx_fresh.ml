@@ -4,7 +4,6 @@
   to
     `call_fresh (fun a -> ... )`
 *)
-open Base
 open Ppxlib
 open Ppxlib.Ast_helper
 

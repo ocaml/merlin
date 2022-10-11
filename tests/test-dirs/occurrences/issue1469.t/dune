@@ -20,7 +20,8 @@
    -open
    Predefined
    ; When the test will be properly merged, we could remove -dparseetree to make it less breakable
-   -dparsetree))
+   ;-dparsetree
+   ))
  (preprocess
   (per_module
    ((pps ppx_fresh)
