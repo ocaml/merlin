@@ -9,6 +9,8 @@ undefined
       (#1503)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
+  + test suite
+    - add tests for constructors' documentation (#1511)
 
 merlin 4.6
 ==========
