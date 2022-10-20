@@ -45,14 +45,10 @@ Merlin should show comments for a type's constructor from the current module:
   > -filename main.ml <main.ml | jq '.value'
   "A Comment"
 
-FIXME: expected "B Comment"
   $ $MERLIN single document -position 4:4 \
   > -filename main.ml <main.ml | tr '\n' ' ' | jq '.value'
-  "A Comment B Comment"
-
-FIXME: expected ""
-  $ $MERLIN single document -position 6:4 \
-  > -filename main.ml <main.ml | jq '.value'
   "B Comment"
 
-The issue probaby lies in the heuristics in [ocamldoc.ml]
+  $ $MERLIN single document -position 6:4 \
+  > -filename main.ml <main.ml | jq '.value'
+  "No documentation available"
