@@ -24,6 +24,7 @@ undefined
   + test suite
     - Add a test for the `enclosing` command (#1512)
     - Add tests for interactions between locate and record labels (#1505)
+    - add test showing an issue with locate and implicit transitive deps
 
 merlin 4.6
 ==========
