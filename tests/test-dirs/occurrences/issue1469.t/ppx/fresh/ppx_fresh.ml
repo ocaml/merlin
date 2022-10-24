@@ -7,6 +7,7 @@
 open Ppxlib
 open Ppxlib.Ast_helper
 
+[@@@ocaml.warnerror "-26"]
 let is_fresh e =
   match e.pexp_desc with
   | Pexp_ident { txt = Lident "fresh"; _ } -> true
@@ -23,7 +24,7 @@ let mapper =
     inherit Ast_traverse.map as super
 
     method! expression e =
-      let loc = e.pexp_loc in
+      (* let loc = e.pexp_loc in *)
       match e.pexp_desc with
       | Pexp_apply
           ( efresh
@@ -40,8 +41,9 @@ let mapper =
         when is_fresh efresh ->
         let new_body = self#expression (snd body) in
         let pat =
+          let loc = var_loc in
           Pat.var
-            ~loc:var_loc
+            ~loc
               (* we declare a pattern with location of original identifier *)
             (Ast_builder.Default.Located.mk var_name ~loc)
         in

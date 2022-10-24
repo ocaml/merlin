@@ -26,3 +26,6 @@
   (per_module
    ((pps ppx_fresh)
     Lib1))))
+
+(cram
+ (deps ./lib1.ml))

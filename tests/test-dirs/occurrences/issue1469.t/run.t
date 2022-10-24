@@ -1,5 +1,4 @@
   $ dune build
-
   $ dune runtest
   $ cat lib1.ml | nl -ba
        1	let boo r = fresh a (r === a)
