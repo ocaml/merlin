@@ -1,0 +1,3 @@
+[submodule "vendor/lrgrep"]
+	path = vendor/lrgrep
+	url = https://github.com/let-def/lrgrep
