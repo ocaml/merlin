@@ -1,0 +1,88 @@
+{}
+
+rule error_message token = parse error
+
+(* let x = 5 ; let y = 6 let z = 7 *)
+
+| expr as e; SEMI
+  partial {
+    match token with
+    | Parser_raw.ELSE -> (
+      match e with 
+      | {pexp_desc = Pexp_ifthenelse(_, _, None); _}, startp, _endp -> (
+        Some ("The semicolon line "
+              ^ string_of_int startp.pos_lnum
+              ^ ", character "
+              ^ string_of_int (startp.pos_cnum - startp.pos_bol)
+              ^ " terminates the `if ... then ...` expression. \
+              Remove it to add an else branch.")
+        )
+      | _ -> None
+      )
+    | _ -> None
+  }
+
+| [label_declaration: mutable_flag LIDENT . COLON]
+  partial {
+    match token with
+    | Parser_raw.EQUAL ->
+      Some "Expecting ':' to declare the type of a record field, not '='"
+    | _ -> None
+  }
+
+| structure_item; !; SEMI as semi;
+  LET; ext; list(attribute); rec_flag; let_binding_body; !
+  { let (), startp, _endp = semi in
+    "Might be due to the semicolon line "
+    ^ string_of_int startp.pos_lnum
+    ^ ", character "
+    ^ string_of_int (startp.pos_cnum - startp.pos_bol)
+  }
+
+(* Replace builtin grammatical rule reporting unclosed parenthesis *)
+| LPAREN as lp; [. RPAREN]; !
+  { let (), startp, _endp = lp in
+    "Unclosed parenthesis at line " 
+    ^ string_of_int startp.pos_lnum
+    ^ ", character "
+    ^ string_of_int (startp.pos_cnum - startp.pos_bol)
+  }
+
+(* https://github.com/ocaml/ocaml/issues/11108
+   Report when a keyword has been typed in a context where a lowercase
+   identifier is expected. *)
+| [. LIDENT]; !
+  partial { match Lexer_raw.as_keyword token with
+    | None -> None
+    | Some kw ->
+      Some ("`" ^ kw ^ "' is a keyword and cannot appear in this context (try " ^ kw ^ "_)")
+  }
+
+(* https://github.com/ocaml/ocaml/issues/5068 *)
+| ([. UIDENT] | [. TYPE] | [. REC]); !
+  { "Expecting `type' or a module name beginning with an uppercase letter"
+  }
+
+(* https://discuss.ocaml.org/t/syntax-error-compiling-code-with-functor-module/6352 *)
+| [. seq_expr ]; !
+  { match token with
+    | MODULE ->
+      "`module' keyword cannot appear in an expression, \
+       use `(module M)' to pack a first class-module \
+       or `let module M = ... in ...' to define a local module"
+    | _ -> "Expecting expression"
+  }
+
+(* https://github.com/ocaml/ocaml/issues/11445 *)
+| OF; constructor_arguments; !
+  partial {
+    match token with
+    | MINUSGREATER ->
+      Some "Issue #11445: in constructor arguments, \
+            arrow types should be wrapped between parentheses"
+    | _ -> None
+  }
+
+| [. IN]; !
+  { "Expecting `in'" }
+
