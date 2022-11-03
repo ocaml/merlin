@@ -46,7 +46,7 @@ The hole is filled with merlin.hole.
   $ echo "let _ =" | \
   > $MERLIN single dump -what source -filename hole_1.ml | \
   > tr -d '\n' | jq '.value'
-  "let _ = [%merlin.hole ]"
+  "let _ = _"
 
   $ echo "module M : sig val f : int -> unit end =" |
   > $MERLIN single errors -filename "module_recovery.ml"

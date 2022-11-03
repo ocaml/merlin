@@ -219,7 +219,7 @@ module Gen = struct
           let name = Ident.name (Path.head path) in
           raise (Modtype_not_found (Mod, name))
       end
-    | Mty_for_hole -> Mod.mk Pmod_hole
+    | Mty_for_hole -> Mod.hole ()
   and structure_item env =
     let open Ast_helper in
     function

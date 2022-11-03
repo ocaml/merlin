@@ -172,6 +172,9 @@ module Pat = struct
   let extension ?loc ?attrs a = mk ?loc ?attrs (Ppat_extension a)
 end
 
+(* Merlin's holes *)
+let hole_txt = "merlin.hole"
+
 module Exp = struct
   let mk ?(loc = !default_loc) ?(attrs = []) d =
     {pexp_desc = d;
@@ -221,7 +224,9 @@ module Exp = struct
     mk ?loc ?attrs (Pexp_letop {let_; ands; body})
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
-  let hole  ?loc ?attrs () = mk ?loc ?attrs Pexp_hole
+  let hole ?(loc = !default_loc) ?attrs () =
+    let id = Location.mkloc hole_txt loc in
+    mk ~loc ?attrs  @@ Pexp_extension (id, PStr [])
 
   let case lhs ?guard rhs =
     {
@@ -266,7 +271,9 @@ let mk ?(loc = !default_loc) ?(attrs = []) d =
   let constraint_ ?loc ?attrs m mty = mk ?loc ?attrs (Pmod_constraint (m, mty))
   let unpack ?loc ?attrs e = mk ?loc ?attrs (Pmod_unpack e)
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pmod_extension a)
-  let hole ?loc ?attrs () = mk ?loc ?attrs Pmod_hole
+  let hole ?(loc = !default_loc) ?attrs () =
+    let id = Location.mkloc hole_txt loc in
+    mk ~loc ?attrs  @@ Pmod_extension (id, PStr [])
 end
 
 module Sig = struct

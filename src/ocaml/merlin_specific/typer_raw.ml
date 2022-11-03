@@ -217,7 +217,6 @@ module Rewrite_loc = struct
         ands = List.map ~f:u_binding_op ands;
         body = u_expression body;
       }
-    | Pexp_hole -> Pexp_hole
 
   and u_binding_op { pbop_op; pbop_pat; pbop_exp; pbop_loc } =
     { pbop_op = u_loc pbop_op
@@ -529,7 +528,6 @@ module Rewrite_loc = struct
       Pmod_constraint (u_module_expr me, u_module_type mt)
     | Pmod_unpack e -> Pmod_unpack (u_expression e)
     | Pmod_extension ext -> Pmod_extension (u_extension ext)
-    | Pmod_hole -> Pmod_hole
 
   and u_structure l = List.map ~f:u_structure_item l
 
