@@ -3854,25 +3854,9 @@ and type_expect_
           raise (error (loc, env, Invalid_extension_constructor_payload))
       end
 
-  | Pexp_hole ->
-    re { exp_desc = Texp_hole;
-         exp_loc = loc; exp_extra = [];
-         exp_type = instance ty_expected;
-         exp_attributes = sexp.pexp_attributes;
-         exp_env = env }
-
-  | Pexp_extension ({ txt = "merlin.hole"; _ } as s, payload) ->
+  | Pexp_extension ({ txt; _ } as s, payload) when txt = Ast_helper.hole_txt ->
     let attr = Ast_helper.Attr.mk s payload in
-    re { exp_desc = Texp_ident
-                      (Path.Pident (Ident.create_local "*type-hole*"),
-                       Location.mkloc (Longident.Lident "*type-hole*") loc,
-                       { Types.
-                         val_type = ty_expected;
-                         val_kind = Val_reg;
-                         val_loc = loc;
-                         val_attributes = [];
-                         val_uid = Uid.internal_not_actually_unique;
-                       });
+    re { exp_desc = Texp_hole;
          exp_loc = loc; exp_extra = [];
          exp_type = instance ty_expected;
          exp_attributes = attr :: sexp.pexp_attributes;

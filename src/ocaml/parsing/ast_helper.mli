@@ -519,3 +519,4 @@ type let_bindings =
 
 val no_label : arg_label
 val extract_str_payload : payload -> (string * Location.t) option
+val hole_txt : string

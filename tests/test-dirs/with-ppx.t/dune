@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (preprocess
+  (pps my_ppx)))
