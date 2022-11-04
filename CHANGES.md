@@ -7,6 +7,7 @@ undefined
     - Replace custom "holes" AST nodes by extensions. This restores binary
       compatibility and fixes issues with PPXs when using typed-holes.
       (#1503)
+    - Do not change temporarily Merlin's cwd when starting a PPX (#1521)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite
