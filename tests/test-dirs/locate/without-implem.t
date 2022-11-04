@@ -16,7 +16,7 @@
   >  (modules_without_implementation noimpl))
   > EOF
 
-  $ dune build ./main.exe
+  $ dune build ./main.exe 2> /dev/null
 
   $ $MERLIN single locate -look-for ml -position 1:16 \
   > -filename main.ml <main.ml
