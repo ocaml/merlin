@@ -139,6 +139,7 @@ module Preferences : sig
 
   val src : string -> File.t
   val build : string -> File.t
+  val build_fallback : string -> File.t
 
   val is_preferred : string -> bool
 end = struct
@@ -152,6 +153,7 @@ end = struct
 
   let src   file = if !prioritize_impl then File.ml  file else File.mli  file
   let build file = if !prioritize_impl then File.cmt file else File.cmti file
+  let build_fallback file = if !prioritize_impl then File.cmti file else File.cmt file
 
   let is_preferred fn =
     match File.of_filename fn with
@@ -290,28 +292,35 @@ let move_to filename cmt_infos =
   File_switching.move_to ~digest filename
 
 
-let rec load_cmt comp_unit ml_or_mli =
-  let fn =
-    Preferences.set ml_or_mli;
+let load_cmt comp_unit ml_or_mli =
+  Preferences.set ml_or_mli;
+  let filename =
     Preferences.build comp_unit
+    |> File.with_ext
   in
-  match Load_path.find_uncap (File.with_ext fn) with
-  | filename ->
-    let cmt = (Cmt_cache.read filename).cmt_infos in
-    let pos_fname = cmt.cmt_sourcefile in
-    (* FIXME @ulysse: is the [Option.iter] still necessary with the new
-       implementation of [move_to]? *)
-    Option.iter cmt.cmt_source_digest
-      ~f:(fun _digest -> move_to filename cmt);
-    Ok (pos_fname, cmt)
-  | exception Not_found ->
-    if ml_or_mli = `MLI then begin
-      (* there might not have been an mli (so no cmti), so the decl comes from
-          the .ml, and the corresponding .cmt *)
-      log ~title:"load" "Failed to load cmti file, retrying with cmt";
-      load_cmt comp_unit `ML
-    end else
-      Error ()
+  let rec aux file =
+    log ~title:"load" "Looking for file %S" file;
+    match Load_path.find_uncap file with
+    | filename ->
+      let cmt = (Cmt_cache.read filename).cmt_infos in
+      let pos_fname = cmt.cmt_sourcefile in
+      (* FIXME @ulysse: is the [Option.iter] still necessary with the new
+        implementation of [move_to]? *)
+      Option.iter cmt.cmt_source_digest
+        ~f:(fun _digest -> move_to filename cmt);
+      Ok (pos_fname, cmt)
+    | exception Not_found ->
+      let fallback =
+        Preferences.build_fallback comp_unit
+        |> File.with_ext
+      in
+      if file <> fallback then begin
+        (* there might not have been an mli, so the decl comes from
+            the .ml, and the corresponding .cmt, or vice-versa *)
+        log ~title:"load" "Failed to load cmti file, retrying with cmt";
+        aux fallback
+      end else Error ()
+    in aux filename
 
 module Shape_reduce =
   Shape.Make_reduce (struct
@@ -320,17 +329,16 @@ module Shape_reduce =
     let fuel = 10
 
     let read_unit_shape ~unit_name =
-      let fn = File.(with_ext (cmt unit_name)) in
-      log ~title:"read_unit_shape" "inspecting %s" unit_name;
-      match Load_path.find_uncap fn with
-      | filename ->
-        let cmt_infos = (Cmt_cache.read filename).cmt_infos in
-        move_to filename cmt_infos;
-        log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
-        cmt_infos.cmt_impl_shape
-      | exception Not_found ->
-        log ~title:"read_unit_shape" "failed to find %s" fn;
-        None
+        log ~title:"read_unit_shape" "inspecting %s" unit_name;
+        match load_cmt unit_name `ML with
+        | Ok (filename, cmt_infos) ->
+          let filename = Option.value ~default:"*none*" filename in
+          move_to filename cmt_infos;
+          log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
+          cmt_infos.cmt_impl_shape
+        | Error () ->
+          log ~title:"read_unit_shape" "failed to find %s" unit_name;
+          None
 
     let find_shape env id = Env.shape_of_path
       ~namespace:Shape.Sig_component_kind.Module env (Pident id)
@@ -401,7 +409,7 @@ let from_uid ~ml_or_mli uid loc path =
   in
   let title = "from_uid" in
   match uid with
-  | Some (Shape.Uid.Item { comp_unit; _ } as uid)->
+  | Some (Shape.Uid.Item { comp_unit; _ } as uid) ->
     let locopt =
       if Env.get_unit_name () = comp_unit then begin
         log ~title "We look for %a in the current compilation unit."
@@ -460,6 +468,8 @@ let from_uid ~ml_or_mli uid loc path =
     end
   | Some (Compilation_unit comp_unit as uid) ->
     begin
+      log ~title "Got the uid of a compilation unit: %a"
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
       match loc_of_comp_unit comp_unit with
       | Some loc -> `Found (Some uid, loc)
       | _ -> log ~title "Failed to load the shapes";

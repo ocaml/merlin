@@ -50,7 +50,13 @@
   > -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "didn't manage to find Dune__exe.Noimpl",
+    "value": {
+      "file": "$TESTCASE_ROOT/noimpl.mli",
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
     "notifications": []
   }
 
