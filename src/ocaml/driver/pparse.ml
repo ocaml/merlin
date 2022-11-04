@@ -38,7 +38,15 @@ let report_error = function
     log ~title:"report_error"
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
-external merlin_system_command : string -> int = "ml_merlin_system_command"
+
+external windows_merlin_system_command : string -> cwd:string -> int = "ml_merlin_system_command"
+
+let merlin_system_command =
+  if Sys.win32 then
+    windows_merlin_system_command
+  else
+    fun cmd ~cwd ->
+      Sys.command (Printf.sprintf "cd %s && %s" (Filename.quote cwd) cmd)
 
 let ppx_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s %s%s"
@@ -51,13 +59,8 @@ let apply_rewriter magic ppx (fn_in, failures) =
   let comm = ppx_commandline ppx.workval fn_in fn_out in
   log ~title "running %s from directory %S" comm ppx.workdir;
   Logger.log_flush ();
-  begin
-    try Sys.chdir ppx.workdir
-    with exn ->
-      log ~title "cannot change directory %S: %a" ppx.workdir Logger.exn exn
-  end;
   let failure =
-    let ok = merlin_system_command comm = 0 in
+    let ok = merlin_system_command comm ~cwd:ppx.workdir = 0 in
     if not ok then Some (CannotRun comm)
     else if not (Sys.file_exists fn_out) then
       Some (WrongMagic comm)
@@ -150,19 +153,13 @@ type ('a, 'b) res = Ok of 'a | Error of 'b
 let apply_pp ~workdir ~filename ~source ~pp =
   let fn_in = Filename.temp_file "merlinpp" (Filename.basename filename) in
   begin
-    try Sys.chdir workdir
-    with exn ->
-      log ~title:"apply_pp" "cannot change directory %S: %a"
-        workdir Logger.exn exn
-  end;
-  begin
     let oc = open_out_bin fn_in in
     output_string oc source;
     close_out oc
   end;
   let fn_out = fn_in ^ ".out" in
   let comm = pp_commandline pp fn_in fn_out in
-  let ok = merlin_system_command comm = 0 in
+  let ok = merlin_system_command comm ~cwd:workdir = 0 in
   Misc.remove_file fn_in;
   if not ok then begin
     Misc.remove_file fn_out;
