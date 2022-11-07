@@ -315,26 +315,39 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       );
 
     let ppf = Format.str_formatter in
-    let all_results = List.mapi (small_enclosings @ result)
-      ~f:(fun i (loc,text,tail) ->
-          let print = match index with None -> true | Some index -> index = i in
-          let ret x = (loc, x, tail) in
-          match text with
-          | Type_enclosing.String str -> ret (`String str)
-          | Type_enclosing.Type (env, t) when print ->
-            Printtyp.wrap_printing_env env ~verbosity
-              (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
-            ret (`String (Format.flush_str_formatter ()))
-          | Type_enclosing.Type_decl (env, id, t) when print ->
-            Printtyp.wrap_printing_env env ~verbosity
-              (fun () -> Printtyp.type_declaration env id ppf t);
-            ret (`String (Format.flush_str_formatter ()))
-          | Type_enclosing.Modtype (env, m) when print ->
-            Printtyp.wrap_printing_env env ~verbosity
-              (fun () -> Printtyp.modtype env ppf m);
-            ret (`String (Format.flush_str_formatter ()))
-          | _ -> ret (`Index i)
-        )
+    let printtyp = fun i (loc,text,tail) ->
+      let print = match index with None -> true | Some index -> index = i in
+      let ret x = (loc, x, tail) in
+      let aux verbosity =
+        match text with
+        | Type_enclosing.String str -> ret (`String str)
+        | Type_enclosing.Type (env, t) when print ->
+          Printtyp.wrap_printing_env env ~verbosity
+            (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
+          ret (`String (Format.flush_str_formatter ()))
+        | Type_enclosing.Type_decl (env, id, t) when print ->
+          Printtyp.wrap_printing_env env ~verbosity
+            (fun () -> Printtyp.type_declaration env id ppf t);
+          ret (`String (Format.flush_str_formatter ()))
+        | Type_enclosing.Modtype (env, m) when print ->
+          Printtyp.wrap_printing_env env ~verbosity
+            (fun () -> Printtyp.modtype env ppf m);
+          ret (`String (Format.flush_str_formatter ()))
+        | _ -> ret (`Index i)
+      in
+      try Some (aux verbosity)
+      with Stack_overflow ->
+        (* Recursive types when printed with verbosity = 1 can lead to a
+           stack overflow. This should never happen with verbosity = 0.
+
+           A more satisfying handling of this issue would be to detect these
+           specific cases instead of relying on exception catching. See:
+           https://github.com/ocaml/merlin/issues/1335#issuecomment-831300004 *)
+        if verbosity > 0 then Some (aux 0)
+        else None
+      in
+    let all_results =
+      List.filter_mapi (small_enclosings @ result) ~f:printtyp
     in
     let normalize ({Location. loc_start; loc_end; _}, text, _tail) =
       Lexing.split_pos loc_start, Lexing.split_pos loc_end, text

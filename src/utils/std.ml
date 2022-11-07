@@ -114,6 +114,16 @@ module List = struct
       | None -> filter_map ~f xs
       | Some x -> x :: filter_map ~f xs
 
+  let filter_mapi ~f l =
+    let rec aux i = function
+      | [] -> []
+      | x :: xs ->
+        match f i x with
+        | None -> aux (i + 1) xs
+        | Some x -> x :: aux (i + 1) xs
+    in
+    aux 0 l
+
   let rec find_map ~f = function
     | [] -> raise Not_found
     | x :: xs ->
