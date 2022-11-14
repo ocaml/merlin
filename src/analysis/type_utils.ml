@@ -54,7 +54,7 @@ module Printtyp = struct
     Env.with_cmis @@ fun () -> (* ?? Not sure *)
     match !verbosity with 
     | Smart | Lvl 0 -> ty
-    | Lvl verbosity ->
+    | Lvl (_ : int) ->
       (* Fresh copy of the type to mutilate *)
       let ty = Subst.type_expr Subst.identity ty in
       let marks = Hashtbl.create 7 in
@@ -81,7 +81,7 @@ module Printtyp = struct
               Btype.iter_type_expr (iter (pred d)) ty0
           end
       in
-      iter verbosity ty;
+      iter (match !verbosity with | Smart -> assert false | Lvl v -> v) ty;
       ty
 
   let expand_type_decl env ty =
