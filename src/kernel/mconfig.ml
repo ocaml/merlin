@@ -140,7 +140,7 @@ module Verbosity = struct
     | Smart -> for_smart
     | Lvl v -> v
 
-  let param_spec = "\"smart\" | integer"
+  let param_spec = "\"smart\" | <integer>"
 
   let of_string = function 
     | "smart" -> Smart 
