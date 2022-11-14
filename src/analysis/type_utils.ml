@@ -189,9 +189,7 @@ let print_short_modtype verbosity env ppf md  =
 
 let print_type_with_decl ~verbosity env ppf typ =
   match verbosity with
-  | Verbosity.Smart | Lvl 0 -> 
-    Printtyp.type_scheme env ppf typ
-
+  | Verbosity.Smart | Lvl 0 ->  Printtyp.type_scheme env ppf typ
   | Lvl _ -> begin
     match Types.get_desc typ with
     | Types.Tconstr (path, params, _) ->
