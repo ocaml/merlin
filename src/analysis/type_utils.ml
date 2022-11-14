@@ -178,7 +178,7 @@ let rec mod_smallerthan n m =
   | _ -> Some 1
 
 let print_short_modtype verbosity env ppf md  =
-  (* ocaml-lsp shouldn't have "repeat to confirm", so [for_smart = 1] here *)
+  (* In smart mode we list modules' contents, so [for_smart = 1] here *)
   let verbosity = Verbosity.to_int verbosity ~for_smart:1 in
   match mod_smallerthan 1000 md with
   | None when verbosity = 0 ->
