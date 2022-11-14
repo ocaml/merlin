@@ -372,8 +372,8 @@ let query_flags = [
         in
         {query with verbosity}),
     "\"smart\" | <integer> Verbosity determines the number of \
-      expansions of aliases in answers. \"smart\" automatically \
-      determines this number itself."
+      expansions of aliases in answers. \"smart\" is equivalent to \
+      verbosity=0 but expands module types."
   );
   (
     "-printer-width",
