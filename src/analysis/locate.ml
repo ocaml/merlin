@@ -260,6 +260,12 @@ module Utils = struct
         Some (List.find_map Mconfig.(config.merlin.suffixes) ~f:attempt_search)
       with Not_found ->
         None
+
+  let find_file ~config ?with_fallback (file : File.t) =
+    find_file_with_path ~config ?with_fallback file @@
+        match file with
+        | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
+        | CMT _ | CMTI _         -> Mconfig.build_path config
 end
 
 let move_to filename cmt_infos =
@@ -290,53 +296,42 @@ let move_to filename cmt_infos =
   File_switching.move_to ~digest filename
 
 
-let rec load_cmt comp_unit ml_or_mli =
-  let fn =
-    Preferences.set ml_or_mli;
+let load_cmt ~config comp_unit ml_or_mli =
+  Preferences.set ml_or_mli;
+  let file =
     Preferences.build comp_unit
   in
-  match Load_path.find_uncap (File.with_ext fn) with
-  | filename ->
-    let cmt = (Cmt_cache.read filename).cmt_infos in
-    let pos_fname = cmt.cmt_sourcefile in
-    (* FIXME @ulysse: is the [Option.iter] still necessary with the new
-       implementation of [move_to]? *)
-    Option.iter cmt.cmt_source_digest
-      ~f:(fun _digest -> move_to filename cmt);
-    Ok (pos_fname, cmt)
-  | exception Not_found ->
-    if ml_or_mli = `MLI then begin
-      (* there might not have been an mli (so no cmti), so the decl comes from
-          the .ml, and the corresponding .cmt *)
-      log ~title:"load" "Failed to load cmti file, retrying with cmt";
-      load_cmt comp_unit `ML
-    end else
-      Error ()
+  match Utils.find_file ~config ~with_fallback:true file with
+  | Some path ->
+      let cmt_infos = (Cmt_cache.read path).cmt_infos in
+      let source_file = cmt_infos.cmt_sourcefile in
+      let source_file = Option.value ~default:"*pack*" source_file in
+      move_to path cmt_infos;
+      Ok (source_file, cmt_infos)
+  | None -> Error ()
 
-module Shape_reduce =
-  Shape.Make_reduce (struct
-    type env = Env.t
+let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
+  let module Shape_reduce =
+    Shape.Make_reduce (struct
+      type env = Env.t
 
-    let fuel = 10
+      let fuel = 10
 
-    let read_unit_shape ~unit_name =
-      let fn = File.(with_ext (cmt unit_name)) in
-      log ~title:"read_unit_shape" "inspecting %s" unit_name;
-      match Load_path.find_uncap fn with
-      | filename ->
-        let cmt_infos = (Cmt_cache.read filename).cmt_infos in
-        move_to filename cmt_infos;
-        log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
-        cmt_infos.cmt_impl_shape
-      | exception Not_found ->
-        log ~title:"read_unit_shape" "failed to find %s" fn;
-        None
+      let read_unit_shape ~unit_name =
+          log ~title:"read_unit_shape" "inspecting %s" unit_name;
+          match load_cmt ~config unit_name `ML with
+          | Ok (filename, cmt_infos) ->
+            move_to filename cmt_infos;
+            log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
+            cmt_infos.cmt_impl_shape
+          | Error () ->
+            log ~title:"read_unit_shape" "failed to find %s" unit_name;
+            None
 
-    let find_shape env id = Env.shape_of_path
-      ~namespace:Shape.Sig_component_kind.Module env (Pident id)
-  end)
-
-let uid_of_path ~env ~ml_or_mli ~decl_uid path ns =
+      let find_shape env id = Env.shape_of_path
+        ~namespace:Shape.Sig_component_kind.Module env (Pident id)
+    end)
+  in
   match ml_or_mli with
   | `MLI -> Some decl_uid
   | `ML ->
@@ -390,10 +385,10 @@ let module_aliasing ~(bin_annots : Cmt_format.binary_annots) uid  =
         Format.pp_print_option Shape.Uid.print fmt shape.uid);
     Option.map ~f:(fun uid -> uid, path) shape.uid
 
-let from_uid ~ml_or_mli uid loc path =
+let from_uid ~config ~ml_or_mli uid loc path =
   let loc_of_comp_unit comp_unit =
-    match load_cmt comp_unit ml_or_mli with
-    | Ok (Some pos_fname, _cmt) ->
+    match load_cmt ~config comp_unit ml_or_mli with
+    | Ok (pos_fname, _cmt) ->
       let pos = Std.Lexing.make_pos ~pos_fname (1, 0) in
       let loc = { Location.loc_start=pos; loc_end=pos; loc_ghost=true } in
       Some loc
@@ -401,7 +396,7 @@ let from_uid ~ml_or_mli uid loc path =
   in
   let title = "from_uid" in
   match uid with
-  | Some (Shape.Uid.Item { comp_unit; _ } as uid)->
+  | Some (Shape.Uid.Item { comp_unit; _ } as uid) ->
     let locopt =
       if Env.get_unit_name () = comp_unit then begin
         log ~title "We look for %a in the current compilation unit."
@@ -420,8 +415,8 @@ let from_uid ~ml_or_mli uid loc path =
           Some (uid, loc)
       end else begin
         log ~title "Loading the shapes for unit %S" comp_unit;
-        match load_cmt comp_unit ml_or_mli with
-        | Ok (Some _pos_fname, cmt) ->
+        match load_cmt ~config comp_unit ml_or_mli with
+        | Ok (_pos_fname, cmt) ->
           log ~title "Shapes successfully loaded, looking for %a"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
           begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
@@ -460,6 +455,8 @@ let from_uid ~ml_or_mli uid loc path =
     end
   | Some (Compilation_unit comp_unit as uid) ->
     begin
+      log ~title "Got the uid of a compilation unit: %a"
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
       match loc_of_comp_unit comp_unit with
       | Some loc -> `Found (Some uid, loc)
       | _ -> log ~title "Failed to load the shapes";
@@ -469,9 +466,9 @@ let from_uid ~ml_or_mli uid loc path =
   | None -> log ~title "No UID found, fallbacking to lookup location.";
       `Found (None, loc)
 
-let locate ~env ~ml_or_mli decl_uid loc path ns =
-  let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path ns in
-  from_uid ~ml_or_mli uid loc path
+let locate ~config ~env ~ml_or_mli decl_uid loc path ns =
+  let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns in
+  from_uid ~config ~ml_or_mli uid loc path
 
 let path_and_loc_of_cstr desc _ =
   let open Types in
@@ -762,7 +759,7 @@ end = struct
       Some x
 end
 
-let uid_from_longident ~env nss ml_or_mli ident =
+let uid_from_longident ~config ~env nss ml_or_mli ident =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
@@ -770,12 +767,12 @@ let uid_from_longident ~env nss ml_or_mli ident =
     if Utils.is_builtin_path path then
       `Builtin
     else
-      let uid = uid_of_path ~env ~ml_or_mli ~decl_uid path namespace in
+      let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace in
       `Uid (uid, loc, path)
 
-let from_longident ~env nss ml_or_mli ident =
-  match uid_from_longident ~env nss ml_or_mli ident with
-  | `Uid (uid, loc, path) -> from_uid ~ml_or_mli uid loc path
+let from_longident ~config ~env nss ml_or_mli ident =
+  match uid_from_longident ~config ~env nss ml_or_mli ident with
+  | `Uid (uid, loc, path) -> from_uid ~config ~ml_or_mli uid loc path
   | (`Builtin | `Not_in_env _) as v -> v
 
 let from_path ~config ~env ~namespace ml_or_mli path =
@@ -786,7 +783,7 @@ let from_path ~config ~env ~namespace ml_or_mli path =
     match Env_lookup.loc path namespace env with
     | None -> `Not_in_env (Path.name path)
     | Some (loc, uid, namespace) ->
-      match locate ~env ~ml_or_mli uid loc path namespace with
+      match locate ~config ~env ~ml_or_mli uid loc path namespace with
       | `Not_found _
       | `File_not_found _ as err -> err
       | `Found (uid, loc) ->
@@ -832,7 +829,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     log ~title:"from_string"
       "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli");
-    match from_longident ~env nss switch ident with
+    match from_longident ~config ~env nss switch ident with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found (uid, loc) ->
@@ -844,7 +841,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
     a uid-based search and return the attached comment in the attributes.
     This is a more sound way to get documentation than resorting on the
     [Ocamldoc.associate_comment] heuristic *)
-let doc_from_uid ~comp_unit uid =
+let doc_from_uid ~config ~comp_unit uid =
   let exception Found of Typedtree.attributes in
   let test elt_uid attributes =
     if Shape.Uid.equal uid elt_uid then raise (Found attributes)
@@ -903,7 +900,7 @@ let doc_from_uid ~comp_unit uid =
   in
   let typedtree =
     log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
-    match load_cmt comp_unit `MLI with
+    match load_cmt ~config comp_unit `MLI with
     | Ok (_, cmt_infos) ->
       log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
       begin match cmt_infos.cmt_annots with
@@ -936,7 +933,6 @@ let doc_from_uid ~comp_unit uid =
 
 let get_doc ~config ~env ~local_defs ~comments ~pos =
   File_switching.reset ();
-  let browse = Mbrowse.of_typedtree local_defs in
   let from_uid ~loc uid =
     begin match uid with
     | Some (Shape.Uid.Item { comp_unit; _ } as uid)
@@ -945,7 +941,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
           log ~title:"get_doc" "the doc (%a) you're looking for is in another
             compilation unit (%s)"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
-          (match doc_from_uid ~comp_unit uid with
+          (match doc_from_uid ~config ~comp_unit uid with
           | `Found doc -> `Found_doc doc
           | `No_documentation ->
               (* We fallback on the legacy heuristic to handle some unproper
@@ -976,24 +972,16 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       end
     | `User_input path ->
       log ~title:"get_doc" "looking for the doc of '%s'" path;
-      let lid = Longident.parse path in
-      begin match Context.inspect_browse_tree ~cursor:pos lid [browse] with
-      | None ->
-        `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
-      | Some _ ->
-        (* FIXME @ulysse: Why are we looking at the context if we're not using
-           the information?  *)
-        begin match from_string ~config ~env ~local_defs ~pos `MLI path with
-        | `Found (uid, _, pos) ->
-          let loc : Location.t =
-            { loc_start = pos; loc_end = pos; loc_ghost = true }
-          in
-          from_uid ~loc uid
-        | `At_origin | `Missing_labels_namespace -> `No_documentation
-        | `Builtin _ -> `Builtin
-        | (`Not_in_env _ | `Not_found _ |`File_not_found _ )
-          as otherwise -> otherwise
-        end
+      begin match from_string ~config ~env ~local_defs ~pos `MLI path with
+      | `Found (uid, _, pos) ->
+        let loc : Location.t =
+          { loc_start = pos; loc_end = pos; loc_ghost = true }
+        in
+        from_uid ~loc uid
+      | `At_origin | `Missing_labels_namespace -> `No_documentation
+      | `Builtin _ -> `Builtin
+      | (`Not_in_env _ | `Not_found _ |`File_not_found _ )
+        as otherwise -> otherwise
       end
   with
   | `Found_doc doc -> `Found doc
@@ -1003,7 +991,9 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       does not poulates doc attributes in the typedtree. *)
     let comments =
       match File_switching.where_am_i () with
-      | None -> comments
+      | None ->
+        log ~title:"get_doc" "Using reader's comment (current buffer)";
+        comments
       | Some cmt_path ->
         log ~title:"get_doc" "File switching: actually in %s" cmt_path;
         let {Cmt_cache. cmt_infos; _ } = Cmt_cache.read cmt_path in
@@ -1017,7 +1007,10 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
               Location.print_loc l);
         Format.fprintf fmt "]\n"
       );
-    let (_, deepest_before) = List.hd @@ Mbrowse.deepest_before loc.loc_start [browse] in
+    let browse = Mbrowse.of_typedtree local_defs in
+    let (_, deepest_before) =
+      Mbrowse.(leaf_node @@ deepest_before loc.loc_start [browse])
+    in
     (* based on https://v2.ocaml.org/manual/doccomments.html#ss:label-comments: *)
     let after_only = begin match deepest_before with
       | Browse_raw.Constructor_declaration _ -> true
