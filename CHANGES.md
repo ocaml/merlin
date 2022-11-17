@@ -11,6 +11,8 @@ undefined
       (#1507, fixes #1506)
     - Fix variant constructors' comments grouping (#1516, @mheiber, fixes #1513)
     - Filter-out duplicates from the `enclosing` command result (#1512)
+    - Add a new `verbosity=smart` mode for type enclosing that only expand
+      modules' types (#1374, @ulugbekna)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite

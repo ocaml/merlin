@@ -72,7 +72,7 @@ how Merlin could be driven from an editor:
 $ cat test.ml
 let x = 5
 let y = 3.0 *. x
-$ ocamlmerlin single type-enclosing -position '1:5' -filename test.ml < test.ml 
+$ ocamlmerlin single type-enclosing -position '1:5' -filename test.ml < test.ml
 {
   "class" : "return",
   "value" : [
@@ -90,7 +90,7 @@ $ ocamlmerlin single type-enclosing -position '1:5' -filename test.ml < test.ml
     }
   ]
 }
-$ ocamlmerlin single complete-prefix -prefix 'List.m' -position '2:14' -filename test.ml < test.ml 
+$ ocamlmerlin single complete-prefix -prefix 'List.m' -position '2:14' -filename test.ml < test.ml
 {
   "class" : "return",
   "value" : {
@@ -119,7 +119,7 @@ $ ocamlmerlin single complete-prefix -prefix 'List.m' -position '2:14' -filename
         "desc" : "'a -> 'a list -> bool",
         "kind" : "Value"
       },
-      ... 
+      ...
     ],
     "context" : null
   }
@@ -165,7 +165,7 @@ Merlin answers always have the same shape:
 {
   "class": "return" | "failure" | "error" | "exception",
   "value": <defined-by-class-and-request>,
-  "notifications": string list 
+  "notifications": string list
 }
 ```
 
@@ -226,7 +226,7 @@ Entries is the list of possible completion. Each entry is made of:
 ### `construct -position <position> [ -with-values <none|local> -depth <int> ]`
 
     -position <position>      Position where construct should happen
-    -with-values <none|local> Use values from the environment 
+    -with-values <none|local> Use values from the environment
                               (experimental, defaults to none)
     -depth <int>              Depth of the search (defaults to 1)
 
@@ -367,7 +367,7 @@ Looks for first file with a matching name in the project source and build paths
 
 ### `shape -position <position>`
 
-    -position <position>  Position 
+    -position <position>  Position
 
 This command can be used to assist navigation in a source code buffer.
 It returns a tree of all relevant locations around the cursor.
@@ -382,12 +382,13 @@ shape =
 ```
 
 
-### `type-enclosing -position <position> [ -expression <string> ] [ -cursor <int> ] [ -index <int> ]`
+### `type-enclosing -position <position> [ -expression <string> ] [ -cursor <int> ] [verbosity <smart|int>] [ -index <int> ]`
 
-    -position <position>  Position to complete
-    -expression <string>  Expression to type
-           -cursor <int>  Position of the cursor inside expression
-            -index <int>  Only print type of <index>'th result
+      -position <position>  Position to complete
+      -expression <string>  Expression to type
+             -cursor <int>  Position of the cursor inside expression
+              -index <int>  Only print type of <index>'th result
+    -verbosity <smart|int>  Verbosity level
 
 Returns a list of type information for all expressions at given position, sorted by increasing size.
 That is asking for type enlosing around `2` in `string_of_int 2` will return the types of `2 : int` and `string_of_int 2 : string`.
@@ -398,6 +399,9 @@ relevant to the prefix ending at the `cursor` offset.
 `-index` can be used to print only one type information. This is useful to
 query the types lazily: normally, Merlin would return the signature of all
 enclosing modules, which can be very expensive.
+
+`-verbosity` determines the number of expansions of aliases in answers.
+`smart` only expands module types."
 
 The result is returned as a list of:
 ```javascript
@@ -473,7 +477,7 @@ or the context of `z` ?).
 This is solved by tweaking the parser to add `[@merlin.loc]` attributes, with
 the locations marked by `[]`: `let x =[ y ]in[ z]`.
 
-This way, merlin will pick `z` node after `in` and `y` node before. 
+This way, merlin will pick `z` node after `in` and `y` node before.
 
 #### `[@merlin.hide]` and `[@merlin.focus]`
 

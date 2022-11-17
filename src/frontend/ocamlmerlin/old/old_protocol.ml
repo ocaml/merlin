@@ -44,7 +44,7 @@ struct
   type t = {
     document: document option;
     printer_width: int option;
-    printer_verbosity: int option;
+    printer_verbosity: string option;
   }
 end
 

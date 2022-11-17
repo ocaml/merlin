@@ -130,18 +130,43 @@ let dump_merlin x =
     )
   ]
 
+module Verbosity = struct
+  type t = Smart | Lvl of int
+
+  let default = Lvl 0
+
+  let to_int t ~for_smart = 
+    match t with 
+    | Smart -> for_smart
+    | Lvl v -> v
+
+  let param_spec = "\"smart\" | <integer>"
+
+  let of_string = function 
+    | "smart" -> Smart 
+    | maybe_int ->
+      try Lvl (int_of_string maybe_int)
+      with _ -> invalid_arg ("argument should be: " ^ param_spec)
+
+  let to_string = function 
+    | Smart -> "smart"
+    | Lvl v -> "lvl " ^ (string_of_int v)
+
+  let to_json t = `String (to_string t)
+end
+
 type query = {
   filename  : string;
   directory : string;
   printer_width : int;
-  verbosity : int;
+  verbosity : Verbosity.t;
 }
 
 let dump_query x = `Assoc [
     "filename"  , `String x.filename;
     "directory" , `String x.directory;
     "printer_width", `Int x.printer_width;
-    "verbosity" , `Int x.verbosity;
+    "verbosity" , Verbosity.to_json x.verbosity;
   ]
 
 type t = {
@@ -341,13 +366,14 @@ let merlin_flags = [
 let query_flags = [
   (
     "-verbosity",
-    Marg.param "integer" (fun verbosity query ->
+    Marg.param Verbosity.param_spec (fun verbosity query ->
         let verbosity =
-          try int_of_string verbosity
-          with _ -> invalid_arg "argument should be an integer"
+          Verbosity.of_string verbosity        
         in
         {query with verbosity}),
-    "<integer> Verbosity determines the number of expansions of aliases in answers"
+    "\"smart\" | <integer> Verbosity determines the number of \
+      expansions of aliases in answers. \"smart\" is equivalent to \
+      verbosity=0 but expands module types."
   );
   (
     "-printer-width",
@@ -600,7 +626,7 @@ let initial = {
   query = {
     filename = "*buffer*";
     directory = Sys.getcwd ();
-    verbosity = 0;
+    verbosity = Verbosity.default;
     printer_width = 0;
   }
 }

@@ -231,6 +231,7 @@ let dispatch (type a) (context : Context.t) (cmd : a command) : a =
   let config = match context.printer_verbosity with
     | None -> config
     | Some verbosity ->
+      let verbosity = Mconfig.Verbosity.of_string verbosity in
       Mconfig.({config with query = {config.query with verbosity}})
   in
   let config = match context.printer_width with

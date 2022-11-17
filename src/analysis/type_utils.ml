@@ -28,6 +28,8 @@
 
 open Std
 
+module Verbosity = Mconfig.Verbosity
+
 let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   let lexbuf = Lexing.from_string expr in
   let state = Lexer_raw.make keywords in
@@ -43,15 +45,16 @@ let lookup_module name env =
   let path, md = Env.find_module_by_name name env in
   path, md.Types.md_type, md.Types.md_attributes
 
-let verbosity = ref 0
+let verbosity = ref Verbosity.default
 
 module Printtyp = struct
   include Printtyp
 
   let expand_type env ty =
     Env.with_cmis @@ fun () -> (* ?? Not sure *)
-    if !verbosity = 0 then ty
-    else
+    match !verbosity with 
+    | Smart | Lvl 0 -> ty
+    | Lvl (_ : int) ->
       (* Fresh copy of the type to mutilate *)
       let ty = Subst.type_expr Subst.identity ty in
       let marks = Hashtbl.create 7 in
@@ -78,7 +81,7 @@ module Printtyp = struct
               Btype.iter_type_expr (iter (pred d)) ty0
           end
       in
-      iter !verbosity ty;
+      iter (match !verbosity with | Smart -> assert false | Lvl v -> v) ty;
       ty
 
   let expand_type_decl env ty =
@@ -99,18 +102,32 @@ module Printtyp = struct
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
 
-  let select_verbose a b env =
-    (if !verbosity = 0 then a else b env)
+  let select_by_verbosity ~default ?(smart=default) ~verbose = 
+    match !verbosity with
+    | Smart -> smart
+    | Lvl 0 -> default
+    | Lvl _ -> verbose
 
-  let type_scheme env ppf ty =
-    select_verbose type_scheme verbose_type_scheme env ppf ty
+  let type_scheme env ppf ty = 
+    (select_by_verbosity 
+      ~default:type_scheme 
+      ~verbose:(verbose_type_scheme env)) ppf ty
 
-  let type_declaration env id ppf =
-    select_verbose type_declaration verbose_type_declaration env id ppf
+  let type_declaration env id ppf = 
+    (select_by_verbosity 
+      ~default:type_declaration 
+      ~verbose:(verbose_type_declaration env)) id ppf
 
   let modtype env ppf mty =
-    select_verbose modtype verbose_modtype env ppf mty
-
+    let smart ppf = function 
+      | Types.Mty_ident _ | Mty_alias _ -> verbose_modtype env ppf mty
+      | _ -> modtype ppf mty 
+    in 
+    (select_by_verbosity 
+      ~default:modtype
+      ~verbose:(verbose_modtype env)
+      ~smart) ppf mty
+  
   let wrap_printing_env env ~verbosity:v f =
     let_ref verbosity v (fun () -> wrap_printing_env env f)
 end
@@ -161,6 +178,8 @@ let rec mod_smallerthan n m =
   | _ -> Some 1
 
 let print_short_modtype verbosity env ppf md  =
+  (* In smart mode we list modules' contents, so [for_smart = 1] here *)
+  let verbosity = Verbosity.to_int verbosity ~for_smart:1 in
   match mod_smallerthan 1000 md with
   | None when verbosity = 0 ->
     Format.pp_print_string ppf
@@ -169,7 +188,9 @@ let print_short_modtype verbosity env ppf md  =
     Printtyp.modtype env ppf md
 
 let print_type_with_decl ~verbosity env ppf typ =
-  if verbosity > 0 then
+  match verbosity with
+  | Verbosity.Smart | Lvl 0 ->  Printtyp.type_scheme env ppf typ
+  | Lvl _ -> begin
     match Types.get_desc typ with
     | Types.Tconstr (path, params, _) ->
       let decl =
@@ -202,8 +223,7 @@ let print_type_with_decl ~verbosity env ppf typ =
           Printtyp.type_declaration env ident ppf decl
         end
     | _ -> Printtyp.type_scheme env ppf typ
-  else
-    Printtyp.type_scheme env ppf typ
+  end
 
 let print_exn ppf exn =
   match Location.error_of_exn exn with
@@ -241,7 +261,7 @@ let print_constr ppf env lid =
   print_cstr_desc ppf cstr_desc
 
 exception Fallback
-let type_in_env ?(verbosity=0) ?keywords ~context env ppf expr =
+let type_in_env ?(verbosity=Verbosity.default) ?keywords ~context env ppf expr =
   let print_expr expression =
     let (str, _sg, _shape, _) =
       Env.with_cmis @@ fun () ->

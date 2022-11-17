@@ -51,7 +51,7 @@ let get_class_field_desc_infos = function
 let outline_type ~env typ =
   let ppf, to_string = Format.to_string () in
   Printtyp.wrap_printing_env env (fun () ->
-  Type_utils.print_type_with_decl ~verbosity:0 env ppf typ);
+    Type_utils.print_type_with_decl ~verbosity:(Mconfig.Verbosity.Lvl 0) env ppf typ);
   Some (to_string ())
 
 let rec summarize node =
