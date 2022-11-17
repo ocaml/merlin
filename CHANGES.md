@@ -13,6 +13,8 @@ undefined
     - Filter-out duplicates from the `enclosing` command result (#1512)
     - Add a new `verbosity=smart` mode for type enclosing that only expand
       modules' types (#1374, @ulugbekna)
+    - Improve locate for labels' declarations in the current buffer.
+      (#1505, fixes #1524)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite
@@ -20,6 +22,7 @@ undefined
     - add test cases for label comment documentation (#1526, @mheiber)
   + test suite
     - Add a test for the `enclosing` command (#1512)
+    - Add tests for interactions between locate and record labels (#1505)
 
 merlin 4.6
 ==========
