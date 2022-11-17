@@ -1,12 +1,13 @@
 merlin 4.7
 ==========
-undefined
+Thu Nov 24 13:31:42 CEST 2022
 
   + merlin binary
     - Replace custom "holes" AST nodes by extensions. This restores binary
       compatibility and fixes issues with PPXs when using typed-holes.
       (#1503)
-    - Do not change temporarily Merlin's cwd when starting a PPX (#1521)
+    - Do not change temporarily Merlin's cwd when starting a PPX (#1521,
+      fixes #1420)
     - Fix a parsing issue when declaring the `(??)` custom prefix operator.
       (#1507, fixes #1506)
     - Fix variant constructors' comments grouping (#1516, @mheiber, fixes #1513)
@@ -18,15 +19,15 @@ undefined
     - Fix locate on module without implementation (#1522, fixes #1519)
     - Allow program name customization when merlin is used as a library. (#1532)
   + editor modes
-    - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
-    - emacs: update CI for newer releases and fix some warnings (#1454, @mattiase)
+    - vim: load the plugin when necessary if it wasn't loaded before (#1511)
+    - emacs: update CI for newer releases and fix some warnings (#1454,
+      @mattiase)
   + test suite
-    - add tests for constructors' documentation (#1511)
-    - add test cases for label comment documentation (#1526, @mheiber)
-  + test suite
+    - Add tests for constructors' documentation (#1511)
+    - Add test cases for label comment documentation (#1526, @mheiber)
     - Add a test for the `enclosing` command (#1512)
     - Add tests for interactions between locate and record labels (#1505)
-    - add test showing an issue with locate and implicit transitive deps
+    - Add test showing an issue with locate and implicit transitive deps
 
 merlin 4.6
 ==========
