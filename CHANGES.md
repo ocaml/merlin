@@ -15,6 +15,7 @@ undefined
       modules' types (#1374, @ulugbekna)
     - Improve locate for labels' declarations in the current buffer.
       (#1505, fixes #1524)
+    - Fix locate on module without implementation (#1522, fixes #1519)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite
