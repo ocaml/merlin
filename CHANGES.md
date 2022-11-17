@@ -10,11 +10,14 @@ undefined
     - Fix a parsing issue when declaring the `(??)` custom prefix operator.
       (#1507, fixes #1506)
     - Fix variant constructors' comments grouping (#1516, @mheiber, fixes #1513)
+    - Filter-out duplicates from the `enclosing` command result (#1512)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite
     - add tests for constructors' documentation (#1511)
     - add test cases for label comment documentation (#1526, @mheiber)
+  + test suite
+    - Add a test for the `enclosing` command (#1512)
 
 merlin 4.6
 ==========
