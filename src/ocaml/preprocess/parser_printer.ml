@@ -47,7 +47,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_ITEM) -> "QUOTED_STRING_ITEM"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_EXPR) -> "QUOTED_STRING_EXPR"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUOTE) -> "'"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION) -> "??"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUESTION) -> "?"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PRIVATE) -> "private"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP) -> "!+" (* chosen with care; see above *)
@@ -394,7 +393,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_ITEM -> (string_of_quoted_STRING)
   | MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_EXPR -> (string_of_quoted_STRING)
   | MenhirInterpreter.T MenhirInterpreter.T_QUOTE -> (fun _ -> "'")
-  | MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION -> (fun _ -> "??")
   | MenhirInterpreter.T MenhirInterpreter.T_QUESTION -> (fun _ -> "?")
   | MenhirInterpreter.T MenhirInterpreter.T_PRIVATE -> (fun _ -> "private")
   | MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP -> (Printf.sprintf "PREFIXOP(%S)")
@@ -740,7 +738,6 @@ let print_token = function
   | QUOTED_STRING_ITEM v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_ITEM) v
   | QUOTED_STRING_EXPR v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_EXPR) v
   | QUOTE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUOTE) ()
-  | QUESTIONQUESTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION) ()
   | QUESTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUESTION) ()
   | PRIVATE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PRIVATE) ()
   | PREFIXOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP) v
@@ -877,7 +874,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_QUOTED_STRING_ITEM -> QUOTED_STRING_ITEM v
   | MenhirInterpreter.T_QUOTED_STRING_EXPR -> QUOTED_STRING_EXPR v
   | MenhirInterpreter.T_QUOTE -> QUOTE
-  | MenhirInterpreter.T_QUESTIONQUESTION -> QUESTIONQUESTION
   | MenhirInterpreter.T_QUESTION -> QUESTION
   | MenhirInterpreter.T_PRIVATE -> PRIVATE
   | MenhirInterpreter.T_PREFIXOP -> PREFIXOP v

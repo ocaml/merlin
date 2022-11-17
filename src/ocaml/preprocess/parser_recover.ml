@@ -46,7 +46,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_ITEM -> ("", Location.none, "", Location.none, None)
     | MenhirInterpreter.T MenhirInterpreter.T_QUOTED_STRING_EXPR -> ("", Location.none, "", Location.none, None)
     | MenhirInterpreter.T MenhirInterpreter.T_QUOTE -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_QUESTION -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_PRIVATE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP -> "!+"
@@ -407,7 +406,6 @@ let can_pop (type a) : a terminal -> bool = function
   | T_RBRACKET -> true
   | T_RBRACE -> true
   | T_QUOTE -> true
-  | T_QUESTIONQUESTION -> true
   | T_QUESTION -> true
   | T_PRIVATE -> true
   | T_PLUSEQ -> true
