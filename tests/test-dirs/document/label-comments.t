@@ -62,5 +62,5 @@ FIXME: expected "fld_b comment"
   > EOF
 
   $ $MERLIN single document -position 8:4 \
-  > -filename main.ml <main.ml | jq '.value'
-  "fld_a comment"
+  > -filename main.ml <main.ml | tr '\r\n' ' ' | jq '.value'
+  "fld_a comment fld_b comment"

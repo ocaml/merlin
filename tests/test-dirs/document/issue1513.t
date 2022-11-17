@@ -16,18 +16,22 @@ Merlin should show comments for a type's constructor from another module:
 
   $ $OCAMLC -c -bin-annot naux.ml
 
-FIXME: the constructors are missing from the [uid_to_loc] tables
+FIXME: We should not rely on "fallbacking". This requires a compiler change.
   $ $MERLIN single document -position 1:13 \
-  > -filename main.ml <main.ml | jq '.value'
-  "didn't manage to find Naux.t"
+  > -log-file - -log-section locate \
+  > -filename main.ml <main.ml 2>&1 | 
+  > grep "Uid not found in the cmt table"
+  Uid not found in the cmt table. Fallbacking to the node's location: File "naux.ml", line 2, characters 2-5
 
+FIXME: expected "B Comment"
   $ $MERLIN single document -position 2:13 \
   > -filename main.ml <main.ml | tr '\n' ' ' | jq '.value'
-  "didn't manage to find Naux.t"
+  "A Comment B Comment"
 
+FIXME
   $ $MERLIN single document -position 3:13 \
   > -filename main.ml <main.ml | jq '.value'
-  "didn't manage to find Naux.t"
+  "B Comment"
 
   $ rm naux.cmt
 
