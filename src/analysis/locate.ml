@@ -281,7 +281,7 @@ module Utils = struct
           (Mconfig.source_path config) file
       ) Mconfig.(config.merlin.suffixes)
     in
-    List.uniq files ~cmp:String.compare
+    List.dedup_adjacent files ~cmp:String.compare
 
   let find_file_with_path ~config ?(with_fallback=false) file path =
     if File.name file = Misc.unitname Mconfig.(config.query.filename) then
