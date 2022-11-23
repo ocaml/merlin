@@ -1986,6 +1986,10 @@ let wrap_constraint env mark arg mty explicit =
 (* Type a module value expression *)
 
 let rec type_module ?(alias=false) sttn funct_body anchor env smod =
+  (* Merlin: when we start typing a module we don't want to include potential
+    saved_items from its parent. We backup them before starting and restore them
+    when finished. *)
+  Msupport.with_saved_types (fun () ->
   try
     Builtin_attributes.warning_scope smod.pmod_attributes
       (fun () -> type_module_aux ~alias sttn funct_body anchor env smod)
@@ -1999,7 +2003,7 @@ let rec type_module ?(alias=false) sttn funct_body anchor env smod =
       mod_type = Mty_signature [];
       mod_env = env;
       mod_attributes = Msupport.flush_saved_types () @ smod.pmod_attributes;
-      mod_loc = smod.pmod_loc }
+      mod_loc = smod.pmod_loc })
 
 and type_module_aux ~alias sttn funct_body anchor env smod =
   match smod.pmod_desc with
