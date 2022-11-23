@@ -1,6 +1,6 @@
 merlin 4.7
 ==========
-undefined
+Thu Nov 24 13:31:42 CEST 2022
 
   + merlin binary
     - Replace custom "holes" AST nodes by extensions. This restores binary
@@ -11,10 +11,10 @@ undefined
     - Fix variant constructors' comments grouping (#1516, @mheiber, fixes #1513)
     - Filter-out duplicates from the `enclosing` command result (#1512)
   + editor modes
-    - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
+    - vim: load the plugin when necessary if it wasn't loaded before (#1511)
   + test suite
-    - add tests for constructors' documentation (#1511)
-    - add test cases for label comment documentation (#1526, @mheiber)
+    - Add tests for constructors' documentation (#1511)
+    - Add test cases for label comments documentation (#1526, @mheiber)
     - Add a test for the `enclosing` command (#1512)
 
 merlin 4.6
