@@ -429,8 +429,6 @@ rule token state = parse
         return (LABEL name) }
   | "?"
       { return QUESTION }
-  | "??"
-      { return QUESTIONQUESTION }
   | "?" (lowercase identchar * as name) ':'
       { oPTLABEL (check_label_name lexbuf name) }
   | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
