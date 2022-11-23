@@ -335,12 +335,15 @@ let get_config { workdir; process_dir; configurator } path_abs =
       - If `dot-merlin-reader` is not installed and the project use `.merlin`
         files
       - There was a bug in the external reader causing a crash *)
+      let program_name = Lib_config.program_name () in
       let error = Printf.sprintf
-        "A problem occurred with merlin external configuration reader. %s If \
-         the problem persists, please file an issue on Merlin's tracker."
+        "A problem occurred with %s external configuration reader. %s If \
+         the problem persists, please file an issue on %s's tracker."
+        program_name
         (match configurator with
         | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
         | Dune -> "Check that `dune` is installed and up-to-date.")
+        program_name
       in
       empty_config, [ error ]
     | End_of_input ->
@@ -348,11 +351,12 @@ let get_config { workdir; process_dir; configurator } path_abs =
         - if a project using old-dune has not been built and Merlin wrongly tries to
           start `new-dune ocaml-merlin` in the absence of `.merlin` files
         - the process stopped in the middle of its answer (which is very unlikely) *)
+      let program_name = Lib_config.program_name () in
       let error = Printf.sprintf
-        "Merlin could not load its configuration from the external reader. %s"
+        "%s could not load its configuration from the external reader. %s"
+        program_name
         (match configurator with
-        | Dot_merlin -> "If the problem persists, please file an issue on \
-          Merlin's tracker."
+        | Dot_merlin -> "If the problem persists, please file an issue."
         | Dune -> "Building your project with `dune` might solve this issue.")
       in
       empty_config, [ error ]
