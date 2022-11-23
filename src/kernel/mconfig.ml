@@ -689,6 +689,7 @@ let source_path config =
     [[config.query.directory];
      stdlib;
      config.merlin.source_path]
+  |> List.filter_dup
 
 let build_path config = (
   let dirs =
