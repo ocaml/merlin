@@ -15,7 +15,7 @@
 (** Pops comments from a list of comments (string * loc) to find the ones that
    are associated to a given location. Also returns the remaining comments after
    the location. *)
-let associate_comment ?(after_only=false) comments loc nextloc =
+let associate_comment ~after_only comments loc nextloc =
   let lstart = loc.Location.loc_start.Lexing.pos_lnum
   and lend =  loc.Location.loc_end.Lexing.pos_lnum in
   let isnext c =
