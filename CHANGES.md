@@ -18,6 +18,7 @@ undefined
     - Fix locate on module without implementation (#1522, fixes #1519)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
+    - emacs: update CI for newer releases and fix some warnings (#1454, @mattiase)
   + test suite
     - add tests for constructors' documentation (#1511)
     - add test cases for label comment documentation (#1526, @mheiber)
