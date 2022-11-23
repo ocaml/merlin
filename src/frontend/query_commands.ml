@@ -351,11 +351,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let path = match Mbrowse.enclosing pos [structures] with
-      | [] -> []
-      | path -> List.map ~f:snd path
-    in
-    List.map ~f:Mbrowse.node_loc path
+    let mbrowse = Mbrowse.enclosing pos [structures] in
+    (* We remove possible duplicates from the list*)
+    List.fold_left mbrowse ~init:[] ~f:(fun acc node ->
+      let loc = Mbrowse.node_loc (snd node) in
+      match acc with
+      | hd::_ as acc when Location_aux.compare hd loc = 0 -> acc
+      | _ -> loc::acc)
+    |> List.rev
 
   | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
