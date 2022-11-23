@@ -1,3 +1,13 @@
+merlin 4.7
+==========
+undefined
+
+
+  + merlin binary
+    - Replace custom "holes" AST nodes by extensions. This restores binary
+      compatibility and fixes issues with PPXs when using typed-holes.
+      (#1503)
+
 merlin 4.6
 ==========
 Fri Jul  1 12:51:42 CEST 2022
