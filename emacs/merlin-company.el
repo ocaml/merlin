@@ -1,4 +1,4 @@
-;;; merlin-company.el --- Merlin and company mode integration.   -*- coding: utf-8; lexical-binding: t -*-
+;;; merlin-company.el --- Merlin and company mode integration   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
@@ -88,7 +88,7 @@
 
 ;; Public functions
 ;;;###autoload
-(defun merlin-company-backend (command &optional arg &rest ignored)
+(defun merlin-company-backend (command &optional arg &rest _ignored)
   (interactive (list 'interactive))
   (when merlin-mode
     (cl-case command

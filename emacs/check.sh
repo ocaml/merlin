@@ -5,7 +5,10 @@ EMACS="${EMACS:=emacs}"
 
 NEEDED_PACKAGES="package-lint company iedit auto-complete"
 
-TO_CHECK=*.el
+ELS_TO_CHECK=*.el
+# To reduce the amount of false positives we only package-lint files
+# that are actual installable packages.
+PKGS_TO_CHECK="merlin.el merlin-ac.el merlin-company.el merlin-iedit.el"
 
 INIT_PACKAGE_EL="(progn \
   (require 'package) \
@@ -23,7 +26,7 @@ INIT_PACKAGE_EL="(progn \
          --eval "$INIT_PACKAGE_EL"
 
 # Byte compile, failing on byte compiler errors, or on warnings unless ignored
-if [ -n "${EMACS_LINT_IGNORE+x}" ]; then
+if [ -n "${EMACS_BYTECOMP_WARN_IGNORE:+x}" ]; then
     ERROR_ON_WARN=nil
 else
     ERROR_ON_WARN=t
@@ -34,14 +37,16 @@ fi
          --eval "$INIT_PACKAGE_EL" \
          --eval "(setq byte-compile-error-on-warn ${ERROR_ON_WARN})" \
          -f batch-byte-compile \
-         ${TO_CHECK}
+         ${ELS_TO_CHECK}
 
-# Lint failures are ignored if EMACS_LINT_IGNORE is defined, so that lint
-# failures on Emacs 24.2 and below don't cause the tests to fail, as these
-# versions have buggy imenu that reports (defvar foo) as a definition of foo.
+# package-lint failures are ignored if EMACS_PACKAGE_LINT_IGNORE is nonempty.
+# Right now this is always the case because it is difficult to make
+# package-lint shut up completely.
+EMACS_PACKAGE_LINT_IGNORE=1
+
 "$EMACS" -Q -batch \
          --eval "$INIT_PACKAGE_EL" \
          -L . \
          --eval "(require 'package-lint)" \
          -f package-lint-batch-and-exit \
-         ${TO_CHECK} || [ -n "${EMACS_LINT_IGNORE+x}" ]
+         ${PKGS_TO_CHECK} || [ -n "${EMACS_PACKAGE_LINT_IGNORE:+x}" ]

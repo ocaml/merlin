@@ -219,7 +219,7 @@ merlin-locate, see `merlin-locate-in-new-window').")
 
 (defvar-local merlin-buffer-configuration nil
   "An association list describing the configuration of merlin binary for the
-current buffer.  Customize `merlin-configuration-function` to initialize it.
+current buffer.  Customize `merlin-configuration-function' to initialize it.
 The association list can contain the following optional keys:
 - `flags': extra flags to give merlin
 
@@ -992,7 +992,7 @@ prefix of `bar' is `'."
 
 (defun merlin-complete (ident)
   "Return the data for completion of IDENT, i.e. a list of tuples of the form
-  '(NAME TYPE KIND INFO)."
+  (NAME TYPE KIND INFO)."
   (setq-local merlin--dwimed nil)
   (let* ((merlin-verbosity-context t) ; increase verbosity level if necessary
          (ident- (merlin-completion-split-ident ident))
@@ -1332,8 +1332,8 @@ strictly within, or nil if there is no such element."
   (merlin-call "holes"))
 
 (defun merlin--first-hole-aux (holes current-point comp)
-  "Returns the first `hole` of the list such that
-    `(funcall comp hole current-point)`"
+  "Returns the first HOLE of the list such that
+    (funcall comp HOLE current-point) is true."
   (when holes
     (let* ((head (car holes))
            (tail (cdr holes))
@@ -1344,8 +1344,8 @@ strictly within, or nil if there is no such element."
         (merlin--first-hole-aux tail current-point comp)))))
 
 (defun merlin--first-hole (holes current-point comp)
-  "Returns the first `hole` of the list that such that
-    `(funcall comp hole current-point)`. If no hole match
+  "Returns the first HOLE of the list that such that
+    (funcall comp HOLE current-point) is true. If no hole match
     that condition the first one of the list is returned."
   (let ((hole (merlin--first-hole-aux holes current-point comp)))
     (if hole hole (car holes))))
@@ -1645,7 +1645,7 @@ Empty string defaults to jumping to all these."
   (merlin--goto-file-and-point (merlin-call-jump target)))
 
 (defun merlin-call-phrase (target)
-  "Move to next phrase (TARGET = 'next) or previous phrase (TARGET = 'prev)"
+  "Move to next phrase (TARGET = `next') or previous phrase (TARGET = `prev')."
   (if (or (not target) (equal target ""))
       (setq target "fun let module match"))
   (let ((result (merlin-call "phrase"
@@ -1798,9 +1798,9 @@ Empty string defaults to jumping to all these."
   (save-excursion
     (merlin-occurrences-populate-buffer lst)
     (cl-case merlin-occurrences-show-buffer
-      ('same
+      (same
        (switch-to-buffer (merlin--get-occ-buff)))
-      ('other
+      (other
        (switch-to-buffer-other-window (merlin--get-occ-buff)))
       (t nil))))
 
@@ -1821,7 +1821,7 @@ Empty string defaults to jumping to all these."
 ;;;;;;;;;;;;;;;;;;;
 
 (defun merlin--refactor-open (mode)
-  "Refactor open statement under cursor. mode can be 'qualify or 'unqualify"
+  "Refactor open statement under cursor. mode can be `qualify' or `unqualify'."
   (save-excursion
     (dolist (occurrence (nreverse (merlin-call
                                    "refactor-open"

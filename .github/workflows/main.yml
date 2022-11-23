@@ -14,6 +14,7 @@ on:
       - 'doc/**'
       - 'emacs/**'
       - 'vim/**'
+      - '**/emacs-lint.yml'
   pull_request:
     branches: [ master ]
     paths-ignore:
@@ -23,6 +24,7 @@ on:
       - 'doc/**'
       - 'emacs/**'
       - 'vim/**'
+      - '**/emacs-lint.yml'
   schedule:
     - cron: '0 12 */6 * *'
 
