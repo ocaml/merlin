@@ -73,7 +73,7 @@
             ((string= kind "Exn")
              (setq merlin-imenu--exception-list (cons marker merlin-imenu--exception-list))))
       (when sub-trees
-        (merlin-imenu-parse-outline (concat prefix entry ".") sub-trees)))))
+        (merlin-imenu-parse-outline (concat entry ".") sub-trees)))))
 
 (defun merlin-imenu-create-index ()
   "Create data for imenu using the merlin outline feature."
