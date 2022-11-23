@@ -8,6 +8,7 @@ undefined
       (#1503)
     - Fix a parsing issue when declaring the `(??)` custom prefix operator.
       (#1507, fixes #1506)
+    - Fix variant constructors' comments grouping (#1516, @mheiber, fixes #1513)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite

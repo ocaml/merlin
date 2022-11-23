@@ -869,8 +869,16 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
               Location.print_loc l);
         Format.fprintf fmt "]\n"
       );
+    let (_, deepest_before) = List.hd @@ Mbrowse.deepest_before loc.loc_start [browse] in
+    (* based on https://v2.ocaml.org/manual/doccomments.html#ss:label-comments: *)
+    let after_only = begin match deepest_before with
+      | Browse_raw.Constructor_declaration _ -> true
+      (* The remaining `true` cases are currently not reachable *)
+      | Label_declaration _ | Record_field _ | Row_field _  -> true
+      | _ -> false
+    end in
     begin match
-      Ocamldoc.associate_comment comments loc !last_location
+      Ocamldoc.associate_comment ~after_only comments loc !last_location
     with
     | None, _     -> `No_documentation
     | Some doc, _ -> `Found doc
