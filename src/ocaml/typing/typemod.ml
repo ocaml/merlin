@@ -2217,6 +2217,10 @@ let simplify_app_summary app_view =
   | false, None -> Includemod.Error.Anonymous, mty
 
 let rec type_module ?(alias=false) sttn funct_body anchor env smod =
+  (* Merlin: when we start typing a module we don't want to include potential
+    saved_items from its parent. We backup them before starting and restore them
+    when finished. *)
+  Msupport.with_saved_types @@ fun () ->
   try
     Builtin_attributes.warning_scope smod.pmod_attributes
       (fun () -> type_module_aux ~alias sttn funct_body anchor env smod)
