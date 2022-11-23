@@ -792,8 +792,6 @@ let expr_of_lwt_bindings ~loc lbs body =
 
 %token EOL
 
-%token QUESTIONQUESTION [@symbol "??"]
-
 %token LET_LWT [@cost 1] [@symbol "lwt"]
 %token TRY_LWT [@cost 1] [@symbol "try_lwt"]
 %token MATCH_LWT [@cost 1] [@symbol "match_lwt"]
@@ -870,7 +868,7 @@ The precedences must be listed from low to high.
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW PREFIXOP STRING TRUE UIDENT UNDERSCORE
           LBRACKETPERCENT QUOTED_STRING_EXPR
-          DOTLESS DOTTILDE GREATERDOT QUESTIONQUESTION
+          DOTLESS DOTTILDE GREATERDOT
 
 
 /* Entry points */

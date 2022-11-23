@@ -6,6 +6,8 @@ undefined
     - Replace custom "holes" AST nodes by extensions. This restores binary
       compatibility and fixes issues with PPXs when using typed-holes.
       (#1503)
+    - Fix a parsing issue when declaring the `(??)` custom prefix operator.
+      (#1507, fixes #1506)
   + editor modes
     - vim: load the plugin when necessary if it wasn’t loaded before (#1511)
   + test suite
