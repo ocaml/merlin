@@ -92,7 +92,7 @@ let main () =
   | args -> Old_merlin.run args
 
 let () =
-  Std.Json.pretty_to_string := Yojson.Basic.pretty_to_string;
+  Lib_config.Json.set_pretty_to_string Yojson.Basic.pretty_to_string;
   let `Log_file_path log_file, `Log_sections sections =
     Log_info.get ()
   in

@@ -31,18 +31,33 @@ module Cmi = struct
         fprintf ppf "%a@ is not a compiled interface"
           Location.print_filename filename
     | Wrong_version_interface (filename, compiler_magic) ->
+      let program_name = Lib_config.program_name () in
       begin match to_version_opt compiler_magic with
       | None ->
         fprintf ppf
-          "%a@ seems to be compiled with a version of OCaml that is not@.\
-           supported by Merlin."
+          "Compiler version mismatch: this project seems to be compiled with a \
+          version of the OCaml compiler that is not supported by this version \
+          of %s. OCaml language support will not work properly until this \
+          problem is fixed. \n\
+          Hint: It seems that the project is built with a newer OCaml compiler \
+          version that the running %s version does not know about. Make sure \
+          your editor runs a version of %s that supports this version of the \
+          compiler. \n\
+          This diagnostic is based on the compiled interface file: %a"
+          program_name program_name program_name
           Location.print_filename filename
       | Some version ->
         fprintf ppf
-          "%a@ seems to be compiled with OCaml %s.@.\
-           But this instance of Merlin handles OCaml %s."
-          Location.print_filename filename version
+          "Compiler version mismatch: this project seems to be compiled with \
+          version %s of the OCaml compiler, but the running %s supports OCaml \
+          version %s. OCaml language support will not work properly until this \
+          problem is fixed. \n\
+          Hint: Make sure your editor runs a version of %s that supports the \
+          correct version of the compiler. \n\
+          This diagnostic is based on the compiled interface file: %a"
+          version program_name
           (Option.get @@ to_version_opt Config.cmi_magic_number)
+          program_name Location.print_filename filename
       end
     | Corrupted_interface filename ->
         fprintf ppf "Corrupted compiled interface@ %a"
