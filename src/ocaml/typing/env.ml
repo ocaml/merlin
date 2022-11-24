@@ -105,8 +105,8 @@ let add_label_usage lu usage =
     lu.lu_construct <- true
 
 let is_mutating_label_usage = function
-| Mutation -> true
-| (Projection | Construct | Exported_private | Exported) -> false
+  | Mutation -> true
+  | (Projection | Construct | Exported_private | Exported) -> false
 
 let label_usages () =
   {lu_projection = false; lu_mutation = false; lu_construct = false}
