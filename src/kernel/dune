@@ -14,7 +14,7 @@
   -open Merlin_specific
   -open Merlin_extend)
  (libraries merlin_config os_ipc ocaml_parsing ocaml_preprocess ocaml_typing ocaml_utils
-            merlin_extend merlin_specific merlin_utils merlin_dot_protocol))
+            merlin_extend merlin_specific merlin_utils merlin_dot_protocol menhirLib))
 
 (rule
   (targets standard_library.ml)
