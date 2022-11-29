@@ -33,7 +33,7 @@ features.
 Compilation
 -----------
 
-Dependencies: OCamlFind, Yojson >= 2.0.0, Dune >= 2.7.
+Dependencies: `ocamlfind`, `yojson` >= 2.0.0, `dune` >= 2.7.
 
 ```shell
 dune build -p dot-merlin-reader,merlin
