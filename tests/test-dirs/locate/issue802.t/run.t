@@ -15,7 +15,7 @@ Test jumping from a normal constructor:
       "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 9
       }
     },
     "notifications": []
