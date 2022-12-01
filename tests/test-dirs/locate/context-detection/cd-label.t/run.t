@@ -42,14 +42,14 @@
   }
 
 FIXME: this is not a very satisfying answer. 
-We could expect 2:12 or at least 2:4
+We could expect 2:12
   $ $MERLIN single locate  -look-for ml -position 3:24 \
   > -filename ./record.ml < ./record.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/record.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 5
     }
   }
 

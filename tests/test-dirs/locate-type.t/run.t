@@ -7,7 +7,7 @@
       "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 2,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -20,7 +20,7 @@
       "file": "$TESTCASE_ROOT/a.ml",
       "pos": {
         "line": 2,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []

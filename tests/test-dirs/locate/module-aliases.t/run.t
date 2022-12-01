@@ -73,7 +73,7 @@ declaration of the alias and not to the aliased module itself.
     "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 7
     }
   }
 
@@ -176,6 +176,6 @@ declaration of the alias and not to the aliased module itself.
     "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 7
     }
   }

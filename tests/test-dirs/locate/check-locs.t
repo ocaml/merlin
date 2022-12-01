@@ -45,8 +45,6 @@
   > let _ = fun (_ : ct) (_ : dt) -> ()
   > EOF
 
-FIXME Most of the following locs are wrong. 
-
 We expect merlin to jump to the identifier, not the beginning of the definition
 / declaration.
 
@@ -55,7 +53,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 2,
-    "col": 2
+    "col": 6
   }
 
   $ $MERLIN  single locate -look-for ml -position 33:8 \
@@ -70,14 +68,14 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 3,
-    "col": 2
+    "col": 11
   }
 
   $ $MERLIN  single locate -look-for ml -position 34:8 \
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 18,
-    "col": 2
+    "col": 11
   }
 
 (* type *)
@@ -85,14 +83,14 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 4,
-    "col": 2
+    "col": 7
   }
 
   $ $MERLIN  single locate -look-for ml -position 35:8 \
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 19,
-    "col": 2
+    "col": 7
   }
 
 (* typext *)
@@ -100,14 +98,14 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 5,
-    "col": 2
+    "col": 7
   }
 
   $ $MERLIN  single locate -look-for ml -position 36:8 \
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 20,
-    "col": 2
+    "col": 7
   }
 
 (* exception *)
@@ -115,14 +113,14 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml  | jq ".value.pos"
   {
     "line": 7,
-    "col": 2
+    "col": 12
   }
 
   $ $MERLIN  single locate -look-for ml -position 37:15 \
   > -filename ./locs.ml < ./locs.ml  | jq ".value.pos"
   {
     "line": 22,
-    "col": 2
+    "col": 12
   }
 
 (* module *)
@@ -130,14 +128,14 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml  | jq ".value.pos"
   {
     "line": 8,
-    "col": 2
+    "col": 9
   }
 
   $ $MERLIN  single locate -look-for ml -position 38:11 \
   > -filename ./locs.ml < ./locs.ml  | jq ".value.pos"
   {
     "line": 23,
-    "col": 2
+    "col": 9
   }
 
 (* module rec *)
@@ -145,7 +143,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml  | jq ".value.pos"
   {
     "line": 9,
-    "col": 2
+    "col": 13
   }
 
   $ $MERLIN  single locate -look-for ml -position 39:11 \
@@ -159,7 +157,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 10,
-    "col": 2
+    "col": 6
   }
 
   $ $MERLIN  single locate -look-for ml -position 40:11 \
@@ -174,14 +172,14 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 11,
-    "col": 2
+    "col": 14
   }
 
   $ $MERLIN  single locate -look-for ml -position 41:12 \
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 26,
-    "col": 2
+    "col": 14
   }
 
 (* class *)
@@ -189,7 +187,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 12,
-    "col": 2
+    "col": 8
   }
 
   $ $MERLIN  single locate -look-for ml -position 42:12 \
@@ -203,7 +201,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 13,
-    "col": 2
+    "col": 6
   }
 
   $ $MERLIN  single locate -look-for ml -position 43:12 \
@@ -218,7 +216,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 14,
-    "col": 2
+    "col": 13
   }
 
   $ $MERLIN  single locate -look-for ml -position 44:17 \
@@ -232,7 +230,7 @@ We expect merlin to jump to the identifier, not the beginning of the definition
   > -filename ./locs.ml < ./locs.ml | jq ".value.pos"
   {
     "line": 15,
-    "col": 2
+    "col": 6
   }
 
   $ $MERLIN  single locate -look-for ml -position 44:26 \
