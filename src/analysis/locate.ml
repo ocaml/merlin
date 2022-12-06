@@ -44,6 +44,8 @@ module File : sig
   val cmt : string -> t
   val cmti : string -> t
 
+  val is_source : t -> bool
+
   val of_filename : string -> t option
 
   val alternate : t -> t
@@ -61,6 +63,10 @@ end = struct
     | MLI  of string
     | CMT  of string
     | CMTI of string
+
+  let is_source = function
+    | ML _ | MLL _ | MLI _ -> true
+    | CMT _ | CMTI _ -> false
 
   let file_path_to_mod_name f =
     Misc.unitname (Filename.basename f)
@@ -242,7 +248,8 @@ module Utils = struct
     List.dedup_adjacent files ~cmp:String.compare
 
   let find_file_with_path ~config ?(with_fallback=false) file path =
-    if File.name file = Misc.unitname Mconfig.(config.query.filename) then
+    if File.is_source file &&
+       File.name file = Misc.unitname Mconfig.(config.query.filename) then
       Some Mconfig.(config.query.filename)
     else
       let attempt_search src_suffix_pair =
@@ -892,7 +899,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     begin match uid with
     | Some (Shape.Uid.Item { comp_unit; _ } as uid)
     | Some (Shape.Uid.Compilation_unit comp_unit as uid)
-        when Env.get_unit_name () <> comp_unit ->
+         ->
           log ~title:"get_doc" "the doc (%a) you're looking for is in another
             compilation unit (%s)"
             Logger.fmt (fun fmt -> Shape.Uid.print fmt uid) comp_unit;
@@ -929,6 +936,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
       log ~title:"get_doc" "looking for the doc of '%s'" path;
       begin match from_string ~config ~env ~local_defs ~pos `MLI path with
       | `Found (uid, _, pos) ->
+        log ~title:"get_doc" "looking for the doc of '%s'" path;
         let loc : Location.t =
           { loc_start = pos; loc_end = pos; loc_ghost = true }
         in

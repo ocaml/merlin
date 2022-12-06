@@ -14,12 +14,10 @@ FIXME: Merlin should return the docstring
   > -filename doc.ml <doc.ml | jq '.value'
   "No documentation available"
 
-FIXME: we expect the declaration's comment (which also not shown after removing
-the definition's comment)
   $ $MERLIN single document -position 3:9 \
   > -filename doc.ml <doc.ml 
   {
     "class": "return",
-    "value": "whatever",
+    "value": "whatever decl",
     "notifications": []
   }
