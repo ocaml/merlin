@@ -4,10 +4,9 @@
   > let _ = id ()
   > EOF
 
-FIXME: Merlin should return the docstring
   $ $MERLIN single document -position 2:5 \
   > -filename doc.ml <doc.ml | jq '.value'
-  "No documentation available"
+  "whatever"
 
   $ $MERLIN single document -position 3:9 \
   > -filename doc.ml <doc.ml | jq '.value'

@@ -993,7 +993,9 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
           { loc_start = pos; loc_end = pos; loc_ghost = true }
         in
         doc_from_uid ~config ~loc uid
-      | `At_origin | `Missing_labels_namespace -> `No_documentation
+      | `At_origin ->
+        `Found_loc { Location.loc_start = pos; loc_end = pos; loc_ghost = true }
+      | `Missing_labels_namespace -> `No_documentation
       | `Builtin _ -> `Builtin
       | (`Not_in_env _ | `Not_found _ |`File_not_found _ )
         as otherwise -> otherwise
