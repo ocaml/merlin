@@ -80,6 +80,7 @@ value ml_merlin_fs_exact_case_basename(value path)
 
 value ml_merlin_fs_exact_case_basename(value path)
 {
+  (void)path;
   return Val_int(0);
 }
 
@@ -187,6 +188,8 @@ value ml_merlin_dont_inherit_stdio(value vstatus)
 
 CAMLprim value ml_merlin_system_command(value v_command, value v_cwd)
 {
+  (void)v_command;
+  (void)v_cwd;
   caml_invalid_argument("ml_merlin_system_command is only available on windows");
 }
 
