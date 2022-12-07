@@ -517,6 +517,11 @@ let ocaml_flags = [
     " Add support for VM-scheduled threads library"
   );
   (
+    "-safe-string",
+    Marg.unit (fun ocaml -> ocaml),
+    " Default to true unconditionally since 5.00"
+  );
+  (
     "-nopervasives",
     Marg.unit (fun ocaml -> {ocaml with nopervasives = true}),
     " Don't open Pervasives module (advanced)"
