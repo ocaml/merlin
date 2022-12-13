@@ -164,10 +164,10 @@ merlin 4.7.1
 Thu Dec 13 11:49:42 CEST 2022
 
   + merlin binary
-    - Restore compatibility with the compiler command line by accepting the
-      `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
-      #1518)
-    - mark some C variables as unused to remove warnings (#1541, @antalsz)
+    - Restore compatibility with the compiler's command line by accepting
+      the `-safe-string` flag as a no-op instead of rejecting it. (#1544,
+      fixes #1518)
+    - Mark some C variables as unused to remove warnings (#1541, @antalsz)
 
 merlin 4.7
 ==========
