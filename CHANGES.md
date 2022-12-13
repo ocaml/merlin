@@ -6,6 +6,7 @@ Thu Dec 13 12:49:42 CEST 2022
     - Restore compatibility with the compielr command line by accepting the
       `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
       #1518)
+    - mark some C variables as unused to remove warnings (#1541, @antalsz)
 
 merlin 4.7
 ==========
