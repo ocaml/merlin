@@ -133,20 +133,20 @@ module Verbosity = struct
 
   let default = Lvl 0
 
-  let to_int t ~for_smart = 
-    match t with 
+  let to_int t ~for_smart =
+    match t with
     | Smart -> for_smart
     | Lvl v -> v
 
   let param_spec = "\"smart\" | <integer>"
 
-  let of_string = function 
-    | "smart" -> Smart 
+  let of_string = function
+    | "smart" -> Smart
     | maybe_int ->
       try Lvl (int_of_string maybe_int)
       with _ -> invalid_arg ("argument should be: " ^ param_spec)
 
-  let to_string = function 
+  let to_string = function
     | Smart -> "smart"
     | Lvl v -> "lvl " ^ (string_of_int v)
 
@@ -366,7 +366,7 @@ let query_flags = [
     "-verbosity",
     Marg.param Verbosity.param_spec (fun verbosity query ->
         let verbosity =
-          Verbosity.of_string verbosity        
+          Verbosity.of_string verbosity
         in
         {query with verbosity}),
     "\"smart\" | <integer> Verbosity determines the number of \
@@ -500,6 +500,11 @@ let ocaml_flags = [
     "-vmthread",
     Marg.unit (fun ocaml -> {ocaml with threads = `None}),
     " Add support for VM-scheduled threads library"
+  );
+  (
+    "-safe-string",
+    Marg.unit (fun ocaml -> ocaml),
+    " Default to true unconditionally since 5.00"
   );
   (
     "-nopervasives",

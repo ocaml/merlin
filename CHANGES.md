@@ -1,3 +1,12 @@
+merlin 4.7.1
+==========
+Thu Dec 13 12:49:42 CEST 2022
+
+  + merlin binary
+    - Restore compatibility with the compielr command line by accepting the
+      `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
+      #1518)
+
 merlin 4.7
 ==========
 Thu Nov 24 17:49:42 CEST 2022
