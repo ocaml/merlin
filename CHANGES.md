@@ -144,9 +144,6 @@ Fri Feb 24 16:55:42 CEST 2023
     - Update internal typer to match OCaml 4.14.1 release (#1557)
     - Improve type-enclosing behaviour when used on records' labels (#1565,
       fixes #1564)
-    - Restore compatibility with the compiler command line by accepting the
-      `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
-      #1518)
     - Restore compatibility with some OCaml compiler's debug flags that were
       incorrectly rejected by Merlin (#1556)
     - Traverse aliases when jumping to declaration. This matches
@@ -161,6 +158,16 @@ Fri Feb 24 16:55:42 CEST 2023
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
+
+merlin 4.7.1
+============
+Thu Dec 13 11:49:42 CEST 2022
+
+  + merlin binary
+    - Restore compatibility with the compiler command line by accepting the
+      `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
+      #1518)
+    - mark some C variables as unused to remove warnings (#1541, @antalsz)
 
 merlin 4.7
 ==========
