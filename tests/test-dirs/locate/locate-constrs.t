@@ -3,30 +3,31 @@
 **/
 
   $ cat >constr.ml <<EOF
-  > module C = struct type t = A of int |  B end
+  > module C : sig type t = A of int | B end
+  >   = struct type t = A of int | B end
   > let foo : C.t = C.A 42
   > EOF
 
-We expect 1:27
-  $ $MERLIN single locate -look-for mli -position 2:18 \
+We expect 1:24
+  $ $MERLIN single locate -look-for mli -position 3:18 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
       "line": 1,
-      "col": 27
+      "col": 24
     }
   }
 
 FIXME: this is not a very satisfying answer. 
-We expect 1:18
-  $ $MERLIN single locate  -look-for ml -position 2:12 \
+We expect 1:20
+  $ $MERLIN single locate  -look-for ml -position 3:12 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
-      "line": 1,
-      "col": 18
+      "line": 2,
+      "col": 11
     }
   }
 
@@ -43,7 +44,17 @@ With the declaration in another compilation unit:
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
       "line": 1,
-      "col": 36
+      "col": 33
+    }
+  }
+
+  $ $MERLIN single locate -look-for ml -position 1:19 \
+  > -filename ./other_module.ml < ./other_module.ml | jq '.value'
+  {
+    "file": "$TESTCASE_ROOT/constr.ml",
+    "pos": {
+      "line": 1,
+      "col": 33
     }
   }
 
