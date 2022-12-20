@@ -56,7 +56,10 @@ Merlin is still able to inspect part of the ill-typed tree
     "tail": "no"
   }
 
-FIXME and we expect locate to work as well
+And locate works as well
   $ $MERLIN single locate -position 8:25 \
-  > -filename ill.ml <ill.ml | jq '.value'
-  "Not in environment 'problem'"
+  > -filename ill.ml <ill.ml | jq '.value.pos'
+  {
+    "line": 4,
+    "col": 6
+  }

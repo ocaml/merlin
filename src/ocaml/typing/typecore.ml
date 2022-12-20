@@ -4238,7 +4238,10 @@ and type_function ?(in_function : (Location.t * type_expr) option)
             | None   -> Not_a_function(ty_fun, explanation)
           end
       in
-      raise (error(loc_fun, env, err))
+      (* Merlin: we recover with an expected type of 'a -> 'b *)
+      let level = get_level (instance ty_expected) in
+      raise_error (error(loc_fun, env, err));
+      (newvar2 level, newvar2 level)
   in
   let ty_arg =
     if is_optional arg_label then
