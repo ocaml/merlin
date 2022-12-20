@@ -50,11 +50,17 @@ Merlin is still able to give the type of an identifier involved in the error:
     "tail": "no"
   }
 
-Fixme: But fails to locate it's definition:
+And locate finds its definition:
   $ $MERLIN single locate -position 9:13 \
   > -filename ill.ml <ill.ml
   {
     "class": "return",
-    "value": "Not in environment 'problem'",
+    "value": {
+      "file": "$TESTCASE_ROOT/ill.ml",
+      "pos": {
+        "line": 4,
+        "col": 6
+      }
+    },
     "notifications": []
   }
