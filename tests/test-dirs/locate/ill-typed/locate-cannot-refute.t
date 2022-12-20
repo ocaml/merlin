@@ -52,15 +52,8 @@ Merlin is still able to give the type of an identifier involved in the error:
 
 And locate finds its definition:
   $ $MERLIN single locate -position 9:13 \
-  > -filename ill.ml <ill.ml
+  > -filename ill.ml <ill.ml | jq '.value.pos'
   {
-    "class": "return",
-    "value": {
-      "file": "$TESTCASE_ROOT/ill.ml",
-      "pos": {
-        "line": 4,
-        "col": 6
-      }
-    },
-    "notifications": []
+    "line": 4,
+    "col": 6
   }
