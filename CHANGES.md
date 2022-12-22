@@ -20,6 +20,10 @@ Thu Nov 24 13:31:42 CEST 2022
     - Allow program name customization when merlin is used as a library. (#1532)
   + editor modes
     - vim: load the plugin when necessary if it wasn't loaded before (#1511)
+    - emacs: xref works from context menus; better highlighting of xref
+      matches; xref recognises operators and binding operators at the
+      cursor position; bad locations are filtered out (#1385, fixes
+      #1410)
     - emacs: update CI for newer releases and fix some warnings (#1454,
       @mattiase)
   + test suite
