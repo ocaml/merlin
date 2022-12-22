@@ -903,9 +903,9 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (setq errors (cl-remove-if-not (lambda (e) (assoc 'start e)) errors))
     (unless merlin-report-warnings
       (setq errors (cl-remove-if (lambda (e)
-                                   (or
-                                    (eq (cdr-safe (assoc 'message e)) "warning")
-                                    (merlin--error-warning-p (cdr (assoc 'message e)))))
+                                   (let ((msg (cdr (assoc 'message e))))
+                                     (or (equal msg "warning")
+                                         (merlin--error-warning-p msg))))
                                  errors)))
     (setq merlin-erroneous-buffer (or errors no-loc))
     (dolist (e no-loc)
