@@ -18,4 +18,6 @@ preprocess:
 promote:
 	dune promote
 
-.PHONY: all build dev clean test promote
+bench:
+
+.PHONY: all build dev clean test promote bench
