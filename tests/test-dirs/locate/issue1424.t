@@ -18,7 +18,8 @@
   > val foo : int
   > EOF
 
-  $ dune build
+NOTE: we need to build the @check target to have the cmt and not only the cmti
+  $ dune build @check
 
 Jump to interface:
   $ $MERLIN single locate -look-for mli -position 1:16 \
@@ -32,13 +33,12 @@ Jump to interface:
   }
 
 Jump to definition:
-FIXME: it should jump to the ml file
   $ $MERLIN single locate -look-for ml -position 1:16 \
   > -filename test.ml <test.ml | jq '.value'
   {
-    "file": "$TESTCASE_ROOT/test2.mli",
+    "file": "$TESTCASE_ROOT/test2.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 4
     }
   }
