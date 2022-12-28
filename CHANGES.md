@@ -1,3 +1,11 @@
+merlin 4.7.2
+============
+undefined
+
+  + merlin binary
+    - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
+      (#1554, fixes #1553)
+
 merlin 4.7.1
 ==========
 Thu Dec 13 11:49:42 CEST 2022
