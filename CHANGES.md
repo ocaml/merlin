@@ -141,6 +141,8 @@ merlin 4.8
 Fri Feb 24 16:55:42 CEST 2023
 
   + merlin binary
+    - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
+      (#1554, fixes #1553)
     - Update internal typer to match OCaml 4.14.1 release (#1557)
     - Improve type-enclosing behaviour when used on records' labels (#1565,
       fixes #1564)
