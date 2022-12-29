@@ -404,7 +404,7 @@ let ocaml_ignored_flags = [
   "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
   "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
   "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
-  "-verbose"; "-where"; "-force-tmc";
+  "-verbose"; "-where";
 ]
 
 let ocaml_ignored_parametrized_flags = [
