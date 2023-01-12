@@ -143,7 +143,8 @@ Fri Feb 24 16:55:42 CEST 2023
   + merlin binary
     - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
       (#1554, fixes #1553)
-    - Update internal typer to match OCaml 4.14.1 release (#1557)
+    - Upgrade Merlin from the RC2 to the stable 5.0.0 compiler release (#1559,
+      fixes #1558)
     - Improve type-enclosing behaviour when used on records' labels (#1565,
       fixes #1564)
     - Restore compatibility with some OCaml compiler's debug flags that were
@@ -160,6 +161,7 @@ Fri Feb 24 16:55:42 CEST 2023
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
+    - Add a test for incorrect alert defaults (#1559)
 
 merlin 4.7.1
 ============
