@@ -1,3 +1,11 @@
+merlin 4.8
+==========
+undefined
+
+  + merlin binary
+    - Prevent `Locate.get_doc` from crashing if `env_of_only_summary` fails.
+      (#1562, fixes #1561)
+
 merlin 4.7
 ==========
 Thu Nov 24 13:31:42 CEST 2022
