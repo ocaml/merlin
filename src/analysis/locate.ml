@@ -889,6 +889,13 @@ let doc_from_uid ~config ~comp_unit uid =
         Tast_iterator.default_iterator.value_binding sub vb)
     }
   in
+  let try_rebuild_env env =
+    try Envaux.env_of_only_summary env
+    with Envaux.Error err ->
+      log ~title:"doc_from_uid" "Error while rebuilding the environment: %a"
+        Logger.fmt (fun fmt -> Envaux.report_error fmt err);
+      env
+  in
   let parse_attributes attrs =
     let open Parsetree in
     try Some (List.find_map attrs ~f:(fun attr ->
@@ -905,9 +912,9 @@ let doc_from_uid ~config ~comp_unit uid =
       log ~title:"doc_from_uid" "Cmt loaded, itering on the typedtree";
       begin match cmt_infos.cmt_annots with
       | Interface s -> Some (`Interface { s with
-          sig_final_env = Envaux.env_of_only_summary s.sig_final_env})
+          sig_final_env = try_rebuild_env s.sig_final_env})
       | Implementation str -> Some (`Implementation { str with
-          str_final_env = Envaux.env_of_only_summary str.str_final_env})
+          str_final_env = try_rebuild_env str.str_final_env})
       | _ -> None
       end
     | Error _ -> None
