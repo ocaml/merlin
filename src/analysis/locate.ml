@@ -879,13 +879,31 @@ let doc_from_uid ~config ~comp_unit uid =
         Tast_iterator.default_iterator.type_declaration sub td);
 
       value_binding = (fun sub ({ vb_pat; vb_attributes; _ } as vb) ->
-        begin match vb_pat.pat_desc with
-        | Tpat_var (id, _) ->
-            begin try
-              let vd = Env.find_value (Pident id) env in
-              test vd.val_uid vb_attributes
-            with Not_found -> () end
-        | _ -> () end;
+        let pat_var_iter ~f pat =
+          let rec aux pat =
+            let open Typedtree in
+            match pat.pat_desc with
+            | Tpat_var (id, _) -> f id
+            | Tpat_alias (pat, _, _)
+            | Tpat_variant (_, Some pat, _)
+            | Tpat_lazy pat
+            | Tpat_or (pat, _, _) ->
+                aux pat
+            | Tpat_tuple pats
+            | Tpat_construct (_, _, pats, _)
+            | Tpat_array pats ->
+                List.iter ~f:aux pats
+            | Tpat_record (pats, _) ->
+                List.iter ~f:(fun (_, _, pat) -> aux pat) pats
+            | _ -> ()
+          in
+          aux pat
+        in
+        pat_var_iter vb_pat ~f:(fun id ->
+          try
+            let vd = Env.find_value (Pident id) env in
+            test vd.val_uid vb_attributes
+          with Not_found -> ());
         Tast_iterator.default_iterator.value_binding sub vb)
     }
   in
