@@ -5,14 +5,18 @@ undefined
   + merlin binary
     - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
       (#1554, fixes #1553)
+    - Upgrade Merlin from the RC2 to the stable 5.0.0 compiler release (#1559,
+      fixes #1558)
+  + test suite
+    - Add a test for incorrect alert defaults (#1559)
 
 merlin 4.7.1
 ==========
 Thu Dec 13 11:49:42 CEST 2022
 
   + merlin binary
-    - Restore compatibility with the compiler's command line by accepting 
-      the `-safe-string` flag as a no-op instead of rejecting it. (#1544, 
+    - Restore compatibility with the compiler's command line by accepting
+      the `-safe-string` flag as a no-op instead of rejecting it. (#1544,
       fixes #1518)
     - Mark some C variables as unused to remove warnings (#1541, @antalsz)
 
