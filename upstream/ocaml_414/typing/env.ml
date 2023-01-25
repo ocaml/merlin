@@ -104,6 +104,10 @@ let add_label_usage lu usage =
     lu.lu_mutation <- true;
     lu.lu_construct <- true
 
+let is_mutating_label_usage = function
+  | Mutation -> true
+  | (Projection | Construct | Exported_private | Exported) -> false
+
 let label_usages () =
   {lu_projection = false; lu_mutation = false; lu_construct = false}
 
@@ -2219,6 +2223,14 @@ and add_cltype ?shape id ty env =
 let add_module ?arg ?shape id presence mty env =
   add_module_declaration ~check:false ?arg ?shape id presence (md mty) env
 
+let add_module_lazy ~update_summary id presence mty env =
+  let md = Subst.Lazy.{mdl_type = mty;
+                       mdl_attributes = [];
+                       mdl_loc = Location.none;
+                       mdl_uid = Uid.internal_not_actually_unique}
+  in
+  add_module_declaration_lazy ~update_summary id presence md env
+
 let add_local_type path info env =
   { env with
     local_constraints = Path.Map.add path info env.local_constraints }
@@ -2723,7 +2735,10 @@ let use_cltype ~use ~loc path desc =
 let use_label ~use ~loc usage env lbl =
   if use then begin
     mark_label_description_used usage env lbl;
-    Builtin_attributes.check_alerts loc lbl.lbl_attributes lbl.lbl_name
+    Builtin_attributes.check_alerts loc lbl.lbl_attributes lbl.lbl_name;
+    if is_mutating_label_usage usage then
+      Builtin_attributes.check_deprecated_mutable loc lbl.lbl_attributes
+        lbl.lbl_name
   end
 
 let use_constructor_desc ~use ~loc usage env cstr =
