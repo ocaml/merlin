@@ -29,14 +29,13 @@
     }
   }
 
-FIXME: it would be more useful to traverse the alias and jump to 2:2
   $ $MERLIN single locate -look-for mli -position 11:10 \
   > -filename ./main.ml < ./main.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
-      "line": 10,
-      "col": 0
+      "line": 2,
+      "col": 2
     }
   }
   $ $MERLIN single locate -look-for ml -position 2:10 \
@@ -49,13 +48,12 @@ FIXME: it would be more useful to traverse the alias and jump to 2:2
     }
   }
 
-FIXME: it would be more useful to traverse the alias and jump to main 2:2
   $ $MERLIN single locate -look-for mli -position 2:10 \
   > -filename ./other.ml < ./other.ml | jq '.value'
   {
-    "file": "$TESTCASE_ROOT/other.ml",
+    "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
-      "line": 1,
-      "col": 0
+      "line": 2,
+      "col": 2
     }
   }

@@ -310,6 +310,16 @@ let load_cmt ~config comp_unit ml_or_mli =
       Ok (source_file, cmt_infos)
   | None -> Error ()
 
+let find_declaration_uid ~env ~decl_uid path =
+  let rec non_alias_declaration_uid path =
+    let md = Env.find_module path env in
+    match md.md_type with
+    | Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole -> md.md_uid
+    | Mty_alias path -> non_alias_declaration_uid path
+  in
+  try non_alias_declaration_uid path
+with Not_found -> decl_uid
+
 let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
   let module Shape_reduce =
     Shape.Make_reduce (struct
@@ -333,7 +343,7 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
     end)
   in
   match ml_or_mli with
-  | `MLI -> Some decl_uid
+  | `MLI -> Some (find_declaration_uid ~decl_uid ~env path)
   | `ML ->
     let shape = Env.shape_of_path ~namespace:ns env path in
     log ~title:"shape_of_path" "initial: %a"
