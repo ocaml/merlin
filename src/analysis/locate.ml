@@ -310,7 +310,7 @@ let load_cmt ~config comp_unit ml_or_mli =
       Ok (source_file, cmt_infos)
   | None -> Error ()
 
-let find_declaration_uid ~env ~fallback_uid path =
+let scrape_alias ~env ~fallback_uid path =
   let rec non_alias_declaration_uid ~fallback_uid path =
     match Env.find_module path env with
     | { md_type = Mty_alias path; md_uid = fallback_uid; _ } ->
@@ -344,7 +344,7 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
     end)
   in
   match ml_or_mli with
-  | `MLI -> Some (find_declaration_uid ~fallback_uid:decl_uid ~env path)
+  | `MLI -> Some (scrape_alias ~fallback_uid:decl_uid ~env path)
   | `ML ->
     let shape = Env.shape_of_path ~namespace:ns env path in
     log ~title:"shape_of_path" "initial: %a"
