@@ -310,15 +310,16 @@ let load_cmt ~config comp_unit ml_or_mli =
       Ok (source_file, cmt_infos)
   | None -> Error ()
 
-let find_declaration_uid ~env ~decl_uid path =
-  let rec non_alias_declaration_uid path =
-    let md = Env.find_module path env in
-    match md.md_type with
-    | Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole -> md.md_uid
-    | Mty_alias path -> non_alias_declaration_uid path
+let find_declaration_uid ~env ~fallback_uid path =
+  let rec non_alias_declaration_uid ~fallback_uid path =
+    match Env.find_module path env with
+    | { md_type = Mty_alias path; md_uid = fallback_uid; _ } ->
+        non_alias_declaration_uid ~fallback_uid path
+    | { md_type = Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole;
+        md_uid; _ }-> md_uid
+    | exception Not_found -> fallback_uid
   in
-  try non_alias_declaration_uid path
-with Not_found -> decl_uid
+  non_alias_declaration_uid ~fallback_uid path
 
 let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
   let module Shape_reduce =
@@ -343,7 +344,7 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
     end)
   in
   match ml_or_mli with
-  | `MLI -> Some (find_declaration_uid ~decl_uid ~env path)
+  | `MLI -> Some (find_declaration_uid ~fallback_uid:decl_uid ~env path)
   | `ML ->
     let shape = Env.shape_of_path ~namespace:ns env path in
     log ~title:"shape_of_path" "initial: %a"
