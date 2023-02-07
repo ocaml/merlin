@@ -11,49 +11,43 @@
   > EOF
 
 On `let |y = x.kind`
-Verbosity 0 should stop at Kind.t
+Verbosity 0 stops at Kind.t
   $ $MERLIN single type-enclosing -position 8:4 -verbosity 0 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
   "Kind.t"
 
 On `let |y = x.kind`
-Verbosity 1 should show the actual type definition of Kind.t
+Verbosity 1 shows the actual type definition of Kind.t
   $ $MERLIN single type-enclosing -position 8:4 -verbosity 1 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
   "type t = A | B"
 
 On `let y = x.k|ind`
-Verbosity 0 should stop at Kind.t
   $ $MERLIN single type-enclosing -position 8:11 -verbosity 0 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
   "Kind.t"
 
 On `let y = x.k|ind`
-FIXME Verbosity 1 should show the actual type definition of Kind.t
   $ $MERLIN single type-enclosing -position 8:11 -verbosity 1 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
-  "Kind.t"
+  "type t = A | B"
 
 On `let z = { kind = B }.k|ind`
-Verbosity 0 should stop at Kind.t
   $ $MERLIN single type-enclosing -position 9:22 -verbosity 0 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
   "Kind.t"
 
 On `let z = { kind = B }.k|ind`
-Verbosity 1 should show the actual type definition of Kind.t
   $ $MERLIN single type-enclosing -position 9:22 -verbosity 1 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
   "type t = A | B"
 
 On `let x = { k|ind = A }`
-Verbosity 0 should stop at Kind.t
   $ $MERLIN single type-enclosing -position 7:12 -verbosity 0 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
   "Kind.t"
 
 On `let x = { k|ind = A }`
-FIXME Verbosity 1 should show the actual type definition of Kind.t
   $ $MERLIN single type-enclosing -position 7:12 -verbosity 1 \
   > -filename ./main.ml < ./main.ml | tr '\r\n' ' ' | jq ".value[0].type"
-  "Kind.t"
+  "type t = A | B"
