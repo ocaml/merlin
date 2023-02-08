@@ -8,6 +8,8 @@ unreleased
       fixes #1564)
     - Restore compatibility with some OCaml compiler's debug flags that were
       incorrectly rejected by Merlin. (#1556)
+    - Traverse aliases when jumping to declaration. This matches
+      jump-to-definition'q behavior (#1563)
 
 merlin 4.7
 ==========
