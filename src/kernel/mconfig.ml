@@ -135,20 +135,20 @@ module Verbosity = struct
 
   let default = Lvl 0
 
-  let to_int t ~for_smart = 
-    match t with 
+  let to_int t ~for_smart =
+    match t with
     | Smart -> for_smart
     | Lvl v -> v
 
   let param_spec = "\"smart\" | <integer>"
 
-  let of_string = function 
-    | "smart" -> Smart 
+  let of_string = function
+    | "smart" -> Smart
     | maybe_int ->
       try Lvl (int_of_string maybe_int)
       with _ -> invalid_arg ("argument should be: " ^ param_spec)
 
-  let to_string = function 
+  let to_string = function
     | Smart -> "smart"
     | Lvl v -> "lvl " ^ (string_of_int v)
 
@@ -368,7 +368,7 @@ let query_flags = [
     "-verbosity",
     Marg.param Verbosity.param_spec (fun verbosity query ->
         let verbosity =
-          Verbosity.of_string verbosity        
+          Verbosity.of_string verbosity
         in
         {query with verbosity}),
     "\"smart\" | <integer> Verbosity determines the number of \
@@ -392,7 +392,7 @@ let ocaml_ignored_flags = [
   "-c"; "-compact"; "-compat-32"; "-config"; "-custom"; "-dalloc";
   "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
   "-dflambda-no-invariants"; "-dflambda-verbose"; "-dinstr"; "-dinterf";
-  "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer";
+  "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer"; "-dshape";
   "-drawclambda"; "-drawflambda"; "-drawlambda"; "-dreload"; "-dscheduling";
   "-dsel"; "-dsource"; "-dspill"; "-dsplit"; "-dstartup"; "-dtimings";
   "-dtypedtree"; "-dtypes"; "-dump-pass"; "-fno-PIC"; "-fPIC"; "-g"; "-i";
@@ -415,7 +415,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style";
+  "-error-style"; "-dump-dir";
 ]
 
 let ocaml_warnings_spec ~error =
