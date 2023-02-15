@@ -693,21 +693,6 @@ FIXME
         "valid": true,
         "message": "Unbound module Lsit
   Hint: Did you mean List?"
-      },
-      {
-        "start": {
-          "line": 9,
-          "col": 2
-        },
-        "end": {
-          "line": 9,
-          "col": 5
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "Unbound value map
-  Hint: Did you mean max?"
       }
     ],
     "notifications": []

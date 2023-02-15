@@ -4074,8 +4074,10 @@ and type_expect_
       | exception exn ->
         raise_error exn;
         (* We're dropping the local open node and keeping only its body.
-           Seems fine. *)
-        type_expect env e ty_expected_explained
+           We also don't report any error in the body, as there's no way to
+           tell if it is due to the failed open. *)
+        Msupport.catch_errors (Warnings.backup ()) (ref [])
+          (fun () -> type_expect env e ty_expected_explained)
       end
   | Pexp_letop{ let_ = slet; ands = sands; body = sbody } ->
       let rec loop spat_acc ty_acc sands =
