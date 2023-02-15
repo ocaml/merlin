@@ -7,5 +7,8 @@
   > EOF
 
   $ $MERLIN single locate -position 4:2 \
-  > -filename open.ml <open.ml | jq '.value'
-  "Not in environment 'x'"
+  > -filename open.ml <open.ml | jq '.value.pos'
+  {
+    "line": 1,
+    "col": 4
+  }

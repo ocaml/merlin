@@ -4057,19 +4057,26 @@ and type_expect_
         exp_env = env }
   | Pexp_open (od, e) ->
       let tv = newvar () in
-      let (od, _, newenv) = !type_open_decl env od in
-      let exp = type_expect newenv e ty_expected_explained in
-      (* Force the return type to be well-formed in the original
-         environment. *)
-      unify_var newenv tv exp.exp_type;
-      re {
-        exp_desc = Texp_open (od, exp);
-        exp_type = exp.exp_type;
-        exp_loc = loc;
-        exp_extra = [];
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env;
-      }
+      begin match !type_open_decl env od with
+      | (od, _, newenv) ->
+        let exp = type_expect newenv e ty_expected_explained in
+        (* Force the return type to be well-formed in the original
+           environment. *)
+        unify_var newenv tv exp.exp_type;
+        re {
+          exp_desc = Texp_open (od, exp);
+          exp_type = exp.exp_type;
+          exp_loc = loc;
+          exp_extra = [];
+          exp_attributes = sexp.pexp_attributes;
+          exp_env = env;
+        }
+      | exception exn ->
+        raise_error exn;
+        (* We're dropping the local open node and keeping only its body.
+           Seems fine. *)
+        type_expect env e ty_expected_explained
+      end
   | Pexp_letop{ let_ = slet; ands = sands; body = sbody } ->
       let rec loop spat_acc ty_acc sands =
         match sands with
