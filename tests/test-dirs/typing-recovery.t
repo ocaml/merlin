@@ -639,3 +639,61 @@ make sure we also handle that correctly in structures:
   ",
     "notifications": []
   }
+
+# Spurious errors
+
+Sometimes typing recovery consists in dropping intermediate nodes, which could
+generate errors in subtrees. We don't want to tell the user about sub errors,
+since they might go away when fixing the first one.
+
+FIXME
+
+  $ cat >open.ml <<EOF
+  > let x = false
+  > let f () =
+  >   let open Unknown in
+  >   x
+  > ;;
+  > 
+  > let g () =
+  >   let open Lsit in
+  >   map
+  > ;;
+  > EOF
+
+  $ $MERLIN single errors -filename open.ml < open.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 11
+        },
+        "end": {
+          "line": 3,
+          "col": 18
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module Unknown"
+      },
+      {
+        "start": {
+          "line": 8,
+          "col": 11
+        },
+        "end": {
+          "line": 8,
+          "col": 15
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "Unbound module Lsit
+  Hint: Did you mean List?"
+      }
+    ],
+    "notifications": []
+  }

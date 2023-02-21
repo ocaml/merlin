@@ -10,6 +10,10 @@ unreleased
       incorrectly rejected by Merlin. (#1556)
     - Traverse aliases when jumping to declaration. This matches
       jump-to-definition'q behavior (#1563)
+    - Improve locate's behavior in various ill-typed expressions (#1546, fixes
+      #1567 and partially #1543)
+  + test suite
+    - Add multiple tests for locate over ill-typed expressions (#1546)
 
 merlin 4.7
 ==========
