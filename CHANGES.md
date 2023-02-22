@@ -7,6 +7,8 @@ undefined
       (#1554, fixes #1553)
     - Upgrade Merlin from the RC2 to the stable 5.0.0 compiler release (#1559,
       fixes #1558)
+  + editor modes
+    - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
   + test suite
     - Add a test for incorrect alert defaults (#1559)
 
