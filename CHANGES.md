@@ -9,6 +9,9 @@ undefined
       fixes #1558)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
+    - emacs: xref works from context menus; better highlighting of xref matches;
+      xref recognises operators and binding operators at the cursor position;
+      bad locations are filtered out (#1385, fixes #1410, @mattiase)
   + test suite
     - Add a test for incorrect alert defaults (#1559)
 
