@@ -160,6 +160,9 @@ Fri Feb 24 16:55:42 CEST 2023
       locking down current directory (#1569, fixes #1474)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
+    - emacs: xref works from context menus; better highlighting of xref matches;
+      xref recognises operators and binding operators at the cursor position;
+      bad locations are filtered out (#1385, fixes #1410, @mattiase)
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
