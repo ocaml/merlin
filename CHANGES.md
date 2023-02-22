@@ -7,6 +7,8 @@ undefined
       (#1554, fixes #1553)
     - Upgrade Merlin from the RC2 to the stable 5.0.0 compiler release (#1559,
       fixes #1558)
+    - Improve type-enclosing behaviour when used on records' labels (#1565,
+      fixes #1564)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
     - emacs: xref works from context menus; better highlighting of xref matches;

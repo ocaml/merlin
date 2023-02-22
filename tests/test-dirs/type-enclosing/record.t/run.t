@@ -231,7 +231,7 @@ FIXME: The following results are not entirely satisfying (`foo.Bar -> foo` could
         "line": 12,
         "col": 18
       },
-      "type": "unit",
+      "type": "type unit = ()",
       "tail": "no"
     },
     {
