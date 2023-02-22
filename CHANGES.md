@@ -158,6 +158,8 @@ Fri Feb 24 16:55:42 CEST 2023
       fixes #1540)
     - On Windows, change to a harmless directory when launching server to avoid
       locking down current directory (#1569, fixes #1474)
+  + editor modes
+    - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
