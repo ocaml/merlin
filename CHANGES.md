@@ -167,6 +167,7 @@ Fri Feb 24 16:55:42 CEST 2023
     - Add multiple tests for locate over ill-typed expressions (#1546)
     - Add non-regression tests for other fixes in this release
     - Add a test for incorrect alert defaults (#1559)
+    - Add multiple tests for locate over ill-typed expressions (#1546)
 
 merlin 4.7.1
 ============
