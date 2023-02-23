@@ -14,6 +14,8 @@ undefined
       #1518)
     - Traverse aliases when jumping to declaration. This matches
       jump-to-definition's behavior (#1563)
+    - Improve locate's behavior in various ill-typed expressions (#1546, fixes
+      #1567 and partially #1543)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
     - emacs: xref works from context menus; better highlighting of xref matches;
@@ -21,6 +23,7 @@ undefined
       bad locations are filtered out (#1385, fixes #1410, @mattiase)
   + test suite
     - Add a test for incorrect alert defaults (#1559)
+    - Add multiple tests for locate over ill-typed expressions (#1546)
 
 merlin 4.7.1
 ==========

@@ -2261,7 +2261,8 @@ let check_unused ?(lev=get_current_level ()) env expected_ty cases =
           env expected_ty constrs labels spat
       with
         Some pat when refute ->
-          raise (error (spat.ppat_loc, env, Unrefuted_pattern pat))
+          raise_error (error (spat.ppat_loc, env, Unrefuted_pattern pat));
+          Some pat
       | r -> r)
     cases
 
@@ -4073,19 +4074,28 @@ and type_expect_
         exp_env = env }
   | Pexp_open (od, e) ->
       let tv = newvar () in
-      let (od, _, newenv) = !type_open_decl env od in
-      let exp = type_expect newenv e ty_expected_explained in
-      (* Force the return type to be well-formed in the original
-         environment. *)
-      unify_var newenv tv exp.exp_type;
-      re {
-        exp_desc = Texp_open (od, exp);
-        exp_type = exp.exp_type;
-        exp_loc = loc;
-        exp_extra = [];
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env;
-      }
+      begin match !type_open_decl env od with
+      | (od, _, newenv) ->
+        let exp = type_expect newenv e ty_expected_explained in
+        (* Force the return type to be well-formed in the original
+           environment. *)
+        unify_var newenv tv exp.exp_type;
+        re {
+          exp_desc = Texp_open (od, exp);
+          exp_type = exp.exp_type;
+          exp_loc = loc;
+          exp_extra = [];
+          exp_attributes = sexp.pexp_attributes;
+          exp_env = env;
+        }
+      | exception exn ->
+        raise_error exn;
+        (* We're dropping the local open node and keeping only its body.
+           We also don't report any error in the body, as there's no way to
+           tell if it is due to the failed open. *)
+        Msupport.catch_errors (Warnings.backup ()) (ref [])
+          (fun () -> type_expect env e ty_expected_explained)
+      end
   | Pexp_letop{ let_ = slet; ands = sands; body = sbody } ->
       let rec loop spat_acc ty_acc sands =
         match sands with
@@ -4254,7 +4264,10 @@ and type_function ?(in_function : (Location.t * type_expr) option)
             | None   -> Not_a_function(ty_fun, explanation)
           end
       in
-      raise (error(loc_fun, env, err))
+      (* Merlin: we recover with an expected type of 'a -> 'b *)
+      let level = get_level (instance ty_expected) in
+      raise_error (error(loc_fun, env, err));
+      (newvar2 level, newvar2 level)
   in
   let ty_arg =
     if is_optional arg_label then
