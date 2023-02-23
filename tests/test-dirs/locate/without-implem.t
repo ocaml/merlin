@@ -1,5 +1,5 @@
   $ cat >dune-project <<EOF
-  > (lang dune 3.0)
+  > (lang dune 2.0)
   > EOF
 
   $ cat >noimpl.mli <<EOF
