@@ -153,6 +153,7 @@ let run ~new_env wd args =
     Os_ipc.merlin_set_environ env;
     Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
   | None -> () end;
+  let old_wd = Sys.getcwd () in
   let wd_msg = match wd with
     | None -> "No working directory specified"
     | Some wd ->
@@ -163,5 +164,5 @@ let run ~new_env wd args =
     Log_info.get ()
   in
   Logger.with_log_file log_file ~sections @@ fun () ->
-  log ~title:"run" "%s" wd_msg;
+  log ~title:"run" "%s (old wd: %S)" wd_msg old_wd;
   run args
