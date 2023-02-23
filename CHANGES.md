@@ -13,6 +13,8 @@ unreleased
     - Improve locate's behavior in various ill-typed expressions (#1546, fixes
       #1567 and partially #1543)
     - Correctly traverse patterns when looking for docs in the typedtree (#1572)
+    - Get documentation when the declaration or definition is selected (#1542,
+      fixes #1540)
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
 
