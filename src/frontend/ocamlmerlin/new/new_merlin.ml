@@ -147,6 +147,11 @@ let run = function
         prerr_endline ("Exception: " ^ Printexc.to_string exn);
         1
 
+let restore_cwd old f args =
+  match f args with
+  | exception e -> Sys.chdir old; raise e
+  | res -> Sys.chdir old; res
+
 let run ~new_env wd args =
   begin match new_env with
   | Some env ->
@@ -154,11 +159,11 @@ let run ~new_env wd args =
     Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
   | None -> () end;
   let old_wd = Sys.getcwd () in
-  let wd_msg = match wd with
-    | None -> "No working directory specified"
+  let wd_msg, run = match wd with
+    | None -> "No working directory specified", run
     | Some wd ->
-      try Sys.chdir wd; Printf.sprintf "changed directory to %S" wd
-      with _ -> Printf.sprintf "cannot change working directory to %S" wd
+      try Sys.chdir wd; Printf.sprintf "changed directory to %S" wd, restore_cwd old_wd run
+      with _ -> Printf.sprintf "cannot change working directory to %S" wd, run
   in
   let `Log_file_path log_file, `Log_sections sections =
     Log_info.get ()

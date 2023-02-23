@@ -9,5 +9,5 @@ Check that the working directory of the server process is correctly restored.
   $ $MERLIN server errors -filename test.ml < test.ml 2>&1 | grep 'old wd'
   changed directory to "$TESTCASE_ROOT" (old wd: "/")
   $ $MERLIN server errors -filename test.ml < test.ml 2>&1 | grep 'old wd'
-  changed directory to "$TESTCASE_ROOT" (old wd: "$TESTCASE_ROOT")
+  changed directory to "$TESTCASE_ROOT" (old wd: "/")
   $ $MERLIN server stop-server
