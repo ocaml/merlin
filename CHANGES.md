@@ -12,6 +12,8 @@ undefined
     - Restore compatibility with the compiler's command line by accepting the
       `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
       #1518)
+    - Traverse aliases when jumping to declaration. This matches
+      jump-to-definition's behavior (#1563)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
     - emacs: xref works from context menus; better highlighting of xref matches;
