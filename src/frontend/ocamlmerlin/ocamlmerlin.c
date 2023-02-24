@@ -279,7 +279,7 @@ static int connect_socket(const char *socketname, int fail)
 #ifdef _WIN32
 static void start_server(const char *socketname, const char* eventname, const char *exec_path)
 {
-  char buf[PATHSZ];
+  char buf[PATHSZ], lpSystemDir[PATHSZ];
   PROCESS_INFORMATION pi;
   STARTUPINFO si;
   HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, eventname);
@@ -288,9 +288,12 @@ static void start_server(const char *socketname, const char* eventname, const ch
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
+  /* Change to a harmless directory, so that process still works if the current
+     directory is deleted. */
+  GetSystemDirectory(lpSystemDir, PATHSZ);
   /* Note that DETACHED_PROCESS means that the process does not appear in Task Manager
      but the server can still be stopped with ocamlmerlin server stop-server */
-  if (!CreateProcess(exec_path, buf, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi))
+  if (!CreateProcess(exec_path, buf, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, lpSystemDir, &si, &pi))
     failwith_perror("fork");
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);

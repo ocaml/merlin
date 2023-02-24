@@ -15,6 +15,8 @@ unreleased
     - Correctly traverse patterns when looking for docs in the typedtree (#1572)
     - Get documentation when the declaration or definition is selected (#1542,
       fixes #1540)
+    - On Windows, change to a harmless directory when launching server to avoid
+      locking down current directory. (#1569, fixes #1474)
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
 

@@ -147,21 +147,30 @@ let run = function
         prerr_endline ("Exception: " ^ Printexc.to_string exn);
         1
 
+let with_wd ~wd ~old_wd f args =
+  match Sys.chdir wd with
+  | () ->
+    log ~title:"run" "changed directory to %S (old wd: %S)" wd old_wd;
+    Fun.protect ~finally:(fun () -> Sys.chdir old_wd) (fun () -> f args)
+  | exception Sys_error _ ->
+    log ~title:"run" "cannot change working directory to %S (old wd: %S)"
+      wd old_wd;
+    f args
+
 let run ~new_env wd args =
   begin match new_env with
   | Some env ->
     Os_ipc.merlin_set_environ env;
     Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
   | None -> () end;
-  let wd_msg = match wd with
-    | None -> "No working directory specified"
-    | Some wd ->
-      try Sys.chdir wd; Printf.sprintf "changed directory to %S" wd
-      with _ -> Printf.sprintf "cannot change working directory to %S" wd
+  let old_wd = Sys.getcwd () in
+  let run args () = match wd with
+    | Some wd -> with_wd ~wd ~old_wd run args
+    | None ->
+      log ~title:"run" "No working directory specified (old wd: %S)" old_wd;
+      run args
   in
   let `Log_file_path log_file, `Log_sections sections =
     Log_info.get ()
   in
-  Logger.with_log_file log_file ~sections @@ fun () ->
-  log ~title:"run" "%s" wd_msg;
-  run args
+  Logger.with_log_file log_file ~sections @@ run args
