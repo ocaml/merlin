@@ -16,6 +16,7 @@ undefined
       jump-to-definition's behavior (#1563)
     - Improve locate's behavior in various ill-typed expressions (#1546, fixes
       #1567 and partially #1543)
+    - Correctly traverse patterns when looking for docs in the typedtree (#1572)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
     - emacs: xref works from context menus; better highlighting of xref matches;
