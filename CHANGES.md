@@ -12,6 +12,7 @@ unreleased
       jump-to-definition'q behavior (#1563)
     - Improve locate's behavior in various ill-typed expressions (#1546, fixes
       #1567 and partially #1543)
+    - Correctly traverse patterns when looking for docs in the typedtree (#1572)
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
 
