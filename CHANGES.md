@@ -1,6 +1,6 @@
-merlin 4.7.2
-============
-undefined
+merlin 4.8
+==========
+Fri Feb 24 16:55:42 CEST 2023
 
   + merlin binary
     - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
@@ -29,6 +29,7 @@ undefined
   + test suite
     - Add a test for incorrect alert defaults (#1559)
     - Add multiple tests for locate over ill-typed expressions (#1546)
+    - Add non-regression tests for other fixes in this release
 
 merlin 4.7.1
 ==========
