@@ -1,24 +1,25 @@
 merlin 4.8
 ==========
-unreleased
+Fri Feb 24 16:55:42 CEST 2023
 
   + merlin binary
-    - Update internal typer to match OCaml 4.14.1 release. (#1557)
+    - Update internal typer to match OCaml 4.14.1 release (#1557)
     - Improve type-enclosing behaviour when used on records' labels (#1565,
       fixes #1564)
     - Restore compatibility with some OCaml compiler's debug flags that were
-      incorrectly rejected by Merlin. (#1556)
+      incorrectly rejected by Merlin (#1556)
     - Traverse aliases when jumping to declaration. This matches
-      jump-to-definition'q behavior (#1563)
+      jump-to-definition's behavior (#1563)
     - Improve locate's behavior in various ill-typed expressions (#1546, fixes
       #1567 and partially #1543)
     - Correctly traverse patterns when looking for docs in the typedtree (#1572)
     - Get documentation when the declaration or definition is selected (#1542,
       fixes #1540)
     - On Windows, change to a harmless directory when launching server to avoid
-      locking down current directory. (#1569, fixes #1474)
+      locking down current directory (#1569, fixes #1474)
   + test suite
     - Add multiple tests for locate over ill-typed expressions (#1546)
+    - Add non-regression tests for other fixes in this release
 
 merlin 4.7
 ==========
