@@ -147,8 +147,9 @@ Fri Feb 24 16:55:42 CEST 2023
       fixes #1558)
     - Improve type-enclosing behaviour when used on records' labels (#1565,
       fixes #1564)
-    - Restore compatibility with some OCaml compiler's debug flags that were
-      incorrectly rejected by Merlin (#1556)
+    - Restore compatibility with the compiler's command line by accepting the
+      `-safe-string` flag as a no-op instead of rejecting it (#1544, fixes
+      #1518)
     - Traverse aliases when jumping to declaration. This matches
       jump-to-definition's behavior (#1563)
     - Improve locate's behavior in various ill-typed expressions (#1546, fixes
