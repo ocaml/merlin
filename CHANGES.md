@@ -1,14 +1,35 @@
-merlin 4.7.2
-============
-undefined
+merlin 4.8
+==========
+Fri Feb 24 16:55:42 CEST 2023
 
   + merlin binary
     - Recognize OCaml 5.0 cmi magic number in compiler version mismatch message
       (#1554, fixes #1553)
     - Upgrade Merlin from the RC2 to the stable 5.0.0 compiler release (#1559,
       fixes #1558)
+    - Improve type-enclosing behaviour when used on records' labels (#1565,
+      fixes #1564)
+    - Restore compatibility with the compiler's command line by accepting the
+      `-safe-string` flag as a no-op instead of rejecting it (#1544, fixes
+      #1518)
+    - Traverse aliases when jumping to declaration. This matches
+      jump-to-definition's behavior (#1563)
+    - Improve locate's behavior in various ill-typed expressions (#1546, fixes
+      #1567 and partially #1543)
+    - Correctly traverse patterns when looking for docs in the typedtree (#1572)
+    - Get documentation when the declaration or definition is selected (#1542,
+      fixes #1540)
+    - On Windows, change to a harmless directory when launching server to avoid
+      locking down current directory (#1569, fixes #1474)
+  + editor modes
+    - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
+    - emacs: xref works from context menus; better highlighting of xref matches;
+      xref recognises operators and binding operators at the cursor position;
+      bad locations are filtered out (#1385, fixes #1410, @mattiase)
   + test suite
     - Add a test for incorrect alert defaults (#1559)
+    - Add multiple tests for locate over ill-typed expressions (#1546)
+    - Add non-regression tests for other fixes in this release
 
 merlin 4.7.1
 ==========

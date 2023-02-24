@@ -390,7 +390,7 @@ let ocaml_ignored_flags = [
   "-c"; "-compact"; "-compat-32"; "-config"; "-custom"; "-dalloc";
   "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
   "-dflambda-no-invariants"; "-dflambda-verbose"; "-dinstr"; "-dinterf";
-  "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer";
+  "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer"; "-dshape";
   "-drawclambda"; "-drawflambda"; "-drawlambda"; "-dreload"; "-dscheduling";
   "-dsel"; "-dsource"; "-dspill"; "-dsplit"; "-dstartup"; "-dtimings";
   "-dtypedtree"; "-dtypes"; "-dump-pass"; "-fno-PIC"; "-fPIC"; "-g"; "-i";
@@ -413,7 +413,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style";
+  "-error-style"; "-dump-dir";
 ]
 
 let ocaml_warnings_spec ~error =

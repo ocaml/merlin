@@ -102,6 +102,11 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
         let ppf, to_string = Format.to_string () in
         Type_utils.print_constr ~verbosity env ppf cd;
         Some (loc, String (to_string ()), `No)
+      | Some (Context.Label { lbl_name; lbl_arg; _ }) ->
+        log ~title:"from_reconstructed" "ctx: label %s" lbl_name;
+        let ppf, to_string = Format.to_string () in
+        Type_utils.print_type_with_decl ~verbosity env ppf lbl_arg;
+        Some (loc, String (to_string ()), `No)
       | Some Context.Constant -> None
       | _ ->
         let context = Option.value ~default:Context.Expr context in

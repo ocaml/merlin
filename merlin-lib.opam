@@ -13,9 +13,9 @@ depends: [
   "ocaml" {>= "5.0" & < "5.1"}
   "dune" {>= "2.9.0"}
   "csexp" {>= "1.5.1"}
-  "menhir" {dev}
-  "menhirLib" {dev}
-  "menhirSdk" {dev}
+  "menhir"    {dev & >= "20201216"}
+  "menhirLib" {dev & >= "20201216"}
+  "menhirSdk" {dev & >= "20201216"}
 ]
 synopsis:
   "Merlin's libraries"
