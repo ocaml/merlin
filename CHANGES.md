@@ -10,7 +10,7 @@ Fri Feb 24 16:55:42 CEST 2023
     - Improve type-enclosing behaviour when used on records' labels (#1565,
       fixes #1564)
     - Restore compatibility with the compiler's command line by accepting the
-      `-safe-string` flag as a no-op instead of rejecting it. (#1544, fixes
+      `-safe-string` flag as a no-op instead of rejecting it (#1544, fixes
       #1518)
     - Traverse aliases when jumping to declaration. This matches
       jump-to-definition's behavior (#1563)
@@ -20,7 +20,7 @@ Fri Feb 24 16:55:42 CEST 2023
     - Get documentation when the declaration or definition is selected (#1542,
       fixes #1540)
     - On Windows, change to a harmless directory when launching server to avoid
-      locking down current directory. (#1569, fixes #1474)
+      locking down current directory (#1569, fixes #1474)
   + editor modes
     - emacs: Fix misuse of `eq` comparison (#1549, @mattiase)
     - emacs: xref works from context menus; better highlighting of xref matches;
