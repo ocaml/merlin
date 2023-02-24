@@ -3,3 +3,8 @@
  (applies_to :whole_subtree)
  (alias all-server-tests)
  (locks merlin_server))
+
+(cram
+ (applies_to chdir_to_root)
+ (enabled_if
+  (<> %{os_type} Win32)))
