@@ -174,14 +174,14 @@ let wrap_string_lexer f state lexbuf =
   state.string_start_loc <- Location.curr lexbuf;
   f state lexbuf >>= fun loc_end ->
   lexbuf.lex_start_p <- state.string_start_loc.Location.loc_start;
-  state.string_start_loc <- Location.none;
   let loc =
     Location.{
       loc_ghost = false;
-      loc_start = state.string_start_loc.Location.loc_start;
+      loc_start = state.string_start_loc.Location.loc_end;
       loc_end;
     }
   in
+  state.string_start_loc <- Location.none;
   return (Buffer.contents state.buffer, loc)
 
 (* to translate escape sequences *)
