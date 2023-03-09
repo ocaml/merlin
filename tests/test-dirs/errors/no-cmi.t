@@ -23,22 +23,7 @@
   libb.cmt
   libb.ml
 
-FIXME: the cmi do exist, there should be no errors
+There should be no errors
   $ cd liba && $MERLIN single errors -filename liba.ml<liba.ml |
   > jq '.value'
-  [
-    {
-      "start": {
-        "line": 1,
-        "col": 14
-      },
-      "end": {
-        "line": 1,
-        "col": 18
-      },
-      "type": "warning",
-      "sub": [],
-      "valid": true,
-      "message": "Warning 49: no cmi file was found in path for module Libb"
-    }
-  ]
+  []
