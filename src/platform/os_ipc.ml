@@ -38,3 +38,9 @@ external merlin_set_environ : string -> unit =
 (* {1 Fixup for Windows process management} *)
 
 external merlin_dont_inherit_stdio : bool -> unit = "ml_merlin_dont_inherit_stdio"
+
+external ml_scan_roots : unit -> unit = "ml_scan_roots"
+
+let () =
+  Sys.set_signal Sys.sigusr1
+    (Sys.Signal_handle (fun _ -> ml_scan_roots ()))
