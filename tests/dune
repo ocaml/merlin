@@ -12,3 +12,7 @@
   %{bin:ocamlmerlin-server}
   %{bin:ocamlmerlin}
   %{bin:dot-merlin-reader}))
+
+(cram
+ (applies_to with-ppx)
+ (deps (package ppxlib)))
