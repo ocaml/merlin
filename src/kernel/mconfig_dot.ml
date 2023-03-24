@@ -279,12 +279,11 @@ let get_config { workdir; process_dir; configurator } path_abs =
       workdir
   in
   let query path (p : Configurator.Process.t) =
+    let open Merlin_dot_protocol.Blocking in
     log_query path;
-    Merlin_dot_protocol.Commands.send_file
-      ~out_channel:p.stdin
-      path;
+    Commands.send_file p.stdin path;
     flush p.stdin;
-    Merlin_dot_protocol.read ~in_channel:p.stdout
+    read p.stdout
   in
   try
     let p =
@@ -327,8 +326,8 @@ let get_config { workdir; process_dir; configurator } path_abs =
         prepend_config ~dir:workdir configurator directives empty_config
       in
       postprocess_config cfg, failures
-    | Error (Merlin_dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
-    | Error (Merlin_dot_protocol.Csexp_parse_error _) -> raise End_of_input
+    | Error (Merlin_dot_protocol.Blocking.Unexpected_output msg) -> empty_config, [ msg ]
+    | Error (Merlin_dot_protocol.Blocking.Csexp_parse_error _) -> raise End_of_input
   with
     | Process_exited ->
       (* This can happen

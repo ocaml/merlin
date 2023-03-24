@@ -127,40 +127,31 @@ module Sexp = struct
     List (List.map ~f directives)
 end
 
-module Commands = struct
-  type t = File of string | Halt | Unknown
+module type S = sig
+  type 'a io
+  type in_chan
+  type out_chan
 
-  let read_input in_channel =
-    let open Sexp in
-    match Csexp.input in_channel with
-    | Ok (List [Atom "File"; Atom path]) -> File path
-    | Ok (Atom "Halt") -> Halt
-    | Ok _ -> Unknown
-    | Error _msg -> Halt
-
-  let send_file ~out_channel path =
-    Sexp.(List [Atom "File"; Atom path])
-    |> Csexp.to_channel out_channel
-end
-
-type read_error =
+  type read_error =
   | Unexpected_output of string
   | Csexp_parse_error of string
 
-let read ~in_channel =
-  match Csexp.input in_channel with
-  | Ok (Sexp.List directives) ->
-      Ok (List.map directives ~f:Sexp.to_directive)
-  | Ok sexp ->
-    let msg = Printf.sprintf
-      "A list of directives was expected, instead got: \"%s\""
-      (Sexp.to_string sexp)
-    in
-    Error (Unexpected_output msg)
-  | Error msg -> Error (Csexp_parse_error msg)
+  (** [read] reads one csexp from the channel and returns the list of
+      directives it represents *)
+  val read :
+    in_chan -> (directive list, read_error) Merlin_utils.Std.Result.t io
 
-let write ~out_channel (directives : directive list) =
-  directives |> Sexp.from_directives |> Csexp.to_channel out_channel
+  val write : out_chan -> directive list -> unit io
+
+  module Commands : sig
+    type t = File of string | Halt | Unknown
+    val read_input : in_chan -> t io
+
+    val send_file : out_chan -> string -> unit io
+
+    val halt : out_chan -> unit io
+  end
+end
 
 module Make (IO : sig
   type 'a t
@@ -169,32 +160,66 @@ module Make (IO : sig
     val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   end
 end) (Chan : sig
-  type t
+  type in_chan
+  type out_chan
 
-  val read : t -> Csexp.t option IO.t
+  val read : in_chan -> (Csexp.t, string) result IO.t
 
-  val write : t -> Csexp.t -> unit IO.t
-end) = struct
+  val write : out_chan -> Csexp.t -> unit IO.t
+end) =
+struct
+  type 'a io = 'a IO.t
+  type in_chan = Chan.in_chan
+  type out_chan = Chan.out_chan
+
+  type read_error =
+  | Unexpected_output of string
+  | Csexp_parse_error of string
+
+  module Commands = struct
+    type t = File of string | Halt | Unknown
+
+    let read_input chan =
+      let open Sexp in
+      let open IO.O in
+      let+ input = Chan.read chan in
+      match input with
+      | Ok (List [Atom "File"; Atom path]) -> File path
+      | Ok (Atom "Halt") -> Halt
+      | Ok _ -> Unknown
+      | Error _ -> Halt
+
+    let send_file chan path =
+      Chan.write chan Sexp.(List [Atom "File"; Atom path])
+
+    let halt chan = Chan.write chan (Sexp.Atom "Halt")
+  end
+
   let read chan =
     let open IO.O in
     let+ res = Chan.read chan in
     match res with
-    | None ->
-        Error (Unexpected_output "Eof")
-    | Some (Sexp.List directives) ->
-        Ok (List.map directives ~f:Sexp.to_directive)
-    | Some sexp ->
-      let msg = Printf.sprintf
-        "A list of directives was expected, instead got: \"%s\""
-        (Sexp.to_string sexp)
+    | Ok (Sexp.List directives) -> Ok (List.map directives ~f:Sexp.to_directive)
+    | Ok sexp ->
+      let msg =
+        Printf.sprintf "A list of directives was expected, instead got: \"%s\""
+          (Sexp.to_string sexp)
       in
       Error (Unexpected_output msg)
+    | Error msg -> Error (Csexp_parse_error msg)
 
-  module Commands = struct
-    let send_file chan path =
-      Chan.write chan Sexp.(List [Atom "File"; Atom path])
-
-    let halt chan =
-      Chan.write chan (Sexp.Atom "Halt")
-  end
+  let write out_chan (directives : directive list) =
+    directives |> Sexp.from_directives |> Chan.write out_chan
 end
+
+module Blocking =
+  Make (struct
+      type 'a t = 'a
+      module O = struct let ( let+ ) x f = f x end
+    end)
+    (struct
+      type in_chan = in_channel
+      type out_chan = out_channel
+      let read = Csexp.input
+      let write = Csexp.to_channel
+    end)
