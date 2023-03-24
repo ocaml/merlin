@@ -19,8 +19,7 @@ let with_include_dir path f =
   restore ();
   result
 
-
-let rewrite cfg parsetree =
+let rewrite parsetree cfg =
   let ppx = cfg.ocaml.ppx in
   (* add include path attribute to the parsetree *)
   with_include_dir (Mconfig.build_path cfg) @@ fun () ->

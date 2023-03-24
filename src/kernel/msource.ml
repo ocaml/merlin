@@ -7,6 +7,13 @@ type t = {
   text: string;
 }
 
+module Digest = struct
+  type t = Digest.t
+
+  let make { text } = Digest.string text
+  let equal = Digest.equal
+end
+
 let dump t = `Assoc [
     "text"     , `String t.text;
   ]
