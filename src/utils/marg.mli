@@ -1,14 +1,14 @@
 (** {0 Argument parsing library which fold over arguments}
 
     Specifications of arguments is split in two passes:
+
     - [_ table] for parsing global arguments (compiler flags, merlin
       configuration)
-    - a (string * _ t) for parsing command local arguments
-*)
+    - a (string * _ t) for parsing command local arguments *)
 
-(** Action associated to a flag updating a state of type 'acc.
-    It takes a list of arguments and either succeeds returning untouched
-    arguments or fails raising an exception. *)
+(** Action associated to a flag updating a state of type 'acc. It takes a list
+    of arguments and either succeeds returning untouched arguments or fails
+    raising an exception. *)
 type 'acc t = string list -> 'acc -> string list * 'acc
 
 (** A table mapping a flag to the corresponding action *)
@@ -35,22 +35,27 @@ val param_ignore : 'acc t
 
 type docstring = string
 
-type 'a spec = (string * docstring * 'a t)
+type 'a spec = string * docstring * 'a t
 
-(** Consume at most one flag from the list, returning updated state or
-    [None] in case of failure.
-    Warning function is called with an error message in case of incorrect
-    use.  *)
+(** Consume at most one flag from the list, returning updated state or [None] in
+    case of failure. Warning function is called with an error message in case of
+    incorrect use. *)
 val parse_one :
   warning:(string -> unit) ->
-  'global table -> 'local spec list ->
-  string list -> 'global -> 'local ->
+  'global table ->
+  'local spec list ->
+  string list ->
+  'global ->
+  'local ->
   (string list * 'global * 'local) option
 
 (** Consume all arguments from the input list, calling warning for incorrect
     ones and resuming parsing after. *)
 val parse_all :
   warning:(string -> unit) ->
-  'global table -> 'local spec list ->
-  string list -> 'global -> 'local ->
+  'global table ->
+  'local spec list ->
+  string list ->
+  'global ->
+  'local ->
   'global * 'local

@@ -1,6 +1,6 @@
 module Namespace : sig
-  type t = [
-    | `Vals
+  type t =
+    [ `Vals
     | `Type
     | `Constr
     | `Mod
@@ -8,24 +8,21 @@ module Namespace : sig
     | `Functor
     | `Labels
     | `Unknown
-    | `Apply
-  ]
+    | `Apply ]
 
   val to_string : t -> string
 end
 
 module Id : sig
-  type t = private
-    | Id of Ident.t
-    | String of string
+  type t = private Id of Ident.t | String of string
 
   val name : t -> string
 end
 
-type t (* = private elt list *)
-and elt = private
-  | Ident of Id.t * Namespace.t
-  | Applied_to of t
+type t
+
+(* = private elt list *)
+and elt = private Ident of Id.t * Namespace.t | Applied_to of t
 
 val to_string : t -> string
 val to_unique_string : t -> string
