@@ -3,5 +3,5 @@
 (using menhir 2.0)
 
 (cram enable)
-(formatting disabled)
+(formatting (enabled_for ocaml))
 (implicit_transitive_deps false)

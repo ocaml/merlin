@@ -1,13 +1,15 @@
 version=0.24.1
-assignment-operator=begin-line
-cases-exp-indent=2
+break-cases=fit-or-vertical
+break-struct=natural
 doc-comments=before
+doc-comments-tag-only=fit
 dock-collection-brackets=false
-if-then-else=keyword-first
-module-item-spacing=sparse
-parens-tuple=multi-line-only
-sequence-blank-line=compact
+# Preserve beign/end
+exp-grouping=preserve
+if-then-else=fit-or-vertical
+module-item-spacing=preserve
+parse-docstrings
 space-around-lists=false
+space-around-records=false
 space-around-variants=false
-type-decl=sparse
-wrap-comments=true
+
