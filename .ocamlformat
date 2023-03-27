@@ -9,7 +9,7 @@ dock-collection-brackets=false
 exp-grouping=preserve
 if-then-else=fit-or-vertical
 module-item-spacing=preserve
-parse-docstrings
+parse-docstrings=false
 space-around-lists=false
 space-around-records=false
 space-around-variants=false
