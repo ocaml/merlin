@@ -1,0 +1,13 @@
+version=0.24.1
+assignment-operator=begin-line
+cases-exp-indent=2
+doc-comments=before
+dock-collection-brackets=false
+if-then-else=keyword-first
+module-item-spacing=sparse
+parens-tuple=multi-line-only
+sequence-blank-line=compact
+space-around-lists=false
+space-around-variants=false
+type-decl=sparse
+wrap-comments=true
