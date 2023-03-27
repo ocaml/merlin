@@ -2,6 +2,7 @@ version=0.24.1
 break-cases=fit-or-vertical
 break-struct=natural
 doc-comments=before
+cases-exp-indent=2
 doc-comments-tag-only=fit
 dock-collection-brackets=false
 # Preserve beign/end
