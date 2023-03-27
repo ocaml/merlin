@@ -55,22 +55,22 @@ let explain env (unexpected, startp, endp) popped shifted =
     match top env with
     | None -> return None
     | Some (Element (st, _, startp, endp)) -> (
-        if closing_st st then incr closed;
-        begin
-          match opening_st st with
-          | None -> ()
-          | Some st ->
-              if !closed = 0 && !unclosed = None then
-                unclosed := Some (st, mkloc startp endp)
-              else
-                decr closed
-        end;
-        match Parser_explain.named_item_at (number st) with
-        | name -> return (Some (name, mkloc startp endp))
-        | exception Not_found -> (
-            match pop env with
-            | None -> return None
-            | Some env -> process env))
+      if closing_st st then incr closed;
+      begin
+        match opening_st st with
+        | None -> ()
+        | Some st ->
+          if !closed = 0 && !unclosed = None then
+            unclosed := Some (st, mkloc startp endp)
+          else
+            decr closed
+      end;
+      match Parser_explain.named_item_at (number st) with
+      | name -> return (Some (name, mkloc startp endp))
+      | exception Not_found -> (
+        match pop env with
+        | None -> return None
+        | Some env -> process env))
   in
   process env
 
@@ -96,10 +96,10 @@ let to_error {item; unclosed; location; popped; shifted; unexpected = _} =
     | None -> if popped = "" then "" else ", maybe remove " ^ popped
     | Some (X (T T_EOF)) -> ""
     | Some sym ->
-        if popped = "" then
-          ", expecting " ^ friendly_name sym
-        else
-          ", maybe replace " ^ popped ^ " by " ^ friendly_name sym
+      if popped = "" then
+        ", expecting " ^ friendly_name sym
+      else
+        ", maybe replace " ^ popped ^ " by " ^ friendly_name sym
   in
   let msg = Printf.sprintf "Syntax error%s%s%s" inside after expecting in
   Location.error ~loc:location ~source:Location.Parser msg

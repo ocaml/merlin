@@ -22,11 +22,11 @@ module Server = struct
     match process_request client with
     | code -> close_with code
     | exception Exit ->
-        close_with (-1);
-        raise Exit
+      close_with (-1);
+      raise Exit
     | exception exn ->
-        Logger.log ~section:"server" ~title:"process failed" "%a" Logger.exn exn;
-        close_with (-1)
+      Logger.log ~section:"server" ~title:"process failed" "%a" Logger.exn exn;
+      close_with (-1)
 
   let server_accept merlinid server =
     let rec loop total =
@@ -47,22 +47,22 @@ module Server = struct
   let rec loop merlinid server =
     match server_accept merlinid server with
     | None ->
-        (* Timeout *)
-        ()
+      (* Timeout *)
+      ()
     | Some client ->
-        let continue =
-          match process_client client with
-          | exception Exit -> false
-          | () -> true
-        in
-        if continue then loop merlinid server
+      let continue =
+        match process_client client with
+        | exception Exit -> false
+        | () -> true
+      in
+      if continue then loop merlinid server
 
   let start socket_path socket_fd =
     match Os_ipc.server_setup socket_path socket_fd with
     | None -> Logger.log ~section:"server" ~title:"cannot setup listener" ""
     | Some server ->
-        loop (File_id.get Sys.executable_name) server;
-        Os_ipc.server_close server
+      loop (File_id.get Sys.executable_name) server;
+      Os_ipc.server_close server
 end
 
 let main () =
@@ -73,18 +73,18 @@ let main () =
   | "old-protocol" :: args -> Old_merlin.run args
   | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->
-      Printf.eprintf
-        "Usage: %s <frontend> <arguments...>\n\
-         Select the merlin frontend to execute. Valid values are:\n\n\
-         - 'old-protocol' executes the merlin frontend from previous version.\n\
-        \  It is a top level reading and writing commands in a JSON form.\n\n\
-         - 'single' is a simpler frontend that reads input from stdin,\n\
-        \  processes a single query and outputs result on stdout.\n\n\
-         - 'server' works like 'single', but uses a background process to\n\
-        \  speedup processing.\n\
-         If no frontend is specified, it defaults to 'old-protocol' for\n\
-         compatibility with existing editors.\n"
-        Sys.argv.(0)
+    Printf.eprintf
+      "Usage: %s <frontend> <arguments...>\n\
+       Select the merlin frontend to execute. Valid values are:\n\n\
+       - 'old-protocol' executes the merlin frontend from previous version.\n\
+      \  It is a top level reading and writing commands in a JSON form.\n\n\
+       - 'single' is a simpler frontend that reads input from stdin,\n\
+      \  processes a single query and outputs result on stdout.\n\n\
+       - 'server' works like 'single', but uses a background process to\n\
+      \  speedup processing.\n\
+       If no frontend is specified, it defaults to 'old-protocol' for\n\
+       compatibility with existing editors.\n"
+      Sys.argv.(0)
   | args -> Old_merlin.run args
 
 let () =

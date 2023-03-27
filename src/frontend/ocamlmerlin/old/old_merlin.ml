@@ -61,8 +61,8 @@ let ocamlmerlin_args =
           | "json" -> `Json
           | "sexp" -> `Sexp
           | _ ->
-              prerr_endline "Valid protocols are 'json' and 'sexp'";
-              exit 1) ) ]
+            prerr_endline "Valid protocols are 'json' and 'sexp'";
+            exit 1) ) ]
 
 let signal sg behavior =
   try ignore (Sys.signal sg behavior)
@@ -74,20 +74,20 @@ let rec merlin_loop input output =
   match
     match input () with
     | Some (Old_protocol.Request (context, request)) ->
-        let answer = Old_command.dispatch context request in
-        output ~notifications:(List.rev !notifications)
-          (Old_protocol.Return (request, answer));
-        true
+      let answer = Old_command.dispatch context request in
+      output ~notifications:(List.rev !notifications)
+        (Old_protocol.Return (request, answer));
+      true
     | None -> false
   with
   | exception exn ->
-      let trace =
-        {Logger.section = "backtrace"; msg = Printexc.get_backtrace ()}
-      in
-      output
-        ~notifications:(trace :: List.rev !notifications)
-        (Old_protocol.Exception exn);
-      merlin_loop input output
+    let trace =
+      {Logger.section = "backtrace"; msg = Printexc.get_backtrace ()}
+    in
+    output
+      ~notifications:(trace :: List.rev !notifications)
+      (Old_protocol.Exception exn);
+    merlin_loop input output
   | true -> merlin_loop input output
   | false -> ()
 
@@ -113,9 +113,9 @@ let setup_merlin args =
     match input () with
     | None -> None
     | Some json ->
-        Logger.log ~section:"frontend" ~title:"input" "%a" Logger.json
-          (fun () -> json);
-        Some (Old_IO.request_of_json json)
+      Logger.log ~section:"frontend" ~title:"input" "%a" Logger.json (fun () ->
+          json);
+      Some (Old_IO.request_of_json json)
   in
   let output ~notifications x =
     let json = Old_IO.json_of_response notifications x in

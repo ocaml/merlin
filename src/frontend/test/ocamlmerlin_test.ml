@@ -13,7 +13,7 @@ exception Detail of exn * string
 let () =
   Printexc.register_printer (function
     | Detail (exn, msg) ->
-        Some (Printexc.to_string exn ^ "\nAdditional information:\n" ^ msg)
+      Some (Printexc.to_string exn ^ "\nAdditional information:\n" ^ msg)
     | _ -> None)
 
 let str_match ~re str = Str.string_match (Str.regexp (re ^ "$")) str 0
@@ -134,8 +134,8 @@ let tests =
           (let string_list = function
              | [] -> "[]"
              | comps ->
-                 let comps = List.map ~f:String.escaped comps in
-                 "[\"" ^ String.concat ~sep:"\";\"" comps ^ "\"]"
+               let comps = List.map ~f:String.escaped comps in
+               "[\"" ^ String.concat ~sep:"\";\"" comps ^ "\"]"
            in
            let assert_split i (str, expected) =
              test ("split_command-" ^ string_of_int i) @@ fun () ->
@@ -159,37 +159,37 @@ let failed = ref 0
 let rec run_tests indent = function
   | [] -> ()
   | x :: xs ->
-      run_test indent x;
-      run_tests indent xs
+    run_test indent x;
+    run_tests indent xs
 
 and run_test indent = function
   | Single (name, f) ->
-      Printf.printf "%s%s:\t%!" indent name;
-      begin
-        match f () with
-        | () ->
-            incr passed;
-            Printf.printf "OK\n%!"
-        | exception exn ->
-            let bt = Printexc.get_backtrace () in
-            incr failed;
-            Printf.printf "KO\n%!";
-            Printf.eprintf "%sTest %s failed with exception:\n%s%s\n%!" indent
-              name indent
-              (match exn with
-              | Failure str -> str
-              | exn -> Printexc.to_string exn);
-            begin
-              match Location.error_of_exn exn with
-              | None | Some `Already_displayed -> ()
-              | Some (`Ok {Location.msg; loc}) ->
-                  Printf.eprintf "%sError message:\n%s\n%!" indent msg
-            end;
-            Printf.eprintf "%sBacktrace:\n%s\n%!" indent bt
-      end
+    Printf.printf "%s%s:\t%!" indent name;
+    begin
+      match f () with
+      | () ->
+        incr passed;
+        Printf.printf "OK\n%!"
+      | exception exn ->
+        let bt = Printexc.get_backtrace () in
+        incr failed;
+        Printf.printf "KO\n%!";
+        Printf.eprintf "%sTest %s failed with exception:\n%s%s\n%!" indent name
+          indent
+          (match exn with
+          | Failure str -> str
+          | exn -> Printexc.to_string exn);
+        begin
+          match Location.error_of_exn exn with
+          | None | Some `Already_displayed -> ()
+          | Some (`Ok {Location.msg; loc}) ->
+            Printf.eprintf "%sError message:\n%s\n%!" indent msg
+        end;
+        Printf.eprintf "%sBacktrace:\n%s\n%!" indent bt
+    end
   | Group (name, tests) ->
-      Printf.printf "%s-> %s\n" indent name;
-      run_tests (indent ^ "  ") tests
+    Printf.printf "%s-> %s\n" indent name;
+    run_tests (indent ^ "  ") tests
 
 let () =
   Printexc.record_backtrace true;

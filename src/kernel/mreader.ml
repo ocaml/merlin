@@ -42,10 +42,10 @@ let normal_parse ?for_completion config source =
     match for_completion with
     | None -> (false, lexer)
     | Some pos ->
-        let pos =
-          Msource.get_lexing_pos source ~filename:(Mconfig.filename config) pos
-        in
-        Mreader_lexer.for_completion lexer pos
+      let pos =
+        Msource.get_lexing_pos source ~filename:(Mconfig.filename config) pos
+      in
+      Mreader_lexer.for_completion lexer pos
   in
   let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
   let lexer_keywords = Mreader_lexer.keywords lexer
@@ -71,23 +71,23 @@ let instantiate_reader spec config source =
   match spec with
   | [] -> (lazy None, ignore)
   | name :: args -> (
-      let reader = lazy (Mreader_extend.start name args config source) in
-      ( reader,
-        fun () ->
-          if Lazy.is_val reader then
-            match Lazy.force reader with
-            | None -> ()
-            | Some reader -> Mreader_extend.stop reader ))
+    let reader = lazy (Mreader_extend.start name args config source) in
+    ( reader,
+      fun () ->
+        if Lazy.is_val reader then
+          match Lazy.force reader with
+          | None -> ()
+          | Some reader -> Mreader_extend.stop reader ))
 
 let get_reader config =
   let rec find_reader assocsuffixes =
     match assocsuffixes with
     | [] -> []
     | (suffix, reader) :: t ->
-        if Filename.check_suffix Mconfig.(config.query.filename) suffix then
-          [reader]
-        else
-          find_reader t
+      if Filename.check_suffix Mconfig.(config.query.filename) suffix then
+        [reader]
+      else
+        find_reader t
   in
   match Mconfig.(config.merlin.reader) with
   (* if a reader flag exists then this is explicitly used disregarding suffix association *)
@@ -121,32 +121,32 @@ let try_with_reader config source f =
     match !ambient_reader with
     | Some (reader, reader_spec', source')
       when compare reader_spec reader_spec' = 0 && compare source source' = 0 ->
-        (reader, ignore)
+      (reader, ignore)
     | _ -> instantiate_reader reader_spec config source
   in
   match reader with
   | None ->
-      stop ();
-      None
+    stop ();
+    None
   | Some reader -> Misc.try_finally (fun () -> f reader) ~always:stop
 
 let print_pretty config source tree =
   match try_with_reader config source (Mreader_extend.print_pretty tree) with
   | Some result -> result
   | None ->
-      let ppf, to_string = Std.Format.to_string () in
-      let open Extend_protocol.Reader in
-      begin
-        match tree with
-        | Pretty_case_list x -> Pprintast.case_list ppf x
-        | Pretty_core_type x -> Pprintast.core_type ppf x
-        | Pretty_expression x -> Pprintast.expression ppf x
-        | Pretty_pattern x -> Pprintast.pattern ppf x
-        | Pretty_signature x -> Pprintast.signature ppf x
-        | Pretty_structure x -> Pprintast.structure ppf x
-        | Pretty_toplevel_phrase x -> Pprintast.toplevel_phrase ppf x
-      end;
-      to_string ()
+    let ppf, to_string = Std.Format.to_string () in
+    let open Extend_protocol.Reader in
+    begin
+      match tree with
+      | Pretty_case_list x -> Pprintast.case_list ppf x
+      | Pretty_core_type x -> Pprintast.core_type ppf x
+      | Pretty_expression x -> Pprintast.expression ppf x
+      | Pretty_pattern x -> Pprintast.pattern ppf x
+      | Pretty_signature x -> Pprintast.signature ppf x
+      | Pretty_structure x -> Pprintast.structure ppf x
+      | Pretty_toplevel_phrase x -> Pprintast.toplevel_phrase ppf x
+    end;
+    to_string ()
 
 let default_print_outcome tree =
   Mocaml.default_printer Format.str_formatter tree;
@@ -173,26 +173,26 @@ let reconstruct_identifier config source pos =
 
 let parse ?for_completion config = function
   | source, None -> begin
-      match
-        try_with_reader config source (Mreader_extend.parse ?for_completion)
-      with
-      | Some (`No_labels no_labels_for_completion, parsetree) ->
-          let lexer_errors, parser_errors, comments = ([], [], []) in
-          let lexer_keywords = [] (* TODO? *) in
-          { lexer_keywords;
-            lexer_errors;
-            parser_errors;
-            comments;
-            parsetree;
-            no_labels_for_completion }
-      | None -> normal_parse ?for_completion config source
-    end
-  | _, Some parsetree ->
+    match
+      try_with_reader config source (Mreader_extend.parse ?for_completion)
+    with
+    | Some (`No_labels no_labels_for_completion, parsetree) ->
       let lexer_errors, parser_errors, comments = ([], [], []) in
-      let lexer_keywords = [] in
+      let lexer_keywords = [] (* TODO? *) in
       { lexer_keywords;
         lexer_errors;
         parser_errors;
         comments;
         parsetree;
-        no_labels_for_completion = false }
+        no_labels_for_completion }
+    | None -> normal_parse ?for_completion config source
+  end
+  | _, Some parsetree ->
+    let lexer_errors, parser_errors, comments = ([], [], []) in
+    let lexer_keywords = [] in
+    { lexer_keywords;
+      lexer_errors;
+      parser_errors;
+      comments;
+      parsetree;
+      no_labels_for_completion = false }

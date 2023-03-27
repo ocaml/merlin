@@ -26,10 +26,10 @@ let rewrite cfg parsetree =
   with
   | parsetree -> parsetree
   | exception exn ->
-      log ~title:"rewrite" "failed with %a" Logger.fmt (fun fmt ->
-          match Location.error_of_exn exn with
-          | None | Some `Already_displayed ->
-              Format.fprintf fmt "%s" (Printexc.to_string exn)
-          | Some (`Ok err) -> Location.print_main fmt err);
-      Msupport.raise_error exn;
-      parsetree
+    log ~title:"rewrite" "failed with %a" Logger.fmt (fun fmt ->
+        match Location.error_of_exn exn with
+        | None | Some `Already_displayed ->
+          Format.fprintf fmt "%s" (Printexc.to_string exn)
+        | Some (`Ok err) -> Location.print_main fmt err);
+    Msupport.raise_error exn;
+    parsetree

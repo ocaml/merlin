@@ -24,9 +24,9 @@ exception Fatal_error of string * Printexc.raw_backtrace
 let () =
   Printexc.register_printer (function
     | Fatal_error (msg, bt) ->
-        Some
-          (Printf.sprintf "Fatal error: %s\n%s" msg
-             (Printexc.raw_backtrace_to_string bt))
+      Some
+        (Printf.sprintf "Fatal error: %s\n%s" msg
+           (Printexc.raw_backtrace_to_string bt))
     | _ -> None)
 
 let fatal_error msg = raise (Fatal_error (msg, Printexc.get_callstack 50))
@@ -44,28 +44,28 @@ let fatal_errorf fmt =
 let try_finally ?(always = fun () -> ()) ?(exceptionally = fun () -> ()) work =
   match work () with
   | result -> begin
-      match always () with
-      | () -> result
-      | exception always_exn ->
-          (* raise_with_backtrace is not available before OCaml 4.05 *)
-          (*let always_bt = Printexc.get_raw_backtrace () in*)
-          exceptionally ();
-          (*Printexc.raise_with_backtrace always_exn always_bt*)
-          raise always_exn
-    end
+    match always () with
+    | () -> result
+    | exception always_exn ->
+      (* raise_with_backtrace is not available before OCaml 4.05 *)
+      (*let always_bt = Printexc.get_raw_backtrace () in*)
+      exceptionally ();
+      (*Printexc.raise_with_backtrace always_exn always_bt*)
+      raise always_exn
+  end
   | exception work_exn -> begin
-      (*let work_bt = Printexc.get_raw_backtrace () in*)
-      match always () with
-      | () ->
-          exceptionally ();
-          (*Printexc.raise_with_backtrace work_exn work_bt*)
-          raise work_exn
-      | exception always_exn ->
-          (*let always_bt = Printexc.get_raw_backtrace () in*)
-          exceptionally ();
-          (*Printexc.raise_with_backtrace always_exn always_bt*)
-          raise always_exn
-    end
+    (*let work_bt = Printexc.get_raw_backtrace () in*)
+    match always () with
+    | () ->
+      exceptionally ();
+      (*Printexc.raise_with_backtrace work_exn work_bt*)
+      raise work_exn
+    | exception always_exn ->
+      (*let always_bt = Printexc.get_raw_backtrace () in*)
+      exceptionally ();
+      (*Printexc.raise_with_backtrace always_exn always_bt*)
+      raise always_exn
+  end
 
 let reraise_preserving_backtrace e f =
   let bt = Printexc.get_raw_backtrace () in
@@ -81,11 +81,11 @@ let protect_refs =
     set_refs refs;
     match f () with
     | x ->
-        set_refs backup;
-        x
+      set_refs backup;
+      x
     | exception e ->
-        set_refs backup;
-        raise e
+      set_refs backup;
+      raise e
 
 (* List functions *)
 
@@ -94,8 +94,8 @@ let map_end f l1 l2 = List.map_end ~f l1 l2
 let rec map_left_right f = function
   | [] -> []
   | hd :: tl ->
-      let res = f hd in
-      res :: map_left_right f tl
+    let res = f hd in
+    res :: map_left_right f tl
 
 let for_all2 pred l1 l2 = List.for_all2 ~f:pred l1 l2
 
@@ -107,8 +107,8 @@ let rec split_last = function
   | [] -> assert false
   | [x] -> ([], x)
   | hd :: tl ->
-      let lst, last = split_last tl in
-      (hd :: lst, last)
+    let lst, last = split_last tl in
+    (hd :: lst, last)
 
 (* Options *)
 
@@ -122,23 +122,23 @@ let remove_file filename = try Sys.remove filename with Sys_error _msg -> ()
 let rec split_path path acc =
   match Filename.dirname path with
   | dir when dir = path ->
-      let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
-      let dir =
-        if
-          (not Sys.unix)
-          && String.length dir > 2
-          && is_letter dir.[0]
-          && dir.[1] = ':'
-        then
-          (* We do two things here:
-              - We use an uppercase letter to match Dune's behavior
-              - We also add the separator ousrselves because [Filename.concat]
-              does not if its first argument is of the form ["C:"] *)
-          Printf.sprintf "%c:%s" (Char.uppercase_ascii dir.[0]) Filename.dir_sep
-        else
-          dir
-      in
-      dir :: acc
+    let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
+    let dir =
+      if
+        (not Sys.unix)
+        && String.length dir > 2
+        && is_letter dir.[0]
+        && dir.[1] = ':'
+      then
+        (* We do two things here:
+            - We use an uppercase letter to match Dune's behavior
+            - We also add the separator ousrselves because [Filename.concat]
+            does not if its first argument is of the form ["C:"] *)
+        Printf.sprintf "%c:%s" (Char.uppercase_ascii dir.[0]) Filename.dir_sep
+      else
+        dir
+    in
+    dir :: acc
   | dir -> split_path dir (Filename.basename path :: acc)
 
 (* Deal with case insensitive FS *)
@@ -158,9 +158,9 @@ module Exists_in_directory = File_cache.Make (struct
         match Hashtbl.find cache filename with
         | x -> x
         | exception Not_found ->
-            let exists = Sys.file_exists (Filename.concat dir filename) in
-            Hashtbl.add cache filename exists;
-            exists)
+          let exists = Sys.file_exists (Filename.concat dir filename) in
+          Hashtbl.add cache filename exists;
+          exists)
     else
       fun _ -> false
 end)
@@ -171,28 +171,28 @@ let exact_file_exists ~dirname ~basename =
   let path = Filename.concat dirname basename in
   match fs_exact_case_basename path with
   | None ->
-      let path' = fs_exact_case path in
-      path == path' || (* only on macos *) basename = Filename.basename path'
+    let path' = fs_exact_case path in
+    path == path' || (* only on macos *) basename = Filename.basename path'
   | Some bn ->
-      (* only on windows *)
-      basename = bn
+    (* only on windows *)
+    basename = bn
 
 let canonicalize_filename ?cwd path =
   let parts =
     match split_path path [] with
     | dot :: rest when dot = Filename.current_dir_name ->
-        split_path
-          (match cwd with
-          | None -> Sys.getcwd ()
-          | Some c -> c)
-          rest
+      split_path
+        (match cwd with
+        | None -> Sys.getcwd ()
+        | Some c -> c)
+        rest
     | parts -> parts
   in
   let goup path = function
     | dir when dir = Filename.parent_dir_name -> (
-        match path with
-        | _ :: t -> t
-        | [] -> [])
+      match path with
+      | _ :: t -> t
+      | [] -> [])
     | dir when dir = Filename.current_dir_name -> path
     | dir -> dir :: path
   in
@@ -206,42 +206,42 @@ let canonicalize_filename ?cwd path =
 let rec expand_glob ~filter acc root = function
   | [] -> root :: acc
   | Glob.Wildwild :: _tl ->
-      (* FIXME: why is tl not used? *)
-      let rec append acc root =
-        let items = try Sys.readdir root with Sys_error _ -> [||] in
-        let process acc dir =
-          let filename = Filename.concat root dir in
-          if filter filename then
-            append (filename :: acc) filename
-          else
-            acc
-        in
-        Array.fold_left process (root :: acc) items
-      in
-      append acc root
-  | Glob.Exact component :: tl ->
-      let filename = Filename.concat root component in
-      expand_glob ~filter acc filename tl
-  | pattern :: tl ->
+    (* FIXME: why is tl not used? *)
+    let rec append acc root =
       let items = try Sys.readdir root with Sys_error _ -> [||] in
       let process acc dir =
-        if Glob.match_pattern pattern dir then
-          let root' = Filename.concat root dir in
-          if filter root' then
-            expand_glob ~filter acc root' tl
-          else
-            acc
+        let filename = Filename.concat root dir in
+        if filter filename then
+          append (filename :: acc) filename
         else
           acc
       in
-      Array.fold_left process acc items
+      Array.fold_left process (root :: acc) items
+    in
+    append acc root
+  | Glob.Exact component :: tl ->
+    let filename = Filename.concat root component in
+    expand_glob ~filter acc filename tl
+  | pattern :: tl ->
+    let items = try Sys.readdir root with Sys_error _ -> [||] in
+    let process acc dir =
+      if Glob.match_pattern pattern dir then
+        let root' = Filename.concat root dir in
+        if filter root' then
+          expand_glob ~filter acc root' tl
+        else
+          acc
+      else
+        acc
+    in
+    Array.fold_left process acc items
 
 let expand_glob ?(filter = fun _ -> true) path acc =
   match split_path path [] with
   | [] -> acc
   | root :: subs ->
-      let patterns = List.map ~f:Glob.compile_pattern subs in
-      expand_glob ~filter acc root patterns
+    let patterns = List.map ~f:Glob.compile_pattern subs in
+    expand_glob ~filter acc root patterns
 
 let find_in_path path name =
   canonicalize_filename
@@ -277,11 +277,11 @@ let find_in_path_rel path name =
   let rec try_dir = function
     | [] -> raise Not_found
     | dir :: rem ->
-        let dir = simplify dir in
-        if Exists_in_directory.read dir name then
-          Filename.concat dir name
-        else
-          try_dir rem
+      let dir = simplify dir in
+      if Exists_in_directory.read dir name then
+        Filename.concat dir name
+      else
+        try_dir rem
   in
   try_dir path
 
@@ -389,19 +389,19 @@ let output_to_file_via_temporary ?(mode = [Open_text]) filename fn =
      files are being produced simultaneously in the same directory. *)
   match fn temp_filename oc with
   | res ->
-      close_out oc;
-      begin
-        try
-          Sys.rename temp_filename filename;
-          res
-        with exn ->
-          remove_file temp_filename;
-          raise exn
-      end
+    close_out oc;
+    begin
+      try
+        Sys.rename temp_filename filename;
+        res
+      with exn ->
+        remove_file temp_filename;
+        raise exn
+    end
   | exception exn ->
-      close_out oc;
-      remove_file temp_filename;
-      raise exn
+    close_out oc;
+    remove_file temp_filename;
+    raise exn
 
 (* Reading from a channel *)
 
@@ -473,11 +473,11 @@ let replace_substring ~before ~after str =
   let rec search acc curr =
     match search_substring before str curr with
     | next ->
-        let prefix = String.sub str ~pos:curr ~len:(next - curr) in
-        search (prefix :: acc) (next + String.length before)
+      let prefix = String.sub str ~pos:curr ~len:(next - curr) in
+      search (prefix :: acc) (next + String.length before)
     | exception Not_found ->
-        let suffix = String.sub str ~pos:curr ~len:(String.length str - curr) in
-        List.rev (suffix :: acc)
+      let suffix = String.sub str ~pos:curr ~len:(String.length str - curr) in
+      List.rev (suffix :: acc)
   in
   String.concat ~sep:after (search [] 0)
 
@@ -586,8 +586,8 @@ let file_contents filename =
       match input ic str 0 1024 with
       | 0 -> ()
       | n ->
-          Buffer.add_subbytes buf str 0 n;
-          loop ()
+        Buffer.add_subbytes buf str 0 n;
+        loop ()
     in
     loop ();
     close_in_noerr ic;
@@ -660,13 +660,13 @@ let spellcheck env name =
     match edit_distance target head cutoff with
     | None -> acc
     | Some dist ->
-        let best_choice, best_dist = acc in
-        if dist < best_dist then
-          ([head], dist)
-        else if dist = best_dist then
-          (head :: best_choice, dist)
-        else
-          acc
+      let best_choice, best_dist = acc in
+      if dist < best_dist then
+        ([head], dist)
+      else if dist = best_dist then
+        (head :: best_choice, dist)
+      else
+        acc
   in
   fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
 
@@ -679,11 +679,11 @@ let did_you_mean ppf get_choices =
   match get_choices () with
   | [] -> ()
   | choices ->
-      let rest, last = split_last choices in
-      Format.fprintf ppf "@\nHint: Did you mean %s%s%s?@?"
-        (String.concat ~sep:", " rest)
-        (if rest = [] then "" else " or ")
-        last
+    let rest, last = split_last choices in
+    Format.fprintf ppf "@\nHint: Did you mean %s%s%s?@?"
+      (String.concat ~sep:", " rest)
+      (if rest = [] then "" else " or ")
+      last
 
 let cut_at s c =
   let pos = String.index s c in

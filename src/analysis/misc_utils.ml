@@ -14,8 +14,8 @@ end = struct
     let rec aux acc = function
       | Env.Env_open (s, path) -> aux (path :: acc) s
       | s ->
-          Option.map ~f:(aux acc) (Browse_misc.summary_prev s)
-          |> Option.value ~default:acc
+        Option.map ~f:(aux acc) (Browse_misc.summary_prev s)
+        |> Option.value ~default:acc
     in
     aux [] env
 
@@ -23,7 +23,7 @@ end = struct
 
   let rec to_shortest_lid ~(opens : Path.t list) = function
     | Path.Pdot (path, name) when List.exists ~f:(Path.same path) opens ->
-        Longident.Lident name
+      Longident.Lident name
     | Path.Pdot (path, name) -> Ldot (to_shortest_lid ~opens path, name)
     | Pident ident -> Lident (Ident.name ident)
     | _ -> assert false

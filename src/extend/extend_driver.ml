@@ -30,9 +30,9 @@ let run ?(notify = ignore) ?(debug = ignore) name =
   match Extend_main.Handshake.negotiate_driver name stdout stdin with
   | capabilities -> {name; capabilities; stdin; stdout; pid; notify; debug}
   | exception exn ->
-      close_out_noerr stdin;
-      close_in_noerr stdout;
-      raise exn
+    close_out_noerr stdin;
+    close_in_noerr stdout;
+    raise exn
 
 let stop t =
   close_out_noerr t.stdin;
@@ -51,14 +51,14 @@ let reader t request =
   let rec aux () =
     match input_value t.stdout with
     | P.Notify str ->
-        t.notify str;
-        aux ()
+      t.notify str;
+      aux ()
     | P.Debug str ->
-        t.debug str;
-        aux ()
+      t.debug str;
+      aux ()
     | P.Exception (kind, msg) ->
-        stop t;
-        raise (Extension (t.name, kind, msg))
+      stop t;
+      raise (Extension (t.name, kind, msg))
     | P.Reader_response response -> response
   in
   aux ()

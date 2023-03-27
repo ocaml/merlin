@@ -36,14 +36,14 @@ let print_constructor c =
   match c.cstr_args with
   | [] -> Printtyp.tree_of_type_scheme (dummy_type_scheme (get_desc c.cstr_res))
   | args ->
-      let desc =
-        Tarrow
-          ( Ast_helper.no_label,
-            dummy_type_scheme (Ttuple args),
-            c.cstr_res,
-            commu_ok )
-      in
-      Printtyp.tree_of_type_scheme (dummy_type_scheme desc)
+    let desc =
+      Tarrow
+        ( Ast_helper.no_label,
+          dummy_type_scheme (Ttuple args),
+          c.cstr_res,
+          commu_ok )
+    in
+    Printtyp.tree_of_type_scheme (dummy_type_scheme desc)
 
 let summary_prev = function
   | Env.Env_empty -> None
@@ -74,13 +74,13 @@ let signature_of_env ?(ignore_extensions = true) env =
     | Env_type (_, i, t) -> Some (Sig_type (i, t, Trec_not, Exported))
     (* Texp_first == bluff, FIXME *)
     | Env_extension (_, i, e) -> begin
-        match e.ext_type_path with
-        | Path.Pident id when Ident.name id = "exn" ->
-            Some (Sig_typext (i, e, Text_exception, Exported))
-        | _ -> Some (Sig_typext (i, e, Text_first, Exported))
-      end
+      match e.ext_type_path with
+      | Path.Pident id when Ident.name id = "exn" ->
+        Some (Sig_typext (i, e, Text_exception, Exported))
+      | _ -> Some (Sig_typext (i, e, Text_first, Exported))
+    end
     | Env_module (_, i, pr, m) ->
-        Some (Sig_module (i, pr, m, Trec_not, Exported))
+      Some (Sig_module (i, pr, m, Trec_not, Exported))
     | Env_modtype (_, i, m) -> Some (Sig_modtype (i, m, Exported))
     | Env_class (_, i, c) -> Some (Sig_class (i, c, Trec_not, Exported))
     | Env_cltype (_, i, c) -> Some (Sig_class_type (i, c, Trec_not, Exported))
@@ -103,8 +103,8 @@ let signature_of_env ?(ignore_extensions = true) env =
     match summary_module_ident_opt summary with
     | Some i when ignore_extensions && i = Extension.ident -> ()
     | _ ->
-        Option.iter ~f:append (signature_of_summary summary);
-        Option.iter ~f:aux (summary_prev summary)
+      Option.iter ~f:append (signature_of_summary summary);
+      Option.iter ~f:aux (summary_prev summary)
   in
   aux (Env.summary env);
   (* Since 4.08 one can't simply call [simplify]. *)

@@ -133,8 +133,8 @@ module Verbosity = struct
   let of_string = function
     | "smart" -> Smart
     | maybe_int -> (
-        try Lvl (int_of_string maybe_int)
-        with _ -> invalid_arg ("argument should be: " ^ param_spec))
+      try Lvl (int_of_string maybe_int)
+      with _ -> invalid_arg ("argument should be: " ^ param_spec))
 
   let to_string = function
     | Smart -> "smart"
@@ -176,9 +176,9 @@ let stdlib =
     match config.merlin.stdlib with
     | Some stdlib -> stdlib
     | None -> (
-        match env with
-        | Some stdlib -> stdlib
-        | None -> Standard_library.path)
+      match env with
+      | Some stdlib -> stdlib
+      | None -> Standard_library.path)
 
 let normalize_step t =
   let merlin = t.merlin in
@@ -222,28 +222,28 @@ let get_external_config path t =
   match Mconfig_dot.find_project_context directory with
   | None -> t
   | Some (ctxt, config_path) ->
-      let dot, failures = Mconfig_dot.get_config ctxt path in
-      let merlin = t.merlin in
-      let merlin =
-        { merlin with
-          build_path = dot.build_path @ merlin.build_path;
-          source_path = dot.source_path @ merlin.source_path;
-          cmi_path = dot.cmi_path @ merlin.cmi_path;
-          cmt_path = dot.cmt_path @ merlin.cmt_path;
-          exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-          extensions = dot.extensions @ merlin.extensions;
-          suffixes = dot.suffixes @ merlin.suffixes;
-          stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-          reader =
-            (if dot.reader = [] then
-               merlin.reader
-            else
-              dot.reader);
-          flags_to_apply = dot.flags @ merlin.flags_to_apply;
-          failures = failures @ merlin.failures;
-          config_path = Some config_path }
-      in
-      normalize {t with merlin}
+    let dot, failures = Mconfig_dot.get_config ctxt path in
+    let merlin = t.merlin in
+    let merlin =
+      { merlin with
+        build_path = dot.build_path @ merlin.build_path;
+        source_path = dot.source_path @ merlin.source_path;
+        cmi_path = dot.cmi_path @ merlin.cmi_path;
+        cmt_path = dot.cmt_path @ merlin.cmt_path;
+        exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+        extensions = dot.extensions @ merlin.extensions;
+        suffixes = dot.suffixes @ merlin.suffixes;
+        stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+        reader =
+          (if dot.reader = [] then
+             merlin.reader
+          else
+            dot.reader);
+        flags_to_apply = dot.flags @ merlin.flags_to_apply;
+        failures = failures @ merlin.failures;
+        config_path = Some config_path }
+    in
+    normalize {t with merlin}
 
 let merlin_flags =
   [ ( "-build-path",
@@ -270,9 +270,9 @@ let merlin_flags =
       Marg.param "suffix:reader" (fun assoc_pair merlin ->
           match Misc.rev_string_split ~on:':' assoc_pair with
           | [reader; suffix] ->
-              { merlin with
-                extension_to_reader =
-                  (suffix, reader) :: merlin.extension_to_reader }
+            { merlin with
+              extension_to_reader =
+                (suffix, reader) :: merlin.extension_to_reader }
           | _ -> merlin),
       "Associate suffix with reader" );
     ( "-addsuffix",
@@ -280,7 +280,7 @@ let merlin_flags =
         (fun suffix_pair merlin ->
           match Misc.rev_string_split ~on:':' suffix_pair with
           | [intf; impl] ->
-              {merlin with suffixes = (impl, intf) :: merlin.suffixes}
+            {merlin with suffixes = (impl, intf) :: merlin.suffixes}
           | _ -> merlin),
       "Add a suffix implementation,interface pair" );
     ( "-extension",

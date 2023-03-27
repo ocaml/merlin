@@ -58,14 +58,13 @@ type t = elt list and elt = Ident of Id.t * Namespace.t | Applied_to of t
 let rec to_string ~name = function
   | [] | Applied_to _ :: _ -> invalid_arg "Namespaced_path.to_string"
   | Ident (id, ns) :: rest ->
-      List.fold_left rest
-        ~init:(name id ^ Namespace.to_tag_string ns)
-        ~f:(fun acc elt ->
-          match elt with
-          | Ident (id, ns) ->
-              Printf.sprintf "%s.%s%s" acc (name id)
-                (Namespace.to_tag_string ns)
-          | Applied_to arg -> Printf.sprintf "%s(%s)" acc (to_string ~name arg))
+    List.fold_left rest
+      ~init:(name id ^ Namespace.to_tag_string ns)
+      ~f:(fun acc elt ->
+        match elt with
+        | Ident (id, ns) ->
+          Printf.sprintf "%s.%s%s" acc (name id) (Namespace.to_tag_string ns)
+        | Applied_to arg -> Printf.sprintf "%s(%s)" acc (to_string ~name arg))
 
 let to_unique_string l = to_string ~name:Id.unique_name l
 let to_string l = to_string ~name:Id.name l
@@ -77,8 +76,8 @@ let of_path ~namespace p =
     | Pident id -> Ident (Id.Id id, namespace) :: acc
     | Pdot (p, s) -> aux `Mod (Ident (Id.String s, namespace) :: acc) p
     | Papply (p1, p2) ->
-        let acc = Applied_to (aux `Mod [] p2) :: acc in
-        aux `Mod acc p1
+      let acc = Applied_to (aux `Mod [] p2) :: acc in
+      aux `Mod acc p1
   in
   aux namespace [] p
 
@@ -115,5 +114,5 @@ let rec subst_prefix ~old_prefix ~new_prefix p =
   match (old_prefix, p) with
   | [], _ -> Some (new_prefix @ p)
   | op1 :: ops, elt1 :: p when equal_elt op1 elt1 ->
-      subst_prefix ~old_prefix:ops ~new_prefix p
+    subst_prefix ~old_prefix:ops ~new_prefix p
   | _ -> None

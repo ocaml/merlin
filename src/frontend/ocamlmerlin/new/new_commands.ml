@@ -21,25 +21,25 @@ let marg_position f =
     | "start" -> f `Start
     | "end" -> f `End
     | str -> (
-        match int_of_string str with
-        | n -> f (`Offset n)
-        | exception _ -> (
-            match
-              let offset = String.index str ':' in
-              let line = String.sub str ~pos:0 ~len:offset in
-              let col =
-                String.sub str ~pos:(offset + 1)
-                  ~len:(String.length str - offset - 1)
-              in
-              `Logical (int_of_string line, int_of_string col)
-            with
-            | pos -> f pos
-            | exception _ ->
-                failwithf
-                  "expecting position, got %S. position can be \
-                   start|end|<offset>|<line>:<col>, where offset, line and col \
-                   are numbers, lines are indexed from 1."
-                  str)))
+      match int_of_string str with
+      | n -> f (`Offset n)
+      | exception _ -> (
+        match
+          let offset = String.index str ':' in
+          let line = String.sub str ~pos:0 ~len:offset in
+          let col =
+            String.sub str ~pos:(offset + 1)
+              ~len:(String.length str - offset - 1)
+          in
+          `Logical (int_of_string line, int_of_string col)
+        with
+        | pos -> f pos
+        | exception _ ->
+          failwithf
+            "expecting position, got %S. position can be \
+             start|end|<offset>|<line>:<col>, where offset, line and col are \
+             numbers, lines are indexed from 1."
+            str)))
 
 let marg_completion_kind f =
   Marg.param "completion-kind" (function
@@ -52,18 +52,18 @@ let marg_completion_kind f =
     | "mt" | "modtype" | "module-type" -> f `Modules_type
     | "k" | "kw" | "keyword" -> f `Keywords
     | str ->
-        failwithf
-          "expecting completion kind, got %S. kind can be value, variant, \
-           constructor, label, module or module-type"
-          str)
+      failwithf
+        "expecting completion kind, got %S. kind can be value, variant, \
+         constructor, label, module or module-type"
+        str)
 
 let rec find_command name = function
   | [] -> raise Not_found
   | (Command (name', _, _, _, _) as command) :: xs ->
-      if name = name' then
-        command
-      else
-        find_command name xs
+    if name = name' then
+      command
+    else
+      find_command name xs
 
 let run pipeline query =
   Logger.log ~section:"New_commands" ~title:"run(query)" "%a" Logger.json
@@ -95,7 +95,7 @@ let all_commands =
           | `Offset -1, _ -> failwith "-start <pos> is mandatory"
           | _, `Offset -1 -> failwith "-end <pos> is mandatory"
           | startp, endp ->
-              run buffer (Query_protocol.Case_analysis (startp, endp))
+            run buffer (Query_protocol.Case_analysis (startp, endp))
       end;
     command "holes" ~spec:[]
       ~doc:"Returns the list of the positions of all the holes in the file."
@@ -119,10 +119,10 @@ let all_commands =
             (Marg.param "int" (fun depth (pos, with_values, _depth) ->
                  match int_of_string depth with
                  | depth ->
-                     if depth >= 1 then
-                       (pos, with_values, Some depth)
-                     else
-                       failwith "depth should be a positive integer"
+                   if depth >= 1 then
+                     (pos, with_values, Some depth)
+                   else
+                     failwith "depth should be a positive integer"
                  | exception _ -> failwith "depth should be a positive integer"))
         ]
       ~doc:
@@ -138,8 +138,7 @@ let all_commands =
           match pos with
           | `Offset -1 -> failwith "-position <pos> is mandatory"
           | pos ->
-              run buffer
-                (Query_protocol.Construct (pos, with_values, max_depth))
+            run buffer (Query_protocol.Construct (pos, with_values, max_depth))
       end;
     command "complete-prefix"
       ~spec:
@@ -195,9 +194,9 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer
-                (Query_protocol.Complete_prefix
-                   (txt, pos, List.rev kinds, doc, typ))
+            run buffer
+              (Query_protocol.Complete_prefix
+                 (txt, pos, List.rev kinds, doc, typ))
       end;
     command "document"
       ~doc:
@@ -218,7 +217,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Document (ident, pos))
+            run buffer (Query_protocol.Document (ident, pos))
       end;
     command "enclosing"
       ~spec:
@@ -235,7 +234,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Enclosing pos)
+            run buffer (Query_protocol.Enclosing pos)
       end;
     command "errors"
       ~spec:
@@ -303,8 +302,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer
-                (Query_protocol.Expand_prefix (txt, pos, List.rev kinds, typ))
+            run buffer
+              (Query_protocol.Expand_prefix (txt, pos, List.rev kinds, typ))
       end;
     command "extension-list"
       ~spec:
@@ -315,8 +314,8 @@ let all_commands =
                  | "enabled" -> `Enabled
                  | "disabled" -> `Disabled
                  | _ ->
-                     failwith
-                       "-status should be one of all, disabled or enabled")) ]
+                   failwith "-status should be one of all, disabled or enabled"))
+        ]
       ~doc:
         "List all known / currently enabled / currently disabled extensions as \
          a list of strings."
@@ -357,7 +356,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Jump (target, pos))
+            run buffer (Query_protocol.Jump (target, pos))
       end;
     command "phrase"
       ~spec:
@@ -378,7 +377,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Phrase (target, pos))
+            run buffer (Query_protocol.Phrase (target, pos))
       end;
     command "list-modules"
       ~spec:
@@ -408,8 +407,8 @@ let all_commands =
                  | "mli" | "interface" -> (prefix, pos, `MLI)
                  | "ml" | "implementation" -> (prefix, pos, `ML)
                  | str ->
-                     failwithf "expecting interface or implementation, got %S."
-                       str)) ]
+                   failwithf "expecting interface or implementation, got %S."
+                     str)) ]
       ~doc:
         "Finds the declaration of entity at the specified position, Or \
          referred to by specified string.\n\
@@ -424,7 +423,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Locate (prefix, lookfor, pos))
+            run buffer (Query_protocol.Locate (prefix, lookfor, pos))
       end;
     command "locate-type"
       ~spec:
@@ -436,7 +435,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Locate_type pos)
+            run buffer (Query_protocol.Locate_type pos)
       end;
     command "occurrences"
       ~spec:
@@ -451,7 +450,7 @@ let all_commands =
         fun buffer -> function
           | `None -> failwith "-identifier-at <pos> is mandatory"
           | `Ident_at pos ->
-              run buffer (Query_protocol.Occurrences (`Ident_at pos))
+            run buffer (Query_protocol.Occurrences (`Ident_at pos))
       end;
     command "outline" ~spec:[]
       ~doc:
@@ -491,7 +490,7 @@ let all_commands =
           | None, _ -> failwith "-action is mandatory"
           | _, `None -> failwith "-position is mandatory"
           | Some action, (#Msource.position as pos) ->
-              run buffer (Query_protocol.Refactor_open (action, pos))
+            run buffer (Query_protocol.Refactor_open (action, pos))
       end;
     command "search-by-polarity"
       ~doc:"search-by-polarity -position pos -query ident\n\tTODO"
@@ -506,7 +505,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Polarity_search (query, pos))
+            run buffer (Query_protocol.Polarity_search (query, pos))
       end;
     command "shape"
       ~doc:
@@ -579,16 +578,16 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              let expr =
-                if expr = "" then
-                  None
-                else
-                  let cursor =
-                    if cursor = -1 then String.length expr else cursor
-                  in
-                  Some (expr, cursor)
-              in
-              run buffer (Query_protocol.Type_enclosing (expr, pos, index))
+            let expr =
+              if expr = "" then
+                None
+              else
+                let cursor =
+                  if cursor = -1 then String.length expr else cursor
+                in
+                Some (expr, cursor)
+            in
+            run buffer (Query_protocol.Type_enclosing (expr, pos, index))
       end;
     command "type-expression"
       ~doc:
@@ -605,7 +604,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-              run buffer (Query_protocol.Type_expr (expr, pos))
+            run buffer (Query_protocol.Type_expr (expr, pos))
       end;
     (* Implemented without support from Query_protocol.  This command might be
        refactored if it proves useful for old protocol too. *)

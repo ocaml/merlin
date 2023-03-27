@@ -67,7 +67,7 @@ struct
       | Parser.AboutToReduce _ when not allow_reduction -> `Fail
       | Parser.Accepted v -> `Accept v
       | (Parser.Shifting _ | Parser.AboutToReduce _) as checkpoint ->
-          aux true (Parser.resume checkpoint)
+        aux true (Parser.resume checkpoint)
       | Parser.InputNeeded env as checkpoint -> `Recovered (checkpoint, env)
     in
     aux allow_reduction (Parser.offer (T.inj (T.InputNeeded env)) token)
@@ -76,33 +76,33 @@ struct
     match Parser.top env with
     | None -> col
     | Some (Parser.Element (state, _, pos, _)) ->
-        if Recovery.guide (Parser.incoming_symbol state) then
-          match Parser.pop env with
-          | None -> col
-          | Some env -> follow_guide (snd (Lexing.split_pos pos)) env
-        else
-          col
+      if Recovery.guide (Parser.incoming_symbol state) then
+        match Parser.pop env with
+        | None -> col
+        | Some env -> follow_guide (snd (Lexing.split_pos pos)) env
+      else
+        col
 
   let candidate env =
     let line, min_col, max_col =
       match Parser.top env with
       | None -> (1, 0, 0)
       | Some (Parser.Element (state, _, pos, _)) ->
-          let depth = Recovery.depth.(Parser.number state) in
-          let line, col = Lexing.split_pos pos in
-          if depth = 0 then
-            (line, col, col)
-          else
-            let col' =
-              match Parser.pop_many depth env with
+        let depth = Recovery.depth.(Parser.number state) in
+        let line, col = Lexing.split_pos pos in
+        if depth = 0 then
+          (line, col, col)
+        else
+          let col' =
+            match Parser.pop_many depth env with
+            | None -> max_int
+            | Some env -> (
+              match Parser.top env with
               | None -> max_int
-              | Some env -> (
-                  match Parser.top env with
-                  | None -> max_int
-                  | Some (Parser.Element (_, _, pos, _)) ->
-                      follow_guide (snd (Lexing.split_pos pos)) env)
-            in
-            (line, min col col', max col col')
+              | Some (Parser.Element (_, _, pos, _)) ->
+                follow_guide (snd (Lexing.split_pos pos)) env)
+          in
+          (line, min col col', max col col')
     in
     {line; min_col; max_col; env}
 
@@ -121,18 +121,18 @@ struct
     let rec aux = function
       | [] -> `Fail
       | x :: xs -> (
-          match feed_token ~allow_reduction:true token x.env with
-          | `Fail ->
-              (*if not (is_closed k) then
-                printf k "Couldn't resume %d with %S.\n"
-                  (env_state x.env) (let (t,_,_) = token in Dump.token t);*)
-              aux xs
-          | `Recovered (checkpoint, _) -> `Ok (checkpoint, x.env)
-          | `Accept v -> begin
-              match aux xs with
-              | `Fail -> `Accept v
-              | x -> x
-            end)
+        match feed_token ~allow_reduction:true token x.env with
+        | `Fail ->
+          (*if not (is_closed k) then
+            printf k "Couldn't resume %d with %S.\n"
+              (env_state x.env) (let (t,_,_) = token in Dump.token t);*)
+          aux xs
+        | `Recovered (checkpoint, _) -> `Ok (checkpoint, x.env)
+        | `Accept v -> begin
+          match aux xs with
+          | `Fail -> `Accept v
+          | x -> x
+        end)
     in
     aux recoveries
 
@@ -145,8 +145,8 @@ struct
       else
         match Parser.pop env with
         | None ->
-            assert (n = 1);
-            -1
+          assert (n = 1);
+          -1
         | Some env -> nth_state env (n - 1)
     in
     let st = nth_state env 0 in
@@ -162,61 +162,60 @@ struct
       match Parser.top env with
       | None -> (None, acc)
       | Some (Parser.Element (state, _, _startp, endp)) -> (
-          (*Dump.element k elt;*)
-          log ~title:"decide state" "%d" (Parser.number state);
-          let actions = decide env in
-          let candidate0 = candidate env in
-          let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env =
-            function
-            | Recovery.Abort ->
-                log ~title:"eval Abort" "";
-                raise Not_found
-            | Recovery.R prod ->
-                log ~title:"eval Reduce" "";
-                let prod = Parser.find_production prod in
-                Parser.force_reduction prod env
-            | Recovery.S (Parser.N n as sym) ->
-                let xsym = Parser.X sym in
-                if !shifted = None && not (Recovery.nullable n) then
-                  shifted := Some xsym;
-                log ~title:"eval Shift N" "%a" Dump.symbol xsym;
-                (* FIXME: if this is correct remove the fixme, otherwise use
-                   [startp] *)
-                let loc =
-                  {Location.loc_start = endp; loc_end = endp; loc_ghost = true}
-                in
-                let v = Recovery.default_value loc sym in
-                Parser.feed sym endp v endp env
-            | Recovery.S (Parser.T t as sym) ->
-                let xsym = Parser.X sym in
-                if !shifted = None then shifted := Some xsym;
-                log ~title:"eval Shift T" "%a" Dump.symbol xsym;
-                let loc =
-                  {Location.loc_start = endp; loc_end = endp; loc_ghost = true}
-                in
-                let v = Recovery.default_value loc sym in
-                let token = (Recovery.token_of_terminal t v, endp, endp) in
-                begin
-                  match feed_token ~allow_reduction:true token env with
-                  | `Fail -> assert false
-                  | `Accept v -> raise (E.Result v)
-                  | `Recovered (_, env) -> env
-                end
-            | Recovery.Sub actions ->
-                log ~title:"enter Sub" "";
-                let env = List.fold_left ~f:eval ~init:env actions in
-                log ~title:"leave Sub" "";
-                env
-          in
-          match
-            List.rev_scan_left [] ~f:eval ~init:env actions
-            |> List.map ~f:(fun env -> {candidate0 with env})
-          with
-          | exception Not_found -> (None, acc)
-          | exception E.Result v -> (Some v, acc)
-          | [] -> (None, acc)
-          | candidate :: _ as candidates -> aux (candidates @ acc) candidate.env
-          )
+        (*Dump.element k elt;*)
+        log ~title:"decide state" "%d" (Parser.number state);
+        let actions = decide env in
+        let candidate0 = candidate env in
+        let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env =
+          function
+          | Recovery.Abort ->
+            log ~title:"eval Abort" "";
+            raise Not_found
+          | Recovery.R prod ->
+            log ~title:"eval Reduce" "";
+            let prod = Parser.find_production prod in
+            Parser.force_reduction prod env
+          | Recovery.S (Parser.N n as sym) ->
+            let xsym = Parser.X sym in
+            if !shifted = None && not (Recovery.nullable n) then
+              shifted := Some xsym;
+            log ~title:"eval Shift N" "%a" Dump.symbol xsym;
+            (* FIXME: if this is correct remove the fixme, otherwise use
+               [startp] *)
+            let loc =
+              {Location.loc_start = endp; loc_end = endp; loc_ghost = true}
+            in
+            let v = Recovery.default_value loc sym in
+            Parser.feed sym endp v endp env
+          | Recovery.S (Parser.T t as sym) ->
+            let xsym = Parser.X sym in
+            if !shifted = None then shifted := Some xsym;
+            log ~title:"eval Shift T" "%a" Dump.symbol xsym;
+            let loc =
+              {Location.loc_start = endp; loc_end = endp; loc_ghost = true}
+            in
+            let v = Recovery.default_value loc sym in
+            let token = (Recovery.token_of_terminal t v, endp, endp) in
+            begin
+              match feed_token ~allow_reduction:true token env with
+              | `Fail -> assert false
+              | `Accept v -> raise (E.Result v)
+              | `Recovered (_, env) -> env
+            end
+          | Recovery.Sub actions ->
+            log ~title:"enter Sub" "";
+            let env = List.fold_left ~f:eval ~init:env actions in
+            log ~title:"leave Sub" "";
+            env
+        in
+        match
+          List.rev_scan_left [] ~f:eval ~init:env actions
+          |> List.map ~f:(fun env -> {candidate0 with env})
+        with
+        | exception Not_found -> (None, acc)
+        | exception E.Result v -> (Some v, acc)
+        | [] -> (None, acc)
+        | candidate :: _ as candidates -> aux (candidates @ acc) candidate.env)
     in
     let popped = ref [] in
     (*let should_pop stack =

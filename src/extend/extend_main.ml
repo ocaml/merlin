@@ -23,26 +23,26 @@ module Reader = struct
 
     let exec = function
       | Req_load buf ->
-          buffer := Some (V.load buf);
-          Res_loaded
+        buffer := Some (V.load buf);
+        Res_loaded
       | Req_parse -> Res_parse (V.parse (get_buffer ()))
       | Req_parse_line (pos, str) ->
-          Res_parse (V.parse_line (get_buffer ()) pos str)
+        Res_parse (V.parse_line (get_buffer ()) pos str)
       | Req_parse_for_completion pos ->
-          let info, tree = V.for_completion (get_buffer ()) pos in
-          Res_parse_for_completion (info, tree)
+        let info, tree = V.for_completion (get_buffer ()) pos in
+        Res_parse_for_completion (info, tree)
       | Req_get_ident_at pos ->
-          Res_get_ident_at (V.ident_at (get_buffer ()) pos)
+        Res_get_ident_at (V.ident_at (get_buffer ()) pos)
       | Req_print_outcome trees ->
-          let print t =
-            V.print_outcome Format.str_formatter t;
-            Format.flush_str_formatter ()
-          in
-          let trees = List.rev_map print trees in
-          Res_print_outcome (List.rev trees)
+        let print t =
+          V.print_outcome Format.str_formatter t;
+          Format.flush_str_formatter ()
+        in
+        let trees = List.rev_map print trees in
+        Res_print_outcome (List.rev trees)
       | Req_pretty_print p ->
-          V.pretty_print Format.str_formatter p;
-          Res_pretty_print (Format.flush_str_formatter ())
+        V.pretty_print Format.str_formatter p;
+        Res_pretty_print (Format.flush_str_formatter ())
   end
 end
 
@@ -96,8 +96,8 @@ module Handshake = struct
     | exception End_of_file -> exit 0
     | P.Start_communication -> ()
     | _ ->
-        prerr_endline "Unexpected value after handshake.";
-        exit 1
+      prerr_endline "Unexpected value after handshake.";
+      exit 1
 
   exception Error of string
 
@@ -141,13 +141,12 @@ let extension_main ?reader desc =
   begin
     match Sys.getenv "__MERLIN_MASTER_PID" with
     | exception Not_found ->
-        Printf.eprintf
-          "This is %s merlin extension, version %s.\n\
-           This binary should be invoked from merlin and cannot be used \
-           directly.\n\
-           %!"
-          desc.P.name desc.P.version;
-        exit 1
+      Printf.eprintf
+        "This is %s merlin extension, version %s.\n\
+         This binary should be invoked from merlin and cannot be used directly.\n\
+         %!"
+        desc.P.name desc.P.version;
+      exit 1
     | _ -> ()
   end;
   (* Communication happens on stdin/stdout. *)
@@ -156,26 +155,26 @@ let extension_main ?reader desc =
     match reader with
     | None -> fun _ -> failwith "No reader"
     | Some (module R : R.V0) ->
-        let module M = Reader.Make (R) in
-        M.exec
+      let module M = Reader.Make (R) in
+      M.exec
   in
   let respond f =
     match f () with
     | (r : P.response) -> Utils.send r
     | exception exn ->
-        let name = Printexc.exn_slot_name exn in
-        let desc = Printexc.to_string exn in
-        Utils.send (P.Exception (name, desc))
+      let name = Printexc.exn_slot_name exn in
+      let desc = Printexc.to_string exn in
+      Utils.send (P.Exception (name, desc))
   in
   let rec loop () =
     flush stdout;
     match input_value stdin with
     | exception End_of_file -> exit 0
     | P.Start_communication ->
-        prerr_endline "Unexpected message.";
-        exit 2
+      prerr_endline "Unexpected message.";
+      exit 2
     | P.Reader_request request ->
-        respond (fun () -> P.Reader_response (reader request));
-        loop ()
+      respond (fun () -> P.Reader_response (reader request));
+      loop ()
   in
   loop ()

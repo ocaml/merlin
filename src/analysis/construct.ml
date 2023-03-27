@@ -15,16 +15,16 @@ let () =
   Location.register_error_of_exn (function
     | Not_a_hole -> Some (Location.error "Construct only works on holes.")
     | Modtype_not_found (Modtype, s) ->
-        let txt = Format.sprintf "Module type not found: %s" s in
-        Some (Location.error txt)
+      let txt = Format.sprintf "Module type not found: %s" s in
+      Some (Location.error txt)
     | Modtype_not_found (Mod, s) ->
-        let txt = Format.sprintf "Module not found: %s" s in
-        Some (Location.error txt)
+      let txt = Format.sprintf "Module not found: %s" s in
+      Some (Location.error txt)
     | No_constraint ->
-        Some
-          (Location.error
-             "Could not find a module type to construct from. Check that you \
-              used a correct constraint.")
+      Some
+        (Location.error
+           "Could not find a module type to construct from. Check that you \
+            used a correct constraint.")
     | _ -> None)
 module Util = struct
   open Misc_utils.Path
@@ -90,20 +90,20 @@ module Util = struct
         (* TODO is this test general enough ? *)
         match unifiable env (Transient_expr.type_expr type_expr) typ with
         | Some snap ->
-            (* This will be called multiple times so we need to backtrack
-                See c-simple, test 6.2b for an example *)
-            Btype.backtrack snap;
-            Some params
+          (* This will be called multiple times so we need to backtrack
+              See c-simple, test 6.2b for an example *)
+          Btype.backtrack snap;
+          Some params
         | None -> begin
-            match type_expr.desc with
-            | Tarrow (arg_label, _, te, _) -> check_type te (arg_label :: params)
-            | _ -> None
-          end
+          match type_expr.desc with
+          | Tarrow (arg_label, _, te, _) -> check_type te (arg_label :: params)
+          | _ -> None
+        end
       in
       (* TODO we should probably sort the results better *)
       match (is_in_stdlib path, check_type value_description.val_type []) with
       | false, Some params ->
-          Path.Map.add path (name, value_description, params) acc
+        Path.Map.add path (name, value_description, params) acc
       | _, _ -> acc
     in
     (* We look for values in the current scope and in local unonpend submodules.
@@ -185,97 +185,96 @@ module Gen = struct
     let open Ast_helper in
     function
     | Mty_ident path -> begin
-        try
-          let m = Env.find_modtype path env in
-          match m.mtd_type with
-          | Some t -> module_ env t
-          | None -> raise Not_found
-        with Not_found ->
-          let name = Ident.name (Path.head path) in
-          raise (Modtype_not_found (Modtype, name))
-      end
+      try
+        let m = Env.find_modtype path env in
+        match m.mtd_type with
+        | Some t -> module_ env t
+        | None -> raise Not_found
+      with Not_found ->
+        let name = Ident.name (Path.head path) in
+        raise (Modtype_not_found (Modtype, name))
+    end
     | Mty_signature sig_items ->
-        let env = Env.add_signature sig_items env in
-        Mod.structure @@ structure env sig_items
+      let env = Env.add_signature sig_items env in
+      Mod.structure @@ structure env sig_items
     | Mty_functor (param, out) ->
-        let param =
-          match param with
-          | Unit -> Parsetree.Unit
-          | Named (id, in_) ->
-              Parsetree.Named
-                ( Location.mknoloc (Option.map ~f:Ident.name id),
-                  Ptyp_of_type.module_type in_ )
-        in
-        Mod.functor_ param @@ module_ env out
+      let param =
+        match param with
+        | Unit -> Parsetree.Unit
+        | Named (id, in_) ->
+          Parsetree.Named
+            ( Location.mknoloc (Option.map ~f:Ident.name id),
+              Ptyp_of_type.module_type in_ )
+      in
+      Mod.functor_ param @@ module_ env out
     | Mty_alias path -> begin
-        try
-          let m = Env.find_module path env in
-          module_ env m.md_type
-        with Not_found ->
-          let name = Ident.name (Path.head path) in
-          raise (Modtype_not_found (Mod, name))
-      end
+      try
+        let m = Env.find_module path env in
+        module_ env m.md_type
+      with Not_found ->
+        let name = Ident.name (Path.head path) in
+        raise (Modtype_not_found (Mod, name))
+    end
     | Mty_for_hole -> Mod.hole ()
 
   and structure_item env =
     let open Ast_helper in
     function
     | Sig_value (id, _vd, _visibility) ->
-        let vb = Vb.mk (Pat.var (Util.var_of_id id)) (Exp.hole ()) in
-        Str.value Nonrecursive [vb]
+      let vb = Vb.mk (Pat.var (Util.var_of_id id)) (Exp.hole ()) in
+      Str.value Nonrecursive [vb]
     | Sig_type (id, type_declaration, rec_flag, _visibility) ->
-        let td = Ptyp_of_type.type_declaration id type_declaration in
-        let rec_flag =
-          match rec_flag with
-          | Trec_first | Trec_next -> Asttypes.Recursive
-          | Trec_not -> Nonrecursive
-        in
-        (* mutually recursive types are really handled by [structure] *)
-        Str.type_ rec_flag [td]
+      let td = Ptyp_of_type.type_declaration id type_declaration in
+      let rec_flag =
+        match rec_flag with
+        | Trec_first | Trec_next -> Asttypes.Recursive
+        | Trec_not -> Nonrecursive
+      in
+      (* mutually recursive types are really handled by [structure] *)
+      Str.type_ rec_flag [td]
     | Sig_modtype (id, {mtd_type; _}, _visibility) ->
-        let mtd =
-          Ast_helper.Mtd.mk
-            ?typ:(Option.map ~f:Ptyp_of_type.module_type mtd_type)
-          @@ Util.var_of_id id
-        in
-        Ast_helper.Str.modtype mtd
+      let mtd =
+        Ast_helper.Mtd.mk ?typ:(Option.map ~f:Ptyp_of_type.module_type mtd_type)
+        @@ Util.var_of_id id
+      in
+      Ast_helper.Str.modtype mtd
     | Sig_module (id, _, mod_decl, _, _) ->
-        let module_binding =
-          Ast_helper.Mb.mk (Location.mknoloc (Some (Ident.name id)))
-          @@ module_ env mod_decl.md_type
-        in
-        Str.module_ module_binding
+      let module_binding =
+        Ast_helper.Mb.mk (Location.mknoloc (Some (Ident.name id)))
+        @@ module_ env mod_decl.md_type
+      in
+      Str.module_ module_binding
     | Sig_typext (id, ext_constructor, _, _) ->
-        let lid =
-          Untypeast.lident_of_path ext_constructor.ext_type_path
-          |> Location.mknoloc
-        in
-        Str.type_extension
-        @@ Ast_helper.Te.mk ~attrs:ext_constructor.ext_attributes ~params:[]
-             ~priv:ext_constructor.ext_private lid
-             [Ptyp_of_type.extension_constructor id ext_constructor]
+      let lid =
+        Untypeast.lident_of_path ext_constructor.ext_type_path
+        |> Location.mknoloc
+      in
+      Str.type_extension
+      @@ Ast_helper.Te.mk ~attrs:ext_constructor.ext_attributes ~params:[]
+           ~priv:ext_constructor.ext_private lid
+           [Ptyp_of_type.extension_constructor id ext_constructor]
     | Sig_class_type (id, _class_type_decl, _, _) ->
-        let str =
-          Format.asprintf
-            "Construct does not handle class types yet. Please replace this \
-             comment by [%s]'s definition."
-            (Ident.name id)
-        in
-        Str.text [Docstrings.docstring str Location.none] |> List.hd
+      let str =
+        Format.asprintf
+          "Construct does not handle class types yet. Please replace this \
+           comment by [%s]'s definition."
+          (Ident.name id)
+      in
+      Str.text [Docstrings.docstring str Location.none] |> List.hd
     | Sig_class (id, _class_decl, _, _) ->
-        let str =
-          Format.asprintf
-            "Construct does not handle classes yet. Please replace this \
-             comment by [%s]'s definition."
-            (Ident.name id)
-        in
-        Str.text [Docstrings.docstring str Location.none] |> List.hd
+      let str =
+        Format.asprintf
+          "Construct does not handle classes yet. Please replace this comment \
+           by [%s]'s definition."
+          (Ident.name id)
+      in
+      Str.text [Docstrings.docstring str Location.none] |> List.hd
 
   and structure env (items : Types.signature_item list) =
     List.map (Ptyp_of_type.group_items items) ~f:(function
       | Ptyp_of_type.Item item -> structure_item env item
       | Ptyp_of_type.Type (rec_flag, type_decls) ->
-          Ast_helper.Str.type_ rec_flag type_decls)
+        Ast_helper.Str.type_ rec_flag type_decls)
 
   (* [expression values_scope ~depth env ty] generates a list of PAST
      expressions that could fill a hole of type [ty] in the environment [env].
@@ -318,15 +317,15 @@ module Gen = struct
         let open Asttypes in
         match label with
         | Labelled s | Optional s ->
-            (* Pun for labelled arguments *)
-            (Ast_helper.Pat.var (Location.mknoloc s), s)
+          (* Pun for labelled arguments *)
+          (Ast_helper.Pat.var (Location.mknoloc s), s)
         | Nolabel -> begin
-            match get_desc ty with
-            | Tconstr (path, _, _) ->
-                let name = uniq_name env (Path.last path) in
-                (Ast_helper.Pat.var (Location.mknoloc name), name)
-            | _ -> (Ast_helper.Pat.any (), "_")
-          end
+          match get_desc ty with
+          | Tconstr (path, _, _) ->
+            let name = uniq_name env (Path.last path) in
+            (Ast_helper.Pat.var (Location.mknoloc name), name)
+          | _ -> (Ast_helper.Pat.any (), "_")
+        end
     in
 
     let constructor env type_expr path constrs =
@@ -339,31 +338,31 @@ module Gen = struct
         let ty_args, ty_res, _ = Ctype.instance_constructor cstr_descr in
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
-            let lid =
-              Util.prefix env ~env_check:Env.find_constructor_by_name path
-                cstr_descr.cstr_name
-              |> Location.mknoloc
-            in
-            let args = List.map ty_args ~f:(exp_or_hole env) in
-            let args_combinations = Util.combinations args in
-            let exps =
-              List.map args_combinations ~f:(function
-                | [] -> None
-                | [e] -> Some e
-                | l -> Some (Ast_helper.Exp.tuple l))
-            in
-            Btype.backtrack snap;
-            List.filter_map exps ~f:(fun exp ->
-                let exp = Ast_helper.Exp.construct lid exp in
-                (* For gadts not all combinations will be valid.
-                   See Test 6.1b in c-simple.t for an example.
+          let lid =
+            Util.prefix env ~env_check:Env.find_constructor_by_name path
+              cstr_descr.cstr_name
+            |> Location.mknoloc
+          in
+          let args = List.map ty_args ~f:(exp_or_hole env) in
+          let args_combinations = Util.combinations args in
+          let exps =
+            List.map args_combinations ~f:(function
+              | [] -> None
+              | [e] -> Some e
+              | l -> Some (Ast_helper.Exp.tuple l))
+          in
+          Btype.backtrack snap;
+          List.filter_map exps ~f:(fun exp ->
+              let exp = Ast_helper.Exp.construct lid exp in
+              (* For gadts not all combinations will be valid.
+                 See Test 6.1b in c-simple.t for an example.
 
-                   We therefore check that constructed expressions
-                   can be typed. *)
-                try
-                  Typecore.type_expression env exp |> ignore;
-                  Some exp
-                with _ -> None)
+                 We therefore check that constructed expressions
+                 can be typed. *)
+              try
+                Typecore.type_expression env exp |> ignore;
+                Some exp
+              with _ -> None)
         | None -> []
       in
       List.map constrs ~f:(make_constr env path type_expr) |> Util.panache
@@ -375,20 +374,20 @@ module Gen = struct
           ~f:(fun (_lbl, row_field) ->
             match row_field_repr row_field with
             | Rpresent _ | Reither (true, [], _) | Reither (false, [_], _) ->
-                true
+              true
             | _ -> false)
           (row_fields row_desc)
       in
       match fields with
       | [] -> raise (Not_allowed "empty variant type")
       | row_descrs ->
-          List.map row_descrs ~f:(fun (lbl, row_field) ->
-              (match row_field_repr row_field with
-              | Reither (false, [ty], _) | Rpresent (Some ty) ->
-                  List.map ~f:(fun s -> Some s) (exp_or_hole env ty)
-              | _ -> [None])
-              |> List.map ~f:(fun e -> Ast_helper.Exp.variant lbl e))
-          |> List.flatten
+        List.map row_descrs ~f:(fun (lbl, row_field) ->
+            (match row_field_repr row_field with
+            | Reither (false, [ty], _) | Rpresent (Some ty) ->
+              List.map ~f:(fun s -> Some s) (exp_or_hole env ty)
+            | _ -> [None])
+            |> List.map ~f:(fun e -> Ast_helper.Exp.variant lbl e))
+        |> List.flatten
     in
 
     let record env typ path labels =
@@ -428,84 +427,84 @@ module Gen = struct
         match get_desc rtyp with
         | Tlink _ | Tsubst _ -> assert false
         | Tpoly (texp, _) ->
-            (* We are not going "deeper" so we don't call [exp_or_hole] here *)
-            expression ~idents_table values_scope ~depth env texp
+          (* We are not going "deeper" so we don't call [exp_or_hole] here *)
+          expression ~idents_table values_scope ~depth env texp
         | Tunivar _ | Tvar _ -> []
         | Tconstr (path, [texp], _) when path = Predef.path_lazy_t ->
-            (* Special case for lazy *)
-            let exps = exp_or_hole env texp in
-            List.map exps ~f:Ast_helper.Exp.lazy_
+          (* Special case for lazy *)
+          let exps = exp_or_hole env texp in
+          List.map exps ~f:Ast_helper.Exp.lazy_
         | Tconstr (path, _params, _) -> begin
-            (* If this is a "basic" type we propose a default value *)
-            try [Hashtbl.find Util.predef_types path]
-            with Not_found -> (
-              let def = Env.find_type_descrs path env in
-              match def with
-              | Type_variant (constrs, _) -> constructor env rtyp path constrs
-              | Type_record (labels, _) -> record env rtyp path labels
-              | Type_abstract | Type_open -> [])
-          end
+          (* If this is a "basic" type we propose a default value *)
+          try [Hashtbl.find Util.predef_types path]
+          with Not_found -> (
+            let def = Env.find_type_descrs path env in
+            match def with
+            | Type_variant (constrs, _) -> constructor env rtyp path constrs
+            | Type_record (labels, _) -> record env rtyp path labels
+            | Type_abstract | Type_open -> [])
+        end
         | Tarrow (label, tyleft, tyright, _) ->
-            let argument, name = make_arg env label tyleft in
-            let value_description =
-              { val_type = tyleft;
-                val_kind = Val_reg;
-                val_loc = Location.none;
-                val_attributes = [];
-                val_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) }
-            in
-            let env =
-              Env.add_value (Ident.create_local name) value_description env
-            in
-            let exps = arrow_rhs env tyright in
-            List.map exps ~f:(Ast_helper.Exp.fun_ label None argument)
+          let argument, name = make_arg env label tyleft in
+          let value_description =
+            { val_type = tyleft;
+              val_kind = Val_reg;
+              val_loc = Location.none;
+              val_attributes = [];
+              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) }
+          in
+          let env =
+            Env.add_value (Ident.create_local name) value_description env
+          in
+          let exps = arrow_rhs env tyright in
+          List.map exps ~f:(Ast_helper.Exp.fun_ label None argument)
         | Ttuple types ->
-            let choices =
-              List.map types ~f:(exp_or_hole env) |> Util.combinations
-            in
-            List.map choices ~f:Ast_helper.Exp.tuple
+          let choices =
+            List.map types ~f:(exp_or_hole env) |> Util.combinations
+          in
+          List.map choices ~f:Ast_helper.Exp.tuple
         | Tvariant row_desc -> variant env rtyp row_desc
         | Tpackage (path, lids_args) -> begin
-            let open Ast_helper in
-            try
-              let ty =
-                Typemod.modtype_of_package env Location.none path lids_args
-              in
-              let ast =
-                Exp.constraint_
-                  (Exp.pack (module_ env ty))
-                  (Ptyp_of_type.core_type typ)
-              in
-              [ast]
-            with Typemod.Error _ ->
-              let name = Ident.name (Path.head path) in
-              raise (Modtype_not_found (Modtype, name))
-          end
-        | Tobject (fields, _) ->
-            let rec aux acc fields =
-              match get_desc fields with
-              | Tnil -> acc
-              | Tvar _ | Tunivar _ -> acc
-              | Tfield ("*dummy method*", _, _, fields) -> aux acc fields
-              | Tfield (name, _, type_expr, fields) ->
-                  let exprs =
-                    exp_or_hole env type_expr
-                    |> List.map ~f:(fun expr ->
-                           let open Ast_helper in
-                           Cf.method_ (Location.mknoloc name) Asttypes.Public
-                           @@ Ast_helper.Cf.concrete Asttypes.Fresh expr)
-                  in
-                  aux (exprs :: acc) fields
-              | _ ->
-                  failwith
-                  @@ Format.asprintf
-                       "Unexpected type constructor in fields list: %a"
-                       Printtyp.type_expr fields
+          let open Ast_helper in
+          try
+            let ty =
+              Typemod.modtype_of_package env Location.none path lids_args
             in
-            let all_fields = aux [] fields |> Util.combinations in
-            List.map all_fields ~f:(fun fields ->
-                let open Ast_helper in
-                Exp.object_ @@ Ast_helper.Cstr.mk (Pat.any ()) fields)
+            let ast =
+              Exp.constraint_
+                (Exp.pack (module_ env ty))
+                (Ptyp_of_type.core_type typ)
+            in
+            [ast]
+          with Typemod.Error _ ->
+            let name = Ident.name (Path.head path) in
+            raise (Modtype_not_found (Modtype, name))
+        end
+        | Tobject (fields, _) ->
+          let rec aux acc fields =
+            match get_desc fields with
+            | Tnil -> acc
+            | Tvar _ | Tunivar _ -> acc
+            | Tfield ("*dummy method*", _, _, fields) -> aux acc fields
+            | Tfield (name, _, type_expr, fields) ->
+              let exprs =
+                exp_or_hole env type_expr
+                |> List.map ~f:(fun expr ->
+                       let open Ast_helper in
+                       Cf.method_ (Location.mknoloc name) Asttypes.Public
+                       @@ Ast_helper.Cf.concrete Asttypes.Fresh expr)
+              in
+              aux (exprs :: acc) fields
+            | _ ->
+              failwith
+              @@ Format.asprintf
+                   "Unexpected type constructor in fields list: %a"
+                   Printtyp.type_expr fields
+          in
+          let all_fields = aux [] fields |> Util.combinations in
+          List.map all_fields ~f:(fun fields ->
+              let open Ast_helper in
+              Exp.object_ @@ Ast_helper.Cstr.mk (Pat.any ()) fields)
         | Tfield _ | Tnil -> failwith "Found a field type outside an object"
       in
       let matching_values =
@@ -537,15 +536,15 @@ let to_string_with_parentheses exp =
 let node ?(depth = 1) ~keywords ~values_scope node =
   match node with
   | Browse_raw.Expression {exp_type; exp_env; _} ->
-      let idents_table = Util.idents_table ~keywords in
-      Gen.expression ~idents_table values_scope ~depth exp_env exp_type
-      |> List.map ~f:to_string_with_parentheses
+    let idents_table = Util.idents_table ~keywords in
+    Gen.expression ~idents_table values_scope ~depth exp_env exp_type
+    |> List.map ~f:to_string_with_parentheses
   | Browse_raw.Module_expr {mod_desc = Tmod_constraint _; mod_type; mod_env; _}
   | Browse_raw.Module_expr {mod_desc = Tmod_apply _; mod_type; mod_env; _} ->
-      let m = Gen.module_ mod_env mod_type in
-      [Format.asprintf "%a" Pprintast.module_expr m]
+    let m = Gen.module_ mod_env mod_type in
+    [Format.asprintf "%a" Pprintast.module_expr m]
   | Browse_raw.Module_expr _ | Browse_raw.Module_binding _ ->
-      (* Constructible modules have an explicit constraint or are functor
-         applications. In other cases we do not know what to construct. *)
-      raise No_constraint
+    (* Constructible modules have an explicit constraint or are functor
+       applications. In other cases we do not know what to construct. *)
+    raise No_constraint
   | _ -> raise Not_a_hole

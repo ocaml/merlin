@@ -17,11 +17,11 @@ let with_state state f =
     failwith "Mocaml.with_state: another instance is already in use";
   match Local_store.with_store state f with
   | r ->
-      Cmt_format.clear ();
-      r
+    Cmt_format.clear ();
+    r
   | exception exn ->
-      Cmt_format.clear ();
-      reraise exn
+    Cmt_format.clear ();
+    reraise exn
 
 let is_current_state state =
   match !current_state with

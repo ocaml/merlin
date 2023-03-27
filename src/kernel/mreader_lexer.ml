@@ -49,25 +49,25 @@ let get_tokens keywords pos text =
   Lexing.move lexbuf pos;
   let rec aux items = function
     | Lexer_raw.Return (Parser_raw.COMMENT comment) ->
-        continue (Comment comment :: items)
+      continue (Comment comment :: items)
     | Lexer_raw.Refill k -> aux items (k ())
     | Lexer_raw.Return t ->
-        let triple = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
-        let items = Triple triple :: items in
-        if t = Parser_raw.EOF then
-          items
-        else
-          continue items
+      let triple = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
+      let items = Triple triple :: items in
+      if t = Parser_raw.EOF then
+        items
+      else
+        continue items
     | Lexer_raw.Fail (err, loc) -> continue (Error (err, loc) :: items)
   and continue items = aux items (Lexer_raw.token state lexbuf) in
 
   function
   | [] ->
-      (* First line: skip #! ... *)
-      aux [] (Lexer_raw.skip_sharp_bang state lexbuf)
+    (* First line: skip #! ... *)
+    aux [] (Lexer_raw.skip_sharp_bang state lexbuf)
   | items ->
-      (* Resume *)
-      continue items
+    (* Resume *)
+    continue items
 
 let initial_position config =
   { Lexing.pos_fname = Mconfig.filename config;
@@ -96,12 +96,12 @@ let rev_filter_map ~f lst =
   let rec aux acc = function
     | [] -> acc
     | x :: xs ->
-        let acc =
-          match f x with
-          | Some x' -> x' :: acc
-          | None -> acc
-        in
-        aux acc xs
+      let acc =
+        match f x with
+        | Some x' -> x' :: acc
+        | None -> acc
+      in
+      aux acc xs
   in
   aux [] lst
 
@@ -228,15 +228,15 @@ let reconstruct_identifier_from_tokens tokens pos =
   let rec look_for_component acc = function
     (* Skip 'a and `A *)
     | ((LIDENT _ | UIDENT _), _, _) :: ((BACKQUOTE | QUOTE), _, _) :: items ->
-        check acc items
+      check acc items
     (* UIDENT is a regular a component *)
     | ((UIDENT _, _, _) as item) :: items -> look_for_dot (item :: acc) items
     (* LIDENT always begin a new identifier *)
     | ((LIDENT _, _, _) as item) :: items ->
-        if acc = [] then
-          look_for_dot [item] items
-        else
-          check acc (item :: items)
+      if acc = [] then
+        look_for_dot [item] items
+      else
+        check acc (item :: items)
     (* Reified operators behave like LIDENT *)
     | (RPAREN, _, _) :: ((token, _, _) as item) :: (LPAREN, _, _) :: items
       when is_operator token <> None && acc = [] -> look_for_dot [item] items
@@ -271,28 +271,28 @@ let reconstruct_identifier_from_tokens tokens pos =
       match items with
       | [] -> raise Not_found
       | (_, _, endp) :: _ when Lexing.compare_pos endp pos < 0 ->
-          raise Not_found
+        raise Not_found
       | _ -> look_for_component [] items
   in
 
   match look_for_component [] tokens with
   | exception Not_found -> []
   | acc ->
-      let fmt (token, loc_start, loc_end) =
-        let id =
-          match token with
-          | UIDENT s | LIDENT s -> s
-          | _ -> (
-              match is_operator token with
-              | Some t -> t
-              | None -> assert false)
-        in
-        Location.mkloc id {Location.loc_start; loc_end; loc_ghost = false}
+    let fmt (token, loc_start, loc_end) =
+      let id =
+        match token with
+        | UIDENT s | LIDENT s -> s
+        | _ -> (
+          match is_operator token with
+          | Some t -> t
+          | None -> assert false)
       in
-      let before_pos = function
-        | _, s, _ -> Lexing.compare_pos s pos <= 0
-      in
-      List.map ~f:fmt (List.filter ~f:before_pos acc)
+      Location.mkloc id {Location.loc_start; loc_end; loc_ghost = false}
+    in
+    let before_pos = function
+      | _, s, _ -> Lexing.compare_pos s pos <= 0
+    in
+    List.map ~f:fmt (List.filter ~f:before_pos acc)
 
 let reconstruct_identifier config source pos =
   let rec lex acc lexbuf =
@@ -301,7 +301,7 @@ let reconstruct_identifier config source pos =
     match token with
     | EOF -> item :: acc
     | EOL when Lexing.compare_pos lexbuf.Lexing.lex_curr_p pos > 0 ->
-        item :: acc
+      item :: acc
     | EOL -> lex [] lexbuf
     | _ -> lex (item :: acc) lexbuf
   in
@@ -327,29 +327,29 @@ let for_completion t pos =
   let rec aux acc = function
     (* Cursor is before item: continue *)
     | item :: items when Lexing.compare_pos (item_start item) pos >= 0 ->
-        aux (item :: acc) items
+      aux (item :: acc) items
     (* Cursor is in the middle of item: stop *)
     | item :: _ when Lexing.compare_pos (item_end item) pos > 0 ->
-        check_label item;
-        raise Exit
+      check_label item;
+      raise Exit
     (* Cursor is at the end *)
     | (Triple (token, _, loc_end) as item) :: _ as items
       when Lexing.compare_pos pos loc_end = 0 ->
-        check_label item;
-        begin
-          match token with
-          (* Already on identifier, no need to introduce *)
-          | UIDENT _ | LIDENT _ -> raise Exit
-          | _ -> (acc, items)
-        end
+      check_label item;
+      begin
+        match token with
+        (* Already on identifier, no need to introduce *)
+        | UIDENT _ | LIDENT _ -> raise Exit
+        | _ -> (acc, items)
+      end
     | items -> (acc, items)
   in
   let t =
     match aux [] t.items with
     | exception Exit -> t
     | acc, items ->
-        { t with
-          items = List.rev_append acc (Triple (LIDENT "", pos, pos) :: items) }
+      { t with
+        items = List.rev_append acc (Triple (LIDENT "", pos, pos) :: items) }
   in
   (!no_labels, t)
 

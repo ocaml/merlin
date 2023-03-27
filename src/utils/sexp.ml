@@ -40,37 +40,37 @@ let unescaped str =
   match String.index str '\\' with
   | exception Not_found -> str
   | _ ->
-      let len = String.length str in
-      let buf = Buffer.create len in
-      let i = ref 0 in
-      while !i < len do
-        match str.[!i] with
-        | '\\' ->
-            incr i;
-            begin
-              match str.[!i] with
-              | 'n' -> Buffer.add_char buf '\n'
-              | 'r' -> Buffer.add_char buf '\r'
-              | 't' -> Buffer.add_char buf '\t'
-              | 'x' ->
-                  let c0 = Char.code str.[!i + 1] in
-                  let c1 = Char.code str.[!i + 2] in
-                  Buffer.add_char buf (Char.chr (c0 * 16 lor c1));
-                  i := !i + 2
-              | '0' .. '9' ->
-                  let c0 = Char.code str.[!i + 1] in
-                  let c1 = Char.code str.[!i + 2] in
-                  let c2 = Char.code str.[!i + 3] in
-                  Buffer.add_char buf (Char.chr (c0 * 64 lor (c1 * 8) lor c2));
-                  i := !i + 2
-              | c -> Buffer.add_char buf c
-            end;
-            incr i
-        | c ->
-            Buffer.add_char buf c;
-            incr i
-      done;
-      Buffer.contents buf
+    let len = String.length str in
+    let buf = Buffer.create len in
+    let i = ref 0 in
+    while !i < len do
+      match str.[!i] with
+      | '\\' ->
+        incr i;
+        begin
+          match str.[!i] with
+          | 'n' -> Buffer.add_char buf '\n'
+          | 'r' -> Buffer.add_char buf '\r'
+          | 't' -> Buffer.add_char buf '\t'
+          | 'x' ->
+            let c0 = Char.code str.[!i + 1] in
+            let c1 = Char.code str.[!i + 2] in
+            Buffer.add_char buf (Char.chr (c0 * 16 lor c1));
+            i := !i + 2
+          | '0' .. '9' ->
+            let c0 = Char.code str.[!i + 1] in
+            let c1 = Char.code str.[!i + 2] in
+            let c2 = Char.code str.[!i + 3] in
+            Buffer.add_char buf (Char.chr (c0 * 64 lor (c1 * 8) lor c2));
+            i := !i + 2
+          | c -> Buffer.add_char buf c
+        end;
+        incr i
+      | c ->
+        Buffer.add_char buf c;
+        incr i
+    done;
+    Buffer.contents buf
 
 let rec of_list = function
   | [] -> nil
@@ -78,9 +78,9 @@ let rec of_list = function
 
 let rec tell_sexp tell = function
   | Cons (a, b) ->
-      tell "(";
-      tell_sexp tell a;
-      tell_cons tell b
+    tell "(";
+    tell_sexp tell a;
+    tell_cons tell b
   | Sym s -> tell s
   | String s -> tell (escaped s)
   | Int i -> tell (string_of_int i)
@@ -89,13 +89,13 @@ let rec tell_sexp tell = function
 and tell_cons tell = function
   | Sym "nil" -> tell ")"
   | Cons (a, b) ->
-      tell " ";
-      tell_sexp tell a;
-      tell_cons tell b
+    tell " ";
+    tell_sexp tell a;
+    tell_cons tell b
   | sexp ->
-      tell " . ";
-      tell_sexp tell sexp;
-      tell ")"
+    tell " . ";
+    tell_sexp tell sexp;
+    tell ")"
 
 let is_alpha c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 
@@ -113,8 +113,8 @@ let read_sexp getch =
     | '"' -> read_string getch
     | '\000' -> raise End_of_file
     | '(' ->
-        let lhs, next = read_sexp getch (getch ()) in
-        read_cons getch (fun rhs -> Cons (lhs, rhs)) next
+      let lhs, next = read_sexp getch (getch ()) in
+      read_cons getch (fun rhs -> Cons (lhs, rhs)) next
     | _ -> failwith "Invalid parse"
   and read_cons getch k next =
     match
@@ -125,21 +125,21 @@ let read_sexp getch =
     | ' ' | '\t' | '\n' -> read_cons getch k None
     | ')' -> (k nil, None)
     | '.' ->
-        let rhs, next = read_sexp getch (getch ()) in
-        let rec aux = function
-          | ')' -> k rhs
-          | ' ' | '\t' | '\n' -> aux (getch ())
-          | _ -> failwith "Invalid parse"
-        in
-        ( begin
-            match next with
-            | Some c -> aux c
-            | None -> aux (getch ())
-          end,
-          None )
+      let rhs, next = read_sexp getch (getch ()) in
+      let rec aux = function
+        | ')' -> k rhs
+        | ' ' | '\t' | '\n' -> aux (getch ())
+        | _ -> failwith "Invalid parse"
+      in
+      ( begin
+          match next with
+          | Some c -> aux c
+          | None -> aux (getch ())
+        end,
+        None )
     | c ->
-        let cell, next = read_sexp getch c in
-        read_cons getch (fun rhs -> k (Cons (cell, rhs))) next
+      let cell, next = read_sexp getch c in
+      read_cons getch (fun rhs -> k (Cons (cell, rhs))) next
   and read_num getch c =
     Buffer.clear buf;
     Buffer.add_char buf c;
@@ -147,19 +147,19 @@ let read_sexp getch =
     let rec aux () =
       match getch () with
       | c when c >= '0' && c <= '9' ->
-          Buffer.add_char buf c;
-          aux ()
+        Buffer.add_char buf c;
+        aux ()
       | ('.' | 'e' | 'E') as c ->
-          is_float := true;
-          Buffer.add_char buf c;
-          aux ()
+        is_float := true;
+        Buffer.add_char buf c;
+        aux ()
       | c ->
-          let s = Buffer.contents buf in
-          ( (if !is_float then
-               Float (float_of_string s)
-            else
-              Int (int_of_string s)),
-            Some c )
+        let s = Buffer.contents buf in
+        ( (if !is_float then
+             Float (float_of_string s)
+          else
+            Int (int_of_string s)),
+          Some c )
     in
     aux ()
   and read_string getch =
@@ -168,13 +168,13 @@ let read_sexp getch =
       match getch () with
       | '\000' -> failwith "Unterminated string"
       | '\\' ->
-          Buffer.add_char buf '\\';
-          Buffer.add_char buf (getch ());
-          aux ()
+        Buffer.add_char buf '\\';
+        Buffer.add_char buf (getch ());
+        aux ()
       | '"' -> (String (unescaped (Buffer.contents buf)), None)
       | c ->
-          Buffer.add_char buf c;
-          aux ()
+        Buffer.add_char buf c;
+        aux ()
     in
     aux ()
   and read_sym getch next =
@@ -186,11 +186,11 @@ let read_sexp getch =
         | None -> getch ()
       with
       | ('\'' | '-' | ':' | '_') as c ->
-          Buffer.add_char buf c;
-          aux None
+        Buffer.add_char buf c;
+        aux None
       | c when is_alphanum c ->
-          Buffer.add_char buf c;
-          aux None
+        Buffer.add_char buf c;
+        aux None
       | c -> (Sym (Buffer.contents buf), Some c)
     in
     aux next
@@ -245,20 +245,20 @@ let of_file_descr ?(on_read = ignore) fd =
   let getch () =
     match !rest with
     | Some r ->
-        rest := None;
-        r
+      rest := None;
+      r
     | None -> (
-        match !getch () with
-        | '\000' ->
-            on_read fd;
-            let read = Unix.read fd buffer 0 1024 in
-            if read = 0 then
-              '\000'
-            else begin
-              getch := getch_of_subbytes buffer 0 read;
-              !getch ()
-            end
-        | c -> c)
+      match !getch () with
+      | '\000' ->
+        on_read fd;
+        let read = Unix.read fd buffer 0 1024 in
+        if read = 0 then
+          '\000'
+        else begin
+          getch := getch_of_subbytes buffer 0 read;
+          !getch ()
+        end
+      | c -> c)
   in
   fun () ->
     try
@@ -280,7 +280,7 @@ let rec of_json =
   | `Bool true -> Sym "true"
   | `Bool false -> Sym "false"
   | `Assoc lst ->
-      Cons (Cons (Sym "assoc", Sym "nil"), of_list (List.map assoc_item lst))
+    Cons (Cons (Sym "assoc", Sym "nil"), of_list (List.map assoc_item lst))
   | `List lst -> of_list (List.map of_json lst)
 
 let rec to_json =

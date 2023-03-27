@@ -16,15 +16,15 @@ let rec normalize_path env path =
   match Env.find_type path env with
   | exception Not_found -> path
   | decl -> (
-      match decl.Types.type_manifest with
-      | Some body
-        when decl.Types.type_private = Asttypes.Public
-             || decl.Types.type_kind <> Types.Type_abstract -> begin
-          match Types.get_desc body with
-          | Types.Tconstr (path, _, _) -> normalize_path env path
-          | _ -> path
-        end
-      | _ -> path)
+    match decl.Types.type_manifest with
+    | Some body
+      when decl.Types.type_private = Asttypes.Public
+           || decl.Types.type_kind <> Types.Type_abstract -> begin
+      match Types.get_desc body with
+      | Types.Tconstr (path, _, _) -> normalize_path env path
+      | _ -> path
+    end
+    | _ -> path)
 
 let match_query env query t =
   let cost = ref 0 in
@@ -33,22 +33,22 @@ let match_query env query t =
     incr cost;
     match Types.get_desc t with
     | Types.Tconstr (path, params, _) ->
-        remove cost pos (normalize_path env path);
-        begin
-          match Env.find_type path env with
-          | exception Not_found -> ()
-          | {Types.type_variance; _} ->
-              List.iter2 type_variance params ~f:(fun var arg ->
-                  if Types.Variance.mem Types.Variance.Inj var then (
-                    if Types.Variance.mem Types.Variance.Pos var then
-                      traverse neg neg_fun pos pos_fun arg;
-                    if Types.Variance.mem Types.Variance.Neg var then
-                      traverse pos pos_fun neg neg_fun arg))
-        end
+      remove cost pos (normalize_path env path);
+      begin
+        match Env.find_type path env with
+        | exception Not_found -> ()
+        | {Types.type_variance; _} ->
+          List.iter2 type_variance params ~f:(fun var arg ->
+              if Types.Variance.mem Types.Variance.Inj var then (
+                if Types.Variance.mem Types.Variance.Pos var then
+                  traverse neg neg_fun pos pos_fun arg;
+                if Types.Variance.mem Types.Variance.Neg var then
+                  traverse pos pos_fun neg neg_fun arg))
+      end
     | Types.Tarrow (_, t1, t2, _) ->
-        decr pos_fun;
-        traverse neg neg_fun pos pos_fun t2;
-        traverse pos pos_fun neg neg_fun t1
+      decr pos_fun;
+      traverse neg neg_fun pos pos_fun t2;
+      traverse pos pos_fun neg neg_fun t1
     | Types.Ttuple ts -> List.iter ~f:(traverse neg neg_fun pos pos_fun) ts
     | Types.Tvar _ | Types.Tunivar _ -> decr cost (* Favor polymorphic defs *)
     | _ -> ()
@@ -87,8 +87,8 @@ let directories ~global_modules env =
       match md.Types.md_type with
       | Types.Mty_alias _ -> l
       | _ ->
-          let lident = Longident.Ldot (lident, name) in
-          Trie (name, lident, lazy (explore lident env)) :: l
+        let lident = Longident.Ldot (lident, name) in
+        Trie (name, lident, lazy (explore lident env)) :: l
     in
     Env.fold_modules add_module (Some lident) env []
   in
@@ -120,10 +120,10 @@ let execute_query query env dirs =
       Lazy.force children
     with
     | children ->
-        List.fold_left ~f:recurse ~init:(direct (Some dir) acc) children
+      List.fold_left ~f:recurse ~init:(direct (Some dir) acc) children
     | exception Not_found ->
-        Logger.notify ~section:"polarity-search" "%S not found"
-          (String.concat ~sep:"." (Longident.flatten dir));
-        acc
+      Logger.notify ~section:"polarity-search" "%S not found"
+        (String.concat ~sep:"." (Longident.flatten dir));
+      acc
   in
   List.fold_left dirs ~init:(direct None []) ~f:recurse

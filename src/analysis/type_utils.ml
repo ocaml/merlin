@@ -56,40 +56,40 @@ module Printtyp = struct
     match !verbosity with
     | Smart | Lvl 0 -> ty
     | Lvl (_ : int) ->
-        (* Fresh copy of the type to mutilate *)
-        let ty = Subst.type_expr Subst.identity ty in
-        let marks = Hashtbl.create 7 in
-        let mark ty =
-          if Hashtbl.mem marks (Types.get_id ty) then
-            false
-          else (
-            Hashtbl.add marks (Types.get_id ty) ();
-            true)
-        in
-        let rec iter d ty0 =
-          if mark ty0 then
-            let open Types in
-            let ty' = Ctype.full_expand ~may_forget_scope:true env ty0 in
-            if get_desc ty' == get_desc ty0 then
-              Btype.iter_type_expr (iter d) ty0
-            else begin
-              let desc =
-                match get_desc ty' with
-                | Tvariant row -> Tvariant (set_row_name row None)
-                | Tobject (ty, _) -> Tobject (ty, ref None)
-                | desc -> desc
-              in
-              Types.Transient_expr.(set_desc (repr ty0) desc);
-              if d > 0 then
-                Btype.iter_type_expr (iter (pred d)) ty0
-            end
-        in
-        iter
-          (match !verbosity with
-          | Smart -> assert false
-          | Lvl v -> v)
-          ty;
-        ty
+      (* Fresh copy of the type to mutilate *)
+      let ty = Subst.type_expr Subst.identity ty in
+      let marks = Hashtbl.create 7 in
+      let mark ty =
+        if Hashtbl.mem marks (Types.get_id ty) then
+          false
+        else (
+          Hashtbl.add marks (Types.get_id ty) ();
+          true)
+      in
+      let rec iter d ty0 =
+        if mark ty0 then
+          let open Types in
+          let ty' = Ctype.full_expand ~may_forget_scope:true env ty0 in
+          if get_desc ty' == get_desc ty0 then
+            Btype.iter_type_expr (iter d) ty0
+          else begin
+            let desc =
+              match get_desc ty' with
+              | Tvariant row -> Tvariant (set_row_name row None)
+              | Tobject (ty, _) -> Tobject (ty, ref None)
+              | desc -> desc
+            in
+            Types.Transient_expr.(set_desc (repr ty0) desc);
+            if d > 0 then
+              Btype.iter_type_expr (iter (pred d)) ty0
+          end
+      in
+      iter
+        (match !verbosity with
+        | Smart -> assert false
+        | Lvl v -> v)
+        ty;
+      ty
 
   let expand_type_decl env ty =
     match ty.Types.type_manifest with
@@ -150,36 +150,36 @@ let rec mod_smallerthan n m =
     match m with
     | Mty_ident _ -> Some 1
     | Mty_signature s -> begin
-        match List.length_lessthan n s with
-        | None -> None
-        | Some _ ->
-            List.fold_left s ~init:(Some 0)
-              ~f:
-                begin
-                  fun acc item ->
-                    let sub n1 m =
-                      match mod_smallerthan (n - n1) m with
-                      | Some n2 -> Some (n1 + n2)
-                      | None -> None
-                    in
-                    match (acc, si_modtype_opt item) with
-                    | None, _ -> None
-                    | Some n', _ when n' > n -> None
-                    | Some n1, Some mty -> sub n1 mty
-                    | Some n', _ -> Some (succ n')
-                end
-      end
+      match List.length_lessthan n s with
+      | None -> None
+      | Some _ ->
+        List.fold_left s ~init:(Some 0)
+          ~f:
+            begin
+              fun acc item ->
+                let sub n1 m =
+                  match mod_smallerthan (n - n1) m with
+                  | Some n2 -> Some (n1 + n2)
+                  | None -> None
+                in
+                match (acc, si_modtype_opt item) with
+                | None, _ -> None
+                | Some n', _ when n' > n -> None
+                | Some n1, Some mty -> sub n1 mty
+                | Some n', _ -> Some (succ n')
+            end
+    end
     | Mty_functor _ ->
-        let m1, m2 = unpack_functor m in
-        begin
-          match (mod_smallerthan n m2, m1) with
-          | None, _ -> None
-          | result, Unit -> result
-          | Some n1, Named (_, mt) -> (
-              match mod_smallerthan (n - n1) mt with
-              | None -> None
-              | Some n2 -> Some (n1 + n2))
-        end
+      let m1, m2 = unpack_functor m in
+      begin
+        match (mod_smallerthan n m2, m1) with
+        | None, _ -> None
+        | result, Unit -> result
+        | Some n1, Named (_, mt) -> (
+          match mod_smallerthan (n - n1) mt with
+          | None -> None
+          | Some n2 -> Some (n1 + n2))
+      end
     | _ -> Some 1
 
 let print_short_modtype verbosity env ppf md =
@@ -187,47 +187,47 @@ let print_short_modtype verbosity env ppf md =
   let verbosity = Verbosity.to_int verbosity ~for_smart:1 in
   match mod_smallerthan 1000 md with
   | None when verbosity = 0 ->
-      Format.pp_print_string ppf "(* large signature, repeat to confirm *)"
+    Format.pp_print_string ppf "(* large signature, repeat to confirm *)"
   | _ -> Printtyp.modtype env ppf md
 
 let print_type_with_decl ~verbosity env ppf typ =
   match verbosity with
   | Verbosity.Smart | Lvl 0 -> Printtyp.type_scheme env ppf typ
   | Lvl _ -> begin
-      match Types.get_desc typ with
-      | Types.Tconstr (path, params, _) ->
-          let decl = Env.with_cmis @@ fun () -> Env.find_type path env in
-          let is_abstract =
-            match decl.Types.type_kind with
-            | Types.Type_abstract -> true
-            | _ -> false
-          in
-          (* Print expression only if it is parameterized or abstract *)
-          let print_expr = is_abstract || params <> [] in
-          if print_expr then
-            Printtyp.type_scheme env ppf typ;
-          (* If not abstract, also print the declaration *)
-          if not is_abstract then begin
-            (* Separator if expression was printed *)
-            if print_expr then begin
-              Format.pp_print_newline ppf ();
-              Format.pp_print_newline ppf ()
-            end;
-            let ident =
-              match path with
-              | Path.Papply _ -> assert false
-              | Path.Pdot _ -> Ident.create_persistent (Path.last path)
-              | Path.Pident ident -> ident
-            in
-            Printtyp.type_declaration env ident ppf decl
-          end
-      | _ -> Printtyp.type_scheme env ppf typ
-    end
+    match Types.get_desc typ with
+    | Types.Tconstr (path, params, _) ->
+      let decl = Env.with_cmis @@ fun () -> Env.find_type path env in
+      let is_abstract =
+        match decl.Types.type_kind with
+        | Types.Type_abstract -> true
+        | _ -> false
+      in
+      (* Print expression only if it is parameterized or abstract *)
+      let print_expr = is_abstract || params <> [] in
+      if print_expr then
+        Printtyp.type_scheme env ppf typ;
+      (* If not abstract, also print the declaration *)
+      if not is_abstract then begin
+        (* Separator if expression was printed *)
+        if print_expr then begin
+          Format.pp_print_newline ppf ();
+          Format.pp_print_newline ppf ()
+        end;
+        let ident =
+          match path with
+          | Path.Papply _ -> assert false
+          | Path.Pdot _ -> Ident.create_persistent (Path.last path)
+          | Path.Pident ident -> ident
+        in
+        Printtyp.type_declaration env ident ppf decl
+      end
+    | _ -> Printtyp.type_scheme env ppf typ
+  end
 
 let print_exn ppf exn =
   match Location.error_of_exn exn with
   | None | Some `Already_displayed ->
-      Format.pp_print_string ppf (Printexc.to_string exn)
+    Format.pp_print_string ppf (Printexc.to_string exn)
   | Some (`Ok report) -> Location.print_main ppf report
 
 let print_type ppf env lid =
@@ -265,70 +265,70 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
     let open Typedtree in
     match str.str_items with
     | [{str_desc = Tstr_eval (exp, _); _}] ->
-        print_type_with_decl ~verbosity env ppf exp.exp_type
+      print_type_with_decl ~verbosity env ppf exp.exp_type
     | _ -> failwith "unhandled expression"
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Msupport.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
   | exception exn ->
-      print_exn ppf exn;
-      false
+    print_exn ppf exn;
+    false
   | e -> (
-      let extract_specific_parsing_info e =
-        match e.Parsetree.pexp_desc with
-        | Parsetree.Pexp_ident longident -> `Ident longident
-        | Parsetree.Pexp_construct (longident, _) -> `Constr longident
-        | _ -> `Other
-      in
-      let open Context in
-      match extract_specific_parsing_info e with
-      | `Ident longident | `Constr longident -> begin
+    let extract_specific_parsing_info e =
+      match e.Parsetree.pexp_desc with
+      | Parsetree.Pexp_ident longident -> `Ident longident
+      | Parsetree.Pexp_construct (longident, _) -> `Constr longident
+      | _ -> `Other
+    in
+    let open Context in
+    match extract_specific_parsing_info e with
+    | `Ident longident | `Constr longident -> begin
+      try
+        begin
+          match context with
+          | Label lbl_des ->
+            (* We use information from the context because `Env.find_label_by_name`
+               can fail *)
+            Printtyp.type_expr ppf lbl_des.lbl_arg
+          | Type -> print_type ppf env longident
+          (* TODO: special processing for module aliases ? *)
+          | Module_type -> print_modtype ppf verbosity env longident
+          | Module_path -> print_modpath ppf verbosity env longident
+          | Constructor _ -> print_constr ppf env longident
+          | _ -> raise Fallback
+        end;
+        true
+      with _ -> (
+        (* Fallback to contextless typing attempts *)
+        try
+          print_expr e;
+          true
+        with exn -> (
           try
-            begin
-              match context with
-              | Label lbl_des ->
-                  (* We use information from the context because `Env.find_label_by_name`
-                     can fail *)
-                  Printtyp.type_expr ppf lbl_des.lbl_arg
-              | Type -> print_type ppf env longident
-              (* TODO: special processing for module aliases ? *)
-              | Module_type -> print_modtype ppf verbosity env longident
-              | Module_path -> print_modpath ppf verbosity env longident
-              | Constructor _ -> print_constr ppf env longident
-              | _ -> raise Fallback
-            end;
+            print_modpath ppf verbosity env longident;
             true
           with _ -> (
-            (* Fallback to contextless typing attempts *)
             try
-              print_expr e;
+              (* TODO: useless according to test suite *)
+              print_modtype ppf verbosity env longident;
               true
-            with exn -> (
+            with _ -> (
               try
-                print_modpath ppf verbosity env longident;
+                (* TODO: useless according to test suite *)
+                print_constr ppf env longident;
                 true
-              with _ -> (
-                try
-                  (* TODO: useless according to test suite *)
-                  print_modtype ppf verbosity env longident;
-                  true
-                with _ -> (
-                  try
-                    (* TODO: useless according to test suite *)
-                    print_constr ppf env longident;
-                    true
-                  with _ ->
-                    print_exn ppf exn;
-                    false))))
-        end
-      | `Other -> (
-          try
-            print_expr e;
-            true
-          with exn ->
-            print_exn ppf exn;
-            false))
+              with _ ->
+                print_exn ppf exn;
+                false))))
+    end
+    | `Other -> (
+      try
+        print_expr e;
+        true
+      with exn ->
+        print_exn ppf exn;
+        false))
 
 let print_constr ~verbosity env ppf cd =
   Printtyp.wrap_printing_env env ~verbosity @@ fun () -> print_cstr_desc ppf cd
@@ -338,7 +338,7 @@ let print_constr ~verbosity env ppf cd =
 let read_doc_attributes attrs =
   let rec loop = function
     | ({Location.txt = "doc" | "ocaml.doc"; loc = _}, payload) :: _ ->
-        Ast_helper.extract_str_payload payload
+      Ast_helper.extract_str_payload payload
     | _ :: rest -> loop rest
     | [] -> None
   in

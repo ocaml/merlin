@@ -51,14 +51,14 @@ let log_flush () =
 let log ~section ~title fmt =
   match !destination with
   | Some oc when is_section_enabled section ->
-      Printf.ksprintf
-        (fun str ->
-          output_section oc section title;
-          if str <> "" then (
-            output_string oc str;
-            if str.[String.length str - 1] <> '\n' then
-              output_char oc '\n'))
-        fmt
+    Printf.ksprintf
+      (fun str ->
+        output_section oc section title;
+        if str <> "" then (
+          output_string oc str;
+          if str.[String.length str - 1] <> '\n' then
+            output_char oc '\n'))
+      fmt
   | None | Some _ -> Printf.ifprintf () fmt
 
 let fmt_buffer = Buffer.create 128
@@ -70,7 +70,7 @@ let fmt () f =
     match f fmt_handle with
     | () -> ()
     | exception exn ->
-        Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn)
+      Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn)
   end;
   Format.pp_print_flush fmt_handle ();
   let msg = Buffer.contents fmt_buffer in
@@ -104,51 +104,51 @@ let with_sections sections f =
     match sections with
     | [] -> None
     | sections ->
-        let table = Hashtbl.create (List.length sections) in
-        List.iter sections ~f:(fun section -> Hashtbl.replace table section ());
-        Some table
+      let table = Hashtbl.create (List.length sections) in
+      List.iter sections ~f:(fun section -> Hashtbl.replace table section ());
+      Some table
   in
   let sections0 = !selected_sections in
   selected_sections := sections;
   match f () with
   | result ->
-      selected_sections := sections0;
-      result
+    selected_sections := sections0;
+    result
   | exception exn ->
-      selected_sections := sections0;
-      reraise exn
+    selected_sections := sections0;
+    reraise exn
 
 let with_log_file file ?(sections = []) f =
   match file with
   | None -> with_sections sections f
   | Some file -> (
+    log_flush ();
+    let destination', release =
+      match file with
+      | "" -> (None, ignore)
+      | "-" -> (Some stderr, ignore)
+      | filename -> (
+        match open_out filename with
+        | exception exn ->
+          Printf.eprintf "cannot open %S for logging: %s" filename
+            (Printexc.to_string exn);
+          (None, ignore)
+        | oc -> (Some oc, fun () -> close_out_noerr oc))
+    in
+    let destination0 = !destination in
+    destination := destination';
+    let release () =
       log_flush ();
-      let destination', release =
-        match file with
-        | "" -> (None, ignore)
-        | "-" -> (Some stderr, ignore)
-        | filename -> (
-            match open_out filename with
-            | exception exn ->
-                Printf.eprintf "cannot open %S for logging: %s" filename
-                  (Printexc.to_string exn);
-                (None, ignore)
-            | oc -> (Some oc, fun () -> close_out_noerr oc))
-      in
-      let destination0 = !destination in
-      destination := destination';
-      let release () =
-        log_flush ();
-        destination := destination0;
-        release ()
-      in
-      match with_sections sections f with
-      | v ->
-          release ();
-          v
-      | exception exn ->
-          release ();
-          reraise exn)
+      destination := destination0;
+      release ()
+    in
+    match with_sections sections f with
+    | v ->
+      release ();
+      v
+    | exception exn ->
+      release ();
+      reraise exn)
 
 type 'a printf = title:string -> ('a, unit, string, unit) format4 -> 'a
 type logger = {log : 'a. 'a printf}

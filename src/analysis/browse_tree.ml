@@ -62,7 +62,7 @@ let dummy =
 let rec normalize_type_expr env type_expr =
   match Types.get_desc type_expr with
   | Types.Tconstr (path, _, _) ->
-      normalize_type_decl env (Env.find_type path env)
+    normalize_type_decl env (Env.find_type path env)
   | _ -> raise Not_found
 
 and normalize_type_decl env decl =
@@ -82,13 +82,12 @@ let same_constructor env a b =
   else begin
     let get_decls = function
       | `Description d ->
-          let ty = normalize_type_expr env d.Types.cstr_res in
-          begin
-            match ty.Types.type_kind with
-            | Types.Type_variant (decls, _) ->
-                List.map decls ~f:id_of_constr_decl
-            | _ -> assert false
-          end
+        let ty = normalize_type_expr env d.Types.cstr_res in
+        begin
+          match ty.Types.type_kind with
+          | Types.Type_variant (decls, _) -> List.map decls ~f:id_of_constr_decl
+          | _ -> assert false
+        end
       | `Declaration d -> [d.Typedtree.cd_id]
     in
     let a = get_decls a in
@@ -117,7 +116,7 @@ let all_constructor_occurrences ({t_env = env; _}, d) t =
         when (* Don't try this at home kids. *)
              try same_constructor env d d'.Location.txt
              with Not_found -> same_constructor t.t_env d d'.Location.txt ->
-          {d' with Location.txt = t} :: acc
+        {d' with Location.txt = t} :: acc
       | _ -> acc
     in
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)

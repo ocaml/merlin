@@ -32,11 +32,11 @@ let get filename =
   match !cache with
   | None -> get filename
   | Some table -> (
-      match Hashtbl.find table filename with
-      | stats ->
-          Logger.log ~section:"stat_cache" ~title:"reuse cache" "%s" filename;
-          stats
-      | exception Not_found ->
-          let stats = get filename in
-          Hashtbl.add table filename stats;
-          stats)
+    match Hashtbl.find table filename with
+    | stats ->
+      Logger.log ~section:"stat_cache" ~title:"reuse cache" "%s" filename;
+      stats
+    | exception Not_found ->
+      let stats = get filename in
+      Hashtbl.add table filename stats;
+      stats)

@@ -42,13 +42,13 @@ let add_ppxopts ppx opts t =
   match opts with
   | [] -> t
   | opts ->
-      let ppx = Filename.basename ppx in
-      let optss = try String.Map.find ppx t.ppxopts with Not_found -> [] in
-      if not (List.mem ~set:optss opts) then
-        let ppxopts = String.Map.add ~key:ppx ~data:(opts :: optss) t.ppxopts in
-        {t with ppxopts}
-      else
-        t
+    let ppx = Filename.basename ppx in
+    let optss = try String.Map.find ppx t.ppxopts with Not_found -> [] in
+    if not (List.mem ~set:optss opts) then
+      let ppxopts = String.Map.add ~key:ppx ~data:(opts :: optss) t.ppxopts in
+      {t with ppxopts}
+    else
+      t
 
 let union ta tb =
   { ppxs = List.filter_dup (ta.ppxs @ tb.ppxs);

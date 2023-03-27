@@ -112,12 +112,12 @@ module Cache = File_cache.Make (struct
       aux ()
     with
     | End_of_file ->
-        close_in_noerr ic;
-        let recurse = !recurse and includes = !includes in
-        {recurse; includes; path; directives = List.rev !acc}
+      close_in_noerr ic;
+      let recurse = !recurse and includes = !includes in
+      {recurse; includes; path; directives = List.rev !acc}
     | exn ->
-        close_in_noerr ic;
-        raise exn
+      close_in_noerr ic;
+      raise exn
 
   let cache_name = "Mconfig_dot"
 end)
@@ -144,30 +144,30 @@ let directives_of_files filenames =
   let rec process acc = function
     | x :: rest when Hashtbl.mem marked x -> process acc rest
     | x :: rest ->
-        Hashtbl.add marked x ();
-        let file = Cache.read x in
-        let dir = Filename.dirname file.path in
-        let rest =
-          List.map ~f:(canonicalize_filename ~cwd:dir) file.includes @ rest
-        in
-        let rest =
-          if file.recurse then
-            let dir =
-              if Filename.basename file.path <> ".merlin" then
-                dir
-              else
-                Filename.dirname dir
-            in
-            if dir <> file.path then
-              match find dir with
-              | Some fname -> fname :: rest
-              | None -> rest
+      Hashtbl.add marked x ();
+      let file = Cache.read x in
+      let dir = Filename.dirname file.path in
+      let rest =
+        List.map ~f:(canonicalize_filename ~cwd:dir) file.includes @ rest
+      in
+      let rest =
+        if file.recurse then
+          let dir =
+            if Filename.basename file.path <> ".merlin" then
+              dir
             else
-              rest
+              Filename.dirname dir
+          in
+          if dir <> file.path then
+            match find dir with
+            | Some fname -> fname :: rest
+            | None -> rest
           else
             rest
-        in
-        process (file :: acc) rest
+        else
+          rest
+      in
+      process (file :: acc) rest
     | [] -> List.rev acc
   in
   process [] filenames
@@ -182,10 +182,10 @@ let ppx_of_package ?(predicates = []) setup pkg =
       if j < l then
         match s.[j] with
         | (' ' | '\t' | '\n' | '\r' | ',') as c when c <> ',' || comma ->
-            if i < j then
-              String.sub s ~pos:i ~len:(j - i) :: split (j + 1) (j + 1)
-            else
-              split (j + 1) (j + 1)
+          if i < j then
+            String.sub s ~pos:i ~len:(j - i) :: split (j + 1) (j + 1)
+          else
+            split (j + 1) (j + 1)
         | _ -> split i (j + 1)
       else if i < j then
         [String.sub s ~pos:i ~len:(j - i)]
@@ -218,11 +218,11 @@ let ppx_of_package ?(predicates = []) setup pkg =
     match ppxopts with
     | [] -> ()
     | lst ->
-        log ~title:"ppx options" "%a" Logger.json @@ fun () ->
-        let f (ppx, opts) =
-          `List [`String ppx; `List (List.map ~f:(fun s -> `String s) opts)]
-        in
-        `List (List.map ~f lst)
+      log ~title:"ppx options" "%a" Logger.json @@ fun () ->
+      let f (ppx, opts) =
+        `List [`String ppx; `List (List.map ~f:(fun s -> `String s) opts)]
+      in
+      `List (List.map ~f lst)
   end;
   let setup =
     match ppx with
@@ -302,7 +302,7 @@ let path_of_packages ?conf ?path ?toolchain packages =
     match Findlib.package_deep_ancestors [] recorded_packages with
     | packages -> (packages, failures)
     | exception exn ->
-        ([], sprintf "Findlib failure: %S" (Printexc.to_string exn) :: failures)
+      ([], sprintf "Findlib failure: %S" (Printexc.to_string exn) :: failures)
   in
   let packages = List.filter_dup packages in
   let path = List.map ~f:Findlib.package_directory packages in
@@ -333,45 +333,44 @@ let prepend_config ~cwd ~cfg =
     ~f:(fun cfg (d : Merlin_dot_protocol.Directive.Raw.t) ->
       match d with
       | (`B _ | `S _ | `CMI _ | `CMT _) as directive ->
-          {cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize}
+        {cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize}
       | ( `EXT _
         | `SUFFIX _
         | `FLG _
         | `READER _
         | `EXCLUDE_QUERY_DIR
         | `UNKNOWN_TAG _ ) as directive ->
-          {cfg with pass_forward = directive :: cfg.pass_forward}
+        {cfg with pass_forward = directive :: cfg.pass_forward}
       | `PKG ps -> {cfg with packages_to_load = ps @ cfg.packages_to_load}
       | `STDLIB path ->
-          let canon_path = canonicalize_filename ~cwd path in
-          begin
-            match cfg.stdlib with
-            | None -> ()
-            | Some p ->
-                log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
-          end;
-          {cfg with stdlib = Some canon_path}
+        let canon_path = canonicalize_filename ~cwd path in
+        begin
+          match cfg.stdlib with
+          | None -> ()
+          | Some p ->
+            log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
+        end;
+        {cfg with stdlib = Some canon_path}
       | `FINDLIB path ->
-          let canon_path = canonicalize_filename ~cwd path in
-          begin
-            match cfg.stdlib with
-            | None -> ()
-            | Some p ->
-                log ~title:"conflicting paths for findlib" "%s\n%s" p canon_path
-          end;
-          {cfg with findlib = Some canon_path}
+        let canon_path = canonicalize_filename ~cwd path in
+        begin
+          match cfg.stdlib with
+          | None -> ()
+          | Some p ->
+            log ~title:"conflicting paths for findlib" "%s\n%s" p canon_path
+        end;
+        {cfg with findlib = Some canon_path}
       | `FINDLIB_PATH path ->
-          let canon_path = canonicalize_filename ~cwd path in
-          {cfg with findlib_path = canon_path :: cfg.findlib_path}
+        let canon_path = canonicalize_filename ~cwd path in
+        {cfg with findlib_path = canon_path :: cfg.findlib_path}
       | `FINDLIB_TOOLCHAIN path ->
-          begin
-            match cfg.stdlib with
-            | None -> ()
-            | Some p ->
-                log ~title:"conflicting paths for findlib toolchain" "%s\n%s" p
-                  path
-          end;
-          {cfg with findlib_toolchain = Some path})
+        begin
+          match cfg.stdlib with
+          | None -> ()
+          | Some p ->
+            log ~title:"conflicting paths for findlib toolchain" "%s\n%s" p path
+        end;
+        {cfg with findlib_toolchain = Some path})
 
 let process_one ~cfg {path; directives; _} =
   let cwd = Filename.dirname path in
@@ -446,8 +445,8 @@ let postprocess cfg =
     match Ppxsetup.command_line ppxsetup with
     | [] -> []
     | lst ->
-        let cmd = List.concat_map lst ~f:(fun pp -> ["-ppx"; pp]) in
-        [`FLG cmd]
+      let cmd = List.concat_map lst ~f:(fun pp -> ["-ppx"; pp]) in
+      [`FLG cmd]
   in
   List.concat
     [ List.concat_map cfg.to_canonicalize ~f:(fun (dir, directive) ->
@@ -456,9 +455,9 @@ let postprocess cfg =
             | `B path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `B p)
             | `S path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `S p)
             | `CMI path ->
-                List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
+              List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
             | `CMT path ->
-                List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
+              List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
           in
           (dirs :> Merlin_dot_protocol.directive list));
       (cfg.pass_forward :> Merlin_dot_protocol.directive list);
@@ -483,10 +482,10 @@ let rec main () =
   match Merlin_dot_protocol.Commands.read_input stdin with
   | Halt -> exit 0
   | File _path ->
-      let directives = load dot_merlin_file in
-      Merlin_dot_protocol.write ~out_channel:stdout directives;
-      flush stdout;
-      main ()
+    let directives = load dot_merlin_file in
+    Merlin_dot_protocol.write ~out_channel:stdout directives;
+    flush stdout;
+    main ()
   | Unknown -> main ()
 
 let () = main ()

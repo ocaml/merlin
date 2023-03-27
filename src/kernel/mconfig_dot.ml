@@ -124,11 +124,11 @@ end = struct
       let prog, args =
         match cfg with
         | Dot_merlin ->
-            let prog = "dot-merlin-reader" in
-            (prog, [| prog |])
+          let prog = "dot-merlin-reader" in
+          (prog, [| prog |])
         | Dune ->
-            let prog = "dune" in
-            (prog, [| prog; "ocaml-merlin"; "--no-print-directory" |])
+          let prog = "dune" in
+          (prog, [| prog; "ocaml-merlin"; "--no-print-directory" |])
       in
       let cwd = Sys.getcwd () in
       let stdin_r, stdin_w = Unix.pipe () in
@@ -194,9 +194,9 @@ end = struct
     match Unix.waitpid [WNOHANG] p.pid with
     | 0, _ -> Some p.process
     | _ -> begin
-        Hashtbl.remove running_processes (dir, configurator);
-        None
-      end
+      Hashtbl.remove running_processes (dir, configurator);
+      None
+    end
 end
 
 let prepend_config ~dir:cwd configurator (directives : directive list) config =
@@ -204,30 +204,30 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
     ~f:
       (fun (config, errors) -> function
         | `B path ->
-            ({config with build_path = path :: config.build_path}, errors)
+          ({config with build_path = path :: config.build_path}, errors)
         | `S path ->
-            ({config with source_path = path :: config.source_path}, errors)
+          ({config with source_path = path :: config.source_path}, errors)
         | `CMI path -> ({config with cmi_path = path :: config.cmi_path}, errors)
         | `CMT path -> ({config with cmt_path = path :: config.cmt_path}, errors)
         | `EXT exts ->
-            ({config with extensions = exts @ config.extensions}, errors)
+          ({config with extensions = exts @ config.extensions}, errors)
         | `SUFFIX suffix ->
-            ( {config with suffixes = parse_suffix suffix @ config.suffixes},
-              errors )
+          ( {config with suffixes = parse_suffix suffix @ config.suffixes},
+            errors )
         | `FLG flags ->
-            let flags = {workdir = cwd; workval = flags} in
-            ({config with flags = flags :: config.flags}, errors)
+          let flags = {workdir = cwd; workval = flags} in
+          ({config with flags = flags :: config.flags}, errors)
         | `STDLIB path -> ({config with stdlib = Some path}, errors)
         | `READER reader -> ({config with reader}, errors)
         | `EXCLUDE_QUERY_DIR -> ({config with exclude_query_dir = true}, errors)
         | `ERROR_MSG str -> (config, str :: errors)
         | `UNKNOWN_TAG _ when configurator = Configurator.Dune ->
-            (* For easier forward compatibility we ignore unknown configuration tags
-               when they are provided by dune *)
-            (config, errors)
+          (* For easier forward compatibility we ignore unknown configuration tags
+             when they are provided by dune *)
+          (config, errors)
         | `UNKNOWN_TAG tag ->
-            let error = Printf.sprintf "Unknown configuration tag \"%s\"" tag in
-            (config, error :: errors))
+          let error = Printf.sprintf "Unknown configuration tag \"%s\"" tag in
+          (config, error :: errors))
     directives
 
 let postprocess_config config =
@@ -299,45 +299,45 @@ let get_config {workdir; process_dir; configurator} path_abs =
 
     match answer with
     | Ok directives ->
-        let cfg, failures =
-          prepend_config ~dir:workdir configurator directives empty_config
-        in
-        (postprocess_config cfg, failures)
+      let cfg, failures =
+        prepend_config ~dir:workdir configurator directives empty_config
+      in
+      (postprocess_config cfg, failures)
     | Error (Merlin_dot_protocol.Unexpected_output msg) -> (empty_config, [msg])
     | Error (Merlin_dot_protocol.Csexp_parse_error _) -> raise End_of_input
   with
   | Process_exited ->
-      (* This can happen
-         - If `dot-merlin-reader` is not installed and the project use `.merlin`
-           files
-         - There was a bug in the external reader causing a crash *)
-      let program_name = Lib_config.program_name () in
-      let error =
-        Printf.sprintf
-          "A problem occurred with %s external configuration reader. %s If the \
-           problem persists, please file an issue on %s's tracker."
-          program_name
-          (match configurator with
-          | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
-          | Dune -> "Check that `dune` is installed and up-to-date.")
-          program_name
-      in
-      (empty_config, [error])
+    (* This can happen
+       - If `dot-merlin-reader` is not installed and the project use `.merlin`
+         files
+       - There was a bug in the external reader causing a crash *)
+    let program_name = Lib_config.program_name () in
+    let error =
+      Printf.sprintf
+        "A problem occurred with %s external configuration reader. %s If the \
+         problem persists, please file an issue on %s's tracker."
+        program_name
+        (match configurator with
+        | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
+        | Dune -> "Check that `dune` is installed and up-to-date.")
+        program_name
+    in
+    (empty_config, [error])
   | End_of_input ->
-      (* This can happen
-         - if a project using old-dune has not been built and Merlin wrongly tries to
-           start `new-dune ocaml-merlin` in the absence of `.merlin` files
-         - the process stopped in the middle of its answer (which is very unlikely) *)
-      let program_name = Lib_config.program_name () in
-      let error =
-        Printf.sprintf
-          "%s could not load its configuration from the external reader. %s"
-          program_name
-          (match configurator with
-          | Dot_merlin -> "If the problem persists, please file an issue."
-          | Dune -> "Building your project with `dune` might solve this issue.")
-      in
-      (empty_config, [error])
+    (* This can happen
+       - if a project using old-dune has not been built and Merlin wrongly tries to
+         start `new-dune ocaml-merlin` in the absence of `.merlin` files
+       - the process stopped in the middle of its answer (which is very unlikely) *)
+    let program_name = Lib_config.program_name () in
+    let error =
+      Printf.sprintf
+        "%s could not load its configuration from the external reader. %s"
+        program_name
+        (match configurator with
+        | Dot_merlin -> "If the problem persists, please file an issue."
+        | Dune -> "Building your project with `dune` might solve this issue.")
+    in
+    (empty_config, [error])
 
 let find_project_context start_dir =
   (* The workdir is the first directory we find which contains a [dune] file.
@@ -347,16 +347,16 @@ let find_project_context start_dir =
   let map_workdir dir = function
     | Some dir -> Some dir
     | None ->
-        let fnames = List.map ~f:(Filename.concat dir) ["dune"; "dune-file"] in
-        if
-          List.exists
-            ~f:(fun fname ->
-              Sys.file_exists fname && not (Sys.is_directory fname))
-            fnames
-        then
-          Some dir
-        else
-          None
+      let fnames = List.map ~f:(Filename.concat dir) ["dune"; "dune-file"] in
+      if
+        List.exists
+          ~f:(fun fname ->
+            Sys.file_exists fname && not (Sys.is_directory fname))
+          fnames
+      then
+        Some dir
+      else
+        None
   in
 
   let rec loop workdir dir =

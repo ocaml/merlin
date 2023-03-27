@@ -26,10 +26,10 @@ let fresh_env config =
 let get_cache config =
   match !cache with
   | Some (env0, snap0, items) when Types.is_valid snap0 ->
-      (env0, snap0, Some items)
+    (env0, snap0, Some items)
   | Some _ | None ->
-      let env0, snap0 = fresh_env config in
-      (env0, snap0, None)
+    let env0, snap0 = fresh_env config in
+    (env0, snap0, None)
 
 let return_and_cache status =
   cache := Some status;
@@ -52,49 +52,49 @@ let compatible_prefix result_items tree_items =
     | ritem :: ritems, pitem :: pitems
       when Types.is_valid ritem.part_snapshot
            && compare ritem.parsetree_item pitem = 0 ->
-        aux (ritem :: acc) (ritems, pitems)
+      aux (ritem :: acc) (ritems, pitems)
     | _, pitems ->
-        log ~title:"compatible_prefix" "reusing %d items, %d new items to type"
-          (List.length acc) (List.length pitems);
-        (acc, pitems)
+      log ~title:"compatible_prefix" "reusing %d items, %d new items to type"
+        (List.length acc) (List.length pitems);
+      (acc, pitems)
   in
   aux [] (result_items, tree_items)
 
 let rec type_structure caught env = function
   | parsetree_item :: rest ->
-      let items, _, part_env =
-        Typemod.merlin_type_structure env [parsetree_item]
-      in
-      let typedtree_items =
-        (items.Typedtree.str_items, items.Typedtree.str_type)
-      in
-      let item =
-        { parsetree_item;
-          typedtree_items;
-          part_env;
-          part_snapshot = Btype.snapshot ();
-          part_errors = !caught;
-          part_checks = !Typecore.delayed_checks;
-          part_warnings = Warnings.backup () }
-      in
-      item :: type_structure caught part_env rest
+    let items, _, part_env =
+      Typemod.merlin_type_structure env [parsetree_item]
+    in
+    let typedtree_items =
+      (items.Typedtree.str_items, items.Typedtree.str_type)
+    in
+    let item =
+      { parsetree_item;
+        typedtree_items;
+        part_env;
+        part_snapshot = Btype.snapshot ();
+        part_errors = !caught;
+        part_checks = !Typecore.delayed_checks;
+        part_warnings = Warnings.backup () }
+    in
+    item :: type_structure caught part_env rest
   | [] -> []
 
 let rec type_signature caught env = function
   | parsetree_item :: rest ->
-      let {Typedtree.sig_final_env = part_env; sig_items; sig_type} =
-        Typemod.merlin_transl_signature env [parsetree_item]
-      in
-      let item =
-        { parsetree_item;
-          typedtree_items = (sig_items, sig_type);
-          part_env;
-          part_snapshot = Btype.snapshot ();
-          part_errors = !caught;
-          part_checks = !Typecore.delayed_checks;
-          part_warnings = Warnings.backup () }
-      in
-      item :: type_signature caught part_env rest
+    let {Typedtree.sig_final_env = part_env; sig_items; sig_type} =
+      Typemod.merlin_transl_signature env [parsetree_item]
+    in
+    let item =
+      { parsetree_item;
+        typedtree_items = (sig_items, sig_type);
+        part_env;
+        part_snapshot = Btype.snapshot ();
+        part_errors = !caught;
+        part_checks = !Typecore.delayed_checks;
+        part_warnings = Warnings.backup () }
+    in
+    item :: type_signature caught part_env rest
   | [] -> []
 
 let type_implementation config caught parsetree =
@@ -108,9 +108,9 @@ let type_implementation config caught parsetree =
     match prefix with
     | [] -> (env0, snap0, Warnings.backup ())
     | x :: _ ->
-        caught := x.part_errors;
-        Typecore.delayed_checks := x.part_checks;
-        (x.part_env, x.part_snapshot, x.part_warnings)
+      caught := x.part_errors;
+      Typecore.delayed_checks := x.part_checks;
+      (x.part_env, x.part_snapshot, x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';
@@ -128,9 +128,9 @@ let type_interface config caught parsetree =
     match prefix with
     | [] -> (env0, snap0, Warnings.backup ())
     | x :: _ ->
-        caught := x.part_errors;
-        Typecore.delayed_checks := x.part_checks;
-        (x.part_env, x.part_snapshot, x.part_warnings)
+      caught := x.part_errors;
+      Typecore.delayed_checks := x.part_checks;
+      (x.part_env, x.part_snapshot, x.part_warnings)
   in
   Btype.backtrack snap';
   Warnings.restore warn';
@@ -186,11 +186,11 @@ let get_typedtree t =
   in
   match t.typedtree with
   | `Implementation l ->
-      let str_items, str_type = split_items l in
-      `Implementation {Typedtree.str_items; str_type; str_final_env = get_env t}
+    let str_items, str_type = split_items l in
+    `Implementation {Typedtree.str_items; str_type; str_final_env = get_env t}
   | `Interface l ->
-      let sig_items, sig_type = split_items l in
-      `Interface {Typedtree.sig_items; sig_type; sig_final_env = get_env t}
+    let sig_items, sig_type = split_items l in
+    `Interface {Typedtree.sig_items; sig_type; sig_final_env = get_env t}
 
 let node_at ?(skip_recovered = false) t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
@@ -206,5 +206,5 @@ let node_at ?(skip_recovered = false) t pos_cursor =
   | [] -> [(get_env t, Browse_raw.Dummy)]
   | path when skip_recovered -> select path
   | path ->
-      log ~title:"node_at" "Deepest before %s" (Mbrowse.print () path);
-      path
+    log ~title:"node_at" "Deepest before %s" (Mbrowse.print () path);
+    path

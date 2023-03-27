@@ -73,35 +73,35 @@ module Sexp = struct
   let rec to_string = function
     | Atom s -> s
     | List l ->
-        String.concat ~sep:" "
-          (List.concat [["("]; List.map ~f:to_string l; [")"]])
+      String.concat ~sep:" "
+        (List.concat [["("]; List.map ~f:to_string l; [")"]])
 
   let to_directive sexp =
     match sexp with
     | List [Atom tag; Atom value] -> begin
+      match tag with
+      | "S" -> `S value
+      | "B" -> `B value
+      | "CMI" -> `CMI value
+      | "CMT" -> `CMT value
+      | "STDLIB" -> `STDLIB value
+      | "SUFFIX" -> `SUFFIX value
+      | "ERROR" -> `ERROR_MSG value
+      | "FLG" ->
+        (* This means merlin asked dune 2.6 for configuration.
+           But the protocole evolved, only dune 2.8 should be used *)
+        `ERROR_MSG "No .merlin file found. Try building the project."
+      | tag -> `UNKNOWN_TAG tag
+    end
+    | List [Atom tag; List l] ->
+      let value = strings_of_atoms l in
+      begin
         match tag with
-        | "S" -> `S value
-        | "B" -> `B value
-        | "CMI" -> `CMI value
-        | "CMT" -> `CMT value
-        | "STDLIB" -> `STDLIB value
-        | "SUFFIX" -> `SUFFIX value
-        | "ERROR" -> `ERROR_MSG value
-        | "FLG" ->
-            (* This means merlin asked dune 2.6 for configuration.
-               But the protocole evolved, only dune 2.8 should be used *)
-            `ERROR_MSG "No .merlin file found. Try building the project."
+        | "EXT" -> `EXT value
+        | "FLG" -> `FLG value
+        | "READER" -> `READER value
         | tag -> `UNKNOWN_TAG tag
       end
-    | List [Atom tag; List l] ->
-        let value = strings_of_atoms l in
-        begin
-          match tag with
-          | "EXT" -> `EXT value
-          | "FLG" -> `FLG value
-          | "READER" -> `READER value
-          | tag -> `UNKNOWN_TAG tag
-        end
     | List [Atom "EXCLUDE_QUERY_DIR"] -> `EXCLUDE_QUERY_DIR
     | _ -> `ERROR_MSG "Unexpected output from external config reader"
 
@@ -121,7 +121,7 @@ module Sexp = struct
         | `READER ss -> ("READER", [List (atoms_of_strings ss)])
         | `EXCLUDE_QUERY_DIR -> ("EXCLUDE_QUERY_DIR", [])
         | `UNKNOWN_TAG tag ->
-            ("ERROR", single @@ Printf.sprintf "Unknown tag in .merlin: %s" tag)
+          ("ERROR", single @@ Printf.sprintf "Unknown tag in .merlin: %s" tag)
         | `ERROR_MSG s -> ("ERROR", single s)
       in
       List (Atom tag :: body)
@@ -152,11 +152,11 @@ let read ~in_channel =
   match Csexp.input in_channel with
   | Ok (Sexp.List directives) -> Ok (List.map directives ~f:Sexp.to_directive)
   | Ok sexp ->
-      let msg =
-        Printf.sprintf "A list of directives was expected, instead got: \"%s\""
-          (Sexp.to_string sexp)
-      in
-      Error (Unexpected_output msg)
+    let msg =
+      Printf.sprintf "A list of directives was expected, instead got: \"%s\""
+        (Sexp.to_string sexp)
+    in
+    Error (Unexpected_output msg)
   | Error msg -> Error (Csexp_parse_error msg)
 
 let write ~out_channel (directives : directive list) =

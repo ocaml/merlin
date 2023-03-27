@@ -16,11 +16,11 @@ let timed_lazy r x =
      in
      match Lazy.force x with
      | x ->
-         update ();
-         x
+       update ();
+       x
      | exception exn ->
-         update ();
-         Std.reraise exn)
+       update ();
+       Std.reraise exn)
 
 module Cache = struct
   let cache = ref []
@@ -54,14 +54,14 @@ module Cache = struct
     let key = key config in
     match List.assoc key !cache with
     | state ->
-        cache := (key, state) :: List.remove_assoc key !cache;
-        log ~title "found entry for this configuration";
-        state
+      cache := (key, state) :: List.remove_assoc key !cache;
+      log ~title "found entry for this configuration";
+      state
     | exception Not_found ->
-        log ~title "nothing cached for this configuration";
-        let state = Mocaml.new_state () in
-        cache := (key, state) :: List.take_n 5 !cache;
-        state
+      log ~title "nothing cached for this configuration";
+      let state = Mocaml.new_state () in
+      cache := (key, state) :: List.take_n 5 !cache;
+      state
 end
 
 module Typer = struct
@@ -136,15 +136,14 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
         (match Mconfig.(config.ocaml.pp) with
         | None -> (raw_source, None)
         | Some {workdir; workval} -> (
-            let source = Msource.text raw_source in
-            match
-              Pparse.apply_pp ~workdir
-                ~filename:Mconfig.(config.query.filename)
-                ~source ~pp:workval
-            with
-            | `Source source -> (Msource.make source, None)
-            | (`Interface _ | `Implementation _) as ast -> (raw_source, Some ast)
-            )))
+          let source = Msource.text raw_source in
+          match
+            Pparse.apply_pp ~workdir
+              ~filename:Mconfig.(config.query.filename)
+              ~source ~pp:workval
+          with
+          | `Source source -> (Msource.make source, None)
+          | (`Interface _ | `Implementation _) as ast -> (raw_source, Some ast))))
   in
   let reader =
     timed_lazy reader_time

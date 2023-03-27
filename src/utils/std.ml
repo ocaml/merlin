@@ -90,8 +90,8 @@ module List = struct
     match l with
     | [] -> acc
     | x :: xs ->
-        let init = f init x in
-        rev_scan_left (init :: acc) ~f xs ~init
+      let init = f init x in
+      rev_scan_left (init :: acc) ~f xs ~init
 
   let scan_left ~f l ~init = List.rev (rev_scan_left [] ~f l ~init)
 
@@ -105,16 +105,16 @@ module List = struct
   let rec filter_map ~f = function
     | [] -> []
     | x :: xs -> (
-        match f x with
-        | None -> filter_map ~f xs
-        | Some x -> x :: filter_map ~f xs)
+      match f x with
+      | None -> filter_map ~f xs
+      | Some x -> x :: filter_map ~f xs)
 
   let rec find_map ~f = function
     | [] -> raise Not_found
     | x :: xs -> (
-        match f x with
-        | None -> find_map ~f xs
-        | Some x' -> x')
+      match f x with
+      | None -> find_map ~f xs
+      | Some x' -> x')
 
   let rec map_end ~f l1 l2 =
     match l1 with
@@ -174,10 +174,10 @@ module List = struct
 
   let rec merge_cons ~f = function
     | a :: (b :: tl as tl') -> begin
-        match f a b with
-        | Some a' -> merge_cons ~f (a' :: tl)
-        | None -> a :: merge_cons ~f tl'
-      end
+      match f a b with
+      | Some a' -> merge_cons ~f (a' :: tl)
+      | None -> a :: merge_cons ~f tl'
+    end
     | tl -> tl
 
   let rec take_while ~f = function
@@ -220,9 +220,9 @@ module List = struct
   let rec fold_n_map ~f ~init = function
     | [] -> (init, [])
     | x :: xs ->
-        let acc, x' = f init x in
-        let acc, xs' = fold_n_map ~f ~init:acc xs in
-        (acc, x' :: xs')
+      let acc, x' = f init x in
+      let acc, xs' = fold_n_map ~f ~init:acc xs in
+      (acc, x' :: xs')
 
   module Lazy = struct
     type 'a t = Nil | Cons of 'a * 'a t lazy_t
@@ -243,9 +243,9 @@ module List = struct
     let rec filter_map ~f = function
       | Nil -> Nil
       | Cons (a, tl) -> (
-          match f a with
-          | None -> filter_map ~f (Lazy.force tl)
-          | Some a' -> Cons (a', lazy (filter_map ~f (Lazy.force tl))))
+        match f a with
+        | None -> filter_map ~f (Lazy.force tl)
+        | Some a' -> Cons (a', lazy (filter_map ~f (Lazy.force tl))))
   end
 
   let rec last = function
@@ -256,9 +256,9 @@ module List = struct
   let rec group_by pred group acc = function
     | [] -> List.rev acc
     | x :: xs -> (
-        match group with
-        | x' :: _ when pred x x' -> group_by pred (x :: group) acc xs
-        | _ -> group_by pred [x] (group :: acc) xs)
+      match group with
+      | x' :: _ when pred x x' -> group_by pred (x :: group) acc xs
+      | _ -> group_by pred [x] (group :: acc) xs)
 
   let group_by pred xs =
     match group_by pred [] [] xs with
@@ -437,21 +437,21 @@ module String = struct
   let trim = function
     | "" -> ""
     | str ->
-        let l = String.length str in
-        let is_space = function
-          | ' ' | '\n' | '\t' | '\r' -> true
-          | _ -> false
-        in
-        let r0 = ref 0 and rl = ref l in
-        while !r0 < l && is_space str.[!r0] do
-          incr r0
-        done;
-        let r0 = !r0 in
-        while !rl > r0 && is_space str.[!rl - 1] do
-          decr rl
-        done;
-        let rl = !rl in
-        if r0 = 0 && rl = l then str else sub str ~pos:r0 ~len:(rl - r0)
+      let l = String.length str in
+      let is_space = function
+        | ' ' | '\n' | '\t' | '\r' -> true
+        | _ -> false
+      in
+      let r0 = ref 0 and rl = ref l in
+      while !r0 < l && is_space str.[!r0] do
+        incr r0
+      done;
+      let r0 = !r0 in
+      while !rl > r0 && is_space str.[!rl - 1] do
+        decr rl
+      done;
+      let rl = !rl in
+      if r0 = 0 && rl = l then str else sub str ~pos:r0 ~len:(rl - r0)
 
   let print () s = Printf.sprintf "%S" s
 
@@ -469,15 +469,15 @@ module String = struct
     match String.index s c with
     | exception Not_found -> [s]
     | p ->
-        let rec loop i =
-          match String.index_from s i c with
-          | exception Not_found -> [String.sub s i (String.length s - i)]
-          | j ->
-              let s0 = String.sub s i (j - i) in
-              s0 :: loop (j + 1)
-        in
-        let s0 = String.sub s 0 p in
-        s0 :: loop (p + 1)
+      let rec loop i =
+        match String.index_from s i c with
+        | exception Not_found -> [String.sub s i (String.length s - i)]
+        | j ->
+          let s0 = String.sub s i (j - i) in
+          s0 :: loop (j + 1)
+      in
+      let s0 = String.sub s 0 p in
+      s0 :: loop (p + 1)
 
   let chop_prefix ~prefix text =
     let tlen = String.length text in
@@ -515,18 +515,18 @@ module String = struct
       match next_occurrence ~pattern text 0 with
       | exception Not_found -> text
       | j0 ->
-          let buffer = Buffer.create (String.length text) in
-          let rec aux i j =
-            Buffer.add_substring buffer text i (j - i);
-            Buffer.add_string buffer with_;
-            let i' = j + String.length pattern in
-            match next_occurrence ~pattern text i' with
-            | exception Not_found ->
-                Buffer.add_substring buffer text i' (String.length text - i')
-            | j' -> aux i' j'
-          in
-          aux 0 j0;
-          Buffer.contents buffer
+        let buffer = Buffer.create (String.length text) in
+        let rec aux i j =
+          Buffer.add_substring buffer text i (j - i);
+          Buffer.add_string buffer with_;
+          let i' = j + String.length pattern in
+          match next_occurrence ~pattern text i' with
+          | exception Not_found ->
+            Buffer.add_substring buffer text i' (String.length text - i')
+          | j' -> aux i' j'
+        in
+        aux 0 j0;
+        Buffer.contents buffer
 end
 
 let sprintf = Printf.sprintf
@@ -645,37 +645,37 @@ end = struct
   let compile_pattern = function
     | "**" -> Wildwild
     | pattern ->
-        let regexp = Buffer.create 15 in
-        let chunk = Buffer.create 15 in
-        let flush () =
-          if Buffer.length chunk > 0 then (
-            Buffer.add_string regexp (Str.quote (Buffer.contents chunk));
-            Buffer.clear chunk)
-        in
-        let l = String.length pattern in
-        let i = ref 0 in
-        while !i < l do
-          begin
-            match pattern.[!i] with
-            | '\\' ->
-                incr i;
-                if !i < l then Buffer.add_char chunk pattern.[!i]
-            | '*' ->
-                flush ();
-                Buffer.add_string regexp ".*"
-            | '?' ->
-                flush ();
-                Buffer.add_char regexp '.'
-            | x -> Buffer.add_char chunk x
-          end;
-          incr i
-        done;
-        if Buffer.length regexp = 0 then
-          Exact (Buffer.contents chunk)
-        else (
-          flush ();
-          Buffer.add_char regexp '$';
-          Regexp (Str.regexp (Buffer.contents regexp)))
+      let regexp = Buffer.create 15 in
+      let chunk = Buffer.create 15 in
+      let flush () =
+        if Buffer.length chunk > 0 then (
+          Buffer.add_string regexp (Str.quote (Buffer.contents chunk));
+          Buffer.clear chunk)
+      in
+      let l = String.length pattern in
+      let i = ref 0 in
+      while !i < l do
+        begin
+          match pattern.[!i] with
+          | '\\' ->
+            incr i;
+            if !i < l then Buffer.add_char chunk pattern.[!i]
+          | '*' ->
+            flush ();
+            Buffer.add_string regexp ".*"
+          | '?' ->
+            flush ();
+            Buffer.add_char regexp '.'
+          | x -> Buffer.add_char chunk x
+        end;
+        incr i
+      done;
+      if Buffer.length regexp = 0 then
+        Exact (Buffer.contents chunk)
+      else (
+        flush ();
+        Buffer.add_char regexp '$';
+        Regexp (Str.regexp (Buffer.contents regexp)))
 
   let match_pattern re str =
     match re with
@@ -697,11 +697,11 @@ let let_ref r v f =
   r := v;
   match f () with
   | result ->
-      r := v';
-      result
+    r := v';
+    result
   | exception exn ->
-      r := v';
-      raise exn
+    r := v';
+    raise exn
 
 let failwithf fmt = Printf.ksprintf failwith fmt
 
@@ -729,32 +729,32 @@ module Shell = struct
       match c with
       | ' ' | '\t' | '\n' | '\r' -> flush ()
       | '\\' ->
-          dirty := true;
-          if !i < len then (
-            Buffer.add_char buf (unescape str.[!i]);
-            incr i)
+        dirty := true;
+        if !i < len then (
+          Buffer.add_char buf (unescape str.[!i]);
+          incr i)
       | '\'' ->
-          dirty := true;
-          while !i < len && str.[!i] <> '\'' do
-            Buffer.add_char buf str.[!i];
-            incr i
-          done;
+        dirty := true;
+        while !i < len && str.[!i] <> '\'' do
+          Buffer.add_char buf str.[!i];
           incr i
+        done;
+        incr i
       | '"' ->
-          dirty := true;
-          while !i < len && str.[!i] <> '"' do
-            (match str.[!i] with
-            | '\\' ->
-                incr i;
-                if !i < len then
-                  Buffer.add_char buf (unescape str.[!i])
-            | x -> Buffer.add_char buf x);
-            incr i
-          done;
+        dirty := true;
+        while !i < len && str.[!i] <> '"' do
+          (match str.[!i] with
+          | '\\' ->
+            incr i;
+            if !i < len then
+              Buffer.add_char buf (unescape str.[!i])
+          | x -> Buffer.add_char buf x);
           incr i
+        done;
+        incr i
       | x ->
-          dirty := true;
-          Buffer.add_char buf x
+        dirty := true;
+        Buffer.add_char buf x
     done;
     flush ();
     List.rev !comps
@@ -798,8 +798,8 @@ let file_contents filename =
       match input ic str 0 1024 with
       | 0 -> ()
       | n ->
-          Buffer.add_subbytes buf str 0 n;
-          loop ()
+        Buffer.add_subbytes buf str 0 n;
+        loop ()
     in
     loop ();
     close_in_noerr ic;

@@ -42,13 +42,13 @@ let fold_node f env t acc =
     with
     | [] -> acc
     | parts ->
-        let rec aux acc = function
-          | [] -> acc
-          | part :: parts ->
-              let t = node_of_binary_part env part in
-              aux (f (Browse_raw.node_update_env env t) t acc) parts
-        in
-        aux acc parts
+      let rec aux acc = function
+        | [] -> acc
+        | part :: parts ->
+          let t = node_of_binary_part env part in
+          aux (f (Browse_raw.node_update_env env t) t acc) parts
+      in
+      aux acc parts
   in
   Browse_raw.fold_node f env t acc
 
@@ -120,8 +120,8 @@ let compare_locations pos l1 l2 =
   let t1_first = -1 in
   match (Location_aux.compare_pos pos l1, Location_aux.compare_pos pos l2) with
   | 0, 0 ->
-      (* Cursor inside both locations: favor closer to the end *)
-      Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
+    (* Cursor inside both locations: favor closer to the end *)
+    Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
   | _, 0 -> t2_first
@@ -134,13 +134,13 @@ let compare_locations pos l1 l2 =
 let best_node pos = function
   | [] -> []
   | init :: xs ->
-      let f acc x =
-        if compare_locations pos (leaf_loc acc) (leaf_loc x) <= 0 then
-          acc
-        else
-          x
-      in
-      List.fold_left ~f ~init xs
+    let f acc x =
+      if compare_locations pos (leaf_loc acc) (leaf_loc x) <= 0 then
+        acc
+      else
+        x
+    in
+    List.fold_left ~f ~init xs
 
 let enclosing pos roots =
   match best_node pos roots with
@@ -151,27 +151,27 @@ let deepest_before pos roots =
   match enclosing pos roots with
   | [] -> []
   | root ->
-      let rec aux path =
-        let env0, node0 = leaf_node path in
-        let loc0 = node_merlin_loc node0 in
-        let select_candidate env node acc =
-          let loc = node_merlin_loc node in
-          if
-            path == root
-            || Location_aux.compare_pos pos loc = 0
-            || Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
-          then
-            match acc with
-            | Some (_, loc', _) when compare_locations pos loc' loc <= 0 -> acc
-            | Some _ | None -> Some (env, loc, node)
-          else
-            acc
-        in
-        match fold_node select_candidate env0 node0 None with
-        | None -> path
-        | Some (env, _, node) -> aux ((env, node) :: path)
+    let rec aux path =
+      let env0, node0 = leaf_node path in
+      let loc0 = node_merlin_loc node0 in
+      let select_candidate env node acc =
+        let loc = node_merlin_loc node in
+        if
+          path == root
+          || Location_aux.compare_pos pos loc = 0
+          || Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
+        then
+          match acc with
+          | Some (_, loc', _) when compare_locations pos loc' loc <= 0 -> acc
+          | Some _ | None -> Some (env, loc, node)
+        else
+          acc
       in
-      aux root
+      match fold_node select_candidate env0 node0 None with
+      | None -> path
+      | Some (env, _, node) -> aux ((env, node) :: path)
+    in
+    aux root
 
 (* Select open nodes *)
 
@@ -184,8 +184,8 @@ let rec select_open_node = function[@warning "-9"]
           _ ) )
     :: ancestors -> Some (p, longident, ancestors)
   | (_, Signature_item ({sig_desc = Tsig_open op}, _)) :: ancestors ->
-      let p, {Asttypes.txt = longident} = op.open_expr in
-      Some (p, longident, ancestors)
+    let p, {Asttypes.txt = longident} = op.open_expr in
+    Some (p, longident, ancestors)
   | ( _,
       Expression
         { exp_desc =
@@ -197,12 +197,12 @@ let rec select_open_node = function[@warning "-9"]
     when List.exists pat_extra ~f:(function
            | Tpat_open _, _, _ -> true
            | _ -> false) ->
-      let p, longident =
-        List.find_map pat_extra ~f:(function
-          | Tpat_open (p, {txt = longident}, _), _, _ -> Some (p, longident)
-          | _ -> None)
-      in
-      Some (p, longident, ancestors)
+    let p, longident =
+      List.find_map pat_extra ~f:(function
+        | Tpat_open (p, {txt = longident}, _), _, _ -> Some (p, longident)
+        | _ -> None)
+    in
+    Some (p, longident, ancestors)
   | [] -> None
   | _ :: ancestors -> select_open_node ancestors
 
@@ -238,7 +238,7 @@ let rec is_recovered_expression e =
   | Texp_tuple [_] -> true
   (* Recovery on unbound identifier *)
   | Texp_ident (Path.Pident id, _, _) when Ident.name id = "*type-error*" ->
-      true
+    true
   (* Recovery on desugared optional label application *)
   | Texp_construct _ as cstr when is_recovered_Texp_construct cstr -> true
   | _ -> false

@@ -58,16 +58,16 @@ let fun_pred all =
   let rec normalize_fun = function
     (* fun pat fun something *)
     | node1 :: node2 :: node3 :: tail when is_node_fun node3 ->
-        assert (is_node_fun node1);
-        assert (is_node_pattern node2);
-        normalize_fun (node3 :: tail)
+      assert (is_node_fun node1);
+      assert (is_node_pattern node2);
+      normalize_fun (node3 :: tail)
     (* fun let something *)
     | node1 :: node2 :: _ when is_node_let node2 ->
-        assert (is_node_fun node1);
-        node2
+      assert (is_node_fun node1);
+      node2
     | node :: _ ->
-        assert (is_node_fun node);
-        node
+      assert (is_node_fun node);
+      node
     | _ -> assert false
   in
   match all with
@@ -89,9 +89,9 @@ let match_pred = function
 let rec find_map ~f = function
   | [] -> None
   | head :: tail -> (
-      match f head with
-      | Some v -> Some v
-      | None -> find_map tail ~f)
+    match f head with
+    | Some v -> Some v
+    | None -> find_map tail ~f)
 
 exception No_matching_target
 exception No_predicate of string
@@ -101,19 +101,19 @@ let rec find_node preds nodes =
   match nodes with
   | [] -> raise No_matching_target
   | _ :: tail -> (
-      match find_map preds ~f:(fun pred -> pred nodes) with
-      | Some node -> node
-      | None -> find_node preds tail)
+    match find_map preds ~f:(fun pred -> pred nodes) with
+    | Some node -> node
+    | None -> find_node preds tail)
 
 (* Skip all nodes that won't advance cursor's position *)
 let rec skip_non_moving pos = function
   | node :: tail as all ->
-      let node_loc = Browse_raw.node_real_loc Location.none node in
-      let loc_start = node_loc.Location.loc_start in
-      if pos.Lexing.pos_lnum = loc_start.Lexing.pos_lnum then
-        skip_non_moving pos tail
-      else
-        all
+    let node_loc = Browse_raw.node_real_loc Location.none node in
+    let loc_start = node_loc.Location.loc_start in
+    if pos.Lexing.pos_lnum = loc_start.Lexing.pos_lnum then
+      skip_non_moving pos tail
+    else
+      all
   | [] -> []
 
 let get typed_tree pos target =
@@ -159,9 +159,9 @@ let phrase typed_tree pos target =
   let enclosing =
     match Mbrowse.enclosing pos [roots] with
     | (env, (Browse_raw.Module_expr _ as node)) :: enclosing ->
-        Browse_raw.fold_node
-          (fun env node enclosing -> (env, node) :: enclosing)
-          env node enclosing
+      Browse_raw.fold_node
+        (fun env node enclosing -> (env, node) :: enclosing)
+        env node enclosing
     | enclosing -> enclosing
   in
   (* Drop environment, they are of no use here *)
@@ -170,47 +170,43 @@ let phrase typed_tree pos target =
     match target with
     | `Prev -> List.rev (List.take_while ~f:(( != ) x) xs)
     | `Next -> (
-        match List.drop_while ~f:(( != ) x) xs with
-        | _ :: xs -> xs
-        | [] -> [])
+      match List.drop_while ~f:(( != ) x) xs with
+      | _ :: xs -> xs
+      | [] -> [])
   in
   let find_pos prj xs =
     match target with
     | `Prev ->
-        let f x = Location_aux.compare_pos pos (prj x) > 0 in
-        List.rev (List.take_while ~f xs)
+      let f x = Location_aux.compare_pos pos (prj x) > 0 in
+      List.rev (List.take_while ~f xs)
     | `Next ->
-        let f x = Location_aux.compare_pos pos (prj x) >= 0 in
-        List.drop_while ~f xs
+      let f x = Location_aux.compare_pos pos (prj x) >= 0 in
+      List.drop_while ~f xs
   in
   let rec seek_item = function
     | [] -> None
     | Browse_raw.Signature xs :: tail -> begin
-        match
-          find_pos (fun x -> x.Typedtree.sig_loc) xs.Typedtree.sig_items
-        with
-        | [] -> seek_item tail
-        | y :: _ -> Some y.Typedtree.sig_loc
-      end
+      match find_pos (fun x -> x.Typedtree.sig_loc) xs.Typedtree.sig_items with
+      | [] -> seek_item tail
+      | y :: _ -> Some y.Typedtree.sig_loc
+    end
     | Browse_raw.Structure xs :: tail -> begin
-        match
-          find_pos (fun x -> x.Typedtree.str_loc) xs.Typedtree.str_items
-        with
-        | [] -> seek_item tail
-        | y :: _ -> Some y.Typedtree.str_loc
-      end
+      match find_pos (fun x -> x.Typedtree.str_loc) xs.Typedtree.str_items with
+      | [] -> seek_item tail
+      | y :: _ -> Some y.Typedtree.str_loc
+    end
     | Browse_raw.Signature_item (x, _) :: Browse_raw.Signature xs :: tail ->
     begin
-        match find_item x xs.Typedtree.sig_items with
-        | [] -> seek_item tail
-        | y :: _ -> Some y.Typedtree.sig_loc
-      end
+      match find_item x xs.Typedtree.sig_items with
+      | [] -> seek_item tail
+      | y :: _ -> Some y.Typedtree.sig_loc
+    end
     | Browse_raw.Structure_item (x, _) :: Browse_raw.Structure xs :: tail ->
     begin
-        match find_item x xs.Typedtree.str_items with
-        | [] -> seek_item tail
-        | y :: _ -> Some y.Typedtree.str_loc
-      end
+      match find_item x xs.Typedtree.str_items with
+      | [] -> seek_item tail
+      | y :: _ -> Some y.Typedtree.str_loc
+    end
     | _ :: xs -> seek_item xs
   in
   match (seek_item enclosing, target) with
