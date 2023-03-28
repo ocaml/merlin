@@ -81,5 +81,5 @@ jobs:
       - name: Check if formatted
         if: matrix.os == 'ubuntu-latest'
         run: |
-          opam exec dune fmt
-          git diff --exit-code
+          opam install ocamlformat.0.24.1
+          opam exec dune build @fmt
