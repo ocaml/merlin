@@ -1,57 +1,69 @@
-{}
+{
+  let rec longident_to_string = function
+    | Longident.Lident n -> n
+    | Longident.Lapply (a, b) ->
+      longident_to_string a ^ "(" ^ longident_to_string b ^ ")"
+    | Longident.Ldot (a, n) ->
+      longident_to_string a ^ "." ^ n
 
-rule error_message token = parse error
+  let report_currified_constructor ?outer inner (token : Parser_raw.token) =
+    let token = match token with
+      | UNDERSCORE -> "_"
+      | LIDENT u | UIDENT u -> u
+      | LPAREN -> "..."
+      | _ -> assert false
+    in
+    let inner_msg = longident_to_string inner ^ " (..., " ^ token ^ ")" in
+    "Issue #10990: arguments of n-ary constructors should be put between parentheses, e.g. " ^
+    match outer with
+    | Some outer -> longident_to_string outer ^ " (" ^ inner_msg ^ ")"
+    | None -> inner_msg
 
-(* let x = 5 ; let y = 6 let z = 7 *)
+  let str_line pos = string_of_int pos.Lexing.pos_lnum
+  let str_col pos = string_of_int (pos.Lexing.pos_cnum - pos.Lexing.pos_bol)
+}
 
-| expr as e; SEMI
+rule error_message = parse error
+
+| e=expr; SEMI @ ELSE
   partial {
-    match token with
-    | Parser_raw.ELSE -> (
-      match e with 
-      | {pexp_desc = Pexp_ifthenelse(_, _, None); _}, startp, _endp -> (
-        Some ("The semicolon line "
-              ^ string_of_int startp.pos_lnum
-              ^ ", character "
-              ^ string_of_int (startp.pos_cnum - startp.pos_bol)
-              ^ " terminates the `if ... then ...` expression. \
-              Remove it to add an else branch.")
-        )
-      | _ -> None
+    match e with
+    | {pexp_desc = Pexp_ifthenelse(_, _, None); _} -> (
+      Some ("The semicolon line "
+            ^ string_of_int $startloc(e).pos_lnum
+            ^ ", character "
+            ^ string_of_int ($startloc(e).pos_cnum - $startloc(e).pos_bol)
+            ^ " terminates the `if ... then ...` expression. \
+            Remove it to add an else branch.")
       )
     | _ -> None
   }
 
-| [label_declaration: mutable_flag LIDENT . COLON]
-  partial {
-    match token with
-    | Parser_raw.EQUAL ->
-      Some "Expecting ':' to declare the type of a record field, not '='"
-    | _ -> None
+| LIDENT / label_declaration: mutable_flag _ . COLON @ EQUAL {
+    "Expecting ':' to declare the type of a record field, not '='"
   }
 
-| structure_item; !; SEMI as semi;
-  LET; ext; list(attribute); rec_flag; let_binding_body; !
-  { let (), startp, _endp = semi in
-    "Might be due to the semicolon line "
-    ^ string_of_int startp.pos_lnum
+(* let x = 5 ; let y = 6 let z = 7 *)
+
+| [structure_item]; semi=SEMI; [let_bindings(ext)]
+  { "Might be due to the semicolon line "
+    ^ str_line $startloc(semi)
     ^ ", character "
-    ^ string_of_int (startp.pos_cnum - startp.pos_bol)
+    ^ str_col $startloc(semi)
   }
 
 (* Replace builtin grammatical rule reporting unclosed parenthesis *)
-| LPAREN as lp; [. RPAREN]; !
-  { let (), startp, _endp = lp in
-    "Unclosed parenthesis at line " 
-    ^ string_of_int startp.pos_lnum
+| lp=LPAREN; [_* / . RPAREN]
+  { "Unclosed parenthesis at line "
+    ^ str_line $startloc(lp)
     ^ ", character "
-    ^ string_of_int (startp.pos_cnum - startp.pos_bol)
+    ^ str_col $startloc(lp)
   }
 
 (* https://github.com/ocaml/ocaml/issues/11108
    Report when a keyword has been typed in a context where a lowercase
    identifier is expected. *)
-| [. LIDENT]; !
+| [_* / . LIDENT]
   partial { match Lexer_raw.as_keyword token with
     | None -> None
     | Some kw ->
@@ -59,30 +71,33 @@ rule error_message token = parse error
   }
 
 (* https://github.com/ocaml/ocaml/issues/5068 *)
-| ([. UIDENT] | [. TYPE] | [. REC]); !
+| [_*  / . UIDENT |  _* / . TYPE | _* / . REC]
   { "Expecting `type' or a module name beginning with an uppercase letter"
   }
 
 (* https://discuss.ocaml.org/t/syntax-error-compiling-code-with-functor-module/6352 *)
-| [. seq_expr ]; !
-  { match token with
-    | MODULE ->
-      "`module' keyword cannot appear in an expression, \
+| [_* / . seq_expr] @ MODULE
+  {  "`module' keyword cannot appear in an expression, \
        use `(module M)' to pack a first class-module \
        or `let module M = ... in ...' to define a local module"
-    | _ -> "Expecting expression"
   }
 
 (* https://github.com/ocaml/ocaml/issues/11445 *)
-| OF; constructor_arguments; !
-  partial {
-    match token with
-    | MINUSGREATER ->
-      Some "Issue #11445: in constructor arguments, \
-            arrow types should be wrapped between parentheses"
-    | _ -> None
+
+| [constructor_arguments] @ MINUSGREATER
+  { "Issue #11445: in constructor arguments, \
+     arrow types should be wrapped between parentheses"
   }
 
-| [. IN]; !
+| [_* / . IN]
   { "Expecting `in'" }
 
+| outer=constr_longident; inner=constr_longident;
+  [_ / pattern_gen: constr_longident pattern .]
+  @ UNDERSCORE | LIDENT | UIDENT | LPAREN
+  { report_currified_constructor ~outer inner token }
+
+| inner=constr_longident;
+  [_* / pattern_gen: constr_longident pattern .]
+  @ UNDERSCORE | LIDENT | UIDENT | LPAREN
+  { report_currified_constructor inner token }

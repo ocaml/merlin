@@ -57,7 +57,7 @@ let log_env env =
   (Logger.for_section "analyser").log ~title:"stack"
     "[%s]" (String.concat ";" (states env))
 
-let explain env (unexpected, startp, endp) popped shifted =
+let explain env (unexpected, startp, endp as token) popped shifted =
   log_env env;
   let mkloc s e = {Location. loc_start = s; loc_end = e; loc_ghost = false} in
   let open MenhirInterpreter in
@@ -66,7 +66,7 @@ let explain env (unexpected, startp, endp) popped shifted =
   let unclosed = ref None in
   let analyser =
     List.filter_map
-      (Parse_errors.execute_error_message unexpected)
+      (fun candidate -> Parse_errors.execute_error_message candidate token)
       (Analyser.run env)
   in
   let return item =
