@@ -1,3 +1,10 @@
+merlin 4.9
+==========
+unreleased
+
+  + test suite
+    - Add missing dependency to a test using ppxlib (#1583)
+
 merlin 4.8
 ==========
 Fri Feb 24 16:55:42 CEST 2023
