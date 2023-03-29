@@ -2,6 +2,8 @@ merlin 4.9
 ==========
 unreleased
 
+  + merlin binary
+    - Allow monadic IO in dot protocol (#1581)
   + test suite
     - Add missing dependency to a test using ppxlib (#1583)
 
