@@ -127,14 +127,16 @@ module Sexp = struct
     List (List.map ~f directives)
 end
 
+type read_error =
+  | Unexpected_output of string
+  | Csexp_parse_error of string
+
+type command = File of string | Halt | Unknown
+
 module type S = sig
   type 'a io
   type in_chan
   type out_chan
-
-  type read_error =
-  | Unexpected_output of string
-  | Csexp_parse_error of string
 
   (** [read] reads one csexp from the channel and returns the list of
       directives it represents *)
@@ -144,8 +146,7 @@ module type S = sig
   val write : out_chan -> directive list -> unit io
 
   module Commands : sig
-    type t = File of string | Halt | Unknown
-    val read_input : in_chan -> t io
+    val read_input : in_chan -> command io
 
     val send_file : out_chan -> string -> unit io
 
@@ -172,13 +173,7 @@ struct
   type in_chan = Chan.in_chan
   type out_chan = Chan.out_chan
 
-  type read_error =
-  | Unexpected_output of string
-  | Csexp_parse_error of string
-
   module Commands = struct
-    type t = File of string | Halt | Unknown
-
     let read_input chan =
       let open Sexp in
       let open IO.O in
