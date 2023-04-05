@@ -279,12 +279,11 @@ let get_config { workdir; process_dir; configurator } path_abs =
       workdir
   in
   let query path (p : Configurator.Process.t) =
+    let open Merlin_dot_protocol.Blocking in
     log_query path;
-    Merlin_dot_protocol.Commands.send_file
-      ~out_channel:p.stdin
-      path;
+    Commands.send_file p.stdin path;
     flush p.stdin;
-    Merlin_dot_protocol.read ~in_channel:p.stdout
+    read p.stdout
   in
   try
     let p =

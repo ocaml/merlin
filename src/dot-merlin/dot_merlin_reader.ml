@@ -476,11 +476,12 @@ let load dot_merlin_file =
 let dot_merlin_file =  Filename.concat (Sys.getcwd ()) ".merlin"
 
 let rec main () =
-  match Merlin_dot_protocol.Commands.read_input stdin with
+  let open Merlin_dot_protocol.Blocking in
+  match Commands.read_input stdin with
   | Halt -> exit 0
   | File _path ->
     let directives = load dot_merlin_file in
-    Merlin_dot_protocol.write ~out_channel:stdout directives;
+    write stdout directives;
     flush stdout;
     main ()
   | Unknown -> main ()
