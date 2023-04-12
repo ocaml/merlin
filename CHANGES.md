@@ -8,6 +8,8 @@ unreleased
       the upcoming `project-wide-occurrences` feature (#1596)
     - Construct bool-typed holes as `false` instead of `true` in the
       `construct` command, for consistency (#1599).
+    - Add a hook to configure system command for spawning ppxes when Merlin is
+      used as a library. (#1585)
   + test suite
     - Add missing dependency to a test using ppxlib (#1583)
 
