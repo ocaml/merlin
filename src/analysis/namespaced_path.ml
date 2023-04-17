@@ -89,6 +89,8 @@ let of_path ~namespace p =
         Applied_to (aux `Mod [] p2) :: acc
       in
       aux `Mod acc p1
+    | Path.Pextra_ty _ ->
+        failwith "NSP " (* todo merlin *)
   in
   aux namespace [] p
 
