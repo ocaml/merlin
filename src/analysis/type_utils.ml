@@ -52,7 +52,7 @@ module Printtyp = struct
 
   let expand_type env ty =
     Env.with_cmis @@ fun () -> (* ?? Not sure *)
-    match !verbosity with 
+    match !verbosity with
     | Smart | Lvl 0 -> ty
     | Lvl (_ : int) ->
       (* Fresh copy of the type to mutilate *)
@@ -102,32 +102,32 @@ module Printtyp = struct
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
 
-  let select_by_verbosity ~default ?(smart=default) ~verbose = 
+  let select_by_verbosity ~default ?(smart=default) ~verbose =
     match !verbosity with
     | Smart -> smart
     | Lvl 0 -> default
     | Lvl _ -> verbose
 
-  let type_scheme env ppf ty = 
-    (select_by_verbosity 
-      ~default:type_scheme 
+  let type_scheme env ppf ty =
+    (select_by_verbosity
+      ~default:type_scheme
       ~verbose:(verbose_type_scheme env)) ppf ty
 
-  let type_declaration env id ppf = 
-    (select_by_verbosity 
-      ~default:type_declaration 
+  let type_declaration env id ppf =
+    (select_by_verbosity
+      ~default:type_declaration
       ~verbose:(verbose_type_declaration env)) id ppf
 
   let modtype env ppf mty =
-    let smart ppf = function 
+    let smart ppf = function
       | Types.Mty_ident _ | Mty_alias _ -> verbose_modtype env ppf mty
-      | _ -> modtype ppf mty 
-    in 
-    (select_by_verbosity 
+      | _ -> modtype ppf mty
+    in
+    (select_by_verbosity
       ~default:modtype
       ~verbose:(verbose_modtype env)
       ~smart) ppf mty
-  
+
   let wrap_printing_env env ~verbosity:v f =
     let_ref verbosity v (fun () -> wrap_printing_env env f)
 end
@@ -217,8 +217,9 @@ let print_type_with_decl ~verbosity env ppf typ =
             end;
           let ident = match path with
             | Path.Papply _ -> assert false
-            | Path.Pdot _ -> Ident.create_persistent (Path.last path)
             | Path.Pident ident -> ident
+            | Path.Pdot _ | Path.Pextra_ty _ ->
+                Ident.create_persistent (Path.last path)
           in
           Printtyp.type_declaration env ident ppf decl
         end
