@@ -790,6 +790,9 @@ and module_expr i ppf x =
       line i ppf "Pmod_apply\n";
       module_expr i ppf me1;
       module_expr i ppf me2;
+  | Pmod_apply_unit me1 ->
+      line i ppf "Pmod_apply_unit\n";
+      module_expr i ppf me1
   | Pmod_constraint (me, mt) ->
       line i ppf "Pmod_constraint\n";
       module_expr i ppf me;
@@ -909,7 +912,22 @@ and value_binding i ppf x =
   line i ppf "<def>\n";
   attributes (i+1) ppf x.pvb_attributes;
   pattern (i+1) ppf x.pvb_pat;
+  Option.iter (value_constraint (i+1) ppf) x.pvb_constraint;
   expression (i+1) ppf x.pvb_expr
+
+and value_constraint i ppf x =
+  let pp_sep ppf () = Format.fprintf ppf "@ "; in
+  let pp_newtypes = Format.pp_print_list fmt_string_loc ~pp_sep in
+  match x with
+  | Pvc_constraint { locally_abstract_univars = []; typ } ->
+      core_type i ppf typ
+  | Pvc_constraint { locally_abstract_univars=newtypes; typ} ->
+      line i ppf "<type> %a.\n" pp_newtypes newtypes;
+      core_type i ppf  typ
+  | Pvc_coercion { ground; coercion} ->
+      line i ppf "<coercion>\n";
+      option i core_type ppf ground;
+      core_type i ppf coercion;
 
 and binding_op i ppf x =
   line i ppf "<binding_op> %a %a"

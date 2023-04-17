@@ -52,7 +52,7 @@ val map_entry : ('a -> 'b) ->
 
 val branch_complete
   :  Mconfig.t
-  -> ?get_doc:([> `Completion_entry of Namespaced_path.Namespace.t
+  -> ?get_doc:([> `Completion_entry of Namespace.t
                 * Path.t * Location.t ] -> [> `Found of string ])
   -> ?target_type:Types.type_expr
   -> ?kinds:Compl.kind list
