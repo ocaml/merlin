@@ -960,7 +960,8 @@ and module_expr_desc =
   | Pmod_structure of structure  (** [struct ... end] *)
   | Pmod_functor of functor_parameter * module_expr
       (** [functor(X : MT1) -> ME] *)
-  | Pmod_apply of module_expr * module_expr  (** [ME1(ME2)] *)
+  | Pmod_apply of module_expr * module_expr (** [ME1(ME2)] *)
+  | Pmod_apply_unit of module_expr (** [ME1()] *)
   | Pmod_constraint of module_expr * module_type  (** [(ME : MT)] *)
   | Pmod_unpack of expression  (** [(val E)] *)
   | Pmod_extension of extension  (** [[%id]] *)
@@ -1004,13 +1005,30 @@ and structure_item_desc =
   | Pstr_attribute of attribute  (** [[\@\@\@id]] *)
   | Pstr_extension of extension * attributes  (** [[%%id]] *)
 
+and value_constraint =
+  | Pvc_constraint of {
+      locally_abstract_univars:string loc list;
+      typ:core_type;
+    }
+  | Pvc_coercion of {ground:core_type option; coercion:core_type }
+  (**
+     - [Pvc_constraint { locally_abstract_univars=[]; typ}]
+         is a simple type constraint on a value binding: [ let x : typ]
+     - More generally, in [Pvc_constraint { locally_abstract_univars; typ}]
+       [locally_abstract_univars] is the list of locally abstract type
+       variables in [ let x: type a ... . typ ]
+     - [Pvc_coercion { ground=None; coercion }] represents [let x :> typ]
+     - [Pvc_coercion { ground=Some g; coercion }] represents [let x : g :> typ]
+  *)
+
 and value_binding =
   {
     pvb_pat: pattern;
     pvb_expr: expression;
+    pvb_constraint: value_constraint option;
     pvb_attributes: attributes;
     pvb_loc: Location.t;
-  }
+  }(** [let pat : type_constraint = exp] *)
 
 and module_binding =
     {

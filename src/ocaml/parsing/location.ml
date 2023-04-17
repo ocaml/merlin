@@ -85,14 +85,33 @@ let input_phrase_buffer = ref (None : Buffer.t option)
 (******************************************************************************)
 (* Terminal info *)
 
+(*
+let status = ref Terminfo.Uninitialised
+
+let setup_terminal () =
+  if !status = Terminfo.Uninitialised then
+    status := Terminfo.setup stdout
+*)
+
 (* The number of lines already printed after input.
 
    This is used by [highlight_terminfo] to identify the current position of the
    input in the terminal. This would not be possible without this information,
    since printing several warnings/errors adds text between the user input and
    the bottom of the terminal.
+
+   We also use for {!is_first_report}, see below.
 *)
 let num_loc_lines = ref 0
+
+(* We use [num_loc_lines] to determine if the report about to be
+   printed is the first or a follow-up report of the current
+   "batch" -- contiguous reports without user input in between, for
+   example for the current toplevel phrase. We use this to print
+   a blank line between messages of the same batch.
+*)
+let is_first_message () =
+  !num_loc_lines = 0
 
 (* This is used by the toplevel to reset [num_loc_lines] before each phrase *)
 let reset () =
@@ -102,6 +121,13 @@ let reset () =
 let echo_eof () =
   print_newline ();
   incr num_loc_lines
+
+(* This is used by the toplevel and the report printers below. *)
+let separate_new_message ppf =
+  if not (is_first_message ()) then begin
+    Format.pp_print_newline ppf ();
+    incr num_loc_lines
+  end
 
 (* Code printing errors and warnings must be wrapped using this function, in
    order to update [num_loc_lines].
@@ -135,12 +161,40 @@ let rewrite_absolute_path path =
   *)
   path
 
+(*
+let rewrite_find_first_existing path =
+  match Misc.get_build_path_prefix_map () with
+  | None ->
+      if Sys.file_exists path then Some path
+      else None
+  | Some prefix_map ->
+    match Build_path_prefix_map.rewrite_all prefix_map path with
+    | [] ->
+      if Sys.file_exists path then Some path
+      else None
+    | matches ->
+      Some (List.find Sys.file_exists matches)
+
+let rewrite_find_all_existing_dirs path =
+  let ok path = Sys.file_exists path && Sys.is_directory path in
+  match Misc.get_build_path_prefix_map () with
+  | None ->
+      if ok path then [path]
+      else []
+  | Some prefix_map ->
+    match Build_path_prefix_map.rewrite_all prefix_map path with
+    | [] ->
+        if ok path then [path]
+        else []
+    | matches ->
+      match (List.filter ok matches) with
+      | [] -> raise Not_found
+      | results -> results *)
+
 let absolute_path s = (* This function could go into Filename *)
   let open Filename in
-  let s =
-    if not (is_relative s) then s
-    else (rewrite_absolute_path (concat (Sys.getcwd ()) s))
-  in
+  let s = if (is_relative s) then (concat (Sys.getcwd ()) s) else s in
+  let s = rewrite_absolute_path s in
   (* Now simplify . and .. components *)
   let rec aux s =
     let base = basename s in
@@ -378,6 +432,79 @@ let infer_line_numbers
    See [lines_around_from_current_input] below for an instantiation of
    [get_lines] that reads from the current input.
 *)
+(*
+let highlight_quote ppf
+    ~(get_lines: start_pos:position -> end_pos:position -> input_line list)
+    ?(max_lines = 10)
+    highlight_tag
+    locs
+  =
+  let iset = ISet.of_intervals @@ List.filter_map (fun loc ->
+    let s, e = loc.loc_start, loc.loc_end in
+    if s.pos_cnum = -1 || e.pos_cnum = -1 then None
+    else Some ((s, s.pos_cnum), (e, e.pos_cnum - 1))
+  ) locs in
+  match ISet.extrema iset with
+  | None -> ()
+  | Some ((leftmost, _), (rightmost, _)) ->
+      let lines =
+        get_lines ~start_pos:leftmost ~end_pos:rightmost
+        |> List.map (fun ({ text; start_pos } as line) ->
+          let end_pos = start_pos + String.length text - 1 in
+          let line_nb =
+            match ISet.find_bound_in iset ~range:(start_pos, end_pos) with
+            | None -> None
+            | Some (p, _) -> Some p.pos_lnum
+          in
+          (line_nb, line))
+        |> infer_line_numbers
+        |> List.map (fun (lnum, { text; start_pos }) ->
+          (text,
+           Option.fold ~some:Int.to_string ~none:"" lnum,
+           start_pos))
+      in
+    Format.fprintf ppf "@[<v>";
+    begin match lines with
+    | [] | [("", _, _)] -> ()
+    | [(line, line_nb, line_start_cnum)] ->
+        (* Single-line error *)
+        Format.fprintf ppf "%s | %s@," line_nb line;
+        Format.fprintf ppf "%*s   " (String.length line_nb) "";
+        (* Iterate up to [rightmost], which can be larger than the length of
+           the line because we may point to a location after the end of the
+           last token on the line, for instance:
+           {[
+             token
+                       ^
+             Did you forget ...
+           ]} *)
+        for i = 0 to rightmost.pos_cnum - line_start_cnum - 1 do
+          let pos = line_start_cnum + i in
+          if ISet.is_start iset ~pos <> None then
+            Format.fprintf ppf "@{<%s>" highlight_tag;
+          if ISet.mem iset ~pos then Format.pp_print_char ppf '^'
+          else if i < String.length line then begin
+            (* For alignment purposes, align using a tab for each tab in the
+               source code *)
+            if line.[i] = '\t' then Format.pp_print_char ppf '\t'
+            else Format.pp_print_char ppf ' '
+          end;
+          if ISet.is_end iset ~pos <> None then
+            Format.fprintf ppf "@}"
+        done;
+        Format.fprintf ppf "@}@,"
+    | _ ->
+        (* Multi-line error *)
+        Misc.pp_two_columns ~sep:"|" ~max_lines ppf
+        @@ List.map (fun (line, line_nb, line_start_cnum) ->
+          let line = String.mapi (fun i car ->
+            if ISet.mem iset ~pos:(line_start_cnum + i) then car else '.'
+          ) line in
+          (line_nb, line)
+        ) lines
+    end;
+    Format.fprintf ppf "@]"
+*)
 
 
 
@@ -444,6 +571,25 @@ let lines_around_from_lexbuf
     in
     lines_around ~start_pos ~end_pos ~seek ~read_char
   end
+*)
+
+(*
+(* Attempt to get lines from the phrase buffer *)
+let lines_around_from_phrasebuf
+    ~(start_pos: position) ~(end_pos: position)
+    (pb: Buffer.t):
+  input_line list
+  =
+  let pos = ref 0 in
+  let seek n = pos := n in
+  let read_char () =
+    if !pos >= Buffer.length pb then None
+    else begin
+      let c = Buffer.nth pb !pos in
+      incr pos; Some c
+    end
+  in
+  lines_around ~start_pos ~end_pos ~seek ~read_char
 *)
 
 (*
@@ -614,6 +760,7 @@ let batch_mode_printer : report_printer =
   in
   let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
   let pp self ppf report =
+    separate_new_message ppf;
     (* Make sure we keep [num_loc_lines] updated.
         The tabulation box is here to give submessage the option
         to be aligned with the main message box
@@ -663,6 +810,34 @@ let batch_mode_printer : report_printer =
   in
   { pp; pp_report_kind; pp_main_loc; pp_main_txt;
     pp_submsgs; pp_submsg; pp_submsg_loc; pp_submsg_txt }
+
+(*
+let terminfo_toplevel_printer (lb: lexbuf): report_printer =
+  let pp self ppf err =
+    setup_colors ();
+    (* Highlight all toplevel locations of the report, instead of displaying
+       the main location. Do it now instead of in [pp_main_loc], to avoid
+       messing with Format boxes. *)
+    let sub_locs = List.map (fun { loc; _ } -> loc) err.sub in
+    let all_locs = err.main.loc :: sub_locs in
+    let locs_highlighted = List.filter is_quotable_loc all_locs in
+    highlight_terminfo lb ppf locs_highlighted;
+    batch_mode_printer.pp self ppf err
+  in
+  let pp_main_loc _ _ _ _ = () in
+  let pp_submsg_loc _ _ ppf loc =
+    if not loc.loc_ghost then
+      Format.fprintf ppf "%a:@ " print_loc loc in
+  { batch_mode_printer with pp; pp_main_loc; pp_submsg_loc }
+
+let best_toplevel_printer () =
+  setup_terminal ();
+  match !status, !input_lexbuf with
+  | Terminfo.Good_term, Some lb ->
+      terminfo_toplevel_printer lb
+  | _, _ ->
+      batch_mode_printer
+*)
 
 (* Creates a printer for the current input *)
 let default_report_printer () : report_printer =

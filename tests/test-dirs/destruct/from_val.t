@@ -118,11 +118,23 @@ FIXME
   >   fun x -> x
   > EOF
 
-  $ $MERLIN single case-analysis -start 6:10 -end 6:10 -filename typ2.ml <typ2.ml | \
-  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  $ $MERLIN single case-analysis -start 6:11 -end 6:11 \
+  > -filename typ2.ml <typ2.ml 
   {
-    "class": "error",
-    "value": "Destruct not allowed on core_type",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 6,
+          "col": 11
+        },
+        "end": {
+          "line": 6,
+          "col": 12
+        }
+      },
+      "match x with | Int _ -> _ | Add -> _ | App (_, _) -> _"
+    ],
     "notifications": []
   }
 

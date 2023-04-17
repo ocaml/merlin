@@ -598,9 +598,11 @@ let find_source ~config loc path =
         matches)
 
 module Namespace = struct
+  type all = Namespace.t
+
   type under_type = [ `Constr | `Labels ]
 
-  type t = (* TODO: share with [Namespaced_path.Namespace.t] *)
+  type t =(* TODO: share with [Namespace.t] *)
     [ `Type | `Mod | `Modtype | `Vals | under_type ]
 
   type inferred =
@@ -624,7 +626,7 @@ module Env_lookup : sig
 
   val loc
     : Path.t
-    -> Namespaced_path.Namespace.t
+    -> Namespace.all
     -> Env.t
     -> (Location.t * Shape.Uid.t * Shape.Sig_component_kind.t) option
 
@@ -636,7 +638,7 @@ module Env_lookup : sig
 
 end = struct
 
-  let loc path (namespace : Namespaced_path.Namespace.t) env =
+  let loc path (namespace : Namespace.all) env =
     try
       Some (
         match namespace with

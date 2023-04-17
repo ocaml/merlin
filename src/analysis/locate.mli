@@ -29,13 +29,14 @@
 val log : 'a Logger.printf
 
 module Namespace : sig
+  type all = Namespace.t
   type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
 end
 
 val from_path
   : config:Mconfig.t
   -> env:Env.t
-  -> namespace:Namespaced_path.Namespace.t
+  -> namespace:Namespace.all
   -> [ `ML | `MLI ]
   -> Path.t
   -> [> `File_not_found of string
@@ -68,7 +69,7 @@ val get_doc
   -> pos:Lexing.position
   -> [ `User_input of string
      | `Completion_entry of
-        Namespaced_path.Namespace.t * Path.t * Location.t ]
+         Namespace.all * Path.t * Location.t ]
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string
