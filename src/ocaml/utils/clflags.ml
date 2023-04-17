@@ -10,7 +10,7 @@ let strict_sequence     = ref false
 let applicative_functors = ref true
 
 let nopervasives        = ref false
-let strict_formats      = ref false
+let strict_formats      = ref true
 let open_modules        = ref []
 
 let annotations         = ref false
