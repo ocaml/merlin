@@ -1,5 +1,7 @@
   $ $OCAMLC -c dep.mli
 
+FIXME: the signature mismatch appear to be a bit less precise after moving to
+ocaml 5.1. Is that expected ?
   $ $MERLIN single errors -filename test.ml < test.ml
   {
     "class": "return",
@@ -138,26 +140,23 @@
       {
         "start": {
           "line": 82,
-          "col": 22
+          "col": 13
         },
         "end": {
           "line": 86,
-          "col": 5
+          "col": 6
         },
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Signature mismatch:
-  Modules do not match:
-    sig type t = int val foo : 'a -> string end
-  is not included in
-    S
+        "message": "Modules do not match: sig type t = int val foo : 'a -> string end
+  is not included in S
   Values do not match:
-    val foo : 'a -> string
+  val foo : 'a -> string
   is not included in
-    val foo : int -> t
+  val foo : int -> t
   The type int -> string is not compatible with the type int -> t
-  Type string is not compatible with type t = int 
+  Type string is not compatible with type t = int
   File \"test.ml\", line 72, characters 2-20: Expected declaration
   File \"test.ml\", line 85, characters 8-11: Actual declaration"
       },
@@ -317,26 +316,20 @@
       {
         "start": {
           "line": 82,
-          "col": 22
+          "col": 13
         },
         "end": {
           "line": 86,
-          "col": 5
+          "col": 6
         },
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Signature mismatch:
-  Modules do not match:
-    sig type t = int val foo : 'a -> string end
-  is not included in
-    S
-  Values do not match:
-    val foo : 'a -> string
-  is not included in
-    val foo : t -> t
+        "message": "Modules do not match: sig type t = int val foo : 'a -> string end
+  is not included in S
+  Values do not match: val foo : 'a -> string is not included in val foo : t -> t
   The type t -> string is not compatible with the type t -> t
-  Type string is not compatible with type t 
+  Type string is not compatible with type t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
   File \"test.ml\", line 85, characters 8-11: Actual declaration"
       },
