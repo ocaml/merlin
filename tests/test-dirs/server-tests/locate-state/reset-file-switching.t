@@ -46,7 +46,7 @@ we trigger the bug
     "class": "return",
     "value": "[map f [a1; ...; an]] applies function [f] to [a1, ..., an],
      and builds the list [[f a1; ...; f an]]
-     with the results returned by [f]. Not tail-recursive.",
+     with the results returned by [f].",
     "notifications": []
   }
 
