@@ -152,7 +152,7 @@ and type_declaration id {
   =
   let params = List.map2 type_params type_variance ~f:(fun type_ variance ->
     let core_type = core_type type_ in
-    let pos, neg, _inv, inj = Types.Variance.get_lower variance in
+    let pos, neg, inj = Types.Variance.get_lower variance in
     let v = if pos then  Asttypes.Covariant
       else (if neg then Contravariant
       else NoVariance)
