@@ -34,6 +34,7 @@ module Path : sig
     | Pident of Ident.t
     | Pdot of t * string
     | Papply of t * t
+    | Pextra_ty of t * Path.extra_ty
 
   val equal : t -> t -> bool
 
