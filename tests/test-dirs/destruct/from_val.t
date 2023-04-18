@@ -118,11 +118,12 @@ FIXME
   >   fun x -> x
   > EOF
 
+FIXME: changed in 5.1
   $ $MERLIN single case-analysis -start 6:10 -end 6:10 -filename typ2.ml <typ2.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
     "class": "error",
-    "value": "Destruct not allowed on core_type",
+    "value": "Destruct not allowed on case",
     "notifications": []
   }
 

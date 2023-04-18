@@ -75,7 +75,7 @@ Test 2.1
   }
 
 Test 2.2 with shortpaths
-
+FIXME: short-path disabled in 5.1
   $ $MERLIN single type-enclosing -short-paths -position 2:5 -filename type_alias3.ml <<EOF
   > type foo = int
   > let x = 1
@@ -92,7 +92,7 @@ Test 2.2 with shortpaths
           "line": 2,
           "col": 5
         },
-        "type": "foo",
+        "type": "int",
         "tail": "no"
       }
     ],

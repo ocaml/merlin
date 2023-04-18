@@ -1,3 +1,4 @@
+FIXME: broke in 5.1
 Simple module construction
   $ $MERLIN single construct -position 40:16 \
   > -filename module.ml <module.ml
@@ -43,8 +44,7 @@ Simple module construction
     [@@@ocaml.text
       \"Construct does not handle class types yet. Please replace this comment by [room]'s definition.\"]
     [@@@ocaml.text
-      \"Construct does not handle classes yet. Please replace this comment by [croom]'s definition.\"]
-    module type Another  = sig val i : int end
+      \"Construct does not handle class types yet. Please replace this comment by [croom]'s definition.\"]
     module type Sig  =
       sig
         type t

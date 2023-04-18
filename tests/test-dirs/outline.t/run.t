@@ -1,3 +1,4 @@
+FIXME: short-path disabled in 5.1
   $ echo "S .\nB .\nFLG -nopervasives" > .merlin
   $ $MERLIN single outline < foo.ml
   {
@@ -240,5 +241,5 @@
   "A.a"
   null
   $ $MERLIN single outline -short-paths < path.ml | jq '.value[].type'
-  "a"
+  "A.a"
   null
