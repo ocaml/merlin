@@ -106,9 +106,11 @@ Thu Aug 24 17:17:42 CEST 2023
 
 merlin 4.9
 ==========
-Fri May 26 15:23:42 CEST 2023
+unreleased
 
   + merlin binary
+    - Preview support for OCaml 5.1-alpha1. Short path is temporary disabled and
+      inline records might not behave as expected.
     - Allow monadic IO in dot protocol (#1581)
     - Add a `scope` option to the `occurrences` command in preparation for
       the upcoming `project-wide-occurrences` feature (#1596)
