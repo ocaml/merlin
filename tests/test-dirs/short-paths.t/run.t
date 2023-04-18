@@ -1,5 +1,5 @@
   $ $OCAMLC -c dep.mli
-
+FIXME: short-path disabled in 5.1
 FIXME: the signature mismatch appear to be a bit less precise after moving to
 ocaml 5.1. Is that expected ?
   $ $MERLIN single errors -filename test.ml < test.ml
@@ -311,7 +311,7 @@ ocaml 5.1. Is that expected ?
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type N.O.t but an expression was expected of type unit"
+        "message": "This expression has type t = M.t but an expression was expected of type unit"
       },
       {
         "start": {
@@ -327,9 +327,12 @@ ocaml 5.1. Is that expected ?
         "valid": true,
         "message": "Modules do not match: sig type t = int val foo : 'a -> string end
   is not included in S
-  Values do not match: val foo : 'a -> string is not included in val foo : t -> t
-  The type t -> string is not compatible with the type t -> t
-  Type string is not compatible with type t
+  Values do not match:
+  val foo : 'a -> string
+  is not included in
+  val foo : int -> t
+  The type int -> string is not compatible with the type int -> t
+  Type string is not compatible with type t = int
   File \"test.ml\", line 72, characters 2-20: Expected declaration
   File \"test.ml\", line 85, characters 8-11: Actual declaration"
       },
@@ -345,7 +348,7 @@ ocaml 5.1. Is that expected ?
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type Dep.t"
+        "message": "This expression has type int but an expression was expected of type Dep.M.t"
       }
     ],
     "notifications": []
