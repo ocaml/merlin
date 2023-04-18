@@ -1,3 +1,11 @@
+merlin 4.9-preview
+==========
+Tue Apr 24 16:55:42 CEST 2023
+
+  + merlin binary
+    - Preview support for OCaml 5.1-alpha1. Short path is temporary disabled and
+      inline records might not behave as expected.
+
 merlin 4.8
 ==========
 Fri Feb 24 16:55:42 CEST 2023
