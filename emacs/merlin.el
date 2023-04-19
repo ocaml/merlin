@@ -1490,7 +1490,7 @@ strictly within, or nil if there is no such element."
 
 (defun merlin--project-get ()
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
-.merlins file loaded and a list of error messages, if any error occurred during
+.merlin files loaded and a list of error messages, if any error occurred during
 loading"
   (let ((ret (merlin-call "check-configuration")))
     (setq merlin--project-cache
