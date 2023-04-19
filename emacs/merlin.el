@@ -1444,20 +1444,16 @@ strictly within, or nil if there is no such element."
 
 
 (defun merlin--construct-complete (start stop results)
+  "Read a constructor from RESULTS, and replace the text between START and STOP."
   (let ((start (merlin--point-of-pos start))
         (stop  (merlin--point-of-pos stop)))
-    (cl-labels ((insert-choice (_b _e newtext)
+    (cl-labels ((insert-choice (newtext)
           (completion--replace start stop newtext)
           (merlin--first-hole-between start (+ start (length newtext)))))
-      (if (= (length results) 1)
-        (insert-choice 0 0 (car results))
-        (with-output-to-temp-buffer "*Constructions*"
-          (progn
-            (with-current-buffer "*Constructions*"
-              (setq-local
-                completion-list-insert-choice-function
-                #'insert-choice))
-            (display-completion-list results)))))))
+      (pcase results
+        ('() (error "No constructors for this hole"))
+        (`(,result) (insert-choice result))
+        (results (insert-choice (completing-read "Constructor: " results nil t)))))))
 
 (defun merlin--construct-point (point)
   "Execute a construct at POINT."
