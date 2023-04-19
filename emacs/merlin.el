@@ -1460,22 +1460,18 @@ strictly within, or nil if there is no such element."
             (display-completion-list results)))))))
 
 (defun merlin--construct-point (point)
-  "Execute a construct on POINT"
-  (progn
-    (ignore point) ; Without this Emacs bytecode compiler complains about an
-                   ; unused variable. This may be a bug in the compiler
-    (let ((result (merlin-call "construct"
-                              "-position" (merlin-unmake-point (point)))))
-      (when result
-        (let* ((loc   (car result))
-              (start (cdr (assoc 'start loc)))
-              (stop  (cdr (assoc 'end loc))))
-          (merlin--construct-complete start stop (cadr result)))))))
+  "Execute a construct at POINT."
+  (when-let ((result (merlin-call "construct"
+                                  "-position" (merlin-unmake-point point))))
+    (let* ((loc   (car result))
+           (start (cdr (assoc 'start loc)))
+           (stop  (cdr (assoc 'end loc))))
+      (merlin--construct-complete start stop (cadr result)))))
 
 (defun merlin-construct ()
-  "Construct over the current hole"
+  "Construct over the current hole."
   (interactive)
-  (merlin--construct-point (cons (point) (point))))
+  (merlin--construct-point (point)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
