@@ -425,16 +425,25 @@ different file."
 
   command "occurrences"
     ~spec: [
-      arg "-identifier-at" "<position> Position to complete"
-        (marg_position (fun pos _pos -> (`Ident_at pos)));
+      arg "-identifier-at" "<position> Position of the identifier"
+        (marg_position (fun pos (_pos, scope) -> (`Ident_at pos, scope)));
+      optional "-scope" "buffer|project Scope of the query"
+        (Marg.param "<buffer|project>"
+          (fun scope (pos, _scope) ->
+            match scope with
+            | "buffer" -> (pos, `Buffer)
+            | "project" -> (pos, `Project)
+            | _ -> failwith "-scope should be one of buffer or project"
+          ));
     ]
 ~doc:"Returns a list of locations `{'start': position, 'end': position}` \
 of all occurrences in current buffer of the entity at the specified position."
-    ~default:`None
-    begin fun buffer -> function
-      | `None -> failwith "-identifier-at <pos> is mandatory"
-      | `Ident_at pos ->
-        run buffer (Query_protocol.Occurrences (`Ident_at pos))
+    ~default:(`None, `Buffer)
+    begin fun buffer ->
+      function
+      | `None, _ -> failwith "-identifier-at <pos> is mandatory"
+      | `Ident_at pos, scope ->
+        run buffer (Query_protocol.Occurrences (`Ident_at pos, scope))
     end
   ;
 
