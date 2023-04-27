@@ -161,7 +161,7 @@ let request_of_json context =
     | [`String "shape"; pos] ->
       request (Query (Shape (pos_of_json pos)))
     | [`String "occurrences"; `String "ident"; `String "at"; jpos] ->
-      request (Query (Occurrences (`Ident_at (pos_of_json jpos))))
+      request (Query (Occurrences (`Ident_at (pos_of_json jpos), `Buffer)))
     | (`String ("reset"|"checkout") :: document) ->
       request (Sync (Checkout (document_of_json document)))
     | [`String "refresh"] ->

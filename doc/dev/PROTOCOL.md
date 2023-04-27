@@ -348,11 +348,15 @@ Returns either:
 - `{'pos': position}` if the location is in the current buffer,
 - `{'file': string, 'pos': position}` if definition is located in a different file.
 
-### `occurrences -identifier-at <position>`
+### `occurrences -identifier-at <position> [ -scope <buffer|project> ]`
 
 -identifier-at <position>  Position to complete
+  -scope <buffer|project>  Scope of the request
 
-Returns a list of locations `{'start': position, 'end': position}` of all occurrences in current buffer of the entity at the specified position.
+Returns a list of locations `{'start': position, 'end': position}` of all
+occurrences in current buffer of the entity at the specified position. If scope
+is set to `project` the returned locations will also contain a field `file`:
+`{'file': string, 'start': position, 'end': position}`.
 
 ### `outline`
 
