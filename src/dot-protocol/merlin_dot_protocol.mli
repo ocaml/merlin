@@ -74,19 +74,54 @@ end
 
 type directive = Directive.Processed.t
 
-module Commands : sig
-  type t = File of string | Halt | Unknown
-
-  val read_input : in_channel -> t
-  val send_file : out_channel:out_channel -> string -> unit
-end
-
 type read_error =
   | Unexpected_output of string
   | Csexp_parse_error of string
 
-(** [read inc] reads one csexp from the channel [inc] and returns the list of
-  directives it represents *)
-val read : in_channel:in_channel -> (directive list, read_error) Merlin_utils.Std.Result.t
+type command = File of string | Halt | Unknown
 
-val write : out_channel:out_channel -> directive list -> unit
+module type S = sig
+  type 'a io
+  type in_chan
+  type out_chan
+
+  (** [read] reads one csexp from the channel and returns the list of
+      directives it represents *)
+  val read :
+    in_chan -> (directive list, read_error) Merlin_utils.Std.Result.t io
+
+  val write : out_chan -> directive list -> unit io
+
+  module Commands : sig
+    val read_input : in_chan -> command io
+
+    val send_file : out_chan -> string -> unit io
+
+    val halt : out_chan -> unit io
+  end
+end
+
+(** Provided for projects using merlin as a library in order to use
+    custom IO implementation *)
+module Make (IO : sig
+  type 'a t
+
+  module O : sig
+    val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  end
+end) (Chan : sig
+  type in_chan
+  type out_chan
+
+  val read : in_chan -> (Csexp.t, string) result IO.t
+
+  val write : out_chan -> Csexp.t -> unit IO.t
+end) : S
+  with type 'a io = 'a IO.t
+   and type in_chan = Chan.in_chan
+   and type out_chan = Chan.out_chan
+
+module Blocking : S
+  with type 'a io = 'a
+   and type in_chan = in_channel
+   and type out_chan = out_channel
