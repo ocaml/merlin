@@ -781,7 +781,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let config = Mpipeline.final_config pipeline in
     Mconfig.(config.merlin.source_path)
 
-  | Occurrences (`Ident_at pos) ->
+  | Occurrences (`Ident_at pos, _scope) ->
     let typer = Mpipeline.typer_result pipeline in
     let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in

@@ -199,10 +199,14 @@ let dump (type a) : a t -> json =
       "query", `String query;
       "position", mk_position pos;
     ]
-  | Occurrences (`Ident_at pos) ->
+  | Occurrences (`Ident_at pos, scope) ->
     mk "occurrences" [
       "kind", `String "identifiers";
       "position", mk_position pos;
+      "scope", (match scope with
+        | `Buffer -> `String "local"
+        | `Project -> `String "project"
+      )
     ]
   | Refactor_open (action, pos) ->
     mk "refactor-open" [
@@ -226,13 +230,18 @@ let string_of_completion_kind = function
   | `Class       -> "Class"
   | `Keyword     -> "Keyword"
 
-let with_location ?(skip_none=false) loc assoc =
+let with_location ?(with_file=false) ?(skip_none=false) loc assoc =
+  let with_file l =
+    if not with_file then l
+    else ("file", `String loc.Location.loc_start.pos_fname) :: l
+  in
   if skip_none && loc = Location.none then
     `Assoc assoc
   else
-    `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
-            ("end",   Lexing.json_of_position loc.Location.loc_end) ::
-            assoc)
+    `Assoc ( with_file @@
+      ("start", Lexing.json_of_position loc.Location.loc_start) ::
+      ("end",   Lexing.json_of_position loc.Location.loc_end) ::
+      assoc )
 
 let json_of_type_loc (loc,desc,tail) =
   with_location loc [
@@ -413,8 +422,9 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Findlib_list, strs -> `List (List.map ~f:Json.string strs)
   | Extension_list _, strs -> `List (List.map ~f:Json.string strs)
   | Path_list _, strs -> `List (List.map ~f:Json.string strs)
-  | Occurrences _, locations ->
+  | Occurrences (_, scope), locations ->
+    let with_file = scope = `Project in
     `List (List.map locations
-             ~f:(fun loc -> with_location loc []))
+             ~f:(fun loc -> with_location ~with_file loc []))
   | Version, version ->
     `String version

@@ -194,7 +194,7 @@ type _ t =
     :  [`Build|`Source]
     -> string list t
   | Occurrences(* *)
-    : [`Ident_at of Msource.position]
+    : [`Ident_at of Msource.position] * [`Project | `Buffer]
     -> Location.t list t
   | Version
     : string t
