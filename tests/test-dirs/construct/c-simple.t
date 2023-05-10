@@ -533,7 +533,7 @@ Test M.3 : Predef types
   $ $MERLIN single construct -position 8:22 \
   > -filename M3.ml <M3.ml | jq ".value[1]"
   [
-    "true"
+    "false"
   ]
 
   $ $MERLIN single construct -position 9:22 \
