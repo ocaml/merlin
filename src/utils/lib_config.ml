@@ -8,3 +8,8 @@ module Json = struct
   let set_pretty_to_string f =
     Std.Json.pretty_to_string := f
 end
+
+module System = struct
+  let set_run_in_directory f =
+    Std.System.run_in_directory := f
+end
