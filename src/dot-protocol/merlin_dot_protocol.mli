@@ -52,6 +52,7 @@ module Directive : sig
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
+    | `USE_PPX_CACHE
     | `UNKNOWN_TAG of string ]
 
   module Processed : sig

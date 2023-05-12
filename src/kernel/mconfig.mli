@@ -40,6 +40,7 @@ type merlin = {
   log_file    : string option;
   log_sections: string list;
   config_path : string option;
+  use_ppx_cache     : bool;
 
   exclude_query_dir : bool;
 

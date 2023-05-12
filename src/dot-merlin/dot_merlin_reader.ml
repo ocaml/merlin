@@ -104,6 +104,8 @@ module Cache = File_cache.Make (struct
             tell (`FINDLIB_TOOLCHAIN (String.drop 18 line))
           else if String.is_prefixed ~by:"EXCLUDE_QUERY_DIR" line then
             tell `EXCLUDE_QUERY_DIR
+          else if String.is_prefixed ~by:"USE_PPX_CACHE" line then
+            tell `USE_PPX_CACHE
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -325,7 +327,7 @@ let prepend_config ~cwd ~cfg =
     | `B _ | `S _ | `CMI _ | `CMT _  as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
-    | (`EXCLUDE_QUERY_DIR | `UNKNOWN_TAG _) as directive ->
+    | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }

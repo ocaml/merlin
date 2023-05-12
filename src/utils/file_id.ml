@@ -6,9 +6,12 @@ let null_stat =
     st_perm = -1; st_uid = -1; st_gid = -1; st_rdev = -1; st_size = -1;
     st_atime = nan; st_mtime = nan; st_ctime = nan }
 
+let get_res filename =
+  try Result.ok @@ Unix.stat filename
+  with _ -> Error ("Stat for" ^ filename ^ "couldn't be gathered")
+
 let get filename =
-  try Unix.stat filename
-  with _ -> null_stat
+  match get_res filename with Ok fn -> fn | Error _ -> null_stat
 
 let check a b =
   a == b || (
