@@ -86,6 +86,9 @@ let placeholder =
 
 let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
+  log ~title:"gen_patterns" "%a" Logger.fmt (fun fmt ->
+    Format.fprintf fmt "Generating patterns for type %a"
+    Printtyp.type_expr type_expr);
   match get_desc type_expr with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tvar _     -> raise (Not_allowed "non-immediate type")
@@ -158,7 +161,14 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       | lbl, Rpresent param_opt ->
         let popt = Option.map param_opt ~f:(fun _ -> Patterns.omega) in
         Some (Tast_helper.Pat.variant env type_expr lbl popt (ref row_desc))
-      | _, _ -> None
+        | _, Reither (_, l, _) ->
+          let popt = match l with
+            | [] -> None
+            | _ :: _ ->  Some Patterns.omega
+          in
+          Some (Tast_helper.Pat.variant env type_expr lbl popt (ref row_desc))
+      | _, _ ->
+        log ~title:"gen_patterns" "Absent"; None
     )
   | _ ->
     let fmt, to_string = Format.to_string () in
@@ -547,17 +557,18 @@ let rec node config source selected_node parents =
         let str = Mreader.print_pretty config source (Pretty_case_list cases) in
         loc, str
       | [] ->
+        (* The match is already complete, we try to refine it *)
         begin match Typedtree.classify_pattern patt with
         | Computation -> raise (Not_allowed ("computation pattern"));
         | Value ->
           let _patt : Typedtree.value Typedtree.general_pattern = patt in
           if not (destructible patt) then raise Nothing_to_do else
             let ty = patt.Typedtree.pat_type in
-            (* Printf.eprintf "pouet cp \n%!" ; *)
             begin match gen_patterns patt.Typedtree.pat_env ty with
-            | [] -> assert false (* we raise Not_allowed, but never return [] *)
+            | [] ->
+              (* gen_patterns might raise Not_allowed, but should never return [] *)
+              assert false
             | [ more_precise ] ->
-              (* Printf.eprintf "one cp \n%!" ; *)
               (* If only one pattern is generated, then we're only refining the
                 current pattern, not generating new branches. *)
               let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in

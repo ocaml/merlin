@@ -6,6 +6,25 @@
   >   | None | Some _ -> ()
   > EOF
 
+  $ $MERLIN single case-analysis -start 5:16 -end 5:16 \
+  > -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 5,
+          "col": 16
+        },
+        "end": {
+          "line": 5,
+          "col": 17
+        }
+      },
+      "`Foo"
+    ],
+    "notifications": []
+  }
   $ $MERLIN single case-analysis -start 5:16 -end 5:16 -filename main.ml <main.ml
   {
     "class": "exception",
