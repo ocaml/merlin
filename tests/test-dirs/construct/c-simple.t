@@ -178,13 +178,13 @@ Test lazy
 
 User defined types should be ordered the same as in declaration
 
-  $ cat >lazy.ml <<EOF
+  $ cat >user_defined.ml <<EOF
   > type my_type = One | Another
   > let x : my_type = _
   > EOF
 
   $ $MERLIN single construct -position 2:18 \
-  > -filename lazy.ml <lazy.ml | jq ".value"
+  > -filename user_defined.ml <user_defined.ml | jq ".value"
   [
     {
       "start": {
