@@ -41,7 +41,8 @@ dune build -p dot-merlin-reader,merlin
 
 Note: if you want to work on Merlin, you'll want to avoid the `-p merlin` to
 build in dev mode, with some extra warnings enabled. In that case, you'll also
-need an extra dependency: Menhir. You should pin it by running:
+need an extra dependency: Menhir. We recommend that you pin it to version 20201216
+which was used to generate the parser currently present in the sources.
 ```shell
 opam pin menhir 20201216
 ```
