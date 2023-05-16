@@ -3759,7 +3759,7 @@ and type_expect_
           exp_type = typ;
           exp_attributes = sexp.pexp_attributes;
           exp_env = env }
-      with Unify _ ->
+      with Error (_, _, Undefined_method _) ->
         let valid_methods =
           match !obj_meths with
           | Some meths ->
