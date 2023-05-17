@@ -25,7 +25,7 @@
     "notifications": []
   }
 
-FIXME that Foo is the module type Foo.S, not the module Foo
+That Foo is the module type Foo.S, not the module Foo
   $ $MERLIN single type-enclosing -position 11:21 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
@@ -37,12 +37,12 @@ FIXME that Foo is the module type Foo.S, not the module Foo
       "line": 11,
       "col": 21
     },
-    "type": "sig module type S = Empty val x : unit end",
+    "type": "Foo.S",
     "tail": "no"
   }
 
 
-FIXME that Foo is the module type Foo.S, not the module Foo
+That Foo is the module type Foo.S, not the module Foo
   $ $MERLIN single type-enclosing -position 14:19 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
@@ -54,6 +54,6 @@ FIXME that Foo is the module type Foo.S, not the module Foo
       "line": 14,
       "col": 21
     },
-    "type": "sig module type S = Empty val x : unit end",
+    "type": "Foo.S",
     "tail": "no"
   }
