@@ -84,3 +84,7 @@ val make_key_generator : unit -> (t -> t)
 
 val rename_no_exn: t -> t
         (** Like [rename], but does not fail on persistent/predef idents. *)
+
+val get_currentstamp: unit -> int
+	(** Get the value of the current stamp (the stamp of the last created
+            identifier). Used to flush identifier-based caches when backtracking. *)

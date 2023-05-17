@@ -496,6 +496,28 @@ type type_descriptions = type_descr_kind
 
 let in_signature_flag = 0x01
 
+let stamped_changes =
+  s_table Stamped_hashtable.create_changes ()
+
+let stamped_add table path value =
+  let rec path_stamp = function
+    | Pident id -> Ident.stamp id
+    | Pdot (t, _) -> path_stamp t
+    | Papply (t1, t2) -> Int.max (path_stamp t1) (path_stamp t2)
+  in
+  let stamp = path_stamp path in
+  let stamp = if stamp = 0 then None else Some stamp in
+  Stamped_hashtable.add table ?stamp path value
+
+let stamped_mem table path =
+  Stamped_hashtable.mem table path
+
+let stamped_find table path =
+  Stamped_hashtable.find table path
+
+let stamped_create n =
+  Stamped_hashtable.create !stamped_changes n
+
 type t = {
   values: (value_entry, value_data) IdTbl.t;
   constrs: constructor_data TycompTbl.t;
@@ -556,8 +578,8 @@ and functor_components = {
   (* Formal parameter and argument signature *)
   fcomp_res: module_type;               (* Result signature *)
   fcomp_shape: Shape.t;
-  fcomp_cache: (Path.t, module_components) Hashtbl.t;  (* For memoization *)
-  fcomp_subst_cache: (Path.t, module_type) Hashtbl.t
+  fcomp_cache: (Path.t, module_components) Stamped_hashtable.t;  (* For memoization *)
+  fcomp_subst_cache: (Path.t, module_type) Stamped_hashtable.t;
 }
 
 and address_unforced =
@@ -1008,7 +1030,7 @@ let modtype_of_functor_appl fcomp p1 p2 =
   | Mty_alias _ as mty -> mty
   | mty ->
       try
-        Hashtbl.find fcomp.fcomp_subst_cache p2
+        stamped_find fcomp.fcomp_subst_cache p2
       with Not_found ->
         let scope = Path.scope (Papply(p1, p2)) in
         let mty =
@@ -1020,7 +1042,7 @@ let modtype_of_functor_appl fcomp p1 p2 =
           in
           Subst.modtype (Rescope scope) subst mty
         in
-        Hashtbl.add fcomp.fcomp_subst_cache p2 mty;
+        stamped_add fcomp.fcomp_subst_cache p2 mty;
         mty
 
 let check_functor_appl
@@ -1028,7 +1050,7 @@ let check_functor_appl
     ~f_comp
     ~arg_path ~arg_mty ~param_mty
     env =
-  if not (Hashtbl.mem f_comp.fcomp_cache arg_path) then
+  if not (stamped_mem f_comp.fcomp_cache arg_path) then
     !check_functor_application
       ~errors ~loc ~lid_whole_app ~f0_path ~args
       ~arg_path ~arg_mty ~param_mty
@@ -1951,8 +1973,8 @@ let rec components_of_module_maker
               Named (param, force_modtype (modtype scoping sub ty_arg)));
           fcomp_res = force_modtype (modtype scoping sub ty_res);
           fcomp_shape = cm_shape;
-          fcomp_cache = Hashtbl.create 17;
-          fcomp_subst_cache = Hashtbl.create 17 })
+          fcomp_cache = stamped_create 17;
+          fcomp_subst_cache = stamped_create 17 })
   | MtyL_ident _ -> Error No_components_abstract
   | MtyL_alias p -> Error (No_components_alias p)
   | MtyL_for_hole -> Error No_components_abstract
@@ -2213,7 +2235,7 @@ let scrape_alias env mty = scrape_alias env mty
 
 let components_of_functor_appl ~loc ~f_path ~f_comp ~arg env =
   try
-    let c = Hashtbl.find f_comp.fcomp_cache arg in
+    let c = stamped_find f_comp.fcomp_cache arg in
     c
   with Not_found ->
     let p = Papply(f_path, arg) in
@@ -2239,7 +2261,7 @@ let components_of_functor_appl ~loc ~f_path ~f_comp ~arg env =
         (*???*)
         env Subst.identity p addr (Subst.Lazy.of_modtype mty) shape
     in
-    Hashtbl.add f_comp.fcomp_cache arg comps;
+    stamped_add f_comp.fcomp_cache arg comps;
     comps
 
 (* Define forward functions *)
@@ -3976,7 +3998,7 @@ and short_paths_functor_components_desc env mpath comp path =
   | Functor_comps f ->
       let mty =
         try
-          Hashtbl.find f.fcomp_subst_cache path
+          stamped_find f.fcomp_subst_cache path
         with Not_found ->
           let mty =
             let subst =
@@ -3988,7 +4010,7 @@ and short_paths_functor_components_desc env mpath comp path =
             Subst.modtype (Rescope (Path.scope (Papply (mpath, path))))
               subst f.fcomp_res
           in
-          Hashtbl.add f.fcomp_subst_cache path mty;
+          stamped_add f.fcomp_subst_cache path mty;
           mty
       in
       let loc = Location.(in_file !input_name) in
@@ -4095,3 +4117,6 @@ let short_paths env =
     let basis = Persistent_env.short_paths_basis !persistent_env in
     Short_paths.initial basis
   | Some short_paths -> short_paths
+
+let cleanup_functor_caches ~stamp =
+  Stamped_hashtable.backtrack !stamped_changes ~stamp
