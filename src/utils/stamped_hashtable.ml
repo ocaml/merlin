@@ -1,18 +1,36 @@
-type ('a, 'b) t = {
-  table: ('a, 'b) Hashtbl.t;
-  mutable recent: (int * 'a) list;
-  mutable sorted: (int * 'a) list;
+
+type cell =
+    Cell : {
+      stamp: int;
+      table: ('a, 'b) Hashtbl.t;
+      key: 'a;
+    } -> cell
+
+type changes = {
+  mutable recent: cell list;
+  mutable sorted: cell list;
 }
 
-let create n = {
-  table = Hashtbl.create n;
+let create_changes () = {
   recent = [];
   sorted = [];
 }
 
-let add t ~stamp a b =
-  Hashtbl.add t.table a b;
-  t.recent <- (stamp, a) :: t.recent
+type ('a, 'b) t = {
+  table: ('a, 'b) Hashtbl.t;
+  changes: changes;
+}
+
+let create changes n = {
+  table = Hashtbl.create n;
+  changes;
+}
+
+let add {table; changes} ?stamp key value =
+  Hashtbl.add table key value;
+  match stamp with
+  | None -> ()
+  | Some stamp -> changes.recent <- Cell {stamp; key; table} :: changes.recent
 
 let mem t a =
   Hashtbl.mem t.table a
@@ -21,31 +39,31 @@ let find t a =
   Hashtbl.find t.table a
 
 (* Sort by decreasing stamps *)
-let order (i1, _) (i2, _) =
-  Int.compare i2 i1
+let order (Cell c1) (Cell c2) =
+  Int.compare c2.stamp c1.stamp
 
 let rec filter_prefix pred = function
   | x :: xs when not (pred x) ->
     filter_prefix pred xs
   | xs -> xs
 
-let backtrack t ~stamp =
-  let process (stamp', path) =
-    if stamp' > stamp then (
-      Hashtbl.remove t.table path;
+let backtrack cs ~stamp =
+  let process (Cell c) =
+    if c.stamp > stamp then (
+      Hashtbl.remove c.table c.key;
       false
     ) else
       true
   in
   let recent =
-    t.recent
+    cs.recent
     |> List.filter process
     |> List.fast_sort order
   in
-  t.recent <- [];
+  cs.recent <- [];
   let sorted =
-    t.sorted
+    cs.sorted
     |> filter_prefix process
     |> List.merge order recent
   in
-  t.sorted <- sorted
+  cs.sorted <- sorted
