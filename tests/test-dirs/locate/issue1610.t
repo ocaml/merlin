@@ -14,11 +14,24 @@
 
 FIXME: we should jump to the functor's body, not the current definition
   $ $MERLIN single locate -look-for ml -position 11:15 \
-  > -filename main.ml <main.ml | jq '.value'
+  > -filename main.ml <main.ml 
   {
-    "file": "$TESTCASE_ROOT/main.ml",
-    "pos": {
-      "line": 11,
-      "col": 0
-    }
+    "class": "return",
+    "value": {
+      "file": "$TESTCASE_ROOT/main.ml",
+      "pos": {
+        "line": 11,
+        "col": 0
+      }
+    },
+    "notifications": []
+  }
+
+FIXME: same when the user inputs the expression manually
+  $ $MERLIN single locate -prefix 'M(T).t' -look-for ml -position 11:15 \
+  > -filename main.ml <main.ml 
+  {
+    "class": "return",
+    "value": "Not in environment 'M(T).t'",
+    "notifications": []
   }
