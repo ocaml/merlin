@@ -41,6 +41,23 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
   Parser_raw.parse_expression lexer lexbuf
 
+
+let parse_longident lid =
+  let protected_lid =
+    Pprintast.protect_ident (Format.str_formatter) lid;
+    Format.flush_str_formatter ()
+  in
+  let lexbuf = Lexing.from_string protected_lid in
+  let state = Lexer_raw.make @@ Lexer_raw.keywords [] in
+  let rec lexer = function
+    | Lexer_raw.Fail (e,l) -> raise (Lexer_raw.Error (e,l))
+    | Lexer_raw.Return token -> token
+    | Lexer_raw.Refill k -> lexer (k ())
+  in
+  let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
+  try Some (Parser_raw.parse_any_longident lexer lexbuf)
+  with Parser_raw.Error -> None
+
 let lookup_module name env =
   let path, md = Env.find_module_by_name name env in
   path, md.Types.md_type, md.Types.md_attributes
@@ -52,7 +69,7 @@ module Printtyp = struct
 
   let expand_type env ty =
     Env.with_cmis @@ fun () -> (* ?? Not sure *)
-    match !verbosity with 
+    match !verbosity with
     | Smart | Lvl 0 -> ty
     | Lvl (_ : int) ->
       (* Fresh copy of the type to mutilate *)
@@ -102,32 +119,32 @@ module Printtyp = struct
   let verbose_modtype env ppf t =
     Printtyp.modtype ppf (expand_sig env t)
 
-  let select_by_verbosity ~default ?(smart=default) ~verbose = 
+  let select_by_verbosity ~default ?(smart=default) ~verbose =
     match !verbosity with
     | Smart -> smart
     | Lvl 0 -> default
     | Lvl _ -> verbose
 
-  let type_scheme env ppf ty = 
-    (select_by_verbosity 
-      ~default:type_scheme 
+  let type_scheme env ppf ty =
+    (select_by_verbosity
+      ~default:type_scheme
       ~verbose:(verbose_type_scheme env)) ppf ty
 
-  let type_declaration env id ppf = 
-    (select_by_verbosity 
-      ~default:type_declaration 
+  let type_declaration env id ppf =
+    (select_by_verbosity
+      ~default:type_declaration
       ~verbose:(verbose_type_declaration env)) id ppf
 
   let modtype env ppf mty =
-    let smart ppf = function 
+    let smart ppf = function
       | Types.Mty_ident _ | Mty_alias _ -> verbose_modtype env ppf mty
-      | _ -> modtype ppf mty 
-    in 
-    (select_by_verbosity 
+      | _ -> modtype ppf mty
+    in
+    (select_by_verbosity
       ~default:modtype
       ~verbose:(verbose_modtype env)
       ~smart) ppf mty
-  
+
   let wrap_printing_env env ~verbosity:v f =
     let_ref verbosity v (fun () -> wrap_printing_env env f)
 end

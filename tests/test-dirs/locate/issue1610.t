@@ -13,6 +13,7 @@
   > EOF
 
 FIXME: we should jump to the functor's body, not the current definition
+This is due to an issue with identifier-reconstruction
   $ $MERLIN single locate -look-for ml -position 11:15 \
   > -filename main.ml <main.ml 
   {
@@ -27,11 +28,17 @@ FIXME: we should jump to the functor's body, not the current definition
     "notifications": []
   }
 
-FIXME: same when the user inputs the expression manually
+It works as expected when the user inputs the expression manually
   $ $MERLIN single locate -prefix 'M(T).t' -look-for ml -position 11:15 \
   > -filename main.ml <main.ml 
   {
     "class": "return",
-    "value": "Not in environment 'M(T).t'",
+    "value": {
+      "file": "$TESTCASE_ROOT/main.ml",
+      "pos": {
+        "line": 6,
+        "col": 2
+      }
+    },
     "notifications": []
   }
