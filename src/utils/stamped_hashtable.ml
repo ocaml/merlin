@@ -6,31 +6,32 @@ type cell =
       key: 'a;
     } -> cell
 
-type changes = {
+type changelog = {
   mutable recent: cell list;
   mutable sorted: cell list;
 }
 
-let create_changes () = {
+let create_changelog () = {
   recent = [];
   sorted = [];
 }
 
 type ('a, 'b) t = {
   table: ('a, 'b) Hashtbl.t;
-  changes: changes;
+  changelog: changelog;
 }
 
-let create changes n = {
+let create changelog n = {
   table = Hashtbl.create n;
-  changes;
+  changelog;
 }
 
-let add {table; changes} ?stamp key value =
+let add {table; changelog} ?stamp key value =
   Hashtbl.add table key value;
   match stamp with
   | None -> ()
-  | Some stamp -> changes.recent <- Cell {stamp; key; table} :: changes.recent
+  | Some stamp ->
+    changelog.recent <- Cell {stamp; key; table} :: changelog.recent
 
 let mem t a =
   Hashtbl.mem t.table a

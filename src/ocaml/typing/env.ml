@@ -496,8 +496,8 @@ type type_descriptions = type_descr_kind
 
 let in_signature_flag = 0x01
 
-let stamped_changes =
-  s_table Stamped_hashtable.create_changes ()
+let stamped_changelog =
+  s_table Stamped_hashtable.create_changelog ()
 
 let stamped_add table path value =
   let rec path_stamp = function
@@ -516,7 +516,7 @@ let stamped_find table path =
   Stamped_hashtable.find table path
 
 let stamped_create n =
-  Stamped_hashtable.create !stamped_changes n
+  Stamped_hashtable.create !stamped_changelog n
 
 type t = {
   values: (value_entry, value_data) IdTbl.t;
@@ -4119,4 +4119,4 @@ let short_paths env =
   | Some short_paths -> short_paths
 
 let cleanup_functor_caches ~stamp =
-  Stamped_hashtable.backtrack !stamped_changes ~stamp
+  Stamped_hashtable.backtrack !stamped_changelog ~stamp
