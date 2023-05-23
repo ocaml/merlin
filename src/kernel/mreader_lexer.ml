@@ -28,6 +28,8 @@
 
 open Std
 
+let {Logger. log} = Logger.for_section "mreader_lexer"
+
 type keywords = Lexer_raw.keywords
 
 type triple = Parser_raw.token * Lexing.position * Lexing.position
@@ -223,6 +225,15 @@ let is_operator = function
      »
 *)
 
+let print_token fmt = function
+  | LIDENT s -> Format.fprintf fmt "LIDENT %s" s
+  | UIDENT s -> Format.fprintf fmt "UIDENT %s" s
+  | LPAREN -> Format.fprintf fmt "LPAREN"
+  | RPAREN -> Format.fprintf fmt "RPAREN"
+  | DOT -> Format.fprintf fmt "DOT"
+  | EOF -> Format.fprintf fmt "EOF"
+  | _ ->  Format.fprintf fmt "OTHER";;
+
 let reconstruct_identifier_from_tokens tokens pos =
   let rec look_for_component acc = function
 
@@ -246,6 +257,36 @@ let reconstruct_identifier_from_tokens tokens pos =
       when is_operator token <> None && acc = [] ->
       look_for_dot [item] items
 
+    (* RPAREN UIDENT means that we are in presence of a functor application. *)
+    | (RPAREN, _, end_pos) :: ((UIDENT _, _, _ ) as item) :: items
+      when acc <> [] ->
+      let param_items, items = group_until_lparen [item] items in
+      begin try
+        begin try
+          (* Is the cursor on the parameter ? *)
+          look_for_dot [] (List.rev param_items)
+        with Not_found ->
+          (* Is the cursor on the functor or before ? *)
+          look_for_component [] items
+        end
+      with Not_found ->
+        (* The cursor must be after the application [M.N(F).|t]
+           We make a single component with the applciation and continue *)
+        match items with
+        | (UIDENT f, start_pos, _ ) :: items ->
+          let app =
+            let param = List.map ~f:(function
+              | (DOT, _, _ ) -> "."
+              | (UIDENT s, _, _) -> s
+              | _ -> raise Not_found
+            ) param_items
+            in
+            Format.sprintf "%s(%s)" f (String.concat ~sep:"" param)
+          in
+          look_for_dot ((UIDENT app, start_pos, end_pos ) :: acc) items
+        | _ -> raise Not_found
+      end
+
     (* An operator alone is an identifier on its own *)
     | (token, _, _ as item) :: items
       when is_operator token <> None && acc = [] ->
@@ -256,6 +297,11 @@ let reconstruct_identifier_from_tokens tokens pos =
       check acc items
 
     | [] -> raise Not_found
+
+  and group_until_lparen acc = function
+    | (LPAREN,_,_) :: items -> acc, items
+    | item :: items -> group_until_lparen (item::acc) items
+    | _ -> raise Not_found
 
   and look_for_dot acc = function
     | (DOT,_,_) :: items -> look_for_component acc items
@@ -312,6 +358,9 @@ let reconstruct_identifier config source pos =
   let lexbuf = Lexing.from_string (Msource.text source) in
   Location.init lexbuf (Mconfig.filename config);
   let tokens = lex [] lexbuf in
+  log ~title:"from_tokens" "%a"  Logger.fmt (fun fmt ->
+    Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@ ")
+      (fun fmt (tok, _, _) -> print_token fmt tok) fmt tokens);
   reconstruct_identifier_from_tokens tokens pos
 
 let is_uppercase {Location. txt = x; _} =
