@@ -1,4 +1,5 @@
-
+(* A cell, recording a single change of the changelog.
+   It needs to be a GADT to hide the parameters of the Hashtbl. *)
 type cell =
     Cell : {
       stamp: int;
@@ -8,13 +9,21 @@ type cell =
 
 type changelog = {
   mutable recent: cell list;
+  (* The [recent] list contains the changes that happened since the last
+     call to backtrack, in reverse order (the most recent change is first
+     in the list). *)
   mutable sorted: cell list;
+  (* Cells in the [sorted] list are sorted by decreasing stamp, such that
+     listing all cells greater than a threshold is a simple, in order,
+     traversal. *)
 }
 
 let create_changelog () = {
   recent = [];
   sorted = [];
 }
+
+(* Wrappers around [Hashtbl] *)
 
 type ('a, 'b) t = {
   table: ('a, 'b) Hashtbl.t;
@@ -39,16 +48,21 @@ let mem t a =
 let find t a =
   Hashtbl.find t.table a
 
-(* Sort by decreasing stamps *)
+(* Implementation of backtracking *)
+
+(* Helper to sort by decreasing stamps *)
 let order (Cell c1) (Cell c2) =
   Int.compare c2.stamp c1.stamp
 
+(* Drop the prefix not satisfying a certain predicate *)
 let rec filter_prefix pred = function
   | x :: xs when not (pred x) ->
     filter_prefix pred xs
   | xs -> xs
 
 let backtrack cs ~stamp =
+  (* Check if a cell is still valid (older than [stamp]).
+     If not, remove it from its table. *)
   let process (Cell c) =
     if c.stamp > stamp then (
       Hashtbl.remove c.table c.key;
@@ -56,12 +70,19 @@ let backtrack cs ~stamp =
     ) else
       true
   in
+  (* Process recent list:
+     - remove items newer than [stamp]
+     - sort the remainder *)
   let recent =
     cs.recent
     |> List.filter process
     |> List.fast_sort order
   in
   cs.recent <- [];
+  (* Process sorted list:
+     - remove prefix items newer than [stamp]
+     - merge remaining items with the recent ones
+  *)
   let sorted =
     cs.sorted
     |> filter_prefix process
