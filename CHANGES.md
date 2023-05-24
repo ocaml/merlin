@@ -15,6 +15,7 @@ unreleased
       (#1609, fixes #1529 and ocaml-lsp#1032)
     - Fix `construct` results ordering for sum types sand poly variants (#1603)
     - Fix object method completion not working (#1606, fixes #1575)
+    - Improve context detection for package types (#1608, fixes #1607)
   + editor modes
     - emacs: call the user's configured completion UI in
       `merlin-construct` (#1598)
