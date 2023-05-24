@@ -16,12 +16,24 @@
   > type u = N.M(F.T).t
   > EOF
 
-This should return the type of `t` (line 7)
+FIXME: This should return the type of `t` (line 7)
   $ $MERLIN single type-enclosing -position 15:18 -verbosity 1 \
   > -filename main.ml <main.ml 
   {
     "class": "return",
     "value": [
+      {
+        "start": {
+          "line": 15,
+          "col": 9
+        },
+        "end": {
+          "line": 15,
+          "col": 19
+        },
+        "type": "functor (T : T) -> sig type t = int T.t end",
+        "tail": "no"
+      },
       {
         "start": {
           "line": 15,
@@ -65,7 +77,48 @@ Type of M (line 6)
   > -filename main.ml <main.ml | jq '.value[0].type'
   "functor (T : T) -> sig type t = int T.t end"
 
-Type of N (line 5)
+Type of N (and larger enclosings) (line 5)
   $ $MERLIN single type-enclosing -position 15:9 \
-  > -filename main.ml <main.ml | jq '.value[0].type'
-  "sig module M : functor (T : T) -> sig type t = int T.t end end"
+  > -filename main.ml <main.ml 
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 15,
+          "col": 9
+        },
+        "end": {
+          "line": 15,
+          "col": 10
+        },
+        "type": "sig module M : functor (T : T) -> sig type t = int T.t end end",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 15,
+          "col": 9
+        },
+        "end": {
+          "line": 15,
+          "col": 19
+        },
+        "type": "N.M(F.T).t",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 15,
+          "col": 0
+        },
+        "end": {
+          "line": 15,
+          "col": 19
+        },
+        "type": "type u = N.M(F.T).t",
+        "tail": "no"
+      }
+    ],
+    "notifications": []
+  }
