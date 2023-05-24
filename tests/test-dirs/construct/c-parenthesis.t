@@ -22,7 +22,7 @@ Test 1.1 :
       }
     },
     [
-      "(Some _)",
-      "None"
+      "None",
+      "(Some _)"
     ]
   ]

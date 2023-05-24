@@ -26,8 +26,8 @@ Test 1.1 :
       }
     },
     [
-      "(Some _)",
-      "None"
+      "None",
+      "(Some _)"
     ]
   ]
 
@@ -47,8 +47,8 @@ With depth 2:
       }
     },
     [
-      "(Some 0)",
-      "None"
+      "None",
+      "(Some 0)"
     ]
   ]
 
@@ -68,8 +68,8 @@ With values:
       }
     },
     [
-      "(Some _)",
       "None",
+      "(Some _)",
       "nice_candidate",
       "(nice_candidate_with_arg _)",
       "(nice_candidate_with_labeled_arg ~x:_)"
@@ -92,8 +92,8 @@ With depth 2 and values:
       }
     },
     [
-      "(Some 0)",
       "None",
+      "(Some 0)",
       "(Some y)",
       "nice_candidate",
       "(nice_candidate_with_arg _)",
@@ -121,8 +121,8 @@ Test 1.2
       }
     },
     [
-      "(_ :: _)",
-      "[]"
+      "[]",
+      "(_ :: _)"
     ]
   ]
 
@@ -146,8 +146,8 @@ Test 1.3
       }
     },
     [
-      "(_ :: _)",
-      "[]"
+      "[]",
+      "(_ :: _)"
     ]
   ]
 
@@ -175,6 +175,33 @@ Test lazy
       "(lazy _)"
     ]
   ]
+
+User defined types should be ordered the same as in declaration
+
+  $ cat >user_defined.ml <<EOF
+  > type my_type = One | Another
+  > let x : my_type = _
+  > EOF
+
+  $ $MERLIN single construct -position 2:18 \
+  > -filename user_defined.ml <user_defined.ml | jq ".value"
+  [
+    {
+      "start": {
+        "line": 2,
+        "col": 18
+      },
+      "end": {
+        "line": 2,
+        "col": 19
+      }
+    },
+    [
+      "One",
+      "Another"
+    ]
+  ]
+
 
 #############
 ## RECORDS ##
@@ -346,9 +373,9 @@ Test 6.1
   $ $MERLIN single construct -position 7:3 \
   > -filename c61.ml <c61.ml | jq '.value[1]'
   [
-    "(Eq (_, _))",
+    "(Int _)",
     "(Float _)",
-    "(Int _)"
+    "(Eq (_, _))"
   ]
 
 Test 6.1b
@@ -369,15 +396,15 @@ Eq (Int _, Float) is wrong and should not appear (fixed)
         }
       },
       [
-        "(Eq ((Eq (_, _)), (Float _)))",
-        "(Float 0.0)",
-        "(Eq ((Float _), (Float _)))",
         "(Int 0)",
-        "(Eq ((Float _), (Eq (_, _))))",
-        "(Eq ((Eq (_, _)), (Eq (_, _))))",
-        "(Eq ((Int _), (Eq (_, _))))",
+        "(Float 0.0)",
+        "(Eq ((Eq (_, _)), (Float _)))",
+        "(Eq ((Float _), (Float _)))",
+        "(Eq ((Int _), (Int _)))",
         "(Eq ((Eq (_, _)), (Int _)))",
-        "(Eq ((Int _), (Int _)))"
+        "(Eq ((Float _), (Eq (_, _))))",
+        "(Eq ((Int _), (Eq (_, _))))",
+        "(Eq ((Eq (_, _)), (Eq (_, _))))"
       ]
     ],
     "notifications": []
@@ -387,8 +414,8 @@ Test 6.1c
   $ $MERLIN single construct -position 9:3 \
   > -filename c61.ml <c61.ml | jq '.value[1]'
   [
-    "(Eq (_, _))",
-    "(Int _)"
+    "(Int _)",
+    "(Eq (_, _))"
   ]
 
 Test 6.2
@@ -412,10 +439,10 @@ Fixed: v2 should appear
   $ $MERLIN single construct -with-values local -position 9:3 \
   > -filename c62.ml <c62.ml | jq '.value[1]'
   [
-    "(App (_, _))",
-    "Add",
-    "(Float _)",
     "(Int _)",
+    "(Float _)",
+    "Add",
+    "(App (_, _))",
     "v1",
     "v2"
   ]
@@ -425,8 +452,8 @@ only v1 should appear
   $ $MERLIN single construct -with-values local -position 11:3 \
   > -filename c62.ml <c62.ml | jq '.value[1]'
   [
-    "(App (_, _))",
     "(Int _)",
+    "(App (_, _))",
     "v1",
     "x"
   ]
@@ -466,8 +493,8 @@ Test M.2 : FIXME wrong position
       }
     },
     [
-      "(_ :: _)",
-      "[]"
+      "[]",
+      "(_ :: _)"
     ]
   ]
 

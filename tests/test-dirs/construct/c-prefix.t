@@ -25,8 +25,8 @@ Test 1.1 :
       }
     },
     [
-      "Prefix.B",
-      "(Prefix.A _)"
+      "(Prefix.A _)",
+      "Prefix.B"
     ]
   ]
 
@@ -54,8 +54,8 @@ Test 1.2 :
       }
     },
     [
-      "B",
-      "(A _)"
+      "(A _)",
+      "B"
     ]
   ]
 
@@ -76,8 +76,8 @@ Test 1.3 :
   $ $MERLIN single construct -position 5:20 -filename c13.ml <c13.ml |
   >  jq ".value[1]"
   [
-    "Prefix.B",
-    "(Prefix.A _)"
+    "(Prefix.A _)",
+    "Prefix.B"
   ]
 
   $ $MERLIN single construct -position 6:20 -filename c13.ml <c13.ml |
@@ -89,8 +89,8 @@ Test 1.3 :
   $ $MERLIN single construct -position 8:13 -filename c13.ml <c13.ml |
   >  jq ".value[1]"
   [
-    "B",
-    "(A _)"
+    "(A _)",
+    "B"
   ]
 
   $ $MERLIN single construct -position 9:13 -filename c13.ml <c13.ml |
