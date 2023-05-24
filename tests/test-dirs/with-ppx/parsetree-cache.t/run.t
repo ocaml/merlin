@@ -39,7 +39,7 @@ By default, the cache for the reader phase and the PPX phase are disabled
   # . Phase cache - PPX phase
   Cache is disabled: configuration
 
-The cache can be enabled via the [-use-ppx-cache] flag
+The cache can be enabled via the USE_PPX_CACHE directive
   $ cat > .merlin <<EOF
   > FLG -ppx '_build/default/.ppx/a56cb746ce56d7c281c7d9796f4166ed/ppx.exe -as-ppx
   > USE_PPX_CACHE
