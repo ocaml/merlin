@@ -19,6 +19,8 @@ unreleased
     - Fix incorrect locations for string literals (#1574)
     - Fixed an issue that caused `errors` to erroneously alert about missing
       `cmi` files (#1577)
+    - Prevent destruct from crashing on closed variant types (#1602,
+      fixes #1601)
   + editor modes
     - emacs: call the user's configured completion UI in
       `merlin-construct` (#1598)
