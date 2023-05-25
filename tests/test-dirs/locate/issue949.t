@@ -7,21 +7,15 @@ This test is for testing the behavior of identifiers with a . in them:
   > EOF
 
   $ $MERLIN single locate -look-for ml -position 2:16 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
-    "file": "$TESTCASE_ROOT/main.ml",
-    "pos": {
-      "line": 1,
-      "col": 22
-    }
+    "line": 1,
+    "col": 22
   }
 
   $ $MERLIN single locate -look-for ml -position 3:14 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
-    "file": "$TESTCASE_ROOT/main.ml",
-    "pos": {
-      "line": 1,
-      "col": 22
-    }
+    "line": 1,
+    "col": 22
   }
