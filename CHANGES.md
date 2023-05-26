@@ -21,6 +21,7 @@ unreleased
       `cmi` files (#1577)
     - Prevent destruct from crashing on closed variant types (#1602,
       fixes #1601)
+    - Improve longident parsing (#1612, fixes #945)
   + editor modes
     - emacs: call the user's configured completion UI in
       `merlin-construct` (#1598)
