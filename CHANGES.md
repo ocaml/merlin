@@ -11,6 +11,8 @@ unreleased
     - Add a hook to configure system command for spawning ppxes when Merlin is
       used as a library. (#1585)
     - Implement an all-or-nothing cache for the PPX phase (#1584)
+    - Cleanup functors caches when backtracking, to avoid memory leaks
+      (#1609, fixes #1529 and ocaml-lsp#1032)
   + editor modes
     - emacs: call the user's configured completion UI in
       `merlin-construct` (#1598)
