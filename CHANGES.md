@@ -17,6 +17,8 @@ unreleased
     - Fix object method completion not working (#1606, fixes #1575)
     - Improve context detection for package types (#1608, fixes #1607)
     - Fix incorrect locations for string literals (#1574)
+    - Fixed an issue that caused `errors` to erroneously alert about missing
+      `cmi` files (#1577)
   + editor modes
     - emacs: call the user's configured completion UI in
       `merlin-construct` (#1598)

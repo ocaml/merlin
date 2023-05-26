@@ -656,10 +656,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
   | Errors { lexing; parsing; typing }->
     let typer = Mpipeline.typer_result pipeline in
     let verbosity = verbosity pipeline in
-    Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
     let lexer_errors  = Mpipeline.reader_lexer_errors pipeline  in
     let parser_errors = Mpipeline.reader_parser_errors pipeline in
     let typer_errors  = Mpipeline.typer_errors pipeline  in
+    Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
     (* When there is a cmi error, we will have a lot of meaningless errors,
        there is no need to report them. *)
     let typer_errors =
