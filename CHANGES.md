@@ -1,6 +1,6 @@
 merlin 4.9
 ==========
-unreleased
+Fri May 26 15:23:42 CEST 2023
 
   + merlin binary
     - Allow monadic IO in dot protocol (#1581)
