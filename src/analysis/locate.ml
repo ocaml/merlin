@@ -715,7 +715,10 @@ end = struct
 end
 
 let uid_from_longident ~config ~env nss ml_or_mli ident =
-  let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
+  let str_ident =
+    try String.concat ~sep:"." (Longident.flatten ident)
+    with _-> "Not a flat longident"
+  in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
   | Some (path, namespace, decl_uid, loc) ->
@@ -746,51 +749,55 @@ let from_path ~config ~env ~namespace ml_or_mli path =
         | `Found (file, loc) -> `Found (uid, file, loc)
         | `File_not_found _ as otherwise -> otherwise
 
+let infer_namespace ?namespaces ~pos lid browse is_label =
+  match namespaces with
+  | Some nss ->
+    if not is_label
+    then `Ok (nss :> Namespace.inferred list)
+    else if List.mem `Labels ~set:nss then (
+      log ~title:"from_string" "restricting namespaces to labels";
+      `Ok [ `Labels ]
+    ) else (
+      log ~title:"from_string"
+        "input is clearly a label, but the given namespaces don't cover that";
+      `Error `Missing_labels_namespace
+    )
+  | None ->
+    match Context.inspect_browse_tree ~cursor:pos lid [browse], is_label with
+    | None, _ ->
+      log ~title:"from_string" "already at origin, doing nothing" ;
+      `Error `At_origin
+    | Some (Label _ as ctxt), true
+    | Some ctxt, false ->
+      log ~title:"from_string"
+        "inferred context: %s" (Context.to_string ctxt);
+      `Ok (Namespace.from_context ctxt)
+    | _, true ->
+      log ~title:"from_string"
+        "dropping inferred context, it is not precise enough";
+      `Ok [ `Labels ]
+
 let from_string ~config ~env ~local_defs ~pos ?namespaces switch path =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
-  let lid = Longident.parse path in
-  let ident, is_label = Longident.keep_suffix lid in
-  match
-    match namespaces with
-    | Some nss ->
-      if not is_label
-      then `Ok (nss :> Namespace.inferred list)
-      else if List.mem `Labels ~set:nss then (
-        log ~title:"from_string" "restricting namespaces to labels";
-        `Ok [ `Labels ]
-      ) else (
-        log ~title:"from_string"
-          "input is clearly a label, but the given namespaces don't cover that";
-        `Error `Missing_labels_namespace
-      )
-    | None ->
-      match Context.inspect_browse_tree ~cursor:pos lid [browse], is_label with
-      | None, _ ->
-        log ~title:"from_string" "already at origin, doing nothing" ;
-        `Error `At_origin
-      | Some (Label _ as ctxt), true
-      | Some ctxt, false ->
-        log ~title:"from_string"
-          "inferred context: %s" (Context.to_string ctxt);
-        `Ok (Namespace.from_context ctxt)
-      | _, true ->
-        log ~title:"from_string"
-          "dropping inferred context, it is not precise enough";
-        `Ok [ `Labels ]
-  with
-  | `Error e -> e
-  | `Ok nss ->
-    log ~title:"from_string"
-      "looking for the source of '%s' (prioritizing %s files)"
-      path (match switch with `ML -> ".ml" | `MLI -> ".mli");
-    match from_longident ~config ~env nss switch ident with
-    | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
-    | `Builtin -> `Builtin path
-    | `Found (uid, loc) ->
-      match find_source ~config loc path with
-      | `Found (file, loc) -> `Found (uid, file, loc)
-      | `File_not_found _ as otherwise -> otherwise
+  let lid = Type_utils.parse_longident path in
+  let from_lid lid =
+    let ident, is_label = Longident.keep_suffix lid in
+    match infer_namespace ?namespaces ~pos lid browse is_label with
+    | `Error e -> e
+    | `Ok nss ->
+      log ~title:"from_string"
+        "looking for the source of '%s' (prioritizing %s files)"
+        path (match switch with `ML -> ".ml" | `MLI -> ".mli");
+      match from_longident ~config ~env nss switch ident with
+      | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
+      | `Builtin -> `Builtin path
+      | `Found (uid, loc) ->
+        match find_source ~config loc path with
+        | `Found (file, loc) -> `Found (uid, file, loc)
+        | `File_not_found _ as otherwise -> otherwise
+  in
+  Option.value_map ~f:from_lid ~default:(`Not_found (path, None)) lid
 
 (** When we look for docstring in external compilation unit we can perform
     a uid-based search and return the attached comment in the attributes.

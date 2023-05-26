@@ -49,22 +49,22 @@ val mod_smallerthan : int -> Types.module_type -> int option
     otherwise (module is bigger than threshold).
     Used to skip printing big modules in completion. *)
 
-val type_in_env : 
-     ?verbosity:Mconfig.Verbosity.t 
-  -> ?keywords:Lexer_raw.keywords 
-  -> context: Context.t 
-  -> Env.t 
-  -> Format.formatter 
-  -> string 
+val type_in_env :
+     ?verbosity:Mconfig.Verbosity.t
+  -> ?keywords:Lexer_raw.keywords
+  -> context: Context.t
+  -> Env.t
+  -> Format.formatter
+  -> string
   -> bool
 (** [type_in_env env ppf input] parses [input] and prints its type on [ppf].
     Returning true if it printed a type, false otherwise. *)
 
-val print_type_with_decl : 
-     verbosity:Mconfig.Verbosity.t 
-  -> Env.t 
-  -> Format.formatter 
-  -> Types.type_expr 
+val print_type_with_decl :
+     verbosity:Mconfig.Verbosity.t
+  -> Env.t
+  -> Format.formatter
+  -> Types.type_expr
   -> unit
 (** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
     type expression, except if it is a type constructor and verbosity is set then
@@ -80,9 +80,11 @@ val read_doc_attributes : Parsetree.attributes -> (string * Location.t) option
 
 val is_deprecated : Parsetree.attributes -> bool
 
-val print_constr : 
-     verbosity:Mconfig.Verbosity.t 
-  -> Env.t 
-  -> Format.formatter 
-  -> Types.constructor_description 
+val print_constr :
+     verbosity:Mconfig.Verbosity.t
+  -> Env.t
+  -> Format.formatter
+  -> Types.constructor_description
   -> unit
+
+val parse_longident : string -> Longident.t option
