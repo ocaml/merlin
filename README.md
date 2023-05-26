@@ -39,9 +39,13 @@ Dependencies: ocamlfind, yojson >= 2.0.0, dune >= 2.7.
 dune build -p dot-merlin-reader,merlin
 ```
 
-Note: if you want to work on merlin, you'll want to avoid the `-p merlin`, to
-build in dev mode, with some extra warnings enabled. In that case you'll also
-need an extra dependency: menhir.
+Note: if you want to work on Merlin, you'll want to avoid the `-p merlin` to
+build in dev mode, with some extra warnings enabled. In that case, you'll also
+need an extra dependency: Menhir. We recommend that you pin it to version 20201216
+which was used to generate the parser currently present in the sources.
+```shell
+opam pin menhir 20201216
+```
 
 Installation
 ------------
@@ -172,7 +176,7 @@ Next steps
 
 To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/ocaml/merlin/wiki/project-configuration) file
 unless your project is built using dune.
-Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin. 
+Note that, in a project using Dune, user-created `.merlin` files will take precedence over the configuration provided by Dune to Merlin.
 
 Read more in the [wiki](https://github.com/ocaml/merlin/wiki) to learn how to make full use of Merlin in your projects.
 
