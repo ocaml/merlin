@@ -104,6 +104,8 @@ module Cache = File_cache.Make (struct
             tell (`FINDLIB_TOOLCHAIN (String.drop 18 line))
           else if String.is_prefixed ~by:"EXCLUDE_QUERY_DIR" line then
             tell `EXCLUDE_QUERY_DIR
+          else if String.is_prefixed ~by:"USE_PPX_CACHE" line then
+            tell `USE_PPX_CACHE
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -325,7 +327,7 @@ let prepend_config ~cwd ~cfg =
     | `B _ | `S _ | `CMI _ | `CMT _  as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
-    | (`EXCLUDE_QUERY_DIR | `UNKNOWN_TAG _) as directive ->
+    | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }
@@ -476,11 +478,12 @@ let load dot_merlin_file =
 let dot_merlin_file =  Filename.concat (Sys.getcwd ()) ".merlin"
 
 let rec main () =
-  match Merlin_dot_protocol.Commands.read_input stdin with
+  let open Merlin_dot_protocol.Blocking in
+  match Commands.read_input stdin with
   | Halt -> exit 0
   | File _path ->
     let directives = load dot_merlin_file in
-    Merlin_dot_protocol.write ~out_channel:stdout directives;
+    write stdout directives;
     flush stdout;
     main ()
   | Unknown -> main ()

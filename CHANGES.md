@@ -1,3 +1,35 @@
+merlin 4.9
+==========
+Fri May 26 15:23:42 CEST 2023
+
+  + merlin binary
+    - Allow monadic IO in dot protocol (#1581)
+    - Add a `scope` option to the `occurrences` command in preparation for
+      the upcoming `project-wide-occurrences` feature (#1596)
+    - Construct bool-typed holes as `false` instead of `true` in the
+      `construct` command, for consistency (#1599).
+    - Add a hook to configure system command for spawning ppxes when Merlin is
+      used as a library. (#1585)
+    - Implement an all-or-nothing cache for the PPX phase (#1584)
+    - Cleanup functors caches when backtracking, to avoid memory leaks
+      (#1609, fixes #1529 and ocaml-lsp#1032)
+    - Fix `construct` results ordering for sum types sand poly variants (#1603)
+    - Fix object method completion not working (#1606, fixes #1575)
+    - Improve context detection for package types (#1608, fixes #1607)
+    - Fix incorrect locations for string literals (#1574)
+    - Fixed an issue that caused `errors` to erroneously alert about missing
+      `cmi` files (#1577)
+    - Prevent destruct from crashing on closed variant types (#1602,
+      fixes #1601)
+    - Improve longident parsing (#1612, fixes #945)
+  + editor modes
+    - emacs: call the user's configured completion UI in
+      `merlin-construct` (#1598)
+  + test suite
+    - Add missing dependency to a test using ppxlib (#1583)
+    - Add tests for the new PPX phase cache (#1584)
+    - Add and update tests for `construct` ordering (#1603)
+
 merlin 4.8
 ==========
 Fri Feb 24 16:55:42 CEST 2023

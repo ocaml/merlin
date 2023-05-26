@@ -43,6 +43,7 @@ type config = {
   stdlib       : string option;
   reader       : string list;
   exclude_query_dir : bool;
+  use_ppx_cache : bool;
 }
 
 let empty_config = {
@@ -56,6 +57,7 @@ let empty_config = {
   stdlib       = None;
   reader       = [];
   exclude_query_dir = false;
+  use_ppx_cache = false;
 }
 
 let white_regexp = Str.regexp "[ \t]+"
@@ -233,6 +235,8 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
       {config with reader}, errors
     | `EXCLUDE_QUERY_DIR ->
       {config with exclude_query_dir = true}, errors
+    | `USE_PPX_CACHE ->
+      {config with use_ppx_cache = true}, errors
     | `ERROR_MSG str ->
       config, str :: errors
     | `UNKNOWN_TAG _ when configurator = Configurator.Dune ->
@@ -257,6 +261,7 @@ let postprocess_config config =
     stdlib      = config.stdlib;
     reader      = config.reader;
     exclude_query_dir = config.exclude_query_dir;
+    use_ppx_cache = config.use_ppx_cache;
   }
 
 type context = {
@@ -279,12 +284,11 @@ let get_config { workdir; process_dir; configurator } path_abs =
       workdir
   in
   let query path (p : Configurator.Process.t) =
+    let open Merlin_dot_protocol.Blocking in
     log_query path;
-    Merlin_dot_protocol.Commands.send_file
-      ~out_channel:p.stdin
-      path;
+    Commands.send_file p.stdin path;
     flush p.stdin;
-    Merlin_dot_protocol.read ~in_channel:p.stdout
+    read p.stdout
   in
   try
     let p =

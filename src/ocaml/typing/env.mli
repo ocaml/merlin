@@ -531,3 +531,4 @@ val with_cmis : (unit -> 'a) -> 'a
 (* helper for merlin *)
 
 val add_merlin_extension_module: Ident.t -> module_type -> t -> t
+val cleanup_functor_caches : stamp:int -> unit

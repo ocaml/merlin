@@ -375,3 +375,6 @@ let rename_no_exn = function
       incr currentstamp;
       Local { name; stamp = !currentstamp }
   | id -> id
+
+let get_currentstamp () =
+  !currentstamp

@@ -346,6 +346,9 @@ module Result = struct
   type ('a, 'e) t = ('a, 'e) result =
   | Ok of 'a
   | Error of 'e
+
+  let map ~f r = Result.map f r
+  let bind ~f r = Result.bind r f
 end
 
 module String = struct
@@ -745,6 +748,43 @@ module Shell = struct
     done;
     flush ();
     List.rev !comps
+end
+
+module System = struct
+  external windows_merlin_system_command : string -> cwd:string -> int =
+    "ml_merlin_system_command"
+
+  let run_in_directory
+    : (prog:string
+    -> prog_is_quoted:bool
+    -> args:string list
+    -> cwd:string
+    -> ?stdin:string
+    -> ?stdout:string
+    -> ?stderr:string
+    -> unit
+    -> [ `Finished of int | `Cancelled ]) ref = ref @@
+    fun ~prog ~prog_is_quoted:_ ~args ~cwd ?stdin:_ ?stdout ?stderr:_ () ->
+      (* Currently we assume that [prog] is always quoted and might contain
+      arguments such as [-as-ppx]. This is due to the way Merlin gets its
+      configuration. Thus we cannot rely on [Filename.quote_command]. *)
+      let args = String.concat ~sep:" " @@ List.map ~f:Filename.quote args in
+      let args = match stdout with
+        | Some file -> Format.sprintf "%s 1>%s" args (Filename.quote file)
+        | None ->
+          (* Runned program should never output on stdout since it is the
+             channel used by Merlin to communicate with the editor *)
+          if Sys.win32 then args else Format.sprintf "%s 1>&2" args
+      in
+      let cmd = Format.sprintf "%s %s" prog args in
+      let exit_code =
+        if Sys.win32 then
+          (* Note: the following function will never output to stdout *)
+          windows_merlin_system_command cmd ~cwd
+        else
+          Sys.command (Printf.sprintf "cd %s && %s" (Filename.quote cwd) cmd)
+      in
+      `Finished exit_code
 end
 
   (* [modules_in_path ~ext path] lists ocaml modules corresponding to
