@@ -148,6 +148,7 @@ let inspect_browse_tree ~cursor lid browse : t option =
     | Module_expr _
     | Open_description _ -> Some Module_path
     | Module_type _ -> Some Module_type
+    | Core_type { ctyp_desc = Ttyp_package _; _ } -> Some Module_type
     | Core_type _ -> Some Type
     | Record_field (_, lbl, _) when (Longident.last lid) = lbl.lbl_name ->
       (* if we stopped here, then we're on the label itself, and whether or
