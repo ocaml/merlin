@@ -40,6 +40,7 @@ module Directive = struct
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
+    | `USE_PPX_CACHE
     | `UNKNOWN_TAG of string ]
 
   module Processed = struct
@@ -101,6 +102,7 @@ module Sexp = struct
         | tag -> `UNKNOWN_TAG tag
       end
     | List [ Atom "EXCLUDE_QUERY_DIR" ] -> `EXCLUDE_QUERY_DIR
+    | List [ Atom "USE_PPX_CACHE" ] -> `USE_PPX_CACHE
     | _ -> `ERROR_MSG "Unexpected output from external config reader"
 
   let from_directives (directives : Directive.Processed.t list) =
@@ -118,6 +120,7 @@ module Sexp = struct
         | `SUFFIX s -> ("SUFFIX", single s)
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
         | `EXCLUDE_QUERY_DIR -> ("EXCLUDE_QUERY_DIR", [])
+        | `USE_PPX_CACHE -> ("USE_PPX_CACHE", [])
         | `UNKNOWN_TAG tag -> ("ERROR", single @@
             Printf.sprintf "Unknown tag in .merlin: %s" tag)
         | `ERROR_MSG s -> ("ERROR", single s)

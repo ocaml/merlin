@@ -346,6 +346,9 @@ module Result = struct
   type ('a, 'e) t = ('a, 'e) result =
   | Ok of 'a
   | Error of 'e
+
+  let map ~f r = Result.map f r
+  let bind ~f r = Result.bind r f
 end
 
 module String = struct

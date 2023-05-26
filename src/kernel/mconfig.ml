@@ -81,6 +81,8 @@ type merlin = {
   log_sections : string list;
   config_path : string option;
 
+  use_ppx_cache : bool;
+
   exclude_query_dir : bool;
 
   flags_to_apply : string list with_workdir list;
@@ -241,6 +243,7 @@ let get_external_config path t =
       cmi_path = dot.cmi_path @ merlin.cmi_path;
       cmt_path = dot.cmt_path @ merlin.cmt_path;
       exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+      use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
       extensions = dot.extensions @ merlin.extensions;
       suffixes = dot.suffixes @ merlin.suffixes;
       stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
@@ -604,6 +607,8 @@ let initial = {
     config_path = None;
 
     exclude_query_dir = false;
+
+    use_ppx_cache     = false;
 
     flags_to_apply    = [];
     flags_applied     = [];
