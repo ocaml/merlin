@@ -30,8 +30,8 @@
   $ $MERLIN single construct -depth 3 -position 2:4 \
   > -filename obj1.ml <obj1.ml | jq ".value[1]"
   [
-    "object method get int = Some _ method a = \"\" end",
-    "object method get int = None method a = \"\" end"
+    "object method get int = None method a = \"\" end",
+    "object method get int = Some _ method a = \"\" end"
   ]
 
 More cases
