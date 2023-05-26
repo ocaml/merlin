@@ -38,29 +38,29 @@ let report_error = function
     log ~title:"report_error"
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
-
-external windows_merlin_system_command : string -> cwd:string -> int = "ml_merlin_system_command"
-
-let merlin_system_command =
-  if Sys.win32 then
-    windows_merlin_system_command
-  else
-    fun cmd ~cwd ->
-      Sys.command (Printf.sprintf "cd %s && %s" (Filename.quote cwd) cmd)
-
-let ppx_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s %s%s"
-    cmd (Filename.quote fn_in) (Filename.quote fn_out)
-    (if Sys.win32 then "" else " 1>&2")
+let commandline prog args =
+  Filename.quote_command prog args
 
 let apply_rewriter magic ppx (fn_in, failures) =
   let title = "apply_rewriter" in
   let fn_out = Filename.temp_file "camlppx" "" in
-  let comm = ppx_commandline ppx.workval fn_in fn_out in
+  let args = [fn_in; fn_out] in
+  let comm = commandline ppx.workval args in
   log ~title "running %s from directory %S" comm ppx.workdir;
   Logger.log_flush ();
+  let ok =
+    match
+      !System.run_in_directory
+        ~prog:ppx.workval
+        ~prog_is_quoted:true
+        ~args
+        ~cwd:ppx.workdir
+        ()
+    with
+    | `Finished 0 -> true
+    | `Finished _ | `Cancelled -> false
+  in
   let failure =
-    let ok = merlin_system_command comm ~cwd:ppx.workdir = 0 in
     if not ok then Some (CannotRun comm)
     else if not (Sys.file_exists fn_out) then
       Some (WrongMagic comm)
@@ -143,10 +143,6 @@ let apply_rewriters ~ppx ?restore ~tool_name = function
   | `Implementation ast ->
     `Implementation (apply_rewriters_str ~ppx ?restore ~tool_name ast)
 
-let pp_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s 1>%s"
-    cmd (Filename.quote fn_in) (Filename.quote fn_out)
-
 (* FIXME: remove this once we drop support for 4.02 *)
 type ('a, 'b) res = Ok of 'a | Error of 'b
 
@@ -158,8 +154,21 @@ let apply_pp ~workdir ~filename ~source ~pp =
     close_out oc
   end;
   let fn_out = fn_in ^ ".out" in
-  let comm = pp_commandline pp fn_in fn_out in
-  let ok = merlin_system_command comm ~cwd:workdir = 0 in
+  let args = [fn_in] in
+  let comm = commandline pp args in
+  let ok =
+    match
+      !System.run_in_directory
+        ~prog:pp
+        ~prog_is_quoted:true
+        ~args
+        ~stdout:fn_out
+        ~cwd:workdir
+        ()
+    with
+    | `Finished 0 -> true
+    | `Finished _ | `Cancelled -> false
+  in
   Misc.remove_file fn_in;
   if not ok then begin
     Misc.remove_file fn_out;
