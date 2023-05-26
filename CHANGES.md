@@ -10,6 +10,9 @@ unreleased
       `construct` command, for consistency (#1599).
     - Add a hook to configure system command for spawning ppxes when Merlin is
       used as a library. (#1585)
+  + editor modes
+    - emacs: call the user's configured completion UI in
+      `merlin-construct` (#1598)
   + test suite
     - Add missing dependency to a test using ppxlib (#1583)
 

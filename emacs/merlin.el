@@ -1444,38 +1444,30 @@ strictly within, or nil if there is no such element."
 
 
 (defun merlin--construct-complete (start stop results)
+  "Read a constructor from RESULTS, and replace the text between START and STOP."
   (let ((start (merlin--point-of-pos start))
         (stop  (merlin--point-of-pos stop)))
-    (cl-labels ((insert-choice (_b _e newtext)
+    (cl-labels ((insert-choice (newtext)
           (completion--replace start stop newtext)
           (merlin--first-hole-between start (+ start (length newtext)))))
-      (if (= (length results) 1)
-        (insert-choice 0 0 (car results))
-        (with-output-to-temp-buffer "*Constructions*"
-          (progn
-            (with-current-buffer "*Constructions*"
-              (setq-local
-                completion-list-insert-choice-function
-                #'insert-choice))
-            (display-completion-list results)))))))
+      (pcase results
+        ('() (error "No constructors for this hole"))
+        (`(,result) (insert-choice result))
+        (results (insert-choice (completing-read "Constructor: " results nil t)))))))
 
 (defun merlin--construct-point (point)
-  "Execute a construct on POINT"
-  (progn
-    (ignore point) ; Without this Emacs bytecode compiler complains about an
-                   ; unused variable. This may be a bug in the compiler
-    (let ((result (merlin-call "construct"
-                              "-position" (merlin-unmake-point (point)))))
-      (when result
-        (let* ((loc   (car result))
-              (start (cdr (assoc 'start loc)))
-              (stop  (cdr (assoc 'end loc))))
-          (merlin--construct-complete start stop (cadr result)))))))
+  "Execute a construct at POINT."
+  (when-let ((result (merlin-call "construct"
+                                  "-position" (merlin-unmake-point point))))
+    (let* ((loc   (car result))
+           (start (cdr (assoc 'start loc)))
+           (stop  (cdr (assoc 'end loc))))
+      (merlin--construct-complete start stop (cadr result)))))
 
 (defun merlin-construct ()
-  "Construct over the current hole"
+  "Construct over the current hole."
   (interactive)
-  (merlin--construct-point (cons (point) (point))))
+  (merlin--construct-point (point)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1490,7 +1482,7 @@ strictly within, or nil if there is no such element."
 
 (defun merlin--project-get ()
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
-.merlins file loaded and a list of error messages, if any error occurred during
+.merlin files loaded and a list of error messages, if any error occurred during
 loading"
   (let ((ret (merlin-call "check-configuration")))
     (setq merlin--project-cache
