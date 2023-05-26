@@ -50,7 +50,7 @@ module Util = struct
           Predef.path_char, constant (Pconst_char 'c') ;
           Predef.path_string,
             constant (Pconst_string("", Location.none, None)) ;
-          Predef.path_bool, construct "true" ;
+          Predef.path_bool, construct "false" ;
           Predef.path_unit, construct "()" ;
           Predef.path_exn, ident "exn" ;
           Predef.path_array, Ast_helper.Exp.array [] ;

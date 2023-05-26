@@ -6,6 +6,8 @@ unreleased
     - Allow monadic IO in dot protocol (#1581)
     - Add a `scope` option to the `occurrences` command in preparation for
       the upcoming `project-wide-occurrences` feature (#1596)
+    - Construct bool-typed holes as `false` instead of `true` in the
+      `construct` command, for consistency (#1599).
   + test suite
     - Add missing dependency to a test using ppxlib (#1583)
 
