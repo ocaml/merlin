@@ -521,6 +521,7 @@ let stamped_add table path value =
     | Pident id -> Ident.stamp id
     | Pdot (t, _) -> path_stamp t
     | Papply (t1, t2) -> Int.max (path_stamp t1) (path_stamp t2)
+    | Pextra_ty (t, _) -> path_stamp t
   in
   let stamp = path_stamp path in
   let stamp = if stamp = 0 then None else Some stamp in
