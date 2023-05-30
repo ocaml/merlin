@@ -377,7 +377,8 @@ module Incl:
 module Vb:
   sig
     val mk: ?loc: loc -> ?attrs:attrs -> ?docs:docs -> ?text:text ->
-      ?typ:poly_constraint -> pattern -> expression -> value_binding
+      ?value_constraint:value_constraint -> pattern -> expression ->
+      value_binding
   end
 
 
@@ -508,7 +509,7 @@ module Of:
 type let_binding =
   { lb_pattern: pattern;
     lb_expression: expression;
-    lb_constraint: poly_constraint option;
+    lb_constraint: value_constraint option;
     lb_is_pun: bool;
     lb_attributes: attributes;
     lb_docs: docs Lazy.t;

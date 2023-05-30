@@ -472,9 +472,10 @@ module MenhirInterpreter : sig
     | N_let_pattern : (Parsetree.pattern) nonterminal
     | N_let_bindings_no_ext_ : (Ast_helper.let_bindings) nonterminal
     | N_let_bindings_ext_ : (Ast_helper.let_bindings) nonterminal
-    | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression * Parsetree.poly_constraint option) nonterminal
+    | N_let_binding_body_no_punning : (Parsetree.pattern * Parsetree.expression *
+  Parsetree.value_constraint option) nonterminal
     | N_let_binding_body : (Parsetree.pattern * Parsetree.expression *
-  Parsetree.poly_constraint option * bool) nonterminal
+  Parsetree.value_constraint option * bool) nonterminal
     | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal
