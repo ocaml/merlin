@@ -10,4 +10,4 @@ jobs:
     name: Check Changelog Action
     runs-on: ubuntu-20.04
     steps:
-      - uses: tarides/changelog-check-action@v1
+      - uses: tarides/changelog-check-action@v2
