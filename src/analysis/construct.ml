@@ -81,6 +81,16 @@ module Util = struct
       Btype.backtrack snap;
       None
 
+  let typeable env exp type_expected =
+    let snap = Btype.snapshot () in
+    let typeable =
+      match Typecore.type_expect env exp (Typecore.mk_expected type_expected) with
+      | (_ : Typedtree.expression) -> true
+      | exception _ -> false
+    in
+    Btype.backtrack snap;
+    typeable
+
   let is_in_stdlib path =
     Path.head path |> Ident.name = "Stdlib"
 
@@ -321,21 +331,17 @@ module Gen = struct
           | _ -> Ast_helper.Pat.any (), "_" end
     in
 
-    let constructor env type_expr path constrs =
+    let constructor env type_expr constrs =
       log ~title:"constructors" "[%s]"
         (String.concat ~sep:"; "
           (List.map constrs ~f:(fun c -> c.Types.cstr_name)));
       (* [make_constr] builds the PAST repr of a type constructor applied
       to holes *)
-      let make_constr env path type_expr cstr_descr =
+      let make_constr env type_expr cstr_descr =
         let ty_args, ty_res, _ = Ctype.instance_constructor cstr_descr in
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
-          let lid =
-            Util.prefix env ~env_check:Env.find_constructor_by_name
-              path cstr_descr.cstr_name
-            |> Location.mknoloc
-          in
+          let lid = Location.mknoloc (Longident.Lident cstr_descr.cstr_name) in
           let args = List.map ty_args ~f:(exp_or_hole env) in
           let args_combinations = Util.combinations args in
           let exps = List.map args_combinations
@@ -353,13 +359,12 @@ module Gen = struct
 
                 We therefore check that constructed expressions
                 can be typed. *)
-              try
-                Typecore.type_expression env exp |> ignore;
-                Some exp
-              with _ -> None)
+              if Util.typeable env exp type_expr
+              then Some exp
+              else None)
         | None -> []
       in
-      List.map constrs ~f:(make_constr env path type_expr)
+      List.map constrs ~f:(make_constr env type_expr)
       (* [constrs] are ordered inversly to a source code declaration.
          We reverse it to match it and provide better UX *)
       |> List.rev
@@ -394,7 +399,7 @@ module Gen = struct
         |> List.rev
     in
 
-    let record env typ path labels =
+    let record env typ labels =
       log ~title:"record labels" "[%s]"
         (String.concat ~sep:"; "
           (List.map labels ~f:(fun l -> l.Types.lbl_name)));
@@ -402,10 +407,7 @@ module Gen = struct
       let labels = List.map labels ~f:(fun ({ lbl_name; _ } as lbl) ->
         let _, arg, res = Ctype.instance_label true lbl in
         Ctype.unify env res typ ;
-        let lid =
-          Util.prefix env ~env_check:Env.find_label_by_name path lbl_name
-          |> Location.mknoloc
-        in
+        let lid = Location.mknoloc (Longident.Lident lbl_name) in
         let exprs = exp_or_hole env arg in
         lid, exprs)
       in
@@ -448,8 +450,8 @@ module Gen = struct
           with Not_found ->
             let def = Env.find_type_descrs path env in
             match def with
-            | Type_variant (constrs, _) -> constructor env rtyp path constrs
-            | Type_record (labels, _) -> record env rtyp path labels
+            | Type_variant (constrs, _) -> constructor env rtyp constrs
+            | Type_record (labels, _) -> record env rtyp labels
             | Type_abstract | Type_open -> []
           end
         | Tarrow (label, tyleft, tyright, _) ->

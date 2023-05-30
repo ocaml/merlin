@@ -2,6 +2,8 @@ unreleased
 ==========
   + merlin binary
     - Handle concurrent server start (#1622)
+    - Omit module prefixes for constructors and record fields in the
+      `construct` command (#1618).
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
