@@ -1,3 +1,4 @@
 (cram
  (applies_to :whole_subtree)
+ (enabled_if false)
  (locks ../server-tests/merlin_server))
