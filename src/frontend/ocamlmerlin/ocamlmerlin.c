@@ -361,7 +361,8 @@ static void start_server(const char *socketname, const char* ignored, const char
   END_PROTECTCWD
 
   if (err == -1)
-    failwith_perror("bind");
+    // Assume that server was started by another concurrent merlin process
+    return;
 
   if (listen(sock, 5) == -1)
     failwith_perror("listen");
