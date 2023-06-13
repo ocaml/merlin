@@ -62,8 +62,10 @@ module Util = struct
     in
     tbl
 
-  let prefix env ~env_check path name =
-    to_shortest_lid ~env ~env_check ~name path
+  let prefix env ~env_check ~omit_if_possible path name =
+    match omit_if_possible, Warnings.is_active (Disambiguated_name "") with
+    | true, false -> Longident.Lident name
+    | _ -> to_shortest_lid ~env ~env_check ~name path
 
   let var_of_id id = Location.mknoloc @@ Ident.name id
 
@@ -189,7 +191,7 @@ module Gen = struct
   let make_value env (path, (name, _value_description, params)) =
     let open Ast_helper in
     let env_check = Env.find_value_by_name in
-    let lid = Location.mknoloc (Util.prefix env ~env_check path name) in
+    let lid = Location.mknoloc (Util.prefix env ~env_check ~omit_if_possible:false path name) in
     let params = List.map params
       ~f:(fun label -> label, Exp.hole ())
     in
@@ -331,17 +333,23 @@ module Gen = struct
           | _ -> Ast_helper.Pat.any (), "_" end
     in
 
-    let constructor env type_expr constrs =
+    let constructor env type_expr path constrs =
       log ~title:"constructors" "[%s]"
         (String.concat ~sep:"; "
           (List.map constrs ~f:(fun c -> c.Types.cstr_name)));
       (* [make_constr] builds the PAST repr of a type constructor applied
       to holes *)
-      let make_constr env type_expr cstr_descr =
+      let make_constr env path type_expr cstr_descr =
         let ty_args, ty_res, _ = Ctype.instance_constructor cstr_descr in
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
-          let lid = Location.mknoloc (Longident.Lident cstr_descr.cstr_name) in
+          let lid =
+            Util.prefix env
+              ~env_check:Env.find_constructor_by_name
+              ~omit_if_possible:true
+              path cstr_descr.cstr_name
+            |> Location.mknoloc
+          in
           let args = List.map ty_args ~f:(exp_or_hole env) in
           let args_combinations = Util.combinations args in
           let exps = List.map args_combinations
@@ -364,7 +372,7 @@ module Gen = struct
               else None)
         | None -> []
       in
-      List.map constrs ~f:(make_constr env type_expr)
+      List.map constrs ~f:(make_constr env path type_expr)
       (* [constrs] are ordered inversly to a source code declaration.
          We reverse it to match it and provide better UX *)
       |> List.rev
@@ -399,7 +407,7 @@ module Gen = struct
         |> List.rev
     in
 
-    let record env typ labels =
+    let record env typ path labels =
       log ~title:"record labels" "[%s]"
         (String.concat ~sep:"; "
           (List.map labels ~f:(fun l -> l.Types.lbl_name)));
@@ -407,7 +415,13 @@ module Gen = struct
       let labels = List.map labels ~f:(fun ({ lbl_name; _ } as lbl) ->
         let _, arg, res = Ctype.instance_label true lbl in
         Ctype.unify env res typ ;
-        let lid = Location.mknoloc (Longident.Lident lbl_name) in
+        let lid =
+          Util.prefix env
+            ~env_check:Env.find_label_by_name
+            ~omit_if_possible:true
+            path lbl_name
+          |> Location.mknoloc
+        in
         let exprs = exp_or_hole env arg in
         lid, exprs)
       in
@@ -450,8 +464,8 @@ module Gen = struct
           with Not_found ->
             let def = Env.find_type_descrs path env in
             match def with
-            | Type_variant (constrs, _) -> constructor env rtyp constrs
-            | Type_record (labels, _) -> record env rtyp labels
+            | Type_variant (constrs, _) -> constructor env rtyp path constrs
+            | Type_record (labels, _) -> record env rtyp path labels
             | Type_abstract | Type_open -> []
           end
         | Tarrow (label, tyleft, tyright, _) ->
@@ -538,21 +552,23 @@ let to_string_with_parentheses exp =
   in
   Format.asprintf f Pprintast.expression exp
 
-let node ?(depth = 1) ~keywords ~values_scope node =
-  match node with
-  | Browse_raw.Expression { exp_type; exp_env; _ } ->
-      let idents_table = Util.idents_table ~keywords in
-      Gen.expression ~idents_table values_scope ~depth exp_env exp_type
-      |> List.map ~f:to_string_with_parentheses
-  | Browse_raw.Module_expr
-      { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
-  | Browse_raw.Module_expr
-      {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
-      let m = Gen.module_ mod_env mod_type in
-      [ Format.asprintf "%a" Pprintast.module_expr m ]
-  | Browse_raw.Module_expr _
-  | Browse_raw.Module_binding _ ->
-      (* Constructible modules have an explicit constraint or are functor
-        applications. In other cases we do not know what to construct.  *)
-      raise No_constraint
-  | _ -> raise Not_a_hole
+let node ?(depth = 1) ~(config : Mconfig.t) ~keywords ~values_scope node =
+  Warnings.with_state config.ocaml.warnings
+    (fun () ->
+       match node with
+       | Browse_raw.Expression { exp_type; exp_env; _ } ->
+         let idents_table = Util.idents_table ~keywords in
+         Gen.expression ~idents_table values_scope ~depth exp_env exp_type
+         |> List.map ~f:to_string_with_parentheses
+       | Browse_raw.Module_expr
+           { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
+       | Browse_raw.Module_expr
+           {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
+         let m = Gen.module_ mod_env mod_type in
+         [ Format.asprintf "%a" Pprintast.module_expr m ]
+       | Browse_raw.Module_expr _
+       | Browse_raw.Module_binding _ ->
+         (* Constructible modules have an explicit constraint or are functor
+            applications. In other cases we do not know what to construct.  *)
+         raise No_constraint
+       | _ -> raise Not_a_hole)

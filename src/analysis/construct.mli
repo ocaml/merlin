@@ -5,6 +5,7 @@ type values_scope = Null | Local
 
 val node
   : ?depth : int
+  -> config : Mconfig.t
   -> keywords : string list
   -> values_scope : values_scope
   -> Browse_raw.node
