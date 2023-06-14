@@ -2,6 +2,10 @@ unreleased
 ==========
   + merlin binary
     - Handle concurrent server start (#1622)
+  + editor modes
+    - emacs: call merlin-client-logger with "interrupted" if the
+      merlin binary itself is interrupted, not just the parsing of the
+      result (#1626).
 
 
 merlin 4.9
