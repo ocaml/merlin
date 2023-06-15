@@ -24,6 +24,6 @@ bench:
 	opam install .
 	dune build @install
 	merl-an benchmark -s 2 -p merl-an --data=merl-an_bench
-	cat merl-an_bench/bench.json
+	jq . merl-an_bench/bench.json
 
 .PHONY: all build dev clean test promote bench
