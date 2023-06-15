@@ -21,6 +21,7 @@ promote:
 bench:
 	opam pin -y merl-an https://github.com/pitag-ha/merl-an.git
 	git clone https://github.com/pitag-ha/merl-an.git
+	opam install .
 	dune build @install
 	merl-an benchmark -s 2 -p merl-an --data=merl-an_bench
 	cat merl-an_bench/bench.json
