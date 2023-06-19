@@ -565,16 +565,19 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
 
 (defun merlin-call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
-  (let* ((binary (merlin-command))
-         (result (merlin--call-merlin command args)))
+  (let ((binary (merlin-command)) result)
     (condition-case err
-        (setq result (car (read-from-string result)))
-      (error
-        (merlin-client-logger binary command -1 "failure")
-        (error "merlin: error %s trying to parse answer: %s"
-               err result))
+        (progn
+          (setq result (merlin--call-merlin command args))
+          (condition-case err
+              (setq result (car (read-from-string result)))
+            (error
+             (merlin-client-logger binary command -1 "failure")
+             (error "merlin: error %s trying to parse answer: %s"
+                    err result))))
       (quit
-        (merlin-client-logger binary command -1 "interrupted")))
+       (merlin-client-logger binary command -1 "interrupted")
+       (signal (car err) (cdr err))))
     (let* ((notifications (cdr-safe (assoc 'notifications result)))
            (timing (cdr-safe (assoc 'timing result)))
            (class (cdr-safe (assoc 'class result)))
