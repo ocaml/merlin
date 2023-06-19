@@ -595,6 +595,13 @@ static void compute_socketname(char socketname[PATHSZ], struct stat *st)
 
   LocalFree(user_sid_string);
 #else
+  const char *merlin_socket = getenv("MERLIN_SOCKET");
+  if (merlin_socket != NULL)
+  {
+    strcpy(socket_path, merlin_socket);
+    return;
+  }
+
   snprintf(socketname, PATHSZ,
       "ocamlmerlin_%llu_%llu_%llu.socket",
       (unsigned long long)getuid(),
