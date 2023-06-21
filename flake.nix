@@ -7,22 +7,20 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages."${system}";
-        menhirOver = self: _: rec {
-          version = "20201216";
-          src = pkgs.fetchFromGitLab {
-            domain = "gitlab.inria.fr";
-            owner = "fpottier";
-            repo = "menhir";
-            rev = version;
-            sha256 = "sha256:04lnd3qxwma4l5jcv79f9bbl5849l6bhg2rzrrsvdzabdplfrxcb";
-          };
-          name = "ocaml${pkgs.ocaml.version}-${self.pname}-${version}";
-        };
-        menhirLib = pkgs.ocamlPackages.menhirLib.overrideAttrs menhirOver;
-        menhirSdk = pkgs.ocamlPackages.menhirSdk.overrideAttrs menhirOver;
-        menhir = (pkgs.ocamlPackages.menhir.overrideAttrs menhirOver)
-          .overrideAttrs(_: _: { buildInputs = [ menhirLib menhirSdk ]; });
+        pkgs = nixpkgs.legacyPackages."${system}".extend (self: super: {
+          ocamlPackages = super.ocamlPackages.overrideScope' (oself: osuper: {
+            menhirLib = osuper.menhirLib.overrideAttrs (_: rec {
+              version = "20201216";
+              src = pkgs.fetchFromGitLab {
+                domain = "gitlab.inria.fr";
+                owner = "fpottier";
+                repo = "menhir";
+                rev = version;
+                sha256 = "sha256:04lnd3qxwma4l5jcv79f9bbl5849l6bhg2rzrrsvdzabdplfrxcb";
+              };
+            });
+          });
+        });
         inherit (pkgs.ocamlPackages) buildDunePackage;
       in
       rec {
