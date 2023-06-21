@@ -62,10 +62,13 @@ module Util = struct
     in
     tbl
 
-  let prefix env ~env_check ~omit_if_possible path name =
-    match omit_if_possible, Warnings.is_active (Disambiguated_name "") with
-    | true, false -> Longident.Lident name
-    | _ -> to_shortest_lid ~env ~env_check ~name path
+  let prefix env ~env_check path name =
+    to_shortest_lid ~env ~env_check ~name path
+
+  let maybe_prefix env ~env_check path name =
+    match Warnings.is_active (Disambiguated_name "") with
+    | false -> Longident.Lident name
+    | true -> prefix env ~env_check path name
 
   let var_of_id id = Location.mknoloc @@ Ident.name id
 
@@ -191,7 +194,7 @@ module Gen = struct
   let make_value env (path, (name, _value_description, params)) =
     let open Ast_helper in
     let env_check = Env.find_value_by_name in
-    let lid = Location.mknoloc (Util.prefix env ~env_check ~omit_if_possible:false path name) in
+    let lid = Location.mknoloc (Util.prefix env ~env_check path name) in
     let params = List.map params
       ~f:(fun label -> label, Exp.hole ())
     in
@@ -344,9 +347,8 @@ module Gen = struct
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
           let lid =
-            Util.prefix env
+            Util.maybe_prefix env
               ~env_check:Env.find_constructor_by_name
-              ~omit_if_possible:true
               path cstr_descr.cstr_name
             |> Location.mknoloc
           in
@@ -416,9 +418,8 @@ module Gen = struct
         let _, arg, res = Ctype.instance_label true lbl in
         Ctype.unify env res typ ;
         let lid =
-          Util.prefix env
+          Util.maybe_prefix env
             ~env_check:Env.find_label_by_name
-            ~omit_if_possible:true
             path lbl_name
           |> Location.mknoloc
         in
@@ -569,6 +570,10 @@ let node ?(depth = 1) ~(config : Mconfig.t) ~keywords ~values_scope node =
        | Browse_raw.Module_expr _
        | Browse_raw.Module_binding _ ->
          (* Constructible modules have an explicit constraint or are functor
-            applications. In other cases we do not know what to construct.  *)
+            applications. In other cases we do not know what to construct.
+
+            It is ok to raise here, since Warnings.with_state handles it. *)
          raise No_constraint
-       | _ -> raise Not_a_hole)
+       | _ ->
+         (* As above, it is ok to raise here. *)
+         raise Not_a_hole)
