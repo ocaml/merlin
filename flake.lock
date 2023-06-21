@@ -18,6 +18,25 @@
         "type": "github"
       }
     },
+    "menhir-repository": {
+      "flake": false,
+      "locked": {
+        "host": "gitlab.inria.fr",
+        "lastModified": 1608146308,
+        "narHash": "sha256-i/Xs6G1L/bZ1zj+LB5ehiaBC10ounc1koURV3vFolhI=",
+        "owner": "fpottier",
+        "repo": "menhir",
+        "rev": "abb46d3d9c536bcbe30025f37474e3b4c8288590",
+        "type": "gitlab"
+      },
+      "original": {
+        "host": "gitlab.inria.fr",
+        "owner": "fpottier",
+        "ref": "20201216",
+        "repo": "menhir",
+        "type": "gitlab"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1686331126,
@@ -36,6 +55,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "menhir-repository": "menhir-repository",
         "nixpkgs": "nixpkgs"
       }
     },

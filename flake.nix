@@ -3,21 +3,19 @@
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:nixos/nixpkgs";
+  inputs.menhir-repository = {
+    url = "gitlab:fpottier/menhir/20201216?host=gitlab.inria.fr";
+    flake = false;
+  };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, menhir-repository }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages."${system}".extend (self: super: {
-          ocamlPackages = super.ocamlPackages.overrideScope' (oself: osuper: {
-            menhirLib = osuper.menhirLib.overrideAttrs (_: rec {
+        pkgs = nixpkgs.legacyPackages."${system}".extend (_: super: {
+          ocamlPackages = super.ocamlPackages.overrideScope' (_: osuper: {
+            menhirLib = osuper.menhirLib.overrideAttrs (_: {
               version = "20201216";
-              src = pkgs.fetchFromGitLab {
-                domain = "gitlab.inria.fr";
-                owner = "fpottier";
-                repo = "menhir";
-                rev = version;
-                sha256 = "sha256:04lnd3qxwma4l5jcv79f9bbl5849l6bhg2rzrrsvdzabdplfrxcb";
-              };
+              src = menhir-repository;
             });
           });
         });
