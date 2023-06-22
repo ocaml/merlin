@@ -65,6 +65,11 @@ module Util = struct
   let prefix env ~env_check path name =
     to_shortest_lid ~env ~env_check ~name path
 
+  let maybe_prefix env ~env_check path name =
+    match Warnings.is_active (Disambiguated_name "") with
+    | false -> Longident.Lident name
+    | true -> prefix env ~env_check path name
+
   let var_of_id id = Location.mknoloc @@ Ident.name id
 
   let type_to_string t =
@@ -80,6 +85,16 @@ module Util = struct
       (* Unification failure *)
       Btype.backtrack snap;
       None
+
+  let typeable env exp type_expected =
+    let snap = Btype.snapshot () in
+    let typeable =
+      match Typecore.type_expect env exp (Typecore.mk_expected type_expected) with
+      | (_ : Typedtree.expression) -> true
+      | exception _ -> false
+    in
+    Btype.backtrack snap;
+    typeable
 
   let is_in_stdlib path =
     Path.head path |> Ident.name = "Stdlib"
@@ -332,7 +347,8 @@ module Gen = struct
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
           let lid =
-            Util.prefix env ~env_check:Env.find_constructor_by_name
+            Util.maybe_prefix env
+              ~env_check:Env.find_constructor_by_name
               path cstr_descr.cstr_name
             |> Location.mknoloc
           in
@@ -353,10 +369,9 @@ module Gen = struct
 
                 We therefore check that constructed expressions
                 can be typed. *)
-              try
-                Typecore.type_expression env exp |> ignore;
-                Some exp
-              with _ -> None)
+              if Util.typeable env exp type_expr
+              then Some exp
+              else None)
         | None -> []
       in
       List.map constrs ~f:(make_constr env path type_expr)
@@ -403,7 +418,9 @@ module Gen = struct
         let _, arg, res = Ctype.instance_label true lbl in
         Ctype.unify env res typ ;
         let lid =
-          Util.prefix env ~env_check:Env.find_label_by_name path lbl_name
+          Util.maybe_prefix env
+            ~env_check:Env.find_label_by_name
+            path lbl_name
           |> Location.mknoloc
         in
         let exprs = exp_or_hole env arg in
@@ -536,21 +553,27 @@ let to_string_with_parentheses exp =
   in
   Format.asprintf f Pprintast.expression exp
 
-let node ?(depth = 1) ~keywords ~values_scope node =
-  match node with
-  | Browse_raw.Expression { exp_type; exp_env; _ } ->
-      let idents_table = Util.idents_table ~keywords in
-      Gen.expression ~idents_table values_scope ~depth exp_env exp_type
-      |> List.map ~f:to_string_with_parentheses
-  | Browse_raw.Module_expr
-      { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
-  | Browse_raw.Module_expr
-      {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
-      let m = Gen.module_ mod_env mod_type in
-      [ Format.asprintf "%a" Pprintast.module_expr m ]
-  | Browse_raw.Module_expr _
-  | Browse_raw.Module_binding _ ->
-      (* Constructible modules have an explicit constraint or are functor
-        applications. In other cases we do not know what to construct.  *)
-      raise No_constraint
-  | _ -> raise Not_a_hole
+let node ?(depth = 1) ~(config : Mconfig.t) ~keywords ~values_scope node =
+  Warnings.with_state config.ocaml.warnings
+    (fun () ->
+       match node with
+       | Browse_raw.Expression { exp_type; exp_env; _ } ->
+         let idents_table = Util.idents_table ~keywords in
+         Gen.expression ~idents_table values_scope ~depth exp_env exp_type
+         |> List.map ~f:to_string_with_parentheses
+       | Browse_raw.Module_expr
+           { mod_desc = Tmod_constraint _ ; mod_type; mod_env; _ }
+       | Browse_raw.Module_expr
+           {  mod_desc = Tmod_apply _; mod_type; mod_env; _ } ->
+         let m = Gen.module_ mod_env mod_type in
+         [ Format.asprintf "%a" Pprintast.module_expr m ]
+       | Browse_raw.Module_expr _
+       | Browse_raw.Module_binding _ ->
+         (* Constructible modules have an explicit constraint or are functor
+            applications. In other cases we do not know what to construct.
+
+            It is ok to raise here, since Warnings.with_state handles it. *)
+         raise No_constraint
+       | _ ->
+         (* As above, it is ok to raise here. *)
+         raise Not_a_hole)

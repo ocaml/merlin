@@ -623,6 +623,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | Some `None | None -> Construct.Null
       | Some `Local -> Construct.Local
     in
+    let config = Mpipeline.final_config pipeline in
     let keywords = Mpipeline.reader_lexer_keywords pipeline in
     let typer = Mpipeline.typer_result pipeline in
     let typedtree = Mtyper.get_typedtree typer in
@@ -633,11 +634,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | (_, (Browse_raw.Module_expr { mod_desc = Tmod_hole; _ } as node_for_loc))
       :: (_, node) :: _parents ->
         let loc = Mbrowse.node_loc node_for_loc in
-        (loc, Construct.node ~keywords ?depth ~values_scope node)
+        (loc, Construct.node ~config ~keywords ?depth ~values_scope node)
     | (_,  (Browse_raw.Expression { exp_desc = Texp_hole; _ } as node))
       :: _parents ->
       let loc = Mbrowse.node_loc node in
-      (loc, Construct.node ~keywords ?depth ~values_scope node)
+      (loc, Construct.node ~config ~keywords ?depth ~values_scope node)
     | _ :: _ -> raise Construct.Not_a_hole
     | [] -> raise No_nodes
     end
