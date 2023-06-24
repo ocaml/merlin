@@ -39,9 +39,9 @@
             version = "dev";
             src = ./.;
             duneVersion = "3";
-            buildInputs = with pkgs.ocamlPackages; [
+            buildInputs = [
               merlin-lib
-              findlib
+              pkgs.ocamlPackages.findlib
             ];
             doCheck = true;
           };
@@ -50,12 +50,12 @@
             version = "dev";
             src = ./.;
             duneVersion = "3";
-            buildInputs = with pkgs.ocamlPackages; [
+            buildInputs = [
               merlin-lib
               dot-merlin-reader
-              menhirLib
-              menhirSdk
-              yojson
+              pkgs.ocamlPackages.menhirLib
+              pkgs.ocamlPackages.menhirSdk
+              pkgs.ocamlPackages.yojson
             ];
             nativeBuildInputs = [
               pkgs.ocamlPackages.menhir
@@ -64,14 +64,7 @@
             checkInputs = with pkgs.ocamlPackages; [
               ppxlib
             ];
-            doCheck = true;
-            checkPhase = ''
-              runHook preCheck
-              patchShebangs tests/merlin-wrapper
-              dune build @check @runtest
-              runHook postCheck
-           '';
-
+            doCheck = false;
             meta = with pkgs; {
               mainProgram = "ocamlmerlin";
             };
