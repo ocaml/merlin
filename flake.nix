@@ -39,9 +39,11 @@
             version = "dev";
             src = ./.;
             duneVersion = "3";
+            propagatedBuildInputs = [
+              pkgs.ocamlPackages.findlib
+            ];
             buildInputs = [
               merlin-lib
-              pkgs.ocamlPackages.findlib
             ];
             doCheck = true;
           };
@@ -66,6 +68,12 @@
               ppxlib
             ];
             doCheck = true;
+            checkPhase = ''
+              runHook preCheck
+              patchShebangs tests/merlin-wrapper
+              dune build @check @runtest
+              runHook postCheck
+           '';
             meta = with pkgs; {
               mainProgram = "ocamlmerlin";
             };
