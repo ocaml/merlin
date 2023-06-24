@@ -61,10 +61,11 @@
               pkgs.ocamlPackages.menhir
               pkgs.jq
             ];
+            nativeCheckInputs = [ dot-merlin-reader ];
             checkInputs = with pkgs.ocamlPackages; [
               ppxlib
             ];
-            doCheck = false;
+            doCheck = true;
             meta = with pkgs; {
               mainProgram = "ocamlmerlin";
             };
