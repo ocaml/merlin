@@ -26,50 +26,52 @@
           default = merlin;
           merlin-lib = buildDunePackage {
             pname = "merlin-lib";
-            version = "n/a";
+            version = "dev";
             src = ./.;
             duneVersion = "3";
-            buildInputs = with pkgs.ocamlPackages; [ menhirSdk menhir ];
             propagatedBuildInputs = with pkgs.ocamlPackages; [
-              findlib
               csexp
-              yojson
-              menhirLib
             ];
             doCheck = true;
           };
           dot-merlin-reader = buildDunePackage {
             pname = "dot-merlin-reader";
-            version = "n/a";
+            version = "dev";
             src = ./.;
             duneVersion = "3";
-            buildInputs = [ merlin-lib ];
+            buildInputs = with pkgs.ocamlPackages; [
+              merlin-lib
+              findlib
+            ];
             doCheck = true;
           };
           merlin = buildDunePackage {
             pname = "merlin";
-            version = "n/a";
+            version = "dev";
             src = ./.;
             duneVersion = "3";
             buildInputs = with pkgs.ocamlPackages; [
               merlin-lib
               dot-merlin-reader
-            ];
-            propagatedBuildInputs = with pkgs.ocamlPackages; [
-              dot-merlin-reader
-              merlin-lib
-              findlib
+              menhirLib
+              menhirSdk
+              yojson
             ];
             nativeBuildInputs = [
-              dot-merlin-reader
+              pkgs.ocamlPackages.menhir
+              pkgs.jq
             ];
             checkInputs = with pkgs.ocamlPackages; [
               ppxlib
-              pkgs.jq
             ];
-            # merlin tests rely on wrapper shell script and env vars.
-            # TODO: make them work
-            doCheck = false;
+            doCheck = true;
+            checkPhase = ''
+              runHook preCheck
+              patchShebangs tests/merlin-wrapper
+              dune build @check @runtest
+              runHook postCheck
+           '';
+
             meta = with pkgs; {
               mainProgram = "ocamlmerlin";
             };
