@@ -24,8 +24,8 @@
       rec {
         packages = rec {
           default = merlin;
-          merlin = buildDunePackage {
-            pname = "merlin";
+          merlin-lib = buildDunePackage {
+            pname = "merlin-lib";
             version = "n/a";
             src = ./.;
             duneVersion = "3";
@@ -36,8 +36,43 @@
               yojson
               menhirLib
             ];
-            checkInputs = with pkgs.ocamlPackages; [ ppxlib pkgs.jq ];
             doCheck = true;
+          };
+          dot-merlin-reader = buildDunePackage {
+            pname = "dot-merlin-reader";
+            version = "n/a";
+            src = ./.;
+            duneVersion = "3";
+            buildInputs = [ merlin-lib ];
+            doCheck = true;
+          };
+          merlin = buildDunePackage {
+            pname = "merlin";
+            version = "n/a";
+            src = ./.;
+            duneVersion = "3";
+            buildInputs = with pkgs.ocamlPackages; [
+              merlin-lib
+              dot-merlin-reader
+            ];
+            propagatedBuildInputs = with pkgs.ocamlPackages; [
+              dot-merlin-reader
+              merlin-lib
+              findlib
+            ];
+            nativeBuildInputs = [
+              dot-merlin-reader
+            ];
+            checkInputs = with pkgs.ocamlPackages; [
+              ppxlib
+              pkgs.jq
+            ];
+            # merlin tests rely on wrapper shell script and env vars.
+            # TODO: make them work
+            doCheck = false;
+            meta = with pkgs; {
+              mainProgram = "ocamlmerlin";
+            };
           };
         };
         devShells.default = pkgs.mkShell {
