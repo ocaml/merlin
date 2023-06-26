@@ -19,5 +19,7 @@ promote:
 	dune promote
 
 bench:
+	merl-an benchmark -p /projects/irmin -s 1 --data=merl-an_bench
+	jq . merl-an_bench/bench.json
 
 .PHONY: all build dev clean test promote bench
