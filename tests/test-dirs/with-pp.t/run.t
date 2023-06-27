@@ -10,7 +10,7 @@
   > EOF
 
   $ cat >.merlin <<EOF
-  > FLG -pp pp.sh
+  > FLG -pp 'sh pp.sh'
   > EOF
 
   $ $MERLIN single dump -what ppxed-source -filename main.ml<main.ml |
