@@ -24,20 +24,59 @@
       rec {
         packages = rec {
           default = merlin;
-          merlin = buildDunePackage {
-            pname = "merlin";
-            version = "n/a";
+          merlin-lib = buildDunePackage {
+            pname = "merlin-lib";
+            version = "dev";
             src = ./.;
             duneVersion = "3";
-            buildInputs = with pkgs.ocamlPackages; [ menhirSdk menhir ];
             propagatedBuildInputs = with pkgs.ocamlPackages; [
-              findlib
               csexp
-              yojson
-              menhirLib
             ];
-            checkInputs = with pkgs.ocamlPackages; [ ppxlib pkgs.jq ];
             doCheck = true;
+          };
+          dot-merlin-reader = buildDunePackage {
+            pname = "dot-merlin-reader";
+            version = "dev";
+            src = ./.;
+            duneVersion = "3";
+            propagatedBuildInputs = [
+              pkgs.ocamlPackages.findlib
+            ];
+            buildInputs = [
+              merlin-lib
+            ];
+            doCheck = true;
+          };
+          merlin = buildDunePackage {
+            pname = "merlin";
+            version = "dev";
+            src = ./.;
+            duneVersion = "3";
+            buildInputs = [
+              merlin-lib
+              dot-merlin-reader
+              pkgs.ocamlPackages.menhirLib
+              pkgs.ocamlPackages.menhirSdk
+              pkgs.ocamlPackages.yojson
+            ];
+            nativeBuildInputs = [
+              pkgs.ocamlPackages.menhir
+              pkgs.jq
+            ];
+            nativeCheckInputs = [ dot-merlin-reader ];
+            checkInputs = with pkgs.ocamlPackages; [
+              ppxlib
+            ];
+            doCheck = true;
+            checkPhase = ''
+              runHook preCheck
+              patchShebangs tests/merlin-wrapper
+              dune build @check @runtest
+              runHook postCheck
+           '';
+            meta = with pkgs; {
+              mainProgram = "ocamlmerlin";
+            };
           };
         };
         devShells.default = pkgs.mkShell {
