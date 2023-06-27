@@ -54,6 +54,6 @@ jobs:
           opam depext conf-jq # opam depext bug
           opam --cli=2.1 pin --with-version=dev --no-action  \
             https://github.com/voodoos/ocaml-lsp.git
-          opam --cli=2.1 pin --with-version=dev --no-action .
+          opam --cli=2.1 pin --no-action .
           opam install ocaml-lsp-server --with-test
 
