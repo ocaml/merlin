@@ -9,7 +9,10 @@ unreleased
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
       result (#1626).
-
+    - emacs: merlin-construct, with a prefix argument, now includes
+      local values in the completion options.  Alternatively, this
+      behavior can be enabled permanently by customizing
+      `merlin-construct-with-local-values` (#1644)
 
 merlin 4.9
 ==========
