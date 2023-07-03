@@ -82,9 +82,12 @@ let get_unboxed_from_attributes sdecl =
 
 (* Enter all declared types in the environment as abstract types *)
 
-let add_type ~check id decl env =
+let add_type ~long_path ~check id decl env =
   Builtin_attributes.warning_scope ~ppwarning:false decl.type_attributes
-    (fun () -> Env.add_type ~check id decl env)
+    (fun () ->
+       match long_path with
+       | true -> Env.add_type_long_path ~check id decl env
+       | false -> Env.add_type ~check id decl env)
 
 let enter_type rec_flag env sdecl (id, uid) =
   let needed =
@@ -122,7 +125,7 @@ let enter_type rec_flag env sdecl (id, uid) =
       type_uid = uid;
     }
   in
-  add_type ~check:true id decl env
+  add_type ~long_path:true ~check:true id decl env
 
 let update_type temp_env env id loc =
   let path = Path.Pident id in
@@ -847,7 +850,7 @@ let check_redefined_unit (td: Parsetree.type_declaration) =
 
 let add_types_to_env decls env =
   List.fold_right
-    (fun (id, decl) env -> add_type ~check:true id decl env)
+    (fun (id, decl) env -> add_type ~long_path:false ~check:true id decl env)
     decls env
 
 (* Translate a set of type declarations, mutually recursive or not *)

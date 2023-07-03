@@ -1712,8 +1712,8 @@ let prefix_idents root prefixing_sub sg =
 
 (* Short path additions *)
 
-let short_paths_type predef id decl old =
-  if not predef && !Clflags.real_paths then old
+let short_paths_type ~long_path predef id decl old =
+  if long_path || (not predef && !Clflags.real_paths) then old
   else Type(id, decl) :: old
 
 let short_paths_type_open path decls old =
@@ -2080,7 +2080,7 @@ and store_label ~check type_decl type_id lbl_id lbl env =
     labels = TycompTbl.add lbl_id lbl env.labels;
   }
 
-and store_type ~check ~predef id info shape env =
+and store_type ~check ~long_path ~predef id info shape env =
   let loc = info.type_loc in
   if check then
     check_usage loc id info.type_uid
@@ -2117,7 +2117,7 @@ and store_type ~check ~predef id info shape env =
     types = IdTbl.add id tda env.types;
     summary = Env_type(env.summary, id, info);
     short_paths_additions =
-      short_paths_type predef id info env.short_paths_additions; }
+      short_paths_type ~long_path predef id info env.short_paths_additions; }
 
 and store_type_infos ~tda_shape id info env =
   (* Simplified version of store_type that doesn't compute and store
@@ -2136,7 +2136,7 @@ and store_type_infos ~tda_shape id info env =
     types = IdTbl.add id tda env.types;
     summary = Env_type(env.summary, id, info);
     short_paths_additions =
-      short_paths_type false id info env.short_paths_additions; }
+      short_paths_type ~long_path:false false id info env.short_paths_additions; }
 
 and store_extension ~check ~rebind id addr ext shape env =
   let loc = ext.ext_loc in
@@ -2360,7 +2360,7 @@ let enter_value ?check name desc env =
 
 let enter_type ~scope name info env =
   let id = Ident.create_scoped ~scope name in
-  let env = store_type ~check:true ~predef:false
+  let env = store_type ~check:true ~predef:false ~long_path:false
     id info (Shape.leaf info.type_uid) env
   in
   (id, env)
@@ -2412,7 +2412,8 @@ let add_item (map, mod_shape) comp env =
       map, add_value ?shape id decl env
   | Sig_type(id, decl, _, _) ->
       let map, shape = proj_shape (Shape.Item.type_ id) in
-      map, add_type ~check:false ~predef:false ?shape id decl env
+      map,
+      add_type ~long_path:false ~check:false ~predef:false ?shape id decl env
   | Sig_typext(id, ext, _, _) ->
       let map, shape = proj_shape (Shape.Item.extension_constructor id) in
       map, add_extension ~check:false ?shape ~rebind:false id ext env
@@ -2704,12 +2705,15 @@ let save_signature_with_imports ~alerts sg modname filename imports =
 (* Make the initial environment *)
 let (initial_safe_string, initial_unsafe_string) =
   Predef.build_initial_env
-    (add_type ~check:false ~predef:true)
+    (add_type ~check:false ~predef:true ~long_path:false)
     (add_extension ~check:false ~rebind:false)
     empty
 
+let add_type_long_path ~check id info env =
+  add_type ~check ~predef:false ~long_path:true id info env
+
 let add_type ~check id info env =
-  add_type ~check ~predef:false id info env
+  add_type ~check ~predef:false ~long_path:false id info env
 
 (* Tracking usage *)
 
