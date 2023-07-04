@@ -94,6 +94,12 @@ static void failwith(const char *msg)
 
 #define PATHSZ (PATH_MAX+1)
 
+/* On Linux, sun_path size is 108 bytes.
+   On macOS it's 104.
+   We use 102 buffer, as we later append './'
+*/
+#define SOCKSZ (102)
+
 #define BEGIN_PROTECTCWD \
   { char previous_cwd[PATHSZ]; \
     if (!getcwd(previous_cwd, PATHSZ)) previous_cwd[0] = '\0';
@@ -569,7 +575,7 @@ LPSTR retrieve_user_sid_string()
 
 static void compute_socketname(char socketname[PATHSZ], char eventname[PATHSZ], const char merlin_path[PATHSZ])
 #else
-static void compute_socketname(char socketname[PATHSZ], struct stat *st)
+static void compute_socketname(char socketname[SOCKSZ], struct stat *st)
 #endif
 {
 #ifdef _WIN32
@@ -595,7 +601,7 @@ static void compute_socketname(char socketname[PATHSZ], struct stat *st)
 
   LocalFree(user_sid_string);
 #else
-  snprintf(socketname, PATHSZ,
+  snprintf(socketname, SOCKSZ,
       "ocamlmerlin_%llu_%llu_%llu.socket",
       (unsigned long long)getuid(),
       (unsigned long long)st->st_dev,
@@ -607,7 +613,7 @@ static void compute_socketname(char socketname[PATHSZ], struct stat *st)
 
 static char
   merlin_path[PATHSZ] = "<not computed yet>",
-  socketname[PATHSZ] = "<not computed yet>",
+  socketname[SOCKSZ] = "<not computed yet>",
   eventname[PATHSZ] = "<not computed yet>";
 static unsigned char argbuffer[262144];
 
