@@ -1,6 +1,7 @@
 unreleased
 ==========
   + merlin binary
+    - Constrain socket path buffer size to avoid build warnings (#1631)
     - Handle concurrent server start (#1622)
     - Omit module prefixes for constructors and record fields in the
       `construct` command (#1618).  Prefixes are still produced when
