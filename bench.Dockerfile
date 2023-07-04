@@ -12,7 +12,6 @@ RUN eval $(opam env)
 RUN opam install .
 
 # install merl-an
-RUN echo "uncache this thing"
 RUN opam pin -y merl-an https://github.com/pitag-ha/merl-an.git
 
 RUN eval $(opam env)
