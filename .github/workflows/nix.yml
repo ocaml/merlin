@@ -1,0 +1,37 @@
+name: "Nix"
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.git*'
+      - 'doc/**'
+      - 'emacs/**'
+      - 'vim/**'
+      - '**/emacs-lint.yml'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - '.git*'
+      - 'doc/**'
+      - 'emacs/**'
+      - 'vim/**'
+      - '**/emacs-lint.yml'
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: nix
+      uses: cachix/install-nix-action@v21
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - run: nix develop -c dune build @check @runtest -p merlin-lib,dot-merlin-reader,merlin
