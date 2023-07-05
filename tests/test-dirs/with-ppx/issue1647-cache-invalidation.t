@@ -1,7 +1,6 @@
 Make sure that this test doesn't depend on previous state
   $ $MERLIN server stop-server
 
-
   $ cat >dune-project <<EOF
   > (lang dune 2.0)
   > EOF
@@ -44,7 +43,7 @@ Make sure that this test doesn't depend on previous state
   > USE_PPX_CACHE
   > EOF
 
-  $ dune exec ./main.exe
+  $ dune exec ./main.exe 2>/dev/null
   0
 
 `errors` requires the typedtree and thus types the buffer
