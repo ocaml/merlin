@@ -77,13 +77,13 @@ FIXME: The `dump ppxed-source` wrongly reuse the cached version since this
 behavior is based ont he reader cahce being hit or not
   $ $MERLIN server dump -what ppxed-source  -log-file merlin_logs \
   > -filename main.ml <main.ml | tr -d '\n' | jq '.value'
-  "let () = print_int 0"
+  "let () = print_string 0"
 
   $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
   # . Phase cache - Reader phase
   Cache hit
   # . Phase cache - PPX phase
-  Cache hit
+  Cache invalidation
 
 Stop server
   $ $MERLIN server stop-server
