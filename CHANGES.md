@@ -6,6 +6,8 @@ unreleased
     - Omit module prefixes for constructors and record fields in the
       `construct` command (#1618).  Prefixes are still produced when
       warning 42 (disambiguated name) is active.
+    - Correctly invalidate PPX cache when pipeline ran partially (#1650,
+      fixes #1647)
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
