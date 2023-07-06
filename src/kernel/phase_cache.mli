@@ -32,7 +32,7 @@ module With_cache (Phase : S) : sig
   type t = { output : Phase.output; cache_was_hit : bool }
 
   val apply :
-    cache_disabling:string option -> force_invalidation:bool -> Phase.t -> t
+    ?cache_disabling:string option -> ?force_invalidation:bool -> Phase.t -> t
   (** [apply ~cache_disabling ~force_invalidation phase_input] runs the phase
       computation [Phase.f phase_input], if there's some [cache_disabling].
       Otherwise, the phase computation is run with a cache mechanism. Whether
