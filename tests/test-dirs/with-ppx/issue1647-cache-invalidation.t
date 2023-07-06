@@ -72,8 +72,8 @@ reader cache:
   # . Phase cache - Reader phase
   Cache invalidation
 
-FIXME: The `dump ppxed-source` wrongly reuse the cached version since this
-behavior is based ont he reader cahce being hit or not
+The cache detects that the reader cache was invalidated in the last query
+and therefore invalidates the PPX cache in this query.
   $ $MERLIN server dump -what ppxed-source  -log-file merlin_logs \
   > -filename main.ml <main.ml | tr -d '\n' | jq '.value'
   "let () = print_string 0"
