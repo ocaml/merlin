@@ -166,10 +166,11 @@ end
 module Reader_with_cache = Phase_cache.With_cache (Reader_phase)
 
 module Ppx_phase = struct
+  type reader_cache = Off | Version of int
   type t = {
     parsetree : Mreader.parsetree;
     config : Mconfig.t;
-    reader_cache_version : int }
+    reader_cache : reader_cache }
   type output = Mreader.parsetree
 
   let f { parsetree; config; _ } = Mppx.rewrite parsetree config
@@ -192,9 +193,9 @@ module Ppx_phase = struct
   end
 
   module Fingerprint = struct
-    type t = (Single_fingerprint.t list * int)
+    type t = (Single_fingerprint.t list * reader_cache)
 
-    let make { config; reader_cache_version; _ } =
+    let make { config; reader_cache; _ } =
       let rec all_fingerprints acc = function
         | [] -> acc
         | { Std.workdir; workval } :: tl -> (
@@ -207,10 +208,15 @@ module Ppx_phase = struct
                   (Single_fingerprint.make ~binary ~args ~workdir))
       in
       Result.map (all_fingerprints (Ok []) config.ocaml.ppx)
-        ~f:(fun l -> (l, reader_cache_version))
+        ~f:(fun l -> (l, reader_cache))
+
+    let equal_cache_version cv1 cv2 =
+      match cv1, cv2 with
+      | Off, _ | _, Off -> false
+      | Version v1, Version v2 -> Int.equal v1 v2
 
     let equal (f1, rcv1) (f2, rcv2) =
-      Int.equal rcv1 rcv2 &&
+      equal_cache_version rcv1 rcv2 &&
       List.equal ~eq:Single_fingerprint.equal f1 f2
   end
 end
@@ -282,14 +288,14 @@ let process
       (* Currently the cache is invalidated even for source changes that don't
           change the parsetree. To avoid that, we'd have to digest the
           parsetree in the cache. *)
-      let cache_disabling, reader_cache_version =
+      let cache_disabling, reader_cache =
         match cache_version with
-        | Some v -> None, v
-        | None -> Some "reader cache is disabled", -1
+        | Some v -> None, Ppx_phase.Version v
+        | None -> Some "reader cache is disabled", Off
       in
       let { Ppx_with_cache.output = parsetree; _ } =
         Ppx_with_cache.apply ~cache_disabling
-          {parsetree; config; reader_cache_version}
+          {parsetree; config; reader_cache}
       in
       { Ppx.config; parsetree; errors = !caught }
     )) in
