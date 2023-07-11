@@ -605,6 +605,35 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
         (kill-local-variable 'merlin-buffer-configuration)
         (kill-local-variable 'merlin-erroneous-buffer)))))
 
+(defcustom merlin-stop-server-on-opam-switch t
+  "If t, stops the Merlin server before the opam switch changes.
+If the user changes the opam switch using `opam-switch-set-switch'
+or an `\"OPSW\"' menu from `opam-switch-mode', this option asks to
+stop the Merlin server process, so that the next Merlin command
+starts a new server, typically with a different Merlin version
+from a different opam switch.
+
+See https://github.com/ProofGeneral/opam-switch-mode
+
+Note: `opam-switch-mode' triggers automatic changes for `exec-path' and
+`process-environment', which are useful to find the `\"ocamlmerlin\"'
+binary (its filename can be overriden in `merlin-command') and the
+binary of Merlin's subprocesses, in the ambient opam switch."
+  :type 'boolean)
+
+(defun merlin--stop-server-on-opam-switch ()
+  "Stop the Merlin server before the opam switch changes.
+This function is for the `opam-switch-mode' hook
+`opam-switch-before-change-opam-switch-hook', which runs just
+before the user changes the opam switch through `opam-switch-mode'."
+  (when (and merlin-mode merlin-stop-server-on-opam-switch)
+    (condition-case _sig
+        (merlin-stop-server)
+      (t (message "Info: (merlin-stop-server) failed in the previous opam switch")))))
+
+(add-hook 'opam-switch-before-change-opam-switch-hook
+          #'merlin--stop-server-on-opam-switch t)
+
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
 ;;;;;;;;;;;;;;;;;;;;
@@ -1925,16 +1954,12 @@ Empty string defaults to jumping to all these."
 
                  ;; this was originally done via `opam exec' but that does not
                  ;; work for opam 1, and added a performance hit
-                 (setq bin-path (list (concat "PATH=" bin-dir)))
-                 "ocamlmerlin")
-
+                 (setq bin-path (list (concat "PATH=" bin-dir))))
              ;; best effort if opam is not available, lookup for the binary in
              ;; the existing env
-             (progn
-               (message "merlin-command: opam var failed (%S)"
-                        (buffer-string))
-               "ocamlmerlin"))))))
-
+             (message "merlin-command: opam var failed (%S)"
+                      (buffer-string)))
+           "ocamlmerlin"))))
       ;; cache command in merlin-buffer configuration to avoid having to shell
       ;; out to `opam` each time.
       (push (cons 'command command) merlin-buffer-configuration)
