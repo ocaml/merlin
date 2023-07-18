@@ -8,6 +8,8 @@ unreleased
       warning 42 (disambiguated name) is active.
     - Correctly invalidate PPX cache when pipeline ran partially (#1650,
       fixes #1647)
+    - Prevent `short-path` from looping in some cases related to recursive type
+      definitions (#1645)
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
