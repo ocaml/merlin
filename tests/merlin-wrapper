@@ -10,6 +10,7 @@ fi
 
 ocamlmerlin "$@" \
     | jq 'del(.timing)' \
+    | jq 'del(.query_num)' \
     | sed -e 's:"[^"]*lib/ocaml:"lib/ocaml:g' \
     | sed -e 's:\\n:\
 :g'
