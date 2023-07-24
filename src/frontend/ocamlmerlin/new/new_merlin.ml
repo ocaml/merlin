@@ -41,7 +41,9 @@ let commands_help () =
       print_endline doc
     ) New_commands.all_commands
 
-let run = function
+let run =
+  let query_num = ref (-1) in
+  function
   | [] ->
     usage ();
     1
@@ -62,6 +64,7 @@ let run = function
     commands_help ();
     0
   | query :: raw_args ->
+    incr query_num;
     match New_commands.find_command query New_commands.all_commands with
     | exception Not_found ->
       prerr_endline ("Unknown command " ^ query ^ ".\n");
@@ -132,7 +135,8 @@ let run = function
           `Assoc [
             "class", `String class_; "value", message;
             "notifications", `List (List.rev_map notify !notifications);
-            "timing", `Assoc (List.map format_timing timing)
+            "timing", `Assoc (List.map format_timing timing);
+            "query_num", `Int !query_num;
           ]
         in
         log ~title:"run(result)" "%a" Logger.json (fun () -> json);
