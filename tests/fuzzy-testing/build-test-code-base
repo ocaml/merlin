@@ -1,0 +1,8 @@
+#!/bin/bash
+git clone https://github.com/mirage/irmin.git
+cd irmin
+git checkout 8da4d16e7cc8beddfc8a824feca325426bae08a9
+# sudo apt install -y gnuplot-x11 libgmp-dev pkg-config libffi-dev
+# opam install . --deps-only --with-test --no-checksums -y
+# FIXME: @check doesn't build the test files, does it?
+opam exec -- dune build @check

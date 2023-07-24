@@ -1,0 +1,60 @@
+(env
+ (_
+  (binaries build-test-code-base)))
+
+(rule
+ (alias runtest)
+ (target irmin)
+ (enabled_if
+  (= true %{env:FUZZING=false}))
+ (action
+  (run build-test-code-base)))
+
+(rule
+ (alias runtest)
+ (targets irmin_data irmin_pack_data irmin_pack_test_data)
+ (deps
+  irmin
+  %{bin:ocamlmerlin-server}
+  %{bin:ocamlmerlin}
+  %{bin:merlin-wrapper}
+  %{bin:dot-merlin-reader})
+ (enabled_if
+  (= true %{env:FUZZING=false}))
+ ; FIXME: currently using the [merl-an] installed in the switch lol
+ (action
+  (progn
+   (run
+    merl-an
+    behavior
+    --queries=type-enclosing,occurrences,locate,complete-prefix,errors
+    --sample-size=30
+    --data=irmin_data
+    --merlin=ocamlmerlin
+    --project=irmin/src/irmin/)
+   (run
+    merl-an
+    behavior
+    --queries=type-enclosing,occurrences,locate,complete-prefix,errors
+    --sample-size=30
+    --data=irmin_pack_data
+    --merlin=ocamlmerlin
+    --project=irmin/src/irmin-pack
+    --extensions=ml)
+   (run
+    merl-an
+    behavior
+    --queries=type-enclosing,occurrences,locate,complete-prefix,errors
+    --sample-size=30
+    --data=irmin_pack_test_data
+    --merlin=ocamlmerlin
+    --project=irmin/test/irmin-pack
+    --extensions=ml))))
+
+(cram
+ ; FIXME: no need to use cram tests for this. The cram tests only dump the generated file. Could be a simple [diff] workflow
+ (applies_to :whole_subtree)
+ (locks ../test-dirs/server-tests/merlin_server)
+ (enabled_if
+  (= true %{env:FUZZING=false}))
+ (deps irmin_data irmin_pack_data irmin_pack_test_data))
