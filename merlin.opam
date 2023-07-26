@@ -51,8 +51,11 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
     (add-hook 'tuareg-mode-hook 'merlin-mode t)
     (add-hook 'caml-mode-hook 'merlin-mode t)
     ;; Use opam switch to lookup ocamlmerlin binary
-    (setq merlin-command 'opam)))
-
+    (setq merlin-command 'opam)
+    ;; To easily change opam switches within a given Emacs session, you can
+    ;; install the minor mode https://github.com/ProofGeneral/opam-switch-mode
+    ;; and use one of its \"OPSW\" menus.
+    ))
 Take a look at https://github.com/ocaml/merlin for more information
 
 Quick setup with opam-user-setup
