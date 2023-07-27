@@ -84,6 +84,7 @@ type node =
   | Class_declaration        of class_declaration
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
+  | Binding_op               of binding_op
 
   | Include_description      of include_description
   | Include_declaration      of include_declaration
