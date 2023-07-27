@@ -30,6 +30,10 @@ open Std
 
 module Verbosity = Mconfig.Verbosity
 
+let protect expr =
+  Pprintast.protect_ident (Format.str_formatter) expr;
+  Format.flush_str_formatter ()
+
 let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   let lexbuf = Lexing.from_string expr in
   let state = Lexer_raw.make keywords in
@@ -42,10 +46,7 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   Parser_raw.parse_expression lexer lexbuf
 
 let parse_longident lid =
-  let protected_lid =
-    Pprintast.protect_ident (Format.str_formatter) lid;
-    Format.flush_str_formatter ()
-  in
+  let protected_lid = protect lid in
   let lexbuf = Lexing.from_string protected_lid in
   let state = Lexer_raw.make @@ Lexer_raw.keywords [] in
   let rec lexer = function
@@ -292,7 +293,7 @@ let type_in_env ?(verbosity=Verbosity.default) ?keywords ~context env ppf expr =
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Msupport.uncatch_errors @@ fun () ->
-  match parse_expr ?keywords expr with
+  match parse_expr ?keywords @@ protect expr with
   | exception exn -> print_exn ppf exn; false
 
   | e ->
