@@ -370,9 +370,17 @@ let of_expression_desc loc = function
   | Texp_unreachable | Texp_extension_constructor _ ->
     id_fold
   | Texp_letop { let_; ands; body; _ } ->
-    of_bop let_ **
-    list_fold of_bop ands **
-    of_case body
+    let rec flatten_patterns acc pat =
+      match pat.pat_desc with
+      | Tpat_tuple [ tuple; pat ] ->
+           flatten_patterns (pat :: acc) tuple
+      | _ -> List.rev (pat :: acc)
+    in
+    let bindops = let_ :: ands in
+    let patterns = flatten_patterns [] body.c_lhs in
+    let of_letop (pat, bindop) = of_bop bindop ** of_pattern pat in
+    list_fold of_letop (List.combine patterns bindops) **
+    of_expression body.c_rhs
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
 
