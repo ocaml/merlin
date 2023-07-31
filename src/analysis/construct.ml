@@ -93,6 +93,10 @@ module Util = struct
       | (_ : Typedtree.expression) -> true
       | exception _ -> false
     in
+    if not typeable then
+      log ~title:"constructor" "%a does not have the expected type %a"
+        Logger.fmt (fun fmt -> Printast.expression 0 fmt exp)
+        Logger.fmt (fun fmt -> Printtyp.type_expr fmt type_expected);
     Btype.backtrack snap;
     typeable
 
@@ -370,8 +374,11 @@ module Gen = struct
                 We therefore check that constructed expressions
                 can be typed. *)
               if Util.typeable env exp type_expr
-              then Some exp
-              else None)
+              then Some exp else (
+                log ~title:"constructor" "%s's type is not unifiable with %a"
+                  cstr_descr.Types.cstr_name
+                  Logger.fmt (fun fmt -> Printtyp.type_expr fmt type_expr);
+                None))
         | None -> []
       in
       List.map constrs ~f:(make_constr env path type_expr)
