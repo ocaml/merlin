@@ -14,7 +14,9 @@
     "(Foo _)"
   ]
 
-FIXME: construct should work with inline records
+Construct also works with inline records
   $ $MERLIN single construct -position 7:15 \
   > -filename main.ml <main.ml | jq '.value[1]'
-  []
+  [
+    "(Bar _)"
+  ]

@@ -5001,6 +5001,8 @@ and type_construct env loc lid sarg ty_expected_explained attrs =
     | None -> Rejected
     | Some _ ->
       begin match sargs with
+      | [{pexp_desc = Pexp_extension ({ txt; _ }, _); _ }]
+        when txt = Ast_helper.hole_txt -> Required
       | [{pexp_desc =
             Pexp_ident _ |
             Pexp_record (_, (Some {pexp_desc = Pexp_ident _}| None))}] ->
