@@ -11,6 +11,7 @@ unreleased
     - Prevent `short-path` from looping in some cases related to recursive type
       definitions (#1645)
     - Support parsing negative numbers in sexps (#1655)
+    - Fix construct not working with inline records (#1658)
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
