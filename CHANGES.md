@@ -1,3 +1,9 @@
+unreleased
+==========
+  + merlin binary
+    - Handle concurrent server start (#1622)
+
+
 merlin 4.9
 ==========
 Fri May 26 15:23:42 CEST 2023
