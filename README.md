@@ -249,8 +249,15 @@ If it seems relevant, also include information about your development environmen
 
 Found a bug and know how to fix it? Or have a feature you can implement directly? We appreciate pull requests to improve Merlin, and any significant fix should start life as an issue first.
 
-### Documentation and wiki
+#### Changelog
 
+User-visible changes should come with an entry in the changelog under
+the appropriate part of the unreleased section. PR that doesn't
+provide an entry will fail CI check. This behavior can be overridden
+by using the "no changelog" label, which is used for changes that are
+not user-visible.
+
+### Documentation and Wiki
 Help is greatly appreciated, the wiki needs love.
 
 If the wiki didn't cover a topic and you found out the answer, updating the page or pointing out the issue will be very useful for future users.
