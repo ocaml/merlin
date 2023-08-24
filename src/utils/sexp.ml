@@ -103,7 +103,7 @@ let is_alpha c =
   || (c >= 'A' && c <= 'Z')
 
 let is_num c =
-  (c >= '0' && c <= '9')
+  (c >= '0' && c <= '9' || c == '-')
 
 let is_alphanum c = is_alpha c || is_num c
 
@@ -149,22 +149,22 @@ let read_sexp getch =
   and read_num getch c =
     Buffer.clear buf;
     Buffer.add_char buf c;
-    let is_float = ref false in
-    let rec aux () =
+    let rec aux ~is_start ~is_float =
       match getch () with
+      | '-' when is_start ->
+        Buffer.add_char buf c; aux ~is_start:false ~is_float
       | c when c >= '0' && c <= '9' ->
-        Buffer.add_char buf c; aux ()
+        Buffer.add_char buf c; aux ~is_start:false ~is_float
       | '.' | 'e' | 'E' as c ->
-        is_float := true;
-        Buffer.add_char buf c; aux ()
+        Buffer.add_char buf c; aux ~is_start:false ~is_float:true
       | c ->
         let s = Buffer.contents buf in
-        (if !is_float
+        (if is_float
          then Float (float_of_string s)
          else Int (int_of_string s)),
         Some c
     in
-    aux ()
+    aux ~is_start:true ~is_float:false
 
   and read_string getch =
     Buffer.clear buf;

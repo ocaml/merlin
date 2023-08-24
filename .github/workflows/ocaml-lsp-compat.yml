@@ -1,12 +1,10 @@
-# This is a basic workflow to help you get started with Actions
-
-name: CI
+name: Check ocaml-lsp compat
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
   push:
-    branches: [ '500' ]
+    branches: [ 500 ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -16,7 +14,7 @@ on:
       - 'vim/**'
       - '**/emacs-lint.yml'
   pull_request:
-    branches: [ '500' ]
+    branches: [ 500 ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -25,8 +23,6 @@ on:
       - 'emacs/**'
       - 'vim/**'
       - '**/emacs-lint.yml'
-  schedule:
-    - cron: '0 12 */6 * *'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -36,11 +32,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
           - ubuntu-latest
-          - windows-latest
         ocaml-compiler:
-          - '5.0'
+          - 5.0.x
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -55,25 +49,10 @@ jobs:
           # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - name: Install dependencies
+      - name: Check that Merlin and OCaml-LSP are co-installable
         run: |
-          opam depext conf-jq --yes # opam depext bug
-          opam pin menhirLib 20201216 --no-action
-          opam install . --deps-only --with-test --yes
+          opam depext conf-jq # opam depext bug
+          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/ocaml/ocaml-lsp.git
+          opam --cli=2.1 pin --with-version=dev --no-action .
+          opam install ocaml-lsp-server --with-test --ignore-constraints-on=merlin-lib
 
-      - name: Build and test in release mode (windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,merlin
-
-      - name: Build and test in release mode (macos/linux)
-        if: matrix.os != 'windows-latest'
-        run: |
-          opam install . --with-test --yes
-
-      - name: Build in dev mode to check parser changes
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          opam exec -- dune clean
-          opam exec -- dune build
-          git diff --exit-code

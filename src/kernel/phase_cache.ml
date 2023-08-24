@@ -24,7 +24,7 @@ module With_cache (Phase : S) = struct
 
   let cache = ref None
 
-  let apply ~cache_disabling ~force_invalidation input =
+  let apply ?(cache_disabling = None) ?(force_invalidation = false) input =
     let title = Phase.title in
     match cache_disabling with
     | Some reason ->

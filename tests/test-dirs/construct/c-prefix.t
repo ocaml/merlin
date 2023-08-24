@@ -25,8 +25,8 @@ Test 1.1 :
       }
     },
     [
-      "(Prefix.A _)",
-      "Prefix.B"
+      "(A _)",
+      "B"
     ]
   ]
 
@@ -76,14 +76,14 @@ Test 1.3 :
   $ $MERLIN single construct -position 5:20 -filename c13.ml <c13.ml |
   >  jq ".value[1]"
   [
-    "(Prefix.A _)",
-    "Prefix.B"
+    "(A _)",
+    "B"
   ]
 
   $ $MERLIN single construct -position 6:20 -filename c13.ml <c13.ml |
   >  jq ".value[1]"
   [
-    "{ Prefix.a = _ }"
+    "{ a = _ }"
   ]
 
   $ $MERLIN single construct -position 8:13 -filename c13.ml <c13.ml |
@@ -99,3 +99,30 @@ Test 1.3 :
     "{ a = _ }"
   ]
 
+With warning 42 (disambiguated name) active, prefixes are added:
+
+  $ $MERLIN single construct -position 5:20 -filename c13.ml <c13.ml -w +disambiguated-name |
+  >  jq ".value[1]"
+  [
+    "(Prefix.A _)",
+    "Prefix.B"
+  ]
+
+  $ $MERLIN single construct -position 6:20 -filename c13.ml <c13.ml -w +disambiguated-name |
+  >  jq ".value[1]"
+  [
+    "{ Prefix.a = _ }"
+  ]
+
+  $ $MERLIN single construct -position 8:13 -filename c13.ml <c13.ml -w +disambiguated-name |
+  >  jq ".value[1]"
+  [
+    "(A _)",
+    "B"
+  ]
+
+  $ $MERLIN single construct -position 9:13 -filename c13.ml <c13.ml -w +disambiguated-name |
+  >  jq ".value[1]"
+  [
+    "{ a = _ }"
+  ]

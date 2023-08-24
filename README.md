@@ -105,6 +105,8 @@ All you need to do is add the following to your .emacs:
 ;; (require 'merlin-iedit)       ; iedit.el editing of occurrences
 ;; (require 'merlin-company)     ; company.el completion
 ;; (require 'merlin-ac)          ; auto-complete.el completion
+;; To easily change opam switches and pick the ocamlmerlin binary accordingly,
+;; you can use the minor mode https://github.com/ProofGeneral/opam-switch-mode
 ```
 
 A more comprehensive documentation can be found on the [emacs-from-scratch wiki](https://github.com/ocaml/merlin/wiki/emacs-from-scratch).
@@ -127,6 +129,8 @@ emacs startup file is sufficient:
 ;; (require 'merlin-iedit)       ; iedit.el editing of occurrences
 ;; (require 'merlin-company)     ; company.el completion
 ;; (require 'merlin-ac)          ; auto-complete.el completion
+;; To easily change opam switches and pick the ocamlmerlin binary accordingly,
+;; you can use the minor mode https://github.com/ProofGeneral/opam-switch-mode
 ```
 
 ### Other editors
@@ -249,8 +253,15 @@ If it seems relevant, also include information about your development environmen
 
 Found a bug and know how to fix it? Or have a feature you can implement directly? We appreciate pull requests to improve Merlin, and any significant fix should start life as an issue first.
 
-### Documentation and wiki
+#### Changelog
 
+User-visible changes should come with an entry in the changelog under
+the appropriate part of the unreleased section. PR that doesn't
+provide an entry will fail CI check. This behavior can be overridden
+by using the "no changelog" label, which is used for changes that are
+not user-visible.
+
+### Documentation and Wiki
 Help is greatly appreciated, the wiki needs love.
 
 If the wiki didn't cover a topic and you found out the answer, updating the page or pointing out the issue will be very useful for future users.

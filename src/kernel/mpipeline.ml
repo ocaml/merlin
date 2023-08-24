@@ -81,7 +81,7 @@ module Reader = struct
   type t = {
     result : Mreader.result;
     config : Mconfig.t;
-    cache_was_hit : bool;
+    cache_version : int option;
   }
 end
 
@@ -144,10 +144,14 @@ module Reader_phase = struct
     config : Mconfig.t;
   }
 
-  type output = Mreader.result
+  type output = { result: Mreader.result; cache_version: int }
 
-  let f { source; for_completion; config } =
-    Mreader.parse ?for_completion config source
+  let f =
+    let cache_version = ref 0 in
+    fun { source; for_completion; config } ->
+    let result = Mreader.parse ?for_completion config source in
+    incr cache_version;
+    { result; cache_version = !cache_version }
 
   let title = "Reader phase"
 
@@ -162,10 +166,14 @@ end
 module Reader_with_cache = Phase_cache.With_cache (Reader_phase)
 
 module Ppx_phase = struct
-  type t = { parsetree : Mreader.parsetree; config : Mconfig.t }
+  type reader_cache = Off | Version of int
+  type t = {
+    parsetree : Mreader.parsetree;
+    config : Mconfig.t;
+    reader_cache : reader_cache }
   type output = Mreader.parsetree
 
-  let f { parsetree; config } = Mppx.rewrite parsetree config
+  let f { parsetree; config; _ } = Mppx.rewrite parsetree config
   let title = "PPX phase"
 
   module Single_fingerprint = struct
@@ -185,9 +193,9 @@ module Ppx_phase = struct
   end
 
   module Fingerprint = struct
-    type t = Single_fingerprint.t list
+    type t = (Single_fingerprint.t list * reader_cache)
 
-    let make { config; _ } =
+    let make { config; reader_cache; _ } =
       let rec all_fingerprints acc = function
         | [] -> acc
         | { Std.workdir; workval } :: tl -> (
@@ -199,9 +207,17 @@ module Ppx_phase = struct
                     all_fingerprints (Result.map ~f:(List.cons fp) acc) tl)
                   (Single_fingerprint.make ~binary ~args ~workdir))
       in
-      all_fingerprints (Ok []) config.ocaml.ppx
+      Result.map (all_fingerprints (Ok []) config.ocaml.ppx)
+        ~f:(fun l -> (l, reader_cache))
 
-    let equal f1 f2 = List.equal ~eq:Single_fingerprint.equal f1 f2
+    let equal_cache_version cv1 cv2 =
+      match cv1, cv2 with
+      | Off, _ | _, Off -> false
+      | Version v1, Version v2 -> Int.equal v1 v2
+
+    let equal (f1, rcv1) (f2, rcv2) =
+      equal_cache_version rcv1 rcv2 &&
+      List.equal ~eq:Single_fingerprint.equal f1 f2
   end
 end
 
@@ -241,42 +257,45 @@ let process
         (let (lazy ((_, pp_result) as source)) = source in
           let config = Mconfig.normalize config in
           Mocaml.setup_reader_config config;
-          let { Reader_with_cache.output; cache_was_hit } =
-            let cache_disabling =
-              match (config.merlin.use_ppx_cache, pp_result) with
-              | false, _ -> Some "configuration"
-              | true, Some _ ->
-                (* The cache could be refined in the future to also act on the PP phase.
-                   For now, let's disable the whole cache when there's a PP. *)
-                Some "source preprocessor usage"
-              | true, None -> None
-            in
-            Reader_with_cache.apply ~cache_disabling ~force_invalidation:false
+          let cache_disabling =
+            match (config.merlin.use_ppx_cache, pp_result) with
+            | false, _ -> Some "configuration"
+            | true, Some _ ->
+              (* The cache could be refined in the future to also act on the
+                 PP phase. For now, let's disable the whole cache when there's
+                 a PP. *)
+              Some "source preprocessor usage"
+            | true, None -> None
+          in
+          let { Reader_with_cache.output = { result; cache_version }; _ } =
+            Reader_with_cache.apply ~cache_disabling
               { source; for_completion; config }
           in
-          { Reader.result = output; config; cache_was_hit }
+          let cache_version =
+            if Option.is_some cache_disabling then None else Some cache_version
+          in
+          { Reader.result; config; cache_version }
     )) in
   let ppx = timed_lazy ppx_time (lazy (
-      let (lazy
-          {
+      let (lazy {
             Reader.result = { Mreader.parsetree; _ };
             config;
-            cache_was_hit = source_is_unmodified;
-          }) =
-        reader
+            cache_version;
+          }) = reader
       in
       let caught = ref [] in
       Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
-      let {Ppx_with_cache.output = parsetree; cache_was_hit = _ } =
-        let cache_disabling =
-          if config.merlin.use_ppx_cache then None
-          else Some "configuration"
-        in
-        (* With this, the cache is invalidated even for source changes that don't
-           change the parsetree. To avoid that, we'd have to digest the parsetree
-           in the cache. *)
-        let force_invalidation = not source_is_unmodified in
-        Ppx_with_cache.apply ~cache_disabling ~force_invalidation {parsetree; config}
+      (* Currently the cache is invalidated even for source changes that don't
+          change the parsetree. To avoid that, we'd have to digest the
+          parsetree in the cache. *)
+      let cache_disabling, reader_cache =
+        match cache_version with
+        | Some v -> None, Ppx_phase.Version v
+        | None -> Some "reader cache is disabled", Off
+      in
+      let { Ppx_with_cache.output = parsetree; _ } =
+        Ppx_with_cache.apply ~cache_disabling
+          {parsetree; config; reader_cache}
       in
       { Ppx.config; parsetree; errors = !caught }
     )) in

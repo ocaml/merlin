@@ -1,3 +1,33 @@
+merlin 4.10
+==========
+Thu Aug 24 17:17:42 CEST 2023
+
+  + merlin binary
+    - Constrain socket path buffer size to avoid build warnings (#1631)
+    - Handle concurrent server start (#1622)
+    - Omit module prefixes for constructors and record fields in the
+      `construct` command (#1618).  Prefixes are still produced when
+      warning 42 (disambiguated name) is active.
+    - Correctly invalidate PPX cache when pipeline ran partially (#1650,
+      fixes #1647)
+    - Prevent `short-path` from looping in some cases related to recursive type
+      definitions (#1645)
+    - Support parsing negative numbers in sexps (#1655)
+    - Fix construct not working with inline records (#1658)
+    - Improve behavior of `type-enclosing` on let/and operators (#1653)
+    - Fix occurrences of extension constructors (#1662)
+    - Improve node selection when ghosts are present (#1664, fixes #1660)
+  + editor modes
+    - emacs: call merlin-client-logger with "interrupted" if the
+      merlin binary itself is interrupted, not just the parsing of the
+      result (#1626).
+    - emacs: merlin-construct, with a prefix argument, now includes
+      local values in the completion options.  Alternatively, this
+      behavior can be enabled permanently by customizing
+      `merlin-construct-with-local-values` (#1644)
+    - emacs: add support for opam-switch-mode (#1654, fixes #1591).
+      See <https://github.com/ProofGeneral/opam-switch-mode>
+
 merlin 4.9
 ==========
 Fri May 26 15:23:42 CEST 2023

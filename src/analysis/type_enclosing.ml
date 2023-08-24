@@ -54,6 +54,7 @@ let from_nodes ~path =
     | Class_field { cf_desc =
                       Tcf_val (_, _, _, Tcfk_virtual {ctyp_type = t }, _) } ->
       ret (Type (env, t))
+    | Binding_op { bop_op_type; _ } -> ret (Type(env, bop_op_type))
     | _ -> None
   in
   List.filter_map ~f:aux path

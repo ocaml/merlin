@@ -70,12 +70,13 @@ and normalize_type_decl env decl = match decl.Types.type_manifest with
   | Some expr -> normalize_type_expr env expr
   | None -> decl
 
-let id_of_constr_decl c = c.Types.cd_id
+let id_of_constr_decl c = `Id c.Types.cd_id
 
 let same_constructor env a b =
   let name = function
     | `Description d -> d.Types.cstr_name
     | `Declaration d -> Ident.name d.Typedtree.cd_id
+    | `Extension_constructor ec -> Ident.name ec.Typedtree.ext_id
   in
   if name a <> name b then false
   else begin
@@ -85,14 +86,24 @@ let same_constructor env a b =
         begin match ty.Types.type_kind with
         | Types.Type_variant (decls, _) ->
           List.map decls ~f:id_of_constr_decl
+        | Type_open ->
+          [`Uid d.cstr_uid]
         | _ -> assert false
         end
       | `Declaration d ->
-        [d.Typedtree.cd_id]
+        [`Id d.Typedtree.cd_id]
+      | `Extension_constructor ext_cons ->
+        let des = Env.find_ident_constructor ext_cons.Typedtree.ext_id env in
+        [`Uid des.cstr_uid]
     in
     let a = get_decls a in
     let b = get_decls b in
-    List.exists a ~f:(fun id -> List.exists b ~f:(Ident.same id))
+    let same a b = match a, b with
+      | `Id a, `Id b -> Ident.same a b
+      | `Uid a, `Uid b -> Shape.Uid.equal a b
+      | _, _ -> false
+    in
+    List.exists a ~f:(fun id -> List.exists b ~f:(same id))
   end
 
 let all_occurrences path =

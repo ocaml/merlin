@@ -37,7 +37,7 @@ By default, the cache for the reader phase and the PPX phase are disabled
   Cache is disabled: configuration
   --
   # . Phase cache - PPX phase
-  Cache is disabled: configuration
+  Cache is disabled: reader cache is disabled
 
 The cache can be enabled via the USE_PPX_CACHE directive
   $ cat > .merlin <<EOF
@@ -242,7 +242,7 @@ And Merlin does the right thing.
   Cache is disabled: configuration
   --
   # . Phase cache - PPX phase
-  Cache is disabled: configuration
+  Cache is disabled: reader cache is disabled
 
 Again: when ppx_dep.txt is changed to contain a non-int, the AST contains an error.
   $ cat > ppx_dep.txt <<EOF
@@ -279,7 +279,7 @@ This time, since the PPX cache isn't enabled, Merlin does the right thing here a
   Cache is disabled: configuration
   --
   # . Phase cache - PPX phase
-  Cache is disabled: configuration
+  Cache is disabled: reader cache is disabled
 
 Let's clean up
   $ $MERLIN server stop-server

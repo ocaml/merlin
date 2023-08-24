@@ -18,3 +18,4 @@ dune-workspace
 *.un~
 *.swp
 *.swo
+.vscode/
