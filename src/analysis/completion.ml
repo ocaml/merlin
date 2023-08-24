@@ -100,6 +100,7 @@ let classify_node = function
   | Class_structure          _ -> `Expression
   | Class_field              _ -> `Expression
   | Class_field_kind         _ -> `Expression
+  | Binding_op               _ -> `Expression
   | Module_expr              _ -> `Module
   | Module_type_constraint   _ -> `Module_type
   | Structure                _ -> `Structure
@@ -176,7 +177,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
     | `Mod m   ->
       begin try
           if not exact then raise Exit;
-          let verbosity = 
+          let verbosity =
             Mconfig.Verbosity.to_int !Type_utils.verbosity ~for_smart:1
           in
           if Type_utils.mod_smallerthan (1000 * verbosity) m = None then raise Exit;
