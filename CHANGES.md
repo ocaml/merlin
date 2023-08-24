@@ -14,6 +14,7 @@ unreleased
     - Fix construct not working with inline records (#1658)
     - Improve behavior of `type-enclosing` on let/and operators (#1653)
     - Fix occurrences of extension constructors (#1662)
+    - Improve node selection when ghosts are present (#1664, fixes #1660)
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
