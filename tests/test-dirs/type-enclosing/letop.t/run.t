@@ -11,22 +11,22 @@ Various parts of the letop:
         "col": 2
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 6
       },
-      "type": "('a -> 'b) -> 'a option -> 'b option",
+      "type": "'a -> 'b -> ('c -> 'd) -> 'c option -> 'd option",
       "tail": "no"
     },
     {
       "start": {
-        "line": 3,
-        "col": 17
+        "line": 4,
+        "col": 2
       },
       "end": {
-        "line": 5,
-        "col": 9
+        "line": 4,
+        "col": 6
       },
-      "type": "'a -> ('b -> 'c) -> 'b option -> 'c option",
+      "type": "'a option -> (int -> int) -> ('b -> 'c) -> 'b option -> 'c option",
       "tail": "no"
     }
   ]
