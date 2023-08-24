@@ -19,6 +19,8 @@ unreleased
       local values in the completion options.  Alternatively, this
       behavior can be enabled permanently by customizing
       `merlin-construct-with-local-values` (#1644)
+    - emacs: add support for opam-switch-mode (#1654, fixes #1591).
+      See <https://github.com/ProofGeneral/opam-switch-mode>
 
 merlin 4.9
 ==========

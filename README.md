@@ -105,6 +105,8 @@ All you need to do is add the following to your .emacs:
 ;; (require 'merlin-iedit)       ; iedit.el editing of occurrences
 ;; (require 'merlin-company)     ; company.el completion
 ;; (require 'merlin-ac)          ; auto-complete.el completion
+;; To easily change opam switches and pick the ocamlmerlin binary accordingly,
+;; you can use the minor mode https://github.com/ProofGeneral/opam-switch-mode
 ```
 
 A more comprehensive documentation can be found on the [emacs-from-scratch wiki](https://github.com/ocaml/merlin/wiki/emacs-from-scratch).
@@ -127,6 +129,8 @@ emacs startup file is sufficient:
 ;; (require 'merlin-iedit)       ; iedit.el editing of occurrences
 ;; (require 'merlin-company)     ; company.el completion
 ;; (require 'merlin-ac)          ; auto-complete.el completion
+;; To easily change opam switches and pick the ocamlmerlin binary accordingly,
+;; you can use the minor mode https://github.com/ProofGeneral/opam-switch-mode
 ```
 
 ### Other editors
