@@ -1,3 +1,7 @@
 (cram
  (applies_to :whole_subtree)
  (locks ../server-tests/merlin_server))
+
+(cram
+ (applies_to issue1660-deriving-compare)
+ (enabled_if (= %{env:MERLIN_TESTS=default} all)))
