@@ -116,7 +116,9 @@ val node_paths_and_longident : node -> (Path.t Location.loc * Longident.t) list
 
 val node_is_constructor : node ->
   [ `Description of Types.constructor_description
-  | `Declaration of Typedtree.constructor_declaration ] Location.loc option
+  | `Declaration of Typedtree.constructor_declaration
+  | `Extension_constructor of Typedtree.extension_constructor ]
+    Location.loc option
 
 val node_of_binary_part : Env.t -> Cmt_format.binary_part -> node
 

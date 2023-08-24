@@ -13,6 +13,7 @@ unreleased
     - Support parsing negative numbers in sexps (#1655)
     - Fix construct not working with inline records (#1658)
     - Improve behavior of `type-enclosing` on let/and operators (#1653)
+    - Fix occurrences of extension constructors (#1662)
   + editor modes
     - emacs: call merlin-client-logger with "interrupted" if the
       merlin binary itself is interrupted, not just the parsing of the
