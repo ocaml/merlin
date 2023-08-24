@@ -12,6 +12,8 @@ RUN eval $(opam env)
 RUN opam install .
 
 # install merl-an
+## cache workaround: https://github.com/ocurrent/current-bench/issues/468#issuecomment-1621030354
+ADD https://api.github.com/repos/pitag-ha/merl-an/git/refs/heads/main .merl-an-info
 RUN opam pin -y merl-an https://github.com/pitag-ha/merl-an.git
 
 RUN eval $(opam env)
