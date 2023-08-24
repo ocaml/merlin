@@ -6,7 +6,7 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master; 500 ]
+    branches: [ '500' ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -16,7 +16,7 @@ on:
       - 'vim/**'
       - '**/emacs-lint.yml'
   pull_request:
-    branches: [ master ]
+    branches: [ '500' ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -40,7 +40,7 @@ jobs:
           - ubuntu-latest
           - windows-latest
         ocaml-compiler:
-          - 5.0.x
+          - '5.0'
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
