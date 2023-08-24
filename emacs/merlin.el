@@ -209,6 +209,12 @@ kill ring and C-d destructures the expression."
 `merlin-allow-sit-for' is `t'."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-construct-with-local-values nil
+  "If non-nil, `merlin-construct' includes values in the local environment.
+
+Otherwise, `merlin-construct' only includes constructors."
+  :group 'merlin :type 'boolean)
+
 (defalias 'merlin-find-file 'find-file-other-window
   "The function called when merlin try to open a file (doesn't apply to
 merlin-locate, see `merlin-locate-in-new-window').")
@@ -1458,19 +1464,30 @@ strictly within, or nil if there is no such element."
         (`(,result) (insert-choice result))
         (results (insert-choice (completing-read "Constructor: " results nil t)))))))
 
-(defun merlin--construct-point (point)
-  "Execute a construct at POINT."
+(defun merlin--construct-point (with-local-values point)
+  "Execute a construct at POINT.
+
+If WITH-LOCAL-VALUES is non-nil, pass \"-with-values local\" to
+include local values in the candidate list."
   (when-let ((result (merlin-call "construct"
-                                  "-position" (merlin-unmake-point point))))
+                                  "-position" (merlin-unmake-point point)
+                                  "-with-values"
+                                  (if (or with-local-values merlin-construct-with-local-values)
+                                      "local"
+                                    "null"))))
     (let* ((loc   (car result))
            (start (cdr (assoc 'start loc)))
            (stop  (cdr (assoc 'end loc))))
       (merlin--construct-complete start stop (cadr result)))))
 
-(defun merlin-construct ()
-  "Construct over the current hole."
-  (interactive)
-  (merlin--construct-point (point)))
+(defun merlin-construct (&optional arg)
+  "Construct over the current hole.
+
+With prefix ARG, include local values and not just constructors.
+This is like temporarily setting
+`merlin-construct-with-local-values' non-nil."
+  (interactive "P")
+  (merlin--construct-point arg (point)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
