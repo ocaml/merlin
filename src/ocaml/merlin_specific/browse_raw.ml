@@ -933,6 +933,9 @@ let node_is_constructor = function
     Some {loc with Location.txt = `Description desc}
   | Pattern {pat_desc = Tpat_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
+  | Extension_constructor ext_cons ->
+    Some { Location.loc = ext_cons.ext_loc;
+           txt = `Extension_constructor ext_cons}
   | _ -> None
 
 let node_of_binary_part env part =
