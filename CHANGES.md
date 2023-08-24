@@ -1,5 +1,7 @@
-unreleased
+merlin 4.10
 ==========
+Thu Aug 24 17:17:42 CEST 2023
+
   + merlin binary
     - Constrain socket path buffer size to avoid build warnings (#1631)
     - Handle concurrent server start (#1622)
