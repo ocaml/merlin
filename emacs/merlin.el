@@ -1316,15 +1316,18 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (set-temporary-overlay-map merlin-type-enclosing-map t
                                  'merlin--type-enclosing-reset))))
 
-(defun merlin-type-enclosing ()
+(defun merlin-type-enclosing (&optional manual)
   "Print the type of the expression under point (or of the region, if it exists).
-If called repeatedly, increase the verbosity of the type shown."
-  (interactive)
-  (if (region-active-p)
-      (merlin--type-region)
-    (when (merlin--type-enclosing-query)
-      (merlin-type-enclosing-go-up)
-      (merlin--type-enclosing-after))))
+If called repeatedly, increase the verbosity of the type shown.
+With prefix argument MANUAL, call `merlin-type-expr' interactively."
+  (interactive "P")
+  (if manual
+      (call-interactively #'merlin-type-expr)
+    (if (region-active-p)
+        (merlin--type-region)
+      (when (merlin--type-enclosing-query)
+        (merlin-type-enclosing-go-up)
+        (merlin--type-enclosing-after)))))
 
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
@@ -1979,9 +1982,11 @@ Empty string defaults to jumping to all these."
     (define-key merlin-map (kbd "C-c C-x") #'merlin-error-next)
     (define-key merlin-map (kbd "C-c C-l") #'merlin-locate)
     (define-key merlin-map (kbd "C-c &"  ) #'merlin-pop-stack)
-    (define-key merlin-map (kbd "C-c C-r") #'merlin-error-check)
+    (define-key merlin-map (kbd "C-c C-v") #'merlin-error-check)
     (define-key merlin-map (kbd "C-c C-t") #'merlin-type-enclosing)
-    (define-key merlin-map (kbd "C-c C-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c C-d") #'merlin-document)
+    (define-key merlin-map (kbd "C-c M-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c |") #'merlin-destruct)
     (define-key merlin-map (kbd "C-c C-n") #'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") #'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
