@@ -13,12 +13,9 @@
   $ PATH=bin ocamlmerlin single dump-configuration \
   > -filename main.ml <main.ml >output
 
-Not sure why merlin complains about an unknown flag here.
-Fixme: we could provide a better error message
   $ cat output | jq '.value.merlin.failures'
   [
-    "unknown flag main.ml",
-    "flag -filename: error, Unix.Unix_error(Unix.ENOENT, \"create_process\", \"dune\")"
+    "Merlin could not find `dune` in the PATH to get project configuration. If you do not rely on Dune, make sure `.merlin` files are present in the project's sources."
   ]
 
   $ cat >.merlin <<EOF
@@ -28,10 +25,7 @@ Fixme: we could provide a better error message
   $ PATH=bin ocamlmerlin single dump-configuration \
   > -filename main.ml <main.ml >output
 
-Not sure why merlin complains about an unknown flag here.
-Fixme: we could provide a better error message
   $ cat output | jq '.value.merlin.failures'
   [
-    "unknown flag main.ml",
-    "flag -filename: error, Unix.Unix_error(Unix.ENOENT, \"create_process\", \"dot-merlin-reader\")"
+    "Merlin could not find `dot-merlin-reader` in the PATH. Please make sure that `dot-merlin-reader` is installed and in the PATH."
   ]

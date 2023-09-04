@@ -85,6 +85,8 @@ module Configurator : sig
   val of_string_opt : string -> t option
   val to_string : t -> string
 
+  exception Process_exited
+
   module Process : sig
     type nonrec t = {
       kind: t;
@@ -98,8 +100,9 @@ module Configurator : sig
   (* [Some] if the process is live, [None] if the process died immediately after
      spawning.  The check is a bit fragile, but is principally there to check if
      `dot-merlin-reader` isn't installed or isn't on the PATH; it only needs to
-     be best-effort besides that. *)
-  val get_process : dir:string -> t -> Process.t option
+     be best-effort besides that. This function can raise [Process_exited] and
+     [Unix_error]. *)
+  val get_process_exn : dir:string -> t -> Process.t
 end = struct
   type t =
     | Dot_merlin
@@ -115,6 +118,8 @@ end = struct
   let to_string = function
     | Dot_merlin -> "dot-merlin-reader"
     | Dune -> "dune"
+
+  exception Process_exited
 
   module Process = struct
     type nonrec t = {
@@ -167,7 +172,17 @@ end = struct
       log ~title:"get_config" "Starting %s configuration provider from dir %s."
         (to_string cfg)
         dir;
-      let pid = Unix.create_process prog args stdin_r stdout_w stderr_w in
+
+      let pid =
+        let open Unix in
+        try create_process prog args stdin_r stdout_w stderr_w
+        with Unix_error _ as err ->
+          Os_ipc.merlin_dont_inherit_stdio false;
+          chdir cwd;
+          List.iter ~f:close
+            [stdin_r; stdin_w; stdout_r; stdout_w; stderr_r; stderr_w];
+          raise err
+      in
       Os_ipc.merlin_dont_inherit_stdio false;
       Unix.chdir cwd;
       Unix.close stdin_r;
@@ -205,13 +220,13 @@ end = struct
       Hashtbl.add running_processes (dir, configurator) p;
       p
 
-  let get_process ~dir configurator =
+  let get_process_exn ~dir configurator =
     let p = get_process_with_pid ~dir configurator in
     match Unix.waitpid [ WNOHANG ] p.pid with
-    | 0, _ -> Some p.process
+    | 0, _ -> p.process
     | _    -> begin
       Hashtbl.remove running_processes (dir, configurator);
-      None
+      raise Process_exited
     end
 end
 
@@ -270,7 +285,6 @@ type context = {
   process_dir: string;
 }
 
-exception Process_exited
 exception End_of_input
 
 let get_config { workdir; process_dir; configurator } path_abs =
@@ -291,11 +305,7 @@ let get_config { workdir; process_dir; configurator } path_abs =
     read p.stdout
   in
   try
-    let p =
-      match Configurator.get_process ~dir:process_dir configurator with
-      | Some p -> p
-      | None -> raise Process_exited
-    in
+    let p = Configurator.get_process_exn ~dir:process_dir configurator in
     (* Both [p.initial_cwd] and [path_abs] have gone through
        [canonicalize_filename] *)
     let path_rel =
@@ -334,7 +344,7 @@ let get_config { workdir; process_dir; configurator } path_abs =
     | Error (Merlin_dot_protocol.Unexpected_output msg) -> empty_config, [ msg ]
     | Error (Merlin_dot_protocol.Csexp_parse_error _) -> raise End_of_input
   with
-    | Process_exited ->
+    | Configurator.Process_exited ->
       (* This can happen
       - If `dot-merlin-reader` is not installed and the project use `.merlin`
         files
@@ -348,6 +358,21 @@ let get_config { workdir; process_dir; configurator } path_abs =
         | Dot_merlin -> "Check that `dot-merlin-reader` is installed."
         | Dune -> "Check that `dune` is installed and up-to-date.")
         program_name
+      in
+      empty_config, [ error ]
+    | Unix.Unix_error (ENOENT, "create_process", "dune") ->
+      let error = Printf.sprintf
+        "%s could not find `dune` in the PATH to get project configuration. \
+        If you do not rely on Dune, make sure `.merlin` files are present in \
+        the project's sources."
+        (Lib_config.program_name ())
+      in
+      empty_config, [ error ]
+    | Unix.Unix_error (ENOENT, "create_process", "dot-merlin-reader") ->
+      let error = Printf.sprintf
+        "%s could not find `dot-merlin-reader` in the PATH. Please make sure \
+        that `dot-merlin-reader` is installed and in the PATH."
+        (Lib_config.program_name ())
       in
       empty_config, [ error ]
     | End_of_input ->
