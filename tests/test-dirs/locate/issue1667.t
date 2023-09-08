@@ -6,25 +6,28 @@
   > end
   > 
   > module M : B.T = struct end
+  > module type T2 = B.T
+  > module M2 : T2 = struct end
   > EOF
 
-FIXME: we expect line 2 here
   $ $MERLIN single locate -look-for mli -position 7:13 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
-    "file": "$TESTCASE_ROOT/main.ml",
-    "pos": {
-      "line": 4,
-      "col": 2
-    }
+    "line": 2,
+    "col": 2
   }
 
   $ $MERLIN single locate -look-for ml -position 7:13 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
-    "file": "$TESTCASE_ROOT/main.ml",
-    "pos": {
-      "line": 2,
-      "col": 2
-    }
+    "line": 2,
+    "col": 2
+  }
+
+
+  $ $MERLIN single locate -look-for mli -position 9:12 \
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 2,
+    "col": 2
   }
