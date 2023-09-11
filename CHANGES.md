@@ -4,6 +4,7 @@ unreleased
 
   + merlin binary
     - Improve error messages for missing configuration reader (#1669)
+    - Fix regression causing crash when using ppxes under Windows (#1673)
 
 
 
