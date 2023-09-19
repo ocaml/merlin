@@ -18,7 +18,9 @@ jobs:
         emacs_version:
           - '27.2'
           - '28.2'
+          - '29.1'
           - snapshot
+      fail-fast: false  # don't stop jobs if one fails
     env:
       EMACS_PACKAGE_LINT_IGNORE: ${{ matrix.package_lint_ignore }}
       EMACS_BYTECOMP_WARN_IGNORE: ${{ matrix.bytecomp_warn_ignore }}

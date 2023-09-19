@@ -5,8 +5,14 @@ unreleased
   + merlin binary
     - Improve error messages for missing configuration reader (#1669)
     - Fix regression causing crash when using ppxes under Windows (#1673)
-
-
+  + editor modes
+    - emacs: fix/improve keybindings (#1668, fixes #1386):
+      Unbind <kbd>C-c C-r</kbd> (to avoid shadowing `tuareg-eval-region`)
+      and bind <kbd>C-c C-v</kbd> instead to `merlin-error-check`;
+      rebind <kbd>C-c C-d</kbd> to `merlin-document`
+      and bind <kbd>C-c M-d</kbd> and <kbd>C-c |</kbd> instead to `merlin-destruct`;
+      bind <kbd>C-u C-c C-t</kbd> to `merlin-type-expr`.
+      See also <https://github.com/ocaml/merlin/issues/1386#issuecomment-1701567716>
 
 merlin 4.10
 ==========
