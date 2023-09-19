@@ -13,6 +13,7 @@ unreleased
       and bind <kbd>C-c M-d</kbd> and <kbd>C-c |</kbd> instead to `merlin-destruct`;
       bind <kbd>C-u C-c C-t</kbd> to `merlin-type-expr`.
       See also <https://github.com/ocaml/merlin/issues/1386#issuecomment-1701567716>
+    - emacs: remove use of obsolete `defadvice` macro (#1675)
 
 merlin 4.10
 ==========
