@@ -30,6 +30,20 @@ For advanced form of completion see [Advanced features](#advanced-features).
   <source src="completion-at-point.mp4" type="video/mp4">
 </video>
 
+## Typecheck the current file
+
+Merlin automatically typechecks the current file upon save (<kbd>C-x C-s</kbd>).
+
+To do so without triggering a file save, use:
+
+- `M-x merlin-error-check` <kbd>C-c C-v</kbd> \
+Typechecks the current buffer.
+
+If there are several errors, use:
+
+- `M-x merlin-error-next` <kbd>C-c C-x</kbd> \
+Jumps to the next error in the current buffer.
+
 ## Type of an expression
 
 `M-x merlin-type-enclosing` <kbd>C-c C-t</kbd> (<kbd>C-↑</kbd> <kbd>C-↓</kbd>)
@@ -37,6 +51,10 @@ For advanced form of completion see [Advanced features](#advanced-features).
 Gets the type of ident under the cursor. It will highlight the ident and display
 its type. You can then call <kbd>C-↑</kbd> (and <kbd>C-↓</kbd>) to climb the
 typed-tree and display the type of bigger expressions surrounding the cursor.
+
+`M-x merlin-type-expr` <kbd>C-u C-c C-t</kbd>
+
+Asks for an expression, then displays its type in the minibuffer.
 
 ## Locate an identifier
 
@@ -49,6 +67,12 @@ Asks for an identifier and locates it.
 - You can choose if you want locate to jump the the definition or the
   declaration  of identifiers by setting the `merlin-locate-preference` variable
   with `ml` or `mli
+
+## Display identifier documentation
+
+`M-x merlin-document` <kbd>C-c C-d</kbd>
+
+Displays the OCaml documentation for the identifier under the cursor.
 
 ## Source browsing
 
@@ -68,8 +92,8 @@ Jumps to the begining of the closest `fun` /`let` / `module` or `match` parent.
 Destruct is a powerful feature of Merlin that allows one to generate and
 manipulate pattern matching expressions.
 
-The main command, `M-x merlin-destruct` <kbd>C-d</kbd>, behaves differently
-depending on the cursor's context.
+The main command, `M-x merlin-destruct` (<kbd>C-c M-d</kbd> or <kbd>C-c |</kbd>),
+behaves differently depending on the cursor's context.
 
 When called on:
 - an expression: it replaces it by a pattern matching over it's constructors
