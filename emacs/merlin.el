@@ -192,7 +192,7 @@ a new window or not."
 
 (defcustom merlin-logfile nil
   "If non-nil, use this file for the log file (should be an absolute path)."
-  :group 'merlin :type 'filename)
+  :group 'merlin :type 'file)
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
