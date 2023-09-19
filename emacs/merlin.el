@@ -807,12 +807,12 @@ If there is no error, do nothing."
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
-(defun merlin--after-save ()
+(defun merlin--after-save (&optional _)
   (when (and merlin-mode merlin-error-after-save) (merlin-error-check)))
 
-(defadvice basic-save-buffer (after merlin--after-save activate)
-  "The save hook is called only if buffer was modified, but user might want fresh errors anyway"
-  (merlin--after-save))
+; The save hook is called only if buffer was modified,
+; but user might want fresh errors anyway
+(advice-add 'basic-save-buffer :after #'merlin--after-save)
 
 (defun merlin-error-prev (&optional group)
   "Jump back to previous error."
