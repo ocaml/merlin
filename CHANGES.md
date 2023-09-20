@@ -5,6 +5,8 @@ unreleased
   + merlin binary
     - Improve error messages for missing configuration reader (#1669)
     - Fix regression causing crash when using ppxes under Windows (#1673)
+    - Fix confusion between aliased modules and module types (#1676,
+      fixes #1667)
   + editor modes
     - emacs: fix/improve keybindings (#1668, fixes #1386):
       Unbind <kbd>C-c C-r</kbd> (to avoid shadowing `tuareg-eval-region`)

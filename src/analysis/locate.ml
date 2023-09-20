@@ -310,18 +310,30 @@ let load_cmt ~config comp_unit ml_or_mli =
       Ok (source_file, cmt_infos)
   | None -> Error ()
 
-let scrape_alias ~env ~fallback_uid path =
+let scrape_alias ~env ~fallback_uid ~namespace path =
+  let find_type_and_uid ~env ~namespace path =
+    match namespace with
+    | Shape.Sig_component_kind.Module ->
+      let { Types.md_type; md_uid; _ } = Env.find_module path env in
+      md_type, md_uid
+    | Module_type ->
+      begin match Env.find_modtype path env with
+      | { Types.mtd_type = Some mtd_type; mtd_uid; _ } ->
+        mtd_type, mtd_uid
+      | _ -> raise Not_found
+    end
+    | _ -> raise Not_found
+  in
   let rec non_alias_declaration_uid ~fallback_uid path =
-    match Env.find_module path env with
-    | { md_type = Mty_alias path; md_uid = fallback_uid; _ } ->
+    match find_type_and_uid ~env ~namespace path with
+    | (Mty_alias path | Mty_ident path), fallback_uid ->
         non_alias_declaration_uid ~fallback_uid path
-    | { md_type = Mty_ident _ | Mty_signature _ | Mty_functor _ | Mty_for_hole;
-        md_uid; _ }-> md_uid
+    | _, md_uid -> md_uid
     | exception Not_found -> fallback_uid
   in
   non_alias_declaration_uid ~fallback_uid path
 
-let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
+let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
   let module Shape_reduce =
     Shape.Make_reduce (struct
       type env = Env.t
@@ -344,9 +356,15 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns =
     end)
   in
   match ml_or_mli with
-  | `MLI -> Some (scrape_alias ~fallback_uid:decl_uid ~env path)
+  | `MLI ->
+    let uid = scrape_alias ~fallback_uid:decl_uid ~env ~namespace path in
+    log ~title:"uid_of_path" "Declaration uid: %a"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
+    log ~title:"uid_of_path" "Alias scrapped: %a"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+    Some uid
   | `ML ->
-    let shape = Env.shape_of_path ~namespace:ns env path in
+    let shape = Env.shape_of_path ~namespace env path in
     log ~title:"shape_of_path" "initial: %a"
       Logger.fmt (fun fmt -> Shape.print fmt shape);
     let r = Shape_reduce.weak_reduce env shape in
