@@ -7,6 +7,7 @@ unreleased
     - Fix regression causing crash when using ppxes under Windows (#1673)
     - Fix confusion between aliased modules and module types (#1676,
       fixes #1667)
+    - Ignore hidden branches when listing occurrences (#1677, fixes #1671)
   + editor modes
     - emacs: fix/improve keybindings (#1668, fixes #1386):
       Unbind <kbd>C-c C-r</kbd> (to avoid shadowing `tuareg-eval-region`)
