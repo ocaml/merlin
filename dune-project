@@ -5,3 +5,4 @@
 (cram enable)
 (formatting disabled)
 (implicit_transitive_deps false)
+(use_standard_c_and_cxx_flags true)
