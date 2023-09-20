@@ -78,34 +78,32 @@ let drop_leaf t =
   | [] | [ _ ] -> None
   | _leaf :: parents -> Some parents
 
-let has_attr attr_name attrs =
-  List.exists ~f:(fun a ->
-    let (str,_) = Ast_helper.Attr.as_tuple a in
-    str.Location.txt = attr_name
-  ) attrs
+let is_hidden node =
+  Browse_raw.has_attr ~name:"merlin.hide" node
+
+let is_focus node =
+  Browse_raw.has_attr ~name:"merlin.focus" node
 
 let select_leafs pos root =
   let branches = ref [] in
   let rec select_child branch env node has_selected =
     let loc = node_merlin_loc node in
-    let attrs = Browse_raw.node_attributes node in
     if Location_aux.compare_pos pos loc = 0 &&
-       not (has_attr "merlin.hide" attrs)
+       not (is_hidden node)
     then
       (traverse ((env, node) :: branch); true)
     else
       has_selected
   and traverse branch =
     let env, node = leaf_node branch in
-    let attrs = Browse_raw.node_attributes node in
-    if (has_attr "merlin.focus" attrs) then (
+    if (is_focus node) then (
       branches := [];
       let has_leaves = fold_node (select_child branch) env node false in
       if not has_leaves then
         branches := [branch];
       raise Exit
     )
-    else if not (has_attr "merlin.hide" attrs) then (
+    else if not (is_hidden node) then (
       let has_leaves = fold_node (select_child branch) env node false in
       if not has_leaves then
         branches := branch :: !branches

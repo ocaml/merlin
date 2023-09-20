@@ -193,6 +193,13 @@ let node_attributes = function
   | Record_field (`Pattern obj,_,_) -> obj.pat_attributes
   | _ -> []
 
+let has_attr ~name node =
+  let attrs = node_attributes node in
+  List.exists ~f:(fun a ->
+    let (str,_) = Ast_helper.Attr.as_tuple a in
+    str.Location.txt = name
+  ) attrs
+
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
   let loc =

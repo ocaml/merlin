@@ -108,6 +108,7 @@ val node_update_env : Env.t -> node -> Env.t
 val node_real_loc : Location.t -> node -> Location.t
 val node_merlin_loc : Location.t -> node -> Location.t
 val node_attributes : node -> attribute list
+val has_attr : name:string -> node -> bool
 
 val string_of_node : node -> string
 
