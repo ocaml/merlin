@@ -39,7 +39,8 @@ let report_error = function
       "External preprocessor does not produce a valid file. Command line: %s" cmd
 
 let commandline prog args =
-  Filename.quote_command prog args
+  Printf.sprintf "%s %s" prog
+    (String.concat ~sep:" " (List.map ~f:Filename.quote args))
 
 let apply_rewriter magic ppx (fn_in, failures) =
   let title = "apply_rewriter" in
