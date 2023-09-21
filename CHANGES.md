@@ -1,6 +1,6 @@
 merlin 4.11
 ===========
-unreleased
+Thu Sep 24 18:01:42 CEST 2023
 
   + merlin binary
     - Improve error messages for missing configuration reader (#1669)
