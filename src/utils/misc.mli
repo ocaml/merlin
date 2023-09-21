@@ -15,9 +15,18 @@
 
 (** Miscellaneous useful types and functions *)
 
+(** {1 Reporting fatal errors} *)
+
 val fatal_error: string -> 'a
+  (** Raise the [Fatal_error] exception with the given string. *)
+
 val fatal_errorf: ('a, Format.formatter, unit, 'b) format4 -> 'a
+  (** Format the arguments according to the given format string
+      and raise [Fatal_error] with the resulting string. *)
+
 exception Fatal_error of string * Printexc.raw_backtrace
+
+(** {1 Exceptions and finalization} *)
 
 val try_finally :
   ?always:(unit -> unit) ->
@@ -58,23 +67,30 @@ val reraise_preserving_backtrace : exn -> (unit -> unit) -> 'a
 (** [reraise_preserving_backtrace e f] is (f (); raise e) except that the
     current backtrace is preserved, even if [f] uses exceptions internally. *)
 
+(** {1 List operations} *)
 
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
-        (* [map_end f l t] is [map f l @ t], just more efficient. *)
+       (** [map_end f l t] is [map f l @ t], just more efficient. *)
+
 val map_left_right: ('a -> 'b) -> 'a list -> 'b list
-        (* Like [List.map], with guaranteed left-to-right evaluation order *)
+       (** Like [List.map], with guaranteed left-to-right evaluation order *)
+
 val for_all2: ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
-        (* Same as [List.for_all] but for a binary predicate.
+       (** Same as [List.for_all] but for a binary predicate.
            In addition, this [for_all2] never fails: given two lists
            with different lengths, it returns false. *)
+
 val replicate_list: 'a -> int -> 'a list
-        (* [replicate_list elem n] is the list with [n] elements
+       (** [replicate_list elem n] is the list with [n] elements
            all identical to [elem]. *)
+
 val list_remove: 'a -> 'a list -> 'a list
-        (* [list_remove x l] returns a copy of [l] with the first
+       (** [list_remove x l] returns a copy of [l] with the first
            element equal to [x] removed. *)
+
 val split_last: 'a list -> 'a list * 'a
-        (* Return the last element and the other elements of the given list. *)
+       (** Return the last element and the other elements of the given list. *)
+
 val may: ('a -> unit) -> 'a option -> unit
 val may_map: ('a -> 'b) -> 'a option -> 'b option
 
@@ -90,15 +106,19 @@ val exact_file_exists : dirname:string -> basename:string -> bool
 	   systems: return true only if the basename (last component of the
            path) has the correct case. *)
 val find_in_path: string list -> string -> string
-        (* Search a file in a list of directories. *)
+       (** Search a file in a list of directories. *)
+
 val find_in_path_rel: string list -> string -> string
-        (* Search a relative file in a list of directories. *)
+       (** Search a relative file in a list of directories. *)
+
 val find_in_path_uncap: ?fallback:string -> string list -> string -> string
-        (* Same, but search also for uncapitalized name, i.e.
-           if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
-           to match. *)
+       (** Same, but search also for uncapitalized name, i.e.
+           if name is [Foo.ml], allow [/path/Foo.ml] and [/path/foo.ml]
+            to match. *)
+
 val canonicalize_filename : ?cwd:string -> string -> string
         (* Ensure that path is absolute (wrt to cwd), by following ".." and "." *)
+
 val expand_glob : ?filter:(string -> bool) -> string -> string list -> string list
         (* [expand_glob ~filter pattern acc] adds all filenames matching
            [pattern] and satistfying the [filter] predicate to [acc]*)
@@ -111,9 +131,12 @@ val split_path : string -> string list -> string list
         *)
 
 val remove_file: string -> unit
-        (* Delete the given file if it exists. Never raise an error. *)
+       (** Delete the given file if it exists and is a regular file.
+           Does nothing for other kinds of files.
+           Never raises an error. *)
+
 val expand_directory: string -> string -> string
-        (* [expand_directory alt file] eventually expands a [+] at the
+       (** [expand_directory alt file] eventually expands a [+] at the
            beginning of file into [alt] (an alternate root directory) *)
 
 val create_hashtable: int -> ('a * 'b) list -> ('a, 'b) Hashtbl.t
@@ -169,6 +192,27 @@ module Int_literal_converter : sig
   val int64 : string -> int64
   val nativeint : string -> nativeint
 end
+
+val find_first_mono : (int -> bool) -> int
+  (**[find_first_mono p] takes an integer predicate [p : int -> bool]
+     that we assume:
+     1. is monotonic on natural numbers:
+        if [a <= b] then [p a] implies [p b],
+     2. is satisfied for some natural numbers in range [0; max_int]
+        (this is equivalent to: [p max_int = true]).
+
+     [find_first_mono p] is the smallest natural number N that satisfies [p],
+     computed in O(log(N)) calls to [p].
+
+     Our implementation supports two cases where the preconditions on [p]
+     are not respected:
+     - If [p] is always [false], we silently return [max_int]
+       instead of looping or crashing.
+     - If [p] is non-monotonic but eventually true,
+       we return some satisfying value.
+  *)
+
+(** {1 String operations} *)
 
 val chop_extension_if_any: string -> string
         (* Like Filename.chop_extension but returns the initial file
@@ -342,6 +386,7 @@ module Color : sig
     error: style list;
     warning: style list;
     loc: style list;
+    hint:style list;
   }
 
   val default_styles: styles
@@ -360,3 +405,6 @@ module Color : sig
   val set_color_tag_handling : Format.formatter -> unit
   (* adds functions to support color tags to the given formatter. *)
 end
+
+val print_see_manual : Format.formatter -> int list -> unit
+(** See manual section *)

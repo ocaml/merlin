@@ -122,7 +122,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
           try
             ignore (
               Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive:true (* really? *)
+                ~allow_recursive_equations:true (* really? *)
                 (ref env) type_expr typ
             );
             true
@@ -398,16 +398,14 @@ let rec qualify_constructors ~unmangling_tables f pat  =
             let lid_name = flatten txt |> String.concat ~sep:"." in
             let pat = qualify_constructors f pat in
             (* Un-mangle *)
-            match unmangling_tables with
-            | Some (_, labels) ->
+            let (_, labels) = unmangling_tables in
               (match Hashtbl.find_opt labels lid_name with
               | Some lbl_des -> (
                   { lid with txt = Lident lbl_des.Types.lbl_name },
                   lbl_des,
                   pat
                 )
-              | None -> (lid, lbl_des, pat))
-            | None -> (lid, lbl_des, pat))
+              | None -> (lid, lbl_des, pat)))
       in
       let closed =
         if List.length labels > 0 then
@@ -423,12 +421,11 @@ let rec qualify_constructors ~unmangling_tables f pat  =
         match lid.Asttypes.txt with
         | Longident.Lident name ->
           (* Un-mangle *)
-          let name = match unmangling_tables with
-            | Some (constrs, _) ->
+          let name =
+            let constrs, _ = unmangling_tables in
               (match  Hashtbl.find_opt constrs name with
               | Some cstr_des -> cstr_des.Types.cstr_name
               | None -> name)
-            | None -> name
           in
           begin match Types.get_desc pat.pat_type with
           | Types.Tconstr (path, _, _) ->
@@ -480,6 +477,73 @@ let find_branch patterns sub =
     | p :: ps -> aux (p :: before) ps
   in
   aux [] patterns
+
+
+(* conversion from Typedtree.pattern to Parsetree.pattern list *)
+module Conv = struct
+  open Asttypes
+  open Types
+  open Typedtree
+  open Parsetree
+  let mkpat desc = Ast_helper.Pat.mk desc
+
+  let name_counter = ref 0
+  let fresh name =
+    let current = !name_counter in
+    name_counter := !name_counter + 1;
+    "#$" ^ name ^ Int.to_string current
+
+  let conv typed =
+    let constrs = Hashtbl.create 7 in
+    let labels = Hashtbl.create 7 in
+    let rec loop pat =
+      match pat.pat_desc with
+        Tpat_or (pa,pb,_) ->
+          mkpat (Ppat_or (loop pa, loop pb))
+      | Tpat_var (_, ({txt="*extension*"; _} as nm)) -> (* PR#7330 *)
+          mkpat (Ppat_var nm)
+      | Tpat_any
+      | Tpat_var _ ->
+          mkpat Ppat_any
+      | Tpat_constant c ->
+          mkpat (Ppat_constant (Untypeast.constant c))
+      | Tpat_alias (p,_,_) -> loop p
+      | Tpat_tuple lst ->
+          mkpat (Ppat_tuple (List.map ~f:loop lst))
+      | Tpat_construct (cstr_lid, cstr, lst, _) ->
+          let id = fresh cstr.cstr_name in
+          let lid = { cstr_lid with txt = Longident.Lident id } in
+          Hashtbl.add constrs id cstr;
+          let arg =
+            match List.map ~f:loop lst with
+            | []  -> None
+            | [p] -> Some ([], p)
+            | lst -> Some ([], mkpat (Ppat_tuple lst))
+          in
+          mkpat (Ppat_construct(lid, arg))
+      | Tpat_variant(label,p_opt,_row_desc) ->
+          let arg = Option.map ~f:loop p_opt in
+          mkpat (Ppat_variant(label, arg))
+      | Tpat_record (subpatterns, _closed_flag) ->
+          let fields =
+            List.map
+              ~f:(fun (_, lbl, p) ->
+                let id = fresh lbl.lbl_name in
+                Hashtbl.add labels id lbl;
+                (mknoloc (Longident.Lident id), loop p))
+              subpatterns
+          in
+          mkpat (Ppat_record (fields, Open))
+      | Tpat_array lst ->
+          mkpat (Ppat_array (List.map ~f:loop lst))
+      | Tpat_lazy p ->
+          mkpat (Ppat_lazy (loop p))
+    in
+    let ps = loop typed in
+    (ps, constrs, labels)
+end
+
+
 
 let rec node config source selected_node parents =
   let open Extend_protocol.Reader in
@@ -536,7 +600,9 @@ let rec node config source selected_node parents =
       begin match Parmatch.complete_partial ~pred pss with
       | _ :: _ as patterns ->
         let cases =
-          List.map patterns ~f:(fun (pat, unmangling_tables) ->
+          List.map patterns ~f:(fun pat  ->
+            let _pat, constrs, labels = Conv.conv pat in
+            let unmangling_tables = constrs, labels in
             (* Unmangling and prefixing *)
             let pat =
               qualify_constructors ~unmangling_tables

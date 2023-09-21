@@ -1,8 +1,9 @@
 merlin 4.11
 ===========
-unreleased
+Thu Sep 24 18:01:42 CEST 2023
 
   + merlin binary
+    - Add support for OCaml 5.1
     - Improve error messages for missing configuration reader (#1669)
     - Fix regression causing crash when using ppxes under Windows (#1673)
     - Fix confusion between aliased modules and module types (#1676,
@@ -19,7 +20,7 @@ unreleased
     - emacs: remove use of obsolete `defadvice` macro (#1675)
 
 merlin 4.10
-==========
+===========
 Thu Aug 24 17:17:42 CEST 2023
 
   + merlin binary
@@ -50,9 +51,11 @@ Thu Aug 24 17:17:42 CEST 2023
 
 merlin 4.9
 ==========
-Fri May 26 15:23:42 CEST 2023
+unreleased
 
   + merlin binary
+    - Preview support for OCaml 5.1-alpha1. Short path is temporary disabled and
+      inline records might not behave as expected.
     - Allow monadic IO in dot protocol (#1581)
     - Add a `scope` option to the `occurrences` command in preparation for
       the upcoming `project-wide-occurrences` feature (#1596)

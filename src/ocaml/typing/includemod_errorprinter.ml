@@ -339,6 +339,7 @@ module With_shorthand = struct
     let arg, mty = ua.item in
     match (arg: Err.functor_arg_descr) with
     | Unit -> Format.dprintf "()"
+    | Empty_struct -> Format.dprintf "(struct end)"
     | Named p ->
         let mty = modtype { ua with item = mty } in
         Format.dprintf
@@ -357,6 +358,7 @@ module With_shorthand = struct
     let arg, mty = ua.item in
     match (arg: Err.functor_arg_descr) with
     | Unit -> Format.dprintf "()"
+    | Empty_struct -> Format.dprintf "(struct end)"
     | Named p -> fun ppf -> Printtyp.path ppf p
     | Anonymous ->
         let short_mty = modtype { ua with item=mty } in
@@ -519,7 +521,10 @@ module Functor_suberror = struct
       | Named _ | Anonymous ->
           Format.dprintf
             "The functor was expected to be generative at this position"
-
+      | Empty_struct ->
+          (* an empty structure can be used in both applicative and generative
+             context *)
+          assert false
   end
 
   let subcase sub ~expansion_token env (pos, diff) =

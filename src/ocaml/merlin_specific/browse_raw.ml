@@ -341,7 +341,7 @@ let of_expression_desc loc = function
   | Texp_tuple es | Texp_construct (_,_,es) | Texp_array es ->
     list_fold of_expression es
   | Texp_variant (_,Some e)
-  | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
+  | Texp_assert (e, _) | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
     of_expression e
   | Texp_record { fields; extended_expression } ->
     option_fold of_expression extended_expression **
@@ -441,6 +441,8 @@ and of_module_expr_desc = function
   | Tmod_apply (me1,me2,_) ->
     of_module_expr me1 **
     of_module_expr me2
+  | Tmod_apply_unit (me1) ->
+    of_module_expr me1
   | Tmod_constraint (me,_,mtc,_) ->
     of_module_expr me **
     app (Module_type_constraint mtc)

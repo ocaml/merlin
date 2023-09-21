@@ -234,8 +234,9 @@ let print_type_with_decl ~verbosity env ppf typ =
             end;
           let ident = match path with
             | Path.Papply _ -> assert false
-            | Path.Pdot _ -> Ident.create_persistent (Path.last path)
             | Path.Pident ident -> ident
+            | Path.Pdot _ | Path.Pextra_ty _ ->
+                Ident.create_persistent (Path.last path)
           in
           Printtyp.type_declaration env ident ppf decl
         end
