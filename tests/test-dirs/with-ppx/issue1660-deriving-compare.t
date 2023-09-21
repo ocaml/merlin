@@ -28,9 +28,10 @@
   > (library
   >  (name main)
   >  (preprocess (pps ppx_compare)))
+  > EOF
 
   $ dune build
 
   $ $MERLIN single type-enclosing -position 2:7 \
   > -filename main.ml < main.ml |  jq '.value[0].type'
-  "type t =o | Bar"
+  "type t = Foo | Bar"

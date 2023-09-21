@@ -192,7 +192,7 @@ a new window or not."
 
 (defcustom merlin-logfile nil
   "If non-nil, use this file for the log file (should be an absolute path)."
-  :group 'merlin :type 'filename)
+  :group 'merlin :type 'file)
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
@@ -807,12 +807,12 @@ If there is no error, do nothing."
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
-(defun merlin--after-save ()
+(defun merlin--after-save (&optional _)
   (when (and merlin-mode merlin-error-after-save) (merlin-error-check)))
 
-(defadvice basic-save-buffer (after merlin--after-save activate)
-  "The save hook is called only if buffer was modified, but user might want fresh errors anyway"
-  (merlin--after-save))
+; The save hook is called only if buffer was modified,
+; but user might want fresh errors anyway
+(advice-add 'basic-save-buffer :after #'merlin--after-save)
 
 (defun merlin-error-prev (&optional group)
   "Jump back to previous error."
@@ -1316,15 +1316,18 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (set-temporary-overlay-map merlin-type-enclosing-map t
                                  'merlin--type-enclosing-reset))))
 
-(defun merlin-type-enclosing ()
+(defun merlin-type-enclosing (&optional manual)
   "Print the type of the expression under point (or of the region, if it exists).
-If called repeatedly, increase the verbosity of the type shown."
-  (interactive)
-  (if (region-active-p)
-      (merlin--type-region)
-    (when (merlin--type-enclosing-query)
-      (merlin-type-enclosing-go-up)
-      (merlin--type-enclosing-after))))
+If called repeatedly, increase the verbosity of the type shown.
+With prefix argument MANUAL, call `merlin-type-expr' interactively."
+  (interactive "P")
+  (if manual
+      (call-interactively #'merlin-type-expr)
+    (if (region-active-p)
+        (merlin--type-region)
+      (when (merlin--type-enclosing-query)
+        (merlin-type-enclosing-go-up)
+        (merlin--type-enclosing-after)))))
 
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
@@ -1979,9 +1982,11 @@ Empty string defaults to jumping to all these."
     (define-key merlin-map (kbd "C-c C-x") #'merlin-error-next)
     (define-key merlin-map (kbd "C-c C-l") #'merlin-locate)
     (define-key merlin-map (kbd "C-c &"  ) #'merlin-pop-stack)
-    (define-key merlin-map (kbd "C-c C-r") #'merlin-error-check)
+    (define-key merlin-map (kbd "C-c C-v") #'merlin-error-check)
     (define-key merlin-map (kbd "C-c C-t") #'merlin-type-enclosing)
-    (define-key merlin-map (kbd "C-c C-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c C-d") #'merlin-document)
+    (define-key merlin-map (kbd "C-c M-d") #'merlin-destruct)
+    (define-key merlin-map (kbd "C-c |") #'merlin-destruct)
     (define-key merlin-map (kbd "C-c C-n") #'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") #'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]

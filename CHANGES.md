@@ -1,3 +1,23 @@
+merlin 4.11
+===========
+Thu Sep 24 18:01:42 CEST 2023
+
+  + merlin binary
+    - Improve error messages for missing configuration reader (#1669)
+    - Fix regression causing crash when using ppxes under Windows (#1673)
+    - Fix confusion between aliased modules and module types (#1676,
+      fixes #1667)
+    - Ignore hidden branches when listing occurrences (#1677, fixes #1671)
+  + editor modes
+    - emacs: fix/improve keybindings (#1668, fixes #1386):
+      Unbind <kbd>C-c C-r</kbd> (to avoid shadowing `tuareg-eval-region`)
+      and bind <kbd>C-c C-v</kbd> instead to `merlin-error-check`;
+      rebind <kbd>C-c C-d</kbd> to `merlin-document`
+      and bind <kbd>C-c M-d</kbd> and <kbd>C-c |</kbd> instead to `merlin-destruct`;
+      bind <kbd>C-u C-c C-t</kbd> to `merlin-type-expr`.
+      See also <https://github.com/ocaml/merlin/issues/1386#issuecomment-1701567716>
+    - emacs: remove use of obsolete `defadvice` macro (#1675)
+
 merlin 4.10
 ==========
 Thu Aug 24 17:17:42 CEST 2023
