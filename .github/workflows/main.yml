@@ -44,6 +44,10 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
+    # Some tests requiring specific ppxes are disabled by default
+    env:
+      MERLIN_TESTS: all
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -59,6 +63,7 @@ jobs:
         run: |
           opam depext conf-jq --yes # opam depext bug
           opam pin menhirLib 20201216 --no-action
+          opam install --yes ppx_string ppx_compare
           opam install . --deps-only --with-test --yes
 
       - name: Build and test in release mode (windows)

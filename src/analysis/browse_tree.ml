@@ -115,7 +115,10 @@ let all_occurrences path =
       | [] -> acc
       | paths -> (t, paths) :: acc
     in
-    List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
+    if Browse_raw.has_attr ~name:"merlin.hide" t.t_node then
+      acc
+    else
+      List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
   in
   aux []
 
@@ -131,7 +134,10 @@ let all_constructor_occurrences ({t_env = env; _},d) t =
         {d' with Location.txt = t} :: acc
       | _ -> acc
     in
-    List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
+    if Browse_raw.has_attr ~name:"merlin.hide" t.t_node then
+      acc
+    else
+      List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
   in
   aux [] t
 
