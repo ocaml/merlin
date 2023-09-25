@@ -380,14 +380,18 @@ let of_expression_desc loc = function
   | Texp_unreachable | Texp_extension_constructor _ ->
     id_fold
   | Texp_letop { let_; ands; body; _ } ->
-    let rec flatten_patterns acc pat =
+    (* let+ ..pat1 and pat2 and ... are represented as pattern couples:
+       [pat1; [pat2; ...]]. The following function flattens these couples.
+       Keeping track of the known size of the tuple prevent wrongly flattening
+       the patterns patN when they are tuples themselves. *)
+    let rec flatten_patterns ~size acc pat =
       match pat.pat_desc with
-      | Tpat_tuple [ tuple; pat ] ->
-           flatten_patterns (pat :: acc) tuple
+      | Tpat_tuple [ tuple; pat ] when size > 0 ->
+           flatten_patterns ~size:(size - 1) (pat :: acc) tuple
       | _ -> List.rev (pat :: acc)
     in
     let bindops = let_ :: ands in
-    let patterns = flatten_patterns [] body.c_lhs in
+    let patterns = flatten_patterns ~size:(List.length ands) [] body.c_lhs in
     let of_letop (pat, bindop) = of_bop bindop ** of_pattern pat in
     list_fold of_letop (List.combine patterns bindops) **
     of_expression body.c_rhs
