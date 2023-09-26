@@ -423,6 +423,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       Completion.branch_complete config ~kinds ?get_doc ?target_type ~keywords
         prefix branch
       |> print_completion_entries ~with_types config source
+      |> List.sort ~cmp:Compl.entry_compare
     and context = match context with
       | `Application context when no_labels ->
         `Application {context with Compl.labels = []}

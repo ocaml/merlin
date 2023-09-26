@@ -39,6 +39,8 @@ struct
 
   type entry = string raw_entry
 
+  let entry_compare e1 e2 = String.compare e1.name e2.name
+
   type application_context = {
     argument_type: string;
     labels : (string * string) list;
