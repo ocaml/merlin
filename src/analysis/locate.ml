@@ -328,7 +328,8 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
     match find_type_and_uid ~env ~namespace path with
     | Mty_alias path, fallback_uid ->
         non_alias_declaration_uid ~fallback_uid path
-    | Mty_ident alias_path, fallback_uid when not (Path.same path alias_path) ->
+    | Mty_ident alias_path, fallback_uid
+      when namespace = Shape.Sig_component_kind.Module_type ->
         (* This case is necessary to traverse module type aliases *)
         non_alias_declaration_uid ~fallback_uid alias_path
     | _, md_uid -> md_uid
