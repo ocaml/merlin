@@ -1,3 +1,11 @@
+merlin 4.12
+===========
+unreleased
+
+  + merlin binary
+    - Fix issue with let operators and tuples (#1684, fixes #1683, fixes
+      ocaml/ocaml-lsp#1182)
+
 merlin 4.11
 ===========
 Thu Sep 24 18:01:42 CEST 2023
