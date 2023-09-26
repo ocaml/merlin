@@ -326,8 +326,11 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
   in
   let rec non_alias_declaration_uid ~fallback_uid path =
     match find_type_and_uid ~env ~namespace path with
-    | (Mty_alias path | Mty_ident path), fallback_uid ->
+    | Mty_alias path, fallback_uid ->
         non_alias_declaration_uid ~fallback_uid path
+    | Mty_ident alias_path, fallback_uid when not (Path.same path alias_path) ->
+        (* This case is necessary to traverse module type aliases *)
+        non_alias_declaration_uid ~fallback_uid alias_path
     | _, md_uid -> md_uid
     | exception Not_found -> fallback_uid
   in
