@@ -5,6 +5,8 @@ unreleased
   + merlin binary
     - Fix issue with let operators and tuples (#1684, fixes #1683, fixes
       ocaml/ocaml-lsp#1182)
+    - Fix an issue causing Merlin locate queries to hang (#1686,
+      fixes ocaml/ocaml-lsp#1192)
 
 merlin 4.11
 ===========
