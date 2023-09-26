@@ -1,6 +1,6 @@
 merlin 4.12
 ===========
-unreleased
+Tue Sep 26 17:45:42 CEST 2023
 
   + merlin binary
     - Fix issue with let operators and tuples (#1684, fixes #1683, fixes
