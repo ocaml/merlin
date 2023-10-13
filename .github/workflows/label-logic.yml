@@ -1,0 +1,147 @@
+name: Fuzzy CI
+
+on:
+  pull_request:
+    branches: [ label-logic ]
+    types: [ opened, synchronize, reopened, labeled, unlabeled ]
+
+jobs:
+  fuzzy:
+    name: merl-an looks for Merlin behavior changes
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          # When updating the compiler here, also update the Irmin build on ... to the new compiler
+          ocaml-compiler: ocaml-base-compiler.4.14.1
+          dune-cache: true
+
+      - name: Set up ssh env
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY_FOR_FUZZY_CI }}
+
+      - name: Clone data repo
+        run: git clone git@github.com:pitag-ha/merlin-fuzzy-ci-data.git data
+
+      - name: Configure git user
+        run: |
+          git config user.email "actions@github.com>"
+          git config user.name "Merlin Fuzzy CI"
+        working-directory: data
+
+      - name: Checkout new branch
+        run: |
+          git fetch origin
+          git checkout origin/main
+          git checkout -b label-logic
+        working-directory: data
+
+      - name: Push new data
+        run: git push --set-upstream -f origin label-logic
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY_FOR_FUZZY_CI }}
+        working-directory: data
+
+      - name: Fail
+        run: exit 1
+
+  all-good:
+    name: Flag was set
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'pull_request' && github.event.action == 'labeled'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#       - name: Install dependencies
+#         run: opam install --deps-only .
+
+# # TODO: rebase over master before installing merlin.
+
+#       - name: Install merlin
+#         run: |
+#           opam exec -- dune subst
+#           opam exec -- dune build
+#           opam exec -- dune install
+
+#       - name: Install merl-an
+#         run: opam pin -y merl-an https://github.com/pitag-ha/merl-an.git
+
+      # - name: Set up ssh env
+      #   uses: webfactory/ssh-agent@v0.7.0
+      #   with:
+      #     ssh-private-key: ${{ secrets.DEPLOY_KEY_FOR_FUZZY_CI }}
+
+      # - name: Clone data repo
+      #   run: git clone git@github.com:pitag-ha/merlin-fuzzy-ci-data.git data
+
+      # - name: Configure git user
+      #   run: |
+      #     git config user.email "actions@github.com>"
+      #     git config user.name "Merlin Fuzzy CI"
+      #   working-directory: data
+
+      # - name: Checkout new branch
+      #   run: |
+      #     git fetch origin
+      #     git checkout origin/main
+      #     git checkout -b yuhuuu
+      #   working-directory: data
+
+      # - name: Build test code base
+      #   run: |
+      #     eval $(opam env)
+      #     dune build @check
+      #   working-directory: data/test-code-base/irmin
+
+      # - name: Create new data
+      #   run: |
+      #     eval $(opam env)
+      #     merl-an behavior --queries=type-enclosing,occurrences,locate,complete-prefix,errors --sample-size=30 --data=irmin_data --merlin=ocamlmerlin --project=test-code-base/irmin/src/irmin/
+      #     # merl-an behavior --queries=type-enclosing,occurrences,locate,complete-prefix,errors --sample-size=30 --data=irmin_pack_data --merlin=ocamlmerlin --project=irmin/src/irmin-pack --extensions=ml
+      #     # merl-an behavior --queries=type-enclosing,occurrences,locate,complete-prefix,errors --sample-size=30 --data=irmin_pack_test_data --merlin=ocamlmerlin --project=irmin/test/irmin-pack --extensions=ml
+      #   working-directory: data
+
+      # - name: Commit new data
+      #   run: |
+      #     git add irmin_data
+      #     git commit -m "Updated data from PR ..."
+      #   working-directory: data
+
+      # - name: Push new data
+      #   run: git push --set-upstream -f origin yuhuuu
+      #   env:
+      #     SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY_FOR_FUZZY_CI }}
+      #   working-directory: data
+
+      # - name: Diff new data with old data
+      #   run: |
+      #     if [[ -n $(git diff origin/main) ]]; then
+      #       echo "See diff on https://github.com/pitag-ha/merlin-fuzzy-ci-data/compare/main...yuhuuu"
+      #       exit 1
+      #     else
+      #       echo "All good: No diff on merl-an's sample set."
+      #     fi
+      #   working-directory: data
