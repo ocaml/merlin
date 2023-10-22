@@ -5,6 +5,7 @@ merlin NEXT_VERSION
     - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
   + editor modes
     - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+    - emacs: highlight only first error line by default (#1693, fixes #1663)
 
 merlin 4.12
 ===========
