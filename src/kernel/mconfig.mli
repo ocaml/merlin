@@ -49,7 +49,8 @@ type merlin = {
   flags_applied : string list with_workdir list;
 
   failures : string list;
-  extension_to_reader : (string * string) list
+  extension_to_reader : (string * string) list;
+  cache_period : int
 }
 
 val dump_merlin : merlin -> json
