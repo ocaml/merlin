@@ -37,5 +37,11 @@
   > -build-path experimental -build-path unix \
   > -source-path . -source-path unix -source-path experimental \
   > -filename hack.ml <hack.ml | jq '.value'
-  "Several source files in your path have the same name, and merlin doesn't know which is the right one: $TESTCASE_ROOT/unix/m_intf.ml, $TESTCASE_ROOT/experimental/m_intf.ml"
+  {
+    "file": "$TESTCASE_ROOT/experimental/m_intf.ml",
+    "pos": {
+      "line": 1,
+      "col": 20
+    }
+  }
 

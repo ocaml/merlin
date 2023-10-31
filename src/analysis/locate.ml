@@ -361,14 +361,15 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
         ~namespace:Shape.Sig_component_kind.Module env (Pident id)
     end)
   in
-  match ml_or_mli with
-  | `MLI ->
-    let uid = scrape_alias ~fallback_uid:decl_uid ~env ~namespace path in
-    log ~title:"uid_of_path" "Declaration uid: %a"
-      Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
-    log ~title:"uid_of_path" "Alias scrapped: %a"
+  let unalias fallback_uid =
+    let uid = scrape_alias ~fallback_uid ~env ~namespace path in
+    log ~title:"uid_of_path" "Unaliasing uid: %a -> %a"
+      Logger.fmt (fun fmt -> Shape.Uid.print fmt fallback_uid)
       Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
-    Some uid
+    uid
+  in
+  match ml_or_mli with
+  | `MLI -> unalias decl_uid
   | `ML ->
     let shape = Env.shape_of_path ~namespace env path in
     log ~title:"shape_of_path" "initial: %a"
@@ -376,7 +377,11 @@ let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
     let r = Shape_reduce.weak_reduce env shape in
     log ~title:"shape_of_path" "reduced: %a"
       Logger.fmt (fun fmt -> Shape.print fmt r);
-    r.uid
+    match r.uid with
+    | Some uid -> uid
+    | None ->
+      log ~title:"shape_of_path" "No uid found; fallbacking to declaration uid";
+      unalias decl_uid
 
 let from_uid ~config ~ml_or_mli uid loc path =
   let loc_of_comp_unit comp_unit =
@@ -389,61 +394,48 @@ let from_uid ~config ~ml_or_mli uid loc path =
   in
   let title = "from_uid" in
   match uid with
-  | Some (Shape.Uid.Item { comp_unit; _ } as uid) ->
+  | Shape.Uid.Item { comp_unit; _ } ->
     let locopt =
-      if Env.get_unit_name () = comp_unit then begin
-        log ~title "We look for %a in the current compilation unit."
+      let log_and_return msg = log ~title msg; None in
+      let uid_to_loc_tbl =
+        if Env.get_unit_name () = comp_unit then begin
+          log ~title "We look for %a in the current compilation unit."
+            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+          Some (Env.get_uid_to_loc_tbl ())
+        end else begin
+          log ~title "Loading the cmt for unit %S" comp_unit;
+          match load_cmt ~config comp_unit ml_or_mli with
+          | Ok (_pos_fname, cmt) -> Some cmt.cmt_uid_to_loc
+          | Error () -> log_and_return "Failed to load the cmt file."
+        end
+      in
+      Option.bind uid_to_loc_tbl ~f:(fun tbl ->
+        log ~title "Looking for %a in the uid_to_loc table"
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
-        let tbl = Env.get_uid_to_loc_tbl () in
         match Shape.Uid.Tbl.find_opt tbl uid with
         | Some loc ->
           log ~title "Found location: %a"
             Logger.fmt (fun fmt -> Location.print_loc fmt loc);
           Some (uid, loc)
-        | None ->
-          log ~title
-            "Uid not found in the local table.\
-            Fallbacking to the node's location: %a"
-          Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-          Some (uid, loc)
-      end else begin
-        log ~title "Loading the shapes for unit %S" comp_unit;
-        match load_cmt ~config comp_unit ml_or_mli with
-        | Ok (_pos_fname, cmt) ->
-          log ~title "Shapes successfully loaded, looking for %a"
-            Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
-          begin match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_loc uid with
-            | Some loc ->
-              log ~title "Found location: %a"
-                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-              Some (uid, loc)
-            | None ->
-              log ~title "Uid not found in the cmt table. \
-                Fallbacking to the node's location: %a"
-                Logger.fmt (fun fmt -> Location.print_loc fmt loc);
-              Some (uid, loc)
-          end
-        | _ ->
-          log ~title "Failed to load the shapes";
-          None
-      end
+        | None -> log_and_return  "Uid not found in the table.")
     in
     begin match locopt with
     | Some (uid, loc) -> `Found (Some uid, loc)
-    | None -> `Not_found (Path.name path, None)
+    | None ->
+      log ~title "Fallbacking to lookup location: %a"
+        Logger.fmt (fun fmt -> Location.print_loc fmt loc);
+      `Found (Some uid, loc)
     end
-  | Some (Compilation_unit comp_unit as uid) ->
+  | Compilation_unit comp_unit ->
     begin
       log ~title "Got the uid of a compilation unit: %a"
         Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
       match loc_of_comp_unit comp_unit with
       | Some loc -> `Found (Some uid, loc)
-      | _ -> log ~title "Failed to load the shapes";
+      | _ -> log ~title "Failed to load the CU's cmt";
         `Not_found (Path.name path, None)
     end
-  | Some (Predef _ | Internal) -> assert false
-  | None -> log ~title "No UID found, fallbacking to lookup location.";
-      `Found (None, loc)
+  | Predef _ | Internal -> assert false
 
 let locate ~config ~env ~ml_or_mli decl_uid loc path ns =
   let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path ns in

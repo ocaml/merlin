@@ -20,8 +20,8 @@ available:
   }
 
   $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
-  Loading the shapes for unit "A"
-  Shapes successfully loaded, looking for A.0
+  Loading the cmt for unit "A"
+  Looking for A.0 in the uid_to_loc table
   Found location: File "a.ml", line 1, characters 4-9
 
   $ rm log
@@ -41,8 +41,8 @@ available:
   }
 
   $ grep -A1 from_uid log | grep -v from_uid | sed '/^--$/d'
-  Loading the shapes for unit "A"
-  Shapes successfully loaded, looking for A.0
+  Loading the cmt for unit "A"
+  Looking for A.0 in the uid_to_loc table
   Found location: File "a.ml", line 1, characters 4-9
 
   $ rm log
@@ -66,6 +66,9 @@ In the absence of cmt though, fallbacking to the cmi loc makes sense:
   }
 
   $ grep -A1 from_uid log | grep -v from_uid
-  No UID found, fallbacking to lookup location.
+  Loading the cmt for unit "A"
+  --
+  Failed to load the cmt file.
+  Fallbacking to lookup location: File "a.ml", line 1, characters 4-9
 
   $ rm log
