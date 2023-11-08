@@ -91,6 +91,8 @@ let run = function
         (* Start processing query *)
         Logger.with_log_file Mconfig.(config.merlin.log_file)
           ~sections:Mconfig.(config.merlin.log_sections) @@ fun () ->
+        Mocaml.flush_caches
+          ~older_than:(float_of_int (60 * Mconfig.(config.merlin.cache_period))) ();
         File_id.with_cache @@ fun () ->
         let source = Msource.make (Misc.string_of_file stdin) in
         let pipeline = Mpipeline.make config source in

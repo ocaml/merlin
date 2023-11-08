@@ -66,7 +66,8 @@
         "extension": ".rei",
         "reader": "reason"
       }
-    ]
+    ],
+    "cache_period": "5"
   }
 
   $ rm .merlin

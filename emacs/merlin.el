@@ -194,6 +194,10 @@ a new window or not."
   "If non-nil, use this file for the log file (should be an absolute path)."
   :group 'merlin :type 'file)
 
+(defcustom merlin-cache-period nil
+  "If non-nil, use this value for cache period (measured in minutes)."
+  :group 'merlin :type 'natnum)
+
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
 to go up and down the AST. In addition, C-w copies the type to the
@@ -550,6 +554,8 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
                   (cons "-flags" merlin-buffer-flags))
                 (when filename
                   (cons "-filename" filename))
+                (when merlin-cache-period
+                  (cons "-cache-period" (number-to-string merlin-cache-period)))
                 args))
     ;; Log last commands
     (setq merlin-debug-last-commands
