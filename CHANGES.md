@@ -1,3 +1,9 @@
+merlin NEXT_VERSION
+===================
+
+  + editor modes
+    - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+
 merlin 4.12
 ===========
 Tue Sep 26 17:45:42 CEST 2023
