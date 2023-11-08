@@ -90,8 +90,9 @@ type merlin = {
   flags_applied : string list with_workdir list;
 
   failures : string list;
-  extension_to_reader : (string * string) list
+  extension_to_reader : (string * string) list;
 
+  cache_period : int
 }
 
 let dump_merlin x =
@@ -127,7 +128,8 @@ let dump_merlin x =
           "extension", `String suffix;
           "reader", `String reader;
         ]) x.extension_to_reader
-    )
+    );
+    "cache_period"   , Json.string (string_of_int x.cache_period)
   ]
 
 module Verbosity = struct
@@ -355,6 +357,15 @@ let merlin_flags = [
     "-ocamllib-path",
     marg_path (fun path merlin -> {merlin with stdlib = Some path}),
     "<path> Change path of ocaml standard library"
+  );
+  (
+    "-cache-period",
+    Marg.param "int" (fun prot merlin ->
+        try {merlin with cache_period = (int_of_string prot)}
+        with _ -> invalid_arg "Valid value is int";
+      ),
+    "Change file cache retention period. It's measured in minutes. \
+      Default value is 5."
   );
   (
     (* Legacy support for janestreet. Ignored. To be removed soon. *)
@@ -615,6 +626,7 @@ let initial = {
 
     failures = [];
     extension_to_reader = [(".re","reason");(".rei","reason")];
+    cache_period = 5;
   };
   query = {
     filename = "*buffer*";

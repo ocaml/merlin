@@ -33,7 +33,6 @@ module Server = struct
 
   let server_accept merlinid server =
     let rec loop total =
-      Mocaml.flush_caches ~older_than:300.0 ();
       let merlinid' = File_id.get Sys.executable_name in
       if total > merlin_timeout ||
          not (File_id.check merlinid merlinid') then

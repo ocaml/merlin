@@ -1,3 +1,12 @@
+merlin NEXT_VERSION
+===================
+
+  + merlin binary
+    - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
+    - Add `--cache-period` flag, that sets cache invalidation period. (#1698)
+  + editor modes
+    - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+
 merlin 4.12
 ===========
 Tue Sep 26 17:45:42 CEST 2023
