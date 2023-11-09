@@ -9,6 +9,12 @@ val set_program_name : string -> unit
     [set_program]. Defaults to "Merlin". *)
 val program_name : unit -> string
 
+(** [set_cache_period] sets the file cache retention period. Measured in minutes. *)
+val set_cache_period : int -> unit
+
+(** [program ()] returns file cache retention period. Defaults to None. *)
+val cache_period : unit -> int option
+
 module Json : sig
     (** Merlin's logger requires a Json pretty-printer for correct operation.
         [set_pretty_to_string] can be used to provide one. A common pretifier
