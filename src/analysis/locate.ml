@@ -182,7 +182,9 @@ end = struct
   let reset () = state := None
 
   let move_to ~digest file =
-    log ~title:"File_switching.move_to" "%s" file;
+    log ~title:"File_switching.move_to" "file: %s\ndigest: %s" file
+    @@ Digest.to_hex digest;
+
     state := Some { last_file_visited = file ; digest }
 
   let where_am_i () = Option.map !state ~f:last_file_visited
