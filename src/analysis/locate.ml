@@ -449,11 +449,22 @@ let locate ~config ~env ~ml_or_mli decl_uid loc path ns =
 
 let path_and_loc_of_cstr desc _ =
   let open Types in
+  (* At this point the location of a constructor englobs its arguments so we
+    need to shrink it *)
+  let loc_without_args { cstr_name; cstr_loc; _ } =
+    let name_length = String.length cstr_name in
+    let loc_end = { cstr_loc.loc_start with
+      pos_bol = cstr_loc.loc_start.pos_bol + name_length;
+      pos_cnum = cstr_loc.loc_start.pos_cnum + name_length }
+    in
+    { cstr_loc with loc_end }
+  in
+  let loc = loc_without_args desc in
   match desc.cstr_tag with
-  | Cstr_extension (path, _) -> path, desc.cstr_loc
+  | Cstr_extension (path, _) -> path, loc
   | _ ->
     match get_desc desc.cstr_res with
-    | Tconstr (path, _, _) -> path, desc.cstr_loc
+    | Tconstr (path, _, _) -> path, loc
     | _ -> assert false
 
 let path_and_loc_from_label desc env =
@@ -632,11 +643,14 @@ module Env_lookup : sig
     -> Env.t
     -> (Location.t * Shape.Uid.t * Shape.Sig_component_kind.t) option
 
+  (** The latest argument is only true in the constructor case and signal that
+      using the declaration's uid is preferable. Shapes would lead to the
+      definition of the type, not the constructor itself. *)
   val in_namespaces
      : Namespace.inferred list
     -> Longident.t
     -> Env.t
-    -> (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t) option
+    -> (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t * bool) option
 
 end = struct
 
@@ -666,7 +680,7 @@ end = struct
       Not_found -> None
 
   exception Found of
-    (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t)
+    (Path.t * Shape.Sig_component_kind.t * Shape.Uid.t * Location.t * bool)
 
   let in_namespaces (nss : Namespace.inferred list) ident env =
     let open Shape.Sig_component_kind in
@@ -679,60 +693,62 @@ end = struct
               "got extension constructor";
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Extension_constructor, cd.cstr_uid, loc))
+            raise (Found (path, Extension_constructor, cd.cstr_uid, loc, false))
           | `This_cstr cd ->
             log ~title:"lookup"
               "got constructor, fetching path and loc in type namespace";
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Type, cd.cstr_uid,loc))
+            (* The path here is the one of the type, not the constructor *)
+            raise (Found (path, Type, cd.cstr_uid,loc, true))
           | `Constr ->
             log ~title:"lookup" "lookup in constructor namespace" ;
             let cd = Env.find_constructor_by_name ident env in
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)
-            raise (Found (path, Type,cd.cstr_uid, loc))
+            raise (Found (path, Type,cd.cstr_uid, loc, false))
           | `Mod ->
             log ~title:"lookup" "lookup in module namespace" ;
             let path, md = Env.find_module_by_name ident env in
-            raise (Found (path, Module, md.md_uid, md.Types.md_loc))
+            raise (Found (path, Module, md.md_uid, md.Types.md_loc, false))
           | `Modtype ->
             log ~title:"lookup" "lookup in module type namespace" ;
             let path, mtd = Env.find_modtype_by_name ident env in
-            raise (Found (path, Module_type, mtd.mtd_uid, mtd.Types.mtd_loc))
+            raise (Found (path, Module_type, mtd.mtd_uid, mtd.Types.mtd_loc, false))
           | `Type ->
             log ~title:"lookup" "lookup in type namespace" ;
             let path, typ_decl = Env.find_type_by_name ident env in
             raise (
-              Found (path, Type, typ_decl.type_uid, typ_decl.Types.type_loc)
+              Found (path, Type, typ_decl.type_uid, typ_decl.Types.type_loc, false)
             )
           | `Vals ->
             log ~title:"lookup" "lookup in value namespace" ;
             let path, val_desc = Env.find_value_by_name ident env in
             raise (
-              Found (path, Value, val_desc.val_uid, val_desc.Types.val_loc)
+              Found (path, Value, val_desc.val_uid, val_desc.Types.val_loc, false)
             )
           | `This_label lbl ->
             log ~title:"lookup"
               "got label, fetching path and loc in type namespace";
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Type, lbl.lbl_uid, loc))
+            raise (Found (path, Type, lbl.lbl_uid, loc, false))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace" ;
             let lbl = Env.find_label_by_name ident env in
             let path, loc = path_and_loc_from_label lbl env in
             (* TODO: Use [`Labels] here instead of [`Type] *)
-            raise (Found (path, Type, lbl.lbl_uid, loc))
+            raise (Found (path, Type, lbl.lbl_uid, loc, false))
         with Not_found -> ()
       ) ;
       log ~title:"lookup" "   ... not in the environment" ;
       None
-    with Found ((path, namespace, decl_uid, _loc) as x) ->
-      log ~title:"env_lookup" "found: '%a' in namespace %s with uid %a"
+    with Found ((path, namespace, decl_uid, loc, _) as x) ->
+      log ~title:"env_lookup" "found: '%a' in nss %s with uid %a at loc %a"
         Logger.fmt (fun fmt -> Path.print fmt path)
         (Shape.Sig_component_kind.to_string namespace)
-        Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid);
+        Logger.fmt (fun fmt -> Shape.Uid.print fmt decl_uid)
+        Logger.fmt (fun fmt -> Location.print_loc fmt loc);
       Some x
 end
 
@@ -743,12 +759,13 @@ let uid_from_longident ~config ~env nss ml_or_mli ident =
   in
   match Env_lookup.in_namespaces nss ident env with
   | None -> `Not_in_env str_ident
-  | Some (path, namespace, decl_uid, loc) ->
-    if Utils.is_builtin_path path then
-      `Builtin
-    else
-      let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace in
-      `Uid (uid, loc, path)
+  | Some (path, _, _, _, _) when Utils.is_builtin_path path -> `Builtin
+  | Some (path, _namespace, decl_uid, loc, true) ->
+    log ~title:"uid_from_longident" "constructor";
+    `Uid (Some decl_uid, loc, path)
+  | Some (path, namespace, decl_uid, loc, false) ->
+    let uid = uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace in
+    `Uid (uid, loc, path)
 
 let from_longident ~config ~env nss ml_or_mli ident =
   match uid_from_longident ~config ~env nss ml_or_mli ident with

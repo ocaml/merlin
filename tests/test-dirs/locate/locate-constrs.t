@@ -3,46 +3,58 @@
 **/
 
   $ cat >constr.ml <<EOF
-  > type t = A of int |  B
-  > let foo : t = A 42
+  > module C : sig type t = A of int | B end
+  >   = struct type t = A of int | B end
+  > let foo : C.t = C.A 42
   > EOF
 
-  $ $MERLIN single locate -look-for mli -position 2:14 \
+We expect 1:24
+  $ $MERLIN single locate -look-for mli -position 3:18 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
       "line": 1,
-      "col": 9
+      "col": 24
     }
   }
 
 FIXME: this is not a very satisfying answer. 
-We could expect 1:9
-  $ $MERLIN single locate  -look-for ml -position 2:14 \
+We expect 1:20
+  $ $MERLIN single locate  -look-for ml -position 3:12 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
-      "line": 1,
-      "col": 0
+      "line": 2,
+      "col": 11
     }
   }
 
 With the declaration in another compilation unit:
   $ cat >other_module.ml <<EOF
-  > let foo = Constr.B
+  > let foo = Constr.C.B
   > EOF
 
   $ $OCAMLC -c -bin-annot constr.ml
 
-  $ $MERLIN single locate -look-for mli -position 1:17 \
+  $ $MERLIN single locate -look-for mli -position 1:19 \
   > -filename ./other_module.ml < ./other_module.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
       "line": 1,
-      "col": 18
+      "col": 33
+    }
+  }
+
+  $ $MERLIN single locate -look-for ml -position 1:19 \
+  > -filename ./other_module.ml < ./other_module.ml | jq '.value'
+  {
+    "file": "$TESTCASE_ROOT/constr.ml",
+    "pos": {
+      "line": 1,
+      "col": 33
     }
   }
 
