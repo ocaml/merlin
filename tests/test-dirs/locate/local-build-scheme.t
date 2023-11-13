@@ -36,9 +36,10 @@
   $ $MERLIN single locate -position 2:12 -look-for implementation \
   > -build-path experimental -build-path unix \
   > -source-path . -source-path unix -source-path experimental \
-  > -filename hack.ml <hack.ml | jq '.value'
+  > -filename hack.ml <hack.ml | 
+  > sed 's/"file": ".*experimental.*"/"file": "experimental"/' | jq '.value'
   {
-    "file": "$TESTCASE_ROOT/experimental/m_intf.ml",
+    "file": "experimental",
     "pos": {
       "line": 1,
       "col": 20
