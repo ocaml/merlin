@@ -502,6 +502,16 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     if path = "" then `Invalid_context else
       Locate.get_doc ~config
         ~env ~local_defs ~comments ~pos (`User_input path)
+  | Syntax_document _pos ->
+    `No_documentation
+     (* Merlin will:
+      - Parse the file -> AST (Parsetree node)
+      - Type the ast -> TAST (Typedtree node)
+      - Find the node under the cursor
+      - Work with that *)
+    
+    (* TODO *) 
+      
 
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in

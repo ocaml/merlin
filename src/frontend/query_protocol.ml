@@ -133,6 +133,11 @@ type _ t =
        | `Not_found of string * string option
        | `No_documentation
        ] t
+  | Syntax_document
+    : Msource.position
+    -> [ `Builtin of string
+      | `No_documentation
+      ] t
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position
