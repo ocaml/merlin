@@ -94,7 +94,7 @@ type merlin = {
   failures : string list;
   extension_to_reader : (string * string) list;
 
-  cache_period : int
+  cache_lifespan : int
 }
 
 let dump_merlin x =
@@ -131,7 +131,7 @@ let dump_merlin x =
           "reader", `String reader;
         ]) x.extension_to_reader
     );
-    "cache_period"   , Json.string (string_of_int x.cache_period)
+    "cache_lifespan"   , Json.string (string_of_int x.cache_lifespan)
   ]
 
 module Verbosity = struct
@@ -361,9 +361,9 @@ let merlin_flags = [
     "<path> Change path of ocaml standard library"
   );
   (
-    "-cache-period",
+    "-cache-lifespan",
     Marg.param "int" (fun prot merlin ->
-        try {merlin with cache_period = (int_of_string prot)}
+        try {merlin with cache_lifespan = (int_of_string prot)}
         with _ -> invalid_arg "Valid value is int";
       ),
     "Change file cache retention period. It's measured in minutes. \
@@ -638,7 +638,7 @@ let initial = {
 
     failures = [];
     extension_to_reader = [(".re","reason");(".rei","reason")];
-    cache_period = 5;
+    cache_lifespan = 5;
   };
   query = {
     filename = "*buffer*";

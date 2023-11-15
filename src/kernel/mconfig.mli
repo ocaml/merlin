@@ -50,7 +50,7 @@ type merlin = {
 
   failures : string list;
   extension_to_reader : (string * string) list;
-  cache_period : int
+  cache_lifespan : int
 }
 
 val dump_merlin : merlin -> json
