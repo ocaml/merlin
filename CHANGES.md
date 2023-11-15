@@ -3,7 +3,8 @@ merlin NEXT_VERSION
 
   + merlin binary
     - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
-    - Add `--cache-period` flag, that sets cache invalidation period. (#1698)
+    - Add `-cache-lifespan` flag, that sets cache invalidation period. (#1698,
+      #1705)
     - Fix Merlin locate not fallbacking on the correct file in case of ambiguity
       (@goldfirere, #1699)
   + editor modes
