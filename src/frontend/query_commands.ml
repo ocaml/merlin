@@ -502,8 +502,39 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     if path = "" then `Invalid_context else
       Locate.get_doc ~config
         ~env ~local_defs ~comments ~pos (`User_input path)
-  | Syntax_document _pos ->
-    `No_documentation
+  | Syntax_document (patho, pos) ->
+    let typer = Mpipeline.typer_result pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let path =
+      match patho with
+      | Some p -> p
+      | None ->
+        let path = reconstruct_identifier pipeline pos None in
+        let path = Mreader_lexer.identifier_suffix path in
+        let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
+        String.concat ~sep:"." path
+    in
+    if path = "" then `Invalid_context else 
+      let node = Mtyper.node_at typer pos in
+      let get_node_parent = Mbrowse.drop_leaf node in
+      let node_parent = Option.get get_node_parent in
+      let raw_node = snd (Mbrowse.leaf_node node) in
+      let node_name = Mbrowse.print_node () raw_node in 
+      Format.eprintf "%s" (Mbrowse.print() node);
+      let info = 
+        begin 
+          match node_parent, node with
+        | (_, Type_kind _) :: _, (_, Constructor_declaration _) :: _ -> 
+          Syntax_doc.get_syntax_doc node_name
+        | (_, Type_declaration _) :: _, (_, Type_kind Ttype_open) :: _ -> 
+          Syntax_doc.get_syntax_doc node_name
+        | _ -> None
+        end
+      in 
+      (match info with 
+      | Some info -> `Found (Printf.sprintf "%s: %s \ne.g %s \n%s" node_name info.description info.example info.documentation)
+      | _ -> `No_documentation);
+      
      (* Merlin will:
       - Parse the file -> AST (Parsetree node)
       - Type the ast -> TAST (Typedtree node)
