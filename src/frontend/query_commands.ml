@@ -508,16 +508,6 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let node = Mtyper.node_at typer pos in
     Syntax_doc.get_syntax_doc node
 
-      
-     (* Merlin will:
-      - Parse the file -> AST (Parsetree node)
-      - Type the ast -> TAST (Typedtree node)
-      - Find the node under the cursor
-      - Work with that *)
-    
-    (* TODO *) 
-      
-
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
