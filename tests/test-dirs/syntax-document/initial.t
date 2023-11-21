@@ -1,9 +1,14 @@
+ Merlin should print the typedtree 
   $ cat >doc.ml <<EOF
-  > let square x = x * x
-  > (** Calculates the square of a number *)
+  > type t = ..;
   > EOF
 
-  $ $MERLIN single syntax-document -position 1:5 \
-  > -filename doc.ml <doc.ml | jq '.value'
-  "No documentation available"
+  $ $MERLIN single syntax-document -position 1:1 \
+  > -filename doc.ml < doc.ml
 
+  $ cat >doc.ml <<EOF
+  > type t = A; 
+  > EOF
+
+  $ $MERLIN single syntax-document -position 1:1 \
+  > -filename doc.ml < doc.ml
