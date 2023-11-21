@@ -428,7 +428,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style"; "-dump-dir";
+  "-error-style"; "-dump-dir"; "-cmi-file";
 ]
 
 let ocaml_warnings_spec ~error =
