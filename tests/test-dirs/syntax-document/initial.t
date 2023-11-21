@@ -1,4 +1,4 @@
- Merlin should print the typedtree 
+ Merlin should print some documentation
   $ cat >doc.ml <<EOF
   > type t = ..;
   > EOF
