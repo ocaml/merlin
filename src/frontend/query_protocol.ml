@@ -134,8 +134,9 @@ type _ t =
        | `No_documentation
        ] t
   | Syntax_document
-    : Msource.position
-    -> [ `Builtin of string
+    : string option * Msource.position
+    ->[ `Found of string
+      | `Invalid_context
       | `No_documentation
       ] t
   | Locate_type
