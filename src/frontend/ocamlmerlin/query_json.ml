@@ -112,12 +112,8 @@ let dump (type a) : a t -> json =
         );
       "position", mk_position pos;
     ]
-  | Syntax_document (identifier, pos) ->
+  | Syntax_document pos ->
     mk "syntax-document" [
-      "identifier", (match identifier with
-          | None -> `Null
-          | Some ident -> `String ident
-        );
       "position", mk_position pos
     ]
   | Locate (prefix, look_for, pos) ->

@@ -134,7 +134,7 @@ type _ t =
        | `No_documentation
        ] t
   | Syntax_document
-    : string option * Msource.position
+    : Msource.position
     ->[ `Found of string
       | `Invalid_context
       | `No_documentation

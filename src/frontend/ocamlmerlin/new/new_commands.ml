@@ -203,16 +203,14 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
     ~doc: "Returns documentation for OCaml syntax and possibly some AST info for the most interesting entity under the cursor"
     ~spec: [
       arg "-position" "<position> Position to complete"
-          (marg_position (fun pos (ident,_pos) -> (ident,pos)));
-      optional "-identifier" "<string> Identifier"
-          (Marg.param "string" (fun ident (_ident,pos) -> (Some ident,pos)));
+          (marg_position (fun pos _pos -> pos));
     ]
-    ~default:(None,`None)
-    begin fun buffer (ident,pos) ->
-      match pos with
+    ~default: `None
+    begin fun buffer pos ->
+      match pos with 
       | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Syntax_document (ident, pos))
+      | #Msource.position as pos -> 
+        run buffer (Query_protocol.Syntax_document pos)
     end
   ;
 
