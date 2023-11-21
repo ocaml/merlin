@@ -112,8 +112,12 @@ let dump (type a) : a t -> json =
         );
       "position", mk_position pos;
     ]
-  | Syntax_document pos ->
+  | Syntax_document (identifier, pos) ->
     mk "syntax-document" [
+      "identifier", (match identifier with
+          | None -> `Null
+          | Some ident -> `String ident
+        );
       "position", mk_position pos
     ]
   | Locate (prefix, look_for, pos) ->
@@ -386,8 +390,9 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     end
   | Syntax_document _, resp -> 
     begin match resp with 
-      | `No_documentation -> `String "No documentation available"
-      | `Builtin s -> `String (sprintf "%s is a builtin, no documentation is available" s)
+    | `Found doc -> `String doc
+    | `No_documentation -> `String "No documentation available"
+    | `Invalid_context -> `String "Not a valid identifier"
     end
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
