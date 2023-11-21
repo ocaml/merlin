@@ -21,14 +21,7 @@ Since OCaml 5.1 the compiler support the -cmi-file flag:
 
   $ $OCAMLC -c -cmi-file main.cmi main.ml
 
-FIXME: Merlin should ignore the -cmi-file flag
+Merlin should ignore the -cmi-file flag
   $ $MERLIN single errors -cmi-file main.cmi -filename main.ml <main.ml |
   > jq '.value'
-  [
-    {
-      "type": "config",
-      "sub": [],
-      "valid": true,
-      "message": "unknown flag -cmi-file"
-    }
-  ]
+  []
