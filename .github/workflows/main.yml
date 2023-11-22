@@ -38,7 +38,7 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
-          # - windows-latest
+          - windows-latest
         ocaml-compiler:
           - "5.1"
     # The type of runner that the job will run on
@@ -58,6 +58,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          allow-prelease-opam: true
 
       - name: Install dependencies
         run: |
