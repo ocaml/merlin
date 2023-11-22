@@ -24,6 +24,8 @@ val get_errors : result -> exn list
 
 val initial_env : result -> Env.t
 
+val get_cache_stat : result -> string
+
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
  *  2. Check if there is an invalid construct between found env and cursor :
