@@ -7,6 +7,8 @@ merlin NEXT_VERSION
       #1705)
     - Fix Merlin locate not fallbacking on the correct file in case of ambiguity
       (@goldfirere, #1699)
+    - Fix Merlin reporting errors provoked by the recovery itself (#1709, fixes
+      #1704)
   + editor modes
     - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
 
