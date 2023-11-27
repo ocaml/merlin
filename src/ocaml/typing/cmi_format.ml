@@ -35,7 +35,7 @@ type cmi_infos = {
 }
 
 let input_cmi ic =
-  let (name, sign) = (input_value ic : header) in
+  let (name, sign) = (Ocaml_compression.input_value ic : header) in
   let crcs = (input_value ic : crcs) in
   let flags = (input_value ic : flags) in
   {
@@ -76,7 +76,7 @@ let read_cmi filename =
 let output_cmi filename oc cmi =
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
-  output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
+  Ocaml_compression.output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
   flush oc;
   let crc = Digest.file filename in
   let crcs = (cmi.cmi_name, Some crc) :: cmi.cmi_crcs in
