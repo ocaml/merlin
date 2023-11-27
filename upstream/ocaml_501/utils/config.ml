@@ -27,13 +27,13 @@ let c_compiler = {|gcc|}
 let c_output_obj = {|-o |}
 let c_has_debug_prefix_map = true
 let as_has_debug_prefix_map = false
-let ocamlc_cflags = {|-O2 -fno-strict-aliasing -fwrapv -pthread  |}
+let ocamlc_cflags = {| -O2 -fno-strict-aliasing -fwrapv -pthread   -pthread|}
 let ocamlc_cppflags = {| -D_FILE_OFFSET_BITS=64 |}
 (* #7678: ocamlopt uses these only to compile .c files, and the behaviour for
           the two drivers should be identical. *)
-let ocamlopt_cflags = {|-O2 -fno-strict-aliasing -fwrapv -pthread  |}
+let ocamlopt_cflags = {| -O2 -fno-strict-aliasing -fwrapv -pthread   -pthread|}
 let ocamlopt_cppflags = {| -D_FILE_OFFSET_BITS=64 |}
-let bytecomp_c_libraries = {| -L/opt/homebrew/Cellar/zstd/1.5.2/lib -lzstd -lm  -lpthread|}
+let bytecomp_c_libraries = {| -L/opt/homebrew/opt/zstd/lib -lzstd   -lpthread|}
 (* bytecomp_c_compiler and native_c_compiler have been supported for a
    long time and are retained for backwards compatibility.
    For programs that don't need compatibility with older OCaml releases
@@ -44,36 +44,17 @@ let bytecomp_c_compiler =
   c_compiler ^ " " ^ ocamlc_cflags ^ " " ^ ocamlc_cppflags
 let native_c_compiler =
   c_compiler ^ " " ^ ocamlopt_cflags ^ " " ^ ocamlopt_cppflags
-let native_c_libraries = {| -L/opt/homebrew/Cellar/zstd/1.5.2/lib -lzstd -lm  -lpthread|}
+let native_c_libraries = {| -L/opt/homebrew/opt/zstd/lib -lzstd   -lpthread|}
+let native_ldflags = {||}
 let native_pack_linker = {|ld -r -o |}
 let default_rpath = {||}
 let mksharedlibrpath = {||}
 let ar = {|ar|}
 let supports_shared_libraries = true
 let native_dynlink = true
-let mkdll, mkexe, mkmaindll =
-  if Sys.win32 || Sys.cygwin && supports_shared_libraries then
-    let flexlink =
-      let flexlink =
-        Option.value ~default:"flexlink" (Sys.getenv_opt "OCAML_FLEXLINK")
-      in
-      let f i =
-        let c = flexlink.[i] in
-        if c = '/' && Sys.win32 then '\\' else c
-      in
-      String.init (String.length flexlink) f
-    in
-    let flexdll_chain = {||} in
-    let flexlink_flags = {||} in
-    let flags = " -chain " ^ flexdll_chain ^ " " ^ flexlink_flags in
-    flexlink ^ flags ^ {| |},
-    flexlink ^ " -exe" ^ flags
-      ^ {| |} ^ {| |},
-    flexlink ^ " -maindll" ^ flags ^ {| |}
-  else
-    {|gcc -shared -undefined dynamic_lookup -Wl,-w  |},
-    {|gcc -O2 -fno-strict-aliasing -fwrapv -pthread   |},
-    {|gcc -shared -undefined dynamic_lookup -Wl,-w|}
+let mkdll = {|gcc -shared -undefined dynamic_lookup -Wl,-w  |}
+let mkexe = {|gcc -O2 -fno-strict-aliasing -fwrapv -pthread  -pthread  |}
+let mkmaindll = {|gcc -shared -undefined dynamic_lookup -Wl,-w  |}
 
 let flambda = false
 let with_flambda_invariants = false
@@ -102,15 +83,18 @@ let ext_asm = "." ^ {|s|}
 let ext_lib = "." ^ {|a|}
 let ext_dll = "." ^ {|so|}
 
-let host = {|aarch64-apple-darwin22.3.0|}
-let target = {|aarch64-apple-darwin22.3.0|}
+let host = {|aarch64-apple-darwin23.0.0|}
+let target = {|aarch64-apple-darwin23.0.0|}
 
 let systhread_supported = true
 
 let flexdll_dirs = []
 
 let ar_supports_response_files = true
-#2 "utils/config.common.ml"
+
+let tsan = false
+(* utils/config.common.ml.  Generated from config.common.ml.in by configure. *)
+#3 "utils/config.common.ml.in"
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -140,26 +124,18 @@ let standard_library =
   with Not_found ->
     standard_library_default
 
-let exec_magic_number = "Caml1999X033"
+let exec_magic_number = {magic|Caml1999X033|magic}
     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
-and cmi_magic_number = "Caml1999I033"
-and cmo_magic_number = "Caml1999O033"
-and cma_magic_number = "Caml1999A033"
-and cmx_magic_number =
-  if flambda then
-    "Caml1999y033"
-  else
-    "Caml1999Y033"
-and cmxa_magic_number =
-  if flambda then
-    "Caml1999z033"
-  else
-    "Caml1999Z033"
-and ast_impl_magic_number = "Caml1999M033"
-and ast_intf_magic_number = "Caml1999N033"
-and cmxs_magic_number = "Caml1999D033"
-and cmt_magic_number = "Caml1999T033"
-and linear_magic_number = "Caml1999L033"
+and cmi_magic_number = {magic|Caml1999I033|magic}
+and cmo_magic_number = {magic|Caml1999O033|magic}
+and cma_magic_number = {magic|Caml1999A033|magic}
+and cmx_magic_number = {magic|Caml1999Y033|magic}
+and cmxa_magic_number = {magic|Caml1999Z033|magic}
+and ast_impl_magic_number = {magic|Caml1999M033|magic}
+and ast_intf_magic_number = {magic|Caml1999N033|magic}
+and cmxs_magic_number = {magic|Caml1999D033|magic}
+and cmt_magic_number = {magic|Caml1999T033|magic}
+and linear_magic_number = {magic|Caml1999L033|magic}
 
 let safe_string = true
 let default_safe_string = true
@@ -204,6 +180,7 @@ let configuration_variables () =
   p "native_c_compiler" native_c_compiler;
   p "bytecomp_c_libraries" bytecomp_c_libraries;
   p "native_c_libraries" native_c_libraries;
+  p "native_ldflags" native_ldflags;
   p "native_pack_linker" native_pack_linker;
   p_bool "native_compiler" native_compiler;
   p "architecture" architecture;
@@ -230,6 +207,7 @@ let configuration_variables () =
   p_bool "flat_float_array" flat_float_array;
   p_bool "function_sections" function_sections;
   p_bool "afl_instrument" afl_instrument;
+  p_bool "tsan" tsan;
   p_bool "windows_unicode" windows_unicode;
   p_bool "supports_shared_libraries" supports_shared_libraries;
   p_bool "native_dynlink" native_dynlink;
