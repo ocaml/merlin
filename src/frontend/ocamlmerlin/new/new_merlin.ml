@@ -121,7 +121,7 @@ let run = function
           in
           let cpu_time = Misc.time_spent () -. start_cpu in
           let gc_stats = Gc.quick_stat () in
-          let heap_mbytes = gc_stats.heap_words * 8 / 1_000_000 in
+          let heap_mbytes = gc_stats.heap_words * (Sys.word_size / 8) / 1_000_000 in
           let clock_time = Unix.gettimeofday () *. 1000. -. start_clock in
           let timing = Mpipeline.timing_information pipeline in
           let pipeline_time =
