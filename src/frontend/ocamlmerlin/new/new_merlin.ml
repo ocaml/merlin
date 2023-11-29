@@ -120,6 +120,8 @@ let run = function
                 ("error", `String (Format.flush_str_formatter ()))
           in
           let cpu_time = Misc.time_spent () -. start_cpu in
+          let gc_stats = Gc.quick_stat () in
+          let heap_mbytes = gc_stats.heap_words * 8 / 1_000_000 in
           let clock_time = Unix.gettimeofday () *. 1000. -. start_clock in
           let timing = Mpipeline.timing_information pipeline in
           let pipeline_time =
@@ -134,7 +136,8 @@ let run = function
           `Assoc [
             "class", `String class_; "value", message;
             "notifications", `List (List.rev_map notify !notifications);
-            "timing", `Assoc (List.map format_timing timing)
+            "timing", `Assoc (List.map format_timing timing);
+            "heap_mbytes", `Int heap_mbytes
           ]
         in
         log ~title:"run(result)" "%a" Logger.json (fun () -> json);
