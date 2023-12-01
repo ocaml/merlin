@@ -1,5 +1,6 @@
-merlin NEXT_VERSION
-===================
+merlin 4.13
+===========
+Fri Dec  1 15:00:42 CET 2023
 
   + merlin binary
     - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
