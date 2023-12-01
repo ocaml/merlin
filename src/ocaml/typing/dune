@@ -7,4 +7,4 @@
    -open Merlin_utils
    (:standard -w -9))
   (modules_without_implementation annot outcometree)
-  (libraries merlin_utils ocaml_parsing ocaml_utils))
+  (libraries merlin_utils ocaml_compression ocaml_parsing ocaml_utils))

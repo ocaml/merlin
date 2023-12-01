@@ -1,5 +1,5 @@
-merlin 4.13
-===========
+merlin 4.13.1
+=============
 Fri Dec  1 15:00:42 CET 2023
 
   + merlin binary
@@ -12,6 +12,7 @@ Fri Dec  1 15:00:42 CET 2023
       (@goldfirere, #1699)
     - Fix Merlin reporting errors provoked by the recovery itself (#1709, fixes
       #1704)
+    - Add support for OCaml 5.1.1 (#1714)
   + editor modes
     - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
     - emacs: highlight only first error line by default (#1693, fixes #1663)
