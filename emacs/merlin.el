@@ -153,7 +153,7 @@ If a string list, check only if the extension of the buffer-file-name
   "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-error-on-single-line nil
+(defcustom merlin-error-on-single-line t
   "Only highlight first line of multi-line error messages"
   :group 'merlin :type 'boolean)
 

@@ -11,6 +11,7 @@ merlin NEXT_VERSION
       #1704)
   + editor modes
     - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+    - emacs: highlight only first error line by default (#1693, fixes #1663)
 
 merlin 4.12
 ===========
