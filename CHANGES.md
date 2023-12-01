@@ -6,6 +6,8 @@ merlin NEXT_VERSION
     - Add `--cache-period` flag, that sets cache invalidation period. (#1698)
     - Ignore the new 5.1 `cmi-file` flag instead of rejecting it (#1710, fixes
       #1703)
+    - Fix Merlin locate not fallbacking on the correct file in case of ambiguity
+      (@goldfirere, #1699)
   + editor modes
     - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
 
