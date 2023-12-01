@@ -20,8 +20,8 @@ FIXME: We should not rely on "fallbacking". This requires a compiler change.
   $ $MERLIN single document -position 1:13 \
   > -log-file - -log-section locate \
   > -filename main.ml <main.ml 2>&1 | 
-  > grep "Uid not found in the cmt table"
-  Uid not found in the cmt table. Fallbacking to the node's location: File "naux.ml", line 2, characters 2-5
+  > grep "Uid not found in the table."
+  Uid not found in the table.
 
 FIXME: expected "B Comment"
   $ $MERLIN single document -position 2:13 \

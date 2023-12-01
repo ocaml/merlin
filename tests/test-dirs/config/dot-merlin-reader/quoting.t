@@ -67,7 +67,7 @@
         "reader": "reason"
       }
     ],
-    "cache_period": "5"
+    "cache_lifespan": "5"
   }
 
   $ rm .merlin
