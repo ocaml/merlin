@@ -194,7 +194,7 @@ a new window or not."
   "If non-nil, use this file for the log file (should be an absolute path)."
   :group 'merlin :type 'file)
 
-(defcustom merlin-cache-period nil
+(defcustom merlin-cache-lifespan nil
   "If non-nil, use this value for cache period (measured in minutes)."
   :group 'merlin :type 'natnum)
 
@@ -554,8 +554,8 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
                   (cons "-flags" merlin-buffer-flags))
                 (when filename
                   (cons "-filename" filename))
-                (when merlin-cache-period
-                  (cons "-cache-period" (number-to-string merlin-cache-period)))
+                (when merlin-cache-lifespan
+                  (cons "-cache-lifespan" (number-to-string merlin-cache-lifespan)))
                 args))
     ;; Log last commands
     (setq merlin-debug-last-commands

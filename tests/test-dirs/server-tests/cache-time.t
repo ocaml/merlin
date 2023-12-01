@@ -16,18 +16,18 @@
   > EOF
 
 Let's populate file cache
-  $ $MERLIN server errors -log-file merlin_logs -cache-period 45 \
+  $ $MERLIN server errors -log-file merlin_logs -cache-lifespan 45 \
   > -filename main.ml 1> /dev/null <main.ml
 
 When cache time is set to large value, we keep the cache
-  $ $MERLIN server errors -log-file merlin_logs -cache-period 45 \
+  $ $MERLIN server errors -log-file merlin_logs -cache-lifespan 45 \
   > -filename main.ml 1> /dev/null <main.ml
   $ cat merlin_logs | grep -A1 "File_cache(Cmi_cache) - flush" \
   > | tail -1 | sed 's/\ ".*\"//'
   keeping
 
 When cache time is set to 0, file cache gets flushed
-  $ $MERLIN server errors -log-file merlin_logs -cache-period 0 \
+  $ $MERLIN server errors -log-file merlin_logs -cache-lifespan 0 \
   > -filename main.ml 1> /dev/null <main.ml
   $ cat merlin_logs | grep -A1 "File_cache(Cmi_cache) - flush" \
   > | tail -1 | sed 's/\ ".*\"//'
