@@ -1,0 +1,1 @@
+let f (type t) (x: t): bool = x = x
