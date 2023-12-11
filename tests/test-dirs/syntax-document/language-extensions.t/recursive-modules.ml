@@ -10,6 +10,5 @@ end = struct
     | (Node _, Leaf _) -> -1
     | (Node n1, Node n2) -> ASet.compare n1 n2
 end
-
 and ASet : Set.S with type elt = A.t
 = Set.Make(A)
