@@ -81,7 +81,7 @@ let get_syntax_doc node =
       :: _ ->
         Some
           {
-            name = "Abstract variant types";
+            name = "Abstract types";
             description =
               "Allows you to define variants with arbitrary data structures, \
                including other variants, records, and functions";
@@ -93,7 +93,7 @@ let get_syntax_doc node =
       :: _ ->
         Some
           {
-            name = "Record variant types";
+            name = "Record types";
             description =
               "Allows you to define variants with a fixed set of fields, and \
                all of the constructors for a record variant type must have the \
@@ -117,7 +117,7 @@ let get_syntax_doc node =
       :: _ ->
         Some
           {
-            name = "Private Variant Types";
+            name = "Private Types";
             description =
               "Values of a variant type declared private can be de-structured \
                normally in pattern-matching. However, values of these types \
