@@ -102,7 +102,7 @@ type t = {
 
   ppx_cache_hit : bool ref;
   reader_cache_hit : bool ref;
-  buffer_cache_stats : string ref;
+  typer_cache_stats : Mtyper.typer_cache_stats ref;
 }
 
 let raw_source t = t.raw_source
@@ -237,7 +237,7 @@ let process
     ?(error_time=ref 0.0)
     ?(ppx_cache_hit = ref false)
     ?(reader_cache_hit = ref false)
-    ?(buffer_cache_stats = ref "")
+    ?(typer_cache_stats = ref Mtyper.Miss)
     ?for_completion
     config raw_source =
   let state = match state with
@@ -288,7 +288,7 @@ let process
       let (lazy {
             Reader.result = { Mreader.parsetree; _ };
             config;
-            cache_version
+            cache_version;
           }) = reader
       in
       let caught = ref [] in
@@ -313,12 +313,12 @@ let process
       Mocaml.setup_typer_config config;
       let result = Mtyper.run config parsetree in
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
-      buffer_cache_stats := Mtyper.get_cache_stat result;
+      typer_cache_stats := Mtyper.get_cache_stat result;
       { Typer. errors; result }
     )) in
   { config; state; raw_source; source; reader; ppx; typer;
     pp_time; reader_time; ppx_time; typer_time; error_time;
-    ppx_cache_hit; reader_cache_hit; buffer_cache_stats }
+    ppx_cache_hit; reader_cache_hit; typer_cache_stats }
 
 let make config source =
   process (Mconfig.normalize config) source
@@ -338,17 +338,28 @@ let timing_information t = [
 ]
 
 let cache_information t =
-  let fmt_bool hit = if hit then "hit" else "miss" in
-  let phase = ("phase", [
-  "reader" , fmt_bool !(t.reader_cache_hit);
-  "ppx"    , fmt_bool !(t.ppx_cache_hit);
-  ]) in
-  let fmt_file (filename, hit) = (filename, fmt_bool hit) in
-  let cmt = ("cmt", List.map ~f:fmt_file (Cmt_cache.get_cache_stats ())) in
-  let cmi = ("cmi", List.map ~f:fmt_file (Cmi_cache.get_cache_stats ())) in
+  let typer =
+    match !(t.typer_cache_stats) with
+    | Miss -> `String "miss"
+    | Hit { reused; typed } ->
+      `Assoc
+        [ "reused" , `Int reused;
+          "typed", `Int typed
+        ]
+  in
+  let fmt_hit_miss h m =
+    `Assoc [ "hit", `Int h; "miss", `Int m ] in
+  let cmt_stat = Cmt_cache.get_cache_stats () in
+  let cmt = fmt_hit_miss cmt_stat.hit cmt_stat.miss in
+  let cmi_stat = Cmi_cache.get_cache_stats () in
+  let cmi = fmt_hit_miss cmi_stat.hit cmi_stat.miss in
   Cmt_cache.clear_cache_stats ();
   Cmi_cache.clear_cache_stats ();
-  let buffer = ("buffer", [
-      "stats", !(t.buffer_cache_stats)
-  ]) in
-  [phase; cmt; cmi; buffer]
+  let fmt_bool hit = `String (if hit then "hit" else "miss") in
+  `Assoc [
+    "reader_phase" , fmt_bool !(t.reader_cache_hit);
+    "ppx_phase"    , fmt_bool !(t.ppx_cache_hit);
+    "typer"        , typer;
+    "cmt"          , cmt;
+    "cmi"          , cmi
+  ]

@@ -132,17 +132,13 @@ let run = function
           let notify { Logger.section; msg } =
             `String (Printf.sprintf "%s: %s" section msg)
           in
-          let cache = Mpipeline.cache_information pipeline in
-          let format_cache (k,v) =
-            let fmt_str (k, v) = (k, `String v) in
-            (k, `Assoc (List.map fmt_str v)) in
           let format_timing (k,v) = (k, `Int (int_of_float (0.5 +. v))) in
           `Assoc [
             "class", `String class_; "value", message;
             "notifications", `List (List.rev_map notify !notifications);
             "timing", `Assoc (List.map format_timing timing);
-            "heap_mbytes", `Int heap_mbytes
-            "cache", `Assoc (List.map format_cache cache)
+            "heap_mbytes", `Int heap_mbytes;
+            "cache", Mpipeline.cache_information pipeline
           ]
         in
         log ~title:"run(result)" "%a" Logger.json (fun () -> json);

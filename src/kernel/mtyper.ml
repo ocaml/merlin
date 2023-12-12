@@ -19,6 +19,8 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
+
 let cache = s_ref None
 
 let fresh_env config =
@@ -51,7 +53,7 @@ type result = {
     | `Implementation of
         (Parsetree.structure_item, Typedtree.structure_item) item list
   ];
-  cache_stat : string
+  cache_stat : typer_cache_stats
 }
 
 let initial_env res = res.initial_env
@@ -65,10 +67,11 @@ let compatible_prefix result_items tree_items =
         && compare ritem.parsetree_item pitem = 0 ->
       aux (ritem :: acc) (ritems, pitems)
     | (_, pitems) ->
-      let cache_stat = Printf.sprintf "reusing %d items, %d new items to type"
-        (List.length acc) (List.length pitems) in
+      let reused = List.length acc in
+      let typed = List.length pitems in
+      let cache_stat = Hit { reused; typed } in
       log ~title:"compatible_prefix" "reusing %d items, %d new items to type"
-        (List.length acc) (List.length pitems);
+        reused typed;
       acc, pitems, cache_stat
   in
   aux [] (result_items, tree_items)
@@ -111,7 +114,7 @@ let type_implementation config caught parsetree =
   let prefix, parsetree, cache_stat =
     match prefix with
     | Some (`Implementation items) -> compatible_prefix items parsetree
-    | Some (`Interface _) | None -> ([], parsetree, "miss")
+    | Some (`Interface _) | None -> ([], parsetree, Miss)
   in
   let env', snap', stamp', warn' = match prefix with
     | [] -> (env0, snap0, stamp0, Warnings.backup ())
@@ -132,7 +135,7 @@ let type_interface config caught parsetree =
   let prefix, parsetree, cache_stat =
     match prefix with
     | Some (`Interface items) -> compatible_prefix items parsetree
-    | Some (`Implementation _) | None -> ([], parsetree, "miss")
+    | Some (`Implementation _) | None -> ([], parsetree, Miss)
   in
   let env', snap', stamp', warn' = match prefix with
     | [] -> (env0, snap0, stamp0, Warnings.backup ())
