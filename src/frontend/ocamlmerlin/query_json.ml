@@ -388,7 +388,6 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     begin match resp with 
     | `Found doc -> `String doc
     | `No_documentation -> `String "No documentation available"
-    | `Invalid_context -> `String "Not a valid identifier"
     end
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp

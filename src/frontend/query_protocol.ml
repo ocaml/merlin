@@ -136,7 +136,6 @@ type _ t =
   | Syntax_document
     : Msource.position
     ->[ `Found of string
-      | `Invalid_context
       | `No_documentation
       ] t
   | Locate_type
