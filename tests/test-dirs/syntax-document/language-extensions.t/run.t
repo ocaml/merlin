@@ -7,7 +7,7 @@
 
   $ $MERLIN single syntax-document -position 1:6 \
   > -filename ./main.ml < ./main.ml
-  [ expression; expression; value_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Recursive definitions of values",
@@ -47,7 +47,7 @@
 
   $ $MERLIN single syntax-document -position 1:8 \
   > -filename ./rec-modules.ml < ./rec-modules.ml
-  [ module_expr; module_expr; module_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Recursive modules",
@@ -59,7 +59,7 @@
 // Types in modules
   $ $MERLIN single syntax-document -position 5:5 \
   > -filename ./rec-modules.ml < ./rec-modules.ml
-  [ core_type; constructor_declaration; type_kind; type_declaration; structure_item; structure; module_expr; module_expr; module_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Variant Types",
@@ -71,7 +71,7 @@
 // Nested recurvise module
   $ $MERLIN single syntax-document -position 16:11 \
   > -filename ./rec-modules.ml < ./rec-modules.ml
-  [ module_expr; module_expr; module_binding; structure_item; structure; module_expr; module_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Recursive modules",
@@ -94,7 +94,7 @@
 
   $ $MERLIN single syntax-document -position 2:23 \
   > -filename ./rec-mod-type.ml < ./rec-mod-type.ml
-  [ module_expr; module_type; include_description; signature_item; signature; module_type; module_type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Recovering the type of a module",
@@ -106,7 +106,7 @@
 
   $ $MERLIN single syntax-document -position 5:29 \
   > -filename ./rec-mod-type.ml < ./rec-mod-type.ml
-  [ module_expr; module_type; module_expr; module_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Recovering the type of a module",
@@ -153,7 +153,7 @@
 // Destructive substitutions
   $ $MERLIN single syntax-document -position 11:27 \
   > -filename ./sig-subs.ml < ./sig-subs.ml
-  [ type_kind; type_declaration; with_constraint; module_type; include_description; signature_item; signature; module_type; module_type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Signature Substitution - Destructive substitutions",
@@ -165,7 +165,7 @@
 // Local substitutions
   $ $MERLIN single syntax-document -position 16:12 \
   > -filename ./sig-subs.ml < ./sig-subs.ml
-  [ type_kind; type_declaration; signature_item; signature; module_type; module_declaration; signature_item; signature; module_type; module_type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Signature Substitution - Local substitution",
@@ -174,6 +174,9 @@
     },
     "notifications": []
   }
+ // Module type substitutions
+$ $MERLIN single syntax-document -position 26:58 \
+> -filename ./sig-subs.ml < ./sig-subs.ml
 
 
 // Types
@@ -186,7 +189,7 @@
 // Extensible Variant types
   $ $MERLIN single syntax-document -position 1:5 \
   > -filename ./types.ml < ./types.ml
-  [ type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Extensible variant types",
@@ -198,7 +201,7 @@
 // Variant types
   $ $MERLIN single syntax-document -position 2:5 \
   > -filename ./types.ml < ./types.ml
-  [ constructor_declaration; type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Variant Types",
@@ -210,7 +213,7 @@
 // Empty variant types
   $ $MERLIN single syntax-document -position 3:5 \
   > -filename ./types.ml < ./types.ml
-  [ type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Empty Variant types",
@@ -222,7 +225,7 @@
 // Record types
   $ $MERLIN single syntax-document -position 4:5 \
   > -filename ./types.ml < ./types.ml
-  [ core_type; core_type; label_declaration; type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Record types",
@@ -234,7 +237,7 @@
 // Abstract types
   $ $MERLIN single syntax-document -position 5:5 \
   > -filename ./types.ml < ./types.ml
-  [ type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Abstract types",
@@ -265,7 +268,7 @@
 // Private extensible 
   $ $MERLIN single syntax-document -position 1:14 \
   > -filename ./p-types.ml < ./p-types.ml 
-  [ type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Private Extensible Types",
@@ -277,7 +280,7 @@
 // Private variant
   $ $MERLIN single syntax-document -position 2:14 \
   > -filename ./private-types.ml < ./p-types.ml 
-  [ constructor_declaration; type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Private Types",
@@ -289,7 +292,7 @@
 // Private variant b
   $ $MERLIN single syntax-document -position 3:14 \
   > -filename ./p-types.ml < ./p-types.ml
-  [ core_type; constructor_declaration; type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Private Types",
@@ -301,7 +304,7 @@
 // Private record
   $ $MERLIN single syntax-document -position 4:14 \
   > -filename ./p-types.ml < ./p-types.ml 
-  [ core_type; core_type; label_declaration; type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Private Record Types",
@@ -313,7 +316,7 @@
 // Private types - Abbreviations
   $ $MERLIN single syntax-document -position 5:14 \
   > -filename ./p-types.ml < ./p-types.ml 
-  [ type_kind; type_declaration; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Private Type Abbreviations",
@@ -325,7 +328,7 @@
 
   $ $MERLIN single syntax-document -position 7:14 \
   > -filename ./p-types.ml < ./p-types.ml
-  [ type_kind; type_declaration; signature_item; signature; module_type; module_type_constraint; module_expr; module_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Private Type Abbreviations",
@@ -337,7 +340,7 @@
 // Abstract
   $ $MERLIN single syntax-document -position 11:7 \
   > -filename ./p-types.ml < ./p-types.ml
-  [ type_kind; type_declaration; structure_item; structure; module_expr; module_expr; module_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Abstract types",
@@ -361,7 +364,7 @@
 // Locally abstract data types
   $ $MERLIN single syntax-document -position 1:17 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
-  [ expression; expression; case; expression; value_binding; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Locally Abstract Type",
@@ -370,7 +373,9 @@
     },
     "notifications": []
   }
-
+// Locally abstract data types B
+$ $MERLIN single syntax-document -position 3:20 \
+> -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
 
 // Syntax for Bigarray access
   $ cat > bg-access.ml << EOF
@@ -383,7 +388,7 @@
 // Bigarray access - get
   $ $MERLIN single syntax-document -position 3:1 \
   > -filename ./bg-access.ml < ./bg-access.ml
-  [ expression; expression; expression; expression; expression; expression; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Syntax for Bigarray Access",
@@ -395,7 +400,7 @@
 // Bigarray access - set
   $ $MERLIN single syntax-document -position 4:1 \
   > -filename ./bg-access.ml < ./bg-access.ml
-  [ expression; expression; expression; expression; expression; expression; structure_item; structure ]{
+  {
     "class": "return",
     "value": {
       "name": "Syntax for Bigarray Access",
