@@ -96,6 +96,13 @@ type error_filter = {
   typing : bool;
 }
 
+type info = 
+{ 
+    name : string; 
+    description : string; 
+    documentation : string 
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -135,7 +142,7 @@ type _ t =
        ] t
   | Syntax_document
     : Msource.position
-    ->[ `Found of string
+    ->[ `Found of info 
       | `No_documentation
       ] t
   | Locate_type
