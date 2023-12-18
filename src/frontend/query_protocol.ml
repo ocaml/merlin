@@ -96,7 +96,7 @@ type error_filter = {
   typing : bool;
 }
 
-type info = 
+type syntax_doc_result = 
 { 
     name : string; 
     description : string; 
@@ -142,7 +142,7 @@ type _ t =
        ] t
   | Syntax_document
     : Msource.position
-    ->[ `Found of info 
+    ->[ `Found of syntax_doc_result
       | `No_documentation
       ] t
   | Locate_type

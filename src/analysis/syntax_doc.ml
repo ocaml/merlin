@@ -1,8 +1,8 @@
 open Browse_raw
 
-type info = Query_protocol.info
+type syntax_info = Query_protocol.syntax_doc_result
 
-let get_syntax_doc node : info =
+let get_syntax_doc node : syntax_info =
   match node with
   | (_, Type_kind _)
     :: (_, Type_declaration _)
