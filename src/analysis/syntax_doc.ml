@@ -1,6 +1,6 @@
 open Browse_raw
 
-type syntax_info = Query_protocol.syntax_doc_result
+type syntax_info = Query_protocol.syntax_doc_result option
 
 let get_syntax_doc node : syntax_info =
   match node with
@@ -8,7 +8,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_declaration _)
     :: (_, With_constraint (Twith_typesubst _))
     :: _ ->
-      {
+      Some {
         name = "Signature Substitution - Destructive substitutions";
         description =
           "Behaves essentially like normal signature constraints, but it \
@@ -21,7 +21,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_declaration _)
     :: (_, Signature_item ({ sig_desc = Tsig_typesubst _; _ }, _))
     :: _ ->
-      {
+      Some {
         name = "Signature Substitution - Local substitution";
         description =
           "Local substitutions behave like destructive substitutions `(with \
@@ -38,7 +38,7 @@ let get_syntax_doc node : syntax_info =
            (Tmodtype_explicit
              { mty_desc = Tmty_with (_, [ (_, _, Twith_modtype _) ]); _ }) )
     :: _ ->
-      {
+      Some {
         name = "Signature Substitution - Module substitution";
         description =
           "Module type substitution essentially behaves like type \
@@ -51,7 +51,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-      {
+     Some {
         name = "Variant Types";
         description =
           "Let's you represent data that may take on multiple different forms.";
@@ -63,7 +63,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-      {
+     Some {
         name = "Variant Types";
         description =
           "Let's you represent data that may take on multiple different forms.";
@@ -73,7 +73,7 @@ let get_syntax_doc node : syntax_info =
   | (_, Type_kind Ttype_open)
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-      {
+     Some {
         name = "Extensible variant types";
         description = "Can be extended with new variant constructors using +=.";
         documentation = "https://v2.ocaml.org/manual/extensiblevariants.html";
@@ -81,7 +81,7 @@ let get_syntax_doc node : syntax_info =
   | (_, Type_kind Ttype_abstract)
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-      {
+     Some {
         name = "Abstract types";
         description =
           "Allows you to define variants with arbitrary data structures, \
@@ -94,7 +94,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_record _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-      {
+     Some {
         name = "Record types";
         description =
           "Allows you to define variants with a fixed set of fields, and all \
@@ -104,7 +104,7 @@ let get_syntax_doc node : syntax_info =
       }
   | (_, Type_kind _) :: (_, Type_declaration { typ_private = Public; _ }) :: _
     ->
-      {
+     Some {
         name = "Empty Variant types";
         description = "This extension allows the user to define empty variants.";
         documentation = "https://v2.ocaml.org/manual/emptyvariants.html";
@@ -113,7 +113,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Private; _ })
     :: _ ->
-      {
+     Some {
         name = "Private Types";
         description =
           "Values of a variant type declared private can be de-structured \
@@ -127,7 +127,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Private; _ })
     :: _ ->
-      {
+     Some {
         name = "Private Types";
         description =
           "Values of a variant type declared private can be de-structured \
@@ -141,7 +141,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_record _))
     :: (_, Type_declaration { typ_private = Private; _ })
     :: _ ->
-      {
+     Some {
         name = "Private Record Types";
         description =
           "Values of a record type declared private can be de-structured via \
@@ -153,7 +153,7 @@ let get_syntax_doc node : syntax_info =
   | (_, Type_kind Ttype_open)
     :: (_, Type_declaration { typ_private = Private; _ })
     :: _ ->
-      {
+     Some {
         name = "Private Extensible Types";
         description =
           "Enable libraries to reveal , but not all aspects of the \
@@ -164,7 +164,7 @@ let get_syntax_doc node : syntax_info =
   | (_, Type_kind Ttype_abstract)
     :: (_, Type_declaration { typ_private = Private; _ })
     :: _ ->
-      {
+     Some {
         name = "Private Type Abbreviations";
         description =
           "A private type abbreviation declares a type that is distinct from \
@@ -177,7 +177,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Value_binding _)
     :: (_, Structure_item ({ str_desc = Tstr_value (Recursive, _); _ }, _))
     :: _ ->
-      {
+     Some {
         name = "Recursive definitions of values";
         description =
           "The `let rec` binding construct, in addition to the definition of \
@@ -190,7 +190,7 @@ let get_syntax_doc node : syntax_info =
           "https://v2.ocaml.org/releases/5.1/htmlman/recvalues.html";
       }
   | [ (_, Structure _) ] ->
-      {
+     Some {
         name = "Documentation comments";
         description =
           "Automatically converted during parsing into attributes to allow \
@@ -200,7 +200,7 @@ let get_syntax_doc node : syntax_info =
       }
   | (_, Module_expr _) :: (_, Module_type { mty_desc = Tmty_typeof _; _ }) :: _
     ->
-      {
+     Some {
         name = "Recovering the type of a module";
         description =
           "The construction `module type of module-expr` expands to the module \
@@ -214,7 +214,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Module_binding _)
     :: (_, Structure_item ({ str_desc = Tstr_recmodule _; _ }, _))
     :: _ ->
-      {
+     Some {
         name = "Recursive modules";
         description =
           "Recursive module definitions, introduced by the `module rec …and …` \
@@ -234,7 +234,7 @@ let get_syntax_doc node : syntax_info =
          Value_binding
            { vb_expr = { exp_extra = [ (Texp_newtype' _, _, _) ]; _ }; _ } )
     :: _ ->
-      {
+     Some {
         name = "Locally Abstract Type";
         description =
           "The expression `fun ( type typeconstr-name ) -> expr` introduces a \
@@ -258,7 +258,7 @@ let get_syntax_doc node : syntax_info =
              _;
            } )
     :: _ ->
-      {
+     Some {
         name = "First class modules";
         description =
           "The expression ( `module module-expr : package-type` ) converts the \
@@ -275,7 +275,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Expression _)
     :: (_, Expression _)
     :: _ ->
-      {
+     Some {
         name = "Syntax for Bigarray Access";
         description =
           "This extension provides syntactic sugar for getting and setting \
@@ -283,4 +283,4 @@ let get_syntax_doc node : syntax_info =
         documentation =
           "https://v2.ocaml.org/releases/5.1/htmlman/bigarray.html";
       }
-  | _ -> { name = ""; description = ""; documentation = "" }
+  | _ -> None
