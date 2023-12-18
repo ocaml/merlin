@@ -29,6 +29,9 @@
 open Std
 open Query_protocol
 
+let syntax_doc_url endpoint =
+  let base_url = "https://v2.ocaml.org/releases/4.14/htmlman/" in
+  base_url ^ endpoint
 let dump (type a) : a t -> json =
   let mk command args =
     `Assoc (
@@ -386,7 +389,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     end
   | Syntax_document _, resp -> 
     begin match resp with 
-    | `Found doc -> `Assoc ["name", `String doc.name; "description", `String doc.description; "url", `String doc.documentation;]
+    | `Found doc -> `Assoc ["name", `String doc.name; "description", `String doc.description; "url", `String (syntax_doc_url doc.documentation);]
     | `No_documentation -> `String "No documentation available"
     end
   | Locate_type _, resp -> json_of_locate resp
