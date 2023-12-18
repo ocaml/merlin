@@ -9,7 +9,7 @@
 (menhir
  (modules parser_raw)
  (enabled_if (<> %{profile} "release"))
- (mode    promote)
+ (mode    (promote (only parser_raw.ml parser_raw.mli)))
  (flags :standard --inspection --table --cmly))
 
 (rule

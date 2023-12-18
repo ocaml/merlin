@@ -77,7 +77,8 @@ to be used anymore.
 
 `Mocaml.flush_caches` remove all files that have changed on disk or that
 haven't been used for some time.  By default, `ocamlmerlin_server` remove
-entries that haven't been used in the last 300 seconds.
+entries that haven't been used in the last 5 minutes. This behavior can be
+changed with `-cache-lifespan` flag.
 
 Since this involve stating each entry, the check is done after answering.
 

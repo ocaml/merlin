@@ -194,9 +194,11 @@ let rec transl_type env policy styp =
        try
          transl_type_aux env policy styp
        with exn ->
+         let ty = new_global_var () in
+         Msupport.erroneous_type_register ty;
          Msupport.raise_error exn;
            { ctyp_desc = Ttyp_any;
-             ctyp_type = new_global_var ();
+             ctyp_type = ty;
              ctyp_env = env;
              ctyp_loc = styp.ptyp_loc;
              ctyp_attributes = [];

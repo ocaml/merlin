@@ -153,7 +153,7 @@ If a string list, check only if the extension of the buffer-file-name
   "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-error-on-single-line nil
+(defcustom merlin-error-on-single-line t
   "Only highlight first line of multi-line error messages"
   :group 'merlin :type 'boolean)
 
@@ -193,6 +193,10 @@ a new window or not."
 (defcustom merlin-logfile nil
   "If non-nil, use this file for the log file (should be an absolute path)."
   :group 'merlin :type 'file)
+
+(defcustom merlin-cache-lifespan nil
+  "If non-nil, use this value for cache period (measured in minutes)."
+  :group 'merlin :type 'natnum)
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, C-up and C-down are used
@@ -550,6 +554,8 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
                   (cons "-flags" merlin-buffer-flags))
                 (when filename
                   (cons "-filename" filename))
+                (when merlin-cache-lifespan
+                  (cons "-cache-lifespan" (number-to-string merlin-cache-lifespan)))
                 args))
     ;; Log last commands
     (setq merlin-debug-last-commands
