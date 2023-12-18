@@ -189,15 +189,6 @@ let get_syntax_doc node : syntax_info =
         documentation =
           "https://v2.ocaml.org/releases/5.1/htmlman/recvalues.html";
       }
-  | [ (_, Structure _) ] ->
-     Some {
-        name = "Documentation comments";
-        description =
-          "Automatically converted during parsing into attributes to allow \
-           tools to process them as documentation";
-        documentation =
-          "https://v2.ocaml.org/releases/5.1/htmlman/doccomments.html";
-      }
   | (_, Module_expr _) :: (_, Module_type { mty_desc = Tmty_typeof _; _ }) :: _
     ->
      Some {
@@ -267,20 +258,5 @@ let get_syntax_doc node : syntax_info =
            this module.";
         documentation =
           "https://v2.ocaml.org/releases/5.1/htmlman/firstclassmodules.html";
-      }
-  | (_, Expression _)
-    :: (_, Expression _)
-    :: (_, Expression _)
-    :: (_, Expression _)
-    :: (_, Expression _)
-    :: (_, Expression _)
-    :: _ ->
-     Some {
-        name = "Syntax for Bigarray Access";
-        description =
-          "This extension provides syntactic sugar for getting and setting \
-           elements in the arrays provided by the Bigarray module.";
-        documentation =
-          "https://v2.ocaml.org/releases/5.1/htmlman/bigarray.html";
       }
   | _ -> None
