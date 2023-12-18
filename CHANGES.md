@@ -1,3 +1,19 @@
+merlin 4.13
+===========
+Mon Dec 18 16:42:00 CET 2023
+
+  + merlin binary
+    - Fix a follow-up issue to the preference of non-ghost nodes introduced in #1660 (#1690, fixes #1689)
+    - Add `-cache-lifespan` flag, that sets cache invalidation period. (#1698,
+      #1705)
+    - Fix Merlin locate not fallbacking on the correct file in case of ambiguity
+      (@goldfirere, #1699)
+    - Fix Merlin reporting errors provoked by the recovery itself (#1709, fixes
+      #1704)
+  + editor modes
+    - vim: load merlin when Vim is compiled with +python3/dyn (e.g. MacVim)
+    - emacs: highlight only first error line by default (#1693, fixes #1663)
+
 merlin 4.12
 ===========
 Tue Sep 26 17:45:42 CEST 2023

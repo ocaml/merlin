@@ -1,7 +1,7 @@
 if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 
 if !exists('g:merlin_python_version')
-  if has('python3')
+  if has('python3') || has('python3_dynamic')
     let g:merlin_python_version = 3
   elseif has('python') || has('python2')
     let g:merlin_python_version = 2
