@@ -12,7 +12,7 @@
     "value": {
       "name": "Recursive value definition",
       "description": "The `let rec` binding construct, in addition to the definition of recursive functions, also supports a certain class of recursive definitions of non-functional values, such as `let rec name1 = 1 :: name2 and name2 = 2 :: name1 in expr` which binds `name1` to the cyclic list `1::2::1::2::…`, and `name2` to the cyclic list `2::1::2::1::…`",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/recvalues.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/letrecvalues.html"
     },
     "notifications": []
   }
@@ -52,7 +52,7 @@
     "value": {
       "name": "Recursive module",
       "description": "Recursive module definitions, introduced by the `module rec …and …` construction, generalize regular module definitions `module module-name = module-expr` and module specifications `module module-name : module-type` by allowing the defining `module-expr` and the `module-type` to refer recursively to the module identifiers being defined.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/recursivemodules.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/recursivemodules.html"
     },
     "notifications": []
   }
@@ -64,7 +64,7 @@
     "value": {
       "name": "Variant Type",
       "description": "Let's you represent data that may take on multiple different forms.",
-      "url": "https://v2.ocaml.org/manual/coreexamples.html#s:tut-recvariants"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
     },
     "notifications": []
   }
@@ -76,7 +76,7 @@
     "value": {
       "name": "Recursive module",
       "description": "Recursive module definitions, introduced by the `module rec …and …` construction, generalize regular module definitions `module module-name = module-expr` and module specifications `module module-name : module-type` by allowing the defining `module-expr` and the `module-type` to refer recursively to the module identifiers being defined.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/recursivemodules.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/recursivemodules.html"
     },
     "notifications": []
   }
@@ -99,7 +99,7 @@
     "value": {
       "name": "Recovering module type",
       "description": "The construction `module type of module-expr` expands to the module type (signature or functor type) inferred for the module expression `module-expr`. ",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/moduypeof.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/moduletypeof.html"
     },
     "notifications": []
   }
@@ -111,7 +111,7 @@
     "value": {
       "name": "Recovering module type",
       "description": "The construction `module type of module-expr` expands to the module type (signature or functor type) inferred for the module expression `module-expr`. ",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/moduypeof.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/moduletypeof.html"
     },
     "notifications": []
   }
@@ -158,7 +158,7 @@
     "value": {
       "name": "Destructive substitution",
       "description": "Behaves essentially like normal signature constraints, but it additionally removes the redefined type or module from the signature.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/signaturesubstitution.html#ss:destructive-substitution"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/signaturesubstitution.html#ss:destructive-substitution"
     },
     "notifications": []
   }
@@ -170,7 +170,7 @@
     "value": {
       "name": "Local substitution",
       "description": "Local substitutions behave like destructive substitutions `(with ... := ...)` but instead of being applied to a whole signature after the fact, they are introduced during the specification of the signature, and will apply to all the items that follow.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/signaturesubstitution.html#ss:local-substitution"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/signaturesubstitution.html#ss:local-substitution"
     },
     "notifications": []
   }
@@ -194,7 +194,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Extensible variant type",
       "description": "Can be extended with new variant constructors using +=.",
-      "url": "https://v2.ocaml.org/manual/extensiblevariants.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/extensiblevariants.html"
     },
     "notifications": []
   }
@@ -206,7 +206,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Variant Type",
       "description": "Let's you represent data that may take on multiple different forms.",
-      "url": "https://v2.ocaml.org/manual/coreexamples.html#s:tut-recvariants"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
     },
     "notifications": []
   }
@@ -218,7 +218,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Empty Variant type",
       "description": "This extension allows the user to define empty variants.",
-      "url": "https://v2.ocaml.org/manual/emptyvariants.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/emptyvariants.html"
     },
     "notifications": []
   }
@@ -230,7 +230,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Record type",
       "description": "Allows you to define variants with a fixed set of fields, and all of the constructors for a record variant type must have the same fields",
-      "url": "https://v2.ocaml.org/manual/extensiblevariants.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
     },
     "notifications": []
   }
@@ -242,7 +242,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Abstract type",
       "description": "Allows you to define variants with arbitrary data structures, including other variants, records, and functions",
-      "url": "https://v2.ocaml.org/manual/extensiblevariants.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
     },
     "notifications": []
   }
@@ -271,9 +271,9 @@ $ $MERLIN single syntax-document -position 26:58 \
   {
     "class": "return",
     "value": {
-      "name": "Private Extensible Type",
-      "description": "Enable libraries to reveal , but not all aspects of the implementation of a type to clients of the library",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/privatetypes.html#start-section"
+      "name": "Private Extensible Variant Type",
+      "description": "Extensible variant types can be declared private. This prevents new constructors from being declared directly, but allows extension constructors to be referred to in interfaces.",
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/extensiblevariants.html#ss:private-extensible"
     },
     "notifications": []
   }
@@ -285,7 +285,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Private Type",
       "description": "Values of a variant type declared private can be de-structured normally in pattern-matching. However, values of these types cannot be constructed directly by constructor application.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/privatetypes.html#ss:private-types-variant"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-variant"
     },
     "notifications": []
   }
@@ -297,7 +297,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Private Type",
       "description": "Values of a variant type declared private can be de-structured normally in pattern-matching. However, values of these types cannot be constructed directly by constructor application.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/privatetypes.html#ss:private-types-variant"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-variant"
     },
     "notifications": []
   }
@@ -309,7 +309,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Private Record Type",
       "description": "Values of a record type declared private can be de-structured via the expr . field notation. However, values of these types cannot be constructed directly by record construction.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/privatetypes.html#ss:private-types-variant"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-variant"
     },
     "notifications": []
   }
@@ -321,7 +321,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Private Type Abbreviation",
       "description": "A private type abbreviation declares a type that is distinct from its implementation type `typexpr`.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/privatetypes.html#ss:private-types-abbrev"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-abbrev"
     },
     "notifications": []
   }
@@ -333,7 +333,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Private Type Abbreviation",
       "description": "A private type abbreviation declares a type that is distinct from its implementation type `typexpr`.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/privatetypes.html#ss:private-types-abbrev"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-abbrev"
     },
     "notifications": []
   }
@@ -345,7 +345,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Abstract type",
       "description": "Allows you to define variants with arbitrary data structures, including other variants, records, and functions",
-      "url": "https://v2.ocaml.org/manual/extensiblevariants.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
     },
     "notifications": []
   }
@@ -369,7 +369,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "value": {
       "name": "Locally Abstract Type",
       "description": "The expression `fun ( type typeconstr-name ) -> expr` introduces a type constructor named `typeconstr-name` which is considered abstract in the scope of the sub-expression, but then replaced by a fresh type variable.",
-      "url": "https://v2.ocaml.org/releases/5.1/htmlman/locallyabstract.html"
+      "url": "https://v2.ocaml.org/releases/4.14/htmlman/locallyabstract.html"
     },
     "notifications": []
   }
