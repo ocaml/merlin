@@ -36,10 +36,19 @@ end) = struct
   let cache : (string, File_id.t * float ref * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
+  type cache_stats = { hit: int; miss: int }
+  let cache_hit = ref 0
+  let cache_miss = ref 0
+
+  let get_cache_stats () = { hit = !cache_hit; miss = !cache_miss }
+  let clear_cache_stats () =
+    cache_hit := 0; cache_miss := 0
+
   let get_cached_entry ~title fid filename =
     let fid', latest_use, file = Hashtbl.find cache filename in
-    if (File_id.check fid fid') then
-      log ~title "reusing %S" filename
+    if (File_id.check fid fid') then (
+      log ~title "reusing %S" filename;
+      cache_hit := !cache_hit + 1)
     else (
       log ~title "%S was updated on disk" filename;
       raise Not_found;
@@ -53,6 +62,7 @@ end) = struct
     try get_cached_entry ~title fid filename
     with Not_found ->
     try
+      cache_miss := !cache_miss + 1;
       log ~title "reading %S from disk" filename;
       let file = Input.read filename in
       Hashtbl.replace cache filename (fid, ref (Unix.time ()), file);

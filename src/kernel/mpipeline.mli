@@ -26,3 +26,4 @@ val typer_result : t -> Mtyper.result
 val typer_errors : t -> exn list
 
 val timing_information : t -> (string * float) list
+val cache_information : t -> Std.json
