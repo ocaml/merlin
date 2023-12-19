@@ -142,8 +142,7 @@ type _ t =
        ] t
   | Syntax_document
     : Msource.position
-    ->[ `Found of syntax_doc_result
-      | `No_documentation
+    ->[ `Found of syntax_doc_result option
       ] t
   | Locate_type
     : Msource.position

@@ -506,10 +506,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node = Mtyper.node_at typer pos in
-    let syntax_info = Syntax_doc.get_syntax_doc node in 
-    (match syntax_info with 
-    | Some i -> `Found i 
-    | None -> `No_documentation)
+    let res = Syntax_doc.get_syntax_doc node in
+    `Found res
 
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
