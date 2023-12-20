@@ -142,7 +142,9 @@ type _ t =
        ] t
   | Syntax_document
     : Msource.position
-    -> syntax_doc_result option t
+    -> [ `Found of syntax_doc_result
+       | `No_documentation
+       ] t
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position

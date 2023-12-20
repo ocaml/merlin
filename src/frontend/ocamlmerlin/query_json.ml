@@ -384,14 +384,14 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     end
   | Syntax_document _, resp -> (
     match resp with
-    | Some info ->
+    | `Found info ->
           `Assoc
             [
               ("name", `String info.name);
               ("description", `String info.description);
               ("url", `String info.documentation);
             ]
-    | None -> `String "No documentation found"
+    | `No_documentation -> `String "No documentation found"
       )
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
