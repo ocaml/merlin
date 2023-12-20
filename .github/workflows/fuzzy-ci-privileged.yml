@@ -1,0 +1,55 @@
+name: Execute privileged instructions for the Fuzzy CI
+
+# The main workflow fuzzy-ci.yml is triggered by PRs. For security reasons, if
+# the PR comes from a fork, that workflow cannot execute instructions such as
+# comment on PR or delete label on PR:
+# https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+# Instead, fuzzy-ci.yml forwards those instructions to this workflow which
+# checks out the target branch rather than the source.
+
+
+on:
+  workflow_run:
+    workflows: ["Fuzzy CI"]
+    types:
+      - completed
+
+jobs:
+  execute-instruction:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download instruction artifact
+        env:
+          GH_API_ACTIONS: https://api.github.com/repos/${{ github.repository }}/actions
+        run: |
+          all_artifacts=$(curl -sSL  "$GH_API_ACTIONS/runs/${{ github.event.workflow_run.id }}/artifacts")
+          forward_artifact=$(echo $all_artifacts | jq '.artifacts[] | select(.name == "forwarded_instructions")')
+          id=$(echo $forward_artifact | jq -r '.id')
+          curl -sSLO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$GH_API_ACTIONS/artifacts/$id/zip" -D headers.txt
+      - name: Unzip artifact
+        run: |
+          unzip -q zip -d forward || (cat zip && cat headers.txt)
+      - name: Retreive instruction contents
+        id: instruction
+        run: |
+          instruction=$(jq -r '.instruction' forward/instruction.json)
+          echo "instruction=$instruction" | tee -a $GITHUB_OUTPUT
+      - name: Delete the label
+        if: ${{ steps.instruction.outputs.instruction == 'delete_label' }}
+        run: |
+          ENDPOINT=$(jq -r '.endpoint' forward/instruction.json)
+          LABEL_NAME=$(cat .github/fuzzy-ci-helpers/label_name.txt)
+          curl -sL -w "%{http_code}" -o output.txt -X DELETE -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$ENDPOINT/$LABEL_NAME"
+      - name: Comment on PR
+        if: ${{ steps.instruction.outputs.instruction == 'comment' }}
+        run: |
+          export ARTIFACTS_URL=$(jq -r '.artifacts_url' forward/instruction.json)
+          export HASH=$(jq -r '.hash' forward/instruction.json)
+          msg=$(cat .github/fuzzy-ci-helpers/msg.txt | tr '\n' ' ' | tr '|' '\n' | envsubst)
+          jq -n --arg msg "$msg" '{ body: $msg }' | tee -a body.json
+          ENDPOINT=$(jq -r '.endpoint' forward/instruction.json)
+          curl -LsX POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -d @body.json "$ENDPOINT"

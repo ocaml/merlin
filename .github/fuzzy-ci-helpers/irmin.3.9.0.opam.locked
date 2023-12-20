@@ -1,0 +1,773 @@
+opam-version: "2.0"
+synopsis: "opam-monorepo generated lockfile"
+maintainer: "opam-monorepo"
+depends: [
+  "alcotest" {= "1.7.0" & ?vendor}
+  "alcotest-lwt" {= "1.7.0" & ?vendor}
+  "angstrom" {= "0.15.0" & ?vendor}
+  "astring" {= "0.8.5+dune" & ?vendor}
+  "base-bigarray" {= "base"}
+  "base-bytes" {= "base+dune" & ?vendor}
+  "base-threads" {= "base"}
+  "base-unix" {= "base"}
+  "base64" {= "3.5.1" & ?vendor}
+  "bheap" {= "2.0.0" & ?vendor}
+  "bigstringaf" {= "0.9.1" & ?vendor}
+  "checkseum" {= "0.5.2" & ?vendor}
+  "cmdliner" {= "1.2.0+dune" & ?vendor}
+  "conf-gmp" {= "4"}
+  "conf-gnuplot" {= "0.1"}
+  "cppo" {= "1.6.9" & ?vendor}
+  "csexp" {= "1.5.2" & ?vendor}
+  "cstruct" {= "6.2.0" & ?vendor}
+  "digestif" {= "1.1.4" & ?vendor}
+  "dune" {= "3.11.1"}
+  "dune-configurator" {= "3.11.1" & ?vendor}
+  "either" {= "1.0.0" & ?vendor}
+  "eqaf" {= "0.9" & ?vendor}
+  "findlib" {= "1.9.5+dune" & ?vendor}
+  "fmt" {= "0.9.0+dune" & ?vendor}
+  "fpath" {= "0.7.3+dune" & ?vendor}
+  "hex" {= "1.5.0" & ?vendor}
+  "index" {= "1.6.2" & ?vendor}
+  "jsonm" {= "1.0.1+dune" & ?vendor}
+  "logs" {= "0.7.0+dune2" & ?vendor}
+  "lru" {= "0.3.1" & ?vendor}
+  "lwt" {= "5.7.0" & ?vendor}
+  "metrics" {= "0.4.1" & ?vendor}
+  "metrics-unix" {= "0.4.1" & ?vendor}
+  "mtime" {= "2.0.0+dune" & ?vendor}
+  "ocaml" {= "4.14.1"}
+  "ocaml-base-compiler" {= "4.14.1"}
+  "ocaml-compiler-libs" {= "v0.12.4" & ?vendor}
+  "ocaml-config" {= "2"}
+  "ocaml-options-vanilla" {= "1"}
+  "ocaml-syntax-shims" {= "1.0.0" & ?vendor}
+  "ocamlfind" {= "1.9.5+dune" & ?vendor}
+  "ocamlgraph" {= "2.1.0" & ?vendor}
+  "ocplib-endian" {= "1.2" & ?vendor}
+  "optint" {= "0.3.0" & ?vendor}
+  "ppx_derivers" {= "1.2.1" & ?vendor}
+  "ppx_deriving" {= "5.2.1" & ?vendor}
+  "ppx_repr" {= "0.7.0" & ?vendor}
+  "ppxlib" {= "0.31.0" & ?vendor}
+  "progress" {= "0.2.2" & ?vendor}
+  "psq" {= "0.2.1" & ?vendor}
+  "qcheck-alcotest" {= "0.21.2" & ?vendor}
+  "qcheck-core" {= "0.21.2" & ?vendor}
+  "re" {= "1.11.0" & ?vendor}
+  "repr" {= "0.7.0" & ?vendor}
+  "result" {= "1.5" & ?vendor}
+  "rusage" {= "1.0.0" & ?vendor}
+  "semaphore-compat" {= "1.0.1" & ?vendor}
+  "seq" {= "base+dune" & ?vendor}
+  "sexplib0" {= "v0.17~preview.129.00+111" & ?vendor}
+  "stdlib-shims" {= "0.3.0" & ?vendor}
+  "stringext" {= "1.6.0" & ?vendor}
+  "terminal" {= "0.2.2" & ?vendor}
+  "tezos-base58" {= "1.0.0" & ?vendor}
+  "uri" {= "4.4.0" & ?vendor}
+  "uucp" {= "15.1.0+dune" & ?vendor}
+  "uuidm" {= "0.9.8+dune" & ?vendor}
+  "uutf" {= "1.0.3+dune" & ?vendor}
+  "vector" {= "1.0.0" & ?vendor}
+  "yojson" {= "2.1.2" & ?vendor}
+  "zarith" {= "1.12+dune" & ?vendor}
+]
+depexts: [
+  ["gmp"] {os = "freebsd"}
+  ["gmp"] {os = "openbsd"}
+  ["gmp"] {os-distribution = "nixos"}
+  ["gmp"] {os = "macos" & os-distribution = "homebrew"}
+  ["gmp"] {os = "win32" & os-distribution = "cygwinports"}
+  ["gmp"] {os-distribution = "macports" & os = "macos"}
+  ["gmp" "gmp-devel"] {os-distribution = "centos"}
+  ["gmp" "gmp-devel"] {os-distribution = "fedora"}
+  ["gmp" "gmp-devel"] {os-distribution = "ol"}
+  ["gmp-dev"] {os-distribution = "alpine"}
+  ["gmp-devel"] {os-family = "suse" | os-family = "opensuse"}
+  ["gnuplot"] {os = "freebsd"}
+  ["gnuplot"] {os-distribution = "alpine"}
+  ["gnuplot"] {os-distribution = "centos"}
+  ["gnuplot"] {os-distribution = "fedora"}
+  ["gnuplot"] {os-distribution = "ol"}
+  ["gnuplot"] {os-family = "arch"}
+  ["gnuplot"] {os = "macos" & os-distribution = "homebrew"}
+  ["gnuplot"] {os-family = "suse" | os-family = "opensuse"}
+  ["gnuplot-x11"] {os-family = "debian"}
+  ["libgmp-dev"] {os-family = "debian"}
+  ["libgmp-dev"] {os-family = "ubuntu"}
+]
+pin-depends: [
+  [
+    "alcotest.1.7.0"
+    "https://github.com/mirage/alcotest/releases/download/1.7.0/alcotest-1.7.0.tbz"
+  ]
+  [
+    "alcotest-lwt.1.7.0"
+    "https://github.com/mirage/alcotest/releases/download/1.7.0/alcotest-1.7.0.tbz"
+  ]
+  [
+    "angstrom.0.15.0"
+    "https://github.com/inhabitedtype/angstrom/archive/0.15.0.tar.gz"
+  ]
+  [
+    "astring.0.8.5+dune"
+    "https://github.com/dune-universe/astring/archive/v0.8.5+dune.tar.gz"
+  ]
+  [
+    "base-bytes.base+dune"
+    "https://github.com/kit-ty-kate/bytes/archive/v0.1.0.tar.gz"
+  ]
+  [
+    "base64.3.5.1"
+    "https://github.com/mirage/ocaml-base64/releases/download/v3.5.1/base64-3.5.1.tbz"
+  ]
+  [
+    "bheap.2.0.0"
+    "https://github.com/backtracking/bheap/releases/download/2.0.0/bheap-2.0.0.tbz"
+  ]
+  [
+    "bigstringaf.0.9.1"
+    "https://github.com/inhabitedtype/bigstringaf/archive/0.9.1.tar.gz"
+  ]
+  [
+    "checkseum.0.5.2"
+    "https://github.com/mirage/checkseum/releases/download/v0.5.2/checkseum-0.5.2.tbz"
+  ]
+  [
+    "cmdliner.1.2.0+dune"
+    "https://github.com/dune-universe/cmdliner/releases/download/v1.2.0%2Bdune/cmdliner-1.2.0.dune.tbz"
+  ]
+  [
+    "cppo.1.6.9"
+    "https://github.com/ocaml-community/cppo/archive/v1.6.9.tar.gz"
+  ]
+  [
+    "csexp.1.5.2"
+    "https://github.com/ocaml-dune/csexp/releases/download/1.5.2/csexp-1.5.2.tbz"
+  ]
+  [
+    "cstruct.6.2.0"
+    "https://github.com/mirage/ocaml-cstruct/releases/download/v6.2.0/cstruct-6.2.0.tbz"
+  ]
+  [
+    "digestif.1.1.4"
+    "https://github.com/mirage/digestif/releases/download/v1.1.4/digestif-1.1.4.tbz"
+  ]
+  [
+    "dune-configurator.3.11.1"
+    "https://github.com/ocaml/dune/releases/download/3.11.1/dune-3.11.1.tbz"
+  ]
+  [
+    "either.1.0.0"
+    "https://github.com/mirage/either/releases/download/1.0.0/either-1.0.0.tbz"
+  ]
+  [
+    "eqaf.0.9"
+    "https://github.com/mirage/eqaf/releases/download/v0.9/eqaf-0.9.tbz"
+  ]
+  [
+    "findlib.1.9.5+dune"
+    "https://github.com/dune-universe/lib-findlib/releases/download/1.9.5%2Bdune/findlib-1.9.5.dune.tbz"
+  ]
+  [
+    "fmt.0.9.0+dune"
+    "https://github.com/dune-universe/fmt/releases/download/v0.9.0%2Bdune/fmt-0.9.0.dune.tbz"
+  ]
+  [
+    "fpath.0.7.3+dune"
+    "https://github.com/dune-universe/fpath/archive/v0.7.3+dune.tar.gz"
+  ]
+  [
+    "hex.1.5.0"
+    "https://github.com/mirage/ocaml-hex/releases/download/v1.5.0/hex-1.5.0.tbz"
+  ]
+  [
+    "index.1.6.2"
+    "https://github.com/mirage/index/releases/download/1.6.2/index-1.6.2.tbz"
+  ]
+  [
+    "jsonm.1.0.1+dune"
+    "https://github.com/dune-universe/jsonm/archive/v1.0.1+dune.tar.gz"
+  ]
+  [
+    "logs.0.7.0+dune2"
+    "https://github.com/dune-universe/logs/releases/download/v0.7.0%2Bdune2/logs-0.7.0.dune2.tbz"
+  ]
+  [
+    "lru.0.3.1"
+    "https://github.com/pqwy/lru/releases/download/v0.3.1/lru-0.3.1.tbz"
+  ]
+  [
+    "lwt.5.7.0"
+    "https://github.com/ocsigen/lwt/archive/refs/tags/5.7.0.tar.gz"
+  ]
+  [
+    "metrics.0.4.1"
+    "https://github.com/mirage/metrics/releases/download/v0.4.1/metrics-0.4.1.tbz"
+  ]
+  [
+    "metrics-unix.0.4.1"
+    "https://github.com/mirage/metrics/releases/download/v0.4.1/metrics-0.4.1.tbz"
+  ]
+  [
+    "mtime.2.0.0+dune"
+    "https://github.com/dune-universe/mtime/releases/download/2.0.0%2Bdune/mtime-2.0.0.dune.tbz"
+  ]
+  [
+    "ocaml-compiler-libs.v0.12.4"
+    "https://github.com/janestreet/ocaml-compiler-libs/releases/download/v0.12.4/ocaml-compiler-libs-v0.12.4.tbz"
+  ]
+  [
+    "ocaml-syntax-shims.1.0.0"
+    "https://github.com/ocaml-ppx/ocaml-syntax-shims/releases/download/1.0.0/ocaml-syntax-shims-1.0.0.tbz"
+  ]
+  [
+    "ocamlfind.1.9.5+dune"
+    "https://github.com/dune-universe/lib-findlib/releases/download/1.9.5%2Bdune/findlib-1.9.5.dune.tbz"
+  ]
+  [
+    "ocamlgraph.2.1.0"
+    "https://github.com/backtracking/ocamlgraph/releases/download/2.1.0/ocamlgraph-2.1.0.tbz"
+  ]
+  [
+    "ocplib-endian.1.2"
+    "https://github.com/OCamlPro/ocplib-endian/archive/refs/tags/1.2.tar.gz"
+  ]
+  [
+    "optint.0.3.0"
+    "https://github.com/mirage/optint/releases/download/v0.3.0/optint-0.3.0.tbz"
+  ]
+  [
+    "ppx_derivers.1.2.1"
+    "https://github.com/ocaml-ppx/ppx_derivers/archive/1.2.1.tar.gz"
+  ]
+  [
+    "ppx_deriving.5.2.1"
+    "https://github.com/ocaml-ppx/ppx_deriving/releases/download/v5.2.1/ppx_deriving-v5.2.1.tbz"
+  ]
+  [
+    "ppx_repr.0.7.0"
+    "https://github.com/mirage/repr/releases/download/0.7.0/repr-0.7.0.tbz"
+  ]
+  [
+    "ppxlib.0.31.0"
+    "https://github.com/ocaml-ppx/ppxlib/releases/download/0.31.0/ppxlib-0.31.0.tbz"
+  ]
+  [
+    "progress.0.2.2"
+    "https://github.com/craigfe/progress/releases/download/0.2.2/progress-0.2.2.tbz"
+  ]
+  [
+    "psq.0.2.1"
+    "https://github.com/pqwy/psq/releases/download/v0.2.1/psq-0.2.1.tbz"
+  ]
+  [
+    "qcheck-alcotest.0.21.2"
+    "https://github.com/c-cube/qcheck/archive/v0.21.2.tar.gz"
+  ]
+  [
+    "qcheck-core.0.21.2"
+    "https://github.com/c-cube/qcheck/archive/v0.21.2.tar.gz"
+  ]
+  [
+    "re.1.11.0"
+    "https://github.com/ocaml/ocaml-re/releases/download/1.11.0/re-1.11.0.tbz"
+  ]
+  [
+    "repr.0.7.0"
+    "https://github.com/mirage/repr/releases/download/0.7.0/repr-0.7.0.tbz"
+  ]
+  [
+    "result.1.5"
+    "https://github.com/janestreet/result/releases/download/1.5/result-1.5.tbz"
+  ]
+  [
+    "rusage.1.0.0"
+    "https://github.com/CraigFe/ocaml-rusage/releases/download/1.0.0/rusage-1.0.0.tbz"
+  ]
+  [
+    "semaphore-compat.1.0.1"
+    "https://github.com/mirage/semaphore-compat/releases/download/1.0.1/semaphore-compat-1.0.1.tbz"
+  ]
+  ["seq.base+dune" "https://github.com/c-cube/seq/archive/0.2.2.tar.gz"]
+  [
+    "sexplib0.v0.17~preview.129.00+111"
+    "https://github.com/janestreet/sexplib0/archive/c663324f6d4ea85552b3b186b89814bfe953792f.tar.gz"
+  ]
+  [
+    "stdlib-shims.0.3.0"
+    "https://github.com/ocaml/stdlib-shims/releases/download/0.3.0/stdlib-shims-0.3.0.tbz"
+  ]
+  [
+    "stringext.1.6.0"
+    "https://github.com/rgrinberg/stringext/releases/download/1.6.0/stringext-1.6.0.tbz"
+  ]
+  [
+    "terminal.0.2.2"
+    "https://github.com/craigfe/progress/releases/download/0.2.2/progress-0.2.2.tbz"
+  ]
+  [
+    "tezos-base58.1.0.0"
+    "https://github.com/tarides/tezos-base58/releases/download/1.0.0/tezos-base58-1.0.0.tbz"
+  ]
+  [
+    "uri.4.4.0"
+    "https://github.com/mirage/ocaml-uri/releases/download/v4.4.0/uri-4.4.0.tbz"
+  ]
+  [
+    "uucp.15.1.0+dune"
+    "https://github.com/dune-universe/uucp/releases/download/v15.1.0%2Bdune/uucp-15.1.0.dune.tbz"
+  ]
+  [
+    "uuidm.0.9.8+dune"
+    "https://github.com/dune-universe/uuidm/releases/download/v0.9.8%2Bdune/uuidm-0.9.8.dune.tbz"
+  ]
+  [
+    "uutf.1.0.3+dune"
+    "https://github.com/dune-universe/uutf/releases/download/v1.0.3%2Bdune/uutf-1.0.3.dune.tbz"
+  ]
+  [
+    "vector.1.0.0"
+    "https://github.com/backtracking/vector/releases/download/1.0.0/vector-1.0.0.tbz"
+  ]
+  [
+    "yojson.2.1.2"
+    "https://github.com/ocaml-community/yojson/releases/download/2.1.2/yojson-2.1.2.tbz"
+  ]
+  [
+    "zarith.1.12+dune"
+    "https://github.com/dune-universe/Zarith/releases/download/1.12%2Bdune/zarith-1.12.dune.tbz"
+  ]
+]
+x-opam-monorepo-cli-args: [
+  "irmin" "irmin-pack" "irmin-tezos" "--ocaml-version=4.14.1"
+]
+x-opam-monorepo-duniverse-dirs: [
+  [
+    "https://github.com/CraigFe/ocaml-rusage/releases/download/1.0.0/rusage-1.0.0.tbz"
+    "ocaml-rusage"
+    [
+      "sha256=3a0600d857b5828aa868e4b8e59e8504934d60dfeeabe290a14c06f0a4a8e859"
+      "sha512=518b4a039da71ac579597b1a58420b872e60614f364b88603cd1f07a153f679d52e6fb18c83e2d58bbdf749a6626733b31d92c0e0a8dadf30111c3e55e6c9859"
+    ]
+  ]
+  [
+    "https://github.com/OCamlPro/ocplib-endian/archive/refs/tags/1.2.tar.gz"
+    "ocplib-endian"
+    [
+      "md5=8d5492eeb7c6815ade72a7415ea30949"
+      "sha512=2e70be5f3d6e377485c60664a0e235c3b9b24a8d6b6a03895d092c6e40d53810bfe1f292ee69e5181ce6daa8a582bfe3d59f3af889f417134f658812be5b8b85"
+    ]
+  ]
+  [
+    "https://github.com/backtracking/bheap/releases/download/2.0.0/bheap-2.0.0.tbz"
+    "bheap"
+    [
+      "sha256=5f43d7b237bc87b07097f60eae2b32de64e644158308da338bf1512014bdf636"
+      "sha512=90dcf2b3856b25f8ec7204d3596b64dfc264e9158ea84e8c2f15e3980c45ef888b7a969e613f31a626aebc4c5963a09b4fd3c3b95beba7d3159ff42080193841"
+    ]
+  ]
+  [
+    "https://github.com/backtracking/ocamlgraph/releases/download/2.1.0/ocamlgraph-2.1.0.tbz"
+    "ocamlgraph"
+    [
+      "sha256=0f962c36f9253df2393955af41b074b6a426b2f92a9def795b2005b57d302d65"
+      "sha512=8ee77bc1ef27bef41171b5718a73342dca8adc4b4592ff835038cd21e8c91152a0f9500b4034f664d1db7a09dab1efcc3be5d7c59260d6b33710b82a1fb2f196"
+    ]
+  ]
+  [
+    "https://github.com/backtracking/vector/releases/download/1.0.0/vector-1.0.0.tbz"
+    "vector"
+    [
+      "sha256=f212d1d693ce37deb0da2550aab8d550ad5ea457c5757dc02f8ca8a66ebe6641"
+      "sha512=5125dd16f806af4cf7cef112b021f32f4a591b87533d25f8ac684e0eefc0a126f0d878c0d636546fb13afcd113190f7aba90176e5a1049492a7ea2f8a188e5a6"
+    ]
+  ]
+  [
+    "https://github.com/c-cube/qcheck/archive/v0.21.2.tar.gz"
+    "qcheck"
+    [
+      "md5=b8e3728fc1b534ee01e3c2b7e2b30bb3"
+      "sha512=67ff77a66ccf046dfede9123a322002f232a0a65b8ce1890795a4a4ba247bc5413f988e7cfd53412418036c2b907e4cbcd7dcd39d7f1fd2481aee60107b075cc"
+    ]
+  ]
+  [
+    "https://github.com/c-cube/seq/archive/0.2.2.tar.gz"
+    "seq"
+    [
+      "md5=9033e02283aa3bde9f97f24e632902e3"
+      "sha512=cab0eb4cb6d9788b7cbd7acbefefc15689d706c97ff7f75dd97faf3c21e466af4d0ff110541a24729db587e7172b1a30a3c2967e17ec2e49cbd923360052c07c"
+    ]
+  ]
+  [
+    "https://github.com/craigfe/progress/releases/download/0.2.2/progress-0.2.2.tbz"
+    "progress"
+    [
+      "sha256=3341c21923a21cd6b5b5cfa9ec3981f59572c367940fe5e02450533dfb4110b5"
+      "sha512=3edbe5ca6ea0bbc678b7dc4abe38bb4c3c4832de0144cc6e0791678712931fbaf2f7141196fca3fdc13a20777851cadcd165bf30c11d92193eecbd8f2d9dbf15"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/Zarith/releases/download/1.12%2Bdune/zarith-1.12.dune.tbz"
+    "Zarith"
+    [
+      "sha256=af618fe6f029cd2cafe0e9807c3cb230ba8080dfd61e350fcdcfec63064ea904"
+      "sha512=84a3ed58773ddb143f2c309a17686a3c6c7ae930fbdfb2c736f80c61dbfe2c0972a9913d2b111e7b3a2cfd8e5b1999210ac88464833fe8dee798a4154a1aa966"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/astring/archive/v0.8.5+dune.tar.gz"
+    "astring"
+    [
+      "sha256=11327c202fd0115f3a2bf7710c9c603b979a32ba9b16c1a64ba155857233acc8"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/cmdliner/releases/download/v1.2.0%2Bdune/cmdliner-1.2.0.dune.tbz"
+    "cmdliner"
+    [
+      "sha256=84358d8e1f373f38a466418bf707109989417d5eb6a3b26e51030ea893a23f7b"
+      "sha512=c921bb960598ba9a33e93c3a4efd0ca13578f3c8033c0cb2323e7416ed2404ca65fa467631a8e8138708bb6f4b0690747a7eb22d59c5b4dec7ea2e2b77f751e4"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/fmt/releases/download/v0.9.0%2Bdune/fmt-0.9.0.dune.tbz"
+    "fmt"
+    [
+      "sha256=844ce674b3146aaf9c14088a0b817cef10c7152054d3cc984543463da978ff81"
+      "sha512=27765423f43bdfbbdee50906faad14ecf653aaf2fdfc4db6b94791460aa32f3a3490b9d0c1a04aa3ecb0ac4333ea7ce5054251a67a0d67b64f3eb6d737afbf93"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/fpath/archive/v0.7.3+dune.tar.gz"
+    "fpath"
+    [
+      "sha256=792ecf88d2a311596106e30775864629558ed0c2d0501590fda55f363dbb6ebc"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/jsonm/archive/v1.0.1+dune.tar.gz"
+    "jsonm"
+    [
+      "sha256=cb82b2742662636029644db0354a8ff028b9e7495d4fe5278ddef72656b88d1b"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/lib-findlib/releases/download/1.9.5%2Bdune/findlib-1.9.5.dune.tbz"
+    "lib-findlib"
+    [
+      "sha256=5242e5a0cfb2af52d6b596767513d80d2a3588608b366c759f9df0841736a228"
+      "sha512=1b39aedd0cbf623acb9abca88e65e5114f44524f3443f45def184663da76db515e791bee625282a69d20d88e7bc7d4522dbd142e551e09bd7a4cf99d1eabfe95"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/logs/releases/download/v0.7.0%2Bdune2/logs-0.7.0.dune2.tbz"
+    "logs"
+    [
+      "sha256=ae2f76b6bb42122371041d389d0d4348346a79b38ffbb7c20d08e85df2fedf76"
+      "sha512=4c1fdc23c5f9709d50fa1ee518e2ec4cf1a35fb1cedf466bcc849ae47c113b317db2bf95c788d48faacb67952d942d4b378904e3c37e71ef7babb56e2f11ce8b"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/mtime/releases/download/2.0.0%2Bdune/mtime-2.0.0.dune.tbz"
+    "mtime"
+    [
+      "sha256=7dd6d0ba21acd07c2c76d6519a58c09e420af0fba57cfd8dd8ce08535db03a54"
+      "sha512=75942aaad6e25d97b11e0038effc3bed980d336435bffbaecb67368e83299b17d77db92a79d9a010f5961fc8ede7ae346fa91182e6c002f964ce9e0944b6a9ac"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/uucp/releases/download/v15.1.0%2Bdune/uucp-15.1.0.dune.tbz"
+    "uucp"
+    [
+      "sha256=bd14c6e9e4a5e41d2f926c1311aa50034474911a82c37fdea0f062d281162223"
+      "sha512=47c514a52412f5f5b66e359c5f72b43c590670916d1e54a1048b52f22adb7183d3b993dc732a300c93bf3ff5936ef36f1cde6f80b605ac79092c6b03c958e588"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/uuidm/releases/download/v0.9.8%2Bdune/uuidm-0.9.8.dune.tbz"
+    "uuidm"
+    [
+      "sha256=e949c5ae4e782f24447a590d23f89582d945011494c79266fc44a5357bd23add"
+      "sha512=83692fc8120194fbdd418ec2718fab50298db61b3c69af3ae6b2c9b3e9df44090889a203d2f996e534696ef368fd04d2154f2f542048cf74bb261172dafebf36"
+    ]
+  ]
+  [
+    "https://github.com/dune-universe/uutf/releases/download/v1.0.3%2Bdune/uutf-1.0.3.dune.tbz"
+    "uutf"
+    [
+      "sha256=a207104302c6025b32377e6b4f046a037c56e3de12ce7eacd44c2f31ce71649d"
+      "sha512=7f8904668a37f39a0a61d63539c0afb55d5127e57e0b4ea7ce944216d8d299e44b0f13972ad55f973c93a659ee0f97cf0f1421a7012a15be4c719ee9f9cd857d"
+    ]
+  ]
+  [
+    "https://github.com/inhabitedtype/angstrom/archive/0.15.0.tar.gz"
+    "angstrom"
+    ["md5=5104768c404ea92fd0a53a5b0f75cd50"]
+  ]
+  [
+    "https://github.com/inhabitedtype/bigstringaf/archive/0.9.1.tar.gz"
+    "bigstringaf"
+    ["md5=909fdc277cf03096a35b565325d5314a"]
+  ]
+  [
+    "https://github.com/janestreet/ocaml-compiler-libs/releases/download/v0.12.4/ocaml-compiler-libs-v0.12.4.tbz"
+    "ocaml-compiler-libs"
+    [
+      "sha256=4ec9c9ec35cc45c18c7a143761154ef1d7663036a29297f80381f47981a07760"
+      "sha512=978dba8dfa61f98fa24fda7a9c26c2e837081f37d1685fe636dc19cfc3278a940cf01a10293504b185c406706bc1008bc54313d50f023bcdea6d5ac6c0788b35"
+    ]
+  ]
+  [
+    "https://github.com/janestreet/result/releases/download/1.5/result-1.5.tbz"
+    "result"
+    ["md5=1b82dec78849680b49ae9a8a365b831b"]
+  ]
+  [
+    "https://github.com/janestreet/sexplib0/archive/c663324f6d4ea85552b3b186b89814bfe953792f.tar.gz"
+    "sexplib0"
+    [
+      "sha256=9adae2d0907951e81be3b4179907d4287b4a904c9513eb44eb0423a48a4fe137"
+    ]
+  ]
+  [
+    "https://github.com/kit-ty-kate/bytes/archive/v0.1.0.tar.gz"
+    "bytes"
+    [
+      "sha256=795b9bf545841714aaf0e517b62834a589937f65ad815ed4589ea56fa614d238"
+    ]
+  ]
+  [
+    "https://github.com/mirage/alcotest/releases/download/1.7.0/alcotest-1.7.0.tbz"
+    "alcotest"
+    [
+      "sha256=812bacdb34b45e88995e07d7306bdab2f72479ef1996637f1d5d1f41667902df"
+      "sha512=4ae1ba318949ec9db8b87bc8072632a02f0e4003a95ab21e474f5c34c3b5bde867b0194a2d0ea7d9fc4580c70a30ca39287d33a8c134acc7611902f79c7b7ce8"
+    ]
+  ]
+  [
+    "https://github.com/mirage/checkseum/releases/download/v0.5.2/checkseum-0.5.2.tbz"
+    "checkseum"
+    [
+      "sha256=9e5e4fd4405cb4a8b4df00877543251833e08a6499ef42ccb8dba582df0dafc8"
+      "sha512=b66261effaa561ce5cb8d92a3ec78565a5579bf3d3c4b7f08eba59998ac4d7f49ae9c240986c231b22b965c93a949a8a2e35edec42277ecb5602829945fba6db"
+    ]
+  ]
+  [
+    "https://github.com/mirage/digestif/releases/download/v1.1.4/digestif-1.1.4.tbz"
+    "digestif"
+    [
+      "sha256=c3793e720f0da8054f6286c545c821a7febe882e7f4e5497ec89b15a353511e1"
+      "sha512=a4014f65a3be370761833fd98f3916d0a64ada6f99ac016890f5ae98ec75a941836a5a1e145ae36372aeb6b48c66a0ad9907a4318bfc8dc0c237840edba1aef4"
+    ]
+  ]
+  [
+    "https://github.com/mirage/either/releases/download/1.0.0/either-1.0.0.tbz"
+    "either"
+    [
+      "sha256=bf674de3312dee7b7215f07df1e8a96eb3d679164b8a918cdd95b8d97e505884"
+      "sha512=147854c09f897dd028b18a9f19acea8666107aaa7b1aab3c92f568af531364f57298edcaf3897d74246d3857d52e9bfb7ad0fc39220d988d9f14694ca1d5e9ed"
+    ]
+  ]
+  [
+    "https://github.com/mirage/eqaf/releases/download/v0.9/eqaf-0.9.tbz"
+    "eqaf"
+    [
+      "sha256=ec0e28a946ac6817f95d5854f05a9961ae3a8408bb610e79cfad01b9b255dfe0"
+      "sha512=4df7fd3ea35156953a172c1a021aab05b8b122ee8d3cfdb34f96edb1b5133d1fe2721b90cb64287841d770b16c2ffe70559c66e90f8d61a92b73857da22548c4"
+    ]
+  ]
+  [
+    "https://github.com/mirage/index/releases/download/1.6.2/index-1.6.2.tbz"
+    "index"
+    [
+      "sha256=9388835098a4ed44eeced070ed86855c049df12a98311d4980b9b724ecab8860"
+      "sha512=2e3052aac2a3ee4190e5cbc914d37904d589997463b22023d31e6b75e21d779342088324a9b42d1854bf7131f32f3e75f6f9cc2cb214d79dd2baa0b4cc2eaad3"
+    ]
+  ]
+  [
+    "https://github.com/mirage/metrics/releases/download/v0.4.1/metrics-0.4.1.tbz"
+    "metrics"
+    [
+      "sha256=77e0c20fb5c1d06103dbb0ec0bc6045bee3c61c00ad0423c97852ac7f3c6144d"
+      "sha512=8da6e5666a9196f7c6aa77de034a1410e2dd89ee717ffd179ed480c7d4cd9f9e2088abefc05ba8b53a6668bc36ff4fd2d5af2e5a1b79ecd00e2ec35592591dbf"
+    ]
+  ]
+  [
+    "https://github.com/mirage/ocaml-base64/releases/download/v3.5.1/base64-3.5.1.tbz"
+    "ocaml-base64"
+    [
+      "sha256=d8fedaa59bd12feae7acc08b5928dd478aac523f4ca8d240470d2500651c65ed"
+      "sha512=278bd2029800d90ed88ff59b9de723013e645523556a1667b64178d6b5058a7d6da91efffef3589c35569b5fa10ddee74c93f5a3d156b9146c8af5b7fe44aeaf"
+    ]
+  ]
+  [
+    "https://github.com/mirage/ocaml-cstruct/releases/download/v6.2.0/cstruct-6.2.0.tbz"
+    "ocaml-cstruct"
+    [
+      "sha256=9a78073392580e8349148fa3ab4b1b2e989dc9d30d07401b04c96b7c60f03e62"
+      "sha512=8d33fe6b3707a3994d0225cd33cadde0bb2ca834ef01096e3df33a08e4a8c6d02ebccddf558a73988b8a5595b65fdc10de61efbf872c6c9e55c719c7e19c463d"
+    ]
+  ]
+  [
+    "https://github.com/mirage/ocaml-hex/releases/download/v1.5.0/hex-1.5.0.tbz"
+    "ocaml-hex"
+    [
+      "sha256=2e67eeca1b03049307a30831b5cd694bcb2d3e7f2a6b4fb597fbdb647351b4dc"
+      "sha512=baa09b47a90f0a54ad2becfb272f0674219e4fc0c03559deff26aaf13ccd59258b31bf98e56c44a5a8fa03437e3eba2bf5f0cd76e52d184d26cfb1170c490462"
+    ]
+  ]
+  [
+    "https://github.com/mirage/ocaml-uri/releases/download/v4.4.0/uri-4.4.0.tbz"
+    "ocaml-uri"
+    [
+      "sha256=cdabaf6ef5cd2161e59cc7b74c6e4a68ecb80a9f4e96002e338e1b6bf17adec4"
+      "sha512=88374143e0d8aaf6d40aa3cbd7593f9832e9c9727738c6e651498125150c83d5646e13b5737d5c3e81484dd041127f67f8acea13fdc0300ac4e46107559f8ae2"
+    ]
+  ]
+  [
+    "https://github.com/mirage/optint/releases/download/v0.3.0/optint-0.3.0.tbz"
+    "optint"
+    [
+      "sha256=295cff2c134b0385b13ba81d5005d9f841ba40d4a502aed10c997f239ef1147b"
+      "sha512=15ec97a076584e8ea28c589f1db3b9a0dd6fd5a7950528a1d136761cc13bca0e6e7bf6e0f87c73578a37393c213a7a0f3e7beaabd924e176459b29af52b8dd11"
+    ]
+  ]
+  [
+    "https://github.com/mirage/repr/releases/download/0.7.0/repr-0.7.0.tbz"
+    "repr"
+    [
+      "sha256=8adac9fe85bf8a0e20eeb6810d7216e98e1b7f4d9bd399e61bb1024ace2501ac"
+      "sha512=5b104c52a05a3ed7a4505dea3b3b7ee16bba020b5d2d8e4dfd680ff8f82ae021caf0f29207616ac2ae40dfd5bb641a144e31b11d29c5ba4918ba616a57f74647"
+    ]
+  ]
+  [
+    "https://github.com/mirage/semaphore-compat/releases/download/1.0.1/semaphore-compat-1.0.1.tbz"
+    "semaphore-compat"
+    [
+      "sha256=2b771ff5bdcc658404ab6029415b0f7404817287bb7bcf990caf91db7a2e2c8d"
+      "sha512=075fbfc2037dabcbc4a9d135d1a9301825819adb5c8dbf9024c4aa8615f769676121bdf1c98739c306457a59507bb361514d6c1206947c1c1080eeffc261a025"
+    ]
+  ]
+  [
+    "https://github.com/ocaml-community/cppo/archive/v1.6.9.tar.gz"
+    "cppo"
+    [
+      "md5=d23ffe85ac7dc8f0afd1ddf622770d09"
+      "sha512=26ff5a7b7f38c460661974b23ca190f0feae3a99f1974e0fd12ccf08745bd7d91b7bc168c70a5385b837bfff9530e0e4e41cf269f23dd8cf16ca658008244b44"
+    ]
+  ]
+  [
+    "https://github.com/ocaml-community/yojson/releases/download/2.1.2/yojson-2.1.2.tbz"
+    "yojson"
+    [
+      "sha256=59f2f1abbfc8a7ccbdbf608894e5c75e8a76006e34899254446f83e200dfb4f9"
+      "sha512=309cba7568dec51de20c7ab8df033258c275b8d58b0a36a66b26e673a3bc050cbd7e39ff8fe4796e89263e125bcc21e04dc36a394f3cc201956887eee1fb281a"
+    ]
+  ]
+  [
+    "https://github.com/ocaml-dune/csexp/releases/download/1.5.2/csexp-1.5.2.tbz"
+    "csexp"
+    [
+      "sha256=1a14dd04bb4379a41990248550628c77913a9c07f3c35c1370b6960e697787ff"
+      "sha512=be281018bcfc20d4db14894ef51c4b836d6338d2fdfe22e63d46f405f8dea7349e16f1c0ecd65f73d4c85a2a80e618cdbb8c9dafcbb9f229f04f1adca5b1973c"
+    ]
+  ]
+  [
+    "https://github.com/ocaml-ppx/ocaml-syntax-shims/releases/download/1.0.0/ocaml-syntax-shims-1.0.0.tbz"
+    "ocaml-syntax-shims"
+    [
+      "sha256=89b2e193e90a0c168b6ec5ddf6fef09033681bdcb64e11913c97440a2722e8c8"
+      "sha512=75c4c6b0bfa1267a8a49a82ba494d08cf0823fc8350863d6d3d4971528cb09e5a2a29e2981d04c75e76ad0f49360b05a432c9efeff9a4fbc1ec6b28960399852"
+    ]
+  ]
+  [
+    "https://github.com/ocaml-ppx/ppx_derivers/archive/1.2.1.tar.gz"
+    "ppx_derivers"
+    ["md5=5dc2bf130c1db3c731fe0fffc5648b41"]
+  ]
+  [
+    "https://github.com/ocaml-ppx/ppx_deriving/releases/download/v5.2.1/ppx_deriving-v5.2.1.tbz"
+    "ppx_deriving"
+    [
+      "sha256=e96b5fb25b7632570e4b329e22e097fcd4b8e8680d1e43ef003a8fbd742b0786"
+      "sha512=f28cd778a2d48ababa53f73131b25229a11b03685610d020b7b9228b1e25570891cd927b37475aeda49be72debaf5f2dda4c1518a0965db7a361c0ebe325a8d2"
+    ]
+  ]
+  [
+    "https://github.com/ocaml-ppx/ppxlib/releases/download/0.31.0/ppxlib-0.31.0.tbz"
+    "ppxlib"
+    [
+      "sha256=d21676654e57faa12d7895caffe8703b64521d66efcf152491871a55b2ae41d8"
+      "sha512=63f2d327cfc5382476f812670d304aade91b3ea8f10420d6fc9e7078112368d99dbf43dfda9c2c2cf91341b71c37c45c1fe1d54fecde2348560f9d3c48571603"
+    ]
+  ]
+  [
+    "https://github.com/ocaml/dune/releases/download/3.11.1/dune-3.11.1.tbz"
+    "dune_"
+    [
+      "sha256=866f2307adadaf7604f3bf9d98bb4098792baa046953a6726c96c40fc5ed3f71"
+      "sha512=c888153b204a16bcfed2636de776bbd5f9ca84484e716cc1e9ef3ba3c904e9dd15a2609ae943cddb6097912623ec54618c58386d6730ff742d746850400fb3cc"
+    ]
+  ]
+  [
+    "https://github.com/ocaml/ocaml-re/releases/download/1.11.0/re-1.11.0.tbz"
+    "ocaml-re"
+    [
+      "sha256=01fc244780c0f6be72ae796b1fb750f367de18624fd75d07ee79782ed6df8d4f"
+      "sha512=3e3712cc1266ec1f27620f3508ea2ebba338f4083b07d8a69dccee1facfdc1971a6c39f9deea664d2a62fd7f2cfd2eae816ca4c274acfadaee992a3befc4b757"
+    ]
+  ]
+  [
+    "https://github.com/ocaml/stdlib-shims/releases/download/0.3.0/stdlib-shims-0.3.0.tbz"
+    "stdlib-shims"
+    [
+      "sha256=babf72d3917b86f707885f0c5528e36c63fccb698f4b46cf2bab5c7ccdd6d84a"
+      "sha512=1151d7edc8923516e9a36995a3f8938d323aaade759ad349ed15d6d8501db61ffbe63277e97c4d86149cf371306ac23df0f581ec7e02611f58335126e1870980"
+    ]
+  ]
+  [
+    "https://github.com/ocsigen/lwt/archive/refs/tags/5.7.0.tar.gz"
+    "lwt"
+    [
+      "md5=737039d29d45b2d2b35db6931c8d75c6"
+      "sha512=42e629920783428673b99c9d7a639237c9e6b35079b5d907bc67e7ea506acf9edadc48cec580bdcfd2410ed9412bf5e6bcc8b09de2fa7d35ce1490973d05ddd1"
+    ]
+  ]
+  [
+    "https://github.com/pqwy/lru/releases/download/v0.3.1/lru-0.3.1.tbz"
+    "lru"
+    [
+      "sha256=6cbe23d27a7d5b244f869c0b88140d47f70f413a6462ef35c0009325d4b236fd"
+      "sha512=81144e258d6e488d4677ade91132401b6f8871c72aadf2f1c190c4dee918c71c5df10c4e690c5bf1ab0f364d87989d44aec3695310a3477f6473eb17c1261734"
+    ]
+  ]
+  [
+    "https://github.com/pqwy/psq/releases/download/v0.2.1/psq-0.2.1.tbz"
+    "psq"
+    [
+      "sha256=42005f533eabe74b1799ee32b8905654cd66a22bed4af2bd266b28d8462cd344"
+      "sha512=8a8dfe20dc77e1cf38a7b1a7fc76f815c71a4ffe04627151b855feaba8f1ae742594739d1b7a45580b5b24a2cd99b58516f6b5c8d858aa314201f4a6422101ee"
+    ]
+  ]
+  [
+    "https://github.com/rgrinberg/stringext/releases/download/1.6.0/stringext-1.6.0.tbz"
+    "stringext"
+    [
+      "sha256=db41f5d52e9eab17615f110b899dfeb27dd7e7f89cd35ae43827c5119db206ea"
+      "sha512=d8ebe40f42b598a9bd99f1ef4b00ba93458385a4accd121af66a0bf3b3f8d7135f576740adf1a43081dd409977c2219fd4bdbb5b3d1308890d301d553ed49900"
+    ]
+  ]
+  [
+    "https://github.com/tarides/tezos-base58/releases/download/1.0.0/tezos-base58-1.0.0.tbz"
+    "tezos-base58"
+    [
+      "sha256=aa99e1c25e3394cc8b01daeba54369f376348553fd2254beedd5f8569cbb8293"
+      "sha512=17415f5731a5e321043b21f67ca541a2ef5fe7e94fa7a7652164324a02176f3abb18163f8954659cd5470611346688f39be1154850e90a8df08f637bbd972ef1"
+    ]
+  ]
+]
+x-opam-monorepo-root-packages: ["irmin" "irmin-pack" "irmin-tezos"]
+x-opam-monorepo-version: "0.3"
