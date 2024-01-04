@@ -77,6 +77,7 @@ Thu Feb 22 14:00:42 CET 2024
     - Jump to `module-type` (#1728, partially fixes #1656)
     - Exposes stable functions for configuration handling and pattern variable
       destruction. (#1730)
+    - Add `signature-help` command (#1720)
   + editor modes
     - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
     - Fix merlinpp not using binary file open (#1725, fixes #1724)

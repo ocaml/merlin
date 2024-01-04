@@ -846,7 +846,30 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         ~stop
         structure
     end
- 
+
+  | Signature_help pos ->
+    let typer = Mpipeline.typer_result pipeline in
+    let poss = Mpipeline.get_lexing_pos pipeline pos in
+    let node = Mtyper.node_at typer poss in
+    let source = Mpipeline.input_source pipeline in
+    let prefix = Signature_help.prefix_of_position ~short_path:true source pos in
+    let application_signature = Signature_help.application_signature ~prefix node in
+    let param offset (p: Signature_help.parameter_info) =
+      { label_start = offset + p.param_start; label_end = offset + p.param_end} in
+    (match application_signature with
+     | Some s ->
+       let prefix =
+        let fun_name =
+          Option.value ~default:"_" s.function_name
+        in
+        sprintf "%s : " fun_name in
+      Some { label = prefix ^ s.signature;
+             parameters = List.map ~f:(param (String.length prefix)) s.parameters;
+             active_param = Option.value ~default:0 s.active_param;
+             active_signature = 0;
+           }
+    | None -> None)
+
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version;
