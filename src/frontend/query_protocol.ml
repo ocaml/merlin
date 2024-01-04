@@ -96,6 +96,18 @@ type error_filter = {
   typing : bool;
 }
 
+type signature_help_param = {
+  label_start : int;
+  label_end : int;
+}
+
+type signature_help = {
+  label : string;
+  parameters : signature_help_param list;
+  active_param : int;
+  active_signature: int;
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -196,5 +208,8 @@ type _ t =
   | Occurrences(* *)
     : [`Ident_at of Msource.position] * [`Project | `Buffer]
     -> Location.t list t
+  | Signature_help
+    : Msource.position
+    -> signature_help option t
   | Version
     : string t
