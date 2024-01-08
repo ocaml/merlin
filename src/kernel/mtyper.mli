@@ -14,6 +14,8 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
+
 val run : Mconfig.t -> Mreader.parsetree -> result
 
 val get_env : ?pos:Msource.position -> result -> Env.t
@@ -23,6 +25,8 @@ val get_typedtree : result -> typedtree
 val get_errors : result -> exn list
 
 val initial_env : result -> Env.t
+
+val get_cache_stat : result -> typer_cache_stats
 
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.

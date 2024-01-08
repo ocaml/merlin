@@ -99,6 +99,10 @@ type t = {
   ppx_time    : float ref;
   typer_time  : float ref;
   error_time  : float ref;
+
+  ppx_cache_hit : bool ref;
+  reader_cache_hit : bool ref;
+  typer_cache_stats : Mtyper.typer_cache_stats ref;
 }
 
 let raw_source t = t.raw_source
@@ -231,6 +235,9 @@ let process
     ?(ppx_time=ref 0.0)
     ?(typer_time=ref 0.0)
     ?(error_time=ref 0.0)
+    ?(ppx_cache_hit = ref false)
+    ?(reader_cache_hit = ref false)
+    ?(typer_cache_stats = ref Mtyper.Miss)
     ?for_completion
     config raw_source =
   let state = match state with
@@ -267,10 +274,11 @@ let process
               Some "source preprocessor usage"
             | true, None -> None
           in
-          let { Reader_with_cache.output = { result; cache_version }; _ } =
+          let { Reader_with_cache.output = { result; cache_version }; cache_was_hit } =
             Reader_with_cache.apply ~cache_disabling
               { source; for_completion; config }
           in
+          reader_cache_hit := cache_was_hit;
           let cache_version =
             if Option.is_some cache_disabling then None else Some cache_version
           in
@@ -293,10 +301,11 @@ let process
         | Some v -> None, Ppx_phase.Version v
         | None -> Some "reader cache is disabled", Off
       in
-      let { Ppx_with_cache.output = parsetree; _ } =
+      let { Ppx_with_cache.output = parsetree; cache_was_hit } =
         Ppx_with_cache.apply ~cache_disabling
           {parsetree; config; reader_cache}
       in
+      ppx_cache_hit := cache_was_hit;
       { Ppx.config; parsetree; errors = !caught }
     )) in
   let typer = timed_lazy typer_time (lazy (
@@ -304,10 +313,12 @@ let process
       Mocaml.setup_typer_config config;
       let result = Mtyper.run config parsetree in
       let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
+      typer_cache_stats := Mtyper.get_cache_stat result;
       { Typer. errors; result }
     )) in
   { config; state; raw_source; source; reader; ppx; typer;
-    pp_time; reader_time; ppx_time; typer_time; error_time }
+    pp_time; reader_time; ppx_time; typer_time; error_time;
+    ppx_cache_hit; reader_cache_hit; typer_cache_stats }
 
 let make config source =
   process (Mconfig.normalize config) source
@@ -325,3 +336,30 @@ let timing_information t = [
   "typer"  , !(t.typer_time);
   "error"  , !(t.error_time);
 ]
+
+let cache_information t =
+  let typer =
+    match !(t.typer_cache_stats) with
+    | Miss -> `String "miss"
+    | Hit { reused; typed } ->
+      `Assoc
+        [ "reused" , `Int reused;
+          "typed", `Int typed
+        ]
+  in
+  let fmt_hit_miss h m =
+    `Assoc [ "hit", `Int h; "miss", `Int m ] in
+  let cmt_stat = Cmt_cache.get_cache_stats () in
+  let cmt = fmt_hit_miss cmt_stat.hit cmt_stat.miss in
+  let cmi_stat = Cmi_cache.get_cache_stats () in
+  let cmi = fmt_hit_miss cmi_stat.hit cmi_stat.miss in
+  Cmt_cache.clear_cache_stats ();
+  Cmi_cache.clear_cache_stats ();
+  let fmt_bool hit = `String (if hit then "hit" else "miss") in
+  `Assoc [
+    "reader_phase" , fmt_bool !(t.reader_cache_hit);
+    "ppx_phase"    , fmt_bool !(t.ppx_cache_hit);
+    "typer"        , typer;
+    "cmt"          , cmt;
+    "cmi"          , cmi
+  ]

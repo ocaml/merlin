@@ -1,0 +1,8 @@
+This PR changes the response of some of the `ocamlmerlin` queries, that were
+run and analyzed by the
+[Merlin Fuzzy CI](https://github.com/ocaml/merlin/wiki/Merlin-Fuzzy-CI).
+The change is not considered a regression, the analysis of this PR has been
+approved in its following state: |
+- URL to download the generated data sets and their diffs between PR base
+branch and merge branch (at the moment of approval): $ARTIFACTS_URL |
+- 256-sha of full responses diff: $HASH

@@ -19,6 +19,8 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
+
 let cache = s_ref None
 
 let fresh_env config =
@@ -30,7 +32,7 @@ let fresh_env config =
 
 let get_cache config =
   match !cache with
-  | Some (env0, snap0, stamp0, items) when Types.is_valid snap0 ->
+  | Some (env0, snap0, stamp0, items, _) when Types.is_valid snap0 ->
     env0, snap0, stamp0, Some items
   | Some _ | None ->
     let env0, snap0, stamp0 = fresh_env config in
@@ -51,9 +53,12 @@ type result = {
     | `Implementation of
         (Parsetree.structure_item, Typedtree.structure_item) item list
   ];
+  cache_stat : typer_cache_stats
 }
 
 let initial_env res = res.initial_env
+
+let get_cache_stat res = res.cache_stat
 
 let compatible_prefix result_items tree_items =
   let rec aux acc = function
@@ -62,9 +67,12 @@ let compatible_prefix result_items tree_items =
         && compare ritem.parsetree_item pitem = 0 ->
       aux (ritem :: acc) (ritems, pitems)
     | (_, pitems) ->
+      let reused = List.length acc in
+      let typed = List.length pitems in
+      let cache_stat = Hit { reused; typed } in
       log ~title:"compatible_prefix" "reusing %d items, %d new items to type"
-        (List.length acc) (List.length pitems);
-      acc, pitems
+        reused typed;
+      acc, pitems, cache_stat
   in
   aux [] (result_items, tree_items)
 
@@ -103,10 +111,10 @@ let rec type_signature caught env = function
 
 let type_implementation config caught parsetree =
   let env0, snap0, stamp0, prefix = get_cache config in
-  let prefix, parsetree =
+  let prefix, parsetree, cache_stat =
     match prefix with
     | Some (`Implementation items) -> compatible_prefix items parsetree
-    | Some (`Interface _) | None -> ([], parsetree)
+    | Some (`Interface _) | None -> ([], parsetree, Miss)
   in
   let env', snap', stamp', warn' = match prefix with
     | [] -> (env0, snap0, stamp0, Warnings.backup ())
@@ -120,14 +128,14 @@ let type_implementation config caught parsetree =
   Env.cleanup_functor_caches ~stamp:stamp';
   let suffix = type_structure caught env' parsetree in
   return_and_cache
-    (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix))
+    (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix), cache_stat)
 
 let type_interface config caught parsetree =
   let env0, snap0, stamp0, prefix = get_cache config in
-  let prefix, parsetree =
+  let prefix, parsetree, cache_stat =
     match prefix with
     | Some (`Interface items) -> compatible_prefix items parsetree
-    | Some (`Implementation _) | None -> ([], parsetree)
+    | Some (`Implementation _) | None -> ([], parsetree, Miss)
   in
   let env', snap', stamp', warn' = match prefix with
     | [] -> (env0, snap0, stamp0, Warnings.backup ())
@@ -141,7 +149,7 @@ let type_interface config caught parsetree =
   Env.cleanup_functor_caches ~stamp:stamp';
   let suffix = type_signature caught env' parsetree in
   return_and_cache
-    (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix))
+    (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix), cache_stat)
 
 let run config parsetree =
   if not (Env.check_state_consistency ()) then (
@@ -156,12 +164,12 @@ let run config parsetree =
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();
-  let initial_env, initial_snapshot, initial_stamp, typedtree = match parsetree with
+  let initial_env, initial_snapshot, initial_stamp, typedtree, cache_stat = match parsetree with
     | `Implementation parsetree -> type_implementation config caught parsetree
     | `Interface parsetree -> type_interface config caught parsetree
   in
   Typecore.reset_delayed_checks ();
-  { config; initial_env; initial_snapshot; initial_stamp; typedtree }
+  { config; initial_env; initial_snapshot; initial_stamp; typedtree; cache_stat }
 
 let get_env ?pos:_ t =
   Option.value ~default:t.initial_env (

@@ -137,7 +137,8 @@ let run = function
             "class", `String class_; "value", message;
             "notifications", `List (List.rev_map notify !notifications);
             "timing", `Assoc (List.map format_timing timing);
-            "heap_mbytes", `Int heap_mbytes
+            "heap_mbytes", `Int heap_mbytes;
+            "cache", Mpipeline.cache_information pipeline
           ]
         in
         log ~title:"run(result)" "%a" Logger.json (fun () -> json);
