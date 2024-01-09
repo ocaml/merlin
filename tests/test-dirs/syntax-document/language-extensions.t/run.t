@@ -1,4 +1,5 @@
 // Syntax-Documentation Test - Language-extentions
+  $ alias syn_doc="$MERLIN single syntax-document -position "
 
 // Recursive definition of values
   $ cat > main.ml << EOF
@@ -151,17 +152,22 @@
   > EOF
 
 // Destructive substitutions
-  $ $MERLIN single syntax-document -position 11:27 \
-  > -filename ./sig-subs.ml < ./sig-subs.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Destructive substitution",
-      "description": "Behaves essentially like normal signature constraints, but it additionally removes the redefined type or module from the signature.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/signaturesubstitution.html#ss:destructive-substitution"
-    },
-    "notifications": []
-  }
+On 'with':
+  $ syn_doc 11:24 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value'
+  "No documentation found"
+
+On 'type t :='
+  $ syn_doc 11:27 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  "Destructive substitution"
+  $ syn_doc 11:32 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  "Destructive substitution"
+  $ syn_doc 11:34 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  "Destructive substitution"
+
+On '... t'
+  $ syn_doc 11:37 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value'
+  "No documentation found"
+
 // Local substitutions
   $ $MERLIN single syntax-document -position 16:12 \
   > -filename ./sig-subs.ml < ./sig-subs.ml
