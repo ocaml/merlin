@@ -16,7 +16,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Destructive substitution";
           description =
-            "Behaves essentially like normal signature constraints, but it \
+            "Behaves essentially like normal signature constraints, but \
              additionally removes the redefined type or module from the \
              signature.";
           documentation =
@@ -30,9 +30,9 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Local substitution";
           description =
-            "Local substitutions behave like destructive substitutions `(with \
+            "Behaves like destructive substitution `(with \
              ... := ...)` but instead of being applied to a whole signature \
-             after the fact, they are introduced during the specification of \
+             after the fact, it is introduced during the specification of \
              the signature, and will apply to all the items that follow.";
           documentation = syntax_doc_url "signaturesubstitution.html#ss:local-substitution";
         }
@@ -85,7 +85,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Extensible variant type";
           description =
-            "Can be extended with new variant constructors using +=.";
+            "Can be extended with new variant constructors using `+=`.";
           documentation = syntax_doc_url "extensiblevariants.html";
         }
   | (_, Type_kind Ttype_abstract)
@@ -120,7 +120,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Empty Variant type";
           description =
-            "This extension allows the user to define empty variants.";
+            "A empty variant type.";
           documentation = syntax_doc_url "emptyvariants.html";
         }
   | (_, Constructor_declaration _)
@@ -245,7 +245,7 @@ let get_syntax_doc node : syntax_info =
           name = "Locally Abstract Type";
           description =
             "The expression `fun ( type typeconstr-name ) -> expr` introduces \
-             a type constructor named `typeconstr-name` which is considered \
+            "Such a type constructor is considered \
              abstract in the scope of the sub-expression, but then replaced by \
              a fresh type variable.";
           documentation = syntax_doc_url "locallyabstract.html";
