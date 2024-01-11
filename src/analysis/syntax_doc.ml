@@ -16,9 +16,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Destructive substitution";
           description =
-            "Behaves essentially like normal signature constraints, but \
-             additionally removes the redefined type or module from the \
-             signature.";
+            "Behaves like normal signature constraints but removes the redefined type or \
+            module from the signature.";
           documentation =
             syntax_doc_url "signaturesubstitution.html#ss:destructive-substitution";
         }
@@ -30,10 +29,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Local substitution";
           description =
-            "Behaves like destructive substitution `(with \
-             ... := ...)` but instead of being applied to a whole signature \
-             after the fact, it is introduced during the specification of \
-             the signature, and will apply to all the items that follow.";
+            "Behaves like destructive substitution but is introduced during the \
+            specification of the signature, and will apply to all the items that follow.";
           documentation = syntax_doc_url "signaturesubstitution.html#ss:local-substitution";
         }
   | (_, Module_type _)
@@ -47,9 +44,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Module substitution";
           description =
-            "Module type substitution essentially behaves like type \
-             substitutions. They are useful to refine an abstract module type \
-             in a signature into a concrete module type,";
+            "Behaves like type substitutions but are useful to refine an abstract \
+            module type in a signature into a concrete module type,";
           documentation =
           syntax_doc_url "signaturesubstitution.html#ss:module-type-substitution";
         }
@@ -61,8 +57,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Variant Type";
           description =
-            "Let's you represent data that may take on multiple different \
-             forms.";
+            "Represent data that may take on multiple different forms.";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | _
@@ -74,8 +69,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Variant Type";
           description =
-            "Let's you represent data that may take on multiple different \
-             forms.";
+            "Represent data that may take on multiple different forms.";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | (_, Type_kind Ttype_open)
@@ -95,7 +89,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Abstract type";
           description =
-            "Allows you to define variants with arbitrary data structures, \
+            "Define variants with arbitrary data structures, \
              including other variants, records, and functions";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
@@ -109,9 +103,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Record type";
           description =
-            "Allows you to define variants with a fixed set of fields, and all \
-             of the constructors for a record variant type must have the same \
-             fields";
+            "Define variants with a fixed set of fields";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | (_, Type_kind _) :: (_, Type_declaration { typ_private = Public; _ }) :: _
@@ -120,7 +112,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Empty Variant type";
           description =
-            "A empty variant type.";
+            "An empty variant type.";
           documentation = syntax_doc_url "emptyvariants.html";
         }
   | (_, Constructor_declaration _)
@@ -131,9 +123,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Type";
           description =
-            "Values of a variant type declared private can be de-structured \
-             normally in pattern-matching. However, values of these types \
-             cannot be constructed directly by constructor application.";
+            "Can be de-structured normally in pattern-matching but cannot be constructed \
+             directly by constructor application.";
           documentation =  syntax_doc_url "privatetypes.html#ss:private-types-variant";
         }
   | _
@@ -145,9 +136,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Type";
           description =
-            "Values of a variant type declared private can be de-structured \
-             normally in pattern-matching. However, values of these types \
-             cannot be constructed directly by constructor application.";
+            "Can be de-structured normally in pattern-matching but cannot be constructed \
+            directly by constructor application.";
           documentation = syntax_doc_url "privatetypes.html#ss:private-types-variant";
         }
   | _ :: _
@@ -159,9 +149,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Record Type";
           description =
-            "Values of a record type declared private can be de-structured via \
-             the expr . field notation. However, values of these types cannot \
-             be constructed directly by record construction.";
+            "Can be de-structured normally in pattern-matching but cannot be constructed \
+            directly by constructor application.";
           documentation = syntax_doc_url "privatetypes.html#ss:private-types-variant";
         }
   | (_, Type_kind Ttype_open)
@@ -171,8 +160,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Extensible Variant Type";
           description =
-            "Extensible variant types can be declared private. This prevents \
-             new constructors from being declared directly, but allows \
+            "Prevents new constructors from being declared directly, but allows \
              extension constructors to be referred to in interfaces.";
           documentation = syntax_doc_url "extensiblevariants.html#ss:private-extensible";
         }
@@ -183,8 +171,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Type Abbreviation";
           description =
-            "A private type abbreviation declares a type that is distinct from \
-             its implementation type `typexpr`.";
+            "Declares a type that is distinct from its implementation type `typexpr`.";
           documentation = syntax_doc_url "privatetypes.html#ss:private-types-abbrev";
         }
   | (_, Expression _)
@@ -196,12 +183,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Recursive value definition";
           description =
-            "The `let rec` binding construct, in addition to the definition of \
-             recursive functions, also supports a certain class of recursive \
-             definitions of non-functional values, such as `let rec name1 = 1 \
-             :: name2 and name2 = 2 :: name1 in expr` which binds `name1` to \
-             the cyclic list `1::2::1::2::…`, and `name2` to the cyclic list \
-             `2::1::2::1::…`";
+            "Supports a certain class of recursive definitions of non-functional values.";
           documentation = syntax_doc_url "letrecvalues.html";
         }
   | (_, Module_expr _) :: (_, Module_type { mty_desc = Tmty_typeof _; _ }) :: _
@@ -210,8 +192,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Recovering module type";
           description =
-            "The construction `module type of module-expr` expands to the \
-             module type (signature or functor type) inferred for the module \
+            "Expands to the module type (signature or functor type) inferred for the module \
              expression `module-expr`. ";
           documentation = syntax_doc_url "moduletypeof.html";
         }
@@ -224,12 +205,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Recursive module";
           description =
-            "Recursive module definitions, introduced by the `module rec …and \
-             …` construction, generalize regular module definitions `module \
-             module-name = module-expr` and module specifications `module \
-             module-name : module-type` by allowing the defining `module-expr` \
-             and the `module-type` to refer recursively to the module \
-             identifiers being defined.";
+            "A simultaneous definition of modules that can refer recursively to each others.";
           documentation = syntax_doc_url "recursivemodules.html";
         }
   | (_, Expression _)
@@ -244,10 +220,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Locally Abstract Type";
           description =
-            "The expression `fun ( type typeconstr-name ) -> expr` introduces \
-            "Such a type constructor is considered \
-             abstract in the scope of the sub-expression, but then replaced by \
-             a fresh type variable.";
+            "Type constructor which is considered abstract in the scope of the sub-expression \
+            and replaced by a fresh type variable.";
           documentation = syntax_doc_url "locallyabstract.html";
         }
   | _ :: _
@@ -268,10 +242,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "First class module";
           description =
-            "The expression ( `module module-expr : package-type` ) converts \
-             the module (structure or functor) denoted by module expression \
-             `module-expr` to a value of the core language that encapsulates \
-             this module.";
+            "Converts a module (structure or functor) to a value of the core language \
+            that encapsulates the module.";
           documentation = syntax_doc_url "firstclassmodules.html";
         }
   | _ -> None
