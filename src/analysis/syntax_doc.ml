@@ -52,26 +52,18 @@ let get_syntax_doc node : syntax_info =
   | (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
-    :: _ ->
-      Some
-        {
-          name = "Variant Type";
-          description =
-            "Represent data that may take on multiple different forms.";
-          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
-        }
-  | _
-    :: (_, Constructor_declaration _)
+    :: _
+  | _ :: (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-      Some
-        {
-          name = "Variant Type";
-          description =
-            "Represent data that may take on multiple different forms.";
-          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
-        }
+    Some
+      {
+        name = "Variant Type";
+        description =
+          "Represent data that may take on multiple different forms.";
+        documentation = syntax_doc_url "typedecl.html#ss:typedefs";
+      }
   | (_, Type_kind Ttype_open)
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
@@ -118,15 +110,7 @@ let get_syntax_doc node : syntax_info =
   | (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Private; _ })
-    :: _ ->
-      Some
-        {
-          name = "Private Type";
-          description =
-            "Can be de-structured normally in pattern-matching but cannot be constructed \
-             directly by constructor application.";
-          documentation =  syntax_doc_url "privatetypes.html#ss:private-types-variant";
-        }
+    :: _ 
   | _
     :: (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
