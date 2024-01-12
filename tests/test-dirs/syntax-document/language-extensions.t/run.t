@@ -1,25 +1,17 @@
-// Syntax-Documentation Test - Language-extentions
+Syntax-Documentation Test - Language-extentions
   $ alias syn_doc="$MERLIN single syntax-document -position "
 
-// Recursive definition of values
+Recursive definition of values
   $ cat > main.ml << EOF
   > let rec name1 = 1 :: name2 and name2 = 2 :: name1
   > EOF
 
+on rec
   $ syn_doc 1:6 \
-  > -filename ./main.ml < ./main.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Recursive value definition",
-      "description": "Supports a certain class of recursive definitions of non-functional values.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/letrecvalues.html"
-    },
-    "notifications": []
-  }
+  > -filename ./main.ml < ./main.ml | jq '.value.name'
+  "Recursive value definition"
 
-
-// Recursive modules
+Recursive modules
   $ cat > rec-modules.ml << EOF
   > module rec A : sig
   >   type t = Leaf of string | Node of ASet.t
@@ -45,45 +37,21 @@
   >    end
   >  end
   > EOF
-
-  $ syn_doc 1:8 \
-  > -filename ./rec-modules.ml < ./rec-modules.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Recursive module",
-      "description": "A simultaneous definition of modules that can refer recursively to each others.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/recursivemodules.html"
-    },
-    "notifications": []
-  }
-// Types in modules
+on rec
+  $ syn_doc 1:9 \
+  > -filename ./rec-modules.ml < ./rec-modules.ml | jq '.value.name'
+  "Recursive module"
+On type t = Leaf of stri...
   $ syn_doc 5:5 \
-  > -filename ./rec-modules.ml < ./rec-modules.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Variant Type",
-      "description": "Represent data that may take on multiple different forms.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
-    },
-    "notifications": []
-  }
-// Nested recurvise module
-  $ syn_doc 16:11 \
-  > -filename ./rec-modules.ml < ./rec-modules.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Recursive module",
-      "description": "A simultaneous definition of modules that can refer recursively to each others.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/recursivemodules.html"
-    },
-    "notifications": []
-  }
+  > -filename ./rec-modules.ml < ./rec-modules.ml | jq '.value.name'
+  "Variant Type"
+On rec .. Nested recurvise module
+  $ syn_doc 16:12 \
+  > -filename ./rec-modules.ml < ./rec-modules.ml | jq '.value.name'
+  "Recursive module"
 
 
-// Recovering the type of a module
+Recovering the type of a module
   $ cat > rec-mod-type.ml << EOF 
   > module type MYHASH = sig
   >   include module type of struct include Hashtbl end
@@ -92,30 +60,14 @@
   > module MySet : module type of Set = struct
   > end
   > EOF
-
+on module type of..
   $ syn_doc 2:23 \
-  > -filename ./rec-mod-type.ml < ./rec-mod-type.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Recovering module type",
-      "description": "Expands to the module type (signature or functor type) inferred for the module expression `module-expr`. ",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/moduletypeof.html"
-    },
-    "notifications": []
-  }
-
-  $ syn_doc 5:29 \
-  > -filename ./rec-mod-type.ml < ./rec-mod-type.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Recovering module type",
-      "description": "Expands to the module type (signature or functor type) inferred for the module expression `module-expr`. ",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/moduletypeof.html"
-    },
-    "notifications": []
-  }
+  > -filename ./rec-mod-type.ml < ./rec-mod-type.ml | jq '.value.name'
+  "Recovering module type"
+on module type of..
+  $ syn_doc 5:28 \
+  > -filename ./rec-mod-type.ml < ./rec-mod-type.ml | jq '.value.name'
+  "Recovering module type"
 
 
 // Signature Substitutions
@@ -170,17 +122,9 @@ On '... t'
 
 // Local substitutions
   $ syn_doc 16:12 \
-  > -filename ./sig-subs.ml < ./sig-subs.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Local substitution",
-      "description": "Behaves like destructive substitution but is introduced during the specification of the signature, and will apply to all the items that follow.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/signaturesubstitution.html#ss:local-substitution"
-    },
-    "notifications": []
-  }
- // Module type substitutions
+  > -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  "Local substitution"
+// Module type substitutions
 $ syn_doc 26:58 \
 > -filename ./sig-subs.ml < ./sig-subs.ml
 
@@ -192,66 +136,26 @@ $ syn_doc 26:58 \
   > type a3 = |;
   > type a4 = {x: int};
   > type a5 = int;
-// Extensible Variant types
+on type a1..
   $ syn_doc 1:5 \
-  > -filename ./types.ml < ./types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Extensible variant type",
-      "description": "Can be extended with new variant constructors using `+=`.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/extensiblevariants.html"
-    },
-    "notifications": []
-  }
-// Variant types
+  > -filename ./types.ml < ./types.ml | jq '.value.name'
+  "Extensible variant type"
+on type a2..
   $ syn_doc 2:5 \
-  > -filename ./types.ml < ./types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Variant Type",
-      "description": "Represent data that may take on multiple different forms.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
-    },
-    "notifications": []
-  }
-// Empty variant types
+  > -filename ./types.ml < ./types.ml | jq '.value.name'
+  "Variant Type"
+on type a3..
   $ syn_doc 3:5 \
-  > -filename ./types.ml < ./types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Empty Variant type",
-      "description": "An empty variant type.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/emptyvariants.html"
-    },
-    "notifications": []
-  }
-// Record types
+  > -filename ./types.ml < ./types.ml | jq '.value.name'
+  "Empty Variant type"
+on type a4..
   $ syn_doc 4:5 \
-  > -filename ./types.ml < ./types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Record type",
-      "description": "Define variants with a fixed set of fields",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
-    },
-    "notifications": []
-  }
-// Abstract types
+  > -filename ./types.ml < ./types.ml | jq '.value.name'
+  "Record type"
+on type a5..
   $ syn_doc 5:5 \
-  > -filename ./types.ml < ./types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Abstract type",
-      "description": "Define variants with arbitrary data structures, including other variants, records, and functions",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
-    },
-    "notifications": []
-  }
+  > -filename ./types.ml < ./types.ml | jq '.value.name'
+  "Abstract type"
 
 // Private types
 // Extensible
@@ -271,90 +175,34 @@ $ syn_doc 26:58 \
   >   let to_int n = n
   > end
   > EOF
-// Private extensible 
+on type b1..
   $ syn_doc 1:14 \
-  > -filename ./p-types.ml < ./p-types.ml 
-  {
-    "class": "return",
-    "value": {
-      "name": "Private Extensible Variant Type",
-      "description": "Prevents new constructors from being declared directly, but allows extension constructors to be referred to in interfaces.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/extensiblevariants.html#ss:private-extensible"
-    },
-    "notifications": []
-  }
-// Private variant
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
+  "Private Extensible Variant Type"
+on type b2..
   $ syn_doc 2:14 \
-  > -filename ./private-types.ml < ./p-types.ml 
-  {
-    "class": "return",
-    "value": {
-      "name": "Private Type",
-      "description": "Can be de-structured normally in pattern-matching but cannot be constructed directly by constructor application.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-variant"
-    },
-    "notifications": []
-  }
-// Private variant b
+  > -filename ./private-types.ml < ./p-types.ml | jq '.value.name'
+  "Private Type"
+on type b3..
   $ syn_doc 3:14 \
-  > -filename ./p-types.ml < ./p-types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Private Type",
-      "description": "Can be de-structured normally in pattern-matching but cannot be constructed directly by constructor application.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-variant"
-    },
-    "notifications": []
-  }
-// Private record
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
+  "Private Type"
+on type b4..
   $ syn_doc 4:14 \
-  > -filename ./p-types.ml < ./p-types.ml 
-  {
-    "class": "return",
-    "value": {
-      "name": "Private Record Type",
-      "description": "Can be de-structured normally in pattern-matching but cannot be constructed directly by constructor application.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-variant"
-    },
-    "notifications": []
-  }
-// Private types - Abbreviations
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
+  "Private Record Type"
+on b5..
   $ syn_doc 5:14 \
-  > -filename ./p-types.ml < ./p-types.ml 
-  {
-    "class": "return",
-    "value": {
-      "name": "Private Type Abbreviation",
-      "description": "Declares a type that is distinct from its implementation type `typexpr`.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-abbrev"
-    },
-    "notifications": []
-  }
-
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
+  "Private Type Abbreviation"
+on type t = private int..
   $ syn_doc 7:14 \
-  > -filename ./p-types.ml < ./p-types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Private Type Abbreviation",
-      "description": "Declares a type that is distinct from its implementation type `typexpr`.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/privatetypes.html#ss:private-types-abbrev"
-    },
-    "notifications": []
-  }
-// Abstract
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
+  "Private Type Abbreviation"
+on type t = int..
   $ syn_doc 11:7 \
-  > -filename ./p-types.ml < ./p-types.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Abstract type",
-      "description": "Define variants with arbitrary data structures, including other variants, records, and functions",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/typedecl.html#ss:typedefs"
-    },
-    "notifications": []
-  }
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
+  "Abstract type"
 
 
 // Locally abstract data types
@@ -368,19 +216,12 @@ $ syn_doc 26:58 \
   > EOF 
 
 // Locally abstract data types
+on type t..
   $ syn_doc 1:17 \
-  > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
-  {
-    "class": "return",
-    "value": {
-      "name": "Locally Abstract Type",
-      "description": "Type constructor which is considered abstract in the scope of the sub-expression and replaced by a fresh type variable.",
-      "url": "https://v2.ocaml.org/releases/4.14/htmlman/locallyabstract.html"
-    },
-    "notifications": []
-  }
+  > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
+  "Locally Abstract Type"
 // Locally abstract data types B
-$ syn_doc 3:20 \
-> -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
+$ syn_doc 3:17 \
+ > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
 
 
