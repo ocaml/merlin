@@ -16,10 +16,11 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Destructive substitution";
           description =
-            "Behaves like normal signature constraints but removes the redefined type or \
-            module from the signature.";
+            "Behaves like normal signature constraints but removes the \
+             redefined type or module from the signature.";
           documentation =
-            syntax_doc_url "signaturesubstitution.html#ss:destructive-substitution";
+            syntax_doc_url
+              "signaturesubstitution.html#ss:destructive-substitution";
         }
   | (_, Type_kind _)
     :: (_, Type_declaration _)
@@ -29,9 +30,11 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Local substitution";
           description =
-            "Behaves like destructive substitution but is introduced during the \
-            specification of the signature, and will apply to all the items that follow.";
-          documentation = syntax_doc_url "signaturesubstitution.html#ss:local-substitution";
+            "Behaves like destructive substitution but is introduced during \
+             the specification of the signature, and will apply to all the \
+             items that follow.";
+          documentation =
+            syntax_doc_url "signaturesubstitution.html#ss:local-substitution";
         }
   | (_, Module_type _)
     :: (_, Module_type _)
@@ -44,26 +47,28 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Module substitution";
           description =
-            "Behaves like type substitutions but are useful to refine an abstract \
-            module type in a signature into a concrete module type,";
+            "Behaves like type substitutions but are useful to refine an \
+             abstract module type in a signature into a concrete module type,";
           documentation =
-          syntax_doc_url "signaturesubstitution.html#ss:module-type-substitution";
+            syntax_doc_url
+              "signaturesubstitution.html#ss:module-type-substitution";
         }
   | (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _
-  | _ :: (_, Constructor_declaration _)
+  | _
+    :: (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
-    Some
-      {
-        name = "Variant Type";
-        description =
-          "Represent data that may take on multiple different forms.";
-        documentation = syntax_doc_url "typedecl.html#ss:typedefs";
-      }
+      Some
+        {
+          name = "Variant Type";
+          description =
+            "Represent data that may take on multiple different forms.";
+          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
+        }
   | (_, Type_kind Ttype_open)
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
@@ -81,8 +86,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Abstract type";
           description =
-            "Define variants with arbitrary data structures, \
-             including other variants, records, and functions";
+            "Define variants with arbitrary data structures, including other \
+             variants, records, and functions";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | (_, Core_type _)
@@ -94,8 +99,7 @@ let get_syntax_doc node : syntax_info =
       Some
         {
           name = "Record type";
-          description =
-            "Define variants with a fixed set of fields";
+          description = "Define variants with a fixed set of fields";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | (_, Type_kind _) :: (_, Type_declaration { typ_private = Public; _ }) :: _
@@ -103,14 +107,13 @@ let get_syntax_doc node : syntax_info =
       Some
         {
           name = "Empty Variant type";
-          description =
-            "An empty variant type.";
+          description = "An empty variant type.";
           documentation = syntax_doc_url "emptyvariants.html";
         }
   | (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Private; _ })
-    :: _ 
+    :: _
   | _
     :: (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
@@ -120,9 +123,10 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Type";
           description =
-            "Can be de-structured normally in pattern-matching but cannot be constructed \
-            directly by constructor application.";
-          documentation = syntax_doc_url "privatetypes.html#ss:private-types-variant";
+            "Can be de-structured normally in pattern-matching but cannot be \
+             constructed directly by constructor application.";
+          documentation =
+            syntax_doc_url "privatetypes.html#ss:private-types-variant";
         }
   | _ :: _
     :: (_, Label_declaration _)
@@ -133,9 +137,10 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Record Type";
           description =
-            "Can be de-structured normally in pattern-matching but cannot be constructed \
-            directly by constructor application.";
-          documentation = syntax_doc_url "privatetypes.html#ss:private-types-variant";
+            "Can be de-structured normally in pattern-matching but cannot be \
+             constructed directly by constructor application.";
+          documentation =
+            syntax_doc_url "privatetypes.html#ss:private-types-variant";
         }
   | (_, Type_kind Ttype_open)
     :: (_, Type_declaration { typ_private = Private; _ })
@@ -144,9 +149,10 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Extensible Variant Type";
           description =
-            "Prevents new constructors from being declared directly, but allows \
-             extension constructors to be referred to in interfaces.";
-          documentation = syntax_doc_url "extensiblevariants.html#ss:private-extensible";
+            "Prevents new constructors from being declared directly, but \
+             allows extension constructors to be referred to in interfaces.";
+          documentation =
+            syntax_doc_url "extensiblevariants.html#ss:private-extensible";
         }
   | (_, Type_kind Ttype_abstract)
     :: (_, Type_declaration { typ_private = Private; _ })
@@ -155,8 +161,10 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Private Type Abbreviation";
           description =
-            "Declares a type that is distinct from its implementation type `typexpr`.";
-          documentation = syntax_doc_url "privatetypes.html#ss:private-types-abbrev";
+            "Declares a type that is distinct from its implementation type \
+             `typexpr`.";
+          documentation =
+            syntax_doc_url "privatetypes.html#ss:private-types-abbrev";
         }
   | (_, Expression _)
     :: (_, Expression _)
@@ -167,7 +175,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Recursive value definition";
           description =
-            "Supports a certain class of recursive definitions of non-functional values.";
+            "Supports a certain class of recursive definitions of \
+             non-functional values.";
           documentation = syntax_doc_url "letrecvalues.html";
         }
   | (_, Module_expr _) :: (_, Module_type { mty_desc = Tmty_typeof _; _ }) :: _
@@ -176,8 +185,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Recovering module type";
           description =
-            "Expands to the module type (signature or functor type) inferred for the module \
-             expression `module-expr`. ";
+            "Expands to the module type (signature or functor type) inferred \
+             for the module expression `module-expr`. ";
           documentation = syntax_doc_url "moduletypeof.html";
         }
   | (_, Module_expr _)
@@ -189,7 +198,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Recursive module";
           description =
-            "A simultaneous definition of modules that can refer recursively to each others.";
+            "A simultaneous definition of modules that can refer recursively \
+             to each others.";
           documentation = syntax_doc_url "recursivemodules.html";
         }
   | (_, Expression _)
@@ -204,8 +214,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Locally Abstract Type";
           description =
-            "Type constructor which is considered abstract in the scope of the sub-expression \
-            and replaced by a fresh type variable.";
+            "Type constructor which is considered abstract in the scope of the \
+             sub-expression and replaced by a fresh type variable.";
           documentation = syntax_doc_url "locallyabstract.html";
         }
   | _ :: _
@@ -226,8 +236,8 @@ let get_syntax_doc node : syntax_info =
         {
           name = "First class module";
           description =
-            "Converts a module (structure or functor) to a value of the core language \
-            that encapsulates the module.";
+            "Converts a module (structure or functor) to a value of the core \
+             language that encapsulates the module.";
           documentation = syntax_doc_url "firstclassmodules.html";
         }
   | _ -> None
