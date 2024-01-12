@@ -6,7 +6,7 @@
   > let rec name1 = 1 :: name2 and name2 = 2 :: name1
   > EOF
 
-  $ $MERLIN single syntax-document -position 1:6 \
+  $ syn_doc 1:6 \
   > -filename ./main.ml < ./main.ml
   {
     "class": "return",
@@ -46,7 +46,7 @@
   >  end
   > EOF
 
-  $ $MERLIN single syntax-document -position 1:8 \
+  $ syn_doc 1:8 \
   > -filename ./rec-modules.ml < ./rec-modules.ml
   {
     "class": "return",
@@ -58,7 +58,7 @@
     "notifications": []
   }
 // Types in modules
-  $ $MERLIN single syntax-document -position 5:5 \
+  $ syn_doc 5:5 \
   > -filename ./rec-modules.ml < ./rec-modules.ml
   {
     "class": "return",
@@ -70,7 +70,7 @@
     "notifications": []
   }
 // Nested recurvise module
-  $ $MERLIN single syntax-document -position 16:11 \
+  $ syn_doc 16:11 \
   > -filename ./rec-modules.ml < ./rec-modules.ml
   {
     "class": "return",
@@ -93,7 +93,7 @@
   > end
   > EOF
 
-  $ $MERLIN single syntax-document -position 2:23 \
+  $ syn_doc 2:23 \
   > -filename ./rec-mod-type.ml < ./rec-mod-type.ml
   {
     "class": "return",
@@ -105,7 +105,7 @@
     "notifications": []
   }
 
-  $ $MERLIN single syntax-document -position 5:29 \
+  $ syn_doc 5:29 \
   > -filename ./rec-mod-type.ml < ./rec-mod-type.ml
   {
     "class": "return",
@@ -169,7 +169,7 @@ On '... t'
   "No documentation found"
 
 // Local substitutions
-  $ $MERLIN single syntax-document -position 16:12 \
+  $ syn_doc 16:12 \
   > -filename ./sig-subs.ml < ./sig-subs.ml
   {
     "class": "return",
@@ -181,7 +181,7 @@ On '... t'
     "notifications": []
   }
  // Module type substitutions
-$ $MERLIN single syntax-document -position 26:58 \
+$ syn_doc 26:58 \
 > -filename ./sig-subs.ml < ./sig-subs.ml
 
 
@@ -193,7 +193,7 @@ $ $MERLIN single syntax-document -position 26:58 \
   > type a4 = {x: int};
   > type a5 = int;
 // Extensible Variant types
-  $ $MERLIN single syntax-document -position 1:5 \
+  $ syn_doc 1:5 \
   > -filename ./types.ml < ./types.ml
   {
     "class": "return",
@@ -205,7 +205,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Variant types
-  $ $MERLIN single syntax-document -position 2:5 \
+  $ syn_doc 2:5 \
   > -filename ./types.ml < ./types.ml
   {
     "class": "return",
@@ -217,7 +217,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Empty variant types
-  $ $MERLIN single syntax-document -position 3:5 \
+  $ syn_doc 3:5 \
   > -filename ./types.ml < ./types.ml
   {
     "class": "return",
@@ -229,7 +229,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Record types
-  $ $MERLIN single syntax-document -position 4:5 \
+  $ syn_doc 4:5 \
   > -filename ./types.ml < ./types.ml
   {
     "class": "return",
@@ -241,7 +241,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Abstract types
-  $ $MERLIN single syntax-document -position 5:5 \
+  $ syn_doc 5:5 \
   > -filename ./types.ml < ./types.ml
   {
     "class": "return",
@@ -272,7 +272,7 @@ $ $MERLIN single syntax-document -position 26:58 \
   > end
   > EOF
 // Private extensible 
-  $ $MERLIN single syntax-document -position 1:14 \
+  $ syn_doc 1:14 \
   > -filename ./p-types.ml < ./p-types.ml 
   {
     "class": "return",
@@ -284,7 +284,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Private variant
-  $ $MERLIN single syntax-document -position 2:14 \
+  $ syn_doc 2:14 \
   > -filename ./private-types.ml < ./p-types.ml 
   {
     "class": "return",
@@ -296,7 +296,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Private variant b
-  $ $MERLIN single syntax-document -position 3:14 \
+  $ syn_doc 3:14 \
   > -filename ./p-types.ml < ./p-types.ml
   {
     "class": "return",
@@ -308,7 +308,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Private record
-  $ $MERLIN single syntax-document -position 4:14 \
+  $ syn_doc 4:14 \
   > -filename ./p-types.ml < ./p-types.ml 
   {
     "class": "return",
@@ -320,7 +320,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Private types - Abbreviations
-  $ $MERLIN single syntax-document -position 5:14 \
+  $ syn_doc 5:14 \
   > -filename ./p-types.ml < ./p-types.ml 
   {
     "class": "return",
@@ -332,7 +332,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 
-  $ $MERLIN single syntax-document -position 7:14 \
+  $ syn_doc 7:14 \
   > -filename ./p-types.ml < ./p-types.ml
   {
     "class": "return",
@@ -344,7 +344,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Abstract
-  $ $MERLIN single syntax-document -position 11:7 \
+  $ syn_doc 11:7 \
   > -filename ./p-types.ml < ./p-types.ml
   {
     "class": "return",
@@ -368,7 +368,7 @@ $ $MERLIN single syntax-document -position 26:58 \
   > EOF 
 
 // Locally abstract data types
-  $ $MERLIN single syntax-document -position 1:17 \
+  $ syn_doc 1:17 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
   {
     "class": "return",
@@ -380,7 +380,7 @@ $ $MERLIN single syntax-document -position 26:58 \
     "notifications": []
   }
 // Locally abstract data types B
-$ $MERLIN single syntax-document -position 3:20 \
+$ syn_doc 3:20 \
 > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
 
 
