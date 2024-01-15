@@ -136,6 +136,7 @@ $ syn_doc 26:58 \
   > type a3 = |;
   > type a4 = {x: int};
   > type a5 = int;
+  > EOF
 on type a1..
   $ syn_doc 1:5 \
   > -filename ./types.ml < ./types.ml | jq '.value.name'
