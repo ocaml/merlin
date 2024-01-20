@@ -115,27 +115,28 @@ On 'type t :='
   "Destructive substitution"
   $ syn_doc 11:34 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
   "Destructive substitution"
-
 On '... t'
   $ syn_doc 11:37 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value'
   "No documentation found"
-
+On type t
+  $ syn_doc 2:9 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  "Abstract type"
 // Local substitutions
-  $ syn_doc 16:12 \
-  > -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  $ syn_doc 16:12 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
   "Local substitution"
 // Module type substitutions
-$ syn_doc 26:58 \
-> -filename ./sig-subs.ml < ./sig-subs.ml
+  $ syn_doc 25:57 \
+  > -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
+  "Module substitution"
 
 
 // Types
   $ cat > types.ml << EOF 
-  > type a1 = ..;
-  > type a2 = A;
-  > type a3 = |;
-  > type a4 = {x: int};
-  > type a5 = int;
+  > type a1 = ..
+  > type a2 = A
+  > type a3 = |
+  > type a4 = {x: int}
+  > type a5 = int
   > EOF
 on type a1..
   $ syn_doc 1:5 \
@@ -146,7 +147,7 @@ on type a2..
   > -filename ./types.ml < ./types.ml | jq '.value.name'
   "Variant Type"
 on type a3..
-  $ syn_doc 3:5 \
+  $ syn_doc 3:6 \
   > -filename ./types.ml < ./types.ml | jq '.value.name'
   "Empty Variant type"
 on type a4..
@@ -155,8 +156,8 @@ on type a4..
   "Record type"
 on type a5..
   $ syn_doc 5:5 \
-  > -filename ./types.ml < ./types.ml | jq '.value.name'
-  "Abstract type"
+  > -filename ./types.ml < ./types.ml | jq '.value'
+  "No documentation found"
 
 // Private types
 // Extensible
@@ -202,18 +203,17 @@ on type t = private int..
   "Private Type Abbreviation"
 on type t = int..
   $ syn_doc 11:7 \
-  > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
-  "Abstract type"
+  > -filename ./p-types.ml < ./p-types.ml | jq '.value'
+  "No documentation found"
 
 
 // Locally abstract data types
   $ cat > locally-abstract-dt.ml << EOF 
-  > let f = fun (type t) (x: t)
-  >  -> x = x
-  >  let sort_uniq (type s) (cmp : s -> s -> int) =
-  >    let module S = Set.Make(struct type t = s let compare = cmp end) in
-  >    fun l ->
-  >      S.elements (List.fold_right S.add l S.empty)
+  > let f = fun (type t) (x: t) -> x = x
+  > let sort_uniq (type s) (cmp : s -> s -> int) =
+  >   let module S = Set.Make(struct type t = s let compare = cmp end) in
+  >   fun l ->
+  >     S.elements (List.fold_right S.add l S.empty)
   > EOF 
 
 // Locally abstract data types
@@ -221,8 +221,30 @@ on type t..
   $ syn_doc 1:17 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
   "Locally Abstract Type"
-// Locally abstract data types B
-$ syn_doc 3:17 \
- > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml
 
+// First class Modules
+  $ cat > first-class-modules.ml << EOF
+  > type picture = { x : int; y : int }
+  > module type DEVICE = sig
+  >   val draw : picture -> unit
+  > end
+  > let devices : (string, (module DEVICE)) Hashtbl.t = Hashtbl.create 17
+  > module SVG = struct end
+  > module PNG = struct end
+  > let _svg = Hashtbl.add devices "SVG" (module SVG : DEVICE)
+  > let _png = Hashtbl.add devices "PNG" (module PNG : SVG)
+  > EOF 
+
+on type picture
+  $ syn_doc 1:6 \
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
+  "Record type"
+on (module SVG : DEVICE)
+  $ syn_doc 6:43 \
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
+  "First class module"
+on (module PNG : SVG)
+  $ syn_doc 7:43 \
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
+  "First class module"
 
