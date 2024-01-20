@@ -53,6 +53,16 @@ let get_syntax_doc node : syntax_info =
             syntax_doc_url
               "signaturesubstitution.html#ss:module-type-substitution";
         }
+  | (_, Type_kind Ttype_open)
+    :: (_, Type_declaration { typ_private = Public; _ })
+    :: _ ->
+      Some
+        {
+          name = "Extensible variant type";
+          description =
+            "Can be extended with new variant constructors using `+=`.";
+          documentation = syntax_doc_url "extensiblevariants.html";
+        }
   | (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
@@ -69,18 +79,8 @@ let get_syntax_doc node : syntax_info =
             "Represent data that may take on multiple different forms.";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
-  | (_, Type_kind Ttype_open)
-    :: (_, Type_declaration { typ_private = Public; _ })
-    :: _ ->
-      Some
-        {
-          name = "Extensible variant type";
-          description =
-            "Can be extended with new variant constructors using `+=`.";
-          documentation = syntax_doc_url "extensiblevariants.html";
-        }
   | (_, Type_kind Ttype_abstract)
-    :: (_, Type_declaration { typ_private = Public; _ })
+    :: (_, Type_declaration { typ_private = Public; typ_manifest = None; _ })
     :: _ ->
       Some
         {
@@ -102,8 +102,9 @@ let get_syntax_doc node : syntax_info =
           description = "Define variants with a fixed set of fields";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
-  | (_, Type_kind _) :: (_, Type_declaration { typ_private = Public; _ }) :: _
-    ->
+  | (_, Type_kind (Ttype_variant _))
+    :: (_, Type_declaration { typ_private = Public; _ })
+    :: _ ->
       Some
         {
           name = "Empty Variant type";
@@ -218,20 +219,7 @@ let get_syntax_doc node : syntax_info =
              sub-expression and replaced by a fresh type variable.";
           documentation = syntax_doc_url "locallyabstract.html";
         }
-  | _ :: _
-    :: ( _,
-         Value_binding
-           {
-             vb_expr =
-               {
-                 exp_desc = Texp_pack _;
-                 exp_extra =
-                   [ (Texp_constraint { ctyp_desc = Ttyp_package _; _ }, _, _) ];
-                 _;
-               };
-             _;
-           } )
-    :: _ ->
+  | (_, Module_expr _) :: (_, Module_binding _) :: _ ->
       Some
         {
           name = "First class module";
