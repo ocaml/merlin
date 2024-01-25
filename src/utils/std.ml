@@ -390,6 +390,20 @@ module String = struct
            true
        with Not_found -> false)
 
+  (* [is_suffixed ~by s] returns [true] iff [by] is a suffix of [s] *)
+  let is_suffixed ~by =
+    let l = String.length by in
+    fun s ->
+    let l' = String.length s in
+    (l' >= l) &&
+      let n = l' - l in
+      (try for i = 0 to pred l do
+             if s.[i + n] <> by.[i] then
+               raise Not_found
+           done;
+           true
+       with Not_found -> false)
+
   (* Drop characters from beginning of string *)
   let drop n s = sub s ~pos:n ~len:(length s - n)
 
@@ -499,6 +513,10 @@ module String = struct
       raise Not_found
     else
       !i
+
+  let contains_occurrence ~pattern text =
+    try let (_:int) = next_occurrence ~pattern text 0 in true
+    with Not_found -> false
 
   let replace_all ~pattern ~with_ text =
     if pattern = "" then text else
@@ -772,9 +790,20 @@ module System = struct
       (* Currently we assume that [prog] is always quoted and might contain
       arguments such as [-as-ppx]. This is due to the way Merlin gets its
       configuration. Thus we cannot rely on [Filename.quote_command]. *)
+      let has_o_option s =
+        (* Detect [-as-pp/--as-pp] or [-dump-ast/--dump-ast] which means
+           that [-o OUTPUT] is available. *)
+        String.is_suffixed ~by:"-as-pp" s ||
+        String.is_suffixed ~by:"-dump-ast" s ||
+        String.contains_occurrence ~pattern:"-as-pp " s ||
+        String.contains_occurrence ~pattern:"-dump-ast " s in
       let args = String.concat ~sep:" " @@ List.map ~f:Filename.quote args in
       let args = match stdout with
-        | Some file -> Format.sprintf "%s 1>%s" args (Filename.quote file)
+        | Some file ->
+          if Sys.win32 && has_o_option prog then
+            Format.sprintf "%s -o %s" args (Filename.quote file)
+          else
+            Format.sprintf "%s 1>%s" args (Filename.quote file)
         | None ->
           (* Runned program should never output on stdout since it is the
              channel used by Merlin to communicate with the editor *)
