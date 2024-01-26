@@ -390,20 +390,6 @@ module String = struct
            true
        with Not_found -> false)
 
-  (* [is_suffixed ~by s] returns [true] iff [by] is a suffix of [s] *)
-  let is_suffixed ~by =
-    let l = String.length by in
-    fun s ->
-    let l' = String.length s in
-    (l' >= l) &&
-      let n = l' - l in
-      (try for i = 0 to pred l do
-             if s.[i + n] <> by.[i] then
-               raise Not_found
-           done;
-           true
-       with Not_found -> false)
-
   (* Drop characters from beginning of string *)
   let drop n s = sub s ~pos:n ~len:(length s - n)
 
@@ -513,10 +499,6 @@ module String = struct
       raise Not_found
     else
       !i
-
-  let contains_occurrence ~pattern text =
-    try let (_:int) = next_occurrence ~pattern text 0 in true
-    with Not_found -> false
 
   let replace_all ~pattern ~with_ text =
     if pattern = "" then text else
@@ -773,7 +755,7 @@ module Shell = struct
 end
 
 module System = struct
-  external windows_merlin_system_command : string -> cwd:string -> int =
+  external windows_merlin_system_command : string -> cwd:string -> ?outfile:string -> int =
     "ml_merlin_system_command"
 
   let run_in_directory
@@ -790,34 +772,26 @@ module System = struct
       (* Currently we assume that [prog] is always quoted and might contain
       arguments such as [-as-ppx]. This is due to the way Merlin gets its
       configuration. Thus we cannot rely on [Filename.quote_command]. *)
-      let has_o_option s =
-        (* Heuristics on [prog] to detect that [-o OUTPUT] is available:
-           - [ppx.exe -as-pp/--as-pp]
-           - [ppx.exe -dump-ast/--dump-ast]
-           - [ppx.exe]
-           *)
-        String.is_suffixed ~by:"ppx.exe" s ||
-        String.is_suffixed ~by:"-as-pp" s ||
-        String.is_suffixed ~by:"-dump-ast" s ||
-        String.contains_occurrence ~pattern:"-as-pp " s ||
-        String.contains_occurrence ~pattern:"-dump-ast " s in
       let args = String.concat ~sep:" " @@ List.map ~f:Filename.quote args in
-      let args = match stdout with
+      let args, windows_outfile = match stdout with
         | Some file ->
-          if Sys.win32 && has_o_option prog then
-            Format.sprintf "%s -o %s" args (Filename.quote file)
+          if Sys.win32 then
+            args, Some file
           else
-            Format.sprintf "%s 1>%s" args (Filename.quote file)
+            Format.sprintf "%s 1>%s" args (Filename.quote file), None
         | None ->
           (* Runned program should never output on stdout since it is the
              channel used by Merlin to communicate with the editor *)
-          if Sys.win32 then args else Format.sprintf "%s 1>&2" args
+          if Sys.win32 then
+            args, None
+          else
+            Format.sprintf "%s 1>&2" args, None
       in
       let cmd = Format.sprintf "%s %s" prog args in
       let exit_code =
         if Sys.win32 then
           (* Note: the following function will never output to stdout *)
-          windows_merlin_system_command cmd ~cwd
+          windows_merlin_system_command cmd ~cwd ?outfile:windows_outfile
         else
           Sys.command (Printf.sprintf "cd %s && %s" (Filename.quote cwd) cmd)
       in
