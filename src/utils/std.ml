@@ -791,8 +791,12 @@ module System = struct
       arguments such as [-as-ppx]. This is due to the way Merlin gets its
       configuration. Thus we cannot rely on [Filename.quote_command]. *)
       let has_o_option s =
-        (* Detect [-as-pp/--as-pp] or [-dump-ast/--dump-ast] which means
-           that [-o OUTPUT] is available. *)
+        (* Heuristics on [prog] to detect that [-o OUTPUT] is available:
+           - [ppx.exe -as-pp/--as-pp]
+           - [ppx.exe -dump-ast/--dump-ast]
+           - [ppx.exe]
+           *)
+        String.is_suffixed ~by:"ppx.exe" s ||
         String.is_suffixed ~by:"-as-pp" s ||
         String.is_suffixed ~by:"-dump-ast" s ||
         String.contains_occurrence ~pattern:"-as-pp " s ||
