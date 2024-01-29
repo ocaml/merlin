@@ -102,7 +102,6 @@ on module type of..
   >      module F(X:T) = X
   >  end
   > EOF
-
 // Destructive substitutions
 On 'with':
   $ syn_doc 11:24 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value'
@@ -177,7 +176,7 @@ on type a5..
   >   let to_int n = n
   > end
   > EOF
-on type b1..
+  on type b1..
   $ syn_doc 1:14 \
   > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
   "Private Extensible Variant Type"
@@ -214,8 +213,7 @@ on type t = int..
   >   let module S = Set.Make(struct type t = s let compare = cmp end) in
   >   fun l ->
   >     S.elements (List.fold_right S.add l S.empty)
-  > EOF 
-
+  > EOF
 // Locally abstract data types
 on type t..
   $ syn_doc 1:17 \
@@ -233,8 +231,7 @@ on type t..
   > module PNG = struct end
   > let _svg = Hashtbl.add devices "SVG" (module SVG : DEVICE)
   > let _png = Hashtbl.add devices "PNG" (module PNG : SVG)
-  > EOF 
-
+  > EOF
 on type picture
   $ syn_doc 1:6 \
   > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
