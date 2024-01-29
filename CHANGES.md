@@ -4,8 +4,8 @@ merlin NEXT_VERSION
   + merlin binary
     - Add a "heap_mbytes" field to Merlin server responses to report heap usage (#1717)
     - Add cache stats to telemetry (#1711)
-  + Fix `FLG -pp ppx.exe -as-pp/-dump-ast` use of invalid shell redirection when direct
-    process launch on Windows. (#1722)
+    - Fix `FLG -pp ppx.exe -as-pp/-dump-ast` use of invalid shell redirection when 
+    direct process launch on Windows. (#1723, fixes #1722)
 
 merlin 4.13
 ===========

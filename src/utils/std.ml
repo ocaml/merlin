@@ -778,15 +778,17 @@ module System = struct
       let args =
         if Sys.win32 then args
         else
-          Printf.sprintf "%s 1>%s" args
-            (match stdout with | Some file -> Filename.quote file
-                               | None -> "&2")
+          let stdout = match stdout with
+            | Some file -> Filename.quote file
+            | None -> "&2"
+          in
+          Printf.sprintf "%s 1>%s" args stdout
       in
       let cmd = Format.sprintf "%s %s" prog args in
       let exit_code =
         if Sys.win32 then
-          (* Note: the following function will never output to stdout
-             when [stdout = None]. Instead stdout is sent to stderr. *)
+          (* Note: the following function will never output to stdout.
+             When [stdout = None], stdout is sent to stderr. *)
           windows_merlin_system_command cmd ~cwd ?outfile:stdout
         else
           Sys.command (Printf.sprintf "cd %s && %s" (Filename.quote cwd) cmd)
