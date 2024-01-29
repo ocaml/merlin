@@ -5,6 +5,8 @@ merlin NEXT_VERSION
     - Add a "heap_mbytes" field to Merlin server responses to report heap usage (#1717)
     - Add cache stats to telemetry (#1711)
     - Add a query_num field to the `ocamlmerlin` responses to detect server crashes (#1716)
+  + editor modes
+    - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
 
 merlin 4.13
 ===========
