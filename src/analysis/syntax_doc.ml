@@ -53,55 +53,73 @@ let get_syntax_doc node : syntax_info =
             syntax_doc_url
               "signaturesubstitution.html#ss:module-type-substitution";
         }
-  | (_, Type_kind Ttype_open)
-    :: (_, Type_declaration { typ_private = Public; _ })
-    :: _ ->
-      Some
-        {
-          name = "Extensible variant type";
-          description =
-            "Can be extended with new variant constructors using `+=`.";
-          documentation = syntax_doc_url "extensiblevariants.html";
-        }
+  | (_, Type_kind Ttype_open) :: (_, Type_declaration { typ_private; _ }) :: _
+    ->
+      let e_name = "Extensible variant type" in
+      let e_description =
+        "Can be extended with new variant constructors using `+=`."
+      in
+      let e_url = "extensiblevariants.html" in
+      let name, description, url =
+        match typ_private with
+        | Public -> (e_name, e_description, e_url)
+        | Private ->
+            ( Format.sprintf "Private %s" e_name,
+              Format.sprintf
+                "%s. Prevents new constructors from being declared directly, \
+                 but allows extension constructors to be referred to in \
+                 interfaces."
+                e_description,
+              "extensiblevariants.html#ss:private-extensible" )
+      in
+      Some { name; description; documentation = syntax_doc_url url }
   | (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
-    :: (_, Type_declaration { typ_private = Public; _ })
+    :: (_, Type_declaration { typ_private; _ })
     :: _
   | _
     :: (_, Constructor_declaration _)
     :: (_, Type_kind (Ttype_variant _))
-    :: (_, Type_declaration { typ_private = Public; _ })
+    :: (_, Type_declaration { typ_private; _ })
     :: _ ->
-      Some
-        {
-          name = "Variant Type";
-          description =
-            "Represents data that may take on multiple different forms.";
-          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
-        }
-  | (_, Type_kind Ttype_abstract)
-    :: (_, Type_declaration { typ_private = Public; typ_manifest = None; _ })
-    :: _ ->
-      Some
-        {
-          name = "Abstract type";
-          description =
-            "Defines variants with arbitrary data structures, including other \
-             variants, records, and functions";
-          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
-        }
+      let v_name = "Variant type" in
+      let v_description =
+        "Represents data that may take on multiple different forms."
+      in
+      let v_url = "typedecl.html#ss:typedefs" in
+      let name, description, url =
+        match typ_private with
+        | Public -> (v_name, v_description, v_url)
+        | Private ->
+            ( Format.sprintf "Private %s" v_name,
+              Format.sprintf
+                "%s This type is private, values cannot be constructed \
+                 directly but can be de-structured as usual."
+                v_description,
+              "privatetypes.html#ss:private-types-variant" )
+      in
+      Some { name; description; documentation = syntax_doc_url url }
   | (_, Core_type _)
     :: (_, Core_type _)
     :: (_, Label_declaration _)
     :: (_, Type_kind (Ttype_record _))
-    :: (_, Type_declaration { typ_private = Public; _ })
+    :: (_, Type_declaration { typ_private; _ })
     :: _ ->
-      Some
-        {
-          name = "Record type";
-          description = "Defines variants with a fixed set of fields";
-          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
-        }
+      let r_name = "Record type" in
+      let r_description = "Defines variants with a fixed set of fields" in
+      let r_url = "typedecl.html#ss:typedefs" in
+      let name, description, url =
+        match typ_private with
+        | Public -> (r_name, r_description, r_url)
+        | Private ->
+            ( Format.sprintf "Private %s" r_name,
+              Format.sprintf
+                "%s This type is private, values cannot be constructed \
+                 directly but can be de-structured as usual."
+                r_description,
+              "privatetypes.html#ss:private-types-variant" )
+      in
+      Some { name; description; documentation = syntax_doc_url url }
   | (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private = Public; _ })
     :: _ ->
@@ -111,62 +129,23 @@ let get_syntax_doc node : syntax_info =
           description = "An empty variant type.";
           documentation = syntax_doc_url "emptyvariants.html";
         }
-  | (_, Constructor_declaration _)
-    :: (_, Type_kind (Ttype_variant _))
-    :: (_, Type_declaration { typ_private = Private; _ })
-    :: _
-  | _
-    :: (_, Constructor_declaration _)
-    :: (_, Type_kind (Ttype_variant _))
-    :: (_, Type_declaration { typ_private = Private; _ })
-    :: _ ->
-      Some
-        {
-          name = "Private Type";
-          description =
-            "Can be de-structured normally in pattern-matching but cannot be \
-             constructed directly by constructor application.";
-          documentation =
-            syntax_doc_url "privatetypes.html#ss:private-types-variant";
-        }
-  | _ :: _
-    :: (_, Label_declaration _)
-    :: (_, Type_kind (Ttype_record _))
-    :: (_, Type_declaration { typ_private = Private; _ })
-    :: _ ->
-      Some
-        {
-          name = "Private Record Type";
-          description =
-            "Can be de-structured normally in pattern-matching but cannot be \
-             constructed directly by constructor application.";
-          documentation =
-            syntax_doc_url "privatetypes.html#ss:private-types-variant";
-        }
-  | (_, Type_kind Ttype_open)
-    :: (_, Type_declaration { typ_private = Private; _ })
-    :: _ ->
-      Some
-        {
-          name = "Private Extensible Variant Type";
-          description =
-            "Prevents new constructors from being declared directly, but \
-             allows extension constructors to be referred to in interfaces.";
-          documentation =
-            syntax_doc_url "extensiblevariants.html#ss:private-extensible";
-        }
   | (_, Type_kind Ttype_abstract)
-    :: (_, Type_declaration { typ_private = Private; _ })
+    :: (_, Type_declaration { typ_private; typ_manifest = None; _ })
     :: _ ->
-      Some
-        {
-          name = "Private Type Abbreviation";
-          description =
-            "Declares a type that is distinct from its implementation type \
-             `typexpr`.";
-          documentation =
-            syntax_doc_url "privatetypes.html#ss:private-types-abbrev";
-        }
+      let name, description, url =
+        match typ_private with
+        | Public ->
+            ( "Abstract type",
+              "Defines variants with arbitrary data structures, including \
+               other variants, records, and functions.",
+              "typedecl.html#ss:typedefs" )
+        | Private ->
+            ( "Private Type Abbreviation",
+              "Declares a type that is distinct from its implementation type \
+               `typexpr`.",
+              "privatetypes.html#ss:private-types-abbrev" )
+      in
+      Some { name; description; documentation = syntax_doc_url url }
   | (_, Expression _)
     :: (_, Expression _)
     :: (_, Value_binding _)
