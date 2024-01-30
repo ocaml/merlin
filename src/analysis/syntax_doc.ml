@@ -55,7 +55,7 @@ let get_syntax_doc node : syntax_info =
         }
   | (_, Type_kind Ttype_open) :: (_, Type_declaration { typ_private; _ }) :: _
     ->
-      let e_name = "Extensible variant type" in
+      let e_name = "Extensible Variant Type" in
       let e_description =
         "Can be extended with new variant constructors using `+=`."
       in
@@ -82,7 +82,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_variant _))
     :: (_, Type_declaration { typ_private; _ })
     :: _ ->
-      let v_name = "Variant type" in
+      let v_name = "Variant Type" in
       let v_description =
         "Represents data that may take on multiple different forms."
       in
@@ -105,7 +105,7 @@ let get_syntax_doc node : syntax_info =
     :: (_, Type_kind (Ttype_record _))
     :: (_, Type_declaration { typ_private; _ })
     :: _ ->
-      let r_name = "Record type" in
+      let r_name = "Record Type" in
       let r_description = "Defines variants with a fixed set of fields" in
       let r_url = "typedecl.html#ss:typedefs" in
       let name, description, url =
@@ -125,27 +125,33 @@ let get_syntax_doc node : syntax_info =
     :: _ ->
       Some
         {
-          name = "Empty Variant type";
+          name = "Empty Variant Type";
           description = "An empty variant type.";
           documentation = syntax_doc_url "emptyvariants.html";
         }
   | (_, Type_kind Ttype_abstract)
-    :: (_, Type_declaration { typ_private; typ_manifest = None; _ })
+    :: (_, Type_declaration { typ_private = Public; typ_manifest = None; _ })
     :: _ ->
-      let name, description, url =
-        match typ_private with
-        | Public ->
-            ( "Abstract type",
-              "Defines variants with arbitrary data structures, including \
-               other variants, records, and functions.",
-              "typedecl.html#ss:typedefs" )
-        | Private ->
-            ( "Private Type Abbreviation",
-              "Declares a type that is distinct from its implementation type \
-               `typexpr`.",
-              "privatetypes.html#ss:private-types-abbrev" )
-      in
-      Some { name; description; documentation = syntax_doc_url url }
+      Some
+        {
+          name = "Abstract Type";
+          description =
+            "Define variants with arbitrary data structures, including other \
+             variants, records, and functions";
+          documentation = syntax_doc_url "typedecl.html#ss:typedefs";
+        }
+  | (_, Type_kind Ttype_abstract)
+    :: (_, Type_declaration { typ_private = Private; _ })
+    :: _ ->
+      Some
+        {
+          name = "Private Type Abbreviation";
+          description =
+            "Declares a type that is distinct from its implementation type \
+             `typexpr`.";
+          documentation =
+            syntax_doc_url "privatetypes.html#ss:private-types-abbrev";
+        }
   | (_, Expression _)
     :: (_, Expression _)
     :: (_, Value_binding _)
