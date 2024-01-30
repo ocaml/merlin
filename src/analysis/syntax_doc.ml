@@ -76,7 +76,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Variant Type";
           description =
-            "Represent data that may take on multiple different forms.";
+            "Represents data that may take on multiple different forms.";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | (_, Type_kind Ttype_abstract)
@@ -86,7 +86,7 @@ let get_syntax_doc node : syntax_info =
         {
           name = "Abstract type";
           description =
-            "Define variants with arbitrary data structures, including other \
+            "Defines variants with arbitrary data structures, including other \
              variants, records, and functions";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
@@ -99,7 +99,7 @@ let get_syntax_doc node : syntax_info =
       Some
         {
           name = "Record type";
-          description = "Define variants with a fixed set of fields";
+          description = "Defines variants with a fixed set of fields";
           documentation = syntax_doc_url "typedecl.html#ss:typedefs";
         }
   | (_, Type_kind (Ttype_variant _))
@@ -219,7 +219,7 @@ let get_syntax_doc node : syntax_info =
              sub-expression and replaced by a fresh type variable.";
           documentation = syntax_doc_url "locallyabstract.html";
         }
-  | (_, Module_expr _) :: (_, Module_binding _) :: _ ->
+  | (_, Module_expr _) :: (_, Module_expr _) :: _ ->
       Some
         {
           name = "First class module";
