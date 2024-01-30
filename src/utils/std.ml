@@ -755,7 +755,7 @@ module Shell = struct
 end
 
 module System = struct
-  external windows_merlin_system_command : string -> cwd:string -> int =
+  external windows_merlin_system_command : string -> cwd:string -> ?outfile:string -> int =
     "ml_merlin_system_command"
 
   let run_in_directory
@@ -773,18 +773,23 @@ module System = struct
       arguments such as [-as-ppx]. This is due to the way Merlin gets its
       configuration. Thus we cannot rely on [Filename.quote_command]. *)
       let args = String.concat ~sep:" " @@ List.map ~f:Filename.quote args in
-      let args = match stdout with
-        | Some file -> Format.sprintf "%s 1>%s" args (Filename.quote file)
-        | None ->
-          (* Runned program should never output on stdout since it is the
-             channel used by Merlin to communicate with the editor *)
-          if Sys.win32 then args else Format.sprintf "%s 1>&2" args
+      (* Runned program should never output on stdout since it is the
+          channel used by Merlin to communicate with the editor *)
+      let args =
+        if Sys.win32 then args
+        else
+          let stdout = match stdout with
+            | Some file -> Filename.quote file
+            | None -> "&2"
+          in
+          Printf.sprintf "%s 1>%s" args stdout
       in
       let cmd = Format.sprintf "%s %s" prog args in
       let exit_code =
         if Sys.win32 then
-          (* Note: the following function will never output to stdout *)
-          windows_merlin_system_command cmd ~cwd
+          (* Note: the following function will never output to stdout.
+             When [stdout = None], stdout is sent to stderr. *)
+          windows_merlin_system_command cmd ~cwd ?outfile:stdout
         else
           Sys.command (Printf.sprintf "cd %s && %s" (Filename.quote cwd) cmd)
       in
