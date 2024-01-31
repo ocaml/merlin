@@ -119,7 +119,7 @@ On '... t'
   "No documentation found"
 On type t
   $ syn_doc 2:9 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
-  "Abstract type"
+  "Abstract Type"
 // Local substitutions
   $ syn_doc 16:12 -filename ./sig-subs.ml < ./sig-subs.ml | jq '.value.name'
   "Local substitution"
@@ -140,7 +140,7 @@ On type t
 on type a1..
   $ syn_doc 1:5 \
   > -filename ./types.ml < ./types.ml | jq '.value.name'
-  "Extensible variant type"
+  "Extensible Variant Type"
 on type a2..
   $ syn_doc 2:5 \
   > -filename ./types.ml < ./types.ml | jq '.value.name'
@@ -148,11 +148,11 @@ on type a2..
 on type a3..
   $ syn_doc 3:6 \
   > -filename ./types.ml < ./types.ml | jq '.value.name'
-  "Empty Variant type"
+  "Empty Variant Type"
 on type a4..
   $ syn_doc 4:5 \
   > -filename ./types.ml < ./types.ml | jq '.value.name'
-  "Record type"
+  "Record Type"
 on type a5..
   $ syn_doc 5:5 \
   > -filename ./types.ml < ./types.ml | jq '.value'
@@ -176,18 +176,18 @@ on type a5..
   >   let to_int n = n
   > end
   > EOF
-  on type b1..
+on type b1..
   $ syn_doc 1:14 \
   > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
   "Private Extensible Variant Type"
 on type b2..
   $ syn_doc 2:14 \
   > -filename ./private-types.ml < ./p-types.ml | jq '.value.name'
-  "Private Type"
+  "Private Variant Type"
 on type b3..
   $ syn_doc 3:14 \
   > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
-  "Private Type"
+  "Private Variant Type"
 on type b4..
   $ syn_doc 4:14 \
   > -filename ./p-types.ml < ./p-types.ml | jq '.value.name'
@@ -205,7 +205,6 @@ on type t = int..
   > -filename ./p-types.ml < ./p-types.ml | jq '.value'
   "No documentation found"
 
-
 // Locally abstract data types
   $ cat > locally-abstract-dt.ml << EOF 
   > let f = fun (type t) (x: t) -> x = x
@@ -219,6 +218,10 @@ on type t..
   $ syn_doc 1:17 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
   "Locally Abstract Type"
+(FIXME) erroneously reports function body as a Locally Abstract DT
+  $ syn_doc 1:39 \
+  > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
+  "Locally Abstract Type"
 
 // First class Modules
   $ cat > first-class-modules.ml << EOF
@@ -230,18 +233,38 @@ on type t..
   > module SVG = struct end
   > module PNG = struct end
   > let _svg = Hashtbl.add devices "SVG" (module SVG : DEVICE)
-  > let _png = Hashtbl.add devices "PNG" (module PNG : SVG)
+  > let _png = Hashtbl.add devices "PNG" (module PNG : DEVICE)
+  > let sort (type s) (module Set : Set.S with type elt = s) l =
+  >   Set.elements (List.fold_right Set.add l Set.empty)
+  > let make_set (type s) cmp =
+  >   let module S = Set.Make(struct
+  >     type t = s
+  >     let compare = cmp
+  >   end) in
+  >   (module S : Set.S with type elt = s)
   > EOF
 on type picture
   $ syn_doc 1:6 \
   > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
-  "Record type"
+  "Record Type"
+on module SVG..
+  $ syn_doc 6:6 \
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value'
+  "No documentation found"
 on (module SVG : DEVICE)
-  $ syn_doc 6:43 \
+  $ syn_doc 8:43 \
   > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
   "First class module"
-on (module PNG : SVG)
-  $ syn_doc 7:43 \
+on (module PNG : DEVICE)
+  $ syn_doc 9:43 \
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
+  "First class module"
+on type t = s..
+  $ syn_doc 14:10 \
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value'
+  "No documentation found"
+on (module S : Set.S with type elt = s)
+  $ syn_doc 17:2 \
   > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
   "First class module"
 
