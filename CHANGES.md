@@ -9,6 +9,7 @@ merlin NEXT_VERSION
     - Add a query_num field to the `ocamlmerlin` responses to detect server crashes (#1716)
   + editor modes
     - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
+    - Fix merlinpp not using binary file open (#1725, fixes #1724)
 
 merlin 4.13
 ===========
