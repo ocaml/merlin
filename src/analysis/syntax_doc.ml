@@ -204,7 +204,10 @@ let get_syntax_doc node : syntax_info =
              sub-expression and replaced by a fresh type variable.";
           documentation = syntax_doc_url "locallyabstract.html";
         }
-  | (_, Module_expr _) :: (_, Module_expr _) :: _ ->
+  | (_, Module_expr _)
+    :: (_, Module_expr _)
+    :: (_, Expression { exp_desc = Texp_pack _; _ })
+    :: _ ->
       Some
         {
           name = "First class module";
