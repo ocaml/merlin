@@ -84,7 +84,7 @@ let get_syntax_doc cursor_loc node : syntax_info =
     :: _ ->
       let v_name = "Variant Type" in
       let v_description =
-        "Represents data that may take on multiple different forms."
+        "Represent's data that may take on multiple different forms."
       in
       let v_url = "typedecl.html#ss:typedefs" in
       let name, description, url =
