@@ -238,7 +238,7 @@ On x
   > module SVG = struct end
   > module PNG = struct end
   > let _svg = Hashtbl.add devices "SVG" (module SVG : DEVICE)
-  > let _png = Hashtbl.add devices "PNG" (module PNG : DEVICE)
+  > let _png = Hashtbl.add devices "PNG" (module PNG : SVG)
   > let sort (type s) (module Set : Set.S with type elt = s) l =
   >   Set.elements (List.fold_right Set.add l Set.empty)
   > let make_set (type s) cmp =
@@ -260,10 +260,10 @@ on (module SVG : DEVICE)
   $ syn_doc 8:43 \
   > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
   "First class module"
-on (module PNG : DEVICE)
+on (module PNG : SVG)
   $ syn_doc 9:43 \
-  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value.name'
-  "First class module"
+  > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value'
+  "No documentation found"
 on type t = s..
   $ syn_doc 14:10 \
   > -filename ./first-class-modules.ml < ./first-class-modules.ml | jq '.value'
