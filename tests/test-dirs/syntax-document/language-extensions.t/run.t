@@ -218,10 +218,15 @@ on type t..
   $ syn_doc 1:17 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
   "Locally Abstract Type"
-(FIXME) erroneously reports function body as a Locally Abstract DT
+On fun..
+  $ syn_doc 1:9 \
+  > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value'
+  "No documentation found"
+On x
   $ syn_doc 1:39 \
-  > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
-  "Locally Abstract Type"
+  > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value'
+  "No documentation found"
+
 
 // First class Modules
   $ cat > first-class-modules.ml << EOF
