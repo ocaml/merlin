@@ -6,7 +6,7 @@ let syntax_doc_url endpoint =
   let base_url = "https://v2.ocaml.org/releases/4.14/htmlman/" in
   base_url ^ endpoint
 
-let get_syntax_doc node : syntax_info =
+let get_syntax_doc cursor_loc node : syntax_info =
   match node with
   | (_, Type_kind _)
     :: (_, Type_declaration _)
@@ -194,16 +194,27 @@ let get_syntax_doc node : syntax_info =
     :: (_, Expression _)
     :: ( _,
          Value_binding
-           { vb_expr = { exp_extra = [ (Texp_newtype' _, _, _) ]; _ }; _ } )
-    :: _ ->
-      Some
-        {
-          name = "Locally Abstract Type";
-          description =
-            "Type constructor which is considered abstract in the scope of the \
-             sub-expression and replaced by a fresh type variable.";
-          documentation = syntax_doc_url "locallyabstract.html";
-        }
+           {
+             vb_expr =
+               { exp_extra = [ (Texp_newtype' (_, loc), _, _) ]; exp_loc; _ };
+             _;
+           } )
+    :: _ -> (
+      let in_range =
+        cursor_loc.Lexing.pos_cnum - 1 > exp_loc.loc_start.pos_cnum
+        && cursor_loc.Lexing.pos_cnum <= loc.loc.loc_end.pos_cnum + 1
+      in
+      match in_range with
+      | true ->
+          Some
+            {
+              name = "Locally Abstract Type";
+              description =
+                "Type constructor which is considered abstract in the scope of \
+                 the sub-expression and replaced by a fresh type variable.";
+              documentation = syntax_doc_url "locallyabstract.html";
+            }
+      | false -> None)
   | (_, Module_expr _)
     :: (_, Module_expr _)
     :: (_, Expression { exp_desc = Texp_pack _; _ })
