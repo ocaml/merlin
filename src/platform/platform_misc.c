@@ -103,15 +103,17 @@ value ml_merlin_dont_inherit_stdio(value vstatus)
 
 /* Run ppx-command without opening a sub console */
 
-static int windows_system(wchar_t *cmd, wchar_t *cwd, DWORD *ret)
+static int windows_system(wchar_t *cmd, wchar_t *cwd, wchar_t *outfile, DWORD *ret)
 {
     PROCESS_INFORMATION p_info;
     STARTUPINFOW s_info;
-    HANDLE hp, p_stderr;
+    SECURITY_ATTRIBUTES s_attrs;
+    HANDLE hp, p_stderr, hf;
     DWORD handleInfo, flags, err = ERROR_SUCCESS;
 
     memset(&s_info, 0, sizeof(s_info));
     memset(&p_info, 0, sizeof(p_info));
+    memset(&s_attrs, 0, sizeof(s_attrs));
     s_info.cb = sizeof(s_info);
     s_info.dwFlags = STARTF_USESTDHANDLES;
 
@@ -135,8 +137,25 @@ static int windows_system(wchar_t *cmd, wchar_t *cwd, DWORD *ret)
         s_info.hStdError = p_stderr;
     }
 
-    /* Redirect stdout to stderr */
-    s_info.hStdOutput = s_info.hStdError;
+    /* Redirect stdout to <outfile>, or to stderr if no <outfile> */
+    if (outfile == NULL) {
+        s_info.hStdOutput = s_info.hStdError;
+        hf = INVALID_HANDLE_VALUE;
+    } else {
+        s_attrs.bInheritHandle = TRUE;
+        s_attrs.nLength = sizeof(s_attrs);
+        hf = CreateFileW(outfile,
+            GENERIC_WRITE,
+            FILE_SHARE_WRITE | FILE_SHARE_READ,
+            &s_attrs,
+            OPEN_ALWAYS,
+            FILE_ATTRIBUTE_NORMAL,
+            NULL);
+        if (hf == INVALID_HANDLE_VALUE) {
+            err = GetLastError(); goto ret;
+        }
+        s_info.hStdOutput = hf;
+    }
 
     flags = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
     if (! CreateProcessW(NULL, cmd, NULL, NULL,
@@ -154,21 +173,30 @@ static int windows_system(wchar_t *cmd, wchar_t *cwd, DWORD *ret)
         CloseHandle(p_info.hProcess);
         CloseHandle(p_info.hThread);
     }
+
+    if (hf != INVALID_HANDLE_VALUE) {
+        CloseHandle(hf);
+    }
  ret:
     return err;
 }
 
-value ml_merlin_system_command(value v_command, value v_cwd)
+value ml_merlin_system_command(value v_command, value v_cwd, value v_opt_outfile)
 {
-  CAMLparam2(v_command, v_cwd);
+  CAMLparam3(v_command, v_cwd, v_opt_outfile);
   DWORD ret, err;
   wchar_t *command = caml_stat_strdup_to_utf16(String_val(v_command));
   wchar_t *cwd = caml_stat_strdup_to_utf16(String_val(v_cwd));
+  wchar_t *outfile = NULL;
+  if (Is_some(v_opt_outfile)) {
+    outfile = caml_stat_strdup_to_utf16(String_val(Some_val(v_opt_outfile)));
+  }
   caml_release_runtime_system();
-  err = windows_system(command, cwd, &ret);
+  err = windows_system(command, cwd, outfile, &ret);
   caml_acquire_runtime_system();
   caml_stat_free(command);
   caml_stat_free(cwd);
+  if (outfile != NULL) caml_stat_free(outfile);
 
   if (err != ERROR_SUCCESS) {
     win32_maperr(err);
@@ -186,10 +214,11 @@ value ml_merlin_dont_inherit_stdio(value vstatus)
   return Val_unit;
 }
 
-CAMLprim value ml_merlin_system_command(value v_command, value v_cwd)
+CAMLprim value ml_merlin_system_command(value v_command, value v_cwd, value v_opt_outfile)
 {
   (void)v_command;
   (void)v_cwd;
+  (void)v_opt_outfile;
   caml_invalid_argument("ml_merlin_system_command is only available on windows");
 }
 
