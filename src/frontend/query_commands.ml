@@ -502,6 +502,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     if path = "" then `Invalid_context else
       Locate.get_doc ~config
         ~env ~local_defs ~comments ~pos (`User_input path)
+
   | Syntax_document pos ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
@@ -509,8 +510,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let res = Syntax_doc.get_syntax_doc pos node in 
     (match res with
     | Some res -> `Found res 
-    | None -> `No_documentation) 
-
+    | None -> `No_documentation)
 
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
