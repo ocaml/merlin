@@ -30,6 +30,7 @@ open Std
 
 type config = {
   build_path   : string list;
+  hidden_path  : string list;
   source_path  : string list;
   cmi_path     : string list;
   cmt_path     : string list;

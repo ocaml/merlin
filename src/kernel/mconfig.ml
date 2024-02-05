@@ -6,6 +6,7 @@ let {Logger. log} = Logger.for_section "Mconfig"
 
 type ocaml = {
   include_dirs         : string list;
+  hidden_dirs          : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -31,6 +32,7 @@ let dump_warnings st =
 
 let dump_ocaml x = `Assoc [
     "include_dirs"         , `List (List.map ~f:Json.string x.include_dirs);
+    "hidden_dirs"          , `List (List.map ~f:Json.string x.hidden_dirs);
     "no_std_include"       , `Bool x.no_std_include;
     "unsafe"               , `Bool x.unsafe;
     "classic"              , `Bool x.classic;
@@ -69,6 +71,7 @@ let marg_commandline f =
 
 type merlin = {
   build_path  : string list;
+  hidden_path : string list;
   source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
@@ -456,6 +459,13 @@ let ocaml_flags = [
     "<dir> Add <dir> to the list of include directories"
   );
   (
+    "-H",
+    marg_path (fun dir ocaml ->
+        {ocaml with hidden_dirs = dir :: ocaml.hidden_dirs}),
+    "<dir>  Add <dir> to the list of \"hidden\" include directories\n\
+    \ (Like -I, but the program can not directly reference these dependencies)"
+  );
+  (
     "-nostdlib",
     Marg.unit (fun ocaml -> {ocaml with no_std_include = true}),
     " Do not add default directory to the list of include directories"
@@ -587,6 +597,7 @@ let ocaml_flags = [
 let initial = {
   ocaml = {
     include_dirs         = [];
+    hidden_dirs          = [];
     no_std_include       = false;
     unsafe               = false;
     classic              = false;
@@ -605,6 +616,7 @@ let initial = {
   };
   merlin = {
     build_path  = [];
+    hidden_path = [];
     source_path = [];
     cmi_path    = [];
     cmt_path    = [];
@@ -750,6 +762,9 @@ let build_path config = (
     (List.length result) (List.length result');
   result'
 )
+
+let hidden_path config =
+  config.merlin.hidden_path @ config.ocaml.hidden_dirs
 
 let cmt_path config = (
   let dirs =
