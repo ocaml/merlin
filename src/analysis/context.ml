@@ -78,9 +78,9 @@ let inspect_pattern (type a) ~cursor ~lid (p : a Typedtree.general_pattern) =
                   (Printtyped.pattern 0) p);
   match p.pat_desc with
   | Tpat_any when Longident.last lid = "_" -> None
-  | Tpat_var (_, str_loc) when (Longident.last lid) = str_loc.txt ->
+  | Tpat_var (_, str_loc, _) when (Longident.last lid) = str_loc.txt ->
     None
-  | Tpat_alias (_, _, str_loc)
+  | Tpat_alias (_, _, str_loc, _)
     when (Longident.last lid) = str_loc.txt ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
       subpattern, then it must mean that the cursor is on the alias. *)

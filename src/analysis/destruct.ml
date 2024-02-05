@@ -105,7 +105,9 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         List.map labels ~f:(fun lbl_descr ->
           let lidloc = mk_id lbl_descr.lbl_name in
           lidloc, lbl_descr,
-          Tast_helper.Pat.var env type_expr (mk_var lbl_descr.lbl_name)
+          Tast_helper.Pat.var
+            (Uid.internal_not_actually_unique)
+            env type_expr (mk_var lbl_descr.lbl_name)
         )
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
@@ -121,9 +123,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         let res =
           try
             ignore (
-              Ctype.unify_gadt ~equations_level:0
-                ~allow_recursive_equations:true (* really? *)
-                (ref env) type_expr typ
+              let pattern_env = Ctype.Pattern_env.make env
+                ~equations_scope:0
+                ~allow_recursive_equations:true
+              in
+              Ctype.unify_gadt pattern_env type_expr typ
             );
             true
           with Ctype.Unify _trace -> false
@@ -199,7 +203,7 @@ let rec needs_parentheses = function
       | Texp_let _
         (* We are after the "in" keyword, we need to look at the parent of the
            binding. *)
-      | Texp_function {cases = [ _ ]; _ }
+      | Texp_function (_, Tfunction_body _)
         (* The assumption here is that we're not in a [function ... | ...]
             situation but either in [fun param] or [let name param]. *)
         ->
@@ -301,7 +305,7 @@ let rec destructible patt =
   let open Typedtree in
   match patt.pat_desc with
   | Tpat_any | Tpat_var _ -> true
-  | Tpat_alias (p, _, _)  -> destructible p
+  | Tpat_alias (p, _, _, _)  -> destructible p
   | _ -> false
 
 
@@ -335,8 +339,8 @@ let rec subst_patt initial ~by patt =
   | Tpat_any
   | Tpat_var _
   | Tpat_constant _ -> patt
-  | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = Tpat_alias (f p, x, y) }
+  | Tpat_alias (p,x,y,uid) ->
+    { patt with pat_desc = Tpat_alias (f p, x, y,uid) }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f) }
   | Tpat_construct (lid, cd, lst, lco) ->
@@ -362,8 +366,8 @@ let rec rm_sub patt sub =
   | Tpat_any
   | Tpat_var _
   | Tpat_constant _ -> patt
-  | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = Tpat_alias (f p, x, y)  }
+  | Tpat_alias (p,x,y,uid) ->
+    { patt with pat_desc = Tpat_alias (f p, x, y,uid)  }
   | Tpat_tuple lst ->
     { patt with pat_desc = Tpat_tuple (List.map lst ~f) }
   | Tpat_construct (lid, cd, lst, lco) ->
@@ -388,7 +392,8 @@ let rec qualify_constructors ~unmangling_tables f pat  =
   let qualify_constructors = qualify_constructors ~unmangling_tables in
   let pat_desc =
     match pat.pat_desc with
-    | Tpat_alias (p, id, loc) -> Tpat_alias (qualify_constructors f p, id, loc)
+    | Tpat_alias (p, id, loc, uid) ->
+      Tpat_alias (qualify_constructors f p, id, loc, uid)
     | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
     | Tpat_record (labels, closed) ->
       let labels =
@@ -458,7 +463,7 @@ let find_branch patterns sub =
       | Tpat_var _
       | Tpat_constant _
       | Tpat_variant (_, None, _) -> false
-      | Tpat_alias (p,_,_)
+      | Tpat_alias (p,_,_,_)
       | Tpat_variant (_, Some p, _)
       | Tpat_lazy p ->
         is_sub_patt p ~sub
@@ -500,14 +505,14 @@ module Conv = struct
       match pat.pat_desc with
         Tpat_or (pa,pb,_) ->
           mkpat (Ppat_or (loop pa, loop pb))
-      | Tpat_var (_, ({txt="*extension*"; _} as nm)) -> (* PR#7330 *)
+      | Tpat_var (_, ({txt="*extension*"; _} as nm), _) -> (* PR#7330 *)
           mkpat (Ppat_var nm)
       | Tpat_any
       | Tpat_var _ ->
           mkpat Ppat_any
       | Tpat_constant c ->
           mkpat (Ppat_constant (Untypeast.constant c))
-      | Tpat_alias (p,_,_) -> loop p
+      | Tpat_alias (p,_,_,_) -> loop p
       | Tpat_tuple lst ->
           mkpat (Ppat_tuple (List.map ~f:loop lst))
       | Tpat_construct (cstr_lid, cstr, lst, _) ->
