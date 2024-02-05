@@ -59,14 +59,16 @@ type cmt_infos = {
   cmt_args : string array;
   cmt_sourcefile : string option;
   cmt_builddir : string;
-  cmt_loadpath : string list;
+  cmt_loadpath : Load_path.paths;
   cmt_source_digest : string option;
   cmt_initial_env : Env.t;
   cmt_imports : crcs;
   cmt_interface_digest : Digest.t option;
   cmt_use_summaries : bool;
-  cmt_uid_to_loc : Location.t Shape.Uid.Tbl.t;
+  cmt_uid_to_decl : item_declaration Shape.Uid.Tbl.t;
   cmt_impl_shape : Shape.t option; (* None for mli *)
+  cmt_ident_occurrences :
+    (Longident.t Location.loc * Shape_reduce.result) list
 }
 
 type error =
@@ -90,10 +92,8 @@ val read_cmi : string -> Cmi_format.cmi_infos
 (** [save_cmt filename modname binary_annots sourcefile initial_env cmi]
     writes a cmt(i) file.  *)
 val save_cmt :
-  string ->  (* filename.cmt to generate *)
-  string ->  (* module name *)
+  Unit_info.Artifact.t ->
   binary_annots ->
-  string option ->  (* source file *)
   Env.t -> (* initial env *)
   Cmi_format.cmi_infos option -> (* if a .cmi was generated *)
   Shape.t option ->
@@ -111,7 +111,6 @@ val set_saved_types : binary_part list -> unit
 
 val record_value_dependency:
   Types.value_description -> Types.value_description -> unit
-
 
 (*
 

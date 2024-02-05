@@ -279,7 +279,7 @@ let pat
     match x.pat_desc with
     | Tpat_any
     | Tpat_constant _ -> x.pat_desc
-    | Tpat_var (id, s) -> Tpat_var (id, map_loc sub s)
+    | Tpat_var (id, s, uid) -> Tpat_var (id, map_loc sub s, uid)
     | Tpat_tuple l -> Tpat_tuple (List.map (sub.pat sub) l)
     | Tpat_construct (loc, cd, l, vto) ->
         let vto = Option.map (fun (vl,cty) ->
@@ -290,7 +290,8 @@ let pat
     | Tpat_record (l, closed) ->
         Tpat_record (List.map (tuple3 (map_loc sub) id (sub.pat sub)) l, closed)
     | Tpat_array l -> Tpat_array (List.map (sub.pat sub) l)
-    | Tpat_alias (p, id, s) -> Tpat_alias (sub.pat sub p, id, map_loc sub s)
+    | Tpat_alias (p, id, s, uid) ->
+        Tpat_alias (sub.pat sub p, id, map_loc sub s, uid)
     | Tpat_lazy p -> Tpat_lazy (sub.pat sub p)
     | Tpat_value p ->
        (as_computation_pattern (sub.pat sub (p :> pattern))).pat_desc
@@ -302,16 +303,45 @@ let pat
   let pat_attributes = sub.attributes sub x.pat_attributes in
   {x with pat_loc; pat_extra; pat_desc; pat_env; pat_attributes}
 
-let expr sub x =
-  let extra = function
-    | Texp_constraint cty ->
-        Texp_constraint (sub.typ sub cty)
-    | Texp_coerce (cty1, cty2) ->
-        Texp_coerce (Option.map (sub.typ sub) cty1, sub.typ sub cty2)
-    | Texp_newtype _ as d -> d
-    | Texp_newtype' _ as d -> d
-    | Texp_poly cto -> Texp_poly (Option.map (sub.typ sub) cto)
+let function_param sub fp =
+  let fp_kind =
+    match fp.fp_kind with
+    | Tparam_pat pat -> Tparam_pat (sub.pat sub pat)
+    | Tparam_optional_default (pat, expr) ->
+      let pat = sub.pat sub pat in
+      let expr = sub.expr sub expr in
+      Tparam_optional_default (pat, expr)
   in
+  let fp_loc = sub.location sub fp.fp_loc in
+  { fp_kind;
+    fp_param = fp.fp_param;
+    fp_arg_label = fp.fp_arg_label;
+    fp_partial = fp.fp_partial;
+    fp_newtypes = fp.fp_newtypes;
+    fp_loc;
+  }
+
+let extra sub = function
+  | Texp_constraint cty ->
+    Texp_constraint (sub.typ sub cty)
+  | Texp_coerce (cty1, cty2) ->
+    Texp_coerce (Option.map (sub.typ sub) cty1, sub.typ sub cty2)
+  | (Texp_newtype _ | Texp_newtype' _) as d -> d
+  | Texp_poly cto -> Texp_poly (Option.map (sub.typ sub) cto)
+
+let function_body sub body =
+  match body with
+  | Tfunction_body body ->
+      Tfunction_body (sub.expr sub body)
+  | Tfunction_cases { cases; partial; param; loc; exp_extra; attributes } ->
+      let loc = sub.location sub loc in
+      let cases = List.map (sub.case sub) cases in
+      let exp_extra = Option.map (extra sub) exp_extra in
+      let attributes = sub.attributes sub attributes in
+      Tfunction_cases { cases; partial; param; loc; exp_extra; attributes }
+
+let expr sub x =
+  let extra x = extra sub x in
   let exp_loc = sub.location sub x.exp_loc in
   let exp_extra = List.map (tuple3 extra (sub.location sub) id) x.exp_extra in
   let exp_env = sub.env sub x.exp_env in
@@ -323,9 +353,10 @@ let expr sub x =
     | Texp_let (rec_flag, list, exp) ->
         let (rec_flag, list) = sub.value_bindings sub (rec_flag, list) in
         Texp_let (rec_flag, list, sub.expr sub exp)
-    | Texp_function { arg_label; param; cases; partial; } ->
-        let cases = List.map (sub.case sub) cases in
-        Texp_function { arg_label; param; cases; partial; }
+    | Texp_function (params, body) ->
+        let params = List.map (function_param sub) params in
+        let body = function_body sub body in
+        Texp_function (params, body)
     | Texp_apply (exp, list) ->
         Texp_apply (
           sub.expr sub exp,
@@ -752,6 +783,8 @@ let typ sub x =
         Ttyp_poly (sl, sub.typ sub ct)
     | Ttyp_package pack ->
         Ttyp_package (sub.package_type sub pack)
+    | Ttyp_open (path, mod_ident, t) ->
+        Ttyp_open (path, map_loc sub mod_ident, sub.typ sub t)
   in
   let ctyp_attributes = sub.attributes sub x.ctyp_attributes in
   {x with ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes}
@@ -825,7 +858,8 @@ let value_binding sub x =
   let vb_pat = sub.pat sub x.vb_pat in
   let vb_expr = sub.expr sub x.vb_expr in
   let vb_attributes = sub.attributes sub x.vb_attributes in
-  {vb_loc; vb_pat; vb_expr; vb_attributes}
+  let vb_rec_kind = x.vb_rec_kind in
+  {vb_loc; vb_pat; vb_expr; vb_attributes; vb_rec_kind}
 
 let env _sub x = x
 

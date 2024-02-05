@@ -12,8 +12,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-exception Illegal_expr
-
-val is_valid_recursive_expression : Ident.t list -> Typedtree.expression -> bool
+val is_valid_recursive_expression :
+  Ident.t list ->
+  Typedtree.expression ->
+  Value_rec_types.recursive_binding_kind option
 
 val is_valid_class_expr : Ident.t list -> Typedtree.class_expr -> bool

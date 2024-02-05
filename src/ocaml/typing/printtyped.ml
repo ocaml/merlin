@@ -109,6 +109,11 @@ let fmt_private_flag f x =
   | Public -> fprintf f "Public"
   | Private -> fprintf f "Private"
 
+let fmt_partiality f x =
+  match x with
+  | Total -> ()
+  | Partial -> fprintf f " (Partial)"
+
 let line i f s (*...*) =
   fprintf f "%s" (String.make (2*i) ' ');
   fprintf f s (*...*)
@@ -206,7 +211,7 @@ let rec core_type i ppf x =
       line i ppf "Ttyp_class %a\n" fmt_path li;
       list i core_type ppf l;
   | Ttyp_alias (ct, s) ->
-      line i ppf "Ttyp_alias \"%s\"\n" s;
+      line i ppf "Ttyp_alias \"%s\"\n" s.txt;
       core_type i ppf ct;
   | Ttyp_poly (sl, ct) ->
       line i ppf "Ttyp_poly%a\n"
@@ -215,6 +220,9 @@ let rec core_type i ppf x =
   | Ttyp_package { pack_path = s; pack_fields = l } ->
       line i ppf "Ttyp_package %a\n" fmt_path s;
       list i package_with ppf l;
+  | Ttyp_open (path, _mod_ident, t) ->
+      line i ppf "Ttyp_open %a\n" fmt_path path;
+      core_type i ppf t
 
 and package_with i ppf (s, t) =
   line i ppf "with type %a\n" fmt_longident s;
@@ -232,8 +240,8 @@ and pattern : type k . _ -> _ -> k general_pattern -> unit = fun i ppf x ->
   end;
   match x.pat_desc with
   | Tpat_any -> line i ppf "Tpat_any\n";
-  | Tpat_var (s,_) -> line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
-  | Tpat_alias (p, s,_) ->
+  | Tpat_var (s,_,_) -> line i ppf "Tpat_var \"%a\"\n" fmt_ident s;
+  | Tpat_alias (p, s,_,_) ->
       line i ppf "Tpat_alias \"%a\"\n" fmt_ident s;
       pattern i ppf p;
   | Tpat_constant (c) -> line i ppf "Tpat_constant %a\n" fmt_constant c;
@@ -288,7 +296,22 @@ and pattern_extra i ppf (extra_pat, _, attrs) =
      line i ppf "Tpat_extra_open %a\n" fmt_path id;
      attributes i ppf attrs;
 
-and expression_extra i ppf (x,_,attrs) =
+and function_body i ppf (body : function_body) =
+  match[@warning "+9"] body with
+  | Tfunction_body e ->
+      line i ppf "Tfunction_body\n";
+      expression (i+1) ppf e
+  | Tfunction_cases
+      { cases; loc; exp_extra; attributes = attrs; param = _; partial }
+    ->
+      line i ppf "Tfunction_cases%a %a\n"
+        fmt_partiality partial
+        fmt_location loc;
+      attributes (i+1) ppf attrs;
+      Option.iter (fun e -> expression_extra (i+1) ppf e []) exp_extra;
+      list (i+1) case ppf cases
+
+and expression_extra i ppf x attrs =
   match x with
   | Texp_constraint ct ->
       line i ppf "Texp_constraint\n";
@@ -317,7 +340,7 @@ and expression i ppf x =
   | [] -> ()
   | extra ->
     line i ppf "extra\n";
-    List.iter (expression_extra (i+1) ppf) extra;
+    List.iter (fun (x, _, attrs) -> expression_extra (i+1) ppf x attrs) extra;
   end;
   match x.exp_desc with
   | Texp_ident (li,_,_) -> line i ppf "Texp_ident %a\n" fmt_path li;
@@ -327,16 +350,17 @@ and expression i ppf x =
       line i ppf "Texp_let %a\n" fmt_rec_flag rf;
       list i value_binding ppf l;
       expression i ppf e;
-  | Texp_function { arg_label = p; param = _; cases; partial = _; } ->
+  | Texp_function (params, body) ->
       line i ppf "Texp_function\n";
-      arg_label i ppf p;
-      list i case ppf cases;
+      list i function_param ppf params;
+      function_body i ppf body;
   | Texp_apply (e, l) ->
       line i ppf "Texp_apply\n";
       expression i ppf e;
       list i label_x_expression ppf l;
-  | Texp_match (e, l, _partial) ->
-      line i ppf "Texp_match\n";
+  | Texp_match (e, l, partial) ->
+      line i ppf "Texp_match%a\n"
+        fmt_partiality partial;
       expression i ppf e;
       list i case ppf l;
   | Texp_try (e, l) ->
@@ -427,8 +451,9 @@ and expression i ppf x =
   | Texp_pack me ->
       line i ppf "Texp_pack";
       module_expr i ppf me
-  | Texp_letop {let_; ands; param = _; body; partial = _} ->
-      line i ppf "Texp_letop";
+  | Texp_letop {let_; ands; param = _; body; partial } ->
+      line i ppf "Texp_letop%a"
+        fmt_partiality partial;
       binding_op (i+1) ppf let_;
       list (i+1) binding_op ppf ands;
       case i ppf body
@@ -456,6 +481,20 @@ and binding_op i ppf x =
   line i ppf "binding_op %a %a\n" fmt_path x.bop_op_path
     fmt_location x.bop_loc;
   expression i ppf x.bop_exp
+
+and function_param i ppf x =
+  let p = x.fp_arg_label in
+  arg_label i ppf p;
+  match x.fp_kind with
+  | Tparam_pat pat ->
+      line i ppf "Param_pat%a\n"
+        fmt_partiality x.fp_partial;
+      pattern (i+1) ppf pat
+  | Tparam_optional_default (pat, expr) ->
+      line i ppf "Param_optional_default%a\n"
+        fmt_partiality x.fp_partial;
+      pattern (i+1) ppf pat;
+      expression (i+1) ppf expr
 
 and type_parameter i ppf (x, _variance) = core_type i ppf x
 

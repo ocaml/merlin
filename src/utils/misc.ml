@@ -87,6 +87,13 @@ let protect_refs =
 
 let map_end f l1 l2 = List.map_end ~f l1 l2
 
+let rev_map_end f l1 l2 =
+  let rec rmap_f accu = function
+    | [] -> accu
+    | hd::tl -> rmap_f (f hd :: accu) tl
+  in
+  rmap_f l2 l1
+
 let rec map_left_right f = function
     [] -> []
   | hd::tl -> let res = f hd in res :: map_left_right f tl
@@ -262,12 +269,14 @@ let find_in_path_rel path name =
       else try_dir rem
   in try_dir path
 
-let find_in_path_uncap ?(fallback="") path name =
+let normalized_unit_filename = String.uncapitalize_ascii
+
+let find_in_path_normalized ?(fallback="") path name =
   let has_fallback = fallback <> "" in
   canonicalize_filename
   begin
-    let uname = String.uncapitalize name in
-    let ufallback = String.uncapitalize fallback in
+    let uname = normalized_unit_filename name in
+    let ufallback = normalized_unit_filename fallback in
     List.find_map path ~f:(fun dirname ->
         if exact_file_exists ~dirname ~basename:uname
         then Some (Filename.concat dirname uname)
@@ -380,6 +389,12 @@ let no_overflow_mul a b =
 
 let no_overflow_lsl a k =
   0 <= k && k < Sys.word_size - 1 && min_int asr k <= a && a <= max_int asr k
+
+let letter_of_int n =
+  let letter = String.make 1 (Char.chr (Char.code 'a' + n mod 26)) in
+  let num = n / 26 in
+  if num = 0 then letter
+  else letter ^ Int.to_string num
 
 module Int_literal_converter = struct
   (* To convert integer literals, allowing max_int + 1 (PR#4210) *)
@@ -511,149 +526,6 @@ let snd4 (_,x,_, _) = x
 let thd4 (_,_,x,_) = x
 let for4 (_,_,_,x) = x
 
-
-module LongString = struct
-  type t = bytes array
-
-  let create str_size =
-    let tbl_size = str_size / Sys.max_string_length + 1 in
-    let tbl = Array.make tbl_size Bytes.empty in
-    for i = 0 to tbl_size - 2 do
-      tbl.(i) <- Bytes.create Sys.max_string_length;
-    done;
-    tbl.(tbl_size - 1) <- Bytes.create (str_size mod Sys.max_string_length);
-    tbl
-
-  let length tbl =
-    let tbl_size = Array.length tbl in
-    Sys.max_string_length * (tbl_size - 1) + Bytes.length tbl.(tbl_size - 1)
-
-  let get tbl ind =
-    Bytes.get tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
-
-  let set tbl ind c =
-    Bytes.set tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
-              c
-
-  let blit src srcoff dst dstoff len =
-    for i = 0 to len - 1 do
-      set dst (dstoff + i) (get src (srcoff + i))
-    done
-
-  let output oc tbl pos len =
-    for i = pos to pos + len - 1 do
-      output_char oc (get tbl i)
-    done
-
-  let unsafe_blit_to_bytes src srcoff dst dstoff len =
-    for i = 0 to len - 1 do
-      Bytes.unsafe_set dst (dstoff + i) (get src (srcoff + i))
-    done
-
-  let input_bytes ic len =
-    let tbl = create len in
-    Array.iter (fun str -> really_input ic str 0 (Bytes.length str)) tbl;
-    tbl
-end
-
-let file_contents filename =
-  let ic = open_in filename in
-  try
-    let str = Bytes.create 1024 in
-    let buf = Buffer.create 1024 in
-    let rec loop () =
-      match input ic str 0 1024 with
-      | 0 -> ()
-      | n ->
-        Buffer.add_subbytes buf str 0 n;
-        loop ()
-    in
-    loop ();
-    close_in_noerr ic;
-    Buffer.contents buf
-  with exn ->
-    close_in_noerr ic;
-    raise exn
-
-let edit_distance a b cutoff =
-  let la, lb = String.length a, String.length b in
-  let cutoff =
-    (* using max_int for cutoff would cause overflows in (i + cutoff + 1);
-       we bring it back to the (max la lb) worstcase *)
-    min (max la lb) cutoff in
-  if abs (la - lb) > cutoff then None
-  else begin
-    (* initialize with 'cutoff + 1' so that not-yet-written-to cases have
-       the worst possible cost; this is useful when computing the cost of
-       a case just at the boundary of the cutoff diagonal. *)
-    let m = Array.make_matrix (la + 1) (lb + 1) (cutoff + 1) in
-    m.(0).(0) <- 0;
-    for i = 1 to la do
-      m.(i).(0) <- i;
-    done;
-    for j = 1 to lb do
-      m.(0).(j) <- j;
-    done;
-    for i = 1 to la do
-      for j = max 1 (i - cutoff - 1) to min lb (i + cutoff + 1) do
-        let cost = if a.[i-1] = b.[j-1] then 0 else 1 in
-        let best =
-          (* insert, delete or substitute *)
-          min (1 + min m.(i-1).(j) m.(i).(j-1)) (m.(i-1).(j-1) + cost)
-        in
-        let best =
-          (* swap two adjacent letters; we use "cost" again in case of
-             a swap between two identical letters; this is slightly
-             redundant as this is a double-substitution case, but it
-             was done this way in most online implementations and
-             imitation has its virtues *)
-          if not (i > 1 && j > 1 && a.[i-1] = b.[j-2] && a.[i-2] = b.[j-1])
-          then best
-          else min best (m.(i-2).(j-2) + cost)
-        in
-        m.(i).(j) <- best
-      done;
-    done;
-    let result = m.(la).(lb) in
-    if result > cutoff
-    then None
-    else Some result
-  end
-
-let spellcheck env name =
-  let cutoff =
-    match String.length name with
-      | 1 | 2 -> 0
-      | 3 | 4 -> 1
-      | 5 | 6 -> 2
-      | _ -> 3
-  in
-  let compare target acc head =
-    match edit_distance target head cutoff with
-    | None -> acc
-    | Some dist ->
-      let (best_choice, best_dist) = acc in
-      if dist < best_dist then ([head], dist)
-      else if dist = best_dist then (head :: best_choice, dist)
-      else acc
-  in
-  fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
-
-let did_you_mean ppf get_choices =
-  (* flush now to get the error report early, in the (unheard of) case
-     where the search in the get_choices function would take a bit of
-     time; in the worst case, the user has seen the error, she can
-     interrupt the process before the spell-checking terminates. *)
-  Format.fprintf ppf "@?";
-  match get_choices () with
-  | [] -> ()
-  | choices ->
-     let rest, last = split_last choices in
-     Format.fprintf ppf "@\n@{<hint>Hint@}: Did you mean %s%s%s?@?"
-       (String.concat ~sep:", " rest)
-       (if rest = [] then "" else " or ")
-       last
-
 let cut_at s c =
   let pos = String.index s c in
   String.sub s ~pos:0 ~len:pos,
@@ -667,8 +539,26 @@ let ordinal_suffix n =
   | 3 when not teen -> "rd"
   | _ -> "th"
 
-(* Color handling *)
+(* Color support handling *)
 module Color = struct
+  external isatty : out_channel -> bool = "caml_sys_isatty"
+
+  (* reasonable heuristic on whether colors should be enabled *)
+  let should_enable_color () =
+    let term = try Sys.getenv "TERM" with Not_found -> "" in
+    term <> "dumb"
+    && term <> ""
+    && isatty stderr
+
+  type setting = Auto | Always | Never
+
+  let default_setting = Auto
+  let enabled = ref true
+
+end
+
+(* Terminal styling handling *)
+module Style = struct
   (* use ANSI color codes, see https://en.wikipedia.org/wiki/ANSI_escape_code *)
   type color =
     | Black
@@ -712,19 +602,30 @@ module Color = struct
 
 
   type Format.stag += Style of style list
-  type styles = {
-    error: style list;
-    warning: style list;
-    loc: style list;
-    hint:style list;
+
+  type tag_style ={
+    ansi: style list;
+    text_open:string;
+    text_close:string
   }
 
-  let default_styles = {
-    warning = [Bold; FG Magenta];
-    error = [Bold; FG Red];
-    loc = [Bold];
-    hint = [Bold; FG Blue];
+  type styles = {
+    error: tag_style;
+    warning: tag_style;
+    loc: tag_style;
+    hint: tag_style;
+    inline_code: tag_style;
   }
+
+  let no_markup stl = { ansi = stl; text_close = ""; text_open = "" }
+
+  let default_styles = {
+      warning = no_markup [Bold; FG Magenta];
+      error = no_markup [Bold; FG Red];
+      loc = no_markup [Bold];
+      hint = no_markup [Bold; FG Blue];
+      inline_code= { ansi=[Bold]; text_open = {|"|}; text_close = {|"|} }
+    }
 
   let cur_styles = ref default_styles
   let get_styles () = !cur_styles
@@ -733,30 +634,36 @@ module Color = struct
   (* map a tag to a style, if the tag is known.
      @raise Not_found otherwise *)
   let style_of_tag s = match s with
-    | Format.String_tag "error" -> (!cur_styles).error
-    | Format.String_tag "warning" -> (!cur_styles).warning
+    | Format.String_tag "error" ->  (!cur_styles).error
+    | Format.String_tag "warning" ->(!cur_styles).warning
     | Format.String_tag "loc" -> (!cur_styles).loc
     | Format.String_tag "hint" -> (!cur_styles).hint
-    | Style s -> s
+    | Format.String_tag "inline_code" -> (!cur_styles).inline_code
+    | Style s -> no_markup s
     | _ -> raise Not_found
 
-  let color_enabled = ref true
+  let as_inline_code printer ppf x =
+    Format.pp_open_stag ppf (Format.String_tag "inline_code");
+    printer ppf x;
+    Format.pp_close_stag ppf ()
+
+  let inline_code ppf s = as_inline_code Format.pp_print_string ppf s
 
   (* either prints the tag of [s] or delegates to [or_else] *)
   let mark_open_tag ~or_else s =
     try
       let style = style_of_tag s in
-      if !color_enabled then ansi_of_style_l style else ""
+      if !Color.enabled then ansi_of_style_l style.ansi else style.text_open
     with Not_found -> or_else s
 
   let mark_close_tag ~or_else s =
     try
-      let _ = style_of_tag s in
-      if !color_enabled then ansi_of_style_l [Reset] else ""
+      let style = style_of_tag s in
+      if !Color.enabled then ansi_of_style_l [Reset] else style.text_close
     with Not_found -> or_else s
 
-  (* add color handling to formatter [ppf] *)
-  let set_color_tag_handling ppf =
+  (* add tag handling to formatter [ppf] *)
+  let set_tag_handling ppf =
     let open Format in
     let functions = pp_get_formatter_stag_functions ppf () in
     let functions' = {functions with
@@ -767,40 +674,108 @@ module Color = struct
     pp_set_formatter_stag_functions ppf functions';
     ()
 
-  external isatty : out_channel -> bool = "caml_sys_isatty"
-
-  (* reasonable heuristic on whether colors should be enabled *)
-  let should_enable_color () =
-    let term = try Sys.getenv "TERM" with Not_found -> "" in
-    term <> "dumb"
-    && term <> ""
-    && isatty stderr
-
-  type setting = Auto | Always | Never
-
-  let default_setting = Auto
-
   let setup =
     let first = ref true in (* initialize only once *)
     let formatter_l =
       [Format.std_formatter; Format.err_formatter; Format.str_formatter]
     in
     let enable_color = function
-      | Auto -> should_enable_color ()
-      | Always -> true
-      | Never -> false
+      | Color.Auto -> Color.should_enable_color ()
+      | Color.Always -> true
+      | Color.Never -> false
     in
     fun o ->
       if !first then (
         first := false;
         Format.set_mark_tags true;
-        List.iter ~f:set_color_tag_handling formatter_l;
-        color_enabled := (match o with
+        List.iter ~f:set_tag_handling formatter_l;
+        Color.enabled := (match o with
           | Some s -> enable_color s
-          | None -> enable_color default_setting)
+          | None -> enable_color Color.default_setting)
       );
       ()
 end
+
+let edit_distance a b cutoff =
+  let la, lb = String.length a, String.length b in
+  let cutoff =
+    (* using max_int for cutoff would cause overflows in (i + cutoff + 1);
+       we bring it back to the (max la lb) worstcase *)
+    Int.min (Int.max la lb) cutoff in
+  if abs (la - lb) > cutoff then None
+  else begin
+    (* initialize with 'cutoff + 1' so that not-yet-written-to cases have
+       the worst possible cost; this is useful when computing the cost of
+       a case just at the boundary of the cutoff diagonal. *)
+    let m = Array.make_matrix (la + 1) (lb + 1) (cutoff + 1) in
+    m.(0).(0) <- 0;
+    for i = 1 to la do
+      m.(i).(0) <- i;
+    done;
+    for j = 1 to lb do
+      m.(0).(j) <- j;
+    done;
+    for i = 1 to la do
+      for j = Int.max 1 (i - cutoff - 1) to Int.min lb (i + cutoff + 1) do
+        let cost = if a.[i-1] = b.[j-1] then 0 else 1 in
+        let best =
+          (* insert, delete or substitute *)
+          Int.min (1 + Int.min m.(i-1).(j) m.(i).(j-1)) (m.(i-1).(j-1) + cost)
+        in
+        let best =
+          (* swap two adjacent letters; we use "cost" again in case of
+             a swap between two identical letters; this is slightly
+             redundant as this is a double-substitution case, but it
+             was done this way in most online implementations and
+             imitation has its virtues *)
+          if not (i > 1 && j > 1 && a.[i-1] = b.[j-2] && a.[i-2] = b.[j-1])
+          then best
+          else Int.min best (m.(i-2).(j-2) + cost)
+        in
+        m.(i).(j) <- best
+      done;
+    done;
+    let result = m.(la).(lb) in
+    if result > cutoff
+    then None
+    else Some result
+  end
+
+let spellcheck env name =
+  let cutoff =
+    match String.length name with
+      | 1 | 2 -> 0
+      | 3 | 4 -> 1
+      | 5 | 6 -> 2
+      | _ -> 3
+  in
+  let compare target acc head =
+    match edit_distance target head cutoff with
+      | None -> acc
+      | Some dist ->
+         let (best_choice, best_dist) = acc in
+         if dist < best_dist then ([head], dist)
+         else if dist = best_dist then (head :: best_choice, dist)
+         else acc
+  in
+  let env = List.sort_uniq ~cmp:(fun s1 s2 -> String.compare s2 s1) env in
+  fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
+
+let did_you_mean ppf get_choices =
+  (* flush now to get the error report early, in the (unheard of) case
+     where the search in the get_choices function would take a bit of
+     time; in the worst case, the user has seen the error, she can
+     interrupt the process before the spell-checking terminates. *)
+  Format.fprintf ppf "@?";
+  match get_choices () with
+  | [] -> ()
+  | choices ->
+    let rest, last = split_last choices in
+    let comma ppf () = Format.fprintf ppf ", " in
+     Format.fprintf ppf "@\n@{<hint>Hint@}: Did you mean %a%s%a?@?"
+       (Format.pp_print_list ~pp_sep:comma Style.inline_code) rest
+       (if rest = [] then "" else " or ")
+       Style.inline_code last
 
 let print_see_manual ppf manual_section =
   let open Format in

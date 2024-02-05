@@ -40,6 +40,7 @@ type iterator = {
   class_type_declaration: iterator -> class_type_declaration -> unit;
   class_type_field: iterator -> class_type_field -> unit;
   constructor_declaration: iterator -> constructor_declaration -> unit;
+  directive_argument: iterator -> directive_argument -> unit;
   expr: iterator -> expression -> unit;
   extension: iterator -> extension -> unit;
   extension_constructor: iterator -> extension_constructor -> unit;
@@ -61,6 +62,8 @@ type iterator = {
   signature_item: iterator -> signature_item -> unit;
   structure: iterator -> structure -> unit;
   structure_item: iterator -> structure_item -> unit;
+  toplevel_directive: iterator -> toplevel_directive -> unit;
+  toplevel_phrase: iterator -> toplevel_phrase -> unit;
   typ: iterator -> core_type -> unit;
   row_field: iterator -> row_field -> unit;
   object_field: iterator -> object_field -> unit;
@@ -132,6 +135,9 @@ module T = struct
     | Ptyp_package (lid, l) ->
         iter_loc sub lid;
         List.iter (iter_tuple (iter_loc sub) (sub.typ sub)) l
+    | Ptyp_open (mod_ident, t) ->
+        iter_loc sub mod_ident;
+        sub.typ sub t
     | Ptyp_extension x -> sub.extension sub x
 
   let iter_type_declaration sub
@@ -348,6 +354,32 @@ end
 module E = struct
   (* Value expressions for the core language *)
 
+  let iter_function_param sub { pparam_loc = loc; pparam_desc = desc } =
+    sub.location sub loc;
+    match desc with
+    | Pparam_val (_lab, def, p) ->
+        iter_opt (sub.expr sub) def;
+        sub.pat sub p
+    | Pparam_newtype ty ->
+        iter_loc sub ty
+
+  let iter_body sub body =
+    match body with
+    | Pfunction_body e ->
+        sub.expr sub e
+    | Pfunction_cases (cases, loc, attrs) ->
+        sub.cases sub cases;
+        sub.location sub loc;
+        sub.attributes sub attrs
+
+  let iter_constraint sub constraint_ =
+    match constraint_ with
+    | Pconstraint ty ->
+        sub.typ sub ty
+    | Pcoerce (ty1, ty2) ->
+        iter_opt (sub.typ sub) ty1;
+        sub.typ sub ty2
+
   let iter sub {pexp_loc = loc; pexp_desc = desc; pexp_attributes = attrs} =
     sub.location sub loc;
     sub.attributes sub attrs;
@@ -357,11 +389,10 @@ module E = struct
     | Pexp_let (_r, vbs, e) ->
         List.iter (sub.value_binding sub) vbs;
         sub.expr sub e
-    | Pexp_fun (_lab, def, p, e) ->
-        iter_opt (sub.expr sub) def;
-        sub.pat sub p;
-        sub.expr sub e
-    | Pexp_function pel -> sub.cases sub pel
+    | Pexp_function (params, constraint_, body) ->
+        List.iter (iter_function_param sub) params;
+        iter_opt (iter_constraint sub) constraint_;
+        iter_body sub body
     | Pexp_apply (e, l) ->
         sub.expr sub e; List.iter (iter_snd (sub.expr sub)) l
     | Pexp_match (e, pel) ->
@@ -693,5 +724,23 @@ let default_iterator =
          | PSig x -> this.signature this x
          | PTyp x -> this.typ this x
          | PPat (x, g) -> this.pat this x; iter_opt (this.expr this) g
+      );
+
+    directive_argument =
+      (fun this a ->
+         this.location this a.pdira_loc
+      );
+
+    toplevel_directive =
+      (fun this d ->
+         iter_loc this d.pdir_name;
+         iter_opt (this.directive_argument this) d.pdir_arg;
+         this.location this d.pdir_loc
+      );
+
+    toplevel_phrase =
+      (fun this -> function
+         | Ptop_def s -> this.structure this s
+         | Ptop_dir d -> this.toplevel_directive this d
       );
   }

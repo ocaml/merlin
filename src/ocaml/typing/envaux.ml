@@ -77,7 +77,7 @@ let rec env_from_summary sum subst =
       | Env_constraints(s, map) ->
           Path.Map.fold
             (fun path info ->
-              Env.add_local_type (Subst.type_path subst path)
+              Env.add_local_constraint (Subst.type_path subst path)
                 (Subst.type_declaration subst info))
             map (env_from_summary s subst)
       | Env_copy_types s ->
@@ -102,10 +102,12 @@ let env_of_only_summary env =
 (* Error report *)
 
 open Format
+module Style = Misc.Style
 
 let report_error ppf = function
   | Module_not_found p ->
-      fprintf ppf "@[Cannot find module %a@].@." Printtyp.path p
+      fprintf ppf "@[Cannot find module %a@].@."
+        (Style.as_inline_code Printtyp.path) p
 
 let () =
   Location.register_error_of_exn

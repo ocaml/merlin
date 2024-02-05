@@ -13,6 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
+module Style = Misc.Style
 
 module Context = struct
   type pos =
@@ -63,16 +64,20 @@ module Context = struct
   let alt_pp ppf cxt =
     if cxt = [] then () else
     if List.for_all (function Module _ -> true | _ -> false) cxt then
-      Format.fprintf ppf "in module %a," Printtyp.path (path_of_context cxt)
+      Format.fprintf ppf "in module %a,"
+        (Style.as_inline_code Printtyp.path) (path_of_context cxt)
     else
-      Format.fprintf ppf "@[<hv 2>at position@ %a,@]" context cxt
+      Format.fprintf ppf "@[<hv 2>at position@ %a,@]"
+        (Style.as_inline_code context) cxt
 
   let pp ppf cxt =
     if cxt = [] then () else
     if List.for_all (function Module _ -> true | _ -> false) cxt then
-      Format.fprintf ppf "In module %a:@ " Printtyp.path (path_of_context cxt)
+      Format.fprintf ppf "In module %a:@ "
+        (Style.as_inline_code Printtyp.path) (path_of_context cxt)
     else
-      Format.fprintf ppf "@[<hv 2>At position@ %a@]@ " context cxt
+      Format.fprintf ppf "@[<hv 2>At position@ %a@]@ "
+        (Style.as_inline_code context) cxt
 end
 
 module Illegal_permutation = struct
@@ -163,9 +168,9 @@ module Illegal_permutation = struct
   let item mt k = Includemod.item_ident_name (runtime_item k mt)
 
   let pp_item ppf (id,_,kind) =
-    Format.fprintf ppf "%s %S"
+    Format.fprintf ppf "%s %a"
       (Includemod.kind_of_field_desc kind)
-      (Ident.name id)
+      Style.inline_code (Ident.name id)
 
   let pp ctx_printer env ppf (mty,c) =
     try
@@ -379,7 +384,7 @@ module Functor_suberror = struct
     let elt (x,param) =
       let sty = Diffing.(style @@ classify x) in
       Format.dprintf "%a%t%a"
-        Format.pp_open_stag (Misc.Color.Style sty)
+        Format.pp_open_stag (Style.Style sty)
         (printer param)
         Format.pp_close_stag ()
     in
@@ -663,8 +668,9 @@ let core env id x =
 
 let missing_field ppf item =
   let id, loc, kind =  Includemod.item_ident_name item in
-  Format.fprintf ppf "The %s `%a' is required but not provided%a"
-    (Includemod.kind_of_field_desc kind) Printtyp.ident id
+  Format.fprintf ppf "The %s %a is required but not provided%a"
+    (Includemod.kind_of_field_desc kind)
+    (Style.as_inline_code Printtyp.ident) id
     (show_loc "Expected declaration") loc
 
 let module_types {Err.got=mty1; expected=mty2} =
@@ -690,8 +696,8 @@ let module_type_declarations id {Err.got=d1 ; expected=d2} =
 
 let interface_mismatch ppf (diff: _ Err.diff) =
   Format.fprintf ppf
-    "The implementation %s@ does not match the interface %s:@ "
-    diff.got diff.expected
+    "The implementation %a@ does not match the interface %a:@ "
+    Style.inline_code diff.got Style.inline_code diff.expected
 
 let core_module_type_symptom (x:Err.core_module_type_symptom)  =
   match x with
@@ -701,7 +707,9 @@ let core_module_type_symptom (x:Err.core_module_type_symptom)  =
         Some Printtyp.Conflicts.print_explanations
       else None
   | Unbound_module_path path ->
-      Some(Format.dprintf "Unbound module %a" Printtyp.path path)
+      Some(Format.dprintf "Unbound module %a"
+             (Style.as_inline_code Printtyp.path) path
+          )
 
 (* Construct a linearized error message from the error tree *)
 
@@ -741,7 +749,8 @@ and module_type_symptom ~eqmode ~expansion_token ~env ~before ~ctx = function
       module_type ~eqmode ~expansion_token ~env ~before ~ctx diff
   | Invalid_module_alias path ->
       let printer =
-        Format.dprintf "Module %a cannot be aliased" Printtyp.path path
+        Format.dprintf "Module %a cannot be aliased"
+          (Style.as_inline_code Printtyp.path) path
       in
       dwith_context ctx printer :: before
 
@@ -897,11 +906,7 @@ let report_error err =
   let main = err_msgs err in
   Location.errorf ~loc:Location.(in_file !input_name) "%t" main
 
-let report_apply_error ~loc env (lid_app, mty_f, args) =
-  let may_print_app ppf = match lid_app with
-    | None -> ()
-    | Some lid -> Format.fprintf ppf "%a " Printtyp.longident lid
-  in
+let report_apply_error ~loc env (app_name, mty_f, args) =
   let d = Functor_suberror.App.patch env ~f:mty_f ~args in
   match d with
   (* We specialize the one change and one argument case to remove the
@@ -916,26 +921,57 @@ let report_apply_error ~loc env (lid_app, mty_f, args) =
       in
       Location.errorf ~loc "%t" (Functor_suberror.App.single_diff g e more)
   | _ ->
-      let actual = Functor_suberror.App.got d in
-      let expected = Functor_suberror.expected d in
-      let sub =
-        List.rev @@
-        Functor_suberror.params functor_app_diff env ~expansion_token:true d
+      let not_functor =
+        List.for_all (function _, Diffing.Delete _ -> true | _ -> false) d
       in
-      Location.errorf ~loc ~sub
-        "@[<hv>The functor application %tis ill-typed.@ \
-         These arguments:@;<1 2>\
-         @[%t@]@ do not match these parameters:@;<1 2>@[functor@ %t@ -> ...@]@]"
-        may_print_app
-        actual expected
+      if not_functor then
+        match app_name with
+        | Includemod.Named_leftmost_functor lid ->
+            Location.errorf ~loc
+              "@[The module %a is not a functor, it cannot be applied.@]"
+               (Style.as_inline_code Printtyp.longident)  lid
+        | Includemod.Anonymous_functor
+        | Includemod.Full_application_path _
+          (* The "non-functor application in term" case is directly handled in
+             [Env] and it is the only case where we have a full application
+             path at hand. Thus this case of the or-pattern is currently
+             unreachable and we don't try to specialize the corresponding error
+             message. *) ->
+            Location.errorf ~loc
+              "@[This module is not a functor, it cannot be applied.@]"
+      else
+        let intro ppf =
+          match app_name with
+          | Includemod.Anonymous_functor ->
+              Format.fprintf ppf "This functor application is ill-typed."
+          | Includemod.Full_application_path lid ->
+              Format.fprintf ppf "The functor application %a is ill-typed."
+                (Style.as_inline_code Printtyp.longident) lid
+          |  Includemod.Named_leftmost_functor lid ->
+              Format.fprintf ppf
+                "This application of the functor %a is ill-typed."
+                 (Style.as_inline_code Printtyp.longident) lid
+        in
+        let actual = Functor_suberror.App.got d in
+        let expected = Functor_suberror.expected d in
+        let sub =
+          List.rev @@
+          Functor_suberror.params functor_app_diff env ~expansion_token:true d
+        in
+        Location.errorf ~loc ~sub
+          "@[<hv>%t@ \
+           These arguments:@;<1 2>@[%t@]@ \
+           do not match these parameters:@;<1 2>@[functor@ %t@ -> ...@]@]"
+          intro
+          actual expected
 
 let register () =
   Location.register_error_of_exn
     (function
       | Includemod.Error err -> Some (report_error err)
-      | Includemod.Apply_error {loc; env; lid_app; mty_f; args} ->
+      | Includemod.Apply_error {loc; env; app_name; mty_f; args} ->
           Some (Printtyp.wrap_printing_env env ~error:true (fun () ->
-              report_apply_error ~loc env (lid_app, mty_f, args))
+              report_apply_error ~loc env (app_name, mty_f, args))
             )
       | _ -> None
     )
