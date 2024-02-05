@@ -299,7 +299,7 @@ let of_pat_record_field obj loc lbl =
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
-  | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
+  | Tpat_alias (p,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array ps ->
@@ -368,7 +368,7 @@ let of_expression_desc loc = function
   | Texp_letmodule (mb_id, mb_name, mb_presence, mb_expr, e) ->
     let mb =
       {mb_id;mb_name;mb_expr;mb_loc=Location.none;mb_attributes=[]
-      ; mb_presence }
+      ; mb_presence; mb_uid=Shape.Uid.internal_not_actually_unique }
     in
     app (Module_binding mb) ** of_expression e
   | Texp_letexception (ec,e) ->
@@ -534,6 +534,7 @@ and of_signature_item_desc = function
 
 and of_core_type_desc = function
   | Ttyp_any | Ttyp_var _ -> id_fold
+  | Ttyp_open (_,_,ct) -> of_core_type ct
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
@@ -780,9 +781,9 @@ let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; _ } =
     match (pat_desc : k pattern_desc) with
     | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
       fake_path lid_loc cstr_res cstr_name
-    | Tpat_var (id, {Location. loc; txt}) ->
+    | Tpat_var (id, {Location. loc; txt}, _uid) ->
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
-    | Tpat_alias (_,id,loc) ->
+    | Tpat_alias (_,id,loc, _uid) ->
       [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
     | _ -> []
   in

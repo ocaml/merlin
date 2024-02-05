@@ -255,7 +255,7 @@ module Utils = struct
             None
         in
         let fname = File.with_ext ~src_suffix_pair file in
-        try Some (Misc.find_in_path_uncap ?fallback path fname)
+        try Some (Misc.find_in_path_normalized ?fallback path fname)
         with Not_found -> None
       in
       try
@@ -341,7 +341,7 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
 
 let uid_of_path ~config ~env ~ml_or_mli ~decl_uid path namespace =
   let module Shape_reduce =
-    Shape.Make_reduce (struct
+    Shape_reduce.Make (struct
       type env = Env.t
 
       let fuel = 10

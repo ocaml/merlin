@@ -755,9 +755,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
-          find_in_path_uncap (Mconfig.source_path config) x
+          find_in_path_normalized (Mconfig.source_path config) x
         with Not_found -> try
-            find_in_path_uncap (Mconfig.build_path config) x
+            find_in_path_normalized (Mconfig.build_path config) x
           with Not_found ->
             aux xs
     in

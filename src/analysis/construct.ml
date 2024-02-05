@@ -425,7 +425,7 @@ module Gen = struct
           (List.map labels ~f:(fun l -> l.Types.lbl_name)));
 
       let labels = List.map labels ~f:(fun ({ lbl_name; _ } as lbl) ->
-        let _, arg, res = Ctype.instance_label true lbl in
+        let _, arg, res = Ctype.instance_label ~fixed:true lbl in
         Ctype.unify env res typ ;
         let lid =
           Util.maybe_prefix env
@@ -477,7 +477,7 @@ module Gen = struct
             match def with
             | Type_variant (constrs, _) -> constructor env rtyp path constrs
             | Type_record (labels, _) -> record env rtyp path labels
-            | Type_abstract | Type_open -> []
+            | Type_abstract _ | Type_open -> []
           end
         | Tarrow (label, tyleft, tyright, _) ->
           let argument, name = make_arg env label tyleft in
