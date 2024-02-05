@@ -155,11 +155,11 @@ let run config parsetree =
   if not (Env.check_state_consistency ()) then (
     (* Resetting the local store will clear the load_path cache.
        Save it now, reset the store and then restore the path. *)
-    let load_path = Load_path.get_paths () in
+    let { Load_path.visible; hidden } = Load_path.get_paths () in
     Mocaml.flush_caches ();
     Local_store.reset ();
     Load_path.reset ();
-    Load_path.(init ~auto_include:no_auto_include load_path);
+    Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
   );
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->

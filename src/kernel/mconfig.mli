@@ -4,6 +4,7 @@ open Std
 
 type ocaml = {
   include_dirs         : string list;
+  hidden_dirs          : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -28,6 +29,7 @@ val dump_ocaml : ocaml -> json
 
 type merlin = {
   build_path  : string list;
+  hidden_path : string list;
   source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
@@ -56,7 +58,7 @@ val dump_merlin : merlin -> json
 
 (** {1 Some flags affecting queries} *)
 
-module Verbosity : sig 
+module Verbosity : sig
   type t = Smart | Lvl of int
 
   (** the default value for verbosity, i.e., [Lvl 0] *)
@@ -112,6 +114,8 @@ val document_arguments : out_channel -> unit
 val source_path : t -> string list
 
 val build_path : t -> string list
+
+val hidden_path : t -> string list
 
 val cmt_path : t -> string list
 
