@@ -16,7 +16,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(** Static checking of recursive declarations
+(** Static checking of recursive declarations, as described in
+
+      A practical mode system for recursive definitions
+      Alban Reynaud, Gabriel Scherer and Jeremy Yallop
+      POPL 2021
 
 Some recursive definitions are meaningful
 {[
@@ -102,11 +106,9 @@ open Asttypes
 open Typedtree
 open Types
 
-exception Illegal_expr
-
 (** {1 Static or dynamic size} *)
 
-type sd = Static | Dynamic
+type sd = Value_rec_types.recursive_binding_kind
 
 let is_ref : Types.value_description -> bool = function
   | { Types.val_kind =
@@ -142,7 +144,13 @@ let classify_expression : Typedtree.expression -> sd =
     The first definition can be allowed (`y` has a statically-known
     size) but the second one is unsound (`y` has no statically-known size).
   *)
-  let rec classify_expression env e = match e.exp_desc with
+  let rec classify_expression env e : sd =
+    let is_constant expr =
+      match classify_expression env expr with
+      | Constant -> true
+      | _ -> false
+    in
+    match e.exp_desc with
     (* binding and variable cases *)
     | Texp_let (rec_flag, vb, e) ->
         let env = classify_value_bindings rec_flag env vb in
@@ -159,14 +167,29 @@ let classify_expression : Typedtree.expression -> sd =
 
     | Texp_construct (_, {cstr_tag = Cstr_unboxed}, [e]) ->
         classify_expression env e
-    | Texp_construct _ ->
-        Static
+    | Texp_construct (_, _, exprs) ->
+        if List.for_all is_constant exprs then Constant else Static
+
+    | Texp_variant (_, Some expr) ->
+        if is_constant expr then Constant else Static
+    | Texp_variant (_, None) ->
+        Constant
 
     | Texp_record { representation = Record_unboxed _;
                     fields = [| _, Overridden (_,e) |] } ->
         classify_expression env e
-    | Texp_record _ ->
-        Static
+    | Texp_record { fields; _ } ->
+        (* We ignore the [extended_expression] field.
+           As long as all fields are Overridden rather than Kept, the value
+           can be constant. *)
+        let is_constant_field (_label, def) =
+          match def with
+          | Kept _ -> false
+          | Overridden (_loc, expr) -> is_constant expr
+        in
+        if Array.for_all is_constant_field fields then Constant else Static
+    | Texp_tuple exprs ->
+        if List.for_all is_constant exprs then Constant else Static
 
     | Texp_apply ({exp_desc = Texp_ident (_, _, vd)}, _)
       when is_ref vd ->
@@ -175,27 +198,50 @@ let classify_expression : Typedtree.expression -> sd =
       when List.exists is_abstracted_arg args ->
         Static
     | Texp_apply _ ->
-        Dynamic
+        Not_recursive
 
-    | Texp_for _
-    | Texp_constant _
-    | Texp_new _
-    | Texp_instvar _
-    | Texp_tuple _
-    | Texp_array _
-    | Texp_variant _
-    | Texp_setfield _
-    | Texp_while _
-    | Texp_setinstvar _
-    | Texp_pack _
-    | Texp_object _
-    | Texp_function _
-    | Texp_lazy _
-    | Texp_unreachable
-    | Texp_hole
+    | Texp_array _ ->
+        Static
+    | Texp_pack mexp ->
+        classify_module_expression env mexp
+    | Texp_function _ ->
+        Static
+    | Texp_lazy e ->
+      (* The code below was copied (in part) from translcore.ml *)
+      begin match Typeopt.classify_lazy_argument e with
+      | `Constant_or_function ->
+        (* A constant expr (of type <> float if [Config.flat_float_array] is
+           true) gets compiled as itself. *)
+          classify_expression env e
+      | `Float_that_cannot_be_shortcut
+      | `Identifier `Forward_value ->
+          (* Forward blocks *)
+          Static
+      | `Identifier `Other ->
+          classify_expression env e
+      | `Other ->
+          (* other cases compile to a lazy block holding a function *)
+          Static
+      end
     | Texp_extension_constructor _ ->
         Static
 
+    | Texp_constant _ ->
+        Constant
+
+    | Texp_for _
+    | Texp_setfield _
+    | Texp_while _
+    | Texp_setinstvar _ ->
+        (* Unit-returning expressions *)
+        Constant
+
+    | Texp_unreachable ->
+        Constant
+
+    | Texp_new _
+    | Texp_instvar _
+    | Texp_object _
     | Texp_match _
     | Texp_ifthenelse _
     | Texp_send _
@@ -204,7 +250,9 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_try _
     | Texp_override _
     | Texp_letop _ ->
-        Dynamic
+        Not_recursive
+
+    | Texp_hole -> Static
   and classify_value_bindings rec_flag env bindings =
     (* We use a non-recursive classification, classifying each
         binding with respect to the old environment
@@ -221,7 +269,7 @@ let classify_expression : Typedtree.expression -> sd =
     let old_env = env in
     let add_value_binding env vb =
       match vb.vb_pat.pat_desc with
-      | Tpat_var (id, _loc) ->
+      | Tpat_var (id, _loc, _uid) ->
           let size = classify_expression old_env vb.vb_expr in
           Ident.add id size env
       | _ ->
@@ -229,7 +277,7 @@ let classify_expression : Typedtree.expression -> sd =
           env
     in
     List.fold_left add_value_binding env bindings
-  and classify_path env = function
+  and classify_path env : _ -> Value_rec_types.recursive_binding_kind = function
     | Path.Pident x ->
         begin
           try Ident.find_same x env
@@ -244,17 +292,42 @@ let classify_expression : Typedtree.expression -> sd =
                 For non-local identifiers it might be reasonable (although
                 not completely clear) to consider them Static (they have
                 already been evaluated), but for the others we must
-                under-approximate with Dynamic.
+                under-approximate with Not_recursive.
 
                 This could be fixed by a more complete implementation.
             *)
-            Dynamic
+            Not_recursive
         end
     | Path.Pdot _ | Path.Papply _ | Path.Pextra_ty _ ->
         (* local modules could have such paths to local definitions;
             classify_expression could be extend to compute module
             shapes more precisely *)
-        Dynamic
+        Not_recursive
+  and classify_module_expression env mexp : sd =
+    match mexp.mod_desc with
+    | Tmod_ident _ | Tmod_hole ->
+        Not_recursive
+    | Tmod_structure _ ->
+        Static
+    | Tmod_functor _ ->
+        Static
+    | Tmod_apply _ ->
+        Not_recursive
+    | Tmod_apply_unit _ ->
+        Not_recursive
+    | Tmod_constraint (mexp, _, _, coe) ->
+        begin match coe with
+        | Tcoerce_none -> classify_module_expression env mexp
+        | Tcoerce_structure _ ->
+            Static
+        | Tcoerce_functor _ -> Static
+        | Tcoerce_primitive _ ->
+            Misc.fatal_error "letrec: primitive coercion on a module"
+        | Tcoerce_alias _ ->
+            Misc.fatal_error "letrec: alias coercion on a module"
+        end
+    | Tmod_unpack (e, _) ->
+        classify_expression env e
   in classify_expression Ident.empty
 
 
@@ -574,19 +647,36 @@ let rec expression : Typedtree.expression -> term_judg =
       *)
       expression arg << Guard
     | Texp_apply (e, args)  ->
-        let arg (_, eo) = option expression eo in
-        let app_mode = if List.exists is_abstracted_arg args
-          then (* see the comment on Texp_apply in typedtree.mli;
-                  the non-abstracted arguments are bound to local
-                  variables, which corresponds to a Guard mode. *)
-            Guard
-          else Dereference
+        (* [args] may contain omitted arguments, corresponding to labels in
+           the function's type that were not passed in the actual application.
+           The arguments before the first omitted argument are passed to the
+           function immediately, so they are dereferenced. The arguments after
+           the first omitted one are stored in a closure, so guarded.
+           The function itself is called immediately (dereferenced) if there
+           is at least one argument before the first omitted one.
+           On the other hand, if the first argument is omitted then the
+           function is stored in the closure without being called. *)
+        let rec split_args ~has_omitted_arg = function
+          | [] -> [], []
+          | (_, None) :: rest -> split_args ~has_omitted_arg:true rest
+          | (_, Some arg) :: rest ->
+            let applied, delayed = split_args ~has_omitted_arg rest in
+            if has_omitted_arg
+            then applied, arg :: delayed
+            else arg :: applied, delayed
         in
-        join [expression e; list arg args] << app_mode
+        let applied, delayed = split_args ~has_omitted_arg:false args in
+        let function_mode =
+          match applied with
+          | [] -> Guard
+          | _ :: _ -> Dereference
+        in
+        join [expression e << function_mode;
+              list expression applied << Dereference;
+              list expression delayed << Guard]
     | Texp_tuple exprs ->
       list expression exprs << Guard
     | Texp_array exprs ->
-      (*
       let array_mode = match Typeopt.array_kind exp with
         | Lambda.Pfloatarray ->
             (* (flat) float arrays unbox their elements *)
@@ -598,12 +688,6 @@ let rec expression : Typedtree.expression -> term_judg =
         | Lambda.Paddrarray | Lambda.Pintarray ->
             (* non-generic, non-float arrays act as constructors *)
             Guard
-      in
-      *)
-      let array_mode =
-        (* FIXME MERLIN this is incorrect, but it won't report false positive, so it
-           will do for now. *)
-        Guard
       in
       list expression exprs << array_mode
     | Texp_construct (_, desc, exprs) ->
@@ -782,18 +866,55 @@ let rec expression : Typedtree.expression -> term_judg =
         path pth << Dereference;
         list field fields << Dereference;
       ]
-    | Texp_function { cases } ->
+    | Texp_function (params, body) ->
       (*
-         (Gi; _ |- pi -> ei : m[Delay])^i
-         --------------------------------------
-         sum(Gi)^i |- function (pi -> ei)^i : m
-
-         Contrarily to match, the value that is pattern-matched
-         is bound locally, so the pattern modes do not influence
-         the final environment.
+         G      |-{body} b  : m[Delay]
+         (Hj    |-{def}  Pj : m[Delay])^j
+         H  := sum(Hj)^j
+         ps := sum(pat(Pj))^j
+         -----------------------------------
+         G + H - ps |- fun (Pj)^j -> b : m
       *)
-      let case_env c m = fst (case c m) in
-      list case_env cases << Delay
+      let param_pat param =
+        (* param P ::=
+            | ?(pat = expr)
+            | pat
+
+          Define pat(P) as
+              pat if P = ?(pat = expr)
+              pat if P = pat
+          *)
+        match param.fp_kind with
+        | Tparam_pat pat -> pat
+        | Tparam_optional_default (pat, _) -> pat
+      in
+      (* Optional argument defaults.
+
+          G |-{def} P : m
+      *)
+      let param_default param =
+        match param.fp_kind with
+        | Tparam_optional_default (_, default) ->
+          (*
+              G |- e : m
+              ------------------
+              G |-{def} ?(p=e) : m
+          *)
+            expression default
+        | Tparam_pat _ ->
+          (*
+              ------------------
+              . |-{def} p : m
+          *)
+            empty
+      in
+      let patterns = List.map param_pat params in
+      let defaults = List.map param_default params in
+      let body = function_body body in
+      let f = join (body :: defaults) << Delay in
+      (fun m ->
+         let env = f m in
+         remove_patlist patterns env)
     | Texp_lazy e ->
       (*
         G |- e: m[Delay]
@@ -815,17 +936,45 @@ let rec expression : Typedtree.expression -> term_judg =
           list binding_op (let_ :: ands) << Dereference;
           case_env body << Delay
         ]
-    | Texp_unreachable ->
+    | Texp_unreachable | Texp_hole ->
       (*
         ----------
         [] |- .: m
       *)
       empty
-    | Texp_hole -> empty
     | Texp_extension_constructor (_lid, pth) ->
       path pth << Dereference
     | Texp_open (od, e) ->
       open_declaration od >> expression e
+
+(* Function bodies.
+
+    G |-{body} b : m
+*)
+and function_body body =
+  match body with
+  | Tfunction_body body ->
+    (*
+        G |- e : m
+        ------------------
+        G |-{body} e : m (**)
+
+      (**) The "e" here stands for [Tfunction_body] as opposed to
+           [Tfunction_cases].
+    *)
+      expression body
+  | Tfunction_cases { cases; _ } ->
+    (*
+        (Gi; _ |- pi -> ei : m)^i    (**)
+        ------------------
+        sum(Gi)^i |-{body} function (pi -> ei)^i : m
+
+      (**) Contrarily to match, the values that are pattern-matched
+           are bound locally, so the pattern modes do not influence
+           the final environment.
+    *)
+      List.map (fun c mode -> fst (case c mode)) cases
+      |> join
 
 and binding_op : Typedtree.binding_op -> term_judg =
   fun bop ->
@@ -1201,8 +1350,8 @@ and pattern : type k . k general_pattern -> Env.t -> mode = fun pat env ->
 and is_destructuring_pattern : type k . k general_pattern -> bool =
   fun pat -> match pat.pat_desc with
     | Tpat_any -> false
-    | Tpat_var (_, _) -> false
-    | Tpat_alias (pat, _, _) -> is_destructuring_pattern pat
+    | Tpat_var (_, _, _) -> false
+    | Tpat_alias (pat, _, _, _) -> is_destructuring_pattern pat
     | Tpat_constant _ -> true
     | Tpat_tuple _ -> true
     | Tpat_construct _ -> true
@@ -1215,21 +1364,27 @@ and is_destructuring_pattern : type k . k general_pattern -> bool =
     | Tpat_or (l,r,_) ->
         is_destructuring_pattern l || is_destructuring_pattern r
 
-let is_valid_recursive_expression idlist expr =
+let is_valid_recursive_expression idlist expr : sd option =
   match expr.exp_desc with
   | Texp_function _ ->
      (* Fast path: functions can never have invalid recursive references *)
-     true
+     Some Static
   | _ ->
-     match classify_expression expr with
-     | Static ->
-        (* The expression has known size *)
-        let ty = expression expr Return in
-        Env.unguarded ty idlist = []
-     | Dynamic ->
-        (* The expression has unknown size *)
-        let ty = expression expr Return in
-        Env.unguarded ty idlist = [] && Env.dependent ty idlist = []
+     let rkind = classify_expression expr in
+     let is_valid =
+       match rkind with
+       | Static | Constant ->
+         (* The expression has known size or is constant *)
+         let ty = expression expr Return in
+         Env.unguarded ty idlist = []
+       | Not_recursive ->
+         (* The expression has unknown size *)
+         let ty = expression expr Return in
+         Env.unguarded ty idlist = [] && Env.dependent ty idlist = []
+       | Class ->
+         assert false (* Not generated by [classify_expression] *)
+     in
+     if is_valid then Some rkind else None
 
 (* A class declaration may contain let-bindings. If they are recursive,
    their validity will already be checked by [is_valid_recursive_expression]

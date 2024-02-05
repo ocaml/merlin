@@ -62,6 +62,7 @@ type iterator =
     value_bindings: iterator -> (rec_flag * value_binding list) -> unit;
     value_description: iterator -> value_description -> unit;
     with_constraint: iterator -> with_constraint -> unit;
+    item_declaration: iterator -> item_declaration -> unit;
   }
 
 let iter_snd f (_, y) = f y
@@ -92,18 +93,23 @@ let class_infos sub f x =
   f x.ci_expr
 
 let module_type_declaration sub x =
+  sub.item_declaration sub (Module_type x);
   sub.location sub x.mtd_loc;
   sub.attributes sub x.mtd_attributes;
   iter_loc sub x.mtd_name;
   Option.iter (sub.module_type sub) x.mtd_type
 
-let module_declaration sub {md_loc; md_name; md_type; md_attributes; _} =
+let module_declaration sub md =
+  let {md_loc; md_name; md_type; md_attributes; _} = md in
+  sub.item_declaration sub (Module md);
   sub.location sub md_loc;
   sub.attributes sub md_attributes;
   iter_loc sub md_name;
   sub.module_type sub md_type
 
-let module_substitution sub {ms_loc; ms_name; ms_txt; ms_attributes; _} =
+let module_substitution sub ms =
+  let {ms_loc; ms_name; ms_txt; ms_attributes; _} = ms in
+  sub.item_declaration sub (Module_substitution ms);
   sub.location sub ms_loc;
   sub.attributes sub ms_attributes;
   iter_loc sub ms_name;
@@ -115,9 +121,11 @@ let include_infos sub f {incl_loc; incl_mod; incl_attributes; _} =
   f incl_mod
 
 let class_type_declaration sub x =
+  sub.item_declaration sub (Class_type x);
   class_infos sub (sub.class_type sub) x
 
 let class_declaration sub x =
+  sub.item_declaration sub (Class x);
   class_infos sub (sub.class_expr sub) x
 
 let structure_item sub {str_loc; str_desc; str_env; _} =
@@ -143,12 +151,14 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_attribute attr -> sub.attribute sub attr
 
 let value_description sub x =
+  sub.item_declaration sub (Value x);
   sub.location sub x.val_loc;
   sub.attributes sub x.val_attributes;
   iter_loc sub x.val_name;
   sub.typ sub x.val_desc
 
-let label_decl sub {ld_loc; ld_name; ld_type; ld_attributes; _} =
+let label_decl sub ({ld_loc; ld_name; ld_type; ld_attributes; _} as ld) =
+  sub.item_declaration sub (Label ld);
   sub.location sub ld_loc;
   sub.attributes sub ld_attributes;
   iter_loc sub ld_name;
@@ -159,6 +169,7 @@ let constructor_args sub = function
   | Cstr_record l -> List.iter (label_decl sub) l
 
 let constructor_decl sub x =
+  sub.item_declaration sub (Constructor x);
   sub.location sub x.cd_loc;
   sub.attributes sub x.cd_attributes;
   iter_loc sub x.cd_name;
@@ -173,6 +184,7 @@ let type_kind sub = function
   | Ttype_open -> ()
 
 let type_declaration sub x =
+  sub.item_declaration sub (Type x);
   sub.location sub x.typ_loc;
   sub.attributes sub x.typ_attributes;
   iter_loc sub x.typ_name;
@@ -200,7 +212,9 @@ let type_exception sub {tyexn_loc; tyexn_constructor; tyexn_attributes; _} =
   sub.attributes sub tyexn_attributes;
   sub.extension_constructor sub tyexn_constructor
 
-let extension_constructor sub {ext_loc; ext_name; ext_kind; ext_attributes; _} =
+let extension_constructor sub ec =
+  let {ext_loc; ext_name; ext_kind; ext_attributes; _} = ec in
+  sub.item_declaration sub (Extension_constructor ec);
   sub.location sub ext_loc;
   sub.attributes sub ext_attributes;
   iter_loc sub ext_name;
@@ -229,7 +243,7 @@ let pat
   List.iter (pat_extra sub) extra;
   match pat_desc with
   | Tpat_any  -> ()
-  | Tpat_var (_, s) -> iter_loc sub s
+  | Tpat_var (_, s, _) -> iter_loc sub s
   | Tpat_constant _ -> ()
   | Tpat_tuple l -> List.iter (sub.pat sub) l
   | Tpat_construct (lid, _, l, vto) ->
@@ -241,7 +255,7 @@ let pat
   | Tpat_record (l, _) ->
       List.iter (fun (lid, _, i) -> iter_loc sub lid; sub.pat sub i) l
   | Tpat_array l -> List.iter (sub.pat sub) l
-  | Tpat_alias (p, _, s) -> sub.pat sub p; iter_loc sub s
+  | Tpat_alias (p, _, s, _) -> sub.pat sub p; iter_loc sub s
   | Tpat_lazy p -> sub.pat sub p
   | Tpat_value p -> sub.pat sub (p :> pattern)
   | Tpat_exception p -> sub.pat sub p
@@ -249,16 +263,36 @@ let pat
       sub.pat sub p1;
       sub.pat sub p2
 
+let extra sub = function
+  | Texp_constraint cty -> sub.typ sub cty
+  | Texp_coerce (cty1, cty2) ->
+    Option.iter (sub.typ sub) cty1;
+    sub.typ sub cty2
+  | Texp_newtype _ | Texp_newtype' _ -> ()
+  | Texp_poly cto -> Option.iter (sub.typ sub) cto
+
+let function_param sub fp =
+  sub.location sub fp.fp_loc;
+  match fp.fp_kind with
+  | Tparam_pat pat -> sub.pat sub pat
+  | Tparam_optional_default (pat, default_arg) ->
+      sub.pat sub pat;
+      sub.expr sub default_arg
+
+let function_body sub body =
+  match[@warning "+9"] body with
+  | Tfunction_body body ->
+      sub.expr sub body
+  | Tfunction_cases
+      { cases; loc; exp_extra; attributes; partial = _; param = _ }
+    ->
+      List.iter (sub.case sub) cases;
+      sub.location sub loc;
+      Option.iter (extra sub) exp_extra;
+      sub.attributes sub attributes
+
 let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
-  let extra = function
-    | Texp_constraint cty -> sub.typ sub cty
-    | Texp_coerce (cty1, cty2) ->
-        Option.iter (sub.typ sub) cty1;
-        sub.typ sub cty2
-    | Texp_newtype _ -> ()
-    | Texp_newtype' _ -> ()
-    | Texp_poly cto -> Option.iter (sub.typ sub) cto
-  in
+  let extra x = extra sub x in
   sub.location sub exp_loc;
   sub.attributes sub exp_attributes;
   List.iter (fun (e, loc, _) -> extra e; sub.location sub loc) exp_extra;
@@ -269,8 +303,9 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_let (rec_flag, list, exp) ->
       sub.value_bindings sub (rec_flag, list);
       sub.expr sub exp
-  | Texp_function {cases; _} ->
-     List.iter (sub.case sub) cases
+  | Texp_function (params, body) ->
+      List.iter (function_param sub) params;
+      function_body sub body
   | Texp_apply (exp, list) ->
       sub.expr sub exp;
       List.iter (fun (_, o) -> Option.iter (sub.expr sub) o) list
@@ -379,6 +414,7 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_attribute _ -> ()
 
 let class_description sub x =
+  sub.item_declaration sub (Class_type x);
   class_infos sub (sub.class_type sub) x
 
 let functor_parameter sub = function
@@ -464,7 +500,8 @@ let module_expr sub {mod_loc; mod_desc; mod_env; mod_attributes; _} =
       sub.module_coercion sub c
   | Tmod_unpack (exp, _) -> sub.expr sub exp
 
-let module_binding sub {mb_loc; mb_name; mb_expr; mb_attributes; _} =
+let module_binding sub ({mb_loc; mb_name; mb_expr; mb_attributes; _} as mb) =
+  sub.item_declaration sub (Module_binding mb);
   sub.location sub mb_loc;
   sub.attributes sub mb_attributes;
   iter_loc sub mb_name;
@@ -551,6 +588,9 @@ let typ sub {ctyp_loc; ctyp_desc; ctyp_env; ctyp_attributes; _} =
   | Ttyp_variant (list, _, _) -> List.iter (sub.row_field sub) list
   | Ttyp_poly (_, ct) -> sub.typ sub ct
   | Ttyp_package pack -> sub.package_type sub pack
+  | Ttyp_open (_, mod_ident, t) ->
+      iter_loc sub mod_ident;
+      sub.typ sub t
 
 let class_structure sub {cstr_self; cstr_fields; _} =
   sub.pat sub cstr_self;
@@ -594,13 +634,16 @@ let case sub {c_lhs; c_guard; c_rhs} =
   Option.iter (sub.expr sub) c_guard;
   sub.expr sub c_rhs
 
-let value_binding sub {vb_loc; vb_pat; vb_expr; vb_attributes; _} =
+let value_binding sub ({vb_loc; vb_pat; vb_expr; vb_attributes; _} as vb) =
+  sub.item_declaration sub (Value_binding vb);
   sub.location sub vb_loc;
   sub.attributes sub vb_attributes;
   sub.pat sub vb_pat;
   sub.expr sub vb_expr
 
 let env _sub _ = ()
+
+let item_declaration _sub _ = ()
 
 let default_iterator =
   {
@@ -648,4 +691,5 @@ let default_iterator =
     value_bindings;
     value_description;
     with_constraint;
+    item_declaration;
   }

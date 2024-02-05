@@ -82,7 +82,7 @@ let erroneous_type_register te =
   | None -> ()
 
 let erroneous_type_check te =
-  let te = Types.Transient_expr.coerce te in
+  (* let te = Types.Transient_expr.coerce te in *)
   match !errors with
   | Some (_,h) -> Btype.TypeHash.mem h te
   | _ -> false

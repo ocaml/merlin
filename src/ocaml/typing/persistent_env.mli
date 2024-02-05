@@ -32,12 +32,14 @@ val report_error: Format.formatter -> error -> unit
 module Persistent_signature : sig
   type t =
     { filename : string; (** Name of the file containing the signature. *)
-      cmi : Cmi_format.cmi_infos }
+      cmi : Cmi_format.cmi_infos;
+      visibility : Load_path.visibility
+    }
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
       it from memory, for instance to build a self-contained toplevel. *)
-  val load : (unit_name:string -> t option) ref
+  val load : (allow_hidden:bool -> unit_name:string -> t option) ref
 end
 
 type can_load_cmis =
@@ -57,14 +59,14 @@ val fold : 'a t -> (modname -> 'a -> 'b -> 'b) -> 'b -> 'b
 
 val read : 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> modname -> filepath -> 'a
-val find : 'a t -> (Persistent_signature.t -> 'a)
+  -> Unit_info.Artifact.t -> 'a
+val find : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> modname -> 'a
 
 val find_in_cache : 'a t -> modname -> 'a option
 
-val check : 'a t -> (Persistent_signature.t -> 'a)
+val check : allow_hidden:bool -> 'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
   -> loc:Location.t -> modname -> unit
 

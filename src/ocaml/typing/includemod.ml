@@ -748,6 +748,8 @@ and signature_components  ~in_eq ~loc old_env ~mark env subst
               type_declarations ~loc ~old_env env ~mark subst id1 tydec1 tydec2
             in
             let item = mark_error_as_unrecoverable item in
+            (* Right now we don't filter hidden constructors / labels from the
+            shape. *)
             let shape_map = Shape.Map.add_type_proj shape_map id1 orig_shape in
             id1, item, shape_map, false
         | Sig_typext(id1, ext1, _, _), Sig_typext(_id2, ext2, _, _) ->
@@ -925,10 +927,14 @@ let can_alias env path =
 type explanation = Env.t * Error.all
 exception Error of explanation
 
+type application_name =
+  | Anonymous_functor
+  | Full_application_path of Longident.t
+  | Named_leftmost_functor of Longident.t
 exception Apply_error of {
     loc : Location.t ;
     env : Env.t ;
-    lid_app : Longident.t option ;
+    app_name : application_name ;
     mty_f : module_type ;
     args : (Error.functor_arg_descr * module_type) list ;
   }
@@ -958,8 +964,8 @@ let check_functor_application_in_path
         in
         let mty_f = (Env.find_module f0_path env).md_type in
         let args = List.map prepare_arg args in
-        let lid_app = Some lid_whole_app in
-        raise (Apply_error {loc; env; lid_app; mty_f; args})
+        let app_name = Full_application_path lid_whole_app in
+        raise (Apply_error {loc; env; app_name; mty_f; args})
       else
         raise Not_found
 
@@ -1136,7 +1142,7 @@ module Functor_app_diff = struct
     | Insert(Named(Some param, param_ty))
     | Change(_, Named(Some param, param_ty), _ ) ->
         (* Change is Delete + Insert: we add the Inserted parameter to the
-           environnement to track equalities with external components that the
+           environment to track equalities with external components that the
            parameter might add. *)
         let mty = Subst.modtype Keep st.subst param_ty in
         let env = Env.add_module ~arg:true param Mp_present mty st.env in
