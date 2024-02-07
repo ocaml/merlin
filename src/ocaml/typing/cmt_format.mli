@@ -123,3 +123,15 @@ val record_value_dependency:
   val read_signature : 'a -> string -> Types.signature * 'b list * 'c list
 
 *)
+
+val iter_on_declarations :
+  f:(Types.Uid.t -> item_declaration -> unit)
+  -> Tast_iterator.iterator
+
+val iter_on_occurrences :
+  f:(namespace:Shape.Sig_component_kind.t ->
+    Env.t ->
+    Path.t ->
+    Longident.t Location.loc ->
+    unit)
+  -> Tast_iterator.iterator

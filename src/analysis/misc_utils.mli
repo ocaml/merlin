@@ -31,3 +31,6 @@ module Compat : sig
     : Typedtree.pattern
     -> (Typedtree.pattern * Ident.t * string Location.loc) option
 end
+
+(** Extracts the loc from cmt's cmt_uid_to_decl tables *)
+val loc_of_decl : uid:Shape.Uid.t -> Typedtree.item_declaration -> string Location.loc option

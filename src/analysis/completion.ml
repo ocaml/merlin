@@ -219,8 +219,8 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
       | Some p, Some loc ->
         let namespace = (* FIXME: that's just terrible *)
           match kind with
-          | `Value -> `Vals
-          | `Type -> `Type
+          | `Value -> Shape.Sig_component_kind.Value
+          | `Type -> Type
           | _ -> assert false
         in
         begin match get_doc (`Completion_entry (namespace, p, loc)) with
