@@ -7,7 +7,7 @@ Trying them all:
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 9
       }
     },
     "notifications": []
@@ -20,7 +20,7 @@ Trying them all:
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 3,
-        "col": 0
+        "col": 12
       }
     },
     "notifications": []
@@ -33,7 +33,7 @@ Trying them all:
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 7,
-        "col": 0
+        "col": 12
       }
     },
     "notifications": []
@@ -61,7 +61,7 @@ FIXME this should say "Already at definition point" (we're defining the label):
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 5
       }
     },
     "notifications": []
@@ -96,7 +96,7 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 5
       }
     },
     "notifications": []
@@ -109,7 +109,7 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 9
       }
     },
     "notifications": []
@@ -122,7 +122,7 @@ FIXME we failed to parse/reconstruct the ident, that's interesting
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 11,
-        "col": 0
+        "col": 10
       }
     },
     "notifications": []
@@ -151,7 +151,7 @@ FIXME this should jump to line 11:
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 13,
-        "col": 0
+        "col": 11
       }
     },
     "notifications": []
@@ -177,7 +177,7 @@ FIXME this should jump to line 11:
       "file": "$TESTCASE_ROOT/test.ml",
       "pos": {
         "line": 13,
-        "col": 0
+        "col": 11
       }
     },
     "notifications": []

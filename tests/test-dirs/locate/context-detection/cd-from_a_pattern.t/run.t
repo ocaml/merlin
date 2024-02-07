@@ -31,7 +31,7 @@ We call locate from the broken pattern:
       "file": "$TESTCASE_ROOT/from_a_pattern.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []
