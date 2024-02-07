@@ -14,14 +14,14 @@
   > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
     "line": 2,
-    "col": 2
+    "col": 14
   }
 
   $ $MERLIN single locate -look-for ml -position 7:13 \
   > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
     "line": 2,
-    "col": 2
+    "col": 14
   }
 
 
@@ -29,5 +29,5 @@
   > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
     "line": 2,
-    "col": 2
+    "col": 14
   }

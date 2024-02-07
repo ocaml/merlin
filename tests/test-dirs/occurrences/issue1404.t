@@ -30,7 +30,7 @@ occurrences identifier-at 2:0 returns the occurrences of [x]
     }
   ]
 
-FIXME occurrences identifier-at 2:1 returns the occurrences of [x] (should be [+])
+occurrences identifier-at 2:1 returns the occurrences of [+]
   $ $MERLIN single occurrences -identifier-at 2:1 -filename opt.ml <<EOF | \
   > jq '.value'
   > let x = 3 and y = 4 + 2 in
@@ -40,21 +40,21 @@ FIXME occurrences identifier-at 2:1 returns the occurrences of [x] (should be [+
     {
       "start": {
         "line": 1,
-        "col": 4
+        "col": 20
       },
       "end": {
         "line": 1,
-        "col": 5
+        "col": 21
       }
     },
     {
       "start": {
         "line": 2,
-        "col": 0
+        "col": 1
       },
       "end": {
         "line": 2,
-        "col": 1
+        "col": 2
       }
     }
   ]
@@ -84,6 +84,6 @@ locate position 2:1 returns the definition of [(+)]
     "file": "lib/ocaml/stdlib.mli",
     "pos": {
       "line": 335,
-      "col": 0
+      "col": 9
     }
   }

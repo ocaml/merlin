@@ -7,7 +7,7 @@ Check that we handle generative functors properly:
       "file": "$TESTCASE_ROOT/generative.ml",
       "pos": {
         "line": 3,
-        "col": 2
+        "col": 6
       }
     },
     "notifications": []

@@ -7,7 +7,7 @@ Check that we can jump locally inside the functor:
       "file": "$TESTCASE_ROOT/all_local.ml",
       "pos": {
         "line": 12,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -38,7 +38,7 @@ Check that we can jump from inside the functor to the (sig of the) parameter:
       "file": "$TESTCASE_ROOT/all_local.ml",
       "pos": {
         "line": 2,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -53,7 +53,7 @@ Check the argument is substituted for the parameter
       "file": "$TESTCASE_ROOT/all_local.ml",
       "pos": {
         "line": 6,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
