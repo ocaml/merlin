@@ -319,13 +319,13 @@ let of_method_call obj meth loc =
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
-let of_expression_desc loc = function
+let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
-  | Texp_function { cases; _ } ->
-    list_fold of_case cases
+  | Texp_function (params, body) ->
+    list_fold of_function_param params ** of_function_body body
   | Texp_apply (e,ls) ->
     of_expression e **
     list_fold (function
@@ -397,6 +397,17 @@ let of_expression_desc loc = function
     of_expression body.c_rhs
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
+
+and of_function_param fp = of_function_param_kind fp.fp_kind
+
+and of_function_param_kind = function
+  | Tparam_pat pat -> of_pattern pat
+  | Tparam_optional_default (pat, exp) ->
+    of_pattern pat ** of_expression exp
+
+and of_function_body = function
+  | Tfunction_body exp -> of_expression exp
+  | Tfunction_cases fc -> list_fold of_case fc.cases
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->

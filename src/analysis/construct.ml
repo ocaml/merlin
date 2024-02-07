@@ -329,15 +329,23 @@ module Gen = struct
       in
       fun env label ty ->
         let open Asttypes in
+        let make_param arg_label pat =
+          {
+            Parsetree.pparam_loc = Location.none;
+            pparam_desc = Pparam_val (arg_label, None, pat)
+
+          }
+        in
+
         match label with
         | Labelled s | Optional s ->
             (* Pun for labelled arguments *)
-            Ast_helper.Pat.var ( Location.mknoloc s), s
+            make_param label (Ast_helper.Pat.var ( Location.mknoloc s)), s
         | Nolabel -> begin match get_desc ty with
           | Tconstr (path, _, _) ->
             let name = uniq_name env (Path.last path) in
-            Ast_helper.Pat.var (Location.mknoloc name), name
-          | _ -> Ast_helper.Pat.any (), "_" end
+            make_param label (Ast_helper.Pat.var ( Location.mknoloc name)), name
+          | _ ->  make_param label (Ast_helper.Pat.any ()), "_" end
     in
 
     let constructor env type_expr path constrs =
@@ -491,7 +499,9 @@ module Gen = struct
           in
           let env = Env.add_value (Ident.create_local name) value_description env in
           let exps = arrow_rhs env tyright in
-          List.map exps ~f:(Ast_helper.Exp.fun_ label None argument)
+          (* TODO UPRGADE: this should be improved for multiple arguments *)
+          List.map exps ~f:(fun e ->
+            Ast_helper.Exp.function_ [argument] None (Pfunction_body e))
         | Ttuple types ->
           let choices = List.map types ~f:(exp_or_hole env)
             |> Util.combinations
@@ -548,7 +558,7 @@ module Gen = struct
 end
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
-  | Pexp_fun _
+  | Pexp_function _
   | Pexp_lazy _
   | Pexp_apply _
   | Pexp_variant (_, Some _)
