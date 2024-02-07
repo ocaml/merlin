@@ -22,3 +22,6 @@ end
 
 (* Add parenthesis to qualified operators *)
 val parenthesize_name : string -> string
+
+(** Extracts the loc from cmt's cmt_uid_to_decl tables *)
+val loc_of_decl : uid:Shape.Uid.t -> Typedtree.item_declaration -> string Location.loc option

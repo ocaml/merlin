@@ -2034,8 +2034,12 @@ and type_pat_aux
           { p with
             pat_type = ty;
             pat_desc =
-            Tpat_alias
-              ({p with pat_desc = Tpat_any; pat_attributes = []}, id,s, uid);
+                Tpat_alias
+                  ({p with
+                    pat_desc = Tpat_any;
+                    pat_attributes = (* Merlin should ignore these nodes *)
+                      [Ast_helper.Attr.mk (mknoloc "merlin.hide") (PStr [])];
+                    pat_loc = { p.pat_loc with loc_ghost = true }}, id,s,uid);
             pat_extra = [extra];
           }
       | _, p ->
