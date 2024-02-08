@@ -487,21 +487,29 @@ module Gen = struct
             | Type_record (labels, _) -> record env rtyp path labels
             | Type_abstract _ | Type_open -> []
           end
-        | Tarrow (label, tyleft, tyright, _) ->
-          let argument, name = make_arg env label tyleft in
-          let value_description = {
-              val_type = tyleft;
-              val_kind = Val_reg;
-              val_loc = Location.none;
-              val_attributes = [];
-              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
-            }
-          in
-          let env = Env.add_value (Ident.create_local name) value_description env in
-          let exps = arrow_rhs env tyright in
-          (* TODO UPRGADE: this should be improved for multiple arguments *)
+        | Tarrow _ ->
+          let rec left_types acc env ty =
+            match get_desc ty with
+            | Tarrow (label, tyleft, tyright, _) ->
+              let arg, name = make_arg env label tyleft in
+              let value_description = {
+                  val_type = tyleft;
+                  val_kind = Val_reg;
+                  val_loc = Location.none;
+                  val_attributes = [];
+                  val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+                }
+              in
+              let env =
+                Env.add_value (Ident.create_local name) value_description env
+              in
+              left_types (arg :: acc) env tyright
+            | _ -> List.rev acc, ty, env
+         in
+          let arguments, body_type, env = left_types [] env rtyp in
+          let exps = arrow_rhs env body_type in
           List.map exps ~f:(fun e ->
-            Ast_helper.Exp.function_ [argument] None (Pfunction_body e))
+            Ast_helper.Exp.function_ arguments None (Pfunction_body e))
         | Ttuple types ->
           let choices = List.map types ~f:(exp_or_hole env)
             |> Util.combinations
