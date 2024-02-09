@@ -19,14 +19,14 @@ let iter_on_defs ~uid_to_locs_tbl =
     Types.Uid.Tbl.add uid_to_locs_tbl uid loc
   in
   { iter_decl with
-    expr = (fun sub ({ exp_extra; exp_env; _ } as expr) ->
+    expr = (fun sub ({ exp_extra; _ } as expr) ->
       List.iter exp_extra ~f:(fun (exp_extra, _loc, _attr) ->
         match exp_extra with
-        | Texp_newtype' (typ_id, typ_name) ->
-          log "Found definition %s (%a)\n%!" typ_name.txt
+        | Texp_newtype' (typ_id, typ_name, uid) ->
+          log "Found newtype %s wit id %a (%a)\n%!" typ_name.txt
+            Logger.fmt (Fun.flip Ident.print_with_scope typ_id)
             Logger.fmt (fun fmt -> Location.print_loc fmt typ_name.loc);
-          let decl = Env.find_type (Path.Pident typ_id) exp_env in
-          register_uid decl.type_uid typ_name;
+          register_uid uid typ_name;
           ()
         | _ -> ());
       iter_decl.expr sub expr);

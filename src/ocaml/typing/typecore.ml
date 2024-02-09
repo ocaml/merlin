@@ -3558,8 +3558,8 @@ and type_expect_
       re
         { exp_desc = Texp_function (params, body);
           exp_loc = loc;
-          exp_extra =
-            List.map (fun { txt; loc } -> Texp_newtype txt, loc, []) newtypes;
+          exp_extra = List.map (fun (id, txt_loc, uid) ->
+            Texp_newtype' (id, txt_loc, uid), txt_loc.loc, []) newtypes;
           exp_type;
           exp_attributes = sexp.pexp_attributes;
           exp_env = env;
@@ -4292,7 +4292,7 @@ and type_expect_
       re { exp with exp_extra =
              (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
   | Pexp_newtype({txt=name} as label_loc, sbody) ->
-      let body, ety, id = type_newtype loc env name (fun env ->
+      let body, ety, id, uid = type_newtype loc env name (fun env ->
         let expr = type_exp env sbody in
         expr, expr.exp_type)
       in
@@ -4300,7 +4300,7 @@ and type_expect_
          any new extra node in the typed AST. *)
       rue { body with exp_loc = loc; exp_type = ety;
             exp_extra =
-            (Texp_newtype' (id, label_loc), loc, sexp.pexp_attributes) :: body.exp_extra }
+            (Texp_newtype' (id, label_loc, uid), loc, sexp.pexp_attributes) :: body.exp_extra }
   | Pexp_pack m ->
       let (p, fl) =
         match get_desc (Ctype.expand_head env (instance ty_expected)) with
@@ -4599,7 +4599,7 @@ and type_constraint_expect
     nodes for the newtype properly linked.
 *)
 and type_newtype
-  : type a. _ -> _ -> _ -> (Env.t -> a * type_expr) -> a * type_expr * Ident.t =
+  : type a. _ -> _ -> _ -> (Env.t -> a * type_expr) -> a * type_expr * Ident.t * Uid.t =
   fun loc env name type_body ->
   let ty =
     if Typetexp.valid_tyvar_name name then
@@ -4629,7 +4629,8 @@ and type_newtype
     in
     let ety = Subst.type_expr Subst.identity exp_type in
     replace ety;
-    (result, ety, id)
+    let uid = decl.type_uid in
+    (result, ety, id, uid)
   end
 
 and type_ident env ?(recarg=Rejected) lid =
@@ -4764,6 +4765,7 @@ and type_function
       in
       with_explanation ty_fun.explanation (fun () ->
         unify_exp_types loc env exp_type (instance ty_expected));
+      let newtype = nt_id, newtype, nt_uid in
       exp_type, params, body, newtype :: newtypes, contains_gadt
   | { pparam_desc = Pparam_val (arg_label, default_arg, pat); pparam_loc }
       :: rest
@@ -4862,7 +4864,7 @@ and type_function
           fp_arg_label = arg_label;
           fp_param;
           fp_partial = partial;
-          fp_newtypes = newtypes;
+          fp_newtypes = List.map (fun (_,v,_) -> v) newtypes;
           fp_loc = pparam_loc;
         }
       in

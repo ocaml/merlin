@@ -328,7 +328,7 @@ and expression_extra i ppf x attrs =
       option i core_type ppf cto;
   | Texp_newtype s ->
       line i ppf "Texp_newtype \"%s\"\n" s;
-  | Texp_newtype' (id, _) ->
+  | Texp_newtype' (id, _, _) ->
       line i ppf "Texp_newtype' \"%a\"\n" fmt_ident id;
       attributes i ppf attrs;
 

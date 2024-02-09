@@ -172,7 +172,7 @@ and exp_extra =
         (** Used for method bodies. *)
   | Texp_newtype of string
         (** fun (type t) ->  *)
-  | Texp_newtype' of Ident.t * label loc
+  | Texp_newtype' of Ident.t * label loc * Uid.t
   (** merlin-specific: keep enough information to correctly implement
       occurrences for local-types.
       Merlin typechecker uses [Texp_newtype'] constructor, while upstream
