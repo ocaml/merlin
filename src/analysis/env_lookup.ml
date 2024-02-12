@@ -115,6 +115,7 @@ let in_namespaces (nss : Namespace.inferred list) ident env =
           let path, md = Env.find_module_by_name ident env in
           raise (Found (path, Module, md.md_uid, md.Types.md_loc))
         | `Modtype ->
+          log ~title:"lookup" "lookup in module type namespace" ;
           let path, mtd = Env.find_modtype_by_name ident env in
           raise
             (Found (path, Module_type, mtd.mtd_uid, mtd.Types.mtd_loc))
