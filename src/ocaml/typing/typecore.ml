@@ -4748,7 +4748,7 @@ and type_function
   match params_suffix with
   | { pparam_desc = Pparam_newtype newtype; pparam_loc = _ } :: rest ->
       (* Check everything else in the scope of (type a). *)
-      let (params, body, newtypes, contains_gadt), exp_type, _ =
+      let (params, body, newtypes, contains_gadt), exp_type, nt_id, nt_uid =
         type_newtype loc env newtype.txt (fun env ->
           let exp_type, params, body, newtypes, contains_gadt =
             (* mimic the typing of Pexp_newtype by minting a new type var,
