@@ -4694,7 +4694,10 @@ and split_function_ty env ty_expected ~arg_label ~first ~in_function =
             then Not_a_function (ty_fun, explanation)
             else Too_many_arguments (ty_fun, explanation)
         in
-        raise (Error(loc, env, err))
+        (* Merlin: we recover with an expected type of 'a -> 'b *)
+        let level = get_level (instance ty_expected) in
+        raise_error (error(loc, env, err));
+        (ty_expected, newvar2 level)
     in
     let ty_arg =
       if is_optional arg_label then
@@ -4758,13 +4761,10 @@ and type_function
               ~first:false ~in_function
           in
           (params, body, newtypes, contains_gadt), exp_type)
-          (* Merlin: we recover with an expected type of 'a -> 'b *)
-          (* let level = get_level (instance ty_expected) in
-          raise_error (error(loc_fun, env, err));
-          (newvar2 level, newvar2 level) *)
       in
-      with_explanation ty_fun.explanation (fun () ->
+      (try with_explanation ty_fun.explanation (fun () ->
         unify_exp_types loc env exp_type (instance ty_expected));
+       with _ -> Msupport.erroneous_type_register ty_expected);
       let newtype = nt_id, newtype, nt_uid in
       exp_type, params, body, newtype :: newtypes, contains_gadt
   | { pparam_desc = Pparam_val (arg_label, default_arg, pat); pparam_loc }
@@ -4835,8 +4835,9 @@ and type_function
          type for each new parameter. Now that functions are n-ary, we
          could possibly run this once.
       *)
-      with_explanation ty_fun.explanation (fun () ->
+      (try with_explanation ty_fun.explanation (fun () ->
         unify_exp_types loc env exp_type (instance ty_expected));
+      with _ -> Msupport.erroneous_type_register ty_expected);
       (* This is quadratic, as it extracts all of the parameters from an arrow
          type for each parameter that's added. Now that functions are n-ary,
          there might be an opportunity to improve this.
@@ -6085,7 +6086,8 @@ and type_function_cases_expect
     let ty_fun =
       instance (newgenty (Tarrow (Nolabel, ty_arg, ty_res, commu_ok)))
     in
-    unify_exp_types loc env ty_fun (instance ty_expected);
+    (try unify_exp_types loc env ty_fun (instance ty_expected);
+     with _ -> Msupport.erroneous_type_register ty_expected);
     cases, partial, ty_fun
   end
 
