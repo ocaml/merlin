@@ -14,6 +14,8 @@ merlin 4.14
 Thu Feb 22 14:00:42 CET 2024
 
   + merlin binary
+    - Preliminary support for OCaml 5.2
+    - Some regressions in recovery and destruct are present.
     - Add a "heap_mbytes" field to Merlin server responses to report heap usage (#1717)
     - Add cache stats to telemetry (#1711)
     - Add new SyntaxDocument command to find information about the node under the cursor (#1706)
