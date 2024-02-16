@@ -262,7 +262,7 @@ let rec get_every_pattern = function
       let patterns : Typedtree.pattern list =
         Mbrowse.fold_node (fun env node acc ->
             match node with
-            | Pattern _ -> (* Not expected here *) assert false
+            | Pattern _ -> (* Not expected here *) raise Nothing_to_do
             | Case _ ->
               Mbrowse.fold_node (fun _env node acc ->
                   match node with
@@ -477,7 +477,7 @@ let find_branch patterns sub =
         is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
   in
   let rec aux before = function
-    | [] -> raise Not_found
+    | [] -> raise Nothing_to_do
     | p :: after when is_sub_patt p ~sub -> before, after, p
     | p :: ps -> aux (p :: before) ps
   in
