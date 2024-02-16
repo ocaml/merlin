@@ -1,3 +1,11 @@
+merlin 4.14-preview
+===================
+Fri Feb 16 17:31:42 CET 2024
+
+  + merlin binary
+    - Preliminary support for OCaml 5.2
+    - Some regressions in recovery and destruct are present.
+
 merlin 4.13.1
 =============
 Fri Dec  1 15:00:42 CET 2023
