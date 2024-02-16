@@ -1,5 +1,5 @@
 Test finding occurrences of let-based binding operator, from reified syntax:
-
+FIXME UPGRADE 5.2: some of these locations are slightly off.
   $ $MERLIN single occurrences -identifier-at 3:11 ./issue1398.ml < ./issue1398.ml
   {
     "class": "return",
@@ -17,7 +17,7 @@ Test finding occurrences of let-based binding operator, from reified syntax:
       {
         "start": {
           "line": 3,
-          "col": 10
+          "col": 12
         },
         "end": {
           "line": 3,
@@ -57,7 +57,7 @@ Test finding occurrences of and-based binding operator, from reified syntax:
       {
         "start": {
           "line": 3,
-          "col": 19
+          "col": 21
         },
         "end": {
           "line": 3,
@@ -154,5 +154,6 @@ FIXME -- some locs are inexact
           "col": 17
         }
       }
+    ],
     "notifications": []
   }

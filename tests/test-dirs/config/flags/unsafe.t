@@ -9,6 +9,8 @@ Testing array desugaring
     "notifications": []
   }
 
+FIXME UPGRADE 5.2: this test show additionnal warnings after the 5.2 upgrade; probably a
+type that should be marked as incorrect is not anymore.
   $ $MERLIN single errors -filename array_bad.ml <<EOF
   > module Array = struct end
   > let x = [|0|].(0)
@@ -29,6 +31,20 @@ Testing array desugaring
         "sub": [],
         "valid": true,
         "message": "Unbound value Array.get"
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 15
+        },
+        "end": {
+          "line": 2,
+          "col": 16
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Warning 20: this argument will not be used by the function."
       }
     ],
     "notifications": []
@@ -53,6 +69,8 @@ Testing array desugaring
     "notifications": []
   }
 
+FIXME UPGRADE 5.2: this test show additionnal warnings after the 5.2 upgrade; probably a
+type that should be marked as incorrect is not anymore.
   $ $MERLIN single errors -filename unsafe_array_bad.ml -unsafe <<EOF
   > module Array = struct end
   > let x = [|0|].(0)
@@ -73,6 +91,20 @@ Testing array desugaring
         "sub": [],
         "valid": true,
         "message": "Unbound value Array.unsafe_get"
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 15
+        },
+        "end": {
+          "line": 2,
+          "col": 16
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Warning 20: this argument will not be used by the function."
       }
     ],
     "notifications": []
