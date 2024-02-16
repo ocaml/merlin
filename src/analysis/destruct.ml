@@ -477,7 +477,7 @@ let find_branch patterns sub =
         is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
   in
   let rec aux before = function
-    | [] -> raise Not_found
+    | [] -> raise Nothing_to_do
     | p :: after when is_sub_patt p ~sub -> before, after, p
     | p :: ps -> aux (p :: before) ps
   in
