@@ -296,13 +296,25 @@ FIXME UPGRADE 5.2: there is something wrong with the recovery here
       {
         "start": {
           "line": 5,
-          "col": 4
+          "col": 9
         },
         "end": {
           "line": 5,
           "col": 12
         },
         "type": "int",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 5,
+          "col": 4
+        },
+        "end": {
+          "line": 5,
+          "col": 12
+        },
+        "type": "int option",
         "tail": "no"
       },
       {
@@ -318,5 +330,86 @@ FIXME UPGRADE 5.2: there is something wrong with the recovery here
         "tail": "no"
       }
     ],
+    "notifications": []
+  }
+
+  $ $MERLIN single dump -what typedtree -filename under.ml <<EOF
+  > let aa = 4.2
+  > let f (x) : int = function
+  >   | None -> 3
+  >   | Some 5 -> 4
+  >   | Some _aa -> 4
+  > EOF
+  {
+    "class": "return",
+    "value": "[
+    structure_item (under.ml[1,0+0]..under.ml[1,0+12])
+      Tstr_value Nonrec
+      [
+        <def>
+          pattern (under.ml[1,0+4]..under.ml[1,0+6])
+            Tpat_var \"aa/276\"
+          expression (under.ml[1,0+9]..under.ml[1,0+12])
+            Texp_constant Const_float 4.2
+      ]
+    structure_item (under.ml[2,13+0]..under.ml[5,70+17])
+      Tstr_value Nonrec
+      [
+        <def>
+          pattern (under.ml[2,13+4]..under.ml[2,13+5])
+            Tpat_var \"f/277\"
+          expression (under.ml[2,13+6]..under.ml[5,70+17]) ghost
+            Texp_function
+            [
+              Nolabel
+              Param_pat
+                pattern (under.ml[2,13+6]..under.ml[2,13+9])
+                  Tpat_var \"x/279\"
+            ]
+            Tfunction_cases (under.ml[2,13+18]..under.ml[5,70+17])
+              Texp_constraint
+              core_type (under.ml[2,13+12]..under.ml[2,13+15])
+                Ttyp_constr \"int/1!\"
+                []
+              [
+                <case>
+                  pattern (under.ml[3,40+4]..under.ml[3,40+8])
+                    Tpat_construct \"None\"
+                    []
+                    None
+                  expression (under.ml[3,40+12]..under.ml[3,40+13])
+                    attribute \"merlin.loc\"
+                      []
+                    Texp_constant Const_int 3
+                <case>
+                  pattern (under.ml[4,54+4]..under.ml[4,54+10])
+                    Tpat_construct \"Some\"
+                    [
+                      pattern (under.ml[4,54+9]..under.ml[4,54+10])
+                        Tpat_constant Const_int 5
+                    ]
+                    None
+                  expression (under.ml[4,54+14]..under.ml[4,54+15])
+                    attribute \"merlin.loc\"
+                      []
+                    Texp_constant Const_int 4
+                <case>
+                  pattern (under.ml[5,70+4]..under.ml[5,70+12])
+                    Tpat_construct \"Some\"
+                    [
+                      pattern (under.ml[5,70+9]..under.ml[5,70+12])
+                        Tpat_var \"_aa/280\"
+                    ]
+                    None
+                  expression (under.ml[5,70+16]..under.ml[5,70+17])
+                    attribute \"merlin.loc\"
+                      []
+                    Texp_constant Const_int 4
+              ]
+      ]
+  ]
+  
+  
+  ",
     "notifications": []
   }
