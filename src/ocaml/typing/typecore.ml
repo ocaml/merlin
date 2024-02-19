@@ -4697,7 +4697,7 @@ and split_function_ty env ty_expected ~arg_label ~first ~in_function =
         (* Merlin: we recover with an expected type of 'a -> 'b *)
         let level = get_level (instance ty_expected) in
         raise_error (error(loc, env, err));
-        (ty_expected, newvar2 level)
+        (newvar2 level, ty_expected)
     in
     let ty_arg =
       if is_optional arg_label then
