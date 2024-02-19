@@ -10,7 +10,7 @@
     "value": "[
     structure_item (test.ml[1,0+0]..test.ml[3,104+28])
       Tstr_module
-      ERROR_locate_from_inside_function_literal_used_as_non_function/278
+      ERROR_locate_from_inside_function_literal_used_as_non_function/279
         module_expr (test.ml[1,0+72]..test.ml[3,104+28])
           Tmod_structure
           [
@@ -44,7 +44,16 @@
                     ]
                     Tfunction_body
                       expression (test.ml[3,104+21]..test.ml[3,104+28])
-                        Texp_ident \"problem/276\"
+                        attribute \"merlin.incorrect\"
+                          []
+                        attribute \"merlin.saved-parts\"
+                          [
+                            structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
+                              Pstr_eval
+                              expression (_none_[0,0+-1]..[0,0+-1]) ghost
+                                Pexp_constant PConst_int (1,None)
+                          ]
+                        Texp_ident \"*type-error*/277\"
               ]
           ]
   ]
@@ -250,23 +259,11 @@
                               "col": 8
                             },
                             "ghost": false,
-                            "attrs": [
-                              {
-                                "start": {
-                                  "line": 0,
-                                  "col": -1
-                                },
-                                "end": {
-                                  "line": 0,
-                                  "col": -1
-                                },
-                                "name": "merlin.incorrect"
-                              }
-                            ],
+                            "attrs": [],
                             "kind": "pattern (test.ml[2,27+4]..test.ml[2,27+8])
-    attribute \"merlin.incorrect\"
-      []
-    Tpat_any
+    Tpat_construct \"None\"
+    []
+    None
   ",
                             "children": []
                           },
@@ -324,25 +321,34 @@
                               "col": 10
                             },
                             "ghost": false,
-                            "attrs": [
+                            "attrs": [],
+                            "kind": "pattern (test.ml[3,41+4]..test.ml[3,41+10])
+    Tpat_construct \"Some\"
+    [
+      pattern (test.ml[3,41+9]..test.ml[3,41+10])
+        Tpat_constant Const_int 5
+    ]
+    None
+  ",
+                            "children": [
                               {
+                                "filename": "test.ml",
                                 "start": {
-                                  "line": 0,
-                                  "col": -1
+                                  "line": 3,
+                                  "col": 9
                                 },
                                 "end": {
-                                  "line": 0,
-                                  "col": -1
+                                  "line": 3,
+                                  "col": 10
                                 },
-                                "name": "merlin.incorrect"
-                              }
-                            ],
-                            "kind": "pattern (test.ml[3,41+4]..test.ml[3,41+10])
-    attribute \"merlin.incorrect\"
-      []
-    Tpat_any
+                                "ghost": false,
+                                "attrs": [],
+                                "kind": "pattern (test.ml[3,41+9]..test.ml[3,41+10])
+    Tpat_constant Const_int 5
   ",
-                            "children": []
+                                "children": []
+                              }
+                            ]
                           },
                           {
                             "filename": "test.ml",
@@ -398,25 +404,34 @@
                               "col": 12
                             },
                             "ghost": false,
-                            "attrs": [
+                            "attrs": [],
+                            "kind": "pattern (test.ml[4,57+4]..test.ml[4,57+12])
+    Tpat_construct \"Some\"
+    [
+      pattern (test.ml[4,57+9]..test.ml[4,57+12])
+        Tpat_var \"_aa/279\"
+    ]
+    None
+  ",
+                            "children": [
                               {
+                                "filename": "test.ml",
                                 "start": {
-                                  "line": 0,
-                                  "col": -1
+                                  "line": 4,
+                                  "col": 9
                                 },
                                 "end": {
-                                  "line": 0,
-                                  "col": -1
+                                  "line": 4,
+                                  "col": 12
                                 },
-                                "name": "merlin.incorrect"
-                              }
-                            ],
-                            "kind": "pattern (test.ml[4,57+4]..test.ml[4,57+12])
-    attribute \"merlin.incorrect\"
-      []
-    Tpat_any
+                                "ghost": false,
+                                "attrs": [],
+                                "kind": "pattern (test.ml[4,57+9]..test.ml[4,57+12])
+    Tpat_var \"_aa/279\"
   ",
-                            "children": []
+                                "children": []
+                              }
+                            ]
                           },
                           {
                             "filename": "test.ml",
