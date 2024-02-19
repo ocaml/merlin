@@ -108,8 +108,6 @@ let index_buffer ~current_buffer_path ~local_defs () =
   Ast_iterators.iter_on_usages ~f local_defs;
   defs
 
-let merge_tbl ~into tbl = Hashtbl.iter (Index_format.add into) tbl
-
 (* A longident can have the form: A.B.x Right now we are only interested in
    values, but we will eventually want to index all occurrences of modules in
    such longidents. However there is an issue with that: we only have the
@@ -147,27 +145,12 @@ let uid_and_loc_of_node env node =
       Some (val_val.val_uid, val_name.loc)
   | _ -> None
 
-let loc_of_local_def ~local_defs uid =
-  (* WIP *)
-  (* todo: cache or specialize ? *)
-  let uid_to_locs_tbl : string Location.loc Types.Uid.Tbl.t =
-    Types.Uid.Tbl.create 64
-  in
-  match local_defs with
-  | `Interface _ -> failwith "not implemented"
-  | `Implementation str ->
-    let iter = Ast_iterators.iter_on_defs ~uid_to_locs_tbl in
-    iter.structure iter str;
-    (* todo: optimize, the iterator could be more flexible *)
-    (* we could check equality and raise with the result as soon that it arrive *)
-    Shape.Uid.Tbl.find uid_to_locs_tbl uid
-
 let comp_unit_of_uid = function
   | Shape.Uid.Compilation_unit comp_unit
   | Item { comp_unit; _ } -> Some comp_unit
   | Internal | Predef _ -> None
 
-let locs_of ~config ~env ~local_defs ~pos ~node:_ path =
+let locs_of ~config ~env ~local_defs ~pos path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)"
     path
     (Lexing.print_position () pos);
@@ -176,17 +159,13 @@ let locs_of ~config ~env ~local_defs ~pos ~node:_ path =
     ~config:{ mconfig = config; traverse_aliases=false; ml_or_mli = `ML}
     ~env ~local_defs ~pos path
   in
-  (* When we fail to find an exact definition we restrict the scope to the local
-     buffer *)
   let def =
     match locate_result with
     | `At_origin ->
       log ~title:"locs_of" "Cursor is on definition / declaration";
       (* We are on  a definition / declaration so we look for the node's uid  *)
-      (* todo: refactor *)
       let browse = Mbrowse.of_typedtree local_defs in
-      let node = Mbrowse.enclosing pos [browse] in
-      let env, node = Mbrowse.leaf_node node in
+      let env, node = Mbrowse.leaf_node (Mbrowse.enclosing pos [browse]) in
       uid_and_loc_of_node env node
     | `Found { uid; location; approximated = false; _ } ->
         log ~title:"locs_of" "Found definition uid using locate: %a "
@@ -216,22 +195,14 @@ let locs_of ~config ~env ~local_defs ~pos ~node:_ path =
       index_buffer ~current_buffer_path ~local_defs ()
     in
     let buffer_locs = Hashtbl.find_opt buffer_index def_uid in
-    let locs = Option.value ~default: LidSet.empty buffer_locs in
+    let locs = Option.value ~default:LidSet.empty buffer_locs in
     let locs =
         log ~title:"occurrences" "Found %i locs" (LidSet.cardinal locs);
         LidSet.elements locs
-        |> List.filter_map ~f:(fun {Location.txt; loc} ->
+        |> List.map ~f:(fun {Location.txt; loc} ->
           log ~title:"occurrences" "Found occ: %s %a"
             (Longident.head txt) Logger.fmt (Fun.flip Location.print_loc loc);
-          let loc = last_loc loc txt in
-          let fname = loc.Location.loc_start.Lexing.pos_fname in
-          if Filename.is_relative fname then begin
-            match Locate.find_source ~config loc fname with
-            | `Found (file, _) -> Some (set_fname ~file loc)
-            | `File_not_found msg ->
-                log ~title:"occurrences" "%s" msg;
-                None
-          end else Some loc)
+          last_loc loc txt)
     in
     let def_uid_is_in_current_unit =
       let uid_comp_unit = comp_unit_of_uid def_uid in
@@ -240,4 +211,4 @@ let locs_of ~config ~env ~local_defs ~pos ~node:_ path =
     in
     if not def_uid_is_in_current_unit then Ok locs
     else Ok (set_fname ~file:current_buffer_path def_loc :: locs)
-  | None -> Error "nouid"
+  | None -> Error "Could not find the uid of the definition."
