@@ -800,7 +800,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
+    let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
     let path =
       let path = reconstruct_identifier pipeline pos None in
       let path = Mreader_lexer.identifier_suffix path in
@@ -810,7 +810,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       path
     in
     let locs =
-      Occurrences.locs_of ~config ~env ~local_defs ~node ~pos path
+      Occurrences.locs_of ~config ~env ~local_defs ~pos path
       |> Result.value ~default:[]
     in
     let loc_start l = l.Location.loc_start in
