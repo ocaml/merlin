@@ -29,6 +29,21 @@
     "notifications": []
   }
 
+  $ $MERLIN single jump -target module-type -position 2:3 -filename test.ml <<EOF
+  > module type T = sig
+  >   type t
+  > end
+  > EOF
+  {
+    "class": "return",
+    "value": {
+      "pos": {
+        "line": 1,
+        "col": 0
+      }
+    },
+    "notifications": []
+  }
 
 
 Same line should fail:

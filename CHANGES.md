@@ -8,6 +8,7 @@ merlin NEXT_VERSION
     - Fix `FLG -pp ppx.exe -as-pp/-dump-ast` use of invalid shell redirection when 
     direct process launch on Windows. (#1723, fixes #1722)
     - Add a query_num field to the `ocamlmerlin` responses to detect server crashes (#1716)
+    - Jump to `module-type` (#1728, partially fixes #1656)
   + editor modes
     - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
     - Fix merlinpp not using binary file open (#1725, fixes #1724)
