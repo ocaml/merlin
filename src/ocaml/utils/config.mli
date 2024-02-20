@@ -18,6 +18,8 @@
 val version: string
         (* The current version number of the system *)
 
+val ext_obj : string
+
 val interface_suffix: string ref
         (* Suffix for interface file names *)
 

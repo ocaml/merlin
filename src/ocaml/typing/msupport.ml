@@ -28,7 +28,9 @@
 
 open Std
 
-let errors : (exn list ref * unit Btype.TypeHash.t) option ref = ref None
+module RawTypeHash = Hashtbl.Make(Types.TransientTypeOps)
+
+let errors : (exn list ref * unit RawTypeHash.t) option ref = ref None
 
 let monitor_errors' = ref (ref false)
 let monitor_errors () =
@@ -66,7 +68,7 @@ let catch_errors warnings caught f =
   let warnings' = Warnings.backup () in
   let errors' = !errors in
   Warnings.restore warnings;
-  errors := (Some (caught,Btype.TypeHash.create 3));
+  errors := (Some (caught,RawTypeHash.create 3));
   Misc.try_finally f
     ~always:(fun () ->
        errors := errors';
@@ -78,13 +80,13 @@ let uncatch_errors f =
 let erroneous_type_register te =
   let te = Types.Transient_expr.coerce te in
   match !errors with
-  | Some (_,h) -> Btype.TypeHash.replace h te ()
+  | Some (_,h) -> RawTypeHash.replace h te ()
   | None -> ()
 
 let erroneous_type_check te =
   let te = Types.Transient_expr.coerce te in
   match !errors with
-  | Some (_,h) -> Btype.TypeHash.mem h te
+  | Some (_,h) -> RawTypeHash.mem h te
   | _ -> false
 
 let rec erroneous_expr_check e =

@@ -17,15 +17,13 @@
     }
   }
 
-FIXME: this is not a very satisfying answer. 
-We could expect 1:9
   $ $MERLIN single locate  -look-for ml -position 2:14 \
   > -filename ./constr.ml < ./constr.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 9
     }
   }
 
@@ -42,7 +40,7 @@ With the declaration in another compilation unit:
     "file": "$TESTCASE_ROOT/constr.ml",
     "pos": {
       "line": 1,
-      "col": 18
+      "col": 21
     }
   }
 

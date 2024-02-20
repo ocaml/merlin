@@ -46,33 +46,6 @@ type set = string list
 let ident = Ident.create_persistent "_"
 
 (** Definition of each extension *)
-let ext_lwt = {
-  name = "lwt";
-  private_def = [
-    "module Lwt : sig
-      val un_lwt : 'a Lwt.t -> 'a
-      val in_lwt : 'a Lwt.t -> 'a Lwt.t
-      val to_lwt : 'a -> 'a Lwt.t
-      val finally' : 'a Lwt.t -> unit Lwt.t -> 'a Lwt.t
-      val un_stream : 'a Lwt_stream.t -> 'a
-      val unit_lwt : unit Lwt.t -> unit Lwt.t
-    end"
-  ];
-  public_def = [
-    "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
-     val raise_lwt : exn -> 'a Lwt.t
-     val assert_lwt : bool -> unit Lwt.t"
-  ];
-  keywords = [
-    "lwt", LET_LWT;
-    "try_lwt", TRY_LWT;
-    "match_lwt", MATCH_LWT;
-    "finally", FINALLY_LWT;
-    "for_lwt", FOR_LWT;
-    "while_lwt", WHILE_LWT;
-  ];
-  packages = ["lwt.syntax"];
-}
 
 let ext_nonrec = {
   name = "nonrec";
@@ -100,7 +73,7 @@ let ext_meta = {
 }
 
 (* Known extensions *)
-let registry = [ext_lwt;ext_meta]
+let registry = [ext_meta]
 let registry =
   List.fold_left registry ~init:String.Map.empty
     ~f:(fun map ext -> String.Map.add map ~key:ext.name ~data:ext)

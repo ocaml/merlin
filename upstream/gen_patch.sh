@@ -2,8 +2,8 @@
 
 D_MERLIN=../src/ocaml
 
-FROM=500
-TO=501
+FROM=501
+TO=502
 
 D_FROM=ocaml_${FROM}
 D_TO=ocaml_${TO}
@@ -18,11 +18,12 @@ for file in "${D_TO}"/*/*.ml*; do
   F_PATCH=$(echo "${F_TO}" | sed "s/${D_TO}/${D_PATCH}/g")
   mkdir "$(dirname "${F_PATCH}")" 2>/dev/null | true
   # Make diff
-  RES=$(diff -u -N "${F_FROM}" "${F_TO}")
-  if [ -n "${RES}" ]; then
-    # Write the patch file if non-empty
-    echo "${RES}" > "${F_PATCH}.patch"
+  diff -u -N "${F_FROM}" "${F_TO}" >"${F_PATCH}.patch"
+  if [ -s "${F_PATCH}.patch" ]; then
     # Apply the patch file
     patch "${F_MERLIN}" "${F_PATCH}.patch"
+    echo "patched ${F_MERLIN}"
+  else
+    rm "${F_PATCH}.patch"
   fi
 done

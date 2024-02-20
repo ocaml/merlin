@@ -58,7 +58,7 @@ Module types substitutions
       "file": "$TESTCASE_ROOT/mtsubst.ml",
       "pos": {
         "line": 5,
-        "col": 19
+        "col": 31
       }
     },
     "notifications": []
@@ -86,7 +86,7 @@ Module types substitutions
       "file": "$TESTCASE_ROOT/mtsubst.ml",
       "pos": {
         "line": 5,
-        "col": 19
+        "col": 31
       }
     },
     "notifications": []

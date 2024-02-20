@@ -7,7 +7,7 @@ Regression test for #624
       "file": "$TESTCASE_ROOT/off_by_one.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []

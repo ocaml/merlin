@@ -1,3 +1,4 @@
+FIXME: with 5.2 new function representation we lost some granularity
   $ $MERLIN single type-enclosing -position 5:24 -verbosity 0 \
   > -filename ./issue864.ml < ./issue864.ml
   {
@@ -25,18 +26,6 @@
           "col": 24
         },
         "type": "int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 5,
-          "col": 9
-        },
-        "end": {
-          "line": 5,
-          "col": 24
-        },
-        "type": "X.t -> int",
         "tail": "no"
       },
       {
@@ -87,18 +76,6 @@
       {
         "start": {
           "line": 7,
-          "col": 20
-        },
-        "end": {
-          "line": 7,
-          "col": 37
-        },
-        "type": "X.t -> int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 7,
           "col": 7
         },
         "end": {
@@ -139,18 +116,6 @@
           "col": 35
         },
         "type": "int",
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 9,
-          "col": 20
-        },
-        "end": {
-          "line": 9,
-          "col": 35
-        },
-        "type": "X.t -> int",
         "tail": "no"
       },
       {

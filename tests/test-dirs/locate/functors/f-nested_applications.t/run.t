@@ -7,7 +7,7 @@
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
         "line": 10,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -21,7 +21,7 @@
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
         "line": 10,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -35,7 +35,7 @@
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
         "line": 10,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -49,7 +49,7 @@
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
         "line": 10,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
@@ -63,7 +63,7 @@
       "file": "$TESTCASE_ROOT/nested_applications.ml",
       "pos": {
         "line": 10,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []

@@ -18,6 +18,7 @@
 open Types
 open Asttypes
 open Typedtree
+open Lambda
 
 let scrape_ty env ty =
   match get_desc ty with
@@ -43,7 +44,7 @@ let scrape_ty env ty =
 let scrape env ty =
   get_desc (scrape_ty env ty)
 
-let _scrape_poly env ty =
+let scrape_poly env ty =
   let ty = scrape_ty env ty in
   match get_desc ty with
   | Tpoly (ty, _) -> get_desc ty
@@ -66,6 +67,13 @@ let is_immediate = function
       (* In bytecode, we don't know at compile time whether we are
          targeting 32 or 64 bits. *)
       !Clflags.native_code && Sys.word_size = 64
+
+let maybe_pointer_type env ty =
+  let ty = scrape_ty env ty in
+  if is_immediate (Ctype.immediacy env ty) then Immediate
+  else Pointer
+
+let maybe_pointer exp = maybe_pointer_type exp.exp_env exp.exp_type
 
 type classification =
   | Int
@@ -92,7 +100,7 @@ let classify env ty =
       else begin
         try
           match (Env.find_type p env).type_kind with
-          | Type_abstract ->
+          | Type_abstract _ ->
               Any
           | Type_record _ | Type_variant _ | Type_open ->
               Addr
@@ -107,7 +115,6 @@ let classify env ty =
   | Tlink _ | Tsubst _ | Tpoly _ | Tfield _ ->
       assert false
 
-(*
 let array_type_kind env ty =
   match scrape_poly env ty with
   | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_array ->
@@ -125,6 +132,7 @@ let array_type_kind env ty =
 
 let array_kind exp = array_type_kind exp.exp_env exp.exp_type
 
+(*
 let array_pattern_kind pat = array_type_kind pat.pat_env pat.pat_type
 
 let bigarray_decode_type env ty tbl dfl =
@@ -136,7 +144,8 @@ let bigarray_decode_type env ty tbl dfl =
       dfl
 
 let kind_table =
-  ["float32_elt", Pbigarray_float32;
+  ["float16_elt", Pbigarray_float16;
+   "float32_elt", Pbigarray_float32;
    "float64_elt", Pbigarray_float64;
    "int8_signed_elt", Pbigarray_sint8;
    "int8_unsigned_elt", Pbigarray_uint8;
@@ -178,11 +187,6 @@ let value_kind env ty =
     | _ ->
         Pgenval
   end
-
-let function_return_value_kind env ty =
-  match is_function_type env ty with
-  | Some (_lhs, rhs) -> value_kind env rhs
-  | None -> Pgenval
 *)
 
 (** Whether a forward block is needed for a lazy thunk on a value, i.e.

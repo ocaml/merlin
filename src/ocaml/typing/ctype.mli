@@ -178,12 +178,25 @@ val instance_list: type_expr list -> type_expr list
         (* Take an instance of a list of type schemes *)
 val new_local_type:
         ?loc:Location.t ->
-        ?manifest_and_scope:(type_expr * int) -> unit -> type_declaration
-val existential_name: constructor_description -> type_expr -> string
+        ?manifest_and_scope:(type_expr * int) ->
+        type_origin -> type_declaration
+
+module Pattern_env : sig
+  type t = private
+    { mutable env : Env.t;
+      equations_scope : int;
+      (* scope for local type declarations *)
+      allow_recursive_equations : bool;
+      (* true iff checking counter examples *)
+    }
+  val make: Env.t -> equations_scope:int -> allow_recursive_equations:bool -> t
+  val copy: ?equations_scope:int -> t -> t
+  val set_env: t -> Env.t -> unit
+end
 
 type existential_treatment =
   | Keep_existentials_flexible
-  | Make_existentials_abstract of { env: Env.t ref; scope: int }
+  | Make_existentials_abstract of Pattern_env.t
 
 val instance_constructor: existential_treatment ->
         constructor_description -> type_expr list * type_expr * type_expr list
@@ -198,12 +211,13 @@ val instance_class:
         type_expr list -> class_type -> type_expr list * class_type
 
 val instance_poly:
-        ?keep_names:bool ->
-        bool -> type_expr list -> type_expr -> type_expr list * type_expr
+        ?keep_names:bool -> fixed:bool ->
+        type_expr list -> type_expr -> type_expr list * type_expr
         (* Take an instance of a type scheme containing free univars *)
 val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * bool
 val instance_label:
-        bool -> label_description -> type_expr list * type_expr * type_expr
+        fixed:bool ->
+        label_description -> type_expr list * type_expr * type_expr
         (* Same, for a label *)
 val apply:
         ?use_current_level:bool ->
@@ -255,8 +269,7 @@ val extract_concrete_typedecl:
 val unify: Env.t -> type_expr -> type_expr -> unit
         (* Unify the two types given. Raise [Unify] if not possible. *)
 val unify_gadt:
-        equations_level:int -> allow_recursive_equations:bool ->
-        Env.t ref -> type_expr -> type_expr -> Btype.TypePairs.t
+        Pattern_env.t -> type_expr -> type_expr -> Btype.TypePairs.t
         (* Unify the two types given and update the environment with the
            local constraints. Raise [Unify] if not possible.
            Returns the pairs of types that have been equated.  *)
@@ -312,9 +325,9 @@ exception Filter_method_failed of filter_method_failure
 type class_match_failure =
     CM_Virtual_class
   | CM_Parameter_arity_mismatch of int * int
-  | CM_Type_parameter_mismatch of Env.t * Errortrace.equality_error
+  | CM_Type_parameter_mismatch of int * Env.t * Errortrace.equality_error
   | CM_Class_type_mismatch of Env.t * class_type * class_type
-  | CM_Parameter_mismatch of Env.t * Errortrace.moregen_error
+  | CM_Parameter_mismatch of int * Env.t * Errortrace.moregen_error
   | CM_Val_type_mismatch of string * Env.t * Errortrace.comparison_error
   | CM_Meth_type_mismatch of string * Env.t * Errortrace.comparison_error
   | CM_Non_mutable_value of string

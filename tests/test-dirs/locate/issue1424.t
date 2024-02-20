@@ -28,7 +28,7 @@ Jump to interface:
     "file": "$TESTCASE_ROOT/test2.mli",
     "pos": {
       "line": 1,
-      "col": 0
+      "col": 4
     }
   }
 

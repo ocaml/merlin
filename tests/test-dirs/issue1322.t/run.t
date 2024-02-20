@@ -14,7 +14,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "In this `with' constraint, the new definition of t
+        "message": "In this with constraint, the new definition of t
   does not match its original definition in the constrained signature:
   Type declarations do not match:
     type 'a t = 'a t constraint 'a = int

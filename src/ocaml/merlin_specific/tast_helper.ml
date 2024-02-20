@@ -8,13 +8,13 @@ module Pat = struct
     let pat_desc = Tpat_constant c in
     { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
 
-  let var ?loc pat_env pat_type str =
+  let var ?loc uid pat_env pat_type str =
     let pat_loc =
       match loc with
       | None -> str.Asttypes.loc
       | Some loc -> loc
     in
-    let pat_desc = Tpat_var (Ident.create_local str.Asttypes.txt, str) in
+    let pat_desc = Tpat_var (Ident.create_local str.Asttypes.txt, str, uid) in
     { pat_desc; pat_loc; pat_extra; pat_attributes; pat_type; pat_env }
 
   let record ?(loc=Location.none) pat_env pat_type lst closed_flag =
@@ -25,7 +25,7 @@ module Pat = struct
     let pat_desc = Tpat_tuple lst in
     { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
 
-  let construct ?(loc=Location.none) 
+  let construct ?(loc=Location.none)
     pat_env pat_type lid cstr_desc args locs_coretype =
     let pat_desc = Tpat_construct (lid, cstr_desc, args, locs_coretype) in
     { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }

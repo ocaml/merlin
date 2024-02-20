@@ -299,7 +299,7 @@ let of_pat_record_field obj loc lbl =
 let of_pattern_desc (type k) (desc : k pattern_desc) =
   match desc with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
-  | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
+  | Tpat_alias (p,_,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p
   | Tpat_exception p -> of_pattern p
   | Tpat_value p -> of_pattern (p :> value general_pattern)
   | Tpat_tuple ps | Tpat_construct (_,_,ps,None) | Tpat_array ps ->
@@ -319,13 +319,13 @@ let of_method_call obj meth loc =
   let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
-let of_expression_desc loc = function
+let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ | Texp_hole -> id_fold
   | Texp_let (_,vbs,e) ->
     of_expression e ** list_fold of_value_binding vbs
-  | Texp_function { cases; _ } ->
-    list_fold of_case cases
+  | Texp_function (params, body) ->
+    list_fold of_function_param params ** of_function_body body
   | Texp_apply (e,ls) ->
     of_expression e **
     list_fold (function
@@ -368,7 +368,7 @@ let of_expression_desc loc = function
   | Texp_letmodule (mb_id, mb_name, mb_presence, mb_expr, e) ->
     let mb =
       {mb_id;mb_name;mb_expr;mb_loc=Location.none;mb_attributes=[]
-      ; mb_presence }
+      ; mb_presence; mb_uid=Shape.Uid.internal_not_actually_unique }
     in
     app (Module_binding mb) ** of_expression e
   | Texp_letexception (ec,e) ->
@@ -397,6 +397,17 @@ let of_expression_desc loc = function
     of_expression body.c_rhs
   | Texp_open (od, e) ->
     app (Module_expr od.open_expr) ** of_expression e
+
+and of_function_param fp = of_function_param_kind fp.fp_kind
+
+and of_function_param_kind = function
+  | Tparam_pat pat -> of_pattern pat
+  | Tparam_optional_default (pat, exp) ->
+    of_pattern pat ** of_expression exp
+
+and of_function_body = function
+  | Tfunction_body exp -> of_expression exp
+  | Tfunction_cases fc -> list_fold of_case fc.cases
 
 and of_class_expr_desc = function
   | Tcl_ident (_,_,cts) ->
@@ -534,6 +545,7 @@ and of_signature_item_desc = function
 
 and of_core_type_desc = function
   | Ttyp_any | Ttyp_var _ -> id_fold
+  | Ttyp_open (_,_,ct) -> of_core_type ct
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 ** of_core_type ct2
   | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
@@ -780,9 +792,9 @@ let pattern_paths (type k) { Typedtree. pat_desc; pat_extra; _ } =
     match (pat_desc : k pattern_desc) with
     | Tpat_construct (lid_loc,{Types. cstr_name; cstr_res; _},_,_) ->
       fake_path lid_loc cstr_res cstr_name
-    | Tpat_var (id, {Location. loc; txt}) ->
+    | Tpat_var (id, {Location. loc; txt}, _uid) ->
       [mkloc (Path.Pident id) loc, Some (Longident.Lident txt)]
-    | Tpat_alias (_,id,loc) ->
+    | Tpat_alias (_,id,loc, _uid) ->
       [reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)]
     | _ -> []
   in
@@ -836,7 +848,7 @@ let expression_paths { Typedtree. exp_desc; exp_extra; _ } =
   List.fold_left ~init exp_extra
     ~f:(fun acc (extra, _, _) ->
       match extra with
-      | Texp_newtype' (id, label_loc) ->
+      | Texp_newtype' (id, label_loc, _) ->
         let path = Path.Pident id in
         let lid = Longident.Lident (label_loc.txt) in
         (mkloc path label_loc.loc, Some lid) :: acc

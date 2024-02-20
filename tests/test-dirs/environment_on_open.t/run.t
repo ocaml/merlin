@@ -6,7 +6,7 @@
       "file": "$TESTCASE_ROOT/environment_on_open.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []

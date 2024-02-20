@@ -22,7 +22,7 @@ Reproduce bug described (and fixed) in commit e558d203334fd06f7653a6388b46dba895
       "file": "$TESTCASE_ROOT/missed_shadowing.ml",
       "pos": {
         "line": 7,
-        "col": 0
+        "col": 12
       }
     },
     "notifications": []

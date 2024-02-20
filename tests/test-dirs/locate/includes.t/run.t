@@ -13,7 +13,7 @@ thing.
       "file": "$TESTCASE_ROOT/foo.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 8
       }
     },
     "notifications": []
@@ -29,7 +29,7 @@ the structure, but the stamp will have changed:
       "file": "$TESTCASE_ROOT/foo.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 8
       }
     },
     "notifications": []

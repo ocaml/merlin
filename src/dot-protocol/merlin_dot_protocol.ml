@@ -31,7 +31,7 @@ open Merlin_utils.Std.Result
 
 module Directive = struct
   type include_path =
-    [ `B of string | `S of string | `CMI of string | `CMT of string ]
+    [ `B of string | `H of string | `S of string | `CMI of string | `CMT of string ]
 
   type no_processing_required =
     [ `EXT of string list
@@ -82,6 +82,7 @@ module Sexp = struct
       begin match tag with
         | "S" -> `S value
         | "B" -> `B value
+        | "H" -> `H value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
         | "STDLIB" -> `STDLIB value
@@ -111,6 +112,7 @@ module Sexp = struct
         let single s = [ Atom s ] in
         match t with
         | `B s -> ("B", single s)
+        | `H s -> ("H", single s)
         | `S s -> ("S", single s)
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)

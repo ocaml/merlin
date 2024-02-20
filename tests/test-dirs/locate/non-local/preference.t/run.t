@@ -51,7 +51,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
       "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 3,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
@@ -64,7 +64,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
       "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 3,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []
@@ -77,7 +77,7 @@ Test that Locate.locate and Locate.from_path do their job properly:
       "file": "$TESTCASE_ROOT/a.mli",
       "pos": {
         "line": 3,
-        "col": 0
+        "col": 4
       }
     },
     "notifications": []

@@ -25,8 +25,6 @@ Keywords only including extension:
 
   $ echo "f" | $MERLIN single complete-prefix -position 1:2 -filename test.ml \
   > -kind k -prefix f -extension lwt | jq ".value.entries[].name"
-  "finally"
-  "for_lwt"
   "function"
   "false"
   "fun"

@@ -15,7 +15,7 @@ Test jumping from a normal constructor:
       "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 9
       }
     },
     "notifications": []
@@ -30,7 +30,7 @@ From an exception:
       "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 3,
-        "col": 0
+        "col": 10
       }
     },
     "notifications": []
@@ -60,7 +60,7 @@ And from the extensible type name itself:
       "file": "$TESTCASE_ROOT/error.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 5
       }
     },
     "notifications": []

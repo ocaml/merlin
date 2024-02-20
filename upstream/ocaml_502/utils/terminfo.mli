@@ -2,9 +2,10 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*               Jeremy Yallop, University of Cambridge                   *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
 (*                                                                        *)
-(*   Copyright 2017 Jeremy Yallop                                         *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
 (*   the GNU Lesser General Public License version 2.1, with the          *)
@@ -12,8 +13,20 @@
 (*                                                                        *)
 (**************************************************************************)
 
-exception Illegal_expr
+(** Basic interface to the terminfo database
 
-val is_valid_recursive_expression : Ident.t list -> Typedtree.expression -> bool
+  {b Warning:} this module is unstable and part of
+  {{!Compiler_libs}compiler-libs}.
 
-val is_valid_class_expr : Ident.t list -> Typedtree.class_expr -> bool
+*)
+
+type status =
+  | Uninitialised
+  | Bad_term
+  | Good_term
+
+val setup : out_channel -> status
+val num_lines : out_channel -> int
+val backup : out_channel -> int -> unit
+val standout : out_channel -> bool -> unit
+val resume : out_channel -> int -> unit

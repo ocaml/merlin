@@ -6,7 +6,7 @@
       "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 11
       }
     },
     "notifications": []
@@ -19,7 +19,7 @@
       "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 11
       }
     },
     "notifications": []
@@ -34,7 +34,7 @@ the field bar rather than the identifier.
       "file": "$TESTCASE_ROOT/field.ml",
       "pos": {
         "line": 10,
-        "col": 2
+        "col": 7
       }
     },
     "notifications": []
