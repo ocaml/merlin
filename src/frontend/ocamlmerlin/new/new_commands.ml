@@ -199,6 +199,21 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
     end
   ;
 
+  command "syntax-document"
+    ~doc: "Returns documentation for OCaml syntax for the entity under the cursor"
+    ~spec: [
+      arg "-position" "<position> Position to complete"
+          (marg_position (fun pos _pos -> pos));
+    ]
+    ~default: `None
+    begin fun buffer pos ->
+      match pos with 
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos -> 
+        run buffer (Query_protocol.Syntax_document pos)
+    end
+  ;
+
   command "enclosing"
     ~spec: [
       arg "-position" "<position> Position to complete"

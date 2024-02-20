@@ -112,6 +112,8 @@ let dump (type a) : a t -> json =
         );
       "position", mk_position pos;
     ]
+  | Syntax_document pos ->
+    mk "syntax-document" [ ("position", mk_position pos) ]
   | Locate (prefix, look_for, pos) ->
     mk "locate" [
       "prefix", (match prefix with
@@ -380,6 +382,16 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       | `Found doc ->
         `String doc
     end
+  | Syntax_document _, resp -> 
+    (match resp with
+    | `Found info ->
+      `Assoc
+      [
+        ("name", `String info.name);
+        ("description", `String info.description);
+        ("url", `String info.documentation);
+      ]
+    | `No_documentation -> `String "No documentation found")
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
   | Jump _, resp ->
