@@ -47,6 +47,7 @@ type result = {
   initial_env : Env.t;
   initial_snapshot : Types.snapshot;
   initial_stamp : int;
+  stamp : int;
   typedtree : [
     | `Interface of
         (Parsetree.signature_item, Typedtree.signature_item) item list
@@ -168,8 +169,9 @@ let run config parsetree =
     | `Implementation parsetree -> type_implementation config caught parsetree
     | `Interface parsetree -> type_interface config caught parsetree
   in
+  let stamp = Ident.get_currentstamp () in
   Typecore.reset_delayed_checks ();
-  { config; initial_env; initial_snapshot; initial_stamp; typedtree; cache_stat }
+  { config; initial_env; initial_snapshot; initial_stamp; stamp; typedtree; cache_stat }
 
 let get_env ?pos:_ t =
   Option.value ~default:t.initial_env (
@@ -205,6 +207,8 @@ let get_typedtree t =
   | `Interface l ->
     let sig_items, sig_type = split_items l in
     `Interface {Typedtree. sig_items; sig_type; sig_final_env = get_env t}
+
+let get_stamp t = t.stamp
 
 let node_at ?(skip_recovered=false) t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
