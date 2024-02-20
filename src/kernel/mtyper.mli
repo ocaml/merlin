@@ -20,6 +20,8 @@ val get_env : ?pos:Msource.position -> result -> Env.t
 
 val get_typedtree : result -> typedtree
 
+val get_stamp : result -> int
+
 val get_errors : result -> exn list
 
 val initial_env : result -> Env.t

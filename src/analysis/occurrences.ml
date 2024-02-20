@@ -25,7 +25,7 @@ let decl_of_path_or_lid env namespace path lid =
     end
   | _ -> Env_lookup.loc path namespace env
 
-let index_buffer ~current_buffer_path ~local_defs () =
+let index_buffer_ ~current_buffer_path ~local_defs () =
   let {Logger. log} = Logger.for_section "index" in
   let defs = Hashtbl.create 64 in
   let module Shape_reduce =
@@ -108,6 +108,25 @@ let index_buffer ~current_buffer_path ~local_defs () =
   Ast_iterators.iter_on_usages ~f local_defs;
   defs
 
+let index_buffer =
+  (* Right now, we only cache the last used index. We could do better by caching
+     the index for every known buffer. *)
+  let cache = ref None in
+  fun ~current_buffer_path ~stamp ~local_defs () ->
+    let {Logger. log} = Logger.for_section "index" in
+    match !cache with
+    | Some (path, stamp', value) when
+        String.equal path current_buffer_path
+        && Int.equal stamp' stamp ->
+      log ~title:"index_cache" "Reusing cached value for path %s and stamp %i."
+        path stamp';
+      value
+    | _ ->
+      log ~title:"index_cache" "No valid cache found, reindexing.";
+      let result = index_buffer_ ~current_buffer_path ~local_defs () in
+      cache := Some (current_buffer_path, stamp, result);
+      result
+
 (* A longident can have the form: A.B.x Right now we are only interested in
    values, but we will eventually want to index all occurrences of modules in
    such longidents. However there is an issue with that: we only have the
@@ -150,10 +169,11 @@ let comp_unit_of_uid = function
   | Item { comp_unit; _ } -> Some comp_unit
   | Internal | Predef _ -> None
 
-let locs_of ~config ~env ~local_defs ~pos path =
+let locs_of ~config ~env ~typer_result ~pos path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)"
     path
     (Lexing.print_position () pos);
+  let local_defs = Mtyper.get_typedtree typer_result in
   let locate_result =
     Locate.from_string
     ~config:{ mconfig = config; traverse_aliases=false; ml_or_mli = `ML}
@@ -192,7 +212,8 @@ let locs_of ~config ~env ~local_defs ~pos path =
       Logger.fmt (fun fmt -> Location.print_loc fmt def_loc);
     log ~title:"locs_of" "Indexing current buffer";
     let buffer_index =
-      index_buffer ~current_buffer_path ~local_defs ()
+      let stamp = Mtyper.get_stamp typer_result in
+      index_buffer ~current_buffer_path ~stamp ~local_defs ()
     in
     let buffer_locs = Hashtbl.find_opt buffer_index def_uid in
     let locs = Option.value ~default:LidSet.empty buffer_locs in
