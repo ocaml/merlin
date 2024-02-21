@@ -91,6 +91,10 @@ let module_pred = function
   | _ -> None
 ;;
 
+let module_type_pred = function
+  | (Module_type_declaration _ as node) :: _ -> Some node
+  | _ -> None
+
 let match_pred = function
   | (Expression { exp_desc = Texp_match _ ; _ } as node) :: _ -> Some node
   | _ -> None
@@ -172,6 +176,7 @@ let get typed_tree pos target =
     "fun", fun_pred;
     "let", let_pred;
     "module", module_pred;
+    "module-type", module_type_pred;
     "match", match_pred;
     "match-next-case", match_pred;
     "match-prev-case", match_pred;
