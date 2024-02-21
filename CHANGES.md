@@ -5,9 +5,10 @@ merlin NEXT_VERSION
     - Add a "heap_mbytes" field to Merlin server responses to report heap usage (#1717)
     - Add cache stats to telemetry (#1711)
     - Add new SyntaxDocument command to find information about the node under the cursor (#1706)
-    - Fix `FLG -pp ppx.exe -as-pp/-dump-ast` use of invalid shell redirection when 
+    - Fix `FLG -pp ppx.exe -as-pp/-dump-ast` use of invalid shell redirection when
     direct process launch on Windows. (#1723, fixes #1722)
     - Add a query_num field to the `ocamlmerlin` responses to detect server crashes (#1716)
+    - Jump to cases within a match statement (#1726)
     - Jump to `module-type` (#1728, partially fixes #1656)
   + editor modes
     - vim: load merlin under the ocamlinterface and ocamllex filetypes (#1340)
