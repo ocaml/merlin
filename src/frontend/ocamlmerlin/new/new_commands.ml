@@ -342,8 +342,8 @@ compiler settings in an IDE."
         (marg_position (fun pos (target,_pos) -> (target,pos)));
     ]
 ~doc:"This command can be used to assist navigation in a source code buffer.
-Target is a string that can contain one or more of the 'fun', 'let', 'module' \
-and 'match' words.
+Target is a string that can contain one or more of the 'fun', 'let', 'module', \
+'module-type' and 'match' words.
 It returns the starting position of the function, let definition, module or \
 match expression that contains the cursor
 "
