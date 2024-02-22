@@ -32,6 +32,8 @@ open Std
 open Typedtree
 open Browse_raw
 
+type direction = Prev | Next
+
 let is_node_fun = function
   | Expression { exp_desc = Texp_function _; _ } -> true
   | _ -> false
@@ -89,6 +91,10 @@ let module_pred = function
   | _ -> None
 ;;
 
+let module_type_pred = function
+  | (Module_type_declaration _ as node) :: _ -> Some node
+  | _ -> None
+
 let match_pred = function
   | (Expression { exp_desc = Texp_match _ ; _ } as node) :: _ -> Some node
   | _ -> None
@@ -104,6 +110,8 @@ let rec find_map ~f = function
 
 exception No_matching_target
 exception No_predicate of string
+exception No_next_match_case
+exception No_prev_match_case
 
 (* Returns first node on the list matching a predicate *)
 let rec find_node preds nodes =
@@ -127,6 +135,36 @@ let rec skip_non_moving pos = function
   | [] -> []
 ;;
 
+let get_cases_from_match node =
+  match node with
+  | Expression { exp_desc = Texp_match (_, cases, _); _ } -> cases
+  | _ -> []
+
+let find_case_pos cases pos direction =
+  let rec find_pos pos cases direction =
+    match cases with
+    | [] -> None
+    | { c_lhs = { pat_loc; _ }; _ } :: tail ->
+        let check =
+          match direction with
+          | Prev ->
+            pos.Lexing.pos_cnum > pat_loc.loc_start.pos_cnum
+          | Next ->
+            pos.Lexing.pos_cnum < pat_loc.loc_start.pos_cnum
+        in
+        if check then
+          Some pat_loc.loc_start
+        else
+          find_pos pos tail direction
+  in
+  let case = find_pos pos cases direction in
+  match case with
+  | Some location -> `Found location
+  | None ->
+    (match direction with
+    | Next -> raise No_next_match_case
+    | Prev -> raise No_prev_match_case)
+
 let get typed_tree pos target =
   let roots = Mbrowse.of_typedtree typed_tree in
   let enclosings =
@@ -134,12 +172,14 @@ let get typed_tree pos target =
     | [] -> []
     | l -> List.map ~f:snd l
   in
-
   let all_preds = [
     "fun", fun_pred;
     "let", let_pred;
     "module", module_pred;
+    "module-type", module_type_pred;
     "match", match_pred;
+    "match-next-case", match_pred;
+    "match-prev-case", match_pred;
   ] in
   let targets = Str.split (Str.regexp "[, ]") target in
   try
@@ -152,17 +192,25 @@ let get typed_tree pos target =
     in
     if String.length target = 0 then
       `Error "Specify target"
-    else begin
+    else
       let nodes = skip_non_moving pos enclosings in
       let node = find_node preds nodes in
-      let node_loc = Browse_raw.node_real_loc Location.none node in
-      `Found node_loc.Location.loc_start
-    end
+      match target with
+      | "match-next-case" -> find_case_pos (get_cases_from_match node) pos Next
+      | "match-prev-case" ->
+          find_case_pos (List.rev (get_cases_from_match node)) pos Prev
+      | _ ->
+          let node_loc = Browse_raw.node_real_loc Location.none node in
+          `Found node_loc.Location.loc_start
   with
   | No_predicate target ->
     `Error ("No predicate for " ^ target)
   | No_matching_target ->
     `Error "No matching target"
+  | No_next_match_case ->
+    `Error "No next case found"
+  | No_prev_match_case ->
+    `Error "No previous case found"
 
 let phrase typed_tree pos target =
   let roots = Mbrowse.of_typedtree typed_tree in

@@ -199,6 +199,21 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
     end
   ;
 
+  command "syntax-document"
+    ~doc: "Returns documentation for OCaml syntax for the entity under the cursor"
+    ~spec: [
+      arg "-position" "<position> Position to complete"
+          (marg_position (fun pos _pos -> pos));
+    ]
+    ~default: `None
+    begin fun buffer pos ->
+      match pos with 
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos -> 
+        run buffer (Query_protocol.Syntax_document pos)
+    end
+  ;
+
   command "enclosing"
     ~spec: [
       arg "-position" "<position> Position to complete"
@@ -327,8 +342,8 @@ compiler settings in an IDE."
         (marg_position (fun pos (target,_pos) -> (target,pos)));
     ]
 ~doc:"This command can be used to assist navigation in a source code buffer.
-Target is a string that can contain one or more of the 'fun', 'let', 'module' \
-and 'match' words.
+Target is a string that can contain one or more of the 'fun', 'let', 'module', \
+'module-type' and 'match' words.
 It returns the starting position of the function, let definition, module or \
 match expression that contains the cursor
 "

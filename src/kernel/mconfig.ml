@@ -230,6 +230,26 @@ let rec normalize t =
   ) else
     normalize (normalize_step t)
 
+let merge_merlin_config dot merlin ~failures ~config_path =
+  { merlin with
+    build_path = dot.Mconfig_dot.build_path @ merlin.build_path;
+    source_path = dot.source_path @ merlin.source_path;
+    cmi_path = dot.cmi_path @ merlin.cmi_path;
+    cmt_path = dot.cmt_path @ merlin.cmt_path;
+    exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
+    use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
+    extensions = dot.extensions @ merlin.extensions;
+    suffixes = dot.suffixes @ merlin.suffixes;
+    stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+    reader =
+      if dot.reader = []
+      then merlin.reader
+      else dot.reader;
+    flags_to_apply = dot.flags @ merlin.flags_to_apply;
+    failures = failures @ merlin.failures;
+    config_path = Some config_path;
+  }
+
 let get_external_config path t =
   let path = Misc.canonicalize_filename path in
   let directory = Filename.dirname path in
@@ -237,26 +257,7 @@ let get_external_config path t =
   | None -> t
   | Some (ctxt, config_path) ->
     let dot, failures = Mconfig_dot.get_config ctxt path in
-    let merlin = t.merlin in
-    let merlin = {
-      merlin with
-      build_path = dot.build_path @ merlin.build_path;
-      source_path = dot.source_path @ merlin.source_path;
-      cmi_path = dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.cmt_path @ merlin.cmt_path;
-      exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
-      use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
-      extensions = dot.extensions @ merlin.extensions;
-      suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
-      reader =
-        if dot.reader = []
-        then merlin.reader
-        else dot.reader;
-      flags_to_apply = dot.flags @ merlin.flags_to_apply;
-      failures = failures @ merlin.failures;
-      config_path = Some config_path;
-    } in
+    let merlin = merge_merlin_config dot t.merlin ~failures ~config_path in
     normalize { t with merlin }
 
 let merlin_flags = [

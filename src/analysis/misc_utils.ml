@@ -57,3 +57,14 @@ let parenthesize_name name =
     else
       "(" ^ name ^ ")"
   )
+
+module Compat = struct
+  open Typedtree
+  let pat_var_id_and_loc = function
+    | { pat_desc = Tpat_var (id, loc); _ } -> Some (id, loc)
+    | _ -> None
+
+  let pat_alias_pat_id_and_loc = function
+    | { pat_desc = Tpat_alias (pat, id, loc); _ } -> Some (pat, id, loc)
+    | _ -> None
+end

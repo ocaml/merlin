@@ -96,6 +96,13 @@ type error_filter = {
   typing : bool;
 }
 
+type syntax_doc_result = 
+{ 
+    name : string; 
+    description : string; 
+    documentation : string 
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -131,6 +138,11 @@ type _ t =
        | `Not_in_env of string
        | `File_not_found of string
        | `Not_found of string * string option
+       | `No_documentation
+       ] t
+  | Syntax_document
+    : Msource.position
+    -> [ `Found of syntax_doc_result
        | `No_documentation
        ] t
   | Locate_type
