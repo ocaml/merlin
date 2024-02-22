@@ -39,6 +39,7 @@ type config = {
   hidden_source_path : string list;
   cmi_path     : string list;
   cmt_path     : string list;
+  index_files  : string list;
   flags        : string list with_workdir list;
   extensions   : string list;
   suffixes     : (string * string) list;
@@ -55,6 +56,7 @@ let empty_config = {
   source_path  = [];
   cmi_path     = [];
   cmt_path     = [];
+  index_files  = [];
   extensions   = [];
   suffixes     = [];
   flags        = [];
@@ -243,6 +245,8 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
     | `SH path -> {config with hidden_source_path = path :: config.hidden_source_path}, errors
     | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
     | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
+    | `INDEX file ->
+      {config with index_files = file :: config.index_files}, errors
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}, errors
     | `SUFFIX suffix ->
@@ -278,6 +282,7 @@ let postprocess_config config =
     hidden_source_path = clean config.hidden_source_path;
     cmi_path     = clean config.cmi_path;
     cmt_path     = clean config.cmt_path;
+    index_files  = clean config.index_files;
     extensions   = clean config.extensions;
     suffixes     = clean config.suffixes;
     flags        = clean config.flags;

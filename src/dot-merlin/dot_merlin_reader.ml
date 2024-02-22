@@ -84,6 +84,8 @@ module Cache = File_cache.Make (struct
             tell (`CMI (String.drop 4 line))
           else if String.is_prefixed ~by:"CMT " line then
             tell (`CMT (String.drop 4 line))
+          else if String.is_prefixed ~by:"INDEX " line then
+            tell (`INDEX (String.drop 6 line))
           else if String.is_prefixed ~by:"PKG " line then
             tell (`PKG (rev_split_words (String.drop 4 line)))
           else if String.is_prefixed ~by:"EXT " line then
@@ -328,7 +330,7 @@ let empty_config = {
 let prepend_config ~cwd ~cfg =
   List.fold_left ~init:cfg ~f:(fun cfg (d : Merlin_dot_protocol.Directive.Raw.t) ->
     match d with
-    | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _  as directive ->
+    | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _ as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
     | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
@@ -400,6 +402,8 @@ let postprocess cfg =
           | `SH path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `SH p)
           | `CMI path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
           | `CMT path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
+          | `INDEX path ->
+            List.map (expand ~stdlib dir path) ~f:(fun p -> `INDEX p)
         in
         (dirs :> Merlin_dot_protocol.directive list)
       )

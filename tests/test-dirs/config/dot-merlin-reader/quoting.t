@@ -18,6 +18,7 @@
     "hidden_source_path": [],
     "cmi_path": [],
     "cmt_path": [],
+    "index_files": [],
     "flags_applied": [
       {
         "workdir": "$TESTCASE_ROOT",

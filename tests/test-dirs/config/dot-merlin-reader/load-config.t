@@ -28,6 +28,7 @@ This test comes from: https://github.com/janestreet/merlin-jst/pull/59
     ],
     "cmi_path": [],
     "cmt_path": [],
+    "index_files": [],
     "flags_applied": [],
     "extensions": [],
     "suffixes": [

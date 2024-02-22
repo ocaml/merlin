@@ -36,7 +36,8 @@ module Directive = struct
     | `BH of string
     | `SH of string
     | `CMI of string
-    | `CMT of string ]
+    | `CMT of string
+    | `INDEX of string ]
 
   type no_processing_required =
     [ `EXT of string list
@@ -91,6 +92,7 @@ module Sexp = struct
         | "BH" -> `BH value
         | "CMI" -> `CMI value
         | "CMT" -> `CMT value
+        | "INDEX" -> `INDEX value
         | "STDLIB" -> `STDLIB value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
@@ -123,6 +125,7 @@ module Sexp = struct
         | `SH s -> ("SH", single s)
         | `CMI s -> ("CMI", single s)
         | `CMT s -> ("CMT", single s)
+        | `INDEX s -> ("INDEX", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)

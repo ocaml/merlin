@@ -48,7 +48,8 @@ module Directive : sig
     | `BH of string
     | `SH of string
     | `CMI of string
-    | `CMT of string ]
+    | `CMT of string
+    | `INDEX of string ]
 
   type no_processing_required =
     [ `EXT of string list
