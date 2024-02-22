@@ -38,4 +38,8 @@ end) : sig
 
   val get_cached_entry : string -> Input.t
   (** @raises Not_found if the file is not in cache. *)
+
+  type cache_stats = { hit: int; miss: int }
+  val get_cache_stats : unit -> cache_stats
+  val clear_cache_stats : unit -> unit
 end
