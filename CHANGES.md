@@ -1,5 +1,6 @@
-merlin NEXT_VERSION
-===================
+merlin 4.14
+===========
+Thu Feb 22 14:00:42 CET 2024
 
   + merlin binary
     - Add a "heap_mbytes" field to Merlin server responses to report heap usage (#1717)
