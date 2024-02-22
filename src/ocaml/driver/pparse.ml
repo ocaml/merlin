@@ -177,7 +177,7 @@ let apply_pp ~workdir ~filename ~source ~pp =
   end else if not (Sys.file_exists fn_out) then
     Error (WrongMagic comm)
   else
-    let ic = open_in fn_out in
+    let ic = open_in_bin fn_out in
     let result = Misc.string_of_file ic in
     close_in ic;
     Ok result
