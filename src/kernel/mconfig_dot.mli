@@ -28,6 +28,12 @@
 
 open Std
 
+module Configurator : sig
+  type t =
+    | Dot_merlin
+    | Dune
+end
+
 type config = {
   build_path   : string list;
   source_path  : string list;
@@ -41,6 +47,23 @@ type config = {
   exclude_query_dir : bool;
   use_ppx_cache : bool;
 }
+
+val empty_config : config
+
+(** [prepend_config ~dir c directives config] parses [directives] and update
+    [config] accordingly, prepending new items when to already existing list
+    fields of [config]. [dir] is used as the [workdir] for flags declared in the
+    [directives]. If [c = Dune], unknown directives are ignored. *)
+val prepend_config
+  : dir:string
+  -> Configurator.t
+  -> Merlin_dot_protocol.directive list
+  -> config
+  -> config * string list
+
+(** [prostprocess_config config] removes duplicates and reverses the lists in
+    [config] *)
+val postprocess_config : config -> config
 
 type context
 
