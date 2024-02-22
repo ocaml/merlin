@@ -89,6 +89,10 @@ val initial : t
 
 val dump : t -> json
 
+val merge_merlin_config :
+  Mconfig_dot.config
+  -> merlin -> failures:(string list) -> config_path:string -> merlin
+
 val get_external_config : string -> t -> t
 
 val normalize : t -> t
