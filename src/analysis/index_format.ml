@@ -13,3 +13,11 @@ module Lid : Set.OrderedType with type t = Longident.t Location.loc = struct
 end
 
 module LidSet = Set.Make (Lid)
+
+(** [add tbl uid locs] adds a binding of [uid] to the locations [locs]. If this key is
+    already present the locations are merged. *)
+    let add tbl uid locs =
+      try
+        let locations = Hashtbl.find tbl uid in
+        Hashtbl.replace tbl uid (LidSet.union locs locations)
+      with Not_found -> Hashtbl.add tbl uid locs
