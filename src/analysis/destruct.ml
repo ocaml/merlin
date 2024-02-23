@@ -584,10 +584,7 @@ let rec node config source selected_node parents =
                   subst_patt patt ~by top_patt
                 )
               in
-              let patterns =
-                List.rev_append rev_before
-                  (List.append new_branches after)
-              in
+              let patterns = after @ rev_before @ new_branches in
               let unused = Parmatch.return_unused patterns in
               let new_branches =
                 List.fold_left unused ~init:new_branches ~f:(fun branches u ->
