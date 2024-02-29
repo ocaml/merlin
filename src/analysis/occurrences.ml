@@ -35,11 +35,11 @@ let index_buffer_ ~current_buffer_path ~local_defs () =
       let read_unit_shape ~unit_name =
           log ~title:"read_unit_shape" "inspecting %s" unit_name;
           let cmt = Format.sprintf "%s.cmt" unit_name in
-          match Cmt_format.read (Load_path.find_normalized cmt) with
-          | _, Some cmt_infos ->
+          match Cmt_cache.read (Load_path.find_normalized cmt) with
+          | { cmt_infos = { cmt_impl_shape; _ }; _ } ->
             log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
-            cmt_infos.cmt_impl_shape
-          | exception _ | _ ->
+            cmt_impl_shape
+          | exception _ ->
             log ~title:"read_unit_shape" "failed to find %s" unit_name;
             None
     end)
