@@ -481,6 +481,25 @@ let find_branch patterns sub =
   in
   aux [] patterns
 
+(* In the presence of record punning fields, the definition must be reconstructed
+   with the label. ie: [{a; b}] with destruction on [a] becomes *)
+(*  [{a = destruct_result; b}]. *)
+let find_field_name_for_punned_field patt = function
+  | Pattern {pat_desc = Tpat_record (fields, _); _} :: _ ->
+    List.find_opt ~f:(fun (_, _, opat) ->
+        let ppat_loc = patt.Typedtree.pat_loc
+        and opat_loc = opat.Typedtree.pat_loc in
+        Int.equal (Location_aux.compare ppat_loc opat_loc) 0
+      ) fields |> Option.map ~f:(fun (_, label, _) -> label)
+  | _ -> None
+
+let print_pretty ?punned_field config source subject =
+  let result = Mreader.print_pretty config source subject in
+  match punned_field with
+  | None -> result
+  | Some label ->
+    label.Types.lbl_name ^ " = " ^ result
+
 let rec node config source selected_node parents =
   let open Extend_protocol.Reader in
   let loc = Mbrowse.node_loc selected_node in
@@ -571,9 +590,9 @@ let rec node config source selected_node parents =
             | [ more_precise ] ->
               (* If only one pattern is generated, then we're only refining the
                 current pattern, not generating new branches. *)
+              let punned_field = find_field_name_for_punned_field patt parents in
               let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
-              let str = Mreader.print_pretty
-                  config source (Pretty_pattern ppat) in
+              let str = print_pretty ?punned_field config source (Pretty_pattern ppat) in
               patt.Typedtree.pat_loc, str
             | sub_patterns ->
               let rev_before, after, top_patt =
@@ -609,9 +628,9 @@ let rec node config source selected_node parents =
                 in
                 (* Format.eprintf "por %a \n%!" (Printtyped.pattern 0) p; *)
                 let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
+
                 (* Format.eprintf "ppor %a \n%!" (Pprintast.pattern) ppat; *)
-                let str = Mreader.print_pretty
-                    config source (Pretty_pattern ppat) in
+                let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
                 (* Format.eprintf "STR: %s \n %!" str; *)
                 top_patt.Typedtree.pat_loc, str
             end
