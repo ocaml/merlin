@@ -512,6 +512,164 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some res -> `Found res 
     | None -> `No_documentation)
 
+  | Expand_node pos -> 
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let parsetree = Mpipeline.reader_parsetree pipeline in
+    let ppxed_parsetree = Mpipeline.ppx_parsetree pipeline in
+    let ppx_expansion ~ppx ~a_start ~a_end = 
+      `Found {
+        code = ppx;
+        deriver = { a_start; a_end }
+      }
+    in
+    let check_at_pos loc = 
+      Location_aux.compare_pos pos loc = 0
+    in
+    let atr = ref None in
+    let expression = ref [] in
+    let signature = ref [] in
+    let structure = ref [] in
+    let check_deriving_attr (attrs : Parsetree.attributes) =
+      List.exists ~f:(fun (attr : Parsetree.attribute) ->
+        atr := Some attr.attr_loc;
+        attr.attr_name.txt = "deriving" && check_at_pos attr.attr_loc
+      ) attrs
+    in
+    let check_structures (item: Parsetree.structure_item_desc) = 
+      match item with 
+      | Pstr_type (_, ty) -> 
+        List.exists ~f:(fun (t:Parsetree.type_declaration) -> 
+          check_deriving_attr t.ptype_attributes
+          ) ty
+      | Pstr_exception tc ->
+        check_deriving_attr tc.ptyexn_attributes
+      | Pstr_modtype mt -> 
+        check_deriving_attr mt.pmtd_attributes
+      | Pstr_extension (_,attrs) ->
+          check_deriving_attr attrs
+      | _ -> false
+    in
+    let check_signatures (item: Parsetree.signature_item_desc) = 
+      match item with 
+      | Psig_type (_, ty) -> 
+        List.exists ~f:(fun (t:Parsetree.type_declaration) -> 
+          check_deriving_attr t.ptype_attributes
+          ) ty
+      | Psig_exception tc -> 
+        check_deriving_attr tc.ptyexn_attributes
+      | Psig_modtype mt -> 
+        check_deriving_attr mt.pmtd_attributes
+      | Psig_extension (_,attrs) ->
+          check_deriving_attr attrs
+      | _ -> false
+    in
+    let check_extension_node (expression: Parsetree.expression) = 
+      match expression.pexp_desc with
+      | Pexp_extension (loc,_) ->
+        atr := Some expression.pexp_loc; 
+        check_at_pos loc.loc
+      | _ -> false
+    in
+    let expr (self: Ast_iterator.iterator) (expr: Parsetree.expression) = 
+      match check_extension_node expr with
+      | true ->
+        let expr (self: Ast_iterator.iterator) (exp: Parsetree.expression) = 
+          match exp.pexp_loc = expr.pexp_loc && check_at_pos exp.pexp_loc with
+          | true -> 
+            expression := exp :: !expression
+          | false -> 
+            Ast_iterator.default_iterator.expr self exp
+        in
+        let iterator = 
+          {Ast_iterator.default_iterator with expr}
+        in 
+        (match ppxed_parsetree with
+        | `Interface si -> iterator.signature iterator si
+        | `Implementation str -> iterator.structure iterator str)
+      | false -> Ast_iterator.default_iterator.expr self expr
+    in
+    let signature_item (self : Ast_iterator.iterator) 
+    (item_1 : Parsetree.signature_item) =
+      match check_signatures item_1.psig_desc with
+      | true ->
+        let signature_item(self: Ast_iterator.iterator) 
+        (item_2: Parsetree.signature_item) = 
+        (match check_at_pos item_2.psig_loc && item_1 <> item_2 with
+        | true -> 
+          signature := item_2 :: !signature
+        | false -> 
+          Ast_iterator.default_iterator.signature_item self item_2) 
+        in 
+        let iterator = 
+          {Ast_iterator.default_iterator with signature_item}
+        in 
+        (match ppxed_parsetree with
+        | `Interface si -> iterator.signature iterator si
+        | `Implementation str -> iterator.structure iterator str)
+      | false -> Ast_iterator.default_iterator.signature_item self item_1
+    in
+    let structure_item (self : Ast_iterator.iterator) 
+    (item_1 : Parsetree.structure_item) =
+      (match check_structures item_1.pstr_desc with
+      | true ->
+        let structure_item(self: Ast_iterator.iterator) 
+        (item_2: Parsetree.structure_item) = 
+          (match check_at_pos item_2.pstr_loc && item_1 <> item_2 with
+          | true -> 
+            structure := item_2 :: !structure
+          | false -> 
+            Ast_iterator.default_iterator.structure_item self item_2) 
+        in 
+        let iterator = 
+          {Ast_iterator.default_iterator with structure_item}
+        in 
+        (match ppxed_parsetree with
+        | `Interface si -> iterator.signature iterator si
+        | `Implementation str -> iterator.structure iterator str)
+      | false -> Ast_iterator.default_iterator.structure_item self item_1)
+    in
+    let iterator =
+      { Ast_iterator.default_iterator with signature_item; structure_item; expr }
+    in
+    let _ =
+      match parsetree with
+      | `Interface si -> iterator.signature iterator si
+      | `Implementation str -> iterator.structure iterator str
+    in
+    begin
+      match !signature,!structure,!expression with
+      | signature,[],[] when signature <> [] ->
+        let exp =
+          Pprintast.signature Format.str_formatter (List.rev signature);
+          Format.flush_str_formatter ()
+        in
+        ppx_expansion 
+        ~ppx:exp 
+        ~a_start:(Option.get !atr).loc_start
+        ~a_end:(Option.get !atr).loc_end
+      | [],structure,[] when structure <> [] ->
+        let exp =
+          Pprintast.structure Format.str_formatter (List.rev structure);
+          Format.flush_str_formatter ()
+        in
+        ppx_expansion 
+        ~ppx:exp 
+        ~a_start:(Option.get !atr).loc_start
+        ~a_end:(Option.get !atr).loc_end
+      | [],[],expression when expression <> [] -> 
+        let exp = 
+          List.iter ~f:(fun exp -> 
+            Pprintast.expression Format.str_formatter exp)
+            (List.rev expression);
+            Format.flush_str_formatter ()
+        in
+        ppx_expansion 
+        ~ppx:exp 
+        ~a_start:(Option.get !atr).loc_start
+        ~a_end:(Option.get !atr).loc_end
+      | _ -> `No_deriver
+    end
+
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in

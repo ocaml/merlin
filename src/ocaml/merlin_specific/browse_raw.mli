@@ -75,6 +75,7 @@ type node =
   | Type_declaration         of type_declaration
   | Type_kind                of type_kind
   | Type_extension           of type_extension
+  | Type_exception           of type_exception
   | Extension_constructor    of extension_constructor
   | Label_declaration        of label_declaration
   | Constructor_declaration  of constructor_declaration

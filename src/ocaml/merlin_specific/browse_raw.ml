@@ -62,6 +62,7 @@ type node =
   | Type_declaration         of type_declaration
   | Type_kind                of type_kind
   | Type_extension           of type_extension
+  | Type_exception           of type_exception
   | Extension_constructor    of extension_constructor
   | Label_declaration        of label_declaration
   | Constructor_declaration  of constructor_declaration
@@ -112,7 +113,7 @@ let node_update_env env0 = function
   | Class_type_declaration  _ | Class_type_field        _
   | Include_description     _ | Include_declaration     _
   | Open_description        _ | Open_declaration        _
-  | Binding_op              _
+  | Binding_op              _ | Type_exception          _
     -> env0
 
 let node_real_loc loc0 = function
@@ -140,6 +141,7 @@ let node_real_loc loc0 = function
   | Class_declaration       {ci_loc = loc}
   | Class_description       {ci_loc = loc}
   | Class_type_declaration  {ci_loc = loc}
+  | Type_exception          {tyexn_loc = loc}
   | Extension_constructor   {ext_loc = loc}
   | Include_description     {incl_loc = loc}
   | Include_declaration     {incl_loc = loc}
@@ -165,29 +167,30 @@ let node_attributes = function
   | Class_field cf        -> cf.cf_attributes
   | Module_expr me        -> me.mod_attributes
   | Structure_item ({str_desc = Tstr_eval (_,attr)},_) -> attr
-  | Structure_item ({str_desc = Tstr_attribute a},_) -> [a]
-  | Signature_item ({sig_desc = Tsig_attribute a},_) -> [a]
-  | Module_binding mb     -> mb.mb_attributes
-  | Value_binding vb      -> vb.vb_attributes
-  | Module_type mt        -> mt.mty_attributes
-  | Module_declaration md -> md.md_attributes
+  | Structure_item ({str_desc = Tstr_attribute a},_)   -> [a]
+  | Signature_item ({sig_desc = Tsig_attribute a},_)   -> [a]
+  | Module_binding mb           -> mb.mb_attributes
+  | Value_binding vb            -> vb.vb_attributes
+  | Module_type mt              -> mt.mty_attributes
+  | Module_declaration md       -> md.md_attributes
   | Module_type_declaration mtd -> mtd.mtd_attributes
-  | Open_description o    -> o.open_attributes
-  | Include_declaration i -> i.incl_attributes
-  | Include_description i -> i.incl_attributes
-  | Core_type ct          -> ct.ctyp_attributes
-  | Row_field rf          -> rf.rf_attributes
-  | Value_description vd  -> vd.val_attributes
-  | Type_declaration td   -> td.typ_attributes
-  | Label_declaration ld  -> ld.ld_attributes
-  | Constructor_declaration cd -> cd.cd_attributes
-  | Type_extension te     -> te.tyext_attributes
-  | Extension_constructor ec -> ec.ext_attributes
-  | Class_type ct         -> ct.cltyp_attributes
-  | Class_type_field ctf  -> ctf.ctf_attributes
-  | Class_declaration ci -> ci.ci_attributes
-  | Class_description ci -> ci.ci_attributes
-  | Class_type_declaration ci -> ci.ci_attributes
+  | Open_description o          -> o.open_attributes
+  | Include_declaration i       -> i.incl_attributes
+  | Include_description i       -> i.incl_attributes
+  | Core_type ct                -> ct.ctyp_attributes
+  | Row_field rf                -> rf.rf_attributes
+  | Value_description vd        -> vd.val_attributes
+  | Type_declaration td         -> td.typ_attributes
+  | Label_declaration ld        -> ld.ld_attributes
+  | Constructor_declaration cd  -> cd.cd_attributes
+  | Type_extension te           -> te.tyext_attributes
+  | Type_exception tenx         -> tenx.tyexn_attributes
+  | Extension_constructor ec    -> ec.ext_attributes
+  | Class_type ct               -> ct.cltyp_attributes
+  | Class_type_field ctf        -> ctf.ctf_attributes
+  | Class_declaration ci        -> ci.ci_attributes
+  | Class_description ci        -> ci.ci_attributes
+  | Class_type_declaration ci   -> ci.ci_attributes
   | Method_call (obj,_,_) -> obj.exp_attributes
   | Record_field (`Expression obj,_,_) -> obj.exp_attributes
   | Record_field (`Pattern obj,_,_) -> obj.pat_attributes
@@ -464,7 +467,7 @@ and of_structure_item_desc = function
   | Tstr_typext text ->
     app (Type_extension text)
   | Tstr_exception texn ->
-    app (Extension_constructor texn.tyexn_constructor)
+    app (Type_exception texn)
   | Tstr_module mb ->
     app (Module_binding mb)
   | Tstr_recmodule mbs ->
@@ -507,7 +510,7 @@ and of_signature_item_desc = function
   | Tsig_typext text ->
     app (Type_extension text)
   | Tsig_exception texn ->
-    app (Extension_constructor texn.tyexn_constructor)
+    app (Type_exception texn)
   | Tsig_module md ->
     app (Module_declaration md)
   | Tsig_recmodule mds ->
@@ -657,6 +660,8 @@ let of_node = function
   | Type_extension { tyext_params; tyext_constructors } ->
     list_fold of_typ_param tyext_params **
     list_fold (fun ec -> app (Extension_constructor ec)) tyext_constructors
+  | Type_exception {tyexn_constructor} ->
+    app (Extension_constructor tyexn_constructor)
   | Extension_constructor { ext_kind = Text_decl (_, carg,cto) } ->
     option_fold of_core_type cto **
     of_constructor_arguments carg
@@ -734,6 +739,7 @@ let string_of_node = function
   | Type_declaration        _ -> "type_declaration"
   | Type_kind               _ -> "type_kind"
   | Type_extension          _ -> "type_extension"
+  | Type_exception          _ -> "type_exception"
   | Extension_constructor   _ -> "extension_constructor"
   | Label_declaration       _ -> "label_declaration"
   | Constructor_declaration _ -> "constructor_declaration"

@@ -916,6 +916,12 @@ let untype_structure ?(mapper : mapper = default_mapper) structure =
 let untype_signature ?(mapper : mapper = default_mapper) signature =
   mapper.signature mapper signature
 
+let untype_structure_item ?(mapper : mapper = default_mapper) structure_item =
+  mapper.structure_item mapper structure_item
+
+let untype_signature_item ?(mapper : mapper = default_mapper) signature_item =
+  mapper.signature_item mapper signature_item
+
 (* Merlin *)
 let untype_pattern pat =
   default_mapper.pat default_mapper pat
