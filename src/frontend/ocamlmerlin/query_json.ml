@@ -114,6 +114,8 @@ let dump (type a) : a t -> json =
     ]
   | Syntax_document pos ->
     mk "syntax-document" [ ("position", mk_position pos) ]
+  | Expand_node pos ->
+    mk "ppx-expand" [ ("position", mk_position pos) ]
   | Locate (prefix, look_for, pos) ->
     mk "locate" [
       "prefix", (match prefix with
@@ -392,6 +394,11 @@ let json_of_response (type a) (query : a t) (response : a) : json =
         ("url", `String info.documentation);
       ]
     | `No_documentation -> `String "No documentation found")
+  | Expand_node _, resp -> 
+    (match resp with
+    | `Found info -> `String info
+    | `No_deriver -> `String "No deriver on this node"
+    | `No_code -> `String "No code generated")
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
   | Jump _, resp ->

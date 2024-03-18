@@ -145,6 +145,12 @@ type _ t =
     -> [ `Found of syntax_doc_result
        | `No_documentation
        ] t
+  | Expand_node
+  : Msource.position
+  -> [ `Found of string
+    | `No_deriver
+    | `No_code
+    ] t
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position
