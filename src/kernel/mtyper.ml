@@ -19,6 +19,11 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type parsetree = [
+  | `Interface of Parsetree.signature
+  | `Implementation of Parsetree.structure
+]
+
 type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
 
 let cache = s_ref None
@@ -206,6 +211,13 @@ let get_typedtree t =
     let sig_items, sig_type = split_items l in
     `Interface {Typedtree. sig_items; sig_type; sig_final_env = get_env t}
 
+let get_parsetree t =
+  match t.typedtree with
+  | `Interface signature_items ->
+    `Interface (List.map ~f:(fun { parsetree_item = tree; _} -> tree) signature_items)
+  | `Implementation structure_items ->
+    `Implementation (List.map ~f:(fun { parsetree_item = tree; _} -> tree) structure_items)
+
 let node_at ?(skip_recovered=false) t pos_cursor =
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   log ~title:"node_at" "Node: %s" (Mbrowse.print () node);
@@ -223,3 +235,31 @@ let node_at ?(skip_recovered=false) t pos_cursor =
     log ~title:"node_at" "Deepest before %s"
       (Mbrowse.print () path);
     path
+
+(* Get the node under the cursor in the Parsetree*)
+let node_at_p ?(skip_recovered=false) t pos_cursor =
+  let node = Mbrowse_p.of_parsetree (get_parsetree t) in
+  let rec select = function
+    | _ :: (node' :: _ as ancestors)
+      when Mbrowse_p.is_recovered node' -> select ancestors
+    | l -> l
+  in
+  match Mbrowse_p.deepest_before pos_cursor [node] with
+  | [] -> [Browse_raw_p.Dummy]
+  | path when skip_recovered -> select path
+  | path -> path
+
+
+(* Get the node under the cursor in the Ppxed-Parsetree*)
+let node_at_pp ?(skip_recovered=false) p pos_cursor =
+  let node = Mbrowse_p.of_parsetree p in
+  let rec select = function
+    | _ :: (node' :: _ as ancestors)
+      when Mbrowse_p.is_recovered node' -> select ancestors
+    | l -> l
+  in
+  match Mbrowse_p.deepest_before pos_cursor [node] with
+  | [] -> [Browse_raw_p.Dummy]
+  | path when skip_recovered -> select path
+  | path -> path
+

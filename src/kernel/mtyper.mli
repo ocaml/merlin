@@ -14,6 +14,11 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type parsetree = [
+  | `Interface of Parsetree.signature
+  | `Implementation of Parsetree.structure
+]
+
 type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
 
 val run : Mconfig.t -> Mreader.parsetree -> result
@@ -21,6 +26,8 @@ val run : Mconfig.t -> Mreader.parsetree -> result
 val get_env : ?pos:Msource.position -> result -> Env.t
 
 val get_typedtree : result -> typedtree
+
+val get_parsetree : result -> parsetree
 
 val get_errors : result -> exn list
 
@@ -44,3 +51,13 @@ val get_cache_stat : result -> typer_cache_stats
  *)
 val node_at :
   ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
+
+(* Get the node under the cursor in the Parsetree*)
+val node_at_p :
+  ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse_p.t
+
+(* Get the node under the cursor in the Ppxed-Parsetree*)
+val node_at_pp :
+  ?skip_recovered:bool -> Mreader.parsetree -> Lexing.position -> Mbrowse_p.t
+
+
