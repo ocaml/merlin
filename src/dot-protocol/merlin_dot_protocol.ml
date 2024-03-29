@@ -134,7 +134,12 @@ type read_error =
   | Unexpected_output of string
   | Csexp_parse_error of string
 
-type command = File of string | Halt | Unknown
+type command =
+  | File of string
+  | GetContexts
+  | SetContext of string
+  | Halt
+  | Unknown
 
 module type S = sig
   type 'a io
@@ -152,6 +157,13 @@ module type S = sig
     val read_input : in_chan -> command io
 
     val send_file : out_chan -> string -> unit io
+
+    (** [read_contexts] gets all Dune contexts under the given workspace *)
+    val read_contexts :
+      in_chan -> (string list, read_error) Merlin_utils.Std.Result.t io
+
+    (** [set_context] sets the current Dune context that Merlin will query information from *)
+    val set_context : out_chan -> string -> unit io
 
     val halt : out_chan -> unit io
   end
@@ -189,6 +201,22 @@ struct
 
     let send_file chan path =
       Chan.write chan Sexp.(List [Atom "File"; Atom path])
+
+    let read_contexts chan =
+      let open IO.O in
+      let+ res = Chan.read chan in
+      match res with
+      | Ok (Sexp.List contexts) -> Ok (Sexp.strings_of_atoms contexts)
+      | Ok sexp ->
+          let msg =
+            Printf.sprintf "A list of atoms was expected, instead got: \"%s\""
+              (Sexp.to_string sexp)
+          in
+          Error (Unexpected_output msg)
+      | Error msg -> Error (Csexp_parse_error msg)
+
+    let set_context chan (context_name : string) =
+      Chan.write chan Sexp.(List [Atom "SetContext"; Atom context_name])
 
     let halt chan = Chan.write chan (Sexp.Atom "Halt")
   end

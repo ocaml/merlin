@@ -486,6 +486,6 @@ let rec main () =
     write stdout directives;
     flush stdout;
     main ()
-  | Unknown -> main ()
+  | GetContexts | SetContext _ | Unknown -> main ()
 
 let () = main ()

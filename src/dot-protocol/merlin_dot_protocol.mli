@@ -79,7 +79,12 @@ type read_error =
   | Unexpected_output of string
   | Csexp_parse_error of string
 
-type command = File of string | Halt | Unknown
+type command =
+  | File of string
+  | GetContexts
+  | SetContext of string
+  | Halt
+  | Unknown
 
 module type S = sig
   type 'a io
@@ -98,6 +103,13 @@ module type S = sig
 
     val send_file : out_chan -> string -> unit io
 
+    (** [read_contexts] gets all Dune contexts under the given workspace *)
+    val read_contexts :
+    in_chan -> (string list, read_error) Merlin_utils.Std.Result.t io
+  
+    (** [set_context] sets the current Dune context that Merlin will query information from *)
+    val set_context : out_chan -> string -> unit io
+  
     val halt : out_chan -> unit io
   end
 end
