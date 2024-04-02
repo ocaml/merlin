@@ -7,7 +7,7 @@ let generate_impl ~ctxt (rec_flag, type_declarations) =
   List.map (fun ty ->
     pstr_type ~loc rec_flag
     [{
-      ptype_loc = loc;
+      ptype_loc = {loc with loc_ghost = true};
       ptype_params = ty.ptype_params;
       ptype_cstrs = ty.ptype_cstrs;
       ptype_kind = ty.ptype_kind;
@@ -24,7 +24,7 @@ let generate_intf ~ctxt (rec_flag, type_declarations) =
   List.map (fun ty -> 
     psig_type ~loc rec_flag
     [{
-      ptype_loc = loc;
+      ptype_loc = {loc with loc_ghost = true};
       ptype_params = ty.ptype_params;
       ptype_cstrs = ty.ptype_cstrs;
       ptype_kind = ty.ptype_kind;
@@ -42,7 +42,7 @@ let generate_ext_impl ~ctxt type_extension =
   [
     pstr_typext ~loc
     {
-      ptyext_path = {txt = new_path; loc = loc};
+      ptyext_path = {txt = new_path; loc = ({loc with loc_ghost = true})};
       ptyext_params = type_extension.ptyext_params;
       ptyext_constructors = type_extension.ptyext_constructors;
       ptyext_private = type_extension.ptyext_private;
@@ -58,7 +58,7 @@ let generate_ext_intf ~ctxt type_extension =
   [
     psig_typext ~loc
     {
-      ptyext_path = {txt = new_path; loc = loc};
+      ptyext_path = {txt = new_path; loc = ({loc with loc_ghost = true})};
       ptyext_params = type_extension.ptyext_params;
       ptyext_constructors = type_extension.ptyext_constructors;
       ptyext_private = type_extension.ptyext_private;
@@ -76,10 +76,10 @@ let generate_exn_impl ~ctxt type_exception =
       ptyexn_constructor = {
         pext_name = {txt = type_exception.ptyexn_constructor.pext_name.txt ^ "_renamed"; loc = loc};
         pext_kind = type_exception.ptyexn_constructor.pext_kind;
-        pext_loc = loc;
+        pext_loc = {loc with loc_ghost = true};
         pext_attributes = [];
       };
-      ptyexn_loc = loc;
+      ptyexn_loc = {loc with loc_ghost = true};
       ptyexn_attributes = [];
     }
   ]
@@ -93,10 +93,10 @@ let generate_exn_intf ~ctxt type_exception =
       ptyexn_constructor = {
         pext_name = {txt = type_exception.ptyexn_constructor.pext_name.txt ^ "_renamed"; loc = loc};
         pext_kind = type_exception.ptyexn_constructor.pext_kind;
-        pext_loc = loc;
+        pext_loc = {loc with loc_ghost = true};
         pext_attributes = [];
       };
-      ptyexn_loc = loc;
+      ptyexn_loc = {loc with loc_ghost = true};
       ptyexn_attributes = [];
     }
   ]
@@ -107,10 +107,10 @@ let generate_mt_impl ~ctxt module_type_declaration =
   [
     pstr_modtype ~loc 
     {
-      pmtd_name = {txt = module_type_declaration.pmtd_name.txt ^ "_renamed"; loc = loc;};
+      pmtd_name = {txt = module_type_declaration.pmtd_name.txt ^ "_renamed"; loc = {loc with loc_ghost = true};};
       pmtd_type = module_type_declaration.pmtd_type;
       pmtd_attributes = [];
-      pmtd_loc = loc;
+      pmtd_loc = {loc with loc_ghost = true};
     }
   ]
 
@@ -119,10 +119,10 @@ let generate_mt_intf ~ctxt module_type_declaration =
   [
     psig_modtype ~loc 
     {
-      pmtd_name = {txt = module_type_declaration.pmtd_name.txt ^ "_renamed"; loc = loc;};
+      pmtd_name = {txt = module_type_declaration.pmtd_name.txt ^ "_renamed"; loc = {loc with loc_ghost = true};};
       pmtd_type = module_type_declaration.pmtd_type;
       pmtd_attributes = [];
-      pmtd_loc = loc;
+      pmtd_loc = {loc with loc_ghost = true};
     }
   ]
 
