@@ -255,15 +255,19 @@ let is_recovered = function
 
 let check_node pos node =
   let loc = node_merlin_loc node in 
-  if Location_aux.compare pos loc = 0 then true else false 
+  if Location_aux.compare_pos pos loc = 0 then true else false 
 
 let get_children pos root = 
   let children = 
     match root with
     | Structure str -> 
-        of_structure_items (List.filter ~f:(fun x -> check_node pos (Structure_item(x))) str)
+        of_structure_items (List.filter ~f:(fun x ->
+            check_node pos (Structure_item(x))
+        ) str) 
     | Signature str -> 
-      of_signature_items (List.filter ~f:(fun x -> check_node pos (Signature_item(x))) str)
+      of_signature_items (List.filter ~f:(fun x ->
+        check_node pos (Signature_item(x))
+      ) str) 
     | _ -> raise (Invalid_argument "Not a valid root node")
   in children 
 
