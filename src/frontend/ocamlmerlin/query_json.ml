@@ -397,7 +397,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Expand_node _, resp -> 
     (match resp with
     | `Found info -> `String info
-    | `No_deriver -> `String "No deriver on this node"
+    | `No_deriver -> `String "No PPX deriver/extension node found on this position"
     | `No_code -> `String "No code generated")
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
