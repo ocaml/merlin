@@ -59,6 +59,7 @@ type node =
   | Type_declaration         of type_declaration
   | Type_kind                of type_kind
   | Type_extension           of type_extension
+  | Type_exception           of type_exception
   | Extension_constructor    of extension_constructor
   | Label_declaration        of label_declaration
   | Constructor_declaration  of constructor_declaration
@@ -116,13 +117,15 @@ let node_real_loc loc0 = function
   | Open_description        {popen_loc = loc}
   | Open_declaration        {popen_loc = loc}
   | Binding_op              {pbop_loc = loc}
+  | Type_exception          {ptyexn_loc = loc}
+  | Type_extension          {ptyext_loc = loc}
     -> loc
   | Module_type_declaration_name {pmtd_name = loc}
     -> loc.Location.loc
   | Module_declaration_name      {pmd_name = loc}
   | Module_binding_name          {pmb_name = loc}
     -> loc.Location.loc
-  | Structure _ | Signature _ | Case _ | Class_structure _ | Type_extension _
+  | Structure _ | Signature _ | Case _ | Class_structure _
   | Class_field_kind _ | With_constraint _
   | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
   | Dummy
@@ -153,6 +156,7 @@ let node_attributes = function
   | Label_declaration ld  -> ld.pld_attributes
   | Constructor_declaration cd -> cd.pcd_attributes
   | Type_extension te     -> te.ptyext_attributes
+  | Type_exception texn   -> texn.ptyexn_attributes
   | Extension_constructor ec -> ec.pext_attributes
   | Class_type ct         -> ct.pcty_attributes
   | Class_type_field ctf  -> ctf.pctf_attributes
@@ -164,12 +168,7 @@ let node_attributes = function
   | Record_field (`Pattern obj,_,_) -> obj.ppat_attributes *)
   | _ -> []
 
-let has_attr ~name node =
-  let attrs = node_attributes node in
-  List.exists ~f:(fun a ->
-    let (str,_) = Ast_helper.Attr.as_tuple a in
-    str.Location.txt = name
-  ) attrs
+
 
 let node_merlin_loc loc0 node =
   let attributes = node_attributes node in
@@ -426,10 +425,10 @@ and of_structure_item_desc = function
     app (Value_description vd)
   | Pstr_type (_,tds) ->
     list_fold (fun td -> app (Type_declaration td)) tds
-  | Pstr_typext text ->
+  | Pstr_typext text -> 
     app (Type_extension text)
   | Pstr_exception texn ->
-    app (Extension_constructor texn.ptyexn_constructor)
+    app (Type_exception texn)
   | Pstr_module mb ->
     app (Module_binding mb)
   | Pstr_recmodule mbs ->
@@ -476,7 +475,7 @@ and of_signature_item_desc = function
   | Psig_typext text ->
     app (Type_extension text)
   | Psig_exception texn ->
-    app (Extension_constructor texn.ptyexn_constructor)
+    app (Type_exception texn)
   | Psig_module md ->
     app (Module_declaration md)
   | Psig_recmodule mds ->
@@ -618,6 +617,8 @@ let of_node = function
   | Type_extension { ptyext_params; ptyext_constructors } ->
     list_fold of_typ_param ptyext_params **
     list_fold (fun ec -> app (Extension_constructor ec)) ptyext_constructors
+  | Type_exception {ptyexn_constructor} -> 
+    app (Extension_constructor ptyexn_constructor)
   | Extension_constructor { pext_kind = Pext_decl (_, carg,cto) } ->
     option_fold of_core_type cto **
     of_constructor_arguments carg
@@ -693,6 +694,7 @@ let string_of_node = function
   | Type_declaration        _ -> "type_declaration"
   | Type_kind               _ -> "type_kind"
   | Type_extension          _ -> "type_extension"
+  | Type_exception          _ -> "type_exception"
   | Extension_constructor   _ -> "extension_constructor"
   | Label_declaration       _ -> "label_declaration"
   | Constructor_declaration _ -> "constructor_declaration"
@@ -723,3 +725,10 @@ let node_is_constructor = function
            txt = `Extension_constructor ext_cons}
   | _ -> None
   
+let has_attr ~name node =
+  let attrs = node_attributes node in
+  List.exists ~f:(fun a ->
+    let (str,_) = Ast_helper.Attr.as_tuple a in
+    str.Location.txt = name
+  ) attrs
+ 
