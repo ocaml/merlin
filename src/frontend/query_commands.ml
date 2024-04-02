@@ -513,26 +513,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | None -> `No_documentation)
 
   | Expand_node pos ->
-    let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let p_p = Mpipeline.ppx_parsetree pipeline in
     let node = Mtyper.node_at_pp p_p pos in
-    let t_node = Mtyper.node_at typer pos in
-    Format.eprintf "Parsetree nodes: %s\n" (Mbrowse_p.print () node); 
-    Format.eprintf "Typedtree nodes: %s\n" (Mbrowse.print () t_node);
-    let check_deriver (node: Mbrowse_p.node) : bool =
-      Browse_raw_p.has_attr ~name:"deriving" node && 
+    let check_ppx (node: Mbrowse_p.node) : bool =
+      let has_a_deriver =
+        Browse_raw_p.has_attr ~name:"deriving" node in
       let attrs = Browse_raw_p.node_attributes node in
-      List.exists ~f:(fun a ->
-        let (str,_) = Ast_helper.Attr.as_tuple a in
-        str.loc.loc_start.pos_cnum - 2 < pos.pos_cnum && str.loc.loc_end.pos_cnum + 1 > pos.pos_cnum
-      ) attrs
+      List.exists ~f:(fun (a:Parsetree.attribute) ->
+        let loc = a.attr_loc in
+            loc.loc_start.pos_cnum <= pos.pos_cnum && loc.loc_end.pos_cnum >= pos.pos_cnum
+      ) attrs && has_a_deriver
     in 
-    let has_deriver = List.exists ~f:check_deriver node in
+    let has_deriver = List.exists ~f:check_ppx node in
     if has_deriver then 
       let root = (List.hd (List.rev node)) in
-      let deriver_node_loc = Mbrowse_p.node_loc (List.nth (List.rev node) 2) in
-      let derived_nodes = Mbrowse_p.get_children deriver_node_loc root in
+      let derived_nodes = Mbrowse_p.get_children pos root in
       `Found (Mbrowse_p.pprint_deriver_nodes () derived_nodes)
     else
       `No_deriver
