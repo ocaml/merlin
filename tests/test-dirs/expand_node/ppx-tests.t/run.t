@@ -353,6 +353,7 @@ Module type declaration in structure
   >   val pop : stack -> stack
   >   val peek : stack -> t
   > end [@@deriving rename]
+  > EOF
 
   $ dune build
 
@@ -397,6 +398,7 @@ Module type declaration in signature
   >   val pop : stack -> stack
   >   val peek : stack -> t
   > end [@@deriving rename]
+  > EOF
 
   $ dune build
 
