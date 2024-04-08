@@ -589,14 +589,12 @@ let destruct_expression loc config source parents expr =
   let str = if needs_parentheses then "(" ^ str ^ ")" else str in
   loc, str
 
-
 let refine_partial_match last_case_loc config source patterns =
-  let cases =  List.map patterns ~f:(fun pat  ->
+  let cases = List.map patterns ~f:(fun pat ->
     let _pat, constrs, labels = Conv.conv pat in
     let unmangling_tables = constrs, labels in
     (* Unmangling and prefixing *)
-    let pat =
-      qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat in
+    let pat = qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat in
     (* Untyping and casing *)
     let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
     Ast_helper.Exp.case ppat placeholder
@@ -615,14 +613,13 @@ let filter_new_branches new_branches patterns =
         if branch != p then branch else
           List.fold_left lst ~init:branch ~f:rm_sub))
 
-let refine_current_pattern patt config source parents generated_pattern =
+let refine_current_pattern parents patt config source generated_pattern =
   let punned_field = find_field_name_for_punned_field patt parents in
   let ppat = filter_pat_attr (Untypeast.untype_pattern generated_pattern) in
   let str = print_pretty ?punned_field config source (Pretty_pattern ppat) in
   patt.Typedtree.pat_loc, str
 
-let refine_and_generate_branches patt config source
-    (patterns : Typedtree.pattern list) sub_patterns =
+let refine_and_generate_branches patt config source patterns sub_patterns =
   let rev_before, after, top_patt = find_branch patterns patt in
   let new_branches =
     List.map sub_patterns ~f:(fun by -> subst_patt patt ~by top_patt)
@@ -644,8 +641,8 @@ let refine_and_generate_branches patt config source
     top_patt.Typedtree.pat_loc, str
 
 let refine_complete_match
-    (type a) (patt: a Typedtree.general_pattern)
-    config source parents patterns =
+    (type a) parents (patt: a Typedtree.general_pattern)
+    config source patterns =
   match Typedtree.classify_pattern patt with
   | Computation -> raise (Not_allowed ("computation pattern"))
   | Value ->
@@ -658,7 +655,7 @@ let refine_complete_match
       | [more_precise_pattern] ->
         (* If only one pattern is generated, then we're only refining the
           current pattern, not generating new branches. *)
-        refine_current_pattern patt config source parents more_precise_pattern
+        refine_current_pattern parents patt config source more_precise_pattern
       | sub_patterns ->
         (* If more than one pattern is generated, then we're generating new
            branches. *)
@@ -677,16 +674,11 @@ let destruct_pattern
   in
   let pss = List.map patterns ~f:(fun x -> [ x ]) in
   let m, e_typ = get_match parents in
-  let pred =
-    Typecore.partial_pred
-      ~lev:Btype.generic_level
-      m.Typedtree.exp_env
-      e_typ
-  in
+  let pred = Typecore.partial_pred ~lev:Btype.generic_level m.Typedtree.exp_env e_typ in
   match Parmatch.complete_partial ~pred pss with
   | [] ->
     (* The match is already complete, we try to refine it *)
-    refine_complete_match patt config source parents patterns
+    refine_complete_match parents patt config source patterns
   | patterns ->
     refine_partial_match last_case_loc config source patterns
 
@@ -705,7 +697,6 @@ and node config source selected_node parents =
     destruct_record config source selected_node parents
   | Expression expr ->
     destruct_expression loc config source parents expr
-  | Pattern patt ->
-    destruct_pattern patt config source parents
+  | Pattern patt -> destruct_pattern patt config source parents
   | node ->
     raise (Not_allowed (string_of_node node))
