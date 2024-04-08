@@ -283,19 +283,42 @@ let collect_every_pattern_for_expression parent =
   ) Env.empty parent Location.none
   in loc, patterns
 
+let collect_function_pattern loc param_pattern =
+  match param_pattern.Typedtree.fp_kind with
+  | Typedtree.Tparam_pat pattern ->
+    loc, [pattern]
+  | Typedtree.Tparam_optional_default _ ->
+    raise (Not_allowed "value_binding")
 
-
-let rec get_every_pattern = function
+let rec get_every_pattern loc = function
   | [] -> assert false
   | parent :: parents ->
     match parent with
     | Case _
     | Pattern _ ->
       (* We are still in the same branch, going up. *)
-      get_every_pattern parents
+      get_every_pattern loc parents
     | Expression { exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) ; _}
       when Ident.name id = "*type-error*" ->
       raise (Ill_typed)
+    | Expression { exp_desc = Typedtree.Texp_function (params, _body); _ } ->
+      (* So we need to deal with the case where we're either in the body of a
+         function, or in a function parameter. *)
+      begin
+        match
+          List.find_some ~f:(fun param ->
+            let open Location in
+            let param_loc = param.Typedtree.fp_loc in
+            Lexing.compare_pos loc.loc_start param_loc.loc_start >= 0
+            && Lexing.compare_pos param_loc.loc_end loc.loc_end >= 0
+          ) params with
+        | Some pattern ->
+          (* In parameter case *)
+          collect_function_pattern loc pattern
+        | None ->
+          (* In function body *)
+          collect_every_pattern_for_expression parent
+      end
     | Expression _ ->
       (* We are on the right node *)
       collect_every_pattern_for_expression parent
@@ -648,8 +671,8 @@ let refine_complete_match
 
 let destruct_pattern
     (type a) (patt: a Typedtree.general_pattern)
-    config source  parents =
-  let last_case_loc, patterns = get_every_pattern parents in
+    config source loc parents =
+  let last_case_loc, patterns = get_every_pattern loc parents in
   (* Printf.eprintf "tot %d o%!"(List.length patterns); *)
   let () = List.iter patterns ~f:(fun p ->
     let p = filter_pat_attr (Untypeast.untype_pattern p) in
@@ -681,6 +704,6 @@ and node config source selected_node parents =
     destruct_record config source selected_node parents
   | Expression expr ->
     destruct_expression loc config source parents expr
-  | Pattern patt -> destruct_pattern patt config source parents
+  | Pattern patt -> destruct_pattern patt config source loc parents
   | node ->
     raise (Not_allowed (string_of_node node))
