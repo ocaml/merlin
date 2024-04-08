@@ -9,8 +9,20 @@ FIXME UPGRADE 5.2: this was working before the upgrade
   > -filename fun.ml <fun.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 9
+        },
+        "end": {
+          "line": 1,
+          "col": 11
+        }
+      },
+      "false|true"
+    ],
     "notifications": []
   }
 
@@ -43,12 +55,50 @@ FIXME UPGRADE 5.2: this was working before the upgrade
   > let f x ((false as bb) : bool) y = something
   > EOF
 
-FIXME UPGRADE 5.2: this was working before the upgrade
-  $ $MERLIN single case-analysis -start 1:10 -end 1:15 \
+FIXME UPGRADE 5.2: this was not working before the upgrade
+  $ $MERLIN single case-analysis -start 1:11 -end 1:15 \
   > -filename fun.ml <fun.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 15
+        },
+        "end": {
+          "line": 1,
+          "col": 15
+        }
+      },
+      "|true -> _"
+    ],
+    "notifications": []
+  }
+
+  $ cat >fun.ml <<EOF
+  > let f x (_ as bb : bool) y = something
+  > EOF
+
+FIXME UPGRADE 5.2: this was working before the upgrade
+  $ $MERLIN single case-analysis -start 1:10 -end 1:10 \
+  > -filename fun.ml <fun.ml | \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 9
+        },
+        "end": {
+          "line": 1,
+          "col": 16
+        }
+      },
+      "((false as bb) : bool)|((true as bb) : bool)"
+    ],
     "notifications": []
   }
