@@ -481,9 +481,9 @@ let find_branch patterns sub =
   in
   aux [] patterns
 
-(* In the presence of record punning fields, the definition must be reconstructed
-   with the label. ie: [{a; b}] with destruction on [a] becomes *)
-(*  [{a = destruct_result; b}]. *)
+(* In the presence of record punning fields, the definition must be
+   reconstructed with the label. ie: [{a; b}] with destruction on [a]
+   becomes [{a = destruct_result; b}]. *)
 let find_field_name_for_punned_field patt = function
   | Pattern {pat_desc = Tpat_record (fields, _); _} :: _ ->
     List.find_opt ~f:(fun (_, _, opat) ->
@@ -527,7 +527,8 @@ let destruct_expression loc config source parents expr =
 let refine_partial_match last_case_loc config source patterns =
   let cases = List.map patterns ~f:(fun (pat, unmangling_tables) ->
     (* Unmangling and prefixing *)
-    let pat = qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat in
+    let pat =
+      qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat in
     (* Untyping and casing *)
     let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
     Ast_helper.Exp.case ppat placeholder
@@ -552,7 +553,8 @@ let refine_current_pattern patt config source parents generated_pattern =
   let str = print_pretty ?punned_field config source (Pretty_pattern ppat) in
   patt.Typedtree.pat_loc, str
 
-let refine_and_generate_branches patt config source (patterns : Typedtree.pattern list) sub_patterns =
+let refine_and_generate_branches patt config source
+    (patterns : Typedtree.pattern list) sub_patterns =
   let rev_before, after, top_patt = find_branch patterns patt in
   let new_branches =
     List.map sub_patterns ~f:(fun by -> subst_patt patt ~by top_patt)
@@ -607,7 +609,12 @@ let destruct_pattern
   in
   let pss = List.map patterns ~f:(fun x -> [ x ]) in
   let m, e_typ = get_match parents in
-  let pred = Typecore.partial_pred ~lev:Btype.generic_level m.Typedtree.exp_env e_typ in
+  let pred =
+    Typecore.partial_pred
+      ~lev:Btype.generic_level
+      m.Typedtree.exp_env
+      e_typ
+  in
   match Parmatch.complete_partial ~pred pss with
   | [] ->
     (* The match is already complete, we try to refine it *)
