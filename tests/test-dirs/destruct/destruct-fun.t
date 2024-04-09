@@ -102,3 +102,55 @@ FIXME UPGRADE 5.2: this was working before the upgrade
     ],
     "notifications": []
   }
+
+  $ cat >fun.ml <<EOF
+  > type t = { foo: int }
+  > let f a (b: t) c = something
+  > EOF
+
+  $ $MERLIN single case-analysis -start 2:10 -end 2:10 \
+  > -filename fun.ml <fun.ml | \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 9
+        },
+        "end": {
+          "line": 2,
+          "col": 10
+        }
+      },
+      "{ foo }"
+    ],
+    "notifications": []
+  }
+
+  $ cat >fun.ml <<EOF
+  > type t = Foo
+  > let f a (b: t) c = something
+  > EOF
+
+  $ $MERLIN single case-analysis -start 2:10 -end 2:10 \
+  > -filename fun.ml <fun.ml | \
+  > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 9
+        },
+        "end": {
+          "line": 2,
+          "col": 10
+        }
+      },
+      "Foo"
+    ],
+    "notifications": []
+  }
