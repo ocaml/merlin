@@ -242,6 +242,42 @@ let rec get_match = function
     let s = Mbrowse.print_node () parent in
     raise  (Not_allowed s)
 
+let collect_every_pattern_for_expression parent =
+  let patterns =
+    Mbrowse.fold_node (fun env node acc ->
+      match node with
+      | Pattern _ -> (* Not expected here *) raise Nothing_to_do
+      | Case _ ->
+        Mbrowse.fold_node (fun _env node acc ->
+          match node with
+          | Pattern p ->
+            let ill_typed_pred = Typedtree.{ f = fun p ->
+              List.memq Msupport.incorrect_attribute ~set:p.pat_attributes }
+            in
+            if Typedtree.exists_general_pattern ill_typed_pred p
+            then raise Ill_typed
+            else begin
+              match Typedtree.classify_pattern p with
+              | Value -> (p : Typedtree.pattern) :: acc
+              | Computation ->
+                begin
+                  match Typedtree.split_pattern p with
+                  | Some p, _ -> (p : Typedtree.pattern) :: acc
+                  | None, _ -> acc
+                end
+            end
+          | _ -> acc
+        ) env node acc
+      | _ -> acc
+    ) Env.empty parent []
+  in
+  let loc = Mbrowse.fold_node (fun _ node acc ->
+    let open Location in
+    let loc = Mbrowse.node_loc node in
+    if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
+  ) Env.empty parent Location.none
+  in loc, patterns
+
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
@@ -255,43 +291,7 @@ let rec get_every_pattern = function
       raise (Ill_typed)
     | Expression _ ->
       (* We are on the right node *)
-      let patterns : Typedtree.pattern list =
-        Mbrowse.fold_node (fun env node acc ->
-            match node with
-            | Pattern _ -> (* Not expected here *) assert false
-            | Case _ ->
-              Mbrowse.fold_node (fun _env node acc ->
-                  match node with
-                  | Pattern p ->
-                    let ill_typed_pred : Typedtree.pattern_predicate =
-                      { f = fun p ->
-                            List.memq Msupport.incorrect_attribute
-                            ~set:p.pat_attributes }
-                    in
-                    if Typedtree.exists_general_pattern ill_typed_pred p then
-                      raise Ill_typed;
-                    begin match Typedtree.classify_pattern p with
-                      | Value -> let p : Typedtree.pattern = p in p :: acc
-                      | Computation -> let val_p, _ = Typedtree.split_pattern p in
-                        (* We ignore computation patterns *)
-                        begin match val_p with
-                          | Some val_p ->  val_p :: acc
-                          | None -> acc
-                        end
-                    end
-                  | _ -> acc
-                ) env node acc
-            | _ -> acc
-          ) Env.empty parent []
-      in
-      let loc =
-        Mbrowse.fold_node (fun _ node acc ->
-            let open Location in
-            let loc = Mbrowse.node_loc node in
-            if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
-          ) Env.empty parent Location.none
-      in
-      loc, patterns
+      collect_every_pattern_for_expression parent
     | _ ->
       (* We were not in a match *)
       let s = Mbrowse.print_node () parent in
