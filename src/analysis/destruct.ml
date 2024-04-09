@@ -523,20 +523,22 @@ let destruct_expression loc config source parents expr =
   let str = if needs_parentheses then "(" ^ str ^ ")" else str in
   loc, str
 
-let rec node config source selected_node parents =
+let rec destruct_record config source selected_node = function
+  | Expression { exp_desc = Texp_field _; _ } as parent :: rest ->
+    node config source parent rest
+  | Expression e :: rest ->
+    node config source (Expression e) rest
+  | _ ->
+    raise (Not_allowed (string_of_node selected_node))
+
+and node config source selected_node parents =
   let open Extend_protocol.Reader in
   let loc = Mbrowse.node_loc selected_node in
   match selected_node with
   | Record_field (`Expression _, _, _) ->
-    begin match parents with
-    | Expression { exp_desc = Texp_field _; _ } as parent :: rest ->
-      node config source parent rest
-    | Expression e :: rest ->
-      node config source (Expression e) rest
-    | _ ->
-      raise (Not_allowed (string_of_node selected_node))
-    end
-  | Expression expr -> destruct_expression loc config source parents expr
+    destruct_record config source selected_node parents
+  | Expression expr ->
+    destruct_expression loc config source parents expr
   | Pattern patt ->
     begin let last_case_loc, patterns = get_every_pattern parents in
       (* Printf.eprintf "tot %d o%!"(List.length patterns); *)
