@@ -500,6 +500,29 @@ let print_pretty ?punned_field config source subject =
   | Some label ->
     label.Types.lbl_name ^ " = " ^ result
 
+let destruct_expression loc config source parents expr =
+  let ty = expr.Typedtree.exp_type in
+  let pexp = filter_expr_attr (Untypeast.untype_expression expr) in
+  let () =
+    log ~title:"node_expression" "%a"
+      Logger.fmt (fun fmt -> Printast.expression 0 fmt pexp)
+  in
+  let needs_parentheses, result =
+    if is_package (Types.Transient_expr.repr ty) then
+      let mode = Ast_helper.Mod.unpack pexp in
+      false, Ast_helper.Exp.letmodule_no_opt "M" mode placeholder
+    else
+      let ps = gen_patterns expr.Typedtree.exp_env ty in
+      let cases = List.map ps ~f:(fun patt ->
+        let pc_lhs = filter_pat_attr (Untypeast.untype_pattern patt) in
+        { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = placeholder }
+      ) in
+      needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
+  in
+  let str = Mreader.print_pretty config source (Pretty_expression result) in
+  let str = if needs_parentheses then "(" ^ str ^ ")" else str in
+  loc, str
+
 let rec node config source selected_node parents =
   let open Extend_protocol.Reader in
   let loc = Mbrowse.node_loc selected_node in
@@ -513,30 +536,7 @@ let rec node config source selected_node parents =
     | _ ->
       raise (Not_allowed (string_of_node selected_node))
     end
-  | Expression expr ->
-    let ty = expr.Typedtree.exp_type in
-    let pexp = filter_expr_attr (Untypeast.untype_expression expr) in
-    log ~title:"node_expression" "%a"
-      Logger.fmt (fun fmt -> Printast.expression 0 fmt pexp);
-    let needs_parentheses, result =
-      if is_package (Types.Transient_expr.repr ty) then (
-        let mode = Ast_helper.Mod.unpack pexp in
-        false, Ast_helper.Exp.letmodule_no_opt "M" mode placeholder
-      ) else (
-        let ps = gen_patterns expr.Typedtree.exp_env ty in
-        let cases  =
-          List.map ps ~f:(fun patt ->
-            let pc_lhs = filter_pat_attr (Untypeast.untype_pattern patt) in
-            { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = placeholder }
-          )
-        in
-        needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
-      )
-    in
-    let str = Mreader.print_pretty
-        config source (Pretty_expression result) in
-    let str = if needs_parentheses then "(" ^ str ^ ")" else str in
-    loc, str
+  | Expression expr -> destruct_expression loc config source parents expr
   | Pattern patt ->
     begin let last_case_loc, patterns = get_every_pattern parents in
       (* Printf.eprintf "tot %d o%!"(List.length patterns); *)
