@@ -306,11 +306,8 @@ let rec get_every_pattern loc = function
       begin
         match
           List.find_some ~f:(fun param ->
-            let open Location in
-            let param_loc = param.Typedtree.fp_loc in
-            Lexing.compare_pos loc.loc_start param_loc.loc_start >= 0
-            && Lexing.compare_pos param_loc.loc_end loc.loc_end >= 0
-          ) params with
+            Location_aux.included_in param.Typedtree.fp_loc loc
+        ) params with
         | Some pattern ->
           (* In parameter case *)
           collect_function_pattern loc pattern
