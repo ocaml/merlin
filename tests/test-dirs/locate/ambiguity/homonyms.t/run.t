@@ -18,7 +18,7 @@ This test reproduces issue #1748
 
 Merlin correctly jump to the Import module. Not the one in Bar.
   $ $MERLIN single locate -position 1:10 -look-for implementation \
-  > -filename foo.ml < foo.ml | jq '.value'
+  >  -filename foo.ml < foo.ml | jq '.value'
   {
     "file": "$TESTCASE_ROOT/import.ml",
     "pos": {
@@ -27,11 +27,11 @@ Merlin correctly jump to the Import module. Not the one in Bar.
     }
   }
 
-FIXME: It is incorrect to jump to the `Bar.Import` module here:
+Same in the mli:
   $ $MERLIN single locate -position 1:10 -look-for implementation \
   > -filename foo.mli < foo.mli | jq '.value'
   {
-    "file": "$TESTCASE_ROOT/bar.ml",
+    "file": "$TESTCASE_ROOT/import.ml",
     "pos": {
       "line": 1,
       "col": 0

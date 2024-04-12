@@ -3,8 +3,11 @@ merlin NEXT_VERSION
 
   + merlin binary
     - destruct: Removal of residual patterns (#1737, fixes #1560)
-    - Do not erase fields' names when destructing punned record fields (#1734, 
+    - Do not erase fields' names when destructing punned record fields (#1734,
       fixes #1661)
+    - locate: fix an issue when locating the module ident in
+      an[open_description]. Merlin was using the wrong environment due to the
+      absence of a node representing the ident. (#1750, fixes #1748)
 
 merlin 4.14
 ===========

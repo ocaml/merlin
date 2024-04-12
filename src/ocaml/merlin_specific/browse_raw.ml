@@ -688,7 +688,21 @@ let of_node = function
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
-  | Open_description _ -> id_fold
+  | Open_description od ->
+    (* We synthezise a [module_ident] node from the [open] infos so that Merlin
+      does not use the open resulting environment to answer queries about the
+      module ident. Without this synthetic node Merlin would select the entire
+      open node when the cursor is hover the ident. See issue #1748 *)
+    let path, lid = od.open_expr in
+    let m = {
+        mod_desc = Tmod_ident (path, lid);
+        mod_loc = lid.loc;
+        mod_type = Mty_ident path;
+        mod_env = Env.empty;
+        mod_attributes = [];
+      }
+    in
+    app (Module_expr m)
   | Open_declaration od ->
     app (Module_expr od.open_expr)
   | Include_declaration i ->
