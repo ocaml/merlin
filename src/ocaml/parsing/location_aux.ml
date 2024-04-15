@@ -46,7 +46,7 @@ let compare_pos pos loc =
   else
     0
 
-let included_in parent_loc child_loc =
+let included ~into:parent_loc child_loc =
 Lexing.compare_pos child_loc.loc_start parent_loc.loc_start >= 0 &&
   Lexing.compare_pos parent_loc.loc_end child_loc.loc_end >= 0
 
