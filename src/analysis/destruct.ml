@@ -307,7 +307,7 @@ let rec get_every_pattern loc = function
       begin
         match
           List.find_some ~f:(fun param ->
-            Location_aux.included_in param.Typedtree.fp_loc loc
+            Location_aux.included ~into:param.Typedtree.fp_loc loc
         ) params with
         | Some pattern ->
           (* In parameter case *)
