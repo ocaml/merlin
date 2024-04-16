@@ -63,27 +63,21 @@ let index_buffer_ ~current_buffer_path ~local_defs () =
       | path_shape ->
         log ~title:"index_buffer" "Shape of path: %a"
           Logger.fmt (Fun.flip Shape.print path_shape);
-        begin match Shape_reduce.reduce_for_uid env path_shape with
-        | Internal_error_missing_uid ->
-          log ~title:"index_buffer" "Reduction failed: missing uid";
-          index_decl ()
-        | Resolved_alias l ->
-            let uid = Locate.uid_of_aliases ~traverse_aliases:false l in
-            Index_format.(add defs uid (LidSet.singleton lid))
-        | Resolved uid ->
+        let result =  Shape_reduce.reduce_for_uid env path_shape in
+        begin match Locate.uid_of_result ~traverse_aliases:false result with
+        | Some uid, false ->
           log ~title:"index_buffer" "Found %s (%a) wiht uid %a"
             (Longident.head lid.txt)
             Logger.fmt (Fun.flip Location.print_loc lid.loc)
             Logger.fmt (Fun.flip Shape.Uid.print uid);
-          Index_format.(add defs uid (LidSet.singleton lid))
-        | Approximated s  ->
-          log ~title:"index_buffer" "Shape is approximative, found uid: %a"
-            Logger.fmt (Fun.flip (Format.pp_print_option Shape.Uid.print) s);
-          index_decl ()
-        | Unresolved s ->
-          log ~title:"index_buffer" "Shape unresolved, stuck on: %a"
-            Logger.fmt (Fun.flip Shape.print s);
-          index_decl ()
+            Index_format.(add defs uid (LidSet.singleton lid))
+          | Some uid, true ->
+            log ~title:"index_buffer" "Shape is approximative, found uid: %a"
+              Logger.fmt (Fun.flip Shape.Uid.print uid);
+            index_decl ()
+          | None, _ ->
+            log ~title:"index_buffer" "Reduction failed: missing uid";
+            index_decl ()
         end
   in
   let f ~namespace env path (lid : Longident.t Location.loc)  =

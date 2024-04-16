@@ -42,7 +42,10 @@ type result = {
   approximated: bool;
 }
 
-val uid_of_aliases : traverse_aliases:bool -> Shape.Uid.t list -> Shape.Uid.t
+val uid_of_result
+  : traverse_aliases:bool
+  -> Shape_reduce.result
+  -> Shape.Uid.t option * bool
 
 val find_source
   : config: Mconfig.t
