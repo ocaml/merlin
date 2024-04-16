@@ -574,17 +574,22 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
     Logger.fmt (fun fmt -> Shape_reduce.print_result fmt reduced);
   reduced
 
-let rec uid_of_aliases ~traverse_aliases = function
-  | [] -> assert false
-  | [ def ] -> def
-  | (Shape.Uid.Item { comp_unit; _ })
-    :: (((Compilation_unit comp_unit') :: _) as tl)
-    when let by = comp_unit ^ "__" in String.is_prefixed ~by comp_unit' ->
+let rec uid_of_result ~traverse_aliases = function
+  | Shape_reduce.Resolved uid ->
+      Some uid, false
+  | Resolved_alias (Item { comp_unit; _ },
+      (Resolved_alias (Compilation_unit comp_unit', _) as rest))
+      when let by = comp_unit ^ "__" in String.is_prefixed ~by comp_unit' ->
       (* Always traverse dune-wrapper aliases *)
-      uid_of_aliases ~traverse_aliases tl
-  | [ alias; def ] -> if traverse_aliases then def else alias
-  | _alias :: tl when traverse_aliases -> uid_of_aliases ~traverse_aliases tl
-  | alias :: _tl -> alias
+      uid_of_result ~traverse_aliases rest
+  | Resolved_alias (_alias, rest) when traverse_aliases ->
+      uid_of_result ~traverse_aliases rest
+  | Resolved_alias (alias, _rest) ->
+      Some alias, false
+  | Unresolved { uid = Some uid; desc = Comp_unit _; approximated } ->
+      Some uid, approximated
+  | Approximated _ | Unresolved _ | Internal_error_missing_uid ->
+      None, true
 
 (** This is the main function here *)
 let from_path ~config ~env ~local_defs ~decl path =
@@ -605,12 +610,10 @@ let from_path ~config ~env ~local_defs ~decl path =
     | `MLI -> decl.uid, false
     | `ML ->
       let traverse_aliases = config.traverse_aliases in
-      match find_definition_uid ~config ~env ~decl path with
-      | Resolved uid -> uid, false
-      | Resolved_alias aliases -> uid_of_aliases ~traverse_aliases aliases, false
-      | Unresolved { uid = Some uid; desc = Comp_unit _; approximated } ->
-          uid, approximated
-      | Approximated _ | Unresolved _ | Internal_error_missing_uid ->
+      let result = find_definition_uid ~config ~env ~decl path in
+      match uid_of_result ~traverse_aliases result with
+      | Some uid, approx -> uid, approx
+      | None, _approx ->
           log ~title "No definition uid, falling back to the declaration uid: %a"
             Logger.fmt (Fun.flip Shape.Uid.print decl.uid);
           decl.uid, true
