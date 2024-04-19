@@ -81,7 +81,7 @@ endif
 let s:current_dir=expand("<sfile>:p:h")
 silent! MerlinPy import sys, vim
 MerlinPy if not vim.eval("s:current_dir") in sys.path:
-\    sys.path.append(vim.eval("s:current_dir"))
+\    sys.path.insert(0, vim.eval("s:current_dir"))
 
 MerlinPy import merlin
 
