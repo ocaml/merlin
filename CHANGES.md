@@ -5,6 +5,7 @@ merlin NEXT_VERSION
     - destruct: Removal of residual patterns (#1737, fixes #1560)
     - Do not erase fields' names when destructing punned record fields (#1734, 
       fixes #1661)
+    - Ignore SIGPIPE in the Merlin server process (#1746)
 
 merlin 4.14
 ===========
