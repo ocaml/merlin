@@ -323,9 +323,10 @@ def command_motion(cmd, target, pos):
     except MerlinExc as e:
         try_print_error(e)
 
-def command_occurrences(pos):
+def command_occurrences(pos, project_wide):
     try:
-        lst_or_err = command("occurrences", "-identifier-at", fmtpos(pos))
+        scope_args = ["-scope", "project"] if project_wide else []
+        lst_or_err = command("occurrences", "-identifier-at", fmtpos(pos), *scope_args)
         if not isinstance(lst_or_err, list):
             print(lst_or_err)
         else:
@@ -480,29 +481,36 @@ def vim_document_under_cursor():
     vim_document_at_cursor(None)
 
 # Occurrences
-def vim_occurrences(vimvar):
+def vim_occurrences(vimvar, project_wide):
     vim.command("let %s = []" % vimvar)
     line, col = vim.current.window.cursor
-    lst = command_occurrences((line, col))
-    lst = map(lambda x: x['start'], lst)
+    lst = command_occurrences((line, col), project_wide)
     bufnr = vim.current.buffer.number
+    cur_fname = vim.current.buffer.name
     nr = 0
     cursorpos = 0
     for pos in lst:
-        lnum = pos['line']
-        lcol = pos['col']
-        if (lnum, lcol) <= (line, col): cursorpos = nr
-        text = vim.current.buffer[lnum - 1]
-        text = text.replace("'", "''")
-        vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'I','valid':1}" %
-                (bufnr, lnum, lcol + 1, nr, text))
+        lnum = pos['start']['line']
+        lcol = pos['start']['col']
+        if 'file' in pos:
+            text = ""
+            is_current_file = (pos['file'] == cur_fname)
+        else:
+            text = vim.current.buffer[lnum - 1]
+            text = text.replace("'", "''")
+            is_current_file = True
+        if is_current_file and (lnum, lcol) <= (line, col): cursorpos = nr
+        bufnr_or_fname = "'filename':'%s'" % pos['file'] if 'file' in pos else "'bufnr':%d" % bufnr
+        vim.command("let l:tmp = {%s,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'I','valid':1}" %
+                (bufnr_or_fname, lnum, lcol + 1, nr, text))
         nr = nr + 1
         vim.command("call add(%s, l:tmp)" % vimvar)
     return cursorpos + 1
 
 def vim_occurrences_search():
+    project_wide = False
     line, col = vim.current.window.cursor
-    lst = command_occurrences((line, col))
+    lst = command_occurrences((line, col), project_wide)
     result = ""
     over = ""
     start_col = 0
@@ -521,8 +529,9 @@ def vim_occurrences_search():
     return "[%s, '%s', '%s']" % (start_col, over, result)
 
 def vim_occurrences_replace(content):
+    project_wide = False
     cursor = vim.current.window.cursor
-    lst = command_occurrences(cursor)
+    lst = command_occurrences(cursor, project_wide)
     lst.reverse()
     for pos in lst:
         if pos['start']['line'] == pos['end']['line']:

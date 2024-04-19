@@ -481,7 +481,7 @@ endfunction
 function! merlin#Occurrences()
   let l:occurrences = []
   let l:pos = 0
-  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences"))
+  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences", False))
 
   if l:occurrences == []
     return
@@ -491,6 +491,20 @@ function! merlin#Occurrences()
   execute ":ll! " . l:pos
   if g:merlin_display_occurrence_list
     lopen
+  endif
+endfunction
+
+function! merlin#OccurrencesProjectWide()
+  let l:occurrences = []
+  let l:pos = 0
+  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences", True))
+  if l:occurrences == []
+    return
+  endif
+  call setqflist(l:occurrences)
+  execute ":cc! " . l:pos
+  if g:merlin_display_occurrence_list
+    copen
   endif
 endfunction
 
@@ -749,6 +763,8 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinOccurrences call merlin#Occurrences()
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesForward)  :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
+  " Project-wide occurrences
+  command! -buffer -nargs=0 MerlinOccurrencesProjectWide call merlin#OccurrencesProjectWide()
 
   " Rename
   command! -buffer -nargs=* MerlinRename call merlin#OccurrencesRename(<f-args>)
