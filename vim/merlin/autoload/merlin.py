@@ -84,6 +84,21 @@ def catch_and_print(f, msg=None):
 def concat_map(f, args):
     return [item for arg in args for item in f(arg)]
 
+# Format an integer or a string into a form that can be parsed back by Vim.
+def vim_value(v):
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, str):
+        return "'%s'" % v.replace("'", "''")
+    raise Exception("Failed to convert into a vim value: %s" % str(v))
+
+# Format a dictionnary containing integer and string values into a Vim record.
+def vim_record(d):
+    def vim_field(f):
+        key, val = f
+        return "'%s':%s" % (key, vim_value(val))
+    return "{" + ",".join(map(vim_field, d.items())) + "}"
+
 ######## PROCESS MANAGEMENT
 
 def current_context():
@@ -492,19 +507,20 @@ def vim_occurrences(vimvar, project_wide):
     for pos in lst:
         lnum = pos['start']['line']
         lcol = pos['start']['col']
+        occur = { "lnum": lnum, "col": lcol + 1, "vcol": 0, "nr": nr,
+                 "pattern": "", "type": "I", "valid": 1 }
         if 'file' in pos:
-            text = ""
+            occur["filename"] = pos['file']
+            occur["text"] = ""
             is_current_file = (pos['file'] == cur_fname)
         else:
-            text = vim.current.buffer[lnum - 1]
-            text = text.replace("'", "''")
+            occur["bufnr"] = bufnr
+            occur["text"] = vim.current.buffer[lnum - 1]
             is_current_file = True
-        if is_current_file and (lnum, lcol) <= (line, col): cursorpos = nr
-        bufnr_or_fname = "'filename':'%s'" % pos['file'] if 'file' in pos else "'bufnr':%d" % bufnr
-        vim.command("let l:tmp = {%s,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'I','valid':1}" %
-                (bufnr_or_fname, lnum, lcol + 1, nr, text))
-        nr = nr + 1
+        vim.command("let l:tmp = " + vim_record(occur))
         vim.command("call add(%s, l:tmp)" % vimvar)
+        if is_current_file and (lnum, lcol) <= (line, col): cursorpos = nr
+        nr = nr + 1
     return cursorpos + 1
 
 def vim_occurrences_search():
