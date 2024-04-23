@@ -509,14 +509,13 @@ def vim_occurrences(vimvar, project_wide):
         lcol = pos['start']['col']
         occur = { "lnum": lnum, "col": lcol + 1, "vcol": 0, "nr": nr,
                  "pattern": "", "type": "I", "valid": 1 }
-        if 'file' in pos:
-            occur["filename"] = pos['file']
-            occur["text"] = ""
-            is_current_file = (pos['file'] == cur_fname)
-        else:
-            occur["bufnr"] = bufnr
+        is_current_file = ('file' not in pos or pos['file'] == cur_fname)
+        if is_current_file:
             occur["text"] = vim.current.buffer[lnum - 1]
-            is_current_file = True
+            occur["bufnr"] = bufnr
+        else:
+            occur["text"] = ""
+            occur["filename"] = pos['file']
         vim.command("let l:tmp = " + vim_record(occur))
         vim.command("call add(%s, l:tmp)" % vimvar)
         if is_current_file and (lnum, lcol) <= (line, col): cursorpos = nr
