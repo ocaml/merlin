@@ -488,7 +488,9 @@ function! merlin#Occurrences()
   endif
 
   call setloclist(0, l:occurrences)
-  execute ":ll! " . l:pos
+  if l:pos > 0
+    execute ":ll! " . l:pos
+  endif
   if g:merlin_display_occurrence_list
     lopen
   endif
@@ -502,7 +504,9 @@ function! merlin#OccurrencesProjectWide()
     return
   endif
   call setqflist(l:occurrences)
-  execute ":cc! " . l:pos
+  if l:pos > 0
+    execute ":cc! " . l:pos
+  endif
   if g:merlin_display_occurrence_list
     copen
   endif
