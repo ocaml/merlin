@@ -36,13 +36,6 @@ issue as not already been submitted.
 
 ## Code contributions
 
- ### Legal Notice
- When contributing to Merlin, you must agree that you have authored 100% of the
- content, that you have the necessary rights to the content and that the content
- you contribute may be provided under the [project's MIT
- license](https://github.com/ocaml/merlin/blob/master/LICENSE).
-
-
 ### Styleguides
 
 As of today, Merlin's codebase does not use a code formatter. When contributing
