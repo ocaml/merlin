@@ -1,34 +1,9 @@
-FIXME: should be accepted
+should be accepted
   $ $MERLIN single errors -filename main.ml <<'EOF' | \
   > jq '.value[0]'
   > (* {%ext|babar|} *)
   > EOF
-  {
-    "start": {
-      "line": 1,
-      "col": 0
-    },
-    "end": {
-      "line": 1,
-      "col": 2
-    },
-    "type": "typer",
-    "sub": [
-      {
-        "start": {
-          "line": 1,
-          "col": 0
-        },
-        "end": {
-          "line": 1,
-          "col": 2
-        },
-        "message": "String literal begins here"
-      }
-    ],
-    "valid": true,
-    "message": "This comment contains an unterminated string literal"
-  }
+  null
 
 should fail
   $ $MERLIN single errors -filename main.ml <<'EOF' | \
@@ -62,37 +37,12 @@ should fail
     "message": "This comment contains an unterminated string literal"
   }
 
-FIXME: should accept
+should accept
   $ $MERLIN single errors -filename main.ml <<'EOF' | \
   > jq '.value[0]'
   > (* {%ext id|babar|id} *)
   > EOF
-  {
-    "start": {
-      "line": 1,
-      "col": 0
-    },
-    "end": {
-      "line": 1,
-      "col": 2
-    },
-    "type": "typer",
-    "sub": [
-      {
-        "start": {
-          "line": 1,
-          "col": 0
-        },
-        "end": {
-          "line": 1,
-          "col": 2
-        },
-        "message": "String literal begins here"
-      }
-    ],
-    "valid": true,
-    "message": "This comment contains an unterminated string literal"
-  }
+  null
 
 should accept
   $ $MERLIN single errors -filename main.ml <<'EOF' | \
