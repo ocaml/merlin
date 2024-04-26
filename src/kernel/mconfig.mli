@@ -29,8 +29,9 @@ val dump_ocaml : ocaml -> json
 
 type merlin = {
   build_path  : string list;
-  hidden_path : string list;
   source_path : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
   extensions  : string list;
@@ -111,7 +112,7 @@ val source_path : t -> string list
 
 val build_path : t -> string list
 
-val hidden_path : t -> string list
+val hidden_build_path : t -> string list
 
 val cmt_path : t -> string list
 

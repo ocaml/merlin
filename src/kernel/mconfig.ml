@@ -71,8 +71,9 @@ let marg_commandline f =
 
 type merlin = {
   build_path  : string list;
-  hidden_path : string list;
   source_path : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
   extensions  : string list;
@@ -105,6 +106,8 @@ let dump_merlin x =
   `Assoc [
     "build_path"   , `List (List.map ~f:Json.string x.build_path);
     "source_path"  , `List (List.map ~f:Json.string x.source_path);
+    "hidden_build_path" , `List (List.map ~f:Json.string x.hidden_build_path);
+    "hidden_source_path", `List (List.map ~f:Json.string x.hidden_source_path);
     "cmi_path"     , `List (List.map ~f:Json.string x.cmi_path);
     "cmt_path"     , `List (List.map ~f:Json.string x.cmt_path);
     "flags_applied", `List (List.map ~f:dump_flag_list x.flags_applied);
@@ -245,6 +248,8 @@ let get_external_config path t =
       merlin with
       build_path = dot.build_path @ merlin.build_path;
       source_path = dot.source_path @ merlin.source_path;
+      hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
+      hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
       cmi_path = dot.cmi_path @ merlin.cmi_path;
       cmt_path = dot.cmt_path @ merlin.cmt_path;
       exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
@@ -274,6 +279,18 @@ let merlin_flags = [
     marg_path (fun dir merlin ->
         {merlin with source_path = dir :: merlin.source_path}),
     "<dir> Add <dir> to merlin source path"
+  );
+  (
+    "-hidden-build-path",
+    marg_path (fun dir merlin ->
+        {merlin with hidden_build_path = dir :: merlin.hidden_build_path}),
+    "<dir> Add <dir> to merlin hidden build path"
+  );
+  (
+    "-hidden-source-path",
+    marg_path (fun dir merlin ->
+        {merlin with hidden_source_path = dir :: merlin.hidden_source_path}),
+    "<dir> Add <dir> to merlin hidden source path"
   );
   (
     "-cmi-path",
@@ -616,8 +633,9 @@ let initial = {
   };
   merlin = {
     build_path  = [];
-    hidden_path = [];
     source_path = [];
+    hidden_build_path  = [];
+    hidden_source_path = [];
     cmi_path    = [];
     cmt_path    = [];
     extensions  = [];
@@ -763,8 +781,8 @@ let build_path config = (
   result'
 )
 
-let hidden_path config =
-  config.merlin.hidden_path @ config.ocaml.hidden_dirs
+let hidden_build_path config =
+  config.merlin.hidden_build_path @ config.ocaml.hidden_dirs
 
 let cmt_path config = (
   let dirs =
