@@ -326,7 +326,7 @@ let empty_config = {
 let prepend_config ~cwd ~cfg =
   List.fold_left ~init:cfg ~f:(fun cfg (d : Merlin_dot_protocol.Directive.Raw.t) ->
     match d with
-    | `B _ | `H _ | `S _ | `CMI _ | `CMT _  as directive ->
+    | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _  as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
     | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
@@ -454,8 +454,9 @@ let postprocess cfg =
         let dirs =
           match directive with
           | `B path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `B p)
-          | `H path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `H p)
           | `S path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `S p)
+          | `BH path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `BH p)
+          | `SH path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `SH p)
           | `CMI path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
           | `CMT path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
         in
