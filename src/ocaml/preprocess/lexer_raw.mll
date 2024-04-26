@@ -416,7 +416,7 @@ let hex_float_literal =
   ('.' ['0'-'9' 'A'-'F' 'a'-'f' '_']* )?
   (['p' 'P'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']* )?
 let literal_modifier = ['G'-'Z' 'g'-'z']
-let raw_ident_escape = "\#"
+let raw_ident_escape = "\\#"
 
 
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
