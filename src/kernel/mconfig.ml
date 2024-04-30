@@ -238,10 +238,10 @@ let rec normalize t =
 
 let merge_merlin_config dot merlin ~failures ~config_path =
   { merlin with
-    build_path = dot.build_path @ merlin.build_path;
+    build_path = dot.Mconfig_dot.build_path @ merlin.build_path;
     source_path = dot.source_path @ merlin.source_path;
-    hidden_build_path = dot.hidden_build_path @ merlinhidden_build_path;
-    hidden_source_path = dot.hidden_source_path @ merlinhidden_source_path;
+    hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
+    hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
     exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
     use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
     extensions = dot.extensions @ merlin.extensions;
