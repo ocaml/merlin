@@ -72,10 +72,12 @@ module Cache = File_cache.Make (struct
 
           else if String.is_prefixed ~by:"B " line then
             tell (`B (String.drop 2 line))
-          else if String.is_prefixed ~by:"H " line then
-            tell (`S (String.drop 2 line))
+          else if String.is_prefixed ~by:"BH " line then
+            tell (`BH (String.drop 3 line))
           else if String.is_prefixed ~by:"S " line then
             tell (`S (String.drop 2 line))
+          else if String.is_prefixed ~by:"SH " line then
+            tell (`SH (String.drop 3 line))
           else if String.is_prefixed ~by:"SRC " line then
             tell (`S (String.drop 4 line))
           else if String.is_prefixed ~by:"CMI " line then
