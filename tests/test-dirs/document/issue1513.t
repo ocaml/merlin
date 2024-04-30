@@ -21,15 +21,15 @@ We should not rely on "fallbacking". This requires a compiler change.
   > -filename main.ml <main.ml | tr '\n' ' ' | jq '.value'
   "A Comment"
 
-FIXME: expected "B Comment"
+Expecting "B Comment"
   $ $MERLIN single document -position 2:13 \
   > -filename main.ml <main.ml | tr '\n' ' ' | jq '.value'
-  "A Comment B Comment"
+  "B Comment"
 
-FIXME
+Expecting no documentation
   $ $MERLIN single document -position 3:13 \
   > -filename main.ml <main.ml | jq '.value'
-  "B Comment"
+  "No documentation available"
 
   $ rm naux.cmt
 
