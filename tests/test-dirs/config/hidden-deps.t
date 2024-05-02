@@ -37,56 +37,13 @@
   $ $MERLIN single errors -filename main.ml <main.ml
   {
     "class": "return",
-    "value": [
-      {
-        "start": {
-          "line": 0,
-          "col": -1
-        },
-        "end": {
-          "line": 0,
-          "col": -1
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "Unbound module Stdlib"
-      },
-      {
-        "start": {
-          "line": 1,
-          "col": 8
-        },
-        "end": {
-          "line": 1,
-          "col": 17
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "Unbound value print_int"
-      },
-      {
-        "start": {
-          "line": 1,
-          "col": 18
-        },
-        "end": {
-          "line": 1,
-          "col": 24
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "Unbound module Vlib"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
 
   $ $MERLIN single locate -look-for ml -position 1:23 -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "Not in environment 'Vlib.x'",
+    "value": "'Vlib.x' seems to originate from 'Hlib' whose ML file could not be found",
     "notifications": []
   }

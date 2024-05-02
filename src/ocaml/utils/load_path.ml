@@ -67,14 +67,21 @@ let hidden_dirs = s_ref []
 let no_auto_include _ _ = raise Not_found
 let auto_include_callback = ref no_auto_include
 
-let reset () =
+let reset_visible () =
+  assert (not Config.merlin || Local_store.is_bound ());
+  STbl.clear !visible_files;
+  STbl.clear !visible_files_uncap;
+  visible_dirs := []
+
+let reset_hidden () =
   assert (not Config.merlin || Local_store.is_bound ());
   STbl.clear !hidden_files;
   STbl.clear !hidden_files_uncap;
-  STbl.clear !visible_files;
-  STbl.clear !visible_files_uncap;
-  hidden_dirs := [];
-  visible_dirs := [];
+  hidden_dirs := []
+
+let reset ?(only_hidden = false) ?(only_visible = false) () =
+  if not only_visible then reset_hidden ();
+  if not only_hidden then reset_visible ();
   auto_include_callback := no_auto_include
 
 let get_visible () = List.rev !visible_dirs
@@ -138,7 +145,7 @@ let init ~auto_include ~visible ~hidden =
     match loop_unchanged ~hidden:false [] visible (List.rev !visible_dirs) with
     | None -> ()
     | Some new_dirs ->
-      reset ();
+      reset ~only_visible:true ();
       visible_dirs := new_dirs;
       List.iter prepend_add new_dirs;
       auto_include_callback := auto_include
@@ -146,7 +153,7 @@ let init ~auto_include ~visible ~hidden =
   match loop_unchanged ~hidden:true [] hidden (List.rev !hidden_dirs) with
   | None -> ()
   | Some new_dirs ->
-    reset ();
+    reset ~only_hidden:true ();
     hidden_dirs := new_dirs;
     List.iter prepend_add new_dirs;
     auto_include_callback := auto_include
@@ -257,4 +264,7 @@ let find_normalized_with_visibility fn =
     let fn_uncap = Misc.normalized_unit_filename fn in
     (!auto_include_callback Dir.find_normalized fn_uncap, Visible)
 
-    let find_normalized fn = fst (find_normalized_with_visibility fn)
+let find_normalized fn = fst (find_normalized_with_visibility fn)
+
+(* Merlin: expose standard reset function *)
+let reset () = reset ()
