@@ -53,3 +53,24 @@
     },
     "notifications": []
   }
+
+Show that hidden deps are actually hidden:
+  $ cat >main.ml <<'EOF'
+  > let _ = print_int Hlib.x
+  > EOF
+
+  $ $MERLIN single errors -filename main.ml <main.ml | jq '.value[0]'
+  {
+    "start": {
+      "line": 1,
+      "col": 18
+    },
+    "end": {
+      "line": 1,
+      "col": 24
+    },
+    "type": "typer",
+    "sub": [],
+    "valid": true,
+    "message": "Unbound module Hlib"
+  }
