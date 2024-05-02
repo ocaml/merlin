@@ -219,6 +219,8 @@ module Utils = struct
      Note: We do not refine the load path for module path as we used too. *)
   let find_all_in_path_uncap ?src_suffix_pair ~with_fallback path file =
     let name = File.with_ext ?src_suffix_pair file in
+    log ~title:"find_all_in_path_uncap" "Looking for file %S in path:\n%a" name
+      Logger.fmt (fun fmt -> Format.pp_print_list Format.pp_print_string fmt path);
     let uname = String.uncapitalize name in
     let fallback, ufallback =
       let alt = File.alternate file in
@@ -278,7 +280,7 @@ module Utils = struct
     find_file_with_path ~config ?with_fallback file @@
         match file with
         | ML  _ | MLI _  | MLL _ -> Mconfig.source_path config
-        | CMT _ | CMTI _         -> Mconfig.build_path config
+        | CMT _ | CMTI _         -> Mconfig.cmt_path config
 end
 
 let move_to filename cmt_infos =
@@ -372,6 +374,7 @@ let find_source ~config loc =
     | None -> fname
     | Some s -> s
   in
+  log ~title:"find_source" "initial path: %S" initial_path;
   let dir = Filename.dirname initial_path in
   let dir =
     match config.Mconfig.query.directory with

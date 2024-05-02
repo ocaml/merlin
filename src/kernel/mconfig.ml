@@ -749,7 +749,8 @@ let source_path config =
   List.concat
     [[config.query.directory];
      stdlib;
-     config.merlin.source_path]
+     config.merlin.source_path;
+     config.merlin.hidden_source_path]
   |> List.filter_dup
 
 let build_path config = (
@@ -794,6 +795,7 @@ let cmt_path config = (
   let dirs =
     config.merlin.cmt_path @
     config.merlin.build_path @
+    config.merlin.hidden_build_path @
     dirs
   in
   let stdlib = stdlib config in
