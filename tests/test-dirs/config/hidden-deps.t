@@ -44,6 +44,12 @@
   $ $MERLIN single locate -look-for ml -position 1:23 -filename main.ml <main.ml
   {
     "class": "return",
-    "value": "'Vlib.x' seems to originate from 'Hlib' whose ML file could not be found",
+    "value": {
+      "file": "$TESTCASE_ROOT/hsrc/hlib.ml",
+      "pos": {
+        "line": 1,
+        "col": 4
+      }
+    },
     "notifications": []
   }
