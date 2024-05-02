@@ -65,3 +65,4 @@ val case_list : Format.formatter -> Parsetree.case list -> unit
 val protect_ident : Format.formatter -> string -> unit
 val needs_parens : string -> bool
 val ident_of_name : Format.formatter -> string -> unit
+val needs_parens : string -> bool

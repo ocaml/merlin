@@ -126,16 +126,27 @@ let index_buffer =
    such longidents. However there is an issue with that: we only have the
    location of the complete longident which might span multiple lines. This is
    enough to get the last component since it will always be on the last line,
-   but will prevent us to find the location of previous components. *)
+   but will prevent us to find the location of previous components.
+
+   However, we can safely deduce the location of the last part of the lid only
+   when the ident does not require parenthesis. In that case the loc sie differs
+   from the name size in a way that depends on the concrete syntax which is
+   lost.  *)
 let last_loc (loc : Location.t) lid =
-  if lid = Longident.Lident "*unknown*" then loc
-  else
-    let last_size = Longident.last lid |> String.length in
-    { loc with
-      loc_start = { loc.loc_end with
-        pos_cnum = loc.loc_end.pos_cnum - last_size;
+  match lid with
+  | Longident.Lident _ -> loc
+  | _ ->
+    let last_segment = Longident.last lid in
+    let needs_parens = Pprintast.needs_parens last_segment in
+    if not needs_parens then
+      let last_size = last_segment |> String.length in
+      { loc with
+        loc_start = { loc.loc_end with
+          pos_cnum = loc.loc_end.pos_cnum - last_size;
+        }
       }
-    }
+    else
+      loc
 
 let uid_and_loc_of_node env node =
   let open Browse_raw in
