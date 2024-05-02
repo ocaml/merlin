@@ -42,7 +42,7 @@ FIXME: locate on `M.( |* )` should work:
   > module M = struct let ( * ) a b = a + b end
   > let _ = M.( * )
   > EOF
-  "Comment not terminated"
+  "Not in environment 'M.*'"
 
 And need spaces:
 FIXME: locate on `M.( *| )` should work:
@@ -51,4 +51,4 @@ FIXME: locate on `M.( *| )` should work:
   > module M = struct let ( * ) a b = a + b end
   > let _ = M.( * )
   > EOF
-  "Comment not terminated"
+  "Not in environment 'M.*'"
