@@ -23,7 +23,7 @@ let decl_of_path_or_lid env namespace path lid =
     | {lbl_uid; lbl_loc; _ } ->
       Some { Env_lookup.uid = lbl_uid; loc = lbl_loc; namespace }
     end
-  | _ -> Env_lookup.loc path namespace env
+  | _ -> Env_lookup.by_path path namespace env
 
 let index_buffer_ ~current_buffer_path ~local_defs () =
   let {Logger. log} = Logger.for_section "index" in

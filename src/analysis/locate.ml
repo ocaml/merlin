@@ -652,13 +652,13 @@ let from_longident ~config ~env ~local_defs nss ident =
     try String.concat ~sep:"." (Longident.flatten ident)
     with _-> "Not a flat longident"
   in
-  match Env_lookup.in_namespaces nss ident env with
+  match Env_lookup.by_longident nss ident env with
   | None -> `Not_in_env str_ident
   | Some (path, decl) -> from_path ~config ~env ~local_defs ~decl path
 
 let from_path ~config ~env ~local_defs ~namespace path =
   File_switching.reset ();
-  match Env_lookup.loc path namespace env with
+  match Env_lookup.by_path path namespace env with
   | None -> `Not_in_env (Path.name path)
   | Some decl -> from_path ~config ~env ~local_defs ~decl path
 

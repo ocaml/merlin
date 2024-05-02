@@ -34,7 +34,7 @@ type item = {
   namespace: Shape.Sig_component_kind.t
 }
 
-let loc path (namespace : Namespace.t) env =
+let by_path path (namespace : Namespace.t) env =
   try
     let loc, uid, (namespace : Namespace.t) =
       match namespace with
@@ -56,7 +56,6 @@ let loc path (namespace : Namespace.t) env =
       | Class_type ->
         let clty = Env.find_cltype path env in
         clty.clty_loc, clty.clty_uid, Class
-
     in
     Some { uid; loc; namespace }
   with
@@ -82,7 +81,7 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
-let in_namespaces (nss : Namespace.inferred list) ident env =
+let by_longident (nss : Namespace.inferred list) ident env =
   let open Shape.Sig_component_kind in
   try
     List.iter nss ~f:(fun namespace ->
