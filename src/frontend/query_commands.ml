@@ -221,7 +221,7 @@ let reconstruct_identifier pipeline pos = function
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
          (dot.[0] >= 'A' && dot.[0] <= 'Z')
       then dot
-      else "(" ^ dot ^ ")"
+      else "( " ^ dot ^ ")"
     in
     begin match path with
       | [] -> []
@@ -507,9 +507,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node = Mtyper.node_at typer pos in
-    let res = Syntax_doc.get_syntax_doc pos node in 
+    let res = Syntax_doc.get_syntax_doc pos node in
     (match res with
-    | Some res -> `Found res 
+    | Some res -> `Found res
     | None -> `No_documentation)
 
   | Locate (patho, ml_or_mli, pos) ->
