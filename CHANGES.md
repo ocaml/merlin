@@ -2,6 +2,7 @@ merlin NEXT_VERSION
 ==================
 
   + merlin binary
+    - Support for OCaml 5.2 (#1757)
     - destruct: Removal of residual patterns (#1737, fixes #1560)
     - Do not erase fields' names when destructing punned record fields (#1734,
       fixes #1661)
