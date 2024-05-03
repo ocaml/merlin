@@ -212,7 +212,6 @@ unused case after
   }
 
 Syntax errors also shouldn't escape:
-FIXME UPGRADE 5.2: this is still a parser error
   $ echo "let f (_ : (module S with type 'a t = int)) = ()" |
   > $MERLIN single errors -filename "invalid_package_type.ml"
   {
@@ -241,7 +240,7 @@ FIXME UPGRADE 5.2: this is still a parser error
           "line": 1,
           "col": 41
         },
-        "type": "typer",
+        "type": "parser",
         "sub": [],
         "valid": true,
         "message": "invalid package type: parametrized types are not supported"
