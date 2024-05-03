@@ -1,7 +1,5 @@
   $ $OCAMLC -c dep.mli
 
-FIXME: the signature mismatch appear to be a bit less precise after moving to
-ocaml 5.1. Is that expected ?
   $ $MERLIN single errors -filename test.ml < test.ml
   {
     "class": "return",

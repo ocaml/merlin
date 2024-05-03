@@ -77,8 +77,6 @@ Test finding occurrences of and-based binding operator, from reified syntax:
     "notifications": []
   }
 
-FIXME --  some locs are inexact
-
   $ $MERLIN single occurrences -identifier-at 4:0 ./issue1398.ml < ./issue1398.ml
   {
     "class": "return",
@@ -116,8 +114,6 @@ FIXME --  some locs are inexact
     ],
     "notifications": []
   }
-
-FIXME -- some locs are inexact
 
   $ $MERLIN single occurrences -identifier-at 4:12 ./issue1398.ml < ./issue1398.ml
   {
