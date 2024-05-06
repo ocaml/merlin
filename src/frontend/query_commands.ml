@@ -798,11 +798,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Path_list `Build ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.build_path)
+    Mconfig.(config.merlin.build_path @ config.merlin.hidden_build_path)
 
   | Path_list `Source ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.source_path)
+    Mconfig.(config.merlin.source_path @ config.merlin.hidden_source_path)
 
   | Occurrences (`Ident_at pos, _) ->
     let config = Mpipeline.final_config pipeline in
