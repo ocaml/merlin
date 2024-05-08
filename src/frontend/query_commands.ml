@@ -507,31 +507,53 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node = Mtyper.node_at typer pos in
-    let res = Syntax_doc.get_syntax_doc pos node in 
+    let res = Syntax_doc.get_syntax_doc pos node in
     (match res with
-    | Some res -> `Found res 
+    | Some res -> `Found res
     | None -> `No_documentation)
 
   | Expand_node pos ->
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let p_p = Mpipeline.ppx_parsetree pipeline in
-    let node = Mtyper.node_at_pp p_p pos in
-    let check_ppx (node: Mbrowse_p.node) : bool =
+    let typer = Mpipeline.typer_result pipeline in
+    let nodes = Mtyper.node_at_p typer pos in
+    let get_ppx_attribute attrs =
+      List.find_opt ~f:(fun (a:Parsetree.attribute) ->
+        let loc = a.attr_loc in
+        loc.loc_start.pos_cnum <= pos.pos_cnum && loc.loc_end.pos_cnum >= pos.pos_cnum
+    ) attrs
+    in
+    let check_ppx_deriver node =
       let has_a_deriver =
         Browse_raw_p.has_attr ~name:"deriving" node in
       let attrs = Browse_raw_p.node_attributes node in
-      List.exists ~f:(fun (a:Parsetree.attribute) ->
-        let loc = a.attr_loc in
-            loc.loc_start.pos_cnum <= pos.pos_cnum && loc.loc_end.pos_cnum >= pos.pos_cnum
-      ) attrs && has_a_deriver
-    in 
-    let has_deriver = List.exists ~f:check_ppx node in
-    if has_deriver then 
-      let root = (List.hd (List.rev node)) in
-      let derived_nodes = Mbrowse_p.get_children pos root in
-      `Found (Mbrowse_p.pprint_deriver_nodes () derived_nodes)
-    else
+      let attr = get_ppx_attribute attrs in
+      let check_attr_loc =
+        match attr with
+        | Some _ -> true
+        | None -> false
+      in
+      check_attr_loc && has_a_deriver
+    in
+    let deriver_node = List.find_opt ~f:check_ppx_deriver nodes in
+    begin
+    match deriver_node with
+    | Some node ->
+      let attribute =
+        Option.get (get_ppx_attribute (Browse_raw_p.node_attributes node))
+      in
+      let derived_nodes = Mbrowse_p.get_children pos nodes in
+      `Found (
+        {
+          code = (Mbrowse_p.pprint_deriver_node () derived_nodes);
+          deriver =
+          {
+            a_start = attribute.attr_loc.loc_start;
+            a_end = attribute.attr_loc.loc_end
+          }
+        })
+    | None ->
       `No_deriver
+    end
 
   | Locate (patho, ml_or_mli, pos) ->
     let typer = Mpipeline.typer_result pipeline in
