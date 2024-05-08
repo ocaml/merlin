@@ -165,32 +165,32 @@ let node_attributes = function
   | Class_field cf        -> cf.cf_attributes
   | Module_expr me        -> me.mod_attributes
   | Structure_item ({str_desc = Tstr_eval (_,attr)},_) -> attr
-  | Structure_item ({str_desc = Tstr_attribute a},_) -> [a]
-  | Signature_item ({sig_desc = Tsig_attribute a},_) -> [a]
+  | Structure_item ({str_desc = Tstr_attribute a},_)   -> [a]
+  | Signature_item ({sig_desc = Tsig_attribute a},_)   -> [a]
   | Module_binding mb     -> mb.mb_attributes
   | Value_binding vb      -> vb.vb_attributes
   | Module_type mt        -> mt.mty_attributes
   | Module_declaration md -> md.md_attributes
   | Module_type_declaration mtd -> mtd.mtd_attributes
-  | Open_description o    -> o.open_attributes
-  | Include_declaration i -> i.incl_attributes
-  | Include_description i -> i.incl_attributes
-  | Core_type ct          -> ct.ctyp_attributes
-  | Row_field rf          -> rf.rf_attributes
-  | Value_description vd  -> vd.val_attributes
-  | Type_declaration td   -> td.typ_attributes
-  | Label_declaration ld  -> ld.ld_attributes
-  | Constructor_declaration cd -> cd.cd_attributes
-  | Type_extension te     -> te.tyext_attributes
-  | Extension_constructor ec -> ec.ext_attributes
-  | Class_type ct         -> ct.cltyp_attributes
-  | Class_type_field ctf  -> ctf.ctf_attributes
-  | Class_declaration ci -> ci.ci_attributes
-  | Class_description ci -> ci.ci_attributes
-  | Class_type_declaration ci -> ci.ci_attributes
-  | Method_call (obj,_,_) -> obj.exp_attributes
+  | Open_description o          -> o.open_attributes
+  | Include_declaration i       -> i.incl_attributes
+  | Include_description i       -> i.incl_attributes
+  | Core_type ct                -> ct.ctyp_attributes
+  | Row_field rf                -> rf.rf_attributes
+  | Value_description vd        -> vd.val_attributes
+  | Type_declaration td         -> td.typ_attributes
+  | Label_declaration ld        -> ld.ld_attributes
+  | Constructor_declaration cd  -> cd.cd_attributes
+  | Type_extension te           -> te.tyext_attributes
+  | Extension_constructor ec    -> ec.ext_attributes
+  | Class_type ct               -> ct.cltyp_attributes
+  | Class_type_field ctf        -> ctf.ctf_attributes
+  | Class_declaration ci        -> ci.ci_attributes
+  | Class_description ci        -> ci.ci_attributes
+  | Class_type_declaration ci   -> ci.ci_attributes
+  | Method_call (obj,_,_)       -> obj.exp_attributes
   | Record_field (`Expression obj,_,_) -> obj.exp_attributes
-  | Record_field (`Pattern obj,_,_) -> obj.pat_attributes
+  | Record_field (`Pattern obj,_,_)    -> obj.pat_attributes
   | _ -> []
 
 let has_attr ~name node =
