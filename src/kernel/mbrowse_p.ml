@@ -199,18 +199,12 @@ let rec select_open_node =
 
 let of_structure str = [Browse_raw_p.Structure str]
 
-let rec of_structure_items lst =
-  match lst with
-  | [] -> []
-  | head :: tl -> 
-    Browse_raw_p.Structure_item head :: (of_structure_items tl)
+let of_structure_items lst =
+  List.map ~f:(fun head -> Browse_raw_p.Structure_item head) lst
     
-let rec of_signature_items lst =
-  match lst with
-  | [] -> []
-  | head :: tl -> 
-    Browse_raw_p.Signature_item head :: (of_signature_items tl)
-
+let of_signature_items lst =
+  List.map ~f:(fun head -> Browse_raw_p.Signature_item head) lst
+  
 let of_signature sg = [Browse_raw_p.Signature sg]
 
 let of_parsetree = function
@@ -254,22 +248,24 @@ let is_recovered = function
   | _ -> false
 
 let check_node pos node =
-  let loc = node_merlin_loc node in 
-  if Location_aux.compare_pos pos loc = 0 then true else false 
+  let loc = node_merlin_loc node in
+  if Location_aux.compare_pos pos loc = 0 && loc.loc_ghost then true else false 
 
 let get_children pos root = 
-  let children = 
-    match root with
-    | Structure str -> 
-        of_structure_items (List.filter ~f:(fun x ->
-            check_node pos (Structure_item(x))
-        ) str) 
-    | Signature str -> 
-      of_signature_items (List.filter ~f:(fun x ->
-        check_node pos (Signature_item(x))
-      ) str) 
-    | _ -> raise (Invalid_argument "Not a valid root node")
-  in children 
+  let children =
+    List.map ~f:(fun x -> 
+      match x with
+      | Structure str ->
+          of_structure_items (List.filter ~f:(fun x ->
+              check_node pos (Structure_item(x))
+          ) str)
+      | Signature str ->
+        of_signature_items (List.filter ~f:(fun x ->
+          check_node pos (Signature_item(x))
+        ) str)
+      | _ -> []) root 
+  in children |> List.concat |> List.hd
+
 
 let pprint_deriver_node () node = 
   let ppf, to_string = Format.to_string () in
@@ -281,6 +277,6 @@ let pprint_deriver_node () node =
   Format.pp_print_newline ppf ();
   to_string ()
 
-let pprint_deriver_nodes () nodes = 
-  List.print (fun () node -> pprint_deriver_node () node) () nodes
+let pprint_deriver_nodes = 
+  List.print pprint_deriver_node 
   
