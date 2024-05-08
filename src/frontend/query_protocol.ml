@@ -103,6 +103,18 @@ type syntax_doc_result =
     documentation : string 
 }
 
+type ppx_deriver_pos =
+{ 
+  a_start : Lexing.position;
+  a_end : Lexing.position;
+}
+
+type ppx_expand_result = 
+{
+  code : string;
+  deriver : ppx_deriver_pos
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -146,11 +158,10 @@ type _ t =
        | `No_documentation
        ] t
   | Expand_node
-  : Msource.position
-  -> [ `Found of string
-    | `No_deriver
-    | `No_code
-    ] t
+    : Msource.position
+    -> [ `Found of ppx_expand_result
+       | `No_deriver 
+       ] t
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position

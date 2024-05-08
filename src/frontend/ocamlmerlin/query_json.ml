@@ -395,10 +395,18 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       ]
     | `No_documentation -> `String "No documentation found")
   | Expand_node _, resp -> 
-    (match resp with
-    | `Found info -> `String info
+    let str = match resp with
+    | `Found ppx_info -> 
+      `Assoc
+      [
+        ("code", `String ppx_info.code);
+        ("deriver", `Assoc [
+          ("start", Lexing.json_of_position ppx_info.deriver.a_start);
+          ("end", Lexing.json_of_position ppx_info.deriver.a_end);
+        ])
+      ]
     | `No_deriver -> `String "No PPX deriver/extension node found on this position"
-    | `No_code -> `String "No code generated")
+    in str
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
   | Jump _, resp ->
