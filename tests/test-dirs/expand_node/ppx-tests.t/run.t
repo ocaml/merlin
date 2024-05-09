@@ -79,14 +79,14 @@ on attribute name "deriving"
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     struct
       let _ = fun (_ : point) -> ()
       type point_renamed = {
         x: int ;
         y: int }
     end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -106,14 +106,14 @@ on attribute payload name "rename"
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     struct
       let _ = fun (_ : point) -> ()
       type point_renamed = {
         x: int ;
         y: int }
     end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -198,11 +198,11 @@ on attribute name "deriving"
   {
     "class": "return",
     "value": {
-      "code": "include sig [@@@ocaml.warning \"-32\"] type tttt_renamed =
+      "code": "[ include sig [@@@ocaml.warning \"-32\"] type tttt_renamed =
                                          | Red 
                                          | Green  end[@@ocaml.doc \"@inline\"]
   [@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -222,11 +222,11 @@ on attribute payload name "rename"
   {
     "class": "return",
     "value": {
-      "code": "include sig [@@@ocaml.warning \"-32\"] type tttt_renamed =
+      "code": "[ include sig [@@@ocaml.warning \"-32\"] type tttt_renamed =
                                          | Red 
                                          | Green  end[@@ocaml.doc \"@inline\"]
   [@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -253,10 +253,10 @@ Type declaration in structure B
   {
     "class": "return",
     "value": {
-      "code": "include struct let _ = fun (_ : yyyy) -> ()
+      "code": "[ include struct let _ = fun (_ : yyyy) -> ()
                  type yyyy_renamed = int end[@@ocaml.doc \"@inline\"][@@merlin.hide
                                                                      ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -284,10 +284,10 @@ Type declaration in signature B
   {
     "class": "return",
     "value": {
-      "code": "include sig [@@@ocaml.warning \"-32\"] type yyyy_renamed = int end[@@ocaml.doc
+      "code": "[ include sig [@@@ocaml.warning \"-32\"] type yyyy_renamed = int end[@@ocaml.doc
                                                                     \"@inline\"]
   [@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -315,10 +315,10 @@ Type extension in structure
   {
     "class": "return",
     "value": {
-      "code": "include struct let _ = fun (_ : pppp) -> ()
+      "code": "[ include struct let _ = fun (_ : pppp) -> ()
                  type pppp_renamed = .. end[@@ocaml.doc \"@inline\"][@@merlin.hide
                                                                     ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -336,9 +336,9 @@ Type extension in structure
   {
     "class": "return",
     "value": {
-      "code": "include struct type pppp_renamed +=  
+      "code": "[ include struct type pppp_renamed +=  
                    | Int of int  end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -365,10 +365,10 @@ Type extension in signature
   {
     "class": "return",
     "value": {
-      "code": "include sig [@@@ocaml.warning \"-32\"] type pppp_renamed = .. end[@@ocaml.doc
+      "code": "[ include sig [@@@ocaml.warning \"-32\"] type pppp_renamed = .. end[@@ocaml.doc
                                                                    \"@inline\"]
   [@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -394,9 +394,9 @@ Exception in structure
   {
     "class": "return",
     "value": {
-      "code": "include struct exception Foo_renamed of string  end[@@ocaml.doc \"@inline\"]
+      "code": "[ include struct exception Foo_renamed of string  end[@@ocaml.doc \"@inline\"]
   [@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -422,9 +422,9 @@ Exception in signature
   {
     "class": "return",
     "value": {
-      "code": "include sig [@@@ocaml.warning \"-32\"] exception Foo_renamed of string  end
+      "code": "[ include sig [@@@ocaml.warning \"-32\"] exception Foo_renamed of string  end
   [@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -459,7 +459,7 @@ Module type declaration in structure
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     struct
       module type Stack_renamed  =
         sig
@@ -472,7 +472,7 @@ Module type declaration in structure
           val peek : stack -> t
         end
     end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 9,
@@ -506,7 +506,7 @@ Module type declaration in signature
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     sig
       [@@@ocaml.warning \"-32\"]
       module type Stack_renamed  =
@@ -520,7 +520,7 @@ Module type declaration in signature
           val peek : stack -> t
         end
     end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 9,
@@ -567,10 +567,27 @@ Module type declaration in structure
   {
     "class": "return",
     "value": {
-      "code": "include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+      "code": "[ include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
                                                            \"@inline\"][@@merlin.hide
                                                                       ]
-  ",
+  ; include
+    struct
+      module type Queue_renamed  =
+        sig
+          type t[@@deriving rename]
+          include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                                   \"@inline\"]
+          [@@merlin.hide ]
+          include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                                   \"@inline\"]
+          [@@merlin.hide ]
+          type queue
+          val enqueue : t -> queue -> queue
+          val dequeue : queue -> queue
+          val peek : queue -> t
+        end
+    end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
+   ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -590,7 +607,7 @@ Module type declaration in structure
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     struct
       module type Queue_renamed  =
         sig
@@ -607,7 +624,7 @@ Module type declaration in structure
           val peek : queue -> t
         end
     end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 7,
@@ -641,10 +658,10 @@ on [@@deriving rename]
   {
     "class": "return",
     "value": {
-      "code": "include struct let _ = fun (_ : t) -> ()
+      "code": "[ include struct let _ = fun (_ : t) -> ()
                  type t_renamed = int end[@@ocaml.doc \"@inline\"][@@merlin.hide
                                                                   ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 3,
@@ -673,11 +690,11 @@ on [@@deriving rename]
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     struct let _ = fun (_ : tont) -> ()
            type tont_renamed = (float * float) end[@@ocaml.doc \"@inline\"]
   [@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -696,13 +713,13 @@ on [@@deriving show]
   {
     "class": "return",
     "value": {
-      "code": "include
+      "code": "[ include
     struct
       let _ = fun (_ : pont) -> ()
       [%%ocaml.error
         \"Ppxlib.Deriving: 'show' is not a supported type deriving generator\"]
     end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-  ",
+   ]",
       "deriver": {
         "start": {
           "line": 2,

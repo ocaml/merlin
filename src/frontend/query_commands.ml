@@ -544,7 +544,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       let derived_nodes = Mbrowse_p.get_children pos nodes in
       `Found (
         {
-          code = (Mbrowse_p.pprint_deriver_node () derived_nodes);
+          code = (Mbrowse_p.pprint_deriver_nodes () derived_nodes);
           deriver =
           {
             a_start = attribute.attr_loc.loc_start;

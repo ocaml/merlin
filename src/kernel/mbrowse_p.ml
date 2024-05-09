@@ -264,7 +264,7 @@ let get_children pos root =
           check_node pos (Signature_item(x))
         ) str)
       | _ -> []) root 
-  in children |> List.concat |> List.hd
+  in children |> List.concat
 
 
 let pprint_deriver_node () node = 

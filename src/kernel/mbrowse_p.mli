@@ -80,5 +80,5 @@ val print_node : unit -> node -> string
 val print : unit -> t -> string
 val pprint_deriver_node : unit -> node -> string
 val pprint_deriver_nodes : unit -> node list -> string
-val get_children : Lexing.position -> node list ->  node
+val get_children : Lexing.position -> node list ->  node list
 
