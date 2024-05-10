@@ -1,13 +1,14 @@
 open Ppxlib
 
 let expand ~ctxt payload =
+  let _p = payload in
   let loc = Expansion_context.Extension.extension_point_loc ctxt in
-  Ast_builder.Default.eint ~loc payload
+  Ast_builder.Default.estring ~loc "OCaml is so cool"
 
 let my_extension =
-  Extension.V3.declare "get_int" Extension.Context.expression
-    Ast_pattern.(single_expr_payload (eint __))
+  Extension.V3.declare "tell_me" Extension.Context.expression
+    Ast_pattern.(__)
     expand
 
 let rule = Ppxlib.Context_free.Rule.extension my_extension
-let () = Driver.register_transformation ~rules:[ rule ] "get_int"
+let () = Driver.register_transformation ~rules:[ rule ] "tell_me"

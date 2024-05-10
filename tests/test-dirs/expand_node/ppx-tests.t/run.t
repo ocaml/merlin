@@ -737,27 +737,52 @@ on [@@deriving show]
 
 PPx extension
   $ cat > apttt.ml << EOF
-  > let p  = 4 + [%get_int 98]
+  > let phrase = print_string ([%tell_me] ^ ":-)!")
   > EOF
 
   $ dune build
+  $ $MERLIN single expand-node -position 1:2 -filename ./apttt.ml < ./apttt.ml
+  {
+    "class": "return",
+    "value": "No PPX deriver/extension node found on this position",
+    "notifications": []
+  }
+  $ $MERLIN single expand-node -position 1:7 -filename ./apttt.ml < ./apttt.ml
+  {
+    "class": "return",
+    "value": "No PPX deriver/extension node found on this position",
+    "notifications": []
+  }
   $ $MERLIN single expand-node -position 1:19 -filename ./apttt.ml < ./apttt.ml
   {
     "class": "return",
+    "value": "No PPX deriver/extension node found on this position",
+    "notifications": []
+  }
+  $ $MERLIN single expand-node -position 1:30 -filename ./apttt.ml < ./apttt.ml
+  {
+    "class": "return",
     "value": {
-      "code": "4 + 98",
+      "code": "print_string (\"OCaml is so cool\" ^ \":-)!\")",
       "deriver": {
         "start": {
           "line": 1,
-          "col": 13
+          "col": 27
         },
         "end": {
           "line": 1,
-          "col": 26
+          "col": 37
         }
       }
     },
     "notifications": []
   }
+  $ $MERLIN single expand-node -position 1:41 -filename ./apttt.ml < ./apttt.ml
+  {
+    "class": "return",
+    "value": "No PPX deriver/extension node found on this position",
+    "notifications": []
+  }
+ 
 
 
