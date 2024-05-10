@@ -237,21 +237,7 @@ let node_at ?(skip_recovered=false) t pos_cursor =
     path
 
 (* Get the node under the cursor in the Parsetree*)
-let node_at_p ?(skip_recovered=false) t pos_cursor =
-  let node = Mbrowse_p.of_parsetree (get_parsetree t) in
-  let rec select = function
-    | _ :: (node' :: _ as ancestors)
-      when Mbrowse_p.is_recovered node' -> select ancestors
-    | l -> l
-  in
-  match Mbrowse_p.deepest_before pos_cursor [node] with
-  | [] -> [Browse_raw_p.Dummy]
-  | path when skip_recovered -> select path
-  | path -> path
-
-
-(* Get the node under the cursor in the Ppxed-Parsetree*)
-let node_at_pp ?(skip_recovered=false) p pos_cursor =
+let node_at_p ?(skip_recovered=false) p pos_cursor =
   let node = Mbrowse_p.of_parsetree p in
   let rec select = function
     | _ :: (node' :: _ as ancestors)
@@ -262,4 +248,5 @@ let node_at_pp ?(skip_recovered=false) p pos_cursor =
   | [] -> [Browse_raw_p.Dummy]
   | path when skip_recovered -> select path
   | path -> path
+
 

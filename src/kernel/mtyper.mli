@@ -54,10 +54,7 @@ val node_at :
 
 (* Get the node under the cursor in the Parsetree*)
 val node_at_p :
-  ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse_p.t
-
-(* Get the node under the cursor in the Ppxed-Parsetree*)
-val node_at_pp :
   ?skip_recovered:bool -> Mreader.parsetree -> Lexing.position -> Mbrowse_p.t
+
 
 
