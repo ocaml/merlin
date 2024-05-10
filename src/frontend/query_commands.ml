@@ -512,47 +512,70 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some res -> `Found res
     | None -> `No_documentation)
 
-  | Expand_node pos ->
+  | Expand_node pos -> 
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let typer = Mpipeline.typer_result pipeline in
-    let nodes = Mtyper.node_at_p typer pos in
-    let get_ppx_attribute attrs =
-      List.find_opt ~f:(fun (a:Parsetree.attribute) ->
-        let loc = a.attr_loc in
-        loc.loc_start.pos_cnum <= pos.pos_cnum && loc.loc_end.pos_cnum >= pos.pos_cnum
-    ) attrs
+    let parsetree = Mpipeline.reader_parsetree pipeline in
+    let ppx_parsetree = Mpipeline.ppx_parsetree pipeline in
+    let nodes = Mtyper.node_at_p parsetree pos in
+    let ppx_expansion ~ppx ~a_start ~a_end = 
+      `Found ({
+        code = ppx;
+        deriver = {
+          a_start;
+          a_end
+        }
+      })
     in
-    let check_ppx_deriver node =
-      let has_a_deriver =
-        Browse_raw_p.has_attr ~name:"deriving" node in
-      let attrs = Browse_raw_p.node_attributes node in
-      let attr = get_ppx_attribute attrs in
-      let check_attr_loc =
-        match attr with
-        | Some _ -> true
-        | None -> false
-      in
-      check_attr_loc && has_a_deriver
+    let check_at_pos (loc:Warnings.loc) = 
+      loc.loc_start.pos_cnum <= pos.pos_cnum && loc.loc_end.pos_cnum >= pos.pos_cnum
     in
-    let deriver_node = List.find_opt ~f:check_ppx_deriver nodes in
-    begin
-    match deriver_node with
-    | Some node ->
-      let attribute =
-        Option.get (get_ppx_attribute (Browse_raw_p.node_attributes node))
+    let has_ppx_deriver (attr:Parsetree.attribute) =
+        check_at_pos attr.attr_loc &&
+        attr.attr_name.txt = "deriving"
+    in
+    let has_ppx_extension (node:Browse_raw_p.node) = 
+      match node with
+      | Expression {pexp_desc = Pexp_extension _; pexp_loc = loc; _} -> 
+        check_at_pos loc 
+      | _ -> false
+    in
+    let extension = List.find_opt ~f:has_ppx_extension nodes in
+    begin match extension with
+    | Some (Expression ({pexp_desc = Pexp_extension _; _} as exp)) ->
+        let ppx = ref None in
+        let expr (self : Ast_iterator.iterator) (expr : Parsetree.expression) =
+          match check_at_pos expr.pexp_loc with
+          | true -> 
+            ppx := Some expr
+          | false -> Ast_iterator.default_iterator.expr self expr
+        in
+        let iterator = { Ast_iterator.default_iterator with expr } in
+        let _ =
+          match ppx_parsetree with
+          | `Interface si -> iterator.signature iterator si
+          | `Implementation str -> iterator.structure iterator str
+          in
+          Option.map !ppx ~f:(fun expr ->
+            ppx_expansion ~ppx:(Pprintast.string_of_expression expr)
+            ~a_start:(exp.pexp_loc.loc_start)
+            ~a_end:(exp.pexp_loc.loc_end)) 
+          |> Option.get
+    | Some _ | None ->
+      let nodes = Mtyper.node_at_p ppx_parsetree pos in
+      let has_deriving_attribute = 
+        List.find_opt ~f:has_ppx_deriver 
+        (List.concat_map ~f:(fun node -> 
+          Browse_raw_p.node_attributes node) nodes)
       in
-      let derived_nodes = Mbrowse_p.get_children pos nodes in
-      `Found (
-        {
-          code = (Mbrowse_p.pprint_deriver_nodes () derived_nodes);
-          deriver =
-          {
-            a_start = attribute.attr_loc.loc_start;
-            a_end = attribute.attr_loc.loc_end
-          }
-        })
-    | None ->
-      `No_deriver
+      (match has_deriving_attribute with
+        | Some attribute ->
+          let derived_nodes = Mbrowse_p.get_children pos nodes in
+          ppx_expansion 
+          ~ppx:(Mbrowse_p.pprint_deriver_nodes () derived_nodes)
+          ~a_start:(attribute.attr_loc.loc_start)
+          ~a_end:(attribute.attr_loc.loc_end)
+        | None ->
+          `No_deriver)
     end
 
   | Locate (patho, ml_or_mli, pos) ->
