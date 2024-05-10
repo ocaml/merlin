@@ -2,19 +2,19 @@ name: Fuzzy CI
 
 on:
   pull_request:
-    branches: [ master ]
-    types: [ opened, synchronize, reopened, unlabeled, labeled ]
+    branches: [master]
+    types: [opened, synchronize, reopened, unlabeled, labeled]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - '.git*'
-      - 'doc/**'
-      - 'emacs/**'
-      - 'vim/**'
-      - '**/emacs-lint.yml'
-      - 'bench/**'
-      - 'upstream/**'
-      - 'tests/**'
+      - "**.md"
+      - "**.txt"
+      - ".git*"
+      - "doc/**"
+      - "emacs/**"
+      - "vim/**"
+      - "**/emacs-lint.yml"
+      - "bench/**"
+      - "upstream/**"
+      - "tests/**"
 
 env:
   # Artifact names need to be consistent across jobs:
@@ -41,7 +41,7 @@ env:
   # Irmin version and merl-an version need to be consistent for reproducibility (Irmin is used as the test code base to test `ocamlmerlin` on)
   IRMIN_VERSION: 3.9.0
   # TODO: Release merl-an and install a certain version instead of pinning it to a certain commit
-  MERL_AN_SHA: 1643fb7a9958379fb4ed8d7c5169146aaa88f5b7
+  MERL_AN_SHA: 6411f0d3847e8b7e66362bcb1f9345a5d3e851ca
 
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
@@ -66,163 +66,161 @@ jobs:
       matrix:
         commit: ["merge_branch", "base_branch"]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Checking out ${{ matrix.commit }}
-      env:
-        base_branch_sha: ${{ github.event.pull_request.base.sha }}
-        merge_branch_sha: ${{ github.sha }}
-      run: |
-        sha=$${{ matrix.commit }}_sha
-        echo "Check out $sha"
-        git checkout $sha
+      - name: Checking out ${{ matrix.commit }}
+        env:
+          base_branch_sha: ${{ github.event.pull_request.base.sha }}
+          merge_branch_sha: ${{ github.sha }}
+        run: |
+          sha=$${{ matrix.commit }}_sha
+          echo "Check out $sha"
+          git checkout $sha
 
-    - name: Get desired compiler version
-      id: compiler
-      run: |
-        v=$${{ matrix.commit }}_COMPILER_VERSION
-        echo "version=$v" | tee -a $GITHUB_OUTPUT
+      - name: Get desired compiler version
+        id: compiler
+        run: |
+          v=$${{ matrix.commit }}_COMPILER_VERSION
+          echo "version=$v" | tee -a $GITHUB_OUTPUT
 
-    - name: Install OCaml
-      uses: ocaml/setup-ocaml@v2
-      with:
-        ocaml-compiler: ${{ steps.compiler.outputs.version }}
-        dune-cache: true
+      - name: Install OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ steps.compiler.outputs.version }}
+          dune-cache: true
 
-    - name: Install merlin dependencies
-      run: |
-        opam pin menhirLib 20201216 --no-action
-        opam install . --deps-only --yes
+      - name: Install merlin dependencies
+        run: |
+          opam pin menhirLib 20201216 --no-action
+          opam install . --deps-only --yes
 
-    - name: Install merlin
-      run: |
-        # Running `subst` to have the current commit in the data produced by `merl-an`
-        opam exec -- dune subst
-        opam exec -- dune build -p merlin-lib,dot-merlin-reader,merlin
-        opam exec -- dune install -p merlin-lib,dot-merlin-reader,merlin
+      - name: Install merlin
+        run: |
+          # Running `subst` to have the current commit in the data produced by `merl-an`
+          opam exec -- dune subst
+          opam exec -- dune build -p merlin-lib,dot-merlin-reader,merlin
+          opam exec -- dune install -p merlin-lib,dot-merlin-reader,merlin
 
-    - name: Pull irmin and its deps from cache if possible
-      uses: actions/cache@v3
-      id: irmin-cache
-      with:
-        path: irmin/
-        key: os${{ runner.os }}+arch${{ runner.arch }}+${{ hashFiles('fuzzy-ci-helpers/irmin.3.9.0.opam.locked') }}+${{ env.IRMIN_VERSION }}+${{ steps.compiler.outputs.version }}
+      - name: Pull irmin and its deps from cache if possible
+        uses: actions/cache@v3
+        id: irmin-cache
+        with:
+          path: irmin/
+          key: os${{ runner.os }}+arch${{ runner.arch }}+${{ hashFiles('fuzzy-ci-helpers/irmin.3.9.0.opam.locked') }}+${{ env.IRMIN_VERSION }}+${{ steps.compiler.outputs.version }}
 
-    - name: Download Irmin tarball
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: |
-        wget https://github.com/mirage/irmin/releases/download/$IRMIN_VERSION/irmin-$IRMIN_VERSION.tbz
+      - name: Download Irmin tarball
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/mirage/irmin/releases/download/$IRMIN_VERSION/irmin-$IRMIN_VERSION.tbz
 
-    - name: Create irmin dir
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: mkdir -p irmin
+      - name: Create irmin dir
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: mkdir -p irmin
 
-    - name: Decompress Irmin tarball
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: tar xvf irmin-$IRMIN_VERSION.tbz -C irmin --strip-components=1
+      - name: Decompress Irmin tarball
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: tar xvf irmin-$IRMIN_VERSION.tbz -C irmin --strip-components=1
 
-    - name: Get Irmin's lock files
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: |
-        cp .github/fuzzy-ci-helpers/irmin.3.9.0.opam.locked irmin/irmin.opam.locked
+      - name: Get Irmin's lock files
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: |
+          cp .github/fuzzy-ci-helpers/irmin.3.9.0.opam.locked irmin/irmin.opam.locked
 
-    - name: Install opam monorepo
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: opam install opam-monorepo --yes
+      - name: Install opam monorepo
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: opam install opam-monorepo --yes
 
-    - name: Pull in Irmin's dependencies
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: |
-        git checkout ${{ github.sha }}
-        opam monorepo pull --lockfile=irmin.opam.locked --yes
-      working-directory: irmin
+      - name: Pull in Irmin's dependencies
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: |
+          git checkout ${{ github.sha }}
+          opam monorepo pull --lockfile=irmin.opam.locked --yes
+        working-directory: irmin
 
-    - name: Prune Irmin
-      if: steps.irmin-cache.outputs.cache-hit != 'true'
-      run: |
-        rm -r examples/ bench/
-        find test/ -mindepth 1 -maxdepth 1 -type d -not -name 'irmin-pack' -exec rm -r {} \;
-        find src/ -mindepth 1 -maxdepth 1 -type d \
-        -not -name 'irmin-pack' \
-        -not -name 'irmin' \
-        -not -name 'irmin-tezos' \
-        -not -name ppx_irmin \
-        -not -name irmin_test \
-        -not -name irmin-test \
-        -exec rm -r {} \;
-      working-directory: irmin
+      - name: Prune Irmin
+        if: steps.irmin-cache.outputs.cache-hit != 'true'
+        run: |
+          rm -r examples/ bench/
+          find test/ -mindepth 1 -maxdepth 1 -type d -not -name 'irmin-pack' -exec rm -r {} \;
+          find src/ -mindepth 1 -maxdepth 1 -type d \
+          -not -name 'irmin-pack' \
+          -not -name 'irmin' \
+          -not -name 'irmin-tezos' \
+          -not -name ppx_irmin \
+          -not -name irmin_test \
+          -not -name irmin-test \
+          -exec rm -r {} \;
+        working-directory: irmin
 
-    - name: Build Irmin
-      run: |
-        opam exec -- dune build @check
-      working-directory: irmin
+      - name: Build Irmin
+        run: |
+          opam exec -- dune build @check
+        working-directory: irmin
 
-    - name: Pull merl-an from cache if possible
-      uses: actions/cache@v3
-      id: merl-an-cache
-      with:
-        path: /usr/local/bin/merl-an
-        key: os${{ runner.os }}+arch${{ runner.arch }}+merl-an-sha$MERL_AN_SHA
+      - name: Pull merl-an from cache if possible
+        uses: actions/cache@v3
+        id: merl-an-cache
+        with:
+          path: /usr/local/bin/merl-an
+          key: os${{ runner.os }}+arch${{ runner.arch }}+merl-an-sha$MERL_AN_SHA
 
-    - name: Install merl-an
-      if: steps.merl-an-cache.outputs.cache-hit != 'true'
-      run: opam pin -y merl-an https://github.com/pitag-ha/merl-an.git#$MERL_AN_SHA
+      - name: Install merl-an
+        if: steps.merl-an-cache.outputs.cache-hit != 'true'
+        run: opam pin -y merl-an https://github.com/pitag-ha/merl-an.git#$MERL_AN_SHA
 
-    - name: Add merl-an to /usr/local/bin/
-      if: steps.merl-an-cache.outputs.cache-hit != 'true'
-      run: opam exec -- cp $GITHUB_WORKSPACE/_opam/bin/merl-an /usr/local/bin/merl-an
+      - name: Add merl-an to /usr/local/bin/
+        if: steps.merl-an-cache.outputs.cache-hit != 'true'
+        run: opam exec -- cp $GITHUB_WORKSPACE/_opam/bin/merl-an /usr/local/bin/merl-an
 
-    - name: Create data set of Merlin responses
-      run: |
-        # Note: The parameters with most influence on the execution time are
-        # `--sample-size`: Number of samples per file defined by `--project` (and per local query).
-        # `--project`: List of dirs/files to create samples on. In the case of a dirs, all ml(i) files recursively in the dir are used.
-        # `--queries`: The `ocamlmerlin` queries that are being run.
-        opam exec -- merl-an behavior \
-        --queries=type-enclosing,occurrences,locate,complete-prefix,errors \
-        --sample-size=30 \
-        --data=${{ env.data_dir }} \
-        --merlin=ocamlmerlin \
-        --project=irmin/src/irmin,irmin/src/irmin-pack,irmin/test/irmin-pack
+      - name: Create data set of Merlin responses
+        run: |
+          # Note: The parameters with most influence on the execution time are
+          # `--sample-size`: Number of samples per file defined by `--project` (and per local query).
+          # `--project`: List of dirs/files to create samples on. In the case of a dirs, all ml(i) files recursively in the dir are used.
+          # `--queries`: The `ocamlmerlin` queries that are being run.
+          opam exec -- merl-an behavior \
+          --queries=type-enclosing,occurrences,locate,complete-prefix,errors \
+          --sample-size=30 \
+          --data=${{ env.data_dir }} \
+          --merlin=ocamlmerlin \
+          --project=irmin/src/irmin,irmin/src/irmin-pack,irmin/test/irmin-pack
 
-    - name: Remove varying components from data
-      run: |
-        # TODO: This could be done on the `merl-an` side
-        jq '.responses |= map(del(.heap_mbytes, .timings, .cache))' \
-          ${{ env.data_dir }}/$FULL_DATA_FILE > temp.json && \
-          mv temp.json ${{ env.data_dir }}/$FULL_DATA_FILE
+      - name: Remove varying components from data
+        run: |
+          # TODO: This could be done on the `merl-an` side
+          jq '.responses |= map(del(.heap_mbytes, .timings, .cache))' \
+            ${{ env.data_dir }}/$FULL_DATA_FILE > temp.json && \
+            mv temp.json ${{ env.data_dir }}/$FULL_DATA_FILE
 
-    - name: Create name for data artifact
-      id: artifact_name
-      env:
-        base_branch_artifact_name: ${{ env.BASE_BRANCH_ARTIFACT_NAME }}
-        merge_branch_artifact_name: ${{ env. MERGE_BRANCH_ARTIFACT_NAME }}
-      run: echo "name=$${{ matrix.commit }}_artifact_name" >> $GITHUB_OUTPUT
+      - name: Create name for data artifact
+        id: artifact_name
+        env:
+          base_branch_artifact_name: ${{ env.BASE_BRANCH_ARTIFACT_NAME }}
+          merge_branch_artifact_name: ${{ env. MERGE_BRANCH_ARTIFACT_NAME }}
+        run: echo "name=$${{ matrix.commit }}_artifact_name" >> $GITHUB_OUTPUT
 
-    - name: Upload data
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ steps.artifact_name.outputs.name }}
-        path: ${{ env.data_dir }}
+      - name: Upload data
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.artifact_name.outputs.name }}
+          path: ${{ env.data_dir }}
 
-    - name: Compile diff tool
-      if: ${{ matrix.commit == 'merge_branch' }}
-      run: |
-        # Taking advantage that ocamlopt is installed on this runner: compile the diff tool here and share it with the next job where it's needed.
-        # All GH runners are hosted on x86 machines and all jobs in this workflow declare the same OS, so this should workTM.
-        opam exec -- ocamlopt -o create_diff .github/fuzzy-ci-helpers/create_diff.ml
+      - name: Compile diff tool
+        if: ${{ matrix.commit == 'merge_branch' }}
+        run: |
+          # Taking advantage that ocamlopt is installed on this runner: compile the diff tool here and share it with the next job where it's needed.
+          # All GH runners are hosted on x86 machines and all jobs in this workflow declare the same OS, so this should workTM.
+          opam exec -- ocamlopt -o create_diff .github/fuzzy-ci-helpers/create_diff.ml
 
-    - name: Upload diff tool
-      if: ${{ matrix.commit == 'merge_branch' }}
-      uses: actions/upload-artifact@v3
-      with:
-        name: diff_tool
-        path: create_diff
-
-
+      - name: Upload diff tool
+        if: ${{ matrix.commit == 'merge_branch' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: diff_tool
+          path: create_diff
 
   diff:
     name: Generate diffs
@@ -299,8 +297,6 @@ jobs:
         with:
           name: ${{ env.DIFF_ARTIFACT_NAME }}
           path: ${{ env.diff_dir }}
-
-
 
   output:
     name: Evaluate diffs
@@ -420,7 +416,6 @@ jobs:
             fi
           fi
 
-
   approve:
     name: Approve diff
     if: >
@@ -473,8 +468,8 @@ jobs:
         env:
           id: ${{ steps.diff_metadata.outputs.id }}
         run: |
-         # Doing this manually, since actions/download-artifact only works on the same workflow run on which the artifact was uploaded
-         curl -sSLO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$GH_API_ARTIFACTS/$id/zip" -D headers.txt
+          # Doing this manually, since actions/download-artifact only works on the same workflow run on which the artifact was uploaded
+          curl -sSLO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$GH_API_ARTIFACTS/$id/zip" -D headers.txt
 
       - name: Unzip downloaded diff
         run: |
