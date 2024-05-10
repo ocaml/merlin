@@ -6,7 +6,7 @@ Dune setup
   $ cat > dune << EOF
   > (executable
   >  (name apt)
-  >  (preprocess (pps c_ppx)))
+  >  (preprocess (pps c_ppx my_ppx)))
   > EOF
 
 Type declaration in structure
@@ -733,4 +733,31 @@ on [@@deriving show]
     },
     "notifications": []
   }
+
+
+PPx extension
+  $ cat > apttt.ml << EOF
+  > let p  = 4 + [%get_int 98]
+  > EOF
+
+  $ dune build
+  $ $MERLIN single expand-node -position 1:19 -filename ./apttt.ml < ./apttt.ml
+  {
+    "class": "return",
+    "value": {
+      "code": "4 + 98",
+      "deriver": {
+        "start": {
+          "line": 1,
+          "col": 13
+        },
+        "end": {
+          "line": 1,
+          "col": 26
+        }
+      }
+    },
+    "notifications": []
+  }
+
 
