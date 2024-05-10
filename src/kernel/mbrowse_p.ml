@@ -249,21 +249,21 @@ let is_recovered = function
 
 let check_node pos node =
   let loc = node_merlin_loc node in
-  if Location_aux.compare_pos pos loc = 0 && loc.loc_ghost then true else false 
+  Location_aux.compare_pos pos loc = 0 && loc.loc_ghost
 
-let get_children pos root = 
+let get_children pos nodes = 
   let children =
-    List.map ~f:(fun x -> 
-      match x with
+    List.map ~f:(fun node -> 
+      match node with
       | Structure str ->
-          of_structure_items (List.filter ~f:(fun x ->
-              check_node pos (Structure_item(x))
+          of_structure_items (List.filter ~f:(fun n ->
+              check_node pos (Structure_item(n))
           ) str)
-      | Signature str ->
-        of_signature_items (List.filter ~f:(fun x ->
-          check_node pos (Signature_item(x))
-        ) str)
-      | _ -> []) root 
+      | Signature sg ->
+        of_signature_items (List.filter ~f:(fun n ->
+          check_node pos (Signature_item(n))
+        ) sg)
+      | _ -> []) nodes 
   in children |> List.concat
 
 
@@ -272,7 +272,7 @@ let pprint_deriver_node () node =
     begin match node with
       | Browse_raw_p.Structure_item n -> Pprintast.structure ppf [n]
       | Browse_raw_p.Signature_item n -> Pprintast.signature ppf [n]
-      | _ -> raise (Invalid_argument "Wrong nodes")
+      | _ -> ()
     end;
   Format.pp_print_newline ppf ();
   to_string ()
