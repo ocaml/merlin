@@ -41,7 +41,7 @@ env:
   # Irmin version and merl-an version need to be consistent for reproducibility (Irmin is used as the test code base to test `ocamlmerlin` on)
   IRMIN_VERSION: 3.9.0
   # TODO: Release merl-an and install a certain version instead of pinning it to a certain commit
-  MERL_AN_SHA: 1643fb7a9958379fb4ed8d7c5169146aaa88f5b7
+  MERL_AN_SHA: 6411f0d3847e8b7e66362bcb1f9345a5d3e851ca
 
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
