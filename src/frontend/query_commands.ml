@@ -527,7 +527,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       })
     in
     let check_at_pos (loc:Warnings.loc) = 
-      loc.loc_start.pos_cnum <= pos.pos_cnum && loc.loc_end.pos_cnum >= pos.pos_cnum
+      Location_aux.compare_pos pos loc = 0
     in
     let has_ppx_deriver (attr:Parsetree.attribute) =
         check_at_pos attr.attr_loc &&
@@ -544,7 +544,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some (Expression ({pexp_desc = Pexp_extension _; _} as exp)) ->
         let ppx = ref None in
         let expr (self : Ast_iterator.iterator) (expr : Parsetree.expression) =
-          match check_at_pos expr.pexp_loc with
+          match check_at_pos expr.pexp_loc && 
+          Location_aux.compare exp.pexp_loc expr.pexp_loc = 0 with
           | true -> 
             ppx := Some expr
           | false -> Ast_iterator.default_iterator.expr self expr

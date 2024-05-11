@@ -6,7 +6,7 @@ Dune setup
   $ cat > dune << EOF
   > (executable
   >  (name apt)
-  >  (preprocess (pps c_ppx my_ppx)))
+  >  (preprocess (pps c_ppx my_ppx ppx_here)))
   > EOF
 
 Type declaration in structure
@@ -763,7 +763,7 @@ PPx extension
   {
     "class": "return",
     "value": {
-      "code": "print_string (\"OCaml is so cool\" ^ \":-)!\")",
+      "code": "\"OCaml is so cool\"",
       "deriver": {
         "start": {
           "line": 1,
@@ -785,4 +785,55 @@ PPx extension
   }
  
 
+Show only an output for the hover and not all extensions
+  $ cat > aptxc.ml << EOF
+  > let phrase = [%tell_me] ^ [%tell_me]
+  > EOF
+
+  $ dune build
+on the first [%tell_me]
+  $ $MERLIN single expand-node -position 1:16 -filename ./apttt.ml < ./aptxc.ml
+  {
+    "class": "return",
+    "value": {
+      "code": "\"OCaml is so cool\"",
+      "deriver": {
+        "start": {
+          "line": 1,
+          "col": 13
+        },
+        "end": {
+          "line": 1,
+          "col": 23
+        }
+      }
+    },
+    "notifications": []
+  }
+on the concatenator
+  $ $MERLIN single expand-node -position 1:24 -filename ./apttt.ml < ./aptxc.ml
+  {
+    "class": "return",
+    "value": "No PPX deriver/extension node found on this position",
+    "notifications": []
+  }
+on the second [%tell_me]
+  $ $MERLIN single expand-node -position 1:27 -filename ./apttt.ml < ./aptxc.ml
+  {
+    "class": "return",
+    "value": {
+      "code": "\"OCaml is so cool\"",
+      "deriver": {
+        "start": {
+          "line": 1,
+          "col": 26
+        },
+        "end": {
+          "line": 1,
+          "col": 36
+        }
+      }
+    },
+    "notifications": []
+  }
 
