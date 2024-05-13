@@ -544,7 +544,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     | Some (Expression ({pexp_desc = Pexp_extension _; _} as exp)) ->
         let nodes = Mtyper.node_at_p ppx_parsetree pos in
         let derived_nodes =
-          Mbrowse_p.get_children ~cursor_pos:pos ~expression_loc:(exp.pexp_loc) nodes in
+          Mbrowse_p.get_ext_children ~cursor_pos:pos ~expression_loc:(exp.pexp_loc) nodes in
         ppx_expansion 
           ~ppx:(Mbrowse_p.pprint_deriver_nodes () derived_nodes)
           ~a_start:(exp.pexp_loc.loc_start)

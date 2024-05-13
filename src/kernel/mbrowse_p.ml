@@ -250,15 +250,10 @@ let is_recovered = function
 let check_node pos node =
   let loc = node_merlin_loc node in
   Location_aux.compare_pos pos loc = 0
-  && loc.loc_ghost
 
-let get_children ~cursor_pos ?(expression_loc = Location.none) nodes = 
+let get_children ~cursor_pos nodes = 
   List.map nodes ~f:(fun node ->
     match node with
-    | Expression exp ->
-      List.filter ~f:(fun _x -> 
-      Location_aux.compare_pos cursor_pos exp.pexp_loc = 0 
-      && Location_aux.compare exp.pexp_loc expression_loc = 0) [Expression exp]
     | Structure str ->
       List.filter ~f:( fun n -> 
         check_node cursor_pos n) (of_structure_items str)
@@ -267,6 +262,14 @@ let get_children ~cursor_pos ?(expression_loc = Location.none) nodes =
         check_node cursor_pos n) (of_signature_items sg)
     | _ -> []
   ) |> List.concat
+
+let get_ext_children ~cursor_pos ~expression_loc nodes = 
+  List.filter ~f:(fun node -> 
+    match node with 
+    | Expression exp ->
+      Location_aux.compare_pos cursor_pos exp.pexp_loc = 0 &&
+      Location_aux.compare expression_loc exp.pexp_loc = 0
+    | _ -> false) nodes
 
 let pprint_deriver_node () node = 
   let ppf, to_string = Format.to_string () in
