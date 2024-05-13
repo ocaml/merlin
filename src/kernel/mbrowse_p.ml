@@ -270,7 +270,8 @@ let get_ext_children (pos:Lexing.position) exp_loc nodes =
   List.filter ~f:(fun node ->
     match node with
     | Expression exp ->
-      Location_aux.compare_pos pos exp.pexp_loc = 0 && Location_aux.compare exp.pexp_loc exp_loc = 0
+      Location_aux.compare_pos pos exp.pexp_loc = 0 
+      && Location_aux.compare exp.pexp_loc exp_loc = 0
     | _ -> false
   ) nodes 
 
