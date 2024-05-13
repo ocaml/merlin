@@ -379,67 +379,6 @@ let expand =
     let path = canonicalize_filename ~cwd:dir path in
     expand_glob ~filter path []
 
-module Import_from_dune = struct
-  let escape_only c s =
-    let open String in
-    let n = ref 0 in
-    let len = length s in
-    for i = 0 to len - 1 do
-      if unsafe_get s i = c then incr n
-    done;
-    if !n = 0 then
-      s
-    else
-      let b = Bytes.create (len + !n) in
-      n := 0;
-      for i = 0 to len - 1 do
-        if unsafe_get s i = c then (
-          Bytes.unsafe_set b !n '\\';
-          incr n
-        );
-        Bytes.unsafe_set b !n (unsafe_get s i);
-        incr n
-      done;
-      Bytes.unsafe_to_string b
-
-  let need_quoting s =
-    let len = String.length s in
-    len = 0
-    ||
-    let rec loop i =
-      if i = len then
-        false
-      else
-        match s.[i] with
-        | ' '
-        | '\"'
-        | '('
-        | ')'
-        | '{'
-        | '}'
-        | ';'
-        | '#' ->
-          true
-        | _ -> loop (i + 1)
-    in
-    loop 0
-
-  let quote s =
-    let s =
-      if Sys.win32 then
-        (* We need this hack because merlin unescapes backslashes (except when
-           protected by single quotes). It is only a problem on windows because
-           Filename.quote is using double quotes. *)
-        escape_only '\\' s
-      else
-        s
-    in
-    if need_quoting s then
-      Filename.quote s
-    else
-      s
-end
-
 let postprocess cfg =
   let stdlib = Option.value ~default:standard_library cfg.stdlib in
   let pkg_paths, ppxsetup, failures = path_of_packages cfg.packages_to_load in

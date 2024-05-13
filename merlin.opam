@@ -12,7 +12,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.2" & < "5.3"}
-  "dune" {>= "2.9.0"}
+  "dune" {>= "3.0.0"}
   "merlin-lib" {= version}
   "dot-merlin-reader" {>= "5.0"}
   "yojson" {>= "2.0.0"}
