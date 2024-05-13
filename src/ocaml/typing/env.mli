@@ -18,10 +18,6 @@
 open Types
 open Misc
 
-val register_uid : Uid.t -> Location.t -> unit
-
-val get_uid_to_loc_tbl : unit -> Location.t Types.Uid.Tbl.t
-
 type value_unbound_reason =
   | Val_unbound_instance_variable
   | Val_unbound_self
@@ -57,9 +53,11 @@ type address =
 type t
 
 val empty: t
-val initial_safe_string: t
-val initial_unsafe_string: t
+val initial: t
 val diff: t -> t -> Ident.t list
+
+(* approximation to the preimage equivalence class of [find_type] *)
+val same_type_declarations: t -> t -> bool
 
 type type_descr_kind =
   (label_description, constructor_description) type_kind
@@ -128,9 +126,8 @@ val normalize_module_path: Location.t option -> t -> Path.t -> Path.t
 val normalize_type_path: Location.t option -> t -> Path.t -> Path.t
 (* Normalize the prefix part of the type path *)
 
-val normalize_path_prefix: Location.t option -> t -> Path.t -> Path.t
-(* Normalize the prefix part of other kinds of paths
-   (value/modtype/etc) *)
+val normalize_value_path: Location.t option -> t -> Path.t -> Path.t
+(* Normalize the prefix part of the value path *)
 
 val normalize_modtype_path: t -> Path.t -> Path.t
 (* Normalize a module type path *)
@@ -269,6 +266,21 @@ val find_constructor_by_name:
 val find_label_by_name:
   Longident.t -> t -> label_description
 
+(** The [find_*_index] functions computes a "namespaced" De Bruijn index
+    of an identifier in a given environment. In other words, it returns how many
+    times an identifier has been shadowed by a more recent identifiers with the
+    same name in a given environment.
+    Those functions return [None] when the identifier is not bound in the
+    environment. This behavior is there to facilitate the detection of
+    inconsistent printing environment, but should disappear in the long term.
+*)
+val find_value_index:   Ident.t -> t -> int option
+val find_type_index:    Ident.t -> t -> int option
+val find_module_index:  Ident.t -> t -> int option
+val find_modtype_index: Ident.t -> t -> int option
+val find_class_index:   Ident.t -> t -> int option
+val find_cltype_index:  Ident.t -> t -> int option
+
 (* Check if a name is bound *)
 
 val bound_value: string -> t -> bool
@@ -284,10 +296,13 @@ val make_copy_of_types: t -> (t -> t)
 
 val add_value:
     ?check:(string -> Warnings.t) -> Ident.t -> value_description -> t -> t
-val add_type: check:bool -> Ident.t -> type_declaration -> t -> t
-val add_type_long_path: check:bool -> Ident.t -> type_declaration -> t -> t
+val add_type:
+  check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
+val add_type_long_path:
+  check:bool -> ?shape:Shape.t -> Ident.t -> type_declaration -> t -> t
 val add_extension:
-  check:bool -> rebind:bool -> Ident.t -> extension_constructor -> t -> t
+  check:bool -> ?shape:Shape.t -> rebind:bool -> Ident.t ->
+  extension_constructor -> t -> t
 val add_module: ?arg:bool -> ?shape:Shape.t ->
   Ident.t -> module_presence -> module_type -> t -> t
 val add_module_lazy: update_summary:bool ->
@@ -301,7 +316,7 @@ val add_modtype_lazy: update_summary:bool ->
    Ident.t -> Subst.Lazy.modtype_declaration -> t -> t
 val add_class: Ident.t -> class_declaration -> t -> t
 val add_cltype: Ident.t -> class_type_declaration -> t -> t
-val add_local_type: Path.t -> type_declaration -> t -> t
+val add_local_constraint: Path.t -> type_declaration -> t -> t
 
 (* Insertion of persistent signatures *)
 
@@ -313,7 +328,7 @@ val add_local_type: Path.t -> type_declaration -> t -> t
    contents of the module is accessed. *)
 val add_persistent_structure : Ident.t -> t -> t
 
-(* Returns the set of persistent structures found in the given
+ (* Returns the set of persistent structures found in the given
    directory. *)
 val persistent_structures_of_dir : Load_path.Dir.t -> Misc.String.Set.t
 
@@ -386,14 +401,14 @@ val set_unit_name: string -> unit
 val get_unit_name: unit -> string
 
 (* Read, save a signature to/from a file *)
-val read_signature: modname -> filepath -> signature
+val read_signature: Unit_info.Artifact.t -> signature
         (* Arguments: module name, file name. Results: signature. *)
 val save_signature:
-  alerts:alerts -> signature -> modname -> filepath
+  alerts:alerts -> Types.signature -> Unit_info.Artifact.t
   -> Cmi_format.cmi_infos
         (* Arguments: signature, module name, file name. *)
 val save_signature_with_imports:
-  alerts:alerts -> signature -> modname -> filepath -> crcs
+  alerts:alerts -> signature -> Unit_info.Artifact.t -> crcs
   -> Cmi_format.cmi_infos
         (* Arguments: signature, module name, file name,
            imported units with their CRCs. *)

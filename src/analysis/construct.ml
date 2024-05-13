@@ -329,15 +329,23 @@ module Gen = struct
       in
       fun env label ty ->
         let open Asttypes in
+        let make_param arg_label pat =
+          {
+            Parsetree.pparam_loc = Location.none;
+            pparam_desc = Pparam_val (arg_label, None, pat)
+
+          }
+        in
+
         match label with
         | Labelled s | Optional s ->
             (* Pun for labelled arguments *)
-            Ast_helper.Pat.var ( Location.mknoloc s), s
+            make_param label (Ast_helper.Pat.var (Location.mknoloc s)), s
         | Nolabel -> begin match get_desc ty with
           | Tconstr (path, _, _) ->
             let name = uniq_name env (Path.last path) in
-            Ast_helper.Pat.var (Location.mknoloc name), name
-          | _ -> Ast_helper.Pat.any (), "_" end
+            make_param label (Ast_helper.Pat.var (Location.mknoloc name)), name
+          | _ ->  make_param label (Ast_helper.Pat.any ()), "_" end
     in
 
     let constructor env type_expr path constrs =
@@ -347,7 +355,10 @@ module Gen = struct
       (* [make_constr] builds the PAST repr of a type constructor applied
       to holes *)
       let make_constr env path type_expr cstr_descr =
-        let ty_args, ty_res, _ = Ctype.instance_constructor cstr_descr in
+        let ty_args, ty_res, _ = Ctype.instance_constructor
+          Keep_existentials_flexible
+          cstr_descr
+        in
         match Util.unifiable env type_expr ty_res with
         | Some snap ->
           let lid =
@@ -422,7 +433,7 @@ module Gen = struct
           (List.map labels ~f:(fun l -> l.Types.lbl_name)));
 
       let labels = List.map labels ~f:(fun ({ lbl_name; _ } as lbl) ->
-        let _, arg, res = Ctype.instance_label true lbl in
+        let _, arg, res = Ctype.instance_label ~fixed:true lbl in
         Ctype.unify env res typ ;
         let lid =
           Util.maybe_prefix env
@@ -474,21 +485,31 @@ module Gen = struct
             match def with
             | Type_variant (constrs, _) -> constructor env rtyp path constrs
             | Type_record (labels, _) -> record env rtyp path labels
-            | Type_abstract | Type_open -> []
+            | Type_abstract _ | Type_open -> []
           end
-        | Tarrow (label, tyleft, tyright, _) ->
-          let argument, name = make_arg env label tyleft in
-          let value_description = {
-              val_type = tyleft;
-              val_kind = Val_reg;
-              val_loc = Location.none;
-              val_attributes = [];
-              val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
-            }
-          in
-          let env = Env.add_value (Ident.create_local name) value_description env in
-          let exps = arrow_rhs env tyright in
-          List.map exps ~f:(Ast_helper.Exp.fun_ label None argument)
+        | Tarrow _ ->
+          let rec left_types acc env ty =
+            match get_desc ty with
+            | Tarrow (label, tyleft, tyright, _) ->
+              let arg, name = make_arg env label tyleft in
+              let value_description = {
+                  val_type = tyleft;
+                  val_kind = Val_reg;
+                  val_loc = Location.none;
+                  val_attributes = [];
+                  val_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+                }
+              in
+              let env =
+                Env.add_value (Ident.create_local name) value_description env
+              in
+              left_types (arg :: acc) env tyright
+            | _ -> List.rev acc, ty, env
+         in
+          let arguments, body_type, env = left_types [] env rtyp in
+          let exps = arrow_rhs env body_type in
+          List.map exps ~f:(fun e ->
+            Ast_helper.Exp.function_ arguments None (Pfunction_body e))
         | Ttuple types ->
           let choices = List.map types ~f:(exp_or_hole env)
             |> Util.combinations
@@ -545,7 +566,7 @@ module Gen = struct
 end
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
-  | Pexp_fun _
+  | Pexp_function _
   | Pexp_lazy _
   | Pexp_apply _
   | Pexp_variant (_, Some _)

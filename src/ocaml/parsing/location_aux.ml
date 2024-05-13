@@ -46,6 +46,10 @@ let compare_pos pos loc =
   else
     0
 
+let included ~into:parent_loc child_loc =
+Lexing.compare_pos child_loc.loc_start parent_loc.loc_start >= 0 &&
+  Lexing.compare_pos parent_loc.loc_end child_loc.loc_end >= 0
+
 let union l1 l2 =
   if l1 = Location.none then l2
   else if l2 = Location.none then l1

@@ -212,7 +212,6 @@ unused case after
   }
 
 Syntax errors also shouldn't escape:
-
   $ echo "let f (_ : (module S with type 'a t = int)) = ()" |
   > $MERLIN single errors -filename "invalid_package_type.ml"
   {

@@ -28,33 +28,54 @@
 
 val log : 'a Logger.printf
 
-module Namespace : sig
-  type t = [ `Type | `Mod | `Modtype | `Vals | `Constr | `Labels ]
-end
+type config = {
+  mconfig: Mconfig.t;
+  ml_or_mli: [ `ML | `MLI ];
+  traverse_aliases: bool;
+}
+
+type result = {
+  uid: Shape.Uid.t;
+  decl_uid: Shape.Uid.t;
+  file: string;
+  location: Location.t;
+  approximated: bool;
+}
+
+val uid_of_result
+  : traverse_aliases:bool
+  -> Shape_reduce.result
+  -> Shape.Uid.t option * bool
+
+val find_source
+  : config: Mconfig.t
+  -> Warnings.loc
+  -> string
+  -> [> `File_not_found of string
+      | `Found of string * Location.t ]
 
 val from_path
-  : config:Mconfig.t
+  : config:config
   -> env:Env.t
-  -> namespace:Namespaced_path.Namespace.t
-  -> [ `ML | `MLI ]
+  -> local_defs:Mtyper.typedtree
+  -> namespace:Env_lookup.Namespace.t
   -> Path.t
   -> [> `File_not_found of string
-     | `Found of Shape.Uid.t option * string option * Lexing.position
-     | `Builtin
+     | `Found of result
+     | `Builtin of Shape.Uid.t * string
      | `Not_in_env of string
      | `Not_found of string * string option ]
 
 val from_string
-  :  config:Mconfig.t
+  :  config:config
   -> env:Env.t
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
-  -> ?namespaces:Namespace.t list
-  -> [ `ML | `MLI ]
+  -> ?namespaces:Env_lookup.Namespace.inferred_basic list
   -> string
   -> [> `File_not_found of string
-      | `Found of Shape.Uid.t option * string option * Lexing.position
-      | `Builtin of string
+      | `Found of result
+      | `Builtin of Shape.Uid.t * string
       | `Missing_labels_namespace
       | `Not_found of string * string option
       | `Not_in_env of string
@@ -67,8 +88,7 @@ val get_doc
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> [ `User_input of string
-     | `Completion_entry of
-        Namespaced_path.Namespace.t * Path.t * Location.t ]
+     | `Completion_entry of Env_lookup.Namespace.t * Path.t * Location.t ]
   -> [> `File_not_found of string
       | `Found of string
       | `Builtin of string

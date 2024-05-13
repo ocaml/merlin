@@ -25,42 +25,13 @@ module Path = struct
     | Pident of Ident.t
     | Pdot of t * string
     | Papply of t * t
+    | Pextra_ty of t * Path.extra_ty
 
-  open Path
+  (* open Path *)
 
-  let rec equal t1 t2 =
-    match t1, t2 with
-    | Pident id1, Pident id2 -> Ident.equal id1 id2
-    | Pident _, Pdot _ -> false
-    | Pident _, Papply _ -> false
-    | Pdot _, Pident _ -> false
-    | Pdot(parent1, name1), Pdot(parent2, name2) ->
-        equal parent1 parent2
-        && String.equal name1 name2
-    | Pdot _, Papply _ -> false
-    | Papply _, Pident _ -> false
-    | Papply _, Pdot _ -> false
-    | Papply(func1, arg1), Papply(func2, arg2) ->
-        equal func1 func2
-        && equal arg1 arg2
+  let equal t1 t2 = Path.same t1 t2
 
-  let rec compare t1 t2 =
-    match t1, t2 with
-    | Pident id1, Pident id2 -> Ident.compare id1 id2
-    | Pident _, Pdot _ -> -1
-    | Pident _, Papply _ -> -1
-    | Pdot _, Pident _ -> 1
-    | Pdot(parent1, name1), Pdot(parent2, name2) ->
-        let c = compare parent1 parent2 in
-        if c <> 0 then c
-        else String.compare name1 name2
-    | Pdot _, Papply _ -> -1
-    | Papply _, Pident _ -> 1
-    | Papply _, Pdot _ -> 1
-    | Papply(func1, arg1), Papply(func2, arg2) ->
-        let c = compare func1 func2 in
-        if c <> 0 then c
-        else compare arg1 arg2
+  let compare t1 t2 = Path.compare t1 t2
 
 end
 
@@ -243,8 +214,11 @@ let hidden_name name =
     with Exit -> true
 
 let hidden_ident id =
-  if !Clflags.unsafe_string && Ident.equal id Predef.ident_bytes then true
-  else hidden_name (Ident.name id)
+  (* if !Clflags.unsafe_string && Ident.equal id Predef.ident_bytes then true
+  else
+
+    Since 5.0.0 unsafe_string is always false *)
+ hidden_name (Ident.name id)
 
 let hidden_definition deprecated name =
   match deprecated with
@@ -1387,6 +1361,8 @@ end = struct
     | Path.Papply(p, arg) ->
         let md = find_module t p in
         Module.find_application t md arg
+    | Path.Pextra_ty _ ->
+        raise Not_found
 
   let find_type t path =
     match path with
@@ -1395,7 +1371,7 @@ end = struct
     | Path.Pdot(p, name) ->
         let md = find_module t p in
         Module.find_type t md name
-    | Path.Papply _ ->
+    | Path.Papply _ | Path.Pextra_ty _ ->
         raise Not_found
 
   let find_class_type t path =
@@ -1405,7 +1381,7 @@ end = struct
     | Path.Pdot(p, name) ->
         let md = find_module t p in
         Module.find_class_type t md name
-    | Path.Papply _ ->
+    | Path.Papply _ | Path.Pextra_ty _ ->
         raise Not_found
 
   let find_module_type t path =
@@ -1415,7 +1391,7 @@ end = struct
     | Path.Pdot(p, name) ->
         let md = find_module t p in
         Module.find_module_type t md name
-    | Path.Papply _ ->
+    | Path.Papply _ | Path.Pextra_ty _ ->
         raise Not_found
 
   let canonical_type_path t id =
@@ -1455,7 +1431,7 @@ end = struct
 
   let rec is_module_path_visible t = function
     | Path.Pident id -> is_module_ident_visible t id
-    | Path.Pdot(path, _) ->
+    | Path.Pdot(path, _) | Pextra_ty (path, _) ->
         is_module_path_visible t path
     | Path.Papply(path1, path2) ->
         is_module_path_visible t path1
@@ -1478,7 +1454,7 @@ end = struct
 
   let is_type_path_visible t = function
     | Path.Pident id -> is_type_ident_visible t id
-    | Path.Pdot(path, _) -> is_module_path_visible t path
+    | Path.Pdot(path, _) | Pextra_ty (path, _) -> is_module_path_visible t path
     | Path.Papply _ ->
         failwith
           "Short_paths_graph.Graph.is_type_path_visible: \
@@ -1502,7 +1478,7 @@ end = struct
   let is_class_type_path_visible t = function
     | Path.Pident id -> is_class_type_ident_visible t id
     | Path.Pdot(path, _) -> is_module_path_visible t path
-    | Path.Papply _ ->
+    | Path.Papply _ | Path.Pextra_ty _ ->
         failwith
           "Short_paths_graph.Graph.is_class_type_path_visible: \
            invalid class type path"
@@ -1525,7 +1501,7 @@ end = struct
   let is_module_type_path_visible t = function
     | Path.Pident id -> is_module_type_ident_visible t id
     | Path.Pdot(path, _) -> is_module_path_visible t path
-    | Path.Papply _ ->
+    | Path.Papply _ | Path.Pextra_ty _ ->
         failwith
           "Short_paths_graph.Graph.is_module_type_path_visible: \
            invalid module type path"

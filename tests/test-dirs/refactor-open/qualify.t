@@ -56,8 +56,8 @@ Can qualify nested modules located in the same file
 Can qualify a module from an external library
 
   $ $MERLIN single refactor-open -action qualify -position 1:6 <<EOF
-  > open Unix
-  > let times = times ()
+  > open Sys
+  > let enable_runtime_warnings = enable_runtime_warnings ()
   > EOF
   {
     "class": "return",
@@ -65,13 +65,13 @@ Can qualify a module from an external library
       {
         "start": {
           "line": 2,
-          "col": 12
+          "col": 30
         },
         "end": {
           "line": 2,
-          "col": 17
+          "col": 53
         },
-        "content": "Unix.times"
+        "content": "Sys.enable_runtime_warnings"
       }
     ],
     "notifications": []
@@ -120,4 +120,3 @@ does not return duplicate edits
     ],
     "notifications": []
   }
-

@@ -30,7 +30,7 @@ straight to the functor.
       "file": "$TESTCASE_ROOT/func.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []

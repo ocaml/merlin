@@ -1,3 +1,4 @@
+FIXME: with 5.2 new function representation we lost some granularity
   $ cat >main.ml <<EOF
   > module M = struct
   >  let g =
@@ -24,16 +25,6 @@
         "start": {
           "line": 3,
           "col": 22
-        },
-        "end": {
-          "line": 3,
-          "col": 33
-        }
-      },
-      {
-        "start": {
-          "line": 3,
-          "col": 17
         },
         "end": {
           "line": 3,

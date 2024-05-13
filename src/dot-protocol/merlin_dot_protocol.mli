@@ -43,7 +43,12 @@ really do not want to load them. *)
 
 module Directive : sig
   type include_path =
-    [ `B of string | `S of string | `CMI of string | `CMT of string ]
+    [ `B of string
+    | `S of string
+    | `BH of string
+    | `SH of string
+    | `CMI of string
+    | `CMT of string ]
 
   type no_processing_required =
     [ `EXT of string list

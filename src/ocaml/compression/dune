@@ -1,0 +1,4 @@
+(library
+ (name ocaml_compression)
+ (public_name merlin-lib.ocaml_compression)
+ (libraries compiler-libs.common))

@@ -74,7 +74,7 @@ val ident_some : Ident.t
 val build_initial_env:
   (Ident.t -> type_declaration -> 'a -> 'a) ->
   (Ident.t -> extension_constructor -> 'a -> 'a) ->
-  'a -> 'a * 'a
+  'a -> 'a
 
 (* To initialize linker tables *)
 

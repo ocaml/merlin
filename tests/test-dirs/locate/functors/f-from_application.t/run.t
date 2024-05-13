@@ -8,7 +8,7 @@ FIXME: we confuse the module for the constructor and jump to the wrong place
       "file": "$TESTCASE_ROOT/from_application.ml",
       "pos": {
         "line": 5,
-        "col": 0
+        "col": 7
       }
     },
     "notifications": []
@@ -23,7 +23,7 @@ Jump from inside the functor application to inside the functor application:
       "file": "$TESTCASE_ROOT/from_application.ml",
       "pos": {
         "line": 14,
-        "col": 4
+        "col": 9
       }
     },
     "notifications": []
@@ -38,7 +38,7 @@ Jump from inside the functor application to the outer scope:
       "file": "$TESTCASE_ROOT/from_application.ml",
       "pos": {
         "line": 9,
-        "col": 0
+        "col": 5
       }
     },
     "notifications": []

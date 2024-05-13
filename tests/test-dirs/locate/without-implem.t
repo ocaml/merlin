@@ -26,7 +26,7 @@
       "file": "$TESTCASE_ROOT/noimpl.mli",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 5
       }
     },
     "notifications": []
@@ -40,7 +40,7 @@
       "file": "$TESTCASE_ROOT/noimpl.mli",
       "pos": {
         "line": 1,
-        "col": 0
+        "col": 5
       }
     },
     "notifications": []

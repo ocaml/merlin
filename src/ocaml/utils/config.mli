@@ -18,6 +18,8 @@
 val version: string
         (* The current version number of the system *)
 
+val ext_obj : string
+
 val interface_suffix: string ref
         (* Suffix for interface file names *)
 
@@ -45,7 +47,6 @@ val cmt_magic_number: string
 val max_tag: int
         (* Biggest tag that can be stored in the header of a regular block. *)
 
-val safe_string: bool
 val flat_float_array: bool
 
 (**/**)

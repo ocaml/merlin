@@ -49,7 +49,7 @@ Jump to the declaration of an element of an alisaed module `A.|f`:
     "file": "$TESTCASE_ROOT/anothermod.mli",
     "pos": {
       "line": 3,
-      "col": 0
+      "col": 4
     }
   }
 
@@ -128,7 +128,7 @@ Jump from to another module value decl `Anothermod.|a`:
     "file": "$TESTCASE_ROOT/anothermod.mli",
     "pos": {
       "line": 2,
-      "col": 0
+      "col": 5
     }
   }
 
@@ -139,7 +139,7 @@ Jump from to another module value def `Anothermod.|a`:
     "file": "$TESTCASE_ROOT/anothermod.ml",
     "pos": {
       "line": 2,
-      "col": 0
+      "col": 5
     }
   }
 
@@ -151,7 +151,7 @@ Jump to the declaration of an element of an alisaed module `A.|f`:
     "file": "$TESTCASE_ROOT/anothermod.mli",
     "pos": {
       "line": 3,
-      "col": 0
+      "col": 4
     }
   }
 

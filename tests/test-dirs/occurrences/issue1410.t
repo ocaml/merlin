@@ -1,7 +1,3 @@
-FIXME
-
-First result is incorrect when in the body of a function with an optional argument
-
   $ $MERLIN single occurrences -identifier-at 3:3 -filename opt.ml <<EOF | \
   > jq '.value'
   > (* test case *)
@@ -9,16 +5,6 @@ First result is incorrect when in the body of a function with an optional argume
   > None
   > EOF
   [
-    {
-      "start": {
-        "line": 0,
-        "col": -1
-      },
-      "end": {
-        "line": 0,
-        "col": -1
-      }
-    },
     {
       "start": {
         "line": 3,
