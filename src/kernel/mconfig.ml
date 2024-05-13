@@ -63,6 +63,9 @@ let canonicalize_filename path =
 let marg_path f =
   Marg.param "path" (fun path acc -> f (canonicalize_filename path) acc)
 
+let marg_path_no_canon f =
+  Marg.param "path" (fun path acc -> f path acc)
+
 let marg_commandline f =
   Marg.param "command"
     (fun workval acc -> f {workdir = unsafe_get_cwd (); workval} acc)
@@ -454,7 +457,7 @@ let ocaml_alert_spec =
 let ocaml_flags = [
   (
     "-I",
-    marg_path (fun dir ocaml ->
+    marg_path_no_canon (fun dir ocaml ->
         {ocaml with include_dirs = dir :: ocaml.include_dirs}),
     "<dir> Add <dir> to the list of include directories"
   );
@@ -735,7 +738,7 @@ let source_path config =
      config.merlin.source_path]
   |> List.filter_dup
 
-let build_path config = (
+let include_dirs ~stdlib config =
   let dirs =
     match config.ocaml.threads with
     | `None -> config.ocaml.include_dirs
@@ -747,10 +750,12 @@ let build_path config = (
     config.merlin.build_path @
     dirs
   in
+  List.map dirs ~f:(fun dir -> Misc.expand_directory stdlib dir
+    |> Misc.canonicalize_filename)
+
+let build_path config = (
   let stdlib = stdlib config in
-  let exp_dirs =
-    List.map ~f:(Misc.expand_directory stdlib) dirs
-  in
+  let exp_dirs = include_dirs ~stdlib config in
   let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
   let dirs = List.rev_append exp_dirs stdlib in
   let result =
@@ -765,21 +770,8 @@ let build_path config = (
 )
 
 let cmt_path config = (
-  let dirs =
-    match config.ocaml.threads with
-    | `None -> config.ocaml.include_dirs
-    | `Threads -> "+threads" :: config.ocaml.include_dirs
-    | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
-  in
-  let dirs =
-    config.merlin.cmt_path @
-    config.merlin.build_path @
-    dirs
-  in
   let stdlib = stdlib config in
-  let exp_dirs =
-    List.map ~f:(Misc.expand_directory stdlib) dirs
-  in
+  let exp_dirs = include_dirs ~stdlib config in
   let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
   config.query.directory :: List.rev_append exp_dirs stdlib
 )
