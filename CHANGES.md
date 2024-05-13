@@ -7,6 +7,7 @@ merlin NEXT_VERSION
       fixes #1661)
     - Ignore SIGPIPE in the Merlin server process (#1746)
     - Fix lexing of quoted strings in comments (#1754, fixes #1753)
+    - Improve cursor position detection in longidents (#1756)
 
 merlin 4.14
 ===========
