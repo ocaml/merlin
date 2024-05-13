@@ -175,18 +175,18 @@ Same for an ident that requires both parenthesis and spaces:
   >   *)
   > EOF
 
-  $ $MERLIN single occurrences -identifier-at 4:10 ./test.ml < ./test.ml
+  $ $MERLIN single occurrences -identifier-at 4:12 ./test.ml < ./test.ml
   {
     "class": "return",
     "value": [
       {
         "start": {
-          "line": 1,
-          "col": 7
+          "line": 2,
+          "col": 6
         },
         "end": {
-          "line": 1,
-          "col": 8
+          "line": 2,
+          "col": 11
         }
       },
       {
@@ -196,27 +196,27 @@ Same for an ident that requires both parenthesis and spaces:
         },
         "end": {
           "line": 4,
-          "col": 13
-        }
-      },
-      {
-        "start": {
-          "line": 5,
-          "col": 8
-        },
-        "end": {
-          "line": 5,
           "col": 15
         }
       },
       {
         "start": {
+          "line": 5,
+          "col": 8
+        },
+        "end": {
+          "line": 5,
+          "col": 17
+        }
+      },
+      {
+        "start": {
           "line": 6,
           "col": 8
         },
         "end": {
           "line": 6,
-          "col": 12
+          "col": 14
         }
       },
       {
@@ -226,7 +226,7 @@ Same for an ident that requires both parenthesis and spaces:
         },
         "end": {
           "line": 8,
-          "col": 2
+          "col": 4
         }
       }
     ],
