@@ -559,18 +559,6 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   let shape = Env.shape_of_path ~namespace env path in
   log ~title:"shape_of_path" "initial: %a"
     Logger.fmt (Fun.flip Shape.print shape);
-  let _keep_aliases =
-    if config.traverse_aliases
-    then (fun _ -> false)
-    else (function
-    | Shape. { uid = Some (Item { comp_unit; _ });
-               desc = Alias { desc = Comp_unit alias_cu; _ };
-               _ }
-      when let by = comp_unit ^ "__" in
-        Merlin_utils.Std.String.is_prefixed ~by alias_cu ->
-      false
-    | _ -> true)
-  in
   let reduced = Reduce.reduce_for_uid env shape
   in
   log ~title:"shape_of_path" "reduced: %a"
@@ -580,10 +568,13 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
 let rec uid_of_result ~traverse_aliases = function
   | Shape_reduce.Resolved uid ->
       Some uid, false
-  | Resolved_alias (Item { comp_unit; _ },
-      (Resolved_alias (Compilation_unit comp_unit', _) as rest))
+  | Resolved_alias ((Item { comp_unit; _ } | Compilation_unit comp_unit),
+      ((Resolved_alias (Compilation_unit comp_unit', _)
+      | Resolved (Compilation_unit comp_unit') ) as rest))
       when let by = comp_unit ^ "__" in String.is_prefixed ~by comp_unit' ->
       (* Always traverse dune-wrapper aliases *)
+      log ~title:"uid_of_result"
+        "Traversing wrapping alias: %s__ %s" comp_unit comp_unit';
       uid_of_result ~traverse_aliases rest
   | Resolved_alias (_alias, rest) when traverse_aliases ->
       uid_of_result ~traverse_aliases rest
