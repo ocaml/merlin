@@ -797,6 +797,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Occurrences (`Ident_at pos, _) ->
     let config = Mpipeline.final_config pipeline in
+    let source = Mpipeline.raw_source pipeline in
     let typer_result = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer_result pos) in
@@ -809,7 +810,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       path
     in
     let locs =
-      Occurrences.locs_of ~config ~env ~typer_result ~pos path
+      Occurrences.locs_of ~config ~source ~env ~typer_result ~pos path
       |> Result.value ~default:[]
     in
     let loc_start l = l.Location.loc_start in
