@@ -562,7 +562,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
             ~a_end:(exp.pexp_loc.loc_end)) 
           |> Option.get
     | Some _ | None ->
-      let nodes = Mtyper.node_at_p ppx_parsetree pos in
+      let nodes = Mtyper.node_at_p parsetree pos in
       let has_deriving_attribute = 
         List.find_opt ~f:has_ppx_deriver 
         (List.concat_map ~f:(fun node -> 
@@ -570,6 +570,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       in
       (match has_deriving_attribute with
         | Some attribute ->
+          let nodes = Mtyper.node_at_p ppx_parsetree pos in
           let derived_nodes = Mbrowse_p.get_children pos nodes in
           ppx_expansion 
           ~ppx:(Mbrowse_p.pprint_deriver_nodes () derived_nodes)

@@ -249,7 +249,7 @@ let is_recovered = function
 
 let check_node pos node =
   let loc = node_merlin_loc node in
-  Location_aux.compare_pos pos loc = 0 && loc.loc_ghost
+  Location_aux.compare_pos pos loc = 0
 
 let get_children pos nodes = 
   let children =
@@ -265,7 +265,6 @@ let get_children pos nodes =
         ) sg)
       | _ -> []) nodes 
   in children |> List.concat
-
 
 let pprint_deriver_node () node = 
   let ppf, to_string = Format.to_string () in
