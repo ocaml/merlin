@@ -656,10 +656,8 @@ and comment state = parse
       state.buffer <- buffer;
       Buffer.add_char state.buffer '\"';
       comment state lexbuf }
-  | "{" ('%' '%'? extattrident blank*)? lowercase* "|"
+  | "{" ('%' '%'? extattrident blank*)? (lowercase* as delim) "|"
       {
-        let delim = Lexing.lexeme lexbuf in
-        let delim = String.sub delim ~pos:1 ~len:(String.length delim - 2) in
         state.string_start_loc <- Location.curr lexbuf;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         (catch (quoted_string delim state lexbuf) (fun e l -> match e with
