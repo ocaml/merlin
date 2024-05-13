@@ -1,3 +1,9 @@
+merlin NEXT_VERSION
+==================
+
+  + merlin binary
+    - destruct: Removal of residual patterns (#1737, fixes #1560)
+
 merlin 4.14
 ===========
 Thu Feb 22 14:00:42 CET 2024
