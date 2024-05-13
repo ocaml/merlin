@@ -221,7 +221,7 @@ let reconstruct_identifier pipeline pos = function
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
          (dot.[0] >= 'A' && dot.[0] <= 'Z')
       then dot
-      else "(" ^ dot ^ ")"
+      else "( " ^ dot ^ ")"
     in
     begin match path with
       | [] -> []
