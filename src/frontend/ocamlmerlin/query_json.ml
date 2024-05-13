@@ -216,6 +216,10 @@ let dump (type a) : a t -> json =
                                          | `Unqualify -> "unqualify");
       "position", mk_position pos;
     ]
+  | Signature_help pos ->
+    mk "signature-help" [
+      "position", mk_position pos
+    ]
   | Version -> mk "version" []
 
 let string_of_completion_kind = function
@@ -349,6 +353,22 @@ let json_of_locate resp =
   | `Found (Some file,pos) ->
     `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
 
+let json_of_signature_help resp =
+  let param { label_start; label_end } =
+    `Assoc ["label", `List [`Int label_start; `Int label_end]] in
+  match resp with
+  | None -> `Assoc []
+  | Some { label; parameters; active_param; active_signature } ->
+    let signature =
+      `Assoc
+        ["label", `String label;
+          "parameters", `List (List.map ~f:param parameters);] in
+    `Assoc
+      ["signatures", `List [signature];
+       "activeParameter", `Int active_param;
+       "activeSignature", `Int active_signature;
+      ]
+
 let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
@@ -438,5 +458,6 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     let with_file = scope = `Project in
     `List (List.map locations
              ~f:(fun loc -> with_location ~with_file loc []))
+  | Signature_help _, s -> json_of_signature_help s
   | Version, version ->
     `String version
