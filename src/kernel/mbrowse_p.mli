@@ -80,6 +80,7 @@ val print_node : unit -> node -> string
 val print : unit -> t -> string
 val pprint_deriver_node : unit -> node -> string
 val pprint_deriver_nodes : unit -> node list -> string
-val get_children : Lexing.position -> node list ->  node list
-val get_ext_children : Lexing.position -> Warnings.loc -> node list ->  node list
+val get_children : cursor_pos:Lexing.position -> 
+  ?expression_loc:Warnings.loc -> 
+  node list -> node list
 

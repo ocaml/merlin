@@ -250,30 +250,23 @@ let is_recovered = function
 let check_node pos node =
   let loc = node_merlin_loc node in
   Location_aux.compare_pos pos loc = 0
+  && loc.loc_ghost
 
-let get_children pos nodes = 
-  let children =
-    List.map ~f:(fun node -> 
-      match node with
-      | Structure str ->
-          of_structure_items (List.filter ~f:(fun n ->
-              check_node pos (Structure_item(n))
-          ) str)
-      | Signature sg ->
-        of_signature_items (List.filter ~f:(fun n ->
-          check_node pos (Signature_item(n))
-        ) sg)
-      | _ -> []) nodes 
-  in children |> List.concat
-
-let get_ext_children (pos:Lexing.position) exp_loc nodes = 
-  List.filter ~f:(fun node ->
+let get_children ~cursor_pos ?(expression_loc = Location.none) nodes = 
+  List.map nodes ~f:(fun node ->
     match node with
     | Expression exp ->
-      Location_aux.compare_pos pos exp.pexp_loc = 0 
-      && Location_aux.compare exp.pexp_loc exp_loc = 0
-    | _ -> false
-  ) nodes 
+      List.filter ~f:(fun _x -> 
+      Location_aux.compare_pos cursor_pos exp.pexp_loc = 0 
+      && Location_aux.compare exp.pexp_loc expression_loc = 0) [Expression exp]
+    | Structure str ->
+      List.filter ~f:( fun n -> 
+        check_node cursor_pos n) (of_structure_items str)
+    | Signature sg -> 
+      List.filter ~f:( fun n -> 
+        check_node cursor_pos n) (of_signature_items sg)
+    | _ -> []
+  ) |> List.concat
 
 let pprint_deriver_node () node = 
   let ppf, to_string = Format.to_string () in
