@@ -542,25 +542,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let extension = List.find_opt ~f:has_ppx_extension nodes in
     begin match extension with
     | Some (Expression ({pexp_desc = Pexp_extension _; _} as exp)) ->
-        let ppx = ref None in
-        let expr (self : Ast_iterator.iterator) (expr : Parsetree.expression) =
-          match check_at_pos expr.pexp_loc && 
-          Location_aux.compare exp.pexp_loc expr.pexp_loc = 0 with
-          | true -> 
-            ppx := Some expr
-          | false -> Ast_iterator.default_iterator.expr self expr
-        in
-        let iterator = { Ast_iterator.default_iterator with expr } in
-        let _ =
-          match ppx_parsetree with
-          | `Interface si -> iterator.signature iterator si
-          | `Implementation str -> iterator.structure iterator str
-          in
-          Option.map !ppx ~f:(fun expr ->
-            ppx_expansion ~ppx:(Pprintast.string_of_expression expr)
-            ~a_start:(exp.pexp_loc.loc_start)
-            ~a_end:(exp.pexp_loc.loc_end)) 
-          |> Option.get
+        let nodes = Mtyper.node_at_p ppx_parsetree pos in
+        let derived_nodes = Mbrowse_p.get_ext_children pos exp.pexp_loc nodes in
+        ppx_expansion 
+          ~ppx:(Mbrowse_p.pprint_deriver_nodes () derived_nodes)
+          ~a_start:(exp.pexp_loc.loc_start)
+            ~a_end:(exp.pexp_loc.loc_end)
     | Some _ | None ->
       let nodes = Mtyper.node_at_p parsetree pos in
       let has_deriving_attribute = 

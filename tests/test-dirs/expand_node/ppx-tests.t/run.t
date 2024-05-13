@@ -869,7 +869,8 @@ PPx extension
   {
     "class": "return",
     "value": {
-      "code": "\"OCaml is so cool\"",
+      "code": "[ \"OCaml is so cool\"
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -902,7 +903,8 @@ on the first [%tell_me]
   {
     "class": "return",
     "value": {
-      "code": "\"OCaml is so cool\"",
+      "code": "[ \"OCaml is so cool\"
+   ]",
       "deriver": {
         "start": {
           "line": 1,
@@ -928,7 +930,8 @@ on the second [%tell_me]
   {
     "class": "return",
     "value": {
-      "code": "\"OCaml is so cool\"",
+      "code": "[ \"OCaml is so cool\"
+   ]",
       "deriver": {
         "start": {
           "line": 1,

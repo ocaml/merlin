@@ -266,11 +266,20 @@ let get_children pos nodes =
       | _ -> []) nodes 
   in children |> List.concat
 
+let get_ext_children (pos:Lexing.position) exp_loc nodes = 
+  List.filter ~f:(fun node ->
+    match node with
+    | Expression exp ->
+      Location_aux.compare_pos pos exp.pexp_loc = 0 && Location_aux.compare exp.pexp_loc exp_loc = 0
+    | _ -> false
+  ) nodes 
+
 let pprint_deriver_node () node = 
   let ppf, to_string = Format.to_string () in
     begin match node with
       | Browse_raw_p.Structure_item n -> Pprintast.structure ppf [n]
       | Browse_raw_p.Signature_item n -> Pprintast.signature ppf [n]
+      | Browse_raw_p.Expression e -> Pprintast.expression ppf e
       | _ -> ()
     end;
   Format.pp_print_newline ppf ();
