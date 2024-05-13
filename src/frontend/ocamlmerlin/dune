@@ -12,12 +12,15 @@
   -open Merlin_kernel
   -open Merlin_utils
   -open Merlin_analysis
-  -open Merlin_kernel)
+  -open Merlin_kernel
+  -open Merlin_commands)
  (modules (:standard \ gen_ccflags))
  (libraries merlin-lib.config yojson merlin-lib.analysis merlin-lib.kernel
             merlin-lib.utils merlin-lib.os_ipc merlin-lib.ocaml_parsing
             merlin-lib.query_protocol merlin-lib.query_commands
-            merlin-lib.ocaml_typing merlin-lib.ocaml_utils unix str))
+            merlin-lib.ocaml_typing merlin-lib.ocaml_utils
+            merlin-lib.commands
+            unix str))
 
 (executable
  (name      gen_ccflags)
