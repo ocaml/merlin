@@ -1,3 +1,5 @@
+open Misc
+
 module Path : sig
   (** [to_shortest_lid ~env ~env_check path] will make a [Longident.t] from the
   provided [Path.t] and attempt to use the shortest prefix possible given the
@@ -22,6 +24,11 @@ end
 
 (* Add parenthesis to qualified operators *)
 val parenthesize_name : string -> string
+
+(** [parse_identifier] attempts to re-parse a longident so that we get
+    the location of each of its components. *)
+val parse_identifier :
+  (Mconfig.t * Msource.t) -> Lexing.position -> modname Location.loc list
 
 module Compat : sig
   val pat_var_id_and_loc :

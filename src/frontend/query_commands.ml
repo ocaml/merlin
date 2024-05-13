@@ -204,18 +204,9 @@ let dump pipeline = function
 
 let reconstruct_identifier pipeline pos = function
   | None ->
-    let path = Mreader.reconstruct_identifier
-        (Mpipeline.input_config pipeline)
-        (Mpipeline.raw_source pipeline)
-        pos
-    in
-    let path = Mreader_lexer.identifier_suffix path in
-    Logger.log
-      ~section:Type_enclosing.log_section
-      ~title:"reconstruct-identifier"
-      "paths: [%s]"
-      (String.concat ~sep:";" (List.map path
-        ~f:(fun l -> l.Location.txt)));
+    let config = Mpipeline.input_config pipeline in
+    let source = Mpipeline.raw_source pipeline in
+    let path = Misc_utils.parse_identifier (config, source) pos in
     let reify dot =
       if dot = "" ||
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
