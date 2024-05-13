@@ -9,6 +9,9 @@ merlin NEXT_VERSION
     - Ignore SIGPIPE in the Merlin server process (#1746)
     - Fix lexing of quoted strings in comments (#1754, fixes #1753)
     - Improve cursor position detection in longidents (#1756)
+    - Addition of a `merlin-lib.commands` library which disassociates the
+      execution of commands from the `new_protocol`, from the binary, allowing
+      it to be invoked from other projects (#1758)
 
 merlin 4.14
 ===========
