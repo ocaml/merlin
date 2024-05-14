@@ -1,3 +1,17 @@
+UNRELEASED
+==========
+
+  + merlin binary
+    - Support project-wide occurrences queries using index files (#1766)
+      - The file format is described in library `Merlin_lib.index_format`
+      - Two new configuration directives are introduced:
+        - `SOURCE_ROOT` that is used to resolve relative paths found in the
+          indexes.
+        - `INDEX` that is used to declare the list of index files Merlin should
+          use when looking for occurrences.
+  + editor modes
+    - emacs: add basic support for project-wide occurrences (#1766)
+
 merlin 5.0
 ==========
 Fri May 17 19:59:42 CET 2024
