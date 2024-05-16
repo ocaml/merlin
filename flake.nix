@@ -21,10 +21,12 @@
               version = "20201216";
               src = menhir-repository;
             });
+
+            inherit (packages) merlin-lib dot-merlin-reader merlin;
           });
 
         inherit (ocamlPackages) buildDunePackage;
-      in rec {
+
         packages = rec {
           default = merlin;
           merlin-lib = buildDunePackage {
@@ -35,6 +37,7 @@
             propagatedBuildInputs = with ocamlPackages; [ csexp ];
             doCheck = true;
           };
+
           dot-merlin-reader = buildDunePackage {
             pname = "dot-merlin-reader";
             version = "dev";
@@ -44,6 +47,7 @@
             buildInputs = [ merlin-lib ];
             doCheck = true;
           };
+
           merlin = buildDunePackage {
             pname = "merlin";
             version = "dev";
@@ -69,9 +73,12 @@
             meta = with pkgs; { mainProgram = "ocamlmerlin"; };
           };
         };
+      in {
+        inherit packages;
+
         devShells.default = pkgs.mkShell {
           inputsFrom = pkgs.lib.attrValues packages;
-          buildInputs = with ocamlPackages; [ ocaml-lsp ];
+          buildInputs = with ocamlPackages; [ merlin ];
         };
       });
 }
