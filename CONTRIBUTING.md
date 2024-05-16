@@ -78,7 +78,7 @@ to be reapplied for each new version of the compiler.
 
 #### `/src/kernel`
 The backbone of merlin. Contains configuration utilities and pipeline
-management. The pipeline describe the compilation workflow: parsing, ppxing and
+management. The pipeline describes the compilation workflow: parsing, ppxing and
 typing.
 
 #### `/src/frontend/query_protocol.ml`
