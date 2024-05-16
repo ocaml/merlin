@@ -34,6 +34,8 @@ type iterator =
     env: iterator -> Env.t -> unit;
     expr: iterator -> expression -> unit;
     extension_constructor: iterator -> extension_constructor -> unit;
+    include_declaration: iterator -> include_declaration -> unit;
+    include_description: iterator -> include_description -> unit;
     location: iterator -> Location.t -> unit;
     module_binding: iterator -> module_binding -> unit;
     module_coercion: iterator -> module_coercion -> unit;
@@ -120,6 +122,12 @@ let include_infos sub f {incl_loc; incl_mod; incl_attributes; _} =
   sub.attributes sub incl_attributes;
   f incl_mod
 
+let include_description sub incl =
+  include_infos sub (sub.module_type sub) incl
+
+let include_declaration sub incl =
+  include_infos sub (sub.module_expr sub) incl
+
 let class_type_declaration sub x =
   sub.item_declaration sub (Class_type x);
   class_infos sub (sub.class_type sub) x
@@ -146,7 +154,7 @@ let structure_item sub {str_loc; str_desc; str_env; _} =
   | Tstr_class_type list ->
       List.iter (fun (_, s, cltd) ->
         iter_loc sub s; sub.class_type_declaration sub cltd) list
-  | Tstr_include incl -> include_infos sub (sub.module_expr sub) incl
+  | Tstr_include incl -> sub.include_declaration sub incl
   | Tstr_open od -> sub.open_declaration sub od
   | Tstr_attribute attr -> sub.attribute sub attr
 
@@ -407,7 +415,7 @@ let signature_item sub {sig_loc; sig_desc; sig_env; _} =
   | Tsig_recmodule list -> List.iter (sub.module_declaration sub) list
   | Tsig_modtype x -> sub.module_type_declaration sub x
   | Tsig_modtypesubst x -> sub.module_type_declaration sub x
-  | Tsig_include incl -> include_infos sub (sub.module_type sub) incl
+  | Tsig_include incl -> sub.include_description sub incl
   | Tsig_class list -> List.iter (sub.class_description sub) list
   | Tsig_class_type list -> List.iter (sub.class_type_declaration sub) list
   | Tsig_open od -> sub.open_description sub od
@@ -663,6 +671,8 @@ let default_iterator =
     env;
     expr;
     extension_constructor;
+    include_description;
+    include_declaration;
     location;
     module_binding;
     module_coercion;

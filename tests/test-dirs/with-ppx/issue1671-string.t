@@ -59,16 +59,6 @@ Merlin should ignore hidden nodes in occurrences results
           "line": 1,
           "col": 7
         }
-      },
-      {
-        "start": {
-          "line": 3,
-          "col": 93
-        },
-        "end": {
-          "line": 3,
-          "col": 94
-        }
       }
     ],
     "notifications": []
