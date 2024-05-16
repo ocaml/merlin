@@ -67,6 +67,9 @@ in the grammar.
 
 ### Repository organization
 
+There is a partial overview over the repo organization with file-granularity at
+[ARCHITECTURE.md](https://github.com/ocaml/merlin/blob/master/doc/dev/ARCHITECTURE.md).
+Here is a more high-level overview.
 
 #### `/src/ocaml`
 Vendored OCaml typer. Also include Merlin's incremental parser and other
