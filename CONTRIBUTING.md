@@ -22,7 +22,7 @@ places:
 - The Merlin protocol is described in [this
   document](https://github.com/ocaml/merlin/blob/master/doc/dev/PROTOCOL.md).
 
-Contribution to the documentation are welcome!
+Contributions to the documentation are welcome!
 
 ## Question, bug reports and feature requests
 
@@ -32,7 +32,7 @@ support questions, feature requests and bug reports.
 When reporting an issue, please include a precise reproduction in the bug report
 when that's possible, as it is a very useful tool to investigate. You should
 also check that you are using the latest version of Merlin and that a similar
-issue as not already been submitted.
+issue has not already been submitted.
 
 ## Code contributions
 
@@ -47,6 +47,11 @@ We plan to move the codebase to ocamlformat in a near future.
 Changes unrelated to the issue addressed by a PR should be made in a separate
 PR. Additionally, formatting changes in parts of the code not concerned by a
 specific PR should be proposed in another PR.
+
+Ideally, any opened issue should be accompanied by a test with a reproduction.
+When working on a fix for an issue, the first commit should contain the test
+showing the issue. Following commits should fix the issue and update the test
+result accordingly.
 
 ### Menhir version
 
@@ -65,7 +70,8 @@ in the grammar.
 
 #### `/src/ocaml`
 Vendored OCaml typer. Also include Merlin's incremental parser and other
-utilites.
+utilites. Changes to these modules should be kept minimal as these patches need
+to be reapplied for each new version of the compiler.
 
 #### `/src/kernel`
 The backbone of merlin. Contains configuration utilities and pipeline
@@ -89,7 +95,7 @@ The configuration protocol that configuration servers such as
 `dot-merlin-reader` or `dune ocaml-merlin` should implement.
 
 #### `/src/dot-merlin-reader`
-The historical documentation server of Merlin. Tt reads `.merlin` configuration
+The historical configuration server of Merlin. It reads `.merlin` configuration
 files whose syntax is [documented in the
 wiki](https://github.com/ocaml/merlin/wiki/Project-configuration).
 
@@ -100,11 +106,7 @@ For an alternative frontend, see
 [ocaml-lsp-server](https://github.com/ocaml/ocaml-lsp/)
 
 #### `/tests/test-dirs`
-Merlin's behavioral test-suite. We rely on Dune's cram test framework. Ideally,
-any opened issue should be accompanied by a test with a reproduction. When
-working on a fix for an issue, please have a first commit with the test showing
-the issue, before commits that fix the issue and update the test result
-accordingly.
+Merlin's behavioral test-suite. We rely on Dune's cram test framework.
 
 #### `/emacs`
 The emacs editor mode.
