@@ -1,5 +1,6 @@
-merlin NEXT_VERSION
-==================
+merlin 5.0
+==========
+Fri May 17 19:59:42 CET 2024
 
   + merlin binary
     - Support for OCaml 5.2 (#1757)
