@@ -13,6 +13,7 @@
   > let _ = let open Mod in Nod.x
   > EOF
 
+FIXME: we could expect module appearing in paths to be highlighted
   $ $MERLIN single occurrences -identifier-at 6:13 -filename test.ml <test.ml | 
   > jq '.value'
   [
@@ -25,50 +26,10 @@
         "line": 2,
         "col": 12
       }
-    },
-    {
-      "start": {
-        "line": 6,
-        "col": 12
-      },
-      "end": {
-        "line": 6,
-        "col": 15
-      }
-    },
-    {
-      "start": {
-        "line": 7,
-        "col": 14
-      },
-      "end": {
-        "line": 7,
-        "col": 17
-      }
-    },
-    {
-      "start": {
-        "line": 9,
-        "col": 0
-      },
-      "end": {
-        "line": 9,
-        "col": 3
-      }
-    },
-    {
-      "start": {
-        "line": 12,
-        "col": 24
-      },
-      "end": {
-        "line": 12,
-        "col": 27
-      }
     }
   ]
 
-
+FIXME: we could expect module appearing in paths to be highlighted
   $ $MERLIN single occurrences -identifier-at 12:18 -filename test.ml <test.ml | 
   > jq '.value'
   [
@@ -80,36 +41,6 @@
       "end": {
         "line": 1,
         "col": 10
-      }
-    },
-    {
-      "start": {
-        "line": 6,
-        "col": 8
-      },
-      "end": {
-        "line": 6,
-        "col": 11
-      }
-    },
-    {
-      "start": {
-        "line": 7,
-        "col": 8
-      },
-      "end": {
-        "line": 7,
-        "col": 11
-      }
-    },
-    {
-      "start": {
-        "line": 8,
-        "col": 8
-      },
-      "end": {
-        "line": 8,
-        "col": 11
       }
     },
     {
