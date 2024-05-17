@@ -8,6 +8,7 @@
   >   | Mod.A r -> r.lbl
   > EOF
 
+FIXME: we could expect module appearing in paths to be highlighted
   $ $MERLIN single occurrences -identifier-at 4:9 -filename test.ml <test.ml | 
   > jq '.value'
   [
@@ -19,26 +20,6 @@
       "end": {
         "line": 1,
         "col": 10
-      }
-    },
-    {
-      "start": {
-        "line": 4,
-        "col": 8
-      },
-      "end": {
-        "line": 4,
-        "col": 11
-      }
-    },
-    {
-      "start": {
-        "line": 7,
-        "col": 4
-      },
-      "end": {
-        "line": 7,
-        "col": 7
       }
     }
   ]

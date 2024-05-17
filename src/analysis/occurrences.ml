@@ -25,7 +25,7 @@ let decl_of_path_or_lid env namespace path lid =
     end
   | _ -> Env_lookup.by_path path namespace env
 
-let index_buffer_ ~config ~source ~current_buffer_path ~local_defs () =
+let index_buffer_ ~current_buffer_path ~local_defs () =
   let {Logger. log} = Logger.for_section "index" in
   let defs = Hashtbl.create 64 in
   let module Shape_reduce =
@@ -80,38 +80,6 @@ let index_buffer_ ~config ~source ~current_buffer_path ~local_defs () =
           index_decl ()
         end
   in
-  let f ~namespace env path (lid : Longident.t Location.loc)  =
-    (* The compiler lacks sufficient location information to precisely hihglight
-       modules in paths. This function hacks around that issue when looking for
-       occurrences in the current buffer only. *)
-    (* We rely on a custom re-parsing of the longidents that provide us with
-       location information and match these with the real path and longident. *)
-    let rec iter_on_path ~namespace (path : Path.t) lid reparsed =
-      log ~title:"iter_on_path" "Path %a, lid: %a"
-        Logger.fmt (Fun.flip Path.print path)
-        Logger.fmt (Fun.flip Pprintast.longident lid.Location.txt);
-      match path, lid.txt, reparsed with
-      | Pdot (path', n), (Ldot (_, s) | Lident s), _
-          when n <> s && String.lowercase_ascii n = n ->
-          iter_on_path ~namespace path' lid reparsed
-      | (Pdot _ | Pident _), Lident s, [{ Location.txt = name; loc}]
-        when name = s ->
-          log ~title:"iter_on_path" "Last %a, lid: %a"
-            Logger.fmt (Fun.flip Path.print path)
-            Logger.fmt (Fun.flip Pprintast.longident lid.Location.txt);
-          f ~namespace env path { lid with loc = loc }
-      | Pdot (path', _), Ldot (lid', s), { txt = name; loc} :: tl when name = s ->
-          let () = f ~namespace env path { lid with loc = loc } in
-          iter_on_path ~namespace:Module path' { lid with txt = lid' } tl
-      | Papply _, _, _ -> f ~namespace env path lid
-      | _, _, _ -> f ~namespace env path lid
-    in
-    let reparsed_lid =
-      Misc_utils.parse_identifier (config, source) lid.loc.loc_end
-      |> List.rev
-    in
-    iter_on_path ~namespace path lid reparsed_lid
-  in
   Ast_iterators.iter_on_usages ~f local_defs;
   defs
 
@@ -119,7 +87,7 @@ let index_buffer =
   (* Right now, we only cache the last used index. We could do better by caching
      the index for every known buffer. *)
   let cache = ref None in
-  fun ~config ~source ~current_buffer_path ~stamp ~local_defs () ->
+  fun ~current_buffer_path ~stamp ~local_defs () ->
     let {Logger. log} = Logger.for_section "index" in
     match !cache with
     | Some (path, stamp', value) when
@@ -131,7 +99,7 @@ let index_buffer =
     | _ ->
       log ~title:"index_cache" "No valid cache found, reindexing.";
       let result =
-        index_buffer_ ~config ~source ~current_buffer_path ~local_defs ()
+        index_buffer_ ~current_buffer_path ~local_defs ()
       in
       cache := Some (current_buffer_path, stamp, result);
       result
@@ -189,7 +157,7 @@ let comp_unit_of_uid = function
   | Item { comp_unit; _ } -> Some comp_unit
   | Internal | Predef _ -> None
 
-let locs_of ~config ~source ~env ~typer_result ~pos path =
+let locs_of ~config ~env ~typer_result ~pos path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)"
     path
     (Lexing.print_position () pos);
@@ -233,7 +201,7 @@ let locs_of ~config ~source ~env ~typer_result ~pos path =
     log ~title:"locs_of" "Indexing current buffer";
     let buffer_index =
       let stamp = Mtyper.get_stamp typer_result in
-      index_buffer ~config ~source ~current_buffer_path ~stamp ~local_defs ()
+      index_buffer ~current_buffer_path ~stamp ~local_defs ()
     in
     let buffer_locs = Hashtbl.find_opt buffer_index def_uid in
     let locs = Option.value ~default:LidSet.empty buffer_locs in
