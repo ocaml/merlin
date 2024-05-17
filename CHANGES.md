@@ -12,6 +12,8 @@ merlin NEXT_VERSION
     - Addition of a `merlin-lib.commands` library which disassociates the
       execution of commands from the `new_protocol`, from the binary, allowing
       it to be invoked from other projects (#1758)
+    - New occurrences backend: Don't index occurrences when `merlin.hide`
+      attribute is present. (#1768)
 
 merlin 4.14
 ===========
