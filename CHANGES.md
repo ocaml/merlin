@@ -14,6 +14,8 @@ merlin NEXT_VERSION
       it to be invoked from other projects (#1758)
     - New occurrences backend: Don't index occurrences when `merlin.hide`
       attribute is present. (#1768)
+    - Use the new `uid_to_decl` table in 5.2's cmt files to get documentation.
+      (#1773)
 
 merlin 4.14
 ===========
