@@ -46,6 +46,7 @@ type config = {
   extensions   : string list;
   suffixes     : (string * string) list;
   stdlib       : string option;
+  source_root  : string option;
   reader       : string list;
   exclude_query_dir : bool;
   use_ppx_cache : bool;
