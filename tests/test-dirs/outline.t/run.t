@@ -112,6 +112,21 @@
       },
       {
         "start": {
+          "line": 18,
+          "col": 0
+        },
+        "end": {
+          "line": 18,
+          "col": 20
+        },
+        "name": "Ex",
+        "kind": "Exn",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
           "line": 14,
           "col": 0
         },

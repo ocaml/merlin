@@ -120,7 +120,6 @@ let classify_node = function
   | Type_declaration         _ -> `Type
   | Type_kind                _ -> `Type
   | Type_extension           _ -> `Type
-  | Type_exception           _ -> `Type
   | Extension_constructor    _ -> `Type
   | Label_declaration        _ -> `Type
   | Constructor_declaration  _ -> `Type
