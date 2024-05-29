@@ -214,7 +214,7 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
     end
   ;
 
-  command "expand-node"
+  command "expand-ppx"
     ~doc: "Returns the generated code of a PPX."
     ~spec: [
       arg "-position" "<position> Position to complete"
@@ -225,7 +225,7 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
       match pos with 
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos -> 
-        run buffer (Query_protocol.Expand_node pos)
+        run buffer (Query_protocol.Expand_ppx pos)
     end
   ;
 

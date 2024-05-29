@@ -18,24 +18,8 @@ Type declaration in structure
 
   $ dune build
 
-on keyword module
-  $ $MERLIN single expand-node -position 1:4 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
 on module name "MyModule"
-  $ $MERLIN single expand-node -position 1:11 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on keyword struct
-  $ $MERLIN single expand-node -position 1:21 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 1:11 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": "No PPX deriver/extension node found on this position",
@@ -43,31 +27,7 @@ on keyword struct
   }
 
 on keyword type  
-  $ $MERLIN single expand-node -position 2:3 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on type name "point"
-  $ $MERLIN single expand-node -position 2:9 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on label x  
-  $ $MERLIN single expand-node -position 2:16 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on core type "int"
-  $ $MERLIN single expand-node -position 2:24 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 2:3 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": "No PPX deriver/extension node found on this position",
@@ -75,7 +35,7 @@ on core type "int"
   }
 
 on attribute name "deriving"
-  $ $MERLIN single expand-node -position 2:36 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 2:36 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": {
@@ -107,7 +67,7 @@ on attribute name "deriving"
   }
 
 on attribute payload name "rename"
-  $ $MERLIN single expand-node -position 2:46 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 2:46 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": {
@@ -147,64 +107,8 @@ Type declaration in signature
 
   $ dune build
 
-on keyword module
-  $ $MERLIN single expand-node -position 1:4 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on module name "MyModule"
-  $ $MERLIN single expand-node -position 1:11 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on keyword struct
-  $ $MERLIN single expand-node -position 1:21 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on keyword type  
-  $ $MERLIN single expand-node -position 2:3 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on type name "point"
-  $ $MERLIN single expand-node -position 2:9 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on label x  
-  $ $MERLIN single expand-node -position 2:16 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-on core type "int"
-  $ $MERLIN single expand-node -position 2:24 -filename ./apt.ml < ./apt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
 on attribute name "deriving"
-  $ $MERLIN single expand-node -position 2:36 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 2:36 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": {
@@ -227,7 +131,7 @@ on attribute name "deriving"
   }
 
 on attribute payload name "rename"
-  $ $MERLIN single expand-node -position 2:42 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 2:42 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": {
@@ -249,7 +153,6 @@ on attribute payload name "rename"
     "notifications": []
   }
 
-
 Type declaration in structure
   $ cat > apt.ml << EOF
   > type yyyy = int [@@deriving rename]
@@ -257,7 +160,7 @@ Type declaration in structure
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 1:23 -filename ./apt.ml < ./apt.ml
+  $ $MERLIN single expand-ppx -position 1:23 -filename ./apt.ml < ./apt.ml
   {
     "class": "return",
     "value": {
@@ -278,7 +181,6 @@ Type declaration in structure
     "notifications": []
   }
 
-
 Type declaration in signature
   $ cat > apt.mli << EOF
   > type yyyy = int [@@deriving rename]
@@ -286,8 +188,7 @@ Type declaration in signature
 
   $ dune build
 
-
-  $ $MERLIN single expand-node -position 1:23 -filename ./apt.mli < ./apt.mli
+  $ $MERLIN single expand-ppx -position 1:23 -filename ./apt.mli < ./apt.mli
   {
     "class": "return",
     "value": {
@@ -308,16 +209,14 @@ Type declaration in signature
     "notifications": []
   }
 
-
 Type extension in structure
   $ cat > apy.ml << EOF
   > type pppp = .. [@@deriving rename]
-  > type pppp += Int of int [@@deriving rename]
   > EOF
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 1:22 -filename ./apy.ml < ./apy.ml
+  $ $MERLIN single expand-ppx -position 1:22 -filename ./apy.ml < ./apy.ml
   {
     "class": "return",
     "value": {
@@ -337,13 +236,6 @@ Type extension in structure
     },
     "notifications": []
   }
-  $ $MERLIN single expand-node -position 2:30 -filename ./apy.ml < ./apy.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
 
 Type extension in signature
   $ cat > apy.mli << EOF
@@ -352,7 +244,7 @@ Type extension in signature
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 1:22 -filename ./apy.mli < ./apy.mli
+  $ $MERLIN single expand-ppx -position 1:22 -filename ./apy.mli < ./apy.mli
   {
     "class": "return",
     "value": {
@@ -380,7 +272,7 @@ Exception in structure
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 1:30 -filename ./apr.ml < ./apr.ml
+  $ $MERLIN single expand-ppx -position 1:30 -filename ./apr.ml < ./apr.ml
   {
     "class": "return",
     "value": {
@@ -407,7 +299,7 @@ Exception in signature
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 1:30 -filename ./apr.mli < ./apr.mli
+  $ $MERLIN single expand-ppx -position 1:30 -filename ./apr.mli < ./apr.mli
   {
     "class": "return",
     "value": {
@@ -427,7 +319,6 @@ Exception in signature
     "notifications": []
   }
 
-
 Module type declaration in structure
   $ cat > apc.ml << EOF
   > module type Stack = sig 
@@ -443,7 +334,7 @@ Module type declaration in structure
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 9:8 -filename ./apc.ml < ./apc.ml
+  $ $MERLIN single expand-ppx -position 9:8 -filename ./apc.ml < ./apc.ml
   {
     "class": "return",
     "value": {
@@ -489,17 +380,9 @@ Module type declaration in signature
 
   $ dune build
 
-on keyword module
-  $ $MERLIN single expand-node -position 1:6 -filename ./apc.mli < ./apc.mli
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
 on attribute name deriving of type t
 TODO: a cursor here should only output the derived t and now the whole module
-  $ $MERLIN  single expand-node -position 2:14 -filename ./apc.mli < ./apc.mli
+  $ $MERLIN  single expand-ppx -position 2:14 -filename ./apc.mli < ./apc.mli
   {
     "class": "return",
     "value": {
@@ -550,16 +433,8 @@ TODO: a cursor here should only output the derived t and now the whole module
     "notifications": []
   }
 
-on type stack
-  $ $MERLIN single expand-node -position 3:10 -filename ./apc.mli < ./apc.mli
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
 on attribute name deriving of module Stack
-  $ $MERLIN single expand-node -position 9:8 -filename ./apc.mli < ./apc.mli
+  $ $MERLIN single expand-ppx -position 9:8 -filename ./apc.mli < ./apc.mli
   {
     "class": "return",
     "value": {
@@ -612,12 +487,12 @@ on attribute name deriving of module Stack
 
 Test for an attribute that's not deriving
   $ cat > apf.ml << EOF
-  > type y = int * float [@@deriving show]
+  > type y = int * float [@@deriving merlin.hide]
   > EOF
 
   $ dune build
 
-  $ $MERLIN single expand-node -position 1:18 -filename ./apf.ml < ./apf.ml
+  $ $MERLIN single expand-ppx -position 1:27 -filename ./apf.ml < ./apf.ml
   {
     "class": "return",
     "value": "No PPX deriver/extension node found on this position",
@@ -630,28 +505,8 @@ PPx extension
   > EOF
 
   $ dune build
-  $ $MERLIN single expand-node -position 1:2 -filename ./apttt.ml < ./apttt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
 
-  $ $MERLIN single expand-node -position 1:7 -filename ./apttt.ml < ./apttt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-  $ $MERLIN single expand-node -position 1:19 -filename ./apttt.ml < ./apttt.ml
-  {
-    "class": "return",
-    "value": "No PPX deriver/extension node found on this position",
-    "notifications": []
-  }
-
-  $ $MERLIN single expand-node -position 1:30 -filename ./apttt.ml < ./apttt.ml
+  $ $MERLIN single expand-ppx -position 1:30 -filename ./apttt.ml < ./apttt.ml
   {
     "class": "return",
     "value": {
@@ -670,7 +525,7 @@ PPx extension
     "notifications": []
   }
 
-  $ $MERLIN single expand-node -position 1:41 -filename ./apttt.ml < ./apttt.ml
+  $ $MERLIN single expand-ppx -position 1:41 -filename ./apttt.ml < ./apttt.ml
   {
     "class": "return",
     "value": "No PPX deriver/extension node found on this position",
@@ -684,7 +539,7 @@ Show only an output for the hover and not all extensions
 
   $ dune build
 on the first [%tell_me]
-  $ $MERLIN single expand-node -position 1:16 -filename ./apttt.ml < ./aptxc.ml
+  $ $MERLIN single expand-ppx -position 1:16 -filename ./apttt.ml < ./aptxc.ml
   {
     "class": "return",
     "value": {
@@ -704,7 +559,7 @@ on the first [%tell_me]
   }
 
 on the concatenator
-  $ $MERLIN single expand-node -position 1:24 -filename ./apttt.ml < ./aptxc.ml
+  $ $MERLIN single expand-ppx -position 1:24 -filename ./apttt.ml < ./aptxc.ml
   {
     "class": "return",
     "value": "No PPX deriver/extension node found on this position",
@@ -712,7 +567,7 @@ on the concatenator
   }
 
 on the second [%tell_me]
-  $ $MERLIN single expand-node -position 1:28 -filename ./apttt.ml < ./aptxc.ml
+  $ $MERLIN single expand-ppx -position 1:28 -filename ./apttt.ml < ./aptxc.ml
   {
     "class": "return",
     "value": {

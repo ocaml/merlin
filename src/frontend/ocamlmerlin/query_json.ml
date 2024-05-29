@@ -114,7 +114,7 @@ let dump (type a) : a t -> json =
     ]
   | Syntax_document pos ->
     mk "syntax-document" [ ("position", mk_position pos) ]
-  | Expand_node pos ->
+  | Expand_ppx pos ->
     mk "ppx-expand" [ ("position", mk_position pos) ]
   | Locate (prefix, look_for, pos) ->
     mk "locate" [
@@ -394,18 +394,18 @@ let json_of_response (type a) (query : a t) (response : a) : json =
         ("url", `String info.documentation);
       ]
     | `No_documentation -> `String "No documentation found")
-  | Expand_node _, resp -> 
+  | Expand_ppx _, resp -> 
     let str = match resp with
     | `Found ppx_info -> 
       `Assoc
       [
         ("code", `String ppx_info.code);
         ("deriver", `Assoc [
-          ("start", Lexing.json_of_position ppx_info.deriver.a_start);
-          ("end", Lexing.json_of_position ppx_info.deriver.a_end);
+          ("start", Lexing.json_of_position ppx_info.attr_start);
+          ("end", Lexing.json_of_position ppx_info.attr_end);
         ])
       ]
-    | `No_deriver -> `String "No PPX deriver/extension node found on this position"
+    | `No_ppx -> `String "No PPX deriver/extension node found on this position"
     in str
   | Locate_type _, resp -> json_of_locate resp
   | Locate _, resp -> json_of_locate resp
