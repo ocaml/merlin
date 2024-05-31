@@ -1,6 +1,6 @@
 merlin 4.15
 ===========
-May May 31 14:02:42 CET 2024
+Fri May 31 14:02:42 CEST 2024
 
   + merlin binary
     - destruct: Removal of residual patterns (#1737, fixes #1560)
