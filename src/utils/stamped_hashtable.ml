@@ -48,6 +48,9 @@ let mem t a =
 let find t a =
   Hashtbl.find t.table a
 
+let fold f t acc =
+  Hashtbl.fold f t.table acc
+
 (* Implementation of backtracking *)
 
 (* Helper to sort by decreasing stamps *)

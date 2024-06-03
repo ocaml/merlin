@@ -5,113 +5,13 @@ let {Logger. log} = Logger.for_section "occurrences"
 
 type t = { locs: Warnings.loc list; status: Query_protocol.occurrences_status }
 
+let () = Mtyper.set_index_items Index_occurrences.items
+
 let set_fname ~file (loc : Location.t) =
   let pos_fname = file in
   { loc with
       loc_start = { loc.loc_start with pos_fname };
       loc_end   = { loc.loc_end with pos_fname }}
-
-let decl_of_path_or_lid env namespace path lid =
-  match (namespace : Shape.Sig_component_kind.t) with
-  | Constructor ->
-    begin match Env.find_constructor_by_name lid env with
-    | exception Not_found -> None
-    | {cstr_uid; cstr_loc; _ } ->
-      Some { Env_lookup.uid = cstr_uid; loc = cstr_loc; namespace }
-    end
-  | Label ->
-    begin match Env.find_label_by_name lid env with
-    | exception Not_found -> None
-    | {lbl_uid; lbl_loc; _ } ->
-      Some { Env_lookup.uid = lbl_uid; loc = lbl_loc; namespace }
-    end
-  | _ -> Env_lookup.by_path path namespace env
-
-let index_buffer_ ~current_buffer_path ~local_defs () =
-  let {Logger. log} = Logger.for_section "index" in
-  let defs = Hashtbl.create 64 in
-  let add tbl uid locs =
-    try
-      let locations = Hashtbl.find tbl uid in
-      Hashtbl.replace tbl uid (Lid_set.union locs locations)
-    with Not_found -> Hashtbl.add tbl uid locs
-  in
-  let module Shape_reduce =
-    Shape_reduce.Make (struct
-      let fuel = 10
-
-      let read_unit_shape ~unit_name =
-          log ~title:"read_unit_shape" "inspecting %s" unit_name;
-          let cmt = Format.sprintf "%s.cmt" unit_name in
-          match Cmt_cache.read (Load_path.find_normalized cmt) with
-          | { cmt_infos = { cmt_impl_shape; _ }; _ } ->
-            log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
-            cmt_impl_shape
-          | exception _ ->
-            log ~title:"read_unit_shape" "failed to find %s" unit_name;
-            None
-    end)
-  in
-  let f ~namespace env path (lid : Longident.t Location.loc)  =
-    log ~title:"index_buffer" "Path: %a" Logger.fmt (Fun.flip Path.print path);
-    let not_ghost { Location.loc = { loc_ghost; _ }; _ } = not loc_ghost in
-    let lid = { lid with loc = set_fname ~file:current_buffer_path lid.loc } in
-    let index_decl () =
-      begin match decl_of_path_or_lid env namespace path lid.txt with
-      | exception _ |  None -> log ~title:"index_buffer" "Declaration not found"
-      | Some decl ->
-        log ~title:"index_buffer" "Found declaration: %a"
-          Logger.fmt (Fun.flip Location.print_loc decl.loc);
-        add defs decl.uid (Lid_set.singleton lid)
-      end
-    in
-     if not_ghost lid then
-      match Env.shape_of_path ~namespace env path with
-      | exception Not_found -> ()
-      | path_shape ->
-        log ~title:"index_buffer" "Shape of path: %a"
-          Logger.fmt (Fun.flip Shape.print path_shape);
-        let result =  Shape_reduce.reduce_for_uid env path_shape in
-        begin match Locate.uid_of_result ~traverse_aliases:false result with
-        | Some uid, false ->
-          log ~title:"index_buffer" "Found %a (%a) wiht uid %a"
-            Logger.fmt (Fun.flip Pprintast.longident lid.txt)
-            Logger.fmt (Fun.flip Location.print_loc lid.loc)
-            Logger.fmt (Fun.flip Shape.Uid.print uid);
-          add defs uid (Lid_set.singleton lid)
-        | Some uid, true ->
-          log ~title:"index_buffer" "Shape is approximative, found uid: %a"
-            Logger.fmt (Fun.flip Shape.Uid.print uid);
-          index_decl ()
-        | None, _ ->
-          log ~title:"index_buffer" "Reduction failed: missing uid";
-          index_decl ()
-        end
-  in
-  Ast_iterators.iter_on_usages ~f local_defs;
-  defs
-
-let index_buffer =
-  (* Right now, we only cache the last used index. We could do better by caching
-     the index for every known buffer. *)
-  let cache = ref None in
-  fun ~scope ~current_buffer_path ~stamp ~local_defs () ->
-    let {Logger. log} = Logger.for_section "index" in
-    match !cache with
-    | Some (path, stamp', scope', value) when
-        String.equal path current_buffer_path
-        && Int.equal stamp' stamp
-        && scope' = scope ->
-      log ~title:"index_cache" "Reusing cached value for path %s and stamp %i."
-        path stamp';
-      value
-    | _ ->
-      log ~title:"index_cache" "No valid cache found, reindexing.";
-      let result =
-        index_buffer_ ~current_buffer_path ~local_defs ()
-      in
-      cache := Some (current_buffer_path, stamp, scope, result);
-      result
 
 (* A longident can have the form: A.B.x Right now we are only interested in
    values, but we will eventually want to index all occurrences of modules in
@@ -210,6 +110,13 @@ end = struct
     | None -> cache_and_return (stat t file)
 end
 
+let get_buffer_locs result uid =
+  Stamped_hashtable.fold
+    (fun (uid', loc) () acc ->
+      if Shape.Uid.equal uid uid' then Lid_set.add loc acc else acc)
+    (Mtyper.get_index result)
+    Lid_set.empty
+
 let locs_of ~config ~env ~typer_result ~pos ~scope path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)"
     path
@@ -253,11 +160,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       Logger.fmt (fun fmt -> Shape.Uid.print fmt def_uid)
       Logger.fmt (fun fmt -> Location.print_loc fmt def_loc);
     log ~title:"locs_of" "Indexing current buffer";
-    let buffer_index =
-      let stamp = Mtyper.get_stamp typer_result in
-      index_buffer ~scope ~current_buffer_path ~stamp ~local_defs ()
-    in
-    let buffer_locs = Hashtbl.find_opt buffer_index def_uid in
+    let buffer_locs = get_buffer_locs typer_result def_uid in
     let external_locs =
       if scope = `Buffer then []
       else List.filter_map config.merlin.index_files ~f:(fun file ->
@@ -291,11 +194,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
           (Lid_set.union acc_locs locs, String.Set.union acc_files files))
         (external_locs)
     in
-    let locs =
-      match buffer_locs with
-      | Some buffer_locs -> Lid_set.union buffer_locs external_locs
-      | None -> external_locs
-    in
+    let locs = Lid_set.union buffer_locs external_locs in
     let locs =
       log ~title:"occurrences" "Found %i locs" (Lid_set.cardinal locs);
       Lid_set.elements locs
