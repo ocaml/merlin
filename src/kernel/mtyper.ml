@@ -19,9 +19,23 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
+type typedtree_items = [
+  | `Interface of
+      (Parsetree.signature_item, Typedtree.signature_item) item list
+  | `Implementation of
+      (Parsetree.structure_item, Typedtree.structure_item) item list
+]
+
 type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
 
-let cache = s_ref None
+type 'a cache_result = {
+  env : Env.t;
+  snapshot : Types.snapshot;
+  ident_stamp : int;
+  value : 'a;
+}
+
+let cache : typedtree_items option cache_result option ref = s_ref None
 
 let fresh_env config =
   let env0 = Typer_raw.fresh_env () in
@@ -32,14 +46,13 @@ let fresh_env config =
 
 let get_cache config =
   match !cache with
-  | Some (env0, snap0, stamp0, items, _) when Types.is_valid snap0 ->
-    env0, snap0, stamp0, Some items
+  | Some ({ snapshot; _ } as c) when Types.is_valid snapshot -> c
   | Some _ | None ->
-    let env0, snap0, stamp0 = fresh_env config in
-    env0, snap0, stamp0, None
+    let env, snapshot, ident_stamp = fresh_env config in
+    { env; snapshot; ident_stamp; value = None  }
 
 let return_and_cache status =
-  cache := Some status;
+  cache := Some ({ status with value = Some status.value });
   status
 
 type result = {
@@ -48,12 +61,7 @@ type result = {
   initial_snapshot : Types.snapshot;
   initial_stamp : int;
   stamp : int;
-  typedtree : [
-    | `Interface of
-        (Parsetree.signature_item, Typedtree.signature_item) item list
-    | `Implementation of
-        (Parsetree.structure_item, Typedtree.structure_item) item list
-  ];
+  typedtree : typedtree_items;
   cache_stat : typer_cache_stats
 }
 
@@ -111,14 +119,14 @@ let rec type_signature caught env = function
   | [] -> []
 
 let type_implementation config caught parsetree =
-  let env0, snap0, stamp0, prefix = get_cache config in
-  let prefix, parsetree, cache_stat =
+  let { env; snapshot; ident_stamp; value = prefix; _ } = get_cache config in
+  let prefix, parsetree, cache_stats =
     match prefix with
     | Some (`Implementation items) -> compatible_prefix items parsetree
     | Some (`Interface _) | None -> ([], parsetree, Miss)
   in
   let env', snap', stamp', warn' = match prefix with
-    | [] -> (env0, snap0, stamp0, Warnings.backup ())
+    | [] -> (env, snapshot, ident_stamp, Warnings.backup ())
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
@@ -128,18 +136,18 @@ let type_implementation config caught parsetree =
   Warnings.restore warn';
   Env.cleanup_functor_caches ~stamp:stamp';
   let suffix = type_structure caught env' parsetree in
-  return_and_cache
-    (env0, snap0, stamp0, `Implementation (List.rev_append prefix suffix), cache_stat)
+  let value = `Implementation (List.rev_append prefix suffix) in
+  return_and_cache { env; snapshot; ident_stamp; value }, cache_stats
 
 let type_interface config caught parsetree =
-  let env0, snap0, stamp0, prefix = get_cache config in
-  let prefix, parsetree, cache_stat =
+  let { env; snapshot; ident_stamp; value = prefix; _ } = get_cache config in
+  let prefix, parsetree, cache_stats =
     match prefix with
     | Some (`Interface items) -> compatible_prefix items parsetree
     | Some (`Implementation _) | None -> ([], parsetree, Miss)
   in
   let env', snap', stamp', warn' = match prefix with
-    | [] -> (env0, snap0, stamp0, Warnings.backup ())
+    | [] -> (env, snapshot, ident_stamp, Warnings.backup ())
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
@@ -149,8 +157,8 @@ let type_interface config caught parsetree =
   Warnings.restore warn';
   Env.cleanup_functor_caches ~stamp:stamp';
   let suffix = type_signature caught env' parsetree in
-  return_and_cache
-    (env0, snap0, stamp0, `Interface (List.rev_append prefix suffix), cache_stat)
+  let value = `Interface (List.rev_append prefix suffix) in
+  return_and_cache { env; snapshot; ident_stamp; value}, cache_stats
 
 let run config parsetree =
   if not (Env.check_state_consistency ()) then (
@@ -165,13 +173,21 @@ let run config parsetree =
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();
-  let initial_env, initial_snapshot, initial_stamp, typedtree, cache_stat = match parsetree with
+  let cached_result, cache_stat = match parsetree with
     | `Implementation parsetree -> type_implementation config caught parsetree
     | `Interface parsetree -> type_interface config caught parsetree
   in
   let stamp = Ident.get_currentstamp () in
   Typecore.reset_delayed_checks ();
-  { config; initial_env; initial_snapshot; initial_stamp; stamp; typedtree; cache_stat }
+  {
+    config;
+    initial_env = cached_result.env;
+    initial_snapshot = cached_result.snapshot;
+    initial_stamp = cached_result.ident_stamp;
+    stamp;
+    typedtree = cached_result.value;
+    cache_stat;
+  }
 
 let get_env ?pos:_ t =
   Option.value ~default:t.initial_env (
