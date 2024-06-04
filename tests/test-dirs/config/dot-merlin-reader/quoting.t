@@ -18,6 +18,7 @@
     "hidden_source_path": [],
     "cmi_path": [],
     "cmt_path": [],
+    "index_files": [],
     "flags_applied": [
       {
         "workdir": "$TESTCASE_ROOT",
@@ -53,6 +54,7 @@
       }
     ],
     "stdlib": null,
+    "source_root": null,
     "reader": [],
     "protocol": "json",
     "log_file": null,

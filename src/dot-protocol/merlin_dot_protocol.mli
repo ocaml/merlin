@@ -48,12 +48,14 @@ module Directive : sig
     | `BH of string
     | `SH of string
     | `CMI of string
-    | `CMT of string ]
+    | `CMT of string
+    | `INDEX of string ]
 
   type no_processing_required =
     [ `EXT of string list
     | `FLG of string list
     | `STDLIB of string
+    | `SOURCE_ROOT of string
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR

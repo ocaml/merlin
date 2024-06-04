@@ -1,0 +1,10 @@
+(library
+ (name merlin_index_format)
+ (public_name merlin-lib.index_format)
+ (flags
+  :standard
+  -open Ocaml_parsing
+  -open Ocaml_typing
+  -open Ocaml_utils
+  -open Merlin_utils)
+ (libraries ocaml_parsing ocaml_typing ocaml_utils merlin_utils))

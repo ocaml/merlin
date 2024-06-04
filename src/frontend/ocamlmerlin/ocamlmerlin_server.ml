@@ -4,11 +4,6 @@ let merlin_timeout =
 
 module Server = struct
 
-  let rec protect_eintr f =
-    match f () with
-    | exception (Unix.Unix_error(Unix.EINTR, _, _)) -> protect_eintr f
-    | result -> result
-
   let process_request {Os_ipc. wd; environ; argv; context = _}  =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit

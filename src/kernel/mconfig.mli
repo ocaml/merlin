@@ -34,9 +34,11 @@ type merlin = {
   hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
+  index_files : string list;
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
+  source_root : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
