@@ -1,3 +1,8 @@
+merlin NEXT_VERSION
+=========
+  + merlin binary
+       - Implement new expand-node command for expanding PPX annotations (#1745)
+
 merlin 5.0
 ==========
 Fri May 17 19:59:42 CET 2024
