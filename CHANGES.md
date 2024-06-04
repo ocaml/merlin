@@ -11,6 +11,7 @@ UNRELEASED
           use when looking for occurrences.
     - A new `UNIT_NAME` configuration directive that can be used to tell Merlin
       the correct name of the current unit in the presence of wrapping (#1776)
+    - Perform incremental indexation of the buffer when typing. (#1777)
   + editor modes
     - emacs: add basic support for project-wide occurrences (#1766)
 
