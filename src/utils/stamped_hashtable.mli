@@ -34,6 +34,9 @@ val mem : ('a, 'b) t -> 'a -> bool
 val find : ('a, 'b) t -> 'a -> 'b
 (** See [Hashtbl.find]. *)
 
+val fold : ('a -> 'b -> 'acc -> 'acc) -> ('a, 'b) t -> 'acc -> 'acc
+(** See [Hashtbl.fold]. *)
+
 val create_changelog : unit -> changelog
 (** Create a new change log. *)
 
