@@ -4,6 +4,7 @@ import vim
 import re
 import os
 import sys
+import itertools
 from sys import platform
 
 enclosing_types = [] # nothing to see here
@@ -83,6 +84,21 @@ def catch_and_print(f, msg=None):
 
 def concat_map(f, args):
     return [item for arg in args for item in f(arg)]
+
+# Format an integer or a string into a form that can be parsed back by Vim.
+def vim_value(v):
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, str):
+        return "'%s'" % v.replace("'", "''")
+    raise Exception("Failed to convert into a vim value: %s" % str(v))
+
+# Format a dictionnary containing integer and string values into a Vim record.
+def vim_record(d):
+    def vim_field(f):
+        key, val = f
+        return "'%s':%s" % (key, vim_value(val))
+    return "{" + ",".join(map(vim_field, d.items())) + "}"
 
 ######## PROCESS MANAGEMENT
 
@@ -323,9 +339,10 @@ def command_motion(cmd, target, pos):
     except MerlinExc as e:
         try_print_error(e)
 
-def command_occurrences(pos):
+def command_occurrences(pos, project_wide):
     try:
-        lst_or_err = command("occurrences", "-identifier-at", fmtpos(pos))
+        scope_args = ["-scope", "project"] if project_wide else []
+        lst_or_err = command("occurrences", "-identifier-at", fmtpos(pos), *scope_args)
         if not isinstance(lst_or_err, list):
             print(lst_or_err)
         else:
@@ -479,30 +496,75 @@ def vim_document_at_cursor(path):
 def vim_document_under_cursor():
     vim_document_at_cursor(None)
 
+# Read the lines numbers present in [lines] from file [fname]. End-of-line is
+# stripped from each line.
+def read_lines_of_file(fname, lines):
+    lines = iter(sorted(set(lines)))
+    next_line = next(lines)
+    n = 1
+    r = {}
+    try:
+        try:
+            with open(fname) as inp:
+                for line in inp:
+                    if next_line == n:
+                        r[n] = line.rstrip("\n")
+                        next_line = next(lines)
+                    n += 1
+        except FileNotFoundError:
+            pass
+        # File has been truncated or not found
+        while True:
+            r[next_line] = ""
+            next_line = next(lines)
+    except StopIteration:
+        return r
+
+# From the result of [command_occurrences], read the start line for each
+# results. Generate the same occurrences with the 'text' field added.
+def with_text_previews(occurs):
+    preview_lines_by_file = {
+            fname: read_lines_of_file(fname, [ oc['start']['line'] for oc in occurs ])
+            for fname, occurs
+            in itertools.groupby(occurs, lambda oc: oc.get('file'))
+            if fname != None }
+    for oc in occurs:
+        lnum = oc['start']['line']
+        if 'file' not in oc: # Current buffer
+            text = vim.current.buffer[lnum - 1]
+        else:
+            text = preview_lines_by_file[oc['file']][lnum]
+        yield { "text": text, **oc }
+
 # Occurrences
-def vim_occurrences(vimvar):
+def vim_occurrences(vimvar, project_wide):
     vim.command("let %s = []" % vimvar)
     line, col = vim.current.window.cursor
-    lst = command_occurrences((line, col))
-    lst = map(lambda x: x['start'], lst)
+    lst = command_occurrences((line, col), project_wide)
     bufnr = vim.current.buffer.number
+    cur_fname = vim.current.buffer.name
     nr = 0
     cursorpos = 0
-    for pos in lst:
-        lnum = pos['line']
-        lcol = pos['col']
-        if (lnum, lcol) <= (line, col): cursorpos = nr
-        text = vim.current.buffer[lnum - 1]
-        text = text.replace("'", "''")
-        vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'I','valid':1}" %
-                (bufnr, lnum, lcol + 1, nr, text))
-        nr = nr + 1
+    for pos in with_text_previews(lst):
+        lnum = pos['start']['line']
+        lcol = pos['start']['col']
+        occur = { "lnum": lnum, "col": lcol + 1, "vcol": 0, "nr": nr,
+                 "pattern": "", "type": "I", "valid": 1 , "text": pos['text'] }
+        if 'file' not in pos or pos['file'] == cur_fname:
+            # Occurrence is in the current buffer
+            if (lnum, lcol) <= (line, col): cursorpos = nr
+            occur["bufnr"] = bufnr
+        else:
+            occur["filename"] = pos['file']
+        vim.command("let l:tmp = " + vim_record(occur))
         vim.command("call add(%s, l:tmp)" % vimvar)
+        nr = nr + 1
     return cursorpos + 1
 
 def vim_occurrences_search():
+    project_wide = False
     line, col = vim.current.window.cursor
-    lst = command_occurrences((line, col))
+    lst = command_occurrences((line, col), project_wide)
     result = ""
     over = ""
     start_col = 0
@@ -521,8 +583,9 @@ def vim_occurrences_search():
     return "[%s, '%s', '%s']" % (start_col, over, result)
 
 def vim_occurrences_replace(content):
+    project_wide = False
     cursor = vim.current.window.cursor
-    lst = command_occurrences(cursor)
+    lst = command_occurrences(cursor, project_wide)
     lst.reverse()
     for pos in lst:
         if pos['start']['line'] == pos['end']['line']:

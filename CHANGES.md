@@ -13,6 +13,7 @@ UNRELEASED
       the correct name of the current unit in the presence of wrapping (#1776)
   + editor modes
     - emacs: add basic support for project-wide occurrences (#1766)
+    - vim: add basic support for project-wide occurrences (#1767, @Julow)
 
 merlin 5.0
 ==========
