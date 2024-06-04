@@ -37,7 +37,7 @@ The hole is filled with merlin.hole.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting expr"
+        "message": "Syntax error, expecting fun_expr"
       }
     ],
     "notifications": []
@@ -67,7 +67,7 @@ The hole is filled with merlin.hole.
         "valid": true,
         "message": "Signature mismatch:
   Modules do not match: sig end is not included in sig val f : int -> unit end
-  The value `f' is required but not provided
+  The value f is required but not provided
   File \"module_recovery.ml\", line 1, characters 15-34: Expected declaration"
       },
       {
@@ -118,7 +118,7 @@ penalty should prevent it.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting expr"
+        "message": "Syntax error, expecting fun_expr"
       }
     ],
     "notifications": []

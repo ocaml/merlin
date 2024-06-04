@@ -6,6 +6,7 @@ let {Logger. log} = Logger.for_section "Mconfig"
 
 type ocaml = {
   include_dirs         : string list;
+  hidden_dirs          : string list;
   no_std_include       : bool;
   unsafe               : bool;
   classic              : bool;
@@ -15,7 +16,6 @@ type ocaml = {
   recursive_types      : bool;
   strict_sequence      : bool;
   applicative_functors : bool;
-  unsafe_string        : bool;
   nopervasives         : bool;
   strict_formats       : bool;
   open_modules         : string list;
@@ -32,6 +32,7 @@ let dump_warnings st =
 
 let dump_ocaml x = `Assoc [
     "include_dirs"         , `List (List.map ~f:Json.string x.include_dirs);
+    "hidden_dirs"          , `List (List.map ~f:Json.string x.hidden_dirs);
     "no_std_include"       , `Bool x.no_std_include;
     "unsafe"               , `Bool x.unsafe;
     "classic"              , `Bool x.classic;
@@ -40,7 +41,6 @@ let dump_ocaml x = `Assoc [
     "recursive_types"      , `Bool x.recursive_types;
     "strict_sequence"      , `Bool x.strict_sequence;
     "applicative_functors" , `Bool x.applicative_functors;
-    "unsafe_string"        , `Bool x.unsafe_string;
     "nopervasives"         , `Bool x.nopervasives;
     "strict_formats"       , `Bool x.strict_formats;
     "open_modules"         , Json.list Json.string x.open_modules;
@@ -72,6 +72,8 @@ let marg_commandline f =
 type merlin = {
   build_path  : string list;
   source_path : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
   extensions  : string list;
@@ -104,6 +106,8 @@ let dump_merlin x =
   `Assoc [
     "build_path"   , `List (List.map ~f:Json.string x.build_path);
     "source_path"  , `List (List.map ~f:Json.string x.source_path);
+    "hidden_build_path" , `List (List.map ~f:Json.string x.hidden_build_path);
+    "hidden_source_path", `List (List.map ~f:Json.string x.hidden_source_path);
     "cmi_path"     , `List (List.map ~f:Json.string x.cmi_path);
     "cmt_path"     , `List (List.map ~f:Json.string x.cmt_path);
     "flags_applied", `List (List.map ~f:dump_flag_list x.flags_applied);
@@ -236,6 +240,8 @@ let merge_merlin_config dot merlin ~failures ~config_path =
   { merlin with
     build_path = dot.Mconfig_dot.build_path @ merlin.build_path;
     source_path = dot.source_path @ merlin.source_path;
+    hidden_build_path = dot.hidden_build_path @ merlin.hidden_build_path;
+    hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
     cmi_path = dot.cmi_path @ merlin.cmi_path;
     cmt_path = dot.cmt_path @ merlin.cmt_path;
     exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
@@ -274,6 +280,18 @@ let merlin_flags = [
     marg_path (fun dir merlin ->
         {merlin with source_path = dir :: merlin.source_path}),
     "<dir> Add <dir> to merlin source path"
+  );
+  (
+    "-hidden-build-path",
+    marg_path (fun dir merlin ->
+        {merlin with hidden_build_path = dir :: merlin.hidden_build_path}),
+    "<dir> Add <dir> to merlin hidden build path"
+  );
+  (
+    "-hidden-source-path",
+    marg_path (fun dir merlin ->
+        {merlin with hidden_source_path = dir :: merlin.hidden_source_path}),
+    "<dir> Add <dir> to merlin hidden source path"
   );
   (
     "-cmi-path",
@@ -430,7 +448,7 @@ let ocaml_ignored_parametrized_flags = [
   "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
   "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
-  "-error-style"; "-dump-dir";
+  "-error-style"; "-dump-dir"; "-cmi-file";
 ]
 
 let ocaml_warnings_spec ~error =
@@ -457,6 +475,13 @@ let ocaml_flags = [
     marg_path (fun dir ocaml ->
         {ocaml with include_dirs = dir :: ocaml.include_dirs}),
     "<dir> Add <dir> to the list of include directories"
+  );
+  (
+    "-H",
+    marg_path (fun dir ocaml ->
+        {ocaml with hidden_dirs = dir :: ocaml.hidden_dirs}),
+    "<dir>  Add <dir> to the list of \"hidden\" include directories\n\
+    \ (Like -I, but the program can not directly reference these dependencies)"
   );
   (
     "-nostdlib",
@@ -519,18 +544,9 @@ let ocaml_flags = [
     " Add support for VM-scheduled threads library"
   );
   (
-    "-unsafe-string",
-    Marg.unit (fun ocaml -> {ocaml with unsafe_string = true}),
-    Printf.sprintf
-      " Make strings mutable (default: %B)"
-      (not Config.safe_string)
-  );
-  (
     "-safe-string",
-    Marg.unit (fun ocaml -> {ocaml with unsafe_string = false}),
-    Printf.sprintf
-      " Make strings immutable (default: %B)"
-      Config.safe_string
+    Marg.unit (fun ocaml -> ocaml),
+    " Default to true unconditionally since 5.00"
   );
   (
     "-nopervasives",
@@ -599,6 +615,7 @@ let ocaml_flags = [
 let initial = {
   ocaml = {
     include_dirs         = [];
+    hidden_dirs          = [];
     no_std_include       = false;
     unsafe               = false;
     classic              = false;
@@ -608,7 +625,6 @@ let initial = {
     recursive_types      = false;
     strict_sequence      = false;
     applicative_functors = true;
-    unsafe_string        = not Config.safe_string;
     nopervasives         = false;
     strict_formats       = false;
     open_modules         = [];
@@ -619,6 +635,8 @@ let initial = {
   merlin = {
     build_path  = [];
     source_path = [];
+    hidden_build_path  = [];
+    hidden_source_path = [];
     cmi_path    = [];
     cmt_path    = [];
     extensions  = [];
@@ -732,7 +750,8 @@ let source_path config =
   List.concat
     [[config.query.directory];
      stdlib;
-     config.merlin.source_path]
+     config.merlin.source_path;
+     config.merlin.hidden_source_path]
   |> List.filter_dup
 
 let build_path config = (
@@ -764,6 +783,9 @@ let build_path config = (
   result'
 )
 
+let hidden_build_path config =
+  config.merlin.hidden_build_path @ config.ocaml.hidden_dirs
+
 let cmt_path config = (
   let dirs =
     match config.ocaml.threads with
@@ -774,6 +796,7 @@ let cmt_path config = (
   let dirs =
     config.merlin.cmt_path @
     config.merlin.build_path @
+    config.merlin.hidden_build_path @
     dirs
   in
   let stdlib = stdlib config in

@@ -98,6 +98,8 @@ let rec module_path s path =
        Pdot(module_path s p, n)
     | Papply(p1, p2) ->
        Papply(module_path s p1, module_path s p2)
+    | Pextra_ty _ ->
+       fatal_error "Subst.module_path"
 
 let modtype_path s path =
       match Path.Map.find path s.modtypes with
@@ -108,11 +110,18 @@ let modtype_path s path =
          match path with
          | Pdot(p, n) ->
             Pdot(module_path s p, n)
-         | Papply _ ->
+         | Papply _ | Pextra_ty _ ->
             fatal_error "Subst.modtype_path"
          | Pident _ -> path
 
-let type_path s path =
+(* For values, extension constructors, classes and class types *)
+let value_path s path =
+  match path with
+  | Pident _ -> path
+  | Pdot(p, n) -> Pdot(module_path s p, n)
+  | Papply _ | Pextra_ty _ -> fatal_error "Subst.value_path"
+
+let rec type_path s path =
   match Path.Map.find path s.types with
   | Path p -> p
   | Type_function _ -> assert false
@@ -123,13 +132,10 @@ let type_path s path =
         Pdot(module_path s p, n)
      | Papply _ ->
         fatal_error "Subst.type_path"
-
-let type_path s p =
-  match Path.constructor_typath p with
-  | Regular p -> type_path s p
-  | Cstr (ty_path, cstr) -> Pdot(type_path s ty_path, cstr)
-  | LocalExt _ -> type_path s p
-  | Ext (p, cstr) -> Pdot(module_path s p, cstr)
+     | Pextra_ty (p, extra) ->
+         match extra with
+         | Pcstr_ty _ -> Pextra_ty (type_path s p, extra)
+         | Pext_ty -> Pextra_ty (value_path s p, extra)
 
 let to_subst_by_type_function s p =
   match Path.Map.find p s.types with
@@ -155,7 +161,68 @@ let norm = function
   | Tunivar None -> tunivar_none
   | d -> d
 
-let ctype_apply_env_empty = ref (fun _ -> assert false)
+let apply_type_function params args body =
+  For_copy.with_scope (fun copy_scope ->
+    List.iter2
+      (fun param arg ->
+        For_copy.redirect_desc copy_scope param (Tsubst (arg, None)))
+      params args;
+    let rec copy ty =
+      assert (get_level ty = generic_level);
+      match get_desc ty with
+      | Tsubst (ty, _) -> ty
+      | Tvariant row ->
+          let t = newgenstub ~scope:(get_scope ty) in
+          For_copy.redirect_desc copy_scope ty (Tsubst (t, None));
+          let more = row_more row in
+          assert (get_level more = generic_level);
+          let mored = get_desc more in
+          (* We must substitute in a subtle way *)
+          (* Tsubst takes a tuple containing the row var and the variant *)
+          let desc' =
+            match mored with
+            | Tsubst (_, Some ty2) ->
+                (* This variant type has been already copied *)
+                (* Change the stub to avoid Tlink in the new type *)
+                For_copy.redirect_desc copy_scope ty (Tsubst (ty2, None));
+                Tlink ty2
+            | _ ->
+                let more' =
+                  match mored with
+                    Tsubst (ty, None) -> ty
+                    (* TODO: is this case possible?
+                       possibly an interaction with (copy more) below? *)
+                  | Tconstr _ | Tnil ->
+                      copy more
+                  | Tvar _ | Tunivar _ ->
+                      newgenty mored
+                  |  _ -> assert false
+                in
+                let row =
+                  match get_desc more' with (* PR#6163 *)
+                    Tconstr (x,_,_) when not (is_fixed row) ->
+                      let Row {fields; more; closed; name} = row_repr row in
+                      create_row ~fields ~more ~closed ~name
+                        ~fixed:(Some (Reified x))
+                  | _ -> row
+                in
+                (* Register new type first for recursion *)
+                For_copy.redirect_desc copy_scope more
+                  (Tsubst(more', Some t));
+                (* Return a new copy *)
+                Tvariant (copy_row copy true row false more')
+          in
+          Transient_expr.set_stub_desc t desc';
+          t
+      | desc ->
+          let t = newgenstub ~scope:(get_scope ty) in
+          For_copy.redirect_desc copy_scope ty (Tsubst (t, None));
+          let desc' = copy_type_desc copy desc in
+          Transient_expr.set_stub_desc t desc';
+          t
+    in
+    copy body)
+
 
 (* Similar to [Ctype.nondep_type_rec]. *)
 let rec typexp copy_scope s ty =
@@ -204,7 +271,7 @@ let rec typexp copy_scope s ty =
          | exception Not_found -> Tconstr(type_path s p, args, ref Mnil)
          | Path _ -> Tconstr(type_path s p, args, ref Mnil)
          | Type_function { params; body } ->
-            Tlink (!ctype_apply_env_empty params body args)
+            Tlink (apply_type_function params args body)
          end
       | Tpackage(p, fl) ->
           Tpackage(modtype_path s p,
@@ -308,7 +375,7 @@ let type_declaration' copy_scope s decl =
     type_arity = decl.type_arity;
     type_kind =
       begin match decl.type_kind with
-        Type_abstract -> Type_abstract
+        Type_abstract r -> Type_abstract r
       | Type_variant (cstrs, rep) ->
           Type_variant (List.map (constructor_declaration copy_scope s) cstrs,
                         rep)
@@ -384,6 +451,7 @@ let cltype_declaration' copy_scope s decl =
     clty_variance = decl.clty_variance;
     clty_type = class_type copy_scope s decl.clty_type;
     clty_path = type_path s decl.clty_path;
+    clty_hash_type = type_declaration' copy_scope s decl.clty_hash_type ;
     clty_loc = loc s decl.clty_loc;
     clty_attributes = attrs s decl.clty_attributes;
     clty_uid = decl.clty_uid;
@@ -587,7 +655,7 @@ and subst_lazy_modtype scoping s = function
           | Pident _ -> MtyL_ident p
           | Pdot(p, n) ->
              MtyL_ident(Pdot(module_path s p, n))
-          | Papply _ ->
+          | Papply _ | Pextra_ty _ ->
              fatal_error "Subst.modtype"
           end
       end

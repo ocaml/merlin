@@ -6,7 +6,7 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ master; 500 ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -38,9 +38,9 @@ jobs:
         os:
           - macos-latest
           - ubuntu-latest
-          - windows-latest
+          # - windows-latest
         ocaml-compiler:
-          - 4.14.x
+          - 5.2.x
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -51,12 +51,12 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - name: Checkout tree
+        uses: actions/checkout@v4
 
-      - name: Set up OCaml ${{ matrix.ocaml-compiler }}
+      - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
-          # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Install dependencies

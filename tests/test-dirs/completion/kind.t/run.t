@@ -25,8 +25,6 @@ Keywords only including extension:
 
   $ echo "f" | $MERLIN single complete-prefix -position 1:2 -filename test.ml \
   > -kind k -prefix f -extension lwt | jq ".value.entries[].name"
-  "finally"
-  "for_lwt"
   "function"
   "false"
   "fun"
@@ -44,7 +42,9 @@ certain path
   "filteri"
   "find"
   "find_all"
+  "find_index"
   "find_map"
+  "find_mapi"
   "find_opt"
   "flatten"
   "fold_left"

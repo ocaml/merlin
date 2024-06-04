@@ -46,7 +46,6 @@ See issue #1185 on vscode-ocaml-platform
 
 FIXME: we can do better than that
   $ $MERLIN single occurrences -identifier-at 5:2 \
-  > -log-file - -log-section occurrences \
   > -filename main.ml <main.ml | jq '.value'
   [
     {

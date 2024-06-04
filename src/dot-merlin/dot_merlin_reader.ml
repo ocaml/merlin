@@ -72,8 +72,12 @@ module Cache = File_cache.Make (struct
 
           else if String.is_prefixed ~by:"B " line then
             tell (`B (String.drop 2 line))
+          else if String.is_prefixed ~by:"BH " line then
+            tell (`BH (String.drop 3 line))
           else if String.is_prefixed ~by:"S " line then
             tell (`S (String.drop 2 line))
+          else if String.is_prefixed ~by:"SH " line then
+            tell (`SH (String.drop 3 line))
           else if String.is_prefixed ~by:"SRC " line then
             tell (`S (String.drop 4 line))
           else if String.is_prefixed ~by:"CMI " line then
@@ -324,7 +328,7 @@ let empty_config = {
 let prepend_config ~cwd ~cfg =
   List.fold_left ~init:cfg ~f:(fun cfg (d : Merlin_dot_protocol.Directive.Raw.t) ->
     match d with
-    | `B _ | `S _ | `CMI _ | `CMT _  as directive ->
+    | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _  as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
     | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
@@ -453,6 +457,8 @@ let postprocess cfg =
           match directive with
           | `B path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `B p)
           | `S path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `S p)
+          | `BH path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `BH p)
+          | `SH path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `SH p)
           | `CMI path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
           | `CMT path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
         in

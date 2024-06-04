@@ -65,7 +65,7 @@ and strengthen_lazy_sig' ~aliasable env sg p =
     [] -> []
   | (SigL_value(_, _, _) as sigelt) :: rem ->
       sigelt :: strengthen_lazy_sig' ~aliasable env rem p
-  | SigL_type(id, {type_kind=Type_abstract}, _, _) :: rem
+  | SigL_type(id, {type_kind=Type_abstract _}, _, _) :: rem
     when Btype.is_row_name (Ident.name id) ->
       strengthen_lazy_sig' ~aliasable env rem p
   | SigL_type(id, decl, rs, vis) :: rem ->
@@ -77,7 +77,7 @@ and strengthen_lazy_sig' ~aliasable env sg p =
             let manif =
               Some(Btype.newgenty(Tconstr(Pdot(p, Ident.name id),
                                           decl.type_params, ref Mnil))) in
-            if decl.type_kind = Type_abstract then
+            if Btype.type_kind_is_abstract decl then
               { decl with type_private = Public; type_manifest = manif }
             else
               { decl with type_manifest = manif }
@@ -392,7 +392,7 @@ and contains_type_sig env = List.iter (contains_type_item env)
 
 and contains_type_item env = function
     Sig_type (_,({type_manifest = None} |
-                 {type_kind = Type_abstract; type_private = Private}),_, _)
+                 {type_kind = Type_abstract _; type_private = Private}),_, _)
   | Sig_modtype _
   | Sig_typext (_, {ext_args = Cstr_record _}, _, _) ->
       (* We consider that extension constructors with an inlined
@@ -418,12 +418,12 @@ let contains_type env mty =
 
 let rec get_prefixes = function
   | Pident _ -> Path.Set.empty
-  | Pdot (p, _)
-  | Papply (p, _) -> Path.Set.add p (get_prefixes p)
+  | Pdot (p, _) | Papply (p, _) | Pextra_ty (p, _)
+    -> Path.Set.add p (get_prefixes p)
 
 let rec get_arg_paths = function
   | Pident _ -> Path.Set.empty
-  | Pdot (p, _) -> get_arg_paths p
+  | Pdot (p, _) | Pextra_ty (p, _) -> get_arg_paths p
   | Papply (p1, p2) ->
       Path.Set.add p2
         (Path.Set.union (get_prefixes p2)
@@ -437,6 +437,10 @@ let rec rollback_path subst p =
     | Pdot (p1, s) ->
         let p1' = rollback_path subst p1 in
         if Path.same p1 p1' then p else rollback_path subst (Pdot (p1', s))
+    | Pextra_ty (p1, extra) ->
+        let p1' = rollback_path subst p1 in
+        if Path.same p1 p1' then p
+        else rollback_path subst (Pextra_ty (p1', extra))
 
 let rec collect_ids subst bindings p =
     begin match rollback_path subst p with

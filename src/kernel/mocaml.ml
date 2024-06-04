@@ -39,7 +39,6 @@ let setup_reader_config config = (
   recursive_types      := ocaml.recursive_types ;
   strict_sequence      := ocaml.strict_sequence ;
   applicative_functors := ocaml.applicative_functors ;
-  unsafe_string        := ocaml.unsafe_string ;
   nopervasives         := ocaml.nopervasives ;
   strict_formats       := ocaml.strict_formats ;
   open_modules         := ocaml.open_modules ;
@@ -47,7 +46,9 @@ let setup_reader_config config = (
 
 let setup_typer_config config = (
   setup_reader_config config;
-  Load_path.init (Mconfig.build_path config);
+  let visible = Mconfig.build_path config in
+  let hidden = Mconfig.hidden_build_path config in
+  Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
 )
 
 (** Switchable implementation of Oprint *)

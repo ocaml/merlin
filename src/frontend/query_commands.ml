@@ -204,24 +204,15 @@ let dump pipeline = function
 
 let reconstruct_identifier pipeline pos = function
   | None ->
-    let path = Mreader.reconstruct_identifier
-        (Mpipeline.input_config pipeline)
-        (Mpipeline.raw_source pipeline)
-        pos
-    in
-    let path = Mreader_lexer.identifier_suffix path in
-    Logger.log
-      ~section:Type_enclosing.log_section
-      ~title:"reconstruct-identifier"
-      "paths: [%s]"
-      (String.concat ~sep:";" (List.map path
-        ~f:(fun l -> l.Location.txt)));
+    let config = Mpipeline.input_config pipeline in
+    let source = Mpipeline.raw_source pipeline in
+    let path = Misc_utils.parse_identifier (config, source) pos in
     let reify dot =
       if dot = "" ||
          (dot.[0] >= 'a' && dot.[0] <= 'z') ||
          (dot.[0] >= 'A' && dot.[0] <= 'Z')
       then dot
-      else "(" ^ dot ^ ")"
+      else "( " ^ dot ^ ")"
     in
     begin match path with
       | [] -> []
@@ -362,7 +353,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Locate_type pos ->
     let typer = Mpipeline.typer_result pipeline in
-    let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    let local_defs = Mtyper.get_typedtree typer in
+    let structures = Mbrowse.of_typedtree local_defs in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node =
       match Mbrowse.enclosing pos [structures] with
@@ -388,15 +380,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | None -> `Invalid_context
       | Some (env, path) ->
         Locate.log ~title:"debug" "found type: %s" (Path.name path);
+        let config = Locate.{
+            mconfig = Mpipeline.final_config pipeline;
+            ml_or_mli = `MLI;
+            traverse_aliases = true
+          }
+        in
         match Locate.from_path
+                ~config
                 ~env
-                ~config:(Mpipeline.final_config pipeline)
-                ~namespace:`Type `MLI
+                ~local_defs
+                ~namespace:Type
                 path with
-        | `Builtin -> `Builtin (Path.name path)
+        | `Builtin (_, s) -> `Builtin s
         | `Not_in_env _ as s -> s
         | `Not_found _ as s -> s
-        | `Found (_uid, file, pos) -> `Found (file, pos)
+        | `Found { file; location; _ } -> `Found (Some file, location.loc_start)
         | `File_not_found _ as s -> s
     end
 
@@ -507,7 +506,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node = Mtyper.node_at typer pos in
-    let res = Syntax_doc.get_syntax_doc pos node in 
+    let res = Syntax_doc.get_syntax_doc pos node in
     (match res with
     | Some res -> `Found res
     | None -> `No_documentation)
@@ -537,19 +536,24 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         path
     in
     if path = "" then `Invalid_context else
-    begin match
-      Locate.from_string
-        ~config:(Mpipeline.final_config pipeline)
-        ~env ~local_defs ~pos ml_or_mli path
-    with
-    | `Found (_, file, pos) ->
+    let config = Locate.{
+        mconfig = Mpipeline.final_config pipeline;
+        ml_or_mli;
+        traverse_aliases = true
+      }
+    in
+    begin match Locate.from_string ~config ~env ~local_defs ~pos path with
+    | `Found { file; location; _ } ->
       Locate.log ~title:"result"
-        "found: %s" (Option.value ~default:"<local buffer>" file);
-      `Found (file, pos)
+        "found: %s"  file;
+      `Found (Some file, location.loc_start)
     | `Missing_labels_namespace ->
       (* Can't happen because we haven't passed a namespace as input. *)
       assert false
-    | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _|`Builtin _) as
+    | `Builtin (_, s) ->
+      Locate.log ~title:"result" "found builtin %s" s;
+      `Builtin s
+    | (`Not_found _|`At_origin |`Not_in_env _|`File_not_found _) as
       otherwise ->
       Locate.log ~title:"result" "not found";
       otherwise
@@ -763,9 +767,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
-          find_in_path_uncap (Mconfig.source_path config) x
+          find_in_path_normalized (Mconfig.source_path config) x
         with Not_found -> try
-            find_in_path_uncap (Mconfig.build_path config) x
+            find_in_path_normalized (Mconfig.build_path config) x
           with Not_found ->
             aux xs
     in
@@ -793,68 +797,32 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
 
   | Path_list `Build ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.build_path)
+    Mconfig.(config.merlin.build_path @ config.merlin.hidden_build_path)
 
   | Path_list `Source ->
     let config = Mpipeline.final_config pipeline in
-    Mconfig.(config.merlin.source_path)
+    Mconfig.(config.merlin.source_path @ config.merlin.hidden_source_path)
 
-  | Occurrences (`Ident_at pos, _scope) ->
-    let typer = Mpipeline.typer_result pipeline in
-    let str = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+  | Occurrences (`Ident_at pos, _) ->
+    let config = Mpipeline.final_config pipeline in
+    let typer_result = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let enclosing = Mbrowse.enclosing pos [str] in
-    let curr_node =
-      let is_wildcard_pat = function
-        | Browse_raw.Pattern {pat_desc = Typedtree.Tpat_any; _} -> true
-        | _ -> false
-      in
-      List.find_some enclosing ~f:(fun (_, node) ->
-        (* it doesn't make sense to find occurrences of a wildcard pattern *)
-        not (is_wildcard_pat node))
-      |> Option.map ~f:(fun (env, node) -> Browse_tree.of_node ~env node)
-      |> Option.value ~default:Browse_tree.dummy
-    in
-    let str = Browse_tree.of_browse str in
-    let get_loc {Location.txt = _; loc} = loc in
-    let ident_occurrence () =
-      let paths = Browse_raw.node_paths curr_node.Browse_tree.t_node in
-      let under_cursor p = Location_aux.compare_pos pos (get_loc p) = 0 in
-      Logger.log ~section:"occurrences" ~title:"Occurrences paths" "%a"
-        Logger.json (fun () ->
-            let dump_path ({Location.txt; loc} as p) =
-              let ppf, to_string = Format.to_string () in
-              Printtyp.path ppf txt;
-              `Assoc [
-                "start", Lexing.json_of_position loc.Location.loc_start;
-                "end", Lexing.json_of_position loc.Location.loc_end;
-                "under_cursor", `Bool (under_cursor p);
-                "path", `String (to_string ())
-              ]
-            in
-            `List (List.map ~f:dump_path paths));
-      match List.filter paths ~f:under_cursor with
-      | [] -> []
-      | (path :: _) ->
-        let path = path.Location.txt in
-        let ts = Browse_tree.all_occurrences path str in
-        let loc (_t,paths) = List.map ~f:get_loc paths in
-        List.concat_map ~f:loc ts
-
-    in
-    let constructor_occurrence d =
-      let ts = Browse_tree.all_constructor_occurrences (curr_node,d) str in
-      List.map ~f:get_loc ts
-
+    let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer_result pos) in
+    let path =
+      let path = reconstruct_identifier pipeline pos None in
+      let path = Mreader_lexer.identifier_suffix path in
+      let path = List.map ~f:(fun {Location. txt; _} -> txt) path in
+      let path = String.concat ~sep:"." path in
+      Locate.log ~title:"reconstructed identifier" "%s" path;
+      path
     in
     let locs =
-      match Browse_raw.node_is_constructor curr_node.Browse_tree.t_node with
-      | Some d -> constructor_occurrence d.Location.txt
-      | None -> ident_occurrence ()
+      Occurrences.locs_of ~config ~env ~typer_result ~pos path
+      |> Result.value ~default:[]
     in
     let loc_start l = l.Location.loc_start in
     let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
-    List.sort ~cmp locs
+    (List.sort ~cmp locs)
 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"

@@ -35,6 +35,8 @@ type directive = Merlin_dot_protocol.directive
 type config = {
   build_path   : string list;
   source_path  : string list;
+  hidden_build_path  : string list;
+  hidden_source_path : string list;
   cmi_path     : string list;
   cmt_path     : string list;
   flags        : string list with_workdir list;
@@ -48,6 +50,8 @@ type config = {
 
 let empty_config = {
   build_path   = [];
+  hidden_build_path =[];
+  hidden_source_path = [];
   source_path  = [];
   cmi_path     = [];
   cmt_path     = [];
@@ -235,6 +239,8 @@ let prepend_config ~dir:cwd configurator (directives : directive list) config =
     function
     | `B path -> {config with build_path = path :: config.build_path}, errors
     | `S path -> {config with source_path = path :: config.source_path}, errors
+    | `BH path -> {config with hidden_build_path = path :: config.hidden_build_path}, errors
+    | `SH path -> {config with hidden_source_path = path :: config.hidden_source_path}, errors
     | `CMI path -> {config with cmi_path = path :: config.cmi_path}, errors
     | `CMT path -> {config with cmt_path = path :: config.cmt_path}, errors
     | `EXT exts ->
@@ -268,6 +274,8 @@ let postprocess_config config =
   {
     build_path   = clean config.build_path;
     source_path  = clean config.source_path;
+    hidden_build_path  = clean config.hidden_build_path;
+    hidden_source_path = clean config.hidden_source_path;
     cmi_path     = clean config.cmi_path;
     cmt_path     = clean config.cmt_path;
     extensions   = clean config.extensions;

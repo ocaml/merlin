@@ -14,6 +14,8 @@
   {
     "build_path": [],
     "source_path": [],
+    "hidden_build_path": [],
+    "hidden_source_path": [],
     "cmi_path": [],
     "cmt_path": [],
     "flags_applied": [

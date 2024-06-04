@@ -26,6 +26,9 @@ type loc = {
   loc_ghost: bool;
 }
 
+val ghost_loc_in_file : string -> loc
+(** Return an empty ghost range located in a given file *)
+
 type field_usage_warning =
   | Unused
   | Not_read
@@ -65,9 +68,12 @@ type t =
   | Unused_var of string                    (* 26 *)
   | Unused_var_strict of string             (* 27 *)
   | Wildcard_arg_to_constant_constr         (* 28 *)
-  | Eol_in_string                           (* 29 *)
+  | Eol_in_string                           (* 29
+      Note: since OCaml 5.2, the lexer normalizes \r\n sequences in
+      the source file to a single \n character, so the behavior of
+      newlines in string literals is portable. This warning is
+      never emitted anymore. *)
   | Duplicate_definitions of string * string * string * string (* 30 *)
-  | Module_linked_twice of string * string * string (* 31 *)
   | Unused_value_declaration of string      (* 32 *)
   | Unused_open of string                   (* 33 *)
   | Unused_type_declaration of string       (* 34 *)
@@ -109,11 +115,11 @@ type t =
   | Missing_mli                             (* 70 *)
   | Unused_tmc_attribute                    (* 71 *)
   | Tmc_breaks_tailcall                     (* 72 *)
-;;
+  | Generative_application_expects_unit     (* 73 *)
 
 type alert = {kind:string; message:string; def:loc; use:loc}
 
-val parse_options : bool -> string -> alert option;;
+val parse_options : bool -> string -> alert option
 
 val parse_alert_option: string -> unit
   (** Disable/enable alerts based on the parameter to the -alert
@@ -124,11 +130,11 @@ val parse_alert_option: string -> unit
 val without_warnings : (unit -> 'a) -> 'a
   (** Run the thunk with all warnings and alerts disabled. *)
 
-val is_active : t -> bool;;
-val is_error : t -> bool;;
+val is_active : t -> bool
+val is_error : t -> bool
 
-val defaults_w : string;;
-val defaults_warn_error : string;;
+val defaults_w : string
+val defaults_warn_error : string
 
 type reporting_information =
   { id : string
@@ -140,9 +146,9 @@ type reporting_information =
 val report : t -> [ `Active of reporting_information | `Inactive ]
 val report_alert : alert -> [ `Active of reporting_information | `Inactive ]
 
-exception Errors;;
+exception Errors
 
-val check_fatal : unit -> unit;;
+val check_fatal : unit -> unit
 val reset_fatal: unit -> unit
 
 val help_warnings: unit -> unit
@@ -158,7 +164,8 @@ val mk_lazy: (unit -> 'a) -> 'a Lazy.t
 type description =
   { number : int;
     names : string list;
-    description : string; }
+    description : string;
+    since : Sys.ocaml_release_info option; }
 
 val descriptions : description list
 

@@ -56,6 +56,7 @@ type pattern_variable =
     pv_loc: Location.t;
     pv_as_var: bool;
     pv_attributes: Typedtree.attributes;
+    pv_uid : Uid.t;
   }
 
 val mk_expected:
@@ -120,7 +121,6 @@ val check_partial:
         ?lev:int -> Env.t -> type_expr ->
         Location.t -> Typedtree.value Typedtree.case list -> Typedtree.partial
 val type_expect:
-        ?in_function:(Location.t * type_expr) ->
         Env.t -> Parsetree.expression -> type_expected -> Typedtree.expression
 val type_exp:
         Env.t -> Parsetree.expression -> Typedtree.expression
@@ -134,6 +134,7 @@ val option_some: Env.t -> Typedtree.expression -> Typedtree.expression
 val option_none: Env.t -> type_expr -> Location.t -> Typedtree.expression
 val extract_option_type: Env.t -> type_expr -> type_expr
 val generalizable: int -> type_expr -> bool
+val generalize_structure_exp: Typedtree.expression -> unit
 type delayed_check
 val delayed_checks: delayed_check list ref
 val reset_delayed_checks: unit -> unit
@@ -148,15 +149,26 @@ type error =
   | Constructor_arity_mismatch of Longident.t * int * int
   | Label_mismatch of Longident.t * Errortrace.unification_error
   | Pattern_type_clash :
-      Errortrace.unification_error * _ Typedtree.pattern_desc option
+      Errortrace.unification_error * Parsetree.pattern_desc option
       -> error
   | Or_pattern_type_clash of Ident.t * Errortrace.unification_error
   | Multiply_bound_variable of string
   | Orpat_vars of Ident.t * Ident.t list
   | Expr_type_clash of
       Errortrace.unification_error * type_forcing_context option
-      * Typedtree.expression_desc option
-  | Apply_non_function of type_expr
+      * Parsetree.expression_desc option
+  | Function_arity_type_clash of
+      { syntactic_arity :  int;
+        type_constraint : type_expr;
+        trace : Errortrace.unification_error;
+      }
+  | Apply_non_function of {
+      funct : Typedtree.expression;
+      func_ty : type_expr;
+      res_ty : type_expr;
+      previous_arg_loc : Location.t;
+      extra_arg_loc : Location.t;
+    }
   | Apply_wrong_label of arg_label * type_expr * bool
   | Label_multiply_defined of string
   | Label_missing of Ident.t list
@@ -194,7 +206,7 @@ type error =
   | Modules_not_allowed
   | Cannot_infer_signature
   | Not_a_packed_module of type_expr
-  | Unexpected_existential of existential_restriction * string * string list
+  | Unexpected_existential of existential_restriction * string
   | Invalid_interval
   | Invalid_for_loop_index
   | No_value_clauses
@@ -247,7 +259,8 @@ val type_package:
 
 val constant: Parsetree.constant -> (Asttypes.constant, error) result
 
-val check_recursive_bindings : Env.t -> Typedtree.value_binding list -> unit
+val annotate_recursive_bindings :
+  Env.t -> Typedtree.value_binding list -> Typedtree.value_binding list
 val check_recursive_class_bindings :
   Env.t -> Ident.t list -> Typedtree.class_expr list -> unit
 
@@ -257,7 +270,5 @@ val partial_pred :
   ?explode:int ->
   Env.t ->
   type_expr ->
-  (label, constructor_description) Hashtbl.t ->
-  (label, label_description) Hashtbl.t ->
-  Parsetree.pattern ->
-  Typedtree.value Typedtree.pattern_desc Typedtree.pattern_data option
+  Typedtree.pattern ->
+  Typedtree.pattern option

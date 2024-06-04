@@ -42,6 +42,10 @@ val union : t -> t -> t
 (** Like location_union, but keep loc_ghost'ness of first argument *)
 val extend : t -> t -> t
 
+(** [included ~into:parent child] returns [true] if [child] is included
+    in [parent]. Otherwise returns [false]. *)
+val included : into:t -> t -> bool
+
 (** Filter valid errors, log invalid ones *)
 val prepare_errors : exn list -> Location.error list
 

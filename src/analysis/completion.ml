@@ -219,8 +219,8 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
       | Some p, Some loc ->
         let namespace = (* FIXME: that's just terrible *)
           match kind with
-          | `Value -> `Vals
-          | `Type -> `Type
+          | `Value -> Shape.Sig_component_kind.Value
+          | `Type -> Type
           | _ -> assert false
         in
         begin match get_doc (`Completion_entry (namespace, p, loc)) with
@@ -280,7 +280,7 @@ let fold_sumtype_constructors ~env ~init ~f t =
       (Path.name path);
     begin match Env.find_type_descrs path env with
     | exception Not_found -> init
-    | Type_record _ | Type_abstract | Type_open -> init
+    | Type_record _ | Type_abstract _ | Type_open -> init
     | Type_variant (constrs, _) ->
       List.fold_right constrs ~init ~f
     end
@@ -650,7 +650,9 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
                 let lbls = Datarepr.labels_of_type p decl in
                 let labels = List.map lbls ~f:(fun (_,lbl) ->
                     try
-                      let _, lbl_arg, lbl_res = Ctype.instance_label false lbl in
+                      let _, lbl_arg, lbl_res =
+                        Ctype.instance_label ~fixed:false lbl
+                      in
                       begin try
                           Ctype.unify_var env ty lbl_res;
                         with _ -> ()
