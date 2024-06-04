@@ -81,6 +81,7 @@ type merlin = {
   suffixes    : (string * string) list;
   stdlib      : string option;
   source_root : string option;
+  unit_name   : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -123,6 +124,7 @@ let dump_merlin x =
     );
     "stdlib"       , Json.option Json.string x.stdlib;
     "source_root"  , Json.option Json.string x.source_root;
+    "unit_name"    , Json.option Json.string x.unit_name;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -256,6 +258,8 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
     source_root =
       (if dot.source_root = None then merlin.source_root else dot.source_root);
+    unit_name =
+      (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
     reader =
       if dot.reader = []
       then merlin.reader
@@ -657,6 +661,7 @@ let initial = {
     suffixes    = [(".ml", ".mli"); (".re", ".rei")];
     stdlib      = None;
     source_root = None;
+    unit_name   = None;
     reader      = [];
     protocol    = `Json;
     log_file    = None;
@@ -834,4 +839,7 @@ let global_modules ?(include_current=false) config = (
 
 let filename t = t.query.filename
 
-let unitname t = Misc.unitname t.query.filename
+let unitname t =
+  match t.merlin.unit_name with
+  | Some name -> Misc.unitname name
+  | None -> Misc.unitname t.query.filename
