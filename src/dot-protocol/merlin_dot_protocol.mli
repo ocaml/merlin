@@ -56,6 +56,7 @@ module Directive : sig
     | `FLG of string list
     | `STDLIB of string
     | `SOURCE_ROOT of string
+    | `UNIT_NAME of string
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
