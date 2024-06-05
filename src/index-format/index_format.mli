@@ -19,6 +19,7 @@ type index = {
   approximated : Lid_set.t Uid_map.t;
   cu_shape : (string, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
+  root_directory: string option;
 }
 
 val pp : Format.formatter -> index -> unit

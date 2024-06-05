@@ -31,6 +31,7 @@ type index = {
   approximated : Lid_set.t Uid_map.t;
   cu_shape : (string, Shape.t) Hashtbl.t;
   stats : stat Stats.t;
+  root_directory: string option;
 }
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
