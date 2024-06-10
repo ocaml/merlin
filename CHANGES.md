@@ -1,3 +1,14 @@
+merlin 4.16
+===========
+Mon Jun 10 17:35:42 CEST 2024
+
+  + merlin binary
+    - Addition of a `merlin-lib.commands` library which disassociates the
+      execution of commands from the `new_protocol`, from the binary, allowing
+      it to be invoked from other projects (#1758)
+    - `merlin-lib.commands`: Add a `find_command_opt` alternative to
+      `find_command` that does not raise (#1778)
+
 merlin 4.15
 ===========
 Fri May 31 14:02:42 CEST 2024

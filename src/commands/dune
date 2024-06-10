@@ -1,0 +1,14 @@
+(library
+  (name merlin_commands)
+  (public_name merlin-lib.commands)
+  (flags
+    :standard
+    -open Ocaml_parsing
+    -open Merlin_utils
+    -open Merlin_kernel)
+  (libraries
+    merlin-lib.ocaml_parsing
+    merlin-lib.utils
+    merlin-lib.kernel
+    merlin-lib.query_protocol
+    merlin-lib.query_commands))
