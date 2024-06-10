@@ -42,6 +42,9 @@ let add {table; changelog} ?stamp key value =
   | Some stamp ->
     changelog.recent <- Cell {stamp; key; table} :: changelog.recent
 
+let replace t k v =
+  Hashtbl.replace t.table k v
+
 let mem t a =
   Hashtbl.mem t.table a
 
@@ -50,6 +53,11 @@ let find t a =
 
 let fold f t acc =
   Hashtbl.fold f t.table acc
+
+let clear t =
+  Hashtbl.clear t.table;
+  t.changelog.recent <- [];
+  t.changelog.sorted <- []
 
 (* Implementation of backtracking *)
 

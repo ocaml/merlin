@@ -37,9 +37,16 @@ val find : ('a, 'b) t -> 'a -> 'b
 val fold : ('a -> 'b -> 'acc -> 'acc) -> ('a, 'b) t -> 'acc -> 'acc
 (** See [Hashtbl.fold]. *)
 
+val clear : ('a, 'b) t -> unit
+(** Clear the table and empty the changelog. See [Hashtbl.clear]. *)
+
 val create_changelog : unit -> changelog
 (** Create a new change log. *)
 
 (* [backtrack changelog ~stamp] remove all items added to tables logging to
    [changelog] with a stamp strictly greater than [stamp] *)
 val backtrack : changelog -> stamp:int -> unit
+
+val replace : ('a, 'b) t -> 'a -> 'b -> unit
+(** This operation is unsafe in general. Only replacements that does not imply
+    re-stamping are safe. *)

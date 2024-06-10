@@ -38,9 +38,16 @@ module Uid = struct
       print fmt t
   end)
 
-  let id = ref (-1)
+  let id = Local_store.s_ref (-1)
 
   let reinit () = id := (-1)
+
+  let get_current_stamp () = !id
+  let restore_stamp i = id := i
+
+  let stamp_of_uid = function
+    | Item { id; _ } -> Some id
+    | _ -> None
 
   let mk  ~current_unit =
       incr id;
