@@ -19,7 +19,7 @@ The indexer should not mixup uids from mli and ml files:
    uid: Main.1; locs: "t": File "main.ml", line 2, characters 5-6 },
   0 approx shapes: {}, and shapes for CUS .
 
-FIXME: Merlin should not mixup uids from mli and ml files:
+Merlin should not mixup uids from mli and ml files:
   $ $MERLIN single occurrences -scope project -identifier-at 2:8 \
   > -index-file project.ocaml-index \
   > -filename main.mli <main.mli
@@ -38,17 +38,6 @@ FIXME: Merlin should not mixup uids from mli and ml files:
         }
       },
       {
-        "file": "$TESTCASE_ROOT/main.ml",
-        "start": {
-          "line": 1,
-          "col": 4
-        },
-        "end": {
-          "line": 1,
-          "col": 5
-        }
-      },
-      {
         "file": "$TESTCASE_ROOT/main.mli",
         "start": {
           "line": 2,
@@ -63,7 +52,7 @@ FIXME: Merlin should not mixup uids from mli and ml files:
     "notifications": []
   }
 
-FIXME: same as previous case
+Same when the cursor is at the origin:
   $ $MERLIN single occurrences -scope project -identifier-at 1:5 \
   > -index-file project.ocaml-index \
   > -filename main.mli <main.mli
@@ -79,17 +68,6 @@ FIXME: same as previous case
         "end": {
           "line": 1,
           "col": 6
-        }
-      },
-      {
-        "file": "$TESTCASE_ROOT/main.ml",
-        "start": {
-          "line": 1,
-          "col": 4
-        },
-        "end": {
-          "line": 1,
-          "col": 5
         }
       },
       {

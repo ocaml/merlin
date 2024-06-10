@@ -117,6 +117,11 @@ let get_buffer_locs result uid =
     (Mtyper.get_index result)
     Lid_set.empty
 
+let is_in_interface (config : Mconfig.t) (loc : Warnings.loc) =
+  let extension = Filename.extension loc.loc_start.pos_fname in
+  List.exists config.merlin.suffixes
+    ~f:(fun (_impl, intf) -> String.equal extension intf)
+
 let locs_of ~config ~env ~typer_result ~pos ~scope path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)"
     path
@@ -135,10 +140,31 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       (* We are on  a definition / declaration so we look for the node's uid  *)
       let browse = Mbrowse.of_typedtree local_defs in
       let env, node = Mbrowse.leaf_node (Mbrowse.enclosing pos [browse]) in
-      uid_and_loc_of_node env node, scope
+      let node_uid_loc = uid_and_loc_of_node env node in
+      let scope =
+        match node_uid_loc with
+        | Some (_, l) when is_in_interface config l ->
+          (* There is no way to distinguish uids from interfaces from uids of
+             implementations. We fallback on buffer occurrences in that case.
+             TODO: we should be able to improve on that situation when we will be
+             able to distinguish between impl/intf uids and know which declaration
+             are actually linked. *)
+          `Buffer
+        | _ -> scope
+      in
+      node_uid_loc, scope
     | `Found { uid; location; approximated = false; _ } ->
         log ~title:"locs_of" "Found definition uid using locate: %a "
           Logger.fmt (fun fmt -> Shape.Uid.print fmt uid);
+        (* There is no way to distinguish uids from interfaces from uids of
+           implementations. We fallback on buffer occurrences in that case.
+           TODO: we should be able to improve on that situation when we will be
+           able to distinguish between impl/intf uids and know which declaration
+           are actually linked. *)
+        let scope =
+          if is_in_interface config location then `Buffer
+          else scope
+        in
         Some (uid, location), scope
     | `Found { decl_uid; location; approximated = true; _ } ->
         log ~title:"locs_of" "Approx. definition: %a "
