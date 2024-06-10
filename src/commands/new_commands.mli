@@ -35,4 +35,10 @@ type command =
 
 val all_commands : command list
 
+(** [find_command name cmds] returns the command with name [name] in the list
+    [cmds] if it exists. Raises [Not_found] if it does not. *)
 val find_command : string -> command list -> command
+
+(** [find_command name cmds] optionaly returns the command with name [name] if
+    it is in the list [cmds]. *)
+val find_command_opt : string -> command list -> command option
