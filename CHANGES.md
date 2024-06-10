@@ -1,6 +1,6 @@
 merlin 4.16
 ===========
-unreleased
+Mon Jun 10 17:35:42 CEST 2024
 
   + merlin binary
     - Addition of a `merlin-lib.commands` library which disassociates the
