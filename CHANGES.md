@@ -14,6 +14,8 @@ UNRELEASED
     - Perform incremental indexation of the buffer when typing. (#1777)
     - `merlin-lib.commands`: Add a `find_command_opt`` alternative to
       `find_command` that does not raise (#1778)
+    - Prevent uid clashes by not returning PWO for defs located in the current
+      interface file (#1781)
   + editor modes
     - emacs: add basic support for project-wide occurrences (#1766)
     - vim: add basic support for project-wide occurrences (#1767, @Julow)
