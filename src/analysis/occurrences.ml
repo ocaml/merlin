@@ -178,7 +178,12 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
           Lid_set.filter (fun {loc; _} ->
           (* We ignore external results that concern the current buffer *)
           let file = loc.Location.loc_start.Lexing.pos_fname in
-          if String.equal file current_buffer_path then false
+          let file, buf =
+            match config.merlin.source_root with
+            | Some root -> Filename.concat root file, current_buffer_path
+            | None -> file, config.query.filename
+          in
+          if String.equal file buf then false
           else begin
             (* We ignore external results if their source was modified *)
             let check = Stat_check.check stats ~file in
