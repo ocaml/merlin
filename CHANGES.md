@@ -1,5 +1,6 @@
-UNRELEASED
+merlin 5.1
 ==========
+unreleased
 
   + merlin binary
     - Support project-wide occurrences queries using index files (#1766)
