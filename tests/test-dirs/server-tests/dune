@@ -8,3 +8,7 @@
  (applies_to chdir_to_root)
  (enabled_if
   (<> %{os_type} Win32)))
+
+(cram
+ (applies_to pwo-uid-stability)
+ (enabled_if %{bin-available:ocaml-index}))

@@ -78,4 +78,44 @@ environment in different queries, some warnings will be reported only once.
     "notifications": []
   }
 
+
+  $ $MERLIN server errors -filename backtrack.ml -w +A <<EOF
+  > let f x = ()
+  > let g y = ()
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 6
+        },
+        "end": {
+          "line": 1,
+          "col": 7
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Warning 27: unused variable x."
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 6
+        },
+        "end": {
+          "line": 2,
+          "col": 7
+        },
+        "type": "warning",
+        "sub": [],
+        "valid": true,
+        "message": "Warning 27: unused variable y."
+      }
+    ],
+    "notifications": []
+  }
+
   $ $MERLIN server stop-server

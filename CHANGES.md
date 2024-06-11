@@ -16,6 +16,8 @@ UNRELEASED
       `find_command` that does not raise (#1778)
     - Prevent uid clashes by not returning PWO for defs located in the current
       interface file (#1781)
+    - Reset uid counters when restoring the typer cache so that uids are stable
+      across re-typing (#1779)
   + editor modes
     - emacs: add basic support for project-wide occurrences (#1766)
     - vim: add basic support for project-wide occurrences (#1767, @Julow)
