@@ -25,4 +25,7 @@ bench_disabled:
 	echo "Benchmark result:"
 	jq . merl-an_bench/bench.json
 
-.PHONY: all build dev clean test promote bench_disabled
+bench:
+	echo ""
+
+.PHONY: all build dev clean test promote bench bench_disabled
