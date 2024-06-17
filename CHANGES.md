@@ -18,6 +18,8 @@ UNRELEASED
       interface file (#1781)
     - Reset uid counters when restoring the typer cache so that uids are stable
       across re-typing (#1779)
+    - Improve the behavior on occurrences when the cursor is on a label /
+      constructor declaration (#1785)
   + editor modes
     - emacs: add basic support for project-wide occurrences (#1766)
     - vim: add basic support for project-wide occurrences (#1767, @Julow)
