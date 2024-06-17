@@ -53,10 +53,10 @@ let uid_and_loc_of_node env node =
       Some (uid, name.loc)
   | Type_declaration { typ_type; typ_name; _ } ->
       Some (typ_type.type_uid, typ_name.loc)
-  | Label_declaration { ld_uid; ld_loc ; _ } ->
-      Some (ld_uid, ld_loc)
-  | Constructor_declaration { cd_uid; cd_loc ; _ } ->
-      Some (cd_uid, cd_loc)
+  | Label_declaration { ld_uid; ld_name ; _ } ->
+      Some (ld_uid, ld_name.loc)
+  | Constructor_declaration { cd_uid; cd_name ; _ } ->
+      Some (cd_uid, cd_name.loc)
   | Value_description { val_val; val_name; _ } ->
       Some (val_val.val_uid, val_name.loc)
   | _ -> None
