@@ -14,9 +14,12 @@ When cursor on the usage, all occurrences are highlighted
   5
   6
 
-FIXME: When cursor on the definition, occurrences are not highlighted
+When cursor on the definition, occurrences are not highlighted
   $ $MERLIN single occurrences -identifier-at 2:5 -filename test.ml <test.ml |
   > jq '.value[].start.line'
+  2
+  5
+  6
 
 Same test for constructors:
   $ cat >test.ml <<'EOF'
@@ -32,7 +35,7 @@ When cursor on the usage, all occurrences are highlighted
   1
   4
 
-FIXME: When cursor on the definition, occurrences are not highlighted
+When cursor on the definition, occurrences are not highlighted
   $ $MERLIN single occurrences -identifier-at 1:30 -filename test.ml <test.ml |
   > jq '.value[].start.line'
   1
@@ -44,6 +47,8 @@ When cursor on the usage, all occurrences are highlighted
   1
   3
 
-FIXME: When cursor on the definition, occurrences are not highlighted
+When cursor on the definition, occurrences are not highlighted
   $ $MERLIN single occurrences -identifier-at 1:10 -filename test.ml <test.ml |
   > jq '.value[].start.line'
+  1
+  3

@@ -153,7 +153,9 @@ let inspect_browse_tree ~cursor lid browse : t option =
     | Type_declaration _
     | Extension_constructor _
     | Module_binding_name _
-    | Module_declaration_name _ ->
+    | Module_declaration_name _
+    | Label_declaration _
+    | Constructor_declaration _ ->
       None
     | Module_expr _
     | Open_description _ -> Some Module_path
