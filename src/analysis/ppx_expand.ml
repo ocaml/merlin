@@ -50,7 +50,10 @@ let expand ~parsetree ~ppxed_parsetree ~pos =
     match check_extension_node expr with
     | true -> (
         let expr (self : Ast_iterator.iterator) (exp : Parsetree.expression) =
-          match exp.pexp_loc = expr.pexp_loc && check_at_pos exp.pexp_loc with
+          match
+            expr.pexp_loc.loc_start.pos_cnum <= exp.pexp_loc.loc_start.pos_cnum
+            && exp.pexp_loc.loc_end.pos_cnum <= expr.pexp_loc.loc_end.pos_cnum
+          with
           | true -> expression := exp :: !expression
           | false -> Ast_iterator.default_iterator.expr self exp
         in
