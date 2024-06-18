@@ -15,6 +15,7 @@ depends: [
   "dune" {>= "3.0.0"}
   "merlin-lib" {= version}
   "dot-merlin-reader" {>= "5.0"}
+  "ocaml-index" {>= "1.0" & post}
   "yojson" {>= "2.0.0"}
   "conf-jq" {with-test}
   "ppxlib" {with-test}
@@ -69,4 +70,7 @@ should take care of basic setup.
 See https://github.com/OCamlPro/opam-user-setup
 "
   {success & !user-setup:installed}
+]
+pin-depends: [
+  ["ocaml-index.1.0"  "git+https://github.com/voodoos/ocaml-index#82b08987921884daeeb5dccc345a2dcb667fe113"]
 ]

@@ -1,5 +1,6 @@
-UNRELEASED
+merlin 5.1
 ==========
+Tue Jun 18 12:00:42 CEST 2024
 
   + merlin binary
     - Support project-wide occurrences queries using index files (#1766)
