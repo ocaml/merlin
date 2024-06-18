@@ -76,9 +76,12 @@ type merlin = {
   hidden_source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
+  index_files : string list;
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
+  source_root : string option;
+  unit_name   : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
@@ -110,6 +113,7 @@ let dump_merlin x =
     "hidden_source_path", `List (List.map ~f:Json.string x.hidden_source_path);
     "cmi_path"     , `List (List.map ~f:Json.string x.cmi_path);
     "cmt_path"     , `List (List.map ~f:Json.string x.cmt_path);
+    "index_files"  , `List (List.map ~f:Json.string x.index_files);
     "flags_applied", `List (List.map ~f:dump_flag_list x.flags_applied);
     "extensions"   , `List (List.map ~f:Json.string x.extensions);
     "suffixes"     , `List (
@@ -119,6 +123,8 @@ let dump_merlin x =
         ]) x.suffixes
     );
     "stdlib"       , Json.option Json.string x.stdlib;
+    "source_root"  , Json.option Json.string x.source_root;
+    "unit_name"    , Json.option Json.string x.unit_name;
     "reader"       , `List (List.map ~f:Json.string x.reader);
     "protocol"     , (match x.protocol with
         | `Json -> `String "json"
@@ -244,11 +250,16 @@ let merge_merlin_config dot merlin ~failures ~config_path =
     hidden_source_path = dot.hidden_source_path @ merlin.hidden_source_path;
     cmi_path = dot.cmi_path @ merlin.cmi_path;
     cmt_path = dot.cmt_path @ merlin.cmt_path;
+    index_files = dot.index_files @ merlin.index_files;
     exclude_query_dir = dot.exclude_query_dir || merlin.exclude_query_dir;
     use_ppx_cache = dot.use_ppx_cache || merlin.use_ppx_cache;
     extensions = dot.extensions @ merlin.extensions;
     suffixes = dot.suffixes @ merlin.suffixes;
     stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
+    source_root =
+      (if dot.source_root = None then merlin.source_root else dot.source_root);
+    unit_name =
+      (if dot.unit_name = None then merlin.unit_name else dot.unit_name);
     reader =
       if dot.reader = []
       then merlin.reader
@@ -304,6 +315,12 @@ let merlin_flags = [
     marg_path (fun dir merlin ->
         {merlin with cmt_path = dir :: merlin.cmt_path}),
     "<dir> Add <dir> to merlin cmt path"
+  );
+  (
+    "-index-file",
+    marg_path (fun file merlin ->
+        {merlin with index_files = file :: merlin.index_files}),
+    "<file> Add <file> to the index files used by merlin"
   );
   (
     "-reader",
@@ -639,9 +656,12 @@ let initial = {
     hidden_source_path = [];
     cmi_path    = [];
     cmt_path    = [];
+    index_files = [];
     extensions  = [];
     suffixes    = [(".ml", ".mli"); (".re", ".rei")];
     stdlib      = None;
+    source_root = None;
+    unit_name   = None;
     reader      = [];
     protocol    = `Json;
     log_file    = None;
@@ -819,4 +839,7 @@ let global_modules ?(include_current=false) config = (
 
 let filename t = t.query.filename
 
-let unitname t = Misc.unitname t.query.filename
+let unitname t =
+  match t.merlin.unit_name with
+  | Some name -> Misc.unitname name
+  | None -> Misc.unitname t.query.filename

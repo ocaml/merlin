@@ -3,6 +3,33 @@ merlin NEXT_VERSION
   + merlin binary
        - Implement new expand-node command for expanding PPX annotations (#1745)
 
+merlin 5.1
+==========
+Tue Jun 18 12:00:42 CEST 2024
+
+  + merlin binary
+    - Support project-wide occurrences queries using index files (#1766)
+      - The file format is described in library `Merlin_lib.index_format`
+      - Two new configuration directives are introduced:
+        - `SOURCE_ROOT` that is used to resolve relative paths found in the
+          indexes.
+        - `INDEX` that is used to declare the list of index files Merlin should
+          use when looking for occurrences.
+    - A new `UNIT_NAME` configuration directive that can be used to tell Merlin
+      the correct name of the current unit in the presence of wrapping (#1776)
+    - Perform incremental indexation of the buffer when typing. (#1777)
+    - `merlin-lib.commands`: Add a `find_command_opt`` alternative to
+      `find_command` that does not raise (#1778)
+    - Prevent uid clashes by not returning PWO for defs located in the current
+      interface file (#1781)
+    - Reset uid counters when restoring the typer cache so that uids are stable
+      across re-typing (#1779)
+    - Improve the behavior on occurrences when the cursor is on a label /
+      constructor declaration (#1785)
+  + editor modes
+    - emacs: add basic support for project-wide occurrences (#1766)
+    - vim: add basic support for project-wide occurrences (#1767, @Julow)
+
 merlin 5.0
 ==========
 Fri May 17 19:59:42 CET 2024

@@ -84,6 +84,8 @@ module Cache = File_cache.Make (struct
             tell (`CMI (String.drop 4 line))
           else if String.is_prefixed ~by:"CMT " line then
             tell (`CMT (String.drop 4 line))
+          else if String.is_prefixed ~by:"INDEX " line then
+            tell (`INDEX (String.drop 6 line))
           else if String.is_prefixed ~by:"PKG " line then
             tell (`PKG (rev_split_words (String.drop 4 line)))
           else if String.is_prefixed ~by:"EXT " line then
@@ -96,6 +98,10 @@ module Cache = File_cache.Make (struct
             includes := String.trim (String.drop 2 line) :: !includes
           else if String.is_prefixed ~by:"STDLIB " line then
             tell (`STDLIB (String.drop 7 line))
+          else if String.is_prefixed ~by:"SOURCE_ROOT " line then
+            tell (`SOURCE_ROOT (String.drop 12 line))
+          else if String.is_prefixed ~by:"UNIT_NAME " line then
+            tell (`UNIT_NAME (String.drop 10 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -309,6 +315,8 @@ type config = {
   pass_forward : Merlin_dot_protocol.Directive.no_processing_required list;
   to_canonicalize : (string * Merlin_dot_protocol.Directive.include_path) list;
   stdlib : string option;
+  source_root : string option;
+  unit_name   : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -319,6 +327,8 @@ let empty_config = {
   pass_forward      = [];
   to_canonicalize   = [];
   stdlib            = None;
+  source_root       = None;
+  unit_name         = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -328,7 +338,7 @@ let empty_config = {
 let prepend_config ~cwd ~cfg =
   List.fold_left ~init:cfg ~f:(fun cfg (d : Merlin_dot_protocol.Directive.Raw.t) ->
     match d with
-    | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _  as directive ->
+    | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _ as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
     | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
@@ -343,6 +353,11 @@ let prepend_config ~cwd ~cfg =
         log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
       end;
       { cfg with stdlib = Some canon_path }
+    | `SOURCE_ROOT path ->
+      let canon_path = canonicalize_filename ~cwd path in
+      { cfg with source_root = Some canon_path }
+    | `UNIT_NAME name ->
+      { cfg with unit_name = Some name }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with
@@ -367,6 +382,10 @@ let process_one ~cfg {path;directives; _ } =
   let cwd = Filename.dirname path in
   prepend_config ~cwd ~cfg (List.rev directives)
 
+(** [expand ~stdlib dir path] does 3 things:
+    - Re-root paths starting with [+] into [stdlib]
+    - Canonicalize [path] relatively to [dir]
+    - Expand glob patterns *)
 let expand =
   let filter path =
     let name = Filename.basename path in
@@ -378,67 +397,6 @@ let expand =
     let path = expand_directory stdlib path in
     let path = canonicalize_filename ~cwd:dir path in
     expand_glob ~filter path []
-
-module Import_from_dune = struct
-  let escape_only c s =
-    let open String in
-    let n = ref 0 in
-    let len = length s in
-    for i = 0 to len - 1 do
-      if unsafe_get s i = c then incr n
-    done;
-    if !n = 0 then
-      s
-    else
-      let b = Bytes.create (len + !n) in
-      n := 0;
-      for i = 0 to len - 1 do
-        if unsafe_get s i = c then (
-          Bytes.unsafe_set b !n '\\';
-          incr n
-        );
-        Bytes.unsafe_set b !n (unsafe_get s i);
-        incr n
-      done;
-      Bytes.unsafe_to_string b
-
-  let need_quoting s =
-    let len = String.length s in
-    len = 0
-    ||
-    let rec loop i =
-      if i = len then
-        false
-      else
-        match s.[i] with
-        | ' '
-        | '\"'
-        | '('
-        | ')'
-        | '{'
-        | '}'
-        | ';'
-        | '#' ->
-          true
-        | _ -> loop (i + 1)
-    in
-    loop 0
-
-  let quote s =
-    let s =
-      if Sys.win32 then
-        (* We need this hack because merlin unescapes backslashes (except when
-           protected by single quotes). It is only a problem on windows because
-           Filename.quote is using double quotes. *)
-        escape_only '\\' s
-      else
-        s
-    in
-    if need_quoting s then
-      Filename.quote s
-    else
-      s
-end
 
 let postprocess cfg =
   let stdlib = Option.value ~default:standard_library cfg.stdlib in
@@ -461,6 +419,8 @@ let postprocess cfg =
           | `SH path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `SH p)
           | `CMI path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMI p)
           | `CMT path -> List.map (expand ~stdlib dir path) ~f:(fun p -> `CMT p)
+          | `INDEX path ->
+            List.map (expand ~stdlib dir path) ~f:(fun p -> `INDEX p)
         in
         (dirs :> Merlin_dot_protocol.directive list)
       )

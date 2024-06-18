@@ -96,11 +96,11 @@ type error_filter = {
   typing : bool;
 }
 
-type syntax_doc_result = 
-{ 
-    name : string; 
-    description : string; 
-    documentation : string 
+type syntax_doc_result =
+{
+    name : string;
+    description : string;
+    documentation : string
 }
 
 type ppx_expand_result = 
@@ -113,6 +113,13 @@ type ppx_expand_result =
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
+
+type occurrences_status = [
+  | `Not_requested
+  | `Out_of_sync of string list
+  | `No_def
+  | `Included
+]
 
 type _ t =
   | Type_expr(* *)
@@ -220,6 +227,6 @@ type _ t =
     -> string list t
   | Occurrences(* *)
     : [`Ident_at of Msource.position] * [`Project | `Buffer]
-    -> Location.t list t
+    -> (Location.t list * occurrences_status) t
   | Version
     : string t

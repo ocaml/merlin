@@ -1,0 +1,11 @@
+(cram
+ (applies_to :whole_subtree)
+ (enabled_if %{bin-available:ocaml-index}))
+
+(cram
+ (applies_to pwo-ml-gen)
+ (enabled_if (and %{bin-available:ocaml-index} (>= %{read:version/dune.txt} "3.16"))))
+
+(subdir
+ version
+ (rule (action (with-stdout-to dune.txt (run dune --version)))))
