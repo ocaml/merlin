@@ -102,6 +102,8 @@ module Cache = File_cache.Make (struct
             tell (`SOURCE_ROOT (String.drop 12 line))
           else if String.is_prefixed ~by:"UNIT_NAME " line then
             tell (`UNIT_NAME (String.drop 10 line))
+          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
+            tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -317,6 +319,7 @@ type config = {
   stdlib : string option;
   source_root : string option;
   unit_name   : string option;
+  wrapping_prefix : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -329,6 +332,7 @@ let empty_config = {
   stdlib            = None;
   source_root       = None;
   unit_name         = None;
+  wrapping_prefix   = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -358,6 +362,8 @@ let prepend_config ~cwd ~cfg =
       { cfg with source_root = Some canon_path }
     | `UNIT_NAME name ->
       { cfg with unit_name = Some name }
+    | `WRAPPING_PREFIX prefix ->
+      { cfg with wrapping_prefix = Some prefix }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with
@@ -426,6 +432,9 @@ let postprocess cfg =
       )
     ; (cfg.pass_forward :> Merlin_dot_protocol.directive list)
     ; cfg.unit_name |> Option.map ~f:(fun name -> `UNIT_NAME name) |> Option.to_list
+    ; cfg.wrapping_prefix
+        |> Option.map ~f:(fun prefix -> `WRAPPING_PREFIX prefix)
+        |> Option.to_list
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
     ; List.map failures ~f:(fun s -> `ERROR_MSG s)
