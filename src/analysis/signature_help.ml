@@ -1,5 +1,7 @@
 open Std
 
+let {Logger. log} = Logger.for_section "signature-help"
+
 type parameter_info =
   { label : Asttypes.arg_label
   ; param_start : int
@@ -77,20 +79,23 @@ let print_parameter_offset ?arg:argument ppf buffer env label ty =
   Format.pp_print_flush ppf ();
   { label; param_start; param_end; argument }
 
+(* This function preprocesses the signature and associate already assigned
+arguments to the corresponding parameter. (They should always be in the correct
+order in the typedtree, even if they are not in order in the source file.) *)
 let separate_function_signature ~args (e : Typedtree.expression) =
   Type_utils.Printtyp.reset ();
   let buffer = Buffer.create 16 in
   let ppf = Format.formatter_of_buffer buffer in
-  let rec separate ?(i = 0) ?(parameters = []) args ty =
+  let rec separate ?(parameters = []) args ty =
     match (args, Types.get_desc ty) with
     | (_l, arg) :: args, Tarrow (label, ty1, ty2, _) ->
       let parameter =
         print_parameter_offset ppf buffer e.exp_env label ty1 ?arg
       in
-      separate args ty2 ~i:(succ i) ~parameters:(parameter :: parameters)
+      separate args ty2 ~parameters:(parameter :: parameters)
     | [], Tarrow (label, ty1, ty2, _) ->
       let parameter = print_parameter_offset ppf buffer e.exp_env label ty1 in
-      separate args ty2 ~i:(succ i) ~parameters:(parameter :: parameters)
+      separate args ty2 ~parameters:(parameter :: parameters)
     (* end of function type, print remaining type without recording offsets *)
     | _ ->
       Format.fprintf ppf "%a%!" (pp_type e.exp_env) ty;
@@ -109,6 +114,18 @@ let active_parameter_by_arg ~arg params =
     | _ -> false
   in
   try Some (List.index params ~f:find_by_arg) with Not_found -> None
+
+let first_unassigned_argument params =
+  let positional = function
+    | { argument = None; label = Asttypes.Nolabel; _ } -> true
+    | _ -> false
+  in
+  let labelled = function
+    | { argument = None; label = Asttypes.Labelled _ | Optional _; _ } -> true
+    | _ -> false
+  in
+  try Some (List.index params ~f:positional) with Not_found ->
+    try Some (List.index params ~f:labelled) with Not_found -> None
 
 let active_parameter_by_prefix ~prefix params =
   let common = function
@@ -137,24 +154,37 @@ let is_arrow t =
   | Tarrow _ -> true
   | _ -> false
 
-let application_signature ~prefix = function
+let application_signature ~prefix ~cursor = function
   | (_, Browse_raw.Expression arg)
     :: ( _
        , Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args); _ }
        )
     :: _
     when is_arrow exp_type ->
+    log ~title:"application_signature" "Last arg:\n%a"
+      Logger.fmt (fun fmt -> Printtyped.expression fmt arg);
     let result = separate_function_signature e ~args in
-    let active_param = active_parameter_by_arg ~arg result.parameters in
     let active_param =
-      match active_param with
-      | Some _ as ap -> ap
-      | None -> active_parameter_by_prefix ~prefix result.parameters
+      if prefix = "" && Lexing.compare_pos cursor arg.exp_loc.loc_end  > 0 then
+      begin
+        (* If the cursor is placed after the last arg it means that a whitespace
+           was inserted and we want to underline the next argument. *)
+        log ~title:"application_signature"
+          "Current cursor position is after the last argument";
+        first_unassigned_argument result.parameters
+      end else
+        (* If not, we identify the argument which is being written *)
+        let active_param =
+          active_parameter_by_arg ~arg result.parameters
+        in
+        match active_param with
+        | Some _ as ap -> ap
+        | None -> active_parameter_by_prefix ~prefix result.parameters
     in
     Some { result with active_param }
-  (* provide signature information directly after an unapplied function-type
-     value *)
   | (_, Expression ({ exp_type; _ } as e)) :: _ when is_arrow exp_type ->
+    (* provide signature information directly after an unapplied function-type
+       value *)
     let result = separate_function_signature e ~args:[] in
     let active_param = active_parameter_by_prefix ~prefix result.parameters in
     Some { result with active_param }
@@ -219,6 +249,7 @@ let prefix_of_position ~short_path source position =
     let reconstructed_prefix = String.sub text ~pos ~len in
     (* if we reconstructed [~f:ignore] or [?f:ignore], we should take only
        [ignore], so: *)
+    log ~title:"prefix_of_position" "%S" reconstructed_prefix;
     if
       String.is_prefix reconstructed_prefix ~prefix:"~"
       || String.is_prefix reconstructed_prefix ~prefix:"?"

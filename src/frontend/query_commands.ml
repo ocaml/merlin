@@ -847,15 +847,22 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         structure
     end
 
-  | Signature_help pos ->
+  | Signature_help { position; _ } ->
+    (* Todo: additionnal contextual information could help us provide better
+    results.*)
     let typer = Mpipeline.typer_result pipeline in
-    let poss = Mpipeline.get_lexing_pos pipeline pos in
-    let node = Mtyper.node_at typer poss in
+    let pos = Mpipeline.get_lexing_pos pipeline position in
+    let node = Mtyper.node_at typer pos in
     let source = Mpipeline.input_source pipeline in
-    let prefix = Signature_help.prefix_of_position ~short_path:true source pos in
-    let application_signature = Signature_help.application_signature ~prefix node in
+    let prefix =
+      Signature_help.prefix_of_position ~short_path:true source position
+    in
+    let application_signature =
+      Signature_help.application_signature ~prefix ~cursor:pos node
+    in
     let param offset (p: Signature_help.parameter_info) =
-      { label_start = offset + p.param_start; label_end = offset + p.param_end} in
+      { label_start = offset + p.param_start; label_end = offset + p.param_end}
+    in
     (match application_signature with
      | Some s ->
        let prefix =
@@ -864,7 +871,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
         in
         sprintf "%s : " fun_name in
       Some { label = prefix ^ s.signature;
-             parameters = List.map ~f:(param (String.length prefix)) s.parameters;
+             parameters =
+              List.map ~f:(param (String.length prefix)) s.parameters;
              active_param = Option.value ~default:0 s.active_param;
              active_signature = 0;
            }

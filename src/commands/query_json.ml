@@ -226,9 +226,9 @@ let dump (type a) : a t -> json =
                                          | `Unqualify -> "unqualify");
       "position", mk_position pos;
     ]
-  | Signature_help pos ->
+  | Signature_help {position;_} ->
     mk "signature-help" [
-      "position", mk_position pos
+      "position", mk_position position
     ]
   | Version -> mk "version" []
 

@@ -16,6 +16,7 @@ type application_signature =
 (** provide signature information for applied functions *)
 val application_signature :
      prefix:string
+  -> cursor:Lexing.position
   -> Mbrowse.t
   -> application_signature option
 

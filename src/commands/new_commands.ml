@@ -764,8 +764,14 @@ The return value has the shape:
     begin fun buffer (_,pos) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Signature_help pos)
+      | #Msource.position as position ->
+        let sh = {
+          Query_protocol.position;
+          trigger_kind = None;
+          is_retrigger = false;
+          active_signature_help = None;
+        } in
+        run buffer (Query_protocol.Signature_help sh)
     end
   ;
 
