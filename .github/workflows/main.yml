@@ -58,6 +58,7 @@ jobs:
         uses: ocaml/setup-ocaml@v3.0.0-alpha
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          allow-prerelease-opam: true
 
       - name: Install dependencies
         run: |
