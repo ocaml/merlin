@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  + merlin binary
+    - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
+      what to append to the current unit name in the presence of wrapping (#1788)
+
 merlin 5.1
 ==========
 Tue Jun 18 12:00:42 CEST 2024
@@ -12,8 +19,6 @@ Tue Jun 18 12:00:42 CEST 2024
           use when looking for occurrences.
     - A new `UNIT_NAME` configuration directive that can be used to tell Merlin
       the correct name of the current unit in the presence of wrapping (#1776)
-    - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
-      what to append to the current unit name in the presence of wrapping (#1788)
     - Perform incremental indexation of the buffer when typing. (#1777)
     - `merlin-lib.commands`: Add a `find_command_opt`` alternative to
       `find_command` that does not raise (#1778)
