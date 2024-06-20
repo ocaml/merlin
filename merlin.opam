@@ -72,5 +72,5 @@ See https://github.com/OCamlPro/opam-user-setup
   {success & !user-setup:installed}
 ]
 pin-depends: [
-  ["ocaml-index.1.0"  "git+https://github.com/voodoos/ocaml-index#82b08987921884daeeb5dccc345a2dcb667fe113"]
+  ["ocaml-index.1.0"  "/usr/local/home/lstevenson/github/ocaml-index-upstream"]
 ]

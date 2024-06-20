@@ -318,8 +318,6 @@ type config = {
   to_canonicalize : (string * Merlin_dot_protocol.Directive.include_path) list;
   stdlib : string option;
   source_root : string option;
-  unit_name   : string option;
-  wrapping_prefix : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -331,8 +329,6 @@ let empty_config = {
   to_canonicalize   = [];
   stdlib            = None;
   source_root       = None;
-  unit_name         = None;
-  wrapping_prefix   = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -345,7 +341,11 @@ let prepend_config ~cwd ~cfg =
     | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _ as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
-    | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
+    | (`EXCLUDE_QUERY_DIR
+      | `USE_PPX_CACHE
+      | `UNIT_NAME _
+      | `WRAPPING_PREFIX _
+      | `UNKNOWN_TAG _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }
@@ -360,10 +360,6 @@ let prepend_config ~cwd ~cfg =
     | `SOURCE_ROOT path ->
       let canon_path = canonicalize_filename ~cwd path in
       { cfg with source_root = Some canon_path }
-    | `UNIT_NAME name ->
-      { cfg with unit_name = Some name }
-    | `WRAPPING_PREFIX prefix ->
-      { cfg with wrapping_prefix = Some prefix }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with
@@ -431,10 +427,6 @@ let postprocess cfg =
         (dirs :> Merlin_dot_protocol.directive list)
       )
     ; (cfg.pass_forward :> Merlin_dot_protocol.directive list)
-    ; cfg.unit_name |> Option.map ~f:(fun name -> `UNIT_NAME name) |> Option.to_list
-    ; cfg.wrapping_prefix
-        |> Option.map ~f:(fun prefix -> `WRAPPING_PREFIX prefix)
-        |> Option.to_list
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
     ; List.map failures ~f:(fun s -> `ERROR_MSG s)
