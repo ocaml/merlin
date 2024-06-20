@@ -1,3 +1,5 @@
+  $ echo $BUILD_PATH_PREFIX_MAP
+
   $ $MERLIN server stop-server
 
   $ cat >main.ml <<'EOF'
