@@ -6,8 +6,8 @@ description:
 maintainer: ["ulysse@tarides.com"]
 authors: ["ulysse@tarides.com"]
 license: "MIT"
-homepage: "https://github.com/voodoos/ocaml-index"
-bug-reports: "https://github.com/voodoos/ocaml-index/issues"
+homepage: "https://github.com/ocaml/merlin/ocaml-index"
+bug-reports: "https://github.com/ocaml/merlin/issues"
 depends: [
   "dune" {>= "3.0.0"}
   "ocaml" {>= "5.2"}
@@ -30,7 +30,4 @@ build: [
   ]
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
-dev-repo: "git+https://github.com/voodoos/ocaml-index.git"
-pin-depends: [
-  ["merlin-lib.5.1-502"  "git+https://github.com/ocaml/merlin"]
-]
+dev-repo: "git+https://github.com/ocaml/merlin.git"
