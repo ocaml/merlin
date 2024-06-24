@@ -56,6 +56,7 @@
     "stdlib": null,
     "source_root": null,
     "unit_name": null,
+    "wrapping_prefix": null,
     "reader": [],
     "protocol": "json",
     "log_file": null,

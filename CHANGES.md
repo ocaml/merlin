@@ -1,7 +1,10 @@
-merlin NEXT_VERSION
-=========
+unreleased
+==========
+
   + merlin binary
-       - Implement new expand-node command for expanding PPX annotations (#1745)
+    - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
+      what to append to the current unit name in the presence of wrapping (#1788)
+    - Implement new expand-node command for expanding PPX annotations (#1745)
 
 merlin 5.1
 ==========

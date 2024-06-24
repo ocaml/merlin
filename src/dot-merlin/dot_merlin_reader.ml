@@ -102,6 +102,8 @@ module Cache = File_cache.Make (struct
             tell (`SOURCE_ROOT (String.drop 12 line))
           else if String.is_prefixed ~by:"UNIT_NAME " line then
             tell (`UNIT_NAME (String.drop 10 line))
+          else if String.is_prefixed ~by:"WRAPPING_PREFIX " line then
+            tell (`WRAPPING_PREFIX (String.drop 16 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
@@ -316,7 +318,6 @@ type config = {
   to_canonicalize : (string * Merlin_dot_protocol.Directive.include_path) list;
   stdlib : string option;
   source_root : string option;
-  unit_name   : string option;
   packages_to_load : string list;
   findlib : string option;
   findlib_path : string list;
@@ -328,7 +329,6 @@ let empty_config = {
   to_canonicalize   = [];
   stdlib            = None;
   source_root       = None;
-  unit_name         = None;
   packages_to_load  = [];
   findlib           = None;
   findlib_path      = [];
@@ -341,7 +341,11 @@ let prepend_config ~cwd ~cfg =
     | `B _ | `S _ | `BH _ | `SH _ | `CMI _ | `CMT _ | `INDEX _ as directive ->
       { cfg with to_canonicalize = (cwd, directive) :: cfg.to_canonicalize }
     | `EXT _ | `SUFFIX _ | `FLG _ | `READER _
-    | (`EXCLUDE_QUERY_DIR | `USE_PPX_CACHE | `UNKNOWN_TAG _) as directive ->
+    | (`EXCLUDE_QUERY_DIR
+      | `USE_PPX_CACHE
+      | `UNIT_NAME _
+      | `WRAPPING_PREFIX _
+      | `UNKNOWN_TAG _) as directive ->
       { cfg with pass_forward = directive :: cfg.pass_forward }
     | `PKG ps ->
       { cfg with packages_to_load = ps @ cfg.packages_to_load }
@@ -356,8 +360,6 @@ let prepend_config ~cwd ~cfg =
     | `SOURCE_ROOT path ->
       let canon_path = canonicalize_filename ~cwd path in
       { cfg with source_root = Some canon_path }
-    | `UNIT_NAME name ->
-      { cfg with unit_name = Some name }
     | `FINDLIB path ->
       let canon_path = canonicalize_filename ~cwd path in
       begin match cfg.stdlib with

@@ -45,6 +45,7 @@ module Directive = struct
     | `STDLIB of string
     | `SOURCE_ROOT of string
     | `UNIT_NAME of string
+    | `WRAPPING_PREFIX of string
     | `SUFFIX of string
     | `READER of string list
     | `EXCLUDE_QUERY_DIR
@@ -98,6 +99,7 @@ module Sexp = struct
         | "STDLIB" -> `STDLIB value
         | "SOURCE_ROOT" -> `SOURCE_ROOT value
         | "UNIT_NAME" -> `UNIT_NAME value
+        | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
         | "SUFFIX" -> `SUFFIX value
         | "ERROR" -> `ERROR_MSG value
         | "FLG" ->
@@ -132,6 +134,7 @@ module Sexp = struct
         | `INDEX s -> ("INDEX", single s)
         | `SOURCE_ROOT s -> ("SOURCE_ROOT", single s)
         | `UNIT_NAME s -> ("UNIT_NAME", single s)
+        | `WRAPPING_PREFIX s -> ("WRAPPING_PREFIX", single s)
         | `EXT ss -> ("EXT", [ List (atoms_of_strings ss) ])
         | `FLG ss -> ("FLG", [ List (atoms_of_strings ss) ])
         | `STDLIB s -> ("STDLIB", single s)
