@@ -245,7 +245,7 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
   command "expand-ppx"
     ~doc: "Returns the generated code of a PPX."
     ~spec: [
-      arg "-position" "<position> Position to complete"
+      arg "-position" "<position> Position to expand"
           (marg_position (fun pos _pos -> pos));
     ]
     ~default: `None

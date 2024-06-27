@@ -487,7 +487,7 @@ on attribute name deriving of module Stack
 
 Test for an attribute that's not deriving
   $ cat > apf.ml << EOF
-  > type y = int * float [@@deriving merlin.hide]
+  > type y = int * float [@@merlin.hide]
   > EOF
 
   $ dune build
@@ -547,11 +547,11 @@ on the first [%tell_me]
       "deriver": {
         "start": {
           "line": 1,
-          "col": 26
+          "col": 13
         },
         "end": {
           "line": 1,
-          "col": 36
+          "col": 23
         }
       }
     },

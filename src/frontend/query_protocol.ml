@@ -103,7 +103,7 @@ type syntax_doc_result =
     documentation : string
 }
 
-type ppx_expand_result = 
+type ppxed_source = 
 {
   code : string;
   attr_start : Lexing.position;
@@ -161,10 +161,9 @@ type _ t =
        ] t
   | Expand_ppx
     : Msource.position
-    -> 
-      [ `Found of ppx_expand_result
-      | `No_ppx
-      ] t
+    -> [ `Found of ppxed_source
+       | `No_ppx
+       ] t
   | Locate_type
     : Msource.position
       -> [ `Found of string option * Lexing.position
