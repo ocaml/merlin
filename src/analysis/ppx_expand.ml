@@ -87,10 +87,7 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
         let expr (self : Ast_iterator.iterator)
             (new_expr : Parsetree.expression) =
           match
-            original_expr.pexp_loc.loc_start.pos_cnum
-            <= new_expr.pexp_loc.loc_start.pos_cnum
-            && new_expr.pexp_loc.loc_end.pos_cnum
-               <= original_expr.pexp_loc.loc_end.pos_cnum
+            Location_aux.included ~into:(original_expr.pexp_loc) new_expr.pexp_loc
           with
           | true -> expression := new_expr :: !expression
           | false -> Ast_iterator.default_iterator.expr self new_expr
