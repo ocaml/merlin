@@ -515,12 +515,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let parsetree = Mpipeline.reader_parsetree pipeline in
     let ppxed_parsetree = Mpipeline.ppx_parsetree pipeline in
-    let ppx_kind_attr = Ppx_expand.check_extension ~parsetree ~pos in
-    match ppx_kind_attr with
+    let ppx_kind_with_attr = Ppx_expand.check_extension ~parsetree ~pos in
+    match ppx_kind_with_attr with
     | Some _ ->
         `Found
           (Ppx_expand.get_ppxed_source ~ppxed_parsetree ~pos
-              (Option.get ppx_kind_attr))
+              (Option.get ppx_kind_with_attr))
     | None -> `No_ppx)
 
   | Locate (patho, ml_or_mli, pos) ->

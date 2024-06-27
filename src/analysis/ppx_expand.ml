@@ -76,13 +76,13 @@ let check_extension ~parsetree ~pos =
   in
   !kind
 
-let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_attr :
+let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
     Query_protocol.ppxed_source =
   let expression = ref [] in
   let signature = ref [] in
   let structure = ref [] in
   let () =
-    match ppx_kind_attr with
+    match ppx_kind_with_attr with
     | Expr original_expr, _ -> (
         let expr (self : Ast_iterator.iterator)
             (new_expr : Parsetree.expression) =
@@ -124,7 +124,7 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_attr :
         | `Interface si -> iterator.signature iterator si
         | `Implementation str -> iterator.structure iterator str)
   in
-  match (ppx_kind_attr : ppx_kind * Warnings.loc) with
+  match (ppx_kind_with_attr : ppx_kind * Warnings.loc) with
   | Expr _, ext_loc ->
       let exp =
         List.iter
