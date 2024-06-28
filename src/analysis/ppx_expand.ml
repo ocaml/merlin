@@ -78,7 +78,7 @@ let check_extension ~parsetree ~pos =
 
 let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
     Query_protocol.ppxed_source =
-  let expression = ref [] in
+  let expression = ref None in
   let signature = ref [] in
   let structure = ref [] in
   let () =
@@ -87,9 +87,9 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
         let expr (self : Ast_iterator.iterator)
             (new_expr : Parsetree.expression) =
           match
-            Location_aux.included ~into:(original_expr.pexp_loc) new_expr.pexp_loc
+            Location_aux.included ~into:original_expr.pexp_loc new_expr.pexp_loc
           with
-          | true -> expression := new_expr :: !expression
+          | true -> expression := Some new_expr
           | false -> Ast_iterator.default_iterator.expr self new_expr
         in
         let iterator = { Ast_iterator.default_iterator with expr } in
@@ -123,13 +123,11 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
   in
   match (ppx_kind_with_attr : ppx_kind * Warnings.loc) with
   | Expr _, ext_loc ->
-      let exp =
-        List.iter
-          (fun exp -> Pprintast.expression Format.str_formatter exp)
-          (List.rev !expression);
-        Format.flush_str_formatter ()
-      in
-      { code = exp; attr_start = ext_loc.loc_start; attr_end = ext_loc.loc_end }
+      {
+        code = Pprintast.string_of_expression (Option.get !expression);
+        attr_start = ext_loc.loc_start;
+        attr_end = ext_loc.loc_end;
+      }
   | Sig_item _, attr_loc ->
       let exp =
         Pprintast.signature Format.str_formatter (List.rev !signature);
