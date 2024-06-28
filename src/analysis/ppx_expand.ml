@@ -32,7 +32,7 @@ let check_structures pos (item : Parsetree.structure_item_desc) =
         ty
   | Pstr_exception tc -> check_deriving_attr pos tc.ptyexn_attributes
   | Pstr_modtype mt -> check_deriving_attr pos mt.pmtd_attributes
-  | Pstr_extension (_, attrs) -> check_deriving_attr pos attrs
+  | Pstr_typext tex -> check_deriving_attr pos tex.ptyext_attributes
   | _ -> None
 
 let check_signatures pos (item : Parsetree.signature_item_desc) =
@@ -44,7 +44,7 @@ let check_signatures pos (item : Parsetree.signature_item_desc) =
         ty
   | Psig_exception tc -> check_deriving_attr pos tc.ptyexn_attributes
   | Psig_modtype mt -> check_deriving_attr pos mt.pmtd_attributes
-  | Psig_extension (_, attrs) -> check_deriving_attr pos attrs
+  | Psig_typext tex -> check_deriving_attr pos tex.ptyext_attributes
   | _ -> None
 
 let check_extension ~parsetree ~pos =
