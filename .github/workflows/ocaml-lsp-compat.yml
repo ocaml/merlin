@@ -41,17 +41,16 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Check that Merlin and OCaml-LSP are co-installable
         run: |
-          opam depext conf-jq # opam depext bug
           opam --cli=2.1 pin --with-version=dev --no-action https://github.com/voodoos/ocaml-lsp.git#5.2-preview
           opam --cli=2.1 pin --with-version=5.0-502 --no-action .
           opam install ocaml-lsp-server --with-test --ignore-constraints-on=ocamlformat

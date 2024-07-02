@@ -25,10 +25,10 @@ jobs:
       EMACS_PACKAGE_LINT_IGNORE: ${{ matrix.package_lint_ignore }}
       EMACS_BYTECOMP_WARN_IGNORE: ${{ matrix.bytecomp_warn_ignore }}
     steps:
-    - uses: purcell/setup-emacs@master
+    - uses: purcell/setup-emacs@v6.0
       with:
         version: ${{ matrix.emacs_version }}
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Run tests
       run: 'cd emacs && ./check.sh'
