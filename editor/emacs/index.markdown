@@ -68,6 +68,20 @@ Asks for an identifier and locates it.
   declaration  of identifiers by setting the `merlin-locate-preference` variable
   with `ml` or `mli
 
+## Search for an identifier's occurrences
+
+- `M-x merlin-occurrences`
+Returns all occurrences of the identifier under the cursor in the current
+buffer.
+
+- `M-x merlin-project-occurrences`
+
+Returns all occurrences of the identifier under the cursor in the entire
+project. This requires indexing the project. This can be done by running `dune
+build @ocaml-index --watch` when developing. Requires OCaml 5.2 and Dune 3.16.0.
+See [the
+announcement](https://discuss.ocaml.org/t/ann-project-wide-occurrences-in-merlin-and-lsp/14847/12).
+
 ## Display identifier documentation
 
 `M-x merlin-document` <kbd>C-c C-d</kbd>

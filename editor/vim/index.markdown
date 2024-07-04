@@ -54,6 +54,19 @@ Jumps to the definition of the identifier under the cursor.
 - `:MerlinLocate <expr>` \
 Jumps to the definition of the given identifier.
 
+## Search for an identifier's occurrences
+
+- `:MerlinOccurrences`
+Returns all occurrences of the identifier under the cursor in the current
+buffer.
+
+- `:MerlinOccurrencesProjectWide`
+
+Returns all occurrences of the identifier under the cursor in the entire
+project. This requires indexing the project. This can be done by running `dune
+build @ocaml-index --watch` when developing. Requires OCaml 5.2 and Dune 3.16.0.
+See [the
+announcement](https://discuss.ocaml.org/t/ann-project-wide-occurrences-in-merlin-and-lsp/14847/12).
 
 ## Source browsing
 
