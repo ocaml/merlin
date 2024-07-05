@@ -39,19 +39,13 @@ on attribute name "deriving"
   {
     "class": "return",
     "value": {
-      "code": "module MyModule =
+      "code": "include
     struct
-      type point = {
+      let _ = fun (_ : point) -> ()
+      type point_renamed = {
         x: int ;
-        y: int }[@@deriving rename]
-      include
-        struct
-          let _ = fun (_ : point) -> ()
-          type point_renamed = {
-            x: int ;
-            y: int }
-        end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-    end",
+        y: int }
+    end[@@ocaml.doc \"@inline\"][@@merlin.hide ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -71,19 +65,13 @@ on attribute payload name "rename"
   {
     "class": "return",
     "value": {
-      "code": "module MyModule =
+      "code": "include
     struct
-      type point = {
+      let _ = fun (_ : point) -> ()
+      type point_renamed = {
         x: int ;
-        y: int }[@@deriving rename]
-      include
-        struct
-          let _ = fun (_ : point) -> ()
-          type point_renamed = {
-            x: int ;
-            y: int }
-        end[@@ocaml.doc \"@inline\"][@@merlin.hide ]
-    end",
+        y: int }
+    end[@@ocaml.doc \"@inline\"][@@merlin.hide ]",
       "deriver": {
         "start": {
           "line": 2,
@@ -322,7 +310,7 @@ Exception in signature
 Module type declaration in structure
   $ cat > apc.ml << EOF
   > module type Stack = sig 
-  >   type t
+  >   type t [@@deriving rename]
   >   type stack 
   >   val empty : stack
   >   val is_empty : stack -> bool
@@ -334,6 +322,34 @@ Module type declaration in structure
 
   $ dune build
 
+a cursor here should only output the derived t 
+  $ $MERLIN  single expand-ppx -position 2:14 -filename ./apc.ml < ./apc.ml
+  {
+    "class": "return",
+    "value": {
+      "code": "include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                           \"@inline\"][@@merlin.hide
+                                                                      ]
+  include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                           \"@inline\"][@@merlin.hide
+                                                                      ]
+  include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                           \"@inline\"][@@merlin.hide
+                                                                      ]",
+      "deriver": {
+        "start": {
+          "line": 2,
+          "col": 9
+        },
+        "end": {
+          "line": 2,
+          "col": 28
+        }
+      }
+    },
+    "notifications": []
+  }
+
   $ $MERLIN single expand-ppx -position 9:8 -filename ./apc.ml < ./apc.ml
   {
     "class": "return",
@@ -342,7 +358,13 @@ Module type declaration in structure
     struct
       module type Stack_renamed  =
         sig
-          type t
+          type t[@@deriving rename]
+          include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                                   \"@inline\"]
+          [@@merlin.hide ]
+          include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                                   \"@inline\"]
+          [@@merlin.hide ]
           type stack
           val empty : stack
           val is_empty : stack -> bool

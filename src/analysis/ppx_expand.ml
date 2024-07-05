@@ -78,6 +78,7 @@ let check_extension ~parsetree ~pos =
 
 let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
     Query_protocol.ppxed_source =
+    let _pos = pos in
   let expression = ref None in
   let signature = ref [] in
   let structure = ref [] in
@@ -114,11 +115,16 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
     | Str_item original_str, _ -> (
         let structure_item (self : Ast_iterator.iterator)
             (new_str : Parsetree.structure_item) =
-          match
-            check_at_pos pos new_str.pstr_loc && original_str <> new_str
-          with
-          | true -> structure := new_str :: !structure
-          | false -> Ast_iterator.default_iterator.structure_item self new_str
+          let included =
+            Location_aux.included new_str.pstr_loc ~into:original_str.pstr_loc
+          in
+          match included, new_str.pstr_loc.loc_ghost with
+          | true, _ -> 
+            (match check_structures pos new_str.pstr_desc with 
+            | None -> structure := new_str :: !structure
+            | Some _ -> ())
+          | false, false -> Ast_iterator.default_iterator.structure_item self new_str
+          | false, true -> ()
         in
         let iterator = { Ast_iterator.default_iterator with structure_item } in
         match ppxed_parsetree with
