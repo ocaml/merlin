@@ -78,7 +78,6 @@ let check_extension ~parsetree ~pos =
 
 let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
     Query_protocol.ppxed_source =
-    let _pos = pos in
   let expression = ref None in
   let signature = ref [] in
   let structure = ref [] in
