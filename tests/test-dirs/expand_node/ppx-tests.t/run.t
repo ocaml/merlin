@@ -381,44 +381,14 @@ Module type declaration in signature
   $ dune build
 
 on attribute name deriving of type t
-TODO: a cursor here should only output the derived t and now the whole module
+a cursor here should only output the derived t 
   $ $MERLIN  single expand-ppx -position 2:14 -filename ./apc.mli < ./apc.mli
   {
     "class": "return",
     "value": {
-      "code": "module type Stack  =
-    sig
-      type t[@@deriving rename]
-      include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
-                                                               \"@inline\"]
-      [@@merlin.hide ]
-      type stack
-      val empty : stack
-      val is_empty : stack -> bool
-      val push : t -> stack -> stack
-      val pop : stack -> stack
-      val peek : stack -> t
-    end[@@deriving rename]
-  include
-    sig
-      [@@@ocaml.warning \"-32\"]
-      module type Stack_renamed  =
-        sig
-          type t[@@deriving rename]
-          include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
-                                                                   \"@inline\"]
-          [@@merlin.hide ]
-          include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
-                                                                   \"@inline\"]
-          [@@merlin.hide ]
-          type stack
-          val empty : stack
-          val is_empty : stack -> bool
-          val push : t -> stack -> stack
-          val pop : stack -> stack
-          val peek : stack -> t
-        end
-    end[@@ocaml.doc \"@inline\"][@@merlin.hide ]",
+      "code": "include sig [@@@ocaml.warning \"-32\"] type t_renamed end[@@ocaml.doc
+                                                           \"@inline\"][@@merlin.hide
+                                                                      ]",
       "deriver": {
         "start": {
           "line": 2,

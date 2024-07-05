@@ -99,9 +99,13 @@ let get_ppxed_source ~ppxed_parsetree ~pos ppx_kind_with_attr :
     | Sig_item original_sg, _ -> (
         let signature_item (self : Ast_iterator.iterator)
             (new_sg : Parsetree.signature_item) =
-          match check_at_pos pos new_sg.psig_loc && original_sg <> new_sg with
-          | true -> signature := new_sg :: !signature
-          | false -> Ast_iterator.default_iterator.signature_item self new_sg
+          let included =
+            Location_aux.included new_sg.psig_loc ~into:original_sg.psig_loc
+          in
+          match included && original_sg <> new_sg, new_sg.psig_loc.loc_ghost with
+          | true, _ -> signature := new_sg :: !signature
+          | false, false -> Ast_iterator.default_iterator.signature_item self new_sg
+          | false, true -> () (* We don't enter nested ppxes *)
         in
         let iterator = { Ast_iterator.default_iterator with signature_item } in
         match ppxed_parsetree with
