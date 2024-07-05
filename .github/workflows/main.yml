@@ -68,7 +68,7 @@ jobs:
       - name: Build and test in release mode (windows)
         if: matrix.os == 'windows-latest'
         run: |
-          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,merlin
+          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
 
       - name: Build and test in release mode (macos/linux)
         if: matrix.os != 'windows-latest'

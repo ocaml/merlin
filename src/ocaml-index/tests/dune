@@ -1,0 +1,10 @@
+(alias
+ (name ocaml-index-test-deps)
+ (deps
+  (package ocaml-index)))
+
+(cram
+ (package ocaml-index)
+ (applies_to :whole_subtree)
+ (deps
+  (alias ocaml-index-test-deps)))
