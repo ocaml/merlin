@@ -457,10 +457,10 @@ let ocaml_ignored_flags = [
   "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
   "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
   "-no-strict-sequence"; "-no-unbox-free-vars-of-clos";
-  "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
-  "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
-  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
-  "-verbose"; "-where";
+  "-no-unbox-specialised-args"; "-no-unboxed-types"; "-O2"; "-O3";
+  "-Oclassic"; "-opaque"; "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
+  "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures";
+  "-unboxed-types"; "-v"; "-verbose"; "-where";
 ]
 
 let ocaml_ignored_parametrized_flags = [
