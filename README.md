@@ -1,3 +1,17 @@
+⚠️ Default branch recently renamed to `main`
+=======================
+You can update your local clones using the following procedure:
+```
+git branch -m master main
+git fetch origin
+git branch -u origin/main main
+git remote set-head origin -a
+```
+Where `origin` is the name of the upstream remote.
+
+----
+
+
 ![merlin completion in vim](https://github.com/ocaml/merlin/wiki/vim_complete.png)
 
 [Merlin](https://ocaml.github.io/merlin/) is an editor service that provides modern IDE features for OCaml.
