@@ -5,6 +5,8 @@ unreleased
     - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
       what to append to the current unit name in the presence of wrapping (#1788)
     - Add `-unboxed-types` and `-no-unboxed-types` as ocaml ignored flags (#1795, fixes #1794)
+  + editor modes
+    - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
 
 merlin 5.1
 ==========
