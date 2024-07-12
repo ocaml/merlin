@@ -823,19 +823,19 @@ def easy_matcher_wide(start, stop):
     startl = ""
     startc = ""
     if start['line'] > 0:
-        startl = "\%{0}l".format(start['line'])
+        startl = "\\%{0}l".format(start['line'])
     if start['col'] > 0:
-        startc = "\%{0}c".format(start['col'] + 1)
-    return '{0}{1}.*\%{2}l\%{3}c'.format(startl, startc, stop['line'], stop['col'] + 1)
+        startc = "\\%{0}c".format(start['col'] + 1)
+    return '{0}{1}.*\\%{2}l\\%{3}c'.format(startl, startc, stop['line'], stop['col'] + 1)
 
 def easy_matcher(start, stop):
     startl = ""
     startc = ""
     if start['line'] > 0:
-        startl = "\%>{0}l".format(start['line'] - 1)
+        startl = "\\%>{0}l".format(start['line'] - 1)
     if start['col'] > 0:
-        startc = "\%>{0}c".format(start['col'])
-    return '{0}{1}\%<{2}l\%<{3}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
+        startc = "\\%>{0}c".format(start['col'])
+    return '{0}{1}\\%<{2}l\\%<{3}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
 
 def hard_matcher(start, stop):
     first_start = {'line' : start['line'], 'col' : start['col']}
@@ -847,7 +847,7 @@ def hard_matcher(start, stop):
     last_start = {'line' : stop['line'], 'col' : 0}
     last_stop =  {'line' : stop['line'], 'col' : stop['col']}
     last_line = easy_matcher(last_start, last_stop)
-    return "{0}\|{1}\|{2}".format(first_line, middle, last_line)
+    return "{0}\\|{1}\\|{2}".format(first_line, middle, last_line)
 
 def make_matcher(start, stop):
     if start['line'] == stop['line']:
