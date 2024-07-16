@@ -16,7 +16,7 @@
           "col": 15
         }
       },
-      "match foo ?bar:None () with | () -> _"
+      "match foo () with | () -> _"
     ],
     "notifications": []
   }
@@ -41,7 +41,7 @@ $ $MERLIN single case-analysis -start 2:10 -end 2:15 \
           "col": 23
         }
       },
-      "match foo ?bar:(Some 10) () with | () -> _"
+      "match foo ~bar:10 () with | () -> _"
     ],
     "notifications": []
   }
@@ -87,7 +87,7 @@ $ $MERLIN single case-analysis -start 2:10 -end 2:15 \
           "col": 15
         }
       },
-      "match foo ?bar:None () with | () -> _"
+      "match foo () with | () -> _"
     ],
     "notifications": []
   }
@@ -110,7 +110,7 @@ $ $MERLIN single case-analysis -start 2:10 -end 2:15 \
           "col": 23
         }
       },
-      "match foo ?bar:(Some 15) () with | () -> _"
+      "match foo ~bar:15 () with | () -> _"
     ],
     "notifications": []
   }
