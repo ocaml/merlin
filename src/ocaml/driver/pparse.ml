@@ -180,6 +180,7 @@ let apply_pp ~workdir ~filename ~source ~pp =
     let ic = open_in_bin fn_out in
     let result = Misc.string_of_file ic in
     close_in ic;
+    Misc.remove_file fn_out;
     Ok result
 
 let decode_potential_ast source =
