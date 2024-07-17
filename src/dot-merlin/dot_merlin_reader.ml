@@ -356,7 +356,8 @@ let prepend_config ~cwd ~cfg =
       | Some p ->
         log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
       end;
-      { cfg with stdlib = Some canon_path }
+      { cfg with stdlib = Some canon_path;
+                 pass_forward = `STDLIB canon_path :: cfg.pass_forward }
     | `SOURCE_ROOT path ->
       let canon_path = canonicalize_filename ~cwd path in
       { cfg with source_root = Some canon_path }
