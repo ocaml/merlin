@@ -356,8 +356,7 @@ let prepend_config ~cwd ~cfg =
       | Some p ->
         log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
       end;
-      { cfg with stdlib = Some canon_path;
-                 pass_forward = `STDLIB canon_path :: cfg.pass_forward }
+      { cfg with stdlib = Some canon_path }
     | `SOURCE_ROOT path ->
       let canon_path = canonicalize_filename ~cwd path in
       { cfg with source_root = Some canon_path }
@@ -428,6 +427,7 @@ let postprocess cfg =
         (dirs :> Merlin_dot_protocol.directive list)
       )
     ; (cfg.pass_forward :> Merlin_dot_protocol.directive list)
+    ; cfg.stdlib |> Option.map ~f:(fun stdlib -> `STDLIB stdlib) |> Option.to_list
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
     ; List.map failures ~f:(fun s -> `ERROR_MSG s)
