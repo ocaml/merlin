@@ -7,6 +7,7 @@ unreleased
     - Add `-unboxed-types` and `-no-unboxed-types` as ocaml ignored flags (#1795, fixes #1794)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
+    - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
 
 merlin 5.1
 ==========
