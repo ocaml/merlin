@@ -87,7 +87,7 @@ jobs:
           echo "version=$v" | tee -a $GITHUB_OUTPUT
 
       - name: Install OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ steps.compiler.outputs.version }}
           dune-cache: true
@@ -105,7 +105,7 @@ jobs:
           opam exec -- dune install -p merlin-lib,dot-merlin-reader,merlin
 
       - name: Pull irmin and its deps from cache if possible
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: irmin-cache
         with:
           path: irmin/
@@ -161,7 +161,7 @@ jobs:
         working-directory: irmin
 
       - name: Pull merl-an from cache if possible
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: merl-an-cache
         with:
           path: /usr/local/bin/merl-an
@@ -203,7 +203,7 @@ jobs:
         run: echo "name=$${{ matrix.commit }}_artifact_name" >> $GITHUB_OUTPUT
 
       - name: Upload data
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact_name.outputs.name }}
           path: ${{ env.data_dir }}
@@ -217,7 +217,7 @@ jobs:
 
       - name: Upload diff tool
         if: ${{ matrix.commit == 'merge_branch' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: diff_tool
           path: create_diff
@@ -234,13 +234,13 @@ jobs:
       diff_dir: diff
     steps:
       - name: Download base branch data
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ env.BASE_BRANCH_ARTIFACT_NAME }}
           path: ${{ env.base_data_dir }}
 
       - name: Download merge branch data
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ env.MERGE_BRANCH_ARTIFACT_NAME }}
           path: ${{ env.merge_data_dir }}
@@ -249,7 +249,7 @@ jobs:
         run: mkdir -p "$diff_dir"
 
       - name: Download diff tool
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: diff_tool
 
@@ -293,7 +293,7 @@ jobs:
           | ./create_diff "--input-separator--" "--diff-cmd-separator--" "$diff_dir/$DISTILLED_DIFF_FILE"
 
       - name: Upload diff(s)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.DIFF_ARTIFACT_NAME }}
           path: ${{ env.diff_dir }}
@@ -312,7 +312,7 @@ jobs:
 
       - name: Download current diff(s)
         if: ${{ env.current_diff_exists == 'true' }}
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ env.DIFF_ARTIFACT_NAME }}
 
@@ -370,7 +370,7 @@ jobs:
 
       - name: Upload instruction to delete label
         if: ${{ env.earlier_diff_was_approved == 'true' &&  steps.approved_diff.outputs.hash != steps.current_diff.outputs.hash }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: forwarded_instructions
           path: forward/
@@ -453,7 +453,7 @@ jobs:
 
       - name: Upload instruction to delete label
         if: ${{ steps.diff_metadata.outputs.exists == 'false' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: forwarded_instructions
           path: forward/
@@ -498,7 +498,7 @@ jobs:
             '{instruction: $instruction, endpoint: $endpoint, artifacts_url: $artifacts_url, hash: $hash}' > ./forward/instruction.json
 
       - name: Upload instruction to comment on PR
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: forwarded_instructions
           path: forward/

@@ -588,9 +588,41 @@ module Conv = struct
     (ps, constrs, labels)
 end
 
+let need_recover_labeled_args = function
+  | Parsetree.Pexp_construct ({loc; txt = Longident.Lident ctor}, Some e) ->
+    (* If the internal construction is ghosted, then the expression must be
+       re-labelled. *)
+    if String.equal "Some" ctor && loc.loc_ghost then Some e else None
+  | _ -> None
+
+let remove_non_applied_optional_args (Parsetree.{ pexp_desc; _} as base_expr) =
+  (* Fix the behaviour described here
+     https://github.com/ocaml/merlin/issues/1770 *)
+  match pexp_desc with
+  | Parsetree.Pexp_apply (expr, args) ->
+    let args = List.concat_map ~f:(fun (label, (expr : Parsetree.expression)) ->
+      match label, expr.pexp_loc.loc_ghost, expr.pexp_desc with
+      | Asttypes.Optional _, true,
+        Pexp_construct ({ txt = Longident.Lident "None"; _ }, _) ->
+        []
+      | Asttypes.Optional str, false, exp_desc ->
+        (match need_recover_labeled_args exp_desc with
+          | Some e ->  [(Asttypes.Labelled str, e)]
+          | None ->  [(label, expr)]
+        )
+      | _ -> [(label, expr)]
+    ) args
+    in
+    let pexp_desc = Parsetree.Pexp_apply (expr, args) in
+    { base_expr with pexp_desc }
+  | _ -> base_expr
+
 let destruct_expression loc config source parents expr =
   let ty = expr.Typedtree.exp_type in
-  let pexp = filter_expr_attr (Untypeast.untype_expression expr) in
+  let pexp =
+    filter_expr_attr (Untypeast.untype_expression expr)
+    |> remove_non_applied_optional_args
+  in
   let () =
     log ~title:"node_expression" "%a"
       Logger.fmt (fun fmt -> Printast.expression 0 fmt pexp)

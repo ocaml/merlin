@@ -11,7 +11,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "5.2" & < "5.3"}
-  "dune" {>= "2.9.0"}
+  "dune" {>= "3.0.0"}
   "csexp" {>= "1.5.1"}
   "menhir"    {dev & >= "20201216"}
   "menhirLib" {dev & >= "20201216"}

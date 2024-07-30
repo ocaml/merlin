@@ -55,13 +55,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
       - name: Install dependencies
         run: |
-          opam depext conf-jq --yes # opam depext bug
           opam pin menhirLib 20201216 --no-action
           opam install --yes ppx_string ppx_compare
           opam install . --deps-only --with-test --yes
@@ -69,7 +68,7 @@ jobs:
       - name: Build and test in release mode (windows)
         if: matrix.os == 'windows-latest'
         run: |
-          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,merlin
+          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
 
       - name: Build and test in release mode (macos/linux)
         if: matrix.os != 'windows-latest'

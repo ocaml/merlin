@@ -1,0 +1,17 @@
+(library
+ (name lib)
+ (libraries
+  ocaml_typing
+  ocaml_parsing
+  ocaml_utils
+  merlin_utils
+  merlin_analysis
+  merlin_index_format)
+ (flags
+  :standard
+  -open Ocaml_typing
+  -open Ocaml_parsing
+  -open Ocaml_utils
+  -open Merlin_utils
+  -open Merlin_analysis
+  -open Merlin_index_format))

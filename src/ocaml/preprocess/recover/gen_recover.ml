@@ -23,7 +23,7 @@ let () =
 module G = Cmly_read.Read (struct let filename = !name end)
 module A = Recover_attrib.Make(G)
 
-let () =
+let[@alert "-deprecated"] () =
   let open Format in
   let ppf = Format.err_formatter in
   if !verbose then begin
