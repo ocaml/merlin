@@ -323,6 +323,9 @@ Module type declaration in structure
   $ dune build
 
 a cursor here should only output the derived t 
+
+(* Type t_renamed is duplicated multiple times because the same type is derived twice, first by it's own ppx and secondly
+when the parent ppx on the module type declaration is evaluated. *)
   $ $MERLIN  single expand-ppx -position 2:14 -filename ./apc.ml < ./apc.ml
   {
     "class": "return",
@@ -349,6 +352,9 @@ a cursor here should only output the derived t
     },
     "notifications": []
   }
+
+(* Type t_renamed is duplicated multiple times because the same type is derived twice, first by it's own ppx and secondly
+when the parent ppx on the module type declaration is evaluated. *)
 
   $ $MERLIN single expand-ppx -position 9:8 -filename ./apc.ml < ./apc.ml
   {
@@ -426,6 +432,8 @@ a cursor here should only output the derived t
   }
 
 on attribute name deriving of module Stack
+(* Type t_renamed is duplicated multiple times because the same type is derived twice, first by it's own ppx and secondly
+when the parent ppx on the module type declaration is evaluated. *)
   $ $MERLIN single expand-ppx -position 9:8 -filename ./apc.mli < ./apc.mli
   {
     "class": "return",
