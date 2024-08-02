@@ -103,6 +103,13 @@ type syntax_doc_result =
     documentation : string
 }
 
+type ppxed_source = 
+{
+  code : string;
+  attr_start : Lexing.position;
+  attr_end : Lexing.position;
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
@@ -151,6 +158,11 @@ type _ t =
     : Msource.position
     -> [ `Found of syntax_doc_result
        | `No_documentation
+       ] t
+  | Expand_ppx
+    : Msource.position
+    -> [ `Found of ppxed_source
+       | `No_ppx
        ] t
   | Locate_type
     : Msource.position

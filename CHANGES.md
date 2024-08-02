@@ -6,6 +6,7 @@ unreleased
       what to append to the current unit name in the presence of wrapping (#1788)
     - Add `-unboxed-types` and `-no-unboxed-types` as ocaml ignored flags (#1795, fixes #1794)
     - destruct: Refinement in the presence of optional arguments (#1800 #1807, fixes #1770)
+    - Implement new expand-node command for expanding PPX annotations (#1745)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
