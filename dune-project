@@ -3,6 +3,6 @@
 (using menhir 2.0)
 
 (cram enable)
-(formatting disabled)
+(formatting (enabled_for ocaml))
 (implicit_transitive_deps false)
 (use_standard_c_and_cxx_flags true)
