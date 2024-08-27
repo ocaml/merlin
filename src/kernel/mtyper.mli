@@ -60,3 +60,7 @@ val get_cache_stat : result -> typer_cache_stats
  *)
 val node_at :
   ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
+
+(** [extract_toplevel_identifier sigitem] extracts toplevel identifier of
+    a signature item. *)
+val extract_toplevel_identifier : Typedtree.signature_item -> Ident.t option
