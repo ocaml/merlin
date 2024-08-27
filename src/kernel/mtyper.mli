@@ -62,5 +62,5 @@ val node_at :
   ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
 
 (** [extract_toplevel_identifier sigitem] extracts toplevel identifier of
-    a signature item. *)
-val extract_toplevel_identifier : Typedtree.signature_item -> Ident.t option
+    a signature item. It returns a list for dealing with recursive elements. *)
+val extract_toplevel_identifier : Typedtree.signature_item -> Ident.t list
