@@ -825,6 +825,24 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     locs, status
 
+  | Inlay_hints (
+      start,
+      stop,
+      hint_let_binding,
+      hint_pattern_binding,
+      avoid_ghost_location
+    ) ->
+    let start = Mpipeline.get_lexing_pos pipeline start
+    and stop = Mpipeline.get_lexing_pos pipeline stop in
+    Inlay_hints.run
+      ~hint_let_binding
+      ~hint_pattern_binding
+      ~avoid_ghost_location
+      ~start
+      ~stop
+      pipeline
+      
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version;
+
