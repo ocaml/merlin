@@ -135,18 +135,11 @@ let structure_iterator
   in iterator.structure iterator typedtree
 
 type hint = Lexing.position * string
-
-let outline_type env typ =
-  let is_word_char = function
-    | ' ' | '\t' | '\n' -> false
-    | _ -> true
-  in
-  Ocaml_typing.Printtyp.wrap_printing_env env (fun () ->
-      Format.asprintf "@[<h>: %a@]" Ocaml_typing.Printtyp.type_scheme typ
-    ) |> String.extract_words ~is_word_char |> String.concat ~sep:" "
     
 let create_hint env typ loc =
-  let label = outline_type env typ in
+  let label =  Printtyp.wrap_printing_env env (fun () ->
+    Format.asprintf "%a" Printtyp.type_scheme typ)
+  in
   let position = loc.Location.loc_end in
   (position, label)
 

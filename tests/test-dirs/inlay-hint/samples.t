@@ -12,7 +12,7 @@ Optional argument
           "line": 1,
           "col": 8
         },
-        "label": ": 'a option"
+        "label": "'a option"
       }
     ],
     "notifications": []
@@ -32,7 +32,7 @@ Optional argument with value
           "line": 1,
           "col": 9
         },
-        "label": ": int"
+        "label": "int"
       }
     ],
     "notifications": []
@@ -52,7 +52,7 @@ Labeled argument
           "line": 1,
           "col": 8
         },
-        "label": ": int"
+        "label": "int"
       }
     ],
     "notifications": []
@@ -72,7 +72,7 @@ Case argument
           "line": 1,
           "col": 13
         },
-        "label": ": int"
+        "label": "int"
       }
     ],
     "notifications": []
@@ -95,7 +95,7 @@ Pattern variables without pattern-binding hint
           "line": 1,
           "col": 7
         },
-        "label": ": int option"
+        "label": "int option"
       }
     ],
     "notifications": []
@@ -119,14 +119,14 @@ Pattern variables with pattern-binding hint
           "line": 3,
           "col": 10
         },
-        "label": ": int"
+        "label": "int"
       },
       {
         "pos": {
           "line": 1,
           "col": 7
         },
-        "label": ": int option"
+        "label": "int option"
       }
     ],
     "notifications": []
@@ -162,7 +162,7 @@ Let bindings with let hinting
           "line": 1,
           "col": 16
         },
-        "label": ": int"
+        "label": "int"
       }
     ],
     "notifications": []
