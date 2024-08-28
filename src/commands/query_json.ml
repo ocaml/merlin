@@ -154,6 +154,14 @@ let dump (type a) : a t -> json =
       );
       "depth", `Int depth
     ]
+  | Inlay_hints (start, stop, hint_let_binding, hint_pattern_var, ghost) ->
+    mk "inlay-hints" [
+      "start", mk_position start;
+      "stop", mk_position stop;
+      "hint-let-binding", `Bool hint_let_binding;
+      "hint-pattern-variable", `Bool hint_pattern_var;
+      "avoid-ghost-location", `Bool ghost
+    ]
   | Outline -> mk "outline" []
   | Errors { lexing; parsing; typing } ->
     let args =
@@ -351,6 +359,14 @@ let json_of_locate resp =
   | `Found (Some file,pos) ->
     `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
 
+let json_of_inlay_hints hints =
+  let json_of_hint (position, label) =
+     `Assoc [
+       "pos", Lexing.json_of_position position;
+       "label", `String label
+     ]
+  in `List (List.map ~f:json_of_hint hints)
+
 let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
@@ -441,6 +457,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     `List (json_of_outline outlines)
   | Shape _, shapes ->
     `List (List.map ~f:json_of_shape shapes)
+  | Inlay_hints _, result ->
+    json_of_inlay_hints result
   | Errors _, errors ->
     `List (List.map ~f:json_of_error errors)
   | Dump _, json -> json
