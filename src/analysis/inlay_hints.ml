@@ -4,11 +4,6 @@ let {Logger.log} = Logger.for_section "inlay-hints"
 
 module Iterator = Ocaml_typing.Tast_iterator
 
-let overlap_with_loc (start, stop) loc =
-  let a = Lexing.compare_pos start loc.Location.loc_end
-  and b = Lexing.compare_pos stop loc.Location.loc_start in
-  a <= 0 && b >= 0 || a >= 0 && b <= 0
-
 let is_ghost_location avoid_ghost loc =
   loc.Location.loc_ghost && avoid_ghost
 
@@ -20,7 +15,6 @@ let pattern_has_constraint (type a) (pattern: a Typedtree.general_pattern) =
       | Typedtree.Tpat_open (_, _, _)
       | Typedtree.Tpat_unpack -> false
     ) pattern.pat_extra
-
 
 let structure_iterator
     hint_let_binding
@@ -46,7 +40,7 @@ let structure_iterator
           (Printtyped.pattern 0) vb.Typedtree.vb_pat
       )
     in
-    if overlap_with_loc range vb.Typedtree.vb_loc then
+    if Location_aux.overlap_with_range range vb.Typedtree.vb_loc then
       if hint_lhs then
         let () = log ~title:"value_binding" "overlap" in
         match vb.vb_expr.exp_desc with
@@ -61,7 +55,7 @@ let structure_iterator
           Printtyped.expression expr
         )
     in
-    if overlap_with_loc range expr.Typedtree.exp_loc then
+    if Location_aux.overlap_with_range range expr.Typedtree.exp_loc then
       let () = log ~title:"expression" "overlap" in
       match expr.exp_desc with
       | Texp_let (_, bindings, body) ->
@@ -92,7 +86,7 @@ let structure_iterator
   in
 
   let structure_item_iterator (iterator : Iterator.iterator) item =
-    if overlap_with_loc range item.Typedtree.str_loc then
+    if Location_aux.overlap_with_range range item.Typedtree.str_loc then
       let () = log ~title:"structure_item" "overlap" in
       match item.str_desc with
       | Tstr_value (_, bindings) ->
@@ -113,7 +107,7 @@ let structure_iterator
           (Printtyped.pattern 0) pattern
       )
     in
-    if overlap_with_loc range pattern.pat_loc
+    if Location_aux.overlap_with_range range pattern.pat_loc
        && not (pattern_has_constraint pattern)
     then
       let () = log ~title:"pattern" "overlap" in

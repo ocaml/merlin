@@ -50,6 +50,11 @@ let included ~into:parent_loc child_loc =
 Lexing.compare_pos child_loc.loc_start parent_loc.loc_start >= 0 &&
   Lexing.compare_pos parent_loc.loc_end child_loc.loc_end >= 0
 
+let overlap_with_range (start, stop) loc =
+  let a = Lexing.compare_pos start loc.loc_end
+  and b = Lexing.compare_pos stop loc.loc_start in
+  a <= 0 && b >= 0 || a >= 0 && b <= 0
+
 let union l1 l2 =
   if l1 = Location.none then l2
   else if l2 = Location.none then l1
