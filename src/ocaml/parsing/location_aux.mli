@@ -46,6 +46,10 @@ val extend : t -> t -> t
     in [parent]. Otherwise returns [false]. *)
 val included : into:t -> t -> bool
 
+(** [overlap_with_range (pos_start, pos_end) loc] returns [true] if 
+    [loc] overlap with the range defined by [pos_start] and [pos_end]. *)
+val overlap_with_range : (Lexing.position * Lexing.position) -> t -> bool
+
 (** Filter valid errors, log invalid ones *)
 val prepare_errors : exn list -> Location.error list
 

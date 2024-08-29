@@ -199,6 +199,9 @@ type _ t =
   | Construct
     : Msource.position * [`None | `Local] option * int option
     -> (Location.t * string list) t
+  | Inlay_hints
+    : Msource.position * Msource.position * bool * bool * bool
+    -> (Lexing.position * string) list t
   | Outline(* *)
     :  outline t
   | Shape(* *)
