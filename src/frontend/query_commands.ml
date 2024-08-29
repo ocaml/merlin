@@ -834,14 +834,19 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     ) ->
     let start = Mpipeline.get_lexing_pos pipeline start
     and stop = Mpipeline.get_lexing_pos pipeline stop in
-    Inlay_hints.run
-      ~hint_let_binding
-      ~hint_pattern_binding
-      ~avoid_ghost_location
-      ~start
-      ~stop
-      pipeline
-      
+    let typer_result = Mpipeline.typer_result pipeline in
+    begin match Mtyper.get_typedtree typer_result with
+    | `Interface _ -> []
+    | `Implementation structure ->
+      Inlay_hints.of_structure
+        ~hint_let_binding
+        ~hint_pattern_binding
+        ~avoid_ghost_location
+        ~start
+        ~stop
+        structure
+    end
+ 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version;

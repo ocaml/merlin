@@ -2,11 +2,11 @@
 
 type hint = Lexing.position * string
 
-val run :
+val of_structure :
   hint_let_binding:bool
   -> hint_pattern_binding:bool
   -> avoid_ghost_location:bool
   -> start:Lexing.position
   -> stop:Lexing.position
-  -> Mpipeline.t
+  -> Typedtree.structure
   -> hint list

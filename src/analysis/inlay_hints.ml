@@ -137,13 +137,13 @@ let create_hint env typ loc =
   let position = loc.Location.loc_end in
   (position, label)
 
-let run
+let of_structure
     ~hint_let_binding
     ~hint_pattern_binding
     ~avoid_ghost_location
     ~start
     ~stop
-    pipeline =
+    structure =
   let () = log ~title:"start" "%a" Logger.fmt (fun fmt ->
       Format.fprintf fmt "Start on %s to %s with : let: %b, pat: %b, ghost: %b"
         (Lexing.print_position () start)
@@ -152,26 +152,22 @@ let run
         hint_pattern_binding
         avoid_ghost_location)
   in
-  let typer_result = Mpipeline.typer_result pipeline in
-  match Mtyper.get_typedtree typer_result with
-  | `Interface _ -> []
-  | `Implementation structure ->
-    let range = (start, stop) in
-    let hints = ref [] in
-    let () =
-      structure_iterator
-        hint_let_binding
-        hint_pattern_binding
-        avoid_ghost_location
-        structure
-        range
-        (fun env typ loc ->
-           let () = log ~title:"hint" "Find hint %a" Logger.fmt (fun fmt ->
-             Format.fprintf fmt "%s - %a"
-               (Location_aux.print () loc)
-               (Printtyp.type_expr) typ)
-           in
-           let hint = create_hint env typ loc in
-           hints := hint :: !hints)
-    in
-    !hints
+  let range = (start, stop) in
+  let hints = ref [] in
+  let () =
+    structure_iterator
+      hint_let_binding
+      hint_pattern_binding
+      avoid_ghost_location
+      structure
+      range
+      (fun env typ loc ->
+          let () = log ~title:"hint" "Find hint %a" Logger.fmt (fun fmt ->
+            Format.fprintf fmt "%s - %a"
+              (Location_aux.print () loc)
+              (Printtyp.type_expr) typ)
+          in
+          let hint = create_hint env typ loc in
+          hints := hint :: !hints)
+  in
+  !hints
