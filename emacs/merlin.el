@@ -1131,7 +1131,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
         (switch-to-buffer-other-window pol-buff)
         (goto-char 1)
         (tabulated-list-mode)
-        (setq tabulated-list-format [("functions" 100 t)])
+        (setq tabulated-list-format [("Polarity Search Result" 100 t)])
         (setq tabulated-list-entries (mapcar 'merlin--polarity-result-to-list entries))
         (setq tabulated-list-padding 2)
         (face-spec-set 'header-line '((t :weight bold :height 1.2)))
