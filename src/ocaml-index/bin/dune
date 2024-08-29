@@ -2,8 +2,9 @@
  (name ocaml_index)
  (public_name ocaml-index)
  (package ocaml-index)
- (libraries lib ocaml_typing merlin_index_format)
+ (libraries lib ocaml_typing ocaml_utils merlin_index_format)
  (flags
   :standard
   -open Ocaml_typing
+  -open Ocaml_utils
   -open Merlin_index_format))

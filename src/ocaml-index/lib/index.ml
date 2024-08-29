@@ -61,14 +61,15 @@ end
 
 let init_load_path_once ~do_not_use_cmt_loadpath =
   let loaded = ref false in
-  fun ~dirs cmt_loadpath ->
+  fun ~(dirs : Load_path.paths) cmt_loadpath ->
     if not !loaded then (
       let cmt_visible, cmt_hidden =
         if do_not_use_cmt_loadpath then ([], [])
         else (cmt_loadpath.Load_path.visible, cmt_loadpath.Load_path.hidden)
       in
-      let visible = List.concat [ cmt_visible; dirs ] in
-      Load_path.(init ~auto_include:no_auto_include ~visible ~hidden:cmt_hidden);
+      let visible = List.concat [ cmt_visible; dirs.visible ] in
+      let hidden = List.concat [ cmt_hidden; dirs.hidden ] in
+      Load_path.(init ~auto_include:no_auto_include ~visible ~hidden);
       loaded := true)
 
 let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
