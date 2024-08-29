@@ -1106,6 +1106,19 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (defun merlin--get-polarity-buff ()
   (get-buffer-create merlin-polarity-search-buffer-name))
 
+(defun merlin--render-polarity-result (name type)
+  (let ((plain-name (string-remove-prefix "Stdlib__" name)))
+    (concat
+     (propertize "val " 'face (intern "font-lock-keyword-face"))
+     (propertize plain-name 'face (intern "font-lock-function-name-face"))
+     " : "
+     (propertize type 'face (intern "font-lock-doc-face")))))
+
+(defun merlin--polarity-result-to-list (entry)
+  (let ((function-name (merlin-completion-entry-text "" entry))
+        (function-type (merlin-completion-entry-short-description entry)))
+    (list function-name
+          (vector (merlin--render-polarity-result function-name function-type)))))
 
 (defun merlin-search (query)
   (interactive "sSearch pattern: ")
@@ -1113,29 +1126,14 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
          (entries (cdr (assoc 'entries result)))
          (previous-buff (current-buffer)))
     (let ((pol-buff (merlin--get-polarity-buff))
-          (to-entry
-           (lambda (entry)
-             (let ((text (merlin-completion-entry-text "" entry))
-                   (type (merlin-completion-entry-short-description entry)))
-               (list
-                text
-                (vector
-                 (concat
-                  (propertize "val " 'face (intern "font-lock-keyword-face"))
-                  (propertize
-                   (string-remove-prefix "Stdlib__" text)
-                   'face (intern "font-lock-function-name-face"))
-                  " : "
-                  (propertize type 'face (intern "font-lock-doc-face"))))))))
           (inhibit-read-only t))
       (with-current-buffer pol-buff
         (switch-to-buffer-other-window pol-buff)
         (goto-char 1)
         (tabulated-list-mode)
         (setq tabulated-list-format [("functions" 100 t)])
-        (setq tabulated-list-entries (mapcar to-entry entries))
+        (setq tabulated-list-entries (mapcar 'merlin--polarity-result-to-list entries))
         (setq tabulated-list-padding 2)
-
         (face-spec-set 'header-line '((t :weight bold :height 1.2)))
         (tabulated-list-init-header)
         (tabulated-list-print t)
