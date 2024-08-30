@@ -31,7 +31,7 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
     { name with txt = Longident.Lident name.txt }
   in
   let add_loc uid fragment acc =
-    match Misc_utils.loc_of_decl ~uid fragment with
+    match Typedtree_utils.location_of_declaration ~uid fragment with
     | None -> acc
     | Some lid ->
         let lid = to_located_lid lid in

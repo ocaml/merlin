@@ -29,18 +29,3 @@ val parenthesize_name : string -> string
     the location of each of its components. *)
 val parse_identifier :
   (Mconfig.t * Msource.t) -> Lexing.position -> modname Location.loc list
-
-module Compat : sig
-  val pat_var_id_and_loc :
-    Typedtree.pattern -> (Ident.t * string Location.loc) option
-
-  val pat_alias_pat_id_and_loc
-    : Typedtree.pattern
-    -> (Typedtree.pattern * Ident.t * string Location.loc) option
-end
-
-(** Extracts the location of a [uid] from a [Typedtree.item_declaration] *)
-val loc_of_decl :
-  uid:Shape.Uid.t ->
-  Typedtree.item_declaration ->
-  string Location.loc option
