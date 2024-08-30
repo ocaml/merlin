@@ -68,38 +68,3 @@ let parse_identifier (config, source) pos =
     (String.concat ~sep:";" (List.map path
       ~f:(fun l -> l.Location.txt)));
   path
-
-module Compat = struct
-  open Typedtree
-  let pat_var_id_and_loc = function
-    | { pat_desc = Tpat_var (id, loc, _); _ } -> Some (id, loc)
-    | _ -> None
-
-  let pat_alias_pat_id_and_loc = function
-    | { pat_desc = Tpat_alias (pat, id, loc, _); _ } -> Some (pat, id, loc)
-    | _ -> None
-end
-
-let loc_of_decl ~uid =
-  let of_option name =
-    match name.Location.txt with
-    | Some txt -> Some { name with txt }
-    | None -> None
-  in
-  let of_value_binding vb =
-    let bound_idents = Typedtree.let_bound_idents_full [vb] in
-    ListLabels.find_map ~f:(fun (_, loc, _, uid') -> if uid = uid' then Some loc else None) bound_idents
-  in
-  function
-  | Typedtree.Value vd -> Some vd.val_name
-  | Value_binding vb -> of_value_binding vb
-  | Type td -> Some td.typ_name
-  | Constructor cd -> Some cd.cd_name
-  | Extension_constructor ec -> Some ec.ext_name
-  | Label ld -> Some ld.ld_name
-  | Module md -> of_option md.md_name
-  | Module_binding mb -> of_option mb.mb_name
-  | Module_type mtd -> Some mtd.mtd_name
-  | Module_substitution msd -> Some msd.ms_name
-  | Class cd -> Some cd.ci_id_name
-  | Class_type ctd -> Some ctd.ci_id_name

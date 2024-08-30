@@ -99,7 +99,7 @@ these cases. *)
 let iter_on_defs ~uid_to_locs_tbl =
   let log = log ~title:"iter_on_defs" in
   let register_uid uid fragment =
-    let loc = Misc_utils.loc_of_decl ~uid fragment in
+    let loc = Typedtree_utils.location_of_declaration ~uid fragment in
     Option.iter loc ~f:(fun loc ->
       Types.Uid.Tbl.add uid_to_locs_tbl uid loc)
   in

@@ -497,7 +497,7 @@ let find_source ~config loc path =
 let find_loc_of_uid ~config ~local_defs uid comp_unit =
   let title = "find_loc_of_uid" in
   let loc_of_decl ~uid def =
-    match Misc_utils.loc_of_decl ~uid def  with
+    match Typedtree_utils.location_of_declaration ~uid def  with
     | Some loc ->
       log ~title "Found location: %a"
         Logger.fmt (fun fmt -> Location.print_loc fmt loc.loc);
@@ -859,7 +859,7 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
   match doc_from_uid_result with
   | `Found_doc doc -> `Found doc
   | `Found_decl (uid, decl, comments) ->
-      (match Misc_utils.loc_of_decl ~uid decl with
+      (match Typedtree_utils.location_of_declaration ~uid decl with
       | None -> `No_documentation
       | Some loc ->
         let after_only = match decl with
