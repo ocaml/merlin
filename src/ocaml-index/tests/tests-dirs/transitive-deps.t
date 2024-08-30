@@ -16,7 +16,7 @@
   $ ocamlc -bin-annot -bin-annot-occurrences -c lib1/foo.ml -I lib2
 
 # Here we have an implicit transitive dependency on lib2:
-  $ ocamlc -bin-annot -bin-annot-occurrences -c main.ml -I lib1 -I /Users/ulysse/tmp/occurrences/_opam/lib/fpath
+  $ ocamlc -bin-annot -bin-annot-occurrences -c main.ml -I lib1
 
 # We pass explicitely the implicit transitive dependency over lib2:
   $ ocaml-index aggregate -o main.uideps main.cmt -I lib2
