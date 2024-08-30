@@ -18,17 +18,13 @@ val location_of_declaration :
   Typedtree.item_declaration ->
   string Location.loc option
 
-(** A module for compatibility purpose *)
-module Compat : sig
+(** [pat_var_id_and_loc] try to extract the [id] and the [location] of
+    pattern variable. *)
+val pat_var_id_and_loc :
+  Typedtree.pattern -> (Ident.t * string Location.loc) option
 
-  (** [pat_var_id_and_loc] try to extract the [id] and the
-      [location] of pattern variable. *)
-  val pat_var_id_and_loc :
-    Typedtree.pattern -> (Ident.t * string Location.loc) option
-
-  (** [pat_alias_id_and_loc] try to extract the [id] and the
-      [location] of pattern alias. *)
-  val pat_alias_pat_id_and_loc
-    : Typedtree.pattern
-    -> (Typedtree.pattern * Ident.t * string Location.loc) option
-end
+(** [pat_alias_id_and_loc] try to extract the [id] and the [location]
+    of pattern alias. *)
+val pat_alias_pat_id_and_loc
+  : Typedtree.pattern
+  -> (Typedtree.pattern * Ident.t * string Location.loc) option

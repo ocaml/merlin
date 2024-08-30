@@ -66,13 +66,14 @@ let location_of_declaration ~uid =
   | Class cd -> Some cd.ci_id_name
   | Class_type ctd -> Some ctd.ci_id_name
 
-module Compat = struct
-  open Typedtree
-  let pat_var_id_and_loc = function
-    | { pat_desc = Tpat_var (id, loc, _); _ } -> Some (id, loc)
-    | _ -> None
 
-  let pat_alias_pat_id_and_loc = function
-    | { pat_desc = Tpat_alias (pat, id, loc, _); _ } -> Some (pat, id, loc)
-    | _ -> None
-end
+let pat_var_id_and_loc = function
+  | Typedtree.{ pat_desc = Tpat_var (id, loc, _); _ } ->
+    Some (id, loc)
+  | _ -> None
+
+let pat_alias_pat_id_and_loc = function
+  | Typedtree.{ pat_desc = Tpat_alias (pat, id, loc, _); _ } ->
+    Some (pat, id, loc)
+  | _ -> None
+
