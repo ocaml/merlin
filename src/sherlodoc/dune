@@ -1,0 +1,5 @@
+(library
+ (name merlin_sherlodoc)
+ (public_name merlin-lib.sherlodoc))
+
+(ocamllex query_lexer)
