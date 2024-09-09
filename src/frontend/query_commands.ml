@@ -477,6 +477,29 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     { Compl. entries ; context = `Unknown }
 
+  | Type_search (query, pos, limit) ->
+    let query = Merlin_sherlodoc.Query_parser.from_string query in
+    let typer = Mpipeline.typer_result pipeline in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let node = Mtyper.node_at typer pos in
+    let env, _ = Mbrowse.leaf_node node in
+    let config = Mpipeline.final_config pipeline in
+    let modules = Mconfig.global_modules config in
+    let trie = Type_search.make_trie env modules in
+    let result = Type_search.run ~limit env query trie in
+    let verbosity = verbosity pipeline in
+    Printtyp.wrap_printing_env ~verbosity env (fun () ->
+      List.map ~f:(fun (cost, name, typ) ->
+          let loc = typ.Types.val_loc in
+          let typ =
+            Format.asprintf "%a"
+              (Type_utils.Printtyp.type_scheme env)
+              typ.Types.val_type
+          in
+          { name; typ; cost; loc}
+        ) result
+    )
+
   | Refactor_open (mode, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in

@@ -43,6 +43,10 @@ type t =
   | Wildcard
   | Unhandled
 
+val normalize_type_parameters : Type_parsed.t -> t
+(** [normalize_type_parameters ty] replace string based type variables to
+    integer based type variables. *)
+
 val from_string : string -> t option
 (** Try deserializing a string into a typed expression. *)
 

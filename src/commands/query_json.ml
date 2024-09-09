@@ -211,6 +211,12 @@ let dump (type a) : a t -> json =
       "query", `String query;
       "position", mk_position pos;
     ]
+  | Type_search (query, pos, limit) ->
+     mk "type-search" [
+      "query", `String query;
+      "position", mk_position pos;
+      "limit", `Int limit
+    ]
   | Occurrences (`Ident_at pos, scope) ->
     mk "occurrences" [
       "kind", `String "identifiers";
@@ -387,6 +393,16 @@ let json_of_signature_help resp =
        "activeSignature", `Int active_signature;
       ]
 
+let json_of_search_result list =
+  let list = List.map ~f:(fun {name; typ; loc; cost } ->
+      with_location ~with_file:true loc [
+        "name", `String name;
+        "type", `String typ;
+        "cost", `Int cost;
+      ]
+    ) list in
+  `List list
+
 let json_of_response (type a) (query : a t) (response : a) : json =
   match query, response with
   | Type_expr _, str -> `String str
@@ -400,6 +416,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     json_of_completions compl
   | Polarity_search _, compl ->
     json_of_completions compl
+  | Type_search _, result ->
+    json_of_search_result result
   | Refactor_open _, locations ->
     `List (List.map locations ~f:(fun (name,loc) ->
         with_location loc ["content",`String name]))

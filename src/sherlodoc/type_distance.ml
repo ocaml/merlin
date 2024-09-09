@@ -49,6 +49,7 @@ let make_path t =
     | Type_expr.Tycon (constr, []) -> [ Tyname constr :: prefix ]
     | Type_expr.Tycon (constr, args) ->
         let length = String.length constr in
+        let prefix = Tyname constr :: prefix in
         args
         |> List.mapi (fun position arg ->
                let prefix = Argument { position; length } :: prefix in

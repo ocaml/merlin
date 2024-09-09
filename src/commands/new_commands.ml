@@ -572,6 +572,32 @@ of the buffer."
     end
   ;
 
+  command "search-by-type"
+    ~doc:"return a list of values that match a query"
+    ~spec:[
+      arg "-position" "<position> to complete"
+        (marg_position (fun pos (query, _pos, limit) -> (query, pos, limit)));
+      arg "-query" "<query> to request values"
+        (Marg.param
+           "string" (fun query (_query, pos, limit) -> (Some query, pos, limit)));
+      optional "-limit" "<int> the maximal amount of results (default is 100)"
+        (Marg.int
+          (fun limit (query, pos, _limit) -> (query, pos, limit)))
+    ]
+    ~default:(None, `None, 100)
+    begin fun buffer (query, pos, limit) ->
+      match (query, pos) with
+      | (None, `None) ->
+        failwith "-position <pos> and -query <string> are mandatory"
+      | (None, _) ->
+        failwith "-query <string> is mandatory"
+      | (_, `None) ->
+        failwith "-position <pos> is mandatory"
+      | (Some query, (#Msource.position as pos)) ->
+        run buffer (Query_protocol.Type_search (query, pos, limit))
+    end
+  ;
+
   command "inlay-hints"
     ~doc:"return a list of inly-hints for additional client (like LSP)"
     ~spec: [

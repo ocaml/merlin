@@ -25,6 +25,9 @@ val param : string -> (string -> 'acc -> 'acc) -> 'acc t
 (** Action consuming a boolean argument *)
 val bool : (bool -> 'acc -> 'acc) -> 'acc t
 
+(** Action consuming an integer argument *)
+val int : (int -> 'acc -> 'acc) -> 'acc t
+
 (** Action doing nothing *)
 val unit_ignore : 'acc t
 
