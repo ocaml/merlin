@@ -2,4 +2,8 @@
  (name merlin_sherlodoc)
  (public_name merlin-lib.sherlodoc))
 
-(ocamllex query_lexer)
+(menhir
+ (modules type_parser)
+ (flags --explain))
+
+(ocamllex type_lexer)
