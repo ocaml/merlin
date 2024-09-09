@@ -1,1 +1,3 @@
 disable=true
+parse-docstrings
+break-cases=fit-or-vertical
