@@ -3,7 +3,7 @@
      This file is part of Merlin, an helper for ocaml editors
 
      Copyright (C) 2013 - 2024  Xavier Van de Woestyne <xaviervdw(_)gmail.com>
-                                Arthur Wendling <arthur@tarides.com>
+                                Arthur Wendling <arthur(_)tarides.com>
 
 
      Permission is hereby granted, free of charge, to any person obtaining a
