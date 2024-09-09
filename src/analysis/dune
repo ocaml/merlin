@@ -19,6 +19,7 @@
   merlin_kernel
   merlin_utils
   merlin_index_format
+  merlin_sherlodoc
   ocaml_parsing
   ocaml_preprocess
   query_protocol
