@@ -12,6 +12,8 @@ unreleased
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
     - emacs: Improve the way that result of polarity search is displayed (#1814)
+    - emacs: Rewrite merlin-completion-at-point integration to be faster and
+      better (#1759)
 
 merlin 5.1
 ==========
