@@ -1,3 +1,8 @@
+unreleased
+==========
+  + editor modes
+    - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
+
 merlin 4.16
 ===========
 Mon Jun 10 17:35:42 CEST 2024
