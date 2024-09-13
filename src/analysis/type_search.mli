@@ -39,7 +39,11 @@ val make_trie : Env.t -> string list -> t
 (** Compute the list of candidates from a query inside a given environment. *)
 val run :
   ?limit:int ->
+  Mconfig.t ->
+  Mtyper.typedtree ->
+  (string * Location.t) list ->
+  Lexing.position ->
   Env.t ->
   Merlin_sherlodoc.Query_parser.t
   -> t
-  -> (int * string * Types.value_description) list
+  -> (int * string * Types.value_description * string option) list

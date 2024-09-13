@@ -69,6 +69,7 @@ type type_search_result = {
   name: string;
   typ: string;
   loc: Location_aux.t;
+  doc: string option;
   cost: int;
 }
 
