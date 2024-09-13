@@ -68,7 +68,12 @@ end
 type completions = Compl.t
 
 type type_search_result =
-  { name : string; typ : string; loc : Location_aux.t; cost : int }
+  { name : string;
+    typ : string;
+    loc : Location_aux.t;
+    doc : string option;
+    cost : int
+  }
 
 type outline = item list
 and item =
