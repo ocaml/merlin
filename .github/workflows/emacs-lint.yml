@@ -15,20 +15,40 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        os:
+          - ubuntu-latest
+        ocaml-compiler:
+          - 5.2.x
         emacs_version:
           - '27.2'
           - '28.2'
-          - '29.1'
+          - '29.3'
           - snapshot
       fail-fast: false  # don't stop jobs if one fails
     env:
       EMACS_PACKAGE_LINT_IGNORE: ${{ matrix.package_lint_ignore }}
       EMACS_BYTECOMP_WARN_IGNORE: ${{ matrix.bytecomp_warn_ignore }}
     steps:
-    - uses: purcell/setup-emacs@v6.0
-      with:
-        version: ${{ matrix.emacs_version }}
+      - uses: purcell/setup-emacs@v6.0
+        with:
+          version: ${{ matrix.emacs_version }}
 
-    - uses: actions/checkout@v4
-    - name: Run tests
-      run: 'cd emacs && ./check.sh'
+      - uses: actions/checkout@v4
+
+      - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - name: Install dependencies
+        run: |
+          opam pin menhirLib 20201216 --no-action
+          opam install --yes ppx_string ppx_compare
+          opam install . --deps-only --with-test --yes
+
+      - name: Build and install
+        run: |
+          opam install . --yes
+
+      - name: Run tests
+        run: 'cd emacs && opam exec -- ./check.sh'
