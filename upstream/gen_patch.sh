@@ -2,8 +2,8 @@
 
 D_MERLIN=../src/ocaml
 
-FROM=501
-TO=502
+FROM=502
+TO=503
 
 D_FROM=ocaml_${FROM}
 D_TO=ocaml_${TO}
