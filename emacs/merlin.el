@@ -141,6 +141,10 @@ See `merlin-debug'."
   "The name of the buffer displaying result of polarity search."
   :group 'merlin :type 'string)
 
+(defcustom merlin-search-by-type-buffer-name "*merlin-search-by-type-result*"
+  "The name of the buffer displaying result of a search by type query."
+  :group 'merlin :type 'string)
+
 (defcustom merlin-favourite-caml-mode nil
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
@@ -1093,6 +1097,71 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (let ((bounds (bounds-of-thing-at-point 'ocaml-atom)))
     (cons (if bounds (car bounds) (point))
           (point))))
+
+;;;;;;;;;;;;;;;;;;;;;
+;; SEARCH BY TYPE  ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--search-by-type (query)
+  (merlin-call "search-by-type"
+	       "-query" query
+	       "-position" (merlin-unmake-point (point))))
+
+(defun merlin--get-search-by-type-result-buff ()
+  (get-buffer-create merlin-search-by-type-buffer-name))
+
+(defun merlin--search-result-wrap (text)
+  "Remove every newlines and trim tabulation."
+  (string-join (mapcar #'string-trim (string-lines text)) " "))
+
+(defun merlin--search-trim-documentation (doc)
+  "Trim documentation block."
+  (string-join
+   (mapcar #'string-trim (string-lines doc)) "\n"))
+
+(defun merlin--search-result-doc (entry)
+  (let ((doc-entry (cdr (assoc 'doc entry))))
+    (if (eq doc-entry 'null)
+	""
+      (merlin--search-trim-documentation doc-entry))))
+
+(defun merlin--render-search-result (name type docstring)
+  (let ((line
+	 (concat
+	  (propertize
+	   name 'face (intern "font-lock-function-name-face"))
+	  " : "
+	  (propertize
+	   (merlin--search-result-wrap type)
+	   'face (intern "font-lock-doc-face"))
+	  "\n"
+	  (propertize docstring 'face (intern "font-lock-comment-face"))
+	  "\n\n")))
+    (insert line)))
+
+(defun merlin--search-result-to-entry (entry)
+  (let ((function-name (cdr (assoc 'name entry)))
+	(function-type (cdr (assoc 'type entry)))
+	(function-docs (merlin--search-result-doc entry)))
+    (merlin--render-search-result
+     function-name
+     function-type
+     function-docs))) 
+
+(defun merlin-search-by-type (query)
+  (interactive "sSearch query: ")
+  (let* ((result (merlin--search-by-type query))
+	 (previous-buffer (current-buffer)))
+    (let ((search-by-type-buffer (merlin--get-search-by-type-result-buff))
+	  (inhibit-read-only t))
+      (with-current-buffer search-by-type-buffer
+	(switch-to-buffer-other-window search-by-type-buffer)
+	(erase-buffer)
+	(dolist (elt result)
+	  (merlin--search-result-to-entry elt))
+	(goto-char 1)
+	(switch-to-buffer-other-window previous-buffer)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; POLARITY SEARCH ;;
