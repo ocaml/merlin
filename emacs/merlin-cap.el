@@ -15,6 +15,7 @@
 
 ;;; Code:
 
+(require 'ert)
 (require 'merlin)
 (require 'subr-x)
 
