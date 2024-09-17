@@ -6,7 +6,7 @@
 ;; Created: 30 August 2016
 ;; Version: 3.0
 ;; Keywords: ocaml languages
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (compat "29.1.4.5"))
 ;; URL: https://github.com/ocaml/merlin
 
 ;;; Commentary:
@@ -22,6 +22,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'cl-lib)
 (require 'crm) ;; for completing-read-multiple
 ;; caml-types for highlighting
