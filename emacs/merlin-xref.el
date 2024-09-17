@@ -1,4 +1,22 @@
-;; -*- lexical-binding: t -*-
+;;; merlin-xref.el --- Merlin and completion-at-point integration   -*- coding: utf-8; lexical-binding: t -*-
+
+;; Licensed under the MIT license.
+
+;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
+;;         Frédéric Bour <frederic.bour(_)lakaban.net>
+;;         Thomas Refis <thomas.refis(_)gmail.com>
+;; Created: 15 May 2015
+;; Version: 0.1
+;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1") (xref))
+;; URL: http://github.com/ocaml/merlin
+
+;;; Commentary:
+
+;; Merlin integration with xref cross-referencing commands.
+
+;;; Code:
+
 (require 'cl-lib)
 (require 'xref)
 (require 'merlin)
