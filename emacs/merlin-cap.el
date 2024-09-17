@@ -7,6 +7,7 @@
 ;; Created: 15 May 2015
 ;; Version: 0.1
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1") (compat "29.1.4.5"))
 ;; URL: http://github.com/ocaml/merlin
 
 ;;; Commentary:
@@ -15,6 +16,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'merlin)
 (require 'subr-x)
 
@@ -48,10 +50,10 @@ The values are lists of completion strings.")
 (defvar merlin-cap--interrupt-symbol nil)
 
 (define-error 'merlin-cap--test-interrupt "Test-only interrupt")
-(defun merlin-cap--interrupt-in-test (position-symbol)
+(defun merlin-cap--interrupt-in-test (pos-symbol)
   "Error if POSITION-SYMBOL is equal to `merlin-cap--interrupt-symbol'."
-  (when (eq position-symbol merlin-cap--interrupt-symbol)
-    (signal 'merlin-cap--test-interrupt position-symbol)))
+  (when (eq pos-symbol merlin-cap--interrupt-symbol)
+    (signal 'merlin-cap--test-interrupt pos-symbol)))
 
 (defvar-local merlin-cap--process-last-event nil
   "The most recent process event for a Merlin process in this buffer.")
