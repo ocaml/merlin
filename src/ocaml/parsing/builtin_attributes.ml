@@ -103,13 +103,8 @@ let register_attr current_phase name =
     if is_builtin_attr name.txt then
       Attribute_table.replace unused_attrs name ()
 
-<<<<<<<
-
-let string_of_cst = function
-=======
 let string_of_cst const =
   match const.pconst_desc with
->>>>>>>
   | Pconst_string(s, _, _) -> Some s
   | _ -> None
 

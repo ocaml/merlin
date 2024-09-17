@@ -1,0 +1,22 @@
+--- ocaml_502/typing/stypes.ml	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/stypes.ml	2024-09-17 01:15:58.295900254 +0200
+@@ -103,7 +103,7 @@
+ let rec printtyp_reset_maybe loc =
+   match !phrases with
+   | cur :: t when cur.loc_start.pos_cnum <= loc.loc_start.pos_cnum ->
+-     Printtyp.reset ();
++     Out_type.reset ();
+      phrases := t;
+      printtyp_reset_maybe loc;
+   | _ -> ()
+@@ -148,7 +148,9 @@
+       printtyp_reset_maybe loc;
+       Format.pp_print_string Format.str_formatter "  ";
+       Printtyp.wrap_printing_env ~error:false env
+-        (fun () -> Printtyp.shared_type_scheme Format.str_formatter typ);
++        (fun () ->
++           Printtyp.shared_type_scheme Format.str_formatter typ
++        );
+       Format.pp_print_newline Format.str_formatter ();
+       let s = Format.flush_str_formatter () in
+       output_string pp s;

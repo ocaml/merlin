@@ -1,0 +1,168 @@
+--- ocaml_502/parsing/builtin_attributes.ml	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/builtin_attributes.ml	2024-09-17 01:16:30.152541842 +0200
+@@ -36,12 +36,22 @@
+   | 0 -> Int.compare a1.loc.loc_start.pos_cnum a2.loc.loc_start.pos_cnum
+   | n -> n
+ 
++let compiler_stops_before_attributes_consumed () =
++  let stops_before_lambda =
++    match !Clflags.stop_after with
++    | None -> false
++    | Some pass -> Clflags.Compiler_pass.(compare pass Lambda) < 0
++  in
++  stops_before_lambda || !Clflags.print_types
++
+ let warn_unused () =
+   let keys = List.of_seq (Attribute_table.to_seq_keys unused_attrs) in
+-  let keys = List.sort attr_order keys in
+-  List.iter (fun sloc ->
+-    Location.prerr_warning sloc.loc (Warnings.Misplaced_attribute sloc.txt))
+-    keys
++  Attribute_table.clear unused_attrs;
++  if not (compiler_stops_before_attributes_consumed ()) then
++    let keys = List.sort attr_order keys in
++    List.iter (fun sloc ->
++      Location.prerr_warning sloc.loc (Warnings.Misplaced_attribute sloc.txt))
++      keys
+ 
+ (* These are the attributes that are tracked in the builtin_attrs table for
+    misplaced attribute warnings. *)
+@@ -93,7 +103,8 @@
+     if is_builtin_attr name.txt then
+       Attribute_table.replace unused_attrs name ()
+ 
+-let string_of_cst = function
++let string_of_cst const =
++  match const.pconst_desc with
+   | Pconst_string(s, _, _) -> Some s
+   | _ -> None
+ 
+@@ -107,37 +118,39 @@
+   | Some s -> s
+   | None -> ""
+ 
++module Style = Misc.Style
+ let error_of_extension ext =
+   let submessage_from main_loc main_txt = function
+     | {pstr_desc=Pstr_extension
+            (({txt = ("ocaml.error"|"error"); loc}, p), _)} ->
+         begin match p with
+         | PStr([{pstr_desc=Pstr_eval
+-                     ({pexp_desc=Pexp_constant(Pconst_string(msg,_,_))}, _)}
++                     ({pexp_desc=Pexp_constant
++                           {pconst_desc=Pconst_string(msg, _, _); _}}, _)}
+                ]) ->
+-            { Location.loc; txt = fun ppf -> Format.pp_print_text ppf msg }
++            Location.msg ~loc "%a" Format_doc.pp_print_text msg
+         | _ ->
+-            { Location.loc; txt = fun ppf ->
+-                Format.fprintf ppf
+-                  "Invalid syntax for sub-message of extension '%s'." main_txt }
++            Location.msg ~loc "Invalid syntax for sub-message of extension %a."
++              Style.inline_code main_txt
+         end
+     | {pstr_desc=Pstr_extension (({txt; loc}, _), _)} ->
+-        { Location.loc; txt = fun ppf ->
+-            Format.fprintf ppf "Uninterpreted extension '%s'." txt }
++        Location.msg ~loc "Uninterpreted extension '%a'."
++          Style.inline_code txt
+     | _ ->
+-        { Location.loc = main_loc; txt = fun ppf ->
+-            Format.fprintf ppf
+-              "Invalid syntax for sub-message of extension '%s'." main_txt }
++        Location.msg ~loc:main_loc
++          "Invalid syntax for sub-message of extension %a."
++          Style.inline_code main_txt
+   in
+   match ext with
+   | ({txt = ("ocaml.error"|"error") as txt; loc}, p) ->
+       begin match p with
+       | PStr [] -> raise Location.Already_displayed_error
+       | PStr({pstr_desc=Pstr_eval
+-                  ({pexp_desc=Pexp_constant(Pconst_string(msg,_,_))}, _)}::
++                  ({pexp_desc=Pexp_constant
++                      {pconst_desc=Pconst_string(msg, _, _)}}, _)}::
+              inner) ->
+           let sub = List.map (submessage_from loc txt) inner in
+-          Location.error_of_printer ~loc ~sub Format.pp_print_text msg
++          Location.error_of_printer ~loc ~sub Format_doc.pp_print_text msg
+       | _ ->
+           Location.errorf ~loc "Invalid syntax for extension '%s'." txt
+       end
+@@ -185,7 +198,8 @@
+          Pstr_eval
+            ({pexp_desc=Pexp_apply
+                  ({pexp_desc=Pexp_ident{txt=Longident.Lident id}},
+-                  [Nolabel,{pexp_desc=Pexp_constant (Pconst_string(s,_,_))}])
++                  [Nolabel,{pexp_desc=Pexp_constant
++                                {pconst_desc=Pconst_string(s,_,_); _}}])
+             },_)}] ->
+       Some (id, s)
+   | PStr[
+@@ -264,7 +278,10 @@
+   | _ ->
+       []
+ 
+-let alerts_of_sig sg = alerts_of_attrs (attrs_of_sig sg)
++let alerts_of_sig ~mark sg =
++  let a = attrs_of_sig sg in
++  if mark then mark_alerts_used a;
++  alerts_of_attrs a
+ 
+ let rec attrs_of_str = function
+   | {pstr_desc = Pstr_attribute a} :: tl ->
+@@ -272,7 +289,10 @@
+   | _ ->
+       []
+ 
+-let alerts_of_str str = alerts_of_attrs (attrs_of_str str)
++let alerts_of_str ~mark str =
++  let a = attrs_of_str str in
++  if mark then mark_alerts_used a;
++  alerts_of_attrs a
+ 
+ let warn_payload loc txt msg =
+   Location.prerr_warning loc (Warnings.Attribute_payload (txt, msg))
+@@ -293,7 +313,7 @@
+   let process_alert loc name = function
+     | PStr[{pstr_desc=
+               Pstr_eval(
+-                {pexp_desc=Pexp_constant(Pconst_string(s,_,_))},
++                {pexp_desc=Pexp_constant {pconst_desc=Pconst_string(s,_,_); _}},
+                 _)
+            }] ->
+         begin
+@@ -302,15 +322,19 @@
+           with Arg.Bad msg -> warn_payload loc name.txt msg
+         end
+     | k ->
+-        (* Don't [mark_used] in the [Some] cases - that happens in [Env] or
+-           [type_mod] if they are in a valid place.  Do [mark_used] in the
+-           [None] case, which is just malformed and covered by the "Invalid
+-           payload" warning. *)
+         match kind_and_message k with
+         | Some ("all", _) ->
+             warn_payload loc name.txt "The alert name 'all' is reserved"
+-        | Some _ -> ()
++        | Some _ ->
++            (* Do [mark_used] in the [Some] case only if Warning 53 is
++               disabled. Later, they will be marked used (provided they are in a
++               valid place) in [compile_common], when they are extracted to be
++               persisted inside the [.cmi] file. *)
++            if not (Warnings.is_active (Misplaced_attribute ""))
++            then mark_used name
+         | None -> begin
++            (* Do [mark_used] in the [None] case, which is just malformed and
++               covered by the "Invalid payload" warning. *)
+             mark_used name;
+             warn_payload loc name.txt "Invalid payload"
+           end
+@@ -326,7 +350,7 @@
+       begin match attr_payload with
+       | PStr [{ pstr_desc=
+                   Pstr_eval({pexp_desc=Pexp_constant
+-                                         (Pconst_string (s, _, _))},_);
++                                 {pconst_desc=Pconst_string (s, _, _); _}},_);
+                 pstr_loc }] ->
+         (mark_used attr_name;
+          Location.prerr_warning pstr_loc (Warnings.Preprocessor s))

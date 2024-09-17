@@ -1,0 +1,11 @@
+--- ocaml_502/file_formats/cmi_format.mli	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/file_formats/cmi_format.mli	2024-09-17 00:43:20.804104437 +0200
+@@ -45,6 +45,5 @@
+ 
+ exception Error of error
+ 
+-open Format
+-
+-val report_error: formatter -> error -> unit
++val report_error: error Format_doc.format_printer
++val report_error_doc: error Format_doc.printer

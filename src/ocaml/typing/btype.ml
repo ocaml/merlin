@@ -97,6 +97,8 @@ end
 
 let generic_level = Ident.highest_scope
 let lowest_level = Ident.lowest_scope
+let pivot_level = 2 * lowest_level - 1
+    (* pivot_level - lowest_level < lowest_level *)
 
 (**** leveled type pool ****)
 (* This defines a stack of pools of type nodes indexed by the level
@@ -777,7 +779,7 @@ let instance_variable_type label sign =
   | (_, _, ty) -> ty
   | exception Not_found -> assert false
 
-<<<<<<<
+
                   (**********************************)
                   (*  Utilities for level-marking   *)
                   (**********************************)
@@ -806,7 +808,7 @@ let type_iterators =
   let it_type_expr it ty =
     if try_mark_node ty then it.it_do_type_expr it ty
   in
-  {type_iterators with it_type_expr}
+  {type_iterators_without_type_expr with it_type_expr}
 
 
 (* Remove marks from a type. *)
@@ -834,12 +836,7 @@ let unmark_class_signature sign =
   unmark_type sign.csig_self_row;
   Vars.iter (fun _l (_m, _v, t) -> unmark_type t) sign.csig_vars;
   Meths.iter (fun _l (_m, _v, t) -> unmark_type t) sign.csig_meths
-=======
->>>>>>>
 
-                  (**********)
-                  (*  Misc  *)
-                  (**********)
 
 (**** Type information getter ****)
 

@@ -793,15 +793,12 @@ let rec make_fixed_univars mark ty =
     | _ ->
         Btype.iter_type_expr (make_fixed_univars mark) ty
     end
-<<<<<<<
-=======
 
 let make_fixed_univars ty =
   with_type_mark (fun mark -> make_fixed_univars mark ty)
 
 let transl_type env policy styp =
   transl_type env ~policy ~row_context:[] styp
->>>>>>>
 
 let transl_simple_type env ?univars ~closed styp =
   TyVarEnv.reset_locals ?univars ();

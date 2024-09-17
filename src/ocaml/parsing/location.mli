@@ -84,6 +84,7 @@ val input_lexbuf: Lexing.lexbuf option ref
    toplevel phrase. *)
 val input_phrase_buffer: Buffer.t option ref
 
+
 (** {1 Toplevel-specific functions} *)
 
 val echo_eof: unit -> unit
@@ -106,9 +107,7 @@ val rewrite_absolute_path: string -> string
     the BUILD_PATH_PREFIX_MAP spec}
     *)
 
-(*
 val rewrite_find_first_existing: string -> string option
-*)
 (** [rewrite_find_first_existing path] uses a BUILD_PATH_PREFIX_MAP mapping
     and tries to find a source in mapping
     that maps to a result that exists in the file system.
@@ -130,9 +129,7 @@ val rewrite_find_first_existing: string -> string option
     the BUILD_PATH_PREFIX_MAP spec}
     *)
 
-(*
 val rewrite_find_all_existing_dirs: string -> string list
-*)
 (** [rewrite_find_all_existing_dirs dir] accumulates a list of existing
     directories, [dirs], that are the result of mapping a potentially
     abstract directory, [dir], over all the mapping pairs in the
@@ -176,8 +173,6 @@ val print_loc: formatter -> t -> unit
 val print_locs: formatter -> t list -> unit
 val separate_new_message: formatter -> unit
 
-<<<<<<<
-=======
 module Doc: sig
   val separate_new_message: unit Format_doc.printer
   val filename: string Format_doc.printer
@@ -186,12 +181,11 @@ module Doc: sig
   val locs: t list Format_doc.printer
 end
 
->>>>>>>
 (** {1 Toplevel-specific location highlighting} *)
-(*
+
 val highlight_terminfo:
   Lexing.lexbuf -> formatter -> t list -> unit
-*)
+
 
 (** {1 Reporting errors and warnings} *)
 
@@ -208,23 +202,12 @@ type report_kind =
   | Report_alert of string
   | Report_alert_as_error of string
 
-type error_source = Lexer | Parser | Typer | Warning | Unknown | Env | Config
-
 type report = {
   kind : report_kind;
   main : msg;
   sub : msg list;
-<<<<<<<
-  source : error_source;
-=======
   footnote: Format_doc.t option
->>>>>>>
 }
-
-(* Exposed for Merlin *)
-val loc_of_report: report -> t
-val print_main : formatter -> report -> unit
-val print_sub_msg : formatter -> msg -> unit
 
 type report_printer = {
   (* The entry point *)
@@ -254,12 +237,11 @@ type report_printer = {
 (** {2 Report printers used in the compiler} *)
 
 val batch_mode_printer: report_printer
-(*
+
 val terminfo_toplevel_printer: Lexing.lexbuf -> report_printer
 
 val best_toplevel_printer: unit -> report_printer
 (** Detects the terminal capabilities and selects an adequate printer *)
-*)
 
 (** {2 Printing a [report]} *)
 
@@ -323,7 +305,7 @@ val default_alert_reporter: t -> Warnings.alert -> report option
 
 val print_alert: t -> formatter -> Warnings.alert -> unit
 (** Prints an alert. This is simply the composition of [report_alert] and
-   [print_report]. *)
+    [print_report]. *)
 
 val prerr_alert_ref: (t -> Warnings.alert -> unit) ref
 
@@ -350,35 +332,17 @@ val deprecated_script_alert: string -> unit
 type error = report
 (** An [error] is a [report] which [report_kind] must be [Report_error]. *)
 
-<<<<<<<
-val error: ?loc:t -> ?sub:msg list -> ?source:error_source -> string -> error
-=======
 type delayed_msg = unit -> Format_doc.t option
 
 val error: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg -> string -> error
->>>>>>>
 
-<<<<<<<
-val errorf: ?loc:t -> ?sub:msg list -> ?source:error_source ->
-  ('a, Format.formatter, unit, error) format4 -> 'a
-=======
 val errorf: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
   ('a, Format_doc.formatter, unit, error) format4 -> 'a
->>>>>>>
 
-<<<<<<<
-val error_of_printer: ?loc:t -> ?sub:msg list -> ?source:error_source ->
-  (formatter -> 'a -> unit) -> 'a -> error
-=======
 val error_of_printer: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
   (Format_doc.formatter -> 'a -> unit) -> 'a -> error
->>>>>>>
 
-<<<<<<<
-val error_of_printer_file: ?source:error_source -> (formatter -> 'a -> unit) -> 'a -> error
-=======
 val error_of_printer_file: (Format_doc.formatter -> 'a -> unit) -> 'a -> error
->>>>>>>
 
 
 (** {1 Automatically reporting errors for raised exceptions} *)
@@ -401,13 +365,8 @@ exception Already_displayed_error
 (** Raising [Already_displayed_error] signals an error which has already been
    printed. The exception will be caught, but nothing will be printed *)
 
-<<<<<<<
-val raise_errorf: ?loc:t -> ?sub:msg list -> ?source:error_source ->
-  ('a, Format.formatter, unit, 'b) format4 -> 'a
-=======
 val raise_errorf: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
   ('a, Format_doc.formatter, unit, 'b) format4 -> 'a
->>>>>>>
 
 val report_exception: formatter -> exn -> unit
 (** Reraise the exception if it is unknown. *)

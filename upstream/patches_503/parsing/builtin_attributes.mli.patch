@@ -1,0 +1,32 @@
+--- ocaml_502/parsing/builtin_attributes.mli	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/builtin_attributes.mli	2024-09-17 01:16:30.152541842 +0200
+@@ -75,7 +75,8 @@
+ val mark_payload_attrs_used : Parsetree.payload -> unit
+ 
+ (** Issue misplaced attribute warnings for all attributes created with
+-    [mk_internal] but not yet marked used. *)
++    [mk_internal] but not yet marked used. Does nothing if compilation
++    is stopped before lambda due to command-line flags. *)
+ val warn_unused : unit -> unit
+ 
+ (** {3 Warning 53 helpers for environment attributes}
+@@ -115,8 +116,8 @@
+   def:Location.t -> use:Location.t -> Location.t -> Parsetree.attributes ->
+   Parsetree.attributes -> string -> unit
+ val alerts_of_attrs: Parsetree.attributes -> Misc.alerts
+-val alerts_of_sig: Parsetree.signature -> Misc.alerts
+-val alerts_of_str: Parsetree.structure -> Misc.alerts
++val alerts_of_sig: mark:bool -> Parsetree.signature -> Misc.alerts
++val alerts_of_str: mark:bool -> Parsetree.structure -> Misc.alerts
+ 
+ val check_deprecated_mutable:
+     Location.t -> Parsetree.attributes -> string -> unit
+@@ -172,7 +173,7 @@
+ (** [attr_equals_builtin attr s] is true if the name of the attribute is [s] or
+     ["ocaml." ^ s].  This is useful for manually inspecting attribute names, but
+     note that doing so will not result in marking the attribute used for the
+-    purpose of warning 53, so it is usually preferrable to use [has_attribute]
++    purpose of warning 53, so it is usually preferable to use [has_attribute]
+     or [select_attributes]. *)
+ val attr_equals_builtin : Parsetree.attribute -> string -> bool
+ 

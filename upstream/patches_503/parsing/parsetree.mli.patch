@@ -1,0 +1,24 @@
+--- ocaml_502/parsing/parsetree.mli	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/parsetree.mli	2024-09-17 01:16:30.152541842 +0200
+@@ -22,7 +22,12 @@
+ 
+ open Asttypes
+ 
+-type constant =
++type constant = {
++  pconst_desc : constant_desc;
++  pconst_loc : Location.t;
++}
++
++and constant_desc =
+   | Pconst_integer of string * char option
+       (** Integer constants such as [3] [3l] [3L] [3n].
+ 
+@@ -270,6 +275,7 @@
+            [Ppat_constraint(Ppat_unpack(Some "P"), Ptyp_package S)]
+          *)
+   | Ppat_exception of pattern  (** Pattern [exception P] *)
++  | Ppat_effect of pattern * pattern (* Pattern [effect P P] *)
+   | Ppat_extension of extension  (** Pattern [[%id]] *)
+   | Ppat_open of Longident.t loc * pattern  (** Pattern [M.(P)] *)
+ 

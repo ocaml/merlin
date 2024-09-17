@@ -279,14 +279,8 @@ let check_pers_struct ~allow_hidden penv f1 f2 ~loc name =
   | Not_found ->
       let warn = Warnings.No_cmi_file(name, None) in
         Location.prerr_warning loc warn
-<<<<<<<
   | Magic_numbers.Cmi.Error err ->
-      let msg = Format.asprintf "%a" Magic_numbers.Cmi.report_error err in
-=======
-  | Cmi_format.Error err ->
-      let msg = Format.asprintf "%a"
-          Cmi_format.report_error err in
->>>>>>>
+      let msg = Format_doc.asprintf "%a" Magic_numbers.Cmi.report_error err in
       let warn = Warnings.No_cmi_file(name, Some msg) in
         Location.prerr_warning loc warn
   | Error err ->
@@ -415,13 +409,6 @@ let report_error_doc ppf =
         Style.inline_code import
         Style.inline_code "-rectypes"
 
-let () =
-  Location.register_error_of_exn
-    (function
-      | Error err ->
-          Some (Location.error_of_printer_file report_error err)
-      | _ -> None
-    )
 
 (* helper for merlin *)
 
@@ -430,19 +417,19 @@ let with_cmis penv f x =
           [R (penv.can_load_cmis, Can_load_cmis)]
           (fun () -> f x))
 
-<<<<<<<
 let forall ~found ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
       | Missing -> missing name
       | Found (pers_struct, a) ->
         found name pers_struct.ps_filename pers_struct.ps_name a
-=======
+    )
+
+let () =
   Location.register_error_of_exn
     (function
       | Error err ->
           Some (Location.error_of_printer_file report_error_doc err)
       | _ -> None
->>>>>>>
     )
 
 let report_error = Format_doc.compat report_error_doc

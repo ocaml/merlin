@@ -1,0 +1,32 @@
+--- ocaml_502/typing/errortrace.mli	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/errortrace.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -20,7 +20,7 @@
+ type position = First | Second
+ 
+ val swap_position : position -> position
+-val print_pos : Format.formatter -> position -> unit
++val print_pos : position Format_doc.printer
+ 
+ type expanded_type = { ty: type_expr; expanded: type_expr }
+ 
+@@ -84,13 +84,20 @@
+   (* Unification *)
+   | Self_cannot_be_closed : unification obj
+ 
++type first_class_module =
++    | Package_cannot_scrape of Path.t
++    | Package_inclusion of Format_doc.doc
++    | Package_coercion of Format_doc.doc
++
+ type ('a, 'variety) elt =
+   (* Common *)
+   | Diff : 'a diff -> ('a, _) elt
+   | Variant : 'variety variant -> ('a, 'variety) elt
+   | Obj : 'variety obj -> ('a, 'variety) elt
+   | Escape : 'a escape -> ('a, _) elt
++  | Function_label_mismatch of Asttypes.arg_label diff
+   | Incompatible_fields : { name:string; diff: type_expr diff } -> ('a, _) elt
++  | First_class_module: first_class_module -> ('a,_) elt
+   (* Unification & Moregen; included in Equality for simplicity *)
+   | Rec_occur : type_expr * type_expr -> ('a, _) elt
+ 
