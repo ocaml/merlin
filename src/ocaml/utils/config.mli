@@ -46,13 +46,33 @@ val cmt_magic_number: string
 val index_magic_number: string
         (* Magic number for index files *)
 
+<<<<<<<
 val max_tag: int
         (* Biggest tag that can be stored in the header of a regular block. *)
+=======
+val bytecode_cflags : string
+(** The flags ocamlc should pass to the C compiler *)
+>>>>>>>
 
+<<<<<<<
 val flat_float_array: bool
+=======
+val bytecode_cppflags : string
+(** The flags ocamlc should pass to the C preprocessor *)
+>>>>>>>
 
+<<<<<<<
 (**/**)
+=======
+val native_cflags : string
+(** The flags ocamlopt should pass to the C compiler *)
+>>>>>>>
 
+<<<<<<<
 val merlin : bool
+=======
+val native_cppflags : string
+(** The flags ocamlopt should pass to the C preprocessor *)
+>>>>>>>
 
 (**/**)

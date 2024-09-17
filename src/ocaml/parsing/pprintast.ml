@@ -94,26 +94,95 @@ let needs_parens txt =
 let needs_spaces txt =
   first_is '*' txt || last_is '*' txt
 
+let tyvar_of_name s =
+  if String.length s >= 2 && s.[1] = '\'' then
+    (* without the space, this would be parsed as
+       a character literal *)
+    "' " ^ s
+  else if Lexer.is_keyword s then
+    "'\\#" ^ s
+  else if String.equal s "_" then
+    s
+  else
+    "'" ^ s
+
+module Doc = struct
 (* Turn an arbitrary variable name into a valid OCaml identifier by adding \#
   in case it is a keyword, or parenthesis when it is an infix or prefix
   operator. *)
-let ident_of_name ppf txt =
-  let format : (_, _, _) format =
-    if Lexer.is_keyword txt then "\\#%s"
-    else if not (needs_parens txt) then "%s"
-    else if needs_spaces txt then "(@;%s@;)"
-    else "(%s)"
-  in fprintf ppf format txt
+  let ident_of_name ppf txt =
+    let format : (_, _, _) format =
+      if Lexer.is_keyword txt then "\\#%s"
+      else if not (needs_parens txt) then "%s"
+      else if needs_spaces txt then "(@;%s@;)"
+      else "(%s)"
+    in Format_doc.fprintf ppf format txt
 
-let ident_of_name_loc ppf s = ident_of_name ppf s.txt
-
-let protect_longident ppf print_longident longprefix txt =
+  let protect_longident ppf print_longident longprefix txt =
     if not (needs_parens txt) then
-      fprintf ppf "%a.%a" print_longident longprefix ident_of_name txt
+      Format_doc.fprintf ppf "%a.%a"
+        print_longident longprefix
+        ident_of_name txt
     else if needs_spaces txt then
-      fprintf ppf "%a.(@;%s@;)" print_longident longprefix txt
+      Format_doc.fprintf ppf "%a.(@;%s@;)" print_longident longprefix txt
     else
-      fprintf ppf "%a.(%s)" print_longident longprefix txt
+      Format_doc.fprintf ppf "%a.(%s)" print_longident longprefix txt
+
+  let rec longident f = function
+    | Lident s -> ident_of_name f s
+    | Ldot(y,s) -> protect_longident f longident y s
+    | Lapply (y,s) ->
+        Format_doc.fprintf f "%a(%a)" longident y longident s
+
+  let tyvar ppf s =
+    Format_doc.fprintf ppf "%s" (tyvar_of_name s)
+
+  (* Expressions are considered nominal if they can be used as the subject of a
+     sentence or action. In practice, we consider that an expression is nominal
+     if they satisfy one of:
+     - Similar to an identifier: words separated by '.' or '#'.
+     - Do not contain spaces when printed.
+     - Is a constant that is short enough.
+  *)
+  let nominal_exp t =
+    let open Format_doc.Doc in
+    let longident l = Format_doc.doc_printer longident l.Location.txt in
+    let rec nominal_exp doc exp =
+      match exp.pexp_desc with
+      | _ when exp.pexp_attributes <> [] -> None
+      | Pexp_ident l ->
+          Some (longident l doc)
+      | Pexp_variant (lbl, None) ->
+          Some (printf "`%s" lbl doc)
+      | Pexp_construct (l, None) ->
+          Some (longident l doc)
+      | Pexp_field (parent, lbl) ->
+          Option.map
+            (printf ".%t" (longident lbl))
+            (nominal_exp doc parent)
+      | Pexp_send (parent, meth) ->
+          Option.map
+            (printf "#%s" meth.txt)
+            (nominal_exp doc parent)
+      (* String constants are syntactically too complex. For example, the
+         quotes conflict with the 'inline_code' style and they might contain
+         spaces. *)
+      | Pexp_constant { pconst_desc = Pconst_string _; _ } -> None
+      (* Char, integer and float constants are nominal. *)
+      | Pexp_constant { pconst_desc = Pconst_char c; _ } ->
+          Some (msg "%C" c)
+      | Pexp_constant
+          { pconst_desc = Pconst_integer (cst, suf) | Pconst_float (cst, suf);
+            _ } ->
+          Some (msg "%s%t" cst (option char suf))
+      | _ -> None
+    in
+    nominal_exp empty t
+end
+
+let longident ppf l = Format_doc.compat Doc.longident ppf l
+let ident_of_name ppf i = Format_doc.compat Doc.ident_of_name ppf i
+let ident_of_name_loc ppf s = ident_of_name ppf s.txt
 
 type space_formatter = (unit, Format.formatter, unit) format
 
@@ -225,15 +294,9 @@ let paren: 'a . ?first:space_formatter -> ?last:space_formatter ->
     if b then (pp f "("; pp f first; fu f x; pp f last; pp f ")")
     else fu f x
 
-let rec longident f = function
-  | Lident s -> ident_of_name f s
-  | Ldot(y,s) -> protect_longident f longident y s
-  | Lapply (y,s) ->
-      pp f "%a(%a)" longident y longident s
-
 let longident_loc f x = pp f "%a" longident x.txt
 
-let constant f = function
+let constant_desc f = function
   | Pconst_char i ->
       pp f "%C"  i
   | Pconst_string (i, _, None) ->
@@ -248,6 +311,8 @@ let constant f = function
       paren (first_is '-' i) (fun f -> pp f "%s") f i
   | Pconst_float (i, Some m) ->
       paren (first_is '-' i) (fun f (i,m) -> pp f "%s%c" i m) f (i,m)
+
+let constant f const = constant_desc f const.pconst_desc
 
 (* trailing space*)
 let mutable_flag f = function
@@ -277,20 +342,9 @@ let iter_loc f ctxt {txt; loc = _} = f ctxt txt
 
 let constant_string f s = pp f "%S" s
 
-let tyvar_of_name s =
-  if String.length s >= 2 && s.[1] = '\'' then
-    (* without the space, this would be parsed as
-       a character literal *)
-    "' " ^ s
-  else if Lexer.is_keyword s then
-    "'\\#" ^ s
-  else if String.equal s "_" then
-    s
-  else
-    "'" ^ s
 
-let tyvar ppf s =
-  Format.fprintf ppf "%s" (tyvar_of_name s)
+
+let tyvar ppf v = Format_doc.compat Doc.tyvar ppf v
 
 let tyvar_loc f str = tyvar f str.txt
 let string_quot f x = pp f "`%a" ident_of_name x
@@ -512,6 +566,8 @@ and simple_pattern ctxt (f:Format.formatter) (x:pattern) : unit =
         pp f "@[<2>(lazy@;%a)@]" (simple_pattern ctxt) p
     | Ppat_exception p ->
         pp f "@[<2>exception@;%a@]" (pattern1 ctxt) p
+    | Ppat_effect(p1, p2) ->
+        pp f "@[<2>effect@;%a, @;%a@]" (pattern1 ctxt) p1 (pattern1 ctxt) p2
     | Ppat_extension e -> extension ctxt f e
     | Ppat_open (lid, p) ->
         let with_paren =
@@ -1136,7 +1192,7 @@ and module_type ctxt f x =
             pp f "@[<hov2>%a@ ->@ %a@]"
               (module_type1 ctxt) mt1 (module_type ctxt) mt2
         | Some name ->
-            pp f "@[<hov2>functor@ (%s@ :@ %a)@ ->@ %a@]" name
+            pp f "@[<hov2>(%s@ :@ %a)@ ->@ %a@]" name
               (module_type ctxt) mt1 (module_type ctxt) mt2
         end
     | Pmty_with (mt, []) -> module_type ctxt f mt

@@ -105,8 +105,8 @@ and expression_desc =
   | Texp_let of rec_flag * value_binding list * expression
   | Texp_function of function_param list * function_body
   | Texp_apply of expression * (arg_label * expression option) list
-  | Texp_match of expression * computation case list * partial
-  | Texp_try of expression * value case list
+  | Texp_match of expression * computation case list * value case list * partial
+  | Texp_try of expression * value case list * value case list
   | Texp_tuple of expression list
   | Texp_construct of
       Longident.t loc * constructor_description * expression list
@@ -159,6 +159,7 @@ and meth =
 and 'k case =
     {
      c_lhs: 'k general_pattern;
+     c_cont: Ident.t option;
      c_guard: expression option;
      c_rhs: expression;
     }
@@ -891,6 +892,12 @@ let split_pattern pat =
         let vals1, exns1 = split_pattern cp1 in
         let vals2, exns2 = split_pattern cp2 in
         combine_opts (into cpat) vals1 vals2,
+<<<<<<<
+=======
+        combine_opts (into cpat) exns1 exns2
+  in
+  split_pattern pat
+>>>>>>>
         (* We could change the pattern type for exception patterns to
            [Predef.exn], but it doesn't really matter. *)
         combine_opts (into cpat) exns1 exns2

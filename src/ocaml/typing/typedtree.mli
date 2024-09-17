@@ -217,17 +217,22 @@ and expression_desc =
                          (Labelled "y", Some (Texp_constant Const_int 3))
                         ])
          *)
-  | Texp_match of expression * computation case list * partial
+  | Texp_match of expression * computation case list * value case list * partial
         (** match E0 with
             | P1 -> E1
             | P2 | exception P3 -> E2
             | exception P4 -> E3
+            | effect P4 k -> E4
 
             [Texp_match (E0, [(P1, E1); (P2 | exception P3, E2);
-                              (exception P4, E3)], _)]
+                              (exception P4, E3)], [(P4, E4)],  _)]
          *)
-  | Texp_try of expression * value case list
-        (** try E with P1 -> E1 | ... | PN -> EN *)
+  | Texp_try of expression * value case list * value case list
+         (** try E with
+            | P1 -> E1
+            | effect P2 k -> E2
+            [Texp_try (E, [(P1, E1)], [(P2, E2)])]
+          *)
   | Texp_tuple of expression list
         (** (E1, ..., EN) *)
   | Texp_construct of
@@ -297,6 +302,7 @@ and meth =
 and 'k case =
     {
      c_lhs: 'k general_pattern;
+     c_cont: Ident.t option;
      c_guard: expression option;
      c_rhs: expression;
     }
@@ -921,6 +927,7 @@ val pat_bound_idents_full:
 (** Splits an or pattern into its value (left) and exception (right) parts. *)
 val split_pattern:
   computation general_pattern -> pattern option * pattern option
+<<<<<<<
 
 (** Whether an expression looks nice as the subject of a sentence in a error
     message. *)
@@ -930,3 +937,5 @@ val exp_is_nominal : expression -> bool
 
 val unpack_functor_me : module_expr -> functor_parameter * module_expr
 val unpack_functor_mty : module_type -> functor_parameter * module_type
+=======
+>>>>>>>

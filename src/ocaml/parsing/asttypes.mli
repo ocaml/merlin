@@ -65,3 +65,5 @@ type variance =
 type injectivity =
   | Injective
   | NoInjectivity
+
+val string_of_label: arg_label -> string

@@ -19,7 +19,7 @@ open Path
 open Asttypes
 open Parsetree
 open Types
-open Format
+open Format_doc
 
 module Style = Misc.Style
 
@@ -78,6 +78,7 @@ type error =
   | Invalid_type_subst_rhs
   | Unpackable_local_modtype_subst of Path.t
   | With_cannot_remove_packed_modtype of Path.t * module_type
+  | Cannot_alias of Path.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -273,9 +274,8 @@ let path_is_strict_prefix =
        Ident.same ident1 ident2
        && list_is_strict_prefix l1 ~prefix:l2
 
-let iterator_with_env env =
+let iterator_with_env super env =
   let env = ref (lazy env) in
-  let super = Btype.type_iterators in
   env, { super with
     Btype.it_signature = (fun self sg ->
       (* add all items to the env before recursing down, to handle recursive
@@ -368,7 +368,8 @@ let check_usage_of_module_types ~error ~paths ~loc env super =
   { super with Btype.it_do_type_expr }
 
 let do_check_after_substitution env ~loc ~lid paths unpackable_modtype sg =
-  let env, iterator = iterator_with_env env in
+  with_type_mark begin fun mark ->
+  let env, iterator = iterator_with_env (Btype.type_iterators mark) env in
   let last, rest = match List.rev paths with
     | [] -> assert false
     | last :: rest -> last, rest
@@ -387,8 +388,8 @@ let do_check_after_substitution env ~loc ~lid paths unpackable_modtype sg =
        let error p = With_cannot_remove_packed_modtype(p,mty) in
        check_usage_of_module_types ~error ~paths ~loc env iterator
   in
-  iterator.Btype.it_signature iterator sg;
-  Btype.(unmark_iterators.it_signature unmark_iterators) sg
+  iterator.Btype.it_signature iterator sg
+  end
 
 let check_usage_after_substitution env ~loc ~lid paths unpackable_modtype sg =
   match paths, unpackable_modtype with
@@ -422,9 +423,9 @@ let check_well_formed_module env loc context mty =
       | _ :: rem ->
           check_signature env rem
     in
-    let env, super = iterator_with_env env in
+    let env, super =
+      iterator_with_env Btype.type_iterators_without_type_expr env in
     { super with
-      it_type_expr = (fun _self _ty -> ());
       it_signature = (fun self sg ->
         let env_before = !env in
         let env = lazy (Env.add_signature sg (Lazy.force env_before)) in
@@ -536,7 +537,7 @@ let merge_constraint initial_env loc sg lid constr =
             type_attributes = [];
             type_immediate = Unknown;
             type_unboxed_default = false;
-            type_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+            type_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
           }
         and id_row = Ident.create_local (s^"#row") in
         let initial_env =
@@ -608,7 +609,7 @@ let merge_constraint initial_env loc sg lid constr =
         if not destructive_substitution then
           let mtd': modtype_declaration =
             {
-              mtd_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+              mtd_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
               mtd_type = Some mty.mty_type;
               mtd_attributes = [];
               mtd_loc = loc;
@@ -1184,19 +1185,19 @@ end = struct
     should raise an error.
   *)
   let check_unpackable_modtypes ~loc ~env to_remove component =
-    if not (Ident.Set.is_empty to_remove.unpackable_modtypes) then begin
-      let iterator =
-        let error p = Unpackable_local_modtype_subst p in
-        let paths =
-          List.map (fun id -> Pident id)
-            (Ident.Set.elements to_remove.unpackable_modtypes)
+    if not (Ident.Set.is_empty to_remove.unpackable_modtypes) then
+      with_type_mark begin fun mark ->
+        let iterator =
+          let error p = Unpackable_local_modtype_subst p in
+          let paths =
+            List.map (fun id -> Pident id)
+              (Ident.Set.elements to_remove.unpackable_modtypes)
+          in
+          check_usage_of_module_types ~loc ~error ~paths
+            (ref (lazy env)) (Btype.type_iterators mark)
         in
-        check_usage_of_module_types ~loc ~error ~paths
-          (ref (lazy env)) Btype.type_iterators
-      in
-      iterator.Btype.it_signature_item iterator component;
-      Btype.(unmark_iterators.it_signature_item unmark_iterators) component
-    end
+        iterator.Btype.it_signature_item iterator component
+      end
 
   (* We usually require name uniqueness of signature components (e.g. types,
      modules, etc), however in some situation reusing the name is allowed: if
@@ -1356,7 +1357,7 @@ and transl_modtype_aux env smty =
                   { md_type = arg.mty_type;
                     md_attributes = [];
                     md_loc = param.loc;
-                    md_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+                    md_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
                   }
                 in
                 Env.enter_module_declaration ~scope ~arg:true name Mp_present
@@ -1412,7 +1413,11 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
 
 
 
+<<<<<<<
 and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
+=======
+and transl_signature env sg =
+>>>>>>>
   let names = Signature_names.create () in
   let rec transl_sig env sg =
     match sg with
@@ -1554,14 +1559,17 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
             in
             let pres =
               match tmty.mty_type with
-              | Mty_alias _ -> Mp_absent
+              | Mty_alias p ->
+                  if Env.is_functor_arg p env then
+                    raise (Error (pmd.pmd_loc, env, Cannot_alias p));
+                  Mp_absent
               | _ -> Mp_present
             in
             let md = {
               md_type=tmty.mty_type;
               md_attributes=pmd.pmd_attributes;
               md_loc=pmd.pmd_loc;
-              md_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+              md_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
             }
             in
             match pmd.pmd_name.txt with
@@ -1603,7 +1611,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
                 { md_type = Mty_alias path;
                   md_attributes = pms.pms_attributes;
                   md_loc = pms.pms_loc;
-                  md_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+                  md_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
                 }
             in
             let pres =
@@ -1813,8 +1821,6 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
           end
         | Psig_attribute x ->
             Builtin_attributes.warning_attribute x;
-            if toplevel || not (Warnings.is_active (Misplaced_attribute ""))
-            then Builtin_attributes.mark_alert_used x;
             let (trem,rem, final_env) = transl_sig env srem in
             mksig (Tsig_attribute x) env loc :: trem, rem, final_env
         | Psig_extension (ext, _attrs) ->
@@ -1844,7 +1850,7 @@ and transl_modtype_decl_aux env
      Types.mtd_type=Option.map (fun t -> t.mty_type) tmty;
      mtd_attributes=pmtd_attributes;
      mtd_loc=pmtd_loc;
-     mtd_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+     mtd_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
     }
   in
   let scope = Ctype.create_scope () in
@@ -1903,7 +1909,7 @@ and transl_recmodule_modtypes env sdecls =
   let init =
     List.map2
       (fun id pmd ->
-         let md_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+         let md_uid = Uid.mk ~current_unit:(Env.get_current_unit ()) in
          let md =
            { md_type = approx_modtype approx_env pmd.pmd_type;
              md_loc = pmd.pmd_loc;
@@ -2202,11 +2208,11 @@ and package_constraints env loc mty constrs =
   end
 
 let modtype_of_package env loc p fl =
-  (* We call Ctype.correct_levels to ensure that the types being added to the
+  (* We call Ctype.duplicate_type to ensure that the types being added to the
      module type are at generic_level. *)
   let mty =
     package_constraints env loc (Mty_ident p)
-      (List.map (fun (n, t) -> Longident.flatten n, Ctype.correct_levels t) fl)
+      (List.map (fun (n, t) -> Longident.flatten n, Ctype.duplicate_type t) fl)
   in
   Subst.modtype Keep Subst.identity mty
 
@@ -2217,12 +2223,20 @@ let package_subtype env p1 fl1 p2 fl2 =
     modtype_of_package env Location.none p fl
   in
   match mkmty p1 fl1, mkmty p2 fl2 with
-  | exception Error(_, _, Cannot_scrape_package_type _) -> false
+  | exception Error(_, _, Cannot_scrape_package_type r) ->
+      Result.Error (Errortrace.Package_cannot_scrape r)
   | mty1, mty2 ->
     let loc = Location.none in
     match Includemod.modtypes ~loc ~mark:Mark_both env mty1 mty2 with
-    | Tcoerce_none -> true
-    | _ | exception Includemod.Error _ -> false
+    | Tcoerce_none -> Ok ()
+    | c ->
+        let msg =
+          Includemod_errorprinter.coercion_in_package_subtype env mty1 c
+        in
+        Result.Error (Errortrace.Package_coercion msg)
+    | exception Includemod.Error e ->
+        let msg = doc_printf "%a" Includemod_errorprinter.err_msgs e in
+        Result.Error (Errortrace.Package_inclusion msg)
 
 let () = Ctype.package_subtype := package_subtype
 
@@ -2285,6 +2299,8 @@ let simplify_app_summary app_view = match app_view.arg with
     | true , _      -> Includemod.Error.Empty_struct, mty
     | false, Some p -> Includemod.Error.Named p, mty
     | false, None   -> Includemod.Error.Anonymous, mty
+
+let not_principal msg = Warnings.Not_principal (Format_doc.Doc.msg msg)
 
 let rec type_module ?(alias=false) sttn funct_body anchor env smod =
   (* Merlin: when we start typing a module we don't want to include potential
@@ -2374,7 +2390,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
             match param.txt with
             | None -> None, env, Shape.for_unnamed_functor_param
             | Some name ->
-              let md_uid =  Uid.mk ~current_unit:(Env.get_unit_name ()) in
+              let md_uid =  Uid.mk ~current_unit:(Env.get_current_unit ()) in
               let arg_md =
                 { md_type = mty.mty_type;
                   md_attributes = [];
@@ -2432,9 +2448,8 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
       end
   | Pmod_unpack sexp ->
       let exp =
-        Ctype.with_local_level_if_principal
+        Ctype.with_local_level_generalize_structure_if_principal
           (fun () -> Typecore.type_exp env sexp)
-          ~post:Typecore.generalize_structure_exp
       in
       let mty =
         match get_desc (Ctype.expand_head env exp.exp_type) with
@@ -2446,7 +2461,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
               not (Typecore.generalizable (Btype.generic_level-1) exp.exp_type)
             then
               Location.prerr_warning smod.pmod_loc
-                (Warnings.Not_principal "this module unpacking");
+                (not_principal "this module unpacking");
             modtype_of_package env smod.pmod_loc p fl
         | Tvar _ ->
             raise (Typecore.Error
@@ -2808,7 +2823,7 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
           | Mty_alias _ -> Mp_absent
           | _ -> Mp_present
         in
-        let md_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
+        let md_uid = Uid.mk ~current_unit:(Env.get_current_unit ()) in
         let md =
           { md_type = enrich_module_type anchor name.txt modl.mod_type env;
             md_attributes = attrs;
@@ -2887,6 +2902,8 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
                let mty' =
                  enrich_module_type anchor name.txt modl.mod_type newenv
                in
+               Includemod.modtypes_consistency ~loc:modl.mod_loc newenv
+                mty' mty.mty_type;
                (id, name, mty, modl, mty', attrs, loc, shape, uid))
             decls sbind in
         let newenv = (* allow aliasing recursive modules from outside *)
@@ -3033,8 +3050,6 @@ and type_structure ?(toplevel = false) ?(keep_warnings = false) funct_body ancho
         raise (Error_forward (Builtin_attributes.error_of_extension ext))
     | Pstr_attribute x ->
         Builtin_attributes.warning_attribute x;
-        if toplevel || not (Warnings.is_active (Misplaced_attribute "")) then
-          Builtin_attributes.mark_alert_used x;
         Tstr_attribute x, [], shape_map, env
   in
   let rec type_struct env shape_map sstr =
@@ -3280,7 +3295,7 @@ let type_implementation target initial_env ast =
         Typecore.force_delayed_checks ();
         let shape = Shape_reduce.local_reduce Env.empty shape in
         Printtyp.wrap_printing_env ~error:false initial_env
-          (fun () -> fprintf std_formatter "%a@."
+          Format.(fun () -> fprintf std_formatter "%a@."
               (Printtyp.printed_signature @@ Unit_info.source_file target)
               simple_sg
           );
@@ -3336,8 +3351,8 @@ let type_implementation target initial_env ast =
              declarations like "let x = true;; let x = 1;;", because in this
              case, the inferred signature contains only the last declaration. *)
           let shape = Shape_reduce.local_reduce Env.empty shape in
+          let alerts = Builtin_attributes.alerts_of_str ~mark:true ast in
           if not !Clflags.dont_write_files then begin
-            let alerts = Builtin_attributes.alerts_of_str ast in
             let cmi =
               Env.save_signature ~alerts simple_sg (Unit_info.cmi target)
             in
@@ -3365,10 +3380,7 @@ let save_signature target tsg initial_env cmi =
     (Cmt_format.Interface tsg) initial_env (Some cmi) None
 
 let type_interface env ast =
-  transl_signature ~toplevel:true env ast
-
-let transl_signature env ast =
-  transl_signature ~toplevel:false env ast
+  transl_signature env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
@@ -3397,7 +3409,7 @@ let package_signatures units =
         { md_type=Mty_signature sg;
           md_attributes=[];
           md_loc=Location.none;
-          md_uid = Uid.mk ~current_unit:(Env.get_unit_name ());
+          md_uid = Uid.mk ~current_unit:(Env.get_current_unit ());
         }
       in
       Sig_module(newid, Mp_present, md, Trec_not, Exported))
@@ -3467,9 +3479,7 @@ let package_units initial_env objfiles target_cmi =
 
 
 (* Error report *)
-
-
-open Printtyp
+open Printtyp.Doc
 
 let report_error ~loc _env = function
     Cannot_apply mty ->
@@ -3477,8 +3487,9 @@ let report_error ~loc _env = function
         "@[This module is not a functor; it has type@ %a@]"
         (Style.as_inline_code modtype) mty
   | Not_included errs ->
-      let main = Includemod_errorprinter.err_msgs errs in
-      Location.errorf ~loc "@[<v>Signature mismatch:@ %t@]" main
+      Location.errorf ~loc ~footnote:Out_type.Ident_conflicts.err_msg
+        "@[<v>Signature mismatch:@ %a@]"
+        Includemod_errorprinter.err_msgs errs
   | Cannot_eliminate_dependency mty ->
       Location.errorf ~loc
         "@[This functor has type@ %a@ \
@@ -3497,26 +3508,25 @@ let report_error ~loc _env = function
         Style.inline_code "with"
         (Style.as_inline_code longident) lid
   | With_mismatch(lid, explanation) ->
-      let main = Includemod_errorprinter.err_msgs explanation in
-      Location.errorf ~loc
+      Location.errorf ~loc ~footnote:Out_type.Ident_conflicts.err_msg
         "@[<v>\
            @[In this %a constraint, the new definition of %a@ \
              does not match its original definition@ \
              in the constrained signature:@]@ \
-         %t@]"
+         %a@]"
         Style.inline_code "with"
-        (Style.as_inline_code longident) lid main
+        (Style.as_inline_code longident) lid
+        Includemod_errorprinter.err_msgs explanation
   | With_makes_applicative_functor_ill_typed(lid, path, explanation) ->
-      let main = Includemod_errorprinter.err_msgs explanation in
-      Location.errorf ~loc
+      Location.errorf ~loc ~footnote:Out_type.Ident_conflicts.err_msg
         "@[<v>\
            @[This %a constraint on %a makes the applicative functor @ \
              type %a ill-typed in the constrained signature:@]@ \
-         %t@]"
+         %a@]"
         Style.inline_code "with"
         (Style.as_inline_code longident) lid
         Style.inline_code (Path.name path)
-        main
+        Includemod_errorprinter.err_msgs explanation
   | With_changes_module_alias(lid, id, path) ->
       Location.errorf ~loc
         "@[<v>\
@@ -3536,8 +3546,8 @@ let report_error ~loc _env = function
         [ 12; 7; 3 ]
       in
       let pp_constraint ppf () =
-        Format.fprintf ppf "%s := %a"
-          (Path.name p) Printtyp.modtype mty
+        fprintf ppf "%s := %a"
+          (Path.name p) modtype mty
       in
       Location.errorf ~loc
         "This %a constraint@ %a@ makes a packed module ill-formed.@ %a"
@@ -3549,7 +3559,7 @@ let report_error ~loc _env = function
         "In the constrained signature, type %a is defined to be %a.@ \
          Package %a constraints may only be used on abstract types."
         (Style.as_inline_code longident) lid
-        (Style.as_inline_code Printtyp.type_expr) ty
+        (Style.as_inline_code type_expr) ty
         Style.inline_code "with"
   | Repeated_name(kind, name) ->
       Location.errorf ~loc
@@ -3558,27 +3568,27 @@ let report_error ~loc _env = function
         (Sig_component_kind.to_string kind) Style.inline_code name
   | Non_generalizable { vars; expression } ->
       let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2 ] in
-      prepare_for_printing vars;
-      add_type_to_preparation expression;
+      Out_type.prepare_for_printing vars;
+      Out_type.add_type_to_preparation expression;
       Location.errorf ~loc
         "@[The type of this expression,@ %a,@ \
          contains the non-generalizable type variable(s): %a.@ %a@]"
-        (Style.as_inline_code prepared_type_scheme) expression
+        (Style.as_inline_code Out_type.prepared_type_scheme) expression
         (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
-           (Style.as_inline_code prepared_type_scheme)) vars
+           (Style.as_inline_code Out_type.prepared_type_scheme)) vars
         Misc.print_see_manual manual_ref
   | Non_generalizable_module { vars; mty; item } ->
       let[@manual.ref "ss:valuerestriction"] manual_ref = [ 6; 1; 2 ] in
-      prepare_for_printing vars;
-      add_type_to_preparation item.val_type;
+      Out_type.prepare_for_printing vars;
+      Out_type.add_type_to_preparation item.val_type;
       let sub =
         [ Location.msg ~loc:item.val_loc
             "The type of this value,@ %a,@ \
              contains the non-generalizable type variable(s) %a."
-            (Style.as_inline_code prepared_type_scheme)
+            (Style.as_inline_code Out_type.prepared_type_scheme)
             item.val_type
             (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
-               @@ Style.as_inline_code prepared_type_scheme) vars
+               @@ Style.as_inline_code Out_type.prepared_type_scheme) vars
         ]
       in
       Location.errorf ~loc ~sub
@@ -3590,11 +3600,11 @@ let report_error ~loc _env = function
       Location.errorf ~loc
         "@[The interface %a@ declares values, not just types.@ \
            An implementation must be provided.@]"
-        Location.print_filename intf_name
+        Location.Doc.quoted_filename intf_name
   | Interface_not_compiled intf_name ->
       Location.errorf ~loc
         "@[Could not find the .cmi file for interface@ %a.@]"
-        Location.print_filename intf_name
+        Location.Doc.quoted_filename intf_name
   | Not_allowed_in_functor_body ->
       Location.errorf ~loc
         "@[This expression creates fresh types.@ %s@]"
@@ -3623,12 +3633,18 @@ let report_error ~loc _env = function
       Location.errorf ~loc
         "This is an alias for module %a, which is missing"
         (Style.as_inline_code path) p
+  | Cannot_alias p ->
+      Location.errorf ~loc
+        "Functor arguments, such as %a, cannot be aliased"
+        (Style.as_inline_code path) p
   | Cannot_scrape_package_type p ->
       Location.errorf ~loc
         "The type of this packed module refers to %a, which is missing"
         (Style.as_inline_code path) p
   | Badly_formed_signature (context, err) ->
-      Location.errorf ~loc "@[In %s:@ %a@]" context Typedecl.report_error err
+      Location.errorf ~loc "@[In %s:@ %a@]"
+        context
+        Typedecl.report_error_doc err
   | Cannot_hide_id Illegal_shadowing
       { shadowed_item_kind; shadowed_item_id; shadowed_item_loc;
         shadower_id; user_id; user_kind; user_loc } ->
