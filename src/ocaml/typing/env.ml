@@ -4183,13 +4183,22 @@ let cleanup_functor_caches ~stamp =
   Stamped_hashtable.backtrack !stamped_changelog ~stamp
 
 let cleanup_usage_tables ~stamp =
-<<<<<<<
   Stamped_hashtable.backtrack value_declarations_changelog ~stamp;
   Stamped_hashtable.backtrack type_declarations_changelog ~stamp;
   Stamped_hashtable.backtrack module_declarations_changelog ~stamp;
   Stamped_hashtable.backtrack used_constructors_changelog ~stamp;
   Stamped_hashtable.backtrack used_labels_changelog ~stamp
-=======
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error err ->
+          let loc =
+            match err with
+            | Missing_module (loc, _, _)
+            | Illegal_value_name (loc, _)
+            | Lookup_error(loc, _, _) -> loc
+          in
           let error_of_printer =
             if loc = Location.none
             then Location.error_of_printer_file
@@ -4202,4 +4211,3 @@ let cleanup_usage_tables ~stamp =
 
 let report_lookup_error = Format_doc.compat2 report_lookup_error_doc
 let report_error = Format_doc.compat report_error_doc
->>>>>>>

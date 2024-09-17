@@ -1,0 +1,39 @@
+--- typecore.ml	2024-06-27 15:42:08.730793912 +0200
++++ typecore.ml	2024-09-17 01:15:58.295900254 +0200
+@@ -4247,7 +4389,7 @@
+   | Pexp_letmodule(name, smodl, sbody) ->
+       let lv = get_current_level () in
+       let (id, pres, modl, _, body) =
+-        with_local_level begin fun () ->
++        with_local_level_generalize begin fun () ->
+           let modl, pres, id, new_env =
+             Typetexp.TyVarEnv.with_local_scope begin fun () ->
+               let modl, md_shape = !type_module env smodl in
+@@ -4258,7 +4400,7 @@
+                 | _ -> Mp_present
+               in
+               let scope = create_scope () in
+-              let md_uid = Uid.mk ~current_unit:(Env.get_unit_name ()) in
++              let md_uid = Uid.mk ~current_unit:(Env.get_current_unit ()) in
+               let md_shape = Shape.set_uid_if_none md_shape md_uid in
+               let md =
+                 { md_type = modl.mod_type; md_attributes = [];
+@@ -4286,7 +4428,7 @@
+           let body = type_expect new_env sbody ty_expected_explained in
+           (id, pres, modl, new_env, body)
+         end
+-        ~post: begin fun (_id, _pres, _modl, new_env, body) ->
++        ~before_generalize: begin fun (_id, _pres, _modl, new_env, body) ->
+           (* Ensure that local definitions do not leak. *)
+           (* required for implicit unpack *)
+           enforce_current_level new_env body.exp_type
+@@ -4355,8 +4497,7 @@
+       }
+   | Pexp_poly(sbody, sty) ->
+       let ty, cty =
+-        with_local_level_if_principal
+-          ~post:(fun (ty,_) -> generalize_structure ty)
++        with_local_level_generalize_structure_if_principal
+           begin fun () ->
+             match sty with None -> protect_expansion env ty_expected, None
+             | Some sty ->

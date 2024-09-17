@@ -1,0 +1,13 @@
+--- ocaml_502/typing/includemod.mli	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/includemod.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -155,6 +155,10 @@
+   loc:Location.t -> Env.t -> mark:mark ->
+   module_type -> module_type -> module_coercion
+ 
++
++val modtypes_consistency:
++  loc:Location.t -> Env.t -> module_type -> module_type -> unit
++
+ val modtypes_with_shape:
+   shape:Shape.t -> loc:Location.t -> Env.t -> mark:mark ->
+   module_type -> module_type -> module_coercion * Shape.t

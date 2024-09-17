@@ -142,28 +142,12 @@ let print ~with_scope ppf =
   function
   | Global name -> fprintf ppf "%s!" name
   | Predef { name; stamp = n } ->
-<<<<<<<
       fprintf ppf "%s/%i!" name n
-=======
-      fprintf ppf "%s%s!" name
-        (if !Clflags.unique_ids then asprintf "/%i" n else "")
->>>>>>>
   | Local { name; stamp = n } ->
-<<<<<<<
       fprintf ppf "%s/%i" name n
-=======
-      fprintf ppf "%s%s" name
-        (if !Clflags.unique_ids then asprintf "/%i" n else "")
->>>>>>>
   | Scoped { name; stamp = n; scope } ->
-<<<<<<<
       fprintf ppf "%s/%i%s" name n
-        (if with_scope then sprintf "[%i]" scope else "")
-=======
-      fprintf ppf "%s%s%s" name
-        (if !Clflags.unique_ids then asprintf "/%i" n else "")
         (if with_scope then asprintf "[%i]" scope else "")
->>>>>>>
 
 let print_with_scope ppf id = print ~with_scope:true ppf id
 

@@ -1,0 +1,11 @@
+--- ocaml_502/typing/includemod_errorprinter.mli	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/includemod_errorprinter.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -13,5 +13,7 @@
+ (*                                                                        *)
+ (**************************************************************************)
+ 
+-val err_msgs: Includemod.explanation -> Format.formatter -> unit
++val err_msgs: Includemod.explanation Format_doc.printer
++val coercion_in_package_subtype:
++  Env.t -> Types.module_type -> Typedtree.module_coercion -> Format_doc.doc
+ val register: unit -> unit

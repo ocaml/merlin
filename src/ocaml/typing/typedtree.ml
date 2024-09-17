@@ -892,12 +892,6 @@ let split_pattern pat =
         let vals1, exns1 = split_pattern cp1 in
         let vals2, exns2 = split_pattern cp2 in
         combine_opts (into cpat) vals1 vals2,
-<<<<<<<
-=======
-        combine_opts (into cpat) exns1 exns2
-  in
-  split_pattern pat
->>>>>>>
         (* We could change the pattern type for exception patterns to
            [Predef.exn], but it doesn't really matter. *)
         combine_opts (into cpat) exns1 exns2

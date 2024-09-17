@@ -60,12 +60,12 @@ val tyvar: Format.formatter -> string -> unit
       special treatment required for the single quote character in second
       position, or for keywords by escaping them with \#. No-op on "_". *)
 
-<<<<<<<
 (* merlin *)
 val case_list : Format.formatter -> Parsetree.case list -> unit
 val ident_of_name : Format.formatter -> string -> unit
 val needs_parens : string -> bool
-=======
+
+
 (** {!Format_doc} functions for error messages *)
 module Doc:sig
   val longident: Longident.t Format_doc.printer
@@ -75,4 +75,4 @@ module Doc:sig
       of a sentence in a error message. *)
   val nominal_exp : Parsetree.expression -> Format_doc.t option
 end
->>>>>>>
+

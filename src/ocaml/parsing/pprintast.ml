@@ -1818,14 +1818,13 @@ let payload = payload reset_ctxt
 let case_list = case_list reset_ctxt
 
 module Style = Misc.Style
+
 (* merlin: moved from parse.ml *)
 let prepare_error err =
-  let source = Location.Parser in
   let open Syntaxerr in
   match err with
   | Unclosed(opening_loc, opening, closing_loc, closing) ->
       Location.errorf
-        ~source
         ~loc:closing_loc
         ~sub:[
           Location.msg ~loc:opening_loc
@@ -1834,47 +1833,47 @@ let prepare_error err =
         "Syntax error: %a expected" Style.inline_code closing
 
   | Expecting (loc, nonterm) ->
-      Location.errorf ~source ~loc "Syntax error: %a expected."
+      Location.errorf ~loc "Syntax error: %a expected."
         Style.inline_code nonterm
   | Not_expecting (loc, nonterm) ->
-      Location.errorf ~source ~loc "Syntax error: %a not expected."
+      Location.errorf ~loc "Syntax error: %a not expected."
         Style.inline_code nonterm
   | Applicative_path loc ->
-      Location.errorf ~source ~loc
+      Location.errorf ~loc
         "Syntax error: applicative paths of the form %a \
          are not supported when the option %a is set."
         Style.inline_code "F(X).t"
         Style.inline_code "-no-app-func"
   | Variable_in_scope (loc, var) ->
-      Location.errorf ~source ~loc
+      Location.errorf ~loc
         "In this scoped type, variable %a \
          is reserved for the local type %a."
-        (Style.as_inline_code tyvar) var
+        (Style.as_inline_code Doc.tyvar) var
         Style.inline_code var
   | Other loc ->
-      Location.errorf ~source ~loc "Syntax error"
+      Location.errorf ~loc "Syntax error"
   | Ill_formed_ast (loc, s) ->
-      Location.errorf ~source ~loc
+      Location.errorf ~loc
         "broken invariant in parsetree: %s" s
   | Invalid_package_type (loc, ipt) ->
       let invalid ppf ipt = match ipt with
         | Syntaxerr.Parameterized_types ->
-            Format.fprintf ppf "parametrized types are not supported"
+            Format_doc.fprintf ppf "parametrized types are not supported"
         | Constrained_types ->
-            Format.fprintf ppf "constrained types are not supported"
+            Format_doc.fprintf ppf "constrained types are not supported"
         | Private_types ->
-            Format.fprintf ppf  "private types are not supported"
+            Format_doc.fprintf ppf  "private types are not supported"
         | Not_with_type ->
-            Format.fprintf ppf "only %a constraints are supported"
+            Format_doc.fprintf ppf "only %a constraints are supported"
               Style.inline_code "with type t ="
         | Neither_identifier_nor_with_type ->
-            Format.fprintf ppf
+            Format_doc.fprintf ppf
               "only module type identifier and %a constraints are supported"
               Style.inline_code "with type"
       in
-      Location.errorf ~source ~loc "invalid package type: %a" invalid ipt
+      Location.errorf ~loc "Syntax error: invalid package type: %a" invalid ipt
   | Removed_string_set loc ->
-      Location.errorf ~source ~loc
+      Location.errorf ~loc
         "Syntax error: strings are immutable, there is no assignment \
          syntax for them.\n\
          @{<hint>Hint@}: Mutable sequences of bytes are available in \

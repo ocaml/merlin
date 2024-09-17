@@ -1,0 +1,16 @@
+--- ocaml_502/parsing/lexer.mli	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/lexer.mli	2024-09-17 01:16:30.152541842 +0200
+@@ -33,8 +33,13 @@
+   | Unterminated_string_in_comment of Location.t * Location.t
+   | Empty_character_literal
+   | Keyword_as_label of string
++  | Capitalized_label of string
+   | Invalid_literal of string
+   | Invalid_directive of string * string option
++  | Invalid_encoding of string
++  | Invalid_char_in_ident of Uchar.t
++  | Non_lowercase_delimiter of string
++  | Capitalized_raw_identifier of string
+ 
+ exception Error of error * Location.t
+ 

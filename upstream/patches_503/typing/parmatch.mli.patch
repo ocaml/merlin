@@ -1,0 +1,17 @@
+--- ocaml_502/typing/parmatch.mli	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/parmatch.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -75,13 +75,11 @@
+ 
+ val get_mins : ('a -> 'a -> bool) -> 'a list -> 'a list
+ 
+-(** Those two functions recombine one pattern and its arguments:
++(** This function recombines one pattern and its arguments:
+     For instance:
+       (_,_)::p1::p2::rem -> (p1, p2)::rem
+-    The second one will replace mutable arguments by '_'
+ *)
+ val set_args : pattern -> pattern list -> pattern list
+-val set_args_erase_mutable : pattern -> pattern list -> pattern list
+ 
+ val pat_of_constr : pattern -> constructor_description -> pattern
+ val complete_constrs :

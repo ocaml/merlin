@@ -1412,12 +1412,7 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
   ((path, lid, tcstr) :: rev_tcstrs, sg)
 
 
-
-<<<<<<<
 and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
-=======
-and transl_signature env sg =
->>>>>>>
   let names = Signature_names.create () in
   let rec transl_sig env sg =
     match sg with

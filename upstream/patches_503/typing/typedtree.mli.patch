@@ -1,0 +1,45 @@
+--- ocaml_502/typing/typedtree.mli	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/typing/typedtree.mli	2024-09-17 01:15:58.295900254 +0200
+@@ -211,17 +211,22 @@
+                          (Labelled "y", Some (Texp_constant Const_int 3))
+                         ])
+          *)
+-  | Texp_match of expression * computation case list * partial
++  | Texp_match of expression * computation case list * value case list * partial
+         (** match E0 with
+             | P1 -> E1
+             | P2 | exception P3 -> E2
+             | exception P4 -> E3
++            | effect P4 k -> E4
+ 
+             [Texp_match (E0, [(P1, E1); (P2 | exception P3, E2);
+-                              (exception P4, E3)], _)]
++                              (exception P4, E3)], [(P4, E4)],  _)]
+          *)
+-  | Texp_try of expression * value case list
+-        (** try E with P1 -> E1 | ... | PN -> EN *)
++  | Texp_try of expression * value case list * value case list
++         (** try E with
++            | P1 -> E1
++            | effect P2 k -> E2
++            [Texp_try (E, [(P1, E1)], [(P2, E2)])]
++          *)
+   | Texp_tuple of expression list
+         (** (E1, ..., EN) *)
+   | Texp_construct of
+@@ -290,6 +295,7 @@
+ and 'k case =
+     {
+      c_lhs: 'k general_pattern;
++     c_cont: Ident.t option;
+      c_guard: expression option;
+      c_rhs: expression;
+     }
+@@ -913,7 +919,3 @@
+ (** Splits an or pattern into its value (left) and exception (right) parts. *)
+ val split_pattern:
+   computation general_pattern -> pattern option * pattern option
+-
+-(** Whether an expression looks nice as the subject of a sentence in a error
+-    message. *)
+-val exp_is_nominal : expression -> bool

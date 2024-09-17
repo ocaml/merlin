@@ -1,0 +1,8 @@
+--- ocaml_502/utils/ccomp.mli	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/utils/ccomp.mli	2024-09-17 01:19:03.395759607 +0200
+@@ -36,5 +36,3 @@
+   | Partial
+ 
+ val call_linker: link_mode -> string -> string list -> string -> int
+-
+-val linker_is_flexlink : bool

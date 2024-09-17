@@ -218,7 +218,8 @@ let deep_copy () =
     try TypeHash.find table ty
     with Not_found ->
       let ty' =
-        let {Types. level; id; desc; scope} = Transient_expr.repr ty in
+        let ({Types. level; id; desc; _} as texp) = Transient_expr.repr ty in
+        let scope = Transient_expr.get_scope texp in
         create_expr ~level ~id ~scope desc
       in
       TypeHash.add table ty ty';
@@ -1897,11 +1898,6 @@ and type_pat_aux
       let p = {p with ppat_loc=loc} in
       type_pat tps category p expected_ty
         (* TODO: record 'extra' to remember about interval *)
-<<<<<<<
-  | Ppat_interval _ ->
-      raise (error (loc, !!penv, Invalid_interval))
-=======
->>>>>>>
   | Ppat_tuple spl ->
       assert (List.length spl >= 2);
       let expected_tys =
@@ -3302,18 +3298,14 @@ let name_cases default lst =
 
 (* Typing of expressions *)
 
-(** [sexp_for_hint] is used by error messages to report literals in their
+(** [sdesc_for_hint] is used by error messages to report literals in their
     original formatting *)
-let unify_exp ~sexp env exp expected_ty =
+let unify_exp ?sdesc_for_hint env exp expected_ty =
   let loc = proper_exp_loc exp in
   try
     unify_exp_types loc env exp.exp_type expected_ty
   with Error(loc, env, Expr_type_clash(err, tfc, None)) ->
-<<<<<<<
     raise (error(loc, env, Expr_type_clash(err, tfc, sdesc_for_hint)))
-=======
-    raise (Error(loc, env, Expr_type_clash(err, tfc, Some sexp)))
->>>>>>>
 
 (* If [is_inferred e] is true, [e] will be typechecked without using
    the "expected type" provided by the context. *)
@@ -3473,18 +3465,18 @@ and type_expect ?recarg env sexp ty_expected_explained =
 
 and type_expect_
     ?(recarg=Rejected)
-    env sexp ty_expected_explained =
+    env sdesc_for_hint ty_expected_explained =
   let { ty = ty_expected; explanation } = ty_expected_explained in
-  let loc = sexp.pexp_loc in
+  let loc = sdesc_for_hint.pexp_loc in
   (* Record the expression type before unifying it with the expected type *)
   let with_explanation = with_explanation explanation in
   (* Unify the result with [ty_expected], enforcing the current level *)
   let rue exp =
     with_explanation (fun () ->
-      unify_exp ~sexp env (re exp) (instance ty_expected));
+      unify_exp ~sdesc_for_hint env (re exp) (instance ty_expected));
     exp
   in
-  match sexp.pexp_desc with
+  match sdesc_for_hint.pexp_desc with
   | Pexp_ident lid ->
       let path, desc = type_ident env ~recarg lid in
       let exp_desc =
@@ -3509,7 +3501,7 @@ and type_expect_
       rue {
         exp_desc; exp_loc = loc; exp_extra = [];
         exp_type = instance desc.val_type;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   | Pexp_constant({pconst_desc = Pconst_string (str, _, _); _} as cst) -> (
     let cst = constant_or_raise env loc cst in
@@ -3529,14 +3521,14 @@ and type_expect_
     in
     if is_format then
       let format_parsetree =
-        { (type_format loc str env) with pexp_loc = sexp.pexp_loc }  in
+        { (type_format loc str env) with pexp_loc = sdesc_for_hint.pexp_loc }  in
       type_expect env format_parsetree ty_expected_explained
     else
       rue {
         exp_desc = Texp_constant cst;
         exp_loc = loc; exp_extra = [];
         exp_type = instance Predef.type_string;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   )
   | Pexp_constant cst ->
@@ -3545,7 +3537,7 @@ and type_expect_
         exp_desc = Texp_constant cst;
         exp_loc = loc; exp_extra = [];
         exp_type = type_constant cst;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   | Pexp_let(Nonrecursive,
              [{pvb_pat=spat; pvb_attributes=[]; _ } as vb], sbody)
@@ -3553,7 +3545,7 @@ and type_expect_
       (* TODO: allow non-empty attributes? *)
       let sval = vb_exp_constraint vb in
       type_expect env
-        {sexp with
+        {sdesc_for_hint with
          pexp_desc = Pexp_match (sval, [Ast_helper.Exp.case spat sbody])}
         ty_expected_explained
   | Pexp_let(rec_flag, spat_sexp_list, sbody) ->
@@ -3617,13 +3609,13 @@ and type_expect_
         end
         ~before_generalize:(fun (_pat_exp_list, body, new_env) ->
           (* The "body" component of the scope escape check. *)
-          unify_exp ~sexp new_env body (newvar ()))
+          unify_exp ~sdesc_for_hint new_env body (newvar ()))
       in
       re {
         exp_desc = Texp_let(rec_flag, pat_exp_list, body);
         exp_loc = loc; exp_extra = [];
         exp_type = body.exp_type;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   | Pexp_function (params, body_constraint, body) ->
       let in_function = ty_expected_explained, loc in
@@ -3676,7 +3668,7 @@ and type_expect_
           exp_extra = List.map (fun (id, txt_loc, uid) ->
             Texp_newtype' (id, txt_loc, uid), txt_loc.loc, []) newtypes;
           exp_type;
-          exp_attributes = sexp.pexp_attributes;
+          exp_attributes = sdesc_for_hint.pexp_attributes;
           exp_env = env;
         }
   | Pexp_apply(sfunct, sargs) ->
@@ -3725,7 +3717,7 @@ and type_expect_
         exp_desc = Texp_apply(funct, args);
         exp_loc = loc; exp_extra = [];
         exp_type = ty_res;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
       end
   | Pexp_match(sarg, caselist) ->
@@ -3765,7 +3757,7 @@ and type_expect_
         exp_desc = Texp_match(arg, val_cases, eff_cases, partial);
         exp_loc = loc; exp_extra = [];
         exp_type = instance ty_expected;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   | Pexp_try(sbody, caselist) ->
       let body = type_expect env sbody ty_expected_explained in
@@ -3795,7 +3787,7 @@ and type_expect_
         exp_desc = Texp_try(body, exn_cases, eff_cases);
         exp_loc = loc; exp_extra = [];
         exp_type = body.exp_type;
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   | Pexp_tuple sexpl ->
       assert (List.length sexpl >= 2);
@@ -3812,10 +3804,10 @@ and type_expect_
         exp_loc = loc; exp_extra = [];
         (* Keep sharing *)
         exp_type = newty (Ttuple (List.map (fun e -> e.exp_type) expl));
-        exp_attributes = sexp.pexp_attributes;
+        exp_attributes = sdesc_for_hint.pexp_attributes;
         exp_env = env }
   | Pexp_construct(lid, sarg) ->
-      type_construct env ~sexp lid sarg ty_expected_explained
+      type_construct env ~sexp:sdesc_for_hint lid sarg ty_expected_explained
   | Pexp_variant(l, sarg) ->
       (* Keep sharing *)
       let ty_expected1 = protect_expansion env ty_expected in
@@ -4162,31 +4154,25 @@ and type_expect_
       let (obj,meth,typ) =
         with_local_level_generalize_structure_if_principal
           (fun () -> type_send env loc explanation e met)
-<<<<<<<
           ~post:(fun (_,_,typ) -> generalize_structure typ)
-=======
       in
       let typ =
         match get_desc typ with
->>>>>>>
-        in
-        let typ =
-          match get_desc typ with
-          | Tpoly (ty, []) ->
-              instance ty
-          | Tpoly (ty, tl) ->
-              if !Clflags.principal && get_level typ <> generic_level then
-                Location.prerr_warning loc
-                  (Warnings.Not_principal "this use of a polymorphic method");
-              snd (instance_poly ~fixed:false tl ty)
-          | Tvar _ ->
-              let ty' = newvar () in
-              unify env (instance typ) (newty(Tpoly(ty',[])));
-              (* if not !Clflags.nolabels then
-                Location.prerr_warning loc (Warnings.Unknown_method met); *)
-              ty'
-          | _ ->
-              assert false
+        | Tpoly (ty, []) ->
+            instance ty
+        | Tpoly (ty, tl) ->
+            if !Clflags.principal && get_level typ <> generic_level then
+              Location.prerr_warning loc
+                (Warnings.Not_principal "this use of a polymorphic method");
+            snd (instance_poly ~fixed:false tl ty)
+        | Tvar _ ->
+            let ty' = newvar () in
+            unify env (instance typ) (newty(Tpoly(ty',[])));
+            (* if not !Clflags.nolabels then
+              Location.prerr_warning loc (Warnings.Unknown_method met); *)
+            ty'
+        | _ ->
+            assert false
         in
         rue {
           exp_desc = Texp_send(obj, meth);
@@ -4439,35 +4425,8 @@ and type_expect_
                 generalize_and_check_univars env "method" exp ty_expected vars
               end
             in
-<<<<<<<
-            { exp with exp_type = instance ty }
-=======
-        | Tpoly (ty, tl) ->
-            if !Clflags.principal && get_level typ <> generic_level then
-              Location.prerr_warning loc
-                (not_principal "this use of a polymorphic method");
-            snd (instance_poly ~fixed:false tl ty)
->>>>>>>
-        | Tvar _ ->
-<<<<<<<
-=======
-            { exp with exp_type = instance ty }
-        | Tpoly (ty', tl) ->
-            (* One more level to generalize locally *)
-            let (exp, vars) =
-              with_local_level_generalize begin fun () ->
-                let vars, ty'' =
-                  with_local_level_generalize_structure_if_principal
-                    (fun () -> instance_poly ~fixed:true tl ty')
-                in
-                let exp = type_expect env sbody (mk_expected ty'') in
-                (exp, vars)
-              end
-            in
-            check_univars env "method" exp ty_expected vars;
             { exp with exp_type = instance ty }
         | Tvar _ ->
->>>>>>>
             let exp = type_exp env sbody in
             let exp = {exp with exp_type = newty (Tpoly (exp.exp_type, []))} in
             unify_exp ~sexp env exp ty;
@@ -4476,13 +4435,8 @@ and type_expect_
       in
       re { exp with exp_extra =
              (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
-<<<<<<<
   | Pexp_newtype({txt=name} as label_loc, sbody) ->
       let body, ety, id, uid = type_newtype loc env name (fun env ->
-=======
-  | Pexp_newtype(name, sbody) ->
-      let body, ety = type_newtype env name (fun env ->
->>>>>>>
         let expr = type_exp env sbody in
         expr, expr.exp_type)
       in
@@ -4490,12 +4444,7 @@ and type_expect_
          any new extra node in the typed AST. *)
       rue { body with exp_loc = loc; exp_type = ety;
             exp_extra =
-<<<<<<<
             (Texp_newtype' (id, label_loc, uid), loc, sexp.pexp_attributes) :: body.exp_extra }
-=======
-            (Texp_newtype name.txt, loc, sexp.pexp_attributes) :: body.exp_extra
-          }
->>>>>>>
   | Pexp_pack m ->
       let (p, fl) =
         match get_desc (Ctype.expand_head env (instance ty_expected)) with
@@ -4791,13 +4740,8 @@ and type_constraint_expect
     nodes for the newtype properly linked.
 *)
 and type_newtype
-<<<<<<<
   : type a. _ -> _ -> _ -> (Env.t -> a * type_expr) -> a * type_expr * Ident.t * Uid.t =
   fun loc env name type_body ->
-=======
-  : type a. _ -> _ -> (Env.t -> a * type_expr) -> a * type_expr =
-  fun env { txt = name; loc = name_loc } type_body ->
->>>>>>>
   let ty =
     if Typetexp.valid_tyvar_name name then
       newvar ~name ()
@@ -4949,13 +4893,8 @@ and type_function
   match params_suffix with
   | { pparam_desc = Pparam_newtype newtype; pparam_loc = _ } :: rest ->
       (* Check everything else in the scope of (type a). *)
-<<<<<<<
       let (params, body, newtypes, contains_gadt), exp_type, nt_id, nt_uid =
         type_newtype loc env newtype.txt (fun env ->
-=======
-      let (params, body, newtypes, contains_gadt), exp_type =
-        type_newtype env newtype (fun env ->
->>>>>>>
           let exp_type, params, body, newtypes, contains_gadt =
             (* mimic the typing of Pexp_newtype by minting a new type var,
               like [type_exp].
@@ -5460,15 +5399,10 @@ and type_label_exp create env loc ty_expected
         if create then
           raise (error(loc, env, Private_type ty_expected))
         else
-<<<<<<<
           raise (error(lid.loc, env, Private_label(lid.txt, ty_expected)));
       let snap = if vars = [] then None else Some (Btype.snapshot ()) in
       let arg = type_argument env sarg ty_arg (instance ty_arg) in
       (vars, ty_arg, snap, arg)
-=======
-          raise (Error(lid.loc, env, Private_label(lid.txt, ty_expected)));
-      (vars, type_argument env sarg ty_arg (instance ty_arg))
->>>>>>>
     end
     ~before_generalize:(fun (_,arg) -> may_lower_contravariant env arg)
   in
@@ -5803,7 +5737,7 @@ and type_application env funct sargs =
       let ty = funct.exp_type in
       type_args [] ty (instance ty) sargs
 
-and type_construct env ~sexp lid sarg ty_expected_explained =
+and type_construct env loc lid sarg ty_expected_explained attrs =
   let { ty = ty_expected; explanation } = ty_expected_explained in
   let expected_type =
     match extract_concrete_variant env ty_expected with
@@ -5813,13 +5747,8 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
     | Not_a_variant_type ->
         let srt = wrong_kind_sort_of_constructor lid.txt in
         let ctx = Expression explanation in
-<<<<<<<
         let err = Wrong_expected_kind(srt, ctx, ty_expected) in
         raise (error (loc, env, err))
-=======
-        let error = Wrong_expected_kind(srt, ctx, ty_expected) in
-        raise (Error (sexp.pexp_loc, env, error))
->>>>>>>
   in
   let constrs =
     Env.lookup_all_constructors ~loc:lid.loc Env.Positive lid.txt env
@@ -5833,41 +5762,37 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
     match sarg with
       None -> []
     | Some {pexp_desc = Pexp_tuple sel} when
-        constr.cstr_arity > 1
-        || Builtin_attributes.explicit_arity sexp.pexp_attributes
+        constr.cstr_arity > 1 || Builtin_attributes.explicit_arity attrs
       -> sel
     | Some se -> [se] in
   if List.length sargs <> constr.cstr_arity then
-<<<<<<<
     raise(error(loc, env, Constructor_arity_mismatch
                             (lid.txt, constr.cstr_arity, List.length sargs)));
-=======
-    raise(Error(sexp.pexp_loc, env,
-                Constructor_arity_mismatch
-                  (lid.txt, constr.cstr_arity, List.length sargs)));
->>>>>>>
   let separate = !Clflags.principal || Env.has_local_constraints env in
   let ty_args, ty_res, texp =
-    with_local_level_generalize_structure_if separate begin fun () ->
+    with_local_level_iter_if separate ~post:generalize_structure begin fun () ->
       let ty_args, ty_res, texp =
-        with_local_level_generalize_structure_if separate begin fun () ->
+        with_local_level_if separate begin fun () ->
           let (ty_args, ty_res, _) =
             instance_constructor Keep_existentials_flexible constr
           in
           let texp =
             re {
             exp_desc = Texp_construct(lid, constr, []);
-            exp_loc = sexp.pexp_loc; exp_extra = [];
+            exp_loc = loc; exp_extra = [];
             exp_type = ty_res;
-            exp_attributes = sexp.pexp_attributes;
+            exp_attributes = attrs;
             exp_env = env } in
           (ty_args, ty_res, texp)
         end
+        ~post: begin fun (_, ty_res, texp) ->
+          generalize_structure ty_res;
+          with_explanation explanation (fun () ->
+            unify_exp env {texp with exp_type = instance ty_res}
+              (instance ty_expected));
+        end
       in
-      with_explanation explanation (fun () ->
-        unify_exp ~sexp env {texp with exp_type = instance ty_res}
-          (instance ty_expected));
-      (ty_args, ty_res, texp)
+      ((ty_args, ty_res, texp), ty_res::ty_args)
     end
   in
   let ty_args0, ty_res =
@@ -5876,7 +5801,7 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
     | _ -> assert false
   in
   let texp = {texp with exp_type = ty_res} in
-  if not separate then unify_exp ~sexp env texp (instance ty_expected);
+  if not separate then unify_exp env texp (instance ty_expected);
   let recarg =
     match constr.cstr_inlined with
     | None -> Rejected
@@ -5889,11 +5814,7 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
             Pexp_record (_, (Some {pexp_desc = Pexp_ident _}| None))}] ->
         Required
       | _ ->
-<<<<<<<
         raise (error(loc, env, Inlined_record_expected))
-=======
-        raise (Error(sexp.pexp_loc, env, Inlined_record_expected))
->>>>>>>
       end
   in
   let args =
@@ -5902,17 +5823,9 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
   if constr.cstr_private = Private then
     begin match constr.cstr_tag with
     | Cstr_extension _ ->
-<<<<<<<
         raise_error (error(loc, env, Private_constructor (constr, ty_res)))
-=======
-        raise(Error(sexp.pexp_loc, env, Private_constructor (constr, ty_res)))
->>>>>>>
     | Cstr_constant _ | Cstr_block _ | Cstr_unboxed ->
-<<<<<<<
         raise_error (error(loc, env, Private_type ty_res));
-=======
-        raise (Error(sexp.pexp_loc, env, Private_type ty_res));
->>>>>>>
     end;
   (* NOTE: shouldn't we call "re" on this final expression? -- AF *)
   { texp with
@@ -5937,7 +5850,6 @@ and type_statement ?explanation env sexp =
     | _ -> false
   in
   (* Raise the current level to detect non-returning functions *)
-<<<<<<<
   let exp = with_local_level (fun () -> type_exp env sexp) in
   let subexp = final_subexpression exp in
   let ty = expand_head env exp.exp_type in
@@ -5956,26 +5868,6 @@ and type_statement ?explanation env sexp =
     if not !has_errors then check_partial_application ~statement:true exp;
     enforce_current_level env ty;
     exp
-=======
-  with_local_level_generalize (fun () -> type_exp env sexp)
-  ~before_generalize: begin fun exp ->
-    let subexp = final_subexpression exp in
-    let ty = expand_head env exp.exp_type in
-    if is_Tvar ty
-    && get_level ty > get_current_level ()
-    && not (allow_polymorphic subexp) then
-      Location.prerr_warning
-        subexp.exp_loc
-        Warnings.Nonreturning_statement;
-    if !Clflags.strict_sequence then
-      let expected_ty = instance Predef.type_unit in
-      with_explanation explanation (fun () ->
-        unify_exp ~sexp env exp expected_ty)
-    else begin
-      check_partial_application ~statement:true exp;
-      enforce_current_level env ty
-    end
->>>>>>>
   end
 
 (* Most of the arguments are the same as [type_cases].
