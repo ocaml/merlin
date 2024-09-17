@@ -56,5 +56,5 @@ EMACS_PACKAGE_LINT_IGNORE=1
          --eval "$INIT_PACKAGE_EL" \
          -L . \
          --eval "(progn\
-         (load-file \"merlin-cap-test.el\")\
+         (load-file \"tests/merlin-cap-test.el\")\
          (ert-run-tests-batch-and-exit))"
