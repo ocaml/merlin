@@ -13,7 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-open Format
+open Format_doc
 open Outcometree
 
 exception Ellipsis
@@ -37,28 +37,9 @@ let rec print_ident ppf =
 
 let out_ident = ref print_ident
 
-(* Check a character matches the [identchar_latin1] class from the lexer *)
-let is_ident_char c =
-  match c with
-  | 'A'..'Z' | 'a'..'z' | '_' | '\192'..'\214' | '\216'..'\246'
-  | '\248'..'\255' | '\'' | '0'..'9' -> true
-  | _ -> false
-
-let all_ident_chars s =
-  let rec loop s len i =
-    if i < len then begin
-      if is_ident_char s.[i] then loop s len (i+1)
-      else false
-    end else begin
-      true
-    end
-  in
-  let len = String.length s in
-  loop s len 0
-
 let parenthesized_ident name =
   (List.mem name ["or"; "mod"; "land"; "lor"; "lxor"; "lsl"; "lsr"; "asr"])
-  || not (all_ident_chars name)
+  || not (Misc.Utf8_lexeme.is_valid_identifier name)
 
 let value_ident ppf name =
   if parenthesized_ident name then
@@ -249,7 +230,7 @@ let print_out_value ppf tree =
   in
   cautious print_tree_1 ppf tree
 
-let out_value = ref print_out_value
+let out_value = ref (compat print_out_value)
 
 (* Types *)
 
@@ -267,7 +248,7 @@ let rec print_list pr sep ppf =
 let pr_present =
   print_list (fun ppf s -> fprintf ppf "`%s" s) (fun ppf -> fprintf ppf "@ ")
 
-let pr_var = Pprintast.tyvar
+let pr_var = Pprintast.Doc.tyvar
 let ty_var ~non_gen ppf s =
   pr_var ppf (if non_gen then "_" ^ s else s)
 
@@ -404,10 +385,13 @@ and print_typargs ppf =
       pp_print_char ppf ')';
       pp_close_box ppf ();
       pp_print_space ppf ()
-and print_out_label ppf (name, mut, arg) =
-  fprintf ppf "@[<2>%s%a :@ %a@];" (if mut then "mutable " else "")
-    print_lident name
-    print_out_type arg
+and print_out_label ppf {olab_name; olab_mut; olab_type} =
+  fprintf ppf "@[<2>%s%a :@ %a@];"
+    (match olab_mut with
+     | Mutable -> "mutable "
+     | Immutable -> "")
+    print_lident olab_name
+    print_out_type olab_type
 
 let out_label = ref print_out_label
 
@@ -555,7 +539,7 @@ and print_out_functor_parameters ppf l =
           print_args l
     | _ :: _ as non_anonymous_functor ->
         let args, anons = split_anon_functor_arguments non_anonymous_functor in
-        fprintf ppf "@[<2>functor@ %a@]@ ->@ %a"
+        fprintf ppf "@[%a@]@ ->@ %a"
           (pp_print_list ~pp_sep:pp_print_space print_nonanon_arg) args
           print_args anons
   in
@@ -814,6 +798,8 @@ let _ = out_functor_parameters := print_out_functor_parameters
 
 (* Phrases *)
 
+open Format
+
 let print_out_exception ppf exn outv =
   match exn with
     Sys.Break -> fprintf ppf "Interrupted.@."
@@ -848,23 +834,26 @@ let rec print_items ppf =
           otyext_constructors = exts;
           otyext_private = ext.oext_private }
       in
-        fprintf ppf "@[%a@]" !out_type_extension te;
+        fprintf ppf "@[%a@]" (Format_doc.compat !out_type_extension) te;
         if items <> [] then fprintf ppf "@ %a" print_items items
   | (tree, valopt) :: items ->
       begin match valopt with
         Some v ->
-          fprintf ppf "@[<2>%a =@ %a@]" !out_sig_item tree
+          fprintf ppf "@[<2>%a =@ %a@]" (Format_doc.compat !out_sig_item) tree
             !out_value v
-      | None -> fprintf ppf "@[%a@]" !out_sig_item tree
+      | None -> fprintf ppf "@[%a@]" (Format_doc.compat !out_sig_item) tree
       end;
       if items <> [] then fprintf ppf "@ %a" print_items items
 
 let print_out_phrase ppf =
   function
     Ophr_eval (outv, ty) ->
-      fprintf ppf "@[- : %a@ =@ %a@]@." !out_type ty !out_value outv
+      fprintf ppf "@[- : %a@ =@ %a@]@." (compat !out_type) ty !out_value outv
   | Ophr_signature [] -> ()
   | Ophr_signature items -> fprintf ppf "@[<v>%a@]@." print_items items
   | Ophr_exception (exn, outv) -> print_out_exception ppf exn outv
 
 let out_phrase = ref print_out_phrase
+
+type 'a printer = 'a Format_doc.printer ref
+type 'a toplevel_printer = (Format.formatter -> 'a -> unit) ref

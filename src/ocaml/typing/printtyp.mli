@@ -2,9 +2,9 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*  Florian Angeletti, projet Cambium, INRIA Paris                        *)
 (*                                                                        *)
-(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*   Copyright 2024 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
@@ -13,37 +13,39 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Printing functions *)
+(** Printing functions *)
 
-open Format
+
 open Types
-open Outcometree
 
-val longident: formatter -> Longident.t -> unit
-val ident: formatter -> Ident.t -> unit
-val namespaced_ident: Shape.Sig_component_kind.t -> Ident.t -> string
-val tree_of_path: Path.t -> out_ident
-val path: formatter -> Path.t -> unit
+type namespace := Shape.Sig_component_kind.t
+
+val namespaced_ident: namespace -> Ident.t -> string
 val string_of_path: Path.t -> string
-
-val type_path: formatter -> Path.t -> unit
-(** Print a type path taking account of [-short-paths].
-    Calls should be within [wrap_printing_env]. *)
-
-module Out_name: sig
-  val create: string -> out_name
-  val print: out_name -> string
-end
-
-type namespace := Shape.Sig_component_kind.t option
-
 val strings_of_paths: namespace -> Path.t list -> string list
-    (** Print a list of paths, using the same naming context to
-        avoid name collisions *)
+(** Print a list of paths, using the same naming context to
+    avoid name collisions *)
 
-val raw_type_expr: formatter -> type_expr -> unit
-val string_of_label: Asttypes.arg_label -> string
+(** [printed_signature sourcefile ppf sg] print the signature [sg] of
+        [sourcefile] with potential warnings for name collisions *)
+val printed_signature: string -> Format.formatter -> signature -> unit
 
+module type Printers := sig
+
+    val wrap_printing_env: error:bool -> Env.t -> (unit -> 'a) -> 'a
+    (** Call the function using the environment for type path shortening This
+        affects all the printing functions below Also, if [~error:true], then
+        disable the loading of cmis *)
+
+    type 'a printer
+    val longident: Longident.t printer
+    val ident: Ident.t printer
+    val path: Path.t printer
+    val type_path: Path.t printer
+    (** Print a type path taking account of [-short-paths].
+        Calls should be within [wrap_printing_env]. *)
+
+<<<<<<<
 val wrap_printing_env: ?error:bool -> Env.t -> (unit -> 'a) -> 'a
     (* Call the function using the environment for type path shortening *)
     (* This affects all the printing functions below *)
@@ -248,7 +250,61 @@ val print_items: (Env.t -> signature_item -> 'a option) ->
 (* Simple heuristic to rewrite Foo__bar.* as Foo.Bar.* when Foo.Bar is an alias
    for Foo__bar. This pattern is used by the stdlib. *)
 val rewrite_double_underscore_paths: Env.t -> Path.t -> Path.t
+=======
+>>>>>>>
 
-(** [printed_signature sourcefile ppf sg] print the signature [sg] of
-    [sourcefile] with potential warnings for name collisions *)
-val printed_signature: string -> formatter -> signature -> unit
+    (** Print out a type. This will pick names for type variables, and will not
+        reuse names for common type variables shared across multiple type
+        expressions. (It will also reset the printing state, which matters for
+        other type formatters such as [prepared_type_expr].) If you want
+        multiple types to use common names for type variables, see
+        {!Out_type.prepare_for_printing} and {!Out_type.prepared_type_expr}. *)
+    val type_expr: type_expr printer
+
+    val type_scheme: type_expr printer
+
+    val shared_type_scheme: type_expr printer
+    (** [shared_type_scheme] is very similar to [type_scheme], but does not
+        reset the printing context first. This is intended to be used in cases
+        where the printing should have a particularly wide context, such as
+        documentation generators; most use cases, such as error messages, have
+        narrower contexts for which [type_scheme] is better suited. *)
+
+    val type_expansion:
+      Out_type.type_or_scheme -> Errortrace.expanded_type printer
+
+    val label : label_declaration printer
+
+    val constructor : constructor_declaration printer
+    val constructor_arguments: constructor_arguments printer
+
+    val extension_constructor:
+      Ident.t -> extension_constructor printer
+    (** Prints extension constructor with the type signature:
+         type ('a, 'b) bar += A of float
+    *)
+
+    val extension_only_constructor:
+      Ident.t -> extension_constructor printer
+    (** Prints only extension constructor without type signature:
+         A of float
+    *)
+
+
+    val value_description: Ident.t -> value_description printer
+    val type_declaration: Ident.t -> type_declaration printer
+    val modtype_declaration: Ident.t -> modtype_declaration printer
+    val class_declaration: Ident.t -> class_declaration printer
+    val cltype_declaration: Ident.t -> class_type_declaration printer
+
+
+    val modtype: module_type printer
+    val signature: signature printer
+    val class_type: class_type printer
+
+  end
+
+module Doc : Printers with type 'a printer := 'a Format_doc.printer
+
+(** For compatibility with Format printers *)
+include Printers with type 'a printer := 'a Format_doc.format_printer
