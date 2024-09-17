@@ -7,6 +7,7 @@
 ;; Created: 15 May 2015
 ;; Version: 0.1
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1") (compat "29.1.4.5"))
 ;; URL: http://github.com/ocaml/merlin
 
 ;;; Commentary:
@@ -15,6 +16,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'merlin)
 (require 'subr-x)
 
