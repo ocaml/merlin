@@ -78,6 +78,7 @@ let run ?(limit = 100) config local_defs comments pos env query trie =
     Env.fold_values (fun _ path desc acc ->
         let open Merlin_sherlodoc in
         let typ = type_of desc.Types.val_type in
+        let path = Printtyp.rewrite_double_underscore_paths env path in
         let path = Format.asprintf "%a" Printtyp.path path in
         let cost = Query_parser.distance_for query ~path typ in
         if cost >= 1000 then acc

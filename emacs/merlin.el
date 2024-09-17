@@ -1156,10 +1156,10 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 	  (inhibit-read-only t))
       (with-current-buffer search-by-type-buffer
 	(switch-to-buffer-other-window search-by-type-buffer)
-	(erase-buffer)
 	(dolist (elt result)
 	  (merlin--search-result-to-entry elt))
 	(goto-char 1)
+	(read-only-mode)
 	(switch-to-buffer-other-window previous-buffer)))))
 
 

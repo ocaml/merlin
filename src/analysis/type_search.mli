@@ -33,7 +33,7 @@
 (** A Lazy trie of the potentials values. *)
 type t
 
-(** Initiailzie the trie with a given list of directories. *)
+(** Initialize the trie with a given list of directories. *)
 val make_trie : Env.t -> string list -> t
 
 (** Compute the list of candidates from a query inside a given environment. *)
