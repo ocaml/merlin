@@ -3,7 +3,7 @@
 # Adapted from https://github.com/purcell/package-lint/blob/master/run-tests.sh
 EMACS="${EMACS:=emacs}"
 
-NEEDED_PACKAGES="package-lint company iedit auto-complete"
+NEEDED_PACKAGES="package-lint company iedit auto-complete compat"
 
 ELS_TO_CHECK=*.el
 # To reduce the amount of false positives we only package-lint files
