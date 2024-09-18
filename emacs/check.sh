@@ -8,7 +8,7 @@ NEEDED_PACKAGES="package-lint company iedit auto-complete compat"
 ELS_TO_CHECK=*.el
 # To reduce the amount of false positives we only package-lint files
 # that are actual installable packages.
-PKGS_TO_CHECK="merlin.el merlin-ac.el merlin-company.el merlin-iedit.el merlin-cap.el"
+PKGS_TO_CHECK="merlin.el merlin-ac.el merlin-company.el merlin-iedit.el merlin-cap.el tests/merlin-cap-test.el"
 
 INIT_PACKAGE_EL="(progn \
   (require 'package) \

@@ -1,4 +1,4 @@
-;;; merlin-cap.el --- Merlin and completion-at-point integration   -*- coding: utf-8; lexical-binding: t -*-
+;;; merlin-cap-test.el --- Merlin and completion-at-point integration   -*- coding: utf-8; lexical-binding: t -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
@@ -8,6 +8,7 @@
 ;; Created: 13 Sep 2024
 ;; Version: 0.1
 ;; Keywords: ocaml languages
+;; Package-Requires: ((emacs "25.1"))
 ;; URL: http://github.com/ocaml/merlin
 
 ;;; Commentary:
