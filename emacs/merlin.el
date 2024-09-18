@@ -1099,6 +1099,18 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
           (point))))
 
 ;;;;;;;;;;;;;;;;;;;;;
+;; COMMON SEARCH   ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--render-search-result (name type)
+  (let ((plain-name (string-remove-prefix "Stdlib__" name)))
+    (concat
+     (propertize "val " 'face (intern "font-lock-keyword-face"))
+     (propertize plain-name 'face (intern "font-lock-function-name-face"))
+     " : "
+     (propertize type 'face (intern "font-lock-doc-face")))))
+
+;;;;;;;;;;;;;;;;;;;;;
 ;; SEARCH BY TYPE  ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
@@ -1110,58 +1122,32 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (defun merlin--get-search-by-type-result-buff ()
   (get-buffer-create merlin-search-by-type-buffer-name))
 
-(defun merlin--search-result-wrap (text)
-  "Remove every newlines and trim tabulation."
-  (string-join (mapcar #'string-trim (string-lines text)) " "))
-
-(defun merlin--search-trim-documentation (doc)
-  "Trim documentation block."
-  (string-join
-   (mapcar #'string-trim (string-lines doc)) "\n"))
-
-(defun merlin--search-result-doc (entry)
-  (let ((doc-entry (cdr (assoc 'doc entry))))
-    (if (eq doc-entry 'null)
-	""
-      (merlin--search-trim-documentation doc-entry))))
-
-(defun merlin--render-search-result (name type docstring)
-  (let ((line
-	 (concat
-	  (propertize
-	   name 'face (intern "font-lock-function-name-face"))
-	  " : "
-	  (propertize
-	   (merlin--search-result-wrap type)
-	   'face (intern "font-lock-doc-face"))
-	  "\n"
-	  (propertize docstring 'face (intern "font-lock-comment-face"))
-	  "\n\n")))
-    (insert line)))
-
 (defun merlin--search-result-to-entry (entry)
   (let ((function-name (cdr (assoc 'name entry)))
-	(function-type (cdr (assoc 'type entry)))
-	(function-docs (merlin--search-result-doc entry)))
-    (merlin--render-search-result
+	(function-type (cdr (assoc 'type entry))))
+    (list function-name (vector (merlin--render-search-result
      function-name
-     function-type
-     function-docs))) 
+     function-type)))))
 
 (defun merlin-search-by-type (query)
   (interactive "sSearch query: ")
-  (let* ((result (merlin--search-by-type query))
-	 (previous-buffer (current-buffer)))
+  (let ((entries (merlin--search-by-type query))
+         (previous-buff (current-buffer)))
     (let ((search-by-type-buffer (merlin--get-search-by-type-result-buff))
-	  (inhibit-read-only t))
+          (inhibit-read-only t))
       (with-current-buffer search-by-type-buffer
-	(switch-to-buffer-other-window search-by-type-buffer)
-	(dolist (elt result)
-	  (merlin--search-result-to-entry elt))
-	(goto-char 1)
-	(read-only-mode)
-	(switch-to-buffer-other-window previous-buffer)))))
-
+        (switch-to-buffer-other-window search-by-type-buffer)
+        (goto-char 1)
+        (tabulated-list-mode)
+        (setq tabulated-list-format [("Search By Type Result" 100 t)])
+        (setq tabulated-list-entries
+	      (mapcar 'merlin--search-result-to-entry entries))
+        (setq tabulated-list-padding 2)
+        (face-spec-set 'header-line '((t :weight bold :height 1.2)))
+        (tabulated-list-init-header)
+        (tabulated-list-print t)
+        (setq buffer-read-only t)
+        (switch-to-buffer-other-window previous-buff)))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; POLARITY SEARCH ;;
@@ -1175,22 +1161,14 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (defun merlin--get-polarity-buff ()
   (get-buffer-create merlin-polarity-search-buffer-name))
 
-(defun merlin--render-polarity-result (name type)
-  (let ((plain-name (string-remove-prefix "Stdlib__" name)))
-    (concat
-     (propertize "val " 'face (intern "font-lock-keyword-face"))
-     (propertize plain-name 'face (intern "font-lock-function-name-face"))
-     " : "
-     (propertize type 'face (intern "font-lock-doc-face")))))
-
 (defun merlin--polarity-result-to-list (entry)
   (let ((function-name (merlin-completion-entry-text "" entry))
         (function-type (merlin-completion-entry-short-description entry)))
     (list function-name
-          (vector (merlin--render-polarity-result function-name function-type)))))
+          (vector (merlin--render-search-result function-name function-type)))))
 
-(defun merlin-search (query)
-  (interactive "sSearch pattern: ")
+(defun merlin-search-by-polarity (query)
+  (interactive "sSearch query: ")
   (let* ((result (merlin--search query))
          (entries (cdr (assoc 'entries result)))
          (previous-buff (current-buffer)))
@@ -1201,13 +1179,23 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
         (goto-char 1)
         (tabulated-list-mode)
         (setq tabulated-list-format [("Polarity Search Result" 100 t)])
-        (setq tabulated-list-entries (mapcar 'merlin--polarity-result-to-list entries))
+        (setq tabulated-list-entries
+	      (mapcar 'merlin--polarity-result-to-list entries))
         (setq tabulated-list-padding 2)
         (face-spec-set 'header-line '((t :weight bold :height 1.2)))
         (tabulated-list-init-header)
         (tabulated-list-print t)
         (setq buffer-read-only t)
         (switch-to-buffer-other-window previous-buff)))))
+
+(defun merlin--is-polarity-query (query)
+  (or (string-prefix-p "-" query) (string-prefix-p "+" query)))
+
+(defun merlin-search (query)
+  (interactive "sSearch query: ")
+  (if (merlin--is-polarity-query query)
+      (merlin-search-by-polarity query)
+    (merlin-search-by-type query)))
 
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
