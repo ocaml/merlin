@@ -103,6 +103,12 @@
     "doc": "Same as {!map}, but the function is applied to the index of    the element as first argument (counting from 0), and the element    itself as second argument.    @since 4.00"
   }
   {
+    "name": "Seq.map",
+    "type": "('a -> 'b) -> 'a Stdlib__Seq.t -> 'b Stdlib__Seq.t",
+    "cost": 10,
+    "doc": "[map f xs] is the image of the sequence [xs] through the     transformation [f].      If [xs] is the sequence [x0; x1; ...] then     [map f xs] is the sequence [f x0; f x1; ...]."
+  }
+  {
     "name": "List.concat_map",
     "type": "('a -> 'b list) -> 'a list -> 'b list",
     "cost": 10,
@@ -119,12 +125,6 @@
     "type": "f:('a -> 'b list) -> 'a list -> 'b list",
     "cost": 10,
     "doc": "[concat_map ~f l] gives the same result as     {!concat}[ (]{!map}[ f l)]. Tail-recursive.     @since 4.10"
-  }
-  {
-    "name": "ListLabels.filter_map",
-    "type": "f:('a -> 'b option) -> 'a list -> 'b list",
-    "cost": 10,
-    "doc": "[filter_map ~f l] applies [f] to every element of [l], filters     out the [None] elements and returns the list of the arguments of     the [Some] elements.     @since 4.08"
   }
 
   $ $MERLIN single search-by-type -filename ./context.ml \
@@ -145,7 +145,7 @@
         },
         "name": "Hashtbl.add",
         "type": "('a, 'b) Stdlib__Hashtbl.t -> 'a -> 'b -> unit",
-        "cost": 33,
+        "cost": 1,
         "doc": "[Hashtbl.add tbl key data] adds a binding of [key] to [data]
      in table [tbl].
   
@@ -169,7 +169,7 @@
         },
         "name": "Hashtbl.replace",
         "type": "('a, 'b) Stdlib__Hashtbl.t -> 'a -> 'b -> unit",
-        "cost": 34,
+        "cost": 2,
         "doc": "[Hashtbl.replace tbl key data] replaces the current binding of [key]
      in [tbl] by a binding of [key] to [data].  If [key] is unbound in [tbl],
      a binding of [key] to [data] is added to [tbl].
@@ -188,7 +188,7 @@
         },
         "name": "Hashtbl.add_seq",
         "type": "('a, 'b) Stdlib__Hashtbl.t -> ('a * 'b) Seq.t -> unit",
-        "cost": 46,
+        "cost": 24,
         "doc": "Add the given bindings to the table, using {!add}
       @since 4.07"
       },
@@ -204,9 +204,51 @@
         },
         "name": "Hashtbl.replace_seq",
         "type": "('a, 'b) Stdlib__Hashtbl.t -> ('a * 'b) Seq.t -> unit",
-        "cost": 47,
+        "cost": 25,
         "doc": "Add the given bindings to the table, using {!replace}
       @since 4.07"
+      },
+      {
+        "file": "either.mli",
+        "start": {
+          "line": 86,
+          "col": 0
+        },
+        "end": {
+          "line": 87,
+          "col": 73
+        },
+        "name": "Either.map",
+        "type": "left:('a1 -> 'a2) ->
+  right:('b1 -> 'b2) ->
+  ('a1, 'b1) Stdlib__Either.t -> ('a2, 'b2) Stdlib__Either.t",
+        "cost": 44,
+        "doc": "[map ~left ~right (Left v)] is [Left (left v)],
+      [map ~left ~right (Right v)] is [Right (right v)]."
+      },
+      {
+        "file": "moreLabels.mli",
+        "start": {
+          "line": 133,
+          "col": 2
+        },
+        "end": {
+          "line": 133,
+          "col": 51
+        },
+        "name": "MoreLabels.Hashtbl.add",
+        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
+        "cost": 47,
+        "doc": "[Hashtbl.add tbl ~key ~data] adds a binding of [key] to [data]
+       in table [tbl].
+  
+       {b Warning}: Previous bindings for [key] are not removed, but simply
+       hidden. That is, after performing {!remove}[ tbl key],
+       the previous binding for [key], if any, is restored.
+       (Same behavior as with association lists.)
+  
+       If you desire the classic behavior of replacing elements,
+       see {!replace}."
       },
       {
         "file": "moreLabels.mli",
@@ -227,6 +269,25 @@
       {
         "file": "moreLabels.mli",
         "start": {
+          "line": 168,
+          "col": 2
+        },
+        "end": {
+          "line": 168,
+          "col": 55
+        },
+        "name": "MoreLabels.Hashtbl.replace",
+        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
+        "cost": 48,
+        "doc": "[Hashtbl.replace tbl ~key ~data] replaces the current binding of [key]
+       in [tbl] by a binding of [key] to [data].  If [key] is unbound in [tbl],
+       a binding of [key] to [data] is added to [tbl].
+       This is functionally equivalent to {!remove}[ tbl key]
+       followed by {!add}[ tbl key data]."
+      },
+      {
+        "file": "moreLabels.mli",
+        "start": {
           "line": 322,
           "col": 2
         },
@@ -241,67 +302,19 @@
         @since 4.07"
       },
       {
-        "file": "result.mli",
+        "file": "ephemeron.mli",
         "start": {
-          "line": 47,
-          "col": 0
+          "line": 203,
+          "col": 2
         },
         "end": {
-          "line": 47,
-          "col": 72
+          "line": 203,
+          "col": 55
         },
-        "name": "Result.bind",
-        "type": "('a, 'e) result -> ('a -> ('b, 'e) result) -> ('b, 'e) result",
-        "cost": 61,
-        "doc": "[bind r f] is [f v] if [r] is [Ok v] and [r] if [r] is [Error _]."
-      },
-      {
-        "file": "stdlib.mli",
-        "start": {
-          "line": 1324,
-          "col": 0
-        },
-        "end": {
-          "line": 1324,
-          "col": 65
-        },
-        "name": "string_of_format",
-        "type": "('a, 'b, 'c, 'd, 'e, 'f) format6 -> string",
-        "cost": 68,
-        "doc": "Converts a format string into a string."
-      },
-      {
-        "file": "stdlib.mli",
-        "start": {
-          "line": 1324,
-          "col": 0
-        },
-        "end": {
-          "line": 1324,
-          "col": 65
-        },
-        "name": "string_of_format",
-        "type": "('a, 'b, 'c, 'd, 'e, 'f) format6 -> string",
-        "cost": 68,
-        "doc": "Converts a format string into a string."
-      },
-      {
-        "file": "either.mli",
-        "start": {
-          "line": 86,
-          "col": 0
-        },
-        "end": {
-          "line": 87,
-          "col": 73
-        },
-        "name": "Either.map",
-        "type": "left:('a1 -> 'a2) ->
-  right:('b1 -> 'b2) ->
-  ('a1, 'b1) Stdlib__Either.t -> ('a2, 'b2) Stdlib__Either.t",
-        "cost": 77,
-        "doc": "[map ~left ~right (Left v)] is [Left (left v)],
-      [map ~left ~right (Right v)] is [Right (right v)]."
+        "name": "Ephemeron.K2.query",
+        "type": "('k1, 'k2, 'd) Stdlib__Ephemeron.K2.t -> 'k1 -> 'k2 -> 'd option",
+        "cost": 53,
+        "doc": "Same as {!Ephemeron.K1.query}"
       }
     ],
     "notifications": []
