@@ -46,4 +46,4 @@ val run :
   Env.t ->
   Merlin_sherlodoc.Query_parser.t
   -> t
-  -> (int * string * Types.value_description * string option) list
+  -> (int * string * Types.value_description * string option * string) list

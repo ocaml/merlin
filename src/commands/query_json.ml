@@ -394,12 +394,13 @@ let json_of_signature_help resp =
       ]
 
 let json_of_search_result list =
-  let list = List.map ~f:(fun {name; typ; loc; cost; doc } ->
+  let list = List.map ~f:(fun {name; typ; loc; cost; doc; constructible } ->
       with_location ~with_file:true loc [
         "name", `String name;
         "type", `String typ;
         "cost", `Int cost;
-        "doc", match doc with Some x -> `String x | None -> `Null
+        "doc", (match doc with Some x -> `String x | None -> `Null);
+        "constructible", `String constructible
       ]
     ) list in
   `List list

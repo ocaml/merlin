@@ -47,7 +47,26 @@ let type_of env typ =
       let name = Format.asprintf "%a" Printtyp.path p in
       Type_parsed.Tycon (name, List.map ~f:aux args)
     | _ -> Type_parsed.Unhandled
-    in typ |> aux |> Type_expr.normalize_type_parameters
+      in typ |> aux |> Type_expr.normalize_type_parameters
+
+let make_constructible path desc =
+  let holes = match Types.get_desc desc with
+    | Types.Tarrow (l, _, b, _) ->
+      let rec aux acc t =
+        match Types.get_desc t with
+        | Types.Tarrow (l, _, b, _) ->
+          aux (acc ^ with_label l) b
+        | _ -> acc
+      and with_label l =
+        match l with
+        | Ocaml_parsing.Asttypes.Nolabel -> " _"
+        | Labelled s -> " ~" ^ s ^ ":_"
+        | Optional _ -> ""
+      in
+      aux (with_label l) b
+    | _ -> ""
+  in
+  path ^ holes
 
 let make_trie env modules =
   let rec walk env lident =
@@ -78,7 +97,8 @@ let run ?(limit = 100) config local_defs comments pos env query trie =
   let fold_values dir acc =
     Env.fold_values (fun _ path desc acc ->
         let open Merlin_sherlodoc in
-        let typ = type_of env desc.Types.val_type in
+        let d = desc.Types.val_type in
+        let typ = type_of env d in
         let path = Printtyp.rewrite_double_underscore_paths env path in
         let path = Format.asprintf "%a" Printtyp.path path in
         let cost = Query_parser.distance_for query ~path typ in
@@ -94,7 +114,8 @@ let run ?(limit = 100) config local_defs comments pos env query trie =
               (`User_input path)
             |> doc_to_option
           in
-          (cost, path, desc, doc) :: acc
+          let constructible = make_constructible path d in
+          (cost, path, desc, doc, constructible) :: acc
       ) dir env acc
   in
   let rec walk acc (T (_, dir, children)) =
@@ -111,7 +132,7 @@ let run ?(limit = 100) config local_defs comments pos env query trie =
   let init = fold_values None [] in
   trie
   |> List.fold_left ~init ~f:walk
-  |> List.sort ~cmp:(fun (cost_a, a, _, doc_a) (cost_b, b, _, doc_b) ->
+  |> List.sort ~cmp:(fun (cost_a, a, _, doc_a, _) (cost_b, b, _, doc_b, _) ->
       let c = Int.compare cost_a cost_b in
       if Int.equal c 0 then
         let c = Int.compare (String.length a) (String.length b) in
