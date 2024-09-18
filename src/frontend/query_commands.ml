@@ -493,14 +493,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let verbosity = verbosity pipeline in
     Printtyp.wrap_printing_env ~verbosity env (fun () ->
         List.map
-          ~f:(fun (cost, name, typ, doc) ->
+          ~f:(fun (cost, name, typ, doc, constructible) ->
             let loc = typ.Types.val_loc in
             let typ =
               Format.asprintf "%a"
                 (Type_utils.Printtyp.type_scheme env)
                 typ.Types.val_type
             in
-            { name; typ; cost; loc; doc })
+            { name; typ; cost; loc; doc; constructible })
           result)
   | Refactor_open (mode, pos) ->
     let typer = Mpipeline.typer_result pipeline in

@@ -72,7 +72,8 @@ type type_search_result =
     typ : string;
     loc : Location_aux.t;
     doc : string option;
-    cost : int
+    cost : int;
+    constructible : string
   }
 
 type outline = item list

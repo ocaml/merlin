@@ -155,7 +155,8 @@
      (Same behavior as with association lists.)
   
      If you desire the classic behavior of replacing elements,
-     see {!replace}."
+     see {!replace}.",
+        "constructible": "Hashtbl.add _ _ _"
       },
       {
         "file": "hashtbl.mli",
@@ -174,7 +175,8 @@
      in [tbl] by a binding of [key] to [data].  If [key] is unbound in [tbl],
      a binding of [key] to [data] is added to [tbl].
      This is functionally equivalent to {!remove}[ tbl key]
-     followed by {!add}[ tbl key data]."
+     followed by {!add}[ tbl key data].",
+        "constructible": "Hashtbl.replace _ _ _"
       },
       {
         "file": "hashtbl.mli",
@@ -190,7 +192,8 @@
         "type": "('a, 'b) Stdlib__Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 24,
         "doc": "Add the given bindings to the table, using {!add}
-      @since 4.07"
+      @since 4.07",
+        "constructible": "Hashtbl.add_seq _ _"
       },
       {
         "file": "hashtbl.mli",
@@ -206,7 +209,8 @@
         "type": "('a, 'b) Stdlib__Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 25,
         "doc": "Add the given bindings to the table, using {!replace}
-      @since 4.07"
+      @since 4.07",
+        "constructible": "Hashtbl.replace_seq _ _"
       },
       {
         "file": "either.mli",
@@ -224,7 +228,8 @@
   ('a1, 'b1) Stdlib__Either.t -> ('a2, 'b2) Stdlib__Either.t",
         "cost": 44,
         "doc": "[map ~left ~right (Left v)] is [Left (left v)],
-      [map ~left ~right (Right v)] is [Right (right v)]."
+      [map ~left ~right (Right v)] is [Right (right v)].",
+        "constructible": "Either.map ~left:_ ~right:_ _"
       },
       {
         "file": "moreLabels.mli",
@@ -248,7 +253,8 @@
        (Same behavior as with association lists.)
   
        If you desire the classic behavior of replacing elements,
-       see {!replace}."
+       see {!replace}.",
+        "constructible": "MoreLabels.Hashtbl.add _ ~key:_ ~data:_"
       },
       {
         "file": "moreLabels.mli",
@@ -264,7 +270,8 @@
         "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 48,
         "doc": "Add the given bindings to the table, using {!add}
-        @since 4.07"
+        @since 4.07",
+        "constructible": "MoreLabels.Hashtbl.add_seq _ _"
       },
       {
         "file": "moreLabels.mli",
@@ -283,7 +290,8 @@
        in [tbl] by a binding of [key] to [data].  If [key] is unbound in [tbl],
        a binding of [key] to [data] is added to [tbl].
        This is functionally equivalent to {!remove}[ tbl key]
-       followed by {!add}[ tbl key data]."
+       followed by {!add}[ tbl key data].",
+        "constructible": "MoreLabels.Hashtbl.replace _ ~key:_ ~data:_"
       },
       {
         "file": "moreLabels.mli",
@@ -299,7 +307,8 @@
         "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 49,
         "doc": "Add the given bindings to the table, using {!replace}
-        @since 4.07"
+        @since 4.07",
+        "constructible": "MoreLabels.Hashtbl.replace_seq _ _"
       },
       {
         "file": "ephemeron.mli",
@@ -314,7 +323,8 @@
         "name": "Ephemeron.K2.query",
         "type": "('k1, 'k2, 'd) Stdlib__Ephemeron.K2.t -> 'k1 -> 'k2 -> 'd option",
         "cost": 53,
-        "doc": "Same as {!Ephemeron.K1.query}"
+        "doc": "Same as {!Ephemeron.K1.query}",
+        "constructible": "Ephemeron.K2.query _ _ _"
       }
     ],
     "notifications": []
