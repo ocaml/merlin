@@ -81,20 +81,20 @@ a list.
     "type": "'a array list -> 'a array"
   }
   {
-    "name": "Option.join",
-    "type": "'a option option -> 'a option"
-  }
-  {
-    "name": "Result.join",
-    "type": "(('a, 'e) result, 'e) result -> ('a, 'e) result"
-  }
-  {
     "name": "Seq.concat",
     "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t"
   }
   {
+    "name": "Option.join",
+    "type": "'a option option -> 'a option"
+  }
+  {
     "name": "Seq.transpose",
     "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t Stdlib__Seq.t"
+  }
+  {
+    "name": "Result.join",
+    "type": "(('a, 'e) result, 'e) result -> ('a, 'e) result"
   }
 
 3.) Looking for a function that take a list and produce a new list
@@ -129,6 +129,10 @@ map).
     "type": "f:(int -> 'a -> 'b) -> 'a list -> 'b list"
   }
   {
+    "name": "Seq.map",
+    "type": "('a -> 'b) -> 'a Stdlib__Seq.t -> 'b Stdlib__Seq.t"
+  }
+  {
     "name": "List.concat_map",
     "type": "('a -> 'b list) -> 'a list -> 'b list"
   }
@@ -139,8 +143,4 @@ map).
   {
     "name": "ListLabels.concat_map",
     "type": "f:('a -> 'b list) -> 'a list -> 'b list"
-  }
-  {
-    "name": "ListLabels.filter_map",
-    "type": "f:('a -> 'b option) -> 'a list -> 'b list"
   }

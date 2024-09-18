@@ -34,7 +34,7 @@ type trie =
   | T of string * Longident.t * t Lazy.t
 and t = trie list
 
-let type_of typ =
+let type_of env typ =
       let open Merlin_sherlodoc in
   let rec aux typ =
     match Types.get_desc typ with
@@ -43,6 +43,7 @@ let type_of typ =
     | Types.Ttuple elts -> Type_parsed.tuple @@ List.map ~f:aux elts
     | Types.Tarrow (_, a, b, _) -> Type_parsed.Arrow (aux a, aux b)
     | Types.Tconstr (p, args, _) ->
+      let p = Printtyp.rewrite_double_underscore_paths env p in
       let name = Format.asprintf "%a" Printtyp.path p in
       Type_parsed.Tycon (name, List.map ~f:aux args)
     | _ -> Type_parsed.Unhandled
@@ -77,7 +78,7 @@ let run ?(limit = 100) config local_defs comments pos env query trie =
   let fold_values dir acc =
     Env.fold_values (fun _ path desc acc ->
         let open Merlin_sherlodoc in
-        let typ = type_of desc.Types.val_type in
+        let typ = type_of env desc.Types.val_type in
         let path = Printtyp.rewrite_double_underscore_paths env path in
         let path = Format.asprintf "%a" Printtyp.path path in
         let cost = Query_parser.distance_for query ~path typ in
