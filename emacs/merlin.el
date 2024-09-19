@@ -1098,6 +1098,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
     (cons (if bounds (car bounds) (point))
           (point))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; COMMON SEARCH   ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -1110,6 +1111,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
      " : "
      (propertize type 'face (intern "font-lock-doc-face")))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;
 ;; SEARCH BY TYPE  ;;
 ;;;;;;;;;;;;;;;;;;;;;
@@ -1119,6 +1121,12 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 	       "-query" query
 	       "-position" (merlin-unmake-point (point))))
 
+(defun merlin--search-by-type-with-limit (query limit)
+  (merlin-call "search-by-type"
+	       "-query" query
+	       "-limit" limit
+	       "-position" (merlin-unmake-point (point))))
+
 (defun merlin--get-search-by-type-result-buff ()
   (get-buffer-create merlin-search-by-type-buffer-name))
 
@@ -1126,8 +1134,8 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (let ((function-name (cdr (assoc 'name entry)))
 	(function-type (cdr (assoc 'type entry))))
     (list function-name (vector (merlin--render-search-result
-     function-name
-     function-type)))))
+				 function-name
+				 function-type)))))
 
 (defun merlin-search-by-type (query)
   "Search a value definition by type expression"
@@ -1149,6 +1157,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
         (tabulated-list-print t)
         (setq buffer-read-only t)
         (switch-to-buffer-other-window previous-buff)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; POLARITY SEARCH ;;
@@ -1193,12 +1202,42 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (defun merlin--is-polarity-query (query)
   (or (string-prefix-p "-" query) (string-prefix-p "+" query)))
 
-(defun merlin-search (query)
-  "Search a value defintion by polarity or by type expression"
+(defun merlin--search-polarity-or-by-type (query)
   (interactive "sSearch query: ")
   (if (merlin--is-polarity-query query)
       (merlin-search-by-polarity query)
     (merlin-search-by-type query)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; INTERACTIVE SEARCH ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--interactive-search-to-list (entry)
+  (let ((function-name (cdr (assoc 'name entry)))
+	(function-hole (cdr (assoc 'constructible entry)))
+	(function-type (cdr (assoc 'type entry))))
+    (let ((key (merlin--render-search-result function-name function-type))
+	  (value function-hole))
+      (cons key value))))
+
+(defun merlin--perform-search-completion (query start end)
+  (let* ((entries (merlin--search-by-type-with-limit query 20))
+	 (choices (mapcar #'merlin--interactive-search-to-list entries) ))
+    (let ((result (alist-get
+		   (completing-read
+		    (concat "Replace " (string-trim query) " by:" ) choices )
+		   choices nil nil #'equal)))
+      (delete-region start end)
+      (insert result))))
+
+(defun merlin-search (start end)
+  "Search a value defintion by polarity or by type expression"
+  (interactive "r")
+  (if (use-region-p)
+      (let ((query (buffer-substring start end)))
+	(merlin--perform-search-completion query start end))
+    (call-interactively #'merlin--search)))
 
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
