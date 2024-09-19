@@ -1130,9 +1130,10 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
      function-type)))))
 
 (defun merlin-search-by-type (query)
+  "Search a value definition by type expression"
   (interactive "sSearch query: ")
   (let ((entries (merlin--search-by-type query))
-         (previous-buff (current-buffer)))
+        (previous-buff (current-buffer)))
     (let ((search-by-type-buffer (merlin--get-search-by-type-result-buff))
           (inhibit-read-only t))
       (with-current-buffer search-by-type-buffer
@@ -1168,6 +1169,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
           (vector (merlin--render-search-result function-name function-type)))))
 
 (defun merlin-search-by-polarity (query)
+  "Search a value definition by polarity"
   (interactive "sSearch query: ")
   (let* ((result (merlin--search query))
          (entries (cdr (assoc 'entries result)))
@@ -1192,6 +1194,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (or (string-prefix-p "-" query) (string-prefix-p "+" query)))
 
 (defun merlin-search (query)
+  "Search a value defintion by polarity or by type expression"
   (interactive "sSearch query: ")
   (if (merlin--is-polarity-query query)
       (merlin-search-by-polarity query)
