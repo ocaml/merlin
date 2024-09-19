@@ -7,6 +7,12 @@
  (applies_to pwo-ml-gen)
  (enabled_if (>= %{read:version/dune.txt} "3.16")))
 
+(cram
+ (applies_to :whole_subtree)
+ (enabled_if
+  (<> %{os_type} Win32)))
+
 (subdir
  version
  (rule (action (with-stdout-to dune.txt (run dune --version)))))
+
