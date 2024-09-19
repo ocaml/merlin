@@ -15,7 +15,7 @@ unreleased
     - emacs: Improve the way that result of polarity search is displayed (#1814)
     - emacs: Add `merlin-search-by-type`, `merlin-search-by-polarity` and change the
 	  behaviour of `merlin-search` to switch between `by-type` or `by-polarity`
-	  depending on the query (#1828)
+	  depending on the query (#1828 #1830)
 
 merlin 5.1
 ==========
