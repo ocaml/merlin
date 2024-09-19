@@ -1,5 +1,5 @@
 (cram
- (applies_to path-expansion)
+ (applies_to path-expansion hidden-deps)
  (enabled_if
   (<> %{os_type} Win32)))
 

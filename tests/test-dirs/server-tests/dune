@@ -5,10 +5,13 @@
  (locks merlin_server))
 
 (cram
- (applies_to chdir_to_root)
+ (applies_to chdir_to_root incremental-index)
  (enabled_if
   (<> %{os_type} Win32)))
 
 (cram
- (applies_to pwo-uid-stability)
- (enabled_if %{bin-available:ocaml-index}))
+ (applies_to pwo-uid-stability )
+ (enabled_if
+ (and
+  %{bin-available:ocaml-index}
+  (<> %{os_type} Win32))))
