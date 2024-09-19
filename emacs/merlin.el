@@ -1237,7 +1237,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (if (use-region-p)
       (let ((query (buffer-substring start end)))
 	(merlin--perform-search-completion query start end))
-    (call-interactively #'merlin--search)))
+    (call-interactively #'merlin--search-polarity-or-by-type)))
 
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
