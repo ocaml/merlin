@@ -6,9 +6,6 @@
 ;;         Thomas Refis <thomas.refis(_)gmail.com>
 ;;         Tim McGilchrist <timmcgil@gmail.com>
 ;; Created: 13 Sep 2024
-;; Version: 0.1
-;; Keywords: ocaml languages
-;; Package-Requires: ((emacs "25.1"))
 ;; URL: http://github.com/ocaml/merlin
 
 ;;; Commentary:
