@@ -52,7 +52,7 @@ EMACS_PACKAGE_LINT_IGNORE=1
          ${PKGS_TO_CHECK} || [ -n "${EMACS_PACKAGE_LINT_IGNORE:+x}" ]
 
 
-PKGS_TO_CHECK="merlin.el merlin-cap.el"
+PKGS_TO_CHECK="merlin.el merlin-cap.el merlin-xref.el merlin-imenu.el"
 
 "$EMACS" -Q -batch \
          --eval "$INIT_PACKAGE_EL" \
