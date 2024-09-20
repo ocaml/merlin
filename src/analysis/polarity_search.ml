@@ -83,6 +83,19 @@ let build_query ~positive ~negative env =
     pos_fun = !pos_fun
   }
 
+let prepare_query env query =
+  let re = Str.regexp "[ |\t]+" in
+  let pos,neg = Str.split re query |> List.partition ~f:(fun s->s.[0]<>'-') in
+  let prepare s =
+    Longident.parse @@
+    if s.[0] = '-' || s.[0] = '+'
+    then String.sub s ~pos:1 ~len:(String.length s - 1)
+    else s
+  in
+  build_query env
+    ~positive:(List.map pos ~f:prepare)
+    ~negative:(List.map neg ~f:prepare)
+
 let directories ~global_modules env =
   let rec explore lident env =
     let add_module name _ md l =
@@ -129,3 +142,44 @@ let execute_query query env dirs =
       acc
   in
   List.fold_left dirs ~init:(direct None []) ~f:recurse
+
+let execute_query_as_type_search
+    ?(limit = 100) config local_defs comments pos env query dirs =
+  let direct dir acc =
+    Env.fold_values (fun _ path desc acc ->
+        let d  = desc.Types.val_type in
+        match match_query env query d with
+        | Some cost ->
+          let path = Printtyp.rewrite_double_underscore_paths env path in
+          let path = Format.asprintf "%a" Printtyp.path path in
+          let doc =
+            Locate.get_doc
+              ~config
+              ~env
+              ~local_defs
+              ~comments
+              ~pos
+              (`User_input path)
+            |> Type_search.doc_to_option
+          in
+          let constructible = Type_search.make_constructible path d in
+          (cost, path, desc, doc, constructible) :: acc
+        | None -> acc
+      ) dir env acc
+  in
+  let rec recurse acc (Trie (_, dir, children)) =
+    match
+      ignore (Env.find_module_by_name dir env);
+      Lazy.force children
+    with
+    | children ->
+      List.fold_left ~f:recurse ~init:(direct (Some dir) acc) children
+    | exception Not_found ->
+      Logger.notify ~section:"polarity-search" "%S not found"
+        (String.concat ~sep:"." (Longident.flatten dir));
+      acc
+  in
+  dirs
+  |> List.fold_left ~init:(direct None []) ~f:recurse
+  |> List.sort ~cmp:Type_search.compare_result
+  |> List.take_n limit

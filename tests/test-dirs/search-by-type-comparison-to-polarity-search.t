@@ -144,3 +144,99 @@ map).
     "name": "ListLabels.concat_map",
     "type": "f:('a -> 'b list) -> 'a list -> 'b list"
   }
+
+
+4.) Looking for a function that take a list of list of flatten-it into
+a list.
+
+
+  $ $MERLIN single search-by-type -filename ./main.ml \
+  > -position 5:25 -limit 10 -query "'a list list -> 'a list" |
+  > tr '\n' ' ' | jq  '.value[] | {name,type}'
+  {
+    "name": "List.concat",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "List.flatten",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "ListLabels.concat",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "ListLabels.flatten",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "Array.concat",
+    "type": "'a array list -> 'a array"
+  }
+  {
+    "name": "ArrayLabels.concat",
+    "type": "'a array list -> 'a array"
+  }
+  {
+    "name": "Seq.concat",
+    "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t"
+  }
+  {
+    "name": "Option.join",
+    "type": "'a option option -> 'a option"
+  }
+  {
+    "name": "Seq.transpose",
+    "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t Stdlib__Seq.t"
+  }
+  {
+    "name": "Result.join",
+    "type": "(('a, 'e) result, 'e) result -> ('a, 'e) result"
+  }
+
+5.) Using polarity query inside search by type (result are a bit
+different because type path are a little bit different)
+
+  $ $MERLIN single search-by-type -filename ./main.ml \
+  > -position 5:25 -limit 10 -query "-list -list +list" |
+  > tr '\n' ' ' | jq  '.value[] | {name,type}'
+  {
+    "name": "List.tl",
+    "type": "'a list -> 'a list"
+  }
+  {
+    "name": "List.rev",
+    "type": "'a list -> 'a list"
+  }
+  {
+    "name": "ListLabels.tl",
+    "type": "'a list -> 'a list"
+  }
+  {
+    "name": "ListLabels.rev",
+    "type": "'a list -> 'a list"
+  }
+  {
+    "name": "List.concat",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "List.flatten",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "ListLabels.concat",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "ListLabels.flatten",
+    "type": "'a list list -> 'a list"
+  }
+  {
+    "name": "List.cons",
+    "type": "'a -> 'a list -> 'a list"
+  }
+  {
+    "name": "ListLabels.cons",
+    "type": "'a -> 'a list -> 'a list"
+  }

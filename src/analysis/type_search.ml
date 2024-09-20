@@ -93,6 +93,18 @@ let doc_to_option = function
   | `Found doc -> Some doc
   | _ -> None
 
+let compare_result (cost_a, a, _, doc_a, _) (cost_b, b, _, doc_b, _) =
+  let c = Int.compare cost_a cost_b in
+  if Int.equal c 0 then
+    let c = Int.compare (String.length a) (String.length b) in
+    match c, doc_a, doc_b with
+    | 0, Some _, None -> 1
+    | 0, None, Some _ -> -1
+    | 0, Some a, Some b ->
+      Int.compare (String.length a) (String.length b)
+    | _ -> c
+  else c
+
 let run ?(limit = 100) config local_defs comments pos env query trie =
   let fold_values dir acc =
     Env.fold_values (fun _ path desc acc ->
@@ -132,18 +144,12 @@ let run ?(limit = 100) config local_defs comments pos env query trie =
   let init = fold_values None [] in
   trie
   |> List.fold_left ~init ~f:walk
-  |> List.sort ~cmp:(fun (cost_a, a, _, doc_a, _) (cost_b, b, _, doc_b, _) ->
-      let c = Int.compare cost_a cost_b in
-      if Int.equal c 0 then
-        let c = Int.compare (String.length a) (String.length b) in
-        match c, doc_a, doc_b with
-        | 0, Some _, None -> 1
-        | 0, None, Some _ -> -1
-        | 0, Some a, Some b ->
-          Int.compare (String.length a) (String.length b)
-        | _ -> c
-      else c
-    )
+  |> List.sort ~cmp:compare_result
   |> List.take_n limit
     
-  
+let classify_query query =
+  let query = String.trim query in
+  match query.[0] with
+  | '+' | '-' -> `Polarity query
+  | _ -> `By_type query
+  | exception _ -> `Polarity query

@@ -47,3 +47,12 @@ val run :
   Merlin_sherlodoc.Query_parser.t
   -> t
   -> (int * string * Types.value_description * string option * string) list
+
+val doc_to_option : [> `Builtin of string | `Found of string ] -> string option
+val make_constructible : string -> Types.type_expr -> string
+val compare_result :
+  int * string * Types.value_description * string option * string ->
+  int * string * Types.value_description * string option * string ->
+  int
+
+val classify_query : string -> [ `By_type of string | `Polarity of string ]
