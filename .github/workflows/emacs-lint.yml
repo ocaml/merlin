@@ -29,7 +29,7 @@ jobs:
       EMACS_PACKAGE_LINT_IGNORE: ${{ matrix.package_lint_ignore }}
       EMACS_BYTECOMP_WARN_IGNORE: ${{ matrix.bytecomp_warn_ignore }}
     steps:
-      - uses: purcell/setup-emacs@v6.0
+      - uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
 
