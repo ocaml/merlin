@@ -30,12 +30,6 @@
 
 (** Search by type in the current environment. *)
 
-(** A Lazy trie of the potentials values. *)
-type t
-
-(** Initialize the trie with a given list of directories. *)
-val make_trie : Env.t -> string list -> t
-
 (** Compute the list of candidates from a query inside a given environment. *)
 val run :
   ?limit:int ->
@@ -45,7 +39,7 @@ val run :
   Lexing.position ->
   Env.t ->
   Merlin_sherlodoc.Query_parser.t
-  -> t
+  -> string list
   -> (int * string * Types.value_description * string option * string) list
 
 val doc_to_option : [> `Builtin of string | `Found of string ] -> string option

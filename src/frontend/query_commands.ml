@@ -475,8 +475,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       match Type_search.classify_query query with
       | `By_type query ->
         let query = Merlin_sherlodoc.Query_parser.from_string query in
-        let trie = Type_search.make_trie env modules in
-        Type_search.run ~limit config local_defs comments pos env query trie
+        Type_search.run ~limit config local_defs comments pos env query modules
       | `Polarity query ->
         let query = Polarity_search.prepare_query env query in
         let dirs = Polarity_search.directories ~global_modules:modules env in

@@ -30,10 +30,6 @@
 
 open Std
 
-type trie =
-  | T of string * Longident.t * t Lazy.t
-and t = trie list
-
 let type_of env typ =
       let open Merlin_sherlodoc in
   let rec aux typ =
@@ -68,25 +64,6 @@ let make_constructible path desc =
   in
   path ^ holes
 
-let make_trie env modules =
-  let rec walk env lident =
-    Env.fold_modules (fun name _ mdl acc ->
-        match mdl.Types.md_type with
-        | Types.Mty_alias _ -> acc
-        | _ ->
-          let lident = Longident.Ldot (lident, name) in
-          T (name, lident, lazy (walk env lident)) :: acc
-      ) (Some lident) env []
-  in
-  List.fold_left
-    ~init:[]
-    ~f:(fun acc name ->
-        let lident = Longident.Lident name in
-        match Env.find_module_by_name lident env with
-        | exception _ -> acc
-        | _ -> T (name, lident, lazy (walk env lident)) :: acc
-      )
-    modules
 
 let doc_to_option = function
   | `Builtin doc
@@ -105,48 +82,64 @@ let compare_result (cost_a, a, _, doc_a, _) (cost_b, b, _, doc_b, _) =
     | _ -> c
   else c
 
-let run ?(limit = 100) config local_defs comments pos env query trie =
-  let fold_values dir acc =
-    Env.fold_values (fun _ path desc acc ->
-        let open Merlin_sherlodoc in
-        let d = desc.Types.val_type in
-        let typ = type_of env d in
-        let path = Printtyp.rewrite_double_underscore_paths env path in
-        let path = Format.asprintf "%a" Printtyp.path path in
-        let cost = Query_parser.distance_for query ~path typ in
-        if cost >= 1000 then acc
-        else
-          let doc =
-            Locate.get_doc
-              ~config
-              ~env
-              ~local_defs
-              ~comments
-              ~pos
-              (`User_input path)
-            |> doc_to_option
-          in
-          let constructible = make_constructible path d in
-          (cost, path, desc, doc, constructible) :: acc
-      ) dir env acc
-  in
-  let rec walk acc (T (_, dir, children)) =
-    let force () =
-      let _ = Env.find_module_by_name dir env in
-      Lazy.force children
+let compute_value
+    (config, local_defs, comments, pos, query) env
+    _ path desc acc =
+  let open Merlin_sherlodoc in
+  let d = desc.Types.val_type in
+  let typ = type_of env d in
+  let path = Printtyp.rewrite_double_underscore_paths env path in
+  let path = Format.asprintf "%a" Printtyp.path path in
+  let cost = Query_parser.distance_for query ~path typ in
+  if cost >= 1000 then acc
+  else
+    let doc =
+      Locate.get_doc
+        ~config
+        ~env
+        ~local_defs
+        ~comments
+        ~pos
+        (`User_input path)
+      |> doc_to_option
     in
-    match force () with
-    | computed_children ->
-      let init = fold_values (Some dir) acc in
-      List.fold_left ~init ~f:walk computed_children
+    let constructible = make_constructible path d in
+    (cost, path, desc, doc, constructible) :: acc
+
+let compute_values ctx env lident acc =
+  Env.fold_values (compute_value ctx env) lident env acc
+
+let values_from_module ctx env lident acc =
+  let rec aux acc lident =
+    match Env.find_module_by_name lident env with
     | exception _ -> acc
+    | _ -> 
+      let acc = compute_values ctx env (Some lident) acc in
+      Env.fold_modules (fun name _ mdl acc ->
+          match mdl.Types.md_type with
+          | Types.Mty_alias _ -> acc
+          | _ ->
+            let lident = Longident.Ldot (lident, name) in
+            aux acc lident
+        ) (Some lident) env acc
   in
-  let init = fold_values None [] in
-  trie
-  |> List.fold_left ~init ~f:walk
+  aux acc lident
+
+
+let run ?(limit = 100) config local_defs comments pos env query modules =
+  let ctx = (config, local_defs, comments, pos, query) in
+  let init = compute_values ctx env None [] in
+  modules
+  |> List.fold_left
+    ~init
+    ~f:(fun acc name ->
+        let lident = Longident.Lident name in
+        values_from_module ctx env lident acc
+       )
   |> List.sort ~cmp:compare_result
   |> List.take_n limit
-    
+  
+
 let classify_query query =
   let query = String.trim query in
   match query.[0] with

@@ -17,12 +17,12 @@ potential failures, so lifting the result in an int option).
     "type": "string -> int option"
   }
   {
-    "name": "Int32.of_string_opt",
-    "type": "string -> int32 option"
-  }
-  {
     "name": "Int64.of_string_opt",
     "type": "string -> int64 option"
+  }
+  {
+    "name": "Int32.of_string_opt",
+    "type": "string -> int32 option"
   }
   {
     "name": "Sys.getenv_opt",
