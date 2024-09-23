@@ -81,3 +81,10 @@ jobs:
           opam exec -- dune clean
           opam exec -- dune build
           git diff --exit-code
+
+
+      - name: Check that the changes are correctly formatted
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          opam install ocamlformat.0.26.2
+          opam exec -- dune build @fmt
