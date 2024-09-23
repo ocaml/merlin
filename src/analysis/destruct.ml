@@ -301,9 +301,9 @@ let rec get_every_pattern loc = function
       when Ident.name id = "*type-error*" ->
       raise (Ill_typed)
     | Expression { exp_desc = Typedtree.Texp_function (params, _body); _ } ->
-      (* So we need to deal with the case where we're either in the body of a
-         function, or in a function parameter. *)
       begin
+        (* So we need to deal with the case where we're either in the body of a
+           function, or in a function parameter. *)
         match
           List.find_some ~f:(fun param ->
             Location_aux.included ~into:param.Typedtree.fp_loc loc

@@ -477,8 +477,8 @@ module Gen = struct
           let exps = exp_or_hole env texp in
           List.map exps ~f:Ast_helper.Exp.lazy_
         | Tconstr (path, _params, _) ->
-          (* If this is a "basic" type we propose a default value *)
           begin try
+            (* If this is a "basic" type we propose a default value *)
             [ Hashtbl.find Util.predef_types path ]
           with Not_found ->
             let def = Env.find_type_descrs path env in

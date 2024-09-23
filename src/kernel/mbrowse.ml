@@ -119,8 +119,8 @@ let compare_locations pos l1 l2 =
     Location_aux.compare_pos pos l1,
     Location_aux.compare_pos pos l2
   with
+  (* Cursor inside both locations: favor non-ghost closer to the end *)
   | 0, 0 ->
-    (* Cursor inside both locations: favor non-ghost closer to the end *)
     begin match l1.Location.loc_ghost, l2.Location.loc_ghost with
     | true, false -> 1
     | false, true -> -1
