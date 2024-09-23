@@ -8,7 +8,7 @@ let test_distance_1 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 0
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -22,7 +22,7 @@ let test_distance_2 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 0
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -36,7 +36,7 @@ let test_distance_3 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 0
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -50,7 +50,7 @@ let test_distance_4 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 1
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -64,7 +64,7 @@ let test_distance_5 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 1
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -78,7 +78,7 @@ let test_distance_6 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 4
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -92,7 +92,7 @@ let test_distance_7 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 1
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in
@@ -106,7 +106,7 @@ let test_distance_8 =
       and candidate = "('a -> 'b) -> 'a list -> 'b list" in
       let expected = 1000
       and computed =
-        Query_parser.(
+        Query.(
           distance_for (from_string query) ~path
             (candidate |> Type_expr.from_string |> Option.get))
       in

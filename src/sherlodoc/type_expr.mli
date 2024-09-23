@@ -29,12 +29,12 @@
 (** A representation of internal types, with superfluous information removed to
     make it easier to compare them and calculate their distance. *)
 
-(** Type variables are indexed by integers calculated according to the
-    repetition of terms. For example, in the expression of type
-    [‘a -> “b -> ”c], respectively [’a] will have the value [1], [‘b] will have
-    the value [2] and [’c] will have the value [3].
+(** Type variables are indexed by integers calculated according to their
+    positions. For example, in the expression of type ['a -> 'b -> 'c],
+    respectively ['a] will have the value [1], ['b] will have the value [2] and
+    [’c] will have the value [3].
 
-    This makes [‘a -> “b -> ”c] isomorphic to [’foo -> ‘bar -> ’baz]. *)
+    This makes ['a -> 'b -> 'c] isomorphic to [’foo -> 'bar -> 'baz]. *)
 type t =
   | Arrow of t * t
   | Tycon of string * t list

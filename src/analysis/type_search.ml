@@ -30,7 +30,7 @@
 
 open Std
 
-let type_of env typ =
+let sherlodoc_type_of env typ =
       let open Merlin_sherlodoc in
   let rec aux typ =
     match Types.get_desc typ with
@@ -70,7 +70,10 @@ let doc_to_option = function
   | `Found doc -> Some doc
   | _ -> None
 
-let compare_result (cost_a, a, _, doc_a, _) (cost_b, b, _, doc_b, _) =
+let compare_result
+    Query_protocol.{cost = cost_a; name = a; doc = doc_a;  _}
+    Query_protocol.{cost = cost_b; name = b; doc = doc_b;  _}
+  =
   let c = Int.compare cost_a cost_b in
   if Int.equal c 0 then
     let c = Int.compare (String.length a) (String.length b) in
@@ -87,10 +90,10 @@ let compute_value
     _ path desc acc =
   let open Merlin_sherlodoc in
   let d = desc.Types.val_type in
-  let typ = type_of env d in
+  let typ = sherlodoc_type_of env d in
   let path = Printtyp.rewrite_double_underscore_paths env path in
-  let path = Format.asprintf "%a" Printtyp.path path in
-  let cost = Query_parser.distance_for query ~path typ in
+  let name = Format.asprintf "%a" Printtyp.path path in
+  let cost = Query.distance_for query ~path:name typ in
   if cost >= 1000 then acc
   else
     let doc =
@@ -100,11 +103,17 @@ let compute_value
         ~local_defs
         ~comments
         ~pos
-        (`User_input path)
+        (`User_input name)
       |> doc_to_option
     in
-    let constructible = make_constructible path d in
-    (cost, path, desc, doc, constructible) :: acc
+    let loc = desc.Types.val_loc in
+    let typ =
+      Format.asprintf "%a"
+        (Type_utils.Printtyp.type_scheme env)
+        desc.Types.val_type
+    in
+    let constructible = make_constructible name d in
+    Query_protocol.{cost; name; typ; loc; doc; constructible} :: acc
 
 let compute_values ctx env lident acc =
   Env.fold_values (compute_value ctx env) lident env acc
@@ -126,7 +135,15 @@ let values_from_module ctx env lident acc =
   aux acc lident
 
 
-let run ?(limit = 100) config local_defs comments pos env query modules =
+let run
+    ?(limit = 100)
+    ~config
+    ~local_defs
+    ~comments
+    ~pos
+    ~env
+    ~query
+    ~modules () =
   let ctx = (config, local_defs, comments, pos, query) in
   let init = compute_values ctx env None [] in
   modules
@@ -135,7 +152,7 @@ let run ?(limit = 100) config local_defs comments pos env query modules =
     ~f:(fun acc name ->
         let lident = Longident.Lident name in
         values_from_module ctx env lident acc
-       )
+      )
   |> List.sort ~cmp:compare_result
   |> List.take_n limit
   
@@ -145,4 +162,5 @@ let classify_query query =
   match query.[0] with
   | '+' | '-' -> `Polarity query
   | _ -> `By_type query
-  | exception _ -> `Polarity query
+  | exception (Invalid_argument _) -> `Polarity query
+

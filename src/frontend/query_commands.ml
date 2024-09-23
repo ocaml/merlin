@@ -471,30 +471,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let config = Mpipeline.final_config pipeline in
     let comments = Mpipeline.reader_comments pipeline in
     let modules = Mconfig.global_modules config in
-    let result =
+    begin
       match Type_search.classify_query query with
       | `By_type query ->
-        let query = Merlin_sherlodoc.Query_parser.from_string query in
-        Type_search.run ~limit config local_defs comments pos env query modules
+        let query = Merlin_sherlodoc.Query.from_string query in
+        Type_search.run ~limit ~config ~local_defs ~comments ~pos ~env ~query
+          ~modules ()
       | `Polarity query ->
         let query = Polarity_search.prepare_query env query in
-        let dirs = Polarity_search.directories ~global_modules:modules env in
-        Polarity_search.execute_query_as_type_search ~limit config local_defs
-          comments pos env query dirs
-    in
-
-    let verbosity = verbosity pipeline in
-    Printtyp.wrap_printing_env ~verbosity env (fun () ->
-        List.map
-          ~f:(fun (cost, name, typ, doc, constructible) ->
-            let loc = typ.Types.val_loc in
-            let typ =
-              Format.asprintf "%a"
-                (Type_utils.Printtyp.type_scheme env)
-                typ.Types.val_type
-            in
-            { name; typ; cost; loc; doc; constructible })
-          result)
+        let modules = Polarity_search.directories ~global_modules:modules env in
+        Polarity_search.execute_query_as_type_search ~limit ~config ~local_defs
+          ~comments ~pos ~env ~query ~modules ()
+    end
   | Refactor_open (mode, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
