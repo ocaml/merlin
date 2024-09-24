@@ -33,17 +33,22 @@
 (** Compute the list of candidates from a query inside a given environment. *)
 val run :
   ?limit:int ->
-  config:Mconfig.t ->
-  local_defs:Mtyper.typedtree ->
-  comments:(string * Location.t) list ->
-  pos:Lexing.position ->
   env:Env.t ->
   query:Merlin_sherlodoc.Query.t
   -> modules:string list
-  -> unit
+  -> (Mconfig.t
+      * Mtyper.typedtree
+      * (string * Location.t) list
+      * Lexing.position)
+    option
   -> Query_protocol.type_search_result list
 
-val doc_to_option : [> `Builtin of string | `Found of string ] -> string option
+val get_doc :
+  (Mconfig.t
+   *  Mtyper.typedtree
+   * (string * Warnings.loc) list
+   * Lexing.position) option -> Env.t -> string -> string option
+    
 val make_constructible : string -> Types.type_expr -> string
 val compare_result :
    Query_protocol.type_search_result ->

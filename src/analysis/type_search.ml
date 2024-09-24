@@ -70,6 +70,20 @@ let doc_to_option = function
   | `Found doc -> Some doc
   | _ -> None
 
+
+let get_doc doc_ctx env name =
+  match doc_ctx with
+  | None -> None
+  | Some (config, local_defs, comments, pos) ->
+    Locate.get_doc
+      ~config
+      ~env
+      ~local_defs
+      ~comments
+      ~pos
+      (`User_input name)
+    |> doc_to_option
+
 let compare_result
     Query_protocol.{cost = cost_a; name = a; doc = doc_a;  _}
     Query_protocol.{cost = cost_b; name = b; doc = doc_b;  _}
@@ -85,9 +99,7 @@ let compare_result
     | _ -> c
   else c
 
-let compute_value
-    (config, local_defs, comments, pos, query) env
-    _ path desc acc =
+let compute_value doc_ctx query env _ path desc acc =
   let open Merlin_sherlodoc in
   let d = desc.Types.val_type in
   let typ = sherlodoc_type_of env d in
@@ -96,16 +108,7 @@ let compute_value
   let cost = Query.distance_for query ~path:name typ in
   if cost >= 1000 then acc
   else
-    let doc =
-      Locate.get_doc
-        ~config
-        ~env
-        ~local_defs
-        ~comments
-        ~pos
-        (`User_input name)
-      |> doc_to_option
-    in
+    let doc = get_doc doc_ctx env name in
     let loc = desc.Types.val_loc in
     let typ =
       Format.asprintf "%a"
@@ -115,15 +118,15 @@ let compute_value
     let constructible = make_constructible name d in
     Query_protocol.{cost; name; typ; loc; doc; constructible} :: acc
 
-let compute_values ctx env lident acc =
-  Env.fold_values (compute_value ctx env) lident env acc
+let compute_values doc_ctx query env lident acc =
+  Env.fold_values (compute_value doc_ctx query env) lident env acc
 
-let values_from_module ctx env lident acc =
+let values_from_module doc_ctx query env lident acc =
   let rec aux acc lident =
     match Env.find_module_by_name lident env with
     | exception _ -> acc
     | _ -> 
-      let acc = compute_values ctx env (Some lident) acc in
+      let acc = compute_values doc_ctx query env (Some lident) acc in
       Env.fold_modules (fun name _ mdl acc ->
           match mdl.Types.md_type with
           | Types.Mty_alias _ -> acc
@@ -135,23 +138,14 @@ let values_from_module ctx env lident acc =
   aux acc lident
 
 
-let run
-    ?(limit = 100)
-    ~config
-    ~local_defs
-    ~comments
-    ~pos
-    ~env
-    ~query
-    ~modules () =
-  let ctx = (config, local_defs, comments, pos, query) in
-  let init = compute_values ctx env None [] in
+let run ?(limit = 100) ~env ~query ~modules doc_ctx =
+  let init = compute_values doc_ctx query env None [] in
   modules
   |> List.fold_left
     ~init
     ~f:(fun acc name ->
         let lident = Longident.Lident name in
-        values_from_module ctx env lident acc
+        values_from_module doc_ctx query env lident acc
       )
   |> List.sort ~cmp:compare_result
   |> List.take_n limit

@@ -133,16 +133,16 @@ map).
     "type": "('a -> 'b) -> 'a Stdlib__Seq.t -> 'b Stdlib__Seq.t"
   }
   {
-    "name": "List.concat_map",
-    "type": "('a -> 'b list) -> 'a list -> 'b list"
-  }
-  {
     "name": "List.filter_map",
     "type": "('a -> 'b option) -> 'a list -> 'b list"
   }
   {
-    "name": "ListLabels.concat_map",
-    "type": "f:('a -> 'b list) -> 'a list -> 'b list"
+    "name": "List.concat_map",
+    "type": "('a -> 'b list) -> 'a list -> 'b list"
+  }
+  {
+    "name": "ListLabels.filter_map",
+    "type": "f:('a -> 'b option) -> 'a list -> 'b list"
   }
 
 

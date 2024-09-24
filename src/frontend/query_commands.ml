@@ -462,26 +462,30 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
              { Compl.name; kind = `Value; desc; info = ""; deprecated = false })
     in
     { Compl.entries; context = `Unknown }
-  | Type_search (query, pos, limit) ->
+  | Type_search (query, pos, limit, with_doc) ->
     let typer = Mpipeline.typer_result pipeline in
-    let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let node = Mtyper.node_at typer pos in
     let env, _ = Mbrowse.leaf_node node in
     let config = Mpipeline.final_config pipeline in
-    let comments = Mpipeline.reader_comments pipeline in
     let modules = Mconfig.global_modules config in
+    let doc_ctx =
+      if with_doc then
+        let comments = Mpipeline.reader_comments pipeline in
+        let local_defs = Mtyper.get_typedtree typer in
+        Some (config, local_defs, comments, pos)
+      else None
+    in
     begin
       match Type_search.classify_query query with
       | `By_type query ->
         let query = Merlin_sherlodoc.Query.from_string query in
-        Type_search.run ~limit ~config ~local_defs ~comments ~pos ~env ~query
-          ~modules ()
+        Type_search.run ~limit ~env ~query ~modules doc_ctx
       | `Polarity query ->
         let query = Polarity_search.prepare_query env query in
         let modules = Polarity_search.directories ~global_modules:modules env in
-        Polarity_search.execute_query_as_type_search ~limit ~config ~local_defs
-          ~comments ~pos ~env ~query ~modules ()
+        Polarity_search.execute_query_as_type_search ~limit ~env ~query ~modules
+          doc_ctx
     end
   | Refactor_open (mode, pos) ->
     let typer = Mpipeline.typer_result pipeline in

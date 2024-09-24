@@ -178,11 +178,12 @@ let dump (type a) : a t -> json =
   | Polarity_search (query, pos) ->
     mk "polarity-search"
       [ ("query", `String query); ("position", mk_position pos) ]
-  | Type_search (query, pos, limit) ->
+  | Type_search (query, pos, limit, with_doc) ->
     mk "type-search"
       [ ("query", `String query);
         ("position", mk_position pos);
-        ("limit", `Int limit)
+        ("limit", `Int limit);
+        ("with-doc", `Bool with_doc)
       ]
   | Occurrences (`Ident_at pos, scope) ->
     mk "occurrences"

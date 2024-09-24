@@ -143,15 +143,7 @@ let execute_query query env dirs =
   in
   List.fold_left dirs ~init:(direct None []) ~f:recurse
 
-let execute_query_as_type_search
-    ?(limit = 100)
-    ~config
-    ~local_defs
-    ~comments
-    ~pos
-    ~env
-    ~query
-    ~modules () =
+let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules doc_ctx =
   let direct dir acc =
     Env.fold_values (fun _ path desc acc ->
         let d  = desc.Types.val_type in
@@ -159,16 +151,7 @@ let execute_query_as_type_search
         | Some cost ->
           let path = Printtyp.rewrite_double_underscore_paths env path in
           let name = Format.asprintf "%a" Printtyp.path path in
-          let doc =
-            Locate.get_doc
-              ~config
-              ~env
-              ~local_defs
-              ~comments
-              ~pos
-              (`User_input name)
-            |> Type_search.doc_to_option
-          in
+          let doc = Type_search.get_doc doc_ctx env name in
           let loc = desc.Types.val_loc in
           let typ =
             Format.asprintf "%a"
