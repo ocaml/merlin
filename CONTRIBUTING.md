@@ -38,11 +38,9 @@ issue has not already been submitted.
 
 ### Styleguides
 
-As of today, Merlin's codebase does not use a code formatter. When contributing
-code to an existing module, one should adopt the style of the surrounding code.
-Please keep lines under 80 characters.
-
-We plan to move the codebase to ocamlformat in a near future.
+Merlin uses ocamlformat. When contributing code, please always format it by
+running `dune fmt` before submitting a PR. The required version of ocamlformat
+can be found in the `.ocamlformat` configuration file.
 
 Changes unrelated to the issue addressed by a PR should be made in a separate
 PR. Additionally, formatting changes in parts of the code not concerned by a
