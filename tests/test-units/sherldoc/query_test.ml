@@ -114,13 +114,12 @@ let test_distance_8 =
 
 let cases =
   ( "query-parser",
-    [
-      test_distance_1;
+    [ test_distance_1;
       test_distance_2;
       test_distance_3;
       test_distance_4;
       test_distance_5;
       test_distance_6;
       test_distance_7;
-      test_distance_8;
+      test_distance_8
     ] )

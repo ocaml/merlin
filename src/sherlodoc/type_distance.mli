@@ -28,6 +28,6 @@
 
 (** Calculate an approximation of the distance between two types. *)
 
-val compute : query:Type_expr.t -> entry:Type_expr.t -> int
 (** [compute a b] calculates an approximation of the distance between [query]
     and [entry]. *)
+val compute : query:Type_expr.t -> entry:Type_expr.t -> int

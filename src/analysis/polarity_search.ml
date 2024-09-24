@@ -85,15 +85,17 @@ let build_query ~positive ~negative env =
 
 let prepare_query env query =
   let re = Str.regexp "[ |\t]+" in
-  let pos,neg = Str.split re query |> List.partition ~f:(fun s->s.[0]<>'-') in
+  let pos, neg =
+    Str.split re query |> List.partition ~f:(fun s -> s.[0] <> '-')
+  in
   let prepare s =
-    Longident.parse @@
-    if s.[0] = '-' || s.[0] = '+'
-    then String.sub s ~pos:1 ~len:(String.length s - 1)
+    Longident.parse
+    @@
+    if s.[0] = '-' || s.[0] = '+' then
+      String.sub s ~pos:1 ~len:(String.length s - 1)
     else s
   in
-  build_query env
-    ~positive:(List.map pos ~f:prepare)
+  build_query env ~positive:(List.map pos ~f:prepare)
     ~negative:(List.map neg ~f:prepare)
 
 let directories ~global_modules env =
@@ -145,8 +147,9 @@ let execute_query query env dirs =
 
 let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules doc_ctx =
   let direct dir acc =
-    Env.fold_values (fun _ path desc acc ->
-        let d  = desc.Types.val_type in
+    Env.fold_values
+      (fun _ path desc acc ->
+        let d = desc.Types.val_type in
         match match_query env query d with
         | Some cost ->
           let path = Printtyp.rewrite_double_underscore_paths env path in
@@ -159,9 +162,9 @@ let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules doc_ctx =
               desc.Types.val_type
           in
           let constructible = Type_search.make_constructible name d in
-          Query_protocol.{cost; name; typ; loc; doc; constructible} :: acc
-        | None -> acc
-      ) dir env acc
+          Query_protocol.{ cost; name; typ; loc; doc; constructible } :: acc
+        | None -> acc)
+      dir env acc
   in
   let rec recurse acc (Trie (_, dir, children)) =
     match

@@ -7,8 +7,7 @@ let test_distance_1 =
       and computed =
         List.map
           (Name_cost.distance "decode")
-          [
-            "decode";
+          [ "decode";
             "decade";
             "decede";
             "decide";
@@ -16,7 +15,7 @@ let test_distance_1 =
             "bbcode";
             "become";
             "code";
-            "derobe";
+            "derobe"
           ]
       in
       check (list @@ option int) "should be equal" expected computed)
@@ -110,8 +109,7 @@ let test_best_distance_3 =
 
 let cases =
   ( "name_cost",
-    [
-      test_distance_1;
+    [ test_distance_1;
       test_distance_2;
       test_distance_3;
       test_distance_4;
@@ -122,5 +120,5 @@ let cases =
       test_distance_substring_4;
       test_best_distance_1;
       test_best_distance_2;
-      test_best_distance_3;
+      test_best_distance_3
     ] )

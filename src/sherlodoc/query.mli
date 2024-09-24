@@ -29,18 +29,18 @@
 (** Prepares a query based on a string of characters. A query acts on the
     identifier of a function and its type.. *)
 
-type t = { words : string list; type_expr : Type_expr.t option }
 (** Describes a search on an identifier and a type. *)
+type t = { words : string list; type_expr : Type_expr.t option }
 
-val from_string : string -> t
 (** Converts a string into a search query. *)
+val from_string : string -> t
 
-val to_string : t -> string
 (** Inspect a query (mostly for debugging purpose). *)
+val to_string : t -> string
 
-val equal : t -> t -> bool
 (** Equality between queries. *)
+val equal : t -> t -> bool
 
-val distance_for : t -> path:string -> Type_expr.t -> int
 (** [distance_for query ~path typexpr] returns a score for a [query] observing a
     given value, (a [path] and a [type_expr]). *)
+val distance_for : t -> path:string -> Type_expr.t -> int

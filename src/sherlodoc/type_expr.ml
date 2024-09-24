@@ -78,15 +78,15 @@ and as_list acc = function
   | [] -> acc ^ unhandled
   | [ x ] -> acc ^ to_string x
   | x :: xs ->
-      let acc = acc ^ to_string x ^ ", " in
-      as_list acc xs
+    let acc = acc ^ to_string x ^ ", " in
+    as_list acc xs
 
 and as_tuple acc = function
   | [] -> acc ^ unhandled
   | [ x ] -> acc ^ with_parens x
   | x :: xs ->
-      let acc = acc ^ with_parens x ^ " * " in
-      as_tuple acc xs
+    let acc = acc ^ with_parens x ^ " * " in
+    as_tuple acc xs
 
 module SMap = Map.Make (String)
 
@@ -106,25 +106,25 @@ let normalize_type_parameters ty =
     | Type_parsed.Unhandled -> (i, map, Unhandled)
     | Type_parsed.Wildcard -> (i, map, Wildcard)
     | Type_parsed.Arrow (a, b) ->
-        let i, map, a = aux i map a in
-        let i, map, b = aux i map b in
-        (i, map, Arrow (a, b))
+      let i, map, a = aux i map a in
+      let i, map, b = aux i map b in
+      (i, map, Arrow (a, b))
     | Type_parsed.Tycon (s, r) ->
-        let i, map, r = map_with_state aux i map r in
-        (i, map, Tycon (s, r))
+      let i, map, r = map_with_state aux i map r in
+      (i, map, Tycon (s, r))
     | Type_parsed.Tuple r ->
-        let i, map, r = map_with_state aux i map r in
-        (i, map, Tuple r)
+      let i, map, r = map_with_state aux i map r in
+      (i, map, Tuple r)
     | Type_parsed.Tyvar var ->
-        let i, map, value =
-          match SMap.find_opt var map with
-          | Some value -> (i, map, value)
-          | None ->
-              let i = succ i in
-              let map = SMap.add var i map in
-              (i, map, i)
-        in
-        (i, map, Tyvar value)
+      let i, map, value =
+        match SMap.find_opt var map with
+        | Some value -> (i, map, value)
+        | None ->
+          let i = succ i in
+          let map = SMap.add var i map in
+          (i, map, i)
+      in
+      (i, map, Tyvar value)
   in
   let _, _, normalized = aux ~-1 SMap.empty ty in
   normalized

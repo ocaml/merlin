@@ -43,15 +43,15 @@ type t =
   | Wildcard
   | Unhandled
 
-val normalize_type_parameters : Type_parsed.t -> t
 (** [normalize_type_parameters ty] replace string based type variables to
     integer based type variables. *)
+val normalize_type_parameters : Type_parsed.t -> t
 
-val from_string : string -> t option
 (** Try deserializing a string into a typed expression. *)
+val from_string : string -> t option
 
-val to_string : t -> string
 (** Render a type to a string. *)
+val to_string : t -> string
 
-val equal : t -> t -> bool
 (** Equality between types *)
+val equal : t -> t -> bool

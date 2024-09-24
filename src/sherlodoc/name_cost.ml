@@ -92,11 +92,11 @@ let best_distance ?cutoff words entry =
   let rec aux acc = function
     | [] -> acc |> Option.value ~default:0
     | x :: xs -> (
-        match distance_of_substring ?cutoff x entry with
-        | None -> aux acc xs
-        | Some 0 -> 0
-        | Some x ->
-            let acc = Int.min x (Option.value ~default:x acc) in
-            aux (Some acc) xs)
+      match distance_of_substring ?cutoff x entry with
+      | None -> aux acc xs
+      | Some 0 -> 0
+      | Some x ->
+        let acc = Int.min x (Option.value ~default:x acc) in
+        aux (Some acc) xs)
   in
   aux None words

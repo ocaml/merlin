@@ -35,15 +35,15 @@ type t
 val positive : t
 val negative : t
 
-val negate : t -> t
 (** [negate x] returns [positive] if [x] is [negative] and [negative] if [x] is
     [positive]. *)
+val negate : t -> t
 
-val equal : t -> t -> bool
 (** Equality between polarity sign. *)
+val equal : t -> t -> bool
 
-val compare : t -> t -> int
 (** A comparison that act that [negative < positive]. *)
+val compare : t -> t -> int
 
-val to_string : t -> string
 (** Simple printer for polarity sign. *)
+val to_string : t -> string

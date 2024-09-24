@@ -43,25 +43,25 @@ let make_path t =
     | Type_expr.Wildcard -> [ Wildcard :: prefix ]
     | Type_expr.Tyvar x -> [ Tyvar x :: prefix ]
     | Type_expr.Arrow (a, b) ->
-        List.rev_append
-          (aux (Left_arrow :: prefix) a)
-          (aux (Right_arrow :: prefix) b)
+      List.rev_append
+        (aux (Left_arrow :: prefix) a)
+        (aux (Right_arrow :: prefix) b)
     | Type_expr.Tycon (constr, []) -> [ Tyname constr :: prefix ]
     | Type_expr.Tycon (constr, args) ->
-        let length = String.length constr in
-        let prefix = Tyname constr :: prefix in
-        args
-        |> List.mapi (fun position arg ->
-               let prefix = Argument { position; length } :: prefix in
-               aux prefix arg)
-        |> List.fold_left (fun acc xs -> List.rev_append xs acc) []
+      let length = String.length constr in
+      let prefix = Tyname constr :: prefix in
+      args
+      |> List.mapi (fun position arg ->
+             let prefix = Argument { position; length } :: prefix in
+             aux prefix arg)
+      |> List.fold_left (fun acc xs -> List.rev_append xs acc) []
     | Type_expr.Tuple args ->
-        let length = List.length args in
-        args
-        |> List.mapi (fun position arg ->
-               let prefix = Product { position; length } :: prefix in
-               aux prefix arg)
-        |> List.fold_left (fun acc xs -> List.rev_append xs acc) []
+      let length = List.length args in
+      args
+      |> List.mapi (fun position arg ->
+             let prefix = Product { position; length } :: prefix in
+             aux prefix arg)
+      |> List.fold_left (fun acc xs -> List.rev_append xs acc) []
   in
   List.map List.rev (aux [] t)
 
@@ -90,31 +90,31 @@ let distance xs ys =
     | _, [] -> max_distance
     | [ Tyvar _ ], [ Wildcard ] when P.equal xpolarity ypolarity -> 0
     | [ Tyvar x ], [ Tyvar y ] when P.equal xpolarity ypolarity ->
-        if Int.equal x y then 0 else 1
+      if Int.equal x y then 0 else 1
     | Left_arrow :: xs, Left_arrow :: ys ->
-        let xpolarity = P.negate xpolarity and ypolarity = P.negate ypolarity in
-        memo ~xpolarity ~ypolarity (succ i) (succ j) xs ys
+      let xpolarity = P.negate xpolarity and ypolarity = P.negate ypolarity in
+      memo ~xpolarity ~ypolarity (succ i) (succ j) xs ys
     | Left_arrow :: xs, _ ->
-        let xpolarity = P.negate xpolarity in
-        memo ~xpolarity ~ypolarity (succ i) j xs ys
+      let xpolarity = P.negate xpolarity in
+      memo ~xpolarity ~ypolarity (succ i) j xs ys
     | _, Left_arrow :: ys ->
-        let ypolarity = P.negate ypolarity in
-        memo ~xpolarity ~ypolarity i (succ j) xs ys
+      let ypolarity = P.negate ypolarity in
+      memo ~xpolarity ~ypolarity i (succ j) xs ys
     | _, Right_arrow :: ys -> memo ~xpolarity ~ypolarity i (succ j) xs ys
     | Right_arrow :: xs, _ -> memo ~xpolarity ~ypolarity (succ i) j xs ys
     | Product { length = a; _ } :: xs, Product { length = b; _ } :: ys
     | Argument { length = a; _ } :: xs, Argument { length = b; _ } :: ys ->
-        let l = abs (a - b) in
-        l + memo ~xpolarity ~ypolarity (succ i) (succ j) xs ys
+      let l = abs (a - b) in
+      l + memo ~xpolarity ~ypolarity (succ i) (succ j) xs ys
     | Product _ :: xs, ys -> 1 + memo ~xpolarity ~ypolarity (succ i) j xs ys
     | xs, Product _ :: ys -> 1 + memo ~xpolarity ~ypolarity i (succ j) xs ys
     | Tyname x :: xs', Tyname y :: ys' when P.equal xpolarity ypolarity -> (
-        match Name_cost.distance x y with
-        | None -> skip_entry + memo ~xpolarity ~ypolarity i (succ j) xs ys'
-        | Some cost ->
-            cost + memo ~xpolarity ~ypolarity (succ i) (succ j) xs' ys')
+      match Name_cost.distance x y with
+      | None -> skip_entry + memo ~xpolarity ~ypolarity i (succ j) xs ys'
+      | Some cost -> cost + memo ~xpolarity ~ypolarity (succ i) (succ j) xs' ys'
+      )
     | xs, Tyname _ :: ys ->
-        skip_entry + memo ~xpolarity ~ypolarity i (succ j) xs ys
+      skip_entry + memo ~xpolarity ~ypolarity i (succ j) xs ys
     | xs, Argument _ :: ys -> memo ~xpolarity ~ypolarity i (succ j) xs ys
     | _, (Wildcard | Tyvar _) :: _ -> max_distance
   in
@@ -146,39 +146,39 @@ let replace_score best score = best := Int.min score !best
 let minimize = function
   | [] -> 0
   | list ->
-      let used, arr, heuristics = init_heuristic list in
-      let best = ref 1000 and limit = ref 0 in
-      let len_a = Array.length arr in
-      let rec aux rem acc i =
-        let () = incr limit in
-        if !limit > max_distance then false
-        else if rem <= 0 then
-          let score = acc + (1000 * (len_a - i)) in
-          let () = replace_score best score in
-          true
-        else if i >= len_a then
-          let score = acc + (5 * rem) in
-          let () = replace_score best score in
-          true
-        else if acc + heuristics.(i) >= !best then true
-        else
-          let rec find = function
-            | [] -> true
-            | (cost, j) :: rest ->
-                let continue =
-                  if used.(j) then true
-                  else
-                    let () = used.(j) <- true in
-                    let continue = aux (pred rem) (acc + cost) (succ i) in
-                    let () = used.(j) <- false in
-                    continue
-                in
-                if continue then find rest else false
-          in
-          find arr.(i)
-      in
-      let _ = aux (Array.length used) 0 0 in
-      !best
+    let used, arr, heuristics = init_heuristic list in
+    let best = ref 1000 and limit = ref 0 in
+    let len_a = Array.length arr in
+    let rec aux rem acc i =
+      let () = incr limit in
+      if !limit > max_distance then false
+      else if rem <= 0 then
+        let score = acc + (1000 * (len_a - i)) in
+        let () = replace_score best score in
+        true
+      else if i >= len_a then
+        let score = acc + (5 * rem) in
+        let () = replace_score best score in
+        true
+      else if acc + heuristics.(i) >= !best then true
+      else
+        let rec find = function
+          | [] -> true
+          | (cost, j) :: rest ->
+            let continue =
+              if used.(j) then true
+              else
+                let () = used.(j) <- true in
+                let continue = aux (pred rem) (acc + cost) (succ i) in
+                let () = used.(j) <- false in
+                continue
+            in
+            if continue then find rest else false
+        in
+        find arr.(i)
+    in
+    let _ = aux (Array.length used) 0 0 in
+    !best
 
 let compute ~query ~entry =
   let query = make_path query in

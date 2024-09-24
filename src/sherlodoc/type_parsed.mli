@@ -37,8 +37,8 @@ type t =
   | Wildcard
   | Unhandled
 
-val tuple : t list -> t
 (** Create a tuple using a rather naive heuristic:
     - If the list is empty, it produces a type [unit]
     - If the list contains only one element, that element is returned
     - Otherwise, a tuple is constructed. *)
+val tuple : t list -> t

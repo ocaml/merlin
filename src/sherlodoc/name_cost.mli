@@ -28,15 +28,15 @@
 
 (** Utilities for calculating distances between names. *)
 
-val distance : ?cutoff:int -> string -> string -> int option
 (** [distance ?cutoff a b] returns the
     {{:https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance}
       Damerau-Levenshtein} between [a] and [b]. *)
+val distance : ?cutoff:int -> string -> string -> int option
 
-val distance_of_substring : ?cutoff:int -> string -> string -> int option
 (** [distance_of_substring ?cutoff a b] compute the distance by extracting
     relevant substring from [b] *)
+val distance_of_substring : ?cutoff:int -> string -> string -> int option
 
-val best_distance : ?cutoff:int -> string list -> string -> int
 (** [best_distance ?cutoff words entry] compute the best distance of a list of
     string according to a given string. *)
+val best_distance : ?cutoff:int -> string list -> string -> int

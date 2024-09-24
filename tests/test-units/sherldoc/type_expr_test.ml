@@ -135,12 +135,11 @@ let test_long_poly_identifier_1 =
 
 let cases =
   ( "type_expr",
-    [
-      test_parse_simple_type_1;
+    [ test_parse_simple_type_1;
       test_parse_simple_type_2;
       test_parse_simple_type_3;
       test_parse_simple_type_4;
       test_simple_isomorphismic_poly_function_1;
       test_poly_identifier_1;
-      test_long_poly_identifier_1;
+      test_long_poly_identifier_1
     ] )

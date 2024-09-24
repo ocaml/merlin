@@ -15,8 +15,7 @@ let expected_distance query entry expected =
 
 let cases =
   ( "type_distance",
-    [
-      expected_distance "int" "int" 0;
+    [ expected_distance "int" "int" 0;
       expected_distance "string" "string" 0;
       expected_distance "string -> int" "string -> int" 0;
       expected_distance "string -> int -> float" "string -> int -> float" 0;
@@ -41,5 +40,5 @@ let cases =
       expected_distance "('a -> 'a) -> 'a list -> 'a list"
         "('a -> 'b) -> 'a list -> 'b list" 2;
       expected_distance "'a -> 'b option -> 'a option"
-        "'b option -> 'a -> 'a option" 3;
+        "'b option -> 'a -> 'a option" 3
     ] )

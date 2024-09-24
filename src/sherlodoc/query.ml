@@ -70,16 +70,16 @@ let from_string str =
   let words, type_expr =
     match String.index_opt str ':' with
     | None ->
-        if guess_type_search len str then
-          let str = balance_parens len str in
-          ("", Type_expr.from_string str)
-        else (str, None)
+      if guess_type_search len str then
+        let str = balance_parens len str in
+        ("", Type_expr.from_string str)
+      else (str, None)
     | Some loc ->
-        let str_name = String.sub str 0 loc
-        and str_type = String.sub str (succ loc) (len - loc - 1) in
-        let len = String.length str_type in
-        let str_type = balance_parens len str_type in
-        (str_name, Type_expr.from_string str_type)
+      let str_name = String.sub str 0 loc
+      and str_type = String.sub str (succ loc) (len - loc - 1) in
+      let len = String.length str_type in
+      let str_type = balance_parens len str_type in
+      (str_name, Type_expr.from_string str_type)
   in
   let words = naive_of_string words in
   { words; type_expr }
