@@ -14,14 +14,14 @@
     "doc": null
   }
   {
-    "name": "Int64.of_string_opt",
-    "type": "string -> int64 option",
+    "name": "Int32.of_string_opt",
+    "type": "string -> int32 option",
     "cost": 2,
     "doc": null
   }
   {
-    "name": "Int32.of_string_opt",
-    "type": "string -> int32 option",
+    "name": "Int64.of_string_opt",
+    "type": "string -> int64 option",
     "cost": 2,
     "doc": null
   }
@@ -109,20 +109,20 @@
     "doc": null
   }
   {
-    "name": "List.filter_map",
-    "type": "('a -> 'b option) -> 'a list -> 'b list",
-    "cost": 10,
-    "doc": null
-  }
-  {
     "name": "List.concat_map",
     "type": "('a -> 'b list) -> 'a list -> 'b list",
     "cost": 10,
     "doc": null
   }
   {
-    "name": "ListLabels.filter_map",
-    "type": "f:('a -> 'b option) -> 'a list -> 'b list",
+    "name": "List.filter_map",
+    "type": "('a -> 'b option) -> 'a list -> 'b list",
+    "cost": 10,
+    "doc": null
+  }
+  {
+    "name": "ListLabels.concat_map",
+    "type": "f:('a -> 'b list) -> 'a list -> 'b list",
     "cost": 10,
     "doc": null
   }
@@ -234,22 +234,6 @@
       {
         "file": "moreLabels.mli",
         "start": {
-          "line": 168,
-          "col": 2
-        },
-        "end": {
-          "line": 168,
-          "col": 55
-        },
-        "name": "MoreLabels.Hashtbl.replace",
-        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
-        "cost": 48,
-        "doc": null,
-        "constructible": "MoreLabels.Hashtbl.replace _ ~key:_ ~data:_"
-      },
-      {
-        "file": "moreLabels.mli",
-        "start": {
           "line": 318,
           "col": 2
         },
@@ -262,6 +246,22 @@
         "cost": 48,
         "doc": null,
         "constructible": "MoreLabels.Hashtbl.add_seq _ _"
+      },
+      {
+        "file": "moreLabels.mli",
+        "start": {
+          "line": 168,
+          "col": 2
+        },
+        "end": {
+          "line": 168,
+          "col": 55
+        },
+        "name": "MoreLabels.Hashtbl.replace",
+        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
+        "cost": 48,
+        "doc": null,
+        "constructible": "MoreLabels.Hashtbl.replace _ ~key:_ ~data:_"
       },
       {
         "file": "moreLabels.mli",
@@ -316,14 +316,14 @@
     "doc": "Convert the given string to an integer.    The string is read in decimal (by default, or if the string    begins with [0u]), in hexadecimal (if it begins with [0x] or    [0X]), in octal (if it begins with [0o] or [0O]), or in binary    (if it begins with [0b] or [0B]).     The [0u] prefix reads the input as an unsigned integer in the range    [[0, 2*max_int+1]].  If the input exceeds {!max_int}    it is converted to the signed integer    [min_int + input - max_int - 1].     The [_] (underscore) character can appear anywhere in the string    and is ignored.     Return [None] if the given string is not a valid representation of an    integer, or if the integer represented exceeds the range of integers    representable in type [int].    @since 4.05"
   }
   {
-    "name": "Int64.of_string_opt",
-    "type": "string -> int64 option",
+    "name": "Int32.of_string_opt",
+    "type": "string -> int32 option",
     "cost": 2,
     "doc": "Same as [of_string], but return [None] instead of raising.     @since 4.05"
   }
   {
-    "name": "Int32.of_string_opt",
-    "type": "string -> int32 option",
+    "name": "Int64.of_string_opt",
+    "type": "string -> int64 option",
     "cost": 2,
     "doc": "Same as [of_string], but return [None] instead of raising.     @since 4.05"
   }

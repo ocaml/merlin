@@ -84,7 +84,11 @@ let compare_result Query_protocol.{ cost = cost_a; name = a; doc = doc_a; _ }
     match (c, doc_a, doc_b) with
     | 0, Some _, None -> 1
     | 0, None, Some _ -> -1
-    | 0, Some a, Some b -> Int.compare (String.length a) (String.length b)
+    | 0, Some doc_a, Some doc_b ->
+      let c = Int.compare (String.length doc_a) (String.length doc_b) in
+      (* Make default insertion determinist *)
+      if Int.equal 0 c then String.compare a b else c
+    | 0, None, None -> String.compare a b
     | _ -> c
   else c
 
