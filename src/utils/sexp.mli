@@ -1,7 +1,7 @@
 open Std
 
 type t =
-    Cons of t * t
+  | Cons of t * t
   | Sym of string
   | String of string
   | Int of int

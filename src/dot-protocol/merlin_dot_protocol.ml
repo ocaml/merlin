@@ -1,30 +1,30 @@
 (* {{{ COPYING *(
 
-  This file is part of Merlin, an helper for ocaml editors
+     This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2019  Frédéric Bour  <frederic.bour(_)lakaban.net>
-                      Thomas Refis  <refis.thomas(_)gmail.com>
-                      Simon Castellan  <simon.castellan(_)iuwt.fr>
+     Copyright (C) 2019  Frédéric Bour  <frederic.bour(_)lakaban.net>
+                         Thomas Refis  <refis.thomas(_)gmail.com>
+                         Simon Castellan  <simon.castellan(_)iuwt.fr>
 
-  Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation the
-  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-  sell copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+     Permission is hereby granted, free of charge, to any person obtaining a
+     copy of this software and associated documentation files (the "Software"),
+     to deal in the Software without restriction, including without limitation the
+     rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+     sell copies of the Software, and to permit persons to whom the Software is
+     furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
+     The above copyright notice and this permission notice shall be included in
+     all copies or substantial portions of the Software.
 
-  The Software is provided "as is", without warranty of any kind, express or
-  implied, including but not limited to the warranties of merchantability,
-  fitness for a particular purpose and noninfringement. In no event shall
-  the authors or copyright holders be liable for any claim, damages or other
-  liability, whether in an action of contract, tort or otherwise, arising
-  from, out of or in connection with the software or the use or other dealings
-  in the Software.
+     The Software is provided "as is", without warranty of any kind, express or
+     implied, including but not limited to the warranties of merchantability,
+     fitness for a particular purpose and noninfringement. In no event shall
+     the authors or copyright holders be liable for any claim, damages or other
+     liability, whether in an action of contract, tort or otherwise, arising
+     from, out of or in connection with the software or the use or other dealings
+     in the Software.
 
-)* }}} *)
+   )* }}} *)
 
 open Merlin_utils.Std
 open Merlin_utils.Std.Result
@@ -37,7 +37,7 @@ module Directive = struct
     | `SH of string
     | `CMI of string
     | `CMT of string
-    | `INDEX of string]
+    | `INDEX of string ]
 
   type no_processing_required =
     [ `EXT of string list
@@ -55,9 +55,7 @@ module Directive = struct
   module Processed = struct
     type acceptable_in_input = [ include_path | no_processing_required ]
 
-    type t =
-      [ acceptable_in_input
-      | `ERROR_MSG of string ]
+    type t = [ acceptable_in_input | `ERROR_MSG of string ]
   end
 
   module Raw = struct
@@ -78,39 +76,43 @@ module Sexp = struct
   let atoms_of_strings = List.map ~f:(fun s -> Atom s)
 
   let strings_of_atoms =
-    List.filter_map ~f:(function Atom s -> Some s | _ -> None)
+    List.filter_map ~f:(function
+      | Atom s -> Some s
+      | _ -> None)
 
   let rec to_string = function
-  | Atom s -> s
-  | List l -> String.concat ~sep:" "
-    ( List.concat [["("]; List.map ~f:to_string l;[")"]])
+    | Atom s -> s
+    | List l ->
+      String.concat ~sep:" "
+        (List.concat [ [ "(" ]; List.map ~f:to_string l; [ ")" ] ])
 
   let to_directive sexp =
     match sexp with
-    | List [ Atom tag; Atom value ] ->
-      begin match tag with
-        | "S" -> `S value
-        | "B" -> `B value
-        | "SH" -> `SH value
-        | "BH" -> `BH value
-        | "CMI" -> `CMI value
-        | "CMT" -> `CMT value
-        | "INDEX" -> `INDEX value
-        | "STDLIB" -> `STDLIB value
-        | "SOURCE_ROOT" -> `SOURCE_ROOT value
-        | "UNIT_NAME" -> `UNIT_NAME value
-        | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
-        | "SUFFIX" -> `SUFFIX value
-        | "ERROR" -> `ERROR_MSG value
-        | "FLG" ->
-            (* This means merlin asked dune 2.6 for configuration.
-              But the protocole evolved, only dune 2.8 should be used *)
-            `ERROR_MSG "No .merlin file found. Try building the project."
-        | tag -> `UNKNOWN_TAG tag
-      end
+    | List [ Atom tag; Atom value ] -> begin
+      match tag with
+      | "S" -> `S value
+      | "B" -> `B value
+      | "SH" -> `SH value
+      | "BH" -> `BH value
+      | "CMI" -> `CMI value
+      | "CMT" -> `CMT value
+      | "INDEX" -> `INDEX value
+      | "STDLIB" -> `STDLIB value
+      | "SOURCE_ROOT" -> `SOURCE_ROOT value
+      | "UNIT_NAME" -> `UNIT_NAME value
+      | "WRAPPING_PREFIX" -> `WRAPPING_PREFIX value
+      | "SUFFIX" -> `SUFFIX value
+      | "ERROR" -> `ERROR_MSG value
+      | "FLG" ->
+        (* This means merlin asked dune 2.6 for configuration.
+           But the protocole evolved, only dune 2.8 should be used *)
+        `ERROR_MSG "No .merlin file found. Try building the project."
+      | tag -> `UNKNOWN_TAG tag
+    end
     | List [ Atom tag; List l ] ->
-        let value = strings_of_atoms l in
-        begin match tag with
+      let value = strings_of_atoms l in
+      begin
+        match tag with
         | "EXT" -> `EXT value
         | "FLG" -> `FLG value
         | "READER" -> `READER value
@@ -142,8 +144,8 @@ module Sexp = struct
         | `READER ss -> ("READER", [ List (atoms_of_strings ss) ])
         | `EXCLUDE_QUERY_DIR -> ("EXCLUDE_QUERY_DIR", [])
         | `USE_PPX_CACHE -> ("USE_PPX_CACHE", [])
-        | `UNKNOWN_TAG tag -> ("ERROR", single @@
-            Printf.sprintf "Unknown tag in .merlin: %s" tag)
+        | `UNKNOWN_TAG tag ->
+          ("ERROR", single @@ Printf.sprintf "Unknown tag in .merlin: %s" tag)
         | `ERROR_MSG s -> ("ERROR", single s)
       in
       List (Atom tag :: body)
@@ -151,9 +153,7 @@ module Sexp = struct
     List (List.map ~f directives)
 end
 
-type read_error =
-  | Unexpected_output of string
-  | Csexp_parse_error of string
+type read_error = Unexpected_output of string | Csexp_parse_error of string
 
 type command = File of string | Halt | Unknown
 
@@ -203,13 +203,13 @@ struct
       let open IO.O in
       let+ input = Chan.read chan in
       match input with
-      | Ok (List [Atom "File"; Atom path]) -> File path
+      | Ok (List [ Atom "File"; Atom path ]) -> File path
       | Ok (Atom "Halt") -> Halt
       | Ok _ -> Unknown
       | Error _ -> Halt
 
     let send_file chan path =
-      Chan.write chan Sexp.(List [Atom "File"; Atom path])
+      Chan.write chan Sexp.(List [ Atom "File"; Atom path ])
 
     let halt chan = Chan.write chan (Sexp.Atom "Halt")
   end
@@ -232,9 +232,12 @@ struct
 end
 
 module Blocking =
-  Make (struct
+  Make
+    (struct
       type 'a t = 'a
-      module O = struct let ( let+ ) x f = f x end
+      module O = struct
+        let ( let+ ) x f = f x
+      end
     end)
     (struct
       type in_chan = in_channel

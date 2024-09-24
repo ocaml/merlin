@@ -19,20 +19,22 @@ module Lid_set = Set.Make (Lid)
 module Uid_map = Shape.Uid.Map
 module Stats = Map.Make (String)
 
-let add map uid locs = Uid_map.update uid (function
-    | None -> Some locs
-    | Some locs' -> Some (Lid_set.union locs' locs))
-  map
+let add map uid locs =
+  Uid_map.update uid
+    (function
+      | None -> Some locs
+      | Some locs' -> Some (Lid_set.union locs' locs))
+    map
 
 type stat = { mtime : float; size : int; source_digest : string option }
 
-type index = {
-  defs : Lid_set.t Uid_map.t;
-  approximated : Lid_set.t Uid_map.t;
-  cu_shape : (string, Shape.t) Hashtbl.t;
-  stats : stat Stats.t;
-  root_directory: string option;
-}
+type index =
+  { defs : Lid_set.t Uid_map.t;
+    approximated : Lid_set.t Uid_map.t;
+    cu_shape : (string, Shape.t) Hashtbl.t;
+    stats : stat Stats.t;
+    root_directory : string option
+  }
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "{@[";
@@ -101,4 +103,6 @@ let read ~file =
       else Unknown)
 
 let read_exn ~file =
-  match read ~file with Index index -> index | _ -> raise (Not_an_index file)
+  match read ~file with
+  | Index index -> index
+  | _ -> raise (Not_an_index file)
