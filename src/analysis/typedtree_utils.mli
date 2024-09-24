@@ -14,9 +14,7 @@ val let_bound_vars :
 (** Extracts the location of a [uid] from a
     [Typedtree.item_declaration] *)
 val location_of_declaration :
-  uid:Shape.Uid.t ->
-  Typedtree.item_declaration ->
-  string Location.loc option
+  uid:Shape.Uid.t -> Typedtree.item_declaration -> string Location.loc option
 
 (** [pat_var_id_and_loc] try to extract the [id] and the [location] of
     pattern variable. *)
@@ -25,6 +23,6 @@ val pat_var_id_and_loc :
 
 (** [pat_alias_id_and_loc] try to extract the [id] and the [location]
     of pattern alias. *)
-val pat_alias_pat_id_and_loc
-  : Typedtree.pattern
-  -> (Typedtree.pattern * Ident.t * string Location.loc) option
+val pat_alias_pat_id_and_loc :
+  Typedtree.pattern ->
+  (Typedtree.pattern * Ident.t * string Location.loc) option

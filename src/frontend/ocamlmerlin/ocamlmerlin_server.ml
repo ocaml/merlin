@@ -1,10 +1,8 @@
 let merlin_timeout =
-  try float_of_string (Sys.getenv "MERLIN_TIMEOUT")
-  with _ -> 600.0
+  try float_of_string (Sys.getenv "MERLIN_TIMEOUT") with _ -> 600.0
 
 module Server = struct
-
-  let process_request {Os_ipc. wd; environ; argv; context = _}  =
+  let process_request { Os_ipc.wd; environ; argv; context = _ } =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit
     | args -> New_merlin.run ~new_env:(Some environ) (Some wd) args
@@ -22,15 +20,13 @@ module Server = struct
       close_with (-1);
       raise Exit
     | exception exn ->
-      Logger.log ~section:"server" ~title:"process failed" "%a"
-        Logger.exn exn;
+      Logger.log ~section:"server" ~title:"process failed" "%a" Logger.exn exn;
       close_with (-1)
 
   let server_accept merlinid server =
     let rec loop total =
       let merlinid' = File_id.get Sys.executable_name in
-      if total > merlin_timeout ||
-         not (File_id.check merlinid merlinid') then
+      if total > merlin_timeout || not (File_id.check merlinid merlinid') then
         None
       else
         let timeout = max 10.0 (min 60.0 (merlin_timeout -. total)) in
@@ -44,7 +40,8 @@ module Server = struct
 
   let rec loop merlinid server =
     match server_accept merlinid server with
-    | None -> (* Timeout *)
+    | None ->
+      (* Timeout *)
       ()
     | Some client ->
       let continue =
@@ -56,8 +53,7 @@ module Server = struct
 
   let start socket_path socket_fd =
     match Os_ipc.server_setup socket_path socket_fd with
-    | None ->
-      Logger.log ~section:"server" ~title:"cannot setup listener" ""
+    | None -> Logger.log ~section:"server" ~title:"cannot setup listener" ""
     | Some server ->
       (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
       if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
@@ -71,16 +67,16 @@ let main () =
   match List.tl (Array.to_list Sys.argv) with
   | "single" :: args -> exit (New_merlin.run ~new_env:None None args)
   | "old-protocol" :: args -> Old_merlin.run args
-  | ["server"; socket_path; socket_fd] -> Server.start socket_path socket_fd
+  | [ "server"; socket_path; socket_fd ] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->
     Printf.eprintf
       "Usage: %s <frontend> <arguments...>\n\
-       Select the merlin frontend to execute. Valid values are:\n\
-      \n- 'old-protocol' executes the merlin frontend from previous version.\n\
-      \  It is a top level reading and writing commands in a JSON form.\n\
-      \n- 'single' is a simpler frontend that reads input from stdin,\n\
-      \  processes a single query and outputs result on stdout.\n\
-      \n- 'server' works like 'single', but uses a background process to\n\
+       Select the merlin frontend to execute. Valid values are:\n\n\
+       - 'old-protocol' executes the merlin frontend from previous version.\n\
+      \  It is a top level reading and writing commands in a JSON form.\n\n\
+       - 'single' is a simpler frontend that reads input from stdin,\n\
+      \  processes a single query and outputs result on stdout.\n\n\
+       - 'server' works like 'single', but uses a background process to\n\
       \  speedup processing.\n\
        If no frontend is specified, it defaults to 'old-protocol' for\n\
        compatibility with existing editors.\n"
@@ -89,7 +85,5 @@ let main () =
 
 let () =
   Lib_config.Json.set_pretty_to_string Yojson.Basic.pretty_to_string;
-  let `Log_file_path log_file, `Log_sections sections =
-    Log_info.get ()
-  in
+  let `Log_file_path log_file, `Log_sections sections = Log_info.get () in
   Logger.with_log_file log_file ~sections main

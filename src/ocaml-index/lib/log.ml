@@ -1,7 +1,10 @@
 module Level = struct
   type t = Debug | Warning | Error
 
-  let int_of_t = function Debug -> 0 | Warning -> 1 | Error -> 2
+  let int_of_t = function
+    | Debug -> 0
+    | Warning -> 1
+    | Error -> 2
 
   let string_of_t = function
     | Debug -> "debug"

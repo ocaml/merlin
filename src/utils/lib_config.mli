@@ -10,10 +10,10 @@ val set_program_name : string -> unit
 val program_name : unit -> string
 
 module Json : sig
-    (** Merlin's logger requires a Json pretty-printer for correct operation.
+  (** Merlin's logger requires a Json pretty-printer for correct operation.
         [set_pretty_to_string] can be used to provide one. A common pretifier
         is [Yojson.Basic.pretty_to_string].  *)
-    val set_pretty_to_string : (Std.json -> string) -> unit
+  val set_pretty_to_string : (Std.json -> string) -> unit
 end
 
 (** Merlin spawns child processes for preprocessors (pp and ppx), which can be
@@ -41,15 +41,15 @@ module System : sig
 
       - As of today Merlin handles the [`Cancelled] return case identically as
         other error codes. *)
-  val set_run_in_directory
-    : (prog:string
-    -> prog_is_quoted:bool
-    -> args:string list
-    -> cwd:string
-    -> ?stdin:string
-    -> ?stdout:string
-    -> ?stderr:string
-    -> unit
-    -> [ `Finished of int | `Cancelled ])
-    -> unit
+  val set_run_in_directory :
+    (prog:string ->
+    prog_is_quoted:bool ->
+    args:string list ->
+    cwd:string ->
+    ?stdin:string ->
+    ?stdout:string ->
+    ?stderr:string ->
+    unit ->
+    [ `Finished of int | `Cancelled ]) ->
+    unit
 end

@@ -1,0 +1,11 @@
+version=0.26.2
+disable=false
+
+break-cases=fit-or-vertical
+doc-comments=before
+cases-exp-indent=2
+dock-collection-brackets=false
+# Preserve begin/end
+exp-grouping=preserve
+module-item-spacing=preserve
+parse-docstrings=false
