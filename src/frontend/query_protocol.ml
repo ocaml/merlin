@@ -134,6 +134,9 @@ type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ _bool = bool
 
+type occurrences_status =
+  [ `Not_requested | `Out_of_sync of string list | `No_def | `Included ]
+
 type _ t =
   | Type_expr(* *)
     :  string * Msource.position
@@ -242,7 +245,7 @@ type _ t =
     -> string list t
   | Occurrences(* *)
     : [`Ident_at of Msource.position] * [`Project | `Buffer]
-    -> Location.t list t
+    -> (Location.t list * occurrences_status) t
   | Signature_help
     : signature_help
     -> signature_help_result option t
