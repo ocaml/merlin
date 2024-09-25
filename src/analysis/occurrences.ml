@@ -234,16 +234,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
        is not necessary for correctness, it makes the output a bit nicer. *)
     let canonicalize_file_in_loc ({ txt; loc } : 'a Location.loc) :
         'a Location.loc =
-      let canonicalize_pos (pos : Lexing.position) =
-        { pos with pos_fname = Misc.canonicalize_filename pos.pos_fname }
-      in
-      let loc : Location.t =
-        { loc_start = canonicalize_pos loc.loc_start;
-          loc_end = canonicalize_pos loc.loc_end;
-          loc_ghost = loc.loc_ghost
-        }
-      in
-      { txt; loc }
+      let file = Misc.canonicalize_filename loc.loc_start.pos_fname in
+      { txt; loc = set_fname ~file loc }
     in
     let locs = Lid_set.map canonicalize_file_in_loc locs in
     let locs =
