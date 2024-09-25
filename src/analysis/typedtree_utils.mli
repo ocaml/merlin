@@ -18,6 +18,6 @@ val pat_var_id_and_loc :
 
 (** [pat_alias_id_and_loc] try to extract the [id] and the [location]
     of pattern alias. *)
-val pat_alias_pat_id_and_loc
-  : Typedtree.pattern
-  -> (Typedtree.pattern * Ident.t * string Location.loc) option
+val pat_alias_pat_id_and_loc :
+  Typedtree.pattern ->
+  (Typedtree.pattern * Ident.t * string Location.loc) option
