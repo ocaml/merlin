@@ -11,6 +11,7 @@ unreleased
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
+    - emacs: Improve the way that result of polarity search is displayed (#1814)
 
 merlin 4.16
 ===========
