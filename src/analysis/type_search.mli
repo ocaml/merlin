@@ -36,22 +36,22 @@ val run :
   env:Env.t ->
   query:Merlin_sherlodoc.Query.t ->
   modules:string list ->
-  (Mconfig.t * Mtyper.typedtree * (string * Location.t) list * Lexing.position)
-  option ->
-  Query_protocol.type_search_result list
+  unit ->
+  Types.type_expr Query_protocol.type_search_result list
 
 val get_doc :
-  (Mconfig.t
-  * Mtyper.typedtree
-  * (string * Warnings.loc) list
-  * Lexing.position)
-  option ->
-  Env.t ->
+  config:Mconfig.t ->
+  env:Env.t ->
+  local_defs:Mtyper.typedtree ->
+  comments:(string * Location.t) list ->
+  pos:Lexing.position ->
   string ->
   string option
 
 val make_constructible : string -> Types.type_expr -> string
 val compare_result :
-  Query_protocol.type_search_result -> Query_protocol.type_search_result -> int
+  _ Query_protocol.type_search_result ->
+  _ Query_protocol.type_search_result ->
+  int
 
 val classify_query : string -> [ `By_type of string | `Polarity of string ]

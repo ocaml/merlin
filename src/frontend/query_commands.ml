@@ -469,24 +469,31 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let env, _ = Mbrowse.leaf_node node in
     let config = Mpipeline.final_config pipeline in
     let modules = Mconfig.global_modules config in
-    let doc_ctx =
-      if with_doc then
-        let comments = Mpipeline.reader_comments pipeline in
-        let local_defs = Mtyper.get_typedtree typer in
-        Some (config, local_defs, comments, pos)
-      else None
-    in
-    begin
+    let verbosity = verbosity pipeline in
+    let results =
       match Type_search.classify_query query with
       | `By_type query ->
         let query = Merlin_sherlodoc.Query.from_string query in
-        Type_search.run ~limit ~env ~query ~modules doc_ctx
+        Type_search.run ~limit ~env ~query ~modules ()
       | `Polarity query ->
         let query = Polarity_search.prepare_query env query in
         let modules = Polarity_search.directories ~global_modules:modules env in
         Polarity_search.execute_query_as_type_search ~limit ~env ~query ~modules
-          doc_ctx
-    end
+          ()
+    in
+    List.map results ~f:(fun ({ name; typ; doc; _ } as v) ->
+        let typ =
+          Printtyp.wrap_printing_env ~verbosity env @@ fun () ->
+          Format.asprintf "%a" (Type_utils.Printtyp.type_scheme env) typ
+        in
+        let doc =
+          if not with_doc then doc
+          else
+            let comments = Mpipeline.reader_comments pipeline in
+            let local_defs = Mtyper.get_typedtree typer in
+            Type_search.get_doc ~config ~env ~local_defs ~comments ~pos name
+        in
+        { v with typ; doc })
   | Refactor_open (mode, pos) ->
     let typer = Mpipeline.typer_result pipeline in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
