@@ -137,6 +137,10 @@ a call to `merlin-occurrences'."
 See `merlin-debug'."
   :group 'merlin :type 'string)
 
+(defcustom merlin-polarity-search-buffer-name "*merlin-polarity-search-result*"
+  "The name of the buffer displaying result of polarity search."
+  :group 'merlin :type 'string)
+
 (defcustom merlin-favourite-caml-mode nil
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
@@ -1099,17 +1103,42 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
                "-query" query
                "-position" (merlin-unmake-point (point))))
 
+(defun merlin--get-polarity-buff ()
+  (get-buffer-create merlin-polarity-search-buffer-name))
+
+(defun merlin--render-polarity-result (name type)
+  (let ((plain-name (string-remove-prefix "Stdlib__" name)))
+    (concat
+     (propertize "val " 'face (intern "font-lock-keyword-face"))
+     (propertize plain-name 'face (intern "font-lock-function-name-face"))
+     " : "
+     (propertize type 'face (intern "font-lock-doc-face")))))
+
+(defun merlin--polarity-result-to-list (entry)
+  (let ((function-name (merlin-completion-entry-text "" entry))
+        (function-type (merlin-completion-entry-short-description entry)))
+    (list function-name
+          (vector (merlin--render-polarity-result function-name function-type)))))
+
 (defun merlin-search (query)
   (interactive "sSearch pattern: ")
   (let* ((result (merlin--search query))
          (entries (cdr (assoc 'entries result)))
-         (transform
-          (lambda (entry)
-            (let ((text (merlin-completion-entry-text "" entry))
-                  (desc (merlin-completion-entry-short-description entry)))
-              (vector (concat text " : " desc)
-                      `(lambda () (insert ,text)))))))
-    (popup-menu (easy-menu-create-menu "Results" (mapcar transform entries)))))
+         (previous-buff (current-buffer)))
+    (let ((pol-buff (merlin--get-polarity-buff))
+          (inhibit-read-only t))
+      (with-current-buffer pol-buff
+        (switch-to-buffer-other-window pol-buff)
+        (goto-char 1)
+        (tabulated-list-mode)
+        (setq tabulated-list-format [("Polarity Search Result" 100 t)])
+        (setq tabulated-list-entries (mapcar 'merlin--polarity-result-to-list entries))
+        (setq tabulated-list-padding 2)
+        (face-spec-set 'header-line '((t :weight bold :height 1.2)))
+        (tabulated-list-init-header)
+        (tabulated-list-print t)
+        (setq buffer-read-only t)
+        (switch-to-buffer-other-window previous-buff)))))
 
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
