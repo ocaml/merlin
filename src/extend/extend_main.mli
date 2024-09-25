@@ -18,12 +18,12 @@ end
 module Handshake : sig
   val magic_number : string
 
-  type versions = {
-    ast_impl_magic_number : string;
-    ast_intf_magic_number : string;
-    cmi_magic_number : string;
-    cmt_magic_number : string;
-  }
+  type versions =
+    { ast_impl_magic_number : string;
+      ast_intf_magic_number : string;
+      cmi_magic_number : string;
+      cmt_magic_number : string
+    }
 
   exception Error of string
 
