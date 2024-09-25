@@ -93,20 +93,16 @@ let compute_value query env _ path desc acc =
   let open Merlin_sherlodoc in
   let d = desc.Types.val_type in
   let typ = sherlodoc_type_of env d in
-  let path = Printtyp.rewrite_double_underscore_paths env path in
-  let name = Format.asprintf "%a" Printtyp.path path in
+  let name =
+    Printtyp.wrap_printing_env env @@ fun () ->
+    let path = Printtyp.rewrite_double_underscore_paths env path in
+    Format.asprintf "%a" Printtyp.path path
+  in
   let cost = Query.distance_for query ~path:name typ in
   if cost >= 1000 then acc
   else
-    (* let doc = get_doc doc_ctx env name in *)
     let doc = None in
     let loc = desc.Types.val_loc in
-    (* let typ =
-         Printtyp.wrap_printing_env env @@ fun () ->
-           Format.asprintf "%a"
-             (Type_utils.Printtyp.type_scheme env)
-             desc.Types.val_type
-       in *)
     let typ = desc.Types.val_type in
     let constructible = make_constructible name d in
     Query_protocol.{ cost; name; typ; loc; doc; constructible } :: acc

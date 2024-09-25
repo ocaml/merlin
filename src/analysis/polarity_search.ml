@@ -150,8 +150,11 @@ let execute_query query env dirs =
 let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules () =
   execute_query query env modules
   |> List.map ~f:(fun (cost, path, desc) ->
-         let path = Printtyp.rewrite_double_underscore_paths env path in
-         let name = Format.asprintf "%a" Printtyp.path path in
+         let name =
+           Printtyp.wrap_printing_env env @@ fun () ->
+           let path = Printtyp.rewrite_double_underscore_paths env path in
+           Format.asprintf "%a" Printtyp.path path
+         in
          let doc = None in
          let loc = desc.Types.val_loc in
          let typ = desc.Types.val_type in
