@@ -370,3 +370,4 @@ let is_deprecated =
            ("deprecated" | "ocaml.deprecated"); loc = _}, _ ->
         true
       | _ -> false)
+
