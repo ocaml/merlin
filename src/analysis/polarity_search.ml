@@ -80,6 +80,21 @@ let build_query ~positive ~negative env =
     pos_fun = !pos_fun
   }
 
+let prepare_query env query =
+  let re = Str.regexp "[ |\t]+" in
+  let pos, neg =
+    Str.split re query |> List.partition ~f:(fun s -> s.[0] <> '-')
+  in
+  let prepare s =
+    Longident.parse
+    @@
+    if s.[0] = '-' || s.[0] = '+' then
+      String.sub s ~pos:1 ~len:(String.length s - 1)
+    else s
+  in
+  build_query env ~positive:(List.map pos ~f:prepare)
+    ~negative:(List.map neg ~f:prepare)
+
 let directories ~global_modules env =
   let rec explore lident env =
     let add_module name _ md l =
@@ -126,3 +141,21 @@ let execute_query query env dirs =
       acc
   in
   List.fold_left dirs ~init:(direct None []) ~f:recurse
+
+(* [execute_query_as_type_search] runs a standard polarity_search query and map
+   the result for compatibility with the type-search interface. *)
+let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules () =
+  execute_query query env modules
+  |> List.map ~f:(fun (cost, path, desc) ->
+         let name =
+           Printtyp.wrap_printing_env env @@ fun () ->
+           let path = Printtyp.rewrite_double_underscore_paths env path in
+           Format.asprintf "%a" Printtyp.path path
+         in
+         let doc = None in
+         let loc = desc.Types.val_loc in
+         let typ = desc.Types.val_type in
+         let constructible = Type_search.make_constructible name typ in
+         Query_protocol.{ cost; name; typ; loc; doc; constructible })
+  |> List.sort ~cmp:Type_search.compare_result
+  |> List.take_n limit

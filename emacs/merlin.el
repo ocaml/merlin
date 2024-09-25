@@ -137,10 +137,6 @@ a call to `merlin-occurrences'."
 See `merlin-debug'."
   :group 'merlin :type 'string)
 
-(defcustom merlin-polarity-search-buffer-name "*merlin-polarity-search-result*"
-  "The name of the buffer displaying result of polarity search."
-  :group 'merlin :type 'string)
-
 (defcustom merlin-favourite-caml-mode nil
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
@@ -1094,51 +1090,70 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
     (cons (if bounds (car bounds) (point))
           (point))))
 
-;;;;;;;;;;;;;;;;;;;;;
-;; POLARITY SEARCH ;;
-;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;
+;; SEARCH ;;
+;;;;;;;;;;;;
 
 (defun merlin--search (query)
-  (merlin-call "search-by-polarity"
-               "-query" query
-               "-position" (merlin-unmake-point (point))))
+  (merlin-call "search-by-type"
+	       "-query" query
+	       "-position" (merlin-unmake-point (point))))
 
-(defun merlin--get-polarity-buff ()
-  (get-buffer-create merlin-polarity-search-buffer-name))
-
-(defun merlin--render-polarity-result (name type)
+(defun merlin--search-format-key (name type doc)
   (let ((plain-name (string-remove-prefix "Stdlib__" name)))
     (concat
-     (propertize "val " 'face (intern "font-lock-keyword-face"))
      (propertize plain-name 'face (intern "font-lock-function-name-face"))
      " : "
-     (propertize type 'face (intern "font-lock-doc-face")))))
+     (propertize type 'face (intern "font-lock-doc-face"))
+     " "
+     (propertize doc 'face (intern "font-lock-comment-face")))))
 
-(defun merlin--polarity-result-to-list (entry)
-  (let ((function-name (merlin-completion-entry-text "" entry))
-        (function-type (merlin-completion-entry-short-description entry)))
-    (list function-name
-          (vector (merlin--render-polarity-result function-name function-type)))))
+(defun merlin--get-documentation-line-from-entry (entry)
+  (let* ((doc-entry (cdr (assoc 'doc entry)))
+         (doc (if (eq doc-entry 'null) "" doc-entry))
+	 (doc-lines (split-string doc "[\r\n]+")))
+    (car doc-lines)))
+
+(defun merlin--search-entry-to-completion-entry (entry)
+  (let ((value-name (cdr (assoc 'name entry)))
+	(value-hole (cdr (assoc 'constructible entry)))
+	(value-type (cdr (assoc 'type entry)))
+        (value-docs (merlin--get-documentation-line-from-entry entry)))
+    (let ((key (merlin--search-format-key value-name value-type value-docs))
+	  (value value-hole))
+      (cons key value))))
+
+(defun merlin--search-select-completion-result (choices selected)
+  (alist-get selected choices nil nil #'equal))
+
+(defun merlin--search-substitute-constructible (elt)
+  (progn
+    (when (region-active-p)
+      (delete-region (region-beginning) (region-end)))
+    (insert (concat "(" elt ")"))))
+
+(defun merlin--search-completion-presort (choices)
+  (lambda (string pred action)
+    (if (eq action 'metadata)
+	'(metadata (display-sort-function . identity)
+		   (cycle-sort-function . identity))
+      (complete-with-action action choices string pred))))
 
 (defun merlin-search (query)
-  (interactive "sSearch pattern: ")
-  (let* ((result (merlin--search query))
-         (entries (cdr (assoc 'entries result)))
-         (previous-buff (current-buffer)))
-    (let ((pol-buff (merlin--get-polarity-buff))
-          (inhibit-read-only t))
-      (with-current-buffer pol-buff
-        (switch-to-buffer-other-window pol-buff)
-        (goto-char 1)
-        (tabulated-list-mode)
-        (setq tabulated-list-format [("Polarity Search Result" 100 t)])
-        (setq tabulated-list-entries (mapcar 'merlin--polarity-result-to-list entries))
-        (setq tabulated-list-padding 2)
-        (face-spec-set 'header-line '((t :weight bold :height 1.2)))
-        (tabulated-list-init-header)
-        (tabulated-list-print t)
-        (setq buffer-read-only t)
-        (switch-to-buffer-other-window previous-buff)))))
+  "Search values by types or polarity"
+  (interactive "sSearch query: ")
+  (let* ((entries (merlin--search query))
+	 (choices
+	  (mapcar #'merlin--search-entry-to-completion-entry entries)))
+    (let ((constructible
+	   (merlin--search-select-completion-result
+	    choices
+	    (completing-read (concat "Candidates: ")
+			     (merlin--search-completion-presort choices)
+			     nil nil nil t))))
+      (merlin--search-substitute-constructible constructible))))
+
 
 ;;;;;;;;;;;;;;;;;
 ;; TYPE BUFFER ;;
