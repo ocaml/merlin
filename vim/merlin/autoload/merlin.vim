@@ -662,20 +662,6 @@ function! merlin#setVisualSelection(a, b)
   call setpos("'b", markBSave)
 endfunction
 
-let s:phrase_counter = 0
-
-function! merlin#Phrase()
-  if s:phrase_counter
-      let s:phrase_counter = s:phrase_counter - 1
-  else
-    let [l1, c1] = getpos("'<")[1:2]
-    let [l2, c2] = getpos("'>")[1:2]
-    let s:phrase_counter = l2 - l1
-    MerlinPy merlin.vim_selectphrase("l1","c1","l2","c2")
-    call merlin#setVisualSelection([l1,c1],[l2,c2])
-  endif
-endfunction
-
 function! merlin#Register()
   if @% == ":merlin-type-history:"
     return
@@ -807,10 +793,6 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
 
-  """ 'semantic movement'  -----------------------------------------------------
-  " TODO: bind (,),{,} ?
-  command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
-
   """ Polarity search
   command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#PolaritySearch(0,<q-args>)
 
@@ -818,10 +800,6 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
   command! -buffer -nargs=0 MerlinDebugDisable call merlin#DebugDisable()
   command! -buffer -nargs=0 MerlinDebugEnable  call merlin#DebugEnable()
-
-  if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
-    vmap <silent><buffer> <TAB>         :<C-u>MerlinPhrase<return>
-  endif
 
   call merlin#LoadProject()
 endfunction
