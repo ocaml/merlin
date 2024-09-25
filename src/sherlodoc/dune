@@ -1,0 +1,9 @@
+(library
+ (name merlin_sherlodoc)
+ (public_name merlin-lib.sherlodoc))
+
+(menhir
+ (modules type_parser)
+ (flags --explain))
+
+(ocamllex type_lexer)
