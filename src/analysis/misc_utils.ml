@@ -58,13 +58,13 @@ let parenthesize_name name =
       "(" ^ name ^ ")"
   )
 
-module Compat = struct
-  open Typedtree
-  let pat_var_id_and_loc = function
-    | { pat_desc = Tpat_var (id, loc); _ } -> Some (id, loc)
-    | _ -> None
-
-  let pat_alias_pat_id_and_loc = function
-    | { pat_desc = Tpat_alias (pat, id, loc); _ } -> Some (pat, id, loc)
-    | _ -> None
-end
+let parse_identifier (config, source) pos =
+  let path = Mreader.reconstruct_identifier config source pos in
+  let path = Mreader_lexer.identifier_suffix path in
+  Logger.log
+    ~section:Type_enclosing.log_section
+    ~title:"reconstruct-identifier"
+    "paths: [%s]"
+    (String.concat ~sep:";" (List.map path
+      ~f:(fun l -> l.Location.txt)));
+  path
