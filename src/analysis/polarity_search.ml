@@ -145,40 +145,20 @@ let execute_query query env dirs =
   in
   List.fold_left dirs ~init:(direct None []) ~f:recurse
 
-let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules doc_ctx =
-  let direct dir acc =
-    Env.fold_values
-      (fun _ path desc acc ->
-        let d = desc.Types.val_type in
-        match match_query env query d with
-        | Some cost ->
-          let path = Printtyp.rewrite_double_underscore_paths env path in
-          let name = Format.asprintf "%a" Printtyp.path path in
-          let doc = Type_search.get_doc doc_ctx env name in
-          let loc = desc.Types.val_loc in
-          let typ =
-            Format.asprintf "%a"
-              (Type_utils.Printtyp.type_scheme env)
-              desc.Types.val_type
-          in
-          let constructible = Type_search.make_constructible name d in
-          Query_protocol.{ cost; name; typ; loc; doc; constructible } :: acc
-        | None -> acc)
-      dir env acc
-  in
-  let rec recurse acc (Trie (_, dir, children)) =
-    match
-      ignore (Env.find_module_by_name dir env);
-      Lazy.force children
-    with
-    | children ->
-      List.fold_left ~f:recurse ~init:(direct (Some dir) acc) children
-    | exception Not_found ->
-      Logger.notify ~section:"polarity-search" "%S not found"
-        (String.concat ~sep:"." (Longident.flatten dir));
-      acc
-  in
-  modules
-  |> List.fold_left ~init:(direct None []) ~f:recurse
+(* [execute_query_as_type_search] runs a standard polarity_search query and map
+   the result for compatibility with the type-search interface. *)
+let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules () =
+  execute_query query env modules
+  |> List.map ~f:(fun (cost, path, desc) ->
+         let name =
+           Printtyp.wrap_printing_env env @@ fun () ->
+           let path = Printtyp.rewrite_double_underscore_paths env path in
+           Format.asprintf "%a" Printtyp.path path
+         in
+         let doc = None in
+         let loc = desc.Types.val_loc in
+         let typ = desc.Types.val_type in
+         let constructible = Type_search.make_constructible name typ in
+         Query_protocol.{ cost; name; typ; loc; doc; constructible })
   |> List.sort ~cmp:Type_search.compare_result
   |> List.take_n limit

@@ -67,9 +67,9 @@ end
 
 type completions = Compl.t
 
-type type_search_result =
+type 'a type_search_result =
   { name : string;
-    typ : string;
+    typ : 'a;
     loc : Location_aux.t;
     doc : string option;
     cost : int;
@@ -150,7 +150,7 @@ type _ t =
   | Polarity_search : string * Msource.position -> completions t
   | Type_search :
       string * Msource.position * int * bool
-      -> type_search_result list t
+      -> string type_search_result list t
   | Refactor_open :
       [ `Qualify | `Unqualify ] * Msource.position
       -> (string * Location.t) list t
