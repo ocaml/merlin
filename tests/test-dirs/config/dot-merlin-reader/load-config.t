@@ -1,44 +1,28 @@
+This test comes from: https://github.com/janestreet/merlin-jst/pull/59
+
   $ cat > .merlin <<EOF
-  > EXCLUDE_QUERY_DIR
-  > FLG -pp 'I/definitly/need/quoting.exe -nothing'
-  > FLG -ppx '/path/to/ppx.exe --as-ppx --cookie '\\''library-name="model"'\\'''
-  > FLG -w @3
+  > B build/dir
+  > S source/dir
+  > BH build-hidden/dir
+  > SH source-hidden/dir
   > EOF
 
   $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
   > (4:File${#FILE}:$FILE)
   > EOF
-  ((?:EXCLUDE_QUERY_DIR)(?:FLG(?:-pp?:I/definitly/need/quoting.exe -nothing))(?:FLG(?:-ppx?:/path/to/ppx.exe --as-ppx --cookie 'library-name="model"'))(?:FLG(?:-w?:@3)))
+  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:ERROR?:Unknown tag in .merlin?: BH)(?:ERROR?:Unknown tag in .merlin?: SH))
 
   $ echo | $MERLIN single dump-configuration -filename test.ml 2> /dev/null | jq '.value.merlin'
   {
-    "build_path": [],
-    "source_path": [],
+    "build_path": [
+      "$TESTCASE_ROOT/build/dir"
+    ],
+    "source_path": [
+      "$TESTCASE_ROOT/source/dir"
+    ],
     "cmi_path": [],
     "cmt_path": [],
-    "flags_applied": [
-      {
-        "workdir": "$TESTCASE_ROOT",
-        "workval": [
-          "-pp",
-          "I/definitly/need/quoting.exe -nothing"
-        ]
-      },
-      {
-        "workdir": "$TESTCASE_ROOT",
-        "workval": [
-          "-ppx",
-          "/path/to/ppx.exe --as-ppx --cookie 'library-name=\"model\"'"
-        ]
-      },
-      {
-        "workdir": "$TESTCASE_ROOT",
-        "workval": [
-          "-w",
-          "@3"
-        ]
-      }
-    ],
+    "flags_applied": [],
     "extensions": [],
     "suffixes": [
       {
@@ -59,7 +43,10 @@
     "log_file": null,
     "log_sections": [],
     "flags_to_apply": [],
-    "failures": [],
+    "failures": [
+      "Unknown tag in .merlin: SH",
+      "Unknown tag in .merlin: BH"
+    ],
     "assoc_suffixes": [
       {
         "extension": ".re",
