@@ -1,0 +1,4 @@
+(cram
+ (applies_to :whole_subtree)
+ (enabled_if
+  (<> %{os_type} Win32)))

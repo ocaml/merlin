@@ -67,6 +67,15 @@ end
 
 type completions = Compl.t
 
+type 'a type_search_result =
+  { name : string;
+    typ : 'a;
+    loc : Location_aux.t;
+    doc : string option;
+    cost : int;
+    constructible : string
+  }
+
 type outline = item list
 and item =
   { outline_name : string;
@@ -139,6 +148,9 @@ type _ t =
       string * Msource.position * Compl.kind list * [ `with_types ] _bool
       -> completions t
   | Polarity_search : string * Msource.position -> completions t
+  | Type_search :
+      string * Msource.position * int * bool
+      -> string type_search_result list t
   | Refactor_open :
       [ `Qualify | `Unqualify ] * Msource.position
       -> (string * Location.t) list t
