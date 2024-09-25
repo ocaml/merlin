@@ -518,6 +518,37 @@ module String = struct
         in
         aux 0 j0;
         Buffer.contents buffer
+
+  let rfindi =
+    let rec loop s ~f i =
+      if i < 0 then None
+      else if f (String.unsafe_get s i) then Some i
+      else loop s ~f (i - 1)
+    in
+    fun ?from s ~f ->
+      let from =
+        let len = String.length s in
+        match from with
+        | None -> len - 1
+        | Some i ->
+          if i > len - 1 then failwith "rfindi: invalid from"
+          else i
+      in
+      loop s ~f from
+
+  let rec check_prefix s ~prefix len i =
+    i = len || (s.[i] = prefix.[i] && check_prefix s ~prefix len (i + 1))
+
+  let lsplit2 s ~on =
+    match String.index_opt s on with
+    | None -> None
+    | Some i ->
+      Some (sub s ~pos:0 ~len:i, sub s ~pos:(i + 1) ~len:(length s - i - 1))
+
+  let is_prefix s ~prefix =
+    let len = length s in
+    let prefix_len = length prefix in
+    len >= prefix_len && check_prefix s ~prefix prefix_len 0
 end
 
 let sprintf = Printf.sprintf
