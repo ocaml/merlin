@@ -16,7 +16,7 @@ Type declaration in structure
   > end
   > EOF
 
-  $ dune build
+  $ dune build 2>/dev/null
 
 on module name "MyModule"
   $ $MERLIN single expand-ppx -position 1:11 -filename ./apt.ml < ./apt.ml
