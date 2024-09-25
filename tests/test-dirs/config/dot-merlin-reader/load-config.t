@@ -6,12 +6,13 @@ This test comes from: https://github.com/janestreet/merlin-jst/pull/59
   > BH build-hidden/dir
   > SH source-hidden/dir
   > STDLIB /stdlib
+  > SOURCE_ROOT /root
   > EOF
 
   $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
   > (4:File${#FILE}:$FILE)
   > EOF
-  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:ERROR?:Unknown tag in .merlin?: BH)(?:ERROR?:Unknown tag in .merlin?: SH)(?:STDLIB?:/stdlib))
+  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:ERROR?:Unknown tag in .merlin?: BH)(?:ERROR?:Unknown tag in .merlin?: SH)(?:STDLIB?:/stdlib)(?:SOURCE_ROOT?:/root))
 
   $ echo | $MERLIN single dump-configuration -filename test.ml 2> /dev/null | jq '.value.merlin'
   {
@@ -36,7 +37,7 @@ This test comes from: https://github.com/janestreet/merlin-jst/pull/59
       }
     ],
     "stdlib": "/stdlib",
-    "source_root": null,
+    "source_root": "/root",
     "unit_name": null,
     "wrapping_prefix": null,
     "reader": [],
