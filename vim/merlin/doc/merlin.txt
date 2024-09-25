@@ -147,12 +147,6 @@ environment which name matches the user input.
 
 Hitting enter will move you to the definition of the selected element.
 
-:MerlinPhrase                                                *:MerlinPhrase*
-Selects the current phrase.
-
-
-Bound to <TAB> by default in visual mode.
-
 :MerlinErrorCheck                                            *:MerlinErrorCheck*
 
 Perform a fast type check of the current file, displaying the error
