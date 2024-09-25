@@ -15,9 +15,6 @@
   $ ocamlc -bin-annot -bin-annot-occurrences -c lib.ml main.ml
   $ ocaml-index aggregate main.cmt lib.cmt --root . --rewrite-root
 
-TODO: definition is duplicated
-TODO: result paths have a . in them
-
   $ ocamlmerlin single occurrences -scope project -identifier-at 1:4 \
   > -filename lib.ml < lib.ml | jq .value
   [
@@ -33,18 +30,7 @@ TODO: result paths have a . in them
       }
     },
     {
-      "file": "$TESTCASE_ROOT/./lib.ml",
-      "start": {
-        "line": 1,
-        "col": 4
-      },
-      "end": {
-        "line": 1,
-        "col": 7
-      }
-    },
-    {
-      "file": "$TESTCASE_ROOT/./lib.ml",
+      "file": "$TESTCASE_ROOT/lib.ml",
       "start": {
         "line": 2,
         "col": 22
@@ -55,7 +41,7 @@ TODO: result paths have a . in them
       }
     },
     {
-      "file": "$TESTCASE_ROOT/./main.ml",
+      "file": "$TESTCASE_ROOT/main.ml",
       "start": {
         "line": 1,
         "col": 26
