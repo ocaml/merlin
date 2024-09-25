@@ -23,6 +23,7 @@
  (libraries
   merlin_utils
   merlin_kernel
+  merlin_extend
   ocaml_utils
   ocaml_parsing
   ocaml_typing
@@ -30,4 +31,5 @@
   merlin_config
   merlin_analysis
   merlin_sherlodoc
-  query_protocol))
+  query_protocol
+  str))
