@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  + merlin binary
+    - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
+      what to append to the current unit name in the presence of wrapping (#1788)
+
 merlin 4.16
 ===========
 Mon Jun 10 17:35:42 CEST 2024
