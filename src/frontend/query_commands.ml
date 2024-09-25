@@ -858,7 +858,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     in
     let loc_start l = l.Location.loc_start in
     let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
-    List.sort ~cmp locs
+    List.sort ~cmp locs, `Not_requested
 
   | Inlay_hints (
       start,
