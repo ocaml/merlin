@@ -104,7 +104,7 @@ struct
      | _ -> false)
 *)
 
-  let cost_of = function
+  let[@alert "-deprecated"] cost_of = function
     | Head (st, n) ->
         let acc = List.fold_left
             (fun acc (_sym, st') ->
@@ -184,7 +184,7 @@ struct
   let cost_of_actions actions =
     List.fold_left (fun cost act -> cost +. cost_of_action act) 0.0 actions
 
-  let solution = function
+  let[@alert "-deprecated"] solution = function
     | Head (st, n) ->
         let acc = Abort in
         let acc = List.fold_left
