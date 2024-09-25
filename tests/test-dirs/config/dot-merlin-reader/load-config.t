@@ -5,12 +5,13 @@ This test comes from: https://github.com/janestreet/merlin-jst/pull/59
   > S source/dir
   > BH build-hidden/dir
   > SH source-hidden/dir
+  > STDLIB /stdlib
   > EOF
 
   $ FILE=$(pwd)/test.ml; dot-merlin-reader <<EOF | sed 's#[0-9]*:#?:#g'
   > (4:File${#FILE}:$FILE)
   > EOF
-  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:ERROR?:Unknown tag in .merlin?: BH)(?:ERROR?:Unknown tag in .merlin?: SH))
+  ((?:B?:$TESTCASE_ROOT/build/dir)(?:S?:$TESTCASE_ROOT/source/dir)(?:ERROR?:Unknown tag in .merlin?: BH)(?:ERROR?:Unknown tag in .merlin?: SH)(?:STDLIB?:/stdlib))
 
   $ echo | $MERLIN single dump-configuration -filename test.ml 2> /dev/null | jq '.value.merlin'
   {
@@ -34,7 +35,7 @@ This test comes from: https://github.com/janestreet/merlin-jst/pull/59
         "intf": ".rei"
       }
     ],
-    "stdlib": null,
+    "stdlib": "/stdlib",
     "source_root": null,
     "unit_name": null,
     "wrapping_prefix": null,
