@@ -13,6 +13,7 @@ depends: [
   "ocaml" {>= "5.2" & < "5.3"}
   "dune" {>= "3.0.0"}
   "csexp" {>= "1.5.1"}
+  "alcotest" {with-test}
   "menhir"    {dev & >= "20201216"}
   "menhirLib" {dev & >= "20201216"}
   "menhirSdk" {dev & >= "20201216"}

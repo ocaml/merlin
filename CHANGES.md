@@ -8,10 +8,14 @@ unreleased
     - destruct: Refinement in the presence of optional arguments (#1800 #1807, fixes #1770)
     - Implement new expand-node command for expanding PPX annotations (#1745)
     - Implement new inlay-hints command for adding hints on a sourcetree (#1812)
+    - Implement new search-by-type command for searching values by types (#1828)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
     - emacs: Improve the way that result of polarity search is displayed (#1814)
+    - emacs: Add `merlin-search-by-type`, `merlin-search-by-polarity` and change the
+	  behaviour of `merlin-search` to switch between `by-type` or `by-polarity`
+	  depending on the query (#1828)
 
 merlin 5.1
 ==========
