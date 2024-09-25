@@ -754,6 +754,26 @@ The return value has the shape:
       ]
     end
   ;
+  command "signature-help"
+    ~doc:"Returns LSP Signature Help response"
+    ~spec: [
+      arg "-position" "<position> Position of Signature Help request"
+        (marg_position (fun pos (expr,_pos) -> (expr,pos)));
+    ]
+    ~default:("",`None)
+    begin fun buffer (_,pos) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as position ->
+        let sh = {
+          Query_protocol.position;
+          trigger_kind = None;
+          is_retrigger = false;
+          active_signature_help = None;
+        } in
+        run buffer (Query_protocol.Signature_help sh)
+    end
+  ;
 
   (* Used only for testing *)
   command "dump"
