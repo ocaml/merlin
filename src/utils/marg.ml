@@ -26,6 +26,12 @@ let bool f =
       failwithf "expecting boolean (%s), got %S."
         "yes|y|Y|true|1 / no|n|N|false|0" str)
 
+let int f =
+  param "int" (fun str ->
+      match int_of_string_opt str with
+      | None -> failwithf "expecting integer got %S." str
+      | Some x -> f x)
+
 type docstring = string
 
 type 'a spec = string * docstring * 'a t

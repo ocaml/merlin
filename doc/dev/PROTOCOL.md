@@ -425,6 +425,35 @@ The result is returned as a list of:
 
 Returns the type of the expression when typechecked in the environment around the specified position.
 
+### `search-by-polarity` -position <position> -query <string>
+
+	-position <position> Position to search
+	-query <string> The query
+
+Returns a list (in the form of a completion list) of values matching the query. A query is defined by polarity (and does not support type parameters). Arguments are prefixed with `-` and the return type is prefixed with `+`. For example, to find a function that takes a string and returns an integer: `-string +int`. `-list +option` will returns every definition that take a list an option.
+
+### `search-by-type` -position <position> -query <string> -limit <int> -with-doc <bool>
+
+	-position <position> Position to search
+	-query <string> The query
+	-limit <int> a maximum-size of the result set
+	-with-doc <bool> if doc should be included in the result
+
+Returns a list of values matching the query. A query is a type expression, ie: `string -> int option` will search every definition that take a string and returns an option of int. It is also possible to search by polarity.
+
+The result is returned as a list of:
+```javascript
+{
+  'file': filename, // the file where the definition is defined
+  'start': position,
+  'end': position,
+  'name': string, // the name of the definition
+  'type': string, // the type of the definition
+  'cost': int, // the cost/distance of the definition and the query
+  'doc': string | null // the docstring of the definition
+}
+```
+
 ### `check-configuration`
 
 
