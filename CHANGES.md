@@ -8,6 +8,7 @@ unreleased
     - destruct: Refinement in the presence of optional arguments (#1800 #1807, fixes #1770)
     - Implement new expand-node command for expanding PPX annotations (#1745)
     - Implement new inlay-hints command for adding hints on a sourcetree (#1812)
+    - Add `signature-help` command (#1720)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
