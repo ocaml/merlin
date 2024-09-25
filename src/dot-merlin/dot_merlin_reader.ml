@@ -428,6 +428,9 @@ let postprocess cfg =
       )
     ; (cfg.pass_forward :> Merlin_dot_protocol.directive list)
     ; cfg.stdlib |> Option.map ~f:(fun stdlib -> `STDLIB stdlib) |> Option.to_list
+    ; cfg.source_root
+        |> Option.map ~f:(fun source_root -> `SOURCE_ROOT source_root)
+        |> Option.to_list
     ; List.concat_map pkg_paths ~f:(fun p -> [ `B p; `S p ])
     ; ppx
     ; List.map failures ~f:(fun s -> `ERROR_MSG s)
