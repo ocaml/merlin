@@ -860,6 +860,29 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a =
     let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
     List.sort ~cmp locs
 
+  | Inlay_hints (
+      start,
+      stop,
+      hint_let_binding,
+      hint_pattern_binding,
+      avoid_ghost_location
+    ) ->
+    let start = Mpipeline.get_lexing_pos pipeline start
+    and stop = Mpipeline.get_lexing_pos pipeline stop in
+    let typer_result = Mpipeline.typer_result pipeline in
+    begin match Mtyper.get_typedtree typer_result with
+    | `Interface _ -> []
+    | `Implementation structure ->
+      Inlay_hints.of_structure
+        ~hint_let_binding
+        ~hint_pattern_binding
+        ~avoid_ghost_location
+        ~start
+        ~stop
+        structure
+    end
+ 
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version;
+
