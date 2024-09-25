@@ -1,5 +1,5 @@
-type t = [
-  | `Vals
+type t =
+  [ `Vals
   | `Type
   | `Constr
   | `Mod
@@ -7,8 +7,7 @@ type t = [
   | `Functor
   | `Labels
   | `Unknown
-  | `Apply
-]
+  | `Apply ]
 
 let to_tag_string = function
   | `Mod -> ""
@@ -31,4 +30,3 @@ let to_string = function
   | `Modtype -> "(module type) "
   | `Unknown -> "(unknown)"
   | `Apply -> "(functor application)"
-

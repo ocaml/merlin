@@ -7,7 +7,7 @@ val raw_source : t -> Msource.t
 
 val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t
-val get_lexing_pos : t -> [< Msource.position] -> Lexing.position
+val get_lexing_pos : t -> [< Msource.position ] -> Lexing.position
 
 val reader_config : t -> Mconfig.t
 val reader_comments : t -> (string * Location.t) list

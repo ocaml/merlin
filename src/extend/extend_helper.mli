@@ -55,12 +55,11 @@ val focus_node : attribute
 
 (* Projections for merlin attributes and extensions *)
 
-val classify_extension : extension ->
-  [`Other | `Syntax_error]
+val classify_extension : extension -> [ `Other | `Syntax_error ]
 
 val extract_syntax_error : extension -> string * Location.t
 
-val classify_attribute : attribute ->
-  [`Other | `Relaxed_location | `Hide | `Focus]
+val classify_attribute :
+  attribute -> [ `Other | `Relaxed_location | `Hide | `Focus ]
 
 val extract_relaxed_location : attribute -> Location.t

@@ -1,5 +1,5 @@
-type t = [
-  | `Vals
+type t =
+  [ `Vals
   | `Type
   | `Constr
   | `Mod
@@ -7,8 +7,7 @@ type t = [
   | `Functor
   | `Labels
   | `Unknown
-  | `Apply
-]
+  | `Apply ]
 
 val to_tag_string : t -> string
 

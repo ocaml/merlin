@@ -1,29 +1,29 @@
 (** An all-or-nothing cache mechanism that can be used for any phase *)
 
 module type S = sig
-  type t
   (** Phase input *)
+  type t
 
-  type output
   (** Phase output *)
+  type output
 
-  val f : t -> output
   (** Phase computation *)
+  val f : t -> output
 
-  val title : string
   (** Phase title for logging *)
+  val title : string
 
   module Fingerprint : sig
     type input
 
-    type t
     (** Fingerprint used to determine whether the cache should be invalidated *)
+    type t
 
-    val make : input -> (t, string) result
     (** Creates a fingerprint from the phase input *)
+    val make : input -> (t, string) result
 
-    val equal : t -> t -> bool
     (** Determines whether two fingerprints are the same *)
+    val equal : t -> t -> bool
   end
   with type input := t
 end
@@ -31,8 +31,6 @@ end
 module With_cache (Phase : S) : sig
   type t = { output : Phase.output; cache_was_hit : bool }
 
-  val apply :
-    ?cache_disabling:string option -> ?force_invalidation:bool -> Phase.t -> t
   (** [apply ~cache_disabling ~force_invalidation phase_input] runs the phase
       computation [Phase.f phase_input], if there's some [cache_disabling].
       Otherwise, the phase computation is run with a cache mechanism. Whether
@@ -40,4 +38,6 @@ module With_cache (Phase : S) : sig
       comparison between the current fingerprint and the last one. Additionally,
       the invalidation of the cache can be forced by setting the
       force_invalidation parameter to true.*)
+  val apply :
+    ?cache_disabling:string option -> ?force_invalidation:bool -> Phase.t -> t
 end

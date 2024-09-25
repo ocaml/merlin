@@ -4,16 +4,15 @@ open Parsetree
     Merlin. *)
 let syntax_error msg loc : extension =
   let str = Location.mkloc "merlin.syntax-error" loc in
-  let payload = PStr [{
-      pstr_loc = Location.none;
-      pstr_desc = Pstr_eval (
-        Ast_helper.(Exp.constant (const_string msg)), []
-      );
-    }]
+  let payload =
+    PStr
+      [ { pstr_loc = Location.none;
+          pstr_desc =
+            Pstr_eval (Ast_helper.(Exp.constant (const_string msg)), [])
+        }
+      ]
   in
   (str, payload)
-;;
-
 
 (** Physical locations might be too precise for some features.
 
@@ -37,8 +36,6 @@ let syntax_error msg loc : extension =
 let relaxed_location loc : attribute =
   let str = Location.mkloc "merlin.relaxed-location" loc in
   Ast_helper.Attr.mk str (PStr [])
-;;
-
 
 (** If some code should be ignored by merlin when reporting information to
     the user, put a hide_node attribute.
@@ -72,12 +69,12 @@ let focus_node : attribute =
 
 (* Projections for merlin attributes and extensions *)
 
-let classify_extension (id, _ : extension) : [`Other | `Syntax_error] =
+let classify_extension ((id, _) : extension) : [ `Other | `Syntax_error ] =
   match id.Location.txt with
   | "merlin.syntax-error" -> `Syntax_error
   | _ -> `Other
 
-let classify_attribute attr : [`Other | `Relaxed_location | `Hide | `Focus] =
+let classify_attribute attr : [ `Other | `Relaxed_location | `Hide | `Focus ] =
   let id, _ = Ast_helper.Attr.as_tuple attr in
   match id.Location.txt with
   | "merlin.relaxed-location" -> `Relaxed_location
@@ -85,18 +82,20 @@ let classify_attribute attr : [`Other | `Relaxed_location | `Hide | `Focus] =
   | "merlin.focus" -> `Focus
   | _ -> `Other
 
-let extract_syntax_error (id, payload : extension) : string * Location.t =
+let extract_syntax_error ((id, payload) : extension) : string * Location.t =
   if id.Location.txt <> "merlin.syntax-error" then
     invalid_arg "Merlin_extend.Reader_helper.extract_syntax_error";
   let invalid_msg =
-      "Warning: extension produced an incorrect syntax-error node" in
-   let msg = match Ast_helper.extract_str_payload payload with
-     | Some (msg, _loc) -> msg
-     | None -> invalid_msg
+    "Warning: extension produced an incorrect syntax-error node"
   in
-  msg, id.Location.loc
+  let msg =
+    match Ast_helper.extract_str_payload payload with
+    | Some (msg, _loc) -> msg
+    | None -> invalid_msg
+  in
+  (msg, id.Location.loc)
 
 let extract_relaxed_location attr : Location.t =
   match Ast_helper.Attr.as_tuple attr with
-  | ({Location. txt = "merlin.relaxed-location"; loc} , _) -> loc
+  | { Location.txt = "merlin.relaxed-location"; loc }, _ -> loc
   | _ -> invalid_arg "Merlin_extend.Reader_helper.extract_relaxed_location"
