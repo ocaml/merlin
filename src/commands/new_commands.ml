@@ -572,6 +572,52 @@ of the buffer."
     end
   ;
 
+  command "inlay-hints"
+    ~doc:"return a list of inly-hints for additional client (like LSP)"
+    ~spec: [
+      arg "-start" "<position> Where inlay-hints generation start"
+        (marg_position
+           (fun start
+             (_start, stop, let_binding, pattern_binding, ghost) ->
+             (start, stop, let_binding, pattern_binding, ghost)));
+      arg "-end" "<position> Where inlay-hints generation stop"
+        (marg_position
+           (fun stop
+             (start, _stop, let_binding, pattern_binding, ghost) ->
+             (start, stop, let_binding, pattern_binding, ghost)));
+      optional "-let-binding" "<bool> Hint let-binding (default is false)"
+        (Marg.bool
+           (fun let_binding
+             (start, stop, _let_binding, pattern_binding, ghost) ->
+           (start, stop, let_binding, pattern_binding, ghost)));
+      optional
+        "-pattern-binding" "<bool> Hint pattern-binding (default is false)"
+        (Marg.bool
+           (fun pattern_binding
+             (start, stop, let_binding, _pattern_binding, ghost) ->
+           (start, stop, let_binding, pattern_binding, ghost)));
+      optional
+        "-avoid-ghost-location"
+        "<bool> Avoid hinting ghost location (default is true)"
+        (Marg.bool
+           (fun ghost
+             (start, stop, let_binding, pattern_binding, _ghost) ->
+           (start, stop, let_binding, pattern_binding, ghost)));
+    ]
+    ~default:(`None, `None,  false, false, true)
+    begin fun buffer (start, stop, let_binding, pattern_binding, avoid_ghost) ->
+      match (start, stop) with
+      | (`None, `None) -> failwith "-start <pos> and -end are mandatory"
+      | (`None, _) -> failwith "-start <pos> is mandatory"
+      | (_, `None) -> failwith "-end <pos> is mandatory"
+      | (#Msource.position, #Msource.position) as position ->
+        let (start, stop) = position in
+        run buffer
+          (Query_protocol.Inlay_hints
+             (start, stop, let_binding, pattern_binding, avoid_ghost))
+    end
+  ;
+
   command "shape"
 ~doc:"This command can be used to assist navigation in a source code buffer.
 It returns a tree of all relevant locations around the cursor.
