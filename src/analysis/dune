@@ -22,4 +22,5 @@
   ocaml_preprocess
   query_protocol
   ocaml_typing
-  ocaml_utils))
+  ocaml_utils
+  str))
