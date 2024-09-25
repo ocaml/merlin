@@ -710,7 +710,8 @@ let () =
     args, (upd a b)
   in
   let add prj upd (name,flag,_doc) =
-    assert (not (Hashtbl.mem arguments_table name));
+    if Hashtbl.mem arguments_table name then
+      failwith ("Duplicate flag spec: " ^ name);
     Hashtbl.add arguments_table name (lens prj upd flag)
   in
   List.iter
