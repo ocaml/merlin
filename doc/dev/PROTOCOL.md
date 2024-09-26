@@ -388,11 +388,13 @@ shape =
 
 ### `type-enclosing -position <position> [ -expression <string> ] [ -cursor <int> ] [verbosity <smart|int>] [ -index <int> ]`
 
-      -position <position>  Position to complete
-      -expression <string>  Expression to type
-             -cursor <int>  Position of the cursor inside expression
-              -index <int>  Only print type of <index>'th result
-    -verbosity <smart|int>  Verbosity level
+```
+  -position <position>  Position to complete
+  -expression <string>  Expression to type
+         -cursor <int>  Position of the cursor inside expression
+          -index <int>  Only print type of <index>'th result
+-verbosity <smart|int>  Verbosity level
+```
 
 Returns a list of type information for all expressions at given position, sorted by increasing size.
 That is asking for type enlosing around `2` in `string_of_int 2` will return the types of `2 : int` and `string_of_int 2 : string`.
@@ -420,24 +422,30 @@ The result is returned as a list of:
 
 ### `type-expression -position <position> -expression <string>`
 
-    -position <position>  Position to complete
-    -expression <string>  Expression to type
+```
+  -position <position>  Position to complete
+  -expression <string>  Expression to type
+```
 
 Returns the type of the expression when typechecked in the environment around the specified position.
 
-### `search-by-polarity` -position <position> -query <string>
+### `search-by-polarity -position <position> -query <string>`
 
-	-position <position> Position to search
-	-query <string> The query
+```
+-position <position>  Position to search
+     -query <string>  The query
+```
 
 Returns a list (in the form of a completion list) of values matching the query. A query is defined by polarity (and does not support type parameters). Arguments are prefixed with `-` and the return type is prefixed with `+`. For example, to find a function that takes a string and returns an integer: `-string +int`. `-list +option` will returns every definition that take a list an option.
 
-### `search-by-type` -position <position> -query <string> -limit <int> -with-doc <bool>
+### `search-by-type -position <position> -query <string> -limit <int> -with-doc <bool>`
 
-	-position <position> Position to search
-	-query <string> The query
-	-limit <int> a maximum-size of the result set
-	-with-doc <bool> if doc should be included in the result
+```
+-position <position>  Position to search
+     -query <string>  The query
+        -limit <int>  The maximum-size of the result set
+    -with-doc <bool>  If true, values' documentation will be included in the result
+```
 
 Returns a list of values matching the query. A query is a type expression, ie: `string -> int option` will search every definition that take a string and returns an option of int. It is also possible to search by polarity.
 
@@ -453,6 +461,116 @@ The result is returned as a list of:
   'doc': string | null // the docstring of the definition
 }
 ```
+
+### `refactor-open -postion <position> -action <qualify|unqualify>`
+
+```
+       -position <position>  Position to refactor open
+-action <qualify|unqualify>  Direction of rewriting
+```
+
+Returns a list of `content` and `location` (the position referenced by the `location` must be replaced by the `content`).
+
+The result is returned as a list of:
+
+```javascript
+{
+  'start': position, // the start of the region to be substituted
+  'end': position, // the end of the region to be substituted
+  'content' string // the content of the substitution
+}
+```
+
+### `syntax-document -position <position>`
+
+	-position <position>  The position of the keyword to be documented
+
+Returns the string `No documentation found` (if the position does not refer to any keyword) or the following object:
+
+```javascript
+{
+  'name': string, // the name of the keyword under the position
+  'description': string, // the description of the keyword under the position
+  'url': string // a reference link in the OCaml manual
+}
+```
+
+### `expand-ppx -position <position>`
+
+	-position <position>  The position where to expand the ppx preprocessors
+
+Returns the string `No PPX deriver/extension node found on this position` (if the position does not refer to any keyword) or the following object:
+
+```javascript
+{
+  'code': string, // the generated code by a ppx
+  'deriver': {
+    'start': position, // the start of the region expanded by the ppx
+    'end': position, // the end of the region expanded by the ppx
+  }
+}
+```
+
+### `locate-type -position <position>`
+
+	-position <position>  The position of the type to be located
+
+Returns the location of the type at the given position.
+If the type cannot be located (because the cursor is already at the right position, or because it is a referenced built-in type, or because the type cannot be found), the result is a string explaining why it cannot be located.
+The type is defined in the same file, and the result will be the following object:
+
+```javascript
+{
+  'pos': {
+    'start': position, // the start of the region where the type is defined
+	'end': position // the end of the region where the type is defined
+  }
+}
+```
+
+The type is described in another file, and the result will be the following object:
+
+```javascript
+{
+  'file': string, // the file where the type is defined
+  'pos': {
+    'start': position, // the start of the region where the type is defined
+	'end': position // the end of the region where the type is defined
+  }
+}
+```
+
+### `signature-help -position <position>`
+
+	-position <position>  The position where to request additional information for signature help
+
+This command is essentially useful for an LSP server, as it can be used to return information additional to the completion of a function and its parameters.
+If no help is found, the command returns an empty object, otherwise it returns a structured object with signatures and active parameters.
+You can find more information here <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_signatureHelp>
+
+### `inlay-hints -start <position> -end <position> -let-binding <bool> -pattern-binding <bool> -avoid-ghost <bool>`
+
+```
+      -start <position>  the start of the region where to activate the inlay-hints
+        -end <position>  the end of the region where to activate the inlay-hints
+    -let-binding <bool>  activate for `let-bindings
+-pattern-binding <bool>  activate for `pattern-bindings
+    -avoid-ghost <bool>  deactivate for node attached with a ghost location (mainly for tests)
+```
+
+This command is essentially useful for an LSP server, and returns the list of inlay hints for a given region in a list of the following object:
+
+```javascript
+{
+  'pos': {
+    'start': position, // the start of the region where the hint should be attached
+	'end': position // the end of the region where the hint should be attached
+  },
+  'label': string // the value fo the hint
+}
+```
+
+You can find more information here <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#inlayHint_resolve>
 
 ### `check-configuration`
 
