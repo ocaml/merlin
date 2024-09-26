@@ -425,14 +425,14 @@ The result is returned as a list of:
 
 Returns the type of the expression when typechecked in the environment around the specified position.
 
-### `search-by-polarity` -position <position> -query <string>
+### `search-by-polarity -position <position> -query <string>`
 
 	-position <position> Position to search
 	-query <string> The query
 
 Returns a list (in the form of a completion list) of values matching the query. A query is defined by polarity (and does not support type parameters). Arguments are prefixed with `-` and the return type is prefixed with `+`. For example, to find a function that takes a string and returns an integer: `-string +int`. `-list +option` will returns every definition that take a list an option.
 
-### `search-by-type` -position <position> -query <string> -limit <int> -with-doc <bool>
+### `search-by-type -position <position> -query <string> -limit <int> -with-doc <bool>`
 
 	-position <position> Position to search
 	-query <string> The query
@@ -453,6 +453,10 @@ The result is returned as a list of:
   'doc': string | null // the docstring of the definition
 }
 ```
+
+### `refactor-open -postion <position> -action <qualify|unqualify>`
+
+
 
 ### `check-configuration`
 
