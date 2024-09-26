@@ -1,5 +1,6 @@
-unreleased
+merlin 5.2
 ==========
+Thu Sep 26 18:48:42 CEST 2024
 
   + merlin binary
     - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
