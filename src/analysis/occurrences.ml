@@ -208,6 +208,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
                           (Filename.concat root file, current_buffer_path)
                         | None -> (file, config.query.filename)
                       in
+                      let file = Misc.canonicalize_filename file in
+                      let buf = Misc.canonicalize_filename buf in
                       if String.equal file buf then false
                       else begin
                         (* We ignore external results if their source was modified *)
@@ -228,6 +230,14 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
         external_locs
     in
     let locs = Lid_set.union buffer_locs external_locs in
+    (* Some of the paths may have redundant `.`s or `..`s in them. Although canonicalizing
+       is not necessary for correctness, it makes the output a bit nicer. *)
+    let canonicalize_file_in_loc ({ txt; loc } : 'a Location.loc) :
+        'a Location.loc =
+      let file = Misc.canonicalize_filename loc.loc_start.pos_fname in
+      { txt; loc = set_fname ~file loc }
+    in
+    let locs = Lid_set.map canonicalize_file_in_loc locs in
     let locs =
       log ~title:"occurrences" "Found %i locs" (Lid_set.cardinal locs);
       Lid_set.elements locs
