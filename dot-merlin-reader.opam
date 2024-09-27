@@ -13,7 +13,7 @@ build: [
 depends: [
   "ocaml" {>= "5.2" }
   "dune" {>= "2.9.0"}
-  "merlin-lib" {>= "5.0"}
+  "merlin-lib" {>= "5.2"}
   "ocamlfind" {>= "1.6.0"}
 ]
 description:
