@@ -4,6 +4,8 @@
 
 (menhir
  (modules type_parser)
- (flags --explain))
+ (enabled_if (<> %{profile} "release"))
+ (mode promote)
+ (flags :standard --explain))
 
 (ocamllex type_lexer)

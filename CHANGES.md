@@ -1,6 +1,6 @@
-merlin 4.17
-===========
-Thu Sep 26 18:48:42 CEST 2024
+merlin 4.17.1
+=============
+Fri Sep 27 12:02:42 CEST 2024
 
   + merlin binary
     - A new `WRAPPING_PREFIX` configuration directive that can be used to tell Merlin
