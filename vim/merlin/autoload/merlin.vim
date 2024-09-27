@@ -284,13 +284,21 @@ function! merlin#PolaritySearch(debug,query)
   let s:search_result = []
   MerlinPy merlin.vim_polarity_search(vim.eval("a:query"), "s:search_result")
   if a:debug != 1 && s:search_result != []
-    call feedkeys("i=merlin#PolarityComplete()\<CR>","n")
+    call feedkeys("i=merlin#SearchComplete()\<CR>","n")
   endif
 endfunction
 
-function! merlin#PolarityComplete()
+function! merlin#SearchComplete()
   call complete(col('.'), s:search_result)
   return ''
+endfunction
+
+function! merlin#SearchByType(debug,query)
+  let s:search_result = []
+  MerlinPy merlin.vim_search_by_type(vim.eval("a:query"), "s:search_result")
+  if a:debug != 1 && s:search_result != []
+    call feedkeys("i=merlin#SearchComplete()\<CR>","n")
+  endif
 endfunction
 
 function! s:StopHighlight()
@@ -815,6 +823,9 @@ function! merlin#Register()
 
   """ Polarity search
   command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#PolaritySearch(0,<q-args>)
+
+  """ Search by type
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearchType call merlin#SearchByType(0,<q-args>)
 
   """ debug --------------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
