@@ -301,6 +301,16 @@ function! merlin#SearchByType(debug,query)
   endif
 endfunction
 
+" Do a polarity search or a search by type depending on the first character of
+" the query.
+function! merlin#Search(debug, query)
+  if a:query =~ "^[-+]"
+    call merlin#PolaritySearch(a:debug, a:query)
+  else
+    call merlin#SearchByType(a:debug, a:query)
+  endif
+endfunction
+
 function! s:StopHighlight()
   if exists('w:enclosing_zone') && w:enclosing_zone != -1
     call matchdelete(w:enclosing_zone)
@@ -821,11 +831,10 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
 
-  """ Polarity search
-  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#PolaritySearch(0,<q-args>)
-
-  """ Search by type
+  """ Search
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearchPolarity call merlin#PolaritySearch(0,<q-args>)
   command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearchType call merlin#SearchByType(0,<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#Search(0,<q-args>)
 
   """ debug --------------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
