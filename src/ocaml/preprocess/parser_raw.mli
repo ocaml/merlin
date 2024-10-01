@@ -48,6 +48,9 @@ type token =
   | MINUSDOT
   | MINUS
   | METHOD
+  | METAOCAML_ESCAPE
+  | METAOCAML_BRACKET_OPEN
+  | METAOCAML_BRACKET_CLOSE
   | MATCH
   | LPAREN
   | LIDENT of (string)
@@ -83,7 +86,6 @@ type token =
   | HASH
   | GREATERRBRACKET
   | GREATERRBRACE
-  | GREATERDOT
   | GREATER
   | FUNCTOR
   | FUNCTION
@@ -98,10 +100,9 @@ type token =
   | EOF
   | END
   | ELSE
+  | EFFECT
   | DOWNTO
-  | DOTTILDE
   | DOTOP of (string)
-  | DOTLESS
   | DOTDOT
   | DOT
   | DONE
@@ -222,6 +223,9 @@ module MenhirInterpreter : sig
     | T_MINUSDOT : unit terminal
     | T_MINUS : unit terminal
     | T_METHOD : unit terminal
+    | T_METAOCAML_ESCAPE : unit terminal
+    | T_METAOCAML_BRACKET_OPEN : unit terminal
+    | T_METAOCAML_BRACKET_CLOSE : unit terminal
     | T_MATCH : unit terminal
     | T_LPAREN : unit terminal
     | T_LIDENT : (string) terminal
@@ -257,7 +261,6 @@ module MenhirInterpreter : sig
     | T_HASH : unit terminal
     | T_GREATERRBRACKET : unit terminal
     | T_GREATERRBRACE : unit terminal
-    | T_GREATERDOT : unit terminal
     | T_GREATER : unit terminal
     | T_FUNCTOR : unit terminal
     | T_FUNCTION : unit terminal
@@ -272,10 +275,9 @@ module MenhirInterpreter : sig
     | T_EOF : unit terminal
     | T_END : unit terminal
     | T_ELSE : unit terminal
+    | T_EFFECT : unit terminal
     | T_DOWNTO : unit terminal
-    | T_DOTTILDE : unit terminal
     | T_DOTOP : (string) terminal
-    | T_DOTLESS : unit terminal
     | T_DOTDOT : unit terminal
     | T_DOT : unit terminal
     | T_DONE : unit terminal
