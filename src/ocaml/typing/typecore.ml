@@ -5822,6 +5822,7 @@ if List.length sargs <> constr.cstr_arity then
 (* Typing of statements (expressions whose values are discarded) *)
 
 and type_statement ?explanation env sexp =
+  let has_errors = Msupport.monitor_errors () in
   (* OCaml 5.2.0 changed the type of 'while' to give 'while true do e done'
      a polymorphic type.  The change has the potential to trigger a
      nonreturning-statement warning in existing code that follows
@@ -5841,7 +5842,7 @@ and type_statement ?explanation env sexp =
   ~before_generalize: begin fun exp ->
     let subexp = final_subexpression exp in
     let ty = expand_head env exp.exp_type in
-    if is_Tvar ty
+    if is_Tvar ty && not !has_errors
     && get_level ty > get_current_level ()
     && not (allow_polymorphic subexp) then
       Location.prerr_warning
@@ -5852,8 +5853,9 @@ and type_statement ?explanation env sexp =
       with_explanation explanation (fun () ->
         unify_exp ~sexp env exp expected_ty)
     else begin
-      check_partial_application ~statement:true exp;
-      enforce_current_level env ty
+      if not !has_errors then
+        check_partial_application ~statement:true exp;
+        enforce_current_level env ty
     end
   end
 
