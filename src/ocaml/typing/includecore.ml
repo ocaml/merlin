@@ -209,7 +209,6 @@ type type_mismatch =
 
 module Style = Misc.Style
 module Fmt = Format_doc
-module Printtyp = Printtyp.Doc
 
 let report_primitive_mismatch first second ppf err =
   let pr fmt = Fmt.fprintf ppf fmt in

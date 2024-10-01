@@ -797,9 +797,6 @@ let rec make_fixed_univars mark ty =
 let make_fixed_univars ty =
   with_type_mark (fun mark -> make_fixed_univars mark ty)
 
-let transl_type env policy styp =
-  transl_type env ~policy ~row_context:[] styp
-
 let transl_simple_type env ?univars ~closed styp =
   TyVarEnv.reset_locals ?univars ();
   let policy = TyVarEnv.(if closed then fixed_policy else extensible_policy) in
@@ -865,11 +862,11 @@ let transl_type_scheme env styp =
 (* Error report *)
 
 open Format_doc
-open Printtyp.Doc
+open Printtyp
 module Style = Misc.Style
 let pp_tag ppf t = fprintf ppf "`%s" t
 let pp_out_type ppf ty = Style.as_inline_code !Oprint.out_type ppf ty
-let pp_type ppf ty = Style.as_inline_code Printtyp.Doc.type_expr ppf ty
+let pp_type ppf ty = Style.as_inline_code Printtyp.type_expr ppf ty
 
 let report_error_doc env ppf = function
   | Unbound_type_variable (name, in_scope_names) ->

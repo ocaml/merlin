@@ -122,13 +122,6 @@ let echo_eof () =
   print_newline ();
   incr num_loc_lines
 
-(* This is used by the toplevel and the report printers below. *)
-let separate_new_message ppf =
-  if not (is_first_message ()) then begin
-    Format.pp_print_newline ppf ();
-    incr num_loc_lines
-  end
-
 (* Code printing errors and warnings must be wrapped using this function, in
    order to update [num_loc_lines].
 
@@ -216,8 +209,17 @@ let show_filename file =
 
 module Fmt = Format_doc
 
-let print_filename ppf file =
-  Format.pp_print_string ppf (show_filename file)
+module Doc = struct
+
+  (* This is used by the toplevel and the report printers below. *)
+  let separate_new_message ppf () =
+    if not (is_first_message ()) then begin
+      Fmt.pp_print_newline ppf ();
+      incr num_loc_lines
+    end
+
+  let filename ppf file =
+    Fmt.pp_print_string ppf (show_filename file)
 
 (* Best-effort printing of the text describing a location, of the form
    'File "foo.ml", line 3, characters 10-12'.
@@ -225,59 +227,73 @@ let print_filename ppf file =
    Some of the information (filename, line number or characters numbers) in the
    location might be invalid; in which case we do not print it.
  *)
-let print_loc ppf loc =
-  (* setup_tags (); *)
-  let file_valid = function
-    | "_none_" ->
-        (* This is a dummy placeholder, but we print it anyway to please editors
-           that parse locations in error messages (e.g. Emacs). *)
-        true
-    | "" | "//toplevel//" -> false
-    | _ -> true
-  in
-  let line_valid line = line > 0 in
-  let chars_valid ~startchar ~endchar = startchar <> -1 && endchar <> -1 in
+  let loc ppf loc =
+    let file_valid = function
+      | "_none_" ->
+          (* This is a dummy placeholder, but we print it anyway to please
+             editors that parse locations in error messages (e.g. Emacs). *)
+          true
+      | "" | "//toplevel//" -> false
+      | _ -> true
+    in
+    let line_valid line = line > 0 in
+    let chars_valid ~startchar ~endchar = startchar <> -1 && endchar <> -1 in
 
-  let file =
-    (* According to the comment in location.mli, if [pos_fname] is "", we must
-       use [!input_name]. *)
-    if loc.loc_start.pos_fname = "" then !input_name
-    else loc.loc_start.pos_fname
-  in
-  let line = loc.loc_start.pos_lnum in
-  let startchar = loc.loc_start.pos_cnum - loc.loc_start.pos_bol in
-  let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_bol in
+    let file =
+      (* According to the comment in location.mli, if [pos_fname] is "", we must
+         use [!input_name]. *)
+      if loc.loc_start.pos_fname = "" then !input_name
+      else loc.loc_start.pos_fname
+    in
+    let startline = loc.loc_start.pos_lnum in
+    let endline = loc.loc_end.pos_lnum in
+    let startchar = loc.loc_start.pos_cnum - loc.loc_start.pos_bol in
+    let endchar = loc.loc_end.pos_cnum - loc.loc_end.pos_bol in
 
-  let first = ref true in
-  let capitalize s =
-    if !first then (first := false; String.capitalize_ascii s)
-    else s in
-  let comma () =
-    if !first then () else Format.fprintf ppf ", " in
+    let first = ref true in
+    let capitalize s =
+      if !first then (first := false; String.capitalize_ascii s)
+      else s in
+    let comma () =
+      if !first then () else Fmt.fprintf ppf ", " in
 
-  Format.fprintf ppf "@{<loc>";
+    Fmt.fprintf ppf "@{<loc>";
 
-  if file_valid file then
-    Format.fprintf ppf "%s \"%a\"" (capitalize "file") print_filename file;
+    if file_valid file then
+      Fmt.fprintf ppf "%s \"%a\"" (capitalize "file") filename file;
 
-  (* Print "line 1" in the case of a dummy line number. This is to please the
-     existing setup of editors that parse locations in error messages (e.g.
-     Emacs). *)
-  comma ();
-  Format.fprintf ppf "%s %i" (capitalize "line")
-    (if line_valid line then line else 1);
-
-  if chars_valid ~startchar ~endchar then (
+    (* Print "line 1" in the case of a dummy line number. This is to please the
+       existing setup of editors that parse locations in error messages (e.g.
+       Emacs). *)
     comma ();
-    Format.fprintf ppf "%s %i-%i" (capitalize "characters") startchar endchar
-  );
+    let startline = if line_valid startline then startline else 1 in
+    let endline = if line_valid endline then endline else startline in
+    begin if startline = endline then
+        Fmt.fprintf ppf "%s %i" (capitalize "line") startline
+      else
+        Fmt.fprintf ppf "%s %i-%i" (capitalize "lines") startline endline
+    end;
 
-  Format.fprintf ppf "@}"
+    if chars_valid ~startchar ~endchar then (
+      comma ();
+      Fmt.fprintf ppf "%s %i-%i" (capitalize "characters") startchar endchar
+    );
 
-(* Print a comma-separated list of locations *)
-let print_locs ppf locs =
-  Format.pp_print_list ~pp_sep:(fun ppf () -> Format.fprintf ppf ",@ ")
-    print_loc ppf locs
+    Fmt.fprintf ppf "@}"
+
+  (* Print a comma-separated list of locations *)
+  let locs ppf locs =
+    Fmt.pp_print_list ~pp_sep:(fun ppf () -> Fmt.fprintf ppf ",@ ")
+      loc ppf locs
+  let quoted_filename ppf f = Misc.Style.as_inline_code filename ppf f
+
+end
+
+let print_filename = Fmt.compat Doc.filename
+let print_loc = Fmt.compat Doc.loc
+let print_locs = Fmt.compat Doc.locs
+let separate_new_message ppf = Fmt.compat Doc.separate_new_message ppf ()
+
 
 (******************************************************************************)
 (* An interval set structure; additionally, it stores user-provided information
@@ -616,10 +632,11 @@ let lines_around_from_current_input ~start_pos ~end_pos =
 (******************************************************************************)
 (* Reporting errors and warnings *)
 
-type msg = (Format.formatter -> unit) loc
+
+type msg = Fmt.t loc
 
 let msg ?(loc = none) fmt =
-  Format.kdprintf (fun txt -> { loc; txt }) fmt
+  Fmt.kdoc_printf (fun txt -> { loc; txt }) fmt
 
 type report_kind =
   | Report_error
@@ -627,8 +644,6 @@ type report_kind =
   | Report_warning_as_error of string
   | Report_alert of string
   | Report_alert_as_error of string
-
-type error_source = Lexer | Parser | Typer | Warning | Unknown | Env | Config
 
 type report = {
   kind : report_kind;
@@ -638,7 +653,7 @@ type report = {
 }
 
 let loc_of_report { main; _ } = main.loc
-let print_msg fmt msg = msg.txt fmt
+let print_msg fmt msg = Fmt.Doc.format fmt msg.txt
 let print_main fmt { main; _ } = print_msg fmt main
 let print_sub_msg = print_msg
 
@@ -653,7 +668,7 @@ type report_printer = {
   pp_main_loc : report_printer -> report ->
     Format.formatter -> t -> unit;
   pp_main_txt : report_printer -> report ->
-    Format.formatter -> (Format.formatter -> unit) -> unit;
+    Format.formatter -> Fmt.t -> unit;
   pp_submsgs : report_printer -> report ->
     Format.formatter -> msg list -> unit;
   pp_submsg : report_printer -> report ->
@@ -661,9 +676,8 @@ type report_printer = {
   pp_submsg_loc : report_printer -> report ->
     Format.formatter -> t -> unit;
   pp_submsg_txt : report_printer -> report ->
-    Format.formatter -> (Format.formatter -> unit) -> unit;
+    Format.formatter -> Fmt.t -> unit;
 }
-
 (*
 let is_dummy_loc loc =
   (* Fixme: this should be just [loc.loc_ghost] and the function should be
@@ -727,7 +741,10 @@ let batch_mode_printer : report_printer =
     *)
     ()
   in
-  let pp_txt ppf txt = Format.fprintf ppf "@[%t@]" txt in
+  let pp_txt ppf txt = Format.fprintf ppf "@[%a@]" Fmt.Doc.format txt in
+  let pp_footnote ppf f =
+    Option.iter (Format.fprintf ppf "@,%a" pp_txt) f
+  in
   let pp self ppf report =
     (* setup_tags (); *)
     separate_new_message ppf;
@@ -736,13 +753,14 @@ let batch_mode_printer : report_printer =
         to be aligned with the main message box
     *)
     print_updating_num_loc_lines ppf (fun ppf () ->
-      Format.fprintf ppf "@[<v>%a%a%a: %a%a%a%a@]@."
+      Format.fprintf ppf "@[<v>%a%a%a: %a%a%a%a%a@]@."
       Format.pp_open_tbox ()
       (self.pp_main_loc self report) report.main.loc
       (self.pp_report_kind self report) report.kind
       Format.pp_set_tab ()
       (self.pp_main_txt self report) report.main.txt
       (self.pp_submsgs self report) report.sub
+      pp_footnote report.footnote
       Format.pp_close_tbox ()
     ) ()
   in

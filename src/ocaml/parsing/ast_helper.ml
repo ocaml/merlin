@@ -30,7 +30,10 @@ type attrs = attribute list
 
 let default_loc = ref Location.none
 
-let const_string s = Pconst_string (s, !default_loc, None)
+let const_string s =
+  let pconst_desc = Pconst_string (s, !default_loc, None) in
+  let pconst_loc = !default_loc in
+  {pconst_loc; pconst_desc}
 
 let with_default_loc l f =
   Misc.protect_refs [Misc.R (default_loc, l)] f

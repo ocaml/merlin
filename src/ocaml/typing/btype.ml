@@ -93,12 +93,16 @@ module TypePairs = struct
         f (type_expr t1, type_expr t2))
 end
 
+(**** Forward declarations ****)
+
+let print_raw =
+  ref (fun _ -> assert false : Format_doc.formatter -> type_expr -> unit)
+
+
 (**** Type level management ****)
 
 let generic_level = Ident.highest_scope
 let lowest_level = Ident.lowest_scope
-let pivot_level = 2 * lowest_level - 1
-    (* pivot_level - lowest_level < lowest_level *)
 
 (**** leveled type pool ****)
 (* This defines a stack of pools of type nodes indexed by the level
@@ -173,7 +177,6 @@ let type_origin decl =
   match decl.type_kind with
   | Type_abstract origin -> origin
   | Type_variant _ | Type_record _ | Type_open -> Definition
-let label_is_poly lbl = is_poly_Tpoly lbl.lbl_arg
 
 let dummy_method = "*dummy method*"
 
@@ -778,67 +781,6 @@ let instance_variable_type label sign =
   match Vars.find label sign.csig_vars with
   | (_, _, ty) -> ty
   | exception Not_found -> assert false
-
-
-                  (**********************************)
-                  (*  Utilities for level-marking   *)
-                  (**********************************)
-
-let not_marked_node ty = get_level ty >= lowest_level
-    (* type nodes with negative levels are "marked" *)
-let flip_mark_node ty =
-  let ty = Transient_expr.repr ty in
-  Transient_expr.set_level ty (pivot_level - ty.level)
-let logged_mark_node ty =
-  set_level ty (pivot_level - get_level ty)
-
-let try_mark_node ty = not_marked_node ty && (flip_mark_node ty; true)
-let try_logged_mark_node ty = not_marked_node ty && (logged_mark_node ty; true)
-
-let rec mark_type ty =
-  if not_marked_node ty then begin
-    flip_mark_node ty;
-    iter_type_expr mark_type ty
-  end
-
-let mark_type_params ty =
-  iter_type_expr mark_type ty
-
-let type_iterators =
-  let it_type_expr it ty =
-    if try_mark_node ty then it.it_do_type_expr it ty
-  in
-  {type_iterators_without_type_expr with it_type_expr}
-
-
-(* Remove marks from a type. *)
-let rec unmark_type ty =
-  if get_level ty < lowest_level then begin
-    (* flip back the marked level *)
-    flip_mark_node ty;
-    iter_type_expr unmark_type ty
-  end
-
-let unmark_iterators =
-  let it_type_expr _it ty = unmark_type ty in
-  {type_iterators with it_type_expr}
-
-let unmark_type_decl decl =
-  unmark_iterators.it_type_declaration unmark_iterators decl
-
-let unmark_extension_constructor ext =
-  List.iter unmark_type ext.ext_type_params;
-  iter_type_expr_cstr_args unmark_type ext.ext_args;
-  Option.iter unmark_type ext.ext_ret_type
-
-let unmark_class_signature sign =
-  unmark_type sign.csig_self;
-  unmark_type sign.csig_self_row;
-  Vars.iter (fun _l (_m, _v, t) -> unmark_type t) sign.csig_vars;
-  Meths.iter (fun _l (_m, _v, t) -> unmark_type t) sign.csig_meths
-
-
-(**** Type information getter ****)
 
 let cstr_type_path cstr =
   match get_desc cstr.cstr_res with

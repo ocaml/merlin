@@ -2,9 +2,9 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*  Florian Angeletti, projet Cambium, INRIA Paris                        *)
+(*  Xavier Leroy and Jerome Vouillon, projet Cristal, INRIA Rocquencourt  *)
 (*                                                                        *)
-(*   Copyright 2024 Institut National de Recherche en Informatique et     *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
@@ -13,166 +13,6 @@
 (*                                                                        *)
 (**************************************************************************)
 
-open Out_type
-module Fmt = Format_doc
-
-let namespaced_ident namespace  id =
-  Out_name.print (ident_name (Some namespace) id)
-
-module Doc = struct
-  let wrap_printing_env = wrap_printing_env
-
-  let longident = Pprintast.Doc.longident
-
-  let ident ppf id = Fmt.pp_print_string ppf
-      (Out_name.print (ident_name None id))
-
-
-
-  let typexp mode ppf ty =
-    !Oprint.out_type ppf (tree_of_typexp mode ty)
-
-  let type_expansion k ppf e =
-    pp_type_expansion ppf (trees_of_type_expansion k e)
-
-  let type_declaration id ppf decl =
-    !Oprint.out_sig_item ppf (tree_of_type_declaration id decl Trec_first)
-
-  let type_expr ppf ty =
-    (* [type_expr] is used directly by error message printers,
-       we mark eventual loops ourself to avoid any misuse and stack overflow *)
-    prepare_for_printing [ty];
-    prepared_type_expr ppf ty
-
-  let shared_type_scheme ppf ty =
-    add_type_to_preparation ty;
-    typexp Type_scheme ppf ty
-
-  let type_scheme ppf ty =
-    prepare_for_printing [ty];
-    prepared_type_scheme ppf ty
-
-  let path ppf p =
-    !Oprint.out_ident ppf (tree_of_path ~disambiguation:false p)
-
-  let () = Env.print_path := path
-
-  let type_path ppf p = !Oprint.out_ident ppf (tree_of_type_path p)
-
-  let value_description id ppf decl =
-    !Oprint.out_sig_item ppf (tree_of_value_description id decl)
-
-  let class_type ppf cty =
-    reset ();
-    prepare_class_type cty;
-    !Oprint.out_class_type ppf (tree_of_class_type Type cty)
-
-  let class_declaration id ppf cl =
-    !Oprint.out_sig_item ppf (tree_of_class_declaration id cl Trec_first)
-
-  let cltype_declaration id ppf cl =
-    !Oprint.out_sig_item ppf (tree_of_cltype_declaration id cl Trec_first)
-
-  let modtype ppf mty = !Oprint.out_module_type ppf (tree_of_modtype mty)
-  let modtype_declaration id ppf decl =
-    !Oprint.out_sig_item ppf (tree_of_modtype_declaration id decl)
-
-  let constructor ppf c =
-    reset_except_conflicts ();
-    add_constructor_to_preparation c;
-    prepared_constructor ppf c
-
-  let constructor_arguments ppf a =
-    let tys = tree_of_constructor_arguments a in
-    !Oprint.out_type ppf (Otyp_tuple tys)
-
-  let label ppf l =
-    prepare_for_printing [l.Types.ld_type];
-    !Oprint.out_label ppf (tree_of_label l)
-
-  let extension_constructor id ppf ext =
-    !Oprint.out_sig_item ppf (tree_of_extension_constructor id ext Text_first)
-
-  (* Print an extension declaration *)
-
-
-
-  let extension_only_constructor id ppf (ext:Types.extension_constructor) =
-    reset_except_conflicts ();
-    prepare_type_constructor_arguments ext.ext_args;
-    Option.iter add_type_to_preparation ext.ext_ret_type;
-    let name = Ident.name id in
-    let args, ret =
-      extension_constructor_args_and_ret_type_subtree
-        ext.ext_args
-        ext.ext_ret_type
-    in
-    Fmt.fprintf ppf "@[<hv>%a@]"
-      !Oprint.out_constr {
-      Outcometree.ocstr_name = name;
-      ocstr_args = args;
-      ocstr_return_type = ret;
-    }
-
-  (* Print a signature body (used by -i when compiling a .ml) *)
-
-  let print_signature ppf tree =
-    Fmt.fprintf ppf "@[<v>%a@]" !Oprint.out_signature tree
-
-  let signature ppf sg =
-    Fmt.fprintf ppf "%a" print_signature (tree_of_signature sg)
-
-end
-open Doc
-let string_of_path p = Fmt.asprintf "%a" path p
-
-let strings_of_paths namespace p =
-  let trees = List.map (namespaced_tree_of_path namespace) p in
-  List.map (Fmt.asprintf "%a" !Oprint.out_ident) trees
-
-let wrap_printing_env = wrap_printing_env
-let ident = Fmt.compat ident
-let longident = Fmt.compat longident
-let path = Fmt.compat path
-let type_path = Fmt.compat type_path
-let type_expr = Fmt.compat type_expr
-let type_scheme = Fmt.compat type_scheme
-let shared_type_scheme = Fmt.compat shared_type_scheme
-
-let type_declaration  = Fmt.compat1 type_declaration
-let type_expansion = Fmt.compat1 type_expansion
-let value_description = Fmt.compat1 value_description
-let label = Fmt.compat label
-let constructor = Fmt.compat constructor
-let constructor_arguments = Fmt.compat constructor_arguments
-let extension_constructor = Fmt.compat1 extension_constructor
-let extension_only_constructor = Fmt.compat1 extension_only_constructor
-
-let modtype = Fmt.compat modtype
-let modtype_declaration = Fmt.compat1 modtype_declaration
-let signature = Fmt.compat signature
-
-let class_declaration = Fmt.compat1 class_declaration
-let class_type = Fmt.compat class_type
-let cltype_declaration = Fmt.compat1 cltype_declaration
-
-
-(* Print a signature body (used by -i when compiling a .ml) *)
-let printed_signature sourcefile ppf sg =
-  (* we are tracking any collision event for warning 63 *)
-  Ident_conflicts.reset ();
-  let t = tree_of_signature sg in
-  if Warnings.(is_active @@ Erroneous_printed_signature "") then
-    begin match Ident_conflicts.err_msg () with
-    | None -> ()
-    | Some msg ->
-        let conflicts = Fmt.asprintf "%a" Fmt.pp_doc msg in
-        Location.prerr_warning (Location.in_file sourcefile)
-          (Warnings.Erroneous_printed_signature conflicts);
-        Warnings.check_fatal ()
-    end;
-  Fmt.compat print_signature ppf t
-
 (* Printing functions *)
 
 module M = Misc.String.Map
@@ -180,7 +20,7 @@ module S = Misc.String.Set
 
 open Misc
 open Ctype
-open Format
+open Format_doc
 open Longident
 open Path
 open Asttypes
@@ -192,9 +32,9 @@ module Sig_component_kind = Shape.Sig_component_kind
 module Style = Misc.Style
 
 (* Print a long identifier *)
-let longident = Pprintast.longident
+let longident = Pprintast.Doc.longident
 
-let () = Env.print_longident := longident
+let () = Env.print_longident := longident 
 
 (* Print an identifier avoiding name collisions *)
 
@@ -241,7 +81,7 @@ module Namespace = struct
 
 
   let pp ppf x =
-    Format.pp_print_string ppf (Shape.Sig_component_kind.to_string x)
+    pp_print_string ppf (Shape.Sig_component_kind.to_string x)
 
   let lookup =
     let to_lookup f lid = fst @@ in_printing_env (f (Lident lid)) in
@@ -315,12 +155,12 @@ module Conflicts = struct
       end
 
   let pp_explanation ppf r=
-    Format.fprintf ppf "@[<v 2>%a:@,Definition of %s %a@]"
-      Location.print_loc r.location (Sig_component_kind.to_string r.kind)
+    fprintf ppf "@[<v 2>%a:@,Definition of %s %a@]"
+      Location.Doc.loc r.location (Sig_component_kind.to_string r.kind)
       Style.inline_code r.name
 
   let print_located_explanations ppf l =
-    Format.fprintf ppf "@[<v>%a@]" (Format.pp_print_list pp_explanation) l
+    fprintf ppf "@[<v>%a@]" (pp_print_list pp_explanation) l
 
   let reset () = explanations := M.empty
   let list_explanations () =
@@ -330,8 +170,8 @@ module Conflicts = struct
 
 
   let print_toplevel_hint ppf l =
-    let conj ppf () = Format.fprintf ppf " and@ " in
-    let pp_namespace_plural ppf n = Format.fprintf ppf "%as" Namespace.pp n in
+    let conj ppf () = fprintf ppf " and@ " in
+    let pp_namespace_plural ppf n = fprintf ppf "%as" Namespace.pp n in
     let root_names = List.map (fun r -> r.kind, r.root_name) l in
     let unique_root_names = List.sort_uniq Stdlib.compare root_names in
     let submsgs = Array.make Namespace.size [] in
@@ -342,7 +182,7 @@ module Conflicts = struct
       match names with
       | [] -> ()
       | [namespace, a] ->
-          Format.fprintf ppf
+          fprintf ppf
         "@ \
          @[<2>@{<hint>Hint@}: The %a %a has been defined multiple times@ \
          in@ this@ toplevel@ session.@ \
@@ -351,14 +191,14 @@ module Conflicts = struct
         Namespace.pp namespace
         Style.inline_code a Namespace.pp namespace
       | (namespace, _) :: _ :: _ ->
-      Format.fprintf ppf
+      fprintf ppf
         "@ \
          @[<2>@{<hint>Hint@}: The %a %a have been defined multiple times@ \
          in@ this@ toplevel@ session.@ \
          Some toplevel values still refer to@ old@ versions@ of@ those@ %a.\
          @ Did you try to redefine them?@]"
         pp_namespace_plural namespace
-        Format.(pp_print_list ~pp_sep:conj Style.inline_code)
+        (pp_print_list ~pp_sep:conj Style.inline_code)
         (List.map snd names)
         pp_namespace_plural namespace in
     Array.iter (pp_submsg ppf) submsgs
@@ -372,7 +212,7 @@ module Conflicts = struct
     in
     begin match l with
     | [] -> ()
-    | l -> Format.fprintf ppf "@,%a" print_located_explanations l
+    | l -> fprintf ppf "@,%a" print_located_explanations l
     end;
     (* if there are name collisions in a toplevel session,
        display at least one generic hint by namespace *)
@@ -591,11 +431,11 @@ let path ppf p =
   !Oprint.out_ident ppf (tree_of_path None p)
 
 let string_of_path p =
-  Format.asprintf "%a" path p
+  asprintf "%a" path p
 
 let strings_of_paths namespace p =
   let trees = List.map (tree_of_path namespace) p in
-  List.map (Format.asprintf "%a" !Oprint.out_ident) trees
+  List.map (asprintf "%a" !Oprint.out_ident) trees
 
 let () = Env.print_path := path
 
@@ -647,9 +487,10 @@ let visited = ref []
 let rec raw_type ppf ty =
   let ty = safe_repr [] ty in
   if List.memq ty !visited then fprintf ppf "{id=%d}" ty.id else begin
+    let scope = Transient_expr.get_scope ty in
     visited := ty :: !visited;
     fprintf ppf "@[<1>{id=%d;level=%d;scope=%d;desc=@,%a}@]" ty.id ty.level
-      ty.scope raw_type_desc ty.desc
+      scope raw_type_desc ty.desc
   end
 and raw_type_list tl = raw_list raw_type tl
 and raw_lid_type_list tl =
@@ -726,8 +567,8 @@ and raw_field ppf rf =
       fprintf ppf "@[<hov1>RFeither(%B,@,%a,@,%B,@,@[<1>ref%t@])@]" c
         raw_type_list tl m
         (fun ppf ->
-          match e with None -> fprintf ppf " RFnone"
-          | Some f -> fprintf ppf "@,@[<1>(%a)@]" raw_field f))
+          match e with (_, None) -> fprintf ppf " RFnone"
+          | (_, Some f) -> fprintf ppf "@,@[<1>(%a)@]" raw_field f))
     rf
 
 let raw_type_expr ppf t =
@@ -882,7 +723,7 @@ module Internal_names : sig
 
   val add : Path.t -> unit
 
-  val print_explanations : Env.t -> Format.formatter -> unit
+  val print_explanations : Env.t -> Format_doc.formatter -> unit
 
 end = struct
 
@@ -930,7 +771,7 @@ end = struct
             fprintf ppf
               "@ @[<2>@{<hint>Hint@}:@ %a@ and %a@ are existential types@ \
                bound by the constructor@ %a.@]"
-              (Format.pp_print_list
+              (pp_print_list
                  ~pp_sep:(fun ppf () -> fprintf ppf ",@ ")
                  (Style.as_inline_code !Oprint.out_ident))
               (List.rev out_idents)
@@ -1508,7 +1349,11 @@ let prepare_type_constructor_arguments = function
   | Cstr_record l -> List.iter (fun l -> prepare_type l.ld_type) l
 
 let tree_of_label l =
-  (Ident.name l.ld_id, l.ld_mutable = Mutable, tree_of_typexp Type l.ld_type)
+  {
+    olab_name = Ident.name l.ld_id;
+    olab_mut = l.ld_mutable;
+    olab_type = tree_of_typexp Type l.ld_type;
+  }
 
 let tree_of_constructor_arguments = function
   | Cstr_tuple l -> tree_of_typlist Type l
@@ -1815,7 +1660,7 @@ let extension_only_constructor id ppf ext =
       ext.ext_args
       ext.ext_ret_type
   in
-  Format.fprintf ppf "@[<hv>%a@]"
+  fprintf ppf "@[<hv>%a@]"
     !Oprint.out_constr {
       ocstr_name = name;
       ocstr_args = args;
@@ -2221,7 +2066,7 @@ let printed_signature sourcefile ppf sg =
   if Warnings.(is_active @@ Erroneous_printed_signature "")
   && Conflicts.exists ()
   then begin
-    let conflicts = Format.asprintf "%t" Conflicts.print_explanations in
+    let conflicts = asprintf "%t" Conflicts.print_explanations in
     Location.prerr_warning (Location.in_file sourcefile)
       (Warnings.Erroneous_printed_signature conflicts);
     Warnings.check_fatal ()
@@ -2364,7 +2209,7 @@ let rec filter_trace keep_last = function
   | _ :: rem -> filter_trace keep_last rem
 
 let type_path_list =
-  Format.pp_print_list ~pp_sep:(fun ppf () -> Format.pp_print_break ppf 2 0)
+  pp_print_list ~pp_sep:(fun ppf () -> pp_print_break ppf 2 0)
     type_path_expansion
 
 (* Hide variant name and var, to force printing the expanded type *)
@@ -2392,13 +2237,13 @@ let may_prepare_expansion compact (Errortrace.{ty; expanded} as ty_exp) =
   | _ -> prepare_expansion ty_exp
 
 let print_path p =
-  Format.dprintf "%a" !Oprint.out_ident (tree_of_path (Some Type) p)
+  dprintf "%a" !Oprint.out_ident (tree_of_path (Some Type) p)
 
 let print_tag ppf s = Style.inline_code ppf ("`" ^ s)
 
 let print_tags =
-  let comma ppf () = Format.fprintf ppf ",@ " in
-  Format.pp_print_list ~pp_sep:comma print_tag
+  let comma ppf () = fprintf ppf ",@ " in
+  pp_print_list ~pp_sep:comma print_tag
 
 let is_unit env ty =
   match get_desc (Ctype.expand_head env ty) with
@@ -2414,7 +2259,7 @@ let unifiable env ty1 ty2 =
   Btype.backtrack snap;
   res
 
-let explanation_diff env t3 t4 : (Format.formatter -> unit) option =
+let explanation_diff env t3 t4 : (Format_doc.formatter -> unit) option =
   match get_desc t3, get_desc t4 with
   | Tarrow (_, ty1, ty2, _), _
     when is_unit env ty1 && unifiable env ty2 t4 ->
@@ -2551,6 +2396,43 @@ let explain_incompatible_fields name (diff: Types.type_expr Errortrace.diff) =
     (Style.as_inline_code type_expr_with_reserved_names) diff.got
     (Style.as_inline_code type_expr_with_reserved_names) diff.expected
 
+let explain_label_mismatch ~got ~expected =
+  let quoted_label ppf l = Style.inline_code ppf (Asttypes.string_of_label l) in
+  match got, expected with
+  | Asttypes.Nolabel, Asttypes.(Labelled _ | Optional _ )  ->
+      dprintf "@,@[A label@ %a@ was expected@]"
+        quoted_label expected
+  | Asttypes.(Labelled _|Optional _), Asttypes.Nolabel  ->
+      dprintf
+        "@,@[The first argument is labeled@ %a,@ \
+         but an unlabeled argument was expected@]"
+        quoted_label got
+ | Asttypes.Labelled g, Asttypes.Optional e when g = e ->
+      dprintf
+        "@,@[The label@ %a@ was expected to be optional@]"
+        quoted_label got
+  | Asttypes.Optional g, Asttypes.Labelled e when g = e ->
+      dprintf
+        "@,@[The label@ %a@ was expected to not be optional@]"
+        quoted_label got
+  | Asttypes.(Labelled _ | Optional _), Asttypes.(Labelled _ | Optional _) ->
+      dprintf "@,@[Labels %a@ and@ %a do not match@]"
+        quoted_label got
+        quoted_label expected
+  | Asttypes.Nolabel, Asttypes.Nolabel ->
+      (* Two empty labels cannot be mismatched*)
+      assert false
+
+let explain_first_class_module = function
+  | Errortrace.Package_cannot_scrape p -> Some(
+      dprintf "@,@[The module alias %a could not be expanded@]"
+        path p
+    )
+  | Errortrace.Package_inclusion pr ->
+      Some(dprintf "@,@[%a@]" pp_doc pr)
+  | Errortrace.Package_coercion pr ->
+      Some(dprintf "@,@[%a@]" pp_doc pr)
+
 let explanation (type variety) intro prev env
   : (Errortrace.expanded_type, variety) Errortrace.elt -> _ = function
   | Errortrace.Diff {got; expected} ->
@@ -2573,6 +2455,10 @@ let explanation (type variety) intro prev env
     explain_variant v
   | Errortrace.Obj o ->
     explain_object o
+  | Errortrace.Function_label_mismatch diff ->
+    Some (explain_label_mismatch ~got:diff.got ~expected:diff.expected)
+  | Errortrace.First_class_module fm ->
+    explain_first_class_module fm
   | Errortrace.Rec_occur(x,y) ->
     reserve_names x;
     reserve_names y;
@@ -2836,3 +2722,5 @@ let shorten_class_type_path env p =
 
 let () =
   Env.shorten_module_path := shorten_module_path
+
+
