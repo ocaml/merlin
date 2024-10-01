@@ -1729,10 +1729,10 @@ let final_decl env define_class
       let printer =
         if define_class
         then
-          Format_doc.doc_printf "%a" (Printtyp.Doc.class_declaration id) clty
+          Format_doc.doc_printf "%a" (Printtyp.class_declaration id) clty
         else
           Format_doc.doc_printf "%a"
-            (Printtyp.Doc.cltype_declaration id) cltydef
+            (Printtyp.cltype_declaration id) cltydef
       in
       raise(Error(cl.pci_loc, env, Unbound_type_var(printer, reason)))
   end;
@@ -1978,7 +1978,6 @@ let non_virtual_string_of_kind : kind -> string = function
   | Class_type -> "non-virtual class type"
 
 module Style=Misc.Style
-module Printtyp = Printtyp.Doc
 
 let out_type ppf t = Style.as_inline_code !Oprint.out_type ppf t
 let quoted_type ppf t = Style.as_inline_code Printtyp.type_expr ppf t

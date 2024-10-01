@@ -52,8 +52,8 @@ and cmt_magic_number = "Caml1999T034"
 and index_magic_number = "Merl2023I001"
 
 let interface_suffix = ref ".mli"
+let flat_float_array = true
 
 let max_tag = 245
-let flat_float_array = false
 
 let merlin = true

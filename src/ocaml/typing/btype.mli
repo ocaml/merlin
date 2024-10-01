@@ -92,7 +92,6 @@ val is_poly_Tpoly: type_expr -> bool
 val dummy_method: label
 val type_kind_is_abstract: type_declaration -> bool
 val type_origin: type_declaration -> type_origin
-val label_is_poly: label_description -> bool
 
 (**** polymorphic variants ****)
 
@@ -260,6 +259,7 @@ val signature_of_class_type : class_type -> class_signature
 
 (* Get the body of a class type (i.e. without parameters) *)
 val class_body : class_type -> class_type
+
 (* Fully expand the head of a class type *)
 val scrape_class_type : class_type -> class_type
 
@@ -304,6 +304,9 @@ val method_type : label -> class_signature -> type_expr
 (* Return the type of an instance variable.
    @raises [Assert_failure] if the class has no such method. *)
 val instance_variable_type : label -> class_signature -> type_expr
+
+(**** Forward declarations ****)
+val print_raw: (Format_doc.formatter -> type_expr -> unit) ref
 
 (**** Type information getter ****)
 

@@ -3876,9 +3876,9 @@ let () =
           let error_of_printer =
             if loc = Location.none
             then Location.error_of_printer_file
-            else Location.error_of_printer ~loc ?sub:None
+            else Location.error_of_printer ~loc ?sub:None ?footnote:None
           in
-          Some (error_of_printer report_error err)
+          Some (error_of_printer report_error_doc err)
       | _ ->
           None
     )

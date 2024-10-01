@@ -27,6 +27,7 @@ let keep_docs           = ref false
 let transparent_modules = ref true
 let for_package         = ref None
 let debug               = ref false
+let unsafe              = ref false
 let opaque              = ref false
 let unboxed_types       = ref false
 

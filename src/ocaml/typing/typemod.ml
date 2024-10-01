@@ -1816,6 +1816,8 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
           end
         | Psig_attribute x ->
             Builtin_attributes.warning_attribute x;
+            if toplevel || not (Warnings.is_active (Misplaced_attribute ""))
+            then Builtin_attributes.mark_alert_used x;
             let (trem,rem, final_env) = transl_sig env srem in
             mksig (Tsig_attribute x) env loc :: trem, rem, final_env
         | Psig_extension (ext, _attrs) ->
@@ -3291,7 +3293,8 @@ let type_implementation target initial_env ast =
         let shape = Shape_reduce.local_reduce Env.empty shape in
         Printtyp.wrap_printing_env ~error:false initial_env
           Format.(fun () -> fprintf std_formatter "%a@."
-              (Printtyp.printed_signature @@ Unit_info.source_file target)
+                     (Format_doc.compat
+                        (Printtyp.printed_signature @@ Unit_info.source_file target))
               simple_sg
           );
         (* gen_annot target (Cmt_format.Implementation str); *)
@@ -3375,7 +3378,7 @@ let save_signature target tsg initial_env cmi =
     (Cmt_format.Interface tsg) initial_env (Some cmi) None
 
 let type_interface env ast =
-  transl_signature env ast
+  transl_signature ~toplevel:true env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
@@ -3474,7 +3477,7 @@ let package_units initial_env objfiles target_cmi =
 
 
 (* Error report *)
-open Printtyp.Doc
+open Printtyp
 
 let report_error ~loc _env = function
     Cannot_apply mty ->

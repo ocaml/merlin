@@ -107,7 +107,9 @@ val rewrite_absolute_path: string -> string
     the BUILD_PATH_PREFIX_MAP spec}
     *)
 
+(*
 val rewrite_find_first_existing: string -> string option
+*)
 (** [rewrite_find_first_existing path] uses a BUILD_PATH_PREFIX_MAP mapping
     and tries to find a source in mapping
     that maps to a result that exists in the file system.
@@ -129,7 +131,9 @@ val rewrite_find_first_existing: string -> string option
     the BUILD_PATH_PREFIX_MAP spec}
     *)
 
+(*
 val rewrite_find_all_existing_dirs: string -> string list
+*)
 (** [rewrite_find_all_existing_dirs dir] accumulates a list of existing
     directories, [dirs], that are the result of mapping a potentially
     abstract directory, [dir], over all the mapping pairs in the
@@ -183,9 +187,10 @@ end
 
 (** {1 Toplevel-specific location highlighting} *)
 
+(*
 val highlight_terminfo:
   Lexing.lexbuf -> formatter -> t list -> unit
-
+*)
 
 (** {1 Reporting errors and warnings} *)
 
@@ -208,6 +213,12 @@ type report = {
   sub : msg list;
   footnote: Format_doc.t option
 }
+
+
+(* Exposed for Merlin *)
+val loc_of_report: report -> t
+val print_main : formatter -> report -> unit
+val print_sub_msg : formatter -> msg -> unit
 
 type report_printer = {
   (* The entry point *)
@@ -238,10 +249,12 @@ type report_printer = {
 
 val batch_mode_printer: report_printer
 
+(*
 val terminfo_toplevel_printer: Lexing.lexbuf -> report_printer
 
 val best_toplevel_printer: unit -> report_printer
 (** Detects the terminal capabilities and selects an adequate printer *)
+*)
 
 (** {2 Printing a [report]} *)
 

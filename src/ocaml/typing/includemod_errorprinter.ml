@@ -15,7 +15,6 @@
 
 module Style = Misc.Style
 module Fmt = Format_doc
-module Printtyp = Printtyp.Doc
 
 module Context = struct
   type pos =

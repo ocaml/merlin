@@ -876,9 +876,9 @@ module Style = struct
 
   let as_inline_code printer ppf x =
     let open Format_doc in
-    Format.pp_open_stag ppf (Format.String_tag "inline_code");
+    pp_open_stag ppf (Format.String_tag "inline_code");
     printer ppf x;
-    Format.pp_close_stag ppf ()
+    pp_close_stag ppf ()
 
   let inline_code ppf s = as_inline_code Format_doc.pp_print_string ppf s
 
@@ -994,24 +994,25 @@ let spellcheck env name =
   let env = List.sort_uniq ~cmp:(fun s1 s2 -> String.compare s2 s1) env in
   fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
 
+
 let did_you_mean ppf get_choices =
+  let open Format_doc in
   (* flush now to get the error report early, in the (unheard of) case
      where the search in the get_choices function would take a bit of
      time; in the worst case, the user has seen the error, she can
      interrupt the process before the spell-checking terminates. *)
-  Format.fprintf ppf "@?";
+  fprintf ppf "@?";
   match get_choices () with
   | [] -> ()
   | choices ->
     let rest, last = split_last choices in
-    let comma ppf () = Format.fprintf ppf ", " in
-     Format.fprintf ppf "@\n@{<hint>Hint@}: Did you mean %a%s%a?@?"
-       (Format.pp_print_list ~pp_sep:comma Style.inline_code) rest
+     fprintf ppf "@\n@[@{<hint>Hint@}: Did you mean %a%s%a?@]"
+       (pp_print_list ~pp_sep:comma Style.inline_code) rest
        (if rest = [] then "" else " or ")
        Style.inline_code last
 
 let print_see_manual ppf manual_section =
-  let open Format in
+  let open Format_doc in
   fprintf ppf "(see manual section %a)"
     (pp_print_list ~pp_sep:(fun f () -> pp_print_char f '.') pp_print_int)
     manual_section
