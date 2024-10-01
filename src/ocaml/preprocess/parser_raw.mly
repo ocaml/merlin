@@ -918,10 +918,6 @@ let merloc startpos ?endpos x =
 
 %token EOL                    "\\n"      (* not great, but EOL is unused *)
 
-// %token DOTLESS [@cost 1] [@symbol ".<"]
-// %token DOTTILDE [@cost 1] [@symbol ".~"]
-// %token GREATERDOT [@cost 1] [@symbol ">."]
-
 (* see the [metaocaml_expr] comment *)
 %token METAOCAML_ESCAPE         [@symbol ".~"]
 %token METAOCAML_BRACKET_OPEN   [@symbol ".<"]
