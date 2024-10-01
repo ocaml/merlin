@@ -64,7 +64,7 @@ let ext_meta =
         \    end"
       ];
     public_def = [];
-    keywords = [ (">.", GREATERDOT) ];
+    keywords = [ (">.", METAOCAML_BRACKET_CLOSE) ];
     packages = []
   }
 
