@@ -1,25 +1,9 @@
-(**************************************************************************)
-(*                                                                        *)
-(*                                 OCaml                                  *)
-(*                                                                        *)
-(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
-(*                                                                        *)
-(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
-(*     en Automatique.                                                    *)
-(*                                                                        *)
-(*   All rights reserved.  This file is distributed under the terms of    *)
-(*   the GNU Lesser General Public License version 2.1, with the          *)
-(*   special exception on linking described in the file LICENSE.          *)
-(*                                                                        *)
-(**************************************************************************)
 
 (* Printing functions *)
 
-open Format
+open Format_doc
 open Types
 open Outcometree
-
-module Doc : sig include module type of Printtyp_doc end
 
 val longident: formatter -> Longident.t -> unit
 val ident: formatter -> Ident.t -> unit
@@ -31,6 +15,11 @@ val string_of_path: Path.t -> string
 val type_path: formatter -> Path.t -> unit
 (** Print a type path taking account of [-short-paths].
     Calls should be within [wrap_printing_env]. *)
+
+module Out_name: sig
+  val create: string -> out_name
+  val print: out_name -> string
+end
 
 type namespace := Shape.Sig_component_kind.t option
 
@@ -49,6 +38,43 @@ val shorten_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_path: Env.t -> Path.t -> Path.t
 val shorten_class_type_path: Env.t -> Path.t -> Path.t
+
+module Naming_context: sig
+  val enable: bool -> unit
+  (** When contextual names are enabled, the mapping between identifiers
+      and names is ensured to be one-to-one. *)
+
+  val with_arg : Ident.t -> (unit -> 'a) -> 'a
+end
+
+(** The [Conflicts] module keeps track of conflicts arising when attributing
+    names to identifiers and provides functions that can print explanations
+    for these conflict in error messages *)
+module Conflicts: sig
+  val exists: unit -> bool
+  (** [exists()] returns true if the current naming context renamed
+        an identifier to avoid a name collision *)
+
+  type explanation =
+    { kind: Shape.Sig_component_kind.t;
+      name:string;
+      root_name:string;
+      location:Location.t
+    }
+
+  val list_explanations: unit -> explanation list
+(** [list_explanations()] return the list of conflict explanations
+    collected up to this point, and reset the list of collected
+    explanations *)
+
+  val print_located_explanations:
+    Format.formatter -> explanation list -> unit
+
+  val print_explanations: Format.formatter -> unit
+  (** Print all conflict explanations collected up to this point *)
+
+  val reset: unit -> unit
+end
 
 
 val reset: unit -> unit
@@ -143,9 +169,9 @@ val tree_of_modtype_declaration:
     expect: (_: sig end) (Y:X.T) (_:sig end) (Z:X.T)
 *)
 val functor_parameters:
-  sep:(Format.formatter -> unit -> unit) ->
-  ('b -> Format.formatter -> unit) ->
-  (Ident.t option * 'b) list -> Format.formatter -> unit
+  sep:(formatter -> unit -> unit) ->
+  ('b -> formatter -> unit) ->
+  (Ident.t option * 'b) list -> formatter -> unit
 
 type type_or_scheme = Type | Type_scheme
 
@@ -160,40 +186,49 @@ val tree_of_cltype_declaration:
     Ident.t -> class_type_declaration -> rec_status -> out_sig_item
 val cltype_declaration: Ident.t -> formatter -> class_type_declaration -> unit
 val type_expansion :
-  type_or_scheme -> Format.formatter -> Errortrace.expanded_type -> unit
+  type_or_scheme -> formatter -> Errortrace.expanded_type -> unit
 val prepare_expansion: Errortrace.expanded_type -> Errortrace.expanded_type
 val report_ambiguous_type_error:
-    formatter -> Env.t -> (Path.t * Path.t) -> (Path.t * Path.t) list ->
-    (formatter -> unit) -> (formatter -> unit) -> (formatter -> unit) -> unit
+    Format.formatter -> Env.t -> (Path.t * Path.t) -> (Path.t * Path.t) list ->
+    (Format.formatter -> unit) -> (Format.formatter -> unit) ->
+    (Format.formatter -> unit) -> unit
 
 val report_unification_error :
-  formatter ->
+  Format.formatter ->
   Env.t -> Errortrace.unification_error ->
-  ?type_expected_explanation:(formatter -> unit) ->
-  (formatter -> unit) -> (formatter -> unit) ->
+  ?type_expected_explanation:(Format.formatter -> unit) ->
+  (Format.formatter -> unit) -> (Format.formatter -> unit) ->
   unit
 
 val report_equality_error :
-  formatter ->
+  Format.formatter ->
   type_or_scheme ->
   Env.t -> Errortrace.equality_error ->
-  (formatter -> unit) -> (formatter -> unit) ->
+  (Format.formatter -> unit) -> (Format.formatter -> unit) ->
   unit
 
 val report_moregen_error :
-  formatter ->
+  Format.formatter ->
   type_or_scheme ->
   Env.t -> Errortrace.moregen_error ->
-  (formatter -> unit) -> (formatter -> unit) ->
+  (Format.formatter -> unit) -> (Format.formatter -> unit) ->
   unit
 
 val report_comparison_error :
-  formatter ->
+  Format.formatter ->
   type_or_scheme ->
   Env.t -> Errortrace.comparison_error ->
-  (formatter -> unit) -> (formatter -> unit) ->
+  (Format.formatter -> unit) -> (Format.formatter -> unit) ->
   unit
 
+module Subtype : sig
+  val report_error :
+    Format.formatter ->
+    Env.t ->
+    Errortrace.Subtype.error ->
+    string ->
+    unit
+end
 
 (* for toploop *)
 val print_items: (Env.t -> signature_item -> 'a option) ->
