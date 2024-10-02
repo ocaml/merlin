@@ -124,6 +124,10 @@
     val filter : ('a -> bool) -> 'a list -> 'a list
     val find_all : ('a -> bool) -> 'a list -> 'a list
     val filteri : (int -> 'a -> bool) -> 'a list -> 'a list
+    val take : int -> 'a list -> 'a list
+    val drop : int -> 'a list -> 'a list
+    val take_while : ('a -> bool) -> 'a list -> 'a list
+    val drop_while : ('a -> bool) -> 'a list -> 'a list
     val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
     val partition_map :
       ('a -> ('b, 'c) Either.t) -> 'a list -> 'b list * 'c list

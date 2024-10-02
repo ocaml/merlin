@@ -6,6 +6,39 @@
     "value": [
       {
         "start": {
+          "line": 4,
+          "col": 2
+        },
+        "end": {
+          "line": 6,
+          "col": 5
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The type of this class,
+  class virtual x : object method private virtual release : unit end,
+  contains the non-generalizable type variable(s): '_weak11.
+  (see manual section 6.1.2)"
+      },
+      {
+        "start": {
+          "line": 11,
+          "col": 2
+        },
+        "end": {
+          "line": 14,
+          "col": 7
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The type of this class, class c : object method private release : unit end,
+  contains the non-generalizable type variable(s): '_weak10.
+  (see manual section 6.1.2)"
+      },
+      {
+        "start": {
           "line": 21,
           "col": 36
         },
@@ -16,8 +49,9 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Some type variables are unbound in this type: class b : 'a -> a
-  The method x has type 'a where 'a is unbound"
+        "message": "The type of this class, class b : '_weak6 -> a,
+  contains the non-generalizable type variable(s): '_weak9.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -45,9 +79,10 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Some type variables are unbound in this type:
-    class test : ?a:'a -> object method b : 'b end
-  The method b has type 'b where 'b is unbound"
+        "message": "The type of this class,
+  class test : ?a:'_weak4 -> object method b : '_weak5 end,
+  contains the non-generalizable type variable(s): '_weak6, '_weak7, '_weak8.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -89,9 +124,10 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Some type variables are unbound in this type:
-    class test : 'a -> object method b : 'b end
-  The method b has type 'b where 'b is unbound"
+        "message": "The type of this class,
+  class test : '_weak2 -> object method b : '_weak3 end,
+  contains the non-generalizable type variable(s): '_weak3, '_weak4, '_weak5.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -106,6 +142,23 @@
         "sub": [],
         "valid": true,
         "message": "Unbound value c"
+      },
+      {
+        "start": {
+          "line": 39,
+          "col": 0
+        },
+        "end": {
+          "line": 42,
+          "col": 3
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The type of this class,
+  class test : ?a:'_weak1 -> object method b : unit end,
+  contains the non-generalizable type variable(s): '_weak1, '_weak2.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -133,7 +186,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type t = M.t but an expression was expected of type unit"
+        "message": "The value x has type t = M.t but an expression was expected of type unit"
       },
       {
         "start": {
@@ -170,7 +223,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type Dep.M.t"
+        "message": "The constant 5 has type int but an expression was expected of type Dep.M.t"
       }
     ],
     "notifications": []
@@ -180,6 +233,39 @@
   {
     "class": "return",
     "value": [
+      {
+        "start": {
+          "line": 4,
+          "col": 2
+        },
+        "end": {
+          "line": 6,
+          "col": 5
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The type of this class,
+  class virtual x : object method private virtual release : unit end,
+  contains the non-generalizable type variable(s): '_weak11.
+  (see manual section 6.1.2)"
+      },
+      {
+        "start": {
+          "line": 11,
+          "col": 2
+        },
+        "end": {
+          "line": 14,
+          "col": 7
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The type of this class, class c : object method private release : unit end,
+  contains the non-generalizable type variable(s): '_weak10.
+  (see manual section 6.1.2)"
+      },
       {
         "start": {
           "line": 21,
@@ -192,8 +278,9 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Some type variables are unbound in this type: class b : 'a -> a
-  The method x has type 'a where 'a is unbound"
+        "message": "The type of this class, class b : '_weak6 -> a,
+  contains the non-generalizable type variable(s): '_weak9.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -221,9 +308,10 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Some type variables are unbound in this type:
-    class test : ?a:'a -> object method b : 'b end
-  The method b has type 'b where 'b is unbound"
+        "message": "The type of this class,
+  class test : ?a:'_weak4 -> object method b : '_weak5 end,
+  contains the non-generalizable type variable(s): '_weak6, '_weak7, '_weak8.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -265,9 +353,10 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "Some type variables are unbound in this type:
-    class test : 'a -> object method b : 'b end
-  The method b has type 'b where 'b is unbound"
+        "message": "The type of this class,
+  class test : '_weak2 -> object method b : '_weak3 end,
+  contains the non-generalizable type variable(s): '_weak3, '_weak4, '_weak5.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -282,6 +371,23 @@
         "sub": [],
         "valid": true,
         "message": "Unbound value c"
+      },
+      {
+        "start": {
+          "line": 39,
+          "col": 0
+        },
+        "end": {
+          "line": 42,
+          "col": 3
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The type of this class,
+  class test : ?a:'_weak1 -> object method b : unit end,
+  contains the non-generalizable type variable(s): '_weak1, '_weak2.
+  (see manual section 6.1.2)"
       },
       {
         "start": {
@@ -309,7 +415,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type N.O.t but an expression was expected of type unit"
+        "message": "The value x has type t but an expression was expected of type unit"
       },
       {
         "start": {
@@ -325,7 +431,10 @@
         "valid": true,
         "message": "Modules do not match: sig type t = int val foo : 'a -> string end
   is not included in S
-  Values do not match: val foo : 'a -> string is not included in val foo : t -> t
+  Values do not match:
+  val foo : 'a -> string
+  is not included in
+  val foo : int -> t
   The type t -> string is not compatible with the type t -> t
   Type string is not compatible with type t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
@@ -343,7 +452,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type Dep.t"
+        "message": "The constant 5 has type int but an expression was expected of type Dep.M.t"
       }
     ],
     "notifications": []

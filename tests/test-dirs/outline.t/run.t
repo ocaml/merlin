@@ -127,37 +127,6 @@
       },
       {
         "start": {
-          "line": 14,
-          "col": 0
-        },
-        "end": {
-          "line": 16,
-          "col": 3
-        },
-        "name": "class_b",
-        "kind": "Class",
-        "type": null,
-        "children": [
-          {
-            "start": {
-              "line": 15,
-              "col": 9
-            },
-            "end": {
-              "line": 15,
-              "col": 10
-            },
-            "name": "b",
-            "kind": "Method",
-            "type": null,
-            "children": [],
-            "deprecated": false
-          }
-        ],
-        "deprecated": false
-      },
-      {
-        "start": {
           "line": 1,
           "col": 0
         },
