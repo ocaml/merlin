@@ -66,37 +66,44 @@ let default_out_type_extension = !Oprint.out_type_extension
 let default_out_phrase = !Oprint.out_phrase
 
 let replacement_printer = ref None
+let replacement_printer_doc = ref None
 
 let oprint default inj ppf x =
   match !replacement_printer with
   | None -> default ppf x
   | Some printer -> printer ppf (inj x)
 
+let oprint_doc default inj ppf x =
+  match !replacement_printer_doc with
+  | None -> default ppf x
+  | Some printer -> printer ppf (inj x)
+
 let () =
   let open Extend_protocol.Reader in
   Oprint.out_value := oprint default_out_value (fun x -> Out_value x);
-  Oprint.out_type := oprint default_out_type (fun x -> Out_type x);
+  Oprint.out_type := oprint_doc default_out_type (fun x -> Out_type x);
   Oprint.out_class_type :=
-    oprint default_out_class_type (fun x -> Out_class_type x);
+    oprint_doc default_out_class_type (fun x -> Out_class_type x);
   Oprint.out_module_type :=
-    oprint default_out_module_type (fun x -> Out_module_type x);
-  Oprint.out_sig_item := oprint default_out_sig_item (fun x -> Out_sig_item x);
+    oprint_doc default_out_module_type (fun x -> Out_module_type x);
+  Oprint.out_sig_item :=
+    oprint_doc default_out_sig_item (fun x -> Out_sig_item x);
   Oprint.out_signature :=
-    oprint default_out_signature (fun x -> Out_signature x);
+    oprint_doc default_out_signature (fun x -> Out_signature x);
   Oprint.out_type_extension :=
-    oprint default_out_type_extension (fun x -> Out_type_extension x);
+    oprint_doc default_out_type_extension (fun x -> Out_type_extension x);
   Oprint.out_phrase := oprint default_out_phrase (fun x -> Out_phrase x)
 
 let default_printer ppf =
   let open Extend_protocol.Reader in
   function
   | Out_value x -> default_out_value ppf x
-  | Out_type x -> default_out_type ppf x
-  | Out_class_type x -> default_out_class_type ppf x
-  | Out_module_type x -> default_out_module_type ppf x
-  | Out_sig_item x -> default_out_sig_item ppf x
-  | Out_signature x -> default_out_signature ppf x
-  | Out_type_extension x -> default_out_type_extension ppf x
+  | Out_type x -> Format_doc.compat default_out_type ppf x
+  | Out_class_type x -> Format_doc.compat default_out_class_type ppf x
+  | Out_module_type x -> Format_doc.compat default_out_module_type ppf x
+  | Out_sig_item x -> Format_doc.compat default_out_sig_item ppf x
+  | Out_signature x -> Format_doc.compat default_out_signature ppf x
+  | Out_type_extension x -> Format_doc.compat default_out_type_extension ppf x
   | Out_phrase x -> default_out_phrase ppf x
 
 let with_printer printer f = let_ref replacement_printer (Some printer) f
