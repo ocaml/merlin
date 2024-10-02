@@ -129,3 +129,7 @@ val global_modules : ?include_current:bool -> t -> string list
 val filename : t -> string
 
 val unitname : t -> string
+
+val intf_or_impl : t -> Unit_info.intf_or_impl
+
+val unit_info : t -> Unit_info.t
