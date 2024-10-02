@@ -66,9 +66,9 @@ let include_err mode ppf =
       Printtyp.wrap_printing_env ~error:true env (fun () ->
         fprintf ppf
           "@[The class type@;<1 2>%a@ %s@;<1 2>%a@]"
-          Printtyp.class_type cty1
+          Printtyp.Doc.class_type cty1
           "is not matched by the class type"
-          Printtyp.class_type cty2)
+          Printtyp.Doc.class_type cty2)
   | CM_Parameter_mismatch (n, env, err) ->
       Errortrace_report.moregen ppf mode env err
         (msg "The %d%s parameter has type"

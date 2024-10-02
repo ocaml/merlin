@@ -1729,10 +1729,10 @@ let final_decl env define_class
       let printer =
         if define_class
         then
-          Format_doc.doc_printf "%a" (Printtyp.class_declaration id) clty
+          Format_doc.doc_printf "%a" (Printtyp.Doc.class_declaration id) clty
         else
           Format_doc.doc_printf "%a"
-            (Printtyp.cltype_declaration id) cltydef
+            (Printtyp.Doc.cltype_declaration id) cltydef
       in
       raise(Error(cl.pci_loc, env, Unbound_type_var(printer, reason)))
   end;
@@ -1980,7 +1980,7 @@ let non_virtual_string_of_kind : kind -> string = function
 module Style=Misc.Style
 
 let out_type ppf t = Style.as_inline_code !Oprint.out_type ppf t
-let quoted_type ppf t = Style.as_inline_code Printtyp.type_expr ppf t
+let quoted_type ppf t = Style.as_inline_code Printtyp.Doc.type_expr ppf t
 
 let report_error_doc env ppf =
   let pp_args ppf args =
@@ -2011,7 +2011,7 @@ let report_error_doc env ppf =
   | Structure_expected clty ->
       fprintf ppf
         "@[This class expression is not a class structure; it has type@ %a@]"
-        (Style.as_inline_code Printtyp.class_type) clty
+        (Style.as_inline_code Printtyp.Doc.class_type) clty
   | Cannot_apply _ ->
       fprintf ppf
         "This class expression is not a class function, it cannot be applied"
@@ -2030,10 +2030,10 @@ let report_error_doc env ppf =
         quoted_type ty
   | Unbound_class_2 cl ->
       fprintf ppf "@[The class@ %a@ is not yet completely defined@]"
-      (Style.as_inline_code Printtyp.longident) cl
+      (Style.as_inline_code Printtyp.Doc.longident) cl
   | Unbound_class_type_2 cl ->
       fprintf ppf "@[The class type@ %a@ is not yet completely defined@]"
-      (Style.as_inline_code Printtyp.longident) cl
+      (Style.as_inline_code Printtyp.Doc.longident) cl
   | Abbrev_type_clash (abbrev, actual, expected) ->
       (* XXX Afficher une trace ? | Print a trace? *)
       Out_type.prepare_for_printing [abbrev; actual; expected];
@@ -2072,7 +2072,7 @@ let report_error_doc env ppf =
       fprintf ppf
         "@[The class constructor %a@ expects %i type argument(s),@ \
            but is here applied to %i type argument(s)@]"
-        (Style.as_inline_code Printtyp.longident) lid expected provided
+        (Style.as_inline_code Printtyp.Doc.longident) lid expected provided
   | Parameter_mismatch err ->
       let msg = Format_doc.Doc.msg in
       Errortrace_report.unification ppf env err
@@ -2083,11 +2083,11 @@ let report_error_doc env ppf =
       fprintf ppf
         "@[The abbreviation %a@ is used with parameter(s)@ %a@ \
            which are incompatible with constraint(s)@ %a@]"
-        (Style.as_inline_code Printtyp.ident) id
+        (Style.as_inline_code Printtyp.Doc.ident) id
         pp_args params
         pp_args cstrs
   | Bad_class_type_parameters (id, params, cstrs) ->
-      let pp_hash ppf id = fprintf ppf "#%a" Printtyp.ident id in
+      let pp_hash ppf id = fprintf ppf "#%a" Printtyp.Doc.ident id in
       Out_type.prepare_for_printing (params @ cstrs);
       fprintf ppf
         "@[The class type %a@ is used with parameter(s)@ %a,@ \
@@ -2126,7 +2126,7 @@ let report_error_doc env ppf =
       fprintf ppf
         "@[The type of this class,@ %a,@ \
          contains the non-generalizable type variable(s): %a.@ %a@]"
-        (Style.as_inline_code @@ Printtyp.class_declaration id) clty
+        (Style.as_inline_code @@ Printtyp.Doc.class_declaration id) clty
         (pp_print_list ~pp_sep:(fun f () -> fprintf f ",@ ")
            (Style.as_inline_code Out_type.prepared_type_scheme)
         ) nongen_vars
@@ -2137,13 +2137,13 @@ let report_error_doc env ppf =
         "@[The type of self cannot be coerced to@ \
            the type of the current class:@ %a.@.\
            Some occurrences are contravariant@]"
-        (Style.as_inline_code Printtyp.type_scheme) ty
+        (Style.as_inline_code Printtyp.Doc.type_scheme) ty
   | Non_collapsable_conjunction (id, clty, err) ->
       let msg = Format_doc.Doc.msg in
       fprintf ppf
         "@[The type of this class,@ %a,@ \
            contains non-collapsible conjunctive types in constraints.@ %t@]"
-        (Style.as_inline_code @@ Printtyp.class_declaration id) clty
+        (Style.as_inline_code @@ Printtyp.Doc.class_declaration id) clty
         (fun ppf -> Errortrace_report.unification ppf env err
             (msg "Type")
             (msg "is not compatible with type")
@@ -2177,7 +2177,7 @@ let report_error_doc env ppf =
       "@[Cannot close type of object literal:@ %a@,\
        it has been unified with the self type of a class that is not yet@ \
        completely defined.@]"
-      (Style.as_inline_code Printtyp.type_scheme) sign.csig_self
+      (Style.as_inline_code Printtyp.Doc.type_scheme) sign.csig_self
 
 let report_error_doc env ppf err =
   Printtyp.wrap_printing_env ~error:true

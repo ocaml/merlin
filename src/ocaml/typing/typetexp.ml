@@ -862,11 +862,11 @@ let transl_type_scheme env styp =
 (* Error report *)
 
 open Format_doc
-open Printtyp
+open Printtyp.Doc
 module Style = Misc.Style
 let pp_tag ppf t = fprintf ppf "`%s" t
 let pp_out_type ppf ty = Style.as_inline_code !Oprint.out_type ppf ty
-let pp_type ppf ty = Style.as_inline_code Printtyp.type_expr ppf ty
+let pp_type ppf ty = Style.as_inline_code Printtyp.Doc.type_expr ppf ty
 
 let report_error_doc env ppf = function
   | Unbound_type_variable (name, in_scope_names) ->

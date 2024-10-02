@@ -286,8 +286,8 @@ let pp_record_diff first second prefix decl env ppf (x : record_change) =
          %a@ is not the same as:\
          @;<1 2>%a@ %a@]"
         prefix x
-        (Style.as_inline_code Printtyp.label) lbl1
-        (Style.as_inline_code Printtyp.label) lbl2
+        (Style.as_inline_code Printtyp.Doc.label) lbl1
+        (Style.as_inline_code Printtyp.Doc.label) lbl2
         (report_label_mismatch first second env) reason
   | Change Name n ->
       Fmt.fprintf ppf "%aFields have different names, %a and %a."
@@ -356,8 +356,8 @@ let pp_variant_diff first second prefix decl env ppf (x : variant_change) =
          %a@ is not the same as:\
          @;<1 2>%a@ %a@]"
         prefix x
-        (Style.as_inline_code Printtyp.constructor) got
-        (Style.as_inline_code Printtyp.constructor) expected
+        (Style.as_inline_code Printtyp.Doc.constructor) got
+        (Style.as_inline_code Printtyp.Doc.constructor) expected
         (report_constructor_mismatch first second decl env) reason
   | Change Name n ->
       Fmt.fprintf ppf
@@ -383,7 +383,7 @@ let report_extension_constructor_mismatch first second decl env ppf err =
       pr "Private extension constructor(s) would be revealed."
   | Constructor_mismatch (id, ext1, ext2, err) ->
       let constructor =
-        Style.as_inline_code (Printtyp.extension_only_constructor id)
+        Style.as_inline_code (Printtyp.Doc.extension_only_constructor id)
       in
       pr "@[<hv>Constructors do not match:@;<1 2>%a@ is not the same as:\
           @;<1 2>%a@ %a@]"

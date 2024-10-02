@@ -269,7 +269,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let def_uid_is_in_current_unit =
       let uid_comp_unit = comp_unit_of_uid def_uid in
       Option.value_map ~default:false uid_comp_unit
-        ~f:(String.equal @@ Env.get_unit_name ())
+        ~f:(String.equal @@ Env.get_current_unit_name ())
     in
     let status =
       match (scope, String.Set.to_list out_of_sync_files) with

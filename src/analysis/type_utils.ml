@@ -265,7 +265,7 @@ let print_cstr_desc ppf cstr_desc =
 let print_constr ppf env lid =
   let cstr_desc = Env.find_constructor_by_name lid.Asttypes.txt env in
   (* FIXME: support Reader printer *)
-  print_cstr_desc ppf cstr_desc
+  (Format_doc.compat print_cstr_desc) ppf cstr_desc
 
 exception Fallback
 let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
@@ -344,7 +344,8 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
         false))
 
 let print_constr ~verbosity env ppf cd =
-  Printtyp.wrap_printing_env env ~verbosity @@ fun () -> print_cstr_desc ppf cd
+  Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
+  (Format_doc.compat print_cstr_desc) ppf cd
 
 (* From doc-ock
    https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml *)

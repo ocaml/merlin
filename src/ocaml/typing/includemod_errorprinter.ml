@@ -35,10 +35,10 @@ module Context = struct
 
   let rec context ppf = function
       Module id :: rem ->
-        Fmt.fprintf ppf "@[<2>module %a%a@]" Printtyp.ident id args rem
+        Fmt.fprintf ppf "@[<2>module %a%a@]" Printtyp.Doc.ident id args rem
     | Modtype id :: rem ->
         Fmt.fprintf ppf "@[<2>module type %a =@ %a@]"
-          Printtyp.ident id context_mty rem
+          Printtyp.Doc.ident id context_mty rem
     | Body x :: rem ->
         Fmt.fprintf ppf "(%s) ->@ %a" (argname x) context_mty rem
     | Arg x :: rem ->
@@ -66,7 +66,7 @@ module Context = struct
     if cxt = [] then () else
     if List.for_all (function Module _ -> true | _ -> false) cxt then
       Fmt.fprintf ppf ",@ in module %a"
-        (Style.as_inline_code Printtyp.path) (path_of_context cxt)
+        (Style.as_inline_code Printtyp.Doc.path) (path_of_context cxt)
     else
       Fmt.fprintf ppf ",@ @[<hv 2>at position@ %a@]"
         (Style.as_inline_code context) cxt
@@ -75,7 +75,7 @@ module Context = struct
     if cxt = [] then () else
     if List.for_all (function Module _ -> true | _ -> false) cxt then
       Fmt.fprintf ppf "In module %a:@ "
-        (Style.as_inline_code Printtyp.path) (path_of_context cxt)
+        (Style.as_inline_code Printtyp.Doc.path) (path_of_context cxt)
     else
       Fmt.fprintf ppf "@[<hv 2>At position@ %a@]@ "
         (Style.as_inline_code context) cxt
@@ -219,7 +219,7 @@ module Runtime_coercion = struct
         Fmt.fprintf ppf
           "@[The two first-class module types differ by a coercion of@ \
            a module alias %a@ to a module%a.@]"
-          (Style.as_inline_code Printtyp.path) path
+          (Style.as_inline_code Printtyp.Doc.path) path
           ctx_printer ctx
     | Transposition (k,l) ->
         Fmt.fprintf ppf
@@ -397,7 +397,7 @@ module With_shorthand = struct
         let mty = modtype { ua with item = mty } in
         Fmt.dprintf
           "%a@ :@ %t"
-          Printtyp.path p
+          Printtyp.Doc.path p
           (pp_orig dmodtype mty)
     | Anonymous ->
         let short_mty = modtype { ua with item = mty } in
@@ -412,7 +412,7 @@ module With_shorthand = struct
     match (arg: Err.functor_arg_descr) with
     | Unit -> Fmt.dprintf "()"
     | Empty_struct -> Fmt.dprintf "(struct end)"
-    | Named p -> fun ppf -> Printtyp.path ppf p
+    | Named p -> fun ppf -> Printtyp.Doc.path ppf p
     | Anonymous ->
         let short_mty = modtype { ua with item=mty } in
         pp dmodtype short_mty
@@ -733,7 +733,7 @@ let missing_field ppf item =
   let id, loc, kind =  Includemod.item_ident_name item in
   Fmt.fprintf ppf "The %s %a is required but not provided%a"
     (Includemod.kind_of_field_desc kind)
-    (Style.as_inline_code Printtyp.ident) id
+    (Style.as_inline_code Printtyp.Doc.ident) id
     (show_loc "Expected declaration") loc
 
 let module_types {Err.got=mty1; expected=mty2} =
@@ -768,7 +768,7 @@ let core_module_type_symptom (x:Err.core_module_type_symptom)  =
   | Incompatible_aliases -> None
   | Unbound_module_path path ->
       Some(Fmt.dprintf "Unbound module %a"
-             (Style.as_inline_code Printtyp.path) path
+             (Style.as_inline_code Printtyp.Doc.path) path
           )
 
 (* Construct a linearized error message from the error tree *)
@@ -810,7 +810,7 @@ and module_type_symptom ~eqmode ~expansion_token ~env ~before ~ctx = function
   | Invalid_module_alias path ->
       let printer =
         Fmt.dprintf "Module %a cannot be aliased"
-          (Style.as_inline_code Printtyp.path) path
+          (Style.as_inline_code Printtyp.Doc.path) path
       in
       dwith_context ctx printer :: before
 
@@ -993,7 +993,7 @@ let report_apply_error_doc ~loc env (app_name, mty_f, args) =
         | Includemod.Named_leftmost_functor lid ->
             Location.errorf ~loc
               "@[The module %a is not a functor, it cannot be applied.@]"
-               (Style.as_inline_code Printtyp.longident)  lid
+               (Style.as_inline_code Printtyp.Doc.longident)  lid
         | Includemod.Anonymous_functor
         | Includemod.Full_application_path _
           (* The "non-functor application in term" case is directly handled in
@@ -1010,11 +1010,11 @@ let report_apply_error_doc ~loc env (app_name, mty_f, args) =
               Fmt.fprintf ppf "This functor application is ill-typed."
           | Includemod.Full_application_path lid ->
               Fmt.fprintf ppf "The functor application %a is ill-typed."
-                (Style.as_inline_code Printtyp.longident) lid
+                (Style.as_inline_code Printtyp.Doc.longident) lid
           |  Includemod.Named_leftmost_functor lid ->
               Fmt.fprintf ppf
                 "This application of the functor %a is ill-typed."
-                 (Style.as_inline_code Printtyp.longident) lid
+                 (Style.as_inline_code Printtyp.Doc.longident) lid
         in
         let actual = Functor_suberror.App.got d in
         let expected = Functor_suberror.expected d in

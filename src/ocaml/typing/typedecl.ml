@@ -1981,7 +1981,7 @@ module Reaching_path = struct
 end
 
 let quoted_out_type ppf ty = Style.as_inline_code !Oprint.out_type ppf ty
-let quoted_type ppf ty = Style.as_inline_code Printtyp.type_expr ppf ty
+let quoted_type ppf ty = Style.as_inline_code Printtyp.Doc.type_expr ppf ty
 
 let report_error_doc ppf = function
   | Repeated_parameter ->
@@ -2075,8 +2075,8 @@ let report_error_doc ppf = function
           )
             "case" (fun ppf c ->
               fprintf ppf
-                "%a of %a" Printtyp.ident c.Types.cd_id
-                Printtyp.constructor_arguments c.Types.cd_args)
+                "%a of %a" Printtyp.Doc.ident c.Types.cd_id
+                Printtyp.Doc.constructor_arguments c.Types.cd_args)
       | Type_record (tl, _), _ ->
           explain_unbound ppf ty tl (fun l -> l.Types.ld_type)
             "field" (fun l -> Ident.name l.Types.ld_id ^ ": ")
@@ -2093,11 +2093,11 @@ let report_error_doc ppf = function
   | Cannot_extend_private_type path ->
       fprintf ppf "@[%s@ %a@]"
         "Cannot extend private type definition"
-        Printtyp.path path
+        Printtyp.Doc.path path
   | Not_extensible_type path ->
       fprintf ppf "@[%s@ %a@ %s@]"
         "Type definition"
-        (Style.as_inline_code Printtyp.path) path
+        (Style.as_inline_code Printtyp.Doc.path) path
         "is not extensible"
   | Extension_mismatch (path, env, err) ->
       fprintf ppf "@[<v>@[<hov>%s@ %s@;<1 2>%a@]%a@]"
@@ -2110,20 +2110,20 @@ let report_error_doc ppf = function
       let msg = Format_doc.doc_printf in
       Errortrace_report.unification ppf env err
         (msg "The constructor %a@ has type"
-             (Style.as_inline_code Printtyp.longident) lid)
+             (Style.as_inline_code Printtyp.Doc.longident) lid)
         (msg "but was expected to be of type")
   | Rebind_mismatch (lid, p, p') ->
       fprintf ppf
         "@[%s@ %a@ %s@ %a@ %s@ %s@ %a@]"
         "The constructor"
-        (Style.as_inline_code Printtyp.longident) lid
+        (Style.as_inline_code Printtyp.Doc.longident) lid
         "extends type" Style.inline_code (Path.name p)
         "whose declaration does not match"
         "the declaration of type" Style.inline_code (Path.name p')
   | Rebind_private lid ->
       fprintf ppf "@[%s@ %a@ %s@]"
         "The constructor"
-        (Style.as_inline_code Printtyp.longident) lid
+        (Style.as_inline_code Printtyp.Doc.longident) lid
         "is private"
   | Variance (Typedecl_variance.Bad_variance (n, v1, v2)) ->
       let variance (p,n,i) =
@@ -2189,7 +2189,7 @@ let report_error_doc ppf = function
              (variance v2) (variance v1))
   | Unavailable_type_constructor p ->
       fprintf ppf "The definition of type %a@ is unavailable"
-        (Style.as_inline_code Printtyp.path) p
+        (Style.as_inline_code Printtyp.Doc.path) p
   | Variance Typedecl_variance.Varying_anonymous ->
       fprintf ppf "@[%s@ %s@ %s@]"
         "In this GADT definition," "the variance of some parameter"
@@ -2255,7 +2255,7 @@ let report_error_doc ppf = function
         "@[GADT case syntax cannot be used in a %a block.@]"
         Style.inline_code "nonrec"
   | Invalid_private_row_declaration ty ->
-      let pp_private ppf ty = fprintf ppf "private %a" Printtyp.type_expr ty in
+      let pp_private ppf ty = fprintf ppf "private %a" Printtyp.Doc.type_expr ty in
       fprintf ppf
         "@[<hv>This private row type declaration is invalid.@ \
          The type expression on the right-hand side reduces to@;<1 2>%a@ \
@@ -2263,7 +2263,7 @@ let report_error_doc ppf = function
          @[<hv>@[@{<hint>Hint@}: If you intended to define a private \
          type abbreviation,@ \
          write explicitly@]@;<1 2>%a@]"
-        (Style.as_inline_code Printtyp.type_expr) ty
+        (Style.as_inline_code Printtyp.Doc.type_expr) ty
         (Style.as_inline_code pp_private) ty
 
 let () =

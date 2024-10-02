@@ -207,11 +207,14 @@ type report_kind =
   | Report_alert of string
   | Report_alert_as_error of string
 
+type error_source = Lexer | Parser | Typer | Warning | Unknown | Env | Config
+
 type report = {
   kind : report_kind;
   main : msg;
   sub : msg list;
-  footnote: Format_doc.t option
+  footnote: Format_doc.t option;
+  source : error_source;
 }
 
 
@@ -347,15 +350,17 @@ type error = report
 
 type delayed_msg = unit -> Format_doc.t option
 
-val error: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg -> string -> error
+val error: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
+  ?source:error_source -> string -> error
 
 val errorf: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
-  ('a, Format_doc.formatter, unit, error) format4 -> 'a
+  ?source:error_source -> ('a, Format_doc.formatter, unit, error) format4 -> 'a
 
 val error_of_printer: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
-  (Format_doc.formatter -> 'a -> unit) -> 'a -> error
+  ?source:error_source -> (Format_doc.formatter -> 'a -> unit) -> 'a -> error
 
-val error_of_printer_file: (Format_doc.formatter -> 'a -> unit) -> 'a -> error
+val error_of_printer_file: ?source:error_source ->
+  (Format_doc.formatter -> 'a -> unit) -> 'a -> error
 
 
 (** {1 Automatically reporting errors for raised exceptions} *)
@@ -379,7 +384,7 @@ exception Already_displayed_error
    printed. The exception will be caught, but nothing will be printed *)
 
 val raise_errorf: ?loc:t -> ?sub:msg list -> ?footnote:delayed_msg ->
-  ('a, Format_doc.formatter, unit, 'b) format4 -> 'a
+  ?source:error_source -> ('a, Format_doc.formatter, unit, 'b) format4 -> 'a
 
 val report_exception: formatter -> exn -> unit
 (** Reraise the exception if it is unknown. *)

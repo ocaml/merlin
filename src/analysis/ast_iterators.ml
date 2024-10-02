@@ -133,8 +133,9 @@ let iter_on_defs ~uid_to_locs_tbl =
             match exp_extra with
             | Texp_newtype' (typ_id, typ_name, uid) ->
               log "Found newtype %s wit id %a (%a)\n%!" typ_name.txt Logger.fmt
-                (Fun.flip Ident.print_with_scope typ_id) Logger.fmt (fun fmt ->
-                  Location.print_loc fmt typ_name.loc);
+                (Fun.flip (Format_doc.compat Ident.print_with_scope) typ_id)
+                Logger.fmt
+                (fun fmt -> Location.print_loc fmt typ_name.loc);
               register_uid uid typ_name;
               ()
             | _ -> ());
