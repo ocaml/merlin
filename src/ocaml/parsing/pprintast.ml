@@ -1821,10 +1821,12 @@ module Style = Misc.Style
 
 (* merlin: moved from parse.ml *)
 let prepare_error err =
+  let source = Location.Parser in
   let open Syntaxerr in
   match err with
   | Unclosed(opening_loc, opening, closing_loc, closing) ->
       Location.errorf
+        ~source
         ~loc:closing_loc
         ~sub:[
           Location.msg ~loc:opening_loc
@@ -1833,25 +1835,25 @@ let prepare_error err =
         "Syntax error: %a expected" Style.inline_code closing
 
   | Expecting (loc, nonterm) ->
-      Location.errorf ~loc "Syntax error: %a expected."
+      Location.errorf ~source ~loc "Syntax error: %a expected."
         Style.inline_code nonterm
   | Not_expecting (loc, nonterm) ->
-      Location.errorf ~loc "Syntax error: %a not expected."
+      Location.errorf ~source ~loc "Syntax error: %a not expected."
         Style.inline_code nonterm
   | Applicative_path loc ->
-      Location.errorf ~loc
+      Location.errorf ~source ~loc
         "Syntax error: applicative paths of the form %a \
          are not supported when the option %a is set."
         Style.inline_code "F(X).t"
         Style.inline_code "-no-app-func"
   | Variable_in_scope (loc, var) ->
-      Location.errorf ~loc
+      Location.errorf ~source ~loc
         "In this scoped type, variable %a \
          is reserved for the local type %a."
         (Style.as_inline_code Doc.tyvar) var
         Style.inline_code var
   | Other loc ->
-      Location.errorf ~loc "Syntax error"
+      Location.errorf ~source ~loc "Syntax error"
   | Ill_formed_ast (loc, s) ->
       Location.errorf ~loc
         "broken invariant in parsetree: %s" s
@@ -1871,9 +1873,9 @@ let prepare_error err =
               "only module type identifier and %a constraints are supported"
               Style.inline_code "with type"
       in
-      Location.errorf ~loc "Syntax error: invalid package type: %a" invalid ipt
+      Location.errorf ~source ~loc "Syntax error: invalid package type: %a" invalid ipt
   | Removed_string_set loc ->
-      Location.errorf ~loc
+      Location.errorf ~source ~loc
         "Syntax error: strings are immutable, there is no assignment \
          syntax for them.\n\
          @{<hint>Hint@}: Mutable sequences of bytes are available in \
