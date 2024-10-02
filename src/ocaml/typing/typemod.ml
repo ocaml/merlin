@@ -3292,9 +3292,9 @@ let type_implementation target initial_env ast =
         Typecore.force_delayed_checks ();
         let shape = Shape_reduce.local_reduce Env.empty shape in
         Printtyp.wrap_printing_env ~error:false initial_env
-          Format.(fun () -> fprintf std_formatter "%a@."
-                     (Format_doc.compat
-                        (Printtyp.printed_signature @@ Unit_info.source_file target))
+          Format.(fun () ->
+              fprintf std_formatter "%a@." (
+                (Printtyp.printed_signature @@ Unit_info.source_file target))
               simple_sg
           );
         (* gen_annot target (Cmt_format.Implementation str); *)
@@ -3379,6 +3379,9 @@ let save_signature target tsg initial_env cmi =
 
 let type_interface env ast =
   transl_signature ~toplevel:true env ast
+
+let transl_signature env ast =
+  transl_signature ~toplevel:false env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
@@ -3477,7 +3480,7 @@ let package_units initial_env objfiles target_cmi =
 
 
 (* Error report *)
-open Printtyp
+open Printtyp.Doc
 
 let report_error ~loc _env = function
     Cannot_apply mty ->

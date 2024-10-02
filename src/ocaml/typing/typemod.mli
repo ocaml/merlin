@@ -42,7 +42,10 @@ val type_implementation:
   Unit_info.t -> Env.t -> Parsetree.structure ->
   Typedtree.implementation
 val type_interface:
-        Env.t -> Parsetree.signature -> Typedtree.signature
+   Env.t -> Parsetree.signature -> Typedtree.signature
+val transl_signature:
+   Env.t -> Parsetree.signature -> Typedtree.signature
+
 val check_nongen_signature:
         Env.t -> Types.signature -> unit
         (*

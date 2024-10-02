@@ -645,11 +645,14 @@ type report_kind =
   | Report_alert of string
   | Report_alert_as_error of string
 
+type error_source = Lexer | Parser | Typer | Warning | Unknown | Env | Config
+
 type report = {
   kind : report_kind;
   main : msg;
   sub : msg list;
   footnote: Fmt.t option;
+  source : error_source;
 }
 
 let loc_of_report { main; _ } = main.loc
@@ -846,27 +849,27 @@ type delayed_msg = unit -> Fmt.t option
 let report_error ppf err =
   print_report ppf err
 
-let mkerror loc sub footnote txt =
-  { kind = Report_error; main = { loc; txt }; sub; footnote=footnote () }
+let mkerror loc sub footnote source txt =
+  { kind = Report_error; main = { loc; txt }; sub; footnote=footnote (); source }
 
-let errorf ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) =
-  Fmt.kdoc_printf (mkerror loc sub footnote)
+let errorf ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) =
+  Fmt.kdoc_printf (mkerror loc sub footnote source)
 
-let error ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) msg_str =
-  mkerror loc sub footnote Fmt.Doc.(string msg_str empty)
+let error ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) msg_str =
+  mkerror loc sub footnote source Fmt.Doc.(string msg_str empty)
 
-let error_of_printer ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) pp x =
-  mkerror loc sub footnote (Fmt.doc_printf "%a" pp x)
+let error_of_printer ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) pp x =
+  mkerror loc sub footnote source (Fmt.doc_printf "%a" pp x)
 
-let error_of_printer_file print x =
-  error_of_printer ~loc:(in_file !input_name) print x
+let error_of_printer_file ?(source = Typer) print x =
+  error_of_printer ~source ~loc:(in_file !input_name) print x
 
 
 (******************************************************************************)
 (* Reporting warnings: generating a report from a warning number using the
    information in [Warnings] + convenience functions. *)
 
-let default_warning_alert_reporter report mk (loc: t) w : report option =
+let default_warning_alert_reporter ?(source = Typer) report mk (loc: t) w : report option =
   match report w with
   | `Inactive -> None
   | `Active { Warnings.id; message; is_error; sub_locs } ->
@@ -876,7 +879,7 @@ let default_warning_alert_reporter report mk (loc: t) w : report option =
       let sub = List.map (fun (loc, sub_message) ->
         { loc; txt = msg_of_str sub_message }
       ) sub_locs in
-      Some { kind; main; sub; footnote=None }
+      Some { kind; main; sub; footnote=None; source }
 
 let default_warning_reporter =
   default_warning_alert_reporter
@@ -1017,5 +1020,5 @@ let () =
       | _ -> None
     )
 
-let raise_errorf ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) =
-  Fmt.kdoc_printf (fun txt -> raise (Error (mkerror loc sub footnote txt)))
+let raise_errorf ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) =
+  Fmt.kdoc_printf (fun txt -> raise (Error (mkerror loc sub footnote source txt)))
