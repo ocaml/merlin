@@ -2380,7 +2380,7 @@ let explain_incompatible_fields name (diff: Types.type_expr Errortrace.diff) =
     (Fmt.compat1 Style.as_inline_code type_expr_with_reserved_names) diff.expected
 
 let explain_label_mismatch ~got ~expected =
-  let quoted_label ppf l = Style.inline_code ppf (Asttypes.string_of_label l) in
+  let quoted_label ppf l = Style.inline_code ppf (string_of_label l) in
   let quoted_label = Fmt.compat quoted_label in
   match got, expected with
   | Asttypes.Nolabel, Asttypes.(Labelled _ | Optional _ )  ->
