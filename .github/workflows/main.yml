@@ -77,7 +77,7 @@ jobs:
 
 
       - name: Check that the changes are correctly formatted
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'none'
         run: |
           opam install ocamlformat.0.26.2
           opam exec -- dune build @fmt
