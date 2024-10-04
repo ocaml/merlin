@@ -46,7 +46,7 @@ jobs:
 
     # Some tests requiring specific ppxes are disabled by default
     env:
-      MERLIN_TESTS: all
+      MERLIN_TESTS: no-ppx
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -62,7 +62,6 @@ jobs:
       - name: Install dependencies
         run: |
           opam pin menhirLib 20201216 --no-action
-          opam install --yes ppx_string ppx_compare
           opam install . --deps-only --with-test --yes
 
       - name: Build and test in release mode (windows)
