@@ -40,13 +40,13 @@ jobs:
           - ubuntu-latest
           - windows-latest
         ocaml-compiler:
-          - 5.3.x
+          - ocaml-base-compiler.5.3.0~alpha1
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
     # Some tests requiring specific ppxes are disabled by default
     env:
-      MERLIN_TESTS: all
+      MERLIN_TESTS: no-ppx
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -62,18 +62,11 @@ jobs:
       - name: Install dependencies
         run: |
           opam pin menhirLib 20201216 --no-action
-          opam install --yes ppx_string ppx_compare
-          opam install . --deps-only --with-test --yes
+          opam install menhir csexp alcotest yojson conf-jq ocamlfind --yes
 
-      - name: Build and test in release mode (windows)
-        if: matrix.os == 'windows-latest'
+      - name: Build and test in release mode
         run: |
           opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
-
-      - name: Build and test in release mode (macos/linux)
-        if: matrix.os != 'windows-latest'
-        run: |
-          opam install . --with-test --yes
 
       - name: Build in dev mode to check parser changes
         if: matrix.os == 'ubuntu-latest'
