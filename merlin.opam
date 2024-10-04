@@ -21,7 +21,6 @@ depends: [
 ]
 conflicts: [
   "seq" {!= "base"}
-  "base-effects"
 ]
 synopsis:
   "Editor helper, provides completion, typing and source browsing in Vim and Emacs"
