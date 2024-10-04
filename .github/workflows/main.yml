@@ -62,7 +62,7 @@ jobs:
       - name: Install dependencies
         run: |
           opam pin menhirLib 20201216 --no-action
-          opam install . --deps-only --with-test --yes
+          opam install menhir csexp alcotest yojson conf-jq ocamlfind --yes
 
       - name: Build and test in release mode (windows)
         if: matrix.os == 'windows-latest'
