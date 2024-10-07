@@ -45,12 +45,11 @@ Configure merlin
   > EOF
 
 Perform the occurrences query
-TODO: some of these filepaths are wrong
   $ ( cd main ; $MERLIN single occurrences -scope project -identifier-at 1:13 \
   > -filename main.ml < main.ml | jq .value )
   [
     {
-      "file": "$TESTCASE_ROOT/main/lib/foo.ml",
+      "file": "$TESTCASE_ROOT/lib/foo.ml",
       "start": {
         "line": 1,
         "col": 4
@@ -61,7 +60,7 @@ TODO: some of these filepaths are wrong
       }
     },
     {
-      "file": "$TESTCASE_ROOT/main/lib/foo.ml",
+      "file": "$TESTCASE_ROOT/lib/foo.ml",
       "start": {
         "line": 2,
         "col": 22

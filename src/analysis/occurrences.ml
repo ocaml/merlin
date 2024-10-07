@@ -234,7 +234,10 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
        is not necessary for correctness, it makes the output a bit nicer. *)
     let canonicalize_file_in_loc ({ txt; loc } : 'a Location.loc) :
         'a Location.loc =
-      let file = Misc.canonicalize_filename loc.loc_start.pos_fname in
+      let file =
+        Misc.canonicalize_filename ?cwd:config.merlin.source_root
+          loc.loc_start.pos_fname
+      in
       { txt; loc = set_fname ~file loc }
     in
     let locs = Lid_set.map canonicalize_file_in_loc locs in
