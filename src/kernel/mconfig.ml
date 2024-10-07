@@ -814,7 +814,9 @@ let cmt_path config =
   let stdlib = stdlib config in
   let exp_dirs = List.map ~f:(Misc.expand_directory stdlib) dirs in
   let stdlib = if config.ocaml.no_std_include then [] else [ stdlib ] in
-  config.query.directory :: List.rev_append exp_dirs stdlib
+  let result' = List.rev_append exp_dirs stdlib in
+  if config.merlin.exclude_query_dir then result'
+  else config.query.directory :: result'
 
 let global_modules ?(include_current = false) config =
   let modules = Misc.modules_in_path ~ext:".cmi" (build_path config) in
