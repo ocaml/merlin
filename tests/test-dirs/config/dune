@@ -1,5 +1,5 @@
 (cram
- (applies_to path-expansion hidden-deps)
+ (applies_to path-expansion hidden-deps exclude-query-dir)
  (enabled_if
   (<> %{os_type} Win32)))
 
