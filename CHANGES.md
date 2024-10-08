@@ -21,6 +21,8 @@ Fri Sep 27 12:02:42 CEST 2024
       show more user-friendly paths. (#1840)
     - Fix dot-merlin-reader ignoring `SOURCE_ROOT` and `STDLIB` directives
       (#1839, #1803)
+    - Fix occurrences bug in which relative paths in index files are resolved against the
+      PWD rather than the SOURCE_ROOT (#1855)
   + editor modes
     - vim: fix python-3.12 syntax warnings in merlin.py (#1798)
     - vim: Dead code / doc removal for previously deleted MerlinPhrase command (#1804)
