@@ -1,3 +1,4 @@
 (test
  (name sherlodoc_test)
+ (package merlin-lib)
  (libraries fmt alcotest merlin-lib.sherlodoc))
