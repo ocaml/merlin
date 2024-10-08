@@ -12,10 +12,10 @@
   > SOURCE_ROOT .
   > EOF
 
-  $ ocamlc -bin-annot -bin-annot-occurrences -c lib.ml main.ml
+  $ $OCAMLC -bin-annot -bin-annot-occurrences -c lib.ml main.ml
   $ ocaml-index aggregate main.cmt lib.cmt --root . --rewrite-root
 
-  $ ocamlmerlin single occurrences -scope project -identifier-at 1:4 \
+  $ $MERLIN single occurrences -scope project -identifier-at 1:4 \
   > -filename lib.ml < lib.ml | jq .value
   [
     {

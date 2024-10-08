@@ -4,6 +4,8 @@ unreleased
   + merlin binary
     - Respect the `EXCLUDE_QUERY_DIR` configuration directive when looking for cmt
       files (#1854)
+    - Fix occurrences bug in which relative paths in index files are resolved against the
+      PWD rather than the SOURCE_ROOT (#1855)
 
 merlin 5.2.1
 ============
