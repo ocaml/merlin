@@ -1,0 +1,19 @@
+--- ocaml_502/typing/datarepr.mli	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/datarepr.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -19,14 +19,14 @@
+ open Types
+ 
+ val extension_descr:
+-  current_unit:string -> Path.t -> extension_constructor ->
++  current_unit:(Unit_info.t option) -> Path.t -> extension_constructor ->
+   constructor_description
+ 
+ val labels_of_type:
+   Path.t -> type_declaration ->
+   (Ident.t * label_description) list
+ val constructors_of_type:
+-  current_unit:string -> Path.t -> type_declaration ->
++  current_unit:(Unit_info.t option) -> Path.t -> type_declaration ->
+   (Ident.t * constructor_description) list
+ 
+ 

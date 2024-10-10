@@ -90,7 +90,7 @@ Go to the file, and ask merlin to move you to the error:
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type char but an expression was expected of type int"
+        "message": "The value x has type char but an expression was expected of type int"
       }
     ],
     "notifications": []

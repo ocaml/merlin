@@ -1,0 +1,24 @@
+--- ocaml_502/parsing/docstrings.ml	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/docstrings.ml	2024-09-17 01:16:30.152541842 +0200
+@@ -91,8 +91,9 @@
+   let open Parsetree in
+   let body = ds.ds_body in
+   let loc = ds.ds_loc in
++  let const = { pconst_desc= Pconst_string(body,loc,None); pconst_loc= loc } in
+   let exp =
+-    { pexp_desc = Pexp_constant (Pconst_string(body, loc, None));
++    { pexp_desc = Pexp_constant const;
+       pexp_loc = loc;
+       pexp_loc_stack = [];
+       pexp_attributes = []; }
+@@ -143,8 +144,9 @@
+   let open Parsetree in
+   let body = ds.ds_body in
+   let loc = ds.ds_loc in
++  let const = { pconst_desc= Pconst_string(body,loc,None); pconst_loc= loc } in
+   let exp =
+-    { pexp_desc = Pexp_constant (Pconst_string(body, loc, None));
++    { pexp_desc = Pexp_constant const;
+       pexp_loc = loc;
+       pexp_loc_stack = [];
+       pexp_attributes = []; }

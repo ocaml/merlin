@@ -2,8 +2,8 @@
 
 D_MERLIN=../src/ocaml
 
-FROM=501
-TO=502
+FROM=502
+TO=503
 
 D_FROM=ocaml_${FROM}
 D_TO=ocaml_${TO}
@@ -21,7 +21,7 @@ for file in "${D_TO}"/*/*.ml*; do
   diff -u -N "${F_FROM}" "${F_TO}" >"${F_PATCH}.patch"
   if [ -s "${F_PATCH}.patch" ]; then
     # Apply the patch file
-    patch "${F_MERLIN}" "${F_PATCH}.patch"
+    patch --no-backup-if-mismatch --merge "${F_MERLIN}" "${F_PATCH}.patch"
     echo "patched ${F_MERLIN}"
   else
     rm "${F_PATCH}.patch"

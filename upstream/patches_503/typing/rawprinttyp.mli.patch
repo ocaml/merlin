@@ -1,0 +1,23 @@
+--- ocaml_502/typing/rawprinttyp.mli	1970-01-01 01:00:00.000000000 +0100
++++ ocaml_503/typing/rawprinttyp.mli	2024-09-17 01:15:58.295900254 +0200
+@@ -0,0 +1,20 @@
++(**************************************************************************)
++(*                                                                        *)
++(*                                 OCaml                                  *)
++(*                                                                        *)
++(*  Jacques Garrigue, Graduate School of Mathematics, Nagoya University   *)
++(*                                                                        *)
++(*   Copyright 2003 Institut National de Recherche en Informatique et     *)
++(*     en Automatique.                                                    *)
++(*                                                                        *)
++(*   All rights reserved.  This file is distributed under the terms of    *)
++(*   the GNU Lesser General Public License version 2.1, with the          *)
++(*   special exception on linking described in the file LICENSE.          *)
++(*                                                                        *)
++(**************************************************************************)
++
++(** This module provides function(s) for printing the internal representation of
++    type expressions. It is targetted at internal use when debbuging the
++    compiler itself. *)
++
++val type_expr: Format.formatter -> Types.type_expr -> unit
