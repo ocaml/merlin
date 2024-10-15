@@ -982,4 +982,4 @@ let () =
         None
     )
 
-let report_error env = Format_doc.compat (report_error_doc env)
+let report_error = Format_doc.compat1 report_error_doc
