@@ -26,15 +26,15 @@ Locate the Bar on line 4
   > end
   > EOF
 
-The expected location is 2:7 of foo.ml, but it instead goes to 1:9, which is the
-constructor Foo
+FIXME Module type Bar in foo.mli is a correct answer, but since there is only
+one corresponding implementation we could jump there instead.
   $ $MERLIN single locate -position 4:28 -look-for ml \
   > -filename test1.ml < test1.ml | jq .value
   {
-    "file": "$TESTCASE_ROOT/foo.ml",
+    "file": "$TESTCASE_ROOT/foo.mli",
     "pos": {
       "line": 1,
-      "col": 9
+      "col": 7
     }
   }
 

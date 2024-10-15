@@ -510,9 +510,15 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
   end
   else begin
     log ~title "Loading the cmt file for unit %S" comp_unit;
+    let ml_or_mli =
+      match uid with
+      | Item { from = Intf; _ } -> `MLI
+      | _ -> config.ml_or_mli
+    in
+    let config = { config with ml_or_mli } in
     match load_cmt ~config comp_unit with
     | Ok (_pos_fname, cmt) ->
-      log ~title "Shapes successfully loaded, looking for %a" Logger.fmt
+      log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
         (fun fmt -> Shape.Uid.print fmt uid);
       begin
         match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
