@@ -26,6 +26,17 @@ Locate the Bar on line 4
   > end
   > EOF
 
+
+  $ $MERLIN single locate -position 4:28 -look-for mli \
+  > -filename test1.ml < test1.ml | jq .value
+  {
+    "file": "$TESTCASE_ROOT/foo.mli",
+    "pos": {
+      "line": 1,
+      "col": 7
+    }
+  }
+
 FIXME Module type Bar in foo.mli is a correct answer, but since there is only
 one corresponding implementation we could jump there instead.
   $ $MERLIN single locate -position 4:28 -look-for ml \
