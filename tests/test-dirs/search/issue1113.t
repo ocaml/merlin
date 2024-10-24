@@ -45,3 +45,57 @@
     "name": "__LOC__",
     "desc": "string"
   }
+
+  $ $MERLIN single search-by-type -filename ./main.ml \
+  > -position 5:25 -limit 10 -query "ezfnifzen -> ezfzef" |
+  > tr '\n' ' ' | jq  '.value[] | {name,type,cost}'
+  {
+    "name": "Gc.major",
+    "type": "unit -> unit",
+    "cost": 13
+  }
+  {
+    "name": "Gc.minor",
+    "type": "unit -> unit",
+    "cost": 13
+  }
+  {
+    "name": "Sys.time",
+    "type": "unit -> float",
+    "cost": 13
+  }
+  {
+    "name": "read_int",
+    "type": "unit -> int",
+    "cost": 13
+  }
+  {
+    "name": "read_int",
+    "type": "unit -> int",
+    "cost": 13
+  }
+  {
+    "name": "flush_all",
+    "type": "unit -> unit",
+    "cost": 13
+  }
+  {
+    "name": "flush_all",
+    "type": "unit -> unit",
+    "cost": 13
+  }
+  {
+    "name": "read_line",
+    "type": "unit -> string",
+    "cost": 13
+  }
+  {
+    "name": "read_line",
+    "type": "unit -> string",
+    "cost": 13
+  }
+  {
+    "name": "Bytes.copy",
+    "type": "bytes -> bytes",
+    "cost": 13
+  }
