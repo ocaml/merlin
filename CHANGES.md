@@ -6,6 +6,7 @@ unreleased
       files (#1854)
     - Fix occurrences bug in which relative paths in index files are resolved against the
       PWD rather than the SOURCE_ROOT (#1855)
+    - Fix exception in polarity search (#???? fixes #1113)
 
 merlin 5.2.1
 ============
