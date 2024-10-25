@@ -40,10 +40,6 @@ Simple module construction
     let i = _
     let f = _
     module Sub = struct let y = _ end
-    [@@@ocaml.text
-      \"Construct does not handle class types yet. Please replace this comment by [room]'s definition.\"]
-    [@@@ocaml.text
-      \"Construct does not handle classes yet. Please replace this comment by [croom]'s definition.\"]
     module type Another  = sig val i : int end
     module type Sig  =
       sig

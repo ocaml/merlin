@@ -129,7 +129,8 @@ let flush_saved_types () =
   | parts ->
     Cmt_format.set_saved_types [];
     let open Ast_helper in
-    let pexp = Exp.constant (Saved_parts.store parts) in
+    let pconst_desc = Saved_parts.store parts in
+    let pexp = Exp.constant { pconst_desc; pconst_loc = !default_loc } in
     let pstr = Str.eval pexp in
     [ Attr.mk Saved_parts.attribute (Parsetree.PStr [ pstr ]) ]
 
@@ -142,7 +143,9 @@ let rec get_saved_types_from_attributes = function
       begin
         match str with
         | PStr
-            ({ pstr_desc = Pstr_eval ({ pexp_desc = Pexp_constant key; _ }, _);
+            ({ pstr_desc =
+                 Pstr_eval
+                   ({ pexp_desc = Pexp_constant { pconst_desc = key; _ }; _ }, _);
                _
              }
             :: _) -> Saved_parts.find key

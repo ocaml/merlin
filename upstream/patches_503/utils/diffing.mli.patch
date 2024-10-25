@@ -1,0 +1,11 @@
+--- ocaml_502/utils/diffing.mli	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/utils/diffing.mli	2024-09-17 01:19:03.395759607 +0200
+@@ -79,7 +79,7 @@
+   | Insertion
+   | Modification
+   | Preservation
+-val prefix: Format.formatter -> (int * change_kind) -> unit
++val prefix: (int * change_kind) Format_doc.printer
+ val style: change_kind -> Misc.Style.style list
+ 
+ 

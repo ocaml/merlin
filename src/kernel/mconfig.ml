@@ -831,3 +831,15 @@ let unitname t =
       | Some prefix -> prefix ^ basename
       | None -> basename
     end
+
+let intf_or_impl t =
+  let extension = Filename.extension t.query.filename in
+  try
+    List.find_map t.merlin.suffixes ~f:(fun (impl, intf) ->
+        if String.equal extension impl then Some Unit_info.Impl
+        else if String.equal extension intf then Some Unit_info.Intf
+        else None)
+  with Not_found -> Unit_info.Impl
+
+let unit_info t =
+  Unit_info.make ~source_file:t.query.filename (intf_or_impl t) (unitname t)

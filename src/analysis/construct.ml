@@ -37,26 +37,28 @@ module Util = struct
       let construct s =
         Ast_helper.Exp.construct (Location.mknoloc (Longident.Lident s)) None
       in
+      let const_string str = Ast_helper.Const.string str in
+      let const_integer ?suffix str = Ast_helper.Const.integer ?suffix str in
+      let const_float ?suffix str = Ast_helper.Const.float ?suffix str in
+      let const_char c = Ast_helper.Const.char c in
       let ident s =
         Ast_helper.Exp.ident (Location.mknoloc (Longident.Lident s))
       in
       List.iter
         ~f:(fun (k, v) -> Hashtbl.add tbl k v)
-        Parsetree.
-          [ (Predef.path_int, constant (Pconst_integer ("0", None)));
-            (Predef.path_float, constant (Pconst_float ("0.0", None)));
-            (Predef.path_char, constant (Pconst_char 'c'));
-            ( Predef.path_string,
-              constant (Pconst_string ("", Location.none, None)) );
-            (Predef.path_bool, construct "false");
-            (Predef.path_unit, construct "()");
-            (Predef.path_exn, ident "exn");
-            (Predef.path_array, Ast_helper.Exp.array []);
-            (Predef.path_nativeint, constant (Pconst_integer ("0", Some 'n')));
-            (Predef.path_int32, constant (Pconst_integer ("0", Some 'l')));
-            (Predef.path_int64, constant (Pconst_integer ("0", Some 'L')));
-            (Predef.path_lazy_t, Ast_helper.Exp.lazy_ (construct "()"))
-          ]
+        [ (Predef.path_int, constant (const_integer "0"));
+          (Predef.path_float, constant (const_float "0.0"));
+          (Predef.path_char, constant (const_char 'c'));
+          (Predef.path_string, constant (const_string ""));
+          (Predef.path_bool, construct "false");
+          (Predef.path_unit, construct "()");
+          (Predef.path_exn, ident "exn");
+          (Predef.path_array, Ast_helper.Exp.array []);
+          (Predef.path_nativeint, constant (const_integer ~suffix:'n' "0"));
+          (Predef.path_int32, constant (const_integer ~suffix:'l' "0"));
+          (Predef.path_int64, constant (const_integer ~suffix:'L' "0"));
+          (Predef.path_lazy_t, Ast_helper.Exp.lazy_ (construct "()"))
+        ]
     in
     tbl
 
@@ -495,7 +497,7 @@ module Gen = struct
                   val_kind = Val_reg;
                   val_loc = Location.none;
                   val_attributes = [];
-                  val_uid = Uid.mk ~current_unit:(Env.get_unit_name ())
+                  val_uid = Uid.mk ~current_unit:(Env.get_current_unit ())
                 }
               in
               let env =

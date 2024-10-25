@@ -1,0 +1,84 @@
+--- ocaml_502/typing/includeclass.ml	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/includeclass.ml	2024-09-17 01:15:58.292566923 +0200
+@@ -40,8 +40,9 @@
+         cty1.cty_params cty1.cty_type
+         cty2.cty_params cty2.cty_type
+ 
+-open Format
++open Format_doc
+ open Ctype
++module Printtyp=Printtyp.Doc
+ 
+ (*
+ let rec hide_params = function
+@@ -50,6 +51,7 @@
+ *)
+ 
+ let include_err mode ppf =
++  let msg fmt = Format_doc.Doc.msg fmt in
+   function
+   | CM_Virtual_class ->
+       fprintf ppf "A class cannot be changed from virtual to concrete"
+@@ -57,12 +59,10 @@
+       fprintf ppf
+         "The classes do not have the same number of type parameters"
+   | CM_Type_parameter_mismatch (n, env, err) ->
+-      Printtyp.report_equality_error ppf mode env err
+-        (function ppf ->
+-           fprintf ppf "The %d%s type parameter has type"
++     Errortrace_report.equality ppf mode env err
++        (msg "The %d%s type parameter has type"
+              n (Misc.ordinal_suffix n))
+-        (function ppf ->
+-           fprintf ppf "but is expected to have type")
++        (msg "but is expected to have type")
+   | CM_Class_type_mismatch (env, cty1, cty2) ->
+       Printtyp.wrap_printing_env ~error:true env (fun () ->
+         fprintf ppf
+@@ -71,24 +71,18 @@
+           "is not matched by the class type"
+           Printtyp.class_type cty2)
+   | CM_Parameter_mismatch (n, env, err) ->
+-      Printtyp.report_moregen_error ppf mode env err
+-        (function ppf ->
+-           fprintf ppf "The %d%s parameter has type"
++      Errortrace_report.moregen ppf mode env err
++        (msg "The %d%s parameter has type"
+              n (Misc.ordinal_suffix n))
+-        (function ppf ->
+-          fprintf ppf "but is expected to have type")
++        (msg "but is expected to have type")
+   | CM_Val_type_mismatch (lab, env, err) ->
+-      Printtyp.report_comparison_error ppf mode env err
+-        (function ppf ->
+-          fprintf ppf "The instance variable %s@ has type" lab)
+-        (function ppf ->
+-          fprintf ppf "but is expected to have type")
++      Errortrace_report.comparison ppf mode env err
++        (msg "The instance variable %s@ has type" lab)
++        (msg "but is expected to have type")
+   | CM_Meth_type_mismatch (lab, env, err) ->
+-      Printtyp.report_comparison_error ppf mode env err
+-        (function ppf ->
+-          fprintf ppf "The method %s@ has type" lab)
+-        (function ppf ->
+-          fprintf ppf "but is expected to have type")
++      Errortrace_report.comparison ppf mode env err
++        (msg "The method %s@ has type" lab)
++        (msg "but is expected to have type")
+   | CM_Non_mutable_value lab ->
+       fprintf ppf
+        "@[The non-mutable instance variable %s cannot become mutable@]" lab
+@@ -110,9 +104,11 @@
+   | CM_Private_method lab ->
+       fprintf ppf "@[The private method %s cannot become public@]" lab
+ 
+-let report_error mode ppf = function
++let report_error_doc mode ppf = function
+   |  [] -> ()
+   | err :: errs ->
+       let print_errs ppf errs =
+         List.iter (fun err -> fprintf ppf "@ %a" (include_err mode) err) errs in
+       fprintf ppf "@[<v>%a%a@]" (include_err mode) err print_errs errs
++
++let report_error mode = Format_doc.compat (report_error_doc mode)

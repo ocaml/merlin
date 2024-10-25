@@ -36,7 +36,7 @@ When some typing error happens
     "type": "typer",
     "sub": [],
     "valid": true,
-    "message": "This expression has type int -> int -> bool but an expression was expected of type Float.t -> Float.t -> bool Type int is not compatible with type Float.t = float"
+    "message": "The value Int.equal has type int -> int -> bool but an expression was expected of type Float.t -> Float.t -> bool Type int is not compatible with type Float.t = float"
   }
 
 Merlin is still able to inspect part of the ill-typed tree

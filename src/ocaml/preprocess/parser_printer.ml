@@ -65,6 +65,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MINUSDOT) -> "-."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MINUS) -> "-"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_METHOD) -> "method"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_ESCAPE) -> ".~"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_BRACKET_OPEN) -> ".<"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_BRACKET_CLOSE) -> ">."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_MATCH) -> "match"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LPAREN) -> ")"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LIDENT) -> "LIDENT"
@@ -100,7 +103,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_HASH) -> "#"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) -> ">]"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE) -> ">}"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATERDOT) -> ">."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_GREATER) -> ">"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_FUNCTOR) -> "functor"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_FUNCTION) -> "function"
@@ -115,10 +117,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EOF) -> "EOF"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_END) -> "end"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_ELSE) -> "else"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EFFECT) -> "effect"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOWNTO) -> "downto"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTTILDE) -> ".~"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTOP) -> "DOTOP"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTLESS) -> ".<"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOTDOT) -> ".."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOT) -> "."
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DONE) -> "done"
@@ -412,6 +413,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_MINUSDOT -> (fun _ -> "-.")
   | MenhirInterpreter.T MenhirInterpreter.T_MINUS -> (fun _ -> "-")
   | MenhirInterpreter.T MenhirInterpreter.T_METHOD -> (fun _ -> "method")
+  | MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_ESCAPE -> (fun _ -> ".~")
+  | MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_BRACKET_OPEN -> (fun _ -> ".<")
+  | MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_BRACKET_CLOSE -> (fun _ -> ">.")
   | MenhirInterpreter.T MenhirInterpreter.T_MATCH -> (fun _ -> "match")
   | MenhirInterpreter.T MenhirInterpreter.T_LPAREN -> (fun _ -> ")")
   | MenhirInterpreter.T MenhirInterpreter.T_LIDENT -> (Printf.sprintf "LIDENT(%S)")
@@ -447,7 +451,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_HASH -> (fun _ -> "#")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET -> (fun _ -> ">]")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE -> (fun _ -> ">}")
-  | MenhirInterpreter.T MenhirInterpreter.T_GREATERDOT -> (fun _ -> ">.")
   | MenhirInterpreter.T MenhirInterpreter.T_GREATER -> (fun _ -> ">")
   | MenhirInterpreter.T MenhirInterpreter.T_FUNCTOR -> (fun _ -> "functor")
   | MenhirInterpreter.T MenhirInterpreter.T_FUNCTION -> (fun _ -> "function")
@@ -462,10 +465,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_EOF -> (fun _ -> "EOF")
   | MenhirInterpreter.T MenhirInterpreter.T_END -> (fun _ -> "end")
   | MenhirInterpreter.T MenhirInterpreter.T_ELSE -> (fun _ -> "else")
+  | MenhirInterpreter.T MenhirInterpreter.T_EFFECT -> (fun _ -> "effect")
   | MenhirInterpreter.T MenhirInterpreter.T_DOWNTO -> (fun _ -> "downto")
-  | MenhirInterpreter.T MenhirInterpreter.T_DOTTILDE -> (fun _ -> ".~")
   | MenhirInterpreter.T MenhirInterpreter.T_DOTOP -> (fun _ -> "DOTOP")
-  | MenhirInterpreter.T MenhirInterpreter.T_DOTLESS -> (fun _ -> ".<")
   | MenhirInterpreter.T MenhirInterpreter.T_DOTDOT -> (fun _ -> "..")
   | MenhirInterpreter.T MenhirInterpreter.T_DOT -> (fun _ -> ".")
   | MenhirInterpreter.T MenhirInterpreter.T_DONE -> (fun _ -> "done")
@@ -758,6 +760,9 @@ let print_token = function
   | MINUSDOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_MINUSDOT) ()
   | MINUS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_MINUS) ()
   | METHOD -> print_value (MenhirInterpreter.T MenhirInterpreter.T_METHOD) ()
+  | METAOCAML_ESCAPE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_ESCAPE) ()
+  | METAOCAML_BRACKET_OPEN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_BRACKET_OPEN) ()
+  | METAOCAML_BRACKET_CLOSE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_METAOCAML_BRACKET_CLOSE) ()
   | MATCH -> print_value (MenhirInterpreter.T MenhirInterpreter.T_MATCH) ()
   | LPAREN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LPAREN) ()
   | LIDENT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LIDENT) v
@@ -793,7 +798,6 @@ let print_token = function
   | HASH -> print_value (MenhirInterpreter.T MenhirInterpreter.T_HASH) ()
   | GREATERRBRACKET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACKET) ()
   | GREATERRBRACE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERRBRACE) ()
-  | GREATERDOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATERDOT) ()
   | GREATER -> print_value (MenhirInterpreter.T MenhirInterpreter.T_GREATER) ()
   | FUNCTOR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_FUNCTOR) ()
   | FUNCTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_FUNCTION) ()
@@ -808,10 +812,9 @@ let print_token = function
   | EOF -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EOF) ()
   | END -> print_value (MenhirInterpreter.T MenhirInterpreter.T_END) ()
   | ELSE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_ELSE) ()
+  | EFFECT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EFFECT) ()
   | DOWNTO -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOWNTO) ()
-  | DOTTILDE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTTILDE) ()
   | DOTOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTOP) v
-  | DOTLESS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTLESS) ()
   | DOTDOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOTDOT) ()
   | DOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOT) ()
   | DONE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DONE) ()
@@ -888,6 +891,9 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_MINUSDOT -> MINUSDOT
   | MenhirInterpreter.T_MINUS -> MINUS
   | MenhirInterpreter.T_METHOD -> METHOD
+  | MenhirInterpreter.T_METAOCAML_ESCAPE -> METAOCAML_ESCAPE
+  | MenhirInterpreter.T_METAOCAML_BRACKET_OPEN -> METAOCAML_BRACKET_OPEN
+  | MenhirInterpreter.T_METAOCAML_BRACKET_CLOSE -> METAOCAML_BRACKET_CLOSE
   | MenhirInterpreter.T_MATCH -> MATCH
   | MenhirInterpreter.T_LPAREN -> LPAREN
   | MenhirInterpreter.T_LIDENT -> LIDENT v
@@ -923,7 +929,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_HASH -> HASH
   | MenhirInterpreter.T_GREATERRBRACKET -> GREATERRBRACKET
   | MenhirInterpreter.T_GREATERRBRACE -> GREATERRBRACE
-  | MenhirInterpreter.T_GREATERDOT -> GREATERDOT
   | MenhirInterpreter.T_GREATER -> GREATER
   | MenhirInterpreter.T_FUNCTOR -> FUNCTOR
   | MenhirInterpreter.T_FUNCTION -> FUNCTION
@@ -938,10 +943,9 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_EOF -> EOF
   | MenhirInterpreter.T_END -> END
   | MenhirInterpreter.T_ELSE -> ELSE
+  | MenhirInterpreter.T_EFFECT -> EFFECT
   | MenhirInterpreter.T_DOWNTO -> DOWNTO
-  | MenhirInterpreter.T_DOTTILDE -> DOTTILDE
   | MenhirInterpreter.T_DOTOP -> DOTOP v
-  | MenhirInterpreter.T_DOTLESS -> DOTLESS
   | MenhirInterpreter.T_DOTDOT -> DOTDOT
   | MenhirInterpreter.T_DOT -> DOT
   | MenhirInterpreter.T_DONE -> DONE

@@ -1,0 +1,8 @@
+--- ocaml_502/parsing/asttypes.mli	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/asttypes.mli	2024-09-17 01:16:30.152541842 +0200
+@@ -65,3 +65,5 @@
+ type injectivity =
+   | Injective
+   | NoInjectivity
++
++val string_of_label: arg_label -> string

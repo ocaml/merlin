@@ -42,9 +42,10 @@ val type_implementation:
   Unit_info.t -> Env.t -> Parsetree.structure ->
   Typedtree.implementation
 val type_interface:
-        Env.t -> Parsetree.signature -> Typedtree.signature
+   Env.t -> Parsetree.signature -> Typedtree.signature
 val transl_signature:
-        Env.t -> Parsetree.signature -> Typedtree.signature
+   Env.t -> Parsetree.signature -> Typedtree.signature
+
 val check_nongen_signature:
         Env.t -> Types.signature -> unit
         (*
@@ -137,6 +138,7 @@ type error =
   | Invalid_type_subst_rhs
   | Unpackable_local_modtype_subst of Path.t
   | With_cannot_remove_packed_modtype of Path.t * module_type
+  | Cannot_alias of Path.t
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
