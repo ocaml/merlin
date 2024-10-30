@@ -1,2 +1,4 @@
 # git config blame.ignoreRevsFile .git-blame-ignore-revs
 40e0cdb95ff31b81212109fada6e0ff93b6eefee
+# Upgrade to OCamlformat 0.27.0-preview1
+4ea826a50bf50f75273d7256d16f306b373a80e1
