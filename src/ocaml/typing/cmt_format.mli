@@ -109,6 +109,7 @@ val add_saved_type : binary_part -> unit
 val get_saved_types : unit -> binary_part list
 val set_saved_types : binary_part list -> unit
 
+val get_declaration_dependencies : unit -> (dependency_kind * Uid.t * Uid.t) list
 val record_declaration_dependency: dependency_kind * Uid.t * Uid.t -> unit
 
 (*
