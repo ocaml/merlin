@@ -29,7 +29,13 @@
 val log : 'a Logger.printf
 
 type config =
-  { mconfig : Mconfig.t; ml_or_mli : [ `ML | `MLI ]; traverse_aliases : bool }
+  { mconfig : Mconfig.t;
+    ml_or_mli : [ `ML | `Smart | `MLI ];
+        (** When [ml_or_mli] is [`Smart], if locate blocks on an interface uid,
+            it will use the [cmt_declaration_dependencies] to try finding a
+            unique corresponding definition in the implementation. *)
+    traverse_aliases : bool
+  }
 
 type result =
   { uid : Shape.Uid.t;

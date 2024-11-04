@@ -33,7 +33,10 @@ let last_location = ref Location.none
 let { Logger.log } = Logger.for_section "locate"
 
 type config =
-  { mconfig : Mconfig.t; ml_or_mli : [ `ML | `MLI ]; traverse_aliases : bool }
+  { mconfig : Mconfig.t;
+    ml_or_mli : [ `ML | `Smart | `MLI ];
+    traverse_aliases : bool
+  }
 
 type result =
   { uid : Shape.Uid.t;
@@ -146,7 +149,7 @@ end = struct
 end
 
 module Preferences : sig
-  val set : [ `ML | `MLI ] -> unit
+  val set : [ `ML | `Smart | `MLI ] -> unit
 
   val src : string -> File.t
   val build : string -> File.t
@@ -158,7 +161,7 @@ end = struct
   let set choice =
     prioritize_impl :=
       match choice with
-      | `ML -> true
+      | `ML | `Smart -> true
       | _ -> false
 
   let src file = if !prioritize_impl then File.ml file else File.mli file
@@ -481,21 +484,51 @@ let find_source ~config loc path =
           doesn't know which is the right one: %s"
          matches)
 
-(** [find_loc_of_uid] uid's location are given by tables stored int he cmt files
-  for external compilation units or computed by Merlin for the current buffer.
-  This function lookups a uid's location in the appropriate table. *)
+let loc_of_decl ~uid def =
+  let title = "loc_of_decl" in
+  match Typedtree_utils.location_of_declaration ~uid def with
+  | Some loc ->
+    log ~title "Found location: %a" Logger.fmt (fun fmt ->
+        Location.print_loc fmt loc.loc);
+    `Some (uid, loc.loc)
+  | None ->
+    log ~title "The declaration has no location.";
+    `None
+
+let maybe_get_linked_uid ~config comp_unit decl_uid =
+  let title = "linked_uids" in
+  match load_cmt ~config comp_unit with
+  | Ok (_pos_fname, cmt) ->
+    log ~title "Cmt successfully loaded, looking for %a" Logger.fmt (fun fmt ->
+        Shape.Uid.print fmt decl_uid);
+    begin
+      let defs =
+        List.filter_map
+          ~f:(function
+            | Cmt_format.Definition_to_declaration, def, decl
+              when decl = decl_uid -> Some def
+            | _ -> None)
+          cmt.cmt_declaration_dependencies
+      in
+      match defs with
+      | [ def ] -> (
+        match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl def with
+        | Some decl -> loc_of_decl ~uid:decl_uid decl
+        | None ->
+          log ~title "Uid not found in the cmt's table.";
+          `None)
+      | _ -> `None
+    end
+  | _ ->
+    log ~title "Failed to load the cmt file";
+    `None
+
+(** uid's location are given by tables stored int he cmt files for external
+    compilation units or computed by Merlin for the current buffer.
+    [find_loc_of_uid] function lookups a uid's location in the appropriate
+    table. *)
 let find_loc_of_uid ~config ~local_defs uid comp_unit =
   let title = "find_loc_of_uid" in
-  let loc_of_decl ~uid def =
-    match Typedtree_utils.location_of_declaration ~uid def with
-    | Some loc ->
-      log ~title "Found location: %a" Logger.fmt (fun fmt ->
-          Location.print_loc fmt loc.loc);
-      `Some (uid, loc.loc)
-    | None ->
-      log ~title "The declaration has no location.";
-      `None
-  in
   if Env.get_current_unit_name () = comp_unit then begin
     log ~title "We look for %a in the current compilation unit." Logger.fmt
       (fun fmt -> Shape.Uid.print fmt uid);
@@ -515,21 +548,32 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       | Item { from = Intf; _ } -> `MLI
       | _ -> config.ml_or_mli
     in
-    let config = { config with ml_or_mli } in
-    match load_cmt ~config comp_unit with
-    | Ok (_pos_fname, cmt) ->
-      log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
-        (fun fmt -> Shape.Uid.print fmt uid);
-      begin
-        match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
-        | Some decl -> loc_of_decl ~uid decl
-        | None ->
-          log ~title "Uid not found in the cmt's table.";
-          `None
-      end
-    | _ ->
-      log ~title "Failed to load the cmt file";
-      `None
+    let result =
+      (* When looking for a definition but stuck on an interface we load the
+         corresponding cmt file to try to find a corresponding definition. *)
+      if ml_or_mli = `MLI && config.ml_or_mli = `Smart then
+        maybe_get_linked_uid ~config comp_unit uid
+      else `None
+    in
+    match result with
+    | `Some _ as result -> result
+    | `None -> begin
+      let config = { config with ml_or_mli } in
+      match load_cmt ~config comp_unit with
+      | Ok (_pos_fname, cmt) ->
+        log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
+          (fun fmt -> Shape.Uid.print fmt uid);
+        begin
+          match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
+          | Some decl -> loc_of_decl ~uid decl
+          | None ->
+            log ~title "Uid not found in the cmt's table.";
+            `None
+        end
+      | _ ->
+        log ~title "Failed to load the cmt file";
+        `None
+    end
   end
 
 let find_loc_of_comp_unit ~config uid comp_unit =
@@ -612,7 +656,7 @@ let from_path ~config ~env ~local_defs ~decl path =
   let uid, approximated =
     match config.ml_or_mli with
     | `MLI -> (decl.uid, false)
-    | `ML -> (
+    | `ML | `Smart -> (
       let traverse_aliases = config.traverse_aliases in
       let result = find_definition_uid ~config ~env ~decl path in
       match uid_of_result ~traverse_aliases result with
@@ -711,7 +755,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces path =
       log ~title:"from_string"
         "looking for the source of '%s' (prioritizing %s files)" path
         (match config.ml_or_mli with
-        | `ML -> ".ml"
+        | `ML | `Smart -> ".ml"
         | `MLI -> ".mli");
       from_longident ~config ~env ~local_defs nss ident
   in
