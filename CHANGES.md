@@ -1,3 +1,10 @@
+unreleased
+==========
+
+  + merlin binary
+    - Use new 5.3 features to improve locate behavior in some cases. Merlin no
+      longer confuses uids from interfaces and implementations. (#1857)
+
 merlin 5.2.1
 ============
 Fri Sep 27 12:02:42 CEST 2024
