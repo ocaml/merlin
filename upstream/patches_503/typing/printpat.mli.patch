@@ -1,0 +1,22 @@
+--- ocaml_502/typing/printpat.mli	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/printpat.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -17,11 +17,12 @@
+ 
+ val pretty_const
+   : Asttypes.constant -> string
+-val pretty_val : Format.formatter -> 'k Typedtree.general_pattern -> unit
+ 
+-val pretty_pat
+-    : Format.formatter -> 'k Typedtree.general_pattern -> unit
+-val pretty_line
+-    : Format.formatter -> 'k Typedtree.general_pattern list -> unit
+-val pretty_matrix
+-    : Format.formatter -> 'k Typedtree.general_pattern list list -> unit
++val top_pretty: 'k Typedtree.general_pattern Format_doc.printer
++
++module Compat: sig
++  val pretty_pat: Format.formatter -> 'k Typedtree.general_pattern -> unit
++  val pretty_line: Format.formatter -> 'k Typedtree.general_pattern list -> unit
++  val pretty_matrix:
++    Format.formatter -> 'k Typedtree.general_pattern list list -> unit
++end

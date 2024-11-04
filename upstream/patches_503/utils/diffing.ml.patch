@@ -1,0 +1,41 @@
+--- ocaml_502/utils/diffing.ml	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/utils/diffing.ml	2024-09-17 01:19:03.395759607 +0200
+@@ -42,10 +42,11 @@
+   | Modification -> Misc.Style.[ FG Magenta; Bold]
+ 
+ let prefix ppf (pos, p) =
++  let open Format_doc in
+   let sty = style p in
+-  Format.pp_open_stag ppf (Misc.Style.Style sty);
+-  Format.fprintf ppf "%i. " pos;
+-  Format.pp_close_stag ppf ()
++  pp_open_stag ppf (Misc.Style.Style sty);
++  fprintf ppf "%i. " pos;
++  pp_close_stag ppf ()
+ 
+ 
+ let (let*) = Option.bind
+@@ -346,7 +347,22 @@
+     compute_proposition (i-1) (j-1) diff
+   in
+   let*! newweight, (diff, localstate) =
+-    select_best_proposition [diag;del;insert]
++    (* The order of propositions is important here:
++       the call [select_best_proposition [P_0, ...; P_n]] keeps the first
++       proposition with minimal weight as the representative path for this
++       weight class at the current matrix position.
++
++       By induction, the representative path for the minimal weight class will
++       be the smallest path according to the reverse lexical order induced by
++       the element order [[P_0;...; P_n]].
++
++       This is why we choose to start with the [Del] case since path ending with
++       [Del+] suffix are likely to correspond to parital application in the
++       functor application case.
++       Similarly, large block of deletions or insertions at the end of the
++       definitions might point toward incomplete definitions.
++       Thus this seems a good overall setting. *)
++    select_best_proposition [del;insert;diag]
+   in
+   let state = update diff localstate in
+   Matrix.set tbl i j ~weight:newweight ~state ~diff:(Some diff)

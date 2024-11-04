@@ -4,7 +4,7 @@ name: Check ocaml-lsp compat
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -14,7 +14,7 @@ on:
       - 'vim/**'
       - '**/emacs-lint.yml'
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -34,7 +34,7 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - 5.2.x
+          - ocaml-base-compiler.5.3.0~alpha1
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Check that Merlin and OCaml-LSP are co-installable
         run: |
-          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/voodoos/ocaml-lsp.git#5.2-preview
-          opam --cli=2.1 pin --with-version=5.0-502 --no-action .
-          opam install ocaml-lsp-server --with-test --ignore-constraints-on=ocamlformat
+          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/voodoos/ocaml-lsp.git#merlin-503-compat
+          opam --cli=2.1 pin --with-version=5.3-503 --no-action .
+          opam install ocaml-lsp-server --ignore-constraints-on=ocamlformat
 

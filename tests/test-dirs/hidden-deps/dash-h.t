@@ -202,8 +202,7 @@ reference.  With no liba, we also can't see Libb.t is int.
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type t = Liba.t but an expression was expected of type
-    int"
+        "message": "The value x has type t = Liba.t but an expression was expected of type int"
       },
       {
         "start": {

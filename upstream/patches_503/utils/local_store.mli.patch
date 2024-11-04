@@ -1,0 +1,12 @@
+--- ocaml_502/utils/local_store.mli	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/utils/local_store.mli	2024-09-17 01:19:03.395759607 +0200
+@@ -14,7 +14,8 @@
+ (**************************************************************************)
+ 
+ (** This module provides some facilities for creating references (and hash
+-    tables) which can easily be snapshoted and restored to an arbitrary version.
++    tables) which can easily be snapshotted and restored to an arbitrary
++    version.
+ 
+     It is used throughout the frontend (read: typechecker), to register all
+     (well, hopefully) the global state. Thus making it easy for tools like
