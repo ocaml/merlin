@@ -48,6 +48,12 @@ type result =
 val uid_of_result :
   traverse_aliases:bool -> Shape_reduce.result -> Shape.Uid.t option * bool
 
+(** [get_linked_uids] queries the [cmt_declaration_dependencies] table and
+  returns udis related to the one passed as argument. TODO right now this
+  function only returns simple links tagged with [Definition_to_declaration] *)
+val get_linked_uids :
+  config:config -> comp_unit:string -> Shape.Uid.t -> Shape.Uid.t list
+
 val find_source :
   config:Mconfig.t ->
   Warnings.loc ->
