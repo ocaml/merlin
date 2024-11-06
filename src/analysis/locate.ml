@@ -69,6 +69,8 @@ module File : sig
 
   val explain_not_found :
     ?doc_from:string -> string -> t -> [> `File_not_found of string ]
+
+  val is_source : t -> bool
 end = struct
   type t =
     | ML of string
@@ -146,6 +148,10 @@ end = struct
           str_ident
     in
     `File_not_found msg
+
+  let is_source = function
+    | ML _ | MLL _ | MLI _ -> true
+    | CMT _ | CMTI _ -> false
 end
 
 module Preferences : sig
@@ -254,7 +260,15 @@ module Utils = struct
     List.dedup_adjacent files ~cmp:String.compare
 
   let find_file_with_path ~config ?(with_fallback = false) file path =
-    if File.name file = Misc.unitname Mconfig.(config.query.filename) then
+    let title = "find_file_with_path" in
+    let filename = File.name file in
+    log ~title "Try find %S" filename;
+    if
+      File.is_source file
+      && filename = Misc.unitname Mconfig.(config.query.filename)
+    then
+      (* No need to search when looking for the source of the current buffer's
+         compilation unit *)
       Some Mconfig.(config.query.filename)
     else
       let attempt_search src_suffix_pair =
@@ -264,6 +278,7 @@ module Utils = struct
           else None
         in
         let fname = File.with_ext ~src_suffix_pair file in
+        log ~title "Trying %S" fname;
         try Some (Misc.find_in_path_normalized ?fallback path fname)
         with Not_found -> None
       in
@@ -308,10 +323,12 @@ let move_to filename cmt_infos =
   File_switching.move_to ~digest filename
 
 let load_cmt ~config ?(with_fallback = true) comp_unit =
+  let title = "load_cmt" in
   Preferences.set config.ml_or_mli;
   let file = Preferences.build comp_unit in
   match Utils.find_file ~config:config.mconfig ~with_fallback file with
   | Some path ->
+    log ~title "Found %S at path %S" comp_unit path;
     let cmt_infos = (Cmt_cache.read path).cmt_infos in
     let source_file = cmt_infos.cmt_sourcefile in
     let source_file = Option.value ~default:"*pack*" source_file in
@@ -490,38 +507,29 @@ let loc_of_decl ~uid def =
   | Some loc ->
     log ~title "Found location: %a" Logger.fmt (fun fmt ->
         Location.print_loc fmt loc.loc);
-    `Some (uid, loc.loc)
+    Some (uid, loc.loc)
   | None ->
     log ~title "The declaration has no location.";
-    `None
+    None
 
-let maybe_get_linked_uid ~config comp_unit decl_uid =
+let get_linked_uids ~config ~comp_unit decl_uid =
   let title = "linked_uids" in
+  log ~title "Try find cmt file for %s" comp_unit;
   match load_cmt ~config comp_unit with
   | Ok (_pos_fname, cmt) ->
     log ~title "Cmt successfully loaded, looking for %a" Logger.fmt (fun fmt ->
         Shape.Uid.print fmt decl_uid);
-    begin
-      let defs =
-        List.filter_map
-          ~f:(function
-            | Cmt_format.Definition_to_declaration, def, decl
-              when decl = decl_uid -> Some def
-            | _ -> None)
-          cmt.cmt_declaration_dependencies
-      in
-      match defs with
-      | [ def ] -> (
-        match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl def with
-        | Some decl -> loc_of_decl ~uid:decl_uid decl
-        | None ->
-          log ~title "Uid not found in the cmt's table.";
-          `None)
-      | _ -> `None
-    end
+    List.filter_map
+      ~f:(function
+        | Cmt_format.Definition_to_declaration, def, decl when decl = decl_uid
+          -> Some def
+        | Cmt_format.Definition_to_declaration, def, decl when def = decl_uid ->
+          Some decl
+        | _ -> None)
+      cmt.cmt_declaration_dependencies
   | _ ->
     log ~title "Failed to load the cmt file";
-    `None
+    []
 
 (** uid's location are given by tables stored int he cmt files for external
     compilation units or computed by Merlin for the current buffer.
@@ -536,10 +544,10 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
         Shape.Uid.print fmt uid);
     let tbl = Ast_iterators.build_uid_to_locs_tbl ~local_defs () in
     match Shape.Uid.Tbl.find_opt tbl uid with
-    | Some { Location.loc; _ } -> `Some (uid, loc)
+    | Some { Location.loc; _ } -> Some (uid, loc)
     | None ->
       log ~title "Uid not found in the local table.";
-      `None
+      None
   end
   else begin
     log ~title "Loading the cmt file for unit %S" comp_unit;
@@ -548,32 +556,31 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       | Item { from = Intf; _ } -> `MLI
       | _ -> config.ml_or_mli
     in
-    let result =
+    let uid =
       (* When looking for a definition but stuck on an interface we load the
          corresponding cmt file to try to find a corresponding definition. *)
       if ml_or_mli = `MLI && config.ml_or_mli = `Smart then
-        maybe_get_linked_uid ~config comp_unit uid
-      else `None
+        match get_linked_uids ~config ~comp_unit uid with
+        | [ uid ] -> uid
+        | _ -> uid
+      else uid
     in
-    match result with
-    | `Some _ as result -> result
-    | `None -> begin
-      let config = { config with ml_or_mli } in
-      match load_cmt ~config comp_unit with
-      | Ok (_pos_fname, cmt) ->
-        log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
-          (fun fmt -> Shape.Uid.print fmt uid);
-        begin
-          match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
-          | Some decl -> loc_of_decl ~uid decl
-          | None ->
-            log ~title "Uid not found in the cmt's table.";
-            `None
-        end
-      | _ ->
-        log ~title "Failed to load the cmt file";
-        `None
-    end
+    let config = { config with ml_or_mli } in
+    match load_cmt ~config comp_unit with
+    | Ok (_pos_fname, cmt) ->
+      log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
+        (fun fmt -> Shape.Uid.print fmt uid);
+      begin
+        match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
+        | Some decl -> loc_of_decl ~uid decl
+        | None ->
+          log ~title "Uid not found in the cmt's table.";
+          None
+      end
+    | _ ->
+      log ~title "Failed to load the cmt file";
+      None
+    (* end *)
   end
 
 let find_loc_of_comp_unit ~config uid comp_unit =
@@ -672,20 +679,21 @@ let from_path ~config ~env ~local_defs ~decl path =
     match uid with
     | Predef s -> `Builtin (uid, s)
     | Internal -> `Builtin (uid, "<internal>")
-    | Item { comp_unit; _ } -> find_loc_of_uid ~config ~local_defs uid comp_unit
+    | Item { comp_unit; _ } ->
+      `Opt (find_loc_of_uid ~config ~local_defs uid comp_unit)
     | Compilation_unit comp_unit -> find_loc_of_comp_unit ~config uid comp_unit
   in
   let loc =
     match loc with
-    | `None ->
+    | `None | `Opt None ->
       log ~title "Falling back to the declaration's location: %a" Logger.fmt
         (Fun.flip Location.print_loc decl.loc);
       `Some (decl.uid, decl.loc)
-    | other -> other
+    | `Opt (Some result) -> `Some result
+    | (`Builtin _ | `Some _) as other -> other
   in
   (* Step 3:  Location => Source *)
   match loc with
-  | `None -> assert false
   | `Builtin _ as err -> err
   | `Some (uid, loc) -> (
     match find_source ~config:config.mconfig loc (Path.name path) with

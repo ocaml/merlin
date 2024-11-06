@@ -116,10 +116,60 @@ let get_buffer_locs result uid =
       if Shape.Uid.equal uid uid' then Lid_set.add loc acc else acc)
     (Mtyper.get_index result) Lid_set.empty
 
-let is_in_interface (config : Mconfig.t) (loc : Warnings.loc) =
-  let extension = Filename.extension loc.loc_start.pos_fname in
-  List.exists config.merlin.suffixes ~f:(fun (_impl, intf) ->
-      String.equal extension intf)
+let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
+  let title = "get_external_locs" in
+  List.filter_map config.merlin.index_files ~f:(fun file ->
+      log ~title "Lookin for occurrences of %a in index %s" Logger.fmt
+        (Fun.flip Shape.Uid.print uid)
+        file;
+      let external_locs =
+        try
+          let external_index = Index_cache.read file in
+          Index_format.Uid_map.find_opt uid external_index.defs
+          |> Option.map ~f:(fun uid_locs -> (external_index, uid_locs))
+        with Index_format.Not_an_index _ | Sys_error _ ->
+          log ~title "Could not load index %s" file;
+          None
+      in
+      Option.map external_locs ~f:(fun (index, locs) ->
+          let stats = Stat_check.create ~cache_size:128 index in
+          ( Lid_set.filter
+              (fun { loc; _ } ->
+                (* We ignore external results that concern the current buffer *)
+                let file = loc.Location.loc_start.Lexing.pos_fname in
+                let file, buf =
+                  match config.merlin.source_root with
+                  | Some root -> (Filename.concat root file, current_buffer_path)
+                  | None -> (file, config.query.filename)
+                in
+                let file = Misc.canonicalize_filename file in
+                let buf = Misc.canonicalize_filename buf in
+                if String.equal file buf then false
+                else begin
+                  (* We ignore external results if their source was modified *)
+                  let check = Stat_check.check stats ~file in
+                  if not check then
+                    log ~title "File %s might be out-of-sync." file;
+                  check
+                end)
+              locs,
+            Stat_check.get_outdated_files stats )))
+
+let find_linked_uids ~config uid =
+  let title = "find_linked_uids" in
+  match uid with
+  | Shape.Uid.Item { from = _; comp_unit; _ } -> (
+    let config =
+      { Locate.mconfig = config; ml_or_mli = `ML; traverse_aliases = false }
+    in
+    match Locate.get_linked_uids ~config ~comp_unit uid with
+    | [ uid' ] ->
+      log ~title "Found linked uid: %a" Logger.fmt (fun fmt ->
+          Shape.Uid.print fmt uid');
+
+      [ uid' ]
+    | _ -> [])
+  | _ -> []
 
 let locs_of ~config ~env ~typer_result ~pos ~scope path =
   log ~title:"occurrences" "Looking for occurences of %s (pos: %s)" path
@@ -139,28 +189,11 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       let browse = Mbrowse.of_typedtree local_defs in
       let env, node = Mbrowse.leaf_node (Mbrowse.enclosing pos [ browse ]) in
       let node_uid_loc = uid_and_loc_of_node env node in
-      let scope =
-        match node_uid_loc with
-        | Some (_, l) when is_in_interface config l ->
-          (* There is no way to distinguish uids from interfaces from uids of
-             implementations. We fallback on buffer occurrences in that case.
-             TODO: we should be able to improve on that situation when we will be
-             able to distinguish between impl/intf uids and know which declaration
-             are actually linked. *)
-          `Buffer
-        | _ -> scope
-      in
       (node_uid_loc, scope)
     | `Found { uid; location; approximated = false; _ }
     | `File_not_found { uid; location; approximated = false; _ } ->
       log ~title:"locs_of" "Found definition uid using locate: %a " Logger.fmt
         (fun fmt -> Shape.Uid.print fmt uid);
-      (* There is no way to distinguish uids from interfaces from uids of
-         implementations. We fallback on buffer occurrences in that case.
-         TODO: we should be able to improve on that situation when we will be
-         able to distinguish between impl/intf uids and know which declaration
-         are actually linked. *)
-      let scope = if is_in_interface config location then `Buffer else scope in
       (Some (uid, location), scope)
     | `Found { decl_uid; location; approximated = true; _ }
     | `File_not_found { decl_uid; location; approximated = true; _ } ->
@@ -188,41 +221,10 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let external_locs =
       if scope = `Buffer then []
       else
-        List.filter_map config.merlin.index_files ~f:(fun file ->
-            let external_locs =
-              try
-                let external_index = Index_cache.read file in
-                Index_format.Uid_map.find_opt def_uid external_index.defs
-                |> Option.map ~f:(fun uid_locs -> (external_index, uid_locs))
-              with Index_format.Not_an_index _ | Sys_error _ ->
-                log ~title:"external_index" "Could not load index %s" file;
-                None
-            in
-            Option.map external_locs ~f:(fun (index, locs) ->
-                let stats = Stat_check.create ~cache_size:128 index in
-                ( Lid_set.filter
-                    (fun { loc; _ } ->
-                      (* We ignore external results that concern the current buffer *)
-                      let file = loc.Location.loc_start.Lexing.pos_fname in
-                      let file, buf =
-                        match config.merlin.source_root with
-                        | Some root ->
-                          (Filename.concat root file, current_buffer_path)
-                        | None -> (file, config.query.filename)
-                      in
-                      let file = Misc.canonicalize_filename file in
-                      let buf = Misc.canonicalize_filename buf in
-                      if String.equal file buf then false
-                      else begin
-                        (* We ignore external results if their source was modified *)
-                        let check = Stat_check.check stats ~file in
-                        if not check then
-                          log ~title:"locs_of" "File %s might be out-of-sync."
-                            file;
-                        check
-                      end)
-                    locs,
-                  Stat_check.get_outdated_files stats )))
+        let additional_uids = find_linked_uids ~config def_uid in
+        List.concat_map
+          (def_uid :: additional_uids)
+          ~f:(get_external_locs ~config ~current_buffer_path)
     in
     let external_locs, out_of_sync_files =
       List.fold_left

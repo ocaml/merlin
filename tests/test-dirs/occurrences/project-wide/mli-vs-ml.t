@@ -15,8 +15,12 @@
 
 The indexer should not mixup uids from mli and ml files:
   $ ocaml-index dump project.ocaml-index
-  2 uids:
-  {uid: Main.0; locs: "x": File "main.ml", line 1, characters 4-5
+  4 uids:
+  {uid: [intf]Main.0; locs:
+     "t": File "main.mli", line 1, characters 5-6;
+     "t": File "main.mli", line 2, characters 8-9
+   uid: Main.0; locs: "x": File "main.ml", line 1, characters 4-5
+   uid: [intf]Main.1; locs: "x": File "main.mli", line 2, characters 4-5
    uid: Main.1; locs:
      "t": File "main.ml", line 2, characters 5-6;
      "t": File "main.ml", line 3, characters 8-9
@@ -39,6 +43,28 @@ the interface and the implementation.
         "end": {
           "line": 1,
           "col": 6
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 2,
+          "col": 5
+        },
+        "end": {
+          "line": 2,
+          "col": 6
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 3,
+          "col": 8
+        },
+        "end": {
+          "line": 3,
+          "col": 9
         }
       },
       {
@@ -72,6 +98,28 @@ Same when the cursor is at the origin:
         "end": {
           "line": 1,
           "col": 6
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 2,
+          "col": 5
+        },
+        "end": {
+          "line": 2,
+          "col": 6
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 3,
+          "col": 8
+        },
+        "end": {
+          "line": 3,
+          "col": 9
         }
       },
       {
@@ -117,6 +165,28 @@ It also works when querying for t from the implementation:
           "line": 3,
           "col": 9
         }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.mli",
+        "start": {
+          "line": 1,
+          "col": 5
+        },
+        "end": {
+          "line": 1,
+          "col": 6
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.mli",
+        "start": {
+          "line": 2,
+          "col": 8
+        },
+        "end": {
+          "line": 2,
+          "col": 9
+        }
       }
     ],
     "notifications": []
@@ -140,6 +210,17 @@ It also works when querying for x from the implementation:
           "line": 1,
           "col": 5
         }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.mli",
+        "start": {
+          "line": 2,
+          "col": 4
+        },
+        "end": {
+          "line": 2,
+          "col": 5
+        }
       }
     ],
     "notifications": []
@@ -160,6 +241,17 @@ It also works when querying for x from the interface:
         },
         "end": {
           "line": 2,
+          "col": 5
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 1,
+          "col": 4
+        },
+        "end": {
+          "line": 1,
           "col": 5
         }
       }
