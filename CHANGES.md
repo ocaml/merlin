@@ -7,6 +7,7 @@ unreleased
     - Fix occurrences bug in which relative paths in index files are resolved against the
       PWD rather than the SOURCE_ROOT (#1855)
     - Fix exception in polarity search (#1858 fixes #1113)
+    - Fix jump to `fun` targets not working (#1863, fixes #1862)
 
 merlin 5.2.1
 ============
