@@ -258,3 +258,55 @@ It also works when querying for x from the interface:
     ],
     "notifications": []
   }
+
+If we switch lines without rebuilding...
+  $ cat >main.ml <<'EOF'
+  > type t = unit
+  > let x = ()
+  > let _ : t = ()
+  > EOF
+
+FIXME: Merlin would get confused and return an occurrence of `x` in the
+interface when asked from occurrences of `t` in the implementation.
+  $ $MERLIN single occurrences -scope project -identifier-at 1:5 \
+  > -index-file project.ocaml-index \
+  > -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 1,
+          "col": 5
+        },
+        "end": {
+          "line": 1,
+          "col": 6
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 3,
+          "col": 8
+        },
+        "end": {
+          "line": 3,
+          "col": 9
+        }
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.mli",
+        "start": {
+          "line": 2,
+          "col": 4
+        },
+        "end": {
+          "line": 2,
+          "col": 5
+        }
+      }
+    ],
+    "notifications": []
+  }
