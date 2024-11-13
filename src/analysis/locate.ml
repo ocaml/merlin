@@ -507,7 +507,7 @@ let loc_of_decl ~uid def =
   | Some loc ->
     log ~title "Found location: %a" Logger.fmt (fun fmt ->
         Location.print_loc fmt loc.loc);
-    Some (uid, loc.loc)
+    Some loc
   | None ->
     log ~title "The declaration has no location.";
     None
@@ -572,7 +572,9 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
         (fun fmt -> Shape.Uid.print fmt uid);
       begin
         match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
-        | Some decl -> loc_of_decl ~uid decl
+        | Some decl ->
+          loc_of_decl ~uid decl
+          |> Option.map ~f:(fun { Location.loc; _ } -> (uid, loc))
         | None ->
           log ~title "Uid not found in the cmt's table.";
           None
