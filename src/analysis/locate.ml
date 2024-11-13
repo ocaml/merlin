@@ -512,25 +512,6 @@ let loc_of_decl ~uid def =
     log ~title "The declaration has no location.";
     None
 
-let get_linked_uids ~config ~comp_unit decl_uid =
-  let title = "linked_uids" in
-  log ~title "Try find cmt file for %s" comp_unit;
-  match load_cmt ~config comp_unit with
-  | Ok (_pos_fname, cmt) ->
-    log ~title "Cmt successfully loaded, looking for %a" Logger.fmt (fun fmt ->
-        Shape.Uid.print fmt decl_uid);
-    List.filter_map
-      ~f:(function
-        | Cmt_format.Definition_to_declaration, def, decl when decl = decl_uid
-          -> Some def
-        | Cmt_format.Definition_to_declaration, def, decl when def = decl_uid ->
-          Some decl
-        | _ -> None)
-      cmt.cmt_declaration_dependencies
-  | _ ->
-    log ~title "Failed to load the cmt file";
-    []
-
 (** uid's location are given by tables stored int he cmt files for external
     compilation units or computed by Merlin for the current buffer.
     [find_loc_of_uid] function lookups a uid's location in the appropriate
@@ -555,15 +536,6 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       match uid with
       | Item { from = Intf; _ } -> `MLI
       | _ -> config.ml_or_mli
-    in
-    let uid =
-      (* When looking for a definition but stuck on an interface we load the
-         corresponding cmt file to try to find a corresponding definition. *)
-      if ml_or_mli = `MLI && config.ml_or_mli = `Smart then
-        match get_linked_uids ~config ~comp_unit uid with
-        | [ uid ] -> uid
-        | _ -> uid
-      else uid
     in
     let config = { config with ml_or_mli } in
     match load_cmt ~config comp_unit with
@@ -596,6 +568,25 @@ let find_loc_of_comp_unit ~config uid comp_unit =
   | _ ->
     log ~title "Failed to load the CU's cmt";
     `None
+
+let get_linked_uids ~config ~comp_unit decl_uid =
+  let title = "linked_uids" in
+  log ~title "Try find cmt file for %s" comp_unit;
+  match load_cmt ~config comp_unit with
+  | Ok (_pos_fname, cmt) ->
+    log ~title "Cmt successfully loaded, looking for %a" Logger.fmt (fun fmt ->
+        Shape.Uid.print fmt decl_uid);
+    List.filter_map
+      ~f:(function
+        | Cmt_format.Definition_to_declaration, def, decl when decl = decl_uid
+          -> Some def
+        | Cmt_format.Definition_to_declaration, def, decl when def = decl_uid ->
+          Some decl
+        | _ -> None)
+      cmt.cmt_declaration_dependencies
+  | _ ->
+    log ~title "Failed to load the cmt file";
+    []
 
 let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   let namespace = decl.namespace in
@@ -675,6 +666,17 @@ let from_path ~config ~env ~local_defs ~decl path =
           Logger.fmt
           (Fun.flip Shape.Uid.print decl.uid);
         (decl.uid, true))
+  in
+  (* Step 1': Try refine Uid *)
+  let uid =
+    (* When looking for a definition but stuck on an interface we load the
+       corresponding cmt file to try to find a corresponding definition. *)
+    match (uid, config.ml_or_mli) with
+    | Item { from = Intf; comp_unit; _ }, `Smart -> (
+      match get_linked_uids ~config ~comp_unit uid with
+      | [ uid ] -> uid
+      | _ -> uid)
+    | _ -> uid
   in
   (* Step 2:  Uid => Location *)
   let loc =
