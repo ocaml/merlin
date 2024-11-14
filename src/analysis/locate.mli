@@ -48,6 +48,10 @@ type result =
 val uid_of_result :
   traverse_aliases:bool -> Shape_reduce.result -> Shape.Uid.t option * bool
 
+(** Lookup the delcaration of the given Uid in the appropriate cmt file *)
+val lookup_uid_decl :
+  config:Mconfig.t -> Shape.Uid.t -> Typedtree.item_declaration option
+
 (** [get_linked_uids] queries the [cmt_declaration_dependencies] table and
   returns udis related to the one passed as argument. TODO right now this
   function only returns simple links tagged with [Definition_to_declaration] *)
