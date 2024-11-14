@@ -501,6 +501,25 @@ let find_source ~config loc path =
           doesn't know which is the right one: %s"
          matches)
 
+let lookup_uid_decl ~config:mconfig uid =
+  let title = "lookup_uid_decl" in
+  let item =
+    match uid with
+    | Shape.Uid.Internal | Predef _ | Compilation_unit _ -> None
+    | Item { from = Intf; comp_unit; _ } -> Some (`MLI, comp_unit)
+    | Item { from = _; comp_unit; _ } -> Some (`ML, comp_unit)
+  in
+  Option.bind item ~f:(fun (ml_or_mli, comp_unit) ->
+      let config = { mconfig; ml_or_mli; traverse_aliases = false } in
+      match load_cmt ~config comp_unit with
+      | Ok (_pos_fname, cmt) ->
+        log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
+          (fun fmt -> Shape.Uid.print fmt uid);
+        Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid
+      | _ ->
+        log ~title "Failed to load the cmt file";
+        None)
+
 (** uid's location are given by tables stored int he cmt files for external
     compilation units or computed by Merlin for the current buffer.
     [find_loc_of_uid] function lookups a uid's location in the appropriate
@@ -519,30 +538,9 @@ let find_loc_of_item ~config ~local_defs uid comp_unit =
       log ~title "Uid not found in the local table.";
       None
   end
-  else begin
-    log ~title "Loading the cmt file for unit %S" comp_unit;
-    let ml_or_mli =
-      match uid with
-      | Item { from = Intf; _ } -> `MLI
-      | _ -> config.ml_or_mli
-    in
-    let config = { config with ml_or_mli } in
-    match load_cmt ~config comp_unit with
-    | Ok (_pos_fname, cmt) ->
-      log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
-        (fun fmt -> Shape.Uid.print fmt uid);
-      begin
-        match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
-        | Some decl -> Typedtree_utils.location_of_declaration ~uid decl
-        | None ->
-          log ~title "Uid not found in the cmt's table.";
-          None
-      end
-    | _ ->
-      log ~title "Failed to load the cmt file";
-      None
-    (* end *)
-  end
+  else
+    lookup_uid_decl ~config:config.mconfig uid
+    |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid)
 
 let find_loc_of_comp_unit ~config uid comp_unit =
   let title = "find_loc_of_comp_unit" in
