@@ -501,17 +501,6 @@ let find_source ~config loc path =
           doesn't know which is the right one: %s"
          matches)
 
-let loc_of_decl ~uid def =
-  let title = "loc_of_decl" in
-  match Typedtree_utils.location_of_declaration ~uid def with
-  | Some loc ->
-    log ~title "Found location: %a" Logger.fmt (fun fmt ->
-        Location.print_loc fmt loc.loc);
-    Some loc
-  | None ->
-    log ~title "The declaration has no location.";
-    None
-
 (** uid's location are given by tables stored int he cmt files for external
     compilation units or computed by Merlin for the current buffer.
     [find_loc_of_uid] function lookups a uid's location in the appropriate
@@ -544,7 +533,7 @@ let find_loc_of_item ~config ~local_defs uid comp_unit =
         (fun fmt -> Shape.Uid.print fmt uid);
       begin
         match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
-        | Some decl -> loc_of_decl ~uid decl
+        | Some decl -> Typedtree_utils.location_of_declaration ~uid decl
         | None ->
           log ~title "Uid not found in the cmt's table.";
           None
