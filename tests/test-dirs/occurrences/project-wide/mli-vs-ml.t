@@ -266,8 +266,11 @@ If we switch lines without rebuilding...
   > let _ : t = ()
   > EOF
 
-FIXME: Merlin would get confused and return an occurrence of `x` in the
-interface when asked from occurrences of `t` in the implementation.
+Merlin should not get confused and return an occurrence of `x` in the interface
+when asked from occurrences of `t` in the implementation. 
+
+FIXME: this is based on a heuristic that compares the identifiers it could still
+get confused if both identifers are the same.
   $ $MERLIN single occurrences -scope project -identifier-at 1:5 \
   > -index-file project.ocaml-index \
   > -filename main.ml <main.ml
@@ -294,17 +297,6 @@ interface when asked from occurrences of `t` in the implementation.
         "end": {
           "line": 3,
           "col": 9
-        }
-      },
-      {
-        "file": "$TESTCASE_ROOT/main.mli",
-        "start": {
-          "line": 2,
-          "col": 4
-        },
-        "end": {
-          "line": 2,
-          "col": 5
         }
       }
     ],

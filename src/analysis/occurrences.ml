@@ -155,7 +155,7 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
               locs,
             Stat_check.get_outdated_files stats )))
 
-let find_linked_uids ~config uid =
+let find_linked_uids ~config ~name uid =
   let title = "find_linked_uids" in
   match uid with
   | Shape.Uid.Item { from = _; comp_unit; _ } -> (
@@ -166,8 +166,14 @@ let find_linked_uids ~config uid =
     | [ uid' ] ->
       log ~title "Found linked uid: %a" Logger.fmt (fun fmt ->
           Shape.Uid.print fmt uid');
-
-      [ uid' ]
+      let name_check =
+        Locate.lookup_uid_decl ~config:config.mconfig uid'
+        |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid:uid')
+        |> Option.value_map
+             ~f:(fun { Location.txt; _ } -> String.equal name txt)
+             ~default:false
+      in
+      if name_check then [ uid' ] else []
     | _ -> [])
   | _ -> []
 
@@ -221,7 +227,10 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let external_locs =
       if scope = `Buffer then []
       else
-        let additional_uids = find_linked_uids ~config def_uid in
+        let name =
+          String.split_on_char ~sep:'.' path |> List.last |> Option.get
+        in
+        let additional_uids = find_linked_uids ~config ~name def_uid in
         List.concat_map
           (def_uid :: additional_uids)
           ~f:(get_external_locs ~config ~current_buffer_path)
