@@ -18,6 +18,7 @@ end
 module Lid_set = Set.Make (Lid)
 module Uid_map = Shape.Uid.Map
 module Stats = Map.Make (String)
+module Uid_set = Shape.Uid.Set
 
 let add map uid locs =
   Uid_map.update uid
@@ -33,7 +34,8 @@ type index =
     approximated : Lid_set.t Uid_map.t;
     cu_shape : (string, Shape.t) Hashtbl.t;
     stats : stat Stats.t;
-    root_directory : string option
+    root_directory : string option;
+    related_uids : Uid_set.t Union_find.element Uid_map.t
   }
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
@@ -51,6 +53,26 @@ let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
         (Lid_set.elements locs))
     partials;
   Format.fprintf fmt "@]}"
+
+let pp_related_uids (fmt : Format.formatter)
+    (related_uids : Uid_set.t Union_find.element Uid_map.t) =
+  let rec gather acc map =
+    match Uid_map.choose_opt map with
+    | Some (_key, union) ->
+      let group = Union_find.get union |> Uid_set.to_list in
+      List.fold_left (fun acc key -> Uid_map.remove key acc) map group
+      |> gather (group :: acc)
+    | None -> acc
+  in
+  Format.pp_print_list
+    ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@;")
+    (fun fmt group ->
+      Format.fprintf fmt "(%a)"
+        (Format.pp_print_list
+           ~pp_sep:(fun fmt () -> Format.fprintf fmt "@ ")
+           Shape.Uid.print)
+        group)
+    fmt (gather [] related_uids)
 
 let pp (fmt : Format.formatter) pl =
   Format.fprintf fmt "%i uids:@ {@[" (Uid_map.cardinal pl.defs);
@@ -71,7 +93,8 @@ let pp (fmt : Format.formatter) pl =
     (Uid_map.cardinal pl.approximated)
     pp_partials pl.approximated;
   Format.fprintf fmt "and shapes for CUS %s.@ "
-    (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq))
+    (String.concat ";@," (Hashtbl.to_seq_keys pl.cu_shape |> List.of_seq));
+  Format.fprintf fmt "and related uids:@[{%a}@]" pp_related_uids pl.related_uids
 
 let ext = "ocaml-index"
 

@@ -36,6 +36,7 @@
    uid: Stdlib__String.174; locs:
      "String.equal": File "main.ml", line 1, characters 8-20
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{(Main.3 Main.4)}
 
 
   $ ocaml-index dump test.uideps
@@ -53,4 +54,5 @@
    uid: Stdlib__String.174; locs:
      "String.equal": File "main.ml", line 1, characters 8-20
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{(Main.3 Main.4)}
 

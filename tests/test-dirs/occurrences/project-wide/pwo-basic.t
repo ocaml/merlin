@@ -20,6 +20,7 @@
      "print_string": File "lib.ml", line 2, characters 9-21;
      "print_string": File "main.ml", line 1, characters 9-21
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
   $ $MERLIN single occurrences -scope project -identifier-at 1:28 \
   > -index-file project.ocaml-index \

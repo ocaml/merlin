@@ -89,6 +89,7 @@ let index_of_cmt ~into ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
         cmt_initial_env;
         cmt_sourcefile;
         cmt_source_digest;
+        cmt_declaration_dependencies;
         _
       } =
     cmt_infos
@@ -135,15 +136,39 @@ let index_of_cmt ~into ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
           into.stats
       with Unix.Unix_error _ -> into.stats)
   in
-  { defs; approximated; cu_shape; stats; root_directory = into.root_directory }
+  let related_uids =
+    List.fold_left
+      (fun acc (_, uid1, uid2) ->
+        let union = Union_find.make (Uid_set.of_list [ uid1; uid2 ]) in
+        let map_update uid =
+          Uid_map.update uid (function
+            | None -> Some union
+            | Some union' ->
+              Some (Union_find.union ~f:Uid_set.union union' union))
+        in
+        acc |> map_update uid1 |> map_update uid2)
+      into.related_uids cmt_declaration_dependencies
+  in
+  { defs;
+    approximated;
+    cu_shape;
+    stats;
+    related_uids;
+    root_directory = into.root_directory
+  }
 
 let merge_index ~store_shapes ~into index =
   let defs = merge index.defs into.defs in
   let approximated = merge index.approximated into.approximated in
   let stats = Stats.union (fun _ f1 _f2 -> Some f1) into.stats index.stats in
+  let related_uids =
+    Uid_map.union
+      (fun _ a b -> Some (Union_find.union ~f:Uid_set.union a b))
+      index.related_uids into.related_uids
+  in
   if store_shapes then
     Hashtbl.add_seq index.cu_shape (Hashtbl.to_seq into.cu_shape);
-  { into with defs; approximated; stats }
+  { into with defs; approximated; stats; related_uids }
 
 let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
     ~do_not_use_cmt_loadpath files =
@@ -153,7 +178,8 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
       approximated = Shape.Uid.Map.empty;
       cu_shape = Hashtbl.create 64;
       stats = Stats.empty;
-      root_directory = root
+      root_directory = root;
+      related_uids = Uid_map.empty
     }
   in
   let final_index =

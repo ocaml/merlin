@@ -25,6 +25,7 @@ The indexer should not mixup uids from mli and ml files:
      "t": File "main.ml", line 2, characters 5-6;
      "t": File "main.ml", line 3, characters 8-9
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{(Main.0 [intf]Main.1); ([intf]Main.0 Main.1)}
 
 Merlin should not mixup uids from mli and ml files, and return results in both
 the interface and the implementation.
