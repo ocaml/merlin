@@ -58,6 +58,7 @@
      "+": File "main.ml", line 2, characters 14-15;
      "+": File "main.ml", line 4, characters 26-27
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
   $ ocaml-index dump foo.uideps
   5 uids:
@@ -71,6 +72,7 @@
      "+": File "foo.ml", line 3, characters 11-12;
      "+": File "foo.ml", line 3, characters 19-20
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
 
 
@@ -116,6 +118,7 @@
      "+": File "main.ml", line 2, characters 14-15;
      "+": File "main.ml", line 4, characters 26-27
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
   $ ocaml-index stats foo.uideps test.uideps
   Index "test.uideps" contains:

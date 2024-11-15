@@ -43,6 +43,7 @@ We should not index generated modules (lib.ml-gen)
      "foo": File "lib/aux.ml", line 1, characters 4-7;
      "foo": File "lib/aux.ml", line 2, characters 8-11
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
   $ ocaml-index dump _build/default/.main.eobjs/cctx.ocaml-index
   4 uids:
@@ -52,6 +53,7 @@ We should not index generated modules (lib.ml-gen)
    uid: Stdlib.312; locs:
      "print_string": File "main.ml", line 3, characters 9-21
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
   $ $MERLIN single occurrences -scope project -identifier-at 3:23 \
   > -filename main.ml <main.ml | jq '.value[].file'
