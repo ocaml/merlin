@@ -6,6 +6,6 @@ val locs_of :
   env:Env.t ->
   typer_result:Mtyper.result ->
   pos:Lexing.position ->
-  scope:[ `Project | `Buffer ] ->
+  scope:[ `Project | `Buffer | `Renaming ] ->
   string ->
   t

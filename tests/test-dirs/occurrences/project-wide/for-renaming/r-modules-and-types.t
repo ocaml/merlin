@@ -35,7 +35,7 @@
   0 approx shapes: {}, and shapes for CUS .
   and related uids:{([intf]Lib.1 Lib.1); ([intf]Lib.0 Lib.0 Main.0)}
 
-  $ $MERLIN single occurrences -scope project -identifier-at 4:11 \
+  $ $MERLIN single occurrences -scope renaming -identifier-at 4:11 \
   > -index-file project.ocaml-index \
   > -filename main.ml <main.ml
   {
