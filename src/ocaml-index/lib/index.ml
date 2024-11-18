@@ -130,18 +130,20 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
       with Unix.Unix_error _ -> Stats.empty)
   in
   let related_uids =
-    let find map uid =
-      try (Uid_map.find uid map, map)
-      with Not_found ->
-        let elt = Union_find.make (Uid_set.singleton uid) in
-        (elt, Uid_map.add uid elt map)
-    in
     List.fold_left
       (fun acc (_, uid1, uid2) ->
-        let e1, acc = find acc uid1 in
-        let e2, acc = find acc uid2 in
-        ignore @@ Union_find.union ~f:Uid_set.union e1 e2;
-        acc)
+        let union =
+          let e1 = Union_find.make (Uid_set.singleton uid1) in
+          let e2 = Union_find.make (Uid_set.singleton uid2) in
+          Union_find.union ~f:Uid_set.union e1 e2
+        in
+        let map_update uid =
+          Uid_map.update uid (function
+            | None -> Some union
+            | Some union' ->
+              Some (Union_find.union ~f:Uid_set.union union' union))
+        in
+        acc |> map_update uid1 |> map_update uid2)
       Uid_map.empty cmt_declaration_dependencies
   in
   { defs; approximated; cu_shape; stats; root_directory = None; related_uids }
