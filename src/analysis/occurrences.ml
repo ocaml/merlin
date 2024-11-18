@@ -155,15 +155,34 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
               locs,
             Stat_check.get_outdated_files stats )))
 
+let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
+  let title = "lookup_related_uids_in_indexes" in
+  let open Index_format in
+  let related_uids =
+    List.fold_left ~init:Uid_map.empty config.merlin.index_files
+      ~f:(fun acc index_file ->
+        try
+          let index = Index_cache.read index_file in
+          Uid_map.union
+            (fun _ a b -> Some (Union_find.union ~f:Uid_set.union a b))
+            index.related_uids acc
+        with Index_format.Not_an_index _ | Sys_error _ ->
+          log ~title "Could not load index %s" index_file;
+          acc)
+  in
+  Uid_map.find_opt uid related_uids
+  |> Option.value_map ~default:Uid_set.empty ~f:Union_find.get
+  |> Uid_set.to_list
+
 let find_linked_uids ~config ~project_wide ~name uid =
   let title = "find_linked_uids" in
   match uid with
   | Shape.Uid.Item { from = _; comp_unit; _ } ->
-    let config =
+    let locate_config =
       { Locate.mconfig = config; ml_or_mli = `ML; traverse_aliases = false }
     in
     let check_name uid =
-      Locate.lookup_uid_decl ~config:config.mconfig uid
+      Locate.lookup_uid_decl ~config uid
       |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid)
       |> Option.value_map
            ~f:(fun { Location.txt; _ } ->
@@ -175,7 +194,13 @@ let find_linked_uids ~config ~project_wide ~name uid =
              result)
            ~default:false
     in
-    let related_uids = Locate.get_linked_uids ~config ~comp_unit uid in
+    let related_uids =
+      if not project_wide then
+        Locate.get_linked_uids ~config:locate_config ~comp_unit uid
+      else lookup_related_uids_in_indexes ~config uid
+    in
+    log ~title "Found related uids: [%a]" Logger.fmt (fun fmt ->
+        List.iter ~f:(fprintf fmt "%a;" Shape.Uid.print) related_uids);
     List.filter ~f:check_name related_uids
   | _ -> []
 
