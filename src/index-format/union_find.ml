@@ -18,15 +18,16 @@ let union ~f x y =
   | x, y when x == y -> x
   | ( { content = Root ({ rank = rank_x; value = value_x } as root_x); _ },
       { content = Root ({ rank = rank_y; value = value_y } as root_y); _ } ) ->
+    let new_value = f value_x value_y in
     if rank_x < rank_y then (
       x.content <- Link { parent = y };
-      root_y.value <- f value_x value_y;
+      root_y.value <- new_value;
       y)
     else (
       y.content <- Link { parent = x };
-      root_x.value <- f value_x value_y;
+      root_x.value <- new_value;
       if rank_x = rank_y then root_x.rank <- root_x.rank + 1;
-      y)
+      x)
   | _ -> assert false
 
 let get elt =
