@@ -34,6 +34,7 @@ Build indices
      "print_string": File "./lib/foo.ml", line 2, characters 9-21;
      "print_string": File "./main/main.ml", line 2, characters 9-21
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
 Configure merlin
   $ cat > main/.merlin << EOF
