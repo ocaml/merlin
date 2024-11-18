@@ -174,7 +174,7 @@ let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
   |> Option.value_map ~default:Uid_set.empty ~f:Union_find.get
   |> Uid_set.to_list
 
-let find_linked_uids ~config ~project_wide ~name uid =
+let find_linked_uids ~config ~scope ~name uid =
   let title = "find_linked_uids" in
   match uid with
   | Shape.Uid.Item { from = _; comp_unit; _ } ->
@@ -195,9 +195,10 @@ let find_linked_uids ~config ~project_wide ~name uid =
            ~default:false
     in
     let related_uids =
-      if not project_wide then
-        Locate.get_linked_uids ~config:locate_config ~comp_unit uid
-      else lookup_related_uids_in_indexes ~config uid
+      match scope with
+      | `Buffer -> []
+      | `Project -> Locate.get_linked_uids ~config:locate_config ~comp_unit uid
+      | `Renaming -> lookup_related_uids_in_indexes ~config uid
     in
     log ~title "Found related uids: [%a]" Logger.fmt (fun fmt ->
         List.iter ~f:(fprintf fmt "%a;" Shape.Uid.print) related_uids);
@@ -257,9 +258,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
         let name =
           String.split_on_char ~sep:'.' path |> List.last |> Option.get
         in
-        let additional_uids =
-          find_linked_uids ~config ~project_wide:true ~name def_uid
-        in
+        let additional_uids = find_linked_uids ~config ~scope ~name def_uid in
         List.concat_map
           (def_uid :: additional_uids)
           ~f:(get_external_locs ~config ~current_buffer_path)
@@ -313,9 +312,9 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     in
     let status =
       match (scope, String.Set.to_list out_of_sync_files) with
-      | `Project, [] -> `Included
-      | `Project, l -> `Out_of_sync l
       | `Buffer, _ -> `Not_requested
+      | _, [] -> `Included
+      | _, l -> `Out_of_sync l
     in
     if not def_uid_is_in_current_unit then { locs; status }
     else
