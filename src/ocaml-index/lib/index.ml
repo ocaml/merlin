@@ -132,11 +132,7 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
   let related_uids =
     List.fold_left
       (fun acc (_, uid1, uid2) ->
-        let union =
-          let e1 = Union_find.make (Uid_set.singleton uid1) in
-          let e2 = Union_find.make (Uid_set.singleton uid2) in
-          Union_find.union ~f:Uid_set.union e1 e2
-        in
+        let union = Union_find.make (Uid_set.of_list [ uid1; uid2 ]) in
         let map_update uid =
           Uid_map.update uid (function
             | None -> Some union
