@@ -9,12 +9,14 @@ let rec find x =
   match x.content with
   | Root _ -> x
   | Link ({ parent; _ } as link) ->
-    let parent' = find parent in
-    if parent' <> parent then link.parent <- parent';
-    parent'
+    let root = find parent in
+    if root <> parent then link.parent <- root;
+    root
 
 let union ~f x y =
-  match (find x, find y) with
+  let x = find x in
+  let y = find y in
+  match (x, y) with
   | x, y when x == y -> x
   | ( { content = Root ({ rank = rank_x; value = value_x } as root_x); _ },
       { content = Root ({ rank = rank_y; value = value_y } as root_y); _ } ) ->
