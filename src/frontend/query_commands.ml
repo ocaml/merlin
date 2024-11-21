@@ -199,58 +199,6 @@ let dump pipeline = function
        source, parsetree, ppxed-source, ppxed-parsetree, typedtree, \
        env/fullenv (at {col:, line:})"
 
-let reconstruct_identifier pipeline pos = function
-  | None ->
-    let config = Mpipeline.input_config pipeline in
-    let source = Mpipeline.raw_source pipeline in
-    let path = Misc_utils.parse_identifier (config, source) pos in
-    let reify dot =
-      if
-        dot = ""
-        || (dot.[0] >= 'a' && dot.[0] <= 'z')
-        || (dot.[0] >= 'A' && dot.[0] <= 'Z')
-      then dot
-      else "( " ^ dot ^ ")"
-    in
-    begin
-      match path with
-      | [] -> []
-      | base :: tail ->
-        let f { Location.txt = base; loc = bl } { Location.txt = dot; loc = dl }
-            =
-          let loc = Location_aux.union bl dl in
-          let txt = base ^ "." ^ reify dot in
-          Location.mkloc txt loc
-        in
-        [ List.fold_left tail ~init:base ~f ]
-    end
-  | Some (expr, offset) ->
-    let loc_start =
-      let l, c = Lexing.split_pos pos in
-      Lexing.make_pos (l, c - offset)
-    in
-    let shift loc int =
-      let l, c = Lexing.split_pos loc in
-      Lexing.make_pos (l, c + int)
-    in
-    let add_loc source =
-      let loc =
-        { Location.loc_start;
-          loc_end = shift loc_start (String.length source);
-          loc_ghost = false
-        }
-      in
-      Location.mkloc source loc
-    in
-    let len = String.length expr in
-    let rec aux acc i =
-      if i >= len then List.rev_map ~f:add_loc (expr :: acc)
-      else if expr.[i] = '.' then
-        aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
-      else aux acc (succ i)
-    in
-    aux [] offset
-
 let dispatch pipeline (type a) : a Query_protocol.t -> a = function
   | Type_expr (source, pos) ->
     let typer = Mpipeline.typer_result pipeline in
@@ -275,10 +223,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | browse -> Browse_misc.annotate_tail_calls browse
     in
 
-    let result = Type_enclosing.from_nodes ~path in
+    let enclosing_nodes =
+      let cmp (loc1, _, _) (loc2, _, _) = Location_aux.compare loc1 loc2 in
+      (* There might be duplicates in the list *)
+      Type_enclosing.from_nodes ~path |> List.dedup_adjacent ~cmp
+    in
 
     (* enclosings of cursor in given expression *)
-    let exprs = reconstruct_identifier pipeline pos expro in
+    let exprs = Misc_utils.reconstruct_identifier pipeline pos expro in
     let () =
       Logger.log ~section:Type_enclosing.log_section
         ~title:"reconstruct identifier" "%a" Logger.json (fun () ->
@@ -303,41 +255,43 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
              (fun fmt (loc, _, _) -> Location.print_loc fmt loc))
           small_enclosings);
 
-    let ppf = Format.str_formatter in
     let all_results =
-      List.mapi (small_enclosings @ result) ~f:(fun i (loc, text, tail) ->
-          let print =
-            match index with
-            | None -> true
-            | Some index -> index = i
-          in
-          let ret x = (loc, x, tail) in
-          match text with
-          | Type_enclosing.String str -> ret (`String str)
-          | Type_enclosing.Type (env, t) when print ->
-            Printtyp.wrap_printing_env env ~verbosity (fun () ->
-                Type_utils.print_type_with_decl ~verbosity env ppf t);
-            ret (`String (Format.flush_str_formatter ()))
-          | Type_enclosing.Type_decl (env, id, t) when print ->
-            Printtyp.wrap_printing_env env ~verbosity (fun () ->
-                Printtyp.type_declaration env id ppf t);
-            ret (`String (Format.flush_str_formatter ()))
-          | Type_enclosing.Modtype (env, m) when print ->
-            Printtyp.wrap_printing_env env ~verbosity (fun () ->
-                Printtyp.modtype env ppf m);
-            ret (`String (Format.flush_str_formatter ()))
-          | _ -> ret (`Index i))
+      let same_loc (l1, _, _) (l2, _, _) = Location_aux.compare l1 l2 == 0 in
+      let print_type (loc, type_info, tail) =
+        let open Type_enclosing in
+        (loc, String (print_type ~verbosity type_info), tail)
+      in
+      let rec concat_dedup acc l1 l2 =
+        match (l1, l2) with
+        | [ last ], first :: rest ->
+          (* The last reconstructed enclosing might be a duplicate of the first
+             enclosing from the tree. We need to print these enclosings types to
+             check if they differ or not. *)
+          if same_loc last first then
+            let ((_, last_type, _) as last) = print_type last in
+            let ((_, first_type, _) as first) = print_type first in
+            if last_type = first_type then concat_dedup (first :: acc) [] rest
+            else concat_dedup (last :: acc) [] (first :: rest)
+          else concat_dedup (last :: acc) [] l2
+        | hd :: tl, _ -> concat_dedup (hd :: acc) tl l2
+        | [], _ -> List.rev_append acc l2
+      in
+      concat_dedup [] small_enclosings enclosing_nodes
     in
-    let normalize ({ Location.loc_start; loc_end; _ }, text, _tail) =
-      (Lexing.split_pos loc_start, Lexing.split_pos loc_end, text)
-    in
-    (* We remove duplicates from the list. Duplicates can appear when the type
-       from the reconstructed identifier is the same as the one stored in the
-       typedtree *)
-    List.merge_cons
-      ~f:(fun a b ->
-        if compare (normalize a) (normalize b) = 0 then Some b else None)
-      all_results
+    List.mapi all_results ~f:(fun i (loc, text, tail) ->
+        let print =
+          match index with
+          | None -> true
+          | Some index -> index = i
+        in
+        let ret x = (loc, x, tail) in
+        match text with
+        | Type_enclosing.String str -> ret (`String str)
+        | type_info ->
+          if print then
+            let printed_type = Type_enclosing.print_type ~verbosity type_info in
+            ret (`String printed_type)
+          else ret (`Index i))
   | Enclosing pos ->
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
@@ -509,7 +463,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       match patho with
       | Some p -> p
       | None ->
-        let path = reconstruct_identifier pipeline pos None in
+        let path = Misc_utils.reconstruct_identifier pipeline pos None in
         let path = Mreader_lexer.identifier_suffix path in
         let path = List.map ~f:(fun { Location.txt; _ } -> txt) path in
         String.concat ~sep:"." path
@@ -545,7 +499,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       match patho with
       | Some p -> p
       | None ->
-        let path = reconstruct_identifier pipeline pos None in
+        let path = Misc_utils.reconstruct_identifier pipeline pos None in
         let path = Mreader_lexer.identifier_suffix path in
         let path = List.map ~f:(fun { Location.txt; _ } -> txt) path in
         let path = String.concat ~sep:"." path in
@@ -822,7 +776,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let env, _node = Mbrowse.leaf_node (Mtyper.node_at typer_result pos) in
     let path =
-      let path = reconstruct_identifier pipeline pos None in
+      let path = Misc_utils.reconstruct_identifier pipeline pos None in
       let path = Mreader_lexer.identifier_suffix path in
       let path = List.map ~f:(fun { Location.txt; _ } -> txt) path in
       let path = String.concat ~sep:"." path in
