@@ -157,8 +157,7 @@ FIXME? We don't see the generic version
   > let _ = List.map Fun.id [3]
   > EOF
 
-FIXME With index 0 only the first type is shown but deduplication failed becauser the
-next type was not rendered.
+With index 0 only the first type is shown and deduplication id working
   $ $MERLIN single type-enclosing -position 2:14 -index 0 \
   > -filename ./main.ml < ./main.ml 
   {
@@ -192,9 +191,42 @@ next type was not rendered.
     "notifications": []
   }
 
-FIXME With index 1 the list is shorter and the numbering is wrong ! In fact, it
-should have been shorter earlier.
+And with index=1 the correct type is shown
   $ $MERLIN single type-enclosing -position 2:14 -index 1 \
+  > -filename ./main.ml < ./main.ml 
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 8
+        },
+        "end": {
+          "line": 2,
+          "col": 16
+        },
+        "type": "(int -> int) -> int list -> int list",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 8
+        },
+        "end": {
+          "line": 2,
+          "col": 27
+        },
+        "type": "int list",
+        "tail": "no"
+      }
+    ],
+    "notifications": []
+  }
+
+And with index>=2 Merlin sticks to the last item
+  $ $MERLIN single type-enclosing -position 2:14 -index 2 \
   > -filename ./main.ml < ./main.ml 
   {
     "class": "return",

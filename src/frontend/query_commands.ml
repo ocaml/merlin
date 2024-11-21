@@ -278,6 +278,15 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       in
       concat_dedup [] small_enclosings enclosing_nodes
     in
+    let index =
+      (* Clamp the index to [0; number_of_results[ *)
+      let number_of_results = List.length all_results in
+      match index with
+      | Some index when index < 0 -> Some 0
+      | Some index when index >= number_of_results ->
+        Some (number_of_results - 1)
+      | index -> index
+    in
     List.mapi all_results ~f:(fun i (loc, text, tail) ->
         let print =
           match index with
