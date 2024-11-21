@@ -42,10 +42,6 @@ let is_node_let = function
   | Value_binding _ -> true
   | _ -> false
 
-let is_node_pattern = function
-  | Case _ -> true
-  | _ -> false
-
 let fun_pred all =
   (* For:
      `let f x y z = ...` jump to f
@@ -54,15 +50,13 @@ let fun_pred all =
      For
      `List.map l ~f:(fun x -> ...)` jump to fun
 
-     Every fun is immediately followed by pattern in the typed tree.
      Invariant: head is a fun.
   *)
   let rec normalize_fun = function
     (* fun pat fun something *)
-    | node1 :: node2 :: node3 :: tail when is_node_fun node3 ->
+    | node1 :: node2 :: tail when is_node_fun node2 ->
       assert (is_node_fun node1);
-      assert (is_node_pattern node2);
-      normalize_fun (node3 :: tail)
+      normalize_fun (node2 :: tail)
     (* fun let something *)
     | node1 :: node2 :: _ when is_node_let node2 ->
       assert (is_node_fun node1);
