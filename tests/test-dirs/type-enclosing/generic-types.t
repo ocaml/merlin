@@ -26,7 +26,7 @@ With index 0 only the first type is shown:
       "line": 1,
       "col": 16
     },
-    "type": 1,
+    "type": "(int -> int) -> int list -> int list",
     "tail": "no"
   }
 
@@ -183,21 +183,9 @@ next type was not rendered.
         },
         "end": {
           "line": 2,
-          "col": 16
-        },
-        "type": 1,
-        "tail": "no"
-      },
-      {
-        "start": {
-          "line": 2,
-          "col": 8
-        },
-        "end": {
-          "line": 2,
           "col": 27
         },
-        "type": 2,
+        "type": 1,
         "tail": "no"
       }
     ],
@@ -232,7 +220,7 @@ should have been shorter earlier.
           "line": 2,
           "col": 27
         },
-        "type": 2,
+        "type": "int list",
         "tail": "no"
       }
     ],

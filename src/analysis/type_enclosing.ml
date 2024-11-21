@@ -1,4 +1,5 @@
 open Std
+open Type_utils
 
 let log_section = "type-enclosing"
 let { Logger.log } = Logger.for_section log_section
@@ -7,10 +8,33 @@ type type_info =
   | Modtype of Env.t * Types.module_type
   | Type of Env.t * Types.type_expr
   | Type_decl of Env.t * Ident.t * Types.type_declaration
+  | Type_constr of Env.t * Types.constructor_description
   | String of string
 
 type typed_enclosings =
   (Location.t * type_info * Query_protocol.is_tail_position) list
+
+let print_type ~verbosity type_info =
+  let ppf = Format.str_formatter in
+  let wrap_printing_env = Printtyp.wrap_printing_env ~verbosity in
+  match type_info with
+  | Type (env, t) ->
+    wrap_printing_env env (fun () ->
+        print_type_with_decl ~verbosity env ppf t;
+        Format.flush_str_formatter ())
+  | Type_decl (env, id, t) ->
+    wrap_printing_env env (fun () ->
+        Printtyp.type_declaration env id ppf t;
+        Format.flush_str_formatter ())
+  | Type_constr (env, cd) ->
+    wrap_printing_env env (fun () ->
+        print_constr ~verbosity env ppf cd;
+        Format.flush_str_formatter ())
+  | Modtype (env, m) ->
+    wrap_printing_env env (fun () ->
+        Printtyp.modtype env ppf m;
+        Format.flush_str_formatter ())
+  | String s -> s
 
 let from_nodes ~path =
   let aux (env, node, tail) =
@@ -89,14 +113,10 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
     (* Retrieve the type from the AST when it is possible *)
     | Some (Context.Constructor (cd, loc)) ->
       log ~title:"from_reconstructed" "ctx: constructor %s" cd.cstr_name;
-      let ppf, to_string = Format.to_string () in
-      Type_utils.print_constr ~verbosity env ppf cd;
-      Some (loc, String (to_string ()), `No)
+      Some (loc, Type_constr (env, cd), `No)
     | Some (Context.Label { lbl_name; lbl_arg; _ }) ->
       log ~title:"from_reconstructed" "ctx: label %s" lbl_name;
-      let ppf, to_string = Format.to_string () in
-      Type_utils.print_type_with_decl ~verbosity env ppf lbl_arg;
-      Some (loc, String (to_string ()), `No)
+      Some (loc, Type (env, lbl_arg), `No)
     | Some Context.Constant -> None
     | _ -> (
       let context = Option.value ~default:Context.Expr context in
