@@ -177,7 +177,10 @@ let parse ?for_completion config = function
     with
     | Some (`No_labels no_labels_for_completion, parsetree) ->
       let lexer_errors, parser_errors, comments = ([], [], []) in
-      let lexer_keywords = [] (* TODO? *) in
+      let lexer_keywords =
+        []
+        (* TODO? *)
+      in
       { lexer_keywords;
         lexer_errors;
         parser_errors;
