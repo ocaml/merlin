@@ -62,6 +62,18 @@ Check the type of `x`, should work.
         },
         "end": {
           "line": 3,
+          "col": 9
+        },
+        "type": "t",
+        "tail": "no"
+      },
+      {
+        "start": {
+          "line": 3,
+          "col": 8
+        },
+        "end": {
+          "line": 3,
           "col": 14
         },
         "type": "int",

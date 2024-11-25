@@ -223,13 +223,28 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | browse -> Browse_misc.annotate_tail_calls browse
     in
 
+    (* Type enclosing results come from two sources: 1. the typedtree nodes
+       aroung the cursor's position and 2. the result of reconstructing the
+       identifier around the cursor and typing the resulting paths.
+
+       Having the results from 2 is useful because ot is finer-grained than the
+       typedtree's nodes and can provide types for modules appearing in paths.
+
+       This introduces two possible sources of duplicate results:
+       - Sometimes the typedtree nodes in 1 overlaps and we simply remove these.
+       - The last reconstructed enclosing usually overlaps with the first
+         typedtree node but the printed types are not always the same (generic /
+         specialized types). Because systematically printing these types to
+         compare them can be very expensive in the presence of large modules, we
+         defer this deduplication to the clients.
+    *)
     let enclosing_nodes =
       let cmp (loc1, _, _) (loc2, _, _) = Location_aux.compare loc1 loc2 in
-      (* There might be duplicates in the list *)
+      (* There might be duplicates in the list: we remove them *)
       Type_enclosing.from_nodes ~path |> List.dedup_adjacent ~cmp
     in
 
-    (* enclosings of cursor in given expression *)
+    (* Enclosings of cursor in given expression *)
     let exprs = Misc_utils.reconstruct_identifier pipeline pos expro in
     let () =
       Logger.log ~section:Type_enclosing.log_section
@@ -254,30 +269,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           (Format.pp_print_list ~pp_sep:Format.pp_print_space
              (fun fmt (loc, _, _) -> Location.print_loc fmt loc))
           small_enclosings);
-
-    let all_results =
-      let same_loc (l1, _, _) (l2, _, _) = Location_aux.compare l1 l2 == 0 in
-      let print_type (loc, type_info, tail) =
-        let open Type_enclosing in
-        (loc, String (print_type ~verbosity type_info), tail)
-      in
-      let rec concat_dedup acc l1 l2 =
-        match (l1, l2) with
-        | [ last ], first :: rest ->
-          (* The last reconstructed enclosing might be a duplicate of the first
-             enclosing from the tree. We need to print these enclosings types to
-             check if they differ or not. *)
-          if same_loc last first then
-            let ((_, last_type, _) as last) = print_type last in
-            let ((_, first_type, _) as first) = print_type first in
-            if last_type = first_type then concat_dedup (first :: acc) [] rest
-            else concat_dedup (last :: acc) [] (first :: rest)
-          else concat_dedup (last :: acc) [] l2
-        | hd :: tl, _ -> concat_dedup (hd :: acc) tl l2
-        | [], _ -> List.rev_append acc l2
-      in
-      concat_dedup [] small_enclosings enclosing_nodes
-    in
+    let all_results = List.concat [ small_enclosings; enclosing_nodes ] in
     let index =
       (* Clamp the index to [0; number_of_results[ *)
       let number_of_results = List.length all_results in

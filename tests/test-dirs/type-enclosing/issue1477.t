@@ -26,6 +26,18 @@
       },
       "end": {
         "line": 2,
+        "col": 9
+      },
+      "type": "int -> int",
+      "tail": "no"
+    },
+    {
+      "start": {
+        "line": 2,
+        "col": 8
+      },
+      "end": {
+        "line": 2,
         "col": 11
       },
       "type": "int",
