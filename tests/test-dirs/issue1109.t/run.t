@@ -20,9 +20,9 @@
       },
       "end": {
         "line": 5,
-        "col": 16
+        "col": 14
       },
-      "type": "'a",
+      "type": "'a -> 'a",
       "tail": "no"
     }
   ]

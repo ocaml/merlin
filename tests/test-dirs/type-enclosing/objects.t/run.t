@@ -112,9 +112,9 @@
       },
       "end": {
         "line": 14,
-        "col": 14
+        "col": 9
       },
-      "type": "int -> unit",
+      "type": "< pop : int option; push : int -> unit >",
       "tail": "no"
     }
   ]

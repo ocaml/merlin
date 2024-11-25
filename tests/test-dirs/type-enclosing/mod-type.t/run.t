@@ -43,6 +43,18 @@ Get the type of a module type with the same name as a module:
       },
       "type": "sig type a end",
       "tail": "no"
+    },
+    {
+      "start": {
+        "line": 5,
+        "col": 8
+      },
+      "end": {
+        "line": 5,
+        "col": 9
+      },
+      "type": "sig type a end",
+      "tail": "no"
     }
   ]
 
@@ -64,7 +76,7 @@ Get the type of a module type with the same name as a module:
     {
       "start": {
         "line": 7,
-        "col": 8
+        "col": 23
       },
       "end": {
         "line": 7,
@@ -93,7 +105,7 @@ Get the type of a module type with the same name as a module:
     {
       "start": {
         "line": 7,
-        "col": 8
+        "col": 23
       },
       "end": {
         "line": 7,

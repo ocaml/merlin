@@ -38,10 +38,13 @@ type type_info =
   | Modtype of Env.t * Types.module_type
   | Type of Env.t * Types.type_expr
   | Type_decl of Env.t * Ident.t * Types.type_declaration
+  | Type_constr of Env.t * Types.constructor_description
   | String of string
 
 type typed_enclosings =
   (Location.t * type_info * Query_protocol.is_tail_position) list
+
+val print_type : verbosity:Mconfig.Verbosity.t -> type_info -> string
 
 val from_nodes :
   path:(Env.t * Browse_raw.node * Query_protocol.is_tail_position) list ->

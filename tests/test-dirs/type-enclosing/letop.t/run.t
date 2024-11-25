@@ -86,9 +86,9 @@ Various parts of the letop:
       },
       "end": {
         "line": 4,
-        "col": 37
+        "col": 29
       },
-      "type": "'a option",
+      "type": "('a, 'b) Hashtbl.t -> 'a -> 'b option",
       "tail": "no"
     }
   ]
@@ -111,13 +111,13 @@ Various parts of the letop:
     {
       "start": {
         "line": 4,
-        "col": 13
+        "col": 30
       },
       "end": {
         "line": 4,
-        "col": 37
+        "col": 33
       },
-      "type": "'a option",
+      "type": "('a, 'b) Hashtbl.t",
       "tail": "no"
     }
   ]
@@ -140,13 +140,13 @@ Various parts of the letop:
     {
       "start": {
         "line": 4,
-        "col": 13
+        "col": 34
       },
       "end": {
         "line": 4,
         "col": 37
       },
-      "type": "'a option",
+      "type": "'a",
       "tail": "no"
     }
   ]
@@ -175,7 +175,7 @@ Various parts of the letop:
       },
       "end": {
         "line": 5,
-        "col": 9
+        "col": 5
       },
       "type": "int",
       "tail": "no"
