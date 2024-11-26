@@ -4,6 +4,7 @@ unreleased
   + merlin binary
     - Respect the `EXCLUDE_QUERY_DIR` configuration directive when looking for
       cmt files (#1854)
+    - Fix exception in polarity search (#1858 fixes #1113)
 
 
 merlin 4.17.1
