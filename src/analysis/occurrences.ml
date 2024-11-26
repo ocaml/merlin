@@ -151,7 +151,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
         | _ -> scope
       in
       (node_uid_loc, scope)
-    | `Found { uid; location; approximated = false; _ } ->
+    | `Found { uid; location; approximated = false; _ }
+    | `File_not_found { uid; location; approximated = false; _ } ->
       log ~title:"locs_of" "Found definition uid using locate: %a " Logger.fmt
         (fun fmt -> Shape.Uid.print fmt uid);
       (* There is no way to distinguish uids from interfaces from uids of
@@ -161,7 +162,8 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
          are actually linked. *)
       let scope = if is_in_interface config location then `Buffer else scope in
       (Some (uid, location), scope)
-    | `Found { decl_uid; location; approximated = true; _ } ->
+    | `Found { decl_uid; location; approximated = true; _ }
+    | `File_not_found { decl_uid; location; approximated = true; _ } ->
       log ~title:"locs_of" "Approx. definition: %a " Logger.fmt (fun fmt ->
           Shape.Uid.print fmt decl_uid);
       (Some (decl_uid, location), `Buffer)
