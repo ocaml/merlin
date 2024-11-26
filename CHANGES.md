@@ -8,6 +8,8 @@ unreleased
       PWD rather than the SOURCE_ROOT (#1855)
     - Fix exception in polarity search (#1858 fixes #1113)
     - Fix jump to `fun` targets not working (#1863, fixes #1862)
+    - Fix type-enclosing results instability. This reverts some overly
+      aggressive deduplication that should be done on the client side. (#1864)
 
 merlin 5.2.1
 ============
