@@ -124,7 +124,7 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
         file;
       let external_locs =
         try
-          let external_index = Index_cache.read file in
+          let external_index, _ = Index_cache.read file in
           Index_format.Uid_map.find_opt uid external_index.defs
           |> Option.map ~f:(fun uid_locs -> (external_index, uid_locs))
         with Index_format.Not_an_index _ | Sys_error _ ->
@@ -159,10 +159,10 @@ let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
   let title = "lookup_related_uids_in_indexes" in
   let open Index_format in
   let related_uids =
-    List.fold_left ~init:Uid_map.empty config.merlin.index_files
+    List.fold_left ~init:(Uid_map.empty ()) config.merlin.index_files
       ~f:(fun acc index_file ->
         try
-          let index = Index_cache.read index_file in
+          let index, _ = Index_cache.read index_file in
           Uid_map.union
             (fun _ a b -> Some (Union_find.union ~f:Uid_set.union a b))
             index.related_uids acc

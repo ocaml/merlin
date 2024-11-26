@@ -129,7 +129,7 @@ module Cache = File_cache.Make (struct
     | exn ->
       close_in_noerr ic;
       raise exn
-
+  let dispose _ = ()
   let cache_name = "Mconfig_dot"
 end)
 
