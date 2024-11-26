@@ -59,3 +59,55 @@ let parse_identifier (config, source) pos =
     "paths: [%s]"
     (String.concat ~sep:";" (List.map path ~f:(fun l -> l.Location.txt)));
   path
+
+let reconstruct_identifier pipeline pos = function
+  | None ->
+    let config = Mpipeline.input_config pipeline in
+    let source = Mpipeline.raw_source pipeline in
+    let path = parse_identifier (config, source) pos in
+    let reify dot =
+      if
+        dot = ""
+        || (dot.[0] >= 'a' && dot.[0] <= 'z')
+        || (dot.[0] >= 'A' && dot.[0] <= 'Z')
+      then dot
+      else "( " ^ dot ^ ")"
+    in
+    begin
+      match path with
+      | [] -> []
+      | base :: tail ->
+        let f { Location.txt = base; loc = bl } { Location.txt = dot; loc = dl }
+            =
+          let loc = Location_aux.union bl dl in
+          let txt = base ^ "." ^ reify dot in
+          Location.mkloc txt loc
+        in
+        [ List.fold_left tail ~init:base ~f ]
+    end
+  | Some (expr, offset) ->
+    let loc_start =
+      let l, c = Lexing.split_pos pos in
+      Lexing.make_pos (l, c - offset)
+    in
+    let shift loc int =
+      let l, c = Lexing.split_pos loc in
+      Lexing.make_pos (l, c + int)
+    in
+    let add_loc source =
+      let loc =
+        { Location.loc_start;
+          loc_end = shift loc_start (String.length source);
+          loc_ghost = false
+        }
+      in
+      Location.mkloc source loc
+    in
+    let len = String.length expr in
+    let rec aux acc i =
+      if i >= len then List.rev_map ~f:add_loc (expr :: acc)
+      else if expr.[i] = '.' then
+        aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
+      else aux acc (succ i)
+    in
+    aux [] offset
