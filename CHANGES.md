@@ -5,6 +5,8 @@ unreleased
     - Respect the `EXCLUDE_QUERY_DIR` configuration directive when looking for
       cmt files (#1854)
     - Fix exception in polarity search (#1858 fixes #1113)
+    - Fix type-enclosing results instability. This reverts some overly
+      aggressive deduplication that should be done on the client side. (#1864)
 
 
 merlin 4.17.1

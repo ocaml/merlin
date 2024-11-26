@@ -12,6 +12,18 @@
       },
       "type": "int",
       "tail": "no"
+    },
+    {
+      "start": {
+        "line": 5,
+        "col": 8
+      },
+      "end": {
+        "line": 5,
+        "col": 16
+      },
+      "type": "int",
+      "tail": "no"
     }
   ]
 

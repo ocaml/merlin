@@ -14,6 +14,10 @@
     "desc": "CamlinternalOO.params"
   }
   {
+    "name": "Dynlink.is_native",
+    "desc": "bool"
+  }
+  {
     "name": "__FILE__",
     "desc": "string"
   }
@@ -36,10 +40,6 @@
   {
     "name": "__LINE__",
     "desc": "int"
-  }
-  {
-    "name": "__LOC__",
-    "desc": "string"
   }
   {
     "name": "__LOC__",
@@ -75,6 +75,16 @@
     "cost": 13
   }
   {
+    "name": "Unix.fork",
+    "type": "unit -> int",
+    "cost": 13
+  }
+  {
+    "name": "Unix.time",
+    "type": "unit -> float",
+    "cost": 13
+  }
+  {
     "name": "flush_all",
     "type": "unit -> unit",
     "cost": 13
@@ -87,15 +97,5 @@
   {
     "name": "read_line",
     "type": "unit -> string",
-    "cost": 13
-  }
-  {
-    "name": "read_line",
-    "type": "unit -> string",
-    "cost": 13
-  }
-  {
-    "name": "Bytes.copy",
-    "type": "bytes -> bytes",
     "cost": 13
   }
