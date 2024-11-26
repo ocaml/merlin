@@ -360,8 +360,8 @@ let rec of_expression_desc loc = function
            | _, None -> id_fold
            | _, Some e -> of_expression e)
          ls
-  | Texp_match (e, cs, _) -> of_expression e ** list_fold of_case cs
-  | Texp_try (e, cs) -> of_expression e ** list_fold of_case cs
+  | Texp_match (e, cs, _, _) -> of_expression e ** list_fold of_case cs
+  | Texp_try (e, cs, _) -> of_expression e ** list_fold of_case cs
   | Texp_tuple es | Texp_construct (_, _, es) | Texp_array es ->
     list_fold of_expression es
   | Texp_variant (_, Some e)

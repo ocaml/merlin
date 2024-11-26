@@ -16,7 +16,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type string but an expression was expected of type int"
+        "message": "This constant has type string but an expression was expected of type int"
       }
     ],
     "notifications": []
@@ -43,7 +43,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type string but an expression was expected of type int"
+        "message": "This constant has type string but an expression was expected of type int"
       }
     ],
     "notifications": []

@@ -322,7 +322,7 @@ let warn_latin1 lexbuf =
 
 (* Error report *)
 
-open Format
+open Format_doc
 
 let prepare_error loc = function
   | Illegal_character c ->
@@ -438,11 +438,11 @@ rule token state = parse
   | blank +
       { token state lexbuf }
   | ".<"
-      { return DOTLESS }
+      { return METAOCAML_BRACKET_OPEN }
   | ">."
       { return (keyword_or state (Lexing.lexeme lexbuf) (INFIXOP0 ">.")) }
   | ".~"
-      { return (keyword_or state (Lexing.lexeme lexbuf) DOTTILDE) }
+      { return (keyword_or state (Lexing.lexeme lexbuf) METAOCAML_ESCAPE) }
   | "_"
       { return UNDERSCORE }
   | "~"

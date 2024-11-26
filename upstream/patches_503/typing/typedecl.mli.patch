@@ -1,0 +1,18 @@
+--- ocaml_502/typing/typedecl.mli	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/typing/typedecl.mli	2024-09-17 01:15:58.295900254 +0200
+@@ -16,8 +16,6 @@
+ (* Typing of type definitions and primitive definitions *)
+ 
+ open Types
+-open Format
+-
+ val transl_type_decl:
+     Env.t -> Asttypes.rec_flag -> Parsetree.type_declaration list ->
+     Typedtree.type_declaration list * Env.t * Shape.t list
+@@ -111,4 +109,5 @@
+ 
+ exception Error of Location.t * error
+ 
+-val report_error: formatter -> error -> unit
++val report_error: error Format_doc.format_printer
++val report_error_doc: error Format_doc.printer

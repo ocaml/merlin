@@ -1,0 +1,10 @@
+--- ocaml_502/typing/cmt2annot.mli	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/typing/cmt2annot.mli	2024-09-17 01:15:58.292566923 +0200
+@@ -20,3 +20,7 @@
+   sourcefile:string option ->
+   use_summaries:bool -> Cmt_format.binary_annots ->
+   unit
++
++val iterator : scope:Location.t -> bool -> Tast_iterator.iterator
++
++val binary_part : Tast_iterator.iterator -> Cmt_format.binary_part -> unit
