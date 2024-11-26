@@ -17,10 +17,31 @@ We remove the source file to mimick cases were generated source files are not
 accessible to Merlin.
   $ rm noml.ml
 
-FIXME: We still expect occurrences of definitions in hidden source files to work
+We still expect occurrences of definitions in hidden source files to work
   $ $MERLIN single occurrences -identifier-at 2:13 -filename main.ml <main.ml  
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 13
+        },
+        "end": {
+          "line": 1,
+          "col": 14
+        }
+      },
+      {
+        "start": {
+          "line": 2,
+          "col": 13
+        },
+        "end": {
+          "line": 2,
+          "col": 14
+        }
+      }
+    ],
     "notifications": []
   }
