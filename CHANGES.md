@@ -10,6 +10,8 @@ unreleased
     - Fix jump to `fun` targets not working (#1863, fixes #1862)
     - Fix type-enclosing results instability. This reverts some overly
       aggressive deduplication that should be done on the client side. (#1864)
+    - Fix occurrences not working when the definition comes from a hidden source
+      file (#1865)
 
 merlin 5.2.1
 ============

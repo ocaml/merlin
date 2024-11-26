@@ -643,7 +643,14 @@ let from_path ~config ~env ~local_defs ~decl path =
       log ~title:"find_source" "Found file: %s (%a)" file Logger.fmt
         (Fun.flip Location.print_loc location);
       `Found { uid; decl_uid = decl.uid; file; location; approximated }
-    | `File_not_found _ as otherwise -> otherwise)
+    | `File_not_found reason ->
+      `File_not_found
+        { uid;
+          decl_uid = decl.uid;
+          file = reason;
+          location = loc;
+          approximated
+        })
 
 let from_longident ~config ~env ~local_defs nss ident =
   let str_ident =
@@ -851,21 +858,25 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
         let from_path = from_path ~config ~env ~local_defs ~namespace path in
         begin
           match from_path with
-          | `Found { uid; location = loc; _ } -> doc_from_uid ~config ~loc uid
-          | (`Builtin _ | `Not_in_env _ | `File_not_found _ | `Not_found _) as
-            otherwise -> otherwise
+          | `Found { uid; location = loc; _ }
+          | `File_not_found { uid; location = loc; _ } ->
+            doc_from_uid ~config ~loc uid
+          | (`Builtin _ | `Not_in_env _ | `Not_found _) as otherwise ->
+            otherwise
         end
       | `User_input path ->
         log ~title:"get_doc" "looking for the doc of '%s'" path;
         begin
           match from_string ~config ~env ~local_defs ~pos path with
-          | `Found { uid; location = loc; _ } -> doc_from_uid ~config ~loc uid
+          | `Found { uid; location = loc; _ }
+          | `File_not_found { uid; location = loc; _ } ->
+            doc_from_uid ~config ~loc uid
           | `At_origin ->
             `Found_loc
               { Location.loc_start = pos; loc_end = pos; loc_ghost = true }
           | `Missing_labels_namespace -> `No_documentation
-          | (`Builtin _ | `Not_in_env _ | `Not_found _ | `File_not_found _) as
-            otherwise -> otherwise
+          | (`Builtin _ | `Not_in_env _ | `Not_found _) as otherwise ->
+            otherwise
         end
     in
     match doc_from_uid_result with
@@ -901,5 +912,5 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
       | `User_input path -> `Builtin path
       | `Completion_entry (_, path, _) -> `Builtin (Path.name path)
     end
-    | (`File_not_found _ | `Not_found _ | `No_documentation | `Not_in_env _) as
-      otherwise -> otherwise
+    | (`Not_found _ | `No_documentation | `Not_in_env _) as otherwise ->
+      otherwise
