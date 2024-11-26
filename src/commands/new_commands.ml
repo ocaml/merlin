@@ -569,7 +569,11 @@ let all_commands =
       ~spec:
         [ arg "-position" "<position> Position to complete"
             (marg_position (fun pos (query, _pos) -> (query, pos)));
-          arg "-query" "<string> Query of the form TODO"
+          arg "-query"
+            "<string> Query of the form every input parameters prefixed by `-` \
+             and output parameters prefixed by `+`. In example: -string \
+             +option will fetch function that takes string and returns an \
+             option. (You can't parametrize types in polarity queries)"
             (Marg.param "string" (fun query (_prefix, pos) -> (query, pos)))
         ]
       ~default:("", `None)

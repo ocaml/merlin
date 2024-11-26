@@ -68,8 +68,10 @@ let build_query ~positive ~negative env =
       incr r;
       None)
     else
-      let set, _ = Env.find_type_by_name l env in
-      Some (normalize_path env set)
+      try
+        let set, _ = Env.find_type_by_name l env in
+        Some (normalize_path env set)
+      with Not_found -> None
   in
   let pos_fun = ref 0 and neg_fun = ref 0 in
   let positive = List.filter_map positive ~f:(prepare pos_fun) in

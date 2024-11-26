@@ -15,6 +15,18 @@ Various parts of the cons.ml:
       },
       "type": "t",
       "tail": "no"
+    },
+    {
+      "start": {
+        "line": 4,
+        "col": 13
+      },
+      "end": {
+        "line": 4,
+        "col": 14
+      },
+      "type": "t",
+      "tail": "no"
     }
   ]
 
@@ -37,14 +49,14 @@ Various parts of the cons.ml:
     },
     {
       "start": {
-        "line": 7,
-        "col": 2
+        "line": 8,
+        "col": 4
       },
       "end": {
         "line": 8,
-        "col": 11
+        "col": 5
       },
-      "type": "unit",
+      "type": "t",
       "tail": "no"
     }
   ]
@@ -127,13 +139,13 @@ Various parts of the cons.ml:
     {
       "start": {
         "line": 15,
-        "col": 6
+        "col": 12
       },
       "end": {
         "line": 15,
-        "col": 22
+        "col": 15
       },
-      "type": "unit -> M.t",
+      "type": "M.t",
       "tail": "no"
     }
   ]
@@ -233,6 +245,18 @@ the expression reconstructed from  (M|.A 3).
   $ $MERLIN single type-enclosing -position 26:11 -verbosity 0 \
   > -filename ./cons.ml < ./cons.ml | jq ".value[0:2]"
   [
+    {
+      "start": {
+        "line": 26,
+        "col": 8
+      },
+      "end": {
+        "line": 26,
+        "col": 11
+      },
+      "type": "int",
+      "tail": "no"
+    },
     {
       "start": {
         "line": 26,

@@ -1,3 +1,15 @@
+merlin 4.18
+===========
+Tue Nov 26 17:30:42 CET 2024
+
+  + merlin binary
+    - Respect the `EXCLUDE_QUERY_DIR` configuration directive when looking for
+      cmt files (#1854)
+    - Fix exception in polarity search (#1858 fixes #1113)
+    - Fix type-enclosing results instability. This reverts some overly
+      aggressive deduplication that should be done on the client side. (#1864)
+
+
 merlin 4.17.1
 =============
 Fri Sep 27 12:02:42 CEST 2024

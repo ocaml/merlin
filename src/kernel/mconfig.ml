@@ -744,14 +744,14 @@ let source_path config =
   List.concat [ [ config.query.directory ]; stdlib; config.merlin.source_path ]
   |> List.filter_dup
 
-let build_path config =
+let collect_paths ~log_title ~config paths =
   let dirs =
     match config.ocaml.threads with
     | `None -> config.ocaml.include_dirs
     | `Threads -> "+threads" :: config.ocaml.include_dirs
     | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
   in
-  let dirs = config.merlin.cmi_path @ config.merlin.build_path @ dirs in
+  let dirs = paths @ dirs in
   let stdlib = stdlib config in
   let exp_dirs = List.map ~f:(Misc.expand_directory stdlib) dirs in
   let stdlib = if config.ocaml.no_std_include then [] else [ stdlib ] in
@@ -760,23 +760,18 @@ let build_path config =
     if config.merlin.exclude_query_dir then dirs
     else config.query.directory :: dirs
   in
-  let result' = List.filter_dup result in
-  log ~title:"build_path" "%d items in path, %d after deduplication"
-    (List.length result) (List.length result');
-  result'
+  let result = List.filter_dup result in
+  log ~title:log_title "%d items in path, %d after deduplication"
+    (List.length result) (List.length result);
+  result
+
+let build_path config =
+  collect_paths ~log_title:"build_path" ~config
+    (config.merlin.cmi_path @ config.merlin.build_path)
 
 let cmt_path config =
-  let dirs =
-    match config.ocaml.threads with
-    | `None -> config.ocaml.include_dirs
-    | `Threads -> "+threads" :: config.ocaml.include_dirs
-    | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
-  in
-  let dirs = config.merlin.cmt_path @ config.merlin.build_path @ dirs in
-  let stdlib = stdlib config in
-  let exp_dirs = List.map ~f:(Misc.expand_directory stdlib) dirs in
-  let stdlib = if config.ocaml.no_std_include then [] else [ stdlib ] in
-  config.query.directory :: List.rev_append exp_dirs stdlib
+  collect_paths ~log_title:"cmt_path" ~config
+    (config.merlin.cmt_path @ config.merlin.build_path)
 
 let global_modules ?(include_current = false) config =
   let modules = Misc.modules_in_path ~ext:".cmi" (build_path config) in

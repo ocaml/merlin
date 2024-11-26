@@ -29,3 +29,11 @@ val parenthesize_name : string -> string
     the location of each of its components. *)
 val parse_identifier :
   Mconfig.t * Msource.t -> Lexing.position -> string Location.loc list
+
+(** [reconstruct_identifier pipeline pos] returns growing ranges around [pos] and the
+  associated identifier. *)
+val reconstruct_identifier :
+  Mpipeline.t ->
+  Lexing.position ->
+  (string * int) option ->
+  string Location.loc list
