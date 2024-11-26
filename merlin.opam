@@ -14,7 +14,7 @@ depends: [
   "ocaml" {>= "5.2" & < "5.3"}
   "dune" {>= "3.0.0"}
   "merlin-lib" {= version}
-  "dot-merlin-reader" {>= "5.2"}
+  "dot-merlin-reader" {= version}
   "ocaml-index" {>= "1.0" & post}
   "yojson" {>= "2.0.0"}
   "conf-jq" {with-test}

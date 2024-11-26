@@ -1,5 +1,6 @@
-unreleased
+merlin 5.3
 ==========
+Tue Nov 26 17:30:42 CET 2024
 
   + merlin binary
     - Respect the `EXCLUDE_QUERY_DIR` configuration directive when looking for cmt
