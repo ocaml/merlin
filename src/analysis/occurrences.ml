@@ -191,7 +191,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
         List.filter_map config.merlin.index_files ~f:(fun file ->
             let external_locs =
               try
-                let external_index = Index_cache.read file in
+                let (external_index, _ic) = Index_cache.read file in
                 Index_format.Uid_map.find_opt def_uid external_index.defs
                 |> Option.map ~f:(fun uid_locs -> (external_index, uid_locs))
               with Index_format.Not_an_index _ | Sys_error _ ->
