@@ -1,8 +1,10 @@
-(env (_
- (binaries merlin-wrapper)
- (env-vars
-  (MERLIN merlin-wrapper)
-  (OCAMLC ocamlc))))
+(env
+ (_
+  (binaries merlin-wrapper)
+  (env-vars
+   (MERLIN merlin-wrapper)
+   (OCAMLC ocamlc)
+   (DUNE dune))))
 
 (cram
  (package merlin)
@@ -15,4 +17,5 @@
 
 (cram
  (applies_to with-ppx)
- (deps (package ppxlib)))
+ (deps
+  (package ppxlib)))
