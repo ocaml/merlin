@@ -80,6 +80,14 @@ val get_config : context -> string -> config * string list
     - dune-project
     - dune-workspace
 
-    They are detected in that order. [dune] and [jbuild] file do not need to be taken into account because any project using a recent version of dune should have a dune-project file which is even auto-generated when it is missing. And only recent versions of dune will stop writing .merlin files.
+    They are detected in that order. [dune] and [jbuild] file do not need to
+    be taken into account because any project using a recent version of dune
+    should have a dune-project file which is even auto-generated when it is
+    missing. And only recent versions of dune will stop writing .merlin files.
+
+    The presence of the file [".merlin.skip-if-not-cwd"] in a directory means
+    that the three (3) project configuration files are {b not} checked if the
+    directory containing [".merlin.skip-if-not-cwd"] is not the current
+    working directory.
 *)
 val find_project_context : string -> (context * string) option
