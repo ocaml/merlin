@@ -267,9 +267,13 @@ val unify: Env.t -> type_expr -> type_expr -> unit
         (* Unify the two types given. Raise [Unify] if not possible. *)
 val unify_gadt:
         Pattern_env.t -> type_expr -> type_expr -> Btype.TypePairs.t
-        (* Unify the two types given and update the environment with the
-           local constraints. Raise [Unify] if not possible.
-           Returns the pairs of types that have been equated.  *)
+        (* [unify_gadt penv ty1 ty2] unifies [ty1] and [ty2] in
+           [Pattern] mode, possible adding local constraints to the
+           environment in [penv]. Raises [Unify] if not possible.
+           Returns the pairs of types that have been equated.
+           Type variables in [ty1] are assumed to be non-leaking (safely
+           reifiable), moreover if [penv.allow_recursive_equations = true]
+           the same assumption is made for [ty2]. *)
 val unify_var: Env.t -> type_expr -> type_expr -> unit
         (* Same as [unify], but allow free univars when first type
            is a variable. *)
@@ -445,6 +449,7 @@ type closed_class_failure = {
 
 val free_variables: ?env:Env.t -> type_expr -> type_expr list
         (* If env present, then check for incomplete definitions too *)
+val closed_type_expr: ?env:Env.t -> type_expr -> bool
 val closed_type_decl: type_declaration -> type_expr option
 val closed_extension_constructor: extension_constructor -> type_expr option
 val closed_class:
@@ -461,7 +466,7 @@ val collapse_conj_params: Env.t -> type_expr list -> unit
         (* Collapse conjunctive types in class parameters *)
 
 val get_current_level: unit -> int
-val wrap_trace_gadt_instances: Env.t -> ('a -> 'b) -> 'a -> 'b
+val wrap_trace_gadt_instances: ?force:bool -> Env.t -> ('a -> 'b) -> 'a -> 'b
 
 val immediacy : Env.t -> type_expr -> Type_immediacy.t
 
