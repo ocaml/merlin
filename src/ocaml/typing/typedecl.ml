@@ -122,7 +122,7 @@ let enter_type ?abstract_abbrevs rec_flag env sdecl (id, uid) =
   let abstract_source, type_manifest =
     match sdecl.ptype_manifest, abstract_abbrevs with
     | None, _             -> Definition, None
-    | Some _, None        -> Definition, Some (Btype.newgenvar ())
+    | Some _, None        -> Definition, Some (Ctype.newvar ())
     | Some _, Some reason -> reason, None
   in
   let decl =
@@ -650,13 +650,21 @@ let check_coherence env loc dpath decl =
                 | exception Ctype.Equality err ->
                     Some (Includecore.Constraint err)
                 | () ->
+                    let subst =
+                      Subst.Unsafe.add_type_path dpath path Subst.identity in
+                    let decl =
+                      match Subst.Unsafe.type_declaration subst decl with
+                      | Ok decl -> decl
+                      | Error (Fcm_type_substituted_away _) ->
+                           (* no module type substitution in [subst] *)
+                          assert false
+                    in
                     Includecore.type_declarations ~loc ~equality:true env
                       ~mark:true
                       (Path.last path)
                       decl'
                       dpath
-                      (Subst.type_declaration
-                         (Subst.add_type_path dpath path Subst.identity) decl)
+                      decl
               end
             in
             if err <> None then
@@ -1057,6 +1065,23 @@ let check_redefined_unit (td: Parsetree.type_declaration) =
   | _ ->
       ()
 
+(* Update a temporary definition to share recursion *)
+let update_type temp_env env id loc =
+  let path = Path.Pident id in
+  let decl = Env.find_type path temp_env in
+  match decl.type_manifest with None -> ()
+  | Some ty ->
+      (* Since this function is called after generalizing declarations,
+         ty is at the generic level.  Since we need to keep possible
+         sharings in recursive type definitions, unify without instantiating,
+         but generalize again after unification. *)
+      Ctype.with_local_level_generalize begin fun () ->
+        let params = List.map (fun _ -> Ctype.newvar ()) decl.type_params in
+        try Ctype.unify env (Ctype.newconstr path params) ty
+        with Ctype.Unify err ->
+          raise (Error(loc, Type_clash (env, err)))
+      end
+
 let add_types_to_env decls shapes env =
   List.fold_right2
     (fun (id, decl) shape env ->
@@ -1095,7 +1120,7 @@ let transl_type_decl env rec_flag sdecl_list =
   (* Translate declarations, using a temporary environment where abbreviations
      expand to a generic type variable. After that, we check the coherence of
      the translated declarations in the resulting new environment. *)
-  let tdecls, decls, shapes, new_env =
+  let tdecls, decls, shapes, temp_env, new_env =
     Ctype.with_local_level_generalize begin fun () ->
       (* Enter types. *)
       let temp_env =
@@ -1142,7 +1167,7 @@ let transl_type_decl env rec_flag sdecl_list =
       check_duplicates sdecl_list;
       (* Build the final env. *)
       let new_env = add_types_to_env decls shapes env in
-      (tdecls, decls, shapes, new_env)
+      (tdecls, decls, shapes, temp_env, new_env)
     end
   in
   (* Check for ill-formed abbrevs *)
@@ -1172,6 +1197,15 @@ let transl_type_decl env rec_flag sdecl_list =
   List.iter (fun (tdecl, _shape) ->
     check_abbrev_regularity ~abs_env new_env id_loc_list to_check tdecl)
     tdecls;
+  (* Update temporary definitions (for well-founded recursive types) *)
+  begin match rec_flag with
+  | Asttypes.Nonrecursive -> ()
+  | Asttypes.Recursive ->
+      List.iter2
+        (fun (id, _) sdecl ->
+          update_type temp_env new_env id sdecl.ptype_loc)
+        ids_list sdecl_list
+  end;
   (* Check that all type variables are closed *)
   List.iter2
     (fun sdecl (tdecl, _shape) ->
@@ -1982,6 +2016,7 @@ end
 
 let quoted_out_type ppf ty = Style.as_inline_code !Oprint.out_type ppf ty
 let quoted_type ppf ty = Style.as_inline_code Printtyp.Doc.type_expr ppf ty
+let quoted_constr = Style.as_inline_code Pprintast.Doc.constr
 
 let report_error_doc ppf = function
   | Repeated_parameter ->
@@ -2110,20 +2145,20 @@ let report_error_doc ppf = function
       let msg = Format_doc.doc_printf in
       Errortrace_report.unification ppf env err
         (msg "The constructor %a@ has type"
-             (Style.as_inline_code Printtyp.Doc.longident) lid)
+             quoted_constr lid)
         (msg "but was expected to be of type")
   | Rebind_mismatch (lid, p, p') ->
       fprintf ppf
         "@[%s@ %a@ %s@ %a@ %s@ %s@ %a@]"
         "The constructor"
-        (Style.as_inline_code Printtyp.Doc.longident) lid
+        quoted_constr lid
         "extends type" Style.inline_code (Path.name p)
         "whose declaration does not match"
         "the declaration of type" Style.inline_code (Path.name p')
   | Rebind_private lid ->
       fprintf ppf "@[%s@ %a@ %s@]"
         "The constructor"
-        (Style.as_inline_code Printtyp.Doc.longident) lid
+        quoted_constr lid
         "is private"
   | Variance (Typedecl_variance.Bad_variance (n, v1, v2)) ->
       let variance (p,n,i) =

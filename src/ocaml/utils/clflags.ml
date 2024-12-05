@@ -33,6 +33,9 @@ let unboxed_types       = ref false
 
 let locations = ref true
 
+let keyword_edition: string option ref = ref None
+
+
 (* This is used by the -save-ir-after option. *)
 module Compiler_ir = struct
   type t = Linear
@@ -144,5 +147,22 @@ module Compiler_pass = struct
     | Some (Linear, _) -> Some Emit
     | None -> None
 end
+
+let parse_keyword_edition s =
+  let parse_version s =
+  let bad_version () =
+    raise (Arg.Bad "Ill-formed version in keywords flag,\n\
+                    the supported format is <major>.<minor>, for example 5.2 .")
+  in
+  if s = "" then None else match String.split_on_char '.' s with
+  | [] | [_] | _ :: _ :: _ :: _ -> bad_version ()
+  | [major;minor] -> match int_of_string_opt major, int_of_string_opt minor with
+    | Some major, Some minor -> Some (major,minor)
+    | _ -> bad_version ()
+  in
+  match String.split_on_char '+' s with
+  | [] -> None, []
+  | [s] -> parse_version s, []
+  | v :: rest -> parse_version v, rest
 
 let stop_after = ref None
