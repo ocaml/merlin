@@ -113,7 +113,8 @@ module Printtyp = struct
   let expand_sig env mty = Env.with_cmis @@ fun () -> Env.scrape_alias env mty
 
   let verbose_type_scheme env ppf t =
-    Printtyp.type_scheme ppf (expand_type env t)
+    let t = expand_type env t in
+    Printtyp.type_scheme ppf t
 
   let verbose_type_declaration env id ppf t =
     Printtyp.type_declaration id ppf (expand_type_decl env t)

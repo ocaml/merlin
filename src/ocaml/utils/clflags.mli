@@ -41,6 +41,9 @@ val unboxed_types        : bool ref
 
 val locations            : bool ref
 
+val keyword_edition      : string option ref
+
+
 module Compiler_pass : sig
   type t = Parsing | Typing | Lambda | Scheduling | Emit
   val of_string : string -> t option
@@ -52,5 +55,7 @@ module Compiler_pass : sig
   val to_output_filename: t -> prefix:string -> string
   val of_input_filename: string -> t option
 end
+
+val parse_keyword_edition: string -> (int*int) option * string list
 
 val stop_after : Compiler_pass.t option ref
