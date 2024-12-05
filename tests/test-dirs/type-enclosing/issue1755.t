@@ -21,7 +21,7 @@ provide better result.
           "line": 1,
           "col": 25
         },
-        "type": "type b = 'a",
+        "type": "type b = b",
         "tail": "no"
       },
       {
@@ -33,7 +33,7 @@ provide better result.
           "line": 1,
           "col": 25
         },
-        "type": "'a",
+        "type": "b",
         "tail": "no"
       },
       {

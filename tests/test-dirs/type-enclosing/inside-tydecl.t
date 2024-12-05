@@ -29,7 +29,7 @@ test
           "line": 1,
           "col": 20
         },
-        "type": "type t1 = 'a",
+        "type": "type t1 = t1",
         "tail": "no"
       },
       {
