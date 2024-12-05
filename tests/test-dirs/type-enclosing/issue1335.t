@@ -24,7 +24,7 @@ provide better result.
           "line": 4,
           "col": 15
         },
-        "type": "type 'a t = 'b",
+        "type": "type 'a t = 'b t",
         "tail": "no"
       },
       {
@@ -36,7 +36,7 @@ provide better result.
           "line": 4,
           "col": 15
         },
-        "type": "'a",
+        "type": "'k t",
         "tail": "no"
       },
       {
@@ -77,7 +77,7 @@ provide better result.
           "line": 1,
           "col": 25
         },
-        "type": "[ `A of 'a | `B ]",
+        "type": "[ `A of t1 | `B ]",
         "tail": "no"
       },
       {

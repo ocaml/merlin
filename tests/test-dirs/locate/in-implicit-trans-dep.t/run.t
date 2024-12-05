@@ -1,8 +1,9 @@
-  $ dune build @check
+  $ dune build @check 2>/dev/null
+  [1]
 
-When the deifinition is in one of the implicit transitive dependencies
-Merlin does not found the file in the source path provided by Dune. One possible
-fix would be for Dune to provide additional source path for "externatl" deps.
+When the definition is in one of the implicit transitive dependencies
+Merlin does not found the file in the source path provided by Dune. 
+This works as expected since Dune lang 3.17 and OCaml >= 5.2
   $ $MERLIN single locate -look-for ml -position 1:15 \
   > -filename bin/main.ml <bin/main.ml
   {
