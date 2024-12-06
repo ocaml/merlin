@@ -25,17 +25,18 @@ module Cmi = struct
     | "Caml1999I032" -> Some "5.0"
     | "Caml1999I033" -> Some "5.1"
     | "Caml1999I034" -> Some "5.2"
+    | "Caml1999I035" -> Some "5.3"
     | _ -> None
 
   let () = assert (to_version_opt Config.cmi_magic_number <> None)
 
-  open Format
+  open Format_doc
   module Style = Misc.Style
 
   let report_error ppf = function
     | Not_an_interface filename ->
         fprintf ppf "%a@ is not a compiled interface"
-        (Style.as_inline_code Location.print_filename) filename
+        (Style.as_inline_code Location.Doc.filename) filename
     | Wrong_version_interface (filename, compiler_magic) ->
       let program_name = Lib_config.program_name () in
       begin match to_version_opt compiler_magic with
@@ -51,7 +52,7 @@ module Cmi = struct
           compiler. \n\
           This diagnostic is based on the compiled interface file: %a"
           program_name program_name program_name
-          Location.print_filename filename
+          Location.Doc.filename filename
       | Some version ->
         fprintf ppf
           "Compiler version mismatch: this project seems to be compiled with \
@@ -63,11 +64,11 @@ module Cmi = struct
           This diagnostic is based on the compiled interface file: %a"
           version program_name
           (Option.get @@ to_version_opt Config.cmi_magic_number)
-          program_name Location.print_filename filename
+          program_name Location.Doc.filename filename
       end
     | Corrupted_interface filename ->
         fprintf ppf "Corrupted compiled interface@ %a"
-        (Style.as_inline_code Location.print_filename) filename
+        (Style.as_inline_code Location.Doc.filename) filename
 
   let () =
     Location.register_error_of_exn

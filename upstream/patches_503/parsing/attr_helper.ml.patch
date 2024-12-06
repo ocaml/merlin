@@ -1,0 +1,25 @@
+--- ocaml_502/parsing/attr_helper.ml	2024-06-27 15:42:08.724127244 +0200
++++ ocaml_503/parsing/attr_helper.ml	2024-09-17 01:16:30.152541842 +0200
+@@ -39,9 +39,9 @@
+   | None   -> false
+   | Some _ -> true
+ 
+-open Format
++open Format_doc
+ 
+-let report_error ppf = function
++let report_error_doc ppf = function
+   | Multiple_attributes name ->
+     fprintf ppf "Too many %a attributes" Style.inline_code name
+   | No_payload_expected name ->
+@@ -51,7 +51,9 @@
+   Location.register_error_of_exn
+     (function
+       | Error (loc, err) ->
+-        Some (Location.error_of_printer ~loc report_error err)
++        Some (Location.error_of_printer ~loc report_error_doc err)
+       | _ ->
+         None
+     )
++
++let report_error = Format_doc.compat report_error_doc

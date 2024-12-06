@@ -59,7 +59,7 @@ let structure_iterator hint_let_binding hint_pattern_binding
       | Texp_letop { body; _ } ->
         let () = log ~title:"expression" "on let-op" in
         case_iterator hint_let_binding iterator body
-      | Texp_match (expr, cases, _) ->
+      | Texp_match (expr, cases, _, _) ->
         let () = log ~title:"expression" "on match" in
         let () = iterator.expr iterator expr in
         List.iter ~f:(case_iterator hint_pattern_binding iterator) cases

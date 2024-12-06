@@ -1,0 +1,22 @@
+--- ocaml_502/typing/primitive.ml	2024-06-27 15:42:08.727460578 +0200
++++ ocaml_503/typing/primitive.ml	2024-09-17 01:15:58.292566923 +0200
+@@ -232,16 +232,16 @@
+ let report_error ppf err =
+   match err with
+   | Old_style_float_with_native_repr_attribute ->
+-    Format.fprintf ppf "Cannot use %a in conjunction with %a/%a."
++    Format_doc.fprintf ppf "Cannot use %a in conjunction with %a/%a."
+       Style.inline_code "float"
+       Style.inline_code "[@unboxed]"
+       Style.inline_code  "[@untagged]"
+   | Old_style_noalloc_with_noalloc_attribute ->
+-    Format.fprintf ppf "Cannot use %a in conjunction with %a."
++    Format_doc.fprintf ppf "Cannot use %a in conjunction with %a."
+       Style.inline_code "noalloc"
+       Style.inline_code "[@@noalloc]"
+   | No_native_primitive_with_repr_attribute ->
+-    Format.fprintf ppf
++    Format_doc.fprintf ppf
+       "@[The native code version of the primitive is mandatory@ \
+        when attributes %a or %a are present.@]"
+       Style.inline_code "[@untagged]"

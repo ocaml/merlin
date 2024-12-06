@@ -1,0 +1,11 @@
+--- ocaml_502/utils/diffing_with_keys.mli	2024-06-27 15:42:08.730793912 +0200
++++ ocaml_503/utils/diffing_with_keys.mli	2024-09-17 01:19:03.395759607 +0200
+@@ -46,7 +46,7 @@
+   | Insert of {pos:int; insert:'r}
+   | Delete of {pos:int; delete:'l}
+ 
+-val prefix: Format.formatter -> ('l,'r,'diff) change -> unit
++val prefix: ('l,'r,'diff) change Format_doc.printer
+ 
+ module Define(D:Diffing.Defs with type eq := unit): sig
+ 

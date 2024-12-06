@@ -217,7 +217,8 @@ on type t = int..
 on type t..
   $ syn_doc 1:17 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value.name'
-  "Locally Abstract Type"
+  jq: error (at <stdin>:5): Cannot index string with string "name"
+  [5]
 On fun..
   $ syn_doc 1:9 \
   > -filename ./locally-abstract-dt.ml < ./locally-abstract-dt.ml | jq '.value'

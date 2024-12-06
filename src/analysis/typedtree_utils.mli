@@ -26,3 +26,21 @@ val pat_var_id_and_loc :
 val pat_alias_pat_id_and_loc :
   Typedtree.pattern ->
   (Typedtree.pattern * Ident.t * string Location.loc) option
+
+open Typedtree
+
+type texp_match =
+  { expr : expression;
+    computation_cases : computation case list;
+    value_cases : value case list;
+    partial : partial
+  }
+
+type texp_try =
+  { expr : expression;
+    value_cases : value case list;
+    effect_cases : value case list
+  }
+
+val texp_match_of_expr : expression -> texp_match option
+val texp_try_of_expr : expression -> texp_try option

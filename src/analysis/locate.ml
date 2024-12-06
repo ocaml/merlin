@@ -496,7 +496,7 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
       log ~title "The declaration has no location.";
       `None
   in
-  if Env.get_unit_name () = comp_unit then begin
+  if Env.get_current_unit_name () = comp_unit then begin
     log ~title "We look for %a in the current compilation unit." Logger.fmt
       (fun fmt -> Shape.Uid.print fmt uid);
     log ~title "Looking for %a in the uid_to_loc table" Logger.fmt (fun fmt ->
@@ -791,7 +791,7 @@ let doc_from_uid ~config ~loc uid =
   begin
     match uid with
     | (Shape.Uid.Item { comp_unit; _ } | Shape.Uid.Compilation_unit comp_unit)
-      when Env.get_unit_name () <> comp_unit ->
+      when Env.get_current_unit_name () <> comp_unit ->
       log ~title:"get_doc"
         "the doc (%a) you're looking for is in another\n\
         \      compilation unit (%s)" Logger.fmt
@@ -853,7 +853,7 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
       match path with
       | `Completion_entry (namespace, path, _loc) ->
         log ~title:"get_doc" "completion: looking for the doc of '%a'"
-          Logger.fmt (fun fmt -> Path.print fmt path);
+          Logger.fmt (fun fmt -> (Format_doc.compat Path.print) fmt path);
 
         let from_path = from_path ~config ~env ~local_defs ~namespace path in
         begin

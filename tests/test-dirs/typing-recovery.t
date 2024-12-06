@@ -25,7 +25,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type unit"
+        "message": "This constant has type int but an expression was expected of type unit"
       },
       {
         "start": {
@@ -54,7 +54,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type char but an expression was expected of type unit"
+        "message": "This constant has type char but an expression was expected of type unit"
       }
     ],
     "notifications": []
@@ -144,7 +144,9 @@
                           structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                             Pstr_eval
                             expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                              Pexp_constant PConst_int (1,None)
+                              Pexp_constant
+                              constant (_none_[0,0+-1]..[0,0+-1]) ghost
+                                PConst_int (1,None)
                         ]
                       attribute \"merlin.loc\"
                         []
@@ -164,12 +166,15 @@
                           structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                             Pstr_eval
                             expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                              Pexp_constant PConst_int (2,None)
+                              Pexp_constant
+                              constant (_none_[0,0+-1]..[0,0+-1]) ghost
+                                PConst_int (2,None)
                         ]
                       attribute \"merlin.loc\"
                         []
                       Texp_ident \"*type-error*/283\"
                 ]
+                []
       ]
   ]
   
@@ -214,7 +219,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type unit but an expression was expected of type int"
+        "message": "The constructor () has type unit but an expression was expected of type int"
       }
     ],
     "notifications": []
@@ -278,7 +283,9 @@
                     structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                       Pstr_eval
                       expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                        Pexp_constant PConst_int (1,None)
+                        Pexp_constant
+                        constant (_none_[0,0+-1]..[0,0+-1]) ghost
+                          PConst_int (1,None)
                   ]
                 extra
                   Texp_constraint

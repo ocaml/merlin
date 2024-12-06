@@ -35,7 +35,27 @@ val keep_docs            : bool ref
 val transparent_modules  : bool ref
 val for_package          : string option ref
 val debug                : bool ref
+val unsafe               : bool ref
 val opaque               : bool ref
 val unboxed_types        : bool ref
 
 val locations            : bool ref
+
+val keyword_edition      : string option ref
+
+
+module Compiler_pass : sig
+  type t = Parsing | Typing | Lambda | Scheduling | Emit
+  val of_string : string -> t option
+  val to_string : t -> string
+  val is_compilation_pass : t -> bool
+  val available_pass_names : filter:(t -> bool) -> native:bool -> string list
+  val can_save_ir_after : t -> bool
+  val compare : t -> t -> int
+  val to_output_filename: t -> prefix:string -> string
+  val of_input_filename: string -> t option
+end
+
+val parse_keyword_edition: string -> (int*int) option * string list
+
+val stop_after : Compiler_pass.t option ref
