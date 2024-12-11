@@ -76,5 +76,4 @@ let printed_signature = Fmt.compat1 Doc.printed_signature
 
 let () = Env.print_longident := Doc.longident
 let () = Env.print_path := Doc.path
-let () = Btype.print_raw := Doc.raw_type_expr
 let () = Env.shorten_module_path := shorten_module_path
