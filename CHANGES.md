@@ -1,6 +1,8 @@
 unreleased
 ==========
 
+  + merlin binary
+    - Support for OCaml 5.3
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that
