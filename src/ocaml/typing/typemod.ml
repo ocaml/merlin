@@ -1365,7 +1365,7 @@ and transl_with ~loc env remove_aliases (rev_tcstrs,sg) constr =
   ((path, lid, tcstr) :: rev_tcstrs, sg)
 
 
-and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
+and transl_signature ?(keep_warnings = false) env sg =
   let names = Signature_names.create () in
   let rec transl_sig env sg =
     match sg with
@@ -1509,7 +1509,7 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
               match tmty.mty_type with
               | Mty_alias p ->
                   if Env.is_functor_arg p env then
-                    raise (Error (pmd.pmd_loc, env, Cannot_alias p));
+                    Msupport.raise_error (Error (pmd.pmd_loc, env, Cannot_alias p));
                   Mp_absent
               | _ -> Mp_present
             in
@@ -1768,8 +1768,6 @@ and transl_signature ?(keep_warnings = false) ?(toplevel = false) env sg =
           end
         | Psig_attribute x ->
             Builtin_attributes.warning_attribute x;
-            if toplevel || not (Warnings.is_active (Misplaced_attribute ""))
-            then Builtin_attributes.mark_alert_used x;
             let (trem,rem, final_env) = transl_sig env srem in
             mksig (Tsig_attribute x) env loc :: trem, rem, final_env
         | Psig_extension (ext, _attrs) ->
@@ -3045,7 +3043,7 @@ let merlin_type_structure env str =
   str, sg, env
 let type_structure = type_structure false None
 let merlin_transl_signature env sg = transl_signature ~keep_warnings:true env sg
-let transl_signature ~toplevel env sg = transl_signature ~toplevel env sg
+let transl_signature env sg = transl_signature env sg
 
 (* Normalize types in a signature *)
 
@@ -3243,9 +3241,8 @@ let type_implementation target initial_env ast =
         Typecore.force_delayed_checks ();
         let shape = Shape_reduce.local_reduce Env.empty shape in
         Printtyp.wrap_printing_env ~error:false initial_env
-          Format.(fun () ->
-              fprintf std_formatter "%a@." (
-                (Printtyp.printed_signature @@ Unit_info.source_file target))
+          Format.(fun () -> fprintf std_formatter "%a@."
+                (Printtyp.printed_signature @@ Unit_info.source_file target)
               simple_sg
           );
         (* gen_annot target (Cmt_format.Implementation str); *)
@@ -3329,10 +3326,7 @@ let save_signature target tsg initial_env cmi =
     (Cmt_format.Interface tsg) initial_env (Some cmi) None
 
 let type_interface env ast =
-  transl_signature ~toplevel:true env ast
-
-let transl_signature env ast =
-  transl_signature ~toplevel:false env ast
+  transl_signature env ast
 
 (* "Packaging" of several compilation units into one unit
    having them as sub-modules.  *)
