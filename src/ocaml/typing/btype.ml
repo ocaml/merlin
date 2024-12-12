@@ -171,6 +171,7 @@ let type_origin decl =
   match decl.type_kind with
   | Type_abstract origin -> origin
   | Type_variant _ | Type_record _ | Type_open -> Definition
+let label_is_poly lbl = is_poly_Tpoly lbl.lbl_arg
 
 let dummy_method = "*dummy method*"
 

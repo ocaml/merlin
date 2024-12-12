@@ -961,7 +961,7 @@ let solve_constructor_annotation
               unify_pat_types cty.ctyp_loc env tv tv';
               List.remove_assoc id rem
           | _ ->
-              raise (Error (cty.ctyp_loc, !!penv,
+              raise (error (cty.ctyp_loc, !!penv,
                             Unbound_existential (ids, ty))))
         ids_decls ty_ex
     in
@@ -973,16 +973,16 @@ let solve_constructor_annotation
         begin match get_desc tv' with
         | Tconstr (Path.Pident id', [], _) ->
               if List.exists (Ident.same id') !bound_ids then
-                raise (Error (cty.ctyp_loc, !!penv,
+                raise (error (cty.ctyp_loc, !!penv,
                               Bind_existential (Bind_already_bound, id, tv')));
               (* Both id and id' are Scoped identifiers, so their stamps grow *)
               if Ident.scope id' <> penv.equations_scope
               || Ident.compare_stamp id id' > 0 then
-                raise (Error (cty.ctyp_loc, !!penv,
+                raise (error (cty.ctyp_loc, !!penv,
                               Bind_existential (Bind_not_in_scope, id, tv')));
               bound_ids := id' :: !bound_ids
         | _ ->
-            raise (Error (cty.ctyp_loc, !!penv,
+            raise (error (cty.ctyp_loc, !!penv,
                           Bind_existential
                             (Bind_non_locally_abstract, id, tv')));
         end;
@@ -1886,7 +1886,7 @@ and type_pat_aux
       let get_bound = function
         | {pconst_desc = Pconst_char c; _} -> c
         | {pconst_loc = loc; _} ->
-            raise (Error (loc, !!penv, Invalid_interval))
+            raise (error (loc, !!penv, Invalid_interval))
       in
       let c1 = get_bound c1 in
       let c2 = get_bound c2 in
@@ -2182,7 +2182,7 @@ and type_pat_aux
         pat_attributes = sp.ppat_attributes;
       }
   | Ppat_effect _ ->
-      raise (Error (loc, !!penv, Effect_pattern_below_toplevel))
+      raise (error (loc, !!penv, Effect_pattern_below_toplevel))
   | Ppat_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
@@ -3304,7 +3304,7 @@ let name_cases default lst =
 
 (* Typing of expressions *)
 
-(** [sdesc_for_hint] is used by error messages to report literals in their
+(** [sexp_for_hint] is used by error messages to report literals in their
     original formatting *)
 let unify_exp ~sexp env exp expected_ty =
   let loc = proper_exp_loc exp in
@@ -5374,7 +5374,7 @@ and type_label_exp create env loc ty_expected
           (lid, label, sarg) =
   (* Here also ty_expected may be at generic_level *)
   let separate = !Clflags.principal || Env.has_local_constraints env in
-  let is_poly = is_poly_Tpoly label.lbl_arg in
+  let is_poly = label_is_poly label in (* HUH ? *)
   let (vars, arg) =
     (* raise level to check univars *)
     with_local_level_generalize_if is_poly begin fun () ->
@@ -5760,10 +5760,11 @@ and type_construct env ~sexp lid sarg ty_expected_explained =
     match sarg with
       None -> []
     | Some {pexp_desc = Pexp_tuple sel} when
-        constr.cstr_arity > 1 || Builtin_attributes.explicit_arity sexp.pexp_attributes
+        constr.cstr_arity > 1
+        || Builtin_attributes.explicit_arity sexp.pexp_attributes
       -> sel
     | Some se -> [se] in
-if List.length sargs <> constr.cstr_arity then
+  if List.length sargs <> constr.cstr_arity then
     raise(Error(sexp.pexp_loc, env,
                 Constructor_arity_mismatch
                   (lid.txt, constr.cstr_arity, List.length sargs)));

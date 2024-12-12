@@ -92,6 +92,7 @@ val is_poly_Tpoly: type_expr -> bool
 val dummy_method: label
 val type_kind_is_abstract: type_declaration -> bool
 val type_origin: type_declaration -> type_origin
+val label_is_poly: label_description -> bool
 
 (**** polymorphic variants ****)
 
