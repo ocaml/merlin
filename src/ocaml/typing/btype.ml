@@ -776,6 +776,13 @@ let instance_variable_type label sign =
   | (_, _, ty) -> ty
   | exception Not_found -> assert false
 
+
+                  (**********)
+                  (*  Misc  *)
+                  (**********)
+
+(**** Type information getter ****)
+
 let cstr_type_path cstr =
   match get_desc cstr.cstr_res with
   | Tconstr (p, _, _) -> p
