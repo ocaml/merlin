@@ -71,7 +71,7 @@ and raw_type_desc ppf = function
     Tvar name -> fprintf ppf "Tvar %a" print_name name
   | Tarrow(l,t1,t2,c) ->
       fprintf ppf "@[<hov1>Tarrow(\"%s\",@,%a,@,%a,@,%s)@]"
-        (Printtyp.string_of_label l) raw_type t1 raw_type t2
+        (Asttypes.string_of_label l) raw_type t1 raw_type t2
         (if is_commu_ok c then "Cok" else "Cunknown")
   | Ttuple tl ->
       fprintf ppf "@[<1>Ttuple@,%a@]" raw_type_list tl

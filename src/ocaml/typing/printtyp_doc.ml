@@ -184,7 +184,7 @@ module Conflicts = struct
           (List.map snd names)
           pp_namespace_plural namespace in
     Array.iter (pp_submsg ppf) submsgs
-      
+
 
   let print_toplevel_hint ppf l =
     let conj ppf () = Format.fprintf ppf " and@ " in
@@ -219,7 +219,7 @@ module Conflicts = struct
           (List.map snd names)
           pp_namespace_plural namespace in
     Array.iter (pp_submsg ppf) submsgs
-      
+
 
   let print_explanations ppf =
     let ltop, l =
