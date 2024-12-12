@@ -23,6 +23,7 @@ type error =
   | Empty_character_literal
   | Keyword_as_label of string
   | Invalid_literal of string
+  | Unknown_keyword of string
 exception Error of error * Location.t
 
 (* Keywords, manipulated by extensions *)

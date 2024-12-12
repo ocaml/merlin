@@ -30,6 +30,7 @@ type error =
   | Empty_character_literal
   | Keyword_as_label of string
   | Invalid_literal of string
+  | Unknown_keyword of string
 
 exception Error of error * Location.t
 
@@ -79,67 +80,96 @@ let rec catch m f = match m with
 
 (* The table of keywords *)
 
-let keyword_table : keywords =
-  create_hashtable 149 [
-    "and", AND;
-    "as", AS;
-    "assert", ASSERT;
-    "begin", BEGIN;
-    "class", CLASS;
-    "constraint", CONSTRAINT;
-    "do", DO;
-    "done", DONE;
-    "downto", DOWNTO;
-    "else", ELSE;
-    "end", END;
-    "exception", EXCEPTION;
-    "external", EXTERNAL;
-    "false", FALSE;
-    "for", FOR;
-    "fun", FUN;
-    "function", FUNCTION;
-    "functor", FUNCTOR;
-    "if", IF;
-    "in", IN;
-    "include", INCLUDE;
-    "inherit", INHERIT;
-    "initializer", INITIALIZER;
-    "lazy", LAZY;
-    "let", LET;
-    "match", MATCH;
-    "method", METHOD;
-    "module", MODULE;
-    "mutable", MUTABLE;
-    "new", NEW;
-    "nonrec", NONREC;
-    "object", OBJECT;
-    "of", OF;
-    "open", OPEN;
-    "or", OR;
+let all_keywords =
+  let v5_3 = Some (5,3) in
+  let v1_0 = Some (1,0) in
+  let v1_6 = Some (1,6) in
+  let v4_2 = Some (4,2) in
+  let always = None in
+  [
+    "and", AND, always;
+    "as", AS, always;
+    "assert", ASSERT, v1_6;
+    "begin", BEGIN, always;
+    "class", CLASS, v1_0;
+    "constraint", CONSTRAINT, v1_0;
+    "do", DO, always;
+    "done", DONE, always;
+    "downto", DOWNTO, always;
+    "effect", EFFECT, v5_3;
+    "else", ELSE, always;
+    "end", END, always;
+    "exception", EXCEPTION, always;
+    "external", EXTERNAL, always;
+    "false", FALSE, always;
+    "for", FOR, always;
+    "fun", FUN, always;
+    "function", FUNCTION, always;
+    "functor", FUNCTOR, always;
+    "if", IF, always;
+    "in", IN, always;
+    "include", INCLUDE, always;
+    "inherit", INHERIT, v1_0;
+    "initializer", INITIALIZER, v1_0;
+    "lazy", LAZY, v1_6;
+    "let", LET, always;
+    "match", MATCH, always;
+    "method", METHOD, v1_0;
+    "module", MODULE, always;
+    "mutable", MUTABLE, always;
+    "new", NEW, v1_0;
+    "nonrec", NONREC, v4_2;
+    "object", OBJECT, v1_0;
+    "of", OF, always;
+    "open", OPEN, always;
+    "or", OR, always;
 (*  "parser", PARSER; *)
-    "private", PRIVATE;
-    "rec", REC;
-    "sig", SIG;
-    "struct", STRUCT;
-    "then", THEN;
-    "to", TO;
-    "true", TRUE;
-    "try", TRY;
-    "type", TYPE;
-    "val", VAL;
-    "virtual", VIRTUAL;
-    "when", WHEN;
-    "while", WHILE;
-    "with", WITH;
+    "private", PRIVATE, v1_0;
+    "rec", REC, always;
+    "sig", SIG, always;
+    "struct", STRUCT, always;
+    "then", THEN, always;
+    "to", TO, always;
+    "true", TRUE, always;
+    "try", TRY, always;
+    "type", TYPE, always;
+    "val", VAL, always;
+    "virtual", VIRTUAL, v1_0;
+    "when", WHEN, always;
+    "while", WHILE, always;
+    "with", WITH, always;
 
-    "lor", INFIXOP3("lor"); (* Should be INFIXOP2 *)
-    "lxor", INFIXOP3("lxor"); (* Should be INFIXOP2 *)
-    "mod", INFIXOP3("mod");
-    "land", INFIXOP3("land");
-    "lsl", INFIXOP4("lsl");
-    "lsr", INFIXOP4("lsr");
-    "asr", INFIXOP4("asr");
+    "lor", INFIXOP3("lor"), always; (* Should be INFIXOP2 *)
+    "lxor", INFIXOP3("lxor"), always; (* Should be INFIXOP2 *)
+    "mod", INFIXOP3("mod"), always;
+    "land", INFIXOP3("land"), always;
+    "lsl", INFIXOP4("lsl"), always;
+    "lsr", INFIXOP4("lsr"), always;
+    "asr", INFIXOP4("asr"), always
 ]
+
+let keyword_table = Hashtbl.create 149
+
+let populate_keywords (version,keywords) =
+  let greater (x:(int*int) option) (y:(int*int) option) =
+    match x, y with
+    | None, _ | _, None -> true
+    | Some x, Some y -> x >= y
+  in
+  let tbl = keyword_table in
+  Hashtbl.clear tbl;
+  let add_keyword (name, token, since) =
+    if greater version since then Hashtbl.replace tbl name (Some token)
+  in
+  List.iter ~f:add_keyword all_keywords;
+  List.iter ~f:(fun name ->
+    match List.find ~f:(fun (n,_,_) -> n = name) all_keywords with
+    | (_,tok,_) -> Hashtbl.replace tbl name (Some tok)
+    | exception Not_found -> Hashtbl.replace tbl name None
+    ) keywords
+
+(* FIXME: Merlin: this could be made configurable *)
+let () = populate_keywords (None,[])
 
 let keywords l = create_hashtable 11 l
 
@@ -288,11 +318,24 @@ let uchar_for_uchar_escape lexbuf =
 
 let keyword_or state s default =
   try Hashtbl.find state.keywords s
-      with Not_found -> try Hashtbl.find keyword_table s
-  with Not_found -> default
+  with Not_found ->
+    try Option.value ~default @@ Hashtbl.find keyword_table s
+    with Not_found -> default
 
-let is_keyword name = Hashtbl.mem keyword_table name
+let is_keyword name =
+  Hashtbl.mem keyword_table name
+
 let () = Lexer.is_keyword_ref := is_keyword
+
+let find_keyword lexbuf name default =
+  match Hashtbl.find keyword_table name with
+  | Some x -> return x
+  | None -> fail lexbuf (Unknown_keyword name)
+  | exception Not_found -> return default
+
+let find_keyword state lexbuf ~name ~default =
+  try return @@ Hashtbl.find state.keywords name
+  with Not_found -> find_keyword lexbuf name default
 
 let check_label_name lexbuf name =
   if is_keyword name
@@ -358,6 +401,11 @@ let prepare_error loc = function
         "%a is a keyword, it cannot be used as label name" Style.inline_code kwd
   | Invalid_literal s ->
       Location.errorf ~loc "Invalid literal %s" s
+  | Unknown_keyword name ->
+      Location.errorf ~loc
+      "%a has been defined as an additional keyword.@ \
+       This version of OCaml does not support this keyword."
+      Style.inline_code name
 (* FIXME: Invalid_directive? *)
 
 let () =
@@ -470,20 +518,12 @@ rule token state = parse
   | raw_ident_escape (lowercase identchar * as name)
       { return (LIDENT name) }
   | lowercase identchar * as name
-    { return (try Hashtbl.find state.keywords name
-              with Not_found ->
-              try Hashtbl.find keyword_table name
-              with Not_found ->
-                LIDENT name) }
+    { (find_keyword state lexbuf ~name ~default:(LIDENT name)) }
   | lowercase_latin1 identchar_latin1 * as name
       { warn_latin1 lexbuf; return (LIDENT name) }
   | uppercase identchar * as name
     { (* Capitalized keywords for OUnit *)
-      return (try Hashtbl.find state.keywords name
-              with Not_found ->
-              try Hashtbl.find keyword_table name
-              with Not_found ->
-                UIDENT name) }
+      (find_keyword state lexbuf ~name ~default:(UIDENT name))}
   | uppercase_latin1 identchar_latin1 * as name
     { warn_latin1 lexbuf; return (UIDENT name) }
   | int_literal as lit { return (INT (lit, None)) }
