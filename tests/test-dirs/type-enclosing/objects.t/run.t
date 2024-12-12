@@ -238,8 +238,36 @@ FIXME: same as before
 
   $ $MERLIN single type-enclosing -position 21:20 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
-  []
+  [
+    {
+      "start": {
+        "line": 21,
+        "col": 2
+      },
+      "end": {
+        "line": 21,
+        "col": 46
+      },
+      "type": "string -> char -> int",
+      "tail": "no"
+    }
+  ]
+
 
   $ $MERLIN single type-enclosing -position 22:15 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
-  []
+  [
+    {
+      "start": {
+        "line": 22,
+        "col": 2
+      },
+      "end": {
+        "line": 22,
+        "col": 46
+      },
+      "type": "string -> char -> int",
+      "tail": "no"
+    }
+  ]
+
