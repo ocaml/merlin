@@ -79,7 +79,7 @@
             Tpat_var \"f/276\"
           expression (type.ml[1,0+8]..type.ml[1,0+61])
             extra
-              Texp_newtype \"t\"
+              Texp_newtype' \"t/278\"
             Texp_function
             [
               Nolabel
