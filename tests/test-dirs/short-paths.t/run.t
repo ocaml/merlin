@@ -17,7 +17,7 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type: class b : 'a -> a
-  The method x has type 'c where 'c is unbound"
+  The method x has type 'b where 'b is unbound"
       },
       {
         "start": {

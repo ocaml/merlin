@@ -24,7 +24,7 @@ FIXME: Type variable are not shared between the two parts of the error message:
         "valid": true,
         "message": "Some type variables are unbound in this type:
     class test : 'a -> object method b : 'b -> 'b end
-  The method b has type 'a -> 'a where 'a is unbound"
+  The method b has type 'b -> 'b where 'b is unbound"
       }
     ],
     "notifications": []

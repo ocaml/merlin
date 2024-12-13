@@ -83,7 +83,7 @@ let print_parameter_offset ?arg:argument ppf buffer env label ty =
    arguments to the corresponding parameter. (They should always be in the correct
    order in the typedtree, even if they are not in order in the source file.) *)
 let separate_function_signature ~args (e : Typedtree.expression) =
-  Type_utils.Printtyp.reset ();
+  Out_type.reset ();
   let buffer = Buffer.create 16 in
   let ppf = Format.formatter_of_buffer buffer in
   let rec separate ?(parameters = []) args ty =

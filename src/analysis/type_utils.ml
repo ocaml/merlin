@@ -145,7 +145,7 @@ module Printtyp = struct
       ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
-    let_ref verbosity v (fun () -> wrap_printing_env env f)
+    let_ref verbosity v (fun () -> wrap_printing_env ~error:true env f)
 end
 
 let si_modtype_opt = function
