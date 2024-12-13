@@ -1935,7 +1935,6 @@ let explain_unbound_gen ppf tv tl typ kwd pr =
       ".@ @[<hov2>In %s@ %a@;<1 -2>the variable %a is unbound@]"
       kwd (Style.as_inline_code pr) ti
       (Style.as_inline_code Out_type.prepared_type_expr) tv
-      (* kwd pr ti Printtyp.prepared_type_expr tv *)
   with Not_found -> ()
 
 let explain_unbound ppf tv tl typ kwd lab =
