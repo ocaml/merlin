@@ -3671,8 +3671,8 @@ and type_expect_
       re
         { exp_desc = Texp_function (params, body);
           exp_loc = loc;
-          exp_extra =
-            List.map (fun { txt; loc } -> Texp_newtype txt, loc, []) newtypes;
+          exp_extra = List.map (fun (id, txt_loc, uid) ->
+            Texp_newtype' (id, txt_loc, uid), txt_loc.loc, []) newtypes;
           exp_type;
           exp_attributes = sexp.pexp_attributes;
           exp_env = env;
@@ -4437,7 +4437,7 @@ and type_expect_
       re { exp with exp_extra =
              (Texp_poly cty, loc, sexp.pexp_attributes) :: exp.exp_extra }
   | Pexp_newtype(name, sbody) ->
-      let body, ety = type_newtype env name (fun env ->
+      let body, ety, id, uid = type_newtype env name (fun env ->
         let expr = type_exp env sbody in
         expr, expr.exp_type)
       in
@@ -4445,7 +4445,7 @@ and type_expect_
          any new extra node in the typed AST. *)
       rue { body with exp_loc = loc; exp_type = ety;
             exp_extra =
-            (Texp_newtype name.txt, loc, sexp.pexp_attributes) :: body.exp_extra
+            (Texp_newtype' (id, name, uid), loc, sexp.pexp_attributes) :: body.exp_extra
           }
   | Pexp_pack m ->
       let (p, fl) =
@@ -4742,7 +4742,7 @@ and type_constraint_expect
     nodes for the newtype properly linked.
 *)
 and type_newtype
-  : type a. _ -> _ -> (Env.t -> a * type_expr) -> a * type_expr =
+  : type a. _ -> _ -> (Env.t -> a * type_expr) -> a * type_expr * Ident.t * Uid.t =
   fun env { txt = name; loc = name_loc } type_body ->
   let ty =
     if Typetexp.valid_tyvar_name name then
@@ -4772,9 +4772,9 @@ and type_newtype
     in
     let ety = Subst.type_expr Subst.identity exp_type in
     replace ety;
-    (result, ety)
+    (result, ety, id, decl.type_uid)
   end
-  ~before_generalize:(fun (_,ety) -> enforce_current_level env ety)
+  ~before_generalize:(fun (_,ety,_id,_uid) -> enforce_current_level env ety)
 
 and type_ident env ?(recarg=Rejected) lid =
   let (path, desc) = Env.lookup_value ~loc:lid.loc lid.txt env in
@@ -4894,7 +4894,7 @@ and type_function
   match params_suffix with
   | { pparam_desc = Pparam_newtype newtype; pparam_loc = _ } :: rest ->
       (* Check everything else in the scope of (type a). *)
-      let (params, body, newtypes, contains_gadt), exp_type =
+      let (params, body, newtypes, contains_gadt), exp_type, nt_id, nt_uid =
         type_newtype env newtype (fun env ->
           let exp_type, params, body, newtypes, contains_gadt =
             (* mimic the typing of Pexp_newtype by minting a new type var,
@@ -4908,6 +4908,7 @@ and type_function
       (try with_explanation ty_fun.explanation (fun () ->
         unify_exp_types loc env exp_type (instance ty_expected));
        with _ -> Msupport.erroneous_type_register ty_expected);
+      let newtype = nt_id, newtype, nt_uid in
       exp_type, params, body, newtype :: newtypes, contains_gadt
   | { pparam_desc = Pparam_val (arg_label, default_arg, pat); pparam_loc }
       :: rest
@@ -5007,7 +5008,7 @@ and type_function
           fp_arg_label = arg_label;
           fp_param;
           fp_partial = partial;
-          fp_newtypes = newtypes;
+          fp_newtypes = List.map (fun (_,v,_) -> v) newtypes;
           fp_loc = pparam_loc;
         }
       in
