@@ -33,7 +33,10 @@ let last_location = ref Location.none
 let { Logger.log } = Logger.for_section "locate"
 
 type config =
-  { mconfig : Mconfig.t; ml_or_mli : [ `ML | `MLI ]; traverse_aliases : bool }
+  { mconfig : Mconfig.t;
+    ml_or_mli : [ `ML | `Smart | `MLI ];
+    traverse_aliases : bool
+  }
 
 type result =
   { uid : Shape.Uid.t;
@@ -66,6 +69,8 @@ module File : sig
 
   val explain_not_found :
     ?doc_from:string -> string -> t -> [> `File_not_found of string ]
+
+  val is_source : t -> bool
 end = struct
   type t =
     | ML of string
@@ -143,10 +148,14 @@ end = struct
           str_ident
     in
     `File_not_found msg
+
+  let is_source = function
+    | ML _ | MLL _ | MLI _ -> true
+    | CMT _ | CMTI _ -> false
 end
 
 module Preferences : sig
-  val set : [ `ML | `MLI ] -> unit
+  val set : [ `ML | `Smart | `MLI ] -> unit
 
   val src : string -> File.t
   val build : string -> File.t
@@ -158,7 +167,7 @@ end = struct
   let set choice =
     prioritize_impl :=
       match choice with
-      | `ML -> true
+      | `ML | `Smart -> true
       | _ -> false
 
   let src file = if !prioritize_impl then File.ml file else File.mli file
@@ -251,7 +260,15 @@ module Utils = struct
     List.dedup_adjacent files ~cmp:String.compare
 
   let find_file_with_path ~config ?(with_fallback = false) file path =
-    if File.name file = Misc.unitname Mconfig.(config.query.filename) then
+    let title = "find_file_with_path" in
+    let filename = File.name file in
+    log ~title "Try find %S" filename;
+    if
+      File.is_source file
+      && filename = Misc.unitname Mconfig.(config.query.filename)
+    then
+      (* No need to search when looking for the source of the current buffer's
+         compilation unit *)
       Some Mconfig.(config.query.filename)
     else
       let attempt_search src_suffix_pair =
@@ -261,6 +278,7 @@ module Utils = struct
           else None
         in
         let fname = File.with_ext ~src_suffix_pair file in
+        log ~title "Trying %S" fname;
         try Some (Misc.find_in_path_normalized ?fallback path fname)
         with Not_found -> None
       in
@@ -305,10 +323,12 @@ let move_to filename cmt_infos =
   File_switching.move_to ~digest filename
 
 let load_cmt ~config ?(with_fallback = true) comp_unit =
+  let title = "load_cmt" in
   Preferences.set config.ml_or_mli;
   let file = Preferences.build comp_unit in
   match Utils.find_file ~config:config.mconfig ~with_fallback file with
   | Some path ->
+    log ~title "Found %S at path %S" comp_unit path;
     let cmt_infos = (Cmt_cache.read path).cmt_infos in
     let source_file = cmt_infos.cmt_sourcefile in
     let source_file = Option.value ~default:"*pack*" source_file in
@@ -337,8 +357,8 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
       when namespace = Shape.Sig_component_kind.Module_type ->
       (* This case is necessary to traverse module type aliases *)
       non_alias_declaration_uid ~fallback_uid alias_path
-    | _, md_uid -> md_uid
-    | exception Not_found -> fallback_uid
+    | _, md_uid -> (path, md_uid)
+    | exception Not_found -> (path, fallback_uid)
   in
   non_alias_declaration_uid ~fallback_uid path
 
@@ -481,21 +501,31 @@ let find_source ~config loc path =
           doesn't know which is the right one: %s"
          matches)
 
-(** [find_loc_of_uid] uid's location are given by tables stored int he cmt files
-  for external compilation units or computed by Merlin for the current buffer.
-  This function lookups a uid's location in the appropriate table. *)
-let find_loc_of_uid ~config ~local_defs uid comp_unit =
-  let title = "find_loc_of_uid" in
-  let loc_of_decl ~uid def =
-    match Typedtree_utils.location_of_declaration ~uid def with
-    | Some loc ->
-      log ~title "Found location: %a" Logger.fmt (fun fmt ->
-          Location.print_loc fmt loc.loc);
-      `Some (uid, loc.loc)
-    | None ->
-      log ~title "The declaration has no location.";
-      `None
+let lookup_uid_decl ~config:mconfig uid =
+  let title = "lookup_uid_decl" in
+  let item =
+    match uid with
+    | Shape.Uid.Internal | Predef _ | Compilation_unit _ -> None
+    | Item { from = Intf; comp_unit; _ } -> Some (`MLI, comp_unit)
+    | Item { from = _; comp_unit; _ } -> Some (`ML, comp_unit)
   in
+  Option.bind item ~f:(fun (ml_or_mli, comp_unit) ->
+      let config = { mconfig; ml_or_mli; traverse_aliases = false } in
+      match load_cmt ~config comp_unit with
+      | Ok (_pos_fname, cmt) ->
+        log ~title "Cmt successfully loaded, looking for %a" Logger.fmt
+          (fun fmt -> Shape.Uid.print fmt uid);
+        Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid
+      | _ ->
+        log ~title "Failed to load the cmt file";
+        None)
+
+(** uid's location are given by tables stored int he cmt files for external
+    compilation units or computed by Merlin for the current buffer.
+    [find_loc_of_uid] function lookups a uid's location in the appropriate
+    table. *)
+let find_loc_of_item ~config ~local_defs uid comp_unit =
+  let title = "find_loc_of_uid" in
   if Env.get_current_unit_name () = comp_unit then begin
     log ~title "We look for %a in the current compilation unit." Logger.fmt
       (fun fmt -> Shape.Uid.print fmt uid);
@@ -503,28 +533,14 @@ let find_loc_of_uid ~config ~local_defs uid comp_unit =
         Shape.Uid.print fmt uid);
     let tbl = Ast_iterators.build_uid_to_locs_tbl ~local_defs () in
     match Shape.Uid.Tbl.find_opt tbl uid with
-    | Some { Location.loc; _ } -> `Some (uid, loc)
+    | Some loc -> Some loc
     | None ->
       log ~title "Uid not found in the local table.";
-      `None
+      None
   end
-  else begin
-    log ~title "Loading the cmt file for unit %S" comp_unit;
-    match load_cmt ~config comp_unit with
-    | Ok (_pos_fname, cmt) ->
-      log ~title "Shapes successfully loaded, looking for %a" Logger.fmt
-        (fun fmt -> Shape.Uid.print fmt uid);
-      begin
-        match Shape.Uid.Tbl.find_opt cmt.cmt_uid_to_decl uid with
-        | Some decl -> loc_of_decl ~uid decl
-        | None ->
-          log ~title "Uid not found in the cmt's table.";
-          `None
-      end
-    | _ ->
-      log ~title "Failed to load the cmt file";
-      `None
-  end
+  else
+    lookup_uid_decl ~config:config.mconfig uid
+    |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid)
 
 let find_loc_of_comp_unit ~config uid comp_unit =
   let title = "find_loc_of_comp_unit" in
@@ -537,6 +553,43 @@ let find_loc_of_comp_unit ~config uid comp_unit =
   | _ ->
     log ~title "Failed to load the CU's cmt";
     `None
+
+let find_loc_of_uid ~config ~local_defs ~ident ?fallback (uid : Shape.Uid.t) =
+  let find_loc_of_item ~comp_unit =
+    match (find_loc_of_item ~config ~local_defs uid comp_unit, fallback) with
+    | Some { loc; txt }, _ when String.equal txt ident ->
+      (* Checking the ident prevent returning nonsensical results when some uid
+         were swaped but the cmt files were not rebuilt. *)
+      Some (uid, loc)
+    | (Some _ | None), Some fallback ->
+      find_loc_of_item ~config ~local_defs fallback comp_unit
+      |> Option.map ~f:(fun { Location.loc; _ } -> (fallback, loc))
+    | _ -> None
+  in
+  match uid with
+  | Predef s -> `Builtin (uid, s)
+  | Internal -> `Builtin (uid, "<internal>")
+  | Item { comp_unit; _ } -> `Opt (find_loc_of_item ~comp_unit)
+  | Compilation_unit comp_unit -> find_loc_of_comp_unit ~config uid comp_unit
+
+let get_linked_uids ~config ~comp_unit decl_uid =
+  let title = "linked_uids" in
+  log ~title "Try find cmt file for %s" comp_unit;
+  match load_cmt ~config comp_unit with
+  | Ok (_pos_fname, cmt) ->
+    log ~title "Cmt successfully loaded, looking for %a" Logger.fmt (fun fmt ->
+        Shape.Uid.print fmt decl_uid);
+    List.filter_map
+      ~f:(function
+        | Cmt_format.Definition_to_declaration, def, decl when decl = decl_uid
+          -> Some def
+        | Cmt_format.Definition_to_declaration, def, decl when def = decl_uid ->
+          Some decl
+        | _ -> None)
+      cmt.cmt_declaration_dependencies
+  | _ ->
+    log ~title "Failed to load the cmt file";
+    []
 
 let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   let namespace = decl.namespace in
@@ -589,24 +642,27 @@ let rec uid_of_result ~traverse_aliases = function
 let from_path ~config ~env ~local_defs ~decl path =
   let title = "from_path" in
   let unalias (decl : Env_lookup.item) =
-    if not config.traverse_aliases then decl.uid
+    if not config.traverse_aliases then (path, decl.uid)
     else
       let namespace = decl.namespace in
-      let uid = scrape_alias ~fallback_uid:decl.uid ~env ~namespace path in
+      let path, uid =
+        scrape_alias ~fallback_uid:decl.uid ~env ~namespace path
+      in
       if uid <> decl.uid then
         log ~title:"uid_of_path" "Unaliased declaration uid: %a -> %a"
           Logger.fmt
           (Fun.flip Shape.Uid.print decl.uid)
           Logger.fmt
           (Fun.flip Shape.Uid.print uid);
-      uid
+      (path, uid)
   in
   (* Step 1:  Path => Uid *)
-  let decl : Env_lookup.item = { decl with uid = unalias decl } in
+  let path, uid = unalias decl in
+  let decl : Env_lookup.item = { decl with uid } in
   let uid, approximated =
     match config.ml_or_mli with
     | `MLI -> (decl.uid, false)
-    | `ML -> (
+    | `ML | `Smart -> (
       let traverse_aliases = config.traverse_aliases in
       let result = find_definition_uid ~config ~env ~decl path in
       match uid_of_result ~traverse_aliases result with
@@ -617,25 +673,36 @@ let from_path ~config ~env ~local_defs ~decl path =
           (Fun.flip Shape.Uid.print decl.uid);
         (decl.uid, true))
   in
+  (* Step 1': Try refine Uid *)
+  let impl_uid =
+    (* When looking for a definition but stuck on an interface we load the
+       corresponding cmt file to try to find a corresponding definition. *)
+    match (uid, config.ml_or_mli) with
+    | Item { from = Intf; comp_unit; _ }, `Smart -> (
+      match get_linked_uids ~config ~comp_unit uid with
+      | [ uid ] -> Some uid
+      | _ -> None)
+    | _ -> None
+  in
   (* Step 2:  Uid => Location *)
   let loc =
-    match uid with
-    | Predef s -> `Builtin (uid, s)
-    | Internal -> `Builtin (uid, "<internal>")
-    | Item { comp_unit; _ } -> find_loc_of_uid ~config ~local_defs uid comp_unit
-    | Compilation_unit comp_unit -> find_loc_of_comp_unit ~config uid comp_unit
+    let ident = Path.last path in
+    match impl_uid with
+    | Some impl_uid ->
+      find_loc_of_uid ~config ~local_defs ~ident ~fallback:uid impl_uid
+    | None -> find_loc_of_uid ~config ~local_defs ~ident uid
   in
   let loc =
     match loc with
-    | `None ->
+    | `None | `Opt None ->
       log ~title "Falling back to the declaration's location: %a" Logger.fmt
         (Fun.flip Location.print_loc decl.loc);
       `Some (decl.uid, decl.loc)
-    | other -> other
+    | `Opt (Some result) -> `Some result
+    | (`Builtin _ | `Some _) as other -> other
   in
   (* Step 3:  Location => Source *)
   match loc with
-  | `None -> assert false
   | `Builtin _ as err -> err
   | `Some (uid, loc) -> (
     match find_source ~config:config.mconfig loc (Path.name path) with
@@ -705,7 +772,7 @@ let from_string ~config ~env ~local_defs ~pos ?namespaces path =
       log ~title:"from_string"
         "looking for the source of '%s' (prioritizing %s files)" path
         (match config.ml_or_mli with
-        | `ML -> ".ml"
+        | `ML | `Smart -> ".ml"
         | `MLI -> ".mli");
       from_longident ~config ~env ~local_defs nss ident
   in
