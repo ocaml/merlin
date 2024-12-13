@@ -158,6 +158,44 @@ Act either as *:py* or *:py3* depending on the version of python is used
 by the vim plugin.
 This is only useful if you want to write custom merlin extensions. 
 
+:MerlinSearch                                                  *:MerlinSearch*
+
+Act either as :MerlinSearchPolarity or :MerlinSearchType depending on the first
+character of the query. If the query starts with '-' or '+', then
+:MerlinSearchPolarity is used, otherwise, :MerlinSearchType is used.
+
+>
+  :MerlinSearch -int +string
+  :MerlinSearch int -> string
+<
+
+:MerlinSearchPolarity                                  *:MerlinSearchPolarity*
+
+Search for values in the current scope that have a type matching the query.
+The results are displayed in a completion menu.
+
+The query language is simply a list of path identifiers prefixed by `+` or `-`,
+e.g. `-int`, `-int +string`, `-Hashtbl.t +int`.
+
+`-` is interpreted as "consuming" and `+` as "producing": `-int +string` looks
+for functions consuming an `int` and producing a `string`.
+
+>
+  :MerlinSearchPolarity -int +string
+<
+
+:MerlinSearchType                                          *:MerlinSearchType*
+
+Works similarly to :MerlinSearchPolarity but uses a different query language.
+The results are displayed in a completion menu.
+
+The query language is a list of type constructors separated by '->'.
+Type parameters and functions are allowed: `('a -> bool) -> 'a list -> bool`.
+
+>
+  :MerlinSearchType int -> string
+<
+
 ==============================================================================
 OPTIONS                                                       *merlin-options*
 
