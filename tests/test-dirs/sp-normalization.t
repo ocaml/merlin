@@ -26,7 +26,7 @@ This query should not hang indefinitely
         "line": 11,
         "col": 18
       },
-      "type": "type t = unit",
+      "type": "unit",
       "tail": "no"
     },
     {

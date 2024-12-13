@@ -34,7 +34,9 @@ let dummy_type_scheme desc =
 let print_constructor c =
   let open Types in
   match c.cstr_args with
-  | [] -> Printtyp.tree_of_type_scheme (dummy_type_scheme (get_desc c.cstr_res))
+  | [] ->
+    Out_type.tree_of_typexp Type_scheme
+      (dummy_type_scheme (get_desc c.cstr_res))
   | args ->
     let desc =
       Tarrow
@@ -43,7 +45,7 @@ let print_constructor c =
           c.cstr_res,
           commu_ok )
     in
-    Printtyp.tree_of_type_scheme (dummy_type_scheme desc)
+    Out_type.tree_of_typexp Type_scheme (dummy_type_scheme desc)
 
 let summary_prev = function
   | Env.Env_empty -> None

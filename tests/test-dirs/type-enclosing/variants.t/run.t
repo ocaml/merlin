@@ -10,7 +10,7 @@
         "line": 2,
         "col": 18
       },
-      "type": "type core = [ `A | `B ]",
+      "type": "[ `A | `B ]",
       "tail": "no"
     },
     {
@@ -119,7 +119,7 @@
         "line": 5,
         "col": 12
       },
-      "type": "type core = [ `A | `B ]",
+      "type": "[ `A | `B ]",
       "tail": "no"
     },
     {

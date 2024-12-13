@@ -1625,7 +1625,7 @@ let check_unboxable env loc ty =
   let all_unboxable_types = Btype.fold_type_expr check_type Path.Set.empty ty in
   Path.Set.fold
     (fun p () ->
-       let p = Printtyp.shorten_type_path env p in
+       let p = Out_type.shorten_type_path env p in
        Location.prerr_warning loc
          (Warnings.Unboxable_type_in_prim_decl (Path.name p))
     )

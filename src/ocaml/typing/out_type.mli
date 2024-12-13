@@ -39,7 +39,7 @@ open Outcometree
 
 (** {1 Wrapping functions}*)
 
-val wrap_printing_env: error:bool -> Env.t -> (unit -> 'a) -> 'a
+val wrap_printing_env: ?error:bool -> Env.t -> (unit -> 'a) -> 'a
 (** Call the function using the environment for type path shortening
     This affects all the printing and tree cration functions functions below
     Also, if [~error:true], then disable the loading of cmis *)
@@ -257,3 +257,13 @@ val reset: unit -> unit
 
 (** Reset all contexts except for conflicts *)
 val reset_except_conflicts: unit -> unit
+
+(** {1 Merlin Short Path }*)
+
+val best_type_path_simple: Path.t -> Path.t
+val best_class_type_path_simple: Path.t -> Path.t
+
+val shorten_type_path: Env.t -> Path.t -> Path.t
+val shorten_module_type_path: Env.t -> Path.t -> Path.t
+val shorten_module_path: Env.t -> Path.t -> Path.t
+val shorten_class_type_path: Env.t -> Path.t -> Path.t

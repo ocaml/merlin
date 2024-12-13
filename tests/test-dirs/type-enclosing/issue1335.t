@@ -24,7 +24,7 @@ provide better result.
           "line": 4,
           "col": 15
         },
-        "type": "type 'a t = 'b t",
+        "type": "'a t",
         "tail": "no"
       },
       {

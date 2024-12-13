@@ -135,8 +135,9 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
         try
           let ppf, to_string = Format.to_string () in
           if Type_utils.type_in_env ~verbosity ~context env ppf source then (
-            log ~title:"from_reconstructed" "typed %s" source;
-            Some (loc, String (to_string ()), `No))
+            let result = to_string () in
+            log ~title:"from_reconstructed" "typed %s : %s" source result;
+            Some (loc, String result, `No))
           else (
             log ~title:"from_reconstructed" "FAILED to type %s" source;
             None)

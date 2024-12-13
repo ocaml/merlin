@@ -154,7 +154,7 @@ let execute_query_as_type_search ?(limit = 100) ~env ~query ~modules () =
   |> List.map ~f:(fun (cost, path, desc) ->
          let name =
            Printtyp.wrap_printing_env env @@ fun () ->
-           let path = Printtyp.rewrite_double_underscore_paths env path in
+           let path = Out_type.rewrite_double_underscore_paths env path in
            Format.asprintf "%a" Printtyp.path path
          in
          let doc = None in

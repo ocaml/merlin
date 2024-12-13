@@ -104,7 +104,7 @@
   }
   {
     "name": "Seq.map",
-    "type": "('a -> 'b) -> 'a Stdlib__Seq.t -> 'b Stdlib__Seq.t",
+    "type": "('a -> 'b) -> 'a Seq.t -> 'b Seq.t",
     "cost": 10,
     "doc": null
   }
@@ -144,7 +144,7 @@
           "col": 40
         },
         "name": "Hashtbl.add",
-        "type": "('a, 'b) Stdlib__Hashtbl.t -> 'a -> 'b -> unit",
+        "type": "('a, 'b) Hashtbl.t -> 'a -> 'b -> unit",
         "cost": 1,
         "doc": null,
         "constructible": "Hashtbl.add _ _ _"
@@ -160,7 +160,7 @@
           "col": 44
         },
         "name": "Hashtbl.replace",
-        "type": "('a, 'b) Stdlib__Hashtbl.t -> 'a -> 'b -> unit",
+        "type": "('a, 'b) Hashtbl.t -> 'a -> 'b -> unit",
         "cost": 2,
         "doc": null,
         "constructible": "Hashtbl.replace _ _ _"
@@ -176,7 +176,7 @@
           "col": 50
         },
         "name": "Hashtbl.add_seq",
-        "type": "('a, 'b) Stdlib__Hashtbl.t -> ('a * 'b) Seq.t -> unit",
+        "type": "('a, 'b) Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 24,
         "doc": null,
         "constructible": "Hashtbl.add_seq _ _"
@@ -192,7 +192,7 @@
           "col": 54
         },
         "name": "Hashtbl.replace_seq",
-        "type": "('a, 'b) Stdlib__Hashtbl.t -> ('a * 'b) Seq.t -> unit",
+        "type": "('a, 'b) Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 25,
         "doc": null,
         "constructible": "Hashtbl.replace_seq _ _"
@@ -209,8 +209,7 @@
         },
         "name": "Either.map",
         "type": "left:('a1 -> 'a2) ->
-  right:('b1 -> 'b2) ->
-  ('a1, 'b1) Stdlib__Either.t -> ('a2, 'b2) Stdlib__Either.t",
+  right:('b1 -> 'b2) -> ('a1, 'b1) Either.t -> ('a2, 'b2) Either.t",
         "cost": 44,
         "doc": null,
         "constructible": "Either.map ~left:_ ~right:_ _"
@@ -226,7 +225,7 @@
           "col": 51
         },
         "name": "MoreLabels.Hashtbl.add",
-        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
+        "type": "('a, 'b) MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
         "cost": 47,
         "doc": null,
         "constructible": "MoreLabels.Hashtbl.add _ ~key:_ ~data:_"
@@ -242,7 +241,7 @@
           "col": 52
         },
         "name": "MoreLabels.Hashtbl.add_seq",
-        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> ('a * 'b) Seq.t -> unit",
+        "type": "('a, 'b) MoreLabels.Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 48,
         "doc": null,
         "constructible": "MoreLabels.Hashtbl.add_seq _ _"
@@ -258,7 +257,7 @@
           "col": 55
         },
         "name": "MoreLabels.Hashtbl.replace",
-        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
+        "type": "('a, 'b) MoreLabels.Hashtbl.t -> key:'a -> data:'b -> unit",
         "cost": 48,
         "doc": null,
         "constructible": "MoreLabels.Hashtbl.replace _ ~key:_ ~data:_"
@@ -274,7 +273,7 @@
           "col": 56
         },
         "name": "MoreLabels.Hashtbl.replace_seq",
-        "type": "('a, 'b) Stdlib__MoreLabels.Hashtbl.t -> ('a * 'b) Seq.t -> unit",
+        "type": "('a, 'b) MoreLabels.Hashtbl.t -> ('a * 'b) Seq.t -> unit",
         "cost": 49,
         "doc": null,
         "constructible": "MoreLabels.Hashtbl.replace_seq _ _"
@@ -290,7 +289,7 @@
           "col": 55
         },
         "name": "Ephemeron.K2.query",
-        "type": "('k1, 'k2, 'd) Stdlib__Ephemeron.K2.t -> 'k1 -> 'k2 -> 'd option",
+        "type": "('k1, 'k2, 'd) Ephemeron.K2.t -> 'k1 -> 'k2 -> 'd option",
         "cost": 53,
         "doc": null,
         "constructible": "Ephemeron.K2.query _ _ _"
