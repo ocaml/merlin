@@ -19,6 +19,8 @@ open Format
 open Types
 open Outcometree
 
+module Doc : sig include module type of Printtyp_doc end
+
 val longident: formatter -> Longident.t -> unit
 val ident: formatter -> Ident.t -> unit
 val namespaced_ident: Shape.Sig_component_kind.t -> Ident.t -> string
@@ -29,11 +31,6 @@ val string_of_path: Path.t -> string
 val type_path: formatter -> Path.t -> unit
 (** Print a type path taking account of [-short-paths].
     Calls should be within [wrap_printing_env]. *)
-
-module Out_name: sig
-  val create: string -> out_name
-  val print: out_name -> string
-end
 
 type namespace := Shape.Sig_component_kind.t option
 
@@ -52,41 +49,6 @@ val shorten_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_type_path: Env.t -> Path.t -> Path.t
 val shorten_module_path: Env.t -> Path.t -> Path.t
 val shorten_class_type_path: Env.t -> Path.t -> Path.t
-
-module Naming_context: sig
-  val enable: bool -> unit
-  (** When contextual names are enabled, the mapping between identifiers
-      and names is ensured to be one-to-one. *)
-end
-
-(** The [Conflicts] module keeps track of conflicts arising when attributing
-    names to identifiers and provides functions that can print explanations
-    for these conflict in error messages *)
-module Conflicts: sig
-  val exists: unit -> bool
-  (** [exists()] returns true if the current naming context renamed
-        an identifier to avoid a name collision *)
-
-  type explanation =
-    { kind: Shape.Sig_component_kind.t;
-      name:string;
-      root_name:string;
-      location:Location.t
-    }
-
-  val list_explanations: unit -> explanation list
-(** [list_explanations()] return the list of conflict explanations
-    collected up to this point, and reset the list of collected
-    explanations *)
-
-  val print_located_explanations:
-    Format.formatter -> explanation list -> unit
-
-  val print_explanations: Format.formatter -> unit
-  (** Print all conflict explanations collected up to this point *)
-
-  val reset: unit -> unit
-end
 
 
 val reset: unit -> unit
@@ -232,14 +194,6 @@ val report_comparison_error :
   (formatter -> unit) -> (formatter -> unit) ->
   unit
 
-module Subtype : sig
-  val report_error :
-    formatter ->
-    Env.t ->
-    Errortrace.Subtype.error ->
-    string ->
-    unit
-end
 
 (* for toploop *)
 val print_items: (Env.t -> signature_item -> 'a option) ->

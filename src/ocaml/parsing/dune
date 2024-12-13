@@ -5,5 +5,5 @@
   (name ocaml_parsing)
   (public_name merlin-lib.ocaml_parsing)
   (flags -open Ocaml_utils -open Merlin_utils (:standard -w -9))
-  (modules_without_implementation asttypes parsetree)
+  (modules_without_implementation parsetree)
   (libraries merlin_utils ocaml_utils))

@@ -64,7 +64,7 @@ let ext_meta =
         \    end"
       ];
     public_def = [];
-    keywords = [ (">.", GREATERDOT) ];
+    keywords = [ (">.", METAOCAML_BRACKET_CLOSE) ];
     packages = []
   }
 
@@ -124,7 +124,7 @@ let parse_sig =
     (Parser_raw.interface lexer lexbuf : Parsetree.signature)
 
 let type_sig env sg =
-  let sg = Typemod.transl_signature env sg in
+  let sg = Typemod.type_interface env sg in
   sg.Typedtree.sig_type
 
 (*

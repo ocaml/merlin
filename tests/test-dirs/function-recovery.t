@@ -51,7 +51,9 @@
                             structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                               Pstr_eval
                               expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant PConst_int (1,None)
+                                Pexp_constant
+                                constant (_none_[0,0+-1]..[0,0+-1]) ghost
+                                  PConst_int (1,None)
                           ]
                         Texp_ident \"*type-error*/277\"
               ]
@@ -86,7 +88,7 @@
                   extra
                     Tpat_extra_constraint
                     core_type (type.ml[1,0+28]..type.ml[1,0+34])
-                      Ttyp_constr \"list/9!\"
+                      Ttyp_constr \"list/11!\"
                       [
                         core_type (type.ml[1,0+28]..type.ml[1,0+29])
                           Ttyp_constr \"t/278\"
@@ -118,7 +120,9 @@
                           structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
                             Pstr_eval
                             expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                              Pexp_constant PConst_int (1,None)
+                              Pexp_constant
+                              constant (_none_[0,0+-1]..[0,0+-1]) ghost
+                                PConst_int (1,None)
                         ]
                       Texp_ident \"*type-error*/280\"
                 ]

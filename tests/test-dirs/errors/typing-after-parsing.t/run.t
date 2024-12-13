@@ -16,7 +16,7 @@ First ask for all the errors:
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type unit"
+        "message": "The constant 3 has type int but an expression was expected of type unit"
       },
       {
         "start": {
@@ -57,7 +57,7 @@ Now let's just ask for typing errors:
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This expression has type int but an expression was expected of type unit"
+        "message": "The constant 3 has type int but an expression was expected of type unit"
       }
     ],
     "notifications": []

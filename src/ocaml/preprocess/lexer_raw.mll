@@ -29,7 +29,14 @@ type error =
   | Unterminated_string_in_comment of Location.t * Location.t
   | Empty_character_literal
   | Keyword_as_label of string
+  | Capitalized_label of string
   | Invalid_literal of string
+  | Invalid_directive of string * string option
+  | Invalid_encoding of string
+  | Invalid_char_in_ident of Uchar.t
+  | Non_lowercase_delimiter of string
+  | Capitalized_raw_identifier of string
+  | Unknown_keyword of string
 
 exception Error of error * Location.t
 
@@ -50,6 +57,9 @@ let rec (>>=) (m : 'a result) (f : 'a -> 'b result) : 'b result =
   | Refill u ->
     Refill (fun () -> u () >>= f)
   | Fail _ as e -> e
+
+let (let*) = (>>=)
+let (let+) = fun m f -> (>>=) m (fun x -> return (f x))
 
 type preprocessor = (Lexing.lexbuf -> Parser_raw.token) -> Lexing.lexbuf -> Parser_raw.token
 
@@ -79,67 +89,96 @@ let rec catch m f = match m with
 
 (* The table of keywords *)
 
-let keyword_table : keywords =
-  create_hashtable 149 [
-    "and", AND;
-    "as", AS;
-    "assert", ASSERT;
-    "begin", BEGIN;
-    "class", CLASS;
-    "constraint", CONSTRAINT;
-    "do", DO;
-    "done", DONE;
-    "downto", DOWNTO;
-    "else", ELSE;
-    "end", END;
-    "exception", EXCEPTION;
-    "external", EXTERNAL;
-    "false", FALSE;
-    "for", FOR;
-    "fun", FUN;
-    "function", FUNCTION;
-    "functor", FUNCTOR;
-    "if", IF;
-    "in", IN;
-    "include", INCLUDE;
-    "inherit", INHERIT;
-    "initializer", INITIALIZER;
-    "lazy", LAZY;
-    "let", LET;
-    "match", MATCH;
-    "method", METHOD;
-    "module", MODULE;
-    "mutable", MUTABLE;
-    "new", NEW;
-    "nonrec", NONREC;
-    "object", OBJECT;
-    "of", OF;
-    "open", OPEN;
-    "or", OR;
+let all_keywords =
+  let v5_3 = Some (5,3) in
+  let v1_0 = Some (1,0) in
+  let v1_6 = Some (1,6) in
+  let v4_2 = Some (4,2) in
+  let always = None in
+  [
+    "and", AND, always;
+    "as", AS, always;
+    "assert", ASSERT, v1_6;
+    "begin", BEGIN, always;
+    "class", CLASS, v1_0;
+    "constraint", CONSTRAINT, v1_0;
+    "do", DO, always;
+    "done", DONE, always;
+    "downto", DOWNTO, always;
+    "effect", EFFECT, v5_3;
+    "else", ELSE, always;
+    "end", END, always;
+    "exception", EXCEPTION, always;
+    "external", EXTERNAL, always;
+    "false", FALSE, always;
+    "for", FOR, always;
+    "fun", FUN, always;
+    "function", FUNCTION, always;
+    "functor", FUNCTOR, always;
+    "if", IF, always;
+    "in", IN, always;
+    "include", INCLUDE, always;
+    "inherit", INHERIT, v1_0;
+    "initializer", INITIALIZER, v1_0;
+    "lazy", LAZY, v1_6;
+    "let", LET, always;
+    "match", MATCH, always;
+    "method", METHOD, v1_0;
+    "module", MODULE, always;
+    "mutable", MUTABLE, always;
+    "new", NEW, v1_0;
+    "nonrec", NONREC, v4_2;
+    "object", OBJECT, v1_0;
+    "of", OF, always;
+    "open", OPEN, always;
+    "or", OR, always;
 (*  "parser", PARSER; *)
-    "private", PRIVATE;
-    "rec", REC;
-    "sig", SIG;
-    "struct", STRUCT;
-    "then", THEN;
-    "to", TO;
-    "true", TRUE;
-    "try", TRY;
-    "type", TYPE;
-    "val", VAL;
-    "virtual", VIRTUAL;
-    "when", WHEN;
-    "while", WHILE;
-    "with", WITH;
+    "private", PRIVATE, v1_0;
+    "rec", REC, always;
+    "sig", SIG, always;
+    "struct", STRUCT, always;
+    "then", THEN, always;
+    "to", TO, always;
+    "true", TRUE, always;
+    "try", TRY, always;
+    "type", TYPE, always;
+    "val", VAL, always;
+    "virtual", VIRTUAL, v1_0;
+    "when", WHEN, always;
+    "while", WHILE, always;
+    "with", WITH, always;
 
-    "lor", INFIXOP3("lor"); (* Should be INFIXOP2 *)
-    "lxor", INFIXOP3("lxor"); (* Should be INFIXOP2 *)
-    "mod", INFIXOP3("mod");
-    "land", INFIXOP3("land");
-    "lsl", INFIXOP4("lsl");
-    "lsr", INFIXOP4("lsr");
-    "asr", INFIXOP4("asr");
+    "lor", INFIXOP3("lor"), always; (* Should be INFIXOP2 *)
+    "lxor", INFIXOP3("lxor"), always; (* Should be INFIXOP2 *)
+    "mod", INFIXOP3("mod"), always;
+    "land", INFIXOP3("land"), always;
+    "lsl", INFIXOP4("lsl"), always;
+    "lsr", INFIXOP4("lsr"), always;
+    "asr", INFIXOP4("asr"), always
 ]
+
+let keyword_table = Hashtbl.create 149
+
+let populate_keywords (version,keywords) =
+  let greater (x:(int*int) option) (y:(int*int) option) =
+    match x, y with
+    | None, _ | _, None -> true
+    | Some x, Some y -> x >= y
+  in
+  let tbl = keyword_table in
+  Hashtbl.clear tbl;
+  let add_keyword (name, token, since) =
+    if greater version since then Hashtbl.replace tbl name (Some token)
+  in
+  List.iter ~f:add_keyword all_keywords;
+  List.iter ~f:(fun name ->
+    match List.find ~f:(fun (n,_,_) -> n = name) all_keywords with
+    | (_,tok,_) -> Hashtbl.replace tbl name (Some tok)
+    | exception Not_found -> Hashtbl.replace tbl name None
+    ) keywords
+
+(* FIXME: Merlin: this could be made configurable *)
+let () = populate_keywords (None,[])
 
 let keywords l = create_hashtable 11 l
 
@@ -150,8 +189,11 @@ let list_keywords =
     Hashtbl.fold add_kw keywords init
 
 let store_string_char buf c = Buffer.add_char buf c
+let store_string_utf_8_uchar buf u = Buffer.add_utf_8_uchar buf u
+let store_string buf s = Buffer.add_string buf s
 let store_substring buf s ~pos ~len = Buffer.add_substring buf s pos len
 
+let store_lexeme buf lexbuf = store_string buf (Lexing.lexeme lexbuf)
 let store_normalized_newline buf newline =
   (* #12502: we normalize "\r\n" to "\n" at lexing time,
      to avoid behavior difference due to OS-specific
@@ -180,13 +222,18 @@ let store_normalized_newline buf newline =
 
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
+let print_warnings = ref true
 
 (* Escaped chars are interpreted in strings unless they are in comments. *)
+let store_escaped_char state lexbuf c =
+  if in_comment state
+  then store_lexeme state.buffer lexbuf
+  else store_string_char state.buffer c
+
 let store_escaped_uchar state lexbuf u =
   if in_comment state
-  then Buffer.add_string state.buffer (Lexing.lexeme lexbuf)
-  else Buffer.add_utf_8_uchar state.buffer u
-
+  then store_lexeme state.buffer lexbuf
+  else store_string_utf_8_uchar state.buffer u
 
 let compute_quoted_string_idloc {Location.loc_start = orig_loc; _ } shift id =
   let id_start_pos = orig_loc.Lexing.pos_cnum + shift in
@@ -212,6 +259,16 @@ let wrap_string_lexer f state lexbuf =
   in
   state.string_start_loc <- Location.none;
   return (Buffer.contents state.buffer, loc)
+
+let wrap_comment_lexer state comment lexbuf =
+  let start_loc = Location.curr lexbuf  in
+  state.comment_start_loc <- [start_loc];
+  Buffer.reset state.buffer;
+  let+ end_loc = comment state lexbuf in
+  let s = Buffer.contents state.buffer in
+  Buffer.reset state.buffer;
+  s,
+  { start_loc with Location.loc_end = end_loc.Location.loc_end }
 
 (* to translate escape sequences *)
 
@@ -286,17 +343,65 @@ let uchar_for_uchar_escape lexbuf =
       illegal_escape lexbuf
         (Printf.sprintf "%X is not a Unicode scalar value" cp)
 
+let validate_encoding lexbuf raw_name =
+  match Utf8_lexeme.normalize raw_name with
+  | Error _ -> fail lexbuf (Invalid_encoding raw_name)
+  | Ok name -> return name
+
+let ident_for_extended lexbuf raw_name =
+  let* name = validate_encoding lexbuf raw_name in
+  match Utf8_lexeme.validate_identifier name with
+  | Utf8_lexeme.Valid -> return name
+  | Utf8_lexeme.Invalid_character u -> fail lexbuf (Invalid_char_in_ident u)
+  | Utf8_lexeme.Invalid_beginning _ ->
+  assert false (* excluded by the regexps *)
+
+let validate_delim lexbuf raw_name =
+  let* name = validate_encoding lexbuf raw_name in
+  if Utf8_lexeme.is_lowercase name then return name
+  else fail lexbuf (Non_lowercase_delimiter name)
+
+let validate_ext lexbuf name =
+  let* name = validate_encoding lexbuf name in
+  match Utf8_lexeme.validate_identifier ~with_dot:true name with
+  | Utf8_lexeme.Valid -> return name
+  | Utf8_lexeme.Invalid_character u -> fail lexbuf (Invalid_char_in_ident u)
+  | Utf8_lexeme.Invalid_beginning _ ->
+  assert false (* excluded by the regexps *)
+
+let lax_delim raw_name =
+  match Utf8_lexeme.normalize raw_name with
+  | Error _ -> None
+  | Ok name ->
+     if Utf8_lexeme.is_lowercase name then Some name
+     else None
+
 let keyword_or state s default =
   try Hashtbl.find state.keywords s
-      with Not_found -> try Hashtbl.find keyword_table s
-  with Not_found -> default
+  with Not_found ->
+    try Option.value ~default @@ Hashtbl.find keyword_table s
+    with Not_found -> default
 
-let is_keyword name = Hashtbl.mem keyword_table name
+let is_keyword name =
+  Hashtbl.mem keyword_table name
+
 let () = Lexer.is_keyword_ref := is_keyword
 
-let check_label_name lexbuf name =
-  if is_keyword name
-  then fail lexbuf (Keyword_as_label name)
+let find_keyword lexbuf name default =
+  match Hashtbl.find keyword_table name with
+  | Some x -> return x
+  | None -> fail lexbuf (Unknown_keyword name)
+  | exception Not_found -> return default
+
+let find_keyword state lexbuf ~name ~default =
+  try return @@ Hashtbl.find state.keywords name
+  with Not_found -> find_keyword lexbuf name default
+
+let check_label_name ?(raw_escape=false) lexbuf name =
+  if Utf8_lexeme.is_capitalized name then
+    fail lexbuf (Capitalized_label name)
+  else if not raw_escape && is_keyword name then
+    fail lexbuf (Keyword_as_label name)
   else return name
 
 (* Update the current location with file name and line number. *)
@@ -314,15 +419,13 @@ let update_loc lexbuf _file line absolute chars =
     pos_bol = pos.pos_cnum - chars;
   }
 
-(* Warn about Latin-1 characters used in idents *)
 
-let warn_latin1 lexbuf =
-  Location.deprecated (Location.curr lexbuf)
-    "ISO-Latin1 characters in identifiers"
+(* TODO Merlin should we support this ?*)
+let handle_docstrings = ref false
 
 (* Error report *)
 
-open Format
+open Format_doc
 
 let prepare_error loc = function
   | Illegal_character c ->
@@ -356,8 +459,36 @@ let prepare_error loc = function
   | Keyword_as_label kwd ->
       Location.errorf ~loc
         "%a is a keyword, it cannot be used as label name" Style.inline_code kwd
+  | Capitalized_label lbl ->
+      Location.errorf ~loc
+        "%a cannot be used as label name, \
+         it must start with a lowercase letter" Style.inline_code lbl
   | Invalid_literal s ->
       Location.errorf ~loc "Invalid literal %s" s
+  | Invalid_directive (dir, explanation) ->
+      Location.errorf ~loc "Invalid lexer directive %S%t" dir
+        (fun ppf -> match explanation with
+           | None -> ()
+           | Some expl -> fprintf ppf ": %s" expl)
+  | Invalid_encoding s ->
+    Location.errorf ~loc "Invalid encoding of identifier %s." s
+  | Invalid_char_in_ident u ->
+      Location.errorf ~loc "Invalid character U+%X in identifier"
+         (Uchar.to_int u)
+  | Capitalized_raw_identifier lbl ->
+      Location.errorf ~loc
+        "%a cannot be used as a raw identifier, \
+         it must start with a lowercase letter" Style.inline_code lbl
+  | Non_lowercase_delimiter name ->
+      Location.errorf ~loc
+        "%a cannot be used as a quoted string delimiter,@ \
+         it must contain only lowercase letters."
+         Style.inline_code name
+  | Unknown_keyword name ->
+      Location.errorf ~loc
+      "%a has been defined as an additional keyword.@ \
+       This version of OCaml does not support this keyword."
+      Style.inline_code name
 (* FIXME: Invalid_directive? *)
 
 let () =
@@ -375,14 +506,26 @@ let newline = ('\013'* '\010')
 let blank = [' ' '\009' '\012']
 let lowercase = ['a'-'z' '_']
 let uppercase = ['A'-'Z']
-let identchar = ['A'-'Z' 'a'-'z' '_' '\'' '0'-'9' '\128'-'\255']
+let identstart = lowercase | uppercase
+let identchar = ['A'-'Z' 'a'-'z' '_' '\'' '0'-'9']
+let utf8 = ['\192'-'\255'] ['\128'-'\191']*
+let identstart_ext = identstart | utf8
+let identchar_ext = identchar | utf8
+let delim_ext = (lowercase | uppercase | utf8)*
+(* ascii uppercase letters in quoted string delimiters ({delim||delim}) are
+   rejected by the delimiter validation function, we accept them temporarily to
+   have the same error message for ascii and non-ascii uppercase letters *)
+
+(* TODO REMOVE *)
 let lowercase_latin1 = ['a'-'z' '\223'-'\246' '\248'-'\255' '_']
 let uppercase_latin1 = ['A'-'Z' '\192'-'\214' '\216'-'\222']
 let identchar_latin1 = identchar
   (*['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']*)
+(* END TODO REMOVE *)
+
 let symbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
-let symbolcharnopercent =
+let symbolcharnopercent = (* TODO ???? *)
   ['!' '$' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let dotsymbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '/' ':' '=' '>' '?' '@' '^' '|']
@@ -392,6 +535,7 @@ let kwdopchar =
   ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
 
 let ident = (lowercase | uppercase) identchar*
+let ident_ext = identstart_ext  identchar_ext*
 let extattrident = ident ('.' ident)*
 
 let decimal_literal =
@@ -438,11 +582,11 @@ rule token state = parse
   | blank +
       { token state lexbuf }
   | ".<"
-      { return DOTLESS }
+      { return METAOCAML_BRACKET_OPEN }
   | ">."
       { return (keyword_or state (Lexing.lexeme lexbuf) (INFIXOP0 ">.")) }
   | ".~"
-      { return (keyword_or state (Lexing.lexeme lexbuf) DOTTILDE) }
+      { return (keyword_or state (Lexing.lexeme lexbuf) METAOCAML_ESCAPE) }
   | "_"
       { return UNDERSCORE }
   | "~"
@@ -452,40 +596,36 @@ rule token state = parse
       { fail lexbuf
           (Reserved_sequence (".~", Some "is reserved for use in MetaOCaml")) }
       *)
-  | "~" raw_ident_escape (lowercase identchar * as name) ':'
-      { return (LABEL name) }
-  | "~" (lowercase identchar * as name) ':'
+  | "~" (identstart identchar * as name) ':'
       { lABEL (check_label_name lexbuf name) }
-  | "~" (lowercase_latin1 identchar_latin1 * as name) ':'
-      { warn_latin1 lexbuf;
-        return (LABEL name) }
+  | "~" (raw_ident_escape? as escape) (ident_ext as raw_name) ':'
+      { ident_for_extended lexbuf raw_name
+        >>= check_label_name ~raw_escape:(escape<>"") lexbuf
+        |> lABEL }
   | "?"
       { return QUESTION }
-  | "?" raw_ident_escape (lowercase identchar * as name) ':'
-      { return (OPTLABEL name) }
   | "?" (lowercase identchar * as name) ':'
       { oPTLABEL (check_label_name lexbuf name) }
-  | "?" (lowercase_latin1 identchar_latin1 * as name) ':'
-      { warn_latin1 lexbuf; return (OPTLABEL name) }
-  | raw_ident_escape (lowercase identchar * as name)
-      { return (LIDENT name) }
+  | "?" (raw_ident_escape? as escape) (ident_ext as raw_name) ':'
+      { ident_for_extended lexbuf raw_name
+        >>= check_label_name ~raw_escape:(escape<>"") lexbuf
+        |> oPTLABEL }
+  (* | raw_ident_escape (lowercase identchar * as name)
+      { return (LIDENT name) } *)
   | lowercase identchar * as name
-    { return (try Hashtbl.find state.keywords name
-              with Not_found ->
-              try Hashtbl.find keyword_table name
-              with Not_found ->
-                LIDENT name) }
-  | lowercase_latin1 identchar_latin1 * as name
-      { warn_latin1 lexbuf; return (LIDENT name) }
+    { (find_keyword state lexbuf ~name ~default:(LIDENT name)) }
   | uppercase identchar * as name
     { (* Capitalized keywords for OUnit *)
-      return (try Hashtbl.find state.keywords name
-              with Not_found ->
-              try Hashtbl.find keyword_table name
-              with Not_found ->
-                UIDENT name) }
-  | uppercase_latin1 identchar_latin1 * as name
-    { warn_latin1 lexbuf; return (UIDENT name) }
+      (find_keyword state lexbuf ~name ~default:(UIDENT name))}
+  | (raw_ident_escape? as escape) (ident_ext as raw_name)
+    { let* name = ident_for_extended lexbuf raw_name in
+      if Utf8_lexeme.is_capitalized name then begin
+        if escape="" then return (UIDENT name)
+        else return (UIDENT name)
+          (* we don't have capitalized keywords, and thus no needs for
+             capitalized raw identifiers. *)
+          (*fail lexbuf (Capitalized_raw_identifier name)*)
+      end else return (LIDENT name) }
   | int_literal as lit { return (INT (lit, None)) }
   | (int_literal as lit) (literal_modifier as modif)
     { return (INT (lit, Some modif)) }
@@ -498,37 +638,36 @@ rule token state = parse
   | "\""
       { wrap_string_lexer string state lexbuf >>= fun (str, loc) ->
         return (STRING (str, loc, None)) }
-  | "\'\'"
-      { wrap_string_lexer string state lexbuf >>= fun (str, loc) ->
-        return (STRING (str, loc, None)) }
-  | "{" (lowercase* as delim) "|"
-      { wrap_string_lexer (quoted_string delim) state lexbuf
-        >>= fun (str, loc) ->
-        return (STRING (str, loc, Some delim)) }
-  | "{%" (extattrident as id) "|"
+  | "{" (delim_ext as raw_name) '|'
+      { let* delim = validate_delim lexbuf raw_name in
+        let+ s, loc = wrap_string_lexer (quoted_string delim) state lexbuf in
+        STRING (s, loc, Some delim) }
+  | "{%" (extattrident as raw_id) "|"
       { let orig_loc = Location.curr lexbuf in
-        wrap_string_lexer (quoted_string "") state lexbuf
-        >>= fun (str, loc) ->
+        let* id = validate_ext lexbuf raw_id in
+        let+ s, loc =wrap_string_lexer (quoted_string "") state lexbuf in
         let idloc = compute_quoted_string_idloc orig_loc 2 id in
-        return (QUOTED_STRING_EXPR (id, idloc, str, loc, Some "")) }
-  | "{%" (extattrident as id) blank+ (lowercase* as delim) "|"
+        QUOTED_STRING_EXPR (id, idloc, s, loc, Some "") }
+  | "{%" (extattrident as raw_id) blank+ (delim_ext as raw_delim) "|"
       { let orig_loc = Location.curr lexbuf in
-        wrap_string_lexer (quoted_string delim) state lexbuf
-        >>= fun (str, loc) ->
+        let* id = validate_ext lexbuf raw_id in
+        let* delim = validate_delim lexbuf raw_delim in
+        let+ s, loc = wrap_string_lexer (quoted_string delim) state lexbuf in
         let idloc = compute_quoted_string_idloc orig_loc 2 id in
-        return (QUOTED_STRING_EXPR (id, idloc, str, loc, Some delim)) }
-  | "{%%" (extattrident as id) "|"
+        QUOTED_STRING_EXPR (id, idloc, s, loc, Some delim) }
+  | "{%%" (extattrident as raw_id) "|"
       { let orig_loc = Location.curr lexbuf in
-        wrap_string_lexer (quoted_string "") state lexbuf
-        >>= fun (str, loc) ->
+        let* id = validate_ext lexbuf raw_id in
+        let+ s, loc = wrap_string_lexer (quoted_string "") state lexbuf in
         let idloc = compute_quoted_string_idloc orig_loc 3 id in
-        return (QUOTED_STRING_ITEM (id, idloc, str, loc, Some "")) }
-  | "{%%" (extattrident as id) blank+ (lowercase* as delim) "|"
+        QUOTED_STRING_ITEM (id, idloc, s, loc, Some "") }
+  | "{%%" (extattrident as raw_id) blank+ (delim_ext as raw_delim) "|"
       { let orig_loc = Location.curr lexbuf in
-        wrap_string_lexer (quoted_string delim) state lexbuf
-        >>= fun (str, loc) ->
+        let* id = validate_ext lexbuf raw_id in
+        let* delim = validate_delim lexbuf raw_delim in
+        let+ s, loc = wrap_string_lexer (quoted_string delim) state lexbuf in
         let idloc = compute_quoted_string_idloc orig_loc 3 id in
-        return (QUOTED_STRING_ITEM (id, idloc, str, loc, Some delim)) }
+        QUOTED_STRING_ITEM (id, idloc, s, loc, Some delim) }
   | "\'" newline "\'"
     { update_loc lexbuf None 1 false 1;
       (* newline is ('\013'* '\010') *)
@@ -537,34 +676,45 @@ rule token state = parse
     { return (CHAR c) }
   | "\'\\" (['\\' '\'' '\"' 'n' 't' 'b' 'r' ' '] as c) "\'"
     { return (CHAR (char_for_backslash c)) }
-  | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
-    { char_for_octal_code state lexbuf 3 >>= fun c -> return (CHAR c) }
   | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "\'"
     { char_for_decimal_code state lexbuf 2 >>= fun c -> return (CHAR c) }
+  | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
+    { char_for_octal_code state lexbuf 3 >>= fun c -> return (CHAR c) }
   | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "\'"
     { return (CHAR (char_for_hexadecimal_code lexbuf 3)) }
   | "\'" ("\\" [^ '#'] as esc)
       { fail lexbuf (Illegal_escape (esc, None)) }
   | "(*"
-      { let start_loc = Location.curr lexbuf in
-        state.comment_start_loc <- [start_loc];
-        Buffer.reset state.buffer;
-        comment state lexbuf >>= fun end_loc ->
-        let s = Buffer.contents state.buffer in
-        Buffer.reset state.buffer;
-        return (COMMENT (s, { start_loc with
-                              Location.loc_end = end_loc.Location.loc_end }))
+      { let+ s, loc = wrap_comment_lexer state comment lexbuf in
+        COMMENT (s, loc) }
+  | "(**"
+      { let+ s, loc = wrap_comment_lexer state comment lexbuf in
+        if !handle_docstrings then
+          DOCSTRING (Docstrings.docstring s loc)
+        else
+          COMMENT ("*" ^ s, loc)
       }
+  | "(**" (('*'+) as stars)
+      { let+ s, loc =
+          wrap_comment_lexer
+            state
+            (fun state lexbuf ->
+               store_string state.buffer ("*" ^ stars);
+               comment state  lexbuf)
+            lexbuf
+        in
+        COMMENT (s, loc) }
   | "(*)"
-      { let loc = Location.curr lexbuf in
-        Location.prerr_warning loc Warnings.Comment_start;
-        state.comment_start_loc <- [loc];
-        Buffer.reset state.buffer;
-        comment state lexbuf >>= fun end_loc ->
-        let s = Buffer.contents state.buffer in
-        Buffer.reset state.buffer;
-        return (COMMENT (s, { loc with Location.loc_end = end_loc.Location.loc_end }))
-      }
+      { if !print_warnings then
+          Location.prerr_warning (Location.curr lexbuf) Warnings.Comment_start;
+        let+ s, loc = wrap_comment_lexer state comment lexbuf in
+        COMMENT (s, loc) }
+  | "(*" (('*'*) as stars) "*)"
+      { if !handle_docstrings && stars="" then
+         (* (**) is an empty docstring *)
+          return (DOCSTRING(Docstrings.docstring "" (Location.curr lexbuf)))
+        else
+          return (COMMENT (stars, Location.curr lexbuf)) }
   | "*)"
       { let loc = Location.curr lexbuf in
         Location.prerr_warning loc Warnings.Comment_not_end;
@@ -573,13 +723,12 @@ rule token state = parse
         lexbuf.lex_curr_p <- { curpos with pos_cnum = curpos.pos_cnum - 1 };
         return STAR
       }
-  | "#" [' ' '\t']* (['0'-'9']+ as num) [' ' '\t']*
-        ("\"" ([^ '\010' '\013' '\"' ] * as name) "\"")?
-        [^ '\010' '\013'] * newline
-      { update_loc lexbuf name (int_of_string num) true 0;
-        token state lexbuf
+  | "#"
+      { let at_beginning_of_line pos = (pos.pos_cnum = pos.pos_bol) in
+        if not (at_beginning_of_line lexbuf.lex_start_p)
+        then return HASH
+        else try directive state lexbuf with Failure _ -> return HASH
       }
-  | "#"  { return HASH }
   | "&"  { return AMPERSAND }
   | "&&" { return AMPERAMPER }
   | "`"  { return BACKQUOTE }
@@ -632,7 +781,7 @@ rule token state = parse
             { return (PREFIXOP op) }
   | ['~' '?'] symbolchar_or_hash + as op
             { return (PREFIXOP op) }
-  | ['=' '<' '|' '&' '$' '>'] symbolchar * as op
+  | ['=' '<' '>' '|' '&' '$'] symbolchar * as op
             { return (keyword_or state op
                        (INFIXOP0 op)) }
   | ['@' '^'] symbolchar * as op
@@ -657,18 +806,35 @@ rule token state = parse
   | _ as illegal_char
       { fail lexbuf (Illegal_character illegal_char) }
 
+and directive state = parse
+  | ([' ' '\t']* (['0'-'9']+ as num) [' ' '\t']*
+        ("\"" ([^ '\010' '\013' '\"' ] * as name) "\"") as directive)
+        [^ '\010' '\013'] *
+      {
+        match int_of_string num with
+        | exception _ ->
+            (* PR#7165 *)
+            let explanation = "line number out of range" in
+            fail lexbuf (Invalid_directive ("#" ^ directive, Some explanation))
+        | line_num ->
+           (* Documentation says that the line number should be
+              positive, but we have never guarded against this and it
+              might have useful hackish uses. *)
+            update_loc lexbuf (Some name) (line_num - 1) true 0;
+            token state lexbuf
+      }
 and comment state = parse
     "(*"
       { state.comment_start_loc <- (Location.curr lexbuf) :: state.comment_start_loc;
-      Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
-      comment state lexbuf
-    }
+        store_lexeme state.buffer lexbuf;
+        comment state lexbuf
+      }
   | "*)"
       { match state.comment_start_loc with
         | [] -> assert false
         | [_] -> state.comment_start_loc <- []; return (Location.curr lexbuf)
         | _ :: l -> state.comment_start_loc <- l;
-                  Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+                  store_lexeme state.buffer lexbuf;
                   comment state lexbuf
        }
   | "\""
@@ -689,35 +855,37 @@ and comment state = parse
              | e -> fail_loc e l
            )
         ) >>= fun _loc ->
-      state.string_start_loc <- Location.none;
-      Buffer.add_string buffer (String.escaped (Buffer.contents state.buffer));
-      state.buffer <- buffer;
-      Buffer.add_char state.buffer '\"';
-      comment state lexbuf }
-  | "{" ('%' '%'? extattrident blank*)? (lowercase* as delim) "|"
-      {
-        state.string_start_loc <- Location.curr lexbuf;
-        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
-        (catch (quoted_string delim state lexbuf) (fun e l -> match e with
-             | Unterminated_string ->
-               begin match state.comment_start_loc with
-                 | [] -> assert false
-                 | loc :: _ ->
-                   let start = List.hd (List.rev state.comment_start_loc) in
-                   state.comment_start_loc <- [];
-                   fail_loc (Unterminated_string_in_comment (start, l)) loc
-               end
-             | e -> fail_loc e l
-           )
-        ) >>= fun _loc ->
         state.string_start_loc <- Location.none;
-        Buffer.add_char state.buffer '|';
-        Buffer.add_string state.buffer delim;
-        Buffer.add_char state.buffer '}';
+        Buffer.add_string buffer (String.escaped (Buffer.contents state.buffer));
+        state.buffer <- buffer;
+        store_string_char state.buffer '\"';
         comment state lexbuf }
+  | "{" ('%' '%'? extattrident blank*)? (delim_ext as raw_delim) "|"
+      { match lax_delim raw_delim with
+        | None -> store_lexeme state.buffer lexbuf; comment state lexbuf
+        | Some delim ->
+          state.string_start_loc <- Location.curr lexbuf;
+          Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+          (catch (quoted_string delim state lexbuf) (fun e l -> match e with
+              | Unterminated_string ->
+                begin match state.comment_start_loc with
+                  | [] -> assert false
+                  | loc :: _ ->
+                    let start = List.hd (List.rev state.comment_start_loc) in
+                    state.comment_start_loc <- [];
+                    fail_loc (Unterminated_string_in_comment (start, l)) loc
+                end
+              | e -> fail_loc e l
+            )
+          ) >>= fun _loc ->
+          state.string_start_loc <- Location.none;
+          Buffer.add_char state.buffer '|';
+          Buffer.add_string state.buffer delim;
+          Buffer.add_char state.buffer '}';
+          comment state lexbuf }
 
   | "\'\'"
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
   | "\'" (newline as nl) "\'"
       { update_loc lexbuf None 1 false 1;
         store_string_char state.buffer '\'';
@@ -725,16 +893,16 @@ and comment state = parse
         store_string_char state.buffer '\'';
         comment state lexbuf
       }
-  | "\'" [^ '\\' '\'' '\010' '\013' ] "'"
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "\'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+  | "\'" [^ '\\' '\'' '\010' '\013' ] "\'"
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
+  | "\'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "\'"
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
+  | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "\'"
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
   | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
+  | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "\'"
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
   | eof
       { match state.comment_start_loc with
         | [] -> assert false
@@ -748,29 +916,37 @@ and comment state = parse
         store_normalized_newline state.buffer nl;
         comment state lexbuf
       }
-  | (lowercase | uppercase) identchar *
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+  | ident
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
   | _
-      { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
+      { store_lexeme state.buffer lexbuf; comment state lexbuf }
 
 and string state = parse
     '\"'
       { return lexbuf.lex_start_p  }
-  | '\\' newline ([' ' '\t'] * as space)
+  | '\\' (newline as nl) ([' ' '\t'] * as space)
       { update_loc lexbuf None 1 false (String.length space);
+        if in_comment state then begin
+          store_string_char state.buffer '\\';
+          store_normalized_newline state.buffer nl;
+          store_string state.buffer space;
+        end;
         string state lexbuf
       }
-  | '\\' ['\\' '\'' '\"' 'n' 't' 'b' 'r' ' ']
-      { Buffer.add_char state.buffer
-          (char_for_backslash (Lexing.lexeme_char lexbuf 1));
+  | '\\' (['\\' '\'' '\"' 'n' 't' 'b' 'r' ' '] as c)
+      { store_escaped_char state lexbuf (char_for_backslash c);
         string state lexbuf }
   | '\\' ['0'-'9'] ['0'-'9'] ['0'-'9']
       { char_for_decimal_code state lexbuf 1 >>= fun c ->
-        Buffer.add_char state.buffer c;
-        string state lexbuf }
+        store_escaped_char state lexbuf c;
+         string state lexbuf }
+  | '\\' 'o' ['0'-'7'] ['0'-'7'] ['0'-'7']
+      { char_for_octal_code state lexbuf 2 >>= fun c ->
+        store_escaped_char state lexbuf c;
+         string state lexbuf }
   | '\\' 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F']
-      { Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
-        string state lexbuf }
+      { store_escaped_char state lexbuf (char_for_hexadecimal_code lexbuf 2);
+         string state lexbuf }
   | '\\' 'u' '{' hex_digit+ '}'
       { store_escaped_uchar state lexbuf (uchar_for_uchar_escape lexbuf);
         string state lexbuf }
@@ -779,13 +955,11 @@ and string state = parse
         then string state lexbuf
         else begin
 (*  Should be an error, but we are very lax.
-                  fail (Illegal_escape (Lexing.lexeme lexbuf),
-                        (Location.curr lexbuf)
+          error lexbuf (Illegal_escape (Lexing.lexeme lexbuf, None))
 *)
           let loc = Location.curr lexbuf in
           Location.prerr_warning loc Warnings.Illegal_backslash;
-          Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
-          Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 1);
+          store_lexeme state.buffer lexbuf;
           string state lexbuf
         end
       }
@@ -812,16 +986,15 @@ and quoted_string delim state = parse
       { let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         fail_loc Unterminated_string loc }
-  | "|" lowercase* "}"
+  | "|" (ident_ext? as raw_edelim) "}"
       {
-        let edelim = Lexing.lexeme lexbuf in
-        let edelim = String.sub edelim ~pos:1 ~len:(String.length edelim - 2) in
+        let* edelim = validate_encoding lexbuf raw_edelim in
         if delim = edelim then return lexbuf.lex_start_p
-        else (Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        else (store_lexeme state.buffer lexbuf;
               quoted_string delim state lexbuf)
       }
-  | _
-      { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
+  | (_ as c)
+      { store_string_char state.buffer c;
         quoted_string delim state lexbuf }
 
 and skip_sharp_bang state = parse

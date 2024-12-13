@@ -70,3 +70,30 @@ let pat_alias_pat_id_and_loc = function
   | Typedtree.{ pat_desc = Tpat_alias (pat, id, loc, _); _ } ->
     Some (pat, id, loc)
   | _ -> None
+
+open Typedtree
+
+type texp_match =
+  { expr : expression;
+    computation_cases : computation case list;
+    value_cases : value case list;
+    partial : partial
+  }
+
+type texp_try =
+  { expr : expression;
+    value_cases : value case list;
+    effect_cases : value case list
+  }
+
+let texp_match_of_expr expr =
+  match expr.exp_desc with
+  | Texp_match (expr, computation_cases, value_cases, partial) ->
+    Some { expr; computation_cases; value_cases; partial }
+  | _ -> None
+
+let texp_try_of_expr expr =
+  match expr.exp_desc with
+  | Texp_try (expr, value_cases, effect_cases) ->
+    Some { expr; value_cases; effect_cases }
+  | _ -> None

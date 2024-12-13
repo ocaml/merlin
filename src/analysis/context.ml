@@ -66,7 +66,8 @@ let cursor_on_longident_end ~cursor:cursor_pos
       (* FIXME: this is britle, but lids don't have precise enough location
          information to handle these cases correctly. *)
       let name_lenght = String.length name in
-      if Pprintast.needs_parens name then name_lenght + 2 else name_lenght
+      if Pprintast.needs_parens ~kind:Other name then name_lenght + 2
+      else name_lenght
     in
     let constr_pos =
       { loc.loc_end with pos_cnum = end_offset - cstr_name_size }

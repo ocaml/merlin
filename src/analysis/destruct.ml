@@ -214,7 +214,7 @@ let rec get_match = function
       get_match parents
     | Expression m -> (
       match m.Typedtree.exp_desc with
-      | Typedtree.Texp_match (e, _, _) -> (m, e.exp_type)
+      | Typedtree.Texp_match (e, _, _, _) -> (m, e.exp_type)
       | Typedtree.Texp_function _ -> (
         let typ = m.exp_type in
         (* Function must have arrow type. This arrow type
