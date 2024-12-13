@@ -253,7 +253,6 @@ FIXME: same as before
     }
   ]
 
-
   $ $MERLIN single type-enclosing -position 22:15 -verbosity 1 \
   > -filename ./test.ml < ./test.ml | jq ".value[0:2]"
   [
@@ -270,4 +269,3 @@ FIXME: same as before
       "tail": "no"
     }
   ]
-

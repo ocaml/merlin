@@ -1,5 +1,4 @@
-  $ dune build @check 2>/dev/null
-  [1]
+  $ dune build @check 
 
 When the definition is in one of the implicit transitive dependencies
 Merlin does not found the file in the source path provided by Dune. 
