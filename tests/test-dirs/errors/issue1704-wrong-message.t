@@ -29,23 +29,6 @@ due to it's own type recovery.
       {
         "start": {
           "line": 4,
-          "col": 0
-        },
-        "end": {
-          "line": 4,
-          "col": 15
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "This type cannot be unboxed because
-  it might contain both float and non-float values,
-  depending on the instantiation of an unnamed existential variable.
-  You should annotate it with [@@ocaml.boxed]."
-      },
-      {
-        "start": {
-          "line": 4,
           "col": 12
         },
         "end": {
@@ -56,23 +39,6 @@ due to it's own type recovery.
         "sub": [],
         "valid": true,
         "message": "Unbound module X"
-      },
-      {
-        "start": {
-          "line": 5,
-          "col": 0
-        },
-        "end": {
-          "line": 5,
-          "col": 15
-        },
-        "type": "typer",
-        "sub": [],
-        "valid": true,
-        "message": "This type cannot be unboxed because
-  it might contain both float and non-float values,
-  depending on the instantiation of an unnamed existential variable.
-  You should annotate it with [@@ocaml.boxed]."
       },
       {
         "start": {
