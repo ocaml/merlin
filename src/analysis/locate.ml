@@ -794,7 +794,8 @@ let doc_from_uid ~config ~loc uid =
       when Env.get_current_unit_name () <> comp_unit ->
       log ~title:"get_doc"
         "the doc (%a) you're looking for is in another\n\
-        \      compilation unit (%s)" Logger.fmt
+        \      compilation unit (%s)"
+        Logger.fmt
         (fun fmt -> Shape.Uid.print fmt uid)
         comp_unit;
       log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;

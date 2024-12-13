@@ -507,7 +507,10 @@ let complete_methods ~env ~prefix obj =
   in
   let methods = List.filter ~f:has_prefix (methods_of_type env t) in
   List.map methods ~f:(fun (name, ty) ->
-      let info = `None (* TODO: get documentation. *) in
+      let info =
+        `None
+        (* TODO: get documentation. *)
+      in
       { name;
         kind = `MethodCall;
         desc = `Type_scheme ty;

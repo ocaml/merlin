@@ -46,7 +46,7 @@ let get_syntax_doc cursor_loc node : syntax_info =
     :: ( _,
          Module_type_constraint
            (Tmodtype_explicit
-             { mty_desc = Tmty_with (_, [ (_, _, Twith_modtype _) ]); _ }) )
+              { mty_desc = Tmty_with (_, [ (_, _, Twith_modtype _) ]); _ }) )
     :: _ ->
     Some
       { name = "Module substitution";
