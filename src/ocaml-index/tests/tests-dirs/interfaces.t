@@ -17,7 +17,9 @@
   $ ocaml-index aggregate main.cmti -o main.index
 
   $ ocaml-index dump main.index
-  1 uids:
-  {uid: Stdlib__Float.81; locs:
+  2 uids:
+  {uid: [intf]Main.0; locs: "t": File "main.mli", line 1, characters 5-6
+   uid: Stdlib__Float.81; locs:
      "Float.t": File "main.mli", line 1, characters 9-16
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}

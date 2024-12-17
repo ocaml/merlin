@@ -509,6 +509,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     if path = "" then `Invalid_context
     else
+      let ml_or_mli =
+        match ml_or_mli with
+        | `ML -> `Smart
+        | `MLI -> `MLI
+      in
       let config =
         Locate.
           { mconfig = Mpipeline.final_config pipeline;
