@@ -20,7 +20,7 @@ let add_root ~root (lid : Longident.t Location.loc) =
     }
 
 let merge m m' =
-  Shape.Uid.Map.union
+  Uid_map.union
     (fun _uid locs locs' -> Some (Lid_set.union locs locs'))
     m m'
 
@@ -36,7 +36,7 @@ let gather_locs_from_fragments ~root ~rewrite_root map fragments =
     | Some lid ->
       let lid = to_located_lid lid in
       let lid = if rewrite_root then add_root ~root lid else lid in
-      Shape.Uid.Map.add uid (Lid_set.singleton lid) acc
+      Uid_map.add uid (Lid_set.singleton lid) acc
   in
   Shape.Uid.Tbl.fold add_loc fragments map
 
@@ -89,9 +89,9 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
   init_load_path_once ~do_not_use_cmt_loadpath ~dirs:build_path cmt_loadpath;
   let module Reduce = Shape_reduce.Make (Reduce_conf) in
   let defs =
-    if Option.is_none cmt_impl_shape then Shape.Uid.Map.empty
+    if Option.is_none cmt_impl_shape then (Uid_map.empty ())
     else
-      gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty
+      gather_locs_from_fragments ~root ~rewrite_root (Uid_map.empty ())
         cmt_uid_to_decl
   in
   (* The list [cmt_ident_occurrences] associate each ident usage location in the
@@ -115,7 +115,7 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
         | Some uid, false -> (add acc_defs uid (Lid_set.singleton lid), acc_apx)
         | Some uid, true -> (acc_defs, add acc_apx uid (Lid_set.singleton lid))
         | None, _ -> acc)
-      (defs, Shape.Uid.Map.empty)
+      (defs, (Uid_map.empty ()))
       cmt_ident_occurrences
   in
   let cu_shape = Hashtbl.create 1 in
@@ -149,13 +149,17 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
     ~do_not_use_cmt_loadpath files =
   Log.debug "Debug log is enabled";
   let initial_index =
-    { defs = Shape.Uid.Map.empty;
-      approximated = Shape.Uid.Map.empty;
+    { defs = Uid_map.empty ();
+      approximated = Uid_map.empty ();
       cu_shape = Hashtbl.create 64;
       stats = Stats.empty;
       root_directory = root
     }
   in
+  let icl = ref [] in
+  Merlin_utils.Misc.try_finally
+    ~always:(fun () -> List.iter close_in !icl)
+  @@ fun () ->
   let final_index =
     Ocaml_utils.Local_store.with_store (Ocaml_utils.Local_store.fresh ())
     @@ fun () ->
@@ -168,7 +172,7 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
               ~do_not_use_cmt_loadpath cmt_item.cmt_infos
           | exception _ -> (
             match read ~file with
-            | Index index -> index
+            | Index (index, ic) -> icl := ic :: !icl; index
             | _ ->
               Log.error "Unknown file type: %s" file;
               exit 1)
