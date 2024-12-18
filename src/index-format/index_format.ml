@@ -39,8 +39,8 @@ type index =
 let lidset_schema iter lidset = Lid_set.schema iter (fun _v -> ()) lidset
 
 let index_schema (iter: Granular_marshal.iter) index =
-  Uid_map.schema iter (fun _ v -> lidset_schema iter v) index.defs;
-  Uid_map.schema iter (fun _ v -> lidset_schema iter v) index.approximated
+  Uid_map.schema iter (fun _ v iter -> lidset_schema iter v) index.defs;
+  Uid_map.schema iter (fun _ v iter -> lidset_schema iter v) index.approximated
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "{@[";

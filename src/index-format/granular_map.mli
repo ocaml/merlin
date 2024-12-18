@@ -43,7 +43,7 @@ module type S = sig
   val mem: key -> 'a t -> bool
   val update: key -> ('a option -> 'a option) -> 'a t -> 'a t
   val schema: Granular_marshal.iter ->
-    (key -> 'a -> unit) -> 'a s Granular_marshal.link -> unit
+    (key -> 'a -> Granular_marshal.iter -> unit) -> 'a s Granular_marshal.link -> unit
 end
 
 module Make (Ord : OrderedType) : S with type key = Ord.t

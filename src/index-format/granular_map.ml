@@ -43,7 +43,7 @@ module type S = sig
   val mem: key -> 'a t -> bool
   val update: key -> ('a option -> 'a option) -> 'a t -> 'a t
   val schema: Granular_marshal.iter ->
-    (key -> 'a -> unit) -> 'a s Granular_marshal.link -> unit
+    (key -> 'a -> Granular_marshal.iter -> unit) -> 'a s Granular_marshal.link -> unit
 end
 
 module Make (Ord : OrderedType) = struct
@@ -278,6 +278,6 @@ module Make (Ord : OrderedType) = struct
     @@ fun iter tree ->
     match tree with
     | Empty -> ()
-    | Node {l; v; d; r; _} -> schema iter f l ; f v d ; schema iter f r
+    | Node {l; v; d; r; _} -> schema iter f l ; f v d iter ; schema iter f r
 end
 
