@@ -399,7 +399,6 @@ module Exists_in_directory = File_cache.Make(struct
              Hashtbl.add cache filename exists;
              exists)
       else (fun _ -> false)
-    let dispose _ = ()
   end)
 
 let exact_file_exists ~dirname ~basename =

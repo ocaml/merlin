@@ -59,7 +59,8 @@ module Make (Ord : Map.OrderedType) = struct
     link (Node { l; v = x; d; r; h = (if hl >= hr then hl + 1 else hr + 1) })
 
   let singleton x d =
-    link (Node { l = link Empty; v = x; d; r = link Empty; h = 1 })
+    let empty = empty () in
+    link (Node { l = empty; v = x; d; r = empty; h = 1 })
 
   let bal (l : 'a t) x d (r : 'a t) : 'a t =
     let hl =
@@ -113,8 +114,7 @@ module Make (Ord : Map.OrderedType) = struct
 
   let rec add x data s : 'a t =
     match fetch s with
-    | Empty ->
-      link (Node { l = link Empty; v = x; d = data; r = link Empty; h = 1 })
+    | Empty -> link (Node { l = s; v = x; d = data; r = s; h = 1 })
     | Node { l; v; d; r; h } ->
       let c = Ord.compare x v in
       if c = 0 then
@@ -171,7 +171,7 @@ module Make (Ord : Map.OrderedType) = struct
 
   let rec remove x s : 'a t =
     match fetch s with
-    | Empty -> link Empty
+    | Empty -> s
     | Node { l; v; d; r; _ } ->
       let c = Ord.compare x v in
       if c = 0 then merge l r
@@ -192,7 +192,7 @@ module Make (Ord : Map.OrderedType) = struct
 
   let rec map f s =
     match fetch s with
-    | Empty -> link Empty
+    | Empty -> empty ()
     | Node { l; v; d; r; h } ->
       let l' = map f l in
       let d' = f d in
@@ -239,7 +239,7 @@ module Make (Ord : Map.OrderedType) = struct
 
   let rec split x s =
     match fetch s with
-    | Empty -> (link Empty, None, link Empty)
+    | Empty -> (s, None, s)
     | Node { l; v; d; r; _ } ->
       let c = Ord.compare x v in
       if c = 0 then (l, Some d, r)
@@ -252,7 +252,8 @@ module Make (Ord : Map.OrderedType) = struct
 
   let rec union f (s1 : 'a t) (s2 : 'a t) : 'a t =
     match (fetch s1, fetch s2) with
-    | Empty, s | s, Empty -> link s
+    | _, Empty -> s1
+    | Empty, _ -> s2
     | ( Node { l = l1; v = v1; d = d1; r = r1; h = h1 },
         Node { l = l2; v = v2; d = d2; r = r2; h = h2 } ) -> (
       if h1 >= h2 then
@@ -277,9 +278,8 @@ module Make (Ord : Map.OrderedType) = struct
     match fetch t with
     | Empty -> begin
       match f None with
-      | None -> link Empty
-      | Some data ->
-        link (Node { l = link Empty; v = x; d = data; r = link Empty; h = 1 })
+      | None -> t
+      | Some data -> link (Node { l = t; v = x; d = data; r = t; h = 1 })
     end
     | Node { l; v; d; r; h } ->
       let c = Ord.compare x v in

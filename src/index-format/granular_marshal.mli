@@ -4,6 +4,10 @@ type 'a link
 (** [link v] returns a new link to the in-memory value [v]. *)
 val link : 'a -> 'a link
 
+(** [cache (module Hash)] returns a function to de-duplicate links which share
+    the same value, resulting in a compressed file. *)
+val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit
+
 (** [fetch lnk] returns the value pointed by the link [lnk].
 
     We of course have [fetch (link v) = v] and [link (fetch lnk) = lnk]. *)
@@ -47,14 +51,7 @@ val schema_no_sublinks : 'a schema
 val write :
   ?flags:Marshal.extern_flags list -> out_channel -> 'a schema -> 'a -> unit
 
-(** The type to represent an open disk connection. *)
-type store
-
 (** [read ic schema] reads the value marshalled in the input channel [ic],
     stopping the unmarshalling on every link boundary indicated by the [schema].
     It returns the root [value] read.  *)
-val read : in_channel -> 'a schema -> 'a
-
-(** [close store] closes the connection to the disk. Any further {!fetch} requiring
-    to read from the disk will fail. *)
-val close : store -> unit
+val read : string -> in_channel -> 'a schema -> 'a

@@ -31,5 +31,4 @@ include File_cache.Make (struct
   type t = Cmi_format.cmi_infos
   let read name = Cmi_format.read_cmi name
   let cache_name = "Cmi_cache"
-  let dispose _ = ()
 end)

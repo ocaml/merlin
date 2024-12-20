@@ -1,20 +1,6 @@
 exception Not_an_index of string
 
-module Lid : Set.OrderedType with type t = Longident.t Location.loc = struct
-  type t = Longident.t Location.loc
-
-  let compare_pos (p1 : Lexing.position) (p2 : Lexing.position) =
-    let p1f, p2f = Filename.(basename p1.pos_fname, basename p2.pos_fname) in
-    match String.compare p1f p2f with
-    | 0 -> Int.compare p1.pos_cnum p2.pos_cnum
-    | n -> n
-
-  let compare (t1 : t) (t2 : t) =
-    match compare_pos t1.loc.loc_start t2.loc.loc_start with
-    | 0 -> compare_pos t1.loc.loc_end t2.loc.loc_end
-    | n -> n
-end
-
+module Lid = Lid
 module Lid_set = Granular_set.Make (Lid)
 module Uid_map = Granular_map.Make (Shape.Uid)
 module Stats = Map.Make (String)
@@ -38,25 +24,32 @@ type index =
     related_uids : Uid_set.t Union_find.element Uid_map.t
   }
 
-let lidset_schema iter lidset = Lid_set.schema iter (fun _iter _v -> ()) lidset
+let lidset_schema iter lidset = Lid_set.schema iter Lid.schema lidset
 
 let index_schema (iter : Granular_marshal.iter) index =
   Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.defs;
-  Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.approximated
+  Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.approximated;
+  Uid_map.schema iter (fun _ _ _ -> ()) index.related_uids
+
+let compress index =
+  let cache = Lid.cache () in
+  let compress_map_set =
+    Uid_map.iter (fun _ -> Lid_set.iter (Lid.deduplicate cache))
+  in
+  compress_map_set index.defs;
+  compress_map_set index.approximated
+
+let pp_lidset fmt locs =
+  Format.pp_print_list
+    ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@;")
+    Lid.pp fmt (Lid_set.elements locs)
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "{@[";
   Uid_map.iter
     (fun uid locs ->
       Format.fprintf fmt "@[<hov 2>uid: %a; locs:@ @[<v>%a@]@]@;"
-        Shape.Uid.print uid
-        (Format.pp_print_list
-           ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@;")
-           (fun fmt { Location.txt; loc } ->
-             Format.fprintf fmt "%S: %a"
-               (try Longident.flatten txt |> String.concat "." with _ -> "<?>")
-               Location.print_loc loc))
-        (Lid_set.elements locs))
+        Shape.Uid.print uid pp_lidset locs)
     partials;
   Format.fprintf fmt "@]}"
 
@@ -85,14 +78,7 @@ let pp (fmt : Format.formatter) pl =
   Uid_map.iter
     (fun uid locs ->
       Format.fprintf fmt "@[<hov 2>uid: %a; locs:@ @[<v>%a@]@]@;"
-        Shape.Uid.print uid
-        (Format.pp_print_list
-           ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@;")
-           (fun fmt { Location.txt; loc } ->
-             Format.fprintf fmt "%S: %a"
-               (try Longident.flatten txt |> String.concat "." with _ -> "<?>")
-               Location.print_loc loc))
-        (Lid_set.elements locs))
+        Shape.Uid.print uid pp_lidset locs)
     pl.defs;
   Format.fprintf fmt "@]},@ ";
   Format.fprintf fmt "%i approx shapes:@ @[%a@],@ "
@@ -107,21 +93,18 @@ let ext = "ocaml-index"
 let magic_number = Config.index_magic_number
 
 let write ~file index =
+  compress index;
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
     (fun _temp_file_name oc ->
       output_string oc magic_number;
       Granular_marshal.write oc index_schema (index : index))
 
-type file_content =
-  | Cmt of Cmt_format.cmt_infos
-  | Index of index * in_channel
-  | Unknown
+type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
 let read ~file =
   let ic = open_in_bin file in
-  let always_close = ref true in
   Merlin_utils.Misc.try_finally
-    ~always:(fun () -> if !always_close then close_in ic)
+    ~always:(fun () -> close_in ic)
     (fun () ->
       let file_magic_number = ref (Cmt_format.read_magic_number ic) in
       let cmi_magic_number = Ocaml_utils.Config.cmi_magic_number in
@@ -131,13 +114,11 @@ let read ~file =
          file_magic_number := Cmt_format.read_magic_number ic);
       if String.equal !file_magic_number cmt_magic_number then
         Cmt (input_value ic : Cmt_format.cmt_infos)
-      else if String.equal !file_magic_number magic_number then (
-        let index = Granular_marshal.read ic index_schema in
-        always_close := false;
-        Index (index, ic))
+      else if String.equal !file_magic_number magic_number then
+        Index (Granular_marshal.read file ic index_schema)
       else Unknown)
 
 let read_exn ~file =
   match read ~file with
-  | Index (index, ic) -> (index, ic)
+  | Index index -> index
   | _ -> raise (Not_an_index file)
