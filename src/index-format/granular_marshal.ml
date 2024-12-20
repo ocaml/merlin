@@ -7,6 +7,7 @@ and 'a repr =
   | Serialized of { loc : int }
   | On_disk of { fd : store; loc : int; schema : 'a schema }
   | In_memory of 'a
+  | Placeholder
 
 and 'a schema = iter -> 'a -> unit
 
@@ -27,7 +28,8 @@ let fetch_loc fd loc schema =
           | Small v ->
             schema iter v;
             lnk := In_memory v
-          | _ -> assert false)
+          | In_memory _ | On_disk _ -> ()
+          | Placeholder -> invalid_arg "fetch_loc: Placeholder")
     }
   in
   schema iter v;
@@ -37,6 +39,7 @@ let fetch lnk =
   match !lnk with
   | In_memory v -> v
   | Serialized _ | Small _ -> invalid_arg "fetch: serialized"
+  | Placeholder -> invalid_arg "fetch: during a write"
   | On_disk { fd; loc; schema } ->
     let v = fetch_loc fd loc schema in
     lnk := In_memory v;
@@ -56,23 +59,34 @@ let int_of_binstring s =
 let write ?(flags = []) fd root_schema root_value =
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
-  let rec iter =
+  let rec iter size restore =
     { yield =
-        (fun lnk schema ->
+        (fun (type a) (lnk : a link) (schema : a schema) : unit ->
           match !lnk with
-          | Serialized _ | Small _ -> ()
-          | In_memory v -> write_child fd lnk schema v
-          | On_disk _ -> write_child fd lnk schema (fetch lnk))
+          | Serialized _ | Small _ | Placeholder -> ()
+          | In_memory v -> write_child lnk schema v size restore
+          | On_disk _ -> write_child lnk schema (fetch lnk) size restore)
     }
-  and write_child : type a. out_channel -> a link -> a schema -> a -> unit =
-   fun fd lnk schema v ->
-    schema iter v;
-    if Stdlib.Obj.(reachable_words (repr v)) > 500 then (
+  and write_child : type a. a link -> a schema -> a -> _ =
+   fun lnk schema v size restore ->
+    let v_size = write_children schema v in
+    if v_size > 1024 then (
       lnk := Serialized { loc = pos_out fd };
       Marshal.to_channel fd v flags)
-    else lnk := Small v
+    else (
+      size := !size + v_size;
+      restore := (fun () -> lnk := Small v) :: !restore;
+      lnk := Placeholder)
+  and write_children : type a. a schema -> a -> int =
+   fun schema v ->
+    let children_size = ref 0 in
+    let children_restore = ref [] in
+    schema (iter children_size children_restore) v;
+    let v_size = Obj.(reachable_words (repr v)) in
+    List.iter (fun restore -> restore ()) !children_restore;
+    !children_size + v_size
   in
-  root_schema iter root_value;
+  let _ : int = write_children root_schema root_value in
   let root_loc = pos_out fd in
   Marshal.to_channel fd root_value flags;
   seek_out fd pt_root;
