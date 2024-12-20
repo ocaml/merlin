@@ -10,7 +10,7 @@ let rec find x =
   | Root _ -> x
   | Link ({ parent; _ } as link) ->
     let root = find parent in
-    if root <> parent then link.parent <- root;
+    if root != parent then link.parent <- root;
     root
 
 let union ~f x y =
