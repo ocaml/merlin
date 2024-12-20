@@ -89,10 +89,8 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
   init_load_path_once ~do_not_use_cmt_loadpath ~dirs:build_path cmt_loadpath;
   let module Reduce = Shape_reduce.Make (Reduce_conf) in
   let defs =
-    if Option.is_none cmt_impl_shape then Shape.Uid.Map.empty
-    else
-      gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty
-        cmt_uid_to_decl
+    gather_locs_from_fragments ~root ~rewrite_root Shape.Uid.Map.empty
+      cmt_uid_to_decl
   in
   (* The list [cmt_ident_occurrences] associate each ident usage location in the
      module with its (partially) reduced shape. We finish the reduction and
@@ -104,11 +102,6 @@ let index_of_cmt ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
         let resolved =
           match item with
           | Unresolved shape -> Reduce.reduce_for_uid cmt_initial_env shape
-          | Resolved _ when Option.is_none cmt_impl_shape ->
-            (* Right now, without additional information we cannot take the
-               risk to mix uids from interfaces with the ones from
-               implementations. We simply ignore items defined in an interface. *)
-            Internal_error_missing_uid
           | result -> result
         in
         match Locate.uid_of_result ~traverse_aliases:false resolved with
