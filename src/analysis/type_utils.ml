@@ -28,6 +28,9 @@
 
 open Std
 
+let log_section = "type-utils"
+let { Logger.log } = Logger.for_section log_section
+
 module Verbosity = Mconfig.Verbosity
 
 let protect expr =
@@ -145,7 +148,7 @@ module Printtyp = struct
       ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
-    let_ref verbosity v (fun () -> wrap_printing_env env f)
+    let_ref verbosity v (fun () -> wrap_printing_env ~error:true env f)
 end
 
 let si_modtype_opt = function
@@ -246,9 +249,13 @@ let print_exn ppf exn =
 
 let print_type ppf env lid =
   let p, t = Env.find_type_by_name lid.Asttypes.txt env in
-  Printtyp.type_declaration env
-    (Ident.create_persistent (* Incorrect, but doesn't matter. *) (Path.last p))
-    ppf t
+  match t.type_manifest with
+  | None ->
+    Printtyp.type_declaration env
+      (Ident.create_persistent
+         (* Incorrect, but doesn't matter. *) (Path.last p))
+      ppf t
+  | Some type_expr -> Printtyp.type_expr ppf type_expr
 
 let print_modtype ppf verbosity env lid =
   let _p, mtd = Env.find_modtype_by_name lid.Asttypes.txt env in
@@ -305,7 +312,9 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
             (* We use information from the context because `Env.find_label_by_name`
                can fail *)
             Printtyp.type_expr ppf lbl_des.lbl_arg
-          | Type -> print_type ppf env longident
+          | Type ->
+            log ~title:"type_in_env" "Type type";
+            print_type ppf env longident
           (* TODO: special processing for module aliases ? *)
           | Module_type -> print_modtype ppf verbosity env longident
           | Module_path -> print_modpath ppf verbosity env longident

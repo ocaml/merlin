@@ -82,7 +82,7 @@ a list.
   }
   {
     "name": "Seq.concat",
-    "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t"
+    "type": "'a Seq.t Seq.t -> 'a Seq.t"
   }
   {
     "name": "Option.join",
@@ -90,7 +90,7 @@ a list.
   }
   {
     "name": "Seq.transpose",
-    "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t Stdlib__Seq.t"
+    "type": "'a Seq.t Seq.t -> 'a Seq.t Seq.t"
   }
   {
     "name": "Result.join",
@@ -130,7 +130,7 @@ map).
   }
   {
     "name": "Seq.map",
-    "type": "('a -> 'b) -> 'a Stdlib__Seq.t -> 'b Stdlib__Seq.t"
+    "type": "('a -> 'b) -> 'a Seq.t -> 'b Seq.t"
   }
   {
     "name": "List.concat_map",
@@ -179,7 +179,7 @@ a list.
   }
   {
     "name": "Seq.concat",
-    "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t"
+    "type": "'a Seq.t Seq.t -> 'a Seq.t"
   }
   {
     "name": "Option.join",
@@ -187,7 +187,7 @@ a list.
   }
   {
     "name": "Seq.transpose",
-    "type": "'a Stdlib__Seq.t Stdlib__Seq.t -> 'a Stdlib__Seq.t Stdlib__Seq.t"
+    "type": "'a Seq.t Seq.t -> 'a Seq.t Seq.t"
   }
   {
     "name": "Result.join",

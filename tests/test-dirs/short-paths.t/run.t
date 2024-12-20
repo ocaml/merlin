@@ -17,7 +17,7 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type: class b : 'a -> a
-  The method x has type 'c where 'c is unbound"
+  The method x has type 'b where 'b is unbound"
       },
       {
         "start": {
@@ -193,7 +193,7 @@
         "sub": [],
         "valid": true,
         "message": "Some type variables are unbound in this type: class b : 'a -> a
-  The method x has type 'c where 'c is unbound"
+  The method x has type 'b where 'b is unbound"
       },
       {
         "start": {
@@ -309,7 +309,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "The value x has type t but an expression was expected of type unit"
+        "message": "The value x has type N.O.t but an expression was expected of type unit"
       },
       {
         "start": {
@@ -325,10 +325,7 @@
         "valid": true,
         "message": "Modules do not match: sig type t = int val foo : 'a -> string end
   is not included in S
-  Values do not match:
-  val foo : 'a -> string
-  is not included in
-  val foo : int -> t
+  Values do not match: val foo : 'a -> string is not included in val foo : t -> t
   The type t -> string is not compatible with the type t -> t
   Type string is not compatible with type t
   File \"test.ml\", line 72, characters 2-20: Expected declaration
@@ -346,7 +343,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "The constant 5 has type int but an expression was expected of type Dep.M.t"
+        "message": "The constant 5 has type int but an expression was expected of type Dep.t"
       }
     ],
     "notifications": []

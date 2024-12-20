@@ -21,7 +21,7 @@ provide better result.
           "line": 1,
           "col": 25
         },
-        "type": "type b = b",
+        "type": "b",
         "tail": "no"
       },
       {

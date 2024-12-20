@@ -109,7 +109,7 @@ let rec gen_patterns ?(recurse = true) env type_expr =
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | Type_variant (constructors, _) ->
       let prefix =
-        let path = Printtyp.shorten_type_path env path in
+        let path = Out_type.shorten_type_path env path in
         fun name ->
           let env_check = Env.find_constructor_by_name in
           Misc_utils.Path.to_shortest_lid ~env ~name ~env_check path
@@ -630,7 +630,7 @@ let refine_partial_match last_case_loc config source patterns =
         let unmangling_tables = (constrs, labels) in
         (* Unmangling and prefixing *)
         let pat =
-          qualify_constructors ~unmangling_tables Printtyp.shorten_type_path pat
+          qualify_constructors ~unmangling_tables Out_type.shorten_type_path pat
         in
         (* Untyping and casing *)
         let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in

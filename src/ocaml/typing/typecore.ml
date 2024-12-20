@@ -1252,7 +1252,7 @@ end) = struct
       [_] -> []
     | _ -> let open Printtyp in
         wrap_printing_env ~error:true env (fun () ->
-            Out_type.reset(); strings_of_paths (Some Type) tpaths)
+            Out_type.reset(); strings_of_paths Type tpaths)
 
   let disambiguate_by_type env tpath lbls =
     match lbls with

@@ -39,7 +39,7 @@ let sherlodoc_type_of env typ =
     | Types.Ttuple elts -> Type_parsed.tuple @@ List.map ~f:aux elts
     | Types.Tarrow (_, a, b, _) -> Type_parsed.Arrow (aux a, aux b)
     | Types.Tconstr (p, args, _) ->
-      let p = Printtyp.rewrite_double_underscore_paths env p in
+      let p = Out_type.rewrite_double_underscore_paths env p in
       let name = Format.asprintf "%a" Printtyp.path p in
       Type_parsed.Tycon (name, List.map ~f:aux args)
     | _ -> Type_parsed.Unhandled
@@ -95,7 +95,7 @@ let compute_value query env _ path desc acc =
   let typ = sherlodoc_type_of env d in
   let name =
     Printtyp.wrap_printing_env env @@ fun () ->
-    let path = Printtyp.rewrite_double_underscore_paths env path in
+    let path = Out_type.rewrite_double_underscore_paths env path in
     Format.asprintf "%a" Printtyp.path path
   in
   let cost = Query.distance_for query ~path:name typ in
