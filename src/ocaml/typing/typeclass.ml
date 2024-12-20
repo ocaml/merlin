@@ -1840,7 +1840,7 @@ let type_classes define_class approx kind env cls =
          ))
       cls
   in
-  let res, env =
+  let res, newenv =
     Ctype.with_local_level_generalize_for_class begin fun () ->
       let (res, env) =
         List.fold_left (initial_env define_class approx) ([], env) cls
@@ -1852,10 +1852,10 @@ let type_classes define_class approx kind env cls =
       res, env
     end
   in
-  let res = List.rev_map (final_decl env define_class) res in
+  let res = List.rev_map (final_decl newenv define_class) res in
   let decls = List.fold_right extract_type_decls res [] in
   let decls =
-    try Typedecl_variance.update_class_decls env decls
+    try Typedecl_variance.update_class_decls newenv decls
     with Typedecl_variance.Error(loc, err) ->
       raise (Typedecl.Error(loc, Typedecl.Variance err))
   in
