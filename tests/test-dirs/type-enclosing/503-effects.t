@@ -33,18 +33,18 @@
     "tail": "no"
   }
 
-FIXME: the continuation is invisible to Merlin
+The continuation is visible to Merlin
   $ $MERLIN single type-enclosing -position 10:16 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
     "start": {
-      "line": 8,
-      "col": 4
+      "line": 10,
+      "col": 16
     },
     "end": {
       "line": 10,
-      "col": 23
+      "col": 17
     },
-    "type": "int",
+    "type": "(%eff, int) continuation",
     "tail": "no"
   }
