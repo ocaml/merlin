@@ -2,7 +2,7 @@
  (applies_to looping-substitution mutually-recursive partial-cmt includes
    issue802 issue845 issue1848 issue1199 issue1524 sig-substs l-413-features
    module-aliases locate-constrs without-implem without-sig module-decl-aliases
-   in-implicit-trans-dep)
+   in-implicit-trans-dep distinguish-files.t)
  (enabled_if
   (<> %{os_type} Win32)))
 
