@@ -5,6 +5,7 @@ unreleased
     - Support for OCaml 5.3
     - Use new 5.3 features to improve locate behavior in some cases. Merlin no
       longer confuses uids from interfaces and implementations. (#1857)
+    - Perform less merges in the indexer (#1881)
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that
