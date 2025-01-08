@@ -1,7 +1,4 @@
   $ cat >main.ml <<'EOF'
-  > open Effect
-  > open Effect.Deep
-  > 
   > type _ eff += E : unit eff
   > 
   > let () =
@@ -18,15 +15,15 @@
     "notifications": []
   }
 
-  $ $MERLIN single type-enclosing -position 10:13 \
+  $ $MERLIN single type-enclosing -position 7:13 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
     "start": {
-      "line": 10,
+      "line": 7,
       "col": 13
     },
     "end": {
-      "line": 10,
+      "line": 7,
       "col": 14
     },
     "type": "unit eff",
@@ -34,15 +31,15 @@
   }
 
 The continuation is visible to Merlin
-  $ $MERLIN single type-enclosing -position 10:16 \
+  $ $MERLIN single type-enclosing -position 7:16 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
     "start": {
-      "line": 10,
+      "line": 7,
       "col": 16
     },
     "end": {
-      "line": 10,
+      "line": 7,
       "col": 17
     },
     "type": "(%eff, int) continuation",
