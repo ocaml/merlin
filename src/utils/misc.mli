@@ -129,11 +129,16 @@ val canonicalize_filename : ?cwd:string -> string -> string
 val expand_glob : ?filter:(string -> bool) -> string -> string list -> string list
         (* [expand_glob ~filter pattern acc] adds all filenames matching
            [pattern] and satistfying the [filter] predicate to [acc]*)
-val split_path : string -> string list -> string list
-        (* [split_path path tail] prepends all components of [path] to [tail],
+val split_path : string -> string list
+        (* [split_path path] returns the components of [path],
            including implicit "." if path is not absolute.
-           [split_path "a/b/c" []] = ["."; "a"; "b"; "c"]
-           [split_path "/a/b/c" []] = ["/"; "a"; "b"; "c"]
+           [split_path "a/b/c"] = ["."; "a"; "b"; "c"]
+           [split_path "/a/b/c"] = ["/"; "a"; "b"; "c"]
+        FIXME: explain windows behavior
+        *)
+val split_path_and_prepend : string -> string list -> string list
+        (* [split_path_and_prepend path tail] prepends all components of [path] to [tail],
+           including implicit "." if path is not absolute.
         FIXME: explain windows behavior
         *)
 

@@ -16,11 +16,10 @@ Get Lib_b.Different.foo
 
 Part 2: Test that two files with the same name and same contents can be distinguished
 
-TODO: fix this case
 Get Lib_a.Same.foo
   $ $MERLIN single locate -position 1:22 -filename bin/main.ml < bin/main.ml \
   >   | jq .value.file -r
-  $TESTCASE_ROOT/lib_b/same.ml
+  $TESTCASE_ROOT/lib_a/same.ml
 
 Get Lib_b.Same.foo
   $ $MERLIN single locate -position 2:22 -filename bin/main.ml < bin/main.ml \
