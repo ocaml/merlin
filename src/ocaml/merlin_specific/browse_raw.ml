@@ -562,25 +562,17 @@ let of_node = function
   | Expression { exp_desc; exp_extra = _; exp_loc } ->
     of_expression_desc exp_loc exp_desc
   | Case { c_lhs; c_cont = Some (id, vd); c_guard; c_rhs } ->
-    let vd =
-      let name = Ident.name id in
-      Typedtree.
-        { val_id = id;
-          val_name = { txt = name; loc = vd.val_loc };
-          val_desc =
-            { ctyp_desc = Ttyp_var name;
-              ctyp_type = vd.val_type;
-              ctyp_env = Env.empty;
-              ctyp_loc = vd.val_loc;
-              ctyp_attributes = []
-            };
-          val_val = vd;
-          val_prim = [];
-          val_loc = vd.val_loc;
-          val_attributes = []
-        }
+    let name = Ident.name id in
+    let cont_pat =
+      { pat_desc = Tpat_var (id, { txt = name; loc = vd.val_loc }, vd.val_uid);
+        pat_loc = vd.val_loc;
+        pat_extra = [];
+        pat_type = vd.val_type;
+        pat_env = c_rhs.exp_env;
+        pat_attributes = []
+      }
     in
-    of_pattern c_lhs ** of_expression c_rhs ** app (Value_description vd)
+    of_pattern c_lhs ** of_expression c_rhs ** of_pattern cont_pat
     ** option_fold of_expression c_guard
   | Case { c_lhs; c_cont = None; c_guard; c_rhs } ->
     of_pattern c_lhs ** of_expression c_rhs ** option_fold of_expression c_guard
