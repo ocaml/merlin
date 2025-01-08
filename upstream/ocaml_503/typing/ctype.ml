@@ -192,20 +192,23 @@ let create_scope () =
   level
 
 let wrap_end_def f = Misc.try_finally f ~always:end_def
-let wrap_end_def_new_pool f =
-  wrap_end_def (fun _ -> with_new_pool ~level:!current_level f)
 
 (* [with_local_level_gen] handles both the scoping structure of levels
    and automatic generalization through pools (cf. btype.ml) *)
 let with_local_level_gen ~begin_def ~structure ?before_generalize f =
   begin_def ();
   let level = !current_level in
-  let result, pool = wrap_end_def_new_pool f in
-  Option.iter (fun g -> g result) before_generalize;
+  let result, pool =
+    with_new_pool ~level:!current_level begin fun () ->
+      let result = wrap_end_def f in
+      Option.iter (fun g -> g result) before_generalize;
+      result
+    end
+  in
   simple_abbrevs := Mnil;
-  (* Nodes in [pool] were either created by the above call to [f],
-     or they were created before, generalized, and then added to
-     the pool by [update_level].
+  (* Nodes in [pool] were either created by the above calls to [f]
+     and [before_generalize], or they were created before, generalized,
+     and then added to the pool by [update_level].
      In the latter case, their level was already kept for backtracking
      by a call to [set_level] inside [update_level].
      Since backtracking can only go back to a snapshot taken before [f] was

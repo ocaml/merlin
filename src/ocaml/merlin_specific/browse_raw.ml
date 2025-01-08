@@ -360,7 +360,8 @@ let rec of_expression_desc loc = function
            | _, None -> id_fold
            | _, Some e -> of_expression e)
          ls
-  | Texp_match (e, cs, _, _) -> of_expression e ** list_fold of_case cs
+  | Texp_match (e, cs, vs, _) ->
+    of_expression e ** list_fold of_case cs ** list_fold of_case vs
   | Texp_try (e, cs, _) -> of_expression e ** list_fold of_case cs
   | Texp_tuple es | Texp_construct (_, _, es) | Texp_array es ->
     list_fold of_expression es
@@ -560,7 +561,20 @@ let of_node = function
   | Pattern { pat_desc; pat_extra = _ } -> of_pattern_desc pat_desc
   | Expression { exp_desc; exp_extra = _; exp_loc } ->
     of_expression_desc exp_loc exp_desc
-  | Case { c_lhs; c_guard; c_rhs } ->
+  | Case { c_lhs; c_cont = Some (id, vd); c_guard; c_rhs } ->
+    let name = Ident.name id in
+    let cont_pat =
+      { pat_desc = Tpat_var (id, { txt = name; loc = vd.val_loc }, vd.val_uid);
+        pat_loc = vd.val_loc;
+        pat_extra = [];
+        pat_type = vd.val_type;
+        pat_env = c_rhs.exp_env;
+        pat_attributes = []
+      }
+    in
+    of_pattern c_lhs ** of_expression c_rhs ** of_pattern cont_pat
+    ** option_fold of_expression c_guard
+  | Case { c_lhs; c_cont = None; c_guard; c_rhs } ->
     of_pattern c_lhs ** of_expression c_rhs ** option_fold of_expression c_guard
   | Class_expr { cl_desc } -> of_class_expr_desc cl_desc
   | Class_structure { cstr_self; cstr_fields } ->
