@@ -16,11 +16,22 @@ Foo was defined on line 2 when the index was built, but is now defined on line 1
   > let foo = "bar"
   > EOF
 
-TODO: Report the stale occurrence too
   $ $MERLIN single occurrences -scope project -identifier-at 1:28 \
   > -index-file project.ocaml-index \
   > -filename main.ml < main.ml | jq .value
   [
+    {
+      "file": "$TESTCASE_ROOT/lib.ml",
+      "start": {
+        "line": 2,
+        "col": 4
+      },
+      "end": {
+        "line": 2,
+        "col": 7
+      },
+      "stale": true
+    },
     {
       "file": "$TESTCASE_ROOT/main.ml",
       "start": {
