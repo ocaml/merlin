@@ -6,6 +6,7 @@ unreleased
     - Use new 5.3 features to improve locate behavior in some cases. Merlin no
       longer confuses uids from interfaces and implementations. (#1857)
     - Perform less merges in the indexer (#1881)
+    - `locate` can now disambiguate between files with identical names and contents
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that

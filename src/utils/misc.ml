@@ -356,7 +356,7 @@ let remove_file filename =
     then Sys.remove filename
   with Sys_error _msg -> ()
 
-let rec split_path path acc =
+let rec split_path_and_prepend path acc =
   match Filename.dirname path with
   | dir when dir = path ->
     let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
@@ -373,7 +373,9 @@ let rec split_path path acc =
       else dir
     in
     dir :: acc
-  | dir -> split_path dir (Filename.basename path :: acc)
+  | dir -> split_path_and_prepend dir (Filename.basename path :: acc)
+
+let split_path path = split_path_and_prepend path []
 
 (* Deal with case insensitive FS *)
 
@@ -412,9 +414,9 @@ let exact_file_exists ~dirname ~basename =
 
 let canonicalize_filename ?cwd path =
   let parts =
-    match split_path path [] with
+    match split_path path with
     | dot :: rest when dot = Filename.current_dir_name ->
-      split_path (match cwd with None -> Sys.getcwd () | Some c -> c) rest
+      split_path_and_prepend (match cwd with None -> Sys.getcwd () | Some c -> c) rest
     | parts -> parts
   in
   let goup path = function
@@ -461,7 +463,7 @@ let rec expand_glob ~filter acc root = function
     Array.fold_left process acc items
 
 let expand_glob ?(filter=fun _ -> true) path acc =
-  match split_path path [] with
+  match split_path path with
   | [] -> acc
   | root :: subs ->
     let patterns = List.map ~f:Glob.compile_pattern subs in

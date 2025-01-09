@@ -386,12 +386,13 @@ let find_source ~config loc =
     | Some s -> s
   in
   log ~title:"find_source" "initial path: %S" initial_path;
-  let dir = Filename.dirname initial_path in
-  let dir =
+  let canonical_dir_for_file file =
+    let raw_dir = Filename.dirname file in
     match config.Mconfig.query.directory with
-    | "" -> dir
-    | cwd -> Misc.canonicalize_filename ~cwd dir
+    | "" -> raw_dir
+    | cwd -> Misc.canonicalize_filename ~cwd raw_dir
   in
+  let dir = canonical_dir_for_file initial_path in
   match Utils.find_all_matches ~config ~with_fallback file with
   | [] ->
     log ~title:"find_source" "failed to find %S in source path (fallback = %b)"
@@ -410,59 +411,125 @@ let find_source ~config loc =
       ~title:(sprintf "find_source(%s)" filename)
       "multiple matches in the source path : %s"
       (String.concat ~sep:" , " files);
-    try
-      match File_switching.source_digest () with
-      | None ->
-        log ~title:"find_source"
-          "... no source digest available to select the right one";
-        raise Not_found
-      | Some digest ->
-        log ~title:"find_source"
-          "... trying to use source digest to find the right one";
-        log ~title:"find_source" "Source digest: %s" (Digest.to_hex digest);
-        Found
-          (List.find files ~f:(fun f ->
-               let fdigest = Digest.file f in
-               log ~title:"find_source" "  %s (%s)" f (Digest.to_hex fdigest);
-               fdigest = digest))
-    with Not_found -> (
-      log ~title:"find_source" "... using heuristic to select the right one";
-      log ~title:"find_source" "we are looking for a file named %s in %s" fname
-        dir;
-      let rev = String.reverse (Misc.canonicalize_filename ~cwd:dir fname) in
-      let lst =
-        List.map files ~f:(fun path ->
-            let path' = String.reverse path in
-            let priority =
-              (String.common_prefix_len rev path' * 2)
-              + if Preferences.is_preferred path then 1 else 0
-            in
-            (priority, path))
+    match File_switching.source_digest () with
+    | None ->
+      log ~title:"find_source"
+        "... no source digest available to select the right one";
+      raise Not_found
+    | Some digest -> (
+      log ~title:"find_source"
+        "... trying to use source digest to find the right one";
+      log ~title:"find_source" "Source digest: %s" (Digest.to_hex digest);
+      let files_matching_digest =
+        List.filter files ~f:(fun f ->
+            let fdigest = Digest.file f in
+            log ~title:"find_source" "  %s (%s)" f (Digest.to_hex fdigest);
+            fdigest = digest)
       in
-      let lst =
-        (* TODO: remove duplicates in [source_path] instead of using
+      match files_matching_digest with
+      | [ file ] ->
+        log ~title:"find_source"
+          "... found exactly one file with matching digest";
+        Found file
+      | [] -> (
+        log ~title:"find_source" "... found no files with matching digest";
+        log ~title:"find_source" "... using heuristic to select the right one";
+        log ~title:"find_source" "we are looking for a file named %s in %s"
+          fname dir;
+        let rev = String.reverse (Misc.canonicalize_filename ~cwd:dir fname) in
+        let lst =
+          List.map files ~f:(fun path ->
+              let path' = String.reverse path in
+              let priority =
+                (String.common_prefix_len rev path' * 2)
+                + if Preferences.is_preferred path then 1 else 0
+              in
+              (priority, path))
+        in
+        let lst =
+          (* TODO: remove duplicates in [source_path] instead of using
            [sort_uniq] here. *)
-        List.sort_uniq
-          ~cmp:(fun ((i : int), s) ((j : int), t) ->
-            let tmp = compare j i in
-            if tmp <> 0 then tmp
-            else
-              match compare s t with
-              | 0 -> 0
-              | n -> (
-                (* Check if we are referring to the same files.
+          List.sort_uniq
+            ~cmp:(fun ((i : int), s) ((j : int), t) ->
+              let tmp = compare j i in
+              if tmp <> 0 then tmp
+              else
+                match compare s t with
+                | 0 -> 0
+                | n -> (
+                  (* Check if we are referring to the same files.
                     Especially useful on OSX case-insensitive FS.
                     FIXME: May be able handle symlinks and non-existing files,
                     CHECK *)
-                match (File_id.get s, File_id.get t) with
-                | s', t' when File_id.check s' t' -> 0
-                | _ -> n))
-          lst
-      in
-      match lst with
-      | (i1, _) :: (i2, _) :: _ when i1 = i2 -> Multiple_matches files
-      | (_, s) :: _ -> Found s
-      | _ -> assert false))
+                  match (File_id.get s, File_id.get t) with
+                  | s', t' when File_id.check s' t' -> 0
+                  | _ -> n))
+            lst
+        in
+        match lst with
+        | (i1, _) :: (i2, _) :: _ when i1 = i2 -> Multiple_matches files
+        | (_, s) :: _ -> Found s
+        | _ -> assert false)
+      | files_matching_digest ->
+        log ~title:"find_source" "... found multiple files with matching digest";
+        log ~title:"find_source"
+          "... using directory heuristic to choose the best one";
+        (* Give each source file a score that represents how close its path is to the
+           target path (the path of the build artifact) and then choose the source file
+           with the highest score.
+
+           The score of a source file is the longest tail of the path of the its
+           directory that is a subpath of the target path. This is premised on build
+           systems liking to put artifacts in paths that are similar to the source path.
+           i.e., dune may put the cmt for foo/bar/baz.ml in
+           _build/default/foo/bar/.bar.objs/byte/bar__Baz.cmt, so we want to use that
+           shared foo/bar in the path to disambiguate.
+
+           ex:
+             source file: /a/b/c/d/e/f.ml
+             target path: /a/b/c/_build/default/d/e/artifacts/f.cmi
+             score: 2, because /a/b/c/d/e is the source file's directory, and d/e is
+                    the longest tail of it that is a subpath of the target path. *)
+        let score_file source_file =
+          (* This is technically quadratic, but
+             a) most file paths are short
+             b) in the common case, this is linear because common_prefix_len
+                will usually fail on the first loop
+             c) this isn't a hot path - this is only for the uncommon case where there are
+                two identical files
+             So the stars would need to align for this to cause performance problems *)
+          let target_dir = dir in
+          let source_dir = canonical_dir_for_file source_file in
+          let target_dir_rev = target_dir |> Misc.split_path |> List.rev in
+          let source_dir_rev = source_dir |> Misc.split_path |> List.rev in
+          let rec common_prefix_len a b =
+            match (a, b) with
+            | [], _ | _, [] -> 0
+            | a_hd :: a_tl, b_hd :: b_tl ->
+              if String.equal a_hd b_hd then 1 + common_prefix_len a_tl b_tl
+              else 0
+          in
+          let rec candidates = function
+            | [] -> []
+            | _ :: tl as curr -> curr :: candidates tl
+          in
+          candidates target_dir_rev
+          |> List.map ~f:(common_prefix_len source_dir_rev)
+          |> List.max_elt ~cmp:Int.compare
+          |> Option.value ~default:0
+        in
+        let files_matching_digest_with_scores =
+          List.map files_matching_digest ~f:(fun file ->
+              (file, score_file file))
+        in
+        (* get the max *)
+        let best_file, _best_score =
+          List.max_elt files_matching_digest_with_scores
+            ~cmp:(fun (_, a) (_, b) -> Int.compare a b)
+          |> Option.get
+          (* theres at least one element, so this is never None *)
+        in
+        Found best_file))
 
 (* Well, that's just another hack.
    [find_source] doesn't like the "-o" option of the compiler. This hack handles

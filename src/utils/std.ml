@@ -290,6 +290,18 @@ module List = struct
   let sort_uniq ~cmp l = dedup_adjacent ~cmp (sort ~cmp l)
 
   let print f () l = "[ " ^ String.concat "; " (List.map (f ()) l) ^ " ]"
+
+  let max_elt list ~cmp =
+    fold_left list ~init:None ~f:(fun acc elt ->
+        match acc with
+        | None -> Some elt
+        | Some max -> if cmp max elt < 0 then Some elt else acc)
+
+  let min_elt list ~cmp =
+    fold_left list ~init:None ~f:(fun acc elt ->
+        match acc with
+        | None -> Some elt
+        | Some min -> if cmp min elt > 0 then Some elt else acc)
 end
 
 module Option = struct
