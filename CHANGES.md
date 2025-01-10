@@ -1,5 +1,6 @@
-unreleased
+merlin 5.4
 ==========
+Fri Jan 10 17:55:42 CET 2025
 
   + merlin binary
     - Support for OCaml 5.3
