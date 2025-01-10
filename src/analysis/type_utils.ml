@@ -134,6 +134,10 @@ module Printtyp = struct
     (select_by_verbosity ~default:type_scheme ~verbose:(verbose_type_scheme env))
       ppf ty
 
+  let tree_of_typ_scheme te =
+    Out_type.prepare_for_printing [ te ];
+    Out_type.tree_of_typexp Type_scheme te
+
   let type_declaration env id ppf =
     (select_by_verbosity ~default:type_declaration
        ~verbose:(verbose_type_declaration env))

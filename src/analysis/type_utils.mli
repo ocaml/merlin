@@ -40,6 +40,8 @@ module Printtyp : sig
 
   val type_scheme : Env.t -> Format.formatter -> Types.type_expr -> unit
 
+  val tree_of_typ_scheme : Types.type_expr -> Outcometree.out_type
+
   val modtype : Env.t -> Format.formatter -> Types.module_type -> unit
 
   val wrap_printing_env :
