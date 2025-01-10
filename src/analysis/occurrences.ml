@@ -120,17 +120,17 @@ let get_buffer_locs result uid =
 
 let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
   let title = "get_external_locs" in
-  List.filter_map config.merlin.index_files ~f:(fun file ->
+  List.filter_map config.merlin.index_files ~f:(fun index_file ->
       log ~title "Lookin for occurrences of %a in index %s" Logger.fmt
         (Fun.flip Shape.Uid.print uid)
-        file;
+        index_file;
       let external_locs =
         try
-          let external_index = Index_cache.read file in
+          let external_index = Index_cache.read index_file in
           Index_format.Uid_map.find_opt uid external_index.defs
           |> Option.map ~f:(fun uid_locs -> (external_index, uid_locs))
         with Index_format.Not_an_index _ | Sys_error _ ->
-          log ~title "Could not load index %s" file;
+          log ~title "Could not load index %s" index_file;
           None
       in
       Option.map external_locs ~f:(fun (index, locs) ->
@@ -139,18 +139,21 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
               (fun lid ->
                 let { Location.loc; _ } = Index_format.Lid.to_lid lid in
                 (* We ignore external results that concern the current buffer *)
-                let file = loc.Location.loc_start.Lexing.pos_fname in
-                let file, buf =
-                  match config.merlin.source_root with
-                  | Some root -> (Filename.concat root file, current_buffer_path)
-                  | None -> (file, config.query.filename)
+                let file_rel_to_root =
+                  loc.Location.loc_start.Lexing.pos_fname
                 in
-                let file = Misc.canonicalize_filename file in
-                let buf = Misc.canonicalize_filename buf in
+                let file_uncanon, buf_uncanon =
+                  match config.merlin.source_root with
+                  | Some root ->
+                    (Filename.concat root file_rel_to_root, current_buffer_path)
+                  | None -> (file_rel_to_root, config.query.filename)
+                in
+                let file = Misc.canonicalize_filename file_uncanon in
+                let buf = Misc.canonicalize_filename buf_uncanon in
                 if String.equal file buf then false
                 else begin
                   (* We ignore external results if their source was modified *)
-                  let check = Stat_check.check stats ~file in
+                  let check = Stat_check.check stats ~file:file_rel_to_root in
                   if not check then
                     log ~title "File %s might be out-of-sync." file;
                   check
