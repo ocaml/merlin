@@ -35,6 +35,7 @@ Create an index
      "+": File "a.ml", line 2, characters 14-15;
      "+": File "b.ml", line 2, characters 10-11
    }, 0 approx shapes: {}, and shapes for CUS .
+  and related uids:{}
 
 Merlin fails to find occurrences outside of file because of the module prefixes
 

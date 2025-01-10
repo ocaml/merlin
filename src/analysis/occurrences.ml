@@ -155,26 +155,54 @@ let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid =
               locs,
             Stat_check.get_outdated_files stats )))
 
-let find_linked_uids ~config ~name uid =
+let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
+  let title = "lookup_related_uids_in_indexes" in
+  let open Index_format in
+  let related_uids =
+    List.fold_left ~init:Uid_map.empty config.merlin.index_files
+      ~f:(fun acc index_file ->
+        try
+          let index = Index_cache.read index_file in
+          Uid_map.union
+            (fun _ a b -> Some (Union_find.union ~f:Uid_set.union a b))
+            index.related_uids acc
+        with Index_format.Not_an_index _ | Sys_error _ ->
+          log ~title "Could not load index %s" index_file;
+          acc)
+  in
+  Uid_map.find_opt uid related_uids
+  |> Option.value_map ~default:[] ~f:(fun x ->
+         x |> Union_find.get |> Uid_set.to_list)
+
+let find_linked_uids ~config ~scope ~name uid =
   let title = "find_linked_uids" in
   match uid with
-  | Shape.Uid.Item { from = _; comp_unit; _ } -> (
-    let config =
+  | Shape.Uid.Item { from = _; comp_unit; _ } ->
+    let locate_config =
       { Locate.mconfig = config; ml_or_mli = `ML; traverse_aliases = false }
     in
-    match Locate.get_linked_uids ~config ~comp_unit uid with
-    | [ uid' ] ->
-      log ~title "Found linked uid: %a" Logger.fmt (fun fmt ->
-          Shape.Uid.print fmt uid');
-      let name_check =
-        Locate.lookup_uid_decl ~config:config.mconfig uid'
-        |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid:uid')
-        |> Option.value_map
-             ~f:(fun { Location.txt; _ } -> String.equal name txt)
-             ~default:false
-      in
-      if name_check then [ uid' ] else []
-    | _ -> [])
+    let check_name uid =
+      Locate.lookup_uid_decl ~config uid
+      |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid)
+      |> Option.value_map
+           ~f:(fun { Location.txt; _ } ->
+             let result = String.equal name txt in
+             if not result then
+               log ~title "Found clashing idents %S <> %S. Ignoring UID %a."
+                 name txt Logger.fmt
+                 (Fun.flip Shape.Uid.print uid);
+             result)
+           ~default:false
+    in
+    let related_uids =
+      match scope with
+      | `Buffer -> []
+      | `Project -> Locate.get_linked_uids ~config:locate_config ~comp_unit uid
+      | `Renaming -> lookup_related_uids_in_indexes ~config uid
+    in
+    log ~title "Found related uids: [%a]" Logger.fmt (fun fmt ->
+        List.iter ~f:(fprintf fmt "%a;" Shape.Uid.print) related_uids);
+    List.filter ~f:check_name related_uids
   | _ -> []
 
 let locs_of ~config ~env ~typer_result ~pos ~scope path =
@@ -230,7 +258,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
         let name =
           String.split_on_char ~sep:'.' path |> List.last |> Option.get
         in
-        let additional_uids = find_linked_uids ~config ~name def_uid in
+        let additional_uids = find_linked_uids ~config ~scope ~name def_uid in
         List.concat_map
           (def_uid :: additional_uids)
           ~f:(get_external_locs ~config ~current_buffer_path)
@@ -284,9 +312,9 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     in
     let status =
       match (scope, String.Set.to_list out_of_sync_files) with
-      | `Project, [] -> `Included
-      | `Project, l -> `Out_of_sync l
       | `Buffer, _ -> `Not_requested
+      | _, [] -> `Included
+      | _, l -> `Out_of_sync l
     in
     if not def_uid_is_in_current_unit then { locs; status }
     else

@@ -509,6 +509,7 @@ let all_commands =
                  match scope with
                  | "buffer" -> (pos, `Buffer)
                  | "project" -> (pos, `Project)
+                 | "renaming" -> (pos, `Renaming)
                  | _ -> failwith "-scope should be one of buffer or project"))
         ]
       ~doc:

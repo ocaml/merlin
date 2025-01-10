@@ -7,6 +7,7 @@ module Lid : Set.OrderedType with type t = Longident.t Location.loc
 module Lid_set : Set.S with type elt = Lid.t
 module Stats : Map.S with type key = String.t
 module Uid_map = Shape.Uid.Map
+module Uid_set = Shape.Uid.Set
 
 type stat = { mtime : float; size : int; source_digest : string option }
 
@@ -15,7 +16,8 @@ type index =
     approximated : Lid_set.t Uid_map.t;
     cu_shape : (string, Shape.t) Hashtbl.t;
     stats : stat Stats.t;
-    root_directory : string option
+    root_directory : string option;
+    related_uids : Uid_set.t Union_find.element Uid_map.t
   }
 
 val pp : Format.formatter -> index -> unit
