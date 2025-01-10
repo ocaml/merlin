@@ -1,11 +1,11 @@
-type store = in_channel
+type store = string
 
 type 'a link = 'a repr ref
 
 and 'a repr =
   | Small of 'a
   | Serialized of { loc : int }
-  | On_disk of { fd : store; loc : int; schema : 'a schema }
+  | On_disk of { store : store; loc : int; schema : 'a schema }
   | In_memory of 'a
   | Placeholder
 
@@ -17,22 +17,28 @@ let schema_no_sublinks : _ schema = fun _ _ -> ()
 
 let link v = ref (In_memory v)
 
-let fetch_loc fd loc schema =
+let read_loc store fd loc schema =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
   let rec iter =
     { yield =
         (fun lnk schema ->
           match !lnk with
-          | Serialized { loc } -> lnk := On_disk { fd; loc; schema }
+          | Serialized { loc } -> lnk := On_disk { store; loc; schema }
           | Small v ->
             schema iter v;
             lnk := In_memory v
           | In_memory _ | On_disk _ -> ()
-          | Placeholder -> invalid_arg "fetch_loc: Placeholder")
+          | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
   schema iter v;
+  v
+
+let fetch_loc store loc schema =
+  let fd = open_in store in
+  let v = read_loc store fd loc schema in
+  close_in fd;
   v
 
 let fetch lnk =
@@ -40,8 +46,8 @@ let fetch lnk =
   | In_memory v -> v
   | Serialized _ | Small _ -> invalid_arg "fetch: serialized"
   | Placeholder -> invalid_arg "fetch: during a write"
-  | On_disk { fd; loc; schema } ->
-    let v = fetch_loc fd loc schema in
+  | On_disk { store; loc; schema } ->
+    let v = fetch_loc store loc schema in
     lnk := In_memory v;
     v
 
@@ -92,9 +98,7 @@ let write ?(flags = []) fd root_schema root_value =
   seek_out fd pt_root;
   output_string fd (binstring_of_int root_loc)
 
-let read fd root_schema =
+let read store fd root_schema =
   let root_loc = int_of_binstring (really_input_string fd 8) in
-  let root_value = fetch_loc fd root_loc root_schema in
+  let root_value = read_loc store fd root_loc root_schema in
   root_value
-
-let close store = close_in store

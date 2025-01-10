@@ -42,7 +42,8 @@ let lidset_schema iter lidset = Lid_set.schema iter (fun _iter _v -> ()) lidset
 
 let index_schema (iter : Granular_marshal.iter) index =
   Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.defs;
-  Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.approximated
+  Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.approximated;
+  Uid_map.schema iter (fun _ _ _ -> ()) index.related_uids
 
 let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "{@[";
@@ -112,16 +113,12 @@ let write ~file index =
       output_string oc magic_number;
       Granular_marshal.write oc index_schema (index : index))
 
-type file_content =
-  | Cmt of Cmt_format.cmt_infos
-  | Index of index * in_channel
-  | Unknown
+type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
 let read ~file =
   let ic = open_in_bin file in
-  let always_close = ref true in
   Merlin_utils.Misc.try_finally
-    ~always:(fun () -> if !always_close then close_in ic)
+    ~always:(fun () -> close_in ic)
     (fun () ->
       let file_magic_number = ref (Cmt_format.read_magic_number ic) in
       let cmi_magic_number = Ocaml_utils.Config.cmi_magic_number in
@@ -131,13 +128,11 @@ let read ~file =
          file_magic_number := Cmt_format.read_magic_number ic);
       if String.equal !file_magic_number cmt_magic_number then
         Cmt (input_value ic : Cmt_format.cmt_infos)
-      else if String.equal !file_magic_number magic_number then (
-        let index = Granular_marshal.read ic index_schema in
-        always_close := false;
-        Index (index, ic))
+      else if String.equal !file_magic_number magic_number then
+        Index (Granular_marshal.read file ic index_schema)
       else Unknown)
 
 let read_exn ~file =
   match read ~file with
-  | Index (index, ic) -> (index, ic)
+  | Index index -> index
   | _ -> raise (Not_an_index file)

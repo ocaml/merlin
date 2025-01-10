@@ -87,15 +87,14 @@ let () =
   | Some Dump ->
     List.iter
       (fun file ->
-        let index, ic = Index_format.read_exn ~file in
-        Index_format.pp Format.std_formatter index;
-        close_in ic)
+        let index = Index_format.read_exn ~file in
+        Index_format.pp Format.std_formatter index)
       !input_files
   | Some Stats ->
     List.iter
       (fun file ->
         let open Merlin_index_format.Index_format in
-        let { defs; approximated; cu_shape; root_directory; _ }, ic =
+        let { defs; approximated; cu_shape; root_directory; _ } =
           read_exn ~file
         in
         Printf.printf
@@ -111,8 +110,7 @@ let () =
              defs 0)
           (Uid_map.cardinal approximated)
           (Hashtbl.length cu_shape)
-          (Option.value ~default:"none" root_directory);
-        close_in ic)
+          (Option.value ~default:"none" root_directory))
       !input_files
   | _ -> Printf.printf "Nothing to do.\n%!");
   exit 0

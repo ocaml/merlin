@@ -180,9 +180,6 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
       related_uids = Uid_map.empty ()
     }
   in
-  let icl = ref [] in
-  Merlin_utils.Misc.try_finally ~always:(fun () -> List.iter close_in !icl)
-  @@ fun () ->
   let final_index =
     Ocaml_utils.Local_store.with_store (Ocaml_utils.Local_store.fresh ())
     @@ fun () ->
@@ -194,9 +191,7 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
             ~do_not_use_cmt_loadpath cmt_item.cmt_infos
         | exception _ -> (
           match read ~file with
-          | Index (index, ic) ->
-            icl := ic :: !icl;
-            merge_index ~store_shapes ~into index
+          | Index index -> merge_index ~store_shapes ~into index
           | _ ->
             Log.error "Unknown file type: %s" file;
             exit 1))

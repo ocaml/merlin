@@ -40,6 +40,4 @@ include File_cache.Make (struct
   }
 
   let cache_name = "Cmt_cache"
-
-  let dispose _ = ()
 end)

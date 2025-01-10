@@ -30,7 +30,6 @@ module Make (Input : sig
   type t
   val read : string -> t
   val cache_name : string
-  val dispose : t -> unit
 end) =
 struct
   let { Logger.log } =
@@ -55,7 +54,6 @@ struct
       cache_hit := !cache_hit + 1)
     else (
       log ~title "%S was updated on disk" filename;
-      Input.dispose file;
       raise Not_found);
     latest_use := Unix.time ();
     file
@@ -81,13 +79,12 @@ struct
     let fid = File_id.get filename in
     match Hashtbl.find cache filename with
     | exception Not_found -> false
-    | fid', latest_use, file ->
+    | fid', latest_use, _file ->
       if File_id.check fid fid' then begin
         latest_use := Unix.time ();
         true
       end
       else begin
-        Input.dispose file;
         Hashtbl.remove cache filename;
         false
       end

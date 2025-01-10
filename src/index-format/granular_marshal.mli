@@ -47,14 +47,7 @@ val schema_no_sublinks : 'a schema
 val write :
   ?flags:Marshal.extern_flags list -> out_channel -> 'a schema -> 'a -> unit
 
-(** The type to represent an open disk connection. *)
-type store
-
 (** [read ic schema] reads the value marshalled in the input channel [ic],
     stopping the unmarshalling on every link boundary indicated by the [schema].
     It returns the root [value] read.  *)
-val read : in_channel -> 'a schema -> 'a
-
-(** [close store] closes the connection to the disk. Any further {!fetch} requiring
-    to read from the disk will fail. *)
-val close : store -> unit
+val read : string -> in_channel -> 'a schema -> 'a

@@ -10,6 +10,4 @@ include File_cache.Make (struct
         Sys.readdir (if dir = "" then Filename.current_dir_name else dir)
       with Sys_error _ ->
         [||]
-    let dispose _ = ()
   end)
-

@@ -26,11 +26,9 @@ val pp : Format.formatter -> index -> unit
     key is already present the locations are merged. *)
 val add : Lid_set.t Uid_map.t -> Shape.Uid.t -> Lid_set.t -> Lid_set.t Uid_map.t
 
-type file_content =
-  | Cmt of Cmt_format.cmt_infos
-  | Index of index * in_channel
-  | Unknown
+type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
 val write : file:string -> index -> unit
 val read : file:string -> file_content
-val read_exn : file:string -> index * in_channel
+
+val read_exn : file:string -> index
