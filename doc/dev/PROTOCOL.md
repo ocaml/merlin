@@ -355,8 +355,12 @@ Returns either:
 
 Returns a list of locations `{'start': position, 'end': position}` of all
 occurrences in current buffer of the entity at the specified position. If scope
-is set to `project` the returned locations will also contain a field `file`:
+is set to `project` or `renaming`‡ the returned locations will also contain a field `file`:
 `{'file': string, 'start': position, 'end': position}`.
+
+When the scope is set to `renaming`, all usages of all the related definitions
+corresponding to an identifier will be returned. When scope is `project` only
+the usages of the current definition will be returned.
 
 ### `outline`
 
