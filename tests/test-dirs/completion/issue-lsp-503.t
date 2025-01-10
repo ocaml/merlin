@@ -14,14 +14,14 @@ We complete the name of the object
         {
           "name": "map",
           "kind": "Value",
-          "desc": "('a1 -> 'b1) -> 'a1 list -> 'b1 list",
+          "desc": "('a -> 'b) -> 'a list -> 'b list",
           "info": "",
           "deprecated": false
         },
         {
           "name": "mapi",
           "kind": "Value",
-          "desc": "(int -> 'a0 -> 'b0) -> 'a0 list -> 'b0 list",
+          "desc": "(int -> 'a -> 'b) -> 'a list -> 'b list",
           "info": "",
           "deprecated": false
         },

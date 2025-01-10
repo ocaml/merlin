@@ -57,12 +57,13 @@ let raw_info_printer : raw_info -> _ = function
       (Out_sig_item
          (Out_type.tree_of_type_declaration id tdecl Types.Trec_first))
   | `Type_scheme te ->
-    `Print (Out_type (Out_type.tree_of_typexp Type_scheme te))
+    `Print (Out_type (Type_utils.Printtyp.tree_of_typ_scheme te))
   | `Variant (label, arg) -> begin
     match arg with
     | None -> `String label
     | Some te ->
-      `Concat (label ^ " of ", Out_type (Out_type.tree_of_typexp Type_scheme te))
+      `Concat
+        (label ^ " of ", Out_type (Type_utils.Printtyp.tree_of_typ_scheme te))
   end
 
 (* List methods of an object.
