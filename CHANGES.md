@@ -28,6 +28,7 @@ Fri Jan 10 17:55:42 CET 2025
     - Perform less merges in the indexer (#1881)
     - Add initial support for project-wide renaming: occurrences can now return
       all usages of all related definitions. (#1877)
+    - Stale occurrences are flagged as such
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that
