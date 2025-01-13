@@ -38,10 +38,30 @@ let read_loc store fd loc schema =
   schema iter v;
   v
 
-let fetch_loc store loc schema =
+let last_open_store = ref None
+
+let () =
+  at_exit (fun () ->
+      match !last_open_store with
+      | None -> ()
+      | Some (_, fd) -> close_in fd)
+
+let force_open_store store =
   let fd = open_in store in
+  last_open_store := Some (store, fd);
+  fd
+
+let open_store store =
+  match !last_open_store with
+  | Some (store', fd) when store = store' -> fd
+  | Some (_, fd) ->
+    close_in fd;
+    force_open_store store
+  | None -> force_open_store store
+
+let fetch_loc store loc schema =
+  let fd = open_store store in
   let v = read_loc store fd loc schema in
-  close_in fd;
   v
 
 let rec fetch lnk =
