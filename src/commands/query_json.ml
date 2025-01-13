@@ -488,8 +488,15 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Findlib_list, strs -> `List (List.map ~f:Json.string strs)
   | Extension_list _, strs -> `List (List.map ~f:Json.string strs)
   | Path_list _, strs -> `List (List.map ~f:Json.string strs)
-  | Occurrences (_, scope), (locations, _project) ->
+  | Occurrences (_, scope), (occurrences, _project) ->
     let with_file = scope = `Project || scope = `Renaming in
-    `List (List.map locations ~f:(fun loc -> with_location ~with_file loc []))
+    `List
+      (List.map occurrences ~f:(fun occurrence ->
+           let without_location =
+             match occurrence.is_stale with
+             | true -> [ ("stale", Json.bool true) ]
+             | false -> []
+           in
+           with_location ~with_file occurrence.loc without_location))
   | Signature_help _, s -> json_of_signature_help s
   | Version, version -> `String version

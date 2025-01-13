@@ -1,5 +1,7 @@
 type t =
-  { locs : Warnings.loc list; status : Query_protocol.occurrences_status }
+  { occurrences : Query_protocol.occurrence list;
+    status : Query_protocol.occurrences_status
+  }
 
 val locs_of :
   config:Mconfig.t ->

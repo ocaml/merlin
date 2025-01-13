@@ -789,10 +789,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       Locate.log ~title:"reconstructed identifier" "%s" path;
       path
     in
-    let { Occurrences.locs; status } =
+    let { Occurrences.occurrences; status } =
       Occurrences.locs_of ~config ~env ~typer_result ~pos ~scope path
     in
-    (locs, status)
+    (occurrences, status)
   | Inlay_hints
       (start, stop, hint_let_binding, hint_pattern_binding, avoid_ghost_location)
     ->
