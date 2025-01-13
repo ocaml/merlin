@@ -1,3 +1,10 @@
+merlin 5.4.1
+============
+Mon Jan 13 10:55:42 CET 2025
+
+  + ocaml-index
+    - Bump magic number after index file format change (#1886)
+
 merlin 5.4
 ==========
 Fri Jan 10 17:55:42 CET 2025
