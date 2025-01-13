@@ -7,6 +7,8 @@ and 'a repr =
   | Serialized of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
   | In_memory of 'a
+  | In_memory_reused of 'a
+  | Duplicate of 'a link
   | Placeholder
 
 and 'a schema = iter -> 'a -> unit
@@ -28,7 +30,8 @@ let read_loc store fd loc schema =
           | Small v ->
             schema iter v;
             lnk := In_memory v
-          | In_memory _ | On_disk _ -> ()
+          | In_memory _ | In_memory_reused _ | On_disk _ -> ()
+          | Duplicate _ -> invalid_arg "Granular_marshal.read_loc: Duplicate"
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -41,15 +44,33 @@ let fetch_loc store loc schema =
   close_in fd;
   v
 
-let fetch lnk =
+let rec fetch lnk =
   match !lnk with
-  | In_memory v -> v
-  | Serialized _ | Small _ -> invalid_arg "fetch: serialized"
-  | Placeholder -> invalid_arg "fetch: during a write"
+  | In_memory v | In_memory_reused v -> v
+  | Serialized _ | Small _ -> invalid_arg "Granular_marshal.fetch: serialized"
+  | Placeholder -> invalid_arg "Granular_marshal.fetch: during a write"
+  | Duplicate original_lnk ->
+    let v = fetch original_lnk in
+    lnk := In_memory v;
+    v
   | On_disk { store; loc; schema } ->
     let v = fetch_loc store loc schema in
     lnk := In_memory v;
     v
+
+let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
+  let module H = Hashtbl.Make (Key) in
+  let cache = H.create 16 in
+  fun (lnk : a link) ->
+    let key = fetch lnk in
+    match H.find cache key with
+    | original_lnk ->
+      (match !original_lnk with
+      | In_memory v -> original_lnk := In_memory_reused v
+      | In_memory_reused _ -> ()
+      | _ -> assert false);
+      lnk := Duplicate original_lnk
+    | exception Not_found -> H.add cache key lnk
 
 let ptr_size = 8
 
@@ -70,6 +91,10 @@ let write ?(flags = []) fd root_schema root_value =
         (fun (type a) (lnk : a link) (schema : a schema) : unit ->
           match !lnk with
           | Serialized _ | Small _ | Placeholder -> ()
+          | In_memory_reused v -> write_child_reused lnk schema v
+          | Duplicate original_lnk ->
+            (iter size restore).yield original_lnk schema;
+            lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size restore
           | On_disk _ -> write_child lnk schema (fetch lnk) size restore)
     }
@@ -91,6 +116,14 @@ let write ?(flags = []) fd root_schema root_value =
     let v_size = Obj.(reachable_words (repr v)) in
     List.iter (fun restore -> restore ()) !children_restore;
     !children_size + v_size
+  and write_child_reused : type a. a link -> a schema -> a -> _ =
+   fun lnk schema v ->
+    let children_size = ref 0 in
+    let children_restore = ref [] in
+    schema (iter children_size children_restore) v;
+    List.iter (fun restore -> restore ()) !children_restore;
+    lnk := Serialized { loc = pos_out fd };
+    Marshal.to_channel fd v flags
   in
   let _ : int = write_children root_schema root_value in
   let root_loc = pos_out fd in

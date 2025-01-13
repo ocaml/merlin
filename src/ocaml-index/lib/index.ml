@@ -23,6 +23,7 @@ let merge m m' =
   Uid_map.union (fun _uid locs locs' -> Some (Lid_set.union locs locs')) m m'
 
 let add_one uid lid map =
+  let lid = Lid.of_lid lid in
   Uid_map.update uid
     (function
       | None -> Some (Lid_set.singleton lid)

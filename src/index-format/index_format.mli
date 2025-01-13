@@ -3,7 +3,11 @@ exception Not_an_index of string
 val ext : string
 val magic_number : string
 
-module Lid : Set.OrderedType with type t = Longident.t Location.loc
+module Lid : sig
+  include Set.OrderedType
+  val of_lid : Longident.t Location.loc -> t
+  val to_lid : t -> Longident.t Location.loc
+end
 module Lid_set : Granular_set.S with type elt = Lid.t
 module Stats : Map.S with type key = String.t
 module Uid_set = Shape.Uid.Set

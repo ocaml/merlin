@@ -4,6 +4,10 @@ type 'a link
 (** [link v] returns a new link to the in-memory value [v]. *)
 val link : 'a -> 'a link
 
+(** [cache (module Hash)] returns a function to de-duplicate links which share
+    the same value, resulting in a compressed file. *)
+val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit
+
 (** [fetch lnk] returns the value pointed by the link [lnk].
 
     We of course have [fetch (link v) = v] and [link (fetch lnk) = lnk]. *)
