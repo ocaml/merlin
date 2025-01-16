@@ -631,7 +631,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         :: _parents ->
         let loc = Mbrowse.node_loc node_for_loc in
         (loc, Construct.node ~config ~keywords ?depth ~values_scope node)
-      | (_, (Browse_raw.Expression { exp_desc = Texp_hole; _ } as node))
+      | (_, (Browse_raw.Expression { exp_desc = Texp_typed_hole; _ } as node))
         :: _parents ->
         let loc = Mbrowse.node_loc node in
         (loc, Construct.node ~config ~keywords ?depth ~values_scope node)

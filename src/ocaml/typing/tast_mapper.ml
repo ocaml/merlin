@@ -493,8 +493,8 @@ let expr sub x =
         Texp_extension_constructor (map_loc sub lid, path)
     | Texp_open (od, e) ->
         Texp_open (sub.open_declaration sub od, sub.expr sub e)
-    | Texp_hole ->
-        Texp_hole
+    | Texp_typed_hole ->
+        Texp_typed_hole
   in
   let exp_attributes = sub.attributes sub x.exp_attributes in
   {x with exp_loc; exp_extra; exp_desc; exp_env; exp_attributes}

@@ -75,7 +75,7 @@ let expr_tail_positions = function
   | Texp_unreachable
   | Texp_extension_constructor _
   | Texp_letop _
-  | Texp_hole -> []
+  | Texp_typed_hole -> []
   | Texp_match (_, cs, _, _) -> List.map cs ~f:(fun c -> Case c)
   | Texp_try (_, cs, _) -> List.map cs ~f:(fun c -> Case c)
   | Texp_letmodule (_, _, _, _, e)

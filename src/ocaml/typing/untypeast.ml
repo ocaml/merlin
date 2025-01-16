@@ -560,7 +560,7 @@ let expression sub exp =
                              ])
     | Texp_open (od, exp) ->
         Pexp_open (sub.open_declaration sub od, sub.expr sub exp)
-    | Texp_hole ->
+    | Texp_typed_hole ->
         let id = Location.mkloc hole_txt loc in
         Pexp_extension (id, PStr [])
   in

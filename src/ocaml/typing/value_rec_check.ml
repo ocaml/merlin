@@ -242,7 +242,7 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_letop _ ->
         Dynamic
 
-    | Texp_hole -> Static
+    | Texp_typed_hole -> Static
   and classify_value_bindings rec_flag env bindings =
     (* We use a non-recursive classification, classifying each
         binding with respect to the old environment
@@ -935,7 +935,7 @@ let rec expression : Typedtree.expression -> term_judg =
           list binding_op (let_ :: ands) << Dereference;
           case_env body << Delay
         ]
-    | Texp_unreachable | Texp_hole ->
+    | Texp_unreachable | Texp_typed_hole ->
       (*
         ----------
         [] |- .: m
