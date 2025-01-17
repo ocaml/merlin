@@ -2817,7 +2817,7 @@ and is_nonexpansive_mod mexp =
   match mexp.mod_desc with
   | Tmod_ident _
   | Tmod_functor _
-  | Tmod_hole -> true
+  | Tmod_typed_hole -> true
   | Tmod_unpack (e, _) -> is_nonexpansive e
   | Tmod_constraint (m, _, _, _) -> is_nonexpansive_mod m
   | Tmod_structure str ->

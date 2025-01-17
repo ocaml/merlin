@@ -474,7 +474,7 @@ and of_module_expr_desc = function
   | Tmod_constraint (me, _, mtc, _) ->
     of_module_expr me ** app (Module_type_constraint mtc)
   | Tmod_unpack (e, _) -> of_expression e
-  | Tmod_hole -> id_fold
+  | Tmod_typed_hole -> id_fold
 
 and of_structure_item_desc = function
   | Tstr_eval (e, _) -> of_expression e
@@ -935,7 +935,8 @@ let all_holes (env, node) =
       match node with
       | Expression { exp_desc = Texp_typed_hole; exp_loc; exp_type; exp_env; _ }
         -> (exp_loc, exp_env, `Exp exp_type) :: acc
-      | Module_expr { mod_desc = Tmod_hole; mod_loc; mod_type; mod_env; _ } ->
+      | Module_expr
+          { mod_desc = Tmod_typed_hole; mod_loc; mod_type; mod_env; _ } ->
         (mod_loc, mod_env, `Mod mod_type) :: acc
       | _ -> aux acc (env, node)
     in

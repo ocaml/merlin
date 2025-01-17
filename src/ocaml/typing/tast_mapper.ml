@@ -625,7 +625,7 @@ let module_expr sub x =
   let mod_desc =
     match x.mod_desc with
     | Tmod_ident (path, lid) -> Tmod_ident (path, map_loc sub lid)
-    | Tmod_hole -> Tmod_hole
+    | Tmod_typed_hole -> Tmod_typed_hole
     | Tmod_structure st -> Tmod_structure (sub.structure sub st)
     | Tmod_functor (arg, mexpr) ->
         Tmod_functor (functor_parameter sub arg, sub.module_expr sub mexpr)

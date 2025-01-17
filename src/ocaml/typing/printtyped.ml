@@ -840,7 +840,7 @@ and module_expr i ppf x =
   let i = i+1 in
   match x.mod_desc with
   | Tmod_ident (li,_) -> line i ppf "Tmod_ident %a\n" fmt_path li;
-  | Tmod_hole -> line i ppf "Tmod_hole\n";
+  | Tmod_typed_hole -> line i ppf "Tmod_typed_hole\n";
   | Tmod_structure (s) ->
       line i ppf "Tmod_structure\n";
       structure i ppf s;

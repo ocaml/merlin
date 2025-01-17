@@ -295,7 +295,7 @@ let classify_expression : Typedtree.expression -> sd =
             Dynamic
   and classify_module_expression env mexp : sd =
     match mexp.mod_desc with
-    | Tmod_hole ->
+    | Tmod_typed_hole ->
         Dynamic
     | Tmod_ident (path, _) ->
         classify_path env path
@@ -1041,7 +1041,7 @@ and modexp : Typedtree.module_expr -> term_judg =
       coercion coe (fun m -> modexp mexp << m)
     | Tmod_unpack (e, _) ->
       expression e
-    | Tmod_hole -> fun _ -> Env.empty
+    | Tmod_typed_hole -> fun _ -> Env.empty
 
 
 (* G |- pth : m *)
