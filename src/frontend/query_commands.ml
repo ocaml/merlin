@@ -626,12 +626,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let structures = Mbrowse.enclosing pos [ Mbrowse.of_typedtree typedtree ] in
     begin
       match structures with
-      | (_, (Browse_raw.Module_expr { mod_desc = Tmod_hole; _ } as node_for_loc))
+      | ( _,
+          (Browse_raw.Module_expr { mod_desc = Tmod_typed_hole; _ } as
+           node_for_loc) )
         :: (_, node)
         :: _parents ->
         let loc = Mbrowse.node_loc node_for_loc in
         (loc, Construct.node ~config ~keywords ?depth ~values_scope node)
-      | (_, (Browse_raw.Expression { exp_desc = Texp_hole; _ } as node))
+      | (_, (Browse_raw.Expression { exp_desc = Texp_typed_hole; _ } as node))
         :: _parents ->
         let loc = Mbrowse.node_loc node in
         (loc, Construct.node ~config ~keywords ?depth ~values_scope node)

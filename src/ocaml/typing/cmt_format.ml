@@ -240,7 +240,7 @@ let iter_on_occurrences
       | Texp_send _
       | Texp_letmodule _ | Texp_letexception _ | Texp_assert _ | Texp_lazy _
       | Texp_object _ | Texp_pack _ | Texp_letop _ | Texp_unreachable
-      | Texp_open _ | Texp_hole -> ());
+      | Texp_open _ | Texp_typed_hole -> ());
       default_iterator.expr sub e);
 
   (* Remark: some types get iterated over twice due to how constraints are
@@ -305,7 +305,7 @@ let iter_on_occurrences
       (match mod_desc with
       | Tmod_ident (path, lid) -> f ~namespace:Module mod_env path lid
       | Tmod_structure _ | Tmod_functor _ | Tmod_apply _ | Tmod_apply_unit _
-      | Tmod_constraint _ | Tmod_unpack _ | Tmod_hole -> ());
+      | Tmod_constraint _ | Tmod_unpack _ | Tmod_typed_hole -> ());
       default_iterator.module_expr sub me);
 
   open_description =
