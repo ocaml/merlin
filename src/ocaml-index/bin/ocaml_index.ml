@@ -86,7 +86,9 @@ let () =
       ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files
   | Some Dump ->
     List.iter
-      (fun file -> Index_format.(read_exn ~file |> pp Format.std_formatter))
+      (fun file ->
+        let index = Index_format.read_exn ~file in
+        Index_format.pp Format.std_formatter index)
       !input_files
   | Some Stats ->
     List.iter

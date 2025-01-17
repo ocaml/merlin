@@ -3,11 +3,15 @@ exception Not_an_index of string
 val ext : string
 val magic_number : string
 
-module Lid : Set.OrderedType with type t = Longident.t Location.loc
-module Lid_set : Set.S with type elt = Lid.t
+module Lid : sig
+  include Set.OrderedType
+  val of_lid : Longident.t Location.loc -> t
+  val to_lid : t -> Longident.t Location.loc
+end
+module Lid_set : Granular_set.S with type elt = Lid.t
 module Stats : Map.S with type key = String.t
-module Uid_map = Shape.Uid.Map
 module Uid_set = Shape.Uid.Set
+module Uid_map : Granular_map.S with type key = Shape.Uid.t
 
 type stat = { mtime : float; size : int; source_digest : string option }
 
@@ -30,4 +34,5 @@ type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
 val write : file:string -> index -> unit
 val read : file:string -> file_content
+
 val read_exn : file:string -> index
