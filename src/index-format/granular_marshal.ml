@@ -53,7 +53,7 @@ let force_open_store store =
 
 let open_store store =
   match !last_open_store with
-  | Some (store', fd) when store = store' -> fd
+  | Some (store', fd) when store == store' -> fd
   | Some (_, fd) ->
     close_in fd;
     force_open_store store
