@@ -49,7 +49,7 @@ and ast_impl_magic_number = "Caml1999M035"
 and ast_intf_magic_number = "Caml1999N035"
 and cmxs_magic_number = "Caml1999D035"
 and cmt_magic_number = "Caml1999T035"
-and index_magic_number = "Merl2023I003"
+and index_magic_number = "Merl2023I004"
 
 let interface_suffix = ref ".mli"
 let flat_float_array = true
