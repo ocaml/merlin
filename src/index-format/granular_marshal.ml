@@ -2,7 +2,7 @@ module Cache = Hashtbl.Make (Int)
 
 type store = { filename : string; cache : any_link Cache.t }
 
-and any_link = Link : 'a link * 'a schema -> any_link
+and any_link = Link : 'a link * 'a link Type.Id.t -> any_link
 
 and 'a link = 'a repr ref
 
@@ -18,7 +18,7 @@ and 'a repr =
 
 and 'a schema = iter -> 'a -> unit
 
-and iter = { yield : 'a. 'a link -> 'a schema -> unit }
+and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 
 let schema_no_sublinks : _ schema = fun _ _ -> ()
 
@@ -34,7 +34,7 @@ let read_loc store fd loc schema =
   let v = Marshal.from_channel fd in
   let rec iter =
     { yield =
-        (fun lnk schema ->
+        (fun (type a) (lnk : a link) type_id schema ->
           match !lnk with
           | Small v ->
             schema iter v;
@@ -42,13 +42,16 @@ let read_loc store fd loc schema =
           | Serialized { loc } -> lnk := On_disk { store; loc; schema }
           | Serialized_reused { loc } -> (
             match Cache.find store.cache loc with
-            | Link (lnk', schema') ->
-              let lnk' = normalize lnk' in
-              assert (schema == Obj.magic schema');
-              lnk := Duplicate (Obj.magic lnk')
+            | Link (type b) ((lnk', type_id') : b link * _) -> (
+              match Type.Id.provably_equal type_id type_id' with
+              | Some (Equal : (a link, b link) Type.eq) ->
+                lnk := Duplicate (normalize lnk')
+              | None ->
+                invalid_arg
+                  "Granular_marshal.read_loc: reuse of a different type")
             | exception Not_found ->
               lnk := On_disk { store; loc; schema };
-              Cache.add store.cache loc (Link (lnk, schema)))
+              Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
@@ -131,7 +134,7 @@ let write ?(flags = []) fd root_schema root_value =
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
     { yield =
-        (fun (type a) (lnk : a link) (schema : a schema) : unit ->
+        (fun (type a) (lnk : a link) _type_id (schema : a schema) : unit ->
           match !lnk with
           | Serialized _ | Serialized_reused _ | Small _ -> ()
           | Placeholder -> failwith "big nono"

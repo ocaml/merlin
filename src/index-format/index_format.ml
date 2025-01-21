@@ -16,6 +16,11 @@ module Union_find = struct
   let union a b =
     Granular_marshal.(
       link (Union_find.union ~f:Uid_set.union (fetch a) (fetch b)))
+
+  let type_id : t Type.Id.t = Type.Id.make ()
+
+  let schema { Granular_marshal.yield } t =
+    yield t type_id Granular_marshal.schema_no_sublinks
 end
 
 let add map uid locs =
@@ -38,12 +43,18 @@ type index =
 
 let lidset_schema iter lidset = Lid_set.schema iter Lid.schema lidset
 
+let type_setmap : Lid_set.t Uid_map.t Type.Id.t = Type.Id.make ()
+let type_ufmap : Union_find.t Uid_map.t Type.Id.t = Type.Id.make ()
+
 let index_schema (iter : Granular_marshal.iter) index =
-  Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.defs;
-  Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.approximated;
-  Uid_map.schema iter
-    (fun iter _ v ->
-      iter.Granular_marshal.yield v Granular_marshal.schema_no_sublinks)
+  Uid_map.schema type_setmap iter
+    (fun iter _ v -> lidset_schema iter v)
+    index.defs;
+  Uid_map.schema type_setmap iter
+    (fun iter _ v -> lidset_schema iter v)
+    index.approximated;
+  Uid_map.schema type_ufmap iter
+    (fun iter _ v -> Union_find.schema iter v)
     index.related_uids
 
 let compress index =

@@ -36,6 +36,7 @@ module type S = sig
   val mem : key -> 'a t -> bool
   val update : key -> ('a option -> 'a option) -> 'a t -> 'a t
   val schema :
+    'a t Type.Id.t ->
     Granular_marshal.iter ->
     (Granular_marshal.iter -> key -> 'a -> unit) ->
     'a t ->
@@ -296,12 +297,12 @@ module Make (Ord : Map.OrderedType) = struct
         let rr = update x f r in
         if r == rr then t else bal l v d rr
 
-  let rec schema iter f m =
-    iter.yield m @@ fun iter tree ->
+  let rec schema type_id iter f m =
+    iter.yield m type_id @@ fun iter tree ->
     match tree with
     | Empty -> ()
     | Node { l; v; d; r; _ } ->
-      schema iter f l;
+      schema type_id iter f l;
       f iter v d;
-      schema iter f r
+      schema type_id iter f r
 end

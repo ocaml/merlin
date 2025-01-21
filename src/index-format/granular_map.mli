@@ -34,6 +34,7 @@ module type S = sig
   val mem : key -> 'a t -> bool
   val update : key -> ('a option -> 'a option) -> 'a t -> 'a t
   val schema :
+    'a t Type.Id.t ->
     Granular_marshal.iter ->
     (Granular_marshal.iter -> key -> 'a -> unit) ->
     'a t ->

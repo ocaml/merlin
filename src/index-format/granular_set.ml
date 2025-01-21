@@ -265,8 +265,10 @@ module Make (Ord : Set.OrderedType) = struct
       f v;
       iter f r
 
+  let type_id = Type.Id.make ()
+
   let rec schema iter f m =
-    iter.yield m @@ fun iter tree ->
+    iter.yield m type_id @@ fun iter tree ->
     match tree with
     | Empty -> ()
     | Node { l; v; r; _ } ->

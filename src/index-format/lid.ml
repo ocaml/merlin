@@ -51,9 +51,12 @@ let compare t1 t2 =
     | c -> c)
   | c -> c
 
+let type_string : string G.link Type.Id.t = Type.Id.make ()
+let type_longident : Longident.t G.link Type.Id.t = Type.Id.make ()
+
 let schema iter t =
-  iter.G.yield t.filename G.schema_no_sublinks;
-  iter.G.yield t.longident G.schema_no_sublinks
+  iter.G.yield t.filename type_string G.schema_no_sublinks;
+  iter.G.yield t.longident type_longident G.schema_no_sublinks
 
 module Li = struct
   include Longident

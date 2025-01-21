@@ -17,7 +17,7 @@ val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit
     We of course have [fetch (link v) = v] and [link (fetch lnk) = lnk]. *)
 val fetch : 'a link -> 'a
 
-(** For this demo we can't depend on a PPX or external dependencies,
+(** For Merlin we can't depend on a PPX or external dependencies,
     so we require a user-defined {!schema} to describe where the links can be
     found.  This is just an iter traversal over the values, recursively
     yielding on any reachable link. Since links can point to values themselves
@@ -29,10 +29,14 @@ val fetch : 'a link -> 'a
     {[
       type t = { first : string link ; second : int link list link }
 
+      let type_first : string link Type.Id.t = Type.Id.make ()
+      let type_second : int link list link Type.Id.t = Type.Id.make ()
+      let type_v : int link Type.Id.t = Type.Id.make ()
+
       let schema : t schema = fun iter t ->
-        iter.yield t.first schema_no_sublinks ;
-        iter.yield t.second @@ fun iter lst ->
-          List.iter (fun v -> iter.yield v schema_no_sublinks) lst
+        iter.yield t.first type_first schema_no_sublinks ;
+        iter.yield t.second type_second @@ fun iter lst ->
+          List.iter (fun v -> iter.yield v type_v schema_no_sublinks) lst
     ]}
 
     where {!schema_no_sublinks} indicates that the yielded value contains
@@ -44,7 +48,7 @@ type 'a schema = iter -> 'a -> unit
 (** A callback to signal the reachable links and the schema of their pointed
     sub-value.  Since a value can contain multiple links each pointing to
     different types of values, the callback is polymorphic. *)
-and iter = { yield : 'a. 'a link -> 'a schema -> unit }
+and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 
 (** A schema usable when the ['a] value does not contain any links. *)
 val schema_no_sublinks : 'a schema
