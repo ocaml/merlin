@@ -6,6 +6,18 @@ module Uid_map = Granular_map.Make (Shape.Uid)
 module Stats = Map.Make (String)
 module Uid_set = Shape.Uid.Set
 
+module Union_find = struct
+  type t = Uid_set.t Union_find.element Granular_marshal.link
+
+  let make v = Granular_marshal.link (Union_find.make v)
+
+  let get t = Union_find.get (Granular_marshal.fetch t)
+
+  let union a b =
+    Granular_marshal.(
+      link (Union_find.union ~f:Uid_set.union (fetch a) (fetch b)))
+end
+
 let add map uid locs =
   Uid_map.update uid
     (function
@@ -21,7 +33,7 @@ type index =
     cu_shape : (string, Shape.t) Hashtbl.t;
     stats : stat Stats.t;
     root_directory : string option;
-    related_uids : Uid_set.t Union_find.element Uid_map.t
+    related_uids : Union_find.t Uid_map.t
   }
 
 let lidset_schema iter lidset = Lid_set.schema iter Lid.schema lidset
@@ -29,7 +41,10 @@ let lidset_schema iter lidset = Lid_set.schema iter Lid.schema lidset
 let index_schema (iter : Granular_marshal.iter) index =
   Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.defs;
   Uid_map.schema iter (fun iter _ v -> lidset_schema iter v) index.approximated;
-  Uid_map.schema iter (fun _ _ _ -> ()) index.related_uids
+  Uid_map.schema iter
+    (fun iter _ v ->
+      iter.Granular_marshal.yield v Granular_marshal.schema_no_sublinks)
+    index.related_uids
 
 let compress index =
   let cache = Lid.cache () in
@@ -37,7 +52,17 @@ let compress index =
     Uid_map.iter (fun _ -> Lid_set.iter (Lid.deduplicate cache))
   in
   compress_map_set index.defs;
-  compress_map_set index.approximated
+  compress_map_set index.approximated;
+  let related_uids =
+    Uid_map.map
+      (fun set ->
+        let uid = Uid_set.min_elt (Union_find.get set) in
+        let reference_set = Uid_map.find uid index.related_uids in
+        Granular_marshal.reuse reference_set;
+        reference_set)
+      index.related_uids
+  in
+  { index with related_uids }
 
 let pp_lidset fmt locs =
   Format.pp_print_list
@@ -54,7 +79,7 @@ let pp_partials (fmt : Format.formatter) (partials : Lid_set.t Uid_map.t) =
   Format.fprintf fmt "@]}"
 
 let pp_related_uids (fmt : Format.formatter)
-    (related_uids : Uid_set.t Union_find.element Uid_map.t) =
+    (related_uids : Union_find.t Uid_map.t) =
   let rec gather acc map =
     match Uid_map.choose_opt map with
     | Some (_key, union) ->
@@ -93,7 +118,7 @@ let ext = "ocaml-index"
 let magic_number = Config.index_magic_number
 
 let write ~file index =
-  compress index;
+  let index = compress index in
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
     (fun _temp_file_name oc ->
       output_string oc magic_number;

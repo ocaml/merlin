@@ -4,6 +4,10 @@ type 'a link
 (** [link v] returns a new link to the in-memory value [v]. *)
 val link : 'a -> 'a link
 
+(** [reuse lnk] marks the link as being used more than once, to ensure proper
+    serialization of DAGs. *)
+val reuse : 'a link -> unit
+
 (** [cache (module Hash)] returns a function to de-duplicate links which share
     the same value, resulting in a compressed file. *)
 val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit

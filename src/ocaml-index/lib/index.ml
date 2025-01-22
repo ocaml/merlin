@@ -142,8 +142,7 @@ let index_of_cmt ~into ~root ~rewrite_root ~build_path ~do_not_use_cmt_loadpath
         let map_update uid =
           Uid_map.update uid (function
             | None -> Some union
-            | Some union' ->
-              Some (Union_find.union ~f:Uid_set.union union' union))
+            | Some union' -> Some (Union_find.union union' union))
         in
         acc |> map_update uid1 |> map_update uid2)
       into.related_uids cmt_declaration_dependencies
@@ -162,7 +161,7 @@ let merge_index ~store_shapes ~into index =
   let stats = Stats.union (fun _ f1 _f2 -> Some f1) into.stats index.stats in
   let related_uids =
     Uid_map.union
-      (fun _ a b -> Some (Union_find.union ~f:Uid_set.union a b))
+      (fun _ a b -> Some (Union_find.union a b))
       index.related_uids into.related_uids
   in
   if store_shapes then

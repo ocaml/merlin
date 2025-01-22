@@ -43,10 +43,12 @@ All files should be listed on queries: (except `both.ml`)
 
   $ $MERLIN single occurrences -scope renaming -identifier-at 1:5 -filename test.ml < test.ml | jq '.value[] | .file'
   "$TESTCASE_ROOT/test.ml"
+  "$TESTCASE_ROOT/sig.ml"
   "$TESTCASE_ROOT/sig.mli"
   "$TESTCASE_ROOT/test.mli"
 
   $ $MERLIN single occurrences -scope renaming -identifier-at 50:5 -filename test.ml < test.ml | jq '.value[] | .file'
   "$TESTCASE_ROOT/test.ml"
+  "$TESTCASE_ROOT/sig.ml"
   "$TESTCASE_ROOT/sig.mli"
   "$TESTCASE_ROOT/test.mli"

@@ -167,7 +167,7 @@ let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
         try
           let index = Index_cache.read index_file in
           Uid_map.union
-            (fun _ a b -> Some (Union_find.union ~f:Uid_set.union a b))
+            (fun _ a b -> Some (Union_find.union a b))
             index.related_uids acc
         with Index_format.Not_an_index _ | Sys_error _ ->
           log ~title "Could not load index %s" index_file;

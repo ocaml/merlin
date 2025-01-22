@@ -12,6 +12,13 @@ module Lid_set : Granular_set.S with type elt = Lid.t
 module Stats : Map.S with type key = String.t
 module Uid_set = Shape.Uid.Set
 module Uid_map : Granular_map.S with type key = Shape.Uid.t
+module Union_find : sig
+  type t
+
+  val make : Uid_set.t -> t
+  val get : t -> Uid_set.t
+  val union : t -> t -> t
+end
 
 type stat = { mtime : float; size : int; source_digest : string option }
 
@@ -21,7 +28,7 @@ type index =
     cu_shape : (string, Shape.t) Hashtbl.t;
     stats : stat Stats.t;
     root_directory : string option;
-    related_uids : Uid_set.t Union_find.element Uid_map.t
+    related_uids : Union_find.t Uid_map.t
   }
 
 val pp : Format.formatter -> index -> unit
