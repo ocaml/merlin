@@ -1,5 +1,7 @@
 type t
 val make : Mconfig.t -> Msource.t -> t
+val get : ?state:Mocaml.typer_state -> Mconfig.t -> Msource.t -> t
+
 val with_pipeline : t -> (unit -> 'a) -> 'a
 val for_completion : Msource.position -> t -> t
 
@@ -27,3 +29,7 @@ val typer_errors : t -> exn list
 
 val timing_information : t -> (string * float) list
 val cache_information : t -> Std.json
+
+module Cache : sig
+  val get : Mconfig.t -> Mocaml.typer_state
+end

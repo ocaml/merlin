@@ -57,3 +57,12 @@ let with_store slots f =
     List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
     global_bindings.is_bound <- false;
   )
+
+  let open_store slots = 
+    assert (not global_bindings.is_bound);
+    global_bindings.is_bound <- true;
+    List.iter (fun (Slot {ref;value}) -> ref := value) slots
+
+   let close_store slots = 
+    List.iter (fun (Slot s) -> s.value <- !(s.ref)) slots;
+    global_bindings.is_bound <- false    

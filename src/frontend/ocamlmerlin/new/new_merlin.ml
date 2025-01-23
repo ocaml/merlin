@@ -109,15 +109,16 @@ let run =
               (float_of_int (60 * Mconfig.(config.merlin.cache_lifespan)))
             ();
           File_id.with_cache @@ fun () ->
+          let store = Mpipeline.Cache.get config in
+          Local_store.open_store store;
           let source = Msource.make (Misc.string_of_file stdin) in
-          let pipeline = Mpipeline.make config source in
+          let pipeline =
+            Mpipeline.get ~state:(Mpipeline.Cache.get config) config source
+          in
           let json =
             let class_, message =
               Printexc.record_backtrace true;
-              match
-                Mpipeline.with_pipeline pipeline @@ fun () ->
-                command_action pipeline command_args
-              with
+              match command_action pipeline command_args with
               | result -> ("return", result)
               | exception Failure str ->
                 let trace = Printexc.get_backtrace () in
@@ -133,6 +134,7 @@ let run =
                   Location.print_main Format.str_formatter err;
                   ("error", `String (Format.flush_str_formatter ())))
             in
+            Local_store.close_store store;
             let cpu_time = Misc.time_spent () -. start_cpu in
             let gc_stats = Gc.quick_stat () in
             let heap_mbytes =
