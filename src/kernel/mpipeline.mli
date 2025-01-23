@@ -1,6 +1,6 @@
 type t
 val make : Mconfig.t -> Msource.t -> t
-val get : ?state:Mocaml.typer_state -> Mconfig.t -> Msource.t -> t
+val get : Mconfig.t -> Msource.t -> t
 
 val with_pipeline : t -> (unit -> 'a) -> 'a
 val for_completion : Msource.position -> t -> t
@@ -33,3 +33,7 @@ val cache_information : t -> Std.json
 module Cache : sig
   val get : Mconfig.t -> Mocaml.typer_state
 end
+
+val close_typer : [ `True | `False | `Exn of exn ] Atomic.t
+
+val domain_typer : unit -> unit

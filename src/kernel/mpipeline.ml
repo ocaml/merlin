@@ -321,8 +321,6 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
 
 let make config source = process (Mconfig.normalize config) source
 
-let get ?state config source = process ?state (Mconfig.normalize config) source
-
 let for_completion position
     { config;
       state;
@@ -367,3 +365,45 @@ let cache_information t =
       ("cmt", cmt);
       ("cmi", cmi)
     ]
+
+let shared_config = Atomic.make None
+let shared_pipeline = Atomic.make None
+
+let close_typer = Atomic.make `False
+
+let domain_typer () =
+  let rec loop () =
+    if Atomic.get close_typer = `True then ()
+    else
+      match Atomic.get shared_config with
+      | None ->
+        Domain.cpu_relax ();
+        loop ()
+      | Some (config, source) as curr -> (
+        try
+          let pipeline = make config source in
+          if Atomic.compare_and_set shared_config curr None then
+            Atomic.set shared_pipeline (Some pipeline);
+          loop ()
+        with exn -> Atomic.set close_typer (`Exn exn))
+  in
+  loop ()
+
+let get config source =
+  Atomic.set shared_config (Some (config, source));
+
+  let rec loop count =
+    match Atomic.get shared_pipeline with
+    | None -> begin
+      match Atomic.get close_typer with
+      | `Exn exn -> raise exn
+      | `True -> assert false
+      | _ ->
+        Domain.cpu_relax ();
+        loop (count + 1)
+    end
+    | Some pipeline ->
+      Atomic.set shared_pipeline None;
+      pipeline
+  in
+  loop 0

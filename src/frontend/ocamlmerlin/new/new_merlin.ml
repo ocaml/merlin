@@ -112,9 +112,7 @@ let run =
           let store = Mpipeline.Cache.get config in
           Local_store.open_store store;
           let source = Msource.make (Misc.string_of_file stdin) in
-          let pipeline =
-            Mpipeline.get ~state:(Mpipeline.Cache.get config) config source
-          in
+          let pipeline = Mpipeline.get config source in
           let json =
             let class_, message =
               Printexc.record_backtrace true;
