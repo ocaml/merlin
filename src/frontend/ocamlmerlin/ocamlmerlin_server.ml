@@ -56,8 +56,12 @@ module Server = struct
     | None -> Logger.log ~section:"server" ~title:"cannot setup listener" ""
     | Some server ->
       (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
+      let domain_typer = Domain.spawn Mpipeline.domain_typer in
       if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
       loop (File_id.get Sys.executable_name) server;
+
+      Atomic.set Mpipeline.close_typer `True;
+      Domain.join domain_typer;
       Os_ipc.server_close server
 end
 
@@ -65,7 +69,12 @@ let main () =
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run ~new_env:None None args)
+  | "single" :: args ->
+    let domain_typer = Domain.spawn Mpipeline.domain_typer in
+    let vexit = New_merlin.run ~new_env:None None args in
+    Atomic.set Mpipeline.close_typer `True;
+    Domain.join domain_typer;
+    exit vexit
   | "old-protocol" :: args -> Old_merlin.run args
   | [ "server"; socket_path; socket_fd ] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->
