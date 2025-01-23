@@ -329,6 +329,8 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
 
 let make config source = process (Mconfig.normalize config) source
 
+let get ?state config source = process ?state (Mconfig.normalize config) source
+
 let for_completion position
     { config;
       state;
