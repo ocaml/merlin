@@ -1,6 +1,5 @@
 type t
 val make : Mconfig.t -> Msource.t -> t
-val get : Mconfig.t -> Msource.t -> t
 
 val with_pipeline : t -> (unit -> 'a) -> 'a
 val for_completion : Msource.position -> t -> t
@@ -34,6 +33,17 @@ module Cache : sig
   val get : Mconfig.t -> Mocaml.typer_state
 end
 
-val close_typer : [ `True | `False | `Exn of exn ] Atomic.t
+type shared =
+  { closed : [ `True | `False | `Closed | `Exn of exn ] Atomic.t;
+    curr_config : (Mconfig.t * Msource.t) option Shared.t;
+    partial_result : t option Shared.t;
+    complete_result : t option Shared.t
+  }
 
-val domain_typer : unit -> unit
+val create_shared : unit -> shared
+
+val domain_typer : shared -> unit -> unit
+
+val get : shared -> Mconfig.t -> Msource.t -> t
+
+val closing : shared -> unit
