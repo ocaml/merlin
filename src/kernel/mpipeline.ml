@@ -366,44 +366,108 @@ let cache_information t =
       ("cmi", cmi)
     ]
 
-let shared_config = Atomic.make None
-let shared_pipeline = Atomic.make None
+(* ****************************************************************** *)
+(* ********************** Parallel stuff **************************** *)
+(* ****************************************************************** *)
 
-let close_typer = Atomic.make `False
+(** About closed : 
+Main domain writes:
+- `True when closing 
+- `Closed to ack the reception of an exception
 
-let domain_typer () =
+Typer domain writes:
+- `Exn exn when an catching an exception is found
+- `Closed to ack the reception of `True
+*)
+type shared =
+  { closed : [ `True | `False | `Exn of exn | `Closed ] Atomic.t;
+    curr_config : (Mconfig.t * Msource.t) option Shared.t;
+    partial_result : t option Shared.t;
+    complete_result : t option Shared.t
+  }
+
+let create_shared () =
+  { closed = Atomic.make `False;
+    curr_config = Shared.create None;
+    partial_result = Shared.create None;
+    complete_result = Shared.create None
+  }
+
+let rec share_exn (shared : shared) exn =
+  match Atomic.get shared.closed with
+  | `False as prev ->
+    if Atomic.compare_and_set shared.closed prev (`Exn exn) then
+      while Atomic.get shared.closed <> `Closed do
+        Shared.signal shared.partial_result
+      done
+    else share_exn shared exn
+  | `True -> ()
+  | _ -> assert false
+
+let domain_typer shared () =
   let rec loop () =
-    if Atomic.get close_typer = `True then ()
-    else
-      match Atomic.get shared_config with
+    if Atomic.get shared.closed = `True then Atomic.set shared.closed `Closed
+    else begin
+      match Shared.get shared.curr_config with
       | None ->
-        Domain.cpu_relax ();
+        Shared.wait shared.curr_config;
         loop ()
-      | Some (config, source) as curr -> (
+      | Some (config, source) -> (
         try
           let pipeline = make config source in
-          if Atomic.compare_and_set shared_config curr None then
-            Atomic.set shared_pipeline (Some pipeline);
+          Shared.set shared.curr_config None;
+          Shared.locking_set shared.partial_result (Some pipeline);
           loop ()
-        with exn -> Atomic.set close_typer (`Exn exn))
+        with exn ->
+          Atomic.set shared.closed (`Exn exn);
+          shared.curr_config.value <- None;
+          loop ())
+    end
   in
-  loop ()
+  Shared.protect shared.curr_config @@ fun () -> loop ()
 
-let get config source =
-  Atomic.set shared_config (Some (config, source));
+let get { closed; curr_config; partial_result; _ } config source =
+  Shared.set curr_config (Some (config, source));
 
-  let rec loop count =
-    match Atomic.get shared_pipeline with
+  let rec loop () =
+    match Shared.get partial_result with
     | None -> begin
-      match Atomic.get close_typer with
-      | `Exn exn -> raise exn
-      | `True -> assert false
+      match Atomic.get closed with
+      | `True | `Closed -> assert false
+      | `Exn exn ->
+        Atomic.set closed `Closed;
+        raise exn
       | _ ->
-        Domain.cpu_relax ();
-        loop (count + 1)
+        Shared.wait partial_result;
+        loop ()
     end
     | Some pipeline ->
-      Atomic.set shared_pipeline None;
+      Shared.set partial_result None;
       pipeline
   in
-  loop 0
+  Shared.protect partial_result @@ fun () -> loop ()
+
+(* The exchange of message on [shared.closed] is inevitable to avoid some bad 
+ interleavings. In particular, the following implementation of [closing] 
+
+ {[
+  let closing shared = 
+    Atomic.set shared.closed `True;
+    Shared.signal shared.curr_config 
+  ]}
+
+ could lead to the following interleaving: 
+- the typer domain read `closed` as `False
+- the main domain change the value of close and call signal 
+- the typer domain wait forever. 
+*)
+let rec closing shared =
+  match Atomic.get shared.closed with
+  | `False ->
+    if Atomic.compare_and_set shared.closed `False `True then
+      while Atomic.get shared.closed = `Closed do
+        Shared.signal shared.curr_config
+      done
+    else closing shared
+  | `Exn exn -> raise exn
+  | _ -> assert false

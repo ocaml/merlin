@@ -47,7 +47,7 @@ let commands_help () =
       print_endline doc)
     New_commands.all_commands
 
-let run =
+let run shared =
   let query_num = ref (-1) in
   function
   | [] ->
@@ -112,7 +112,7 @@ let run =
           let store = Mpipeline.Cache.get config in
           Local_store.open_store store;
           let source = Msource.make (Misc.string_of_file stdin) in
-          let pipeline = Mpipeline.get config source in
+          let pipeline = Mpipeline.get shared config source in
           let json =
             let class_, message =
               Printexc.record_backtrace true;
@@ -186,7 +186,7 @@ let with_wd ~wd ~old_wd f args =
       old_wd;
     f args
 
-let run ~new_env wd args =
+let run ~new_env shared wd args =
   begin
     match new_env with
     | Some env ->
@@ -197,10 +197,10 @@ let run ~new_env wd args =
   let old_wd = Sys.getcwd () in
   let run args () =
     match wd with
-    | Some wd -> with_wd ~wd ~old_wd run args
+    | Some wd -> with_wd ~wd ~old_wd (run shared) args
     | None ->
       log ~title:"run" "No working directory specified (old wd: %S)" old_wd;
-      run args
+      run shared args
   in
   let `Log_file_path log_file, `Log_sections sections = Log_info.get () in
   Logger.with_log_file log_file ~sections @@ run args
