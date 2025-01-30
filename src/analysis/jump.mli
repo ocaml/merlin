@@ -33,6 +33,9 @@ val get :
   string ->
   [> `Error of string | `Found of Lexing.position ]
 
+val get_all :
+  Mtyper.typedtree -> Std.Lexing.position -> (string * Lexing.position) list
+
 val phrase :
   Mtyper.typedtree ->
   Std.Lexing.position ->

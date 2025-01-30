@@ -136,19 +136,30 @@ let find_case_pos cases pos direction =
   in
   let case = find_pos pos cases direction in
   match case with
-  | Some location -> `Found location
+  | Some location -> location
   | None -> (
     match direction with
     | Next -> raise No_next_match_case
     | Prev -> raise No_prev_match_case)
 
-let get typed_tree pos target =
+let get_enclosings typed_tree pos =
   let roots = Mbrowse.of_typedtree typed_tree in
-  let enclosings =
-    match Mbrowse.enclosing pos [ roots ] with
-    | [] -> []
-    | l -> List.map ~f:snd l
-  in
+
+  match Mbrowse.enclosing pos [ roots ] with
+  | [] -> []
+  | l -> List.map ~f:snd l
+
+let get_node_position target pos node =
+  match target with
+  | "match-next-case" -> find_case_pos (get_cases_from_match node) pos Next
+  | "match-prev-case" ->
+    find_case_pos (List.rev (get_cases_from_match node)) pos Prev
+  | _ ->
+    let node_loc = Browse_raw.node_real_loc Location.none node in
+    node_loc.Location.loc_start
+
+let get typed_tree pos target =
+  let enclosings = get_enclosings typed_tree pos in
   let all_preds =
     [ ("fun", fun_pred);
       ("let", let_pred);
@@ -173,18 +184,37 @@ let get typed_tree pos target =
     else
       let nodes = skip_non_moving pos enclosings in
       let node = find_node preds nodes in
-      match target with
-      | "match-next-case" -> find_case_pos (get_cases_from_match node) pos Next
-      | "match-prev-case" ->
-        find_case_pos (List.rev (get_cases_from_match node)) pos Prev
-      | _ ->
-        let node_loc = Browse_raw.node_real_loc Location.none node in
-        `Found node_loc.Location.loc_start
+      `Found (get_node_position target pos node)
   with
   | No_predicate target -> `Error ("No predicate for " ^ target)
   | No_matching_target -> `Error "No matching target"
   | No_next_match_case -> `Error "No next case found"
   | No_prev_match_case -> `Error "No previous case found"
+
+let get_all typed_tree pos =
+  let enclosings = get_enclosings typed_tree pos in
+  let predicates =
+    [ ("fun", fun_pred);
+      ("let", let_pred);
+      ("module", module_pred);
+      ("module-type", module_type_pred);
+      ("match", match_pred);
+      ("match-next-case", match_pred);
+      ("match-prev-case", match_pred)
+    ]
+  in
+  let nodes = skip_non_moving pos enclosings in
+  let results =
+    List.filter_map
+      ~f:(fun (target, pred) ->
+        match find_node [ pred ] nodes with
+        | exception No_matching_target -> None
+        | node ->
+          let position = get_node_position target pos node in
+          Some (target, position))
+      predicates
+  in
+  results
 
 let phrase typed_tree pos target =
   let roots = Mbrowse.of_typedtree typed_tree in
