@@ -4,6 +4,8 @@ unreleased
   + merlin library
     - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
       (#1888)
+    - `locate` can now disambiguate between files with identical names and contents
+      (#1882)
 
 merlin 5.4.1
 ============
