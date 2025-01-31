@@ -158,9 +158,7 @@ let get_node_position target pos node =
     let node_loc = Browse_raw.node_real_loc Location.none node in
     node_loc.Location.loc_start
 
-let get typed_tree pos target =
-  let enclosings = get_enclosings typed_tree pos in
-  let all_preds =
+let predicates =
     [ ("fun", fun_pred);
       ("let", let_pred);
       ("module", module_pred);
@@ -193,16 +191,6 @@ let get typed_tree pos target =
 
 let get_all typed_tree pos =
   let enclosings = get_enclosings typed_tree pos in
-  let predicates =
-    [ ("fun", fun_pred);
-      ("let", let_pred);
-      ("module", module_pred);
-      ("module-type", module_type_pred);
-      ("match", match_pred);
-      ("match-next-case", match_pred);
-      ("match-prev-case", match_pred)
-    ]
-  in
   let nodes = skip_non_moving pos enclosings in
   let results =
     List.filter_map
