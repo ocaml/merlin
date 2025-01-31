@@ -1,3 +1,9 @@
+unrealeased
+===========
+
++ merlin binary
+  - A new `get_all` function in jump module to return all possible targets (#1891)
+
 merlin 5.4.1
 ============
 Mon Jan 13 10:55:42 CET 2025
