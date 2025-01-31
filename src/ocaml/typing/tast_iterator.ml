@@ -387,7 +387,7 @@ let expr sub {exp_loc; exp_extra; exp_desc; exp_env; exp_attributes; _} =
   | Texp_open (od, e) ->
       sub.open_declaration sub od;
       sub.expr sub e
-  | Texp_hole -> ()
+  | Texp_typed_hole -> ()
 
 
 let package_type sub {pack_fields; pack_txt; _} =
@@ -489,7 +489,7 @@ let module_expr sub {mod_loc; mod_desc; mod_env; mod_attributes; _} =
   sub.attributes sub mod_attributes;
   sub.env sub mod_env;
   match mod_desc with
-  | Tmod_hole  -> ()
+  | Tmod_typed_hole  -> ()
   | Tmod_ident (_, lid) -> iter_loc sub lid
   | Tmod_structure st -> sub.structure sub st
   | Tmod_functor (arg, mexpr) ->

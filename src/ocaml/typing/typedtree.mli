@@ -292,7 +292,7 @@ and expression_desc =
   | Texp_extension_constructor of Longident.t loc * Path.t
   | Texp_open of open_declaration * expression
         (** let open[!] M in e *)
-  | Texp_hole
+  | Texp_typed_hole
 
 and meth =
     Tmeth_name of string
@@ -460,7 +460,7 @@ and module_expr_desc =
         (ME : MT)   (constraint = Tmodtype_explicit MT)
      *)
   | Tmod_unpack of expression * Types.module_type
-  | Tmod_hole
+  | Tmod_typed_hole
 
 and structure = {
   str_items : structure_item list;

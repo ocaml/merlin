@@ -2721,7 +2721,7 @@ let rec is_nonexpansive exp =
   | Texp_unreachable
   | Texp_function _
   | Texp_array []
-  | Texp_hole -> true
+  | Texp_typed_hole -> true
   | Texp_let(_rec_flag, pat_exp_list, body) ->
       List.for_all (fun vb -> is_nonexpansive vb.vb_expr) pat_exp_list &&
       is_nonexpansive body
@@ -2817,7 +2817,7 @@ and is_nonexpansive_mod mexp =
   match mexp.mod_desc with
   | Tmod_ident _
   | Tmod_functor _
-  | Tmod_hole -> true
+  | Tmod_typed_hole -> true
   | Tmod_unpack (e, _) -> is_nonexpansive e
   | Tmod_constraint (m, _, _, _) -> is_nonexpansive_mod m
   | Tmod_structure str ->
@@ -3117,7 +3117,7 @@ let check_partial_application ~statement exp =
             | Texp_apply _ | Texp_send _ | Texp_new _ | Texp_letop _ ->
                 Location.prerr_warning exp_loc
                   Warnings.Ignored_partial_application
-            | Texp_hole -> ()
+            | Texp_typed_hole -> ()
           end
         in
         check exp
@@ -4589,7 +4589,7 @@ and type_expect_
 
   | Pexp_extension ({ txt; _ } as s, payload) when txt = Ast_helper.hole_txt ->
     let attr = Ast_helper.Attr.mk s payload in
-    re { exp_desc = Texp_hole;
+    re { exp_desc = Texp_typed_hole;
          exp_loc = loc; exp_extra = [];
          exp_type = instance ty_expected;
          exp_attributes = attr :: sexp.pexp_attributes;

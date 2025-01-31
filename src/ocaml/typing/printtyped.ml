@@ -468,8 +468,8 @@ and expression i ppf x =
       module_expr i ppf o.open_expr;
       attributes i ppf o.open_attributes;
       expression i ppf e;
-  | Texp_hole ->
-      line i ppf "Texp_hole"
+  | Texp_typed_hole ->
+      line i ppf "Texp_typed_hole"
 
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_ident x.val_id fmt_location
@@ -840,7 +840,7 @@ and module_expr i ppf x =
   let i = i+1 in
   match x.mod_desc with
   | Tmod_ident (li,_) -> line i ppf "Tmod_ident %a\n" fmt_path li;
-  | Tmod_hole -> line i ppf "Tmod_hole\n";
+  | Tmod_typed_hole -> line i ppf "Tmod_typed_hole\n";
   | Tmod_structure (s) ->
       line i ppf "Tmod_structure\n";
       structure i ppf s;
