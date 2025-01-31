@@ -54,7 +54,7 @@ Test when there's no next case
   $ $MERLIN single jump -target match-next-case -position 13:2 -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "No next case found",
+    "value": "No matching case found for match-next-case",
     "notifications": []
   }
 
@@ -62,7 +62,7 @@ Test when there's no previous case
   $ $MERLIN single jump -target match-prev-case -position 3:2 -filename test.ml < test.ml
   {
     "class": "return",
-    "value": "No previous case found",
+    "value": "No matching case found for match-prev-case",
     "notifications": []
   }
 
