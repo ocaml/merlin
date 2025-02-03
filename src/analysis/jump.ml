@@ -191,10 +191,10 @@ let get_all typed_tree pos =
       ~f:(fun (target, pred) ->
         match find_node [ pred ] nodes with
         | exception No_matching_target -> None
-        | node -> (
-          match get_node_position target pos node with
-          | Some position -> Some (target, position)
-          | None -> None))
+        | node ->
+          Option.map
+            ~f:(fun pos -> (target, pos))
+            (get_node_position target pos node))
       predicates
   in
   results
