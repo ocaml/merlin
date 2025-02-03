@@ -1,8 +1,13 @@
-unrealeased
-===========
 
-+ merlin binary
-  - A new `get_all` function in jump module to return all possible targets (#1891)
+unreleased
+==========
+
+  + merlin library
+    - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
+      (#1888)
+    - `locate` can now disambiguate between files with identical names and contents
+      (#1882)
+    - A new `get_all` function in jump module to return all possible targets (#1891)
 
 merlin 5.4.1
 ============
