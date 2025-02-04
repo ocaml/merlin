@@ -4,6 +4,8 @@ let { Logger.log } = Logger.for_section "inlay-hints"
 
 module Iterator = Ocaml_typing.Tast_iterator
 
+let is_ghost_location avoid_ghost loc = loc.Location.loc_ghost && avoid_ghost
+
 let pattern_has_constraint (type a) (pattern : a Typedtree.general_pattern) =
   List.exists
     ~f:(fun (extra, _, _) ->
@@ -14,8 +16,8 @@ let pattern_has_constraint (type a) (pattern : a Typedtree.general_pattern) =
       | Typedtree.Tpat_unpack -> false)
     pattern.pat_extra
 
-let structure_iterator hint_let_binding hint_pattern_binding typedtree range
-    callback =
+let structure_iterator hint_let_binding hint_pattern_binding
+    avoid_ghost_location typedtree range callback =
   let case_iterator hint_lhs (iterator : Iterator.iterator) case =
     let () = log ~title:"case" "on case" in
     let () = if hint_lhs then iterator.pat iterator case.Typedtree.c_lhs in
@@ -82,6 +84,10 @@ let structure_iterator hint_let_binding hint_pattern_binding typedtree range
     if Location_aux.overlap_with_range range item.Typedtree.str_loc then
       let () = log ~title:"structure_item" "overlap" in
       match item.str_desc with
+      | _ when is_ghost_location avoid_ghost_location item.str_loc ->
+        (* Stop iterating when we see a ghost location to avoid
+           annotating generated code *)
+        log ~title:"ghost" "ghost-location found"
       | Tstr_value (_, bindings) ->
         List.iter
           ~f:(fun binding -> expr_iterator iterator binding.Typedtree.vb_expr)
@@ -141,16 +147,15 @@ let of_structure ~hint_let_binding ~hint_pattern_binding ~avoid_ghost_location
   let range = (start, stop) in
   let hints = ref [] in
   let () =
-    structure_iterator hint_let_binding hint_pattern_binding structure range
-      (fun env typ loc ->
+    structure_iterator hint_let_binding hint_pattern_binding
+      avoid_ghost_location structure range (fun env typ loc ->
         let () =
           log ~title:"hint" "Find hint %a" Logger.fmt (fun fmt ->
               Format.fprintf fmt "%s - %a"
                 (Location_aux.print () loc)
                 Printtyp.type_expr typ)
         in
-        if not (loc.Location.loc_ghost && avoid_ghost_location) then
-          let hint = create_hint env typ loc in
-          hints := hint :: !hints)
+        let hint = create_hint env typ loc in
+        hints := hint :: !hints)
   in
   !hints
