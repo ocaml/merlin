@@ -93,7 +93,22 @@ Pair arguments
   > EOF
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "pos": {
+          "line": 1,
+          "col": 10
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 8
+        },
+        "label": "int"
+      }
+    ],
     "notifications": []
   }
 
@@ -106,7 +121,22 @@ Record arguments
   > EOF
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "pos": {
+          "line": 2,
+          "col": 12
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 2,
+          "col": 8
+        },
+        "label": "int"
+      }
+    ],
     "notifications": []
   }
 
@@ -212,13 +242,6 @@ Class-level let bindings without let hinting
       {
         "pos": {
           "line": 1,
-          "col": 17
-        },
-        "label": "int"
-      },
-      {
-        "pos": {
-          "line": 1,
           "col": 9
         },
         "label": "int"
@@ -277,7 +300,15 @@ Top-level let bindings with let hinting
   > EOF
   {
     "class": "return",
-    "value": [],
+    "value": [
+      {
+        "pos": {
+          "line": 1,
+          "col": 5
+        },
+        "label": "int"
+      }
+    ],
     "notifications": []
   }
 
@@ -294,23 +325,9 @@ Support for @merlin.hide
       {
         "pos": {
           "line": 2,
-          "col": 16
-        },
-        "label": "int"
-      },
-      {
-        "pos": {
-          "line": 2,
           "col": 7
         },
         "label": "int"
-      },
-      {
-        "pos": {
-          "line": 1,
-          "col": 21
-        },
-        "label": "'a"
       }
     ],
     "notifications": []
