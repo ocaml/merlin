@@ -107,15 +107,14 @@ let create_hint env typ loc =
   let position = loc.Location.loc_end in
   (position, label)
 
-let of_structure ~hint_let_binding ~hint_pattern_binding ~avoid_ghost_location
-    ~start ~stop structure =
+let of_structure ~hint_let_binding ~hint_pattern_binding ~start ~stop structure
+    =
   let () =
     log ~title:"start" "%a" Logger.fmt (fun fmt ->
-        Format.fprintf fmt
-          "Start on %s to %s with : let: %b, pat: %b, ghost: %b"
+        Format.fprintf fmt "Start on %s to %s with : let: %b, pat: %b"
           (Lexing.print_position () start)
           (Lexing.print_position () stop)
-          hint_let_binding hint_pattern_binding avoid_ghost_location)
+          hint_let_binding hint_pattern_binding)
   in
   let range = (start, stop) in
   let hints = ref [] in

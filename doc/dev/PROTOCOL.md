@@ -552,14 +552,13 @@ This command is essentially useful for an LSP server, as it can be used to retur
 If no help is found, the command returns an empty object, otherwise it returns a structured object with signatures and active parameters.
 You can find more information here <https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_signatureHelp>
 
-### `inlay-hints -start <position> -end <position> -let-binding <bool> -pattern-binding <bool> -avoid-ghost <bool>`
+### `inlay-hints -start <position> -end <position> -let-binding <bool> -pattern-binding <bool>`
 
 ```
       -start <position>  the start of the region where to activate the inlay-hints
         -end <position>  the end of the region where to activate the inlay-hints
     -let-binding <bool>  activate for `let-bindings
 -pattern-binding <bool>  activate for `pattern-bindings
-    -avoid-ghost <bool>  deactivate for node attached with a ghost location (mainly for tests)
 ```
 
 This command is essentially useful for an LSP server, and returns the list of inlay hints for a given region in a list of the following object:

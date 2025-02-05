@@ -1,6 +1,6 @@
 Optional argument
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 \
   > -filename inlay.ml <<EOF
   > let f ?x () = x ()
   > EOF
@@ -20,7 +20,7 @@ Optional argument
 
 Optional argument with value
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 \
   > -filename inlay.ml <<EOF
   > let f ?(x = 1) () = x
   > EOF
@@ -40,7 +40,7 @@ Optional argument with value
 
 Labeled argument
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 \
   > -filename inlay.ml <<EOF
   > let f ~x ~y:z = x + z
   > EOF
@@ -67,7 +67,7 @@ Labeled argument
 
 Case argument
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 \
   > -filename inlay.ml <<EOF
   > let f (Some x) = x + 1
   > EOF
@@ -112,7 +112,7 @@ Record arguments
 
 Pattern variables without pattern-binding hint
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -filename inlay.ml <<EOF
   > let f x =
   >   match x with
@@ -135,7 +135,7 @@ Pattern variables without pattern-binding hint
 
 Pattern variables with pattern-binding hint
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -pattern-binding true \
   > -filename inlay.ml <<EOF
   > let f x =
@@ -167,7 +167,7 @@ Pattern variables with pattern-binding hint
 
 Let bindings without let hinting
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -let-binding false \
   > -filename inlay.ml <<EOF
   > let f () = let y = 0 in y
@@ -180,7 +180,7 @@ Let bindings without let hinting
 
 Let bindings with let hinting
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -let-binding true \
   > -filename inlay.ml <<EOF
   > let f () = let y = 0 in y
@@ -201,7 +201,7 @@ Let bindings with let hinting
 
 Class-level let bindings without let hinting
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -let-binding false \
   > -filename inlay.ml <<EOF
   > class c x = let y = 1 in object method s = x + y end
@@ -229,7 +229,7 @@ Class-level let bindings without let hinting
 
 Class-level let bindings with let hinting
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -let-binding true \
   > -filename inlay.ml <<EOF
   > class c x = let y = 1 in object method s = x + y end
@@ -257,7 +257,7 @@ Class-level let bindings with let hinting
 
 Top-level let bindings without let hinting
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -let-binding false \
   > -filename inlay.ml <<EOF
   > let y = 0
@@ -270,7 +270,7 @@ Top-level let bindings without let hinting
 
 Top-level let bindings with let hinting
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 \
   > -let-binding true \
   > -filename inlay.ml <<EOF
   > let y = 0
@@ -283,7 +283,7 @@ Top-level let bindings with let hinting
 
 Support for @merlin.hide
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 3:0 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 3:0 \
   > -filename inlay.ml <<EOF
   > let[@merlin.hide] f x = 2
   > let f x = (fun y -> x+y+1) [@merlin.hide]
