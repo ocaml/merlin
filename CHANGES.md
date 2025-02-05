@@ -6,6 +6,9 @@ unreleased
       (#1888)
     - `locate` can now disambiguate between files with identical names and contents
       (#1882)
+  + ocaml-index
+    - Improve the granularity of index reading by segmenting the marshalization
+      of the involved data-structures. (#1889)
 
 merlin 5.4.1
 ============

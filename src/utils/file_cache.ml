@@ -79,12 +79,13 @@ struct
     let fid = File_id.get filename in
     match Hashtbl.find cache filename with
     | exception Not_found -> false
-    | fid', latest_use, _ ->
+    | fid', latest_use, _file ->
       if File_id.check fid fid' then begin
         latest_use := Unix.time ();
         true
       end
       else begin
+        Hashtbl.remove cache filename;
         false
       end
 
