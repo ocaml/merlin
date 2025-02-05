@@ -1,6 +1,6 @@
 Optional argument
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
   > -filename inlay.ml <<EOF
   > let f ?x () = x ()
   > EOF
@@ -20,7 +20,7 @@ Optional argument
 
 Optional argument with value
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
   > -filename inlay.ml <<EOF
   > let f ?(x = 1) () = x
   > EOF
@@ -40,13 +40,20 @@ Optional argument with value
 
 Labeled argument
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
   > -filename inlay.ml <<EOF
-  > let f ~x = x + 1
+  > let f ~x ~y:z = x + z
   > EOF
   {
     "class": "return",
     "value": [
+      {
+        "pos": {
+          "line": 1,
+          "col": 13
+        },
+        "label": "int"
+      },
       {
         "pos": {
           "line": 1,
@@ -60,7 +67,7 @@ Labeled argument
 
 Case argument
 
-  $ $MERLIN single inlay-hints -start 1:0 -end 2:26 -avoid-ghost-location false \
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 -avoid-ghost-location false \
   > -filename inlay.ml <<EOF
   > let f (Some x) = x + 1
   > EOF
@@ -75,6 +82,31 @@ Case argument
         "label": "int"
       }
     ],
+    "notifications": []
+  }
+
+Pair arguments
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 2:0 \
+  > -filename inlay.ml <<EOF
+  > let f (a,b) = a+b
+  > EOF
+  {
+    "class": "return",
+    "value": [],
+    "notifications": []
+  }
+
+Record arguments
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 3:0 \
+  > -filename inlay.ml <<EOF
+  > type ('a, 'b) pair = {x:'a; y:'b}
+  > let f {x;y=b} = x+b
+  > EOF
+  {
+    "class": "return",
+    "value": [],
     "notifications": []
   }
 
@@ -146,7 +178,6 @@ Let bindings without let hinting
     "notifications": []
   }
 
-
 Let bindings with let hinting
 
   $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
@@ -163,6 +194,123 @@ Let bindings with let hinting
           "col": 16
         },
         "label": "int"
+      }
+    ],
+    "notifications": []
+  }
+
+Class-level let bindings without let hinting
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  > -let-binding false \
+  > -filename inlay.ml <<EOF
+  > class c x = let y = 1 in object method s = x + y end
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "pos": {
+          "line": 1,
+          "col": 17
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 9
+        },
+        "label": "int"
+      }
+    ],
+    "notifications": []
+  }
+
+Class-level let bindings with let hinting
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  > -let-binding true \
+  > -filename inlay.ml <<EOF
+  > class c x = let y = 1 in object method s = x + y end
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "pos": {
+          "line": 1,
+          "col": 17
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 9
+        },
+        "label": "int"
+      }
+    ],
+    "notifications": []
+  }
+
+Top-level let bindings without let hinting
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  > -let-binding false \
+  > -filename inlay.ml <<EOF
+  > let y = 0
+  > EOF
+  {
+    "class": "return",
+    "value": [],
+    "notifications": []
+  }
+
+Top-level let bindings with let hinting
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 4:26 -avoid-ghost-location false \
+  > -let-binding true \
+  > -filename inlay.ml <<EOF
+  > let y = 0
+  > EOF
+  {
+    "class": "return",
+    "value": [],
+    "notifications": []
+  }
+
+Support for @merlin.hide
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 3:0 -avoid-ghost-location false \
+  > -filename inlay.ml <<EOF
+  > let[@merlin.hide] f x = 2
+  > let f x = (fun y -> x+y+1) [@merlin.hide]
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "pos": {
+          "line": 2,
+          "col": 16
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 2,
+          "col": 7
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 21
+        },
+        "label": "'a"
       }
     ],
     "notifications": []
