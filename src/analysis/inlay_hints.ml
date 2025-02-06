@@ -65,7 +65,20 @@ let structure_iterator hint_let_binding hint_pattern_binding typedtree range
   let structure_item_iterator (iterator : Iterator.iterator) item =
     if Location_aux.overlap_with_range range item.Typedtree.str_loc then
       let () = log ~title:"structure_item" "overlap" in
-      super.structure_item iterator item
+      match item.str_desc with
+      | Tstr_value (_, bindings) ->
+        List.iter
+          ~f:(fun binding ->
+            (* We do not annotate structure item let-bindings (even when hint_let_binding is enabled)
+               because they are already annotated by code lenses. *)
+            iterator.value_binding
+              { iterator with
+                expr = (fun _ -> iterator.expr iterator);
+                pat = (fun _ -> ignore)
+              }
+              binding)
+          bindings
+      | _ -> super.structure_item iterator item
   in
 
   let pattern_iterator (type a) iterator (pattern : a Typedtree.general_pattern)

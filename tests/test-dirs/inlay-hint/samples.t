@@ -300,15 +300,7 @@ Top-level let bindings with let hinting
   > EOF
   {
     "class": "return",
-    "value": [
-      {
-        "pos": {
-          "line": 1,
-          "col": 5
-        },
-        "label": "int"
-      }
-    ],
+    "value": [],
     "notifications": []
   }
 
