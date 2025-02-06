@@ -8,6 +8,9 @@ unreleased
     - `locate` can now disambiguate between files with identical names and contents
       (#1882)
     - A new `get_all` function in jump module to return all possible targets (#1891)
+  + ocaml-index
+    - Improve the granularity of index reading by segmenting the marshalization
+      of the involved data-structures. (#1889)
 
 merlin 5.4.1
 ============
