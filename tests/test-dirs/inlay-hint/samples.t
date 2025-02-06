@@ -304,6 +304,180 @@ Top-level let bindings with let hinting
     "notifications": []
   }
 
+Binding operators without let hinting
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 5:0 \
+  > -let-binding false \
+  > -filename inlay.ml <<EOF
+  > let ( let* ) x f = match x with None -> None | Some x -> f x
+  > let ( let+ ) x f = match x with None -> None | Some x -> Some (f x)
+  > let ( and+ ) x y = let* x = x in let+ y = y in (x, y)
+  > let f x y = let+ x = x and+ y = y in x + y
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "pos": {
+          "line": 4,
+          "col": 9
+        },
+        "label": "int option"
+      },
+      {
+        "pos": {
+          "line": 4,
+          "col": 7
+        },
+        "label": "int option"
+      },
+      {
+        "pos": {
+          "line": 3,
+          "col": 16
+        },
+        "label": "'a option"
+      },
+      {
+        "pos": {
+          "line": 3,
+          "col": 14
+        },
+        "label": "'a option"
+      },
+      {
+        "pos": {
+          "line": 2,
+          "col": 16
+        },
+        "label": "'a -> 'b"
+      },
+      {
+        "pos": {
+          "line": 2,
+          "col": 14
+        },
+        "label": "'a option"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 16
+        },
+        "label": "'a -> 'b option"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 14
+        },
+        "label": "'a option"
+      }
+    ],
+    "notifications": []
+  }
+
+Binding operators with let hinting
+
+  $ $MERLIN single inlay-hints -start 1:0 -end 5:0 \
+  > -let-binding true \
+  > -filename inlay.ml <<EOF
+  > let ( let* ) x f = match x with None -> None | Some x -> f x
+  > let ( let+ ) x f = match x with None -> None | Some x -> Some (f x)
+  > let ( and+ ) x y = let* x = x in let+ y = y in (x, y)
+  > let f x y = let+ x = x and+ y = y in x + y
+  > EOF
+  {
+    "class": "return",
+    "value": [
+      {
+        "pos": {
+          "line": 4,
+          "col": 29
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 4,
+          "col": 18
+        },
+        "label": "int"
+      },
+      {
+        "pos": {
+          "line": 4,
+          "col": 9
+        },
+        "label": "int option"
+      },
+      {
+        "pos": {
+          "line": 4,
+          "col": 7
+        },
+        "label": "int option"
+      },
+      {
+        "pos": {
+          "line": 3,
+          "col": 39
+        },
+        "label": "'a"
+      },
+      {
+        "pos": {
+          "line": 3,
+          "col": 25
+        },
+        "label": "'a"
+      },
+      {
+        "pos": {
+          "line": 3,
+          "col": 16
+        },
+        "label": "'a option"
+      },
+      {
+        "pos": {
+          "line": 3,
+          "col": 14
+        },
+        "label": "'a option"
+      },
+      {
+        "pos": {
+          "line": 2,
+          "col": 16
+        },
+        "label": "'a -> 'b"
+      },
+      {
+        "pos": {
+          "line": 2,
+          "col": 14
+        },
+        "label": "'a option"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 16
+        },
+        "label": "'a -> 'b option"
+      },
+      {
+        "pos": {
+          "line": 1,
+          "col": 14
+        },
+        "label": "'a option"
+      }
+    ],
+    "notifications": []
+  }
+
 Support for @merlin.hide
 
   $ $MERLIN single inlay-hints -start 1:0 -end 3:0 \
