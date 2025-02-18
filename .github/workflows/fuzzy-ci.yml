@@ -2,7 +2,7 @@ name: Fuzzy CI
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
     types: [opened, synchronize, reopened, unlabeled, labeled]
     paths-ignore:
       - "**.md"
@@ -41,7 +41,7 @@ env:
   # Irmin version and merl-an version need to be consistent for reproducibility (Irmin is used as the test code base to test `ocamlmerlin` on)
   IRMIN_VERSION: 3.9.0
   # TODO: Release merl-an and install a certain version instead of pinning it to a certain commit
-  MERL_AN_SHA: 6411f0d3847e8b7e66362bcb1f9345a5d3e851ca
+  MERL_AN_SHA: 344a079bf502f27e9269498db9ed5369753f2ddb
 
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
@@ -169,7 +169,7 @@ jobs:
 
       - name: Install merl-an
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
-        run: opam pin -y merl-an https://github.com/pitag-ha/merl-an.git#$MERL_AN_SHA
+        run: opam pin -y merl-an https://github.com/xvw/merl-an.git#$MERL_AN_SHA
 
       - name: Add merl-an to /usr/local/bin/
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
