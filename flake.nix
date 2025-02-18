@@ -35,6 +35,7 @@
             src = ./.;
             duneVersion = "3";
             propagatedBuildInputs = with ocamlPackages; [ csexp ];
+            checkInputs = with ocamlPackages; [ alcotest ];
             doCheck = true;
           };
 
