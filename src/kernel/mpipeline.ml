@@ -393,11 +393,44 @@ let create_shared () =
     complete_result = Shared.create None
   }
 
+(* The exchange of message on [shared.closed] is inevitable to avoid some bad 
+ interleavings. In particular, the following implementation of [closing] 
+
+ {[
+  let closing shared = 
+    Atomic.set shared.closed `True;
+    Shared.signal shared.curr_config 
+  ]}
+
+ could lead to the following interleaving: 
+- the typer domain read `closed` as `False
+- the main domain change the value of close and call signal 
+- the typer domain wait forever. 
+*)
+let rec closing shared =
+  match Atomic.get shared.closed with
+  | `False ->
+    if Atomic.compare_and_set shared.closed `False `True then
+      while Atomic.get shared.closed == `True do
+        Shared.signal shared.curr_config
+      done
+    else closing shared
+  | `Exn exn as prev ->
+    if Atomic.compare_and_set shared.closed prev `True then (
+      while Atomic.get shared.closed == `True do
+        Shared.signal shared.curr_config
+      done;
+      raise exn)
+    else closing shared
+  | `True -> failwith "Closing: `True"
+  | `Closed -> failwith "Closing: `Closed"
+
 let rec share_exn (shared : shared) exn =
   match Atomic.get shared.closed with
-  | `False as prev ->
-    if Atomic.compare_and_set shared.closed prev (`Exn exn) then
-      while Atomic.get shared.closed <> `Closed do
+  | `False ->
+    let exn_v = `Exn exn in
+    if Atomic.compare_and_set shared.closed `False exn_v then
+      while Atomic.get shared.closed == exn_v do
         Shared.signal shared.partial_result
       done
     else share_exn shared exn
@@ -419,8 +452,7 @@ let domain_typer shared () =
           Shared.locking_set shared.partial_result (Some pipeline);
           loop ()
         with exn ->
-          Atomic.set shared.closed (`Exn exn);
-          shared.curr_config.value <- None;
+          share_exn shared exn;
           loop ())
     end
   in
@@ -435,7 +467,7 @@ let get { closed; curr_config; partial_result; _ } config source =
       match Atomic.get closed with
       | `True | `Closed -> assert false
       | `Exn exn ->
-        Atomic.set closed `Closed;
+        Atomic.set closed `False;
         raise exn
       | _ ->
         Shared.wait partial_result;
@@ -446,28 +478,3 @@ let get { closed; curr_config; partial_result; _ } config source =
       pipeline
   in
   Shared.protect partial_result @@ fun () -> loop ()
-
-(* The exchange of message on [shared.closed] is inevitable to avoid some bad 
- interleavings. In particular, the following implementation of [closing] 
-
- {[
-  let closing shared = 
-    Atomic.set shared.closed `True;
-    Shared.signal shared.curr_config 
-  ]}
-
- could lead to the following interleaving: 
-- the typer domain read `closed` as `False
-- the main domain change the value of close and call signal 
-- the typer domain wait forever. 
-*)
-let rec closing shared =
-  match Atomic.get shared.closed with
-  | `False ->
-    if Atomic.compare_and_set shared.closed `False `True then
-      while Atomic.get shared.closed = `Closed do
-        Shared.signal shared.curr_config
-      done
-    else closing shared
-  | `Exn exn -> raise exn
-  | _ -> assert false
