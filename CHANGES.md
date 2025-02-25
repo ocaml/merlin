@@ -10,6 +10,8 @@ unreleased
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
+  + test suite
+    - Add a test case illustrating wrong open order proposed in issue #1900. (#1901)
 
 merlin 5.4.1
 ============
