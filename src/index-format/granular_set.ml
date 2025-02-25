@@ -31,6 +31,7 @@ module type S = sig
   val iter : (elt -> unit) -> t -> unit
   val cardinal : t -> int
   val elements : t -> elt list
+  val fold : ('acc -> elt -> 'acc) -> 'acc -> t -> 'acc
   val schema :
     Granular_marshal.iter -> (Granular_marshal.iter -> elt -> unit) -> t -> unit
 end
@@ -234,12 +235,12 @@ module Make (Ord : Set.OrderedType) = struct
     | Empty -> 0
     | Node { l; r; _ } -> cardinal l + 1 + cardinal r
 
-  let rec elements_aux accu t =
+  let rec fold f acc t =
     match fetch t with
-    | Empty -> accu
-    | Node { l; v; r; _ } -> elements_aux (v :: elements_aux accu r) l
+    | Empty -> acc
+    | Node { l; v; r; _ } -> fold f (f (fold f acc r) v) l
 
-  let elements s = elements_aux [] s
+  let elements s = fold (fun acc v -> v :: acc) [] s
 
   let try_join l v r =
     if

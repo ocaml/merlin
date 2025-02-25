@@ -36,12 +36,12 @@ end = struct
   let to_list = Lid_map.to_list
 
   let of_filtered_lid_set lid_set ~f:get_staleness =
-    let maybe_add_lid lid acc =
+    let maybe_add_lid acc lid =
       match get_staleness lid with
       | Some staleness -> Lid_map.add lid staleness acc
       | None -> acc
     in
-    Lid_set.fold maybe_add_lid lid_set empty
+    Lid_set.fold maybe_add_lid empty lid_set
 
   let either_fresh a b =
     let open Staleness in
