@@ -492,11 +492,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     let with_file = scope = `Project || scope = `Renaming in
     `List
       (List.map occurrences ~f:(fun occurrence ->
-           let without_location =
-             match occurrence.is_stale with
-             | true -> [ ("stale", Json.bool true) ]
-             | false -> []
-           in
-           with_location ~with_file occurrence.loc without_location))
+           with_location ~with_file occurrence.loc
+             [ ("stale", Json.bool occurrence.is_stale) ]))
   | Signature_help _, s -> json_of_signature_help s
   | Version, version -> `String version

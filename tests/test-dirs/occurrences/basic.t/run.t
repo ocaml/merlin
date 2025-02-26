@@ -12,7 +12,8 @@ Test getting occurrences of a function arg:
         "end": {
           "line": 1,
           "col": 15
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -22,7 +23,8 @@ Test getting occurrences of a function arg:
         "end": {
           "line": 2,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -32,7 +34,8 @@ Test getting occurrences of a function arg:
         "end": {
           "line": 2,
           "col": 13
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -52,7 +55,8 @@ Test getting occurrences of a function arg annotated with a type:
         "end": {
           "line": 4,
           "col": 23
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -62,7 +66,8 @@ Test getting occurrences of a function arg annotated with a type:
         "end": {
           "line": 5,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -72,7 +77,8 @@ Test getting occurrences of a function arg annotated with a type:
         "end": {
           "line": 5,
           "col": 13
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -92,7 +98,8 @@ Test getting occurrences of a record pattern in a function arg:
         "end": {
           "line": 9,
           "col": 28
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -102,7 +109,8 @@ Test getting occurrences of a record pattern in a function arg:
         "end": {
           "line": 10,
           "col": 7
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -112,7 +120,8 @@ Test getting occurrences of a record pattern in a function arg:
         "end": {
           "line": 10,
           "col": 15
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -132,7 +141,8 @@ Test getting occurrences of a function arg then used in record literal:
         "end": {
           "line": 12,
           "col": 25
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -142,7 +152,8 @@ Test getting occurrences of a function arg then used in record literal:
         "end": {
           "line": 13,
           "col": 14
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -162,7 +173,8 @@ Test getting occurrences of a function arg then used in record literal punned:
         "end": {
           "line": 15,
           "col": 33
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -172,7 +184,8 @@ Test getting occurrences of a function arg then used in record literal punned:
         "end": {
           "line": 16,
           "col": 8
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -192,7 +205,8 @@ Test getting occurrences of a function arg alias then used in record literal:
         "end": {
           "line": 18,
           "col": 27
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -202,7 +216,8 @@ Test getting occurrences of a function arg alias then used in record literal:
         "end": {
           "line": 19,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -212,7 +227,8 @@ Test getting occurrences of a function arg alias then used in record literal:
         "end": {
           "line": 19,
           "col": 11
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

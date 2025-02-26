@@ -12,7 +12,8 @@ Reproduction case:
         "end": {
           "line": 2,
           "col": 15
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -22,7 +23,8 @@ Reproduction case:
         "end": {
           "line": 4,
           "col": 12
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -40,7 +42,8 @@ Reproduction case:
         "end": {
           "line": 2,
           "col": 20
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -50,7 +53,8 @@ Reproduction case:
         "end": {
           "line": 5,
           "col": 24
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -71,7 +75,8 @@ work:
         "end": {
           "line": 2,
           "col": 15
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -81,7 +86,8 @@ work:
         "end": {
           "line": 4,
           "col": 12
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -99,7 +105,8 @@ work:
         "end": {
           "line": 2,
           "col": 20
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -109,7 +116,8 @@ work:
         "end": {
           "line": 5,
           "col": 24
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

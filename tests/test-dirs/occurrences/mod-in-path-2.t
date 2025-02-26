@@ -19,7 +19,8 @@ FIXME: we could expect module appearing in paths to be highlighted
       "end": {
         "line": 1,
         "col": 10
-      }
+      },
+      "stale": false
     }
   ]
 
@@ -34,7 +35,8 @@ FIXME: we could expect module appearing in paths to be highlighted
       "end": {
         "line": 2,
         "col": 12
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -44,7 +46,8 @@ FIXME: we could expect module appearing in paths to be highlighted
       "end": {
         "line": 5,
         "col": 13
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -54,6 +57,7 @@ FIXME: we could expect module appearing in paths to be highlighted
       "end": {
         "line": 6,
         "col": 9
-      }
+      },
+      "stale": false
     }
   ]

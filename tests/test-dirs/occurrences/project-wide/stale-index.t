@@ -41,6 +41,7 @@ Foo was defined on line 2 when the index was built, but is now defined on line 1
       "end": {
         "line": 1,
         "col": 29
-      }
+      },
+      "stale": false
     }
   ]

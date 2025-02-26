@@ -44,7 +44,8 @@ the interface and the implementation.
         "end": {
           "line": 1,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -55,7 +56,8 @@ the interface and the implementation.
         "end": {
           "line": 2,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -66,7 +68,8 @@ the interface and the implementation.
         "end": {
           "line": 3,
           "col": 9
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.mli",
@@ -77,7 +80,8 @@ the interface and the implementation.
         "end": {
           "line": 2,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -99,7 +103,8 @@ Same when the cursor is at the origin:
         "end": {
           "line": 1,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -110,7 +115,8 @@ Same when the cursor is at the origin:
         "end": {
           "line": 2,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -121,7 +127,8 @@ Same when the cursor is at the origin:
         "end": {
           "line": 3,
           "col": 9
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.mli",
@@ -132,7 +139,8 @@ Same when the cursor is at the origin:
         "end": {
           "line": 2,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -154,7 +162,8 @@ It also works when querying for t from the implementation:
         "end": {
           "line": 2,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -165,7 +174,8 @@ It also works when querying for t from the implementation:
         "end": {
           "line": 3,
           "col": 9
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.mli",
@@ -176,7 +186,8 @@ It also works when querying for t from the implementation:
         "end": {
           "line": 1,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.mli",
@@ -187,7 +198,8 @@ It also works when querying for t from the implementation:
         "end": {
           "line": 2,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -210,7 +222,8 @@ It also works when querying for x from the implementation:
         "end": {
           "line": 1,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.mli",
@@ -221,7 +234,8 @@ It also works when querying for x from the implementation:
         "end": {
           "line": 2,
           "col": 5
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -243,7 +257,8 @@ It also works when querying for x from the interface:
         "end": {
           "line": 2,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -254,7 +269,8 @@ It also works when querying for x from the interface:
         "end": {
           "line": 1,
           "col": 5
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -287,7 +303,8 @@ get confused if both identifers are the same.
         "end": {
           "line": 1,
           "col": 6
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/main.ml",
@@ -298,7 +315,8 @@ get confused if both identifers are the same.
         "end": {
           "line": 3,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
