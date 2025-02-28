@@ -20,7 +20,8 @@ See issue #1185 on vscode-ocaml-platform
       "end": {
         "line": 2,
         "col": 11
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -30,7 +31,8 @@ See issue #1185 on vscode-ocaml-platform
       "end": {
         "line": 5,
         "col": 3
-      }
+      },
+      "stale": false
     }
   ]
 
@@ -56,7 +58,8 @@ FIXME: we can do better than that
       "end": {
         "line": 2,
         "col": 11
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -66,7 +69,8 @@ FIXME: we can do better than that
       "end": {
         "line": 5,
         "col": 3
-      }
+      },
+      "stale": false
     }
   ]
 

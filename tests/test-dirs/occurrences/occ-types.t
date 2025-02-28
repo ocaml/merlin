@@ -13,7 +13,8 @@
       "end": {
         "line": 1,
         "col": 6
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -23,7 +24,8 @@
       "end": {
         "line": 2,
         "col": 10
-      }
+      },
+      "stale": false
     }
   ]
 
@@ -40,7 +42,8 @@
       "end": {
         "line": 1,
         "col": 19
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -50,7 +53,8 @@
       "end": {
         "line": 1,
         "col": 29
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -60,6 +64,7 @@
       "end": {
         "line": 1,
         "col": 49
-      }
+      },
+      "stale": false
     }
   ]

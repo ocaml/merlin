@@ -6,6 +6,7 @@ unreleased
       (#1888)
     - `locate` can now disambiguate between files with identical names and contents
       (#1882)
+    - `occurrences` now reports stale files (#1885)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
@@ -28,6 +29,7 @@ Fri Jan 10 17:55:42 CET 2025
     - Perform less merges in the indexer (#1881)
     - Add initial support for project-wide renaming: occurrences can now return
       all usages of all related definitions. (#1877)
+    - Stale occurrences are flagged as such
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that

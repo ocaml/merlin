@@ -11,7 +11,8 @@ Test finding occurrences of let-based binding operator, from reified syntax:
         "end": {
           "line": 1,
           "col": 11
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -21,7 +22,8 @@ Test finding occurrences of let-based binding operator, from reified syntax:
         "end": {
           "line": 3,
           "col": 17
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -31,7 +33,8 @@ Test finding occurrences of let-based binding operator, from reified syntax:
         "end": {
           "line": 4,
           "col": 5
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -51,7 +54,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 2,
           "col": 11
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -61,7 +65,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 3,
           "col": 26
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -71,7 +76,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 4,
           "col": 17
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -89,7 +95,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 1,
           "col": 11
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -99,7 +106,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 3,
           "col": 17
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -109,7 +117,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 4,
           "col": 5
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -127,7 +136,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 2,
           "col": 11
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -137,7 +147,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 3,
           "col": 26
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -147,7 +158,8 @@ Test finding occurrences of and-based binding operator, from reified syntax:
         "end": {
           "line": 4,
           "col": 17
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

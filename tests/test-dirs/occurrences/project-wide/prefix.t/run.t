@@ -56,7 +56,8 @@ Merlin fails to find occurrences outside of file because of the module prefixes
         "end": {
           "line": 1,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/b.ml",
@@ -67,7 +68,8 @@ Merlin fails to find occurrences outside of file because of the module prefixes
         "end": {
           "line": 2,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -93,7 +95,8 @@ Merlin successfully finds occurrences outside file when UNIT_NAME directive is u
         "end": {
           "line": 1,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/a.ml",
@@ -104,7 +107,8 @@ Merlin successfully finds occurrences outside file when UNIT_NAME directive is u
         "end": {
           "line": 1,
           "col": 13
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/a.ml",
@@ -115,7 +119,8 @@ Merlin successfully finds occurrences outside file when UNIT_NAME directive is u
         "end": {
           "line": 2,
           "col": 19
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/b.ml",
@@ -126,7 +131,8 @@ Merlin successfully finds occurrences outside file when UNIT_NAME directive is u
         "end": {
           "line": 2,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -152,7 +158,8 @@ Merlin successfully finds occurrences outside file when WRAPPING_PREFIX directiv
         "end": {
           "line": 1,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/a.ml",
@@ -163,7 +170,8 @@ Merlin successfully finds occurrences outside file when WRAPPING_PREFIX directiv
         "end": {
           "line": 1,
           "col": 13
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/a.ml",
@@ -174,7 +182,8 @@ Merlin successfully finds occurrences outside file when WRAPPING_PREFIX directiv
         "end": {
           "line": 2,
           "col": 19
-        }
+        },
+        "stale": false
       },
       {
         "file": "$TESTCASE_ROOT/b.ml",
@@ -185,7 +194,8 @@ Merlin successfully finds occurrences outside file when WRAPPING_PREFIX directiv
         "end": {
           "line": 2,
           "col": 9
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

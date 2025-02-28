@@ -13,7 +13,8 @@
       "end": {
         "line": 3,
         "col": 4
-      }
+      },
+      "stale": false
     }
   ]
 
@@ -32,6 +33,7 @@
       "end": {
         "line": 3,
         "col": 4
-      }
+      },
+      "stale": false
     }
   ]

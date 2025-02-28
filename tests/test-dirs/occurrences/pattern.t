@@ -19,7 +19,8 @@ This test demonstrates the handling of location of patterns. For a pattern like
         "end": {
           "line": 3,
           "col": 13
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -29,7 +30,8 @@ This test demonstrates the handling of location of patterns. For a pattern like
         "end": {
           "line": 3,
           "col": 21
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
