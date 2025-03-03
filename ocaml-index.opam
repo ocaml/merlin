@@ -7,6 +7,7 @@ authors: ["ulysse@tarides.com"]
 license: "MIT"
 homepage: "https://github.com/ocaml/merlin/ocaml-index"
 bug-reports: "https://github.com/ocaml/merlin/issues"
+x-maintenance-intent: ["(latest)"]
 depends: [
   "dune" {>= "3.0.0"}
   "ocaml" {>= "5.3"}
