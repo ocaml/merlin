@@ -25,11 +25,17 @@ WORKDIR /projects
 
 # build irmin
 RUN git clone https://github.com/mirage/irmin.git
-WORKDIR /projects/irmin
-RUN sudo rm -rf examples/ test/
-RUN git checkout 421c09fa57784f155a3d6ad23e0ecc2c9cd0a352
 RUN sudo apt install -y gnuplot-x11 libgmp-dev pkg-config libffi-dev
 RUN opam switch import /app/bench/irmin.opam.export --no-checksums
+WORKDIR /projects/irmin
+RUN git checkout 421c09fa57784f155a3d6ad23e0ecc2c9cd0a352
+RUN sudo rm -rf examples/ test/
+RUN opam exec -- dune build
+
+# build big-bertha
+WORKDIR /projects
+RUN git clone https://github.com/xvw/big-bertha.git
+WORKDIR /projects/big-bertha
 RUN opam exec -- dune build
 
 WORKDIR /app
