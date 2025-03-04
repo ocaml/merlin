@@ -346,12 +346,7 @@ pin-depends: [
   ]
 ]
 x-opam-monorepo-cli-args: [
-  "irmin"
-  "irmin-pack"
-  "irmin-tezos"
-  "ppx_irmin"
-  "irmin-test"
-  "--ocaml-version=5.3.0"
+  "irmin" "irmin-pack" "irmin-tezos" "--ocaml-version=5.3.0"
 ]
 x-opam-monorepo-duniverse-dirs: [
   [
@@ -788,7 +783,5 @@ x-opam-monorepo-duniverse-dirs: [
     ]
   ]
 ]
-x-opam-monorepo-root-packages: [
-  "irmin" "irmin-pack" "irmin-test" "irmin-tezos" "ppx_irmin"
-]
+x-opam-monorepo-root-packages: ["irmin" "irmin-pack" "irmin-tezos"]
 x-opam-monorepo-version: "0.3"
