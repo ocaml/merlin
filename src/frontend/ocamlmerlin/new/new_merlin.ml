@@ -47,7 +47,7 @@ let commands_help () =
       print_endline doc)
     New_commands.all_commands
 
-let run =
+let run shared =
   let query_num = ref (-1) in
   function
   | [] ->
@@ -109,37 +109,42 @@ let run =
               (float_of_int (60 * Mconfig.(config.merlin.cache_lifespan)))
             ();
           File_id.with_cache @@ fun () ->
+          let store = Mpipeline.Cache.get config in
+          Local_store.open_store store;
           let source = Msource.make (Misc.string_of_file stdin) in
-          let pipeline = Mpipeline.make config source in
+          (* let pipeline = Mpipeline.get shared config source in *)
           let json =
-            let class_, message =
+            let class_, message, pipeline =
               Printexc.record_backtrace true;
-              match
-                Mpipeline.with_pipeline pipeline @@ fun () ->
-                command_action pipeline command_args
-              with
-              | result -> ("return", result)
+              match command_action shared config source command_args with
+              | result, pipeline -> ("return", result, pipeline)
               | exception Failure str ->
                 let trace = Printexc.get_backtrace () in
                 log ~title:"run" "Command error backtrace: %s" trace;
-                ("failure", `String str)
+                ("failure", `String str, None)
               | exception exn -> (
                 let trace = Printexc.get_backtrace () in
                 log ~title:"run" "Command error backtrace: %s" trace;
                 match Location.error_of_exn exn with
                 | None | Some `Already_displayed ->
-                  ("exception", `String (Printexc.to_string exn ^ "\n" ^ trace))
+                  ( "exception",
+                    `String (Printexc.to_string exn ^ "\n" ^ trace),
+                    None )
                 | Some (`Ok err) ->
                   Location.print_main Format.str_formatter err;
-                  ("error", `String (Format.flush_str_formatter ())))
+                  ("error", `String (Format.flush_str_formatter ()), None))
             in
+
+            Local_store.close_store store;
             let cpu_time = Misc.time_spent () -. start_cpu in
             let gc_stats = Gc.quick_stat () in
             let heap_mbytes =
               gc_stats.heap_words * (Sys.word_size / 8) / 1_000_000
             in
             let clock_time = (Unix.gettimeofday () *. 1000.) -. start_clock in
-            let timing = Mpipeline.timing_information pipeline in
+            let timing =
+              Option.fold ~none:[] ~some:Mpipeline.timing_information pipeline
+            in
             let pipeline_time =
               List.fold_left (fun acc (_, k) -> k +. acc) 0.0 timing
             in
@@ -152,13 +157,17 @@ let run =
               `String (Printf.sprintf "%s: %s" section msg)
             in
             let format_timing (k, v) = (k, `Int (int_of_float (0.5 +. v))) in
+            let cache =
+              Option.fold ~none:(`Assoc []) ~some:Mpipeline.cache_information
+                pipeline
+            in
             `Assoc
               [ ("class", `String class_);
                 ("value", message);
                 ("notifications", `List (List.rev_map notify !notifications));
                 ("timing", `Assoc (List.map format_timing timing));
                 ("heap_mbytes", `Int heap_mbytes);
-                ("cache", Mpipeline.cache_information pipeline);
+                ("cache", cache);
                 ("query_num", `Int !query_num)
               ]
           in
@@ -186,7 +195,7 @@ let with_wd ~wd ~old_wd f args =
       old_wd;
     f args
 
-let run ~new_env wd args =
+let run ~new_env shared wd args =
   begin
     match new_env with
     | Some env ->
@@ -197,10 +206,10 @@ let run ~new_env wd args =
   let old_wd = Sys.getcwd () in
   let run args () =
     match wd with
-    | Some wd -> with_wd ~wd ~old_wd run args
+    | Some wd -> with_wd ~wd ~old_wd (run shared) args
     | None ->
       log ~title:"run" "No working directory specified (old wd: %S)" old_wd;
-      run args
+      run shared args
   in
   let `Log_file_path log_file, `Log_sections sections = Log_info.get () in
   Logger.with_log_file log_file ~sections @@ run args
