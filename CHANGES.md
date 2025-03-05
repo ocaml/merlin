@@ -8,7 +8,6 @@ unreleased
       (#1882)
     - Improve Inlay Hints Handling with [@merlin.hide] and remove support for "avoid-ghost-location" (#1894)
     - `occurrences` now reports stale files (#1885)
-
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
