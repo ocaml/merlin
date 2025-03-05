@@ -30,7 +30,8 @@ We still expect occurrences of definitions in hidden source files to work
         "end": {
           "line": 1,
           "col": 14
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -40,7 +41,8 @@ We still expect occurrences of definitions in hidden source files to work
         "end": {
           "line": 2,
           "col": 14
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

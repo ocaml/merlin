@@ -25,7 +25,8 @@ The parenthesis are typed as an open statement
         "end": {
           "line": 2,
           "col": 7
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -35,7 +36,8 @@ The parenthesis are typed as an open statement
         "end": {
           "line": 4,
           "col": 11
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -45,7 +47,8 @@ The parenthesis are typed as an open statement
         "end": {
           "line": 5,
           "col": 12
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -55,7 +58,8 @@ The parenthesis are typed as an open statement
         "end": {
           "line": 6,
           "col": 13
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -65,7 +69,8 @@ The parenthesis are typed as an open statement
         "end": {
           "line": 7,
           "col": 15
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -75,7 +80,8 @@ The parenthesis are typed as an open statement
         "end": {
           "line": 9,
           "col": 3
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -107,7 +113,8 @@ We don't have enough information to safely shrink the enclosing
         "end": {
           "line": 2,
           "col": 10
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -117,7 +124,8 @@ We don't have enough information to safely shrink the enclosing
         "end": {
           "line": 4,
           "col": 14
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -127,7 +135,8 @@ We don't have enough information to safely shrink the enclosing
         "end": {
           "line": 5,
           "col": 16
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -137,7 +146,8 @@ We don't have enough information to safely shrink the enclosing
         "end": {
           "line": 6,
           "col": 16
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -147,7 +157,8 @@ We don't have enough information to safely shrink the enclosing
         "end": {
           "line": 8,
           "col": 5
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -157,7 +168,8 @@ We don't have enough information to safely shrink the enclosing
         "end": {
           "line": 9,
           "col": 28
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []
@@ -187,7 +199,8 @@ Same for an ident that requires both parenthesis and spaces:
         "end": {
           "line": 2,
           "col": 11
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -197,7 +210,8 @@ Same for an ident that requires both parenthesis and spaces:
         "end": {
           "line": 4,
           "col": 15
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -207,7 +221,8 @@ Same for an ident that requires both parenthesis and spaces:
         "end": {
           "line": 5,
           "col": 17
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -217,7 +232,8 @@ Same for an ident that requires both parenthesis and spaces:
         "end": {
           "line": 6,
           "col": 14
-        }
+        },
+        "stale": false
       },
       {
         "start": {
@@ -227,7 +243,8 @@ Same for an ident that requires both parenthesis and spaces:
         "end": {
           "line": 8,
           "col": 4
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

@@ -16,7 +16,8 @@ occurrences identifier-at 2:0 returns the occurrences of [x]
       "end": {
         "line": 1,
         "col": 5
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -26,7 +27,8 @@ occurrences identifier-at 2:0 returns the occurrences of [x]
       "end": {
         "line": 2,
         "col": 1
-      }
+      },
+      "stale": false
     }
   ]
 
@@ -45,7 +47,8 @@ occurrences identifier-at 2:1 returns the occurrences of [+]
       "end": {
         "line": 1,
         "col": 21
-      }
+      },
+      "stale": false
     },
     {
       "start": {
@@ -55,7 +58,8 @@ occurrences identifier-at 2:1 returns the occurrences of [+]
       "end": {
         "line": 2,
         "col": 2
-      }
+      },
+      "stale": false
     }
   ]
 

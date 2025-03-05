@@ -58,7 +58,8 @@ Perform the occurrences query
       "end": {
         "line": 1,
         "col": 7
-      }
+      },
+      "stale": false
     },
     {
       "file": "$TESTCASE_ROOT/lib/foo.ml",
@@ -69,7 +70,8 @@ Perform the occurrences query
       "end": {
         "line": 2,
         "col": 25
-      }
+      },
+      "stale": false
     },
     {
       "file": "$TESTCASE_ROOT/main/main.ml",
@@ -80,7 +82,8 @@ Perform the occurrences query
       "end": {
         "line": 1,
         "col": 15
-      }
+      },
+      "stale": false
     },
     {
       "file": "$TESTCASE_ROOT/main/main.ml",
@@ -91,6 +94,7 @@ Perform the occurrences query
       "end": {
         "line": 2,
         "col": 29
-      }
+      },
+      "stale": false
     }
   ]

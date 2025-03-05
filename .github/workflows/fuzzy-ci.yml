@@ -2,7 +2,7 @@ name: Fuzzy CI
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
     types: [opened, synchronize, reopened, unlabeled, labeled]
     paths-ignore:
       - "**.md"
@@ -39,14 +39,14 @@ env:
   CURRENT_ACTION_URL: ${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
 
   # Irmin version and merl-an version need to be consistent for reproducibility (Irmin is used as the test code base to test `ocamlmerlin` on)
-  IRMIN_VERSION: 3.9.0
+  IRMIN_VERSION: 3.10.0
   # TODO: Release merl-an and install a certain version instead of pinning it to a certain commit
-  MERL_AN_SHA: 6411f0d3847e8b7e66362bcb1f9345a5d3e851ca
+  MERL_AN_SHA: 344a079bf502f27e9269498db9ed5369753f2ddb
 
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
-  merge_branch_COMPILER_VERSION: ocaml-base-compiler.4.14.1
-  base_branch_COMPILER_VERSION: ocaml-base-compiler.4.14.1
+  merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.3.0
+  base_branch_COMPILER_VERSION: ocaml-base-compiler.5.3.0
 
 jobs:
   data:
@@ -94,6 +94,7 @@ jobs:
 
       - name: Install merlin dependencies
         run: |
+          opam update
           opam pin menhirLib 20201216 --no-action
           opam install . --deps-only --yes
 
@@ -109,7 +110,7 @@ jobs:
         id: irmin-cache
         with:
           path: irmin/
-          key: os${{ runner.os }}+arch${{ runner.arch }}+${{ hashFiles('fuzzy-ci-helpers/irmin.3.9.0.opam.locked') }}+${{ env.IRMIN_VERSION }}+${{ steps.compiler.outputs.version }}
+          key: os${{ runner.os }}+arch${{ runner.arch }}+${{ hashFiles('fuzzy-ci-helpers/irmin.3.10.0.opam.locked') }}+${{ env.IRMIN_VERSION }}+${{ steps.compiler.outputs.version }}
 
       - name: Download Irmin tarball
         if: steps.irmin-cache.outputs.cache-hit != 'true'
@@ -127,7 +128,7 @@ jobs:
       - name: Get Irmin's lock files
         if: steps.irmin-cache.outputs.cache-hit != 'true'
         run: |
-          cp .github/fuzzy-ci-helpers/irmin.3.9.0.opam.locked irmin/irmin.opam.locked
+          cp .github/fuzzy-ci-helpers/irmin.3.10.0.opam.locked irmin/irmin.opam.locked
 
       - name: Install opam monorepo
         if: steps.irmin-cache.outputs.cache-hit != 'true'
@@ -169,7 +170,7 @@ jobs:
 
       - name: Install merl-an
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
-        run: opam pin -y merl-an https://github.com/pitag-ha/merl-an.git#$MERL_AN_SHA
+        run: opam pin -y merl-an https://github.com/xvw/merl-an.git#$MERL_AN_SHA
 
       - name: Add merl-an to /usr/local/bin/
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
