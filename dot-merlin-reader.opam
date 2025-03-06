@@ -6,6 +6,7 @@ homepage:     "https://github.com/ocaml/merlin"
 bug-reports:  "https://github.com/ocaml/merlin/issues"
 dev-repo:     "git+https://github.com/ocaml/merlin.git"
 license:      "MIT"
+x-maintenance-intent: ["(latest)"]
 build: [
   ["dune" "subst"] {dev}
   ["dune" "build" "-p" name "-j" jobs]
