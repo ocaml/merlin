@@ -2,7 +2,7 @@ name: Fuzzy CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, merlin-domains]
     types: [opened, synchronize, reopened, unlabeled, labeled]
     paths-ignore:
       - "**.md"
