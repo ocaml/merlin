@@ -134,13 +134,12 @@ let dump (type a) : a t -> json =
           | Some `Local -> `String "local" );
         ("depth", `Int depth)
       ]
-  | Inlay_hints (start, stop, hint_let_binding, hint_pattern_var, ghost) ->
+  | Inlay_hints (start, stop, hint_let_binding, hint_pattern_var) ->
     mk "inlay-hints"
       [ ("start", mk_position start);
         ("stop", mk_position stop);
         ("hint-let-binding", `Bool hint_let_binding);
-        ("hint-pattern-variable", `Bool hint_pattern_var);
-        ("avoid-ghost-location", `Bool ghost)
+        ("hint-pattern-variable", `Bool hint_pattern_var)
       ]
   | Outline -> mk "outline" []
   | Errors { lexing; parsing; typing } ->
