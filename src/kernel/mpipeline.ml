@@ -318,7 +318,6 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
     reader_cache_hit;
     typer_cache_stats
   }
-
 let make config source = process (Mconfig.normalize config) source
 
 let for_completion position
@@ -365,3 +364,100 @@ let cache_information t =
       ("cmt", cmt);
       ("cmi", cmi)
     ]
+
+(* Represents the different possible communications between the two domains: 
+  + From Main to Typer :
+    - request is canceled
+    - merlin is closing
+    - main domain is waiting for the lock
+
+  + From Typer to Main :
+    - caught an exception 
+*)
+(* TODO : For message passing, it seems okay to have active waiting but it could be interesting to test both.
+*)
+type mess_main = [ `Empty | `Closing (*| `Waiting | `Cancel *) ]
+type mess_typer = [ `Empty | `Exn of exn ]
+
+type shared =
+  { (* message from main domain to typer domain *)
+    mess_main : mess_main Atomic.t;
+    (* message from typer domain to main domain *)
+    mess_typer : mess_typer Atomic.t;
+    (* typer domain uses [config] to passively wait for a new request *)
+    config : (Mconfig.t * Msource.t) option Shared.t;
+    (* main domain uses [partial_result] to passively wait for a partial result *)
+    partial_result : t option Shared.t
+        (* result is used to pass a full result but also, and mainly to manage the main lock. *)
+        (* result : t option Shared.t *)
+  }
+
+let create_shared () =
+  { mess_main = Atomic.make `Empty;
+    mess_typer = Atomic.make `Empty;
+    config = Shared.create None;
+    partial_result = Shared.create None
+  }
+
+(** [closing]: called by the main domain *)
+let closing shared =
+  (* CAS could be replaced by `set` here *)
+  if Atomic.compare_and_set shared.mess_main `Empty `Closing then
+    while Atomic.get shared.mess_main == `Closing do
+      Shared.signal shared.config
+    done
+  else failwith "closing: should not happen."
+
+(** [share_exn]: called by the typer domain *)
+let share_exn (shared : shared) exn =
+  let exn_v = `Exn exn in
+  (* CAS could be replaced by `set` here *)
+  if Atomic.compare_and_set shared.mess_typer `Empty exn_v then
+    while Atomic.get shared.mess_typer == exn_v do
+      Shared.signal shared.partial_result
+    done
+  else failwith "shared_exn: should not happen."
+
+let domain_typer shared () =
+  let rec loop () =
+    match Atomic.get shared.mess_main with
+    | `Closing -> Atomic.set shared.mess_main `Empty
+    | `Empty -> (
+      match Shared.get shared.config with
+      | None ->
+        Shared.wait shared.config;
+        loop ()
+      | Some (config, source) ->
+        Shared.set shared.config None;
+        (try
+           let mpipeline = make config source in
+           Shared.locking_set shared.partial_result (Some mpipeline)
+         with exn -> share_exn shared exn);
+        loop ())
+  in
+  Shared.protect shared.config (fun () -> loop ())
+
+let get shared config source =
+  Shared.locking_set shared.config (Some (config, source));
+
+  let rec loop () =
+    let critical_section () =
+      match Shared.get shared.partial_result with
+      | None -> begin
+        match Atomic.get shared.mess_typer with
+        | `Empty ->
+          Shared.wait shared.partial_result;
+          `Retry
+        | `Exn exn ->
+          Atomic.set shared.mess_typer `Empty;
+          raise exn
+      end
+      | Some pipeline ->
+        Shared.set shared.partial_result None;
+        `Result pipeline
+    in
+    match Shared.protect shared.partial_result critical_section with
+    | `Retry -> loop ()
+    | `Result pipeline -> pipeline
+  in
+  loop ()
