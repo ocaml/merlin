@@ -19,7 +19,4 @@ let signal a = Condition.signal a.cond
 let create a =
   { mutex = Mutex.create (); cond = Condition.create (); value = a }
 
-let lock a = Mutex.lock a.mutex
-let unlock a = Mutex.unlock a.mutex
-
 let wait a = Condition.wait a.cond a.mutex

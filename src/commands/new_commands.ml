@@ -35,7 +35,11 @@ type command =
       * Marg.docstring
       * ([ `Mandatory | `Optional | `Many ] * 'args Marg.spec) list
       * 'args
-      * (Mpipeline.t -> 'args -> json)
+      * (Mpipeline.shared ->
+        Mconfig.t ->
+        Msource.t ->
+        'args ->
+        json * Mpipeline.t option)
       -> command
 
 let command name ?(doc = "") ~spec ~default f =
@@ -92,12 +96,15 @@ let find_command name = List.find ~f:(command_is ~name)
 
 let find_command_opt name = List.find_opt ~f:(command_is ~name)
 
-let run pipeline query =
+let run shared config source query =
+  let pipeline = Mpipeline.get shared config source in
   Logger.log ~section:"New_commands" ~title:"run(query)" "%a" Logger.json
     (fun () -> Query_json.dump query);
+
+  (* Analyse *)
   let result = Query_commands.dispatch pipeline query in
   let json = Query_json.json_of_response query result in
-  json
+  (json, Some pipeline)
 
 let all_commands =
   [ command "case-analysis"
@@ -119,17 +126,19 @@ let all_commands =
          position}, content]`, where content is string.\n"
       ~default:(`Offset (-1), `Offset (-1))
       begin
-        fun buffer -> function
+        fun shared config source -> function
           | `Offset -1, _ -> failwith "-start <pos> is mandatory"
           | _, `Offset -1 -> failwith "-end <pos> is mandatory"
           | startp, endp ->
-            run buffer (Query_protocol.Case_analysis (startp, endp))
+            run shared config source
+              (Query_protocol.Case_analysis (startp, endp))
       end;
     command "holes" ~spec:[]
       ~doc:"Returns the list of the positions of all the holes in the file."
       ~default:()
       begin
-        fun buffer () -> run buffer Query_protocol.Holes
+        fun shared config source () ->
+          run shared config source Query_protocol.Holes
       end;
     command "construct"
       ~spec:
@@ -160,11 +169,12 @@ let all_commands =
          inferior depth will not be returned."
       ~default:(`Offset (-1), None, None)
       begin
-        fun buffer (pos, with_values, max_depth) ->
+        fun shared config source (pos, with_values, max_depth) ->
           match pos with
           | `Offset -1 -> failwith "-position <pos> is mandatory"
           | pos ->
-            run buffer (Query_protocol.Construct (pos, with_values, max_depth))
+            run shared config source
+              (Query_protocol.Construct (pos, with_values, max_depth))
       end;
     command "complete-prefix"
       ~spec:
@@ -217,11 +227,11 @@ let all_commands =
          like signatures for modules or documentation string."
       ~default:("", `None, [], false, true)
       begin
-        fun buffer (txt, pos, kinds, doc, typ) ->
+        fun shared config source (txt, pos, kinds, doc, typ) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer
+            run shared config source
               (Query_protocol.Complete_prefix
                  (txt, pos, List.rev kinds, doc, typ))
       end;
@@ -240,11 +250,11 @@ let all_commands =
         ]
       ~default:(None, `None)
       begin
-        fun buffer (ident, pos) ->
+        fun shared config source (ident, pos) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Document (ident, pos))
+            run shared config source (Query_protocol.Document (ident, pos))
       end;
     command "syntax-document"
       ~doc:
@@ -255,11 +265,11 @@ let all_commands =
         ]
       ~default:`None
       begin
-        fun buffer pos ->
+        fun shared config source pos ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Syntax_document pos)
+            run shared config source (Query_protocol.Syntax_document pos)
       end;
     command "expand-ppx" ~doc:"Returns the generated code of a PPX."
       ~spec:
@@ -268,11 +278,11 @@ let all_commands =
         ]
       ~default:`None
       begin
-        fun buffer pos ->
+        fun shared config source pos ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Expand_ppx pos)
+            run shared config source (Query_protocol.Expand_ppx pos)
       end;
     command "enclosing"
       ~spec:
@@ -286,11 +296,11 @@ let all_commands =
          the cursor.)"
       ~default:`None
       begin
-        fun buffer pos ->
+        fun shared config source pos ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Enclosing pos)
+            run shared config source (Query_protocol.Enclosing pos)
       end;
     command "errors"
       ~spec:
@@ -323,8 +333,9 @@ let all_commands =
          `message` is the error description to be shown to the user."
       ~default:(true, true, true)
       begin
-        fun buffer (lexing, parsing, typing) ->
-          run buffer (Query_protocol.Errors { lexing; parsing; typing })
+        fun shared config source (lexing, parsing, typing) ->
+          run shared config source
+            (Query_protocol.Errors { lexing; parsing; typing })
       end;
     command "expand-prefix"
       ~doc:
@@ -356,11 +367,11 @@ let all_commands =
         ]
       ~default:("", `None, [], false)
       begin
-        fun buffer (txt, pos, kinds, typ) ->
+        fun shared config source (txt, pos, kinds, typ) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer
+            run shared config source
               (Query_protocol.Expand_prefix (txt, pos, List.rev kinds, typ))
       end;
     command "extension-list"
@@ -379,13 +390,15 @@ let all_commands =
          a list of strings."
       ~default:`All
       begin
-        fun buffer status -> run buffer (Query_protocol.Extension_list status)
+        fun shared config source status ->
+          run shared config source (Query_protocol.Extension_list status)
       end;
     command "findlib-list"
       ~doc:"Returns all known findlib packages as a list of string." ~spec:[]
       ~default:()
       begin
-        fun buffer () -> run buffer Query_protocol.Findlib_list
+        fun shared config source () ->
+          run shared config source Query_protocol.Findlib_list
       end;
     command "flags-list" ~spec:[]
       ~doc:
@@ -393,8 +406,9 @@ let all_commands =
          implement interactive completion of compiler settings in an IDE."
       ~default:()
       begin
-        fun _ () ->
-          `List (List.map ~f:Json.string (Mconfig.flags_for_completion ()))
+        fun _ _ _ () ->
+          ( `List (List.map ~f:Json.string (Mconfig.flags_for_completion ())),
+            None )
       end;
     command "jump"
       ~spec:
@@ -411,11 +425,11 @@ let all_commands =
          module or match expression that contains the cursor\n"
       ~default:("", `None)
       begin
-        fun buffer (target, pos) ->
+        fun shared config source (target, pos) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Jump (target, pos))
+            run shared config source (Query_protocol.Jump (target, pos))
       end;
     command "phrase"
       ~spec:
@@ -433,11 +447,11 @@ let all_commands =
          definition or module definition)."
       ~default:(`Next, `None)
       begin
-        fun buffer (target, pos) ->
+        fun shared config source (target, pos) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Phrase (target, pos))
+            run shared config source (Query_protocol.Phrase (target, pos))
       end;
     command "list-modules"
       ~spec:
@@ -449,8 +463,9 @@ let all_commands =
          and prints the corresponding module name."
       ~default:[]
       begin
-        fun buffer extensions ->
-          run buffer (Query_protocol.List_modules (List.rev extensions))
+        fun shared config source extensions ->
+          run shared config source
+            (Query_protocol.List_modules (List.rev extensions))
       end;
     command "locate"
       ~spec:
@@ -481,11 +496,12 @@ let all_commands =
          different file."
       ~default:(None, `None, `MLI)
       begin
-        fun buffer (prefix, pos, lookfor) ->
+        fun shared config source (prefix, pos, lookfor) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Locate (prefix, lookfor, pos))
+            run shared config source
+              (Query_protocol.Locate (prefix, lookfor, pos))
       end;
     command "locate-type"
       ~spec:
@@ -494,11 +510,11 @@ let all_commands =
         ]
       ~doc:"Locate the declaration of the type of the expression" ~default:`None
       begin
-        fun buffer pos ->
+        fun shared config source pos ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Locate_type pos)
+            run shared config source (Query_protocol.Locate_type pos)
       end;
     command "occurrences"
       ~spec:
@@ -518,10 +534,11 @@ let all_commands =
          position."
       ~default:(`None, `Buffer)
       begin
-        fun buffer -> function
+        fun shared config source -> function
           | `None, _ -> failwith "-identifier-at <pos> is mandatory"
           | `Ident_at pos, scope ->
-            run buffer (Query_protocol.Occurrences (`Ident_at pos, scope))
+            run shared config source
+              (Query_protocol.Occurrences (`Ident_at pos, scope))
       end;
     command "outline" ~spec:[]
       ~doc:
@@ -530,7 +547,8 @@ let all_commands =
          content of the buffer."
       ~default:()
       begin
-        fun buffer () -> run buffer Query_protocol.Outline
+        fun shared config source () ->
+          run shared config source Query_protocol.Outline
       end;
     command "path-of-source"
       ~doc:
@@ -542,8 +560,9 @@ let all_commands =
         ]
       ~default:[]
       begin
-        fun buffer filenames ->
-          run buffer (Query_protocol.Path_of_source (List.rev filenames))
+        fun shared config source filenames ->
+          run shared config source
+            (Query_protocol.Path_of_source (List.rev filenames))
       end;
     command "refactor-open"
       ~doc:"refactor-open -position pos -action <qualify|unqualify>\n\tTODO"
@@ -559,11 +578,12 @@ let all_commands =
         ]
       ~default:(None, `None)
       begin
-        fun buffer -> function
+        fun shared config source -> function
           | None, _ -> failwith "-action is mandatory"
           | _, `None -> failwith "-position is mandatory"
           | Some action, (#Msource.position as pos) ->
-            run buffer (Query_protocol.Refactor_open (action, pos))
+            run shared config source
+              (Query_protocol.Refactor_open (action, pos))
       end;
     command "search-by-polarity"
       ~doc:"search-by-polarity -position pos -query ident\n\tTODO"
@@ -579,11 +599,12 @@ let all_commands =
         ]
       ~default:("", `None)
       begin
-        fun buffer (query, pos) ->
+        fun shared config source (query, pos) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Polarity_search (query, pos))
+            run shared config source
+              (Query_protocol.Polarity_search (query, pos))
       end;
     command "search-by-type" ~doc:"return a list of values that match a query"
       ~spec:
@@ -603,14 +624,14 @@ let all_commands =
         ]
       ~default:(None, `None, 100, false)
       begin
-        fun buffer (query, pos, limit, with_doc) ->
+        fun shared config source (query, pos, limit, with_doc) ->
           match (query, pos) with
           | None, `None ->
             failwith "-position <pos> and -query <string> are mandatory"
           | None, _ -> failwith "-query <string> is mandatory"
           | _, `None -> failwith "-position <pos> is mandatory"
           | Some query, (#Msource.position as pos) ->
-            run buffer
+            run shared config source
               (Query_protocol.Type_search (query, pos, limit, with_doc))
       end;
     command "inlay-hints"
@@ -645,14 +666,18 @@ let all_commands =
         ]
       ~default:(`None, `None, false, false, true)
       begin
-        fun buffer (start, stop, let_binding, pattern_binding, avoid_ghost) ->
+        fun shared
+          config
+          source
+          (start, stop, let_binding, pattern_binding, avoid_ghost)
+        ->
           match (start, stop) with
           | `None, `None -> failwith "-start <pos> and -end are mandatory"
           | `None, _ -> failwith "-start <pos> is mandatory"
           | _, `None -> failwith "-end <pos> is mandatory"
           | (#Msource.position, #Msource.position) as position ->
             let start, stop = position in
-            run buffer
+            run shared config source
               (Query_protocol.Inlay_hints
                  (start, stop, let_binding, pattern_binding, avoid_ghost))
       end;
@@ -676,9 +701,10 @@ let all_commands =
         ]
       ~default:`None
       begin
-        fun buffer -> function
+        fun shared config source -> function
           | `None -> failwith "-position <pos> is mandatory"
-          | #Msource.position as pos -> run buffer (Query_protocol.Shape pos)
+          | #Msource.position as pos ->
+            run shared config source (Query_protocol.Shape pos)
       end;
     command "type-enclosing"
       ~doc:
@@ -725,7 +751,7 @@ let all_commands =
         ]
       ~default:("", -1, `None, None)
       begin
-        fun buffer (expr, cursor, pos, index) ->
+        fun shared config source (expr, cursor, pos, index) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
@@ -737,7 +763,8 @@ let all_commands =
                 in
                 Some (expr, cursor)
             in
-            run buffer (Query_protocol.Type_enclosing (expr, pos, index))
+            run shared config source
+              (Query_protocol.Type_enclosing (expr, pos, index))
       end;
     command "type-expression"
       ~doc:
@@ -751,11 +778,11 @@ let all_commands =
         ]
       ~default:("", `None)
       begin
-        fun buffer (expr, pos) ->
+        fun shared config source (expr, pos) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run buffer (Query_protocol.Type_expr (expr, pos))
+            run shared config source (Query_protocol.Type_expr (expr, pos))
       end;
     (* Implemented without support from Query_protocol.  This command might be
        refactored if it proves useful for old protocol too. *)
@@ -771,25 +798,29 @@ let all_commands =
          ```"
       ~default:()
       begin
-        fun pipeline () ->
+        fun shared config source () ->
+          (* TODO this is probabably not what we want *)
+          let pipeline = Mpipeline.get shared config source in
           let config = Mpipeline.final_config pipeline in
-          `Assoc
-            [ (* TODO Remove support for multiple configuration files
+          ( `Assoc
+              [ (* TODO Remove support for multiple configuration files
                  The protocol could be changed to:
                  'config_file': path_to_dot_merlin_or_dune
 
                  For now, if the configurator is dune, the field 'dot_merlins'
                  will contain the path to the dune file (or jbuild, or dune-project)
               *)
-              ( "dot_merlins",
-                `List
-                  (match Mconfig.(config.merlin.config_path) with
-                  | Some path -> [ Json.string path ]
-                  | None -> []) );
-              ( "failures",
-                `List (List.map ~f:Json.string Mconfig.(config.merlin.failures))
-              )
-            ]
+                ( "dot_merlins",
+                  `List
+                    (match Mconfig.(config.merlin.config_path) with
+                    | Some path -> [ Json.string path ]
+                    | None -> []) );
+                ( "failures",
+                  `List
+                    (List.map ~f:Json.string Mconfig.(config.merlin.failures))
+                )
+              ],
+            Some pipeline )
       end;
     command "signature-help" ~doc:"Returns LSP Signature Help response"
       ~spec:
@@ -798,7 +829,7 @@ let all_commands =
         ]
       ~default:("", `None)
       begin
-        fun buffer (_, pos) ->
+        fun shared config source (_, pos) ->
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as position ->
@@ -809,7 +840,7 @@ let all_commands =
                 active_signature_help = None
               }
             in
-            run buffer (Query_protocol.Signature_help sh)
+            run shared config source (Query_protocol.Signature_help sh)
       end;
     (* Used only for testing *)
     command "dump"
@@ -821,12 +852,17 @@ let all_commands =
         ]
       ~default:"" ~doc:"Not for the casual user, used for debugging merlin"
       begin
-        fun pipeline what -> run pipeline (Query_protocol.Dump [ `String what ])
+        fun shared config source what ->
+          run shared config source (Query_protocol.Dump [ `String what ])
       end;
     (* Used only for testing *)
     command "dump-configuration" ~spec:[] ~default:()
       ~doc:"Not for the casual user, used for merlin tests"
       begin
-        fun pipeline () -> Mconfig.dump (Mpipeline.final_config pipeline)
+        fun shared config source () ->
+          (* TODO this is probabably not what we want *)
+          let pipeline = Mpipeline.get shared config source in
+
+          (Mconfig.dump (Mpipeline.final_config pipeline), Some pipeline)
       end
   ]

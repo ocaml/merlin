@@ -1,8 +1,12 @@
 type t
+
+(* Except inside Mpipeline, this function should only use in old_merlin *)
 val make : Mconfig.t -> Msource.t -> t
+
+(* Except inside Mpipeline, this function should only use in old_merlin *)
 val with_pipeline : t -> (unit -> 'a) -> 'a
 
-val for_completion : Msource.position -> t -> t
+(* val for_completion : Msource.position -> t -> t *)
 
 val raw_source : t -> Msource.t
 
