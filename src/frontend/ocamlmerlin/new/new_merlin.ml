@@ -47,7 +47,7 @@ let commands_help () =
       print_endline doc)
     New_commands.all_commands
 
-let run =
+let run shared =
   let query_num = ref (-1) in
   function
   | [] ->
@@ -109,15 +109,15 @@ let run =
               (float_of_int (60 * Mconfig.(config.merlin.cache_lifespan)))
             ();
           File_id.with_cache @@ fun () ->
+          (* TODO : Would it be possible to not expose this function in mpipeline.mli and its type in mocaml.mli ? *)
+          let store = Mpipeline.Cache.get config in
+          Local_store.open_store store;
           let source = Msource.make (Misc.string_of_file stdin) in
-          let pipeline = Mpipeline.make config source in
+          let pipeline = Mpipeline.get shared config source in
           let json =
             let class_, message =
               Printexc.record_backtrace true;
-              match
-                Mpipeline.with_pipeline pipeline @@ fun () ->
-                command_action pipeline command_args
-              with
+              match command_action pipeline command_args with
               | result -> ("return", result)
               | exception Failure str ->
                 let trace = Printexc.get_backtrace () in
@@ -133,6 +133,7 @@ let run =
                   Location.print_main Format.str_formatter err;
                   ("error", `String (Format.flush_str_formatter ())))
             in
+            Local_store.close_store store;
             let cpu_time = Misc.time_spent () -. start_cpu in
             let gc_stats = Gc.quick_stat () in
             let heap_mbytes =
@@ -186,7 +187,7 @@ let with_wd ~wd ~old_wd f args =
       old_wd;
     f args
 
-let run ~new_env wd args =
+let run ~new_env wd args shared =
   begin
     match new_env with
     | Some env ->
@@ -197,10 +198,10 @@ let run ~new_env wd args =
   let old_wd = Sys.getcwd () in
   let run args () =
     match wd with
-    | Some wd -> with_wd ~wd ~old_wd run args
+    | Some wd -> with_wd ~wd ~old_wd (run shared) args
     | None ->
       log ~title:"run" "No working directory specified (old wd: %S)" old_wd;
-      run args
+      run shared args
   in
   let `Log_file_path log_file, `Log_sections sections = Log_info.get () in
   Logger.with_log_file log_file ~sections @@ run args
