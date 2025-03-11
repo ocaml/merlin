@@ -320,7 +320,7 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
   }
 let make config source = process (Mconfig.normalize config) source
 
-let for_completion position
+(* let for_completion position
     { config;
       state;
       raw_source;
@@ -332,7 +332,7 @@ let for_completion position
       _
     } =
   process config raw_source ~for_completion:position ~state ~pp_time
-    ~reader_time ~ppx_time ~typer_time ~error_time
+    ~reader_time ~ppx_time ~typer_time ~error_time *)
 
 let timing_information t =
   [ ("pp", !(t.pp_time));
@@ -342,9 +342,9 @@ let timing_information t =
     ("error", !(t.error_time))
   ]
 
-let cache_information t =
+let cache_information pipeline =
   let typer =
-    match !(t.typer_cache_stats) with
+    match !(pipeline.typer_cache_stats) with
     | Miss -> `String "miss"
     | Hit { reused; typed } ->
       `Assoc [ ("reused", `Int reused); ("typed", `Int typed) ]
@@ -358,8 +358,8 @@ let cache_information t =
   Cmi_cache.clear_cache_stats ();
   let fmt_bool hit = `String (if hit then "hit" else "miss") in
   `Assoc
-    [ ("reader_phase", fmt_bool !(t.reader_cache_hit));
-      ("ppx_phase", fmt_bool !(t.ppx_cache_hit));
+    [ ("reader_phase", fmt_bool !(pipeline.reader_cache_hit));
+      ("ppx_phase", fmt_bool !(pipeline.ppx_cache_hit));
       ("typer", typer);
       ("cmt", cmt);
       ("cmi", cmi)
