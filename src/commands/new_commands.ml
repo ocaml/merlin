@@ -685,121 +685,37 @@ let all_commands =
       ~spec:
         [ arg "-start" "<position> Where inlay-hints generation start"
             (marg_position
-               (fun
-                 start
-                 ( _start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )
-               ->
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )));
+               (fun start (_start, stop, let_binding, pattern_binding, ghost) ->
+                 (start, stop, let_binding, pattern_binding, ghost)));
           arg "-end" "<position> Where inlay-hints generation stop"
             (marg_position
-               (fun
-                 stop
-                 ( start,
-                   _stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )
-               ->
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )));
+               (fun stop (start, _stop, let_binding, pattern_binding, ghost) ->
+                 (start, stop, let_binding, pattern_binding, ghost)));
           optional "-let-binding" "<bool> Hint let-binding (default is false)"
             (Marg.bool
                (fun
                  let_binding
-                 ( start,
-                   stop,
-                   _let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )
-               ->
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )));
+                 (start, stop, _let_binding, pattern_binding, ghost)
+               -> (start, stop, let_binding, pattern_binding, ghost)));
           optional "-pattern-binding"
             "<bool> Hint pattern-binding (default is false)"
             (Marg.bool
                (fun
                  pattern_binding
-                 ( start,
-                   stop,
-                   let_binding,
-                   _pattern_binding,
-                   function_params,
-                   ghost )
-               ->
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )));
-          optional "-function-params"
-            "<bool> Hint function parameters (default is false)"
-            (Marg.bool
-               (fun
-                 function_params
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   _function_params,
-                   ghost )
-               ->
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )));
+                 (start, stop, let_binding, _pattern_binding, ghost)
+               -> (start, stop, let_binding, pattern_binding, ghost)));
           optional "-avoid-ghost-location"
             "<bool> Avoid hinting ghost location (default is true)"
             (Marg.bool
-               (fun
-                 ghost
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   _ghost )
-               ->
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   ghost )))
+               (fun ghost (start, stop, let_binding, pattern_binding, _ghost) ->
+                 (start, stop, let_binding, pattern_binding, ghost)))
         ]
-      ~default:(`None, `None, false, false, false, true)
+      ~default:(`None, `None, false, false, true)
       begin
         fun shared
           config
           source
-          ( start,
-            stop,
-            let_binding,
-            pattern_binding,
-            function_params,
-            avoid_ghost )
+          (start, stop, let_binding, pattern_binding, avoid_ghost)
         ->
           match (start, stop) with
           | `None, `None -> failwith "-start <pos> and -end are mandatory"
@@ -810,12 +726,7 @@ let all_commands =
             let position = Msource.get_position source stop in
             run ~position shared config source
               (Query_protocol.Inlay_hints
-                 ( start,
-                   stop,
-                   let_binding,
-                   pattern_binding,
-                   function_params,
-                   avoid_ghost ))
+                 (start, stop, let_binding, pattern_binding, avoid_ghost))
       end;
     command "shape"
       ~doc:
