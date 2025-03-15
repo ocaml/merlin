@@ -14,8 +14,8 @@ module Namespace = struct
 
   type inferred =
     [ inferred_basic
-    | `This_label of Types.label_description
-    | `This_cstr of Types.constructor_description ]
+    | `This_label of Data_types.label_description
+    | `This_cstr of Data_types.constructor_description ]
 
   let from_context : Context.t -> inferred list = function
     | Type -> [ `Type; `Mod; `Modtype; `Constr; `Labels; `Vals ]
@@ -65,16 +65,16 @@ exception
 
 let path_and_loc_of_cstr desc _ =
   let open Types in
-  match desc.cstr_tag with
+  match desc.Data_types.cstr_tag with
   | Cstr_extension (path, _) -> (path, desc.cstr_loc)
   | _ -> (
-    match get_desc desc.cstr_res with
-    | Tconstr (path, _, _) -> (path, desc.cstr_loc)
-    | _ -> assert false)
+      match get_desc desc.cstr_res with
+      | Tconstr (path, _, _) -> (path, desc.cstr_loc)
+      | _ -> assert false)
 
 let path_and_loc_from_label desc env =
   let open Types in
-  match get_desc desc.lbl_res with
+  match get_desc desc.Data_types.lbl_res with
   | Tconstr (path, _, _) ->
     let typ_decl = Env.find_type path env in
     (path, typ_decl.Types.type_loc)
@@ -86,7 +86,7 @@ let by_longident (nss : Namespace.inferred list) ident env =
     List.iter nss ~f:(fun namespace ->
         try
           match namespace with
-          | `This_cstr ({ Types.cstr_tag = Cstr_extension _; _ } as cd) ->
+          | `This_cstr ({ Data_types.cstr_tag = Cstr_extension _; _ } as cd) ->
             log ~title:"lookup" "got extension constructor";
             let path, loc = path_and_loc_of_cstr cd env in
             (* TODO: Use [`Constr] here instead of [`Type] *)

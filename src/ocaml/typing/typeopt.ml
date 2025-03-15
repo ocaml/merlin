@@ -82,22 +82,23 @@ type classification =
   | Addr  (* anything except a float or a lazy *)
   | Any
 
-let classify env ty =
+let classify env ty : classification =
   let ty = scrape_ty env ty in
   if is_immediate (Ctype.immediacy env ty) then Int
   else match get_desc ty with
   | Tvar _ | Tunivar _ ->
       Any
   | Tconstr (p, _args, _abbrev) ->
-      if Path.same p Predef.path_float then Float
-      else if Path.same p Predef.path_lazy_t then Lazy
-      else if Path.same p Predef.path_string
-           || Path.same p Predef.path_bytes
-           || Path.same p Predef.path_array
-           || Path.same p Predef.path_nativeint
-           || Path.same p Predef.path_int32
-           || Path.same p Predef.path_int64 then Addr
-      else begin
+      begin match Predef.find_type_constr p with
+      | Some `Float -> Float
+      | Some `Lazy_t -> Lazy
+      | Some (`Int | `Char) -> Int
+      | Some (`String | `Bytes
+             | `Int32 | `Int64 | `Nativeint
+             | `Extension_constructor | `Continuation
+             | `Array | `Floatarray | `Iarray)
+        -> Addr
+      | Some #Predef.data_type_constr | None ->
         try
           match (Env.find_type p env).type_kind with
           | Type_abstract _ ->
@@ -117,7 +118,8 @@ let classify env ty =
 
 let array_type_kind env ty =
   match scrape_poly env ty with
-  | Tconstr(p, [elt_ty], _) when Path.same p Predef.path_array ->
+  | Tconstr(p, [elt_ty], _)
+    when Path.same p Predef.path_array || Path.same p Predef.path_iarray ->
       begin match classify env elt_ty with
       | Any -> if Config.flat_float_array then Pgenarray else Paddrarray
       | Float -> if Config.flat_float_array then Pfloatarray else Paddrarray

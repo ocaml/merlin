@@ -39,7 +39,7 @@ type out_attribute =
   { oattr_name: string }
 
 type out_value =
-  | Oval_array of out_value list
+  | Oval_array of out_value list * Asttypes.mutable_flag
   | Oval_char of char
   | Oval_constr of out_ident * out_value list
   | Oval_ellipsis
@@ -53,9 +53,10 @@ type out_value =
   | Oval_record of (out_ident * out_value) list
   | Oval_string of string * int * out_string (* string, size-to-print, kind *)
   | Oval_stuff of string
-  | Oval_tuple of out_value list
+  | Oval_tuple of (string option * out_value) list
   | Oval_variant of string * out_value option
   | Oval_lazy of out_value
+  | Oval_floatarray of floatarray
 
 type out_type_param = {
     ot_non_gen: bool;
@@ -75,7 +76,7 @@ type out_type =
   | Otyp_record of out_label list
   | Otyp_stuff of string
   | Otyp_sum of out_constructor list
-  | Otyp_tuple of out_type list
+  | Otyp_tuple of (string option * out_type) list
   | Otyp_var of bool * string
   | Otyp_variant of out_variant * bool * (string list) option
   | Otyp_poly of string list * out_type

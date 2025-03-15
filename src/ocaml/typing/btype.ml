@@ -171,7 +171,6 @@ let type_origin decl =
   match decl.type_kind with
   | Type_abstract origin -> origin
   | Type_variant _ | Type_record _ | Type_open -> Definition
-let label_is_poly lbl = is_poly_Tpoly lbl.lbl_arg
 
 let dummy_method = "*dummy method*"
 
@@ -311,7 +310,7 @@ let fold_type_expr f init ty =
   | Tarrow (_, ty1, ty2, _) ->
       let result = f init ty1 in
       f result ty2
-  | Ttuple l            -> List.fold_left f init l
+  | Ttuple l            -> List.fold_left (fun acc (_, t) -> f acc t) init l
   | Tconstr (_, l, _)   -> List.fold_left f init l
   | Tobject(ty, {contents = Some (_, p)}) ->
       let result = f init ty in
@@ -516,7 +515,7 @@ let copy_commu c = if is_commu_ok c then commu_ok else commu_var ()
 let rec copy_type_desc ?(keep_names=false) f = function
     Tvar _ as ty        -> if keep_names then ty else Tvar None
   | Tarrow (p, ty1, ty2, c)-> Tarrow (p, f ty1, f ty2, copy_commu c)
-  | Ttuple l            -> Ttuple (List.map f l)
+  | Ttuple l            -> Ttuple (List.map (fun (label, t) -> label, f t) l)
   | Tconstr (p, l, _)   -> Tconstr (p, List.map f l, ref Mnil)
   | Tobject(ty, {contents = Some (p, tl)})
                         -> Tobject (f ty, ref (Some(p, List.map f tl)))
@@ -775,15 +774,3 @@ let instance_variable_type label sign =
   match Vars.find label sign.csig_vars with
   | (_, _, ty) -> ty
   | exception Not_found -> assert false
-
-
-                  (**********)
-                  (*  Misc  *)
-                  (**********)
-
-(**** Type information getter ****)
-
-let cstr_type_path cstr =
-  match get_desc cstr.cstr_res with
-  | Tconstr (p, _, _) -> p
-  | _ -> assert false

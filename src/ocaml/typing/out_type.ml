@@ -380,9 +380,9 @@ let rec rewrite_double_underscore_paths env p =
     | Some i ->
       let better_lid =
         Ldot
-          (Lident (String.sub name 0 i),
-           Unit_info.modulize
-             (String.sub name (i + 2) (String.length name - i - 2)))
+          (Location.mknoloc (Lident (String.sub name 0 i)),
+          (Location.mknoloc (Unit_info.modulize
+             (String.sub name (i + 2) (String.length name - i - 2)))))
       in
       match Env.find_module_by_name better_lid env with
       | exception Not_found -> p
@@ -571,9 +571,10 @@ let rec lid_of_path = function
     Path.Pident id ->
       Longident.Lident (Ident.name id)
   | Path.Pdot (p1, s) | Path.Pextra_ty (p1, Pcstr_ty s)  ->
-      Longident.Ldot (lid_of_path p1, s)
+      Longident.Ldot (Location.mknoloc (lid_of_path p1), Location.mknoloc s)
   | Path.Papply (p1, p2) ->
-      Longident.Lapply (lid_of_path p1, lid_of_path p2)
+      Longident.Lapply
+        (Location.mknoloc (lid_of_path p1), Location.mknoloc (lid_of_path p2))
   | Path.Pextra_ty (p, Pext_ty) -> lid_of_path p
 
 let is_unambiguous path env =
@@ -588,7 +589,7 @@ let is_unambiguous path env =
       List.for_all (fun p -> Path.same (normalize p) p') rem ||
       (* also allow repeatedly defining and opening (for toplevel) *)
       let id = lid_of_path p in
-      List.for_all (fun p -> lid_of_path p = id) rem &&
+      List.for_all (fun p -> Longident.same (lid_of_path p) id) rem &&
       Path.same p (fst (Env.find_type_by_name id env))
 
 let rec get_best_path r =
@@ -1062,7 +1063,7 @@ module Aliases = struct
       | Tvar _ -> Variable_names.reserve ty
       | Tarrow(_, ty1, ty2, _) ->
           mark_loops_rec visited ty1; mark_loops_rec visited ty2
-      | Ttuple tyl -> List.iter (mark_loops_rec visited) tyl
+      | Ttuple tyl -> List.iter (fun (_, ty) -> mark_loops_rec visited ty) tyl
       | Tconstr(p, tyl, _) -> begin
           match best_type_path_resolution p with
           | Nth n ->
@@ -1179,7 +1180,7 @@ let rec tree_of_typexp mode ty =
           else tree_of_typexp mode ty1 in
         Otyp_arrow (lab, t1, tree_of_typexp mode ty2)
     | Ttuple tyl ->
-        Otyp_tuple (tree_of_typlist mode tyl)
+        Otyp_tuple (tree_of_labeled_typlist mode tyl)
     | Tconstr(p, tyl, _abbrev) -> begin
         match best_type_path p with
         | Nth n -> tree_of_typexp mode (apply_nth n tyl)
@@ -1256,12 +1257,7 @@ let rec tree_of_typexp mode ty =
         Otyp_var (false, Variable_names.(name_of_type new_name) tty)
     | Tpackage (p, fl) ->
         let p = best_module_type_path p in
-        let fl =
-          List.map
-            (fun (li, ty) -> (
-              String.concat "." (Longident.flatten li),
-              tree_of_typexp mode ty
-            )) fl in
+        let fl = tree_of_pack_fields mode fl in
         Otyp_module (tree_of_path (Some Module_type) p, fl)
   in
   Aliases.remove_delay px;
@@ -1287,6 +1283,9 @@ and tree_of_row_field mode (l, f) =
 
 and tree_of_typlist mode tyl =
   List.map (tree_of_typexp mode) tyl
+
+and tree_of_labeled_typlist mode tyl =
+  List.map (fun (label, ty) -> label, tree_of_typexp mode ty) tyl
 
 and tree_of_typobject mode fi nm =
   begin match nm with
@@ -1328,6 +1327,13 @@ and tree_of_typfields mode rest = function
       let (fields, rest) = tree_of_typfields mode rest l in
       (field :: fields, rest)
 
+and tree_of_pack_fields mode fl =
+  List.map
+    (fun (li, ty) -> (
+      String.concat "." li,
+      tree_of_typexp mode ty
+    )) fl
+
 let typexp mode ppf ty =
   !Oprint.out_type ppf (tree_of_typexp mode ty)
 
@@ -1360,7 +1366,7 @@ let filter_params tyl =
     List.fold_left
       (fun tyl ty ->
         if List.exists (eq_type ty) tyl
-        then newty2 ~level:generic_level (Ttuple [ty]) :: tyl
+        then newty2 ~level:generic_level (Ttuple [None, ty]) :: tyl
         else ty :: tyl)
       (* Two parameters might be identical due to a constraint but we need to
          print them differently in order to make the output syntactically valid.
@@ -1699,7 +1705,7 @@ let rec prepare_class_type params = function
       let row = Btype.self_type_row cty in
       if List.memq (proxy row) !Aliases.visited_objects
       || not (List.for_all is_Tvar params)
-      || List.exists (deep_occur row) tyl
+      || deep_occur_list row tyl
       then prepare_class_type params cty
       else List.iter prepare_type tyl
   | Cty_signature sign ->

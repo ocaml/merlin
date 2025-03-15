@@ -17,6 +17,8 @@ val real_paths           : bool ref
 val recursive_types      : bool ref
 val strict_sequence      : bool ref
 val applicative_functors : bool ref
+val unique_ids           : bool ref
+val canonical_ids        : bool ref
 val nopervasives         : bool ref
 val strict_formats       : bool ref
 val open_modules         : string list ref

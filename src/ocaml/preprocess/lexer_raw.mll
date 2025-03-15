@@ -473,7 +473,7 @@ let prepare_error loc = function
   | Invalid_encoding s ->
     Location.errorf ~loc "Invalid encoding of identifier %s." s
   | Invalid_char_in_ident u ->
-      Location.errorf ~loc "Invalid character U+%X in identifier"
+      Location.errorf ~loc "Invalid character U+%04X in identifier"
          (Uchar.to_int u)
   | Capitalized_raw_identifier lbl ->
       Location.errorf ~loc
@@ -534,9 +534,8 @@ let symbolchar_or_hash =
 let kwdopchar =
   ['$' '&' '*' '+' '-' '/' '<' '=' '>' '@' '^' '|']
 
-let ident = (lowercase | uppercase) identchar*
 let ident_ext = identstart_ext  identchar_ext*
-let extattrident = ident ('.' ident)*
+let extattrident = ident_ext ('.' ident_ext)*
 
 let decimal_literal =
   ['0'-'9'] ['0'-'9' '_']*
@@ -916,7 +915,7 @@ and comment state = parse
         store_normalized_newline state.buffer nl;
         comment state lexbuf
       }
-  | ident
+  | ident_ext
       { store_lexeme state.buffer lexbuf; comment state lexbuf }
   | _
       { store_lexeme state.buffer lexbuf; comment state lexbuf }

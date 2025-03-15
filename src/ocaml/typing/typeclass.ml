@@ -1122,19 +1122,22 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
       let scases = [
         Exp.case
           (Pat.construct ~loc
-             (mknoloc (Longident.(Ldot (Lident "*predef*", "Some"))))
+             (mknoloc (Longident.(Ldot (mknoloc (Lident "*predef*"),
+                                        mknoloc "Some"))))
              (Some ([], Pat.var ~loc (mknoloc "*sth*"))))
           (Exp.ident ~loc (mknoloc (Longident.Lident "*sth*")));
 
         Exp.case
           (Pat.construct ~loc
-             (mknoloc (Longident.(Ldot (Lident "*predef*", "None"))))
+             (mknoloc (Longident.(Ldot (mknoloc (Lident "*predef*"),
+                                                mknoloc "None"))))
              None)
           default;
        ]
       in
       let smatch =
-        Exp.match_ ~loc (Exp.ident ~loc (mknoloc (Longident.Lident "*opt*")))
+        Exp.match_ ~loc
+          (Exp.ident ~loc (mknoloc (Longident.Lident "*opt*")))
           scases
       in
       let sfun =
@@ -1160,7 +1163,8 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
             let vd = Env.find_value path val_env' in
             (id,
              {exp_desc =
-              Texp_ident(path, mknoloc (Longident.Lident (Ident.name id)), vd);
+              Texp_ident(path, mknoloc
+                (Longident.Lident (Ident.name id)), vd);
               exp_loc = Location.none; exp_extra = [];
               exp_type = Ctype.instance vd.val_type;
               exp_attributes = []; (* check *)
@@ -1226,7 +1230,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
             let name = Btype.label_name l
             and optional = Btype.is_optional l in
             let use_arg sarg l' =
-              Some (
+              Arg (
                 if not optional || Btype.is_optional l' then
                   type_argument val_env sarg ty ty0
                 else
@@ -1237,7 +1241,7 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
               )
             in
             let eliminate_optional_arg () =
-              Some (option_none val_env ty0 Location.none)
+              Arg (option_none val_env ty0 Location.none)
             in
             let remaining_sargs, arg =
               if ignore_labels then begin
@@ -1269,9 +1273,13 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
                     if Btype.is_optional l && List.mem_assoc Nolabel sargs then
                       eliminate_optional_arg ()
                     else
-                      None
+                      Omitted ()
             in
-            let omitted = if arg = None then (l,ty0) :: omitted else omitted in
+            let omitted =
+              match arg with
+              | Omitted () -> (l,ty0) :: omitted
+              | Arg _ -> omitted
+            in
             type_args ((l,arg)::args) omitted ty_fun ty_fun0 remaining_sargs
         | _ ->
             match sargs with
@@ -1311,7 +1319,8 @@ and class_expr_aux cl_num val_env met_env virt self_scope scl =
              in
              let expr =
                {exp_desc =
-                Texp_ident(path, mknoloc(Longident.Lident (Ident.name id)),vd);
+                Texp_ident(path, mknoloc(
+                  Longident.Lident (Ident.name id)),vd);
                 exp_loc = Location.none; exp_extra = [];
                 exp_type = ty;
                 exp_attributes = [];
@@ -1928,30 +1937,45 @@ let () =
 (*******************************)
 
 (* Check that there is no references through recursive modules (GPR#6491) *)
-let rec check_recmod_class_type env cty =
+let rec check_recmod_class_type env name cty =
   match cty.pcty_desc with
   | Pcty_constr(lid, _) ->
-      ignore (Env.lookup_cltype ~use:false ~loc:lid.loc lid.txt env)
+      begin try
+        ignore (Env.lookup_cltype ~use:false ~loc:lid.loc lid.txt env)
+      with
+      | Env.Error
+          (Lookup_error
+             (location, env,
+              Illegal_reference_to_recursive_module { container; unbound; })) ->
+          Env.lookup_error
+            location env
+            (Illegal_reference_to_recursive_class_type
+               { container;
+                 unbound;
+                 unbound_class_type = lid.txt;
+                 container_class_type = name.txt;
+               })
+      end
   | Pcty_extension _ -> ()
   | Pcty_arrow(_, _, cty) ->
-      check_recmod_class_type env cty
+      check_recmod_class_type env name cty
   | Pcty_open(od, cty) ->
       let _, env = !type_open_descr env od in
-      check_recmod_class_type env cty
+      check_recmod_class_type env name cty
   | Pcty_signature csig ->
-      check_recmod_class_sig env csig
+      check_recmod_class_sig env name csig
 
-and check_recmod_class_sig env csig =
+and check_recmod_class_sig env name csig =
   List.iter
     (fun ctf ->
        match ctf.pctf_desc with
-       | Pctf_inherit cty -> check_recmod_class_type env cty
+       | Pctf_inherit cty -> check_recmod_class_type env name cty
        | Pctf_val _ | Pctf_method _
        | Pctf_constraint _ | Pctf_attribute _ | Pctf_extension _ -> ())
     csig.pcsig_fields
 
 let check_recmod_decl env sdecl =
-  check_recmod_class_type env sdecl.pci_expr
+  check_recmod_class_type env sdecl.pci_name sdecl.pci_expr
 
 (* Approximate the class declaration as class ['params] id = object end *)
 let approx_class sdecl =
@@ -1964,6 +1988,8 @@ let approx_class_declarations env sdecls =
   let decls, env = class_type_declarations env (List.map approx_class sdecls) in
   List.iter (check_recmod_decl env) sdecls;
   decls, env
+
+
 
 (*******************************)
 
