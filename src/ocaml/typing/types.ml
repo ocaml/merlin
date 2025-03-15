@@ -34,7 +34,7 @@ and type_expr = transient_expr
 and type_desc =
     Tvar of string option
   | Tarrow of arg_label * type_expr * type_expr * commutable
-  | Ttuple of type_expr list
+  | Ttuple of (string option * type_expr) list
   | Tconstr of Path.t * type_expr list * abbrev_memo ref
   | Tobject of type_expr * (Path.t * type_expr list) option ref
   | Tfield of string * field_kind * type_expr * type_expr
@@ -44,7 +44,7 @@ and type_desc =
   | Tvariant of row_desc
   | Tunivar of string option
   | Tpoly of type_expr * type_expr list
-  | Tpackage of Path.t * (Longident.t * type_expr) list
+  | Tpackage of Path.t * (string list * type_expr) list
 
 and row_desc =
     { row_fields: (label * row_field) list;
@@ -406,52 +406,6 @@ and ext_status =
   | Text_next                      (* not first constructor of an extension *)
   | Text_exception                 (* an exception *)
 
-
-(* Constructor and record label descriptions inserted held in typing
-   environments *)
-
-type constructor_description =
-  { cstr_name: string;                  (* Constructor name *)
-    cstr_res: type_expr;                (* Type of the result *)
-    cstr_existentials: type_expr list;  (* list of existentials *)
-    cstr_args: type_expr list;          (* Type of the arguments *)
-    cstr_arity: int;                    (* Number of arguments *)
-    cstr_tag: constructor_tag;          (* Tag for heap blocks *)
-    cstr_consts: int;                   (* Number of constant constructors *)
-    cstr_nonconsts: int;                (* Number of non-const constructors *)
-    cstr_generalized: bool;             (* Constrained return type? *)
-    cstr_private: private_flag;         (* Read-only constructor? *)
-    cstr_loc: Location.t;
-    cstr_attributes: Parsetree.attributes;
-    cstr_inlined: type_declaration option;
-    cstr_uid: Uid.t;
-   }
-
-and constructor_tag =
-    Cstr_constant of int                (* Constant constructor (an int) *)
-  | Cstr_block of int                   (* Regular constructor (a block) *)
-  | Cstr_unboxed                        (* Constructor of an unboxed type *)
-  | Cstr_extension of Path.t * bool     (* Extension constructor
-                                           true if a constant false if a block*)
-
-let equal_tag t1 t2 =
-  match (t1, t2) with
-  | Cstr_constant i1, Cstr_constant i2 -> i2 = i1
-  | Cstr_block i1, Cstr_block i2 -> i2 = i1
-  | Cstr_unboxed, Cstr_unboxed -> true
-  | Cstr_extension (path1, b1), Cstr_extension (path2, b2) ->
-      Path.same path1 path2 && b1 = b2
-  | (Cstr_constant _|Cstr_block _|Cstr_unboxed|Cstr_extension _), _ -> false
-
-let may_equal_constr c1 c2 =
-  c1.cstr_arity = c2.cstr_arity
-  && (match c1.cstr_tag,c2.cstr_tag with
-     | Cstr_extension _,Cstr_extension _ ->
-         (* extension constructors may be rebindings of each other *)
-         true
-     | tag1, tag2 ->
-         equal_tag tag1 tag2)
-
 let item_visibility = function
   | Sig_value (_, _, vis)
   | Sig_type (_, _, _, vis)
@@ -460,20 +414,6 @@ let item_visibility = function
   | Sig_modtype (_, _, vis)
   | Sig_class (_, _, _, vis)
   | Sig_class_type (_, _, _, vis) -> vis
-
-type label_description =
-  { lbl_name: string;                   (* Short name *)
-    lbl_res: type_expr;                 (* Type of the result *)
-    lbl_arg: type_expr;                 (* Type of the argument *)
-    lbl_mut: mutable_flag;              (* Is this a mutable field? *)
-    lbl_pos: int;                       (* Position in block *)
-    lbl_all: label_description array;   (* All the labels in this type *)
-    lbl_repres: record_representation;  (* Representation for this record *)
-    lbl_private: private_flag;          (* Read-only field? *)
-    lbl_loc: Location.t;
-    lbl_attributes: Parsetree.attributes;
-    lbl_uid: Uid.t;
-   }
 
 let rec bound_value_identifiers = function
     [] -> []
@@ -864,7 +804,7 @@ let set_level ty level =
 (* TODO: introduce a guard and rename it to set_higher_scope? *)
 let set_scope ty scope =
   let ty = repr ty in
-  let prev_scope = ty.scope land marks_mask in
+  let prev_scope = ty.scope land scope_mask in
   if scope <> prev_scope then begin
     if ty.id <= !last_snapshot then log_change (Cscope (ty, prev_scope));
     Transient_expr.set_scope ty scope

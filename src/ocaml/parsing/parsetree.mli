@@ -101,9 +101,14 @@ and core_type_desc =
             - [?l:T1 -> T2] when [lbl] is
                                      {{!Asttypes.arg_label.Optional}[Optional]}.
          *)
-  | Ptyp_tuple of core_type list
-      (** [Ptyp_tuple([T1 ; ... ; Tn])]
-          represents a product type [T1 * ... * Tn].
+  | Ptyp_tuple of (string option * core_type) list
+      (** [Ptyp_tuple(tl)] represents a product type:
+          - [T1 * ... * Tn]
+              when [tl] is [(None, T1); ...; (None, Tn)]
+          - [L1:T1 * ... * Ln:Tn]
+              when [tl] is [(Some L1, T1); ...; (Some Ln, Tn)]
+          - A mix, e.g., [L1:T1 * T2]
+              when [tl] is [(Some L1, T1); (None, T2)]
 
            Invariant: [n >= 2].
         *)
@@ -174,10 +179,16 @@ and core_type_desc =
   | Ptyp_open of Longident.t loc * core_type (** [M.(T)] *)
   | Ptyp_extension of extension  (** [[%id]]. *)
 
-and package_type = Longident.t loc * (Longident.t loc * core_type) list
+and package_type =
+    {
+     ppt_path: Longident.t loc;
+     ppt_cstrs: (Longident.t loc * core_type) list;
+     ppt_loc: Location.t;
+     ppt_attrs: attributes;
+    }
 (** As {!package_type} typed values:
-         - [(S, [])] represents [(module S)],
-         - [(S, [(t1, T1) ; ... ; (tn, Tn)])]
+         - [{ppt_path: S; ppt_cstrs: []}] represents [(module S)],
+         - [{ppt_path: S; ppt_cstrs: [(t1, T1) ; ... ; (tn, Tn)]}]
           represents [(module S with type t1 = T1 and ... and tn = Tn)].
        *)
 
@@ -234,11 +245,22 @@ and pattern_desc =
 
            Other forms of interval are recognized by the parser
            but rejected by the type-checker. *)
-  | Ppat_tuple of pattern list
-      (** Patterns [(P1, ..., Pn)].
+  | Ppat_tuple of (string option * pattern) list * Asttypes.closed_flag
+      (** [Ppat_tuple(pl, Closed)] represents
+          - [(P1, ..., Pn)]
+              when [pl] is [(None, P1); ...; (None, Pn)]
+          - [(~L1:P1, ..., ~Ln:Pn)]
+              when [pl] is [(Some L1, P1); ...; (Some Ln, Pn)]
+          - A mix, e.g. [(~L1:P1, P2)]
+              when [pl] is [(Some L1, P1); (None, P2)]
 
-           Invariant: [n >= 2]
-        *)
+          [Ppat_tuple(pl, Open)] is similar, but indicates the pattern
+          additionally ends in a [..].
+
+          Invariant:
+          - If Closed, [n >= 2].
+          - If Open, [n >= 1].
+      *)
   | Ppat_construct of Longident.t loc * (string loc list * pattern) option
       (** [Ppat_construct(C, args)] represents:
             - [C]               when [args] is [None],
@@ -315,8 +337,9 @@ and expression_desc =
       [C] represents a type constraint or coercion placed immediately before the
       arrow, e.g. [fun P1 ... Pn : ty -> ...] when [C = Some (Pconstraint ty)].
 
-      A function must have parameters. [Pexp_function (params, _, body)] must
-      have non-empty [params] or a [Pfunction_cases _] body.
+      A function must have parameters: in [Pexp_function (params, _, body)],
+      if [params] does not contain a [Pparam_val _], [body] must be
+      [Pfunction_cases _].
   *)
   | Pexp_apply of expression * (arg_label * expression) list
       (** [Pexp_apply(E0, [(l1, E1) ; ... ; (ln, En)])]
@@ -333,8 +356,14 @@ and expression_desc =
       (** [match E0 with P1 -> E1 | ... | Pn -> En] *)
   | Pexp_try of expression * case list
       (** [try E0 with P1 -> E1 | ... | Pn -> En] *)
-  | Pexp_tuple of expression list
-      (** Expressions [(E1, ..., En)]
+  | Pexp_tuple of (string option * expression) list
+      (** [Pexp_tuple(el)] represents
+          - [(E1, ..., En)]
+              when [el] is [(None, E1); ...; (None, En)]
+          - [(~L1:E1, ..., ~Ln:En)]
+              when [el] is [(Some L1, E1); ...; (Some Ln, En)]
+          - A mix, e.g., [(~L1:E1, E2)]
+              when [el] is [(Some L1, E1); (None, E2)]
 
            Invariant: [n >= 2]
         *)
@@ -400,11 +429,8 @@ and expression_desc =
            values). *)
   | Pexp_object of class_structure  (** [object ... end] *)
   | Pexp_newtype of string loc * expression  (** [fun (type t) -> E] *)
-  | Pexp_pack of module_expr
-      (** [(module ME)].
-
-           [(module ME : S)] is represented as
-           [Pexp_constraint(Pexp_pack ME, Ptyp_package S)] *)
+  | Pexp_pack of module_expr * package_type option
+      (** [(module ME)] or [(module ME : S)]. *)
   | Pexp_open of open_declaration * expression
       (** - [M.(E)]
             - [let open M in E]

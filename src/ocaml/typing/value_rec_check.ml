@@ -119,9 +119,9 @@ let is_ref : Types.value_description -> bool = function
 
 (* See the note on abstracted arguments in the documentation for
     Typedtree.Texp_apply *)
-let is_abstracted_arg : arg_label * expression option -> bool = function
-  | (_, None) -> true
-  | (_, Some _) -> false
+let is_abstracted_arg : arg_label * apply_arg -> bool = function
+  | (_, Omitted ()) -> true
+  | (_, Arg _) -> false
 
 let classify_expression : Typedtree.expression -> sd =
   (* We need to keep track of the size of expressions
@@ -636,7 +636,7 @@ let rec expression : Typedtree.expression -> term_judg =
       path pth << Dereference
     | Texp_instvar (self_path, pth, _inst_var) ->
         join [path self_path << Dereference; path pth]
-    | Texp_apply ({exp_desc = Texp_ident (_, _, vd)}, [_, Some arg])
+    | Texp_apply ({exp_desc = Texp_ident (_, _, vd)}, [_, Arg arg])
       when is_ref vd ->
       (*
         G |- e: m[Guard]
@@ -656,8 +656,8 @@ let rec expression : Typedtree.expression -> term_judg =
            function is stored in the closure without being called. *)
         let rec split_args ~has_omitted_arg = function
           | [] -> [], []
-          | (_, None) :: rest -> split_args ~has_omitted_arg:true rest
-          | (_, Some arg) :: rest ->
+          | (_, Omitted ()) :: rest -> split_args ~has_omitted_arg:true rest
+          | (_, Arg arg) :: rest ->
             let applied, delayed = split_args ~has_omitted_arg rest in
             if has_omitted_arg
             then applied, arg :: delayed
@@ -673,8 +673,8 @@ let rec expression : Typedtree.expression -> term_judg =
               list expression applied << Dereference;
               list expression delayed << Guard]
     | Texp_tuple exprs ->
-      list expression exprs << Guard
-    | Texp_array exprs ->
+      list expression (List.map snd exprs) << Guard
+    | Texp_array (_, exprs) ->
       let array_mode = match Typeopt.array_kind exp with
         | Lambda.Pfloatarray ->
             (* (flat) float arrays unbox their elements *)
@@ -1194,7 +1194,11 @@ and class_expr : Typedtree.class_expr -> term_judg =
         let ids = List.map fst args in
         remove_ids ids (class_expr ce << Delay)
     | Tcl_apply (ce, args) ->
-        let arg (_label, eo) = option expression eo in
+        let arg (_, arg) =
+          match arg with
+          | Omitted () -> empty
+          | Arg e -> expression e
+        in
         join [
           class_expr ce << Dereference;
           list arg args << Dereference;
@@ -1350,7 +1354,7 @@ and is_destructuring_pattern : type k . k general_pattern -> bool =
   fun pat -> match pat.pat_desc with
     | Tpat_any -> false
     | Tpat_var (_, _, _) -> false
-    | Tpat_alias (pat, _, _, _) -> is_destructuring_pattern pat
+    | Tpat_alias (pat, _, _, _, _) -> is_destructuring_pattern pat
     | Tpat_constant _ -> true
     | Tpat_tuple _ -> true
     | Tpat_construct _ -> true

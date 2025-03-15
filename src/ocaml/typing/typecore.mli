@@ -192,7 +192,7 @@ type error =
   | Virtual_class of Longident.t
   | Private_type of type_expr
   | Private_label of Longident.t * type_expr
-  | Private_constructor of constructor_description * type_expr
+  | Private_constructor of Data_types.constructor_description * type_expr
   | Unbound_instance_variable of string * string list
   | Instance_variable_not_mutable of string
   | Not_subtype of Errortrace.Subtype.error
@@ -241,6 +241,12 @@ type error =
   | Missing_type_constraint
   | Wrong_expected_kind of wrong_kind_sort * wrong_kind_context * type_expr
   | Expr_not_a_record_type of type_expr
+  | Constructor_labeled_arg
+  | Partial_tuple_pattern_bad_type
+  | Extra_tuple_label of string option * type_expr
+  | Missing_tuple_label of string option * type_expr
+  | Repeated_tuple_exp_label of string
+  | Repeated_tuple_pat_label of string
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
@@ -266,8 +272,8 @@ val type_object:
   (Env.t -> Location.t -> Parsetree.class_structure ->
    Typedtree.class_structure * string list) ref
 val type_package:
-  (Env.t -> Parsetree.module_expr -> Path.t -> (Longident.t * type_expr) list ->
-  Typedtree.module_expr * (Longident.t * type_expr) list) ref
+  (Env.t -> Parsetree.module_expr -> Path.t -> (string list * type_expr) list ->
+  Typedtree.module_expr * (string list * type_expr) list) ref
 
 val constant: Parsetree.constant -> (Asttypes.constant, error) result
 

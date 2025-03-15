@@ -83,7 +83,7 @@ module Typ = struct
   let alias ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_alias (a, b))
   let variant ?loc ?attrs a b c = mk ?loc ?attrs (Ptyp_variant (a, b, c))
   let poly ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_poly (a, b))
-  let package ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_package (a, b))
+  let package ?loc ?attrs a = mk ?loc ?attrs (Ptyp_package a)
   let extension ?loc ?attrs a = mk ?loc ?attrs (Ptyp_extension a)
   let open_ ?loc ?attrs mod_ident t = mk ?loc ?attrs (Ptyp_open (mod_ident, t))
 
@@ -106,7 +106,8 @@ module Typ = struct
             Ptyp_var x
         | Ptyp_arrow (label,core_type,core_type') ->
             Ptyp_arrow(label, loop core_type, loop core_type')
-        | Ptyp_tuple lst -> Ptyp_tuple (List.map loop lst)
+        | Ptyp_tuple lst ->
+            Ptyp_tuple (List.map (fun (l, t) -> l, loop t) lst)
         | Ptyp_constr( { txt = Longident.Lident s }, [])
           when List.mem s var_names ->
             Ptyp_var s
@@ -126,8 +127,8 @@ module Typ = struct
           List.iter (fun v ->
             check_variable var_names t.ptyp_loc v.txt) string_lst;
             Ptyp_poly(string_lst, loop core_type)
-        | Ptyp_package(longident,lst) ->
-            Ptyp_package(longident,List.map (fun (n,typ) -> (n,loop typ) ) lst)
+        | Ptyp_package ptyp ->
+            Ptyp_package (loop_package_type ptyp)
         | Ptyp_open (mod_ident, core_type) ->
             Ptyp_open (mod_ident, loop core_type)
         | Ptyp_extension (s, arg) ->
@@ -150,9 +151,17 @@ module Typ = struct
             Oinherit (loop t)
       in
       { field with pof_desc; }
+    and loop_package_type ptyp =
+      { ptyp with
+        ppt_cstrs = List.map (fun (n,typ) -> (n,loop typ) ) ptyp.ppt_cstrs }
     in
     loop t
 
+  let package_type ?(loc = !default_loc) ?(attrs = []) p c =
+    {ppt_loc = loc;
+     ppt_path = p;
+     ppt_cstrs = c;
+     ppt_attrs = attrs}
 end
 
 module Pat = struct
@@ -168,7 +177,7 @@ module Pat = struct
   let alias ?loc ?attrs a b = mk ?loc ?attrs (Ppat_alias (a, b))
   let constant ?loc ?attrs a = mk ?loc ?attrs (Ppat_constant a)
   let interval ?loc ?attrs a b = mk ?loc ?attrs (Ppat_interval (a, b))
-  let tuple ?loc ?attrs a = mk ?loc ?attrs (Ppat_tuple a)
+  let tuple ?loc ?attrs a b = mk ?loc ?attrs (Ppat_tuple (a, b))
   let construct ?loc ?attrs a b = mk ?loc ?attrs (Ppat_construct (a, b))
   let variant ?loc ?attrs a b = mk ?loc ?attrs (Ppat_variant (a, b))
   let record ?loc ?attrs a b = mk ?loc ?attrs (Ppat_record (a, b))
@@ -229,7 +238,7 @@ module Exp = struct
   let poly ?loc ?attrs a b = mk ?loc ?attrs (Pexp_poly (a, b))
   let object_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_object a)
   let newtype ?loc ?attrs a b = mk ?loc ?attrs (Pexp_newtype (a, b))
-  let pack ?loc ?attrs a = mk ?loc ?attrs (Pexp_pack a)
+  let pack ?loc ?attrs a b = mk ?loc ?attrs (Pexp_pack (a, b))
   let open_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_open (a, b))
   let letop ?loc ?attrs let_ ands body =
     mk ?loc ?attrs (Pexp_letop {let_; ands; body})

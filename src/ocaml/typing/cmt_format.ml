@@ -174,16 +174,16 @@ let iter_on_occurrences
   in
   let add_constructor_description env lid =
     function
-    | { Types.cstr_tag = Cstr_extension (path, _); _ } ->
+    | { Data_types.cstr_tag = Cstr_extension (path, _); _ } ->
         f ~namespace:Extension_constructor env path lid
-    | { Types.cstr_uid = Predef name; _} ->
+    | { Data_types.cstr_uid = Predef name; _} ->
         let id = List.assoc name Predef.builtin_idents in
         f ~namespace:Constructor env (Pident id) lid
-    | { Types.cstr_res; cstr_name; _ } ->
+    | { Data_types.cstr_res; cstr_name; _ } ->
         let path = path_in_type cstr_res cstr_name in
         Option.iter ~f:(fun path -> f ~namespace:Constructor env path lid) path
   in
-  let add_label env lid { Types.lbl_name; lbl_res; _ } =
+  let add_label env lid { Data_types.lbl_name; lbl_res; _ } =
     let path = path_in_type lbl_res lbl_name in
     Option.iter ~f:(fun path -> f ~namespace:Label env path lid) path
   in
@@ -383,13 +383,30 @@ let index_occurrences binary_annots =
   in
   let f ~namespace env path lid =
     let not_ghost { Location.loc = { loc_ghost; _ }; _ } = not loc_ghost in
-    if not_ghost lid then
+    let reduce_and_store ~namespace lid path = if not_ghost lid then
       match Env.shape_of_path ~namespace env path with
       | exception Not_found -> ()
       | { uid = Some (Predef _); _ } -> ()
       | path_shape ->
         let result = Shape_reduce.local_reduce_for_uid env path_shape in
         index := (lid, result) :: !index
+    in
+    (* Shape reduction can be expensive, but the persistent memoization tables
+       should make these successive reductions fast. *)
+    let rec index_components namespace lid path  =
+      let module_ = Shape.Sig_component_kind.Module in
+      match lid.Location.txt, path with
+      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
+        reduce_and_store ~namespace lid path;
+        index_components module_ lid' path'
+      | Longident.Lapply (lid', lid''), Path.Papply (path', path'') ->
+        index_components module_ lid'' path'';
+        index_components module_ lid' path'
+      | Longident.Lident _, _ ->
+        reduce_and_store ~namespace lid path;
+      | _, _ -> ()
+    in
+    index_components namespace lid path
   in
   iter_on_annots (iter_on_occurrences ~f) binary_annots;
   !index

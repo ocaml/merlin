@@ -6,7 +6,7 @@ type parameter_info =
   { label : Asttypes.arg_label;
     param_start : int;
     param_end : int;
-    argument : Typedtree.expression option
+    argument : Typedtree.apply_arg
   }
 
 type application_signature =
@@ -23,8 +23,8 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
   let rec longident ppf : Longident.t -> unit = function
     | Lident s -> Format.fprintf ppf "%s" (Misc_utils.parenthesize_name s)
     | Ldot (p, s) ->
-      Format.fprintf ppf "%a.%s" longident p (Misc_utils.parenthesize_name s)
-    | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1 longident p2
+      Format.fprintf ppf "%a.%s" longident p.txt (Misc_utils.parenthesize_name s.txt)
+    | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1.txt longident p2.txt
   in
   match exp_desc with
   | Texp_ident (_, { txt = li; _ }, _) ->
@@ -71,7 +71,7 @@ let pp_parameter env label ppf ty =
     Format.fprintf ppf "?%s:%a" l (pp_parameter_type env) (unwrap_option ty)
 
 (* record buffer offsets to be able to underline parameter types *)
-let print_parameter_offset ?arg:argument ppf buffer env label ty =
+let print_parameter_offset ~arg:argument ppf buffer env label ty =
   let param_start = Buffer.length buffer in
   Format.fprintf ppf "%a%!" (pp_parameter env label) ty;
   let param_end = Buffer.length buffer in
@@ -90,11 +90,13 @@ let separate_function_signature ~args (e : Typedtree.expression) =
     match (args, Types.get_desc ty) with
     | (_l, arg) :: args, Tarrow (label, ty1, ty2, _) ->
       let parameter =
-        print_parameter_offset ppf buffer e.exp_env label ty1 ?arg
+        print_parameter_offset ~arg ppf buffer e.exp_env label ty1
       in
       separate args ty2 ~parameters:(parameter :: parameters)
     | [], Tarrow (label, ty1, ty2, _) ->
-      let parameter = print_parameter_offset ppf buffer e.exp_env label ty1 in
+      let parameter =
+        print_parameter_offset ~arg:(Omitted ()) ppf buffer e.exp_env label ty1
+      in
       separate args ty2 ~parameters:(parameter :: parameters)
     (* end of function type, print remaining type without recording offsets *)
     | _ ->
@@ -110,30 +112,30 @@ let separate_function_signature ~args (e : Typedtree.expression) =
 
 let active_parameter_by_arg ~arg params =
   let find_by_arg = function
-    | { argument = Some a; _ } when a == arg -> true
+    | { argument = Arg a; _ } when a == arg -> true
     | _ -> false
   in
   try Some (List.index params ~f:find_by_arg) with Not_found -> None
 
 let first_unassigned_argument params =
   let positional = function
-    | { argument = None; label = Asttypes.Nolabel; _ } -> true
+    | { argument = Omitted (); label = Asttypes.Nolabel; _ } -> true
     | _ -> false
   in
   let labelled = function
-    | { argument = None; label = Asttypes.Labelled _ | Optional _; _ } -> true
+    | { argument = Omitted (); label = Asttypes.Labelled _ | Optional _; _ } -> true
     | _ -> false
   in
   try Some (List.index params ~f:positional)
   with Not_found -> (
-    try Some (List.index params ~f:labelled) with Not_found -> None)
+      try Some (List.index params ~f:labelled) with Not_found -> None)
 
 let active_parameter_by_prefix ~prefix params =
   let common = function
     | Asttypes.Nolabel -> Some 0
     | l
       when String.is_prefixed ~by:"~" prefix
-           || String.is_prefixed ~by:"?" prefix ->
+        || String.is_prefixed ~by:"?" prefix ->
       Some (String.common_prefix_len (Btype.prefixed_label_name l) prefix)
     | _ -> None
   in
@@ -141,12 +143,12 @@ let active_parameter_by_prefix ~prefix params =
   let rec find_by_prefix ?(i = 0) ?longest_len ?longest_i = function
     | [] -> longest_i
     | p :: ps -> (
-      match (common p.label, longest_len) with
-      | Some common_len, Some longest_len when common_len > longest_len ->
-        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
-      | Some common_len, None ->
-        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
-      | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
+        match (common p.label, longest_len) with
+        | Some common_len, Some longest_len when common_len > longest_len ->
+          find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+        | Some common_len, None ->
+          find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+        | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
   in
   find_by_prefix params
 

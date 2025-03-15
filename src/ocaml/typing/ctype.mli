@@ -186,10 +186,10 @@ module Pattern_env : sig
     { mutable env : Env.t;
       equations_scope : int;
       (* scope for local type declarations *)
-      allow_recursive_equations : bool;
+      in_counterexample : bool;
       (* true iff checking counter examples *)
     }
-  val make: Env.t -> equations_scope:int -> allow_recursive_equations:bool -> t
+  val make: Env.t -> equations_scope:int -> in_counterexample:bool -> t
   val copy: ?equations_scope:int -> t -> t
   val set_env: t -> Env.t -> unit
 end
@@ -198,9 +198,12 @@ type existential_treatment =
   | Keep_existentials_flexible
   | Make_existentials_abstract of Pattern_env.t
 
-val instance_constructor: existential_treatment ->
-        constructor_description -> type_expr list * type_expr * type_expr list
-        (* Same, for a constructor. Also returns existentials. *)
+val instance_constructor:
+  existential_treatment ->
+  Data_types.constructor_description ->
+  type_expr list * type_expr * type_expr list
+(* Same, for a constructor. Also returns existentials. *)
+
 val instance_parameterized_type:
         ?keep_names:bool ->
         type_expr list -> type_expr -> type_expr list * type_expr
@@ -215,10 +218,13 @@ val instance_poly:
         type_expr list -> type_expr -> type_expr list * type_expr
         (* Take an instance of a type scheme containing free univars *)
 val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * bool
+
 val instance_label:
-        fixed:bool ->
-        label_description -> type_expr list * type_expr * type_expr
-        (* Same, for a label *)
+  fixed:bool ->
+  Data_types.label_description ->
+  type_expr list * type_expr * type_expr
+(* Same, for a label *)
+
 val apply:
         ?use_current_level:bool ->
         Env.t -> type_expr list -> type_expr -> type_expr list -> type_expr
@@ -271,14 +277,14 @@ val get_new_abstract_name : Env.t -> string -> string
 val unify: Env.t -> type_expr -> type_expr -> unit
         (* Unify the two types given. Raise [Unify] if not possible. *)
 val unify_gadt:
-        Pattern_env.t -> type_expr -> type_expr -> Btype.TypePairs.t
-        (* [unify_gadt penv ty1 ty2] unifies [ty1] and [ty2] in
-           [Pattern] mode, possible adding local constraints to the
+    Pattern_env.t -> pat:type_expr -> expected:type_expr -> Btype.TypePairs.t
+        (* [unify_gadt penv ~pat:ty1 ~expected:ty2] unifies [ty1] and [ty2]
+           in [Pattern] mode, possible adding local constraints to the
            environment in [penv]. Raises [Unify] if not possible.
            Returns the pairs of types that have been equated.
-           Type variables in [ty1] are assumed to be non-leaking (safely
-           reifiable), moreover if [penv.allow_recursive_equations = true]
-           the same assumption is made for [ty2]. *)
+           Type variables in [ty1] are always assumed to be non-leaking
+           (safely reifiable); if [penv.in_counterexample = true]
+           then both [ty1] and [ty2] are assumed to be non-leaking. *)
 val unify_var: Env.t -> type_expr -> type_expr -> unit
         (* Same as [unify], but allow free univars when first type
            is a variable. *)
@@ -290,6 +296,7 @@ val filter_method: Env.t -> string -> type_expr -> type_expr
            [Filter_method_failed] instead of [Unify]. *)
 val occur_in: Env.t -> type_expr -> type_expr -> bool
 val deep_occur: type_expr -> type_expr -> bool
+val deep_occur_list: type_expr -> type_expr list -> bool
 val moregeneral: Env.t -> bool -> type_expr -> type_expr -> unit
         (* Check if the first type scheme is more general than the second. *)
 val is_moregeneral: Env.t -> bool -> type_expr -> type_expr -> bool
@@ -453,6 +460,7 @@ type closed_class_failure = {
 }
 
 val free_variables: ?env:Env.t -> type_expr -> type_expr list
+val free_variables_list: ?env:Env.t -> type_expr list -> type_expr list
         (* If env present, then check for incomplete definitions too *)
 val closed_type_expr: ?env:Env.t -> type_expr -> bool
 val closed_type_decl: type_declaration -> type_expr option
@@ -477,8 +485,8 @@ val immediacy : Env.t -> type_expr -> Type_immediacy.t
 
 (* Stubs *)
 val package_subtype :
-    (Env.t -> Path.t -> (Longident.t * type_expr) list ->
-      Path.t -> (Longident.t * type_expr) list ->
+    (Env.t -> Path.t -> (string list * type_expr) list ->
+      Path.t -> (string list * type_expr) list ->
      (unit,Errortrace.first_class_module) Result.t) ref
 
 (* Raises [Incompatible] *)

@@ -351,9 +351,8 @@ module MenhirInterpreter : sig
     | N_separated_or_terminated_nonempty_list_SEMI_object_expr_field_ : ((string Location.loc * Parsetree.expression) list) nonterminal
     | N_separated_or_terminated_nonempty_list_SEMI_expr_ : (Parsetree.expression list) nonterminal
     | N_row_field : (Parsetree.row_field) nonterminal
-    | N_reversed_separated_nontrivial_llist_STAR_atomic_type_ : (Parsetree.core_type list) nonterminal
-    | N_reversed_separated_nontrivial_llist_COMMA_expr_ : (Parsetree.expression list) nonterminal
     | N_reversed_separated_nontrivial_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
+    | N_reversed_separated_nonempty_llist_STAR_labeled_tuple_typ_element_ : ((string option * Parsetree.core_type) list) nonterminal
     | N_reversed_separated_nonempty_llist_STAR_atomic_type_ : (Parsetree.core_type list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_type_parameter_ : ((Parsetree.core_type * (Asttypes.variance * Asttypes.injectivity)) list) nonterminal
     | N_reversed_separated_nonempty_llist_COMMA_core_type_ : (Parsetree.core_type list) nonterminal
@@ -367,6 +366,9 @@ module MenhirInterpreter : sig
     | N_reversed_nonempty_llist_functor_arg_ : ((Lexing.position * Parsetree.functor_parameter) list) nonterminal
     | N_reversed_nonempty_concat_fun_param_as_list_ : (Parsetree.function_param list) nonterminal
     | N_reversed_llist_preceded_CONSTRAINT_constrain__ : ((Parsetree.core_type * Parsetree.core_type * Location.t) list) nonterminal
+    | N_reversed_labeled_tuple_pattern_pattern_no_exn_ : (Asttypes.closed_flag * (string option * Parsetree.pattern) list) nonterminal
+    | N_reversed_labeled_tuple_pattern_pattern_ : (Asttypes.closed_flag * (string option * Parsetree.pattern) list) nonterminal
+    | N_reversed_labeled_tuple_body : ((string option * Parsetree.expression) list) nonterminal
     | N_reversed_bar_llist_extension_constructor_declaration_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_extension_constructor_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_constructor_declaration_ : (Parsetree.constructor_declaration list) nonterminal
@@ -383,8 +385,6 @@ module MenhirInterpreter : sig
     | N_pattern_var : (Parsetree.pattern) nonterminal
     | N_pattern_no_exn : (Parsetree.pattern) nonterminal
     | N_pattern_gen : (Parsetree.pattern) nonterminal
-    | N_pattern_comma_list_pattern_no_exn_ : (Parsetree.pattern list) nonterminal
-    | N_pattern_comma_list_pattern_ : (Parsetree.pattern list) nonterminal
     | N_pattern : (Parsetree.pattern) nonterminal
     | N_parse_val_longident : (Longident.t) nonterminal
     | N_parse_pattern : (Parsetree.pattern) nonterminal
@@ -467,6 +467,10 @@ module MenhirInterpreter : sig
   Parsetree.value_constraint option) nonterminal
     | N_let_binding_body : (Parsetree.pattern * Parsetree.expression *
   Parsetree.value_constraint option * bool) nonterminal
+    | N_labeled_tuple_pattern_pattern_no_exn_ : (Parsetree.pattern_desc) nonterminal
+    | N_labeled_tuple_pattern_pattern_ : (Parsetree.pattern_desc) nonterminal
+    | N_labeled_tuple_pat_element_list_pattern_no_exn_ : ((string option * Parsetree.pattern) list) nonterminal
+    | N_labeled_tuple_pat_element_list_pattern_ : ((string option * Parsetree.pattern) list) nonterminal
     | N_labeled_simple_pattern : (Asttypes.arg_label * Parsetree.expression option * Parsetree.pattern) nonterminal
     | N_labeled_simple_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal
     | N_label_longident : (Longident.t) nonterminal

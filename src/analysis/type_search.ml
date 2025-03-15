@@ -36,7 +36,8 @@ let sherlodoc_type_of env typ =
     match Types.get_desc typ with
     | Types.Tvar None -> Type_parsed.Wildcard
     | Types.Tvar (Some ty) -> Type_parsed.Tyvar ty
-    | Types.Ttuple elts -> Type_parsed.tuple @@ List.map ~f:aux elts
+    | Types.Ttuple elts ->
+      Type_parsed.tuple @@ List.map ~f:(fun (_, t) -> aux t) elts
     | Types.Tarrow (_, a, b, _) -> Type_parsed.Arrow (aux a, aux b)
     | Types.Tconstr (p, args, _) ->
       let p = Out_type.rewrite_double_underscore_paths env p in
@@ -118,11 +119,13 @@ let values_from_module query env lident acc =
       let acc = compute_values query env (Some lident) acc in
       Env.fold_modules
         (fun name _ mdl acc ->
-          match mdl.Types.md_type with
-          | Types.Mty_alias _ -> acc
-          | _ ->
-            let lident = Longident.Ldot (lident, name) in
-            aux acc lident)
+           match mdl.Types.md_type with
+           | Types.Mty_alias _ -> acc
+           | _ ->
+             let lident =
+               Longident.Ldot (Location.mknoloc lident, Location.mknoloc name)
+             in
+             aux acc lident)
         (Some lident) env acc
   in
   aux acc lident
@@ -131,8 +134,8 @@ let run ?(limit = 100) ~env ~query ~modules () =
   let init = compute_values query env None [] in
   modules
   |> List.fold_left ~init ~f:(fun acc name ->
-         let lident = Longident.Lident name in
-         values_from_module query env lident acc)
+      let lident = Longident.Lident name in
+      values_from_module query env lident acc)
   |> List.sort ~cmp:compare_result
   |> List.take_n limit
 

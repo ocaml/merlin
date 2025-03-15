@@ -17,6 +17,7 @@
 
 open Asttypes
 open Types
+open Data_types
 
 module Uid = Shape.Uid
 
@@ -57,9 +58,11 @@ and 'k pattern_desc =
   | Tpat_any : value pattern_desc
   | Tpat_var : Ident.t * string loc * Uid.t -> value pattern_desc
   | Tpat_alias :
-      value general_pattern * Ident.t * string loc * Uid.t -> value pattern_desc
+      value general_pattern * Ident.t * string loc * Uid.t * type_expr ->
+      value pattern_desc
   | Tpat_constant : constant -> value pattern_desc
-  | Tpat_tuple : value general_pattern list -> value pattern_desc
+  | Tpat_tuple :
+      (string option * value general_pattern) list -> value pattern_desc
   | Tpat_construct :
       Longident.t loc * constructor_description * value general_pattern list
       * (Ident.t loc list * core_type) option ->
@@ -71,7 +74,8 @@ and 'k pattern_desc =
       (Longident.t loc * label_description * value general_pattern) list *
         closed_flag ->
       value pattern_desc
-  | Tpat_array : value general_pattern list -> value pattern_desc
+  | Tpat_array :
+      mutable_flag * value general_pattern list -> value pattern_desc
   | Tpat_lazy : value general_pattern -> value pattern_desc
   (* computation patterns *)
   | Tpat_value : tpat_value_argument -> computation pattern_desc
@@ -104,22 +108,22 @@ and expression_desc =
   | Texp_constant of constant
   | Texp_let of rec_flag * value_binding list * expression
   | Texp_function of function_param list * function_body
-  | Texp_apply of expression * (arg_label * expression option) list
+  | Texp_apply of expression * (arg_label * apply_arg) list
   | Texp_match of expression * computation case list * value case list * partial
   | Texp_try of expression * value case list * value case list
-  | Texp_tuple of expression list
+  | Texp_tuple of (string option * expression) list
   | Texp_construct of
       Longident.t loc * constructor_description * expression list
   | Texp_variant of label * expression option
   | Texp_record of {
-      fields : ( Types.label_description * record_label_definition ) array;
+      fields : ( Data_types.label_description * record_label_definition ) array;
       representation : Types.record_representation;
       extended_expression : expression option;
     }
   | Texp_field of expression * Longident.t loc * label_description
   | Texp_setfield of
       expression * Longident.t loc * label_description * expression
-  | Texp_array of expression list
+  | Texp_array of mutable_flag * expression list
   | Texp_ifthenelse of expression * expression * expression option
   | Texp_sequence of expression * expression
   | Texp_while of expression * expression
@@ -203,6 +207,12 @@ and binding_op =
     bop_loc : Location.t;
   }
 
+and ('a, 'b) arg_or_omitted =
+  | Arg of 'a
+  | Omitted of 'b
+
+and apply_arg = (expression, unit) arg_or_omitted
+
 (* Value expressions for the class language *)
 
 and class_expr =
@@ -220,7 +230,7 @@ and class_expr_desc =
   | Tcl_fun of
       arg_label * pattern * (Ident.t * expression) list
       * class_expr * partial
-  | Tcl_apply of class_expr * (arg_label * expression option) list
+  | Tcl_apply of class_expr * (arg_label * apply_arg) list
   | Tcl_let of rec_flag * value_binding list *
                   (Ident.t * expression) list * class_expr
   | Tcl_constraint of
@@ -476,7 +486,7 @@ and core_type_desc =
     Ttyp_any
   | Ttyp_var of string
   | Ttyp_arrow of arg_label * core_type * core_type
-  | Ttyp_tuple of core_type list
+  | Ttyp_tuple of (string option * core_type) list
   | Ttyp_constr of Path.t * Longident.t loc * core_type list
   | Ttyp_object of object_field list * closed_flag
   | Ttyp_class of Path.t * Longident.t loc * core_type list
@@ -723,13 +733,13 @@ type pattern_action =
 let shallow_iter_pattern_desc
   : type k . pattern_action -> k pattern_desc -> unit
   = fun f -> function
-  | Tpat_alias(p, _, _, _) -> f.f p
-  | Tpat_tuple patl -> List.iter f.f patl
+  | Tpat_alias(p, _, _, _, _) -> f.f p
+  | Tpat_tuple patl -> List.iter (fun (_, p) -> f.f p) patl
   | Tpat_construct(_, _, patl, _) -> List.iter f.f patl
   | Tpat_variant(_, pat, _) -> Option.iter f.f pat
   | Tpat_record (lbl_pat_list, _) ->
       List.iter (fun (_, _, pat) -> f.f pat) lbl_pat_list
-  | Tpat_array patl -> List.iter f.f patl
+  | Tpat_array (_, patl) -> List.iter f.f patl
   | Tpat_lazy p -> f.f p
   | Tpat_any
   | Tpat_var _
@@ -743,16 +753,16 @@ type pattern_transformation =
 let shallow_map_pattern_desc
   : type k . pattern_transformation -> k pattern_desc -> k pattern_desc
   = fun f d -> match d with
-  | Tpat_alias (p1, id, s, uid) ->
-      Tpat_alias (f.f p1, id, s, uid)
+  | Tpat_alias (p1, id, s, uid, ty) ->
+      Tpat_alias (f.f p1, id, s, uid, ty)
   | Tpat_tuple pats ->
-      Tpat_tuple (List.map f.f pats)
+      Tpat_tuple (List.map (fun (label, pat) -> label, f.f pat) pats)
   | Tpat_record (lpats, closed) ->
       Tpat_record (List.map (fun (lid, l,p) -> lid, l, f.f p) lpats, closed)
   | Tpat_construct (lid, c, pats, ty) ->
       Tpat_construct (lid, c, List.map f.f pats, ty)
-  | Tpat_array pats ->
-      Tpat_array (List.map f.f pats)
+  | Tpat_array (am, pats) ->
+      Tpat_array (am, List.map f.f pats)
   | Tpat_lazy p1 -> Tpat_lazy (f.f p1)
   | Tpat_variant (x1, Some p1, x2) ->
       Tpat_variant (x1, Some (f.f p1), x2)
@@ -807,9 +817,9 @@ let rec iter_bound_idents
   match pat.pat_desc with
   | Tpat_var (id, s, uid) ->
      f (id,s,pat.pat_type, uid)
-  | Tpat_alias(p, id, s, uid) ->
+  | Tpat_alias(p, id, s, uid, ty) ->
       iter_bound_idents f p;
-      f (id,s,pat.pat_type, uid)
+      f (id, s, ty, uid)
   | Tpat_or(p1, _, _) ->
       (* Invariant : both arguments bind the same variables *)
       iter_bound_idents f p1
@@ -853,10 +863,10 @@ let rec alpha_pat
       {p with pat_desc =
        try Tpat_var (alpha_var env id, s, uid) with
        | Not_found -> Tpat_any}
-  | Tpat_alias (p1, id, s, uid) ->
-      let new_p : k general_pattern =  alpha_pat env p1 in
+  | Tpat_alias (p1, id, s, uid, ty) ->
+      let new_p =  alpha_pat env p1 in
       begin try
-        {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s, uid)}
+        {p with pat_desc = Tpat_alias (new_p, alpha_var env id, s, uid, ty)}
       with
       | Not_found -> new_p
       end
@@ -897,6 +907,10 @@ let split_pattern pat =
         combine_opts (into cpat) exns1 exns2
   in
   split_pattern pat
+
+let map_apply_arg f = function
+  | Arg arg -> Arg (f arg)
+  | Omitted _ as arg -> arg
 
 (* Expressions are considered nominal if they can be used as the subject of a
    sentence or action. In practice, we consider that an expression is nominal

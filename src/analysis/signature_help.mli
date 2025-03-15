@@ -2,7 +2,7 @@ type parameter_info =
   { label : Asttypes.arg_label;
     param_start : int;
     param_end : int;
-    argument : Typedtree.expression option
+    argument : Typedtree.apply_arg
   }
 
 type application_signature =

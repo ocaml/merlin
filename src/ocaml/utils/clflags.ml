@@ -13,6 +13,8 @@ let applicative_functors = ref true
 
 let nopervasives        = ref false
 let strict_formats      = ref true
+let unique_ids          = ref true               (* -d(no-)unique-ids *)
+let canonical_ids       = ref false           (* -d(no-)canonical-ids *)
 let open_modules        = ref []
 
 let annotations         = ref false

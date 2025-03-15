@@ -94,7 +94,7 @@ let uid_and_loc_of_node env node =
     let md = Env.find_module (Pident ident) env in
     Some (md.md_uid, mb_name.loc)
   | Pattern
-      { pat_desc = Tpat_var (_, name, uid) | Tpat_alias (_, _, name, uid); _ }
+      { pat_desc = Tpat_var (_, name, uid) | Tpat_alias (_, _, name, uid, _); _ }
     -> Some (uid, name.loc)
   | Type_declaration { typ_type; typ_name; _ } ->
     Some (typ_type.type_uid, typ_name.loc)
@@ -131,20 +131,20 @@ end = struct
       log ~title:"stat_check" "No stats found for file %S." file;
       true
     | Some { size; _ } -> (
-      try
-        let stats = Unix.stat file in
-        let equal =
-          (* This is fast but approximative. A better option would be to check
-             [mtime] and then [source_digest] if the times differ. *)
-          Int.equal stats.st_size size
-        in
-        if not equal then
-          log ~title:"stat_check"
-            "File %s has been modified since the index was built." file;
-        equal
-      with Unix.Unix_error _ ->
-        log ~title:"stat_check" "Could not stat file %S" file;
-        false)
+        try
+          let stats = Unix.stat file in
+          let equal =
+            (* This is fast but approximative. A better option would be to check
+               [mtime] and then [source_digest] if the times differ. *)
+            Int.equal stats.st_size size
+          in
+          if not equal then
+            log ~title:"stat_check"
+              "File %s has been modified since the index was built." file;
+          equal
+        with Unix.Unix_error _ ->
+          log ~title:"stat_check" "Could not stat file %S" file;
+          false)
 
   let check t ~file =
     let cache_and_return b =
@@ -159,13 +159,13 @@ end
 let get_buffer_locs result uid =
   Stamped_hashtable.fold
     (fun (uid', loc) () acc ->
-      if Shape.Uid.equal uid uid' then
-        Lid_set.add (Index_format.Lid.of_lid loc) acc
-      else acc)
+       if Shape.Uid.equal uid uid' then
+         Lid_set.add (Index_format.Lid.of_lid loc) acc
+       else acc)
     (Mtyper.get_index result) Lid_set.empty
 
 let get_external_locs ~(config : Mconfig.t) ~current_buffer_path uid :
-    (Occurrence_set.t * Std.String.Set.t) list =
+  (Occurrence_set.t * Std.String.Set.t) list =
   let title = "get_external_locs" in
   List.filter_map config.merlin.index_files ~f:(fun index_file ->
       log ~title "Lookin for occurrences of %a in index %s" Logger.fmt
@@ -219,18 +219,18 @@ let lookup_related_uids_in_indexes ~(config : Mconfig.t) uid =
   let related_uids =
     List.fold_left ~init:(Uid_map.empty ()) config.merlin.index_files
       ~f:(fun acc index_file ->
-        try
-          let index = Index_cache.read index_file in
-          Uid_map.union
-            (fun _ a b -> Some (Union_find.union a b))
-            index.related_uids acc
-        with Index_format.Not_an_index _ | Sys_error _ ->
-          log ~title "Could not load index %s" index_file;
-          acc)
+          try
+            let index = Index_cache.read index_file in
+            Uid_map.union
+              (fun _ a b -> Some (Union_find.union a b))
+              index.related_uids acc
+          with Index_format.Not_an_index _ | Sys_error _ ->
+            log ~title "Could not load index %s" index_file;
+            acc)
   in
   Uid_map.find_opt uid related_uids
   |> Option.value_map ~default:[] ~f:(fun x ->
-         x |> Union_find.get |> Uid_set.to_list)
+      x |> Union_find.get |> Uid_set.to_list)
 
 let find_linked_uids ~config ~scope ~name uid =
   let title = "find_linked_uids" in
@@ -243,14 +243,14 @@ let find_linked_uids ~config ~scope ~name uid =
       Locate.lookup_uid_decl ~config uid
       |> Option.bind ~f:(Typedtree_utils.location_of_declaration ~uid)
       |> Option.value_map
-           ~f:(fun { Location.txt; _ } ->
-             let result = String.equal name txt in
-             if not result then
-               log ~title "Found clashing idents %S <> %S. Ignoring UID %a."
-                 name txt Logger.fmt
-                 (Fun.flip Shape.Uid.print uid);
-             result)
-           ~default:false
+        ~f:(fun { Location.txt; _ } ->
+            let result = String.equal name txt in
+            if not result then
+              log ~title "Found clashing idents %S <> %S. Ignoring UID %a."
+                name txt Logger.fmt
+                (Fun.flip Shape.Uid.print uid);
+            result)
+        ~default:false
     in
     let related_uids =
       match scope with
@@ -328,7 +328,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       List.fold_left
         ~init:(Occurrence_set.empty, String.Set.empty)
         ~f:(fun (acc_locs, acc_files) (locs, files) ->
-          (Occurrence_set.union acc_locs locs, String.Set.union acc_files files))
+            (Occurrence_set.union acc_locs locs, String.Set.union acc_files files))
         external_occurrences
     in
     let occurrences =
@@ -360,12 +360,12 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
                 let file = Filename.concat path loc.loc_start.pos_fname in
                 Some (set_fname ~file loc)
               | None -> begin
-                match Locate.find_source ~config loc fname with
-                | `Found (file, _) -> Some (set_fname ~file loc)
-                | `File_not_found msg ->
-                  log ~title:"occurrences" "%s" msg;
-                  None
-              end
+                  match Locate.find_source ~config loc fname with
+                  | `Found (file, _) -> Some (set_fname ~file loc)
+                  | `File_not_found msg ->
+                    log ~title:"occurrences" "%s" msg;
+                    None
+                end
           in
           Option.map loc ~f:(fun loc : Query_protocol.occurrence ->
               { loc; is_stale = Staleness.is_stale staleness }))

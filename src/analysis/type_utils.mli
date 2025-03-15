@@ -89,7 +89,7 @@ val print_constr :
   verbosity:Mconfig.Verbosity.t ->
   Env.t ->
   Format.formatter ->
-  Types.constructor_description ->
+  Data_types.constructor_description ->
   unit
 
 val parse_longident : string -> Longident.t option

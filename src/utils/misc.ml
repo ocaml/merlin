@@ -83,6 +83,15 @@ let protect_refs =
     | x           -> set_refs backup; x
     | exception e -> set_refs backup; raise e
 
+let repeated_label l =
+  let module Set = String.Set in
+  let rec go s = function
+    | [] -> None
+    | (None, _) :: l -> go s l
+    | (Some lbl, _) :: l ->
+      if Set.mem lbl s then Some lbl else go (Set.add lbl s) l
+  in
+  go Set.empty l
 
 (** {1 Minimal support for Unicode characters in identifiers} *)
 
@@ -858,7 +867,7 @@ module Style = struct
       error = no_markup [Bold; FG Red];
       loc = no_markup [Bold];
       hint = no_markup [Bold; FG Blue];
-      inline_code= { ansi=[Bold]; text_open = {|"|}; text_close = {|"|} }
+      inline_code= no_markup [Bold]
     }
 
   let cur_styles = ref default_styles
@@ -873,6 +882,7 @@ module Style = struct
     | Format.String_tag "loc" -> (!cur_styles).loc
     | Format.String_tag "hint" -> (!cur_styles).hint
     | Format.String_tag "inline_code" -> (!cur_styles).inline_code
+    | Format.String_tag "ralign" -> no_markup []
     | Style s -> no_markup s
     | _ -> raise Not_found
 
@@ -883,6 +893,7 @@ module Style = struct
     pp_close_stag ppf ()
 
   let inline_code ppf s = as_inline_code Format_doc.pp_print_string ppf s
+  let hint ppf = Format_doc.fprintf ppf "@{<hint>Hint@}"
 
   (* either prints the tag of [s] or delegates to [or_else] *)
   let mark_open_tag ~or_else s =
@@ -996,22 +1007,32 @@ let spellcheck env name =
   let env = List.sort_uniq ~cmp:(fun s1 s2 -> String.compare s2 s1) env in
   fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
 
-
-let did_you_mean ppf get_choices =
+let aligned_hint ~prefix ppf main_fmt  =
   let open Format_doc in
-  (* flush now to get the error report early, in the (unheard of) case
-     where the search in the get_choices function would take a bit of
-     time; in the worst case, the user has seen the error, she can
-     interrupt the process before the spell-checking terminates. *)
-  fprintf ppf "@?";
-  match get_choices () with
-  | [] -> ()
+  kdoc_printf (fun main hint ->
+      match hint with
+      | None -> pp_doc ppf main
+      | Some h ->
+        let error_shift = String.length prefix in
+        let h, main = Format_doc.Doc.align_prefix2 (h,0) (main,error_shift) in
+        fprintf ppf "%a@.%a" pp_doc main pp_doc h
+    ) main_fmt
+
+let aligned_error_hint ppf main_fmt =
+  aligned_hint ~prefix:"Error: " ppf main_fmt
+
+let did_you_mean ?(pp=Style.inline_code) choices =
+  let open Format_doc in
+  match choices with
+  | [] -> None
   | choices ->
     let rest, last = split_last choices in
-     fprintf ppf "@\n@[@{<hint>Hint@}: Did you mean %a%s%a?@]"
-       (pp_print_list ~pp_sep:comma Style.inline_code) rest
-       (if rest = [] then "" else " or ")
-       Style.inline_code last
+    Some (doc_printf
+            "@[@{<hint>Hint@}: @{<ralign>Did you mean @}%a%s%a?@]"
+            (pp_print_list ~pp_sep:comma pp) rest
+            (if rest = [] then "" else " or ")
+            pp last
+      )
 
 let print_see_manual ppf manual_section =
   let open Format_doc in

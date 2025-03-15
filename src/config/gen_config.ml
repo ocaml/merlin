@@ -16,6 +16,6 @@ let ocamlversion :
   | `OCaml_4_07_0 | `OCaml_4_07_1 | `OCaml_4_08_0 | `OCaml_4_09_0
   | `OCaml_4_10_0 | `OCaml_4_11_0 | `OCaml_4_12_0 | `OCaml_4_13_0
   | `OCaml_4_14_0 | `OCaml_5_0_0  | `OCaml_5_1_0  | `OCaml_5_2_0
-  | `OCaml_5_3_0  ] = %s
+  | `OCaml_5_3_0  | `OCaml_5_4_0  ] = %s
 |}
     ocaml_version_val

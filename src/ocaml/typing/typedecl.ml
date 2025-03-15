@@ -1128,7 +1128,7 @@ let transl_type_decl env rec_flag sdecl_list =
       (* Translate each declaration. *)
       let current_slot = ref None in
       let warn_unused =
-        Warnings.is_active (Warnings.Unused_type_declaration "") in
+        Warnings.(is_active (Unused_type_declaration ("", Declaration))) in
       let ids_slots (id, _uid as ids) =
         match rec_flag with
         | Asttypes.Recursive when warn_unused ->
@@ -1286,9 +1286,7 @@ let transl_extension_constructor ~scope env type_path type_params
         end;
         (* Remove "_" names from parameters used in the constructor *)
         if not cdescr.cstr_generalized then begin
-          let vars =
-            Ctype.free_variables (Btype.newgenty (Ttuple args))
-          in
+          let vars = Ctype.free_variables_list args in
           List.iter
             (fun ty ->
               if get_desc ty = Tvar (Some "_")
@@ -1297,12 +1295,13 @@ let transl_extension_constructor ~scope env type_path type_params
             typext_params
         end;
         (* Ensure that constructor's type matches the type being extended *)
-        let cstr_type_path = Btype.cstr_type_path cdescr in
-        let cstr_type_params = (Env.find_type cstr_type_path env).type_params in
+        let cstr_res_type_path = Data_types.cstr_res_type_path cdescr in
+        let cstr_res_type_params =
+          (Env.find_type cstr_res_type_path env).type_params in
         let cstr_types =
           (Btype.newgenty
-             (Tconstr(cstr_type_path, cstr_type_params, ref Mnil)))
-          :: cstr_type_params
+             (Tconstr(cstr_res_type_path, cstr_res_type_params, ref Mnil)))
+          :: cstr_res_type_params
         in
         let ext_types =
           (Btype.newgenty
@@ -1311,7 +1310,7 @@ let transl_extension_constructor ~scope env type_path type_params
         in
         if not (Ctype.is_equal env true cstr_types ext_types) then
           raise (Error(lid.loc,
-                       Rebind_mismatch(lid.txt, cstr_type_path, type_path)));
+                   Rebind_mismatch(lid.txt, cstr_res_type_path, type_path)));
         (* Disallow rebinding private constructors to non-private *)
         begin
           match cdescr.cstr_private, priv with
@@ -1958,7 +1957,8 @@ let explain_unbound_single ppf tv ty =
         (fun (_l,f) -> match row_field_repr f with
           Rpresent (Some t) -> t
         | Reither (_,[t],_) -> t
-        | Reither (_,tl,_) -> Btype.newgenty (Ttuple tl)
+        | Reither (_,tl,_) ->
+          Btype.newgenty (Ttuple (List.map (fun e -> None, e) tl))
         | _ -> Btype.newgenty (Ttuple[]))
         "case" (fun (lab,_) -> "`" ^ lab ^ " of ")
   | _ -> trivial ty
@@ -2105,7 +2105,7 @@ let report_error_doc ppf = function
       | Type_variant (tl, _rep), _ ->
           explain_unbound_gen ppf ty tl (fun c ->
             let tl = tys_of_constr_args c.Types.cd_args in
-            Btype.newgenty (Ttuple tl)
+            Btype.newgenty (Ttuple (List.map (fun t -> None, t) tl))
           )
             "case" (fun ppf c ->
               fprintf ppf
@@ -2224,10 +2224,29 @@ let report_error_doc ppf = function
   | Unavailable_type_constructor p ->
       fprintf ppf "The definition of type %a@ is unavailable"
         (Style.as_inline_code Printtyp.Doc.path) p
-  | Variance Typedecl_variance.Varying_anonymous ->
-      fprintf ppf "@[%s@ %s@ %s@]"
-        "In this GADT definition," "the variance of some parameter"
-        "cannot be checked"
+  | Variance (Typedecl_variance.Varying_anonymous (n, reason)) ->
+      let reason_text =
+        match reason with
+        | Variable_constrained ty ->
+            dprintf
+              ", because the type variable %a appears@ in other parameters.@ \
+               In GADTS, covariant or contravariant type parameters@ \
+               must not depend@ on other parameters."
+              (Style.as_inline_code Printtyp.Doc.type_expr) ty
+        | Variable_instantiated ty ->
+            dprintf
+              ", because it is instantiated to the type %a.@ \
+               Covariant or contravariant type parameters@ \
+               may only appear@ as type variables@ \
+               in GADT constructor definitions."
+              (Style.as_inline_code Printtyp.Doc.type_expr) ty
+      in
+      fprintf ppf
+        "@[<hov>In this GADT constructor definition,@ \
+         the variance of the@ %d%s parameter@ \
+         cannot be checked%t@]"
+        n (Misc.ordinal_suffix n)
+        reason_text
   | Val_in_structure ->
       fprintf ppf "Value declarations are only allowed in signatures"
   | Multiple_native_repr_attributes ->

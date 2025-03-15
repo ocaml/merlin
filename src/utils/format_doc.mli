@@ -140,6 +140,14 @@ module Doc: sig
   val result: ok:'a printer -> error:'e printer -> ('a,'e) result printer
   val either: left:'a printer -> right:'b printer -> ('a,'b) Either.t printer
 
+  (** {1 Alignment functions } *)
+
+  (** Align the right side of one ["@{<ralign>...@}"] tag box by inserting
+      spaces at the beginning of boxes. Those function do nothing if the tag box
+      appears after a break hint. *)
+  val align_prefix: (t * int) list -> t list
+  val align_prefix2: (t * int) -> (t * int) -> t * t
+
 end
 
 (** {1 Compatibility API} *)
@@ -269,6 +277,7 @@ val pp_print_newline: unit printer
 (** {2 Separators }*)
 
 val comma: unit printer
+val semicolon: unit printer
 
 (** {2 Compiler output} *)
 
