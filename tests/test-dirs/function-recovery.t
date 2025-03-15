@@ -10,7 +10,7 @@
     "value": "[
     structure_item (test.ml[1,0+0]..test.ml[3,104+28])
       Tstr_module
-      ERROR_locate_from_inside_function_literal_used_as_non_function/279
+      ERROR_locate_from_inside_function_literal_used_as_non_function/283
         module_expr (test.ml[1,0+72]..test.ml[3,104+28])
           Tmod_structure
           [
@@ -19,7 +19,7 @@
               [
                 <def>
                   pattern (test.ml[2,79+6]..test.ml[2,79+13])
-                    Tpat_var \"problem/276\"
+                    Tpat_var \"problem/280\"
                   expression (test.ml[2,79+16]..test.ml[2,79+24])
                     Texp_variant \"Problem\"
                     None
@@ -55,7 +55,7 @@
                                 constant (_none_[0,0+-1]..[0,0+-1]) ghost
                                   PConst_int (1,None)
                           ]
-                        Texp_ident \"*type-error*/277\"
+                        Texp_ident \"*type-error*/281\"
               ]
           ]
   ]
@@ -76,25 +76,25 @@
       [
         <def>
           pattern (type.ml[1,0+4]..type.ml[1,0+5])
-            Tpat_var \"f/276\"
+            Tpat_var \"f/280\"
           expression (type.ml[1,0+8]..type.ml[1,0+61])
-            extra
-              Texp_newtype' \"t/278\"
+            extra (type.ml[1,0+18]..type.ml[1,0+19])
+              Texp_newtype' \"t/282\"
             Texp_function
             [
               Nolabel
               Param_pat
                 pattern (type.ml[1,0+22]..type.ml[1,0+25])
-                  extra
+                  extra (type.ml[1,0+21]..type.ml[1,0+35])
                     Tpat_extra_constraint
                     core_type (type.ml[1,0+28]..type.ml[1,0+34])
                       Ttyp_constr \"list/11!\"
                       [
                         core_type (type.ml[1,0+28]..type.ml[1,0+29])
-                          Ttyp_constr \"t/278\"
+                          Ttyp_constr \"t/282\"
                           []
                       ]
-                  Tpat_alias \"foo/279\"
+                  Tpat_alias \"foo/283\"
                   pattern (type.ml[1,0+22]..type.ml[1,0+25]) ghost
                     attribute \"merlin.hide\"
                       []
@@ -106,10 +106,10 @@
                 [
                   <def>
                     pattern (type.ml[1,0+44]..type.ml[1,0+45])
-                      extra
+                      extra (type.ml[1,0+43]..type.ml[1,0+50])
                         Tpat_extra_constraint
                         core_type (type.ml[1,0+48]..type.ml[1,0+49])
-                          Ttyp_constr \"t/278\"
+                          Ttyp_constr \"t/282\"
                           []
                       Tpat_any
                     expression (type.ml[1,0+53]..type.ml[1,0+55])
@@ -124,7 +124,7 @@
                               constant (_none_[0,0+-1]..[0,0+-1]) ghost
                                 PConst_int (1,None)
                         ]
-                      Texp_ident \"*type-error*/280\"
+                      Texp_ident \"*type-error*/284\"
                 ]
                 expression (type.ml[1,0+59]..type.ml[1,0+61])
                   attribute \"merlin.loc\"
@@ -203,7 +203,7 @@
                     "ghost": false,
                     "attrs": [],
                     "kind": "pattern (test.ml[1,0+4]..test.ml[1,0+5])
-    Tpat_var \"f/276\"
+    Tpat_var \"f/280\"
   ",
                     "children": []
                   },
@@ -234,7 +234,7 @@
                         "ghost": false,
                         "attrs": [],
                         "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
-    Tpat_var \"x/278\"
+    Tpat_var \"x/282\"
   ",
                         "children": []
                       },
@@ -413,7 +413,7 @@
     Tpat_construct \"Some\"
     [
       pattern (test.ml[4,57+9]..test.ml[4,57+12])
-        Tpat_var \"_aa/279\"
+        Tpat_var \"_aa/283\"
     ]
     None
   ",
@@ -431,7 +431,7 @@
                                 "ghost": false,
                                 "attrs": [],
                                 "kind": "pattern (test.ml[4,57+9]..test.ml[4,57+12])
-    Tpat_var \"_aa/279\"
+    Tpat_var \"_aa/283\"
   ",
                                 "children": []
                               }

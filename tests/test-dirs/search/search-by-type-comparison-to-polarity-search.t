@@ -85,16 +85,16 @@ a list.
     "type": "'a Seq.t Seq.t -> 'a Seq.t"
   }
   {
+    "name": "Iarray.concat",
+    "type": "'a iarray list -> 'a iarray"
+  }
+  {
     "name": "Option.join",
     "type": "'a option option -> 'a option"
   }
   {
     "name": "Seq.transpose",
     "type": "'a Seq.t Seq.t -> 'a Seq.t Seq.t"
-  }
-  {
-    "name": "Result.join",
-    "type": "(('a, 'e) result, 'e) result -> ('a, 'e) result"
   }
 
 3.) Looking for a function that take a list and produce a new list
@@ -182,16 +182,16 @@ a list.
     "type": "'a Seq.t Seq.t -> 'a Seq.t"
   }
   {
+    "name": "Iarray.concat",
+    "type": "'a iarray list -> 'a iarray"
+  }
+  {
     "name": "Option.join",
     "type": "'a option option -> 'a option"
   }
   {
     "name": "Seq.transpose",
     "type": "'a Seq.t Seq.t -> 'a Seq.t Seq.t"
-  }
-  {
-    "name": "Result.join",
-    "type": "(('a, 'e) result, 'e) result -> ('a, 'e) result"
   }
 
 5.) Using polarity query inside search by type (result are a bit
