@@ -26,8 +26,10 @@
   $ ocaml-index aggregate -o test.uideps main.uideps lib1/foo.uideps lib2/bar.uideps
 
   $ ocaml-index dump main.uideps
-  4 uids:
-  {uid: Bar.0; locs: "Foo.x": File "main.ml", line 1, characters 18-23
+  6 uids:
+  {uid: Foo; locs: "Foo": File "main.ml", line 1, characters 18-21
+   uid: Stdlib__List; locs: "List": File "main.ml", line 1, characters 8-12
+   uid: Bar.0; locs: "Foo.x": File "main.ml", line 1, characters 18-23
    uid: Main.0; locs: "x": File "main.ml", line 1, characters 4-5
    uid: Main.1; locs: "n": File "main.ml", line 1, characters 34-35
    uid: Stdlib__List.45; locs:
@@ -42,8 +44,10 @@
   and related uids:{}
 
   $ ocaml-index dump test.uideps
-  5 uids:
+  7 uids:
   {uid: Bar; locs: "Bar": File "lib1/foo.ml", line 1, characters 8-11
+   uid: Foo; locs: "Foo": File "main.ml", line 1, characters 18-21
+   uid: Stdlib__List; locs: "List": File "main.ml", line 1, characters 8-12
    uid: Bar.0; locs:
      "x": File "lib2/bar.ml", line 1, characters 4-5;
      "Foo.x": File "main.ml", line 1, characters 18-23

@@ -18,7 +18,10 @@ Create an index
   $ ocaml-index dump .merlin-index
   9 uids:
   {uid: Mylib__A; locs: "Mylib__A": File "mylib.ml", line 1, characters 11-19
-   uid: Mylib__B; locs: "Mylib__B": File "mylib.ml", line 2, characters 11-19
+   uid: Mylib__B; locs:
+     "B": File "a.ml", line 1, characters 10-11;
+     "B": File "a.ml", line 2, characters 16-17;
+     "Mylib__B": File "mylib.ml", line 2, characters 11-19
    uid: Mylib.0; locs: "A": File "mylib.ml", line 1, characters 7-8
    uid: Mylib.1; locs: "B": File "mylib.ml", line 2, characters 7-8
    uid: Mylib__A.0; locs:

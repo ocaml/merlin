@@ -23,8 +23,11 @@ Build indices
   $ ( cd main ; ocaml-index aggregate main.cmt --root ./main --rewrite-root -o main.stanza.merlin-index )
   $ ocaml-index aggregate main/main.stanza.merlin-index lib/lib.stanza.merlin-index --root . --rewrite-root -o global.merlin-index
   $ ocaml-index dump global.merlin-index
-  3 uids:
-  {uid: Foo.0; locs:
+  4 uids:
+  {uid: Foo; locs:
+     "Foo": File "./main/main.ml", line 1, characters 8-11;
+     "Foo": File "./main/main.ml", line 2, characters 22-25
+   uid: Foo.0; locs:
      "bar": File "./lib/foo.ml", line 1, characters 4-7;
      "bar": File "./lib/foo.ml", line 2, characters 22-25;
      "Foo.bar": File "./main/main.ml", line 1, characters 8-15;

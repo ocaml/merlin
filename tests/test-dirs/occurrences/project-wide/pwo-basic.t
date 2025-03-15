@@ -11,8 +11,9 @@
 
   $ ocaml-index aggregate main.cmt lib.cmt
   $ ocaml-index dump project.ocaml-index
-  2 uids:
-  {uid: Lib.0; locs:
+  3 uids:
+  {uid: Lib; locs: "Lib": File "main.ml", line 1, characters 22-25
+   uid: Lib.0; locs:
      "foo": File "lib.ml", line 1, characters 4-7;
      "foo": File "lib.ml", line 2, characters 22-25;
      "Lib.foo": File "main.ml", line 1, characters 22-29
