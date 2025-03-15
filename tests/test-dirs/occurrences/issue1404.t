@@ -87,7 +87,7 @@ locate position 2:1 returns the definition of [(+)]
   {
     "file": "lib/ocaml/stdlib.mli",
     "pos": {
-      "line": 335,
+      "line": 302,
       "col": 9
     }
   }
