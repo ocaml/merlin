@@ -43,7 +43,7 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
           add decl.uid lid
       end
     in
-    if not_ghost lid then
+    let reduce_and_store ~namespace lid path = if not_ghost lid then
       match Env.shape_of_path ~namespace env path with
       | exception Not_found -> ()
       | path_shape ->
@@ -69,6 +69,23 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
             log ~title:"index_buffer" "Reduction failed: missing uid";
             index_decl ()
         end
+    in
+    (* Shape reduction can be expensive, but the persistent memoization tables
+       should make these successive reductions fast. *)
+    let rec index_components namespace lid path  =
+      let module_ = Shape.Sig_component_kind.Module in
+      match lid.Location.txt, path with
+      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
+        reduce_and_store ~namespace lid path;
+        index_components module_ lid' path'
+      | Longident.Lapply (lid', lid''), Path.Papply (path', path'') ->
+        index_components module_ lid'' path'';
+        index_components module_ lid' path'
+      | Longident.Lident _, _ ->
+        reduce_and_store ~namespace lid path;
+      | _, _ -> ()
+    in
+    index_components namespace lid path
   in
   Ast_iterators.iterator_on_usages ~f
 
