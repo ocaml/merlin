@@ -186,7 +186,7 @@ reference.  With no liba, we also can't see Libb.t is int.
         },
         "end": {
           "line": 4,
-          "col": 16
+          "col": 12
         },
         "type": "typer",
         "sub": [],
@@ -223,7 +223,7 @@ reference.  With no liba, we also can't see Libb.t is int.
         },
         "end": {
           "line": 4,
-          "col": 16
+          "col": 12
         },
         "type": "typer",
         "sub": [],
