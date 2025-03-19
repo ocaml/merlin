@@ -169,7 +169,7 @@ let iter_on_occurrences
   let path_in_type typ name =
     match Types.get_desc typ with
     | Tconstr (type_path, _, _) ->
-      Some (Path.Pdot (type_path,  name))
+      Some (Path.Pextra_ty(type_path, Pcstr_ty name))
     | _ -> None
   in
   let add_constructor_description env lid =

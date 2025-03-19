@@ -97,13 +97,13 @@ let by_longident (nss : Namespace.inferred list) ident env =
             let path, loc = path_and_loc_of_cstr cd env in
             log ~title:"lookup" "found path: %a" Logger.fmt (fun fmt ->
                 (Format_doc.compat Path.print) fmt path);
-            let path = Path.Pdot (path, cd.cstr_name) in
+            let path = Path.Pextra_ty (path, Pcstr_ty cd.cstr_name) in
             raise (Found (path, Constructor, cd.cstr_uid, loc))
           | `Constr ->
             log ~title:"lookup" "lookup in constructor namespace";
             let cd = Env.find_constructor_by_name ident env in
             let path, loc = path_and_loc_of_cstr cd env in
-            let path = Path.Pdot (path, cd.cstr_name) in
+            let path = Path.Pextra_ty (path, Pcstr_ty cd.cstr_name) in
             (* TODO: Use [`Constr] here instead of [`Type] *)
             raise (Found (path, Constructor, cd.cstr_uid, loc))
           | `Mod ->
@@ -128,7 +128,7 @@ let by_longident (nss : Namespace.inferred list) ident env =
             log ~title:"lookup"
               "got label, fetching path and loc in type namespace";
             let path, loc = path_and_loc_from_label lbl env in
-            let path = Path.Pdot (path, lbl.lbl_name) in
+            let path = Path.Pextra_ty (path, Pcstr_ty lbl.lbl_name) in
             raise (Found (path, Label, lbl.lbl_uid, loc))
           | `Labels ->
             log ~title:"lookup" "lookup in label namespace";

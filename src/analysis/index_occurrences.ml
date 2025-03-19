@@ -70,24 +70,15 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
             index_decl ()
         end
     in
-    let is_capitalized name = String.(equal name (capitalize_ascii name)) in
     (* Shape reduction can be expensive, but the persistent memoization tables
        should make these successive reductions fast. *)
     let rec index_components namespace lid path  =
       let module_ = Shape.Sig_component_kind.Module in
-      (* The first two branches of the following match are special cases to
-      handle the paths type constructors. These paths are the only ones with a
-      component that is not capitalized: the name of the type itself. We skip
-      such path components when we encounter them.  *)
       match lid.Location.txt, path with
-      | _ , Path.Pdot (Pident id, _)
-          when let name = Ident.name id in not (is_capitalized name) ->
-        reduce_and_store ~namespace lid path
-      | Longident.Ldot (lid', _) , Path.Pdot (Pdot (path', name), _)
-          when not (is_capitalized name) ->
+      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
-      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
+      | Longident.Ldot (lid', _), Path.Pextra_ty (Pdot(path', _), Pcstr_ty _) ->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
       | Longident.Lapply (lid', lid''), Path.Papply (path', path'') ->
