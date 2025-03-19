@@ -8,7 +8,7 @@
   >   | Mod.A r -> r.lbl
   > EOF
 
-FIXME: we could expect module appearing in paths to be highlighted
+We expect module appearing in paths to be highlighted
   $ $MERLIN single occurrences -identifier-at 4:9 -filename test.ml <test.ml | 
   > jq '.value'
   [
