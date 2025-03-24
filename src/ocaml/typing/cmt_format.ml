@@ -395,14 +395,16 @@ let index_occurrences binary_annots =
        should make these successive reductions fast. *)
     let rec index_components namespace lid path  =
       let module_ = Shape.Sig_component_kind.Module in
-      match lid.Location.txt, path with
-      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
+      match (lid.Location.txt : Longident.t), (path : Path.t) with
+      | Ldot (lid', _), Pdot (path', _)
+      | Ldot (lid', _), Pextra_ty (Pdot(path', _), Pcstr_ty _) ->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
-      | Longident.Lapply (lid', lid''), Path.Papply (path', path'') ->
+      | Lapply (lid', lid''), Papply (path', path'')
+      | Lapply (lid', lid''), Pextra_ty (Papply (path', path''), Pcstr_ty _) ->
         index_components module_ lid'' path'';
         index_components module_ lid' path'
-      | Longident.Lident _, _ ->
+      | Lident _, _ ->
         reduce_and_store ~namespace lid path;
       | _, _ -> ()
     in

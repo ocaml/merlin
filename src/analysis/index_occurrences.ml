@@ -75,13 +75,13 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
     let rec index_components namespace lid path  =
       let module_ = Shape.Sig_component_kind.Module in
       match lid.Location.txt, path with
-      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
+      | Longident.Ldot (lid', _), Path.Pdot (path', _)
+      | Ldot (lid', _), Pextra_ty (Pdot(path', _), Pcstr_ty _)->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
-      | Longident.Ldot (lid', _), Path.Pextra_ty (Pdot(path', _), Pcstr_ty _) ->
-        reduce_and_store ~namespace lid path;
-        index_components module_ lid' path'
-      | Longident.Lapply (lid', lid''), Path.Papply (path', path'') ->
+      | Lapply (lid', lid''), Papply (path', path'')
+      | Lapply (lid', lid''),
+        Pextra_ty (Papply (path', path''), Pcstr_ty _) ->
         index_components module_ lid'' path'';
         index_components module_ lid' path'
       | Longident.Lident _, _ ->
