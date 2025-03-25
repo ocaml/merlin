@@ -20,3 +20,7 @@ let create a =
   { mutex = Mutex.create (); cond = Condition.create (); value = a }
 
 let wait a = Condition.wait a.cond a.mutex
+
+let lock a = Mutex.lock a.mutex
+
+let unlock a = Mutex.unlock a.mutex

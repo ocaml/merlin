@@ -219,10 +219,20 @@ end
 
 module Ppx_with_cache = Phase_cache.With_cache (Ppx_phase)
 
+type shared =
+  { msg : Domain_msg.msg;
+    config : (Mconfig.t * Msource.t) option Shared.t;
+    (* Partial result *)
+    partial : t option Shared.t;
+    (* Use to protect typer computation *)
+    result : unit Shared.t
+  }
+
 let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
     ?(ppx_time = ref 0.0) ?(typer_time = ref 0.0) ?(error_time = ref 0.0)
     ?(ppx_cache_hit = ref false) ?(reader_cache_hit = ref false)
-    ?(typer_cache_stats = ref Mtyper.Miss) ?for_completion config raw_source =
+    ?(typer_cache_stats = ref Mtyper.Miss) ?for_completion config raw_source
+    shared =
   let state =
     match state with
     | None -> Cache.get config
@@ -293,14 +303,49 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
         ppx_cache_hit := cache_was_hit;
         { Ppx.config; parsetree; errors = !caught })
   in
+  let cache_and_return_typer result =
+    let errors = timed error_time (fun () -> Mtyper.get_errors result) in
+    typer_cache_stats := Mtyper.get_cache_stat result;
+    { Typer.errors; result }
+  in
+
   let typer =
-    timed typer_time (fun () ->
-        let { Ppx.config; parsetree; _ } = ppx in
-        Mocaml.setup_typer_config config;
-        let result = Mtyper.run config parsetree in
-        let errors = timed error_time (fun () -> Mtyper.get_errors result) in
-        typer_cache_stats := Mtyper.get_cache_stat result;
-        { Typer.errors; result })
+    match
+      timed typer_time (fun () ->
+          let { Ppx.config; parsetree; _ } = ppx in
+          Mocaml.setup_typer_config config;
+          let result =
+            Mtyper.(
+              run config
+                (make_partial shared.msg shared.result Domain_msg.All)
+                parsetree)
+          in
+          cache_and_return_typer result)
+    with
+    | res -> res
+    | effect Mtyper.(Partial result), k ->
+      let typer = cache_and_return_typer result in
+      let mpipeline =
+        { config;
+          state;
+          raw_source;
+          source;
+          reader;
+          ppx;
+          typer;
+          pp_time;
+          reader_time;
+          ppx_time;
+          typer_time;
+          error_time;
+          ppx_cache_hit;
+          reader_cache_hit;
+          typer_cache_stats
+        }
+      in
+      Shared.locking_set shared.partial (Some mpipeline);
+      (* Back to [Mtyper.run] *)
+      Effect.Deep.continue k ()
   in
   { config;
     state;
@@ -318,7 +363,21 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
     reader_cache_hit;
     typer_cache_stats
   }
-let make config source = process (Mconfig.normalize config) source
+
+(* 
+Il faut faire :
+- calculer source, puis reader et ppx PUIS
+- une fonction qui calcul typeur et qui renvoie un résultat partiel quand dispo
+puis continue 
+
+- avec une callback (ou un effet -> Partial ) 
+- ou en interne
+
+Est-ce que l'utilisation d'un effet ne simplifie pas assez ?
+
+*)
+
+let make config source shared = process (Mconfig.normalize config) source shared
 
 (* let for_completion position
     { config;
@@ -376,52 +435,31 @@ let cache_information pipeline =
 *)
 (* TODO : For message passing, it seems okay to have active waiting but it could be interesting to test both.
 *)
-type mess_main = [ `Empty | `Closing (*| `Waiting | `Cancel *) ]
-type mess_typer = [ `Empty | `Exn of exn ]
-
-type shared =
-  { (* message from main domain to typer domain *)
-    mess_main : mess_main Atomic.t;
-    (* message from typer domain to main domain *)
-    mess_typer : mess_typer Atomic.t;
-    (* typer domain uses [config] to passively wait for a new request *)
-    config : (Mconfig.t * Msource.t) option Shared.t;
-    (* main domain uses [partial_result] to passively wait for a partial result *)
-    partial_result : t option Shared.t
-        (* result is used to pass a full result but also, and mainly to manage the main lock. *)
-        (* result : t option Shared.t *)
-  }
-
-let create_shared () =
-  { mess_main = Atomic.make `Empty;
-    mess_typer = Atomic.make `Empty;
-    config = Shared.create None;
-    partial_result = Shared.create None
-  }
 
 (** [closing]: called by the main domain *)
-let closing shared =
-  (* CAS could be replaced by `set` here *)
-  if Atomic.compare_and_set shared.mess_main `Empty `Closing then
-    while Atomic.get shared.mess_main == `Closing do
-      Shared.signal shared.config
-    done
-  else failwith "closing: should not happen."
+let close_typer shared =
+  Domain_msg.send_msg shared.msg.from_main `Closing shared.config
 
 (** [share_exn]: called by the typer domain *)
-let share_exn (shared : shared) exn =
-  let exn_v = `Exn exn in
-  (* CAS could be replaced by `set` here *)
-  if Atomic.compare_and_set shared.mess_typer `Empty exn_v then
-    while Atomic.get shared.mess_typer == exn_v do
-      Shared.signal shared.partial_result
-    done
-  else failwith "shared_exn: should not happen."
+let share_exn shared exn =
+  Domain_msg.send_msg shared.msg.from_typer (`Exn exn) shared.partial
+
+(** [cancel]: called by the main domain *)
+let _cancel shared =
+  Domain_msg.send_msg shared.msg.from_main `Cancel shared.config
 
 let domain_typer shared () =
   let rec loop () =
-    match Atomic.get shared.mess_main with
-    | `Closing -> Atomic.set shared.mess_main `Empty
+    match Atomic.get shared.msg.from_main with
+    | `Closing -> Atomic.set shared.msg.from_main `Empty
+    | `Waiting ->
+      while Atomic.get shared.msg.Domain_msg.from_main == `Waiting do
+        Domain.cpu_relax ()
+      done;
+      loop ()
+    | `Cancel ->
+      Atomic.set shared.msg.from_main `Empty;
+      loop ()
     | `Empty -> (
       match Shared.get shared.config with
       | None ->
@@ -430,9 +468,12 @@ let domain_typer shared () =
       | Some (config, source) ->
         Shared.set shared.config None;
         (try
-           let mpipeline = make config source in
-           Shared.locking_set shared.partial_result (Some mpipeline)
-         with exn -> share_exn shared exn);
+           let mpipeline = make config source shared in
+           Shared.locking_set shared.partial (Some mpipeline)
+         with
+        | Domain_msg.Cancel -> ()
+        | Domain_msg.Closing -> ()
+        | exn -> share_exn shared exn);
         loop ())
   in
   Shared.protect shared.config (fun () -> loop ())
@@ -442,22 +483,29 @@ let get shared config source =
 
   let rec loop () =
     let critical_section () =
-      match Shared.get shared.partial_result with
+      match Shared.get shared.partial with
       | None -> begin
-        match Atomic.get shared.mess_typer with
+        match Atomic.get shared.msg.from_typer with
         | `Empty ->
-          Shared.wait shared.partial_result;
+          Shared.wait shared.partial;
           `Retry
         | `Exn exn ->
-          Atomic.set shared.mess_typer `Empty;
+          Atomic.set shared.msg.from_typer `Empty;
           raise exn
       end
       | Some pipeline ->
-        Shared.set shared.partial_result None;
+        Shared.set shared.partial None;
         `Result pipeline
     in
-    match Shared.protect shared.partial_result critical_section with
+    match Shared.protect shared.partial critical_section with
     | `Retry -> loop ()
     | `Result pipeline -> pipeline
   in
   loop ()
+
+let create_shared () =
+  { msg = Domain_msg.create ();
+    result = Shared.create ();
+    config = Shared.create None;
+    partial = Shared.create None
+  }

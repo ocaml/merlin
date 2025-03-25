@@ -61,7 +61,7 @@ module Server = struct
       let shared = Mpipeline.create_shared () in
       let domain_typer = Domain.spawn @@ Mpipeline.domain_typer shared in
       loop (File_id.get Sys.executable_name) server shared;
-      Mpipeline.closing shared;
+      Mpipeline.close_typer shared;
       Domain.join domain_typer;
       Os_ipc.server_close server
 end
@@ -74,7 +74,7 @@ let main () =
     let shared = Mpipeline.create_shared () in
     let domain_typer = Domain.spawn @@ Mpipeline.domain_typer shared in
     let vexit = New_merlin.run ~new_env:None None args shared in
-    Mpipeline.closing shared;
+    Mpipeline.close_typer shared;
     Domain.join domain_typer;
     exit vexit
   | "old-protocol" :: args -> Old_merlin.run args

@@ -1,7 +1,16 @@
 type t
 
+type shared =
+  { msg : Domain_msg.msg;
+    config : (Mconfig.t * Msource.t) option Shared.t;
+    (* Partial result *)
+    partial : t option Shared.t;
+    (* Use to protect typer computation *)
+    result : unit Shared.t
+  }
+
 (* Except inside Mpipeline, this function should only use in old_merlin *)
-val make : Mconfig.t -> Msource.t -> t
+val make : Mconfig.t -> Msource.t -> shared -> t
 
 (* Except inside Mpipeline, this function should only use in old_merlin *)
 val with_pipeline : t -> (unit -> 'a) -> 'a
@@ -33,12 +42,13 @@ val typer_errors : t -> exn list
 val timing_information : t -> (string * float) list
 val cache_information : t -> Std.json
 
-type shared
-val create_shared : unit -> shared
-val domain_typer : shared -> unit -> unit
-val get : shared -> Mconfig.t -> Msource.t -> t
-val closing : shared -> unit
-
 module Cache : sig
   val get : Mconfig.t -> Mocaml.typer_state
 end
+
+val create_shared : unit -> shared
+val close_typer : shared -> unit
+val share_exn : shared -> exn -> unit
+
+val domain_typer : shared -> unit -> unit
+val get : shared -> Mconfig.t -> Msource.t -> t
