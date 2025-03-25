@@ -101,7 +101,7 @@ let run shared config source query =
   Logger.log ~section:"New_commands" ~title:"run(query)" "%a" Logger.json
     (fun () -> Query_json.dump query);
 
-  (* Analyse *)
+  (* Analyse : need to ask for lock here *)
   let result = Query_commands.dispatch pipeline query in
   let json = Query_json.json_of_response query result in
   (json, Some pipeline)

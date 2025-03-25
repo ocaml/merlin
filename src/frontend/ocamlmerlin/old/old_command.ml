@@ -126,7 +126,9 @@ let checkout_buffer =
       end;
       buffer
 
-let make_pipeline config buffer = Mpipeline.make config buffer.source
+let make_pipeline config buffer =
+  let shared = Mpipeline.create_shared () in
+  Mpipeline.make config buffer.source shared
 
 let dispatch_sync config state (type a) : a sync_command -> a = function
   | Idle_job -> false
