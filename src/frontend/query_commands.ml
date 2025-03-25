@@ -62,8 +62,15 @@ let print_completion_entries ~with_types config source entries =
     List.rev_map ~f:(Completion.map_entry postprocess) entries)
   else List.rev_map ~f:(Completion.map_entry (fun _ -> "")) entries
 
-let for_completion pipeline position =
-  let pipeline = Mpipeline.for_completion position pipeline in
+let for_completion pipeline _position =
+  (* TODO
+
+  This functions is an issue because of the removal of laziness (and the fact that the pipeline computation is now done by another domain than the one calling this function !).
+
+  This quick patch needs to be corrected or at least properly validated. It breaks a single tests that is about completion with labels.  
+*)
+  (*
+  let pipeline = Mpipeline.for_completion position pipeline in *)
   let typer = Mpipeline.typer_result pipeline in
   (pipeline, typer)
 
