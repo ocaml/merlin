@@ -35,7 +35,11 @@ type command =
       * Marg.docstring
       * ([ `Mandatory | `Optional | `Many ] * 'args Marg.spec) list
       * 'args
-      * (Mpipeline.t -> 'args -> json)
+      * (Mpipeline.shared ->
+        Mconfig.t ->
+        Msource.t ->
+        'args ->
+        json * Mpipeline.t option)
       -> command
 
 val all_commands : command list

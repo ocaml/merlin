@@ -4,23 +4,22 @@ let { Logger.log } = Logger.for_section "Pipeline"
 
 let time_shift = ref 0.0
 
-let timed_lazy r x =
-  lazy
-    (let start = Misc.time_spent () in
-     let time_shift0 = !time_shift in
-     let update () =
-       let delta = Misc.time_spent () -. start in
-       let shift = !time_shift -. time_shift0 in
-       time_shift := time_shift0 +. delta;
-       r := !r +. delta -. shift
-     in
-     match Lazy.force x with
-     | x ->
-       update ();
-       x
-     | exception exn ->
-       update ();
-       Std.reraise exn)
+let timed r x =
+  let start = Misc.time_spent () in
+  let time_shift0 = !time_shift in
+  let update () =
+    let delta = Misc.time_spent () -. start in
+    let shift = !time_shift -. time_shift0 in
+    time_shift := time_shift0 +. delta;
+    r := !r +. delta -. shift
+  in
+  match x () with
+  | x ->
+    update ();
+    x
+  | exception exn ->
+    update ();
+    Std.reraise exn
 
 module Cache = struct
   let cache = ref []
@@ -65,7 +64,7 @@ module Cache = struct
 end
 
 module Typer = struct
-  type t = { errors : exn list lazy_t; result : Mtyper.result }
+  type t = { errors : exn list; result : Mtyper.result }
 end
 
 module Ppx = struct
@@ -82,10 +81,10 @@ type t =
   { config : Mconfig.t;
     state : Mocaml.typer_state;
     raw_source : Msource.t;
-    source : (Msource.t * Mreader.parsetree option) lazy_t;
-    reader : Reader.t lazy_t;
-    ppx : Ppx.t lazy_t;
-    typer : Typer.t lazy_t;
+    source : Msource.t * Mreader.parsetree option;
+    reader : Reader.t;
+    ppx : Ppx.t;
+    typer : Typer.t;
     pp_time : float ref;
     reader_time : float ref;
     ppx_time : float ref;
@@ -99,7 +98,7 @@ type t =
 let raw_source t = t.raw_source
 
 let input_config t = t.config
-let input_source t = fst (Lazy.force t.source)
+let input_source t = fst t.source
 
 let with_pipeline t f =
   Mocaml.with_state t.state @@ fun () ->
@@ -110,10 +109,10 @@ let get_lexing_pos t pos =
     ~filename:(Mconfig.filename t.config)
     pos
 
-let reader t = Lazy.force t.reader
+let reader t = t.reader
 
-let ppx t = Lazy.force t.ppx
-let typer t = Lazy.force t.typer
+let ppx t = t.ppx
+let typer t = t.typer
 
 let reader_config t = (reader t).config
 let reader_parsetree t = (reader t).result.Mreader.parsetree
@@ -131,7 +130,7 @@ let ppx_errors t = (ppx t).Ppx.errors
 let final_config t = (ppx t).Ppx.config
 
 let typer_result t = (typer t).Typer.result
-let typer_errors t = Lazy.force (typer t).Typer.errors
+let typer_errors t = (typer t).Typer.errors
 
 module Reader_phase = struct
   type t =
@@ -230,9 +229,8 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
     | Some state -> state
   in
   let source =
-    timed_lazy pp_time
-      (lazy
-        (match Mconfig.(config.ocaml.pp) with
+    timed pp_time (fun () ->
+        match Mconfig.(config.ocaml.pp) with
         | None -> (raw_source, None)
         | Some { workdir; workval } -> (
           let source = Msource.text raw_source in
@@ -242,73 +240,67 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
               ~source ~pp:workval
           with
           | `Source source -> (Msource.make source, None)
-          | (`Interface _ | `Implementation _) as ast -> (raw_source, Some ast))))
+          | (`Interface _ | `Implementation _) as ast -> (raw_source, Some ast)))
   in
   let reader =
-    timed_lazy reader_time
-      (lazy
-        (let (lazy ((_, pp_result) as source)) = source in
-         let config = Mconfig.normalize config in
-         Mocaml.setup_reader_config config;
-         let cache_disabling =
-           match (config.merlin.use_ppx_cache, pp_result) with
-           | false, _ -> Some "configuration"
-           | true, Some _ ->
-             (* The cache could be refined in the future to also act on the
+    timed reader_time (fun () ->
+        let ((_, pp_result) as source) = source in
+        let config = Mconfig.normalize config in
+        Mocaml.setup_reader_config config;
+        let cache_disabling =
+          match (config.merlin.use_ppx_cache, pp_result) with
+          | false, _ -> Some "configuration"
+          | true, Some _ ->
+            (* The cache could be refined in the future to also act on the
                 PP phase. For now, let's disable the whole cache when there's
                 a PP. *)
-             Some "source preprocessor usage"
-           | true, None -> None
-         in
-         let { Reader_with_cache.output = { result; cache_version };
-               cache_was_hit
-             } =
-           Reader_with_cache.apply ~cache_disabling
-             { source; for_completion; config }
-         in
-         reader_cache_hit := cache_was_hit;
-         let cache_version =
-           if Option.is_some cache_disabling then None else Some cache_version
-         in
-         { Reader.result; config; cache_version }))
+            Some "source preprocessor usage"
+          | true, None -> None
+        in
+        let { Reader_with_cache.output = { result; cache_version };
+              cache_was_hit
+            } =
+          Reader_with_cache.apply ~cache_disabling
+            { source; for_completion; config }
+        in
+        reader_cache_hit := cache_was_hit;
+        let cache_version =
+          if Option.is_some cache_disabling then None else Some cache_version
+        in
+        { Reader.result; config; cache_version })
   in
   let ppx =
-    timed_lazy ppx_time
-      (lazy
-        (let (lazy
-               { Reader.result = { Mreader.parsetree; _ };
-                 config;
-                 cache_version
-               }) =
-           reader
-         in
-         let caught = ref [] in
-         Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught
-         @@ fun () ->
-         (* Currently the cache is invalidated even for source changes that don't
+    timed ppx_time (fun () ->
+        let { Reader.result = { Mreader.parsetree; _ }; config; cache_version }
+            =
+          reader
+        in
+        let caught = ref [] in
+        Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught
+        @@ fun () ->
+        (* Currently the cache is invalidated even for source changes that don't
              change the parsetree. To avoid that, we'd have to digest the
              parsetree in the cache. *)
-         let cache_disabling, reader_cache =
-           match cache_version with
-           | Some v -> (None, Ppx_phase.Version v)
-           | None -> (Some "reader cache is disabled", Off)
-         in
-         let { Ppx_with_cache.output = parsetree; cache_was_hit } =
-           Ppx_with_cache.apply ~cache_disabling
-             { parsetree; config; reader_cache }
-         in
-         ppx_cache_hit := cache_was_hit;
-         { Ppx.config; parsetree; errors = !caught }))
+        let cache_disabling, reader_cache =
+          match cache_version with
+          | Some v -> (None, Ppx_phase.Version v)
+          | None -> (Some "reader cache is disabled", Off)
+        in
+        let { Ppx_with_cache.output = parsetree; cache_was_hit } =
+          Ppx_with_cache.apply ~cache_disabling
+            { parsetree; config; reader_cache }
+        in
+        ppx_cache_hit := cache_was_hit;
+        { Ppx.config; parsetree; errors = !caught })
   in
   let typer =
-    timed_lazy typer_time
-      (lazy
-        (let (lazy { Ppx.config; parsetree; _ }) = ppx in
-         Mocaml.setup_typer_config config;
-         let result = Mtyper.run config parsetree in
-         let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
-         typer_cache_stats := Mtyper.get_cache_stat result;
-         { Typer.errors; result }))
+    timed typer_time (fun () ->
+        let { Ppx.config; parsetree; _ } = ppx in
+        Mocaml.setup_typer_config config;
+        let result = Mtyper.run config parsetree in
+        let errors = timed error_time (fun () -> Mtyper.get_errors result) in
+        typer_cache_stats := Mtyper.get_cache_stat result;
+        { Typer.errors; result })
   in
   { config;
     state;
@@ -373,3 +365,116 @@ let cache_information t =
       ("cmt", cmt);
       ("cmi", cmi)
     ]
+
+(* ****************************************************************** *)
+(* ********************** Parallel stuff **************************** *)
+(* ****************************************************************** *)
+
+(** About closed : 
+Main domain writes:
+- `True when closing 
+- `Closed to ack the reception of an exception
+
+Typer domain writes:
+- `Exn exn when an catching an exception is found
+- `Closed to ack the reception of `True
+*)
+type shared =
+  { closed : [ `True | `False | `Exn of exn | `Closed ] Atomic.t;
+    curr_config : (Mconfig.t * Msource.t) option Shared.t;
+    partial_result : t option Shared.t;
+    complete_result : t option Shared.t
+  }
+
+let create_shared () =
+  { closed = Atomic.make `False;
+    curr_config = Shared.create None;
+    partial_result = Shared.create None;
+    complete_result = Shared.create None
+  }
+
+(* The exchange of message on [shared.closed] is inevitable to avoid some bad 
+ interleavings. In particular, the following implementation of [closing] 
+
+ {[
+  let closing shared = 
+    Atomic.set shared.closed `True;
+    Shared.signal shared.curr_config 
+  ]}
+
+ could lead to the following interleaving: 
+- the typer domain read `closed` as `False
+- the main domain change the value of close and call signal 
+- the typer domain wait forever. 
+*)
+let rec closing shared =
+  match Atomic.get shared.closed with
+  | `False ->
+    if Atomic.compare_and_set shared.closed `False `True then
+      while Atomic.get shared.closed == `True do
+        Shared.signal shared.curr_config
+      done
+    else closing shared
+  | `Exn exn as prev ->
+    if Atomic.compare_and_set shared.closed prev `True then (
+      while Atomic.get shared.closed == `True do
+        Shared.signal shared.curr_config
+      done;
+      raise exn)
+    else closing shared
+  | `True -> failwith "Closing: `True"
+  | `Closed -> failwith "Closing: `Closed"
+
+let rec share_exn (shared : shared) exn =
+  match Atomic.get shared.closed with
+  | `False ->
+    let exn_v = `Exn exn in
+    if Atomic.compare_and_set shared.closed `False exn_v then
+      while Atomic.get shared.closed == exn_v do
+        Shared.signal shared.partial_result
+      done
+    else share_exn shared exn
+  | `True -> ()
+  | _ -> assert false
+
+let domain_typer shared () =
+  let rec loop () =
+    if Atomic.get shared.closed = `True then Atomic.set shared.closed `Closed
+    else begin
+      match Shared.get shared.curr_config with
+      | None ->
+        Shared.wait shared.curr_config;
+        loop ()
+      | Some (config, source) -> (
+        try
+          let pipeline = make config source in
+          Shared.set shared.curr_config None;
+          Shared.locking_set shared.partial_result (Some pipeline);
+          loop ()
+        with exn ->
+          share_exn shared exn;
+          loop ())
+    end
+  in
+  Shared.protect shared.curr_config @@ fun () -> loop ()
+
+let get { closed; curr_config; partial_result; _ } config source =
+  Shared.set curr_config (Some (config, source));
+
+  let rec loop () =
+    match Shared.get partial_result with
+    | None -> begin
+      match Atomic.get closed with
+      | `True | `Closed -> assert false
+      | `Exn exn ->
+        Atomic.set closed `False;
+        raise exn
+      | _ ->
+        Shared.wait partial_result;
+        loop ()
+    end
+    | Some pipeline ->
+      Shared.set partial_result None;
+      pipeline
+  in
+  Shared.protect partial_result @@ fun () -> loop ()

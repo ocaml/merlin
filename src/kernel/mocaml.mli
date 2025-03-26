@@ -1,5 +1,5 @@
 (* An instance of load path, environment cache & btype unification log  *)
-type typer_state
+type typer_state = Local_store.store
 
 val new_state : unit -> typer_state
 val with_state : typer_state -> (unit -> 'a) -> 'a
