@@ -618,34 +618,26 @@ let all_commands =
       ~spec:
         [ arg "-start" "<position> Where inlay-hints generation start"
             (marg_position
-               (fun start (_start, stop, let_binding, pattern_binding, ghost) ->
-                 (start, stop, let_binding, pattern_binding, ghost)));
+               (fun start (_start, stop, let_binding, pattern_binding) ->
+                 (start, stop, let_binding, pattern_binding)));
           arg "-end" "<position> Where inlay-hints generation stop"
             (marg_position
-               (fun stop (start, _stop, let_binding, pattern_binding, ghost) ->
-                 (start, stop, let_binding, pattern_binding, ghost)));
+               (fun stop (start, _stop, let_binding, pattern_binding) ->
+                 (start, stop, let_binding, pattern_binding)));
           optional "-let-binding" "<bool> Hint let-binding (default is false)"
             (Marg.bool
-               (fun
-                 let_binding
-                 (start, stop, _let_binding, pattern_binding, ghost)
-               -> (start, stop, let_binding, pattern_binding, ghost)));
+               (fun let_binding (start, stop, _let_binding, pattern_binding) ->
+                 (start, stop, let_binding, pattern_binding)));
           optional "-pattern-binding"
             "<bool> Hint pattern-binding (default is false)"
             (Marg.bool
                (fun
-                 pattern_binding
-                 (start, stop, let_binding, _pattern_binding, ghost)
-               -> (start, stop, let_binding, pattern_binding, ghost)));
-          optional "-avoid-ghost-location"
-            "<bool> Avoid hinting ghost location (default is true)"
-            (Marg.bool
-               (fun ghost (start, stop, let_binding, pattern_binding, _ghost) ->
-                 (start, stop, let_binding, pattern_binding, ghost)))
+                 pattern_binding (start, stop, let_binding, _pattern_binding) ->
+                 (start, stop, let_binding, pattern_binding)))
         ]
-      ~default:(`None, `None, false, false, true)
+      ~default:(`None, `None, false, false)
       begin
-        fun buffer (start, stop, let_binding, pattern_binding, avoid_ghost) ->
+        fun buffer (start, stop, let_binding, pattern_binding) ->
           match (start, stop) with
           | `None, `None -> failwith "-start <pos> and -end are mandatory"
           | `None, _ -> failwith "-start <pos> is mandatory"
@@ -654,7 +646,7 @@ let all_commands =
             let start, stop = position in
             run buffer
               (Query_protocol.Inlay_hints
-                 (start, stop, let_binding, pattern_binding, avoid_ghost))
+                 (start, stop, let_binding, pattern_binding))
       end;
     command "shape"
       ~doc:
