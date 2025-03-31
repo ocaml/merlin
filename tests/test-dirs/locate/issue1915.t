@@ -7,12 +7,18 @@ Testing the behavior of custom operators
   > EOF
 
   $ $MERLIN single locate -look-for ml -position 2:17 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 1,
+    "col": 4
+  }
 
   $ $MERLIN single locate -look-for ml -position 3:12 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 1,
+    "col": 4
+  }
 
 Testing custom indexing operators
 

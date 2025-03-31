@@ -94,6 +94,7 @@ rule token = parse
   | "("  { LPAREN }
   | ")"  { RPAREN }
   | "."  { DOT }
+  | ":=" { COLONEQUAL }
   | "!" symbolchar +
             { PREFIXOP(Lexing.lexeme lexbuf) }
   | ['~' '?'] symbolchar +
@@ -147,7 +148,6 @@ rule token = parse
   | ".."
   | ":"
   | "::"
-  | ":="
   | ":>"
   | ";"
   | ";;"
