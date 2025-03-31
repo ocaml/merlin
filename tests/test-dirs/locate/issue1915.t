@@ -28,10 +28,11 @@ Testing custom indexing operators
   > let name = "baz"
   > let () = name.%{2;4}
   > let () = name.%{5}
-  > let () = ( .%{ } ) name 3
   > let () = ( .%{;..} ) name 7
+  > let () = ( .%{ } ) name 3
   > EOF
 
+Should be on line 1
   $ $MERLIN single locate -look-for ml -position 4:15 \
   > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
@@ -46,6 +47,28 @@ Testing custom indexing operators
     "col": 4
   }
 
+  $ $MERLIN single locate -look-for ml -position 6:13 \
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 1,
+    "col": 4
+  }
+
+  $ $MERLIN single locate -look-for ml -position 6:14 \
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 1,
+    "col": 4
+  }
+
+  $ $MERLIN single locate -look-for ml -position 6:15 \
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 1,
+    "col": 4
+  }
+
+Should be on line 2
   $ $MERLIN single locate -look-for ml -position 5:15 \
   > -filename ./main.ml < ./main.ml | jq '.value.pos'
   {
@@ -67,24 +90,9 @@ Testing custom indexing operators
     "col": 4
   }
 
-  $ $MERLIN single locate -look-for ml -position 6:13 \
-  > -filename ./main.ml < ./main.ml | jq '.value.pos'
-  {
-    "line": 2,
-    "col": 4
-  }
-
-  $ $MERLIN single locate -look-for ml -position 6:14 \
-  > -filename ./main.ml < ./main.ml | jq '.value.pos'
-  {
-    "line": 2,
-    "col": 4
-  }
-
-  $ $MERLIN single locate -look-for ml -position 6:15 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
-
   $ $MERLIN single locate -look-for ml -position 7:15 \
-  > -filename ./main.ml < ./main.ml | jq '.value'
-  "Not a valid identifier"
+  > -filename ./main.ml < ./main.ml | jq '.value.pos'
+  {
+    "line": 2,
+    "col": 4
+  }

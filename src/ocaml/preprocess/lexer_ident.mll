@@ -93,6 +93,11 @@ rule token = parse
   | "'"  { QUOTE }
   | "("  { LPAREN }
   | ")"  { RPAREN }
+  | "}"  { RBRACE }
+  | "]"  { RBRACKET }
+  | ".." { DOTDOT }
+  | "<-" { LESSMINUS }
+  | ";"  { SEMI }
   | "." dotsymbolchar+ ['(' '{' '[' ]
          { DOTOP(Lexing.lexeme lexbuf) }
   | "."  { DOT }
@@ -147,11 +152,9 @@ rule token = parse
   | "*"
   | ","
   | "->"
-  | ".."
   | ":"
   | "::"
   | ":>"
-  | ";"
   | ";;"
   | "<"
   | "<-"
@@ -176,7 +179,6 @@ rule token = parse
   | "[@@"
   | "[@@@"
   | "!"
-
   | "!="
   | "+"
   | "+."
