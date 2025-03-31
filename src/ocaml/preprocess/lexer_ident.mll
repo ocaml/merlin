@@ -93,6 +93,8 @@ rule token = parse
   | "'"  { QUOTE }
   | "("  { LPAREN }
   | ")"  { RPAREN }
+  | "." dotsymbolchar+ ['(' '{' '[' ]
+         { DOTOP(Lexing.lexeme lexbuf) }
   | "."  { DOT }
   | ":=" { COLONEQUAL }
   | "!" symbolchar +

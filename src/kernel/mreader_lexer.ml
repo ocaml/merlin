@@ -123,6 +123,12 @@ let comments t =
 
 open Parser_raw
 
+let pair_bracket = function
+  | '{' -> Some '}'
+  | '(' -> Some ')'
+  | '[' -> Some ']'
+  | _ -> None
+
 let is_operator = function
   | PREFIXOP s
   | LETOP s
@@ -148,6 +154,11 @@ let is_operator = function
   | AMPERAMPER -> Some "&&"
   | COLONEQUAL -> Some ":="
   | PLUSEQ -> Some "+="
+  | DOTOP s -> (
+    let last = String.get s (String.length s - 1) in
+    match pair_bracket last with
+    | Some pair -> Some (s ^ String.make 1 pair)
+    | None -> None)
   | _ -> None
 
 (* [reconstruct_identifier] is impossible to read at the moment, here is a
