@@ -253,7 +253,7 @@ let reconstruct_identifier_from_tokens tokens pos =
     (* LIDENT always begin a new identifier *)
     | ((LIDENT _, _, _) as item) :: items ->
       if acc = [] then look_for_dot [ item ] items else check acc (item :: items)
-    (* Reified custom indexing *)
+    (* Reified custom indexing operators *)
     (* e.g. [( .%(;..) )] *)
     | (RPAREN, _, _)
       :: (token, _, tend)
@@ -270,8 +270,8 @@ let reconstruct_identifier_from_tokens tokens pos =
           (DOTOP (s ^ ";.." ^ Parser_printer.print_token pair), tstart, tend)
         in
         look_for_dot [ item ] items
-      | _ -> check acc items
-      (* e.g. [( .%(;..)<- )] *))
+      | _ -> check acc items)
+    (* e.g. [( .%(;..)<- )] *)
     | (RPAREN, _, _)
       :: (LESSMINUS, _, tend)
       :: (token, _, _)
@@ -290,8 +290,8 @@ let reconstruct_identifier_from_tokens tokens pos =
             tend )
         in
         look_for_dot [ item ] items
-      | _ -> check acc items
-      (* e.g. [( .%( ) )] *))
+      | _ -> check acc items)
+    (* e.g. [( .%( ) )] *)
     | (RPAREN, _, _)
       :: (token, _, tend)
       :: (DOTOP s, tstart, _)
@@ -305,8 +305,8 @@ let reconstruct_identifier_from_tokens tokens pos =
           (DOTOP (s ^ Parser_printer.print_token pair), tstart, tend)
         in
         look_for_dot [ item ] items
-      | _ -> check acc items
-      (* e.g. [( .%( )<- )] *))
+      | _ -> check acc items)
+    (* e.g. [( .%( )<- )] *)
     | (RPAREN, _, _)
       :: (LESSMINUS, _, tend)
       :: (token, _, _)
