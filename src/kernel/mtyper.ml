@@ -117,13 +117,19 @@ let make_partial msg shared comp = { msg; shared; comp }
 exception
   Cancel_struc of (Parsetree.structure_item, Typedtree.structure_item) item list
 
+let continue_typing comp get_location item =
+  match comp with
+  | Domain_msg.All -> true
+  | Partial { line; column } -> (
+    let loc = get_location item in
+    let start = loc.Location.loc_start in
+    match Int.compare line start.pos_lnum with
+    | 0 -> Int.compare column (Lexing.column start) <= 0
+    | i -> i <= 0)
+
 let type_structure caught { msg; shared; comp } env parsetree =
   (*  TODO @xvw *)
-  let _until =
-    match comp with
-    | Domain_msg.All -> Int.max_int
-    | Part i -> i
-  in
+  let continue_typing = continue_typing comp (fun i -> i.Parsetree.pstr_loc) in
 
   let rec loop env parsetree acc =
     (match Atomic.get msg.Domain_msg.from_main with
@@ -160,7 +166,7 @@ let type_structure caught { msg; shared; comp } env parsetree =
       in
       Shared.unlock shared;
       (*  TODO @xvw *)
-      if false (* until = pos *) then (env, rest, item :: acc)
+      if not (continue_typing parsetree_item) then (env, rest, item :: acc)
       else loop part_env rest (item :: acc)
     | [] ->
       Shared.unlock shared;
@@ -173,11 +179,7 @@ exception
 
 let type_signature caught { msg; shared; comp } env parsetree =
   (*  TODO @xvw *)
-  let _until =
-    match comp with
-    | Domain_msg.All -> Int.max_int
-    | Part i -> i
-  in
+  let continue_typing = continue_typing comp (fun i -> i.Parsetree.psig_loc) in
 
   let rec loop env parsetree acc =
     (match Atomic.get msg.Domain_msg.from_main with
@@ -212,7 +214,7 @@ let type_signature caught { msg; shared; comp } env parsetree =
       in
       Shared.unlock shared;
       (*  TODO @xvw *)
-      if false (* until = pos *) then (env, rest, item :: acc)
+      if not (continue_typing parsetree_item) then (env, rest, item :: acc)
       else loop part_env rest (item :: acc)
     | [] ->
       Shared.unlock shared;
@@ -224,7 +226,9 @@ open Effect
 open Effect.Deep
 
 type _ Effect.t +=
-  | Internal_partial : typedtree_items cache_result * typer_cache_stats -> unit t
+  | Internal_partial :
+      typedtree_items cache_result * typer_cache_stats
+      -> unit t
   | Partial : result -> unit t
 
 let type_implementation config caught partial parsetree =
@@ -269,7 +273,7 @@ let type_implementation config caught partial parsetree =
     | All ->
       let _, _, suffix = type_structure caught partial env' parsetree in
       (aux [] suffix, cache_stats)
-    | Part _ ->
+    | Partial _ ->
       let nenv, nparsetree, first_suffix =
         type_structure caught partial env' parsetree
       in
@@ -326,7 +330,7 @@ let type_interface config caught partial parsetree =
     | All ->
       let _, _, suffix = type_signature caught partial env' parsetree in
       (aux [] suffix, cache_stats)
-    | Part _ ->
+    | Partial _ ->
       let nenv, nparsetree, first_suffix =
         type_signature caught partial env' parsetree
       in
@@ -376,10 +380,10 @@ let run config partial parsetree =
     | `Interface parsetree -> type_interface config caught partial parsetree
   with
   | cached_result, cache_stat -> aux cached_result cache_stat
-  | effect Internal_partial (cached_result, cache_stat), k -> 
-      let r = aux cached_result cache_stat in 
-      perform (Partial r); 
-      continue k ()
+  | effect Internal_partial (cached_result, cache_stat), k ->
+    let r = aux cached_result cache_stat in
+    perform (Partial r);
+    continue k ()
 
 let get_env ?pos:_ t =
   Option.value ~default:t.initial_env
