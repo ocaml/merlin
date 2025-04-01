@@ -20,4 +20,4 @@ exception Cancel
 (*  TODO @xvw 
     Type completion needs to be changed for whatever type you defined to describe how far the typer must go. 
 *)
-type completion = All | Part of int
+type completion = All | Partial of { line : int; column : int }
