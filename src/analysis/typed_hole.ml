@@ -14,4 +14,3 @@ let is_a_hole = function
   | (_, Browse_raw.Module_expr { mod_desc = Tmod_typed_hole; _ }) :: (_, _) :: _
   | (_, Browse_raw.Expression { exp_desc = Texp_typed_hole; _ }) :: _ -> true
   | [] | (_, _) :: _ -> false
-;;
