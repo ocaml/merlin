@@ -29,6 +29,8 @@ val get_logical : t -> [< position ] -> [> `Logical of int * int ]
 
 val get_lexing_pos : t -> filename:string -> [< position ] -> Lexing.position
 
+val get_position : t -> [< position ] -> int * int
+
 (** {1 Managing content} *)
 
 (** Updating content *)
