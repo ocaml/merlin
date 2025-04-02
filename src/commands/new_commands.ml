@@ -556,6 +556,8 @@ let all_commands =
         fun shared config source -> function
           | `None, _ -> failwith "-identifier-at <pos> is mandatory"
           | `Ident_at pos, scope ->
+            (* TODO: Guess we have to typecheck everything
+                     to get every occurence? *)
             run shared config source
               (Query_protocol.Occurrences (`Ident_at pos, scope))
       end;
@@ -875,7 +877,6 @@ let all_commands =
                 in
                 Some (expr, cursor)
             in
-
             let position = Msource.get_position source pos in
             run ~position shared config source
               (Query_protocol.Type_enclosing (expr, pos, index))
@@ -956,7 +957,6 @@ let all_commands =
                 active_signature_help = None
               }
             in
-
             let position = Msource.get_position source position in
             run ~position shared config source
               (Query_protocol.Signature_help sh)
