@@ -2,7 +2,7 @@ type t
 
 type shared =
   { msg : Domain_msg.msg;
-    config : (Mconfig.t * Msource.t) option Shared.t;
+    config : (Mconfig.t * Msource.t * (int * int) option) option Shared.t;
     (* Partial result *)
     partial : t option Shared.t;
     (* Use to protect typer computation *)
@@ -10,7 +10,7 @@ type shared =
   }
 
 (* Except inside Mpipeline, this function should only use in old_merlin *)
-val make : Mconfig.t -> Msource.t -> shared -> t
+val make : ?position:int * int -> Mconfig.t -> Msource.t -> shared -> t
 
 (* Except inside Mpipeline, this function should only use in old_merlin *)
 val with_pipeline : t -> (unit -> 'a) -> 'a
@@ -51,4 +51,4 @@ val close_typer : shared -> unit
 val share_exn : shared -> exn -> unit
 
 val domain_typer : shared -> unit -> unit
-val get : shared -> Mconfig.t -> Msource.t -> t
+val get : ?position:int * int -> shared -> Mconfig.t -> Msource.t -> t
