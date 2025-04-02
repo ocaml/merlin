@@ -14,8 +14,7 @@ let send_msg msg new_msg signal_on =
     done
   else failwith "send_msg: should not happen."
 
-exception Closing
-exception Cancel
+exception Cancel_or_Closing
 
 (*  TODO @xvw 
     Type completion needs to be changed for whatever type you defined to describe how far the typer must go. 

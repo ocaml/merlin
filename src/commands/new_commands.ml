@@ -102,9 +102,21 @@ let run ?position shared config source query =
     (fun () -> Query_json.dump query);
 
   (* Analyse : need to ask for lock here *)
-  let result = Query_commands.dispatch pipeline query in
-  let json = Query_json.json_of_response query result in
-  (json, Some pipeline)
+  (* Main domain signals it wants the lock  *)
+  if Atomic.compare_and_set shared.msg.from_main `Empty `Waiting then
+    let result =
+      Shared.protect shared.result (fun () ->
+          (* The write on mess_main needed 
+              to happen in the lock to ensure the main domain got it, before 
+              releasing the typer domain of its active wait *)
+          Atomic.set shared.msg.from_main `Empty;
+          Query_commands.dispatch pipeline query)
+    in
+    let json = Query_json.json_of_response query result in
+    (json, Some pipeline)
+  else
+    (* This can happen when the typer domain found an exception *)
+    failwith "To debug."
 
 let all_commands =
   [ command "case-analysis"

@@ -470,10 +470,14 @@ let domain_typer shared () =
         Shared.set shared.config None;
         (try
            let mpipeline = make ?position:potential_pos config source shared in
-           Shared.locking_set shared.partial (Some mpipeline)
+           match potential_pos with
+           | None -> Shared.locking_set shared.partial (Some mpipeline)
+           | _ -> (* result already shared *) ()
          with
-        | Domain_msg.Cancel -> ()
-        | Domain_msg.Closing -> ()
+        | Domain_msg.Cancel_or_Closing -> ()
+        | Mtyper.Exn_after_partial ->
+          (* An exception has happened after sharing partial result: we can dump it *)
+          ()
         | exn -> share_exn shared exn);
         loop ())
   in
