@@ -32,6 +32,7 @@ val set_index_items :
   unit
 
 type _ Effect.t += Partial : result -> unit Effect.t
+exception Exn_after_partial
 
 (** [run config partial parsetree]
 @perform the effect Partial. It is caught in [Mpipeline.process]).
