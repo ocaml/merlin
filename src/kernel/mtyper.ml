@@ -112,7 +112,13 @@ let compatible_prefix result_items tree_items =
 type partial =
   { msg : Domain_msg.msg; shared : unit Shared.t; comp : Domain_msg.completion }
 
-let make_partial msg shared comp = { msg; shared; comp }
+let make_partial ?position msg shared =
+  let comp =
+    match position with
+    | None -> Domain_msg.All
+    | Some (line, column) -> Domain_msg.Partial { line; column }
+  in
+  { msg; shared; comp }
 
 exception
   Cancel_struc of (Parsetree.structure_item, Typedtree.structure_item) item list
@@ -124,8 +130,8 @@ let continue_typing comp get_location item =
     let loc = get_location item in
     let start = loc.Location.loc_start in
     match Int.compare line start.pos_lnum with
-    | 0 -> Int.compare column (Lexing.column start) <= 0
-    | i -> i <= 0)
+    | 0 -> Int.compare column (Lexing.column start) >= 0
+    | i -> i >= 0)
 
 let type_structure caught { msg; shared; comp } env parsetree =
   (*  TODO @xvw *)

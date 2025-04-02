@@ -12,7 +12,7 @@ type result
 type partial
 
 val make_partial :
-  Domain_msg.msg -> unit Shared.t -> Domain_msg.completion -> partial
+  ?position:int * int -> Domain_msg.msg -> unit Shared.t -> partial
 
 type typedtree =
   [ `Interface of Typedtree.signature | `Implementation of Typedtree.structure ]
