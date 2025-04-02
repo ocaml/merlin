@@ -96,8 +96,8 @@ let find_command name = List.find ~f:(command_is ~name)
 
 let find_command_opt name = List.find_opt ~f:(command_is ~name)
 
-let run shared config source query =
-  let pipeline = Mpipeline.get shared config source in
+let run ?position shared config source query =
+  let pipeline = Mpipeline.get ?position shared config source in
   Logger.log ~section:"New_commands" ~title:"run(query)" "%a" Logger.json
     (fun () -> Query_json.dump query);
 
@@ -130,7 +130,8 @@ let all_commands =
           | `Offset -1, _ -> failwith "-start <pos> is mandatory"
           | _, `Offset -1 -> failwith "-end <pos> is mandatory"
           | startp, endp ->
-            run shared config source
+            let position = Msource.get_position source endp in
+            run ~position shared config source
               (Query_protocol.Case_analysis (startp, endp))
       end;
     command "holes" ~spec:[]
@@ -173,7 +174,9 @@ let all_commands =
           match pos with
           | `Offset -1 -> failwith "-position <pos> is mandatory"
           | pos ->
-            run shared config source
+            (* FIXME: Invalid some tests related to holes. *)
+            (* let position = Msource.get_position source pos in *)
+            run (* ~position *) shared config source
               (Query_protocol.Construct (pos, with_values, max_depth))
       end;
     command "complete-prefix"
@@ -231,7 +234,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Complete_prefix
                  (txt, pos, List.rev kinds, doc, typ))
       end;
@@ -254,7 +258,9 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Document (ident, pos))
+            let position = Msource.get_position source pos in
+            run ~position shared config source
+              (Query_protocol.Document (ident, pos))
       end;
     command "syntax-document"
       ~doc:
@@ -269,7 +275,9 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Syntax_document pos)
+            let position = Msource.get_position source pos in
+            run ~position shared config source
+              (Query_protocol.Syntax_document pos)
       end;
     command "expand-ppx" ~doc:"Returns the generated code of a PPX."
       ~spec:
@@ -282,7 +290,10 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Expand_ppx pos)
+            (* FIXME: Test loop infinitely. *)
+            (* let position = Msource.get_position source pos in *)
+            run (* ~position *) shared config source
+              (Query_protocol.Expand_ppx pos)
       end;
     command "enclosing"
       ~spec:
@@ -300,7 +311,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Enclosing pos)
+            let position = Msource.get_position source pos in
+            run ~position shared config source (Query_protocol.Enclosing pos)
       end;
     command "errors"
       ~spec:
@@ -371,7 +383,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Expand_prefix (txt, pos, List.rev kinds, typ))
       end;
     command "extension-list"
@@ -429,7 +442,13 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Jump (target, pos))
+            (* FIXME: Test loops infinitely
+                      We need a more precise heuristic
+                      based on the target.
+            *)
+            (* let position = Msource.get_position source pos in *)
+            run (* ~position *) shared config source
+              (Query_protocol.Jump (target, pos))
       end;
     command "phrase"
       ~spec:
@@ -451,7 +470,13 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Phrase (target, pos))
+            (* FIXME: Test loops infinitely
+                      We need a more precise heuristic
+                      based on the next phrase.
+            *)
+            (* let position = Msource.get_position source pos in *)
+            run (* ~position *) shared config source
+              (Query_protocol.Phrase (target, pos))
       end;
     command "list-modules"
       ~spec:
@@ -500,7 +525,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Locate (prefix, lookfor, pos))
       end;
     command "locate-type"
@@ -514,7 +540,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Locate_type pos)
+            let position = Msource.get_position source pos in
+            run ~position shared config source (Query_protocol.Locate_type pos)
       end;
     command "occurrences"
       ~spec:
@@ -537,6 +564,8 @@ let all_commands =
         fun shared config source -> function
           | `None, _ -> failwith "-identifier-at <pos> is mandatory"
           | `Ident_at pos, scope ->
+            (* TODO: Guess we have to typecheck everything
+                     to get every occurence? *)
             run shared config source
               (Query_protocol.Occurrences (`Ident_at pos, scope))
       end;
@@ -582,7 +611,10 @@ let all_commands =
           | None, _ -> failwith "-action is mandatory"
           | _, `None -> failwith "-position is mandatory"
           | Some action, (#Msource.position as pos) ->
-            run shared config source
+            (* FIXME: break the test-suite, should we try to keep it?
+                      Need to investigate the command. *)
+            (* let position = Msource.get_position source pos in *)
+            run (* ~position *) shared config source
               (Query_protocol.Refactor_open (action, pos))
       end;
     command "search-by-polarity"
@@ -603,7 +635,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Polarity_search (query, pos))
       end;
     command "search-by-type" ~doc:"return a list of values that match a query"
@@ -631,7 +664,8 @@ let all_commands =
           | None, _ -> failwith "-query <string> is mandatory"
           | _, `None -> failwith "-position <pos> is mandatory"
           | Some query, (#Msource.position as pos) ->
-            run shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Type_search (query, pos, limit, with_doc))
       end;
     command "inlay-hints"
@@ -677,7 +711,8 @@ let all_commands =
           | _, `None -> failwith "-end <pos> is mandatory"
           | (#Msource.position, #Msource.position) as position ->
             let start, stop = position in
-            run shared config source
+            let position = Msource.get_position source stop in
+            run ~position shared config source
               (Query_protocol.Inlay_hints
                  (start, stop, let_binding, pattern_binding, avoid_ghost))
       end;
@@ -704,7 +739,8 @@ let all_commands =
         fun shared config source -> function
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Shape pos)
+            let position = Msource.get_position source pos in
+            run ~position shared config source (Query_protocol.Shape pos)
       end;
     command "type-enclosing"
       ~doc:
@@ -763,7 +799,8 @@ let all_commands =
                 in
                 Some (expr, cursor)
             in
-            run shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Type_enclosing (expr, pos, index))
       end;
     command "type-expression"
@@ -782,7 +819,9 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            run shared config source (Query_protocol.Type_expr (expr, pos))
+            let position = Msource.get_position source pos in
+            run ~position shared config source
+              (Query_protocol.Type_expr (expr, pos))
       end;
     (* Implemented without support from Query_protocol.  This command might be
        refactored if it proves useful for old protocol too. *)
@@ -840,7 +879,9 @@ let all_commands =
                 active_signature_help = None
               }
             in
-            run shared config source (Query_protocol.Signature_help sh)
+            let position = Msource.get_position source position in
+            run ~position shared config source
+              (Query_protocol.Signature_help sh)
       end;
     (* Used only for testing *)
     command "dump"
