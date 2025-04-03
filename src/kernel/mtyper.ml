@@ -105,10 +105,6 @@ let compatible_prefix result_items tree_items =
   in
   aux [] (result_items, tree_items)
 
-(*  TODO @xvw 
-    - type [completion] needs to be changed for whatever type you defined to describe how far the typer must go. 
-    - type [partial] should also change adequatly.
-*)
 type partial =
   { msg : Domain_msg.msg; shared : unit Shared.t; comp : Domain_msg.completion }
 
@@ -120,8 +116,11 @@ let make_partial ?position msg shared =
   in
   { msg; shared; comp }
 
+exception Exn_after_partial
 exception
   Cancel_struc of (Parsetree.structure_item, Typedtree.structure_item) item list
+exception
+  Cancel_sig of (Parsetree.signature_item, Typedtree.signature_item) item list
 
 let continue_typing comp get_location item =
   match comp with
@@ -133,6 +132,9 @@ let continue_typing comp get_location item =
     | 0 -> Int.compare column (Lexing.column start) >= 0
     | i -> i >= 0)
 
+(* TODO It should be possible to cache the result in case an exception is raised 
+during typing by encapsulating the partial result (before the exception) and the 
+exception in an other exception, catched by type_implementation.  *)
 let type_structure caught { msg; shared; comp } env parsetree =
   (*  TODO @xvw *)
   let continue_typing = continue_typing comp (fun i -> i.Parsetree.pstr_loc) in
@@ -146,7 +148,8 @@ let type_structure caught { msg; shared; comp } env parsetree =
       done
     | `Closing -> raise Domain_msg.Cancel_or_Closing
     | `Cancel ->
-      (* Cancel_struct is catched by type_implementation *)
+      (* Cancel_struct is catched by type_implementation where the partial 
+      result is going to get cached *)
       raise (Cancel_struc acc));
 
     Shared.lock shared;
@@ -180,9 +183,6 @@ let type_structure caught { msg; shared; comp } env parsetree =
   in
   loop env parsetree []
 
-exception
-  Cancel_sig of (Parsetree.signature_item, Typedtree.signature_item) item list
-
 let type_signature caught { msg; shared; comp } env parsetree =
   (*  TODO @xvw *)
   let continue_typing = continue_typing comp (fun i -> i.Parsetree.psig_loc) in
@@ -196,7 +196,8 @@ let type_signature caught { msg; shared; comp } env parsetree =
       done
     | `Closing -> raise Domain_msg.Cancel_or_Closing
     | `Cancel ->
-      (* Cancel_sig is catched by type_interface *)
+      (* Cancel_sig is catched by type_interface where the partial 
+      result is going to get cached *)
       raise (Cancel_sig acc));
 
     Shared.lock shared;
@@ -293,8 +294,6 @@ let type_implementation config caught partial parsetree =
     (* Caching before cancellation *)
     aux [] suffix |> ignore;
     raise Domain_msg.Cancel_or_Closing
-
-exception Exn_after_partial
 
 let type_interface config caught partial parsetree =
   let { env; snapshot; ident_stamp; uid_stamp; value = prefix; index; _ } =
