@@ -65,3 +65,7 @@ val reset : unit -> unit
 val is_bound : unit -> bool
 (** Returns [true] when a store is active (i.e. when called from the callback
     passed to {!with_store}), [false] otherwise. *)
+
+
+val open_store : store -> unit
+val close_store : store -> unit 
