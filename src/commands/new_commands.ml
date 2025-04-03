@@ -186,9 +186,8 @@ let all_commands =
           match pos with
           | `Offset -1 -> failwith "-position <pos> is mandatory"
           | pos ->
-            (* FIXME: Invalid some tests related to holes. *)
-            (* let position = Msource.get_position source pos in *)
-            run (* ~position *) shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Construct (pos, with_values, max_depth))
       end;
     command "complete-prefix"
@@ -302,7 +301,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            (* FIXME: Test loop infinitely. *)
+            (* FIXME: Failwith abnormal termination. *)
             (* let position = Msource.get_position source pos in *)
             run (* ~position *) shared config source
               (Query_protocol.Expand_ppx pos)
@@ -454,12 +453,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            (* FIXME: Test loops infinitely
-                      We need a more precise heuristic
-                      based on the target.
-            *)
-            (* let position = Msource.get_position source pos in *)
-            run (* ~position *) shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Jump (target, pos))
       end;
     command "phrase"
@@ -482,9 +477,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            (* FIXME: Test loops infinitely
-                      We need a more precise heuristic
-                      based on the next phrase.
+            (* FIXME: Breaks test motion/phrase.t
             *)
             (* let position = Msource.get_position source pos in *)
             run (* ~position *) shared config source
