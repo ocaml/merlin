@@ -10,7 +10,7 @@ type shared =
   }
 
 (* Except inside Mpipeline, this function should only use in old_merlin *)
-val make : ?position:int * int -> Mconfig.t -> Msource.t -> shared -> t
+val make : ?position:int * int -> Mconfig.t -> Msource.t -> shared -> t option
 
 (* Except inside Mpipeline, this function should only use in old_merlin *)
 val with_pipeline : t -> (unit -> 'a) -> 'a
