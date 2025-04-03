@@ -309,6 +309,7 @@ let process ?position ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
     { Typer.errors; result }
   in
 
+  let typer_has_been_shared = ref false in
   let typer =
     match
       timed typer_time (fun () ->
@@ -344,38 +345,32 @@ let process ?position ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
         }
       in
       Shared.locking_set shared.partial (Some mpipeline);
+      typer_has_been_shared := true;
       (* Back to [Mtyper.run] *)
       Effect.Deep.continue k ()
   in
-  { config;
-    state;
-    raw_source;
-    source;
-    reader;
-    ppx;
-    typer;
-    pp_time;
-    reader_time;
-    ppx_time;
-    typer_time;
-    error_time;
-    ppx_cache_hit;
-    reader_cache_hit;
-    typer_cache_stats
-  }
-
-(* 
-Il faut faire :
-- calculer source, puis reader et ppx PUIS
-- une fonction qui calcul typeur et qui renvoie un résultat partiel quand dispo
-puis continue 
-
-- avec une callback (ou un effet -> Partial ) 
-- ou en interne
-
-Est-ce que l'utilisation d'un effet ne simplifie pas assez ?
-
-*)
+  if !typer_has_been_shared then
+    (* assert (Option.is_some position); *)
+    None
+  else
+    (* assert (position = None); *)
+    Some
+      { config;
+        state;
+        raw_source;
+        source;
+        reader;
+        ppx;
+        typer;
+        pp_time;
+        reader_time;
+        ppx_time;
+        typer_time;
+        error_time;
+        ppx_cache_hit;
+        reader_cache_hit;
+        typer_cache_stats
+      }
 
 let make ?position config source shared =
   process ?position (Mconfig.normalize config) source shared
@@ -469,10 +464,9 @@ let domain_typer shared () =
       | Some (config, source, potential_pos) ->
         Shared.set shared.config None;
         (try
-           let mpipeline = make ?position:potential_pos config source shared in
-           match potential_pos with
-           | None -> Shared.locking_set shared.partial (Some mpipeline)
-           | _ -> (* result already shared *) ()
+           match make ?position:potential_pos config source shared with
+           | Some _ as pipeline -> Shared.locking_set shared.partial pipeline
+           | None -> (* result already shared *) ()
          with
         | Domain_msg.Cancel_or_Closing -> ()
         | Mtyper.Exn_after_partial ->
