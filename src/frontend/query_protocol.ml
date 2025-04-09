@@ -202,7 +202,7 @@ type _ t =
       Msource.position * [ `None | `Local ] option * int option
       -> (Location.t * string list) t
   | Inlay_hints :
-      Msource.position * Msource.position * bool * bool * bool
+      Msource.position * Msource.position * bool * bool * bool * bool
       -> (Lexing.position * string) list t
   | Outline (* *) : outline t
   | Shape (* *) : Msource.position -> shape list t
