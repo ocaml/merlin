@@ -7,6 +7,7 @@ unreleased
     - `locate` can now disambiguate between files with identical names and contents
       (#1882)
     - `occurrences` now reports stale files (#1885)
+    - `inlay-hints` fix inlay hints on function parameters (#1923)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
