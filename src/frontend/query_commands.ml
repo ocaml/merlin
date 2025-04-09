@@ -803,8 +803,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     (occurrences, status)
   | Inlay_hints
-      (start, stop, hint_let_binding, hint_pattern_binding, avoid_ghost_location)
-    ->
+      ( start,
+        stop,
+        hint_let_binding,
+        hint_pattern_binding,
+        hint_function_params,
+        avoid_ghost_location ) ->
     let start = Mpipeline.get_lexing_pos pipeline start
     and stop = Mpipeline.get_lexing_pos pipeline stop in
     let typer_result = Mpipeline.typer_result pipeline in
@@ -813,7 +817,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | `Interface _ -> []
       | `Implementation structure ->
         Inlay_hints.of_structure ~hint_let_binding ~hint_pattern_binding
-          ~avoid_ghost_location ~start ~stop structure
+          ~hint_function_params ~avoid_ghost_location ~start ~stop structure
     end
   | Signature_help { position; _ } -> (
     (* Todo: additionnal contextual information could help us provide better
