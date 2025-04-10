@@ -5,6 +5,7 @@ type hint = Lexing.position * string
 val of_structure :
   hint_let_binding:bool ->
   hint_pattern_binding:bool ->
+  hint_function_params:bool ->
   avoid_ghost_location:bool ->
   start:Lexing.position ->
   stop:Lexing.position ->
