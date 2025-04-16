@@ -51,6 +51,6 @@ jobs:
 
       - name: Check that Merlin and OCaml-LSP are co-installable
         run: |
-          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/liam923/ocaml-lsp.git#stale-occurrences
+          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/liam923/ocaml-lsp.git
           opam --cli=2.1 pin --with-version=5.4-503 --no-action .
           opam install ocaml-lsp-server --ignore-constraints-on=ocamlformat
