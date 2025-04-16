@@ -39,9 +39,7 @@ let pp fmt t =
 
 let compare_pos p1 p2 = Int.compare p1.cnum p2.cnum
 let compare_filename t1 t2 =
-  String.compare
-    (Filename.basename (G.fetch t1.filename))
-    (Filename.basename (G.fetch t2.filename))
+  String.compare (G.fetch t1.filename) (G.fetch t2.filename)
 
 let compare t1 t2 =
   match compare_filename t1 t2 with
