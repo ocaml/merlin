@@ -620,14 +620,16 @@ let find_loc_of_comp_unit ~config uid comp_unit =
     log ~title "Failed to load the CU's cmt";
     `None
 
-let find_loc_of_uid ~config ~local_defs ~ident ?fallback (uid : Shape.Uid.t) =
+let find_loc_of_uid ~config ~local_defs ?ident ?fallback (uid : Shape.Uid.t) =
   let find_loc_of_item ~comp_unit =
-    match (find_loc_of_item ~config ~local_defs uid comp_unit, fallback) with
-    | Some { loc; txt }, _ when String.equal txt ident ->
+    match find_loc_of_item ~config ~local_defs uid comp_unit, fallback, ident with
+    | Some { loc; txt }, _, Some ident when String.equal txt ident ->
       (* Checking the ident prevent returning nonsensical results when some uid
          were swaped but the cmt files were not rebuilt. *)
       Some (uid, loc)
-    | (Some _ | None), Some fallback ->
+    | Some { loc; _ }, _, None ->
+        Some (uid, loc)
+    | (Some _ | None), Some fallback, _ ->
       find_loc_of_item ~config ~local_defs fallback comp_unit
       |> Option.map ~f:(fun { Location.loc; _ } -> (fallback, loc))
     | _ -> None
@@ -705,7 +707,7 @@ let rec uid_of_result ~traverse_aliases = function
   | Approximated _ | Unresolved _ | Internal_error_missing_uid -> (None, true)
 
 (** This is the main function here *)
-let from_path ~config ~env ~local_defs ~decl path =
+let from_path ~config ~env ~local_defs ~decl ?ident:_ path =
   let title = "from_path" in
   let unalias (decl : Env_lookup.item) =
     if not config.traverse_aliases then (path, decl.uid)
@@ -752,11 +754,14 @@ let from_path ~config ~env ~local_defs ~decl path =
   in
   (* Step 2:  Uid => Location *)
   let loc =
-    let ident = Path.last path in
+    let ident =
+      (* TODO it might not be useful to check the ident without impl_uid *)
+      Path.last path
+    in
     match impl_uid with
     | Some impl_uid ->
       find_loc_of_uid ~config ~local_defs ~ident ~fallback:uid impl_uid
-    | None -> find_loc_of_uid ~config ~local_defs ~ident uid
+    | None -> find_loc_of_uid ~config ~local_defs uid
   in
   let loc =
     match loc with
@@ -792,7 +797,9 @@ let from_longident ~config ~env ~local_defs nss ident =
   in
   match Env_lookup.by_longident nss ident env with
   | None -> `Not_in_env str_ident
-  | Some (path, decl) -> from_path ~config ~env ~local_defs ~decl path
+  | Some (path, decl) ->
+    let ident = Longident.last ident in
+    from_path ~config ~env ~local_defs ~decl ~ident path
 
 let from_path ~config ~env ~local_defs ~namespace path =
   File_switching.reset ();

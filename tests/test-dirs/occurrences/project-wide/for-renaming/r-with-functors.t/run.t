@@ -12,6 +12,11 @@ We expect 2 occurrences in func.ml, 1 in func.mli and 2 in main.ml
     "line": 1,
     "col": 22
   }
+  "$TESTCASE_ROOT/main.ml"
+  {
+    "line": 4,
+    "col": 16
+  }
   "$TESTCASE_ROOT/func.ml"
   {
     "line": 1,
@@ -26,9 +31,4 @@ We expect 2 occurrences in func.ml, 1 in func.mli and 2 in main.ml
   {
     "line": 1,
     "col": 24
-  }
-  "$TESTCASE_ROOT/main.ml"
-  {
-    "line": 4,
-    "col": 16
   }

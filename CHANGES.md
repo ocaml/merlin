@@ -8,6 +8,7 @@ unreleased
       (#1882)
     - `occurrences` now reports stale files (#1885)
     - `inlay-hints` fix inlay hints on function parameters (#1923)
+    - Fix issues with ident validation and Lid comparison for occurrences (#1924)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
