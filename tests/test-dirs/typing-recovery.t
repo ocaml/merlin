@@ -435,62 +435,64 @@ And now, with an error deep in a submodule:
           []
         []
     signature_item (test2.mli[3,16+0]..test2.mli[10,149+3])
-      Tsig_module \"M/286\"
-      module_type (test2.mli[3,16+11]..test2.mli[10,149+3])
-        Tmty_signature
-        [
-          signature_item (test2.mli[4,31+2]..test2.mli[4,31+17])
-            Tsig_value
-            value_description foo21/281 (test2.mli[4,31+2]..test2.mli[4,31+17])
-              core_type (test2.mli[4,31+14]..test2.mli[4,31+17])
-                Ttyp_constr \"int/1!\"
+      Tsig_module (Present)
+      M/286
+        module_type (test2.mli[3,16+11]..test2.mli[10,149+3])
+          Tmty_signature
+          [
+            signature_item (test2.mli[4,31+2]..test2.mli[4,31+17])
+              Tsig_value
+              value_description foo21/281 (test2.mli[4,31+2]..test2.mli[4,31+17])
+                core_type (test2.mli[4,31+14]..test2.mli[4,31+17])
+                  Ttyp_constr \"int/1!\"
+                  []
                 []
-              []
-          signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
-            Tsig_module \"N/285\"
-            module_type (test2.mli[5,49+13]..test2.mli[9,143+5])
-              Tmty_signature
-              [
-                signature_item (test2.mli[6,66+4]..test2.mli[6,66+20])
-                  Tsig_value
-                  value_description foo211/282 (test2.mli[6,66+4]..test2.mli[6,66+20])
-                    core_type (test2.mli[6,66+17]..test2.mli[6,66+20])
-                      Ttyp_constr \"int/1!\"
-                      []
-                    []
-                signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
-                  Tsig_value
-                  value_description foo212/283 (test2.mli[7,87+4]..test2.mli[7,87+27])
-                    core_type (test2.mli[7,87+17]..test2.mli[7,87+27])
-                      Ttyp_tuple
-                      [
-                        Label: None
-                        core_type (test2.mli[7,87+17]..test2.mli[7,87+20])
+            signature_item (test2.mli[5,49+2]..test2.mli[9,143+5])
+              Tsig_module (Present)
+              N/285
+                module_type (test2.mli[5,49+13]..test2.mli[9,143+5])
+                  Tmty_signature
+                  [
+                    signature_item (test2.mli[6,66+4]..test2.mli[6,66+20])
+                      Tsig_value
+                      value_description foo211/282 (test2.mli[6,66+4]..test2.mli[6,66+20])
+                        core_type (test2.mli[6,66+17]..test2.mli[6,66+20])
                           Ttyp_constr \"int/1!\"
                           []
-                        Label: None
-                        core_type (test2.mli[7,87+23]..test2.mli[7,87+27])
-                          Ttyp_any
-                      ]
-                    []
-                signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
-                  Tsig_value
-                  value_description foo213/284 (test2.mli[8,115+4]..test2.mli[8,115+27])
-                    core_type (test2.mli[8,115+17]..test2.mli[8,115+27])
-                      Ttyp_tuple
-                      [
-                        Label: None
-                        core_type (test2.mli[8,115+17]..test2.mli[8,115+20])
-                          Ttyp_constr \"int/1!\"
-                          []
-                        Label: None
-                        core_type (test2.mli[8,115+23]..test2.mli[8,115+27])
-                          Ttyp_constr \"char/2!\"
-                          []
-                      ]
-                    []
-              ]
-        ]
+                        []
+                    signature_item (test2.mli[7,87+4]..test2.mli[7,87+27])
+                      Tsig_value
+                      value_description foo212/283 (test2.mli[7,87+4]..test2.mli[7,87+27])
+                        core_type (test2.mli[7,87+17]..test2.mli[7,87+27])
+                          Ttyp_tuple
+                          [
+                            Label: None
+                            core_type (test2.mli[7,87+17]..test2.mli[7,87+20])
+                              Ttyp_constr \"int/1!\"
+                              []
+                            Label: None
+                            core_type (test2.mli[7,87+23]..test2.mli[7,87+27])
+                              Ttyp_any
+                          ]
+                        []
+                    signature_item (test2.mli[8,115+4]..test2.mli[8,115+27])
+                      Tsig_value
+                      value_description foo213/284 (test2.mli[8,115+4]..test2.mli[8,115+27])
+                        core_type (test2.mli[8,115+17]..test2.mli[8,115+27])
+                          Ttyp_tuple
+                          [
+                            Label: None
+                            core_type (test2.mli[8,115+17]..test2.mli[8,115+20])
+                              Ttyp_constr \"int/1!\"
+                              []
+                            Label: None
+                            core_type (test2.mli[8,115+23]..test2.mli[8,115+27])
+                              Ttyp_constr \"char/2!\"
+                              []
+                          ]
+                        []
+                  ]
+          ]
     signature_item (test2.mli[12,154+0]..test2.mli[12,154+21])
       Tsig_value
       value_description foo3/287 (test2.mli[12,154+0]..test2.mli[12,154+21])

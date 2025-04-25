@@ -9,7 +9,7 @@
     "class": "return",
     "value": "[
     structure_item (test.ml[1,0+0]..test.ml[3,104+28])
-      Tstr_module
+      Tstr_module (Present)
       ERROR_locate_from_inside_function_literal_used_as_non_function/283
         module_expr (test.ml[1,0+72]..test.ml[3,104+28])
           Tmod_structure
