@@ -27,6 +27,30 @@
     "class": "return",
     "value": [
       {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 4,
+          "col": 12
+        },
+        "end": {
+          "line": 4,
+          "col": 23
+        },
+        "stale": false
+      },
+      {
+        "file": "$TESTCASE_ROOT/main.ml",
+        "start": {
+          "line": 5,
+          "col": 12
+        },
+        "end": {
+          "line": 5,
+          "col": 23
+        },
+        "stale": false
+      },
+      {
         "file": "$TESTCASE_ROOT/lib.ml",
         "start": {
           "line": 2,
@@ -40,30 +64,6 @@
       },
       {
         "file": "$TESTCASE_ROOT/lib.ml",
-        "start": {
-          "line": 5,
-          "col": 12
-        },
-        "end": {
-          "line": 5,
-          "col": 23
-        },
-        "stale": false
-      },
-      {
-        "file": "$TESTCASE_ROOT/main.ml",
-        "start": {
-          "line": 4,
-          "col": 12
-        },
-        "end": {
-          "line": 4,
-          "col": 23
-        },
-        "stale": false
-      },
-      {
-        "file": "$TESTCASE_ROOT/main.ml",
         "start": {
           "line": 5,
           "col": 12
