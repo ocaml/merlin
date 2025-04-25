@@ -3008,7 +3008,10 @@ let collect_unknown_apply_args env funct ty_fun0 rev_args sargs =
               let ty_arg = newvar () in
               let ty_res = newvar () in
               if get_level ty_fun >= get_level ty_arg &&
-                 not (is_prim ~name:"%identity" funct)
+                 not (is_prim ~name:"%identity" funct) &&
+                 (* These warnings are not useful when the application is the
+                    result of desugaring (like arrays [|0|].(0)) *)
+                 not funct.exp_loc.loc_ghost
               then
                 Location.prerr_warning sarg.pexp_loc
                   Warnings.Ignored_extra_argument;
