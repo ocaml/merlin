@@ -91,45 +91,45 @@ We expect module appearing in paths to be highlighted
     },
     {
       "start": {
-        "line": 6,
-        "col": 8
-      },
-      "end": {
-        "line": 6,
-        "col": 11
-      },
-      "stale": false
-    },
-    {
-      "start": {
-        "line": 7,
-        "col": 8
-      },
-      "end": {
-        "line": 7,
-        "col": 11
-      },
-      "stale": false
-    },
-    {
-      "start": {
-        "line": 8,
-        "col": 8
-      },
-      "end": {
-        "line": 8,
-        "col": 11
-      },
-      "stale": false
-    },
-    {
-      "start": {
         "line": 12,
         "col": 17
       },
       "end": {
         "line": 12,
         "col": 20
+      },
+      "stale": false
+    },
+    {
+      "start": {
+        "line": 6,
+        "col": 8
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "stale": false
+    },
+    {
+      "start": {
+        "line": 7,
+        "col": 8
+      },
+      "end": {
+        "line": 7,
+        "col": 11
+      },
+      "stale": false
+    },
+    {
+      "start": {
+        "line": 8,
+        "col": 8
+      },
+      "end": {
+        "line": 8,
+        "col": 11
       },
       "stale": false
     }
