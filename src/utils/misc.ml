@@ -1037,6 +1037,15 @@ let did_you_mean ?(pp=Style.inline_code) choices =
             pp last
       )
 
+module Error_style = struct
+  type setting =
+    | Contextual
+    | Short
+    | Merlin
+
+  let default_setting = Contextual
+end
+
 let print_see_manual ppf manual_section =
   let open Format_doc in
   fprintf ppf "(see manual section %a)"

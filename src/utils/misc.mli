@@ -467,6 +467,16 @@ module Style : sig
   (* adds functions to support color tags to the given formatter. *)
 end
 
+(* See the -error-style option *)
+module Error_style : sig
+  type setting =
+    | Contextual
+    | Short
+    | Merlin
+
+  val default_setting : setting
+end
+
 val print_see_manual : int list Format_doc.printer
 (** See manual section *)
 
