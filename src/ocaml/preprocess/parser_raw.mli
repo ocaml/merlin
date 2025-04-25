@@ -435,7 +435,7 @@ module MenhirInterpreter : sig
     | N_mk_longident_mod_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_longident_LIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_ident_ : (Longident.t) nonterminal
-    | N_mk_longident_mod_ext_longident___anonymous_43_ : (Longident.t) nonterminal
+    | N_mk_longident_mod_ext_longident___anonymous_42_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_UIDENT_ : (Longident.t) nonterminal
     | N_mk_longident_mod_ext_longident_LIDENT_ : (Longident.t) nonterminal
     | N_method_ : ((string Location.loc * Asttypes.private_flag * Parsetree.class_field_kind) *

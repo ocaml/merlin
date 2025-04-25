@@ -251,8 +251,8 @@ let iter_on_occurrences
       (match ctyp_desc with
       | Ttyp_constr (path, lid, _ctyps) ->
           f ~namespace:Type ctyp_env path lid
-      | Ttyp_package {pack_path; pack_txt} ->
-          f ~namespace:Module_type ctyp_env pack_path pack_txt
+      | Ttyp_package {tpt_path; tpt_txt} ->
+          f ~namespace:Module_type ctyp_env tpt_path tpt_txt
       | Ttyp_class (path, lid, _typs) ->
           (* Deprecated syntax to extend a polymorphic variant *)
           f ~namespace:Type ctyp_env path lid
@@ -395,16 +395,15 @@ let index_occurrences binary_annots =
        should make these successive reductions fast. *)
     let rec index_components namespace lid path  =
       let module_ = Shape.Sig_component_kind.Module in
-      match (lid.Location.txt : Longident.t), (path : Path.t) with
-      | Ldot (lid', _), Pdot (path', _)
-      | Ldot (lid', _), Pextra_ty (Pdot(path', _), Pcstr_ty _) ->
+      let scraped_path = Path.scrape_extra_ty path in
+      match lid.Location.txt, scraped_path with
+      | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
-      | Lapply (lid', lid''), Papply (path', path'')
-      | Lapply (lid', lid''), Pextra_ty (Papply (path', path''), Pcstr_ty _) ->
+      | Longident.Lapply (lid', lid''), Path.Papply (path', path'') ->
         index_components module_ lid'' path'';
         index_components module_ lid' path'
-      | Lident _, _ ->
+      | Longident.Lident _, _ ->
         reduce_and_store ~namespace lid path;
       | _, _ -> ()
     in

@@ -740,6 +740,13 @@ let batch_mode_printer : report_printer =
       | Misc.Error_style.Short ->
           ()
     in
+<<<<<<<
+=======
+    Format.fprintf ppf "%a:@ %a" print_loc loc
+      (Fmt.compat highlight) loc
+  in
+  let pp_txt ppf txt = Format.fprintf ppf "%a" Fmt.Doc.format txt in
+>>>>>>>
     Format.fprintf ppf "@[<v>%a:@ %a@]" print_loc loc highlight loc
     *)
     ()
@@ -804,9 +811,12 @@ let batch_mode_printer : report_printer =
     ) msgs
   in
   let pp_submsg self report ppf { loc; txt } =
-    Format.fprintf ppf "@[%a  @[%a@]@]"
-      (self.pp_submsg_loc self report) loc
-      (self.pp_submsg_txt self report) txt
+    if loc.loc_ghost then
+      Format.fprintf ppf "@[%a@]" (self.pp_submsg_txt self report) txt
+    else
+      Format.fprintf ppf "%a  @[%a@]"
+        (self.pp_submsg_loc self report) loc
+        (self.pp_submsg_txt self report) txt
   in
   let pp_submsg_loc self report ppf loc =
     if not loc.loc_ghost then
@@ -871,6 +881,16 @@ let mkerror loc sub footnote source txt =
 let errorf ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) =
   Fmt.kdoc_printf (mkerror loc sub footnote source)
 
+let aligned_error_hint
+    ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) fmt =
+  Fmt.kdoc_printf (fun main hint ->
+      match hint with
+      | None -> mkerror loc sub footnote source main
+      | Some hint ->
+          let main, hint = Misc.align_error_hint ~main ~hint in
+          mkerror loc (mknoloc hint :: sub) footnote source main
+  ) fmt
+
 let error ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(source = Typer) msg_str =
   mkerror loc sub footnote source Fmt.Doc.(string msg_str empty)
 
@@ -879,7 +899,6 @@ let error_of_printer ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) ?(sour
 
 let error_of_printer_file ?(source = Typer) print x =
   error_of_printer ~source ~loc:(in_file !input_name) print x
-
 
 (******************************************************************************)
 (* Reporting warnings: generating a report from a warning number using the

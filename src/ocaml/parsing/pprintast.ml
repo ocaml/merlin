@@ -248,6 +248,7 @@ let type_variance = function
   | NoVariance -> ""
   | Covariant -> "+"
   | Contravariant -> "-"
+  | Bivariant -> "+-"
 
 let type_injectivity = function
   | NoInjectivity -> ""

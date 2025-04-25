@@ -371,18 +371,19 @@ and print_simple_out_type ppf =
   | Otyp_abstract | Otyp_open
   | Otyp_sum _ | Otyp_manifest (_, _) -> ()
   | Otyp_record lbls -> print_record_decl ppf lbls
-  | Otyp_module (p, fl) ->
-      fprintf ppf "@[<1>(module %a" print_ident p;
-      let first = ref true in
-      List.iter
-        (fun (s, t) ->
-          let sep = if !first then (first := false; "with") else "and" in
-          fprintf ppf " %s type %s = %a" sep s print_out_type t
-        )
-        fl;
-      fprintf ppf ")@]"
+  | Otyp_module pack ->
+      fprintf ppf "@[<1>(module %a)@]" print_package pack
   | Otyp_attribute (t, attr) ->
       fprintf ppf "@[<1>(%a [@@%s])@]" print_out_type t attr.oattr_name
+and print_package ppf pack =
+  fprintf ppf "%a" print_ident pack.opack_path;
+  let first = ref true in
+  List.iter
+    (fun (s, t) ->
+      let sep = if !first then (first := false; "with") else "and" in
+      fprintf ppf " %s type %s = %a" sep s print_out_type t
+    )
+    pack.opack_cstrs
 and print_record_decl ppf lbls =
   fprintf ppf "{%a@;<1 -2>}"
     (print_list_init print_out_label (fun ppf -> fprintf ppf "@ ")) lbls
@@ -448,7 +449,11 @@ let print_type_parameter ?(non_gen=false) ppf s =
 let type_parameter ppf {ot_non_gen=non_gen; ot_name=ty; ot_variance=var,inj} =
   let open Asttypes in
   fprintf ppf "%s%s%a"
-    (match var with Covariant -> "+" | Contravariant -> "-" | NoVariance ->  "")
+    (match var with
+    | Covariant -> "+"
+    | Contravariant -> "-"
+    | NoVariance ->  ""
+    | Bivariant -> "+-")
     (match inj with Injective -> "!" | NoInjectivity -> "")
     (print_type_parameter ~non_gen) ty
 
