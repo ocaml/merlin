@@ -740,15 +740,8 @@ let batch_mode_printer : report_printer =
       | Misc.Error_style.Short ->
           ()
     in
-<<<<<<<
-=======
     Format.fprintf ppf "%a:@ %a" print_loc loc
-      (Fmt.compat highlight) loc
-  in
-  let pp_txt ppf txt = Format.fprintf ppf "%a" Fmt.Doc.format txt in
->>>>>>>
-    Format.fprintf ppf "@[<v>%a:@ %a@]" print_loc loc highlight loc
-    *)
+      (Fmt.compat highlight) loc *)
     ()
   in
   let pp_txt ppf txt = Format.fprintf ppf "%a" Fmt.Doc.format txt in
