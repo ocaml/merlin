@@ -518,12 +518,10 @@ module Gen = struct
           in
           List.map choices ~f:Ast_helper.Exp.tuple
         | Tvariant row_desc -> variant env rtyp row_desc
-        | Tpackage (path, lids_args) -> begin
+        | Tpackage ({ pack_path; _ } as pack) -> begin
             let open Ast_helper in
             try
-              let ty =
-                Typemod.modtype_of_package env Location.none path lids_args
-              in
+              let ty = Typemod.modtype_of_package env Location.none pack in
               let ast =
                 Exp.constraint_
                   (Exp.pack (module_ env ty) None)
@@ -531,7 +529,7 @@ module Gen = struct
               in
               [ ast ]
             with Typemod.Error _ ->
-              let name = Ident.name (Path.head path) in
+              let name = Ident.name (Path.head pack_path) in
               raise (Modtype_not_found (Modtype, name))
           end
         | Tobject (fields, _) ->

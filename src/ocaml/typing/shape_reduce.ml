@@ -27,18 +27,18 @@ type result =
 let rec print_result fmt result =
   match result with
   | Resolved uid ->
-      Format.fprintf fmt "@[Resolved: %a@]@;" Uid.print uid
+      Format.fprintf fmt "@[Resolved:@ %a@]" Uid.print uid
   | Resolved_alias (uid, r) ->
-      Format.fprintf fmt "@[Alias: %a -> %a@]@;"
+      Format.fprintf fmt "@[Alias:@ %a@] ->@ %a"
         Uid.print uid print_result r
   | Unresolved shape ->
-      Format.fprintf fmt "@[Unresolved: %a@]@;" print shape
+      Format.fprintf fmt "@[Unresolved:@ %a@]" print shape
   | Approximated (Some uid) ->
-      Format.fprintf fmt "@[Approximated: %a@]@;" Uid.print uid
+      Format.fprintf fmt "@[Approximated:@ %a@]" Uid.print uid
   | Approximated None ->
-      Format.fprintf fmt "@[Approximated: No uid@]@;"
+      Format.fprintf fmt "Approximated: No uid"
   | Internal_error_missing_uid ->
-      Format.fprintf fmt "@[Missing uid@]@;"
+      Format.fprintf fmt "Missing uid"
 
 
 let find_shape env id =

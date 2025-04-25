@@ -90,8 +90,8 @@ and core_type type_expr =
         type_exprs
     in
     Typ.poly names @@ core_type type_expr
-  | Tpackage (path, lids_type_exprs) ->
-    let lid = mknoloc (Untypeast.lident_of_path path) in
+  | Tpackage { pack_path; pack_cstrs = lids_type_exprs } ->
+    let lid = mknoloc (Untypeast.lident_of_path pack_path) in
     let package_type =
       Typ.package_type lid @@
       List.map lids_type_exprs ~f:(fun (id, t) ->

@@ -2,6 +2,7 @@
 let cmi_file = ref None
 let include_dirs        = ref []
 let hidden_include_dirs = ref []
+let print_variance      = ref false          (* -i-variance *)
 let fast                = ref false
 let classic             = ref false
 let all_ppx             = ref []
@@ -13,6 +14,7 @@ let applicative_functors = ref true
 
 let nopervasives        = ref false
 let strict_formats      = ref true
+let no_alias_deps       = ref false           (* -no-alias-deps *)
 let unique_ids          = ref true               (* -d(no-)unique-ids *)
 let canonical_ids       = ref false           (* -d(no-)canonical-ids *)
 let open_modules        = ref []

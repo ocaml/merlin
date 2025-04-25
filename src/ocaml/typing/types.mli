@@ -134,8 +134,13 @@ type type_desc =
       where 'a1 ... 'an are names given to types in tyl
       and occurrences of those types in ty. *)
 
-  | Tpackage of Path.t * (string list * type_expr) list
+  | Tpackage of package
   (** Type of a first-class module (a.k.a package). *)
+
+(** [package] corresponds to the type of a first-class module *)
+and package =
+  { pack_path : Path.t;
+    pack_cstrs : (string list * type_expr) list }
 
 and fixed_explanation =
   | Univar of type_expr (** The row type was bound to an univar *)

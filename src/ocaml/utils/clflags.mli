@@ -9,6 +9,7 @@
 val cmi_file             : string option ref
 val include_dirs         : string list ref
 val hidden_include_dirs  : string list ref
+val print_variance       : bool ref
 val fast                 : bool ref
 val classic              : bool ref
 val all_ppx              : string list ref
@@ -32,6 +33,7 @@ val print_types          : bool ref
 val native_code          : bool ref
 val dont_write_files     : bool ref
 val error_size           : int ref (* max size of module related errors *)
+val no_alias_deps        : bool ref
 val keep_locs            : bool ref
 val keep_docs            : bool ref
 val transparent_modules  : bool ref

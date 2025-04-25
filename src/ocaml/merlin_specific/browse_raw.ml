@@ -624,8 +624,8 @@ let of_node = function
   | With_constraint (Twith_modtype mt | Twith_modtypesubst mt) ->
     of_module_type mt
   | Core_type { ctyp_desc } -> of_core_type_desc ctyp_desc
-  | Package_type { pack_fields } ->
-    list_fold (fun (_, ct) -> of_core_type ct) pack_fields
+  | Package_type { tpt_cstrs } ->
+    list_fold (fun (_, ct) -> of_core_type ct) tpt_cstrs
   | Row_field rf -> begin
       match rf.rf_desc with
       | Ttag (_, _, cts) -> list_fold of_core_type cts
@@ -885,8 +885,8 @@ let node_paths_full =
     [ (reloc (Path.Pident mtd_id) mtd_name, Some (Lident mtd_name.txt)) ]
   | With_constraint c -> with_constraint_paths c
   | Core_type ct -> core_type_paths ct
-  | Package_type { pack_path; pack_txt } ->
-    [ (reloc pack_path pack_txt, Some pack_txt.txt) ]
+  | Package_type { tpt_path; tpt_txt } ->
+    [ (reloc tpt_path tpt_txt, Some tpt_txt.txt) ]
   | Value_description { val_id; val_name } ->
     [ (reloc (Path.Pident val_id) val_name, Some (Lident val_name.txt)) ]
   | Type_declaration { typ_id; typ_name } ->

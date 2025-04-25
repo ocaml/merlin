@@ -61,6 +61,7 @@ type variance =
   | Covariant
   | Contravariant
   | NoVariance
+  | Bivariant
 
 type injectivity =
   | Injective
