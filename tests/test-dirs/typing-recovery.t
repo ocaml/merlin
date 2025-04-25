@@ -730,10 +730,21 @@ FIXME
           "col": 15
         },
         "type": "typer",
-        "sub": [],
+        "sub": [
+          {
+            "start": {
+              "line": 8,
+              "col": 11
+            },
+            "end": {
+              "line": 8,
+              "col": 15
+            },
+            "message": "Hint: Did you mean List?"
+          }
+        ],
         "valid": true,
-        "message": "Unbound module Lsit
-  Hint:    Did you mean List?"
+        "message": "Unbound module Lsit"
       }
     ],
     "notifications": []

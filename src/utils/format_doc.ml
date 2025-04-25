@@ -252,7 +252,8 @@ module Doc = struct
   let msg fmt = kmsg Fun.id fmt
 
 
-  let ralign_tag = Format.String_tag "ralign"
+  (* In Merlin, it makes no sense to try to align parts of the error messages *)
+  let ralign_tag = Format.String_tag "ralign2"
 
   let rec split_on_open_tag tag rbefore = function
     | [] -> rbefore, []
