@@ -359,7 +359,7 @@ and add_modtype bv mty =
 and add_module_alias bv l =
   (* If we are in delayed dependencies mode, we delay the dependencies
        induced by "Lident s" *)
-  (if !Clflags.transparent_modules then add_parent else add_module_path) bv l;
+  (if !Clflags.no_alias_deps then add_parent else add_module_path) bv l;
   try
     lookup_map l.txt bv
   with Not_found ->
@@ -571,7 +571,7 @@ and add_struct_item (bv, m) item : _ String.Map.t * _ String.Map.t =
       List.iter (add_class_type_declaration bv) cdtl; (bv, m)
   | Pstr_include incl ->
       let Node (s, m') as n = add_module_binding bv incl.pincl_mod in
-      if !Clflags.transparent_modules then
+      if !Clflags.no_alias_deps then
         add_names s
       else
         (* If we are not in the delayed dependency mode, we need to

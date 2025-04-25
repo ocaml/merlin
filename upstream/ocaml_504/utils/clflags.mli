@@ -115,6 +115,7 @@ val use_prims : string ref
 val use_runtime : string ref
 val plugin : bool ref
 val principal : bool ref
+val print_variance : bool ref
 val real_paths : bool ref
 val recursive_types : bool ref
 val strict_sequence : bool ref
@@ -128,7 +129,7 @@ val make_package : bool ref
 val for_package : string option ref
 val error_size : int ref
 val float_const_prop : bool ref
-val transparent_modules : bool ref
+val no_alias_deps : bool ref
 val unique_ids : bool ref
 val canonical_ids : bool ref
 val locations : bool ref
@@ -209,6 +210,7 @@ val unbox_free_vars_of_closures : bool ref
 val unbox_specialised_args : bool ref
 val clambda_checks : bool ref
 val cmm_invariants : bool ref
+val parsetree_ghost_loc_invariant : bool ref
 val default_inline_max_depth : int
 val inline_max_depth : Int_arg_helper.parsed ref
 val remove_unused_arguments : bool ref
