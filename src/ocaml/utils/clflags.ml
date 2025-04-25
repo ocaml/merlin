@@ -33,6 +33,9 @@ let for_package         = ref None
 let debug               = ref false
 let unsafe              = ref false
 let opaque              = ref false
+
+let error_style = ref (Some Misc.Error_style.Merlin) (* -error-style *)
+
 let unboxed_types       = ref false
 
 let locations = ref true
