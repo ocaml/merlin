@@ -954,7 +954,7 @@ module PpxContext = struct
         lid "use_vmthreads", make_bool false;
         lid "recursive_types", make_bool !Clflags.recursive_types;
         lid "principal", make_bool !Clflags.principal;
-        lid "transparent_modules", make_bool !Clflags.transparent_modules;
+        lid "no_alias_deps", make_bool !Clflags.no_alias_deps;
         lid "unboxed_types", make_bool !Clflags.unboxed_types;
         lid "unsafe_string", make_bool false; (* kept for compatibility *)
         get_cookies ()
@@ -1050,8 +1050,8 @@ module PpxContext = struct
           Clflags.recursive_types := get_bool payload
       | "principal" ->
           Clflags.principal := get_bool payload
-      | "transparent_modules" ->
-          Clflags.transparent_modules := get_bool payload
+      | "no_alias_deps" ->
+          Clflags.no_alias_deps := get_bool payload
       | "unboxed_types" ->
           Clflags.unboxed_types := get_bool payload
       | "cookies" ->

@@ -153,7 +153,7 @@ let iter_on_occurrences
   let path_in_type typ name =
     match Types.get_desc typ with
     | Tconstr (type_path, _, _) ->
-      Some (Path.Pdot (type_path,  name))
+      Some (Path.Pextra_ty(type_path, Pcstr_ty name))
     | _ -> None
   in
   let add_constructor_description env lid =
@@ -235,8 +235,8 @@ let iter_on_occurrences
       (match ctyp_desc with
       | Ttyp_constr (path, lid, _ctyps) ->
           f ~namespace:Type ctyp_env path lid
-      | Ttyp_package {pack_path; pack_txt} ->
-          f ~namespace:Module_type ctyp_env pack_path pack_txt
+      | Ttyp_package {tpt_path; tpt_txt} ->
+          f ~namespace:Module_type ctyp_env tpt_path tpt_txt
       | Ttyp_class (path, lid, _typs) ->
           (* Deprecated syntax to extend a polymorphic variant *)
           f ~namespace:Type ctyp_env path lid
@@ -379,7 +379,8 @@ let index_occurrences binary_annots =
        should make these successive reductions fast. *)
     let rec index_components namespace lid path  =
       let module_ = Shape.Sig_component_kind.Module in
-      match lid.Location.txt, path with
+      let scraped_path = Path.scrape_extra_ty path in
+      match lid.Location.txt, scraped_path with
       | Longident.Ldot (lid', _), Path.Pdot (path', _) ->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
@@ -476,12 +477,16 @@ let save_cmt target binary_annots initial_env cmi shape =
          let cmt_annots = clear_env binary_annots in
          let cmt_uid_to_decl = index_declarations cmt_annots in
          let source_digest = Option.map Digest.file sourcefile in
+         let cmt_args =
+           let cmt_args = Array.copy Sys.argv in
+           cmt_args.(0) <- Location.rewrite_absolute_path Sys.argv.(0);
+           cmt_args in
          let cmt = {
            cmt_modname = Unit_info.Artifact.modname target;
            cmt_annots;
            cmt_declaration_dependencies = !uids_deps;
            cmt_comments = Lexer.comments ();
-           cmt_args = Sys.argv;
+           cmt_args;
            cmt_sourcefile = sourcefile;
            cmt_builddir = Location.rewrite_absolute_path (Sys.getcwd ());
            cmt_loadpath = Load_path.get_paths ();

@@ -103,9 +103,9 @@ let compute_variance env visited vari ty =
     | Tpoly (ty, _) ->
         compute_same ty
     | Tvar _ | Tnil | Tlink _ | Tunivar _ -> ()
-    | Tpackage (_, fl) ->
+    | Tpackage pack ->
         let v = Variance.(compose vari full) in
-        List.iter (fun (_, ty) -> compute_variance_rec v ty) fl
+        List.iter (fun (_, ty) -> compute_variance_rec v ty) pack.pack_cstrs
   in
   compute_variance_rec vari ty
 
@@ -122,7 +122,10 @@ let compute_variance_type env ~check (required, loc) decl tyl =
     List.map
       (fun (c,n,i) ->
         let i = if check_injectivity then i else false in
-        if c || n then (c,n,i) else (true,true,i))
+        (* c and n reflects respectively + and - in the syntax,
+           and maps respectively to `not May_neg` and `not May_pos`
+           in the {!Types.Variance.f} fields *)
+        not n, not c, i)
       required
   in
   (* Prepare *)
@@ -322,11 +325,13 @@ let compute_variance_decl env ~check decl (required, _ as rloc) =
     Option.map (fun id -> Type_declaration (id, decl)) check
   in
   let abstract = Btype.type_kind_is_abstract decl in
-  if (abstract || decl.type_kind = Type_open) && decl.type_manifest = None then
+  match decl with
+  | {type_kind = Type_abstract _ | Type_open; type_manifest = None} ->
     List.map
       (fun (c, n, i) -> make (not n) (not c) (not abstract || i))
       required
-  else begin
+  | { type_kind = _; type_manifest = Some _ }
+  | { type_kind = Type_record _ | Type_variant _; type_manifest = _ } ->
     let mn =
       match decl.type_manifest with
         None -> []
@@ -369,7 +374,6 @@ let compute_variance_decl env ~check decl (required, _ as rloc) =
     if mn = [] || not abstract then
       List.map Variance.strengthen vari
     else vari
-  end
 
 let is_hash id =
   let s = Ident.name id in
@@ -416,6 +420,7 @@ let transl_variance (v, i) =
     | Covariant -> (true, false)
     | Contravariant -> (false, true)
     | NoVariance -> (false, false)
+    | Bivariant -> (true, true)
   in
   (co, cn, match i with Injective -> true | NoInjectivity -> false)
 

@@ -44,7 +44,11 @@ and type_desc =
   | Tvariant of row_desc
   | Tunivar of string option
   | Tpoly of type_expr * type_expr list
-  | Tpackage of Path.t * (string list * type_expr) list
+  | Tpackage of package
+
+and package =
+    { pack_path : Path.t;
+      pack_cstrs : (string list * type_expr) list }
 
 and row_desc =
     { row_fields: (label * row_field) list;
@@ -146,18 +150,25 @@ and method_privacy =
      0 <= may_pos <= pos
      0 <= may_weak <= may_neg <= neg
      0 <= inj
+   may_pos/may_neg mean possible positive/negative occurrences;
+     thus, may_pos + may_neg = invariant
    Additionally, the following implications are valid
      pos => inj
      neg => inj
    Examples:
-     type 'a t        : may_pos + may_neg + may_weak
+     type 'a t        : may_pos + may_neg
+     type +'a t       : may_pos
+     type -'a t       : may_neg
+     type +-'a t      : null (no occurrence of 'a assured)
+     type !'a t       : may_pos + may_neg + inj
+     type +!'a t      : may_pos + inj
+     type -!'a t      : may_neg + inj
+     type +-!'a t     : inj
      type 'a t = 'a   : pos
      type 'a t = 'a -> unit : neg
      type 'a t = ('a -> unit) -> unit : pos + may_weak
      type 'a t = A of (('a -> unit) -> unit) : pos
      type +'a p = ..  : may_pos + inj
-     type +!'a t      : may_pos + inj
-     type -!'a t      : may_neg + inj
      type 'a t = A    : inj
  *)
 

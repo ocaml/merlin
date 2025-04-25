@@ -51,6 +51,7 @@ and hidden_include_dirs = ref ([] : string list) (* -H *)
 and no_std_include = ref false          (* -nostdlib *)
 and no_cwd = ref false                  (* -nocwd *)
 and print_types = ref false             (* -i *)
+and print_variance = ref false          (* -i-variance *)
 and make_archive = ref false            (* -a *)
 and debug = ref false                   (* -g *)
 and debug_full = ref false              (* For full DWARF support *)
@@ -100,7 +101,7 @@ and make_package = ref false            (* -pack *)
 and for_package = ref (None: string option) (* -for-pack *)
 and error_size = ref 500                (* -error-size *)
 and float_const_prop = ref true         (* -no-float-const-prop *)
-and transparent_modules = ref false     (* -trans-mod *)
+and no_alias_deps = ref false           (* -no-alias-deps *)
 let unique_ids = ref true               (* -d(no-)unique-ids *)
 let canonical_ids = ref false           (* -d(no-)canonical-ids *)
 let locations = ref true                (* -d(no-)locations *)
@@ -149,6 +150,9 @@ let force_slash = ref false             (* for ocamldep *)
 let clambda_checks = ref false          (* -clambda-checks *)
 let cmm_invariants =
   ref Config.with_cmm_invariants        (* -dcmm-invariants *)
+
+let parsetree_ghost_loc_invariant = ref false
+  (* -dparsetree-ghost-loc-invariant *)
 
 let flambda_invariant_checks =
   ref Config.with_flambda_invariants    (* -flambda-(no-)invariants *)

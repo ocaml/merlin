@@ -50,8 +50,8 @@ let ghost_loc (startpos, endpos) = {
 }
 
 let mktyp ~loc ?attrs d = Typ.mk ~loc:(make_loc loc) ?attrs d
-let mkpat ~loc d = Pat.mk ~loc:(make_loc loc) d
-let mkexp ~loc d = Exp.mk ~loc:(make_loc loc) d
+let mkpat ~loc ?attrs d = Pat.mk ~loc:(make_loc loc) ?attrs d
+let mkexp ~loc ?attrs d = Exp.mk ~loc:(make_loc loc) ?attrs d
 let mkmty ~loc ?attrs d = Mty.mk ~loc:(make_loc loc) ?attrs d
 let mksig ~loc d = Sig.mk ~loc:(make_loc loc) d
 let mkmod ~loc ?attrs d = Mod.mk ~loc:(make_loc loc) ?attrs d
@@ -108,7 +108,7 @@ let reloc_pat ~loc x =
 let reloc_exp ~loc x =
   { x with pexp_loc = make_loc loc;
            pexp_loc_stack = push_loc x.pexp_loc x.pexp_loc_stack }
-let reloc_typ ~loc x =
+let _reloc_typ ~loc x =
   { x with ptyp_loc = make_loc loc;
            ptyp_loc_stack = push_loc x.ptyp_loc x.ptyp_loc_stack }
 
@@ -122,25 +122,14 @@ let mkpatvar ~loc name =
   mkpat ~loc (Ppat_var (mkrhs name loc))
 
 (*
-  Ghost expressions and patterns:
-  expressions and patterns that do not appear explicitly in the
-  source file they have the loc_ghost flag set to true.
-  Then the profiler will not try to instrument them and the
-  -annot option will not try to display their type.
+  See ./location.mli for when to use a ghost location or not.
 
   Every grammar rule that generates an element with a location must
   make at most one non-ghost element, the topmost one.
-
-  How to tell whether your location must be ghost:
-  A location corresponds to a range of characters in the source file.
-  If the location contains a piece of code that is syntactically
-  valid (according to the documentation), and corresponds to the
-  AST node, then the location must be real; in all other cases,
-  it must be ghost.
 *)
-let ghexp ~loc d = Exp.mk ~loc:(ghost_loc loc) d
-let ghpat ~loc d = Pat.mk ~loc:(ghost_loc loc) d
-let ghtyp ~loc d = Typ.mk ~loc:(ghost_loc loc) d
+let ghexp ~loc ?attrs d = Exp.mk ~loc:(ghost_loc loc) ?attrs d
+let ghpat ~loc ?attrs d = Pat.mk ~loc:(ghost_loc loc) ?attrs d
+let ghtyp ~loc ?attrs d = Typ.mk ~loc:(ghost_loc loc) ?attrs d
 let ghloc ~loc d = { txt = d; loc = ghost_loc loc }
 let ghstr ~loc d = Str.mk ~loc:(ghost_loc loc) d
 let ghsig ~loc d = Sig.mk ~loc:(ghost_loc loc) d
@@ -447,33 +436,28 @@ let wrap_type_annotation ~loc newtypes core_type body =
   let exp = mk_newtypes newtypes exp in
   (exp, ghtyp(Ptyp_poly(newtypes, Typ.varify_constructors newtypes core_type)))
 
-let wrap_exp_attrs ~loc body (ext, attrs) =
-  let ghexp = ghexp ~loc in
+let pexp_extension ~id e = Pexp_extension (id, PStr [mkstrexp e []])
+
+let mkexp_attrs ~loc desc (ext, attrs) =
   (* todo: keep exact location for the entire attribute *)
-  let body = {body with pexp_attributes = attrs @ body.pexp_attributes} in
   match ext with
-  | None -> body
-  | Some id -> ghexp(Pexp_extension (id, PStr [mkstrexp body []]))
+  | None -> mkexp ~loc ~attrs desc
+  | Some id ->
+     mkexp ~loc (pexp_extension ~id (ghexp ~loc ~attrs desc))
 
-let mkexp_attrs ~loc d attrs =
-  wrap_exp_attrs ~loc (mkexp ~loc d) attrs
-
-let wrap_typ_attrs ~loc typ (ext, attrs) =
+let mktyp_attrs ~loc desc (ext, attrs) =
   (* todo: keep exact location for the entire attribute *)
-  let typ = {typ with ptyp_attributes = attrs @ typ.ptyp_attributes} in
   match ext with
-  | None -> typ
-  | Some id -> ghtyp ~loc (Ptyp_extension (id, PTyp typ))
+  | None -> mktyp ~loc ~attrs desc
+  | Some id ->
+     mktyp ~loc (Ptyp_extension (id, PTyp (ghtyp ~loc ~attrs desc)))
 
-let wrap_pat_attrs ~loc pat (ext, attrs) =
+let mkpat_attrs ~loc desc (ext, attrs) =
   (* todo: keep exact location for the entire attribute *)
-  let pat = {pat with ppat_attributes = attrs @ pat.ppat_attributes} in
   match ext with
-  | None -> pat
-  | Some id -> ghpat ~loc (Ppat_extension (id, PPat (pat, None)))
-
-let mkpat_attrs ~loc d attrs =
-  wrap_pat_attrs ~loc (mkpat ~loc d) attrs
+  | None -> mkpat ~loc ~attrs desc
+  | Some id ->
+     mkpat ~loc (Ppat_extension (id, PPat (ghpat ~loc ~attrs desc, None)))
 
 let wrap_class_attrs ~loc:_ body attrs =
   {body with pcl_attributes = attrs @ body.pcl_attributes}
@@ -482,21 +466,15 @@ let wrap_mod_attrs ~loc:_ attrs body =
 let wrap_mty_attrs ~loc:_ attrs body =
   {body with pmty_attributes = attrs @ body.pmty_attributes}
 
-let wrap_str_ext ~loc body ext =
-  match ext with
-  | None -> body
-  | Some id -> ghstr ~loc (Pstr_extension ((id, PStr [body]), []))
-
 let wrap_mkstr_ext ~loc (item, ext) =
-  wrap_str_ext ~loc (mkstr ~loc item) ext
-
-let wrap_sig_ext ~loc body ext =
   match ext with
-  | None -> body
-  | Some id -> ghsig ~loc (Psig_extension ((id, PSig [body]), []))
+  | None -> mkstr ~loc item
+  | Some id -> mkstr ~loc (Pstr_extension ((id, PStr [ghstr ~loc item]), []))
 
 let wrap_mksig_ext ~loc (item, ext) =
-  wrap_sig_ext ~loc (mksig ~loc item) ext
+  match ext with
+  | None -> mksig ~loc item
+  | Some id -> mksig ~loc (Psig_extension ((id, PSig [ghsig ~loc item]), []))
 
 let mk_quotedext ~loc (id, idloc, str, strloc, delim) =
   let exp_id = mkloc id idloc in
@@ -2185,8 +2163,8 @@ class_signature:
 class_self_type:
     LPAREN core_type RPAREN
       { $2 }
-  | mktyp((* empty *) { Ptyp_any })
-      { $1 }
+  | (* empty *)
+      { ghtyp ~loc:$sloc Ptyp_any }
 ;
 %inline class_sig_fields:
   flatten(text_csig(class_sig_field)*)
@@ -2349,9 +2327,7 @@ fun_seq_expr:
     { Pexp_sequence($1, $3) })
     { $1 }
   | fun_expr SEMI PERCENT attr_id seq_expr
-    { let seq = mkexp ~loc:$sloc (Pexp_sequence ($1, $5)) in
-      let payload = PStr [mkstrexp seq []] in
-      mkexp ~loc:$sloc (Pexp_extension ($4, payload)) }
+    { mkexp_attrs ~loc:$sloc (Pexp_sequence ($1, $5)) (Some $4, []) }
 ;
 seq_expr:
   | or_function(fun_seq_expr) { $1 }
@@ -2573,11 +2549,9 @@ simple_expr:
 *)
 %inline metaocaml_expr:
   | METAOCAML_ESCAPE e = simple_expr
-    { wrap_exp_attrs ~loc:$sloc e
-       (Some (mknoloc "metaocaml.escape"), []) }
+    { mkexp ~loc:$sloc (pexp_extension ~id:(mknoloc "metaocaml.escape") e) }
   | METAOCAML_BRACKET_OPEN e = seq_expr METAOCAML_BRACKET_CLOSE
-    { wrap_exp_attrs ~loc:$sloc e
-       (Some  (mknoloc "metaocaml.bracket"),[]) }
+    { mkexp ~loc:$sloc (pexp_extension ~id:(mknoloc "metaocaml.bracket") e) }
 ;
 
 %inline simple_expr_:
@@ -3390,10 +3364,16 @@ type_variance:
   | INFIXOP2
       { if $1 = "+!" then Covariant, Injective else
         if $1 = "-!" then Contravariant, Injective else
+        if $1 = "+-" then Bivariant, NoInjectivity else
+        if $1 = "-+" then Bivariant, NoInjectivity else
+        if $1 = "+-!" then Bivariant, Injective else
+        if $1 = "-+!" then Bivariant, Injective else
         expecting $loc($1) "type_variance" }
   | PREFIXOP
       { if $1 = "!+" then Covariant, Injective else
         if $1 = "!-" then Contravariant, Injective else
+        if $1 = "!+-" then Bivariant, Injective else
+        if $1 = "!-+" then Bivariant, Injective else
         expecting $loc($1) "type_variance" }
 ;
 
@@ -3785,8 +3765,8 @@ tuple_type:
 delimited_type_supporting_local_open:
   | LPAREN type_ = core_type RPAREN
       { type_ }
-  | LPAREN MODULE attrs = ext_attributes package_type = package_type RPAREN
-      { wrap_typ_attrs ~loc:$sloc (reloc_typ ~loc:$sloc package_type) attrs }
+  | LPAREN MODULE ext_attrs = ext_attributes package_type = package_type_ RPAREN
+      { mktyp_attrs ~loc:$sloc (Ptyp_package package_type) ext_attrs }
   | mktyp(
       LBRACKET field = tag_field RBRACKET
         { Ptyp_variant([ field ], Closed, None) }
@@ -4234,6 +4214,7 @@ single_attr_id:
   | DO { "do" }
   | DONE { "done" }
   | DOWNTO { "downto" }
+  | EFFECT { "effect" }
   | ELSE { "else" }
   | END { "end" }
   | EXCEPTION { "exception" }

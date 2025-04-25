@@ -216,3 +216,88 @@ let iterator =
 
 let structure st = iterator.structure iterator st
 let signature sg = iterator.signature iterator sg
+
+let check_loc_ghost meth v ~source_contents =
+  let equal_modulo_loc =
+    let no_locs =
+      { Ast_mapper.default_mapper
+        with location = (fun _ _ -> Location.none);
+             attributes = (fun _ _ -> []);
+        (* type z = (int [@foo]) create int at location "int" instead of
+           "int [@foo]". I'd rather loosen the check than worsen the location
+           for type errors. *)
+      }
+    in
+    fun meth node1 node2 ->
+      let norm1 = (meth no_locs) no_locs node1 in
+      let norm2 = (meth no_locs) no_locs node2 in
+      Stdlib.(=) norm1 norm2
+  in
+  let super = Ast_iterator.default_iterator in
+  let depth = ref 0 in
+  let limit_quadratic_complexity meth f =
+    fun self v ->
+      if !depth < 1000 then (
+        depth := !depth + 1;
+        (meth super) self v;
+        depth := !depth -1 ;
+        f v;
+    )
+  in
+  let check ?print ?(wrap = Fun.id) meth parse ast1 (loc : Location.t) =
+    let source_fragment =
+      wrap (
+          String.sub source_contents
+            loc.loc_start.pos_cnum
+            (loc.loc_end.pos_cnum - loc.loc_start.pos_cnum)
+        )
+    in
+    let lexbuf = Lexing.from_string source_fragment in
+    let should_be_loc_ghost, error_if_not =
+      match parse lexbuf with
+      | exception Parsing.Parse_error | exception _ ->
+         true, "non-ghost location points to a non parsable range"
+      | ast2 ->
+         if equal_modulo_loc meth ast1 ast2
+         then false, "ghost location should be non-ghost"
+         else true, "non-ghost location points to a range of source \
+                     code that contains the wrong ast"
+    in
+    if loc.loc_ghost <> should_be_loc_ghost
+    then (
+      Format.eprintf "@[<2>%a: %s%t@]@." Location.print_loc loc error_if_not
+        (fun f ->
+          match print with
+          | None -> ()
+          | Some print -> Format.fprintf f "@\n%a" print ast1)
+    )
+  in
+  let self =
+    { super with
+      expr =
+        limit_quadratic_complexity (fun s -> s.expr)
+          (fun v ->
+            check (fun s -> s.expr) Parse.expression v v.pexp_loc
+              (* ~print:(fun f ty -> Printast.expression 0 f ty) *)
+              (* Add parens because in 1 + 2, + gets assigned a non-ghost
+                 location, but + without parens is not a valid expression. *)
+              ~wrap:(fun s -> "( " ^ s ^ " )"))
+    ; pat =
+        limit_quadratic_complexity (fun s -> s.pat)
+          (fun v -> check (fun s -> s.pat) Parse.pattern v v.ppat_loc )
+    ; typ =
+        limit_quadratic_complexity (fun s -> s.typ)
+          (fun v ->
+            check
+              (* ~print:(fun f ty -> Printast.payload 0 f (PTyp ty)) *)
+              (fun s -> s.typ) Parse.core_type v v.ptyp_loc )
+    ; attribute = (fun self attr ->
+      (* Doc comments would probably need some special case to check they are
+         correctly placed. *)
+      if attr.attr_name.txt = "ocaml.doc"
+         || attr.attr_name.txt = "ocaml.text"
+      then ()
+      else super.attribute self attr)
+    }
+  in
+  (meth self) self v
