@@ -34,7 +34,7 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - ocaml-base-compiler.5.3.0
+          - ocaml-base-compiler.5.4.0+trunk
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
@@ -51,6 +51,6 @@ jobs:
 
       - name: Check that Merlin and OCaml-LSP are co-installable
         run: |
-          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/ocaml/ocaml-lsp.git
-          opam --cli=2.1 pin --with-version=5.4-503 --no-action .
+          opam --cli=2.1 pin --with-version=dev --no-action https://github.com/ocaml/ocaml-lsp.git#504-compat
+          opam --cli=2.1 pin --with-version=5.4-504 --no-action .
           opam install ocaml-lsp-server --ignore-constraints-on=ocamlformat
