@@ -6,7 +6,7 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ main ]
+    branches: [ 504 ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -16,7 +16,7 @@ on:
       - 'vim/**'
       - '**/emacs-lint.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ 504 ]
     paths-ignore:
       - '**.md'
       - '**.txt'
