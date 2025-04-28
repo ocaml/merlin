@@ -31,18 +31,6 @@
       "stale": false
     },
     {
-      "file": "$TESTCASE_ROOT/lib.ml",
-      "start": {
-        "line": 2,
-        "col": 22
-      },
-      "end": {
-        "line": 2,
-        "col": 25
-      },
-      "stale": false
-    },
-    {
       "file": "$TESTCASE_ROOT/main.ml",
       "start": {
         "line": 1,
@@ -51,6 +39,18 @@
       "end": {
         "line": 1,
         "col": 29
+      },
+      "stale": false
+    },
+    {
+      "file": "$TESTCASE_ROOT/lib.ml",
+      "start": {
+        "line": 2,
+        "col": 22
+      },
+      "end": {
+        "line": 2,
+        "col": 25
       },
       "stale": false
     }

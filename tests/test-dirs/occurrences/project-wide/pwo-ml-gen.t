@@ -57,6 +57,6 @@ We should not index generated modules (lib.ml-gen)
 
   $ $MERLIN single occurrences -scope project -identifier-at 3:23 \
   > -filename main.ml <main.ml | jq '.value[].file'
-  "$TESTCASE_ROOT/lib/aux.ml"
-  "$TESTCASE_ROOT/lib/aux.ml"
   "$TESTCASE_ROOT/main.ml"
+  "$TESTCASE_ROOT/lib/aux.ml"
+  "$TESTCASE_ROOT/lib/aux.ml"
