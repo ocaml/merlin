@@ -25,3 +25,6 @@ description:
   "These libraries provides access to low-level compiler interfaces and the
   standard higher-level merlin protocol. The library is provided as-is, is not
   thoroughly documented, and its public API might break with any new release."
+pin-depends: [
+  [ "dune.3.18.3" "git+https://github.com/ocaml/dune#3896fea087ed8bdc82e55a1a1910f8273aaae528" ]
+]
