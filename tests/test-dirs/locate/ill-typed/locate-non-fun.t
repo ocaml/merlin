@@ -27,16 +27,16 @@ When some typing error happens
   {
     "start": {
       "line": 15,
-      "col": 33
+      "col": 11
     },
     "end": {
       "line": 15,
-      "col": 42
+      "col": 79
     },
     "type": "typer",
     "sub": [],
     "valid": true,
-    "message": "The value Int.equal has type int -> int -> bool but an expression was expected of type Float.t -> Float.t -> bool Type int is not compatible with type Float.t = float"
+    "message": "This expression has type Float.t list but an expression was expected of type   unit"
   }
 
 Merlin is still able to inspect part of the ill-typed tree
@@ -55,7 +55,13 @@ Merlin is still able to inspect part of the ill-typed tree
     "tail": "no"
   }
 
-FIXME: And locate should as well...
+And locate should as well...
   $ $MERLIN single locate -position 15:70 \
   > -filename ill.ml <ill.ml | jq '.value'
-  "Not in environment 'problem'"
+  {
+    "file": "$TESTCASE_ROOT/ill.ml",
+    "pos": {
+      "line": 10,
+      "col": 6
+    }
+  }
