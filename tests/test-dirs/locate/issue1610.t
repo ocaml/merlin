@@ -19,6 +19,9 @@ FIXME: we should jump to the functor's body, not the current definition
     "file": "$TESTCASE_ROOT/main.ml",
     "pos": {
       "line": 11,
-      "col": 0
+      "col": 5
     }
   }
+
+The issue appears to reside in "reconstruct identifier".
+A fix was attempted in https://github.com/ocaml/merlin/pull/1611.
