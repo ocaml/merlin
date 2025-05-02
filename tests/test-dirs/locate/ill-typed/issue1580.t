@@ -34,12 +34,28 @@ Issue #1580:
     "notifications": []
   }
 
-FIXME: the typing recovery would be improved for Merlin  to perform the correct
-jump here:
+The typing recovery allows Merlin to perform the correct jump here:
 
   $ $MERLIN single locate -position 6:16 \
   > -filename test.ml <test.ml | jq '.value'
-  "Not in environment 'M.foo'"
+  {
+    "file": "$TESTCASE_ROOT/test.ml",
+    "pos": {
+      "line": 2,
+      "col": 6
+    }
+  }
+
+
+  $ $MERLIN single locate -position 6:25 \
+  > -filename test.ml <test.ml | jq '.value'
+  {
+    "file": "lib/ocaml/stdlib.mli",
+    "pos": {
+      "line": 162,
+      "col": 9
+    }
+  }
 
 Issue #1588:
 
@@ -51,7 +67,13 @@ Issue #1588:
 
   $ $MERLIN single locate -position 3:23 \
   > -filename test.ml <test.ml | jq '.value'
-  "Not in environment 'test'"
+  {
+    "file": "$TESTCASE_ROOT/test.ml",
+    "pos": {
+      "line": 1,
+      "col": 4
+    }
+  }
 
   $ $MERLIN single errors -filename test.ml <test.ml 
   {
