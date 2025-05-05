@@ -88,6 +88,7 @@ and item =
       | `Type
       | `Exn
       | `Class
+      | `ClassType
       | `Method ];
     outline_type : string option;
     deprecated : bool;
