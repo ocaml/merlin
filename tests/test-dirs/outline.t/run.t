@@ -1,6 +1,4 @@
   $ echo "S .\nB .\nFLG -nopervasives" > .merlin
-TODO: handle class type
-TODO: handle nested method and values in class type
   $ $MERLIN single outline < foo.ml
   {
     "class": "return",
@@ -51,11 +49,11 @@ TODO: handle nested method and values in class type
           {
             "start": {
               "line": 62,
-              "col": 9
+              "col": 2
             },
             "end": {
               "line": 62,
-              "col": 12
+              "col": 35
             },
             "name": "baz",
             "kind": "Method",
