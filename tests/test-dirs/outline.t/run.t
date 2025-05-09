@@ -562,3 +562,385 @@
   $ $MERLIN single outline -short-paths < path.ml | jq '.value[].type'
   "a"
   null
+  $ $MERLIN single outline -filename foo.mli < foo.mli
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 56,
+          "col": 0
+        },
+        "end": {
+          "line": 56,
+          "col": 29
+        },
+        "name": "final_let",
+        "kind": "Value",
+        "type": "< foo : int >",
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 54,
+          "col": 0
+        },
+        "end": {
+          "line": 54,
+          "col": 19
+        },
+        "name": "tb",
+        "kind": "ClassType",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 50,
+          "col": 0
+        },
+        "end": {
+          "line": 52,
+          "col": 3
+        },
+        "name": "ta",
+        "kind": "ClassType",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 51,
+              "col": 2
+            },
+            "end": {
+              "line": 51,
+              "col": 35
+            },
+            "name": "baz",
+            "kind": "Method",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 32,
+          "col": 0
+        },
+        "end": {
+          "line": 32,
+          "col": 19
+        },
+        "name": "tb",
+        "kind": "ClassType",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 30,
+          "col": 0
+        },
+        "end": {
+          "line": 30,
+          "col": 26
+        },
+        "name": "ta",
+        "kind": "ClassType",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 22,
+          "col": 0
+        },
+        "end": {
+          "line": 22,
+          "col": 42
+        },
+        "name": "point",
+        "kind": "Type",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 22,
+              "col": 34
+            },
+            "end": {
+              "line": 22,
+              "col": 40
+            },
+            "name": "z",
+            "kind": "Label",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          },
+          {
+            "start": {
+              "line": 22,
+              "col": 26
+            },
+            "end": {
+              "line": 22,
+              "col": 33
+            },
+            "name": "y",
+            "kind": "Label",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          },
+          {
+            "start": {
+              "line": 22,
+              "col": 18
+            },
+            "end": {
+              "line": 22,
+              "col": 25
+            },
+            "name": "x",
+            "kind": "Label",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 20,
+          "col": 0
+        },
+        "end": {
+          "line": 20,
+          "col": 50
+        },
+        "name": "eithery",
+        "kind": "Type",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 20,
+              "col": 36
+            },
+            "end": {
+              "line": 20,
+              "col": 50
+            },
+            "name": "Righty",
+            "kind": "Constructor",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          },
+          {
+            "start": {
+              "line": 20,
+              "col": 24
+            },
+            "end": {
+              "line": 20,
+              "col": 35
+            },
+            "name": "Lefty",
+            "kind": "Constructor",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 18,
+          "col": 0
+        },
+        "end": {
+          "line": 18,
+          "col": 20
+        },
+        "name": "Ex",
+        "kind": "Exn",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 10,
+          "col": 0
+        },
+        "end": {
+          "line": 12,
+          "col": 3
+        },
+        "name": "class_type_a",
+        "kind": "ClassType",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 11,
+              "col": 2
+            },
+            "end": {
+              "line": 11,
+              "col": 23
+            },
+            "name": "a",
+            "kind": "Method",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 0
+        },
+        "end": {
+          "line": 8,
+          "col": 3
+        },
+        "name": "Bar",
+        "kind": "Module",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 4,
+              "col": 2
+            },
+            "end": {
+              "line": 7,
+              "col": 5
+            },
+            "name": "S1",
+            "kind": "Signature",
+            "type": null,
+            "children": [
+              {
+                "start": {
+                  "line": 6,
+                  "col": 4
+                },
+                "end": {
+                  "line": 6,
+                  "col": 22
+                },
+                "name": "foo",
+                "kind": "Value",
+                "type": "t -> int",
+                "children": [],
+                "deprecated": false
+              },
+              {
+                "start": {
+                  "line": 5,
+                  "col": 4
+                },
+                "end": {
+                  "line": 5,
+                  "col": 10
+                },
+                "name": "t",
+                "kind": "Type",
+                "type": null,
+                "children": [],
+                "deprecated": false
+              }
+            ],
+            "deprecated": false
+          },
+          {
+            "start": {
+              "line": 2,
+              "col": 2
+            },
+            "end": {
+              "line": 2,
+              "col": 14
+            },
+            "name": "t",
+            "kind": "Type",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      }
+    ],
+    "notifications": []
+  }
+
+  $ $MERLIN single outline -filename path.mli < path.mli
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 5,
+          "col": 0
+        },
+        "end": {
+          "line": 5,
+          "col": 11
+        },
+        "name": "x",
+        "kind": "Value",
+        "type": "A.a",
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 0
+        },
+        "end": {
+          "line": 3,
+          "col": 3
+        },
+        "name": "A",
+        "kind": "Module",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 2,
+              "col": 2
+            },
+            "end": {
+              "line": 2,
+              "col": 14
+            },
+            "name": "a",
+            "kind": "Type",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      }
+    ],
+    "notifications": []
+  }
