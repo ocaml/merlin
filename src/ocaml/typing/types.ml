@@ -515,9 +515,7 @@ type changes =
   | Unchanged
   | Invalid
 
-open Local_store
-
-let trail = s_table ref Unchanged
+let trail = Local_store.s_table ref Unchanged
 
 let log_change ch =
   let r' = ref Unchanged in
@@ -815,7 +813,7 @@ let undo_change = function
 
 type snapshot = changes ref * int
 let last_snapshot = Local_store.s_ref 0
-let linked_variables = s_ref 0
+let linked_variables = Local_store.s_ref 0
 
 let log_type ty =
   if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))
