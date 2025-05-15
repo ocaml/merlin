@@ -14,6 +14,7 @@ module Ident = struct
   let global name =
     Ident.create_persistent name
 
+  let print_with_scope t = Ident.print_with_scope t
 end
 
 module Ident_map = Map.Make(Ident)
@@ -1153,12 +1154,15 @@ end = struct
       module_type_names = String_map.empty;
       module_names = String_map.empty; }
 
-  let previous_type t id =
+  let failwith_id msg id =
+    failwith (Format_doc.asprintf "%s: %a" msg Ident.print_with_scope id)
+
+  let previous_type _desc t id =
     match Ident_map.find id t.types with
     | exception Not_found -> None
     | prev ->
       match Type.declaration prev with
-      | None -> failwith "Graph.add: type already defined"
+      | None -> failwith_id "Graph.add: type already defined" id
       | Some _ as o -> o
 
   let previous_class_type t id =
@@ -1166,7 +1170,7 @@ end = struct
     | exception Not_found -> None
     | prev ->
       match Class_type.declaration prev with
-      | None -> failwith "Graph.add: class type already defined"
+      | None -> failwith_id "Graph.add: class type already defined" id
       | Some _ as o -> o
 
   let previous_module_type t id =
@@ -1174,7 +1178,7 @@ end = struct
     | exception Not_found -> None
     | prev ->
       match Module_type.declaration prev with
-      | None -> failwith "Graph.add: module type already defined"
+      | None -> failwith_id "Graph.add: module type already defined" id
       | Some _ as o -> o
 
   let previous_module t id =
@@ -1182,7 +1186,7 @@ end = struct
     | exception Not_found -> None
     | prev ->
       match Module.declaration prev with
-      | None -> failwith "Graph.add: module already defined"
+      | None -> failwith_id "Graph.add: module already defined" id
       | Some _ as o -> o
 
   let add_name source id names =
@@ -1213,7 +1217,7 @@ end = struct
     let rec loop acc diff declarations = function
       | [] -> loop_declarations acc diff declarations
       | Component.Type(origin, id, desc, source, dpr) :: rest ->
-          let prev = previous_type acc id in
+          let prev = previous_type desc acc id in
           let typ = Type.base origin id (Some desc) dpr in
           let types = Ident_map.add id typ acc.types in
           let type_names = add_name source id acc.type_names in
