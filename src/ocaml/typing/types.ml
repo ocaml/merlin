@@ -639,7 +639,7 @@ module Transient_expr = struct
   let get_marks ty = ty.scope lsr 27
   let set_scope ty sc =
     if (sc land marks_mask <> 0) then
-      invalid_arg "Types.Transient_expr.set_scope";
+      invalid_arg(Format.sprintf "Types.Transient_expr.set_scope %i" sc);
     ty.scope <- (ty.scope land marks_mask) lor sc
   let try_mark_node mark ty =
     match mark with
