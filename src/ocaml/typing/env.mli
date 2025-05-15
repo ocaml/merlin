@@ -359,7 +359,9 @@ val remove_last_open: Path.t -> t -> t option
 val enter_value:
     ?check:(string -> Warnings.t) ->
     string -> value_description -> t -> Ident.t * t
-val enter_type: scope:int -> string -> type_declaration -> t -> Ident.t * t
+val enter_type:
+  ?long_path:bool -> scope:int ->
+  string -> type_declaration -> t -> Ident.t * t
 val enter_extension:
   scope:int -> rebind:bool -> string ->
   extension_constructor -> t -> Ident.t * t

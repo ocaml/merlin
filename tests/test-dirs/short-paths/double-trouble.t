@@ -8,7 +8,22 @@ Found in issue #1913
 
   $ $MERLIN single errors -short-paths -filename test.ml < test.ml
   {
-    "class": "failure",
-    "value": "Graph.add: type already defined: mn3/281[4]",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 60
+        },
+        "end": {
+          "line": 3,
+          "col": 62
+        },
+        "type": "typer",
+        "sub": [],
+        "valid": true,
+        "message": "The value ed has type mn3 plus but an expression was expected of type int"
+      }
+    ],
     "notifications": []
   }
