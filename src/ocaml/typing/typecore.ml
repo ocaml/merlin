@@ -913,7 +913,8 @@ let solve_constructor_annotation
           new_local_type ~loc:name.loc Definition
             ~manifest_and_scope:(tv, Ident.lowest_scope) in
         let (id, new_env) =
-          Env.enter_type ~scope:expansion_scope name.txt decl !!penv in
+          (* These redundant types should not be added to the shortpath graph *)
+          Env.enter_type ~long_path:true ~scope:expansion_scope name.txt decl !!penv in
         Pattern_env.set_env penv new_env;
         ({name with txt = id}, (decl, tv)))
       name_list
