@@ -10,6 +10,7 @@ unreleased
     - `inlay-hints` fix inlay hints on function parameters (#1923)
     - Fix issues with ident validation and Lid comparison for occurrences (#1924)
     - Handle class type in outline (#1932)
+    - Handle locally defined value in outline (#1936)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
