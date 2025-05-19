@@ -99,6 +99,18 @@ Merlin successfully finds occurrences outside file when UNIT_NAME directive is u
         "stale": false
       },
       {
+        "file": "$TESTCASE_ROOT/b.ml",
+        "start": {
+          "line": 2,
+          "col": 8
+        },
+        "end": {
+          "line": 2,
+          "col": 9
+        },
+        "stale": false
+      },
+      {
         "file": "$TESTCASE_ROOT/a.ml",
         "start": {
           "line": 1,
@@ -119,18 +131,6 @@ Merlin successfully finds occurrences outside file when UNIT_NAME directive is u
         "end": {
           "line": 2,
           "col": 19
-        },
-        "stale": false
-      },
-      {
-        "file": "$TESTCASE_ROOT/b.ml",
-        "start": {
-          "line": 2,
-          "col": 8
-        },
-        "end": {
-          "line": 2,
-          "col": 9
         },
         "stale": false
       }
@@ -162,6 +162,18 @@ Merlin successfully finds occurrences outside file when WRAPPING_PREFIX directiv
         "stale": false
       },
       {
+        "file": "$TESTCASE_ROOT/b.ml",
+        "start": {
+          "line": 2,
+          "col": 8
+        },
+        "end": {
+          "line": 2,
+          "col": 9
+        },
+        "stale": false
+      },
+      {
         "file": "$TESTCASE_ROOT/a.ml",
         "start": {
           "line": 1,
@@ -182,18 +194,6 @@ Merlin successfully finds occurrences outside file when WRAPPING_PREFIX directiv
         "end": {
           "line": 2,
           "col": 19
-        },
-        "stale": false
-      },
-      {
-        "file": "$TESTCASE_ROOT/b.ml",
-        "start": {
-          "line": 2,
-          "col": 8
-        },
-        "end": {
-          "line": 2,
-          "col": 9
         },
         "stale": false
       }

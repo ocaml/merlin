@@ -17,7 +17,7 @@ let pattern_has_constraint (type a) (pattern : a Typedtree.general_pattern) =
     pattern.pat_extra
 
 let structure_iterator hint_let_binding hint_pattern_binding
-    avoid_ghost_location typedtree range callback =
+    hint_function_params avoid_ghost_location typedtree range callback =
   let case_iterator hint_lhs (iterator : Iterator.iterator) case =
     let () = log ~title:"case" "on case" in
     let () = if hint_lhs then iterator.pat iterator case.Typedtree.c_lhs in
@@ -63,20 +63,18 @@ let structure_iterator hint_let_binding hint_pattern_binding
         let () = log ~title:"expression" "on match" in
         let () = iterator.expr iterator expr in
         List.iter ~f:(case_iterator hint_pattern_binding iterator) cases
-      | Texp_function
-          ( _,
-            Tfunction_cases
-              { cases =
-                  [ { c_rhs =
-                        { exp_desc = Texp_let (_, [ { vb_pat; _ } ], body); _ };
-                      _
-                    }
-                  ];
-                _
-              } ) ->
+      | Texp_function (args, body) -> (
         let () = log ~title:"expression" "on function" in
-        let () = iterator.pat iterator vb_pat in
-        iterator.expr iterator body
+        if hint_function_params then
+          List.iter args ~f:(fun Typedtree.{ fp_kind; _ } ->
+              match fp_kind with
+              | Tparam_pat pat | Tparam_optional_default (pat, _) ->
+                iterator.pat iterator pat);
+        match body with
+        | Tfunction_cases { cases; _ } ->
+          List.iter cases ~f:(fun case ->
+              case_iterator hint_pattern_binding iterator case)
+        | Tfunction_body body -> iterator.expr iterator body)
       | _ when is_ghost_location avoid_ghost_location expr.exp_loc ->
         (* Stop iterating when we see a ghost location to avoid
            annotating generated code *)
@@ -138,21 +136,24 @@ let create_hint env typ loc =
   let position = loc.Location.loc_end in
   (position, label)
 
-let of_structure ~hint_let_binding ~hint_pattern_binding ~avoid_ghost_location
-    ~start ~stop structure =
+let of_structure ~hint_let_binding ~hint_pattern_binding ~hint_function_params
+    ~avoid_ghost_location ~start ~stop structure =
   let () =
     log ~title:"start" "%a" Logger.fmt (fun fmt ->
         Format.fprintf fmt
-          "Start on %s to %s with : let: %b, pat: %b, ghost: %b"
+          "Start on %s to %s with : let: %b, pat: %b, function_param: %b, \
+           ghost: %b"
           (Lexing.print_position () start)
           (Lexing.print_position () stop)
-          hint_let_binding hint_pattern_binding avoid_ghost_location)
+          hint_let_binding hint_pattern_binding hint_function_params
+          avoid_ghost_location)
   in
   let range = (start, stop) in
   let hints = ref [] in
   let () =
     structure_iterator hint_let_binding hint_pattern_binding
-      avoid_ghost_location structure range (fun env typ loc ->
+      hint_function_params avoid_ghost_location structure range
+      (fun env typ loc ->
         let () =
           log ~title:"hint" "Find hint %a" Logger.fmt (fun fmt ->
               Format.fprintf fmt "%s - %a"

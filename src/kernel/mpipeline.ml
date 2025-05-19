@@ -4,23 +4,22 @@ let { Logger.log } = Logger.for_section "Pipeline"
 
 let time_shift = ref 0.0
 
-let timed_lazy r x =
-  lazy
-    (let start = Misc.time_spent () in
-     let time_shift0 = !time_shift in
-     let update () =
-       let delta = Misc.time_spent () -. start in
-       let shift = !time_shift -. time_shift0 in
-       time_shift := time_shift0 +. delta;
-       r := !r +. delta -. shift
-     in
-     match Lazy.force x with
-     | x ->
-       update ();
-       x
-     | exception exn ->
-       update ();
-       Std.reraise exn)
+let timed r x =
+  let start = Misc.time_spent () in
+  let time_shift0 = !time_shift in
+  let update () =
+    let delta = Misc.time_spent () -. start in
+    let shift = !time_shift -. time_shift0 in
+    time_shift := time_shift0 +. delta;
+    r := !r +. delta -. shift
+  in
+  match x () with
+  | x ->
+    update ();
+    x
+  | exception exn ->
+    update ();
+    Std.reraise exn
 
 module Cache = struct
   let cache = ref []
@@ -65,7 +64,7 @@ module Cache = struct
 end
 
 module Typer = struct
-  type t = { errors : exn list lazy_t; result : Mtyper.result }
+  type t = { errors : exn list; result : Mtyper.result }
 end
 
 module Ppx = struct
@@ -82,10 +81,10 @@ type t =
   { config : Mconfig.t;
     state : Mocaml.typer_state;
     raw_source : Msource.t;
-    source : (Msource.t * Mreader.parsetree option) lazy_t;
-    reader : Reader.t lazy_t;
-    ppx : Ppx.t lazy_t;
-    typer : Typer.t lazy_t;
+    source : Msource.t * Mreader.parsetree option;
+    reader : Reader.t;
+    ppx : Ppx.t;
+    typer : Typer.t;
     pp_time : float ref;
     reader_time : float ref;
     ppx_time : float ref;
@@ -99,7 +98,7 @@ type t =
 let raw_source t = t.raw_source
 
 let input_config t = t.config
-let input_source t = fst (Lazy.force t.source)
+let input_source t = fst t.source
 
 let with_pipeline t f =
   Mocaml.with_state t.state @@ fun () ->
@@ -110,10 +109,10 @@ let get_lexing_pos t pos =
     ~filename:(Mconfig.filename t.config)
     pos
 
-let reader t = Lazy.force t.reader
+let reader t = t.reader
 
-let ppx t = Lazy.force t.ppx
-let typer t = Lazy.force t.typer
+let ppx t = t.ppx
+let typer t = t.typer
 
 let reader_config t = (reader t).config
 let reader_parsetree t = (reader t).result.Mreader.parsetree
@@ -131,7 +130,7 @@ let ppx_errors t = (ppx t).Ppx.errors
 let final_config t = (ppx t).Ppx.config
 
 let typer_result t = (typer t).Typer.result
-let typer_errors t = Lazy.force (typer t).Typer.errors
+let typer_errors t = (typer t).Typer.errors
 
 module Reader_phase = struct
   type t =
@@ -220,19 +219,28 @@ end
 
 module Ppx_with_cache = Phase_cache.With_cache (Ppx_phase)
 
-let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
+type shared =
+  { msg : Domain_msg.msg;
+    config : (Mconfig.t * Msource.t * (int * int) option) option Shared.t;
+    (* Partial result *)
+    partial : t option Shared.t;
+    (* Use to protect typer computation *)
+    result : unit Shared.t
+  }
+
+let process ?position ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
     ?(ppx_time = ref 0.0) ?(typer_time = ref 0.0) ?(error_time = ref 0.0)
     ?(ppx_cache_hit = ref false) ?(reader_cache_hit = ref false)
-    ?(typer_cache_stats = ref Mtyper.Miss) ?for_completion config raw_source =
+    ?(typer_cache_stats = ref Mtyper.Miss) ?for_completion config raw_source
+    shared =
   let state =
     match state with
     | None -> Cache.get config
     | Some state -> state
   in
   let source =
-    timed_lazy pp_time
-      (lazy
-        (match Mconfig.(config.ocaml.pp) with
+    timed pp_time (fun () ->
+        match Mconfig.(config.ocaml.pp) with
         | None -> (raw_source, None)
         | Some { workdir; workval } -> (
           let source = Msource.text raw_source in
@@ -242,94 +250,132 @@ let process ?state ?(pp_time = ref 0.0) ?(reader_time = ref 0.0)
               ~source ~pp:workval
           with
           | `Source source -> (Msource.make source, None)
-          | (`Interface _ | `Implementation _) as ast -> (raw_source, Some ast))))
+          | (`Interface _ | `Implementation _) as ast -> (raw_source, Some ast)))
   in
   let reader =
-    timed_lazy reader_time
-      (lazy
-        (let (lazy ((_, pp_result) as source)) = source in
-         let config = Mconfig.normalize config in
-         Mocaml.setup_reader_config config;
-         let cache_disabling =
-           match (config.merlin.use_ppx_cache, pp_result) with
-           | false, _ -> Some "configuration"
-           | true, Some _ ->
-             (* The cache could be refined in the future to also act on the
+    timed reader_time (fun () ->
+        let ((_, pp_result) as source) = source in
+        let config = Mconfig.normalize config in
+        Mocaml.setup_reader_config config;
+        let cache_disabling =
+          match (config.merlin.use_ppx_cache, pp_result) with
+          | false, _ -> Some "configuration"
+          | true, Some _ ->
+            (* The cache could be refined in the future to also act on the
                 PP phase. For now, let's disable the whole cache when there's
                 a PP. *)
-             Some "source preprocessor usage"
-           | true, None -> None
-         in
-         let { Reader_with_cache.output = { result; cache_version };
-               cache_was_hit
-             } =
-           Reader_with_cache.apply ~cache_disabling
-             { source; for_completion; config }
-         in
-         reader_cache_hit := cache_was_hit;
-         let cache_version =
-           if Option.is_some cache_disabling then None else Some cache_version
-         in
-         { Reader.result; config; cache_version }))
+            Some "source preprocessor usage"
+          | true, None -> None
+        in
+        let { Reader_with_cache.output = { result; cache_version };
+              cache_was_hit
+            } =
+          Reader_with_cache.apply ~cache_disabling
+            { source; for_completion; config }
+        in
+        reader_cache_hit := cache_was_hit;
+        let cache_version =
+          if Option.is_some cache_disabling then None else Some cache_version
+        in
+        { Reader.result; config; cache_version })
   in
   let ppx =
-    timed_lazy ppx_time
-      (lazy
-        (let (lazy
-               { Reader.result = { Mreader.parsetree; _ };
-                 config;
-                 cache_version
-               }) =
-           reader
-         in
-         let caught = ref [] in
-         Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught
-         @@ fun () ->
-         (* Currently the cache is invalidated even for source changes that don't
+    timed ppx_time (fun () ->
+        let { Reader.result = { Mreader.parsetree; _ }; config; cache_version }
+            =
+          reader
+        in
+        let caught = ref [] in
+        Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught
+        @@ fun () ->
+        (* Currently the cache is invalidated even for source changes that don't
              change the parsetree. To avoid that, we'd have to digest the
              parsetree in the cache. *)
-         let cache_disabling, reader_cache =
-           match cache_version with
-           | Some v -> (None, Ppx_phase.Version v)
-           | None -> (Some "reader cache is disabled", Off)
-         in
-         let { Ppx_with_cache.output = parsetree; cache_was_hit } =
-           Ppx_with_cache.apply ~cache_disabling
-             { parsetree; config; reader_cache }
-         in
-         ppx_cache_hit := cache_was_hit;
-         { Ppx.config; parsetree; errors = !caught }))
+        let cache_disabling, reader_cache =
+          match cache_version with
+          | Some v -> (None, Ppx_phase.Version v)
+          | None -> (Some "reader cache is disabled", Off)
+        in
+        let { Ppx_with_cache.output = parsetree; cache_was_hit } =
+          Ppx_with_cache.apply ~cache_disabling
+            { parsetree; config; reader_cache }
+        in
+        ppx_cache_hit := cache_was_hit;
+        { Ppx.config; parsetree; errors = !caught })
   in
+  let cache_and_return_typer result =
+    let errors = timed error_time (fun () -> Mtyper.get_errors result) in
+    typer_cache_stats := Mtyper.get_cache_stat result;
+    { Typer.errors; result }
+  in
+
+  let typer_has_been_shared = ref false in
   let typer =
-    timed_lazy typer_time
-      (lazy
-        (let (lazy { Ppx.config; parsetree; _ }) = ppx in
-         Mocaml.setup_typer_config config;
-         let result = Mtyper.run config parsetree in
-         let errors = timed_lazy error_time (lazy (Mtyper.get_errors result)) in
-         typer_cache_stats := Mtyper.get_cache_stat result;
-         { Typer.errors; result }))
+    match
+      timed typer_time (fun () ->
+          let { Ppx.config; parsetree; _ } = ppx in
+          Mocaml.setup_typer_config config;
+          let result =
+            Mtyper.(
+              run config
+                (make_partial ?position shared.msg shared.result)
+                parsetree)
+          in
+          cache_and_return_typer result)
+    with
+    | res -> res
+    | effect Mtyper.(Partial result), k ->
+      let typer = cache_and_return_typer result in
+      let mpipeline =
+        { config;
+          state;
+          raw_source;
+          source;
+          reader;
+          ppx;
+          typer;
+          pp_time;
+          reader_time;
+          ppx_time;
+          typer_time;
+          error_time;
+          ppx_cache_hit;
+          reader_cache_hit;
+          typer_cache_stats
+        }
+      in
+      Shared.locking_set shared.partial (Some mpipeline);
+      typer_has_been_shared := true;
+      (* Back to [Mtyper.run] *)
+      Effect.Deep.continue k ()
   in
-  { config;
-    state;
-    raw_source;
-    source;
-    reader;
-    ppx;
-    typer;
-    pp_time;
-    reader_time;
-    ppx_time;
-    typer_time;
-    error_time;
-    ppx_cache_hit;
-    reader_cache_hit;
-    typer_cache_stats
-  }
+  if !typer_has_been_shared then
+    (* assert (Option.is_some position); *)
+    None
+  else
+    (* assert (position = None); *)
+    Some
+      { config;
+        state;
+        raw_source;
+        source;
+        reader;
+        ppx;
+        typer;
+        pp_time;
+        reader_time;
+        ppx_time;
+        typer_time;
+        error_time;
+        ppx_cache_hit;
+        reader_cache_hit;
+        typer_cache_stats
+      }
 
-let make config source = process (Mconfig.normalize config) source
+let make ?position config source shared =
+  process ?position (Mconfig.normalize config) source shared
 
-let for_completion position
+(* let for_completion position
     { config;
       state;
       raw_source;
@@ -341,7 +387,7 @@ let for_completion position
       _
     } =
   process config raw_source ~for_completion:position ~state ~pp_time
-    ~reader_time ~ppx_time ~typer_time ~error_time
+    ~reader_time ~ppx_time ~typer_time ~error_time *)
 
 let timing_information t =
   [ ("pp", !(t.pp_time));
@@ -351,9 +397,9 @@ let timing_information t =
     ("error", !(t.error_time))
   ]
 
-let cache_information t =
+let cache_information pipeline =
   let typer =
-    match !(t.typer_cache_stats) with
+    match !(pipeline.typer_cache_stats) with
     | Miss -> `String "miss"
     | Hit { reused; typed } ->
       `Assoc [ ("reused", `Int reused); ("typed", `Int typed) ]
@@ -367,9 +413,98 @@ let cache_information t =
   Cmi_cache.clear_cache_stats ();
   let fmt_bool hit = `String (if hit then "hit" else "miss") in
   `Assoc
-    [ ("reader_phase", fmt_bool !(t.reader_cache_hit));
-      ("ppx_phase", fmt_bool !(t.ppx_cache_hit));
+    [ ("reader_phase", fmt_bool !(pipeline.reader_cache_hit));
+      ("ppx_phase", fmt_bool !(pipeline.ppx_cache_hit));
       ("typer", typer);
       ("cmt", cmt);
       ("cmi", cmi)
     ]
+
+(* Represents the different possible communications between the two domains: 
+  + From Main to Typer :
+    - request is canceled
+    - merlin is closing
+    - main domain is waiting for the lock
+
+  + From Typer to Main :
+    - caught an exception 
+*)
+(* TODO : For message passing, it seems okay to have active waiting but it could be interesting to test both.
+*)
+
+(** [closing]: called by the main domain *)
+let close_typer shared =
+  Domain_msg.send_msg shared.msg.from_main `Closing shared.config
+
+(** [share_exn]: called by the typer domain *)
+let share_exn shared exn =
+  Domain_msg.send_msg shared.msg.from_typer (`Exn exn) shared.partial
+
+(** [cancel]: called by the main domain *)
+let _cancel shared =
+  Domain_msg.send_msg shared.msg.from_main `Cancel shared.config
+
+let domain_typer shared () =
+  let rec loop () =
+    match Atomic.get shared.msg.from_main with
+    | `Closing -> Atomic.set shared.msg.from_main `Empty
+    | `Waiting ->
+      while Atomic.get shared.msg.Domain_msg.from_main == `Waiting do
+        Domain.cpu_relax ()
+      done;
+      loop ()
+    | `Cancel ->
+      Atomic.set shared.msg.from_main `Empty;
+      loop ()
+    | `Empty -> (
+      match Shared.get shared.config with
+      | None ->
+        Shared.wait shared.config;
+        loop ()
+      | Some (config, source, potential_pos) ->
+        Shared.set shared.config None;
+        (try
+           match make ?position:potential_pos config source shared with
+           | Some _ as pipeline -> Shared.locking_set shared.partial pipeline
+           | None -> (* result already shared *) ()
+         with
+        | Domain_msg.Cancel_or_Closing -> ()
+        | Mtyper.Exn_after_partial ->
+          (* An exception has happened after sharing partial result: we can dump it *)
+          ()
+        | exn -> share_exn shared exn);
+        loop ())
+  in
+  Shared.protect shared.config (fun () -> loop ())
+
+let get ?position shared config source =
+  Shared.locking_set shared.config (Some (config, source, position));
+
+  let rec loop () =
+    let critical_section () =
+      match Shared.get shared.partial with
+      | None -> begin
+        match Atomic.get shared.msg.from_typer with
+        | `Empty ->
+          Shared.wait shared.partial;
+          `Retry
+        | `Exn exn ->
+          Atomic.set shared.msg.from_typer `Empty;
+          raise exn
+      end
+      | Some pipeline ->
+        Shared.set shared.partial None;
+        `Result pipeline
+    in
+    match Shared.protect shared.partial critical_section with
+    | `Retry -> loop ()
+    | `Result pipeline -> pipeline
+  in
+  loop ()
+
+let create_shared () =
+  { msg = Domain_msg.create ();
+    result = Shared.create ();
+    config = Shared.create None;
+    partial = Shared.create None
+  }

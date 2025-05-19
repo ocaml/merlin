@@ -4,7 +4,7 @@
   [
     "application",
     {
-      "argument_type": "'a",
+      "argument_type": "int",
       "labels": [
         {
           "name": "~j",
