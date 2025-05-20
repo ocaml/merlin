@@ -15,6 +15,7 @@ unreleased
       of the involved data-structures. (#1889)
   + test suite
     - Add a test case illustrating wrong open order proposed in issue #1900. (#1901)
+    - Add more short-paths tests cases (#1904)
 
 merlin 5.4.1
 ============
