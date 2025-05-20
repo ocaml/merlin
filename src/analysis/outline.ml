@@ -175,22 +175,25 @@ and get_class_elements node =
   match node.t_node with
   | Class_expr _ ->
     List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
+  | Class_field cf ->
+    let children =
+      List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
+    in
+    cf.cf_desc |> get_class_field_desc_infos
+    |> Option.map ~f:(fun (str_loc, outline_kind) ->
+           let deprecated = Type_utils.is_deprecated cf.cf_attributes in
+           { Query_protocol.outline_name = str_loc.Location.txt;
+             outline_kind;
+             outline_type = None;
+             location = str_loc.Location.loc;
+             children;
+             deprecated
+           })
+    |> Option.to_list
+  | Class_field_kind _ ->
+    List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
   | Class_structure _ ->
-    List.filter_map (Lazy.force node.t_children) ~f:(fun child ->
-        match child.t_node with
-        | Class_field cf -> begin
-          cf.cf_desc |> get_class_field_desc_infos
-          |> Option.map ~f:(fun (str_loc, outline_kind, children) ->
-                 let deprecated = Type_utils.is_deprecated cf.cf_attributes in
-                 { Query_protocol.outline_name = str_loc.Location.txt;
-                   outline_kind;
-                   outline_type = None;
-                   location = str_loc.Location.loc;
-                   children;
-                   deprecated
-                 })
-        end
-        | _ -> None)
+    List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
   | Class_type { cltyp_desc = Tcty_signature { csig_fields; _ }; _ } ->
     List.filter_map csig_fields ~f:(fun field ->
         get_class_signature_field_desc_infos field.ctf_desc
@@ -207,41 +210,9 @@ and get_class_elements node =
   | _ -> []
 
 and get_class_field_desc_infos = function
-  | Typedtree.Tcf_val (str_loc, _, _, field_kind, _) ->
-    Some (str_loc, `Value, get_class_field_kind_elements field_kind)
-  | Typedtree.Tcf_method (str_loc, _, field_kind) ->
-    Some (str_loc, `Method, get_class_field_kind_elements field_kind)
+  | Typedtree.Tcf_val (str_loc, _, _, _field_kind, _) -> Some (str_loc, `Value)
+  | Typedtree.Tcf_method (str_loc, _, _field_kind) -> Some (str_loc, `Method)
   | _ -> None
-
-and get_class_field_kind_elements = function
-  | Tcfk_virtual _ -> []
-  | Tcfk_concrete (_, expr) -> get_expr_elements expr
-
-and get_expr_elements expr =
-  match expr.exp_desc with
-  | Texp_let (_, vbs, expr) ->
-    List.filter_map vbs ~f:(fun vb ->
-        id_of_patt vb.vb_pat
-        |> Option.map ~f:(fun ident ->
-               let children = get_expr_elements vb.vb_expr in
-               let deprecated = Type_utils.is_deprecated vb.vb_attributes in
-
-               mk ~children ~location:vb.vb_loc ~deprecated `Value None ident))
-    @ get_expr_elements expr
-  | Texp_object ({ cstr_fields; _ }, _) ->
-    List.filter_map cstr_fields ~f:(fun field ->
-        field.cf_desc |> get_class_field_desc_infos
-        |> Option.map ~f:(fun (str_loc, outline_kind, children) ->
-               let deprecated = Type_utils.is_deprecated field.cf_attributes in
-               { Query_protocol.outline_name = str_loc.Location.txt;
-                 outline_kind;
-                 outline_type = None;
-                 location = str_loc.Location.loc;
-                 children;
-                 deprecated
-               }))
-  | Texp_function (_, Tfunction_body expr) -> get_expr_elements expr
-  | _ -> []
 
 and get_mod_children node =
   List.concat_map (Lazy.force node.t_children) ~f:remove_mod_indir
