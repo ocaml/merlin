@@ -2,7 +2,10 @@
 
   $ ocaml-index dump _build/default/.main.eobjs/cctx.ocaml-index
   7 uids:
-  {uid: Dune__exe__Lib; locs: "Lib": File "main.ml", line 3, characters 8-11
+  {uid: Dune__exe__Lib; locs:
+     "Lib": File "main.ml", line 3, characters 8-11;
+     "Lib": File "main.ml", line 4, characters 6-9;
+     "Lib": File "main.ml", line 5, characters 6-9
    uid: Dune__exe__Lib.0; locs: "t": File "lib.ml", line 2, characters 7-8
    uid: Dune__exe__Lib.1; locs:
      "label_label": File "lib.ml", line 2, characters 13-24;
@@ -11,8 +14,9 @@
      "Lib.B.label_label": File "main.ml", line 5, characters 6-23
    uid: Dune__exe__Lib.2; locs:
      "B": File "lib.ml", line 1, characters 7-8;
-     "Lib": File "main.ml", line 4, characters 6-9;
-     "Lib": File "main.ml", line 5, characters 6-9
+     "B": File "lib.ml", line 5, characters 10-11;
+     "Lib.B": File "main.ml", line 4, characters 6-11;
+     "Lib.B": File "main.ml", line 5, characters 6-11
    uid: Dune__exe__Lib.3; locs:
      "v": File "lib.ml", line 5, characters 4-5;
      "Lib.v": File "main.ml", line 3, characters 8-13

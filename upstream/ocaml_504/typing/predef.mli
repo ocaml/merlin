@@ -32,6 +32,7 @@ type abstract_type_constr = [
   | `Extension_constructor
   | `Floatarray
   | `Iarray
+  | `Atomic_loc
 ]
 type data_type_constr = [
   | `Bool
@@ -66,8 +67,9 @@ val type_nativeint: type_expr
 val type_int32: type_expr
 val type_int64: type_expr
 val type_lazy_t: type_expr -> type_expr
-val type_extension_constructor:type_expr
-val type_floatarray:type_expr
+val type_extension_constructor: type_expr
+val type_floatarray: type_expr
+val type_atomic_loc: type_expr -> type_expr
 
 val path_int: Path.t
 val path_char: Path.t

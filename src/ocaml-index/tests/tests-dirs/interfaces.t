@@ -11,9 +11,9 @@
 
   $ ocamlobjinfo -quiet -index main.cmti
   Indexed shapes:
-  Unresolved: CU Stdlib . "Float"[module]  :
+  Unresolved: CU Stdlib . "Float"[module] :
     Float (File "main.mli", line 1, characters 9-14)
-  Unresolved: CU Stdlib . "Float"[module] . "t"[type]  :
+  Unresolved: CU Stdlib . "Float"[module] . "t"[type] :
     Float.t (File "main.mli", line 1, characters 9-16)
 
   $ ocaml-index aggregate main.cmti -o main.index
