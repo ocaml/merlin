@@ -2772,18 +2772,18 @@ let mark_type_path_used env path =
   | decl -> mark_type_used decl.type_uid
   | exception Not_found -> ()
 
-let mark_constructor_used usage cd =
-  match stamped_find used_constructors cd.cd_uid with
+let mark_constructor_used usage uid =
+  match stamped_find used_constructors uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
-let mark_extension_used usage ext =
-  match stamped_find used_constructors ext.ext_uid with
+let mark_extension_used usage uid =
+  match stamped_find used_constructors uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
-let mark_label_used usage ld =
-  match stamped_find used_labels ld.ld_uid with
+let mark_label_used usage uid =
+  match stamped_find used_labels uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
