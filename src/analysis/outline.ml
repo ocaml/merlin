@@ -157,19 +157,8 @@ and get_val_elements node =
   match node.t_node with
   | Expression _ ->
     List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
-  | Value_binding vb ->
-    let children =
-      List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
-    in
-    let deprecated = Type_utils.is_deprecated vb.vb_attributes in
-    begin
-      match id_of_patt vb.vb_pat with
-      | None -> []
-      | Some ident ->
-        [ mk ~children ~location:node.t_loc ~deprecated `Value None ident ]
-    end
   | Class_expr _ | Class_structure _ -> get_class_elements node
-  | _ -> []
+  | _ -> Option.to_list (summarize node)
 
 and get_class_elements node =
   match node.t_node with
