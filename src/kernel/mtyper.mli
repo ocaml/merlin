@@ -9,6 +9,11 @@
 
 type result
 
+type partial
+
+val make_partial :
+  ?position:int * int -> Domain_msg.msg -> unit Shared.t -> partial
+
 type typedtree =
   [ `Interface of Typedtree.signature | `Implementation of Typedtree.structure ]
 
@@ -26,7 +31,16 @@ val set_index_items :
   unit) ->
   unit
 
-val run : Mconfig.t -> Mreader.parsetree -> result
+type _ Effect.t += Partial : result -> unit Effect.t
+exception Exn_after_partial
+
+(** [run config partial parsetree]
+@perform the effect Partial. It is caught in [Mpipeline.process]).
+
+@raise [Domain_msg.Cancel] and [Domain_msg.Closing]. Botch are caught in
+[Mpipeline.domain_typer]).
+*)
+val run : Mconfig.t -> partial -> Mreader.parsetree -> result
 
 val get_env : ?pos:Msource.position -> result -> Env.t
 

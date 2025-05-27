@@ -114,6 +114,10 @@ let get_lexing_pos t ~filename pos =
     pos_cnum = o
   }
 
+let get_position t pos =
+  let (`Logical (line, col)) = get_logical t pos in
+  (line, col)
+
 let substitute t starting ending text =
   let len = String.length t.text in
   let (`Offset starting) = get_offset t starting in

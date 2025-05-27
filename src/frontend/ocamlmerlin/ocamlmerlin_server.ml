@@ -2,19 +2,19 @@ let merlin_timeout =
   try float_of_string (Sys.getenv "MERLIN_TIMEOUT") with _ -> 600.0
 
 module Server = struct
-  let process_request { Os_ipc.wd; environ; argv; context = _ } =
+  let process_request { Os_ipc.wd; environ; argv; context = _ } shared =
     match Array.to_list argv with
     | "stop-server" :: _ -> raise Exit
-    | args -> New_merlin.run ~new_env:(Some environ) (Some wd) args
+    | args -> New_merlin.run ~new_env:(Some environ) (Some wd) args shared
 
-  let process_client client =
+  let process_client client shared =
     let context = client.Os_ipc.context in
     Os_ipc.context_setup context;
     let close_with return_code =
       flush_all ();
       Os_ipc.context_close context ~return_code
     in
-    match process_request client with
+    match process_request client shared with
     | code -> close_with code
     | exception Exit ->
       close_with (-1);
@@ -38,18 +38,18 @@ module Server = struct
     | Some _ as result -> result
     | None -> loop 1.0
 
-  let rec loop merlinid server =
+  let rec loop merlinid server shared =
     match server_accept merlinid server with
     | None ->
       (* Timeout *)
       ()
     | Some client ->
       let continue =
-        match process_client client with
+        match process_client client shared with
         | exception Exit -> false
         | () -> true
       in
-      if continue then loop merlinid server
+      if continue then loop merlinid server shared
 
   let start socket_path socket_fd =
     match Os_ipc.server_setup socket_path socket_fd with
@@ -57,7 +57,12 @@ module Server = struct
     | Some server ->
       (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
       if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
-      loop (File_id.get Sys.executable_name) server;
+
+      let shared = Mpipeline.create_shared () in
+      let domain_typer = Domain.spawn @@ Mpipeline.domain_typer shared in
+      loop (File_id.get Sys.executable_name) server shared;
+      Mpipeline.close_typer shared;
+      Domain.join domain_typer;
       Os_ipc.server_close server
 end
 
@@ -65,7 +70,13 @@ let main () =
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
-  | "single" :: args -> exit (New_merlin.run ~new_env:None None args)
+  | "single" :: args ->
+    let shared = Mpipeline.create_shared () in
+    let domain_typer = Domain.spawn @@ Mpipeline.domain_typer shared in
+    let vexit = New_merlin.run ~new_env:None None args shared in
+    Mpipeline.close_typer shared;
+    Domain.join domain_typer;
+    exit vexit
   | "old-protocol" :: args -> Old_merlin.run args
   | [ "server"; socket_path; socket_fd ] -> Server.start socket_path socket_fd
   | ("-help" | "--help" | "-h" | "server") :: _ ->
