@@ -11,6 +11,10 @@ unreleased
     - Fix issues with ident validation and Lid comparison for occurrences (#1924)
     - Handle class type in outline (#1932)
     - Handle locally defined value in outline (#1936)
+    - Fix a typer issue triggering assertions in the short-paths graph (#1935,
+      fixes #1913)
+    - Downstreamed a typer fix from 5.3.X that would trigger assertions linked
+      to scopes bit masks when backtracking the typer cache (#1935)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
