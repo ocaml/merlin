@@ -27,7 +27,7 @@
             },
             "name": "c",
             "kind": "Value",
-            "type": null,
+            "type": "< foo : int >",
             "children": [
               {
                 "start": {
@@ -192,7 +192,7 @@
                     },
                     "name": "x_inside_a_b",
                     "kind": "Value",
-                    "type": null,
+                    "type": "int",
                     "children": [],
                     "deprecated": false
                   }
