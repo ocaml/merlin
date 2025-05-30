@@ -186,9 +186,8 @@ let all_commands =
           match pos with
           | `Offset -1 -> failwith "-position <pos> is mandatory"
           | pos ->
-            (* FIXME: Invalid some tests related to holes. *)
-            (* let position = Msource.get_position source pos in *)
-            run (* ~position *) shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Construct (pos, with_values, max_depth))
       end;
     command "complete-prefix"
@@ -302,7 +301,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            (* FIXME: Test loop infinitely. *)
+            (* FIXME: Failwith abnormal termination. *)
             (* let position = Msource.get_position source pos in *)
             run (* ~position *) shared config source
               (Query_protocol.Expand_ppx pos)
@@ -454,12 +453,8 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            (* FIXME: Test loops infinitely
-                      We need a more precise heuristic
-                      based on the target.
-            *)
-            (* let position = Msource.get_position source pos in *)
-            run (* ~position *) shared config source
+            let position = Msource.get_position source pos in
+            run ~position shared config source
               (Query_protocol.Jump (target, pos))
       end;
     command "phrase"
@@ -482,10 +477,7 @@ let all_commands =
           match pos with
           | `None -> failwith "-position <pos> is mandatory"
           | #Msource.position as pos ->
-            (* FIXME: Test loops infinitely
-                      We need a more precise heuristic
-                      based on the next phrase.
-            *)
+            (* FIXME: Breaks test motion/phrase.t *)
             (* let position = Msource.get_position source pos in *)
             run (* ~position *) shared config source
               (Query_protocol.Phrase (target, pos))
@@ -685,37 +677,121 @@ let all_commands =
       ~spec:
         [ arg "-start" "<position> Where inlay-hints generation start"
             (marg_position
-               (fun start (_start, stop, let_binding, pattern_binding, ghost) ->
-                 (start, stop, let_binding, pattern_binding, ghost)));
+               (fun
+                 start
+                 ( _start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )
+               ->
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )));
           arg "-end" "<position> Where inlay-hints generation stop"
             (marg_position
-               (fun stop (start, _stop, let_binding, pattern_binding, ghost) ->
-                 (start, stop, let_binding, pattern_binding, ghost)));
+               (fun
+                 stop
+                 ( start,
+                   _stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )
+               ->
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )));
           optional "-let-binding" "<bool> Hint let-binding (default is false)"
             (Marg.bool
                (fun
                  let_binding
-                 (start, stop, _let_binding, pattern_binding, ghost)
-               -> (start, stop, let_binding, pattern_binding, ghost)));
+                 ( start,
+                   stop,
+                   _let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )
+               ->
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )));
           optional "-pattern-binding"
             "<bool> Hint pattern-binding (default is false)"
             (Marg.bool
                (fun
                  pattern_binding
-                 (start, stop, let_binding, _pattern_binding, ghost)
-               -> (start, stop, let_binding, pattern_binding, ghost)));
+                 ( start,
+                   stop,
+                   let_binding,
+                   _pattern_binding,
+                   function_params,
+                   ghost )
+               ->
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )));
+          optional "-function-params"
+            "<bool> Hint function parameters (default is false)"
+            (Marg.bool
+               (fun
+                 function_params
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   _function_params,
+                   ghost )
+               ->
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )));
           optional "-avoid-ghost-location"
             "<bool> Avoid hinting ghost location (default is true)"
             (Marg.bool
-               (fun ghost (start, stop, let_binding, pattern_binding, _ghost) ->
-                 (start, stop, let_binding, pattern_binding, ghost)))
+               (fun
+                 ghost
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   _ghost )
+               ->
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   ghost )))
         ]
-      ~default:(`None, `None, false, false, true)
+      ~default:(`None, `None, false, false, false, true)
       begin
         fun shared
           config
           source
-          (start, stop, let_binding, pattern_binding, avoid_ghost)
+          ( start,
+            stop,
+            let_binding,
+            pattern_binding,
+            function_params,
+            avoid_ghost )
         ->
           match (start, stop) with
           | `None, `None -> failwith "-start <pos> and -end are mandatory"
@@ -726,7 +802,12 @@ let all_commands =
             let position = Msource.get_position source stop in
             run ~position shared config source
               (Query_protocol.Inlay_hints
-                 (start, stop, let_binding, pattern_binding, avoid_ghost))
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   avoid_ghost ))
       end;
     command "shape"
       ~doc:
