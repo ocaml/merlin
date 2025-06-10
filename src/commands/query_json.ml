@@ -226,6 +226,7 @@ let string_of_completion_kind = function
   | `MethodCall -> "#"
   | `Exn -> "Exn"
   | `Class -> "Class"
+  | `ClassType -> "ClassType"
   | `Keyword -> "Keyword"
 
 let with_location ?(with_file = false) ?(skip_none = false) loc assoc =

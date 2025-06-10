@@ -5,12 +5,286 @@
     "value": [
       {
         "start": {
-          "line": 24,
+          "line": 67,
           "col": 0
         },
         "end": {
-          "line": 28,
+          "line": 73,
           "col": 3
+        },
+        "name": "final_let",
+        "kind": "Value",
+        "type": "< foo : int >",
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 65,
+          "col": 0
+        },
+        "end": {
+          "line": 65,
+          "col": 19
+        },
+        "name": "tb",
+        "kind": "ClassType",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 61,
+          "col": 0
+        },
+        "end": {
+          "line": 63,
+          "col": 3
+        },
+        "name": "ta",
+        "kind": "ClassType",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 62,
+              "col": 2
+            },
+            "end": {
+              "line": 62,
+              "col": 35
+            },
+            "name": "baz",
+            "kind": "Method",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 55,
+          "col": 0
+        },
+        "end": {
+          "line": 59,
+          "col": 5
+        },
+        "name": "b",
+        "kind": "Class",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 58,
+              "col": 11
+            },
+            "end": {
+              "line": 58,
+              "col": 14
+            },
+            "name": "bar",
+            "kind": "Method",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          },
+          {
+            "start": {
+              "line": 57,
+              "col": 8
+            },
+            "end": {
+              "line": 57,
+              "col": 11
+            },
+            "name": "foo",
+            "kind": "Value",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 45,
+          "col": 0
+        },
+        "end": {
+          "line": 53,
+          "col": 5
+        },
+        "name": "a",
+        "kind": "Class",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 47,
+              "col": 8
+            },
+            "end": {
+              "line": 47,
+              "col": 9
+            },
+            "name": "b",
+            "kind": "Value",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 43,
+          "col": 0
+        },
+        "end": {
+          "line": 43,
+          "col": 18
+        },
+        "name": "c",
+        "kind": "Class",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 37,
+          "col": 0
+        },
+        "end": {
+          "line": 41,
+          "col": 5
+        },
+        "name": "b",
+        "kind": "Class",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 40,
+              "col": 11
+            },
+            "end": {
+              "line": 40,
+              "col": 14
+            },
+            "name": "bar",
+            "kind": "Method",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          },
+          {
+            "start": {
+              "line": 39,
+              "col": 8
+            },
+            "end": {
+              "line": 39,
+              "col": 11
+            },
+            "name": "foo",
+            "kind": "Value",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 35,
+          "col": 0
+        },
+        "end": {
+          "line": 35,
+          "col": 19
+        },
+        "name": "tb",
+        "kind": "ClassType",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 33,
+          "col": 0
+        },
+        "end": {
+          "line": 33,
+          "col": 26
+        },
+        "name": "ta",
+        "kind": "ClassType",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 31,
+          "col": 0
+        },
+        "end": {
+          "line": 31,
+          "col": 18
+        },
+        "name": "c",
+        "kind": "Class",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 29,
+          "col": 0
+        },
+        "end": {
+          "line": 29,
+          "col": 18
+        },
+        "name": "b",
+        "kind": "Class",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 27,
+          "col": 0
+        },
+        "end": {
+          "line": 27,
+          "col": 20
+        },
+        "name": "a",
+        "kind": "Class",
+        "type": null,
+        "children": [],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 25,
+          "col": 0
+        },
+        "end": {
+          "line": 25,
+          "col": 42
         },
         "name": "point",
         "kind": "Type",
@@ -18,12 +292,12 @@
         "children": [
           {
             "start": {
-              "line": 27,
-              "col": 4
+              "line": 25,
+              "col": 34
             },
             "end": {
-              "line": 27,
-              "col": 10
+              "line": 25,
+              "col": 40
             },
             "name": "z",
             "kind": "Label",
@@ -33,12 +307,12 @@
           },
           {
             "start": {
-              "line": 26,
-              "col": 4
+              "line": 25,
+              "col": 26
             },
             "end": {
-              "line": 27,
-              "col": 3
+              "line": 25,
+              "col": 33
             },
             "name": "y",
             "kind": "Label",
@@ -49,11 +323,11 @@
           {
             "start": {
               "line": 25,
-              "col": 4
+              "col": 18
             },
             "end": {
-              "line": 26,
-              "col": 3
+              "line": 25,
+              "col": 25
             },
             "name": "x",
             "kind": "Label",
@@ -66,12 +340,12 @@
       },
       {
         "start": {
-          "line": 20,
+          "line": 23,
           "col": 0
         },
         "end": {
-          "line": 22,
-          "col": 16
+          "line": 23,
+          "col": 50
         },
         "name": "eithery",
         "kind": "Type",
@@ -79,12 +353,12 @@
         "children": [
           {
             "start": {
-              "line": 22,
-              "col": 2
+              "line": 23,
+              "col": 36
             },
             "end": {
-              "line": 22,
-              "col": 16
+              "line": 23,
+              "col": 50
             },
             "name": "Righty",
             "kind": "Constructor",
@@ -94,12 +368,12 @@
           },
           {
             "start": {
-              "line": 21,
-              "col": 2
+              "line": 23,
+              "col": 24
             },
             "end": {
-              "line": 21,
-              "col": 15
+              "line": 23,
+              "col": 35
             },
             "name": "Lefty",
             "kind": "Constructor",
@@ -112,11 +386,11 @@
       },
       {
         "start": {
-          "line": 18,
+          "line": 21,
           "col": 0
         },
         "end": {
-          "line": 18,
+          "line": 21,
           "col": 20
         },
         "name": "Ex",
@@ -127,12 +401,12 @@
       },
       {
         "start": {
-          "line": 14,
+          "line": 16,
           "col": 0
         },
         "end": {
-          "line": 16,
-          "col": 3
+          "line": 19,
+          "col": 5
         },
         "name": "class_b",
         "kind": "Class",
@@ -140,14 +414,45 @@
         "children": [
           {
             "start": {
-              "line": 15,
-              "col": 9
+              "line": 18,
+              "col": 11
             },
             "end": {
-              "line": 15,
-              "col": 10
+              "line": 18,
+              "col": 12
             },
             "name": "b",
+            "kind": "Method",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          }
+        ],
+        "deprecated": false
+      },
+      {
+        "start": {
+          "line": 12,
+          "col": 0
+        },
+        "end": {
+          "line": 14,
+          "col": 3
+        },
+        "name": "class_type_a",
+        "kind": "ClassType",
+        "type": null,
+        "children": [
+          {
+            "start": {
+              "line": 13,
+              "col": 2
+            },
+            "end": {
+              "line": 13,
+              "col": 23
+            },
+            "name": "a",
             "kind": "Method",
             "type": null,
             "children": [],
@@ -162,7 +467,7 @@
           "col": 0
         },
         "end": {
-          "line": 8,
+          "line": 10,
           "col": 3
         },
         "name": "Bar",
@@ -171,12 +476,27 @@
         "children": [
           {
             "start": {
+              "line": 9,
+              "col": 2
+            },
+            "end": {
+              "line": 9,
+              "col": 27
+            },
+            "name": "b",
+            "kind": "ClassType",
+            "type": null,
+            "children": [],
+            "deprecated": false
+          },
+          {
+            "start": {
               "line": 3,
-              "col": 1
+              "col": 2
             },
             "end": {
               "line": 7,
-              "col": 4
+              "col": 5
             },
             "name": "S1",
             "kind": "Signature",
@@ -185,11 +505,11 @@
               {
                 "start": {
                   "line": 6,
-                  "col": 3
+                  "col": 4
                 },
                 "end": {
                   "line": 6,
-                  "col": 21
+                  "col": 22
                 },
                 "name": "foo",
                 "kind": "Value",
@@ -200,11 +520,11 @@
               {
                 "start": {
                   "line": 4,
-                  "col": 3
+                  "col": 4
                 },
                 "end": {
                   "line": 4,
-                  "col": 9
+                  "col": 10
                 },
                 "name": "t",
                 "kind": "Type",
@@ -218,11 +538,11 @@
           {
             "start": {
               "line": 2,
-              "col": 1
+              "col": 2
             },
             "end": {
               "line": 2,
-              "col": 13
+              "col": 14
             },
             "name": "t",
             "kind": "Type",

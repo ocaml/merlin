@@ -5,6 +5,7 @@ unreleased
     - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
       (#1888)
     - `inlay-hints` fix inlay hints on function parameters (#1923)
+    - Handle class type in outline (#1932)
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that

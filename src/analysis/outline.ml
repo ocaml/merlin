@@ -53,6 +53,11 @@ let get_class_field_desc_infos = function
   | Typedtree.Tcf_method (str_loc, _, _) -> Some (str_loc, `Method)
   | _ -> None
 
+let get_class_signature_field_desc_infos = function
+  | Typedtree.Tctf_val (outline_name, _, _, _) -> Some (outline_name, `Value)
+  | Typedtree.Tctf_method (outline_name, _, _, _) -> Some (outline_name, `Method)
+  | _ -> None
+
 let outline_type ~env typ =
   let ppf, to_string = Format.to_string () in
   Printtyp.wrap_printing_env env (fun () ->
@@ -141,6 +146,13 @@ let rec summarize node =
     in
     let deprecated = Type_utils.is_deprecated cd.ci_attributes in
     Some (mk ~children ~location `Class None cd.ci_id_class_type ~deprecated)
+  | Class_type_declaration ctd ->
+    let children =
+      List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
+    in
+    let deprecated = Type_utils.is_deprecated ctd.ci_attributes in
+    Some
+      (mk ~children ~location `ClassType None ctd.ci_id_class_type ~deprecated)
   | _ -> None
 
 and get_class_elements node =
@@ -151,20 +163,31 @@ and get_class_elements node =
     List.filter_map (Lazy.force node.t_children) ~f:(fun child ->
         match child.t_node with
         | Class_field cf -> begin
-          match get_class_field_desc_infos cf.cf_desc with
-          | Some (str_loc, outline_kind) ->
-            let deprecated = Type_utils.is_deprecated cf.cf_attributes in
-            Some
-              { Query_protocol.outline_name = str_loc.Location.txt;
-                outline_kind;
-                outline_type = None;
-                location = str_loc.Location.loc;
-                children = [];
-                deprecated
-              }
-          | None -> None
+          cf.cf_desc |> get_class_field_desc_infos
+          |> Option.map ~f:(fun (str_loc, outline_kind) ->
+                 let deprecated = Type_utils.is_deprecated cf.cf_attributes in
+                 { Query_protocol.outline_name = str_loc.Location.txt;
+                   outline_kind;
+                   outline_type = None;
+                   location = str_loc.Location.loc;
+                   children = [];
+                   deprecated
+                 })
         end
         | _ -> None)
+  | Class_type { cltyp_desc = Tcty_signature { csig_fields; _ }; _ } ->
+    List.filter_map csig_fields ~f:(fun field ->
+        get_class_signature_field_desc_infos field.ctf_desc
+        |> Option.map ~f:(fun (name, outline_kind) ->
+               let deprecated = Type_utils.is_deprecated field.ctf_attributes in
+               { Query_protocol.outline_name = name;
+                 outline_kind;
+                 outline_type = None;
+                 location = field.ctf_loc;
+                 (* TODO: could we have more precised location information? *)
+                 children = [];
+                 deprecated
+               }))
   | _ -> []
 
 and get_mod_children node =
