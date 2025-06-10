@@ -6,6 +6,7 @@ unreleased
       (#1888)
     - `inlay-hints` fix inlay hints on function parameters (#1923)
     - Handle class type in outline (#1932)
+    - Handle locally defined value in outline (#1936)
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that

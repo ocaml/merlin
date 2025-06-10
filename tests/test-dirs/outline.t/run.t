@@ -15,7 +15,39 @@
         "name": "final_let",
         "kind": "Value",
         "type": "< foo : int >",
-        "children": [],
+        "children": [
+          {
+            "start": {
+              "line": 68,
+              "col": 2
+            },
+            "end": {
+              "line": 71,
+              "col": 7
+            },
+            "name": "c",
+            "kind": "Value",
+            "type": "< foo : int >",
+            "children": [
+              {
+                "start": {
+                  "line": 70,
+                  "col": 13
+                },
+                "end": {
+                  "line": 70,
+                  "col": 16
+                },
+                "name": "foo",
+                "kind": "Method",
+                "type": null,
+                "children": [],
+                "deprecated": false
+              }
+            ],
+            "deprecated": false
+          }
+        ],
         "deprecated": false
       },
       {
@@ -135,7 +167,23 @@
             "name": "b",
             "kind": "Value",
             "type": null,
-            "children": [],
+            "children": [
+              {
+                "start": {
+                  "line": 49,
+                  "col": 15
+                },
+                "end": {
+                  "line": 49,
+                  "col": 25
+                },
+                "name": "inside_a_b",
+                "kind": "Method",
+                "type": null,
+                "children": [],
+                "deprecated": false
+              }
+            ],
             "deprecated": false
           }
         ],

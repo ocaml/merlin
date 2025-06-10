@@ -47,7 +47,7 @@ class a =
     val b =
       object
         method inside_a_b () =
-          let x_inside_a_b = 10 in
+          let x_inside_a_b = 10 in (* FIXME missing in outline *)
           print_int x_inside_a_b
       end
   end
