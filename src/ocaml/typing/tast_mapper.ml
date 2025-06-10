@@ -376,8 +376,8 @@ let expr sub x =
         e
     | Texp_open (od, e) ->
         Texp_open (sub.open_declaration sub od, sub.expr sub e)
-    | Texp_hole ->
-        Texp_hole
+    | Texp_typed_hole ->
+        Texp_typed_hole
   in
   {x with exp_extra; exp_desc; exp_env}
 
@@ -493,7 +493,7 @@ let module_expr sub x =
   let mod_desc =
     match x.mod_desc with
     | Tmod_ident _ as d -> d
-    | Tmod_hole -> Tmod_hole
+    | Tmod_typed_hole -> Tmod_typed_hole
     | Tmod_structure st -> Tmod_structure (sub.structure sub st)
     | Tmod_functor (arg, mexpr) ->
         Tmod_functor (functor_parameter sub arg, sub.module_expr sub mexpr)

@@ -1,6 +1,9 @@
 unreleased
 ==========
 
+  + merlin library
+    - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
+      (#1888)
   + vim plugin
     - Added support for search-by-type (#1846)
       This is exposed through the existing `:MerlinSearch` command, that

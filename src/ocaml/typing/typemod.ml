@@ -2371,7 +2371,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
             Msupport.raise_error exn;
             {
-              mod_desc = Tmod_hole;
+              mod_desc = Tmod_typed_hole;
               mod_type = Mty_for_hole;
               mod_loc = sarg.pmod_loc;
               mod_env = env;
@@ -2414,7 +2414,7 @@ and type_module_aux ~alias sttn funct_body anchor env smod =
         mod_loc = smod.pmod_loc },
       Shape.leaf_for_unpack
   | Pmod_extension ({ txt; _ }, _) when txt = Ast_helper.hole_txt ->
-      { mod_desc = Tmod_hole;
+      { mod_desc = Tmod_typed_hole;
         mod_type = Mty_for_hole;
         mod_env = env;
         mod_attributes = smod.pmod_attributes;
