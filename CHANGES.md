@@ -1,3 +1,12 @@
+unreleased
+==========
+
+  + vim plugin
+    - Added support for search-by-type (#1846)
+      This is exposed through the existing `:MerlinSearch` command, that
+      switches between search-by-type and polarity search depending on the
+      first character of the query.
+
 merlin 4.18
 ===========
 Tue Nov 26 17:30:42 CET 2024
