@@ -54,6 +54,8 @@ module Json = struct
       "Logger error: `Std.Json.pretty_to_string` is not set. You should \
        initialize that reference with the pretifier of your choice to enable \
        json logging. A common one is `Yojson.Basic.pretty_to_string`."
+
+  let of_yojson_safe = Yojson.Safe.to_basic
 end
 
 module Hashtbl = struct

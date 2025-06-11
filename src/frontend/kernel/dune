@@ -1,0 +1,5 @@
+(library
+ (name        query_protocol_kernel)
+ (public_name merlin-lib.query_protocol_kernel)
+ (libraries yojson)
+ (preprocess (pps ppx_yojson_conv)))
