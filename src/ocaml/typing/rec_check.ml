@@ -192,7 +192,7 @@ let classify_expression : Typedtree.expression -> sd =
     | Texp_function _
     | Texp_lazy _
     | Texp_unreachable
-    | Texp_hole
+    | Texp_typed_hole
     | Texp_extension_constructor _ ->
         Static
 
@@ -821,7 +821,7 @@ let rec expression : Typedtree.expression -> term_judg =
         [] |- .: m
       *)
       empty
-    | Texp_hole -> empty
+    | Texp_typed_hole -> empty
     | Texp_extension_constructor (_lid, pth) ->
       path pth << Dereference
     | Texp_open (od, e) ->
@@ -891,7 +891,7 @@ and modexp : Typedtree.module_expr -> term_judg =
       coercion coe (fun m -> modexp mexp << m)
     | Tmod_unpack (e, _) ->
       expression e
-    | Tmod_hole -> fun _ -> Env.empty
+    | Tmod_typed_hole -> fun _ -> Env.empty
 
 
 (* G |- pth : m *)

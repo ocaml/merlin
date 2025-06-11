@@ -888,15 +888,15 @@ let find_doc_attributes_in_typedtree ~config ~comp_unit uid =
         | Interface s ->
           Some
             (`Interface
-              { s with
-                sig_final_env = Envaux.env_of_only_summary s.sig_final_env
-              })
+               { s with
+                 sig_final_env = Envaux.env_of_only_summary s.sig_final_env
+               })
         | Implementation str ->
           Some
             (`Implementation
-              { str with
-                str_final_env = Envaux.env_of_only_summary str.str_final_env
-              })
+               { str with
+                 str_final_env = Envaux.env_of_only_summary str.str_final_env
+               })
         | _ -> None
       end
     | Error _ -> None
@@ -946,7 +946,8 @@ let doc_from_uid ~config ~loc uid =
       when Env.get_unit_name () <> comp_unit -> (
       log ~title:"get_doc"
         "the doc (%a) you're looking for is in another\n\
-        \          compilation unit (%s)" Logger.fmt
+        \          compilation unit (%s)"
+        Logger.fmt
         (fun fmt -> Shape.Uid.print fmt uid)
         comp_unit;
       match find_doc_attributes_in_typedtree ~config ~comp_unit uid with

@@ -196,8 +196,8 @@ let rec needs_parentheses = function
          binding. *)
       | Texp_function { cases = [ _ ]; _ }
       (* The assumption here is that we're not in a [function ... | ...]
-          situation but either in [fun param] or [let name param]. *) ->
-        needs_parentheses ts
+          situation but either in [fun param] or [let name param]. *)
+        -> needs_parentheses ts
       | _ -> true
     end
     | _ -> needs_parentheses ts)

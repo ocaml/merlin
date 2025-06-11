@@ -284,13 +284,31 @@ function! merlin#PolaritySearch(debug,query)
   let s:search_result = []
   MerlinPy merlin.vim_polarity_search(vim.eval("a:query"), "s:search_result")
   if a:debug != 1 && s:search_result != []
-    call feedkeys("i=merlin#PolarityComplete()\<CR>","n")
+    call feedkeys("i=merlin#SearchComplete()\<CR>","n")
   endif
 endfunction
 
-function! merlin#PolarityComplete()
+function! merlin#SearchComplete()
   call complete(col('.'), s:search_result)
   return ''
+endfunction
+
+function! merlin#SearchByType(debug,query)
+  let s:search_result = []
+  MerlinPy merlin.vim_search_by_type(vim.eval("a:query"), "s:search_result")
+  if a:debug != 1 && s:search_result != []
+    call feedkeys("i=merlin#SearchComplete()\<CR>","n")
+  endif
+endfunction
+
+" Do a polarity search or a search by type depending on the first character of
+" the query.
+function! merlin#Search(debug, query)
+  if a:query =~ "^[-+]"
+    call merlin#PolaritySearch(a:debug, a:query)
+  else
+    call merlin#SearchByType(a:debug, a:query)
+  endif
 endfunction
 
 function! s:StopHighlight()
@@ -793,8 +811,10 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
 
-  """ Polarity search
-  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#PolaritySearch(0,<q-args>)
+  """ Search
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearchPolarity call merlin#PolaritySearch(0,<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearchType call merlin#SearchByType(0,<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandTypePrefix -nargs=+ MerlinSearch call merlin#Search(0,<q-args>)
 
   """ debug --------------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()

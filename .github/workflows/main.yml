@@ -6,27 +6,27 @@ name: CI
 # events but only for the master branch
 on:
   push:
-    branches: [ '414' ]
+    branches: ["414"]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - '.git*'
-      - 'doc/**'
-      - 'emacs/**'
-      - 'vim/**'
-      - '**/emacs-lint.yml'
+      - "**.md"
+      - "**.txt"
+      - ".git*"
+      - "doc/**"
+      - "emacs/**"
+      - "vim/**"
+      - "**/emacs-lint.yml"
   pull_request:
-    branches: [ '414' ]
+    branches: ["414"]
     paths-ignore:
-      - '**.md'
-      - '**.txt'
-      - '.git*'
-      - 'doc/**'
-      - 'emacs/**'
-      - 'vim/**'
-      - '**/emacs-lint.yml'
+      - "**.md"
+      - "**.txt"
+      - ".git*"
+      - "doc/**"
+      - "emacs/**"
+      - "vim/**"
+      - "**/emacs-lint.yml"
   schedule:
-    - cron: '0 12 */6 * *'
+    - cron: "0 12 */6 * *"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Set up OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           # Version of the OCaml compiler to initialise
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
@@ -82,9 +82,8 @@ jobs:
           opam exec -- dune build
           git diff --exit-code
 
-
       - name: Check that the changes are correctly formatted
         if: matrix.os == 'ubuntu-latest'
         run: |
-          opam install ocamlformat.0.26.2
+          opam install ocamlformat.0.27.0
           opam exec -- dune build @fmt

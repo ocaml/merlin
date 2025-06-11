@@ -409,7 +409,8 @@ module Rewrite_loc = struct
     | Pctf_extension ext -> Pctf_extension (u_extension ext)
 
   and u_class_infos : 'a 'b. ('a -> 'b) -> 'a class_infos -> 'b class_infos =
-   fun u_a { pci_virt; pci_params; pci_name; pci_expr; pci_loc; pci_attributes } ->
+   fun u_a
+       { pci_virt; pci_params; pci_name; pci_expr; pci_loc; pci_attributes } ->
     enter ();
     let pci_params =
       List.map ~f:(fun (ct, v) -> (u_core_type ct, v)) pci_params
@@ -573,7 +574,7 @@ module Rewrite_loc = struct
     { popen_expr; popen_override; popen_loc; popen_attributes }
 
   and u_include_infos :
-        'a 'b. ('a -> 'b) -> 'a include_infos -> 'b include_infos =
+      'a 'b. ('a -> 'b) -> 'a include_infos -> 'b include_infos =
    fun u_a { pincl_mod; pincl_loc; pincl_attributes } ->
     enter ();
     let pincl_mod = u_a pincl_mod in
