@@ -590,13 +590,15 @@ let ocaml_flags =
         \        <num>             a single warning number\n\
         \        <num1>..<num2>    a range of consecutive warning numbers\n\
         \        <letter>          a predefined set\n\
-        \     default setting is %S" Warnings.defaults_w );
+        \     default setting is %S"
+        Warnings.defaults_w );
     ( "-warn-error",
       ocaml_warnings_spec ~error:true,
       Printf.sprintf
         "<list> Enable or disable error status for warnings according\n\
         \     to <list>.  See option -w for the syntax of <list>.\n\
-        \     Default setting is %S" Warnings.defaults_warn_error );
+        \     Default setting is %S"
+        Warnings.defaults_warn_error );
     ( "-alert",
       ocaml_alert_spec,
       Printf.sprintf
