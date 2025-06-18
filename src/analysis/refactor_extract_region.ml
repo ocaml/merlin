@@ -1,4 +1,4 @@
-module Lexing = Std.Lexing
+open Std
 
 module FreshName = struct
   (* Generate a fresh name that does not already exists in given environment. *)
@@ -41,7 +41,7 @@ module Gen = struct
     let open Ast_helper in
     let params =
       List.map
-        (fun param ->
+        ~f:(fun param ->
           let pattern =
             Pat.construct
               (Location.mknoloc (Untypeast.lident_of_path param))
@@ -60,14 +60,14 @@ module Gen = struct
 
   let fun_apply params called_fun_name =
     let open Ast_helper in
-    let params = List.map (fun p -> (Asttypes.Nolabel, p)) params in
+    let params = List.map ~f:(fun p -> (Asttypes.Nolabel, p)) params in
     Exp.apply (ident called_fun_name) params
 
   let fun_apply_unit = fun_apply [ Ast_helper.Exp.ident unit ]
 
   let fun_apply_params params =
     params
-    |> List.map (fun param ->
+    |> List.map ~f:(fun param ->
            Ast_helper.Exp.ident
              (Location.mknoloc (Longident.Lident (Path.name param))))
     |> fun_apply
@@ -76,8 +76,8 @@ end
 let free_variables node env ~toplevel_parent_item =
   let concat_set f children =
     List.fold_left
-      (fun acc child -> f child |> Path.Set.union acc)
-      Path.Set.empty children
+      ~f:(fun acc child -> f child |> Path.Set.union acc)
+      ~init:Path.Set.empty children
   in
   let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.Set.t =
    fun { Typedtree.pat_desc; _ } ->
@@ -127,7 +127,7 @@ let free_variables node env ~toplevel_parent_item =
     @@
     match toplevel_parent_item.Typedtree.str_desc with
     | Tstr_value (_, vbs) ->
-      List.find_map
+      Stdlib.List.find_map
         (function
           | { Typedtree.vb_pat = { pat_desc = Tpat_var (id, _, _); _ }; _ } ->
             Some (Ident.stamp id)
@@ -151,7 +151,7 @@ let free_variables node env ~toplevel_parent_item =
       vars
   in *)
   Path.Set.to_list vars
-  |> List.filter (fun var_path ->
+  |> List.filter ~f:(fun var_path ->
          let var_stamp = Path.head var_path |> Ident.stamp in
          not (is_free (start_stamp, stop_stamp) var_stamp))
 
@@ -164,7 +164,8 @@ let buffer_sub_loc buf loc =
   let (`Offset end_offset) =
     `Logical (Lexing.split_pos loc.loc_end) |> Msource.get_offset buf
   in
-  String.sub (Msource.text buf) start_offset (end_offset - start_offset)
+  String.sub (Msource.text buf) ~pos:start_offset
+    ~len:(end_offset - start_offset)
   |> Msource.make
 
 let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
@@ -264,12 +265,12 @@ let select_suitable_expr ~start ~stop nodes =
       else
         let node = Browse_tree.of_node ~env node in
         Lazy.force node.t_children |> List.rev
-        |> List.find_map (fun node ->
+        |> Stdlib.List.find_map (fun node ->
                select_among_child node.Browse_tree.t_env node.t_node)
     | _ -> None
   in
   nodes |> List.rev
-  |> List.find_map (fun (env, node) -> select_among_child env node)
+  |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
 
 let substitute ~start ~stop ?extract_name buffer structure =
   let enclosing = Mbrowse.enclosing start [ Mbrowse.of_structure structure ] in
@@ -278,7 +279,7 @@ let substitute ~start ~stop ?extract_name buffer structure =
   | Some (expr, expr_env) -> begin
     let toplevel_parent_item =
       List.find
-        (fun item ->
+        ~f:(fun item ->
           Location_aux.included expr.exp_loc ~into:item.Typedtree.str_loc)
         structure.str_items
     in
