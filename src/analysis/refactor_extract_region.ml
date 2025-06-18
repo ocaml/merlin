@@ -155,10 +155,6 @@ let free_variables node env ~toplevel_parent_item =
          let var_stamp = Path.head var_path |> Ident.stamp in
          not (is_free (start_stamp, stop_stamp) var_stamp))
 
-let logical_of_loc loc =
-  let line, col = Lexing.split_pos loc in
-  `Logical (line, col)
-
 (* Maybe add this in [Msource]? *)
 let buffer_sub_loc buf loc =
   let (`Offset start_offset) =
@@ -166,7 +162,7 @@ let buffer_sub_loc buf loc =
     Msource.get_offset buf (`Logical (line, col))
   in
   let (`Offset end_offset) =
-    logical_of_loc loc.Location.loc_end |> Msource.get_offset buf
+    `Logical (Lexing.split_pos loc.loc_end) |> Msource.get_offset buf
   in
   String.sub (Msource.text buf) start_offset (end_offset - start_offset)
   |> Msource.make
@@ -201,8 +197,8 @@ let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
   in
   let substitued_toplevel_item =
     Msource.substitute toplevel_item
-      (logical_of_loc subst_loc.loc_start)
-      (logical_of_loc subst_loc.loc_end)
+      (`Logical (Lexing.split_pos subst_loc.loc_start))
+      (`Logical (Lexing.split_pos subst_loc.loc_end))
       fresh_call
     |> Msource.text
   in
@@ -307,4 +303,4 @@ let substitute ~start ~stop ?extract_name buffer structure =
   Sinon tout ce qui est compris dans l'enclosing -> variable libre *)
 
 (* Ajouter test récursion mutuelle *)
-(* Ajouter test extraction d'expr *)
+(* Return type checker *)

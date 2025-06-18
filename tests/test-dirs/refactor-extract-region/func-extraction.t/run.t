@@ -57,16 +57,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 17:12 -end 17:37 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 18:12 -end 18:37 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 14,
+        "line": 15,
         "col": 0
       },
       "end": {
-        "line": 20,
+        "line": 21,
         "col": 3
       },
       "content": "let fun_name3 (x) (y) = print_endline (x ^ (y ^ z))
@@ -79,11 +79,44 @@
     m",
       "selection-range": {
         "start": {
-          "line": 14,
+          "line": 15,
           "col": 4
         },
         "end": {
-          "line": 14,
+          "line": 15,
+          "col": 17
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 27:6 -end 31:9 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 23,
+        "col": 0
+      },
+      "end": {
+        "line": 32,
+        "col": 5
+      },
+      "content": "let fun_name2 () = let var = ref 0 in var := (10 * 50); !var
+  let my_function =
+    object
+      method foo =
+        let () = () in
+        fun_name2 ()
+    end",
+      "selection-range": {
+        "start": {
+          "line": 23,
+          "col": 4
+        },
+        "end": {
+          "line": 23,
           "col": 17
         }
       }

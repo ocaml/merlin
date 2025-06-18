@@ -9,6 +9,7 @@ let all_empty l =
 
 let max l = List.fold_left (fun acc x -> if x > acc then x else acc) l
 
+(* A comment *)
 let z = "..."
 
 let test x y =
@@ -19,4 +20,13 @@ let test x y =
   in
   m
 
-let _ = assert false
+let my_function =
+  object
+    method foo =
+      let () = () in
+      begin
+        let var = ref 0 in
+        var := 10 * 50;
+        !var
+      end
+  end
