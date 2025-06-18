@@ -41,7 +41,7 @@
         "line": 10,
         "col": 70
       },
-      "content": "let fun_name2 (acc) (x) = if x > acc then x else acc
+      "content": "let fun_name2 acc x = if x > acc then x else acc
   let max l = List.fold_left fun_name2 l",
       "selection-range": {
         "start": {
@@ -73,7 +73,7 @@
   let test x y =
     let fun_name2 = Fun.id in
     let m =
-      let m = fun_name3 in
+      let m = fun_name3 x y in
       m
     in
     m",
@@ -84,7 +84,7 @@
         },
         "end": {
           "line": 14,
-          "col": 13
+          "col": 17
         }
       }
     },

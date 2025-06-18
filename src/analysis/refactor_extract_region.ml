@@ -11,31 +11,30 @@ module FreshName = struct
 end
 
 module Gen = struct
+  let unit = Longident.Lident "()" |> Location.mknoloc
+
   (* Generate [let name = body]. *)
-  let toplevel_let_binding name body =
+  let toplevel_let name body =
     let open Ast_helper in
     let pattern = Pat.mk (Ppat_var { txt = name; loc = Location.none }) in
     let body = Parsetree_utils.filter_expr_attr body in
     Str.value Nonrecursive [ Vb.mk pattern body ]
 
   (* Generate [let name = const]. *)
-  let let_const_toplevel_binding name const =
-    Ast_helper.Exp.constant const |> toplevel_let_binding name
+  let let_const_toplevel name const =
+    Ast_helper.Exp.constant const |> toplevel_let name
 
   (* Generate [let name () = body]. *)
-  let let_unit_toplevel_binding name body =
+  let let_unit_toplevel name body =
     let open Ast_helper in
     let unit_param =
       { Parsetree.pparam_loc = Location.none;
         pparam_desc =
-          Pparam_val
-            ( Nolabel,
-              None,
-              Pat.construct (Location.mknoloc (Longident.Lident "()")) None )
+          Pparam_val (Nolabel, None, Ast_helper.Pat.construct unit None)
       }
     in
     let body = Exp.function_ [ unit_param ] None (Pfunction_body body) in
-    toplevel_let_binding name body
+    toplevel_let name body
 
   (* Generate [let name params = body]. *)
   let toplevel_function params name body =
@@ -54,7 +53,24 @@ module Gen = struct
         params
     in
     let body = Exp.function_ params None (Pfunction_body body) in
-    toplevel_let_binding name body
+    toplevel_let name body
+
+  let ident name =
+    Longident.Lident name |> Location.mknoloc |> Ast_helper.Exp.ident
+
+  let fun_apply params called_fun_name =
+    let open Ast_helper in
+    let params = List.map (fun p -> (Asttypes.Nolabel, p)) params in
+    Exp.apply (ident called_fun_name) params
+
+  let fun_apply_unit = fun_apply [ Ast_helper.Exp.ident unit ]
+
+  let fun_apply_params params =
+    params
+    |> List.map (fun param ->
+           Ast_helper.Exp.ident
+             (Location.mknoloc (Longident.Lident (Path.name param))))
+    |> fun_apply
 end
 
 let free_variables node env ~toplevel_parent_item =
@@ -155,12 +171,15 @@ let buffer_sub_loc buf loc =
   String.sub (Msource.text buf) start_offset (end_offset - start_offset)
   |> Msource.make
 
-let extract_to_toplevel name expr gen_let_binding buffer ~expr_env ~exp_loc
-    ~toplevel_item_loc =
+let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
+    ~exp_loc ~toplevel_item_loc =
   let val_name =
     match name with
     | `Default name -> FreshName.gen_val_name name expr_env
     | `Given name -> name
+  in
+  let fresh_call =
+    gen_call val_name |> Format.asprintf "%a" Pprintast.expression
   in
   let fresh_let_binding =
     gen_let_binding val_name expr
@@ -184,7 +203,7 @@ let extract_to_toplevel name expr gen_let_binding buffer ~expr_env ~exp_loc
     Msource.substitute toplevel_item
       (logical_of_loc subst_loc.loc_start)
       (logical_of_loc subst_loc.loc_end)
-      val_name
+      fresh_call
     |> Msource.text
   in
   let selection_range =
@@ -194,7 +213,7 @@ let extract_to_toplevel name expr gen_let_binding buffer ~expr_env ~exp_loc
       loc_end =
         Lexing.make_pos
           ( toplevel_item_loc.loc_start.pos_lnum,
-            let_length + String.length val_name );
+            let_length + String.length fresh_call );
       loc_ghost = false
     }
   in
@@ -206,8 +225,8 @@ let extract_const_to_toplevel ?extract_name const =
     Option.fold extract_name ~none:(`Default "const_name") ~some:(fun name ->
         `Given name)
   in
-  extract_to_toplevel name (Untypeast.constant const)
-    Gen.let_const_toplevel_binding
+  extract_to_toplevel name (Untypeast.constant const) Gen.let_const_toplevel
+    Gen.ident
 
 let extract_expr_to_toplevel ?extract_name node expr ~expr_env
     ~toplevel_parent_item =
@@ -215,14 +234,13 @@ let extract_expr_to_toplevel ?extract_name node expr ~expr_env
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
   in
-  let free_vars = free_variables node expr_env ~toplevel_parent_item in
-  let generated_let =
-    match (free_vars, is_function expr) with
-    | [], true ->
-      (* TODO: si l'expr est une fonction anonyme alors pas besoin de générer la liste des paramètres. *)
-      Gen.toplevel_let_binding
-    | [], _ -> Gen.let_unit_toplevel_binding
-    | free_vars, _ -> Gen.toplevel_function free_vars
+  let gen_let, gen_call =
+    if is_function expr then (Gen.toplevel_let, Gen.ident)
+    else
+      match free_variables node expr_env ~toplevel_parent_item with
+      | [] -> (Gen.let_unit_toplevel, Gen.fun_apply_unit)
+      | free_vars ->
+        (Gen.toplevel_function free_vars, Gen.fun_apply_params free_vars)
   in
   let name =
     Option.fold extract_name ~none:(`Default "fun_name") ~some:(fun name ->
@@ -230,7 +248,7 @@ let extract_expr_to_toplevel ?extract_name node expr ~expr_env
   in
   extract_to_toplevel name
     (Untypeast.untype_expression expr)
-    generated_let ~expr_env
+    gen_let gen_call ~expr_env
 
 (* We select the most inclusive expression contained entirely within the given region. *)
 let select_suitable_expr ~start ~stop nodes =
@@ -289,4 +307,4 @@ let substitute ~start ~stop ?extract_name buffer structure =
   Sinon tout ce qui est compris dans l'enclosing -> variable libre *)
 
 (* Ajouter test récursion mutuelle *)
-(* Generate and substitute the function call adapted to the extracted expr. *)
+(* Ajouter test extraction d'expr *)
