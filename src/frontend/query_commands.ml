@@ -815,15 +815,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
   | Refactor_extract_region (start, stop, extract_name, buffer) ->
     let start = Mpipeline.get_lexing_pos pipeline start
     and stop = Mpipeline.get_lexing_pos pipeline stop in
-    let typer_result = Mpipeline.typer_result pipeline in
-    begin
-      match Mtyper.get_typedtree typer_result with
-      | `Interface _ -> None
-      | `Implementation structure ->
-        Some
-          (Refactor_extract_region.substitute ~start ~stop ?extract_name buffer
-             structure)
-    end
+    let config = Mpipeline.final_config pipeline in
+    let typer_result =
+      Mpipeline.typer_result pipeline |> Mtyper.get_typedtree
+    in
+    Refactor_extract_region.substitute ~start ~stop ?extract_name config buffer
+      typer_result
   | Signature_help { position; _ } -> (
     (* Todo: additionnal contextual information could help us provide better
        results.*)

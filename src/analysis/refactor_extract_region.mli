@@ -2,6 +2,7 @@ val substitute :
   start:Lexing.position ->
   stop:Lexing.position ->
   ?extract_name:string ->
+  Mconfig.t ->
   Msource.t ->
-  Typedtree.structure ->
-  Query_protocol.substitution_result
+  Mtyper.typedtree ->
+  Query_protocol.substitution_result option

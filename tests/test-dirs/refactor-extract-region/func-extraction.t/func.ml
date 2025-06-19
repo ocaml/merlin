@@ -21,12 +21,8 @@ let test x y =
   m
 
 let my_function =
-  object
-    method foo =
-      let () = () in
-      begin
-        let var = ref 0 in
-        var := 10 * 50;
-        !var
-      end
-  end
+  let var = ref 0 in
+  var := 10 * 50;
+  !var
+
+let test x y = print_endline (x ^ y ^ z)

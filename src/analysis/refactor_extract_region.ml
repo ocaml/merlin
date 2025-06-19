@@ -73,7 +73,8 @@ module Gen = struct
     |> fun_apply
 end
 
-let free_variables node env ~toplevel_parent_item =
+(* Find all variable which appears in [node]. *)
+let rec find_vars node =
   let concat_set f children =
     List.fold_left
       ~f:(fun acc child -> f child |> Path.Set.union acc)
@@ -99,63 +100,43 @@ let free_variables node env ~toplevel_parent_item =
       Path.Set.union (find_pattern_var l) (find_pattern_var r)
     | _ -> Path.Set.empty
   in
-  (* Find all variable which appears in [node]. *)
-  let rec find_vars node =
-    let loop acc node =
-      match node.Browse_tree.t_node with
-      | Browse_raw.Expression { exp_desc = Texp_ident (path, _, _); _ } ->
-        (* Filter [Stdlib] declarations. *)
-        if Path.head path |> Ident.name = "Stdlib" then acc
-        else Path.Set.add path acc
-      | Pattern pat -> find_pattern_var pat |> Path.Set.union acc
-      | _ ->
-        let child = Lazy.force node.t_children in
-        concat_set find_vars child |> Path.Set.union acc
-    in
-    loop Path.Set.empty node
+  let loop acc node =
+    match node.Browse_tree.t_node with
+    | Browse_raw.Expression { exp_desc = Texp_ident (path, _, _); _ } ->
+      Path.Set.add path acc
+    | Pattern pat -> find_pattern_var pat |> Path.Set.union acc
+    | _ ->
+      let child = Lazy.force node.t_children in
+      concat_set find_vars child |> Path.Set.union acc
   in
-  let is_free (start_stamp, stop_stamp) s =
-    match stop_stamp with
-    | None -> s < start_stamp
-    | Some stop_stamp -> s < start_stamp && s > stop_stamp
-  in
-  let vars = Browse_tree.of_node ~env node |> find_vars in
-  let start_stamp =
-    (* TODO: if the extracted expr is contains in a let binding
-      then [Option.get] works here. *)
-    Option.get
-    @@
-    match toplevel_parent_item.Typedtree.str_desc with
-    | Tstr_value (_, vbs) ->
-      Stdlib.List.find_map
-        (function
-          | { Typedtree.vb_pat = { pat_desc = Tpat_var (id, _, _); _ }; _ } ->
-            Some (Ident.stamp id)
-          | _ -> None)
-        vbs
-    | _ -> None
-  in
-  let stop_stamp =
-    None
-    (* TODO: find it *)
-  in
-  (* let () =
-    prerr_endline "Mentionned";
-    Path.Set.iter
-      (fun p ->
-        let var_stamp = Path.head p |> Ident.stamp in
+  loop Path.Set.empty node
 
-        Format.asprintf "%S free:%b" (Path.name p)
-          (is_free (start_stamp, stop_stamp) var_stamp)
-        |> prerr_endline)
-      vars
-  in *)
-  Path.Set.to_list vars
-  |> List.filter ~f:(fun var_path ->
-         let var_stamp = Path.head var_path |> Ident.stamp in
-         not (is_free (start_stamp, stop_stamp) var_stamp))
+let bounded_vars node env ~toplevel_parent_item ~mconfig ~local_defs =
+  let enclosing =
+    { Location.loc_start = toplevel_parent_item.Typedtree.str_loc.loc_start;
+      loc_end = (Browse_raw.node_real_loc Location.none node).loc_start;
+      loc_ghost = false
+    }
+  in
+  Browse_tree.of_node ~env node
+  |> find_vars
+  |> Path.Set.filter (fun var_path ->
+         match
+           Locate.from_path
+             ~config:{ mconfig; ml_or_mli = `ML; traverse_aliases = true }
+             ~env ~local_defs ~namespace:Value var_path
+         with
+         | `Found { location; _ } ->
+           (* let () =
+             Format.asprintf "%S in args:%b" (Path.name var_path)
+               (Location_aux.included location ~into:enclosing)
+             |> prerr_endline
+           in *)
+           Location_aux.included location ~into:enclosing
+         | _ -> false)
+  |> Path.Set.to_list
 
-(* Maybe add this in [Msource]? *)
+(* TODO: Maybe add this in [Msource]? *)
 let buffer_sub_loc buf loc =
   let (`Offset start_offset) =
     let line, col = Lexing.split_pos loc.Location.loc_start in
@@ -226,7 +207,7 @@ let extract_const_to_toplevel ?extract_name const =
     Gen.ident
 
 let extract_expr_to_toplevel ?extract_name node expr ~expr_env
-    ~toplevel_parent_item =
+    ~toplevel_parent_item ~local_defs ~mconfig =
   let is_function = function
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
@@ -234,7 +215,9 @@ let extract_expr_to_toplevel ?extract_name node expr ~expr_env
   let gen_let, gen_call =
     if is_function expr then (Gen.toplevel_let, Gen.ident)
     else
-      match free_variables node expr_env ~toplevel_parent_item with
+      match
+        bounded_vars node expr_env ~toplevel_parent_item ~local_defs ~mconfig
+      with
       | [] -> (Gen.let_unit_toplevel, Gen.fun_apply_unit)
       | free_vars ->
         (Gen.toplevel_function free_vars, Gen.fun_apply_params free_vars)
@@ -272,36 +255,37 @@ let select_suitable_expr ~start ~stop nodes =
   nodes |> List.rev
   |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
 
-let substitute ~start ~stop ?extract_name buffer structure =
-  let enclosing = Mbrowse.enclosing start [ Mbrowse.of_structure structure ] in
-  match select_suitable_expr ~start ~stop enclosing with
-  | None -> failwith "nothing to do"
-  | Some (expr, expr_env) -> begin
-    let toplevel_parent_item =
-      List.find
-        ~f:(fun item ->
-          Location_aux.included expr.exp_loc ~into:item.Typedtree.str_loc)
-        structure.str_items
+let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
+  match typedtree with
+  | `Interface _ -> None
+  | `Implementation structure -> (
+    let enclosing =
+      Mbrowse.enclosing start [ Mbrowse.of_structure structure ]
     in
-    let exp_loc = expr.exp_loc in
-    let toplevel_item_loc = toplevel_parent_item.str_loc in
-    match expr.exp_desc with
-    | Texp_constant const ->
-      (* Special case for constant. They can't produce side effect so it's not
+    match select_suitable_expr ~start ~stop enclosing with
+    | None -> failwith "nothing to do"
+    | Some (expr, expr_env) -> begin
+      let toplevel_parent_item =
+        List.find
+          ~f:(fun item ->
+            Location_aux.included expr.exp_loc ~into:item.Typedtree.str_loc)
+          structure.str_items
+      in
+      let exp_loc = expr.exp_loc in
+      let toplevel_item_loc = toplevel_parent_item.str_loc in
+      match expr.exp_desc with
+      | Texp_constant const ->
+        (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
-      extract_const_to_toplevel const buffer ?extract_name ~expr_env ~exp_loc
-        ~toplevel_item_loc
-    | _ ->
-      extract_expr_to_toplevel (Browse_raw.Expression expr) expr buffer
-        ?extract_name ~expr_env ~exp_loc ~toplevel_item_loc
-        ~toplevel_parent_item
-  end
-
-(* Trouver les variables libres :
-  Récupérer localisation des vars de l'expression toplevel extraite (voir analysis/locate.ml)
-  Si la loc est en dehors du buffer -> pas libre
-  Si la loc est au dessus de l'expression toplevel extraite -> libre
-  Sinon tout ce qui est compris dans l'enclosing -> variable libre *)
+        Some
+          (extract_const_to_toplevel const buffer ?extract_name ~expr_env
+             ~exp_loc ~toplevel_item_loc)
+      | _ ->
+        Some
+          (extract_expr_to_toplevel (Browse_raw.Expression expr) expr buffer
+             ?extract_name ~expr_env ~exp_loc ~toplevel_item_loc
+             ~toplevel_parent_item ~local_defs:typedtree ~mconfig)
+    end)
 
 (* Ajouter test récursion mutuelle *)
-(* Return type checker *)
+(* + de tests *)
