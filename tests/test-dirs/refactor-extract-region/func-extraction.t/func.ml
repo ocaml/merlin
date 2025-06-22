@@ -20,9 +20,20 @@ let test x y =
   in
   m
 
-let my_function =
-  let var = ref 0 in
-  var := 10 * 50;
-  !var
+let my_object =
+  object
+    method foo =
+      let () = () in
+      begin
+        let var = ref 0 in
+        var := 10 * 50;
+        !var
+      end
+  end
 
-let test x y = print_endline (x ^ y ^ z)
+module type T = sig
+  val add : int -> int -> int
+end
+let test (module X : T) (x) y (module Y : T) =
+  let () = () in
+  X.add x y

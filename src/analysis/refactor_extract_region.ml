@@ -29,8 +29,7 @@ module Gen = struct
     let open Ast_helper in
     let unit_param =
       { Parsetree.pparam_loc = Location.none;
-        pparam_desc =
-          Pparam_val (Nolabel, None, Ast_helper.Pat.construct unit None)
+        pparam_desc = Pparam_val (Nolabel, None, Pat.construct unit None)
       }
     in
     let body = Exp.function_ [ unit_param ] None (Pfunction_body body) in
@@ -81,7 +80,20 @@ let rec find_vars node =
       ~init:Path.Set.empty children
   in
   let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.Set.t =
-   fun { Typedtree.pat_desc; _ } ->
+   fun { Typedtree.pat_desc; pat_extra; _ } ->
+    let _constr =
+      Stdlib.List.find_map
+        (fun (pat_extra, _, _) ->
+          match pat_extra with
+          | Typedtree.Tpat_constraint typ ->
+            let () =
+              Format.asprintf "%a!" Printtyp.type_expr typ.Typedtree.ctyp_type
+              |> prerr_endline
+            in
+            Some typ
+          | _ -> None)
+        pat_extra
+    in
     match pat_desc with
     | Typedtree.Tpat_var (ident, _, _) -> Path.Set.singleton (Pident ident)
     | Tpat_tuple pats -> concat_set find_pattern_var pats
@@ -102,7 +114,11 @@ let rec find_vars node =
   in
   let loop acc node =
     match node.Browse_tree.t_node with
-    | Browse_raw.Expression { exp_desc = Texp_ident (path, _, _); _ } ->
+    | Browse_raw.Expression { exp_desc = Texp_ident (path, _, vd); _ } ->
+      let () =
+        Format.asprintf "%a" Printtyp.type_expr vd.val_type |> prerr_endline
+      in
+
       Path.Set.add path acc
     | Pattern pat -> find_pattern_var pat |> Path.Set.union acc
     | _ ->
@@ -126,7 +142,7 @@ let bounded_vars node env ~toplevel_parent_item ~mconfig ~local_defs =
              ~config:{ mconfig; ml_or_mli = `ML; traverse_aliases = true }
              ~env ~local_defs ~namespace:Value var_path
          with
-         | `Found { location; _ } ->
+         | `Found { location; approximated = false; _ } ->
            (* let () =
              Format.asprintf "%S in args:%b" (Path.name var_path)
                (Location_aux.included location ~into:enclosing)
@@ -289,3 +305,5 @@ let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
 
 (* Ajouter test récursion mutuelle *)
 (* + de tests *)
+
+(* préserver type contraine de ce qui est extrait *)

@@ -91,7 +91,7 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 24:2 -end 26:6 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 27:6 -end 31:9 < func.ml
   {
     "class": "return",
     "value": {
@@ -100,12 +100,16 @@
         "col": 0
       },
       "end": {
-        "line": 26,
-        "col": 6
+        "line": 32,
+        "col": 5
       },
       "content": "let fun_name2 () = let var = ref 0 in var := (10 * 50); !var
-  let my_function =
-    fun_name2 ()",
+  let my_object =
+    object
+      method foo =
+        let () = () in
+        fun_name2 ()
+    end",
       "selection-range": {
         "start": {
           "line": 23,
@@ -119,3 +123,6 @@
     },
     "notifications": []
   }
+
+$ $MERLIN single refactoring-extract-region -start 38:55 -end 38:65 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 39:2 -end 39:12 < func.ml
