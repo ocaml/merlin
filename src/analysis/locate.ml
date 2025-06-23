@@ -294,13 +294,37 @@ module Utils = struct
     | CMT _ | CMTI _ -> Mconfig.cmt_path config
 end
 
-let move_to filename cmt_infos =
+let reroot_build_dir ~root path =
+  let sep =
+    try String.get Filename.dir_sep 0 with Invalid_argument _ -> '/'
+  in
+  let segments = path |> String.split_on_char ~sep in
+  let rec strip_prefix = function
+    | [] -> []
+    | "_build" :: _ as l -> l
+    | _ :: tl -> strip_prefix tl
+  in
+  match strip_prefix segments with
+  | [] -> path
+  | l ->
+    let sep = Printf.sprintf "%c" sep in
+    Filename.concat root (String.concat ~sep l)
+
+let move_to (config : Mconfig.t) filename cmt_infos =
   let digest =
     (* [None] only for packs, and we wouldn't have a trie if the cmt was for a
        pack. *)
     let sourcefile_in_builddir =
       Filename.concat cmt_infos.Cmt_format.cmt_builddir
         (Option.get cmt_infos.cmt_sourcefile)
+    in
+    let sourcefile_in_builddir =
+      (* This workaround is meant to fix issues with Dune's BUILD_PREFIX_MAP It
+         will not work when the [_build] folder is not located at the source
+         root. See [#1934](https://github.com/ocaml/merlin/issues/1934). *)
+      match config.merlin.source_root with
+      | None -> sourcefile_in_builddir
+      | Some root -> reroot_build_dir ~root sourcefile_in_builddir
     in
     match
       sourcefile_in_builddir |> String.split_on_char ~sep:'.' |> List.rev
@@ -332,7 +356,7 @@ let load_cmt ~config ?(with_fallback = true) comp_unit =
     let cmt_infos = (Cmt_cache.read path).cmt_infos in
     let source_file = cmt_infos.cmt_sourcefile in
     let source_file = Option.value ~default:"*pack*" source_file in
-    move_to path cmt_infos;
+    move_to config.mconfig path cmt_infos;
     Ok (source_file, cmt_infos)
   | None -> Error ()
 
@@ -622,13 +646,14 @@ let find_loc_of_comp_unit ~config uid comp_unit =
 
 let find_loc_of_uid ~config ~local_defs ?ident ?fallback (uid : Shape.Uid.t) =
   let find_loc_of_item ~comp_unit =
-    match find_loc_of_item ~config ~local_defs uid comp_unit, fallback, ident with
+    match
+      (find_loc_of_item ~config ~local_defs uid comp_unit, fallback, ident)
+    with
     | Some { loc; txt }, _, Some ident when String.equal txt ident ->
       (* Checking the ident prevent returning nonsensical results when some uid
          were swaped but the cmt files were not rebuilt. *)
       Some (uid, loc)
-    | Some { loc; _ }, _, None ->
-        Some (uid, loc)
+    | Some { loc; _ }, _, None -> Some (uid, loc)
     | (Some _ | None), Some fallback, _ ->
       find_loc_of_item ~config ~local_defs fallback comp_unit
       |> Option.map ~f:(fun { Location.loc; _ } -> (fallback, loc))
@@ -672,7 +697,7 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
           ~with_fallback:false unit_name
       with
       | Ok (filename, cmt_infos) ->
-        move_to filename cmt_infos;
+        move_to config.mconfig filename cmt_infos;
         log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
         cmt_infos.cmt_impl_shape
       | Error () ->
