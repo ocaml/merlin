@@ -1,3 +1,19 @@
+merlin 4.19
+===========
+Mon Jun 23 10:10:42 CEST 2024
+
+  + merlin library
+    - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
+      (#1888)
+    - `inlay-hints` fix inlay hints on function parameters (#1923)
+    - Handle class type in outline (#1932)
+    - Handle locally defined value in outline (#1936)
+  + vim plugin
+    - Added support for search-by-type (#1846)
+      This is exposed through the existing `:MerlinSearch` command, that
+      switches between search-by-type and polarity search depending on the
+      first character of the query.
+
 merlin 4.18
 ===========
 Tue Nov 26 17:30:42 CET 2024

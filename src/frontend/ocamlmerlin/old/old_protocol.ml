@@ -73,8 +73,8 @@ type _ sync_command =
   | Checkout : Context.document -> unit sync_command
   | Idle_job : bool sync_command
   | Flags_get : string list sync_command
-  | Project_get
-      : (string list * [ `Ok | `Failures of string list ]) sync_command
+  | Project_get :
+      (string list * [ `Ok | `Failures of string list ]) sync_command
 
 type 'a command = Query of 'a Query_protocol.t | Sync of 'a sync_command
 

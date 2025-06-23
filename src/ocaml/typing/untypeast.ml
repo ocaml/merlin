@@ -517,7 +517,7 @@ let expression sub exp =
                              ])
     | Texp_open (od, exp) ->
         Pexp_open (sub.open_declaration sub od, sub.expr sub exp)
-    | Texp_hole ->
+    | Texp_typed_hole ->
         let id = Location.mkloc hole_txt loc in
         Pexp_extension (id, PStr [])
   in
@@ -681,7 +681,7 @@ let module_expr (sub : mapper) mexpr =
           | Tmod_unpack (exp, _pack) ->
               Pmod_unpack (sub.expr sub exp)
               (* TODO , sub.package_type sub pack) *)
-          | Tmod_hole ->
+          | Tmod_typed_hole ->
               let id = Location.mkloc hole_txt loc in
               Pmod_extension (id, PStr [])
         in

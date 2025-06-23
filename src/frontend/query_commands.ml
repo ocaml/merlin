@@ -612,12 +612,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let structures = Mbrowse.enclosing pos [ Mbrowse.of_typedtree typedtree ] in
     begin
       match structures with
-      | (_, (Browse_raw.Module_expr { mod_desc = Tmod_hole; _ } as node_for_loc))
+      | ( _,
+          (Browse_raw.Module_expr { mod_desc = Tmod_typed_hole; _ } as
+           node_for_loc) )
         :: (_, node)
         :: _parents ->
         let loc = Mbrowse.node_loc node_for_loc in
         (loc, Construct.node ~config ~keywords ?depth ~values_scope node)
-      | (_, (Browse_raw.Expression { exp_desc = Texp_hole; _ } as node))
+      | (_, (Browse_raw.Expression { exp_desc = Texp_typed_hole; _ } as node))
         :: _parents ->
         let loc = Mbrowse.node_loc node in
         (loc, Construct.node ~config ~keywords ?depth ~values_scope node)
@@ -819,8 +821,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
     (List.sort ~cmp locs, `Not_requested)
   | Inlay_hints
-      (start, stop, hint_let_binding, hint_pattern_binding, avoid_ghost_location)
-    ->
+      ( start,
+        stop,
+        hint_let_binding,
+        hint_pattern_binding,
+        hint_function_params,
+        avoid_ghost_location ) ->
     let start = Mpipeline.get_lexing_pos pipeline start
     and stop = Mpipeline.get_lexing_pos pipeline stop in
     let typer_result = Mpipeline.typer_result pipeline in
@@ -829,7 +835,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | `Interface _ -> []
       | `Implementation structure ->
         Inlay_hints.of_structure ~hint_let_binding ~hint_pattern_binding
-          ~avoid_ghost_location ~start ~stop structure
+          ~hint_function_params ~avoid_ghost_location ~start ~stop structure
     end
   | Signature_help { position; _ } -> (
     (* Todo: additionnal contextual information could help us provide better
