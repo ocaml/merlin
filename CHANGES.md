@@ -1,4 +1,4 @@
-unreleased
+merlin 5.5
 ==========
 
   + merlin library
