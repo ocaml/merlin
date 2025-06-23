@@ -1,5 +1,6 @@
-unreleased
-==========
+merlin 4.19
+===========
+Mon Jun 23 10:10:42 CEST 2024
 
   + merlin library
     - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
