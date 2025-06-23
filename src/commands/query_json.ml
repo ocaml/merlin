@@ -39,18 +39,7 @@ let dump (type a) : a t -> json =
       `Assoc [ ("line", `Int line); ("column", `Int col) ]
   in
   let kinds_to_json kind =
-    `List
-      (List.map
-         ~f:(function
-           | `Constructor -> `String "constructor"
-           | `Keywords -> `String "keywords"
-           | `Labels -> `String "label"
-           | `Modules -> `String "module"
-           | `Modules_type -> `String "module-type"
-           | `Types -> `String "type"
-           | `Values -> `String "value"
-           | `Variants -> `String "variant")
-         kind)
+    `List (List.map ~f:(fun kind -> `String (Compl.Kind.to_string kind)) kind)
   in
   function
   | Type_expr (expr, pos) ->

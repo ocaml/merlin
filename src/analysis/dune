@@ -23,6 +23,7 @@
   ocaml_parsing
   ocaml_preprocess
   query_protocol
+  query_protocol_kernel
   ocaml_typing
   ocaml_utils
   str

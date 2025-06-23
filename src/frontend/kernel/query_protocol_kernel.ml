@@ -2,4 +2,5 @@
    is useful because it allows VSCode extensions (which run in javascript) to use the
    serializers/deserializers defined in this module. *)
 
+module Completion_kind = Completion_kind
 module Locate_types_result = Locate_types_result

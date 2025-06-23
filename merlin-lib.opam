@@ -20,6 +20,7 @@ depends: [
   "menhirSdk" {dev & >= "20201216"}
   "yojson" {>= "2.0.0"}
   "ppx_yojson_conv" {>= "0.17.0"}
+  "ppx_jane" {>= "0.17.0"}
 ]
 synopsis:
   "Merlin's libraries"

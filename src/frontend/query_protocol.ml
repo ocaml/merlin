@@ -56,15 +56,8 @@ module Compl = struct
       context : [ `Unknown | `Application of application_context ]
     }
 
-  type kind =
-    [ `Constructor
-    | `Labels
-    | `Modules
-    | `Modules_type
-    | `Types
-    | `Values
-    | `Variants
-    | `Keywords ]
+  module Kind = Completion_kind
+  type kind = Kind.t
 end
 
 type completions = Compl.t
