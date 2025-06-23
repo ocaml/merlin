@@ -47,7 +47,7 @@ let speclist =
       "Rewrite locations paths using the provided root" );
     ( "--store-shapes",
       Arg.Set store_shapes,
-      "Aggregate input-indexes shapes and store them in the new index" );
+      "Aggregate input indexes' shapes and store them in the new index" );
     ( "-I",
       Arg.String
         (fun arg ->
