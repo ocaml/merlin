@@ -36,7 +36,17 @@
             "kind": "Module",
             "type": null,
             "children": [],
-            "deprecated": false
+            "deprecated": false,
+            "selection": {
+              "start": {
+                "line": 4,
+                "col": 9
+              },
+              "end": {
+                "line": 4,
+                "col": 10
+              }
+            }
           },
           {
             "start": {
@@ -51,7 +61,17 @@
             "kind": "Module",
             "type": null,
             "children": [],
-            "deprecated": false
+            "deprecated": false,
+            "selection": {
+              "start": {
+                "line": 3,
+                "col": 9
+              },
+              "end": {
+                "line": 3,
+                "col": 10
+              }
+            }
           },
           {
             "start": {
@@ -66,10 +86,30 @@
             "kind": "Module",
             "type": null,
             "children": [],
-            "deprecated": false
+            "deprecated": false,
+            "selection": {
+              "start": {
+                "line": 2,
+                "col": 9
+              },
+              "end": {
+                "line": 2,
+                "col": 10
+              }
+            }
           }
         ],
-        "deprecated": false
+        "deprecated": false,
+        "selection": {
+          "start": {
+            "line": 1,
+            "col": 7
+          },
+          "end": {
+            "line": 1,
+            "col": 11
+          }
+        }
       }
     ],
     "notifications": []
