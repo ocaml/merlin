@@ -15,6 +15,8 @@ unreleased
       fixes #1913)
     - Downstreamed a typer fix from 5.3.X that would trigger assertions linked
       to scopes bit masks when backtracking the typer cache (#1935)
+    - Add a new selection field to outline results that contains the location of
+      the symbol itself. (#1942)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)

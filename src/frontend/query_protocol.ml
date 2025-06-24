@@ -92,7 +92,8 @@ and item =
       | `Method ];
     outline_type : string option;
     deprecated : bool;
-    location : Location_aux.t;
+    location : Location.t;
+    selection : Location.t;
     children : outline
   }
 
