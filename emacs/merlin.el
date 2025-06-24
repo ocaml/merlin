@@ -6,7 +6,7 @@
 ;; Created: 30 August 2016
 ;; Version: 3.0
 ;; Keywords: ocaml languages
-;; Package-Requires: ((emacs "25.1"))
+;; Package-Requires: ((emacs "25.1") (compat "29.1.4.5"))
 ;; URL: https://github.com/ocaml/merlin
 
 ;;; Commentary:
@@ -22,6 +22,7 @@
 
 ;;; Code:
 
+(require 'compat)
 (require 'cl-lib)
 (require 'crm) ;; for completing-read-multiple
 ;; caml-types for highlighting
@@ -508,55 +509,51 @@ return (LOC1 . LOC2)."
             (delete-file tmp))))
       result)))
 
+(defun merlin--process-environment ()
+  "Return the `process-environment' value for an immediate Merlin call.
+
+This should not be saved, since it depends on the current
+`process-environment'."
+  ;; for simplicity, we use a mere append here (leading to a
+  ;; duplicate binding), it does work because only the first
+  ;; occurrence is considered, one can check this by running
+  ;; (call-process "printenv" nil t)
+  (append (merlin-lookup 'env merlin-buffer-configuration) process-environment))
+
+(defun merlin--command-args (command &rest args)
+  "Return a list of arguments for calling Merlin COMMAND with ARGS."
+  (when (eq merlin-verbosity-context t)
+    (setq merlin-verbosity-context (cons command args)))
+  (if (not merlin-verbosity-context)
+      (setq merlin--verbosity-cache nil)
+    (if (equal merlin-verbosity-context (car-safe merlin--verbosity-cache))
+        (setcdr merlin--verbosity-cache (1+ (cdr merlin--verbosity-cache)))
+      (setq merlin--verbosity-cache (cons merlin-verbosity-context 0))))
+  (merlin--map-flatten-to-string
+   "server" command "-protocol" "sexp"
+   (when-let ((dot-merlin (merlin-lookup 'dot-merlin merlin-buffer-configuration)))
+     (list "-dot-merlin" dot-merlin))
+   (when merlin-debug
+     '("-log-file" "-"))
+   (when merlin-verbosity-context
+     (list "-verbosity" (cdr merlin--verbosity-cache)))
+   (when merlin-buffer-packages-path
+     (list "-I" merlin-buffer-packages-path))
+   (when merlin-buffer-extensions
+     (list "-extension" merlin-buffer-extensions))
+   (unless (string-equal merlin-buffer-flags "")
+     (cons "-flags" merlin-buffer-flags))
+   (when-let ((filename (buffer-file-name (buffer-base-buffer))))
+     (cons "-filename" filename))
+   args))
+
 (defun merlin--call-merlin (command &rest args)
   "Invoke merlin binary with the proper setup to execute the command passed as
 argument (lookup appropriate binary, setup logging, pass global settings)"
   ;; Really start process
   (let ((binary      (merlin-command))
-        ;; (flags       (merlin-lookup 'flags merlin-buffer-configuration))
-        (process-environment
-         ;; for simplicity, we use a mere append here (leading to a
-         ;; duplicate binding), it does work because only the first
-         ;; occurrence is considered, one can check this by running
-         ;; (call-process "printenv" nil t)
-         (append (merlin-lookup 'env merlin-buffer-configuration)
-                 process-environment))
-        (dot-merlin  (merlin-lookup 'dot-merlin merlin-buffer-configuration))
-        ;; FIXME use logfile
-        ;; (logfile     (or (merlin-lookup 'logfile merlin-buffer-configuration)
-        ;;                  merlin-logfile))
-        (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
-                                          merlin-buffer-extensions))
-        (packages    (merlin--map-flatten (lambda (x) (cons "-I" x))
-                                          merlin-buffer-packages-path))
-        (filename    (buffer-file-name (buffer-base-buffer))))
-    ;; Compute verbosity
-    (when (eq merlin-verbosity-context t)
-      (setq merlin-verbosity-context (cons command args)))
-    (if (not merlin-verbosity-context)
-        (setq merlin--verbosity-cache nil)
-      (if (equal merlin-verbosity-context (car-safe merlin--verbosity-cache))
-          (setcdr merlin--verbosity-cache (1+ (cdr merlin--verbosity-cache)))
-        (setq merlin--verbosity-cache (cons merlin-verbosity-context 0))))
-    ;; Compute full command line.
-    (setq args (merlin--map-flatten-to-string
-                "server" command "-protocol" "sexp"
-                (when dot-merlin
-                  (list "-dot-merlin" dot-merlin))
-                ;; Is debug mode enabled
-                (when merlin-debug '("-log-file" "-"))
-                ;; If command is repeated, increase verbosity
-                (when merlin-verbosity-context
-                  (list "-verbosity" (cdr merlin--verbosity-cache)))
-                packages
-                extensions
-                (unless (string-equal merlin-buffer-flags "")
-                  (cons "-flags" merlin-buffer-flags))
-                (when filename
-                  (cons "-filename" filename))
-                (when merlin-cache-lifespan
-                  (cons "-cache-lifespan" (number-to-string merlin-cache-lifespan)))
-                args))
+        (process-environment (merlin--process-environment))
+        (args (merlin--command-args command args)))
     ;; Log last commands
     (setq merlin-debug-last-commands
           (cons (cons (cons binary args) nil) merlin-debug-last-commands))
@@ -584,18 +581,25 @@ argument (lookup appropriate binary, setup logging, pass global settings)"
       (quit
        (merlin-client-logger binary command -1 "interrupted")
        (signal (car err) (cdr err))))
-    (let* ((notifications (cdr-safe (assoc 'notifications result)))
-           (timing (cdr-safe (assoc 'timing result)))
-           (class (cdr-safe (assoc 'class result)))
-           (value (cdr-safe (assoc 'value result))))
-      (merlin-client-logger binary command timing class)
-      (dolist (notification notifications)
-        (message "(merlin) %s" notification))
-      (pcase class
-        ("return" value)
-        ("failure" (error "merlin-mode failure: %s" value))
-        ("error" (error "merlin: %s" value))
-        (_ (error "unknown answer: %S:%S" class value))))))
+    (merlin--handle-result binary command result)))
+
+(defun merlin--handle-result (binary command result)
+  "Turn the parsed sexp RESULT into an error, if it's a Merlin error.
+
+Also, print a message for any Merlin notifications, using BINARY
+and COMMAND."
+  (let* ((notifications (cdr-safe (assoc 'notifications result)))
+         (timing (cdr-safe (assoc 'timing result)))
+         (class (cdr-safe (assoc 'class result)))
+         (value (cdr-safe (assoc 'value result))))
+    (merlin-client-logger binary command timing class)
+    (dolist (notification notifications)
+      (message "(merlin) %s" notification))
+    (pcase class
+      ("return" value)
+      ("failure" (error "merlin-mode failure: %s" value))
+      ("error" (error "merlin: %s" value))
+      (_ (error "unknown answer: %S:%S" class value)))))
 
 (define-obsolete-function-alias 'merlin/call 'merlin-call "2021-01-27")
 
