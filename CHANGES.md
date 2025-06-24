@@ -1,5 +1,6 @@
-unreleased
+merlin 5.5
 ==========
+Tue Jun 24 16:10:42 CEST 2025
 
   + merlin library
     - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
