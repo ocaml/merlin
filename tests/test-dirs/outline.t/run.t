@@ -32,11 +32,11 @@
               {
                 "start": {
                   "line": 70,
-                  "col": 13
+                  "col": 6
                 },
                 "end": {
                   "line": 70,
-                  "col": 16
+                  "col": 21
                 },
                 "name": "foo",
                 "kind": "Method",
@@ -172,11 +172,11 @@
           {
             "start": {
               "line": 58,
-              "col": 11
+              "col": 4
             },
             "end": {
               "line": 58,
-              "col": 14
+              "col": 36
             },
             "name": "bar",
             "kind": "Method",
@@ -197,11 +197,11 @@
           {
             "start": {
               "line": 57,
-              "col": 8
+              "col": 4
             },
             "end": {
               "line": 57,
-              "col": 11
+              "col": 16
             },
             "name": "foo",
             "kind": "Value",
@@ -248,10 +248,10 @@
           {
             "start": {
               "line": 47,
-              "col": 8
+              "col": 4
             },
             "end": {
-              "line": 47,
+              "line": 52,
               "col": 9
             },
             "name": "b",
@@ -261,11 +261,11 @@
               {
                 "start": {
                   "line": 49,
-                  "col": 15
+                  "col": 8
                 },
                 "end": {
-                  "line": 49,
-                  "col": 25
+                  "line": 51,
+                  "col": 32
                 },
                 "name": "inside_a_b",
                 "kind": "Method",
@@ -376,11 +376,11 @@
           {
             "start": {
               "line": 40,
-              "col": 11
+              "col": 4
             },
             "end": {
               "line": 40,
-              "col": 14
+              "col": 39
             },
             "name": "bar",
             "kind": "Method",
@@ -401,11 +401,11 @@
           {
             "start": {
               "line": 39,
-              "col": 8
+              "col": 4
             },
             "end": {
               "line": 39,
-              "col": 11
+              "col": 16
             },
             "name": "foo",
             "kind": "Value",
@@ -779,11 +779,11 @@
           {
             "start": {
               "line": 18,
-              "col": 11
+              "col": 4
             },
             "end": {
               "line": 18,
-              "col": 12
+              "col": 22
             },
             "name": "b",
             "kind": "Method",
