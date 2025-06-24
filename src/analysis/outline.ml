@@ -176,7 +176,7 @@ and get_class_elements node =
            { Query_protocol.outline_name = str_loc.Location.txt;
              outline_kind;
              outline_type = None;
-             location = str_loc.Location.loc;
+             location = cf.cf_loc;
              selection = str_loc.loc;
              children;
              deprecated
