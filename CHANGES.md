@@ -19,6 +19,8 @@ unreleased
       the symbol itself. (#1942)
     - Fix destruct hanging when printing patterns with (::). (#1944, fixes
       ocaml/ocaml-lsp#1489)
+    - Reproduce and fix a handful of jump-to-definition (locate) issues  (#1930,
+      fixes #1580 and #1588, workaround for #1934)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
