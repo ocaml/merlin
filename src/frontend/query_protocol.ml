@@ -29,18 +29,11 @@
 include Query_protocol_kernel
 
 module Compl = struct
+  module Out_kind = Completion_kind.Out
+
   type 'desc raw_entry =
     { name : string;
-      kind :
-        [ `Value
-        | `Constructor
-        | `Variant
-        | `Label
-        | `Module
-        | `Modtype
-        | `Type
-        | `MethodCall
-        | `Keyword ];
+      kind : Out_kind.t;
       desc : 'desc;
       info : 'desc;
       deprecated : bool
@@ -56,8 +49,8 @@ module Compl = struct
       context : [ `Unknown | `Application of application_context ]
     }
 
-  module Kind = Completion_kind
-  type kind = Kind.t
+  module In_kind = Completion_kind.In
+  type kind = In_kind.t
 end
 
 type completions = Compl.t
@@ -74,17 +67,7 @@ type 'a type_search_result =
 type outline = item list
 and item =
   { outline_name : string;
-    outline_kind :
-      [ `Value
-      | `Constructor
-      | `Label
-      | `Module
-      | `Modtype
-      | `Type
-      | `Exn
-      | `Class
-      | `ClassType
-      | `Method ];
+    outline_kind : Outline_kind.t;
     outline_type : string option;
     deprecated : bool;
     location : Location.t;

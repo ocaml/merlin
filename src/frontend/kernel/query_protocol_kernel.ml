@@ -4,3 +4,4 @@
 
 module Completion_kind = Completion_kind
 module Locate_types_result = Locate_types_result
+module Outline_kind = Outline_kind
