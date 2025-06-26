@@ -19,10 +19,3 @@ let test x y =
     m
   in
   m
-
-let my_function =
-  let var = ref 0 in
-  var := 10 * 50;
-  !var
-
-let test x y = print_endline (x ^ y ^ z)

@@ -29,8 +29,7 @@ module Gen = struct
     let open Ast_helper in
     let unit_param =
       { Parsetree.pparam_loc = Location.none;
-        pparam_desc =
-          Pparam_val (Nolabel, None, Ast_helper.Pat.construct unit None)
+        pparam_desc = Pparam_val (Nolabel, None, Pat.construct unit None)
       }
     in
     let body = Exp.function_ [ unit_param ] None (Pfunction_body body) in
@@ -71,6 +70,23 @@ module Gen = struct
            Ast_helper.Exp.ident
              (Location.mknoloc (Longident.Lident (Path.name param))))
     |> fun_apply
+end
+
+module Msource = struct
+  include Msource
+
+  (* TODO: Maybe add this directly in [Msource]? *)
+  let sub_loc src loc =
+    let (`Offset start_offset) =
+      let line, col = Lexing.split_pos loc.Location.loc_start in
+      Msource.get_offset src (`Logical (line, col))
+    in
+    let (`Offset end_offset) =
+      `Logical (Lexing.split_pos loc.loc_end) |> Msource.get_offset src
+    in
+    String.sub (Msource.text src) ~pos:start_offset
+      ~len:(end_offset - start_offset)
+    |> Msource.make
 end
 
 (* Find all variable which appears in [node]. *)
@@ -126,28 +142,10 @@ let bounded_vars node env ~toplevel_parent_item ~mconfig ~local_defs =
              ~config:{ mconfig; ml_or_mli = `ML; traverse_aliases = true }
              ~env ~local_defs ~namespace:Value var_path
          with
-         | `Found { location; _ } ->
-           (* let () =
-             Format.asprintf "%S in args:%b" (Path.name var_path)
-               (Location_aux.included location ~into:enclosing)
-             |> prerr_endline
-           in *)
+         | `Found { location; approximated = false; _ } ->
            Location_aux.included location ~into:enclosing
          | _ -> false)
   |> Path.Set.to_list
-
-(* TODO: Maybe add this in [Msource]? *)
-let buffer_sub_loc buf loc =
-  let (`Offset start_offset) =
-    let line, col = Lexing.split_pos loc.Location.loc_start in
-    Msource.get_offset buf (`Logical (line, col))
-  in
-  let (`Offset end_offset) =
-    `Logical (Lexing.split_pos loc.loc_end) |> Msource.get_offset buf
-  in
-  String.sub (Msource.text buf) ~pos:start_offset
-    ~len:(end_offset - start_offset)
-  |> Msource.make
 
 let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
     ~exp_loc ~toplevel_item_loc =
@@ -163,7 +161,7 @@ let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
     gen_let_binding val_name expr
     |> Format.asprintf "%a" Pprintast.structure_item
   in
-  let toplevel_item = buffer_sub_loc buffer toplevel_item_loc in
+  let toplevel_item = Msource.sub_loc buffer toplevel_item_loc in
   let subst_loc =
     let start_lnum =
       1 + exp_loc.Location.loc_start.pos_lnum
@@ -289,3 +287,5 @@ let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
 
 (* Ajouter test récursion mutuelle *)
 (* + de tests *)
+
+(* préserver type contraine de ce qui est extrait *)
