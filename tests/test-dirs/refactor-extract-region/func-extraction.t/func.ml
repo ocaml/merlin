@@ -19,3 +19,21 @@ let test x y =
     m
   in
   m
+
+
+
+
+
+
+
+
+let rec x = object end
+
+and y _ =
+  object
+    method foo = x
+  end
+
+let rec z x = 10 + y + x
+
+and y = 80
