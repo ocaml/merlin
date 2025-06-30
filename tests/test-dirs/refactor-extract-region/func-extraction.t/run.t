@@ -91,6 +91,38 @@
     "notifications": []
   }
 
+$ $MERLIN single refactoring-extract-region -start 24:15 -end 26:37 -extract-name map_aux < func.ml
+{
+"class": "return",
+"value": {
+"start": {
+"line": 23,
+"col": 0
+},
+"end": {
+"line": 28,
+"col": 9
+},
+"content": "let map_aux acc =
+function | [] -> List.rev acc | x::xs -> loop ((f x) :: acc) xs
+let map f =
+let rec loop map_aux
+in
+loop []",
+"selection-range": {
+"start": {
+"line": 23,
+"col": 4
+},
+"end": {
+"line": 23,
+"col": 11
+}
+}
+},
+"notifications": []
+}
+
   $ $MERLIN single refactoring-extract-region -start 37:14 -end 37:24 < func.ml
   {
     "class": "return",

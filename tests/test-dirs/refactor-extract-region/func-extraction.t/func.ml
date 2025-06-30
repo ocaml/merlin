@@ -20,12 +20,12 @@ let test x y =
   in
   m
 
-
-
-
-
-
-
+let map f =
+  let rec loop acc = function
+    | [] -> List.rev acc
+    | x :: xs -> loop (f x :: acc) xs
+  in
+  loop []
 
 let rec x = object end
 

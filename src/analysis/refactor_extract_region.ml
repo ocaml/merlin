@@ -123,23 +123,42 @@ let rec occuring_vars node =
   in
   loop [] node |> List.rev
 
-type vars_result = { bounded : Path.t list; recursive : bool }
+type extraction_name = Default of { basename : string } | Given of string
 
-let is_recursive_value_binding = function
-  | { Typedtree.str_desc = Tstr_value (Recursive, _); _ } -> true
-  | _ -> false
+(* type extraction = { name : extraction_name } *)
 
-let bounded_vars node env ~toplevel_parent_item ~mconfig ~local_defs =
-  let enclosing =
-    { Location.loc_start = toplevel_parent_item.Typedtree.str_loc.loc_start;
+module Value_binding = struct
+  type t =
+    { rec_flag : Asttypes.rec_flag;
+      bindings : Typedtree.value_binding list;
+      loc : Location.t
+    }
+
+  let is_recursive = function
+    | { rec_flag = Asttypes.Recursive; _ } -> true
+    | { rec_flag = Nonrecursive; _ } -> false
+end
+
+type analysis =
+  { bounded_vars : Path.t list; generated_let_rec_flag : rec_flag }
+
+and rec_flag =
+  | Non_recursive
+  | (* Recursive |*)
+    Rec_and
+
+let analyze_expr node env ~toplevel_vb ~mconfig ~local_defs =
+  let unbounded_enclosing =
+    { Location.loc_start = toplevel_vb.Value_binding.loc.loc_start;
       loc_end = (Browse_raw.node_real_loc Location.none node).loc_start;
       loc_ghost = false
     }
   in
-  let is_parent_recursive = is_recursive_value_binding toplevel_parent_item in
+  let is_parent_recursive = Value_binding.is_recursive toplevel_vb in
   Browse_tree.of_node ~env node
   |> occuring_vars
-  |> List.fold_left ~init:{ bounded = []; recursive = false }
+  |> List.fold_left
+       ~init:{ bounded_vars = []; generated_let_rec_flag = Non_recursive }
        ~f:(fun acc var_path ->
          match
            Locate.from_path
@@ -147,42 +166,35 @@ let bounded_vars node env ~toplevel_parent_item ~mconfig ~local_defs =
              ~env ~local_defs ~namespace:Value var_path
          with
          | `Found { location; approximated = false; _ } ->
-           if Location_aux.included location ~into:enclosing then
-             { acc with bounded = var_path :: acc.bounded }
+           if Location_aux.included location ~into:unbounded_enclosing then
+             { acc with bounded_vars = var_path :: acc.bounded_vars }
            else if
              is_parent_recursive
-             && Location_aux.included location
-                  ~into:toplevel_parent_item.str_loc
-           then { acc with recursive = true }
+             && Location_aux.included location ~into:toplevel_vb.loc
+           then { acc with generated_let_rec_flag = Rec_and }
            else acc
          | _ -> acc)
 
 let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
-    ~exp_loc ~toplevel_parent_item =
+    ~exp_loc ~toplevel_vb =
   let val_name =
     match name with
-    | `Default name -> FreshName.gen_val_name name expr_env
-    | `Given name -> name
+    | Default { basename } -> FreshName.gen_val_name basename expr_env
+    | Given name -> name
   in
   let fresh_call =
     gen_call val_name |> Format.asprintf "%a" Pprintast.expression
   in
-  let is_fresh_let_recursive =
-    false
-    (* match toplevel_parent_item.Typedtree.str_desc with
-    | Tstr_value (Recursive, _) -> true
-    | _ -> false *)
-  in
+  let is_fresh_let_recursive = Value_binding.is_recursive toplevel_vb in
   let fresh_let_binding =
     gen_let_binding ~recursive:is_fresh_let_recursive val_name expr
     |> Format.asprintf "%a" Pprintast.structure_item
   in
-  let toplevel_item_loc = toplevel_parent_item.Typedtree.str_loc in
-  let fresh_toplevel_item = Msource.sub_loc buffer toplevel_item_loc in
+  let fresh_toplevel_item = Msource.sub_loc buffer toplevel_vb.loc in
   let subst_loc =
     let start_lnum =
       1 + exp_loc.Location.loc_start.pos_lnum
-      - toplevel_item_loc.loc_start.pos_lnum
+      - toplevel_vb.loc.loc_start.pos_lnum
     in
     let end_lnum =
       start_lnum + exp_loc.loc_end.pos_lnum - exp_loc.loc_start.pos_lnum
@@ -205,27 +217,28 @@ let extract_to_toplevel name expr gen_let_binding gen_call buffer ~expr_env
       else String.length "let "
     in
     { Location.loc_start =
-        Lexing.make_pos (toplevel_item_loc.loc_start.pos_lnum, prefix_length);
+        Lexing.make_pos (toplevel_vb.loc.loc_start.pos_lnum, prefix_length);
       loc_end =
         Lexing.make_pos
-          ( toplevel_item_loc.loc_start.pos_lnum,
+          ( toplevel_vb.loc.loc_start.pos_lnum,
             prefix_length + String.length val_name );
       loc_ghost = false
     }
   in
   let content = fresh_let_binding ^ "\n" ^ substitued_toplevel_item in
-  { Query_protocol.loc = toplevel_item_loc; content; selection_range }
+  { Query_protocol.loc = toplevel_vb.loc; content; selection_range }
 
 let extract_const_to_toplevel ?extract_name const =
   let name =
-    Option.fold extract_name ~none:(`Default "const_name") ~some:(fun name ->
-        `Given name)
+    Option.fold extract_name
+      ~none:(Default { basename = "const_name" })
+      ~some:(fun name -> Given name)
   in
   extract_to_toplevel name (Untypeast.constant const) Gen.let_const_toplevel
     Gen.ident
 
-let extract_expr_to_toplevel ?extract_name node expr ~expr_env
-    ~toplevel_parent_item ~local_defs ~mconfig =
+let extract_expr_to_toplevel ?extract_name node expr ~expr_env ~toplevel_vb
+    ~local_defs ~mconfig =
   let is_function = function
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
@@ -236,25 +249,26 @@ let extract_expr_to_toplevel ?extract_name node expr ~expr_env
     in
     List.iter ~f:(fun path -> Path.last path |> prerr_endline) need_rec
   in *)
+  let { bounded_vars; _ } =
+    analyze_expr node expr_env ~toplevel_vb ~local_defs ~mconfig
+  in
   let gen_let, gen_call =
-    match
-      bounded_vars node expr_env ~toplevel_parent_item ~local_defs ~mconfig
-    with
-    | { bounded = []; _ } when Fun.negate is_function expr ->
+    match bounded_vars with
+    | [] when Fun.negate is_function expr ->
       (Gen.let_unit_toplevel, Gen.fun_apply_unit)
-    | { bounded = free_vars; _ } ->
-      (Gen.toplevel_function free_vars, Gen.fun_apply_params free_vars)
+    | _ ->
+      (Gen.toplevel_function bounded_vars, Gen.fun_apply_params bounded_vars)
   in
   let name =
-    Option.fold extract_name ~none:(`Default "fun_name") ~some:(fun name ->
-        `Given name)
+    Option.fold extract_name
+      ~none:(Default { basename = "fun_name" })
+      ~some:(fun name -> Given name)
   in
   extract_to_toplevel name
     (Untypeast.untype_expression expr)
-    gen_let gen_call ~expr_env ~toplevel_parent_item
+    gen_let gen_call ~expr_env ~toplevel_vb
 
-(* We select the most inclusive expression contained entirely within the given region. *)
-let select_suitable_expr ~start ~stop nodes =
+let most_inclusive_expr ~start ~stop nodes =
   let region =
     { Location.loc_start = start; loc_end = stop; loc_ghost = true }
   in
@@ -278,6 +292,15 @@ let select_suitable_expr ~start ~stop nodes =
   nodes |> List.rev
   |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
 
+let find_associated_toplevel_item expr structure =
+  Stdlib.List.find_map
+    (function
+      | { Typedtree.str_desc = Tstr_value (rec_flag, bindings); str_loc; _ }
+        when Location_aux.included expr.Typedtree.exp_loc ~into:str_loc ->
+        Some { Value_binding.rec_flag; bindings; loc = str_loc }
+      | _ -> None)
+    structure.Typedtree.str_items
+
 let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
   match typedtree with
   | `Interface _ -> None
@@ -285,28 +308,25 @@ let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
     let enclosing =
       Mbrowse.enclosing start [ Mbrowse.of_structure structure ]
     in
-    match select_suitable_expr ~start ~stop enclosing with
+    match most_inclusive_expr ~start ~stop enclosing with
     | None -> failwith "nothing to do"
     | Some (expr, expr_env) -> begin
-      let toplevel_parent_item =
-        List.find
-          ~f:(fun item ->
-            Location_aux.included expr.exp_loc ~into:item.Typedtree.str_loc)
-          structure.str_items
-      in
-      let exp_loc = expr.exp_loc in
-      match expr.exp_desc with
-      | Texp_constant const ->
-        (* Special case for constant. They can't produce side effect so it's not
+      match find_associated_toplevel_item expr structure with
+      | None -> failwith "nothing to do"
+      | Some toplevel_vb -> (
+        let exp_loc = expr.exp_loc in
+        match expr.exp_desc with
+        | Texp_constant const ->
+          (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
-        Some
-          (extract_const_to_toplevel const buffer ?extract_name ~expr_env
-             ~exp_loc ~toplevel_parent_item)
-      | _ ->
-        Some
-          (extract_expr_to_toplevel (Browse_raw.Expression expr) expr buffer
-             ?extract_name ~expr_env ~exp_loc ~toplevel_parent_item
-             ~local_defs:typedtree ~mconfig)
+          Some
+            (extract_const_to_toplevel const buffer ?extract_name ~expr_env
+               ~exp_loc ~toplevel_vb)
+        | _ ->
+          Some
+            (extract_expr_to_toplevel (Browse_raw.Expression expr) expr buffer
+               ?extract_name ~expr_env ~exp_loc ~toplevel_vb
+               ~local_defs:typedtree ~mconfig))
     end)
 
 (*
