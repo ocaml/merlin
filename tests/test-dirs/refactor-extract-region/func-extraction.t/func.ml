@@ -20,20 +20,20 @@ let test x y =
   in
   m
 
-let my_object =
+let map f =
+  let rec loop acc = function
+    | [] -> List.rev acc
+    | x :: xs -> loop (f x :: acc) xs
+  in
+  loop []
+
+let rec x = object end
+
+and y _ =
   object
-    method foo =
-      let () = () in
-      begin
-        let var = ref 0 in
-        var := 10 * 50;
-        !var
-      end
+    method foo = x
   end
 
-module type T = sig
-  val add : int -> int -> int
-end
-let test (module X : T) (x) y (module Y : T) =
-  let () = () in
-  X.add x y
+let rec z x = 10 + y + x
+
+and y = 80

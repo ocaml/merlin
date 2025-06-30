@@ -10,10 +10,10 @@
         "line": 8,
         "col": 5
       },
-      "content": "let is_empty = function | [] -> true | _ -> false
+      "content": "let is_empty = (function | [] -> true | _ -> false)
   let all_empty l =
     List.for_all
-      is_empty
+      is_empty 
       l",
       "selection-range": {
         "start": {
@@ -41,8 +41,8 @@
         "line": 10,
         "col": 70
       },
-      "content": "let fun_name2 acc x = if x > acc then x else acc
-  let max l = List.fold_left fun_name2 l",
+      "content": "let fun_name2 = fun acc x -> if x > acc then x else acc
+  let max l = List.fold_left fun_name2  l",
       "selection-range": {
         "start": {
           "line": 10,
@@ -84,40 +84,71 @@
         },
         "end": {
           "line": 15,
-          "col": 17
+          "col": 13
         }
       }
     },
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 27:6 -end 31:9 < func.ml
+$ $MERLIN single refactoring-extract-region -start 24:15 -end 26:37 -extract-name map_aux < func.ml
+{
+"class": "return",
+"value": {
+"start": {
+"line": 23,
+"col": 0
+},
+"end": {
+"line": 28,
+"col": 9
+},
+"content": "let map_aux acc =
+function | [] -> List.rev acc | x::xs -> loop ((f x) :: acc) xs
+let map f =
+let rec loop map_aux
+in
+loop []",
+"selection-range": {
+"start": {
+"line": 23,
+"col": 4
+},
+"end": {
+"line": 23,
+"col": 11
+}
+}
+},
+"notifications": []
+}
+
+  $ $MERLIN single refactoring-extract-region -start 37:14 -end 37:24 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 23,
+        "line": 37,
         "col": 0
       },
       "end": {
-        "line": 32,
-        "col": 5
+        "line": 39,
+        "col": 10
       },
-      "content": "let fun_name2 () = let var = ref 0 in var := (10 * 50); !var
-  let my_object =
-    object
-      method foo =
-        let () = () in
-        fun_name2 ()
-    end",
+      "content": "let rec z x = fun_name2 x
+  
+  and y = 80
+  
+  and fun_name2 (x) = (10 + y) + x
+  ",
       "selection-range": {
         "start": {
-          "line": 23,
+          "line": 37,
           "col": 4
         },
         "end": {
-          "line": 23,
-          "col": 16
+          "line": 37,
+          "col": 13
         }
       }
     },
