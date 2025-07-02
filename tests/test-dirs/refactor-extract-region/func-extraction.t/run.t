@@ -113,15 +113,14 @@
       "content": "let rec z x = fun_name2 x
   
   and y = 80
-  
   and fun_name2 (x) = (10 + y) + x",
       "selection-range": {
         "start": {
-          "line": 37,
+          "line": 40,
           "col": 4
         },
         "end": {
-          "line": 37,
+          "line": 40,
           "col": 13
         }
       }

@@ -203,12 +203,10 @@ let extract_to_toplevel
   let toplevel_item = Msource.sub_loc buffer toplevel_vb.loc in
   let subst_loc =
     let start_lnum =
-      (* TODO *)
       1 + expr.exp_loc.Location.loc_start.pos_lnum
       - toplevel_vb.loc.loc_start.pos_lnum
     in
     let end_lnum =
-      (* TODO *)
       start_lnum + expr.exp_loc.loc_end.pos_lnum
       - expr.exp_loc.loc_start.pos_lnum
     in
@@ -225,46 +223,43 @@ let extract_to_toplevel
     |> Msource.text
   in
   let untyped_expr = Untypeast.untype_expression expr in
-  let content, selection_range =
+  let content =
     match gen_binding_kind with
     | Non_recursive ->
-      let content =
-        let fresh_let_binding =
-          generated_binding
-            ~recursive:(is_recursive_vb toplevel_vb)
-            ~name:val_name ~body:untyped_expr
-          |> Format.asprintf "%a" Pprintast.structure_item
-        in
-        fresh_let_binding ^ "\n" ^ substitued_toplevel_binding
+      let fresh_let_binding =
+        generated_binding
+          ~recursive:(is_recursive_vb toplevel_vb)
+          ~name:val_name ~body:untyped_expr
+        |> Format.asprintf "%a" Pprintast.structure_item
       in
-      let selection_range =
-        let prefix_length =
-          if is_recursive_vb toplevel_vb then String.length "let rec "
-          else String.length "let "
-        in
-        { Location.loc_start =
-            Lexing.make_pos (toplevel_vb.loc.loc_start.pos_lnum, prefix_length);
-          loc_end =
-            Lexing.make_pos
-              ( toplevel_vb.loc.loc_start.pos_lnum,
-                prefix_length + String.length val_name );
-          loc_ghost = false
-        }
-      in
-      (content, selection_range)
+      fresh_let_binding ^ "\n" ^ substitued_toplevel_binding
     | Rec_and ->
-      let content =
-        let fresh_let_binding =
-          generated_binding ~recursive:false ~name:val_name ~body:untyped_expr
-          |> Format.asprintf "%a" Pprintast.structure_item
-        in
-        let fresh_and_binding =
-          (* Sorry *)
-          "and" ^ String.drop 3 fresh_let_binding
-        in
-        substitued_toplevel_binding ^ "\n" ^ fresh_and_binding
+      let fresh_let_binding =
+        generated_binding ~recursive:false ~name:val_name ~body:untyped_expr
+        |> Format.asprintf "%a" Pprintast.structure_item
       in
-      (content, Location.none (* TODO: fix that *))
+      let fresh_and_binding =
+        "and" ^ String.drop 3 fresh_let_binding (* Sorry *)
+      in
+      substitued_toplevel_binding ^ "\n" ^ fresh_and_binding
+  in
+  let selection_range =
+    let lnum =
+      match gen_binding_kind with
+      | Non_recursive -> toplevel_vb.loc.loc_start.pos_lnum
+      | Rec_and -> toplevel_vb.loc.loc_end.pos_lnum + String.length "\n"
+    in
+    let prefix_length =
+      match gen_binding_kind with
+      | Non_recursive ->
+        if is_recursive_vb toplevel_vb then String.length "let rec "
+        else String.length "let "
+      | Rec_and -> String.length "and "
+    in
+    { Location.loc_start = Lexing.make_pos (lnum, prefix_length);
+      loc_end = Lexing.make_pos (lnum, prefix_length + String.length val_name);
+      loc_ghost = false
+    }
   in
   { Query_protocol.loc = toplevel_vb.loc; content; selection_range }
 
@@ -377,4 +372,4 @@ let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
                ~toplevel_vb ~local_defs:typedtree ~mconfig))
     end)
 
-(* fixer test *)
+(* documenter mli *)
