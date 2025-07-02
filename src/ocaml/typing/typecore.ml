@@ -3018,6 +3018,7 @@ let collect_unknown_apply_args env funct ty_fun0 rev_args sargs =
     | [] -> ty_fun, List.rev rev_args
     | (lbl, sarg) :: rest ->
         let (ty_arg, ty_res) =
+          try
           let ty_fun = expand_head env ty_fun in
           match get_desc ty_fun with
           | Tvar _ ->
@@ -3039,17 +3040,19 @@ let collect_unknown_apply_args env funct ty_fun0 rev_args sargs =
               match get_desc ty_res with
               | Tarrow _ ->
                   if !Clflags.classic || not (has_label lbl ty_fun) then
-                    raise (Error(sarg.pexp_loc, env,
+                    Msupport.resume_raise (error(sarg.pexp_loc, env,
                                 Apply_wrong_label(lbl, ty_res, false)))
                   else
-                    raise (Error(funct.exp_loc, env, Incoherent_label_order))
+                    Msupport.resume_raise (error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                raise(Error(funct.exp_loc, env, Apply_non_function {
+                Msupport.resume_raise(error(funct.exp_loc, env, Apply_non_function {
                     funct;
                     func_ty = expand_head env funct.exp_type;
                     res_ty = expand_head env ty_res;
                     previous_arg_loc = previous_arg_loc rev_args ~funct;
                     extra_arg_loc = sarg.pexp_loc; }))
+          with Msupport.Resume ->
+            newvar (), ty_fun
         in
         let arg = Unknown_arg { sarg; ty_arg } in
         loop ty_res ((lbl, Arg arg) :: rev_args) rest
@@ -3103,7 +3106,7 @@ let collect_apply_args env funct ignore_labels ty_fun ty_fun0 sargs =
                 then
                   (sargs, None)
                 else
-                  raise(Error(sarg.pexp_loc, env,
+                  raise(error(sarg.pexp_loc, env,
                               Apply_wrong_label(l', ty_fun', optional)))
           end else
             (* Arguments can be commuted, try to fetch the argument
