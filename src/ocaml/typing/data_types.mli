@@ -61,6 +61,7 @@ type label_description =
     lbl_arg: type_expr;                 (* Type of the argument
                                            (the field value) *)
     lbl_mut: mutable_flag;              (* Is this a mutable field? *)
+    lbl_atomic: atomic_flag;            (* Is this an atomic field? *)
     lbl_pos: int;                       (* Position in block *)
     lbl_all: label_description array;   (* All the labels in this type *)
     lbl_repres: record_representation;  (* Representation for this record *)

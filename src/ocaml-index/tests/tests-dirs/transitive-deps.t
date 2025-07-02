@@ -32,7 +32,7 @@
    uid: Bar.0; locs: "Foo.x": File "main.ml", line 1, characters 18-23
    uid: Main.0; locs: "x": File "main.ml", line 1, characters 4-5
    uid: Main.1; locs: "n": File "main.ml", line 1, characters 34-35
-   uid: Stdlib__List.45; locs:
+   uid: Stdlib__List.47; locs:
      "List.init": File "main.ml", line 1, characters 8-17
    }, 0 approx shapes: {}, and shapes for CUS .
   and related uids:{}
@@ -53,7 +53,7 @@
      "Foo.x": File "main.ml", line 1, characters 18-23
    uid: Main.0; locs: "x": File "main.ml", line 1, characters 4-5
    uid: Main.1; locs: "n": File "main.ml", line 1, characters 34-35
-   uid: Stdlib__List.45; locs:
+   uid: Stdlib__List.47; locs:
      "List.init": File "main.ml", line 1, characters 8-17
    }, 0 approx shapes: {}, and shapes for CUS .
   and related uids:{}

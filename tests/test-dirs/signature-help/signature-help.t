@@ -161,7 +161,6 @@ It can make the labelled parameter active.
   }
 
 It can make a labelled parameter active by prefix.
-
   $ $MERLIN single signature-help -position 2:15 <<EOF
   > let mem = ListLabels.mem
   > let _ = mem ~se
@@ -195,7 +194,6 @@ It can make a labelled parameter active by prefix.
   }
 
 It can make an optional parameter active by prefix.
-
   $ $MERLIN single signature-help -position 2:18 <<EOF
   > let create = Hashtbl.create
   > let _ = create ?ra

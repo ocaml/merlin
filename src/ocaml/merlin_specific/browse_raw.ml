@@ -382,6 +382,7 @@ let rec of_expression_desc loc = function
         of_exp_record_field e lid_loc desc ** of_expression e
     in
     array_fold fold_field fields
+  | Texp_atomic_loc (e, _, _) -> of_expression e
   | Texp_field (e, lid_loc, lbl) ->
     of_expression e ** of_exp_record_field e lid_loc lbl
   | Texp_setfield (e1, lid_loc, lbl, e2) ->

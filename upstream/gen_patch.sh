@@ -25,7 +25,7 @@ for file in "${D_TO}"/*/*.ml*; do
   fi
   if [ -s "${F_PATCH}.patch" ]; then
     # Apply the patch file
-    patch --no-backup-if-mismatch --merge "${F_MERLIN}" "${F_PATCH}.patch"
+    patch --no-backup-if-mismatch "${F_MERLIN}" "${F_PATCH}.patch"
     echo "patched ${F_MERLIN}"
   else
     rm "${F_PATCH}.patch"

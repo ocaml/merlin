@@ -142,6 +142,7 @@ With index 0 only the first type is shown:
     val compare_length_with : 'a list -> int -> int
     val is_empty : 'a list -> bool
     val cons : 'a -> 'a list -> 'a list
+    val singleton : 'a -> 'a list
     val hd : 'a list -> 'a
     val tl : 'a list -> 'a list
     val nth : 'a list -> int -> 'a

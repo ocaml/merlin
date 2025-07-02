@@ -2566,7 +2566,8 @@ and mcomp_record_description type_pairs env =
     | l1 :: xs, l2 :: ys ->
         mcomp type_pairs env l1.ld_type l2.ld_type;
         if Ident.name l1.ld_id = Ident.name l2.ld_id &&
-           l1.ld_mutable = l2.ld_mutable
+           l1.ld_mutable = l2.ld_mutable &&
+           l1.ld_atomic = l2.ld_atomic
         then iter xs ys
         else raise Incompatible
     | [], [] -> ()
@@ -3012,8 +3013,10 @@ and unify_labeled_list env labeled_tl1 labeled_tl2 =
     raise_unexplained_for Unify;
   List.iter2
     (fun (label1, ty1) (label2, ty2) ->
-      if not (Option.equal String.equal label1 label2) then
-        raise_unexplained_for Unify;
+      if not (Option.equal String.equal label1 label2) then begin
+        let diff = { Errortrace.got=label1; expected=label2} in
+        raise_for Unify (Errortrace.Tuple_label_mismatch diff)
+      end;
       unify env ty1 ty2)
     labeled_tl1 labeled_tl2
 

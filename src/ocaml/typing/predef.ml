@@ -43,6 +43,7 @@ type abstract_type_constr = [
   | `Extension_constructor
   | `Floatarray
   | `Iarray
+  | `Atomic_loc
 ]
 type data_type_constr = [
   | `Bool
@@ -57,7 +58,7 @@ type type_constr = [
   | data_type_constr
 ]
 
-let all_type_constrs = [
+let all_type_constrs : type_constr list = [
   `Int;
   `Char;
   `String;
@@ -78,6 +79,7 @@ let all_type_constrs = [
   `Extension_constructor;
   `Floatarray;
   `Iarray;
+  `Atomic_loc;
 ]
 
 let ident_int = ident_create "int"
@@ -100,8 +102,9 @@ and ident_string = ident_create "string"
 and ident_extension_constructor = ident_create "extension_constructor"
 and ident_floatarray = ident_create "floatarray"
 and ident_iarray = ident_create "iarray"
+and ident_atomic_loc = ident_create "atomic_loc"
 
-let ident_of_type_constr = function
+let ident_of_type_constr : type_constr -> Ident.t = function
   | `Int -> ident_int
   | `Char -> ident_char
   | `String -> ident_string
@@ -122,6 +125,7 @@ let ident_of_type_constr = function
   | `Extension_constructor -> ident_extension_constructor
   | `Floatarray -> ident_floatarray
   | `Iarray -> ident_iarray
+  | `Atomic_loc -> ident_atomic_loc
 
 let path_int = Pident ident_int
 and path_char = Pident ident_char
@@ -143,6 +147,7 @@ and path_string = Pident ident_string
 and path_extension_constructor = Pident ident_extension_constructor
 and path_floatarray = Pident ident_floatarray
 and path_iarray = Pident ident_iarray
+and path_atomic_loc = Pident ident_atomic_loc
 
 let path_of_type_constr typ =
   Pident (ident_of_type_constr typ)
@@ -168,6 +173,7 @@ and type_string = tconstr path_string []
 and type_extension_constructor = tconstr path_extension_constructor []
 and type_floatarray = tconstr path_floatarray []
 and type_iarray t = tconstr path_iarray [t]
+and type_atomic_loc t = tconstr path_atomic_loc [t]
 
 let find_type_constr =
   let all_predef_paths =
@@ -306,7 +312,9 @@ let decl_of_type_constr tconstr =
   | `Continuation ->
       let variance = Variance.(contravariant, covariant) in
       decl2 ~variance ()
-  | `Array ->
+  | `Array
+  | `Atomic_loc
+    ->
       decl1 ~variance:Variance.full ()
   | `Iarray ->
       decl1 ~variance:Variance.covariant ()

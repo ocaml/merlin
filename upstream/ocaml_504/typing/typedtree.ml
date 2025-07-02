@@ -119,6 +119,7 @@ and expression_desc =
       representation : Types.record_representation;
       extended_expression : expression option;
     }
+  | Texp_atomic_loc of expression * Longident.t loc * label_description
   | Texp_field of expression * Longident.t loc * label_description
   | Texp_setfield of
       expression * Longident.t loc * label_description * expression
@@ -555,6 +556,7 @@ and label_declaration =
      ld_name: string loc;
      ld_uid: Uid.t;
      ld_mutable: mutable_flag;
+     ld_atomic: atomic_flag;
      ld_type: core_type;
      ld_loc: Location.t;
      ld_attributes: attribute list;
