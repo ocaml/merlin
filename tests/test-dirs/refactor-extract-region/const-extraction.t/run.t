@@ -191,3 +191,13 @@
     },
     "notifications": []
   }
+
+  $ $MERLIN single refactoring-extract-region -start 1:0 -end 2:0 \
+  > -filename foobar.mli <<EOF
+  > val f : int -> int
+  > EOF
+  {
+    "class": "error",
+    "value": "Expression extraction is only allowed in implementation file",
+    "notifications": []
+  }

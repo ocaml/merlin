@@ -37,3 +37,7 @@ and y _ =
 let rec z x = 10 + y + x
 
 and y = 80
+
+let f =
+  print_endline "Wild side effect!";
+  1 :: [ 2; 3; 4 ]

@@ -93,8 +93,8 @@
 
   $ $MERLIN single refactoring-extract-region -start 24:15 -end 26:37 -extract-name map_aux < func.ml
   {
-    "class": "failure",
-    "value": "nothing to do",
+    "class": "error",
+    "value": "Nothing to do",
     "notifications": []
   }
 
@@ -121,6 +121,35 @@
         },
         "end": {
           "line": 40,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 42:2 -end 43:18 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 41,
+        "col": 0
+      },
+      "end": {
+        "line": 43,
+        "col": 18
+      },
+      "content": "let fun_name2 () = print_endline \"Wild side effect!\"; [1; 2; 3; 4]
+  let f =
+    fun_name2 ()",
+      "selection-range": {
+        "start": {
+          "line": 41,
+          "col": 4
+        },
+        "end": {
+          "line": 41,
           "col": 13
         }
       }
