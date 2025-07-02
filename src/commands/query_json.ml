@@ -409,19 +409,15 @@ let json_of_search_result list =
   in
   `List list
 
-let json_of_substitution_result subst_res =
-  match subst_res with
-  | None -> `Assoc []
-  | Some { loc; content; selection_range } ->
-    with_location loc
-      [ ("content", `String content);
-        ( "selection-range",
-          `Assoc
-            [ ( "start",
-                Lexing.json_of_position selection_range.Location.loc_start );
-              ("end", Lexing.json_of_position selection_range.loc_end)
-            ] )
-      ]
+let json_of_substitution_result { loc; content; selection_range } =
+  with_location loc
+    [ ("content", `String content);
+      ( "selection-range",
+        `Assoc
+          [ ("start", Lexing.json_of_position selection_range.Location.loc_start);
+            ("end", Lexing.json_of_position selection_range.loc_end)
+          ] )
+    ]
 
 let json_of_response (type a) (query : a t) (response : a) : json =
   match (query, response) with

@@ -162,7 +162,7 @@ type _ t =
       -> (string * Location.t) list t
   | Refactor_extract_region :
       Msource.position * Msource.position * string option * Msource.t
-      -> substitution_result option t
+      -> substitution_result t
   | Document (* *) :
       string option * Msource.position
       -> [ `Found of string

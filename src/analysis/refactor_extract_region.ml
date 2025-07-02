@@ -1,7 +1,19 @@
 open Std
 
+exception Nothing_to_do
+exception Not_allowed_in_interface_file
+
+let () =
+  Location.register_error_of_exn (function
+    | Nothing_to_do -> Some (Location.error "Nothing to do")
+    | Not_allowed_in_interface_file ->
+      Some
+        (Location.error
+           "Expression extraction is only allowed in implementation file")
+    | _ -> None)
+
 module FreshName = struct
-  (* Generate a fresh name that does not already exists in given environment. *)
+  (* Generate a fresh name that does not already exist in given environment. *)
   let gen_val_name basename env =
     let rec loop n =
       let guess = basename ^ Int.to_string n in
@@ -16,14 +28,14 @@ module Gen = struct
   let rec_flag recursive =
     if recursive then Asttypes.Recursive else Nonrecursive
 
-  (* Generate [let name = body]. *)
+  (* Generates [let name = body]. *)
   let toplevel_let ~recursive ~name ~body =
     let open Ast_helper in
     let pattern = Pat.mk (Ppat_var { txt = name; loc = Location.none }) in
     let body = Parsetree_utils.filter_expr_attr body in
     Str.value (rec_flag recursive) [ Vb.mk pattern body ]
 
-  (* Generate [let name () = body]. *)
+  (* Generates [let name () = body]. *)
   let let_unit_toplevel ~recursive ~name ~body =
     let open Ast_helper in
     let unit_param =
@@ -34,7 +46,7 @@ module Gen = struct
     let body = Exp.function_ [ unit_param ] None (Pfunction_body body) in
     toplevel_let ~recursive ~name ~body
 
-  (* Generate [let name params = body]. *)
+  (* Generates [let name params = body]. *)
   let toplevel_function ~recursive params ~name ~body =
     let open Ast_helper in
     let params =
@@ -110,7 +122,7 @@ and value_binding =
     bindings : Typedtree.value_binding list;
     loc : Location.t
   }
-(* Just a convenient type. *)
+(* A convenient type for grouping value binding info. *)
 
 and generated_binding =
   recursive:bool ->
@@ -348,28 +360,23 @@ let find_associated_toplevel_item expr structure =
 
 let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
   match typedtree with
-  | `Interface _ -> None
+  | `Interface _ -> raise Not_allowed_in_interface_file
   | `Implementation structure -> (
     let enclosing =
       Mbrowse.enclosing start [ Mbrowse.of_structure structure ]
     in
     match most_inclusive_expr ~start ~stop enclosing with
-    | None -> failwith "nothing to do"
-    | Some (expr, expr_env) -> begin
+    | None -> raise Nothing_to_do
+    | Some (expr, expr_env) -> (
       match find_associated_toplevel_item expr structure with
-      | None -> failwith "nothing to do"
+      | None -> raise Nothing_to_do
       | Some toplevel_vb -> (
         match expr.exp_desc with
         | Texp_constant _ ->
           (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
-          Some
-            (extract_const_to_toplevel ?extract_name expr ~expr_env buffer
-               ~toplevel_vb)
+          extract_const_to_toplevel ?extract_name expr ~expr_env buffer
+            ~toplevel_vb
         | _ ->
-          Some
-            (extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
-               ~toplevel_vb ~local_defs:typedtree ~mconfig))
-    end)
-
-(* documenter mli *)
+          extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
+            ~toplevel_vb ~local_defs:typedtree ~mconfig)))
