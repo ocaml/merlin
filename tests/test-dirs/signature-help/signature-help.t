@@ -161,8 +161,6 @@ It can make the labelled parameter active.
   }
 
 It can make a labelled parameter active by prefix.
-FIXME: this looks like a type recovery regression in 5.4. 
-There should not be weak vars
   $ $MERLIN single signature-help -position 2:15 <<EOF
   > let mem = ListLabels.mem
   > let _ = mem ~se
@@ -172,18 +170,18 @@ There should not be weak vars
     "value": {
       "signatures": [
         {
-          "label": "mem : '_weak1 -> set:'_weak1 list -> bool",
+          "label": "mem : 'a -> set:'a list -> bool",
           "parameters": [
             {
               "label": [
                 6,
-                13
+                8
               ]
             },
             {
               "label": [
-                17,
-                33
+                12,
+                23
               ]
             }
           ]
@@ -196,7 +194,6 @@ There should not be weak vars
   }
 
 It can make an optional parameter active by prefix.
-FIXME: same here
   $ $MERLIN single signature-help -position 2:18 <<EOF
   > let create = Hashtbl.create
   > let _ = create ?ra
@@ -206,7 +203,7 @@ FIXME: same here
     "value": {
       "signatures": [
         {
-          "label": "create : ?random:bool -> int -> ('_weak1, '_weak2) Hashtbl.t",
+          "label": "create : ?random:bool -> int -> ('a, 'b) Hashtbl.t",
           "parameters": [
             {
               "label": [
