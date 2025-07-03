@@ -104,10 +104,12 @@ let run shared =
             Mconfig.(config.merlin.log_file)
             ~sections:Mconfig.(config.merlin.log_sections)
           @@ fun () ->
+          (* TODO : check this does not create bad data races *)
           Mocaml.flush_caches
             ~older_than:
               (float_of_int (60 * Mconfig.(config.merlin.cache_lifespan)))
             ();
+          (* TODO : check this does not create bad data races *)
           File_id.with_cache @@ fun () ->
           (* TODO : Would it be possible to not expose this function in mpipeline.mli and its type in mocaml.mli ? *)
           let store = Mpipeline.Cache.get config in

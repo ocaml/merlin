@@ -132,9 +132,6 @@ let continue_typing comp get_location item =
     | 0 -> Int.compare column (Lexing.column start) >= 0
     | i -> i >= 0)
 
-(* TODO It should be possible to cache the result in case an exception is raised 
-during typing by encapsulating the partial result (before the exception) and the 
-exception in an other exception, catched by type_implementation.  *)
 let type_structure caught { msg; shared; comp } env parsetree =
   (*  TODO @xvw *)
   let continue_typing = continue_typing comp (fun i -> i.Parsetree.pstr_loc) in

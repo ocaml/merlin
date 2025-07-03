@@ -8,6 +8,7 @@ let locking_set t a =
 let set t a =
   t.value <- a;
   Condition.signal t.cond
+
 let locking_get t = Mutex.protect t.mutex @@ fun () -> t.value
 
 let get t = t.value
