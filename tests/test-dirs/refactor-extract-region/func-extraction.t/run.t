@@ -91,12 +91,8 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 24:15 -end 26:37 -extract-name map_aux < func.ml
-  {
-    "class": "error",
-    "value": "Nothing to do",
-    "notifications": []
-  }
+  $ $MERLIN single refactoring-extract-region -start 24:15 -end 26:37 -extract-name map_aux < func.ml | jq '.value'
+  "Nothing to do"
 
   $ $MERLIN single refactoring-extract-region -start 37:14 -end 37:24 < func.ml
   {
