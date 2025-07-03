@@ -12,7 +12,7 @@ let () =
            "Expression extraction is only allowed in implementation file")
     | _ -> None)
 
-module FreshName = struct
+module Fresh_name = struct
   (* Generate a fresh name that does not already exist in given environment. *)
   let gen_val_name basename env =
     let rec loop n =
@@ -206,7 +206,7 @@ let extract_to_toplevel
     } buffer =
   let val_name =
     match name with
-    | Default { basename } -> FreshName.gen_val_name basename expr_env
+    | Default { basename } -> Fresh_name.gen_val_name basename expr_env
     | Fixed name -> name
   in
   let fresh_call =
