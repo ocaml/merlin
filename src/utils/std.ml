@@ -326,6 +326,10 @@ module Option = struct
     | None -> default
     | Some x -> f x
 
+  let fold ~none ~some = function
+    | Some v -> some v
+    | None -> none
+
   let iter ~f = function
     | None -> ()
     | Some x -> f x

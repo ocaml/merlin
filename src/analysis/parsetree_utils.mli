@@ -6,3 +6,5 @@ open Parsetree
 type nonrec constant_desc = constant_desc
 
 val constant_desc : constant -> constant_desc
+
+val filter_expr_attr : expression -> expression
