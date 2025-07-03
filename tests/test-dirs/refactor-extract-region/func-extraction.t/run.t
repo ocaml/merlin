@@ -91,7 +91,7 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 24:15 -end 26:37 -extract-name map_aux < func.ml | jq '.value'
+  $ $MERLIN single refactoring-extract-region -start 24:21 -end 26:37 -extract-name map_aux < func.ml
   "Nothing to do"
 
   $ $MERLIN single refactoring-extract-region -start 37:14 -end 37:24 < func.ml
@@ -146,6 +146,117 @@
         },
         "end": {
           "line": 41,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 47:4 -end 50:7 -extract-name outsider_expr < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 45,
+        "col": 0
+      },
+      "end": {
+        "line": 62,
+        "col": 5
+      },
+      "content": "let outsider_expr () = let bar = 20 in object method foo = bar end
+  class a =
+    let inner_expr =
+      outsider_expr ()
+    in
+    object
+      method x = (Fun.const 10) ()
+      method y = print_endline
+      method z =
+        let x =
+          object
+            method x = \"foobar\"
+          end
+        in
+        x
+    end",
+      "selection-range": {
+        "start": {
+          "line": 45,
+          "col": 4
+        },
+        "end": {
+          "line": 45,
+          "col": 17
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 56:6 -end 61:7 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 45,
+        "col": 0
+      },
+      "end": {
+        "line": 62,
+        "col": 5
+      },
+      "content": "let fun_name2 () = let x = object method x = \"foobar\" end in x
+  class a =
+    let inner_expr =
+      let bar = 20 in
+      object
+        method foo = bar
+      end
+    in
+    object
+      method x = (Fun.const 10) ()
+      method y = print_endline
+      method z =
+        fun_name2 ()
+    end",
+      "selection-range": {
+        "start": {
+          "line": 45,
+          "col": 4
+        },
+        "end": {
+          "line": 45,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 67:2 -end 69:6 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 66,
+        "col": 0
+      },
+      "end": {
+        "line": 69,
+        "col": 6
+      },
+      "content": "let fun_name2 () = let var = ref 0 in var := (10 * 50); !var
+  let my_mutable_state =
+    fun_name2 ()",
+      "selection-range": {
+        "start": {
+          "line": 66,
+          "col": 4
+        },
+        "end": {
+          "line": 66,
           "col": 13
         }
       }

@@ -107,8 +107,8 @@ and rec_flag = Non_recursive | Rec_and
 type extraction =
   { expr : Typedtree.expression;  (** Expression that being extracted *)
     expr_env : Env.t;  (** Environment of the extracted expression *)
-    toplevel_vb : value_binding;
-        (** The value binding toplevel enclosing the extracted expression. *)
+    toplevel_item : toplevel_item;
+        (** The value binding toplevel or class declaration enclosing the extracted expression. *)
     name : extraction_name;  (** Binding name of the extracted expression. *)
     gen_binding_kind : rec_flag;
     generated_binding : generated_binding;
@@ -117,12 +117,8 @@ type extraction =
 
 and extraction_name = Default of { basename : string } | Fixed of string
 
-and value_binding =
-  { rec_flag : Asttypes.rec_flag;
-    bindings : Typedtree.value_binding list;
-    loc : Location.t
-  }
-(* A convenient type for grouping value binding info. *)
+and toplevel_item = { rec_flag : Asttypes.rec_flag; loc : Location.t }
+(* A convenient type for grouping info. *)
 
 and generated_binding =
   recursive:bool ->
@@ -167,14 +163,14 @@ let rec occuring_vars node =
   in
   loop [] node |> List.rev
 
-let analyze_expr expr env ~toplevel_vb ~mconfig ~local_defs =
+let analyze_expr expr env ~toplevel_item ~mconfig ~local_defs =
   let unbounded_enclosing =
-    { Location.loc_start = toplevel_vb.loc.loc_start;
+    { Location.loc_start = toplevel_item.loc.loc_start;
       loc_end = expr.Typedtree.exp_loc.loc_start;
       loc_ghost = false
     }
   in
-  let is_parent_recursive = is_recursive_vb toplevel_vb in
+  let is_parent_recursive = is_recursive_vb toplevel_item in
   Browse_tree.of_node ~env (Browse_raw.Expression expr)
   |> occuring_vars
   |> List.fold_left
@@ -190,7 +186,7 @@ let analyze_expr expr env ~toplevel_vb ~mconfig ~local_defs =
              { acc with bounded_vars = var_path :: acc.bounded_vars }
            else if
              is_parent_recursive
-             && Location_aux.included location ~into:toplevel_vb.loc
+             && Location_aux.included location ~into:toplevel_item.loc
            then { acc with gen_binding_kind = Rec_and }
            else acc
          | _ -> acc)
@@ -202,7 +198,7 @@ let extract_to_toplevel
       gen_binding_kind;
       generated_binding;
       generated_call;
-      toplevel_vb
+      toplevel_item
     } buffer =
   let val_name =
     match name with
@@ -212,11 +208,11 @@ let extract_to_toplevel
   let fresh_call =
     generated_call ~name:val_name |> Format.asprintf "%a" Pprintast.expression
   in
-  let toplevel_item = Msource.sub_loc buffer toplevel_vb.loc in
+  let toplevel_item_span = Msource.sub_loc buffer toplevel_item.loc in
   let subst_loc =
     let start_lnum =
       1 + expr.exp_loc.Location.loc_start.pos_lnum
-      - toplevel_vb.loc.loc_start.pos_lnum
+      - toplevel_item.loc.loc_start.pos_lnum
     in
     let end_lnum =
       start_lnum + expr.exp_loc.loc_end.pos_lnum
@@ -228,7 +224,7 @@ let extract_to_toplevel
     }
   in
   let substitued_toplevel_binding =
-    Msource.substitute toplevel_item
+    Msource.substitute toplevel_item_span
       (`Logical (Lexing.split_pos subst_loc.loc_start))
       (`Logical (Lexing.split_pos subst_loc.loc_end))
       fresh_call
@@ -240,7 +236,7 @@ let extract_to_toplevel
     | Non_recursive ->
       let fresh_let_binding =
         generated_binding
-          ~recursive:(is_recursive_vb toplevel_vb)
+          ~recursive:(is_recursive_vb toplevel_item)
           ~name:val_name ~body:untyped_expr
         |> Format.asprintf "%a" Pprintast.structure_item
       in
@@ -258,13 +254,13 @@ let extract_to_toplevel
   let selection_range =
     let lnum =
       match gen_binding_kind with
-      | Non_recursive -> toplevel_vb.loc.loc_start.pos_lnum
-      | Rec_and -> toplevel_vb.loc.loc_end.pos_lnum + String.length "\n"
+      | Non_recursive -> toplevel_item.loc.loc_start.pos_lnum
+      | Rec_and -> toplevel_item.loc.loc_end.pos_lnum + String.length "\n"
     in
     let prefix_length =
       match gen_binding_kind with
       | Non_recursive ->
-        if is_recursive_vb toplevel_vb then String.length "let rec "
+        if is_recursive_vb toplevel_item then String.length "let rec "
         else String.length "let "
       | Rec_and -> String.length "and "
     in
@@ -273,9 +269,9 @@ let extract_to_toplevel
       loc_ghost = false
     }
   in
-  { Query_protocol.loc = toplevel_vb.loc; content; selection_range }
+  { Query_protocol.loc = toplevel_item.loc; content; selection_range }
 
-let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_vb =
+let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
   let name =
     Option.fold extract_name
       ~none:(Default { basename = "const_name" })
@@ -284,21 +280,21 @@ let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_vb =
   extract_to_toplevel
     { expr;
       expr_env;
-      toplevel_vb;
+      toplevel_item;
       name;
       gen_binding_kind = Non_recursive;
       generated_binding = Gen.toplevel_let;
       generated_call = Gen.ident
     }
 
-let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_vb
+let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
     ~local_defs ~mconfig =
   let is_function = function
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
   in
   let { bounded_vars; gen_binding_kind } =
-    analyze_expr expr expr_env ~toplevel_vb ~local_defs ~mconfig
+    analyze_expr expr expr_env ~toplevel_item ~local_defs ~mconfig
   in
   let generated_binding, generated_call =
     match bounded_vars with
@@ -317,7 +313,7 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_vb
   extract_to_toplevel
     { expr;
       expr_env;
-      toplevel_vb;
+      toplevel_item;
       name;
       gen_binding_kind;
       generated_binding;
@@ -325,36 +321,59 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_vb
     }
 
 let most_inclusive_expr ~start ~stop nodes =
-  let region =
-    { Location.loc_start = start; loc_end = stop; loc_ghost = true }
+  let is_inside_region =
+    Location_aux.included
+      ~into:{ Location.loc_start = start; loc_end = stop; loc_ghost = true }
   in
   let rec select_among_child env node =
+    let select_deeper node env =
+      let node = Browse_tree.of_node ~env node in
+      Lazy.force node.t_children |> List.rev
+      |> Stdlib.List.find_map (fun node ->
+             select_among_child node.Browse_tree.t_env node.t_node)
+    in
     let node_loc = Mbrowse.node_loc node in
+    let remove_poly expr =
+      (* We have to remove poly extra that cause unexpected "!poly!" to be printed
+         in generated code. This happens when you try to extract the body of a method. *)
+      let open Typedtree in
+      { expr with
+        exp_extra =
+          List.filter
+            ~f:(function
+              | Texp_poly _, _, _ -> false
+              | _ -> true)
+            expr.exp_extra
+      }
+    in
     match node with
     | Expression expr ->
       (* We filter expression that have a ghost location. Otherwise, expression
         such as [let f x = 10 + x] can be extracted and this can lead to invalid 
         code gen.      ^^^^^^^^^^ *)
-      if
-        node_loc.loc_ghost = false
-        && Location_aux.included node_loc ~into:region
-      then Some (expr, env)
-      else
-        let node = Browse_tree.of_node ~env node in
-        Lazy.force node.t_children |> List.rev
-        |> Stdlib.List.find_map (fun node ->
-               select_among_child node.Browse_tree.t_env node.t_node)
-    | _ -> None
+      if node_loc.loc_ghost = false && is_inside_region node_loc then
+        Some (remove_poly expr, env)
+      else select_deeper node env
+    | _ -> select_deeper node env
   in
   nodes |> List.rev
   |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
 
 let find_associated_toplevel_item expr structure =
   Stdlib.List.find_map
-    (function
-      | { Typedtree.str_desc = Tstr_value (rec_flag, bindings); str_loc; _ }
+    (fun { Typedtree.str_desc; str_loc; _ } ->
+      match str_desc with
+      | Tstr_value (rec_flag, _)
         when Location_aux.included expr.Typedtree.exp_loc ~into:str_loc ->
-        Some { rec_flag; bindings; loc = str_loc }
+        Some { rec_flag; loc = str_loc }
+      | Tstr_class cs ->
+        Stdlib.List.find_map
+          (fun (class_decl, _) ->
+            let loc = class_decl.Typedtree.ci_loc in
+            if Location_aux.included expr.exp_loc ~into:loc then
+              Some { rec_flag = Nonrecursive; loc }
+            else None)
+          cs
       | _ -> None)
     structure.Typedtree.str_items
 
@@ -370,13 +389,13 @@ let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
     | Some (expr, expr_env) -> (
       match find_associated_toplevel_item expr structure with
       | None -> raise Nothing_to_do
-      | Some toplevel_vb -> (
+      | Some toplevel_item -> (
         match expr.exp_desc with
         | Texp_constant _ ->
           (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
           extract_const_to_toplevel ?extract_name expr ~expr_env buffer
-            ~toplevel_vb
+            ~toplevel_item
         | _ ->
           extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
-            ~toplevel_vb ~local_defs:typedtree ~mconfig)))
+            ~toplevel_item ~local_defs:typedtree ~mconfig)))

@@ -41,3 +41,29 @@ and y = 80
 let f =
   print_endline "Wild side effect!";
   1 :: [ 2; 3; 4 ]
+
+class a =
+  let inner_expr =
+    let bar = 20 in
+    object
+      method foo = bar
+    end
+  in
+  object
+    method x = (Fun.const 10) ()
+    method y = print_endline
+    method z =
+      let x =
+        object
+          method x = "foobar"
+        end
+      in
+      x
+  end
+
+and b = object end
+
+let my_mutable_state =
+  let var = ref 0 in
+  var := 10 * 50;
+  !var
