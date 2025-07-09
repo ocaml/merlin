@@ -21,18 +21,6 @@ Foo was defined on line 2 when the index was built, but is now defined on line 1
   > -filename main.ml < main.ml | jq .value
   [
     {
-      "file": "$TESTCASE_ROOT/lib.ml",
-      "start": {
-        "line": 2,
-        "col": 4
-      },
-      "end": {
-        "line": 2,
-        "col": 7
-      },
-      "stale": true
-    },
-    {
       "file": "$TESTCASE_ROOT/main.ml",
       "start": {
         "line": 1,
@@ -43,5 +31,17 @@ Foo was defined on line 2 when the index was built, but is now defined on line 1
         "col": 29
       },
       "stale": false
+    },
+    {
+      "file": "$TESTCASE_ROOT/lib.ml",
+      "start": {
+        "line": 2,
+        "col": 4
+      },
+      "end": {
+        "line": 2,
+        "col": 7
+      },
+      "stale": true
     }
   ]

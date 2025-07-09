@@ -1,5 +1,6 @@
-unreleased
+merlin 5.5
 ==========
+Tue Jun 24 16:10:42 CEST 2025
 
   + merlin library
     - Expose utilities to manipulate typed-holes in `Merlin_analysis.Typed_hole`
@@ -7,6 +8,20 @@ unreleased
     - `locate` can now disambiguate between files with identical names and contents
       (#1882)
     - `occurrences` now reports stale files (#1885)
+    - `inlay-hints` fix inlay hints on function parameters (#1923)
+    - Fix issues with ident validation and Lid comparison for occurrences (#1924)
+    - Handle class type in outline (#1932)
+    - Handle locally defined value in outline (#1936)
+    - Fix a typer issue triggering assertions in the short-paths graph (#1935,
+      fixes #1913)
+    - Downstreamed a typer fix from 5.3.X that would trigger assertions linked
+      to scopes bit masks when backtracking the typer cache (#1935)
+    - Add a new selection field to outline results that contains the location of
+      the symbol itself. (#1942)
+    - Fix destruct hanging when printing patterns with (::). (#1944, fixes
+      ocaml/ocaml-lsp#1489)
+    - Reproduce and fix a handful of jump-to-definition (locate) issues  (#1930,
+      fixes #1580 and #1588, workaround for #1934)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
