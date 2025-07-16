@@ -913,7 +913,8 @@ let solve_constructor_annotation
           new_local_type ~loc:name.loc Definition
             ~manifest_and_scope:(tv, Ident.lowest_scope) in
         let (id, new_env) =
-          Env.enter_type ~scope:expansion_scope name.txt decl !!penv in
+          (* These redundant types should not be added to the shortpath graph *)
+          Env.enter_type ~long_path:true ~scope:expansion_scope name.txt decl !!penv in
         Pattern_env.set_env penv new_env;
         ({name with txt = id}, (decl, tv)))
       name_list
@@ -5408,7 +5409,7 @@ and type_label_exp create env loc ty_expected
   if is_poly then check_univars env "field value" arg label.lbl_arg vars;
   (lid, label, {arg with exp_type = instance arg.exp_type})
 
-and type_argument ?explanation ?recarg env sarg ty_expected' ty_expected =
+and type_argument_ ?explanation ?recarg env sarg ty_expected' ty_expected =
   (* ty_expected' may be generic *)
   let no_labels ty =
     let ls, tvar = list_labels env ty in
@@ -5523,6 +5524,36 @@ and type_argument ?explanation ?recarg env sarg ty_expected' ty_expected =
         (mk_expected ?explanation ty_expected') in
       unify_exp ~sexp:sarg env texp ty_expected;
       texp
+
+and type_argument ?explanation ?recarg env sarg ty_expected' ty_expected =
+  Msupport.with_saved_types
+    ~warning_attribute:sarg.pexp_attributes ?save_part:None
+      (fun () ->
+        let saved = save_levels () in
+        try
+          type_argument_ ?explanation ?recarg env sarg ty_expected' ty_expected
+        with exn ->
+          Msupport.erroneous_type_register ty_expected;
+          raise_error exn;
+          set_levels saved;
+          let loc = sarg.pexp_loc in
+          {
+            exp_desc = Texp_ident
+                         (Path.Pident (Ident.create_local "*type-error*"),
+                          Location.mkloc (Longident.Lident "*type-error*") loc,
+                          { Types.
+                            val_type = ty_expected;
+                            val_kind = Val_reg;
+                            val_loc = loc;
+                            val_attributes = [];
+                            val_uid = Uid.internal_not_actually_unique;
+                          });
+            exp_loc = loc;
+            exp_extra = [];
+            exp_type = ty_expected;
+            exp_env = env;
+            exp_attributes = Msupport.recovery_attributes sarg.pexp_attributes;
+          })
 
 and type_application env funct sargs =
   (* funct.exp_type may be generic *)

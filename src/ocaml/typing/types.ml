@@ -515,9 +515,7 @@ type changes =
   | Unchanged
   | Invalid
 
-open Local_store
-
-let trail = s_table ref Unchanged
+let trail = Local_store.s_table ref Unchanged
 
 let log_change ch =
   let r' = ref Unchanged in
@@ -641,7 +639,7 @@ module Transient_expr = struct
   let get_marks ty = ty.scope lsr 27
   let set_scope ty sc =
     if (sc land marks_mask <> 0) then
-      invalid_arg "Types.Transient_expr.set_scope";
+      invalid_arg(Format.sprintf "Types.Transient_expr.set_scope %i" sc);
     ty.scope <- (ty.scope land marks_mask) lor sc
   let try_mark_node mark ty =
     match mark with
@@ -815,7 +813,7 @@ let undo_change = function
 
 type snapshot = changes ref * int
 let last_snapshot = Local_store.s_ref 0
-let linked_variables = s_ref 0
+let linked_variables = Local_store.s_ref 0
 
 let log_type ty =
   if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))
@@ -864,7 +862,7 @@ let set_level ty level =
 (* TODO: introduce a guard and rename it to set_higher_scope? *)
 let set_scope ty scope =
   let ty = repr ty in
-  let prev_scope = ty.scope land marks_mask in
+  let prev_scope = ty.scope land scope_mask in
   if scope <> prev_scope then begin
     if ty.id <= !last_snapshot then log_change (Cscope (ty, prev_scope));
     Transient_expr.set_scope ty scope

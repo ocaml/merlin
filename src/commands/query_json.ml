@@ -326,6 +326,7 @@ let rec json_of_outline outline =
         outline_kind;
         outline_type;
         location;
+        selection;
         children;
         deprecated
       } =
@@ -337,7 +338,8 @@ let rec json_of_outline outline =
           | None -> `Null
           | Some typ -> `String typ );
         ("children", `List (json_of_outline children));
-        ("deprecated", `Bool deprecated)
+        ("deprecated", `Bool deprecated);
+        ("selection", with_location selection [])
       ]
   in
   List.map ~f:json_of_item outline
