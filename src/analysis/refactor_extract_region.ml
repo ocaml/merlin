@@ -29,7 +29,7 @@ module Gen = struct
   let toplevel_let ~name ~body =
     let open Ast_helper in
     let pattern = Pat.mk (Ppat_var { txt = name; loc = Location.none }) in
-    let body = Parsetree_utils.filter_expr_attr body in
+    let body = Parsetree_utils.expr_remove_merlin_attributes body in
     Str.value Nonrecursive [ Vb.mk pattern body ]
 
   (* Generates [let name () = body]. *)
@@ -80,22 +80,17 @@ module Gen = struct
     |> fun_apply
 end
 
-module Msource = struct
-  include Msource
-
-  (* TODO: Maybe add this directly in [Msource]? *)
-  let sub_loc src loc =
-    let (`Offset start_offset) =
-      let line, col = Lexing.split_pos loc.Location.loc_start in
-      Msource.get_offset src (`Logical (line, col))
-    in
-    let (`Offset end_offset) =
-      `Logical (Lexing.split_pos loc.loc_end) |> Msource.get_offset src
-    in
-    String.sub (Msource.text src) ~pos:start_offset
-      ~len:(end_offset - start_offset)
-    |> Msource.make
-end
+let source_sub_loc src loc =
+  let (`Offset start_offset) =
+    let line, col = Lexing.split_pos loc.Location.loc_start in
+    Msource.get_offset src (`Logical (line, col))
+  in
+  let (`Offset end_offset) =
+    `Logical (Lexing.split_pos loc.loc_end) |> Msource.get_offset src
+  in
+  String.sub (Msource.text src) ~pos:start_offset
+    ~len:(end_offset - start_offset)
+  |> Msource.make
 
 type analysis = { bounded_vars : Path.t list; gen_binding_kind : rec_flag }
 
@@ -204,7 +199,7 @@ let extract_to_toplevel
   let fresh_call =
     generated_call ~name:val_name |> Format.asprintf "%a" Pprintast.expression
   in
-  let toplevel_item_span = Msource.sub_loc buffer toplevel_item.loc in
+  let toplevel_item_span = source_sub_loc buffer toplevel_item.loc in
   let subst_loc =
     let start_lnum =
       1 + expr.exp_loc.Location.loc_start.pos_lnum
@@ -267,9 +262,9 @@ let extract_to_toplevel
 
 let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
   let name =
-    Option.fold extract_name
-      ~none:(Default { basename = "const_name" })
-      ~some:(fun name -> Fixed name)
+    match extract_name with
+    | None -> Default { basename = "const_name" }
+    | Some name -> Fixed name
   in
   extract_to_toplevel
     { expr;
@@ -292,7 +287,7 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
   in
   let generated_binding, generated_call =
     match bounded_vars with
-    | [] when Fun.negate is_function expr ->
+    | [] when not (is_function expr) ->
       (* If the extracted expr is already a function, no need to delayed computation
          with a unit parameter. *)
       (Gen.let_unit_toplevel, Gen.fun_apply_unit)
@@ -300,9 +295,9 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
       (Gen.toplevel_function bounded_vars, Gen.fun_apply_params bounded_vars)
   in
   let name =
-    Option.fold extract_name
-      ~none:(Default { basename = "fun_name" })
-      ~some:(fun name -> Fixed name)
+    match extract_name with
+    | None -> Default { basename = "fun_name" }
+    | Some name -> Fixed name
   in
   extract_to_toplevel
     { expr;

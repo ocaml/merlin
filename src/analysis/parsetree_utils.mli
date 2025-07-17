@@ -7,4 +7,5 @@ type nonrec constant_desc = constant_desc
 
 val constant_desc : constant -> constant_desc
 
-val filter_expr_attr : expression -> expression
+(** Filter parsetree attributes which are prefixed by ["merlin."] in given expression. *)
+val expr_remove_merlin_attributes : expression -> expression
