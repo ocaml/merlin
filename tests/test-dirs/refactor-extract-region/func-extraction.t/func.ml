@@ -112,3 +112,9 @@ let f x =
     let y = 0
   end in
   (x * M.y) + 3
+
+let f =
+  let x = 1 in
+  let y = 2 in
+  let z = x + y in
+  z + z + 1

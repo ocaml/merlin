@@ -658,3 +658,35 @@ TODO: This extraction shouldn't be allowed.
     },
     "notifications": []
   }
+
+  $ $MERLIN single refactoring-extract-region -start 119:2 -end 119:18 -extract-name z < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 116,
+        "col": 0
+      },
+      "end": {
+        "line": 120,
+        "col": 11
+      },
+      "content": "let z (x) (y) = x + y
+  let f =
+    let x = 1 in
+    let y = 2 in
+    let z = z x y in
+    z + z + 1",
+      "selection-range": {
+        "start": {
+          "line": 116,
+          "col": 4
+        },
+        "end": {
+          "line": 116,
+          "col": 5
+        }
+      }
+    },
+    "notifications": []
+  }
