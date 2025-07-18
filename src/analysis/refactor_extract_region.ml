@@ -51,7 +51,7 @@ module Gen = struct
         ~f:(fun param ->
           let pattern =
             Pat.construct
-              (Location.mknoloc (Untypeast.lident_of_path param))
+              (Location.mknoloc (Longident.Lident (Path.last param)))
               None
           in
           { Parsetree.pparam_loc = Location.none;
@@ -74,9 +74,7 @@ module Gen = struct
 
   let fun_apply_params params =
     params
-    |> List.map ~f:(fun param ->
-           Ast_helper.Exp.ident
-             (Location.mknoloc (Longident.Lident (Path.name param))))
+    |> List.map ~f:(fun param -> ident ~name:(Path.name param))
     |> fun_apply
 end
 
