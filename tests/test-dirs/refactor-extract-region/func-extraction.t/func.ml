@@ -20,13 +20,6 @@ let test x y =
   in
   m
 
-let map f =
-  let rec loop acc = function
-    | [] -> List.rev acc
-    | x :: xs -> loop (f x :: acc) xs
-  in
-  loop []
-
 let rec x = object end
 
 and y _ =
@@ -65,7 +58,7 @@ and b = object end
 
 let my_mutable_state =
   let var = ref 0 in
-  var := 10 * 50;
+  var := y * 50;
   !var
 
 let func () =
@@ -86,3 +79,36 @@ and z x =
     method x = x
     method y = y
   end
+
+let f = 0 + 1
+
+let f x = (x * 2) + 3
+
+let f x =
+  let y = 0 in
+  (x * y) + 3
+
+let f x =
+  let exception Local in
+  raise Local
+
+let x = 0
+let f x = x + 1
+
+let x = 0
+let y = 1
+let f x = x + y
+
+let f x = List.map (fun y -> y + 1) x
+
+let f y =
+  let y = y + 1 in
+  y + 2
+
+let f () = y + 1
+
+let f x =
+  let module M = struct
+    let y = 0
+  end in
+  (x * M.y) + 3

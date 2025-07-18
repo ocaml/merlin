@@ -91,19 +91,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 24:21 -end 26:37 -extract-name map_aux < func.ml
-  "Nothing to do"
-
-  $ $MERLIN single refactoring-extract-region -start 37:14 -end 37:24 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 30:14 -end 30:24 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 37,
+        "line": 30,
         "col": 0
       },
       "end": {
-        "line": 39,
+        "line": 32,
         "col": 10
       },
       "content": "let rec z x = fun_name2 x
@@ -112,11 +109,11 @@
   and fun_name2 (x) = (10 + y) + x",
       "selection-range": {
         "start": {
-          "line": 40,
+          "line": 33,
           "col": 4
         },
         "end": {
-          "line": 40,
+          "line": 33,
           "col": 13
         }
       }
@@ -124,16 +121,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 42:2 -end 43:18 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 35:2 -end 36:18 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 41,
+        "line": 34,
         "col": 0
       },
       "end": {
-        "line": 43,
+        "line": 36,
         "col": 18
       },
       "content": "let fun_name2 () = print_endline \"Wild side effect!\"; [1; 2; 3; 4]
@@ -141,11 +138,11 @@
     fun_name2 ()",
       "selection-range": {
         "start": {
-          "line": 41,
+          "line": 34,
           "col": 4
         },
         "end": {
-          "line": 41,
+          "line": 34,
           "col": 13
         }
       }
@@ -153,16 +150,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 47:4 -end 50:7 -extract-name outsider_expr < func.ml
+  $ $MERLIN single refactoring-extract-region -start 40:4 -end 43:7 -extract-name outsider_expr < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 45,
+        "line": 38,
         "col": 0
       },
       "end": {
-        "line": 62,
+        "line": 55,
         "col": 5
       },
       "content": "let outsider_expr () = let bar = 20 in object method foo = bar end
@@ -183,11 +180,11 @@
     end",
       "selection-range": {
         "start": {
-          "line": 45,
+          "line": 38,
           "col": 4
         },
         "end": {
-          "line": 45,
+          "line": 38,
           "col": 17
         }
       }
@@ -195,16 +192,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 56:6 -end 61:7 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 49:6 -end 56:7 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 45,
+        "line": 38,
         "col": 0
       },
       "end": {
-        "line": 62,
+        "line": 55,
         "col": 5
       },
       "content": "let fun_name2 () = let x = object method x = \"foobar\" end in x
@@ -223,11 +220,11 @@
     end",
       "selection-range": {
         "start": {
-          "line": 45,
+          "line": 38,
           "col": 4
         },
         "end": {
-          "line": 45,
+          "line": 38,
           "col": 13
         }
       }
@@ -235,28 +232,28 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 67:2 -end 69:6 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 60:2 -end 62:6 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 66,
+        "line": 59,
         "col": 0
       },
       "end": {
-        "line": 69,
+        "line": 62,
         "col": 6
       },
-      "content": "let fun_name2 () = let var = ref 0 in var := (10 * 50); !var
+      "content": "let fun_name2 () = let var = ref 0 in var := (y * 50); !var
   let my_mutable_state =
     fun_name2 ()",
       "selection-range": {
         "start": {
-          "line": 66,
+          "line": 59,
           "col": 4
         },
         "end": {
-          "line": 66,
+          "line": 59,
           "col": 13
         }
       }
@@ -264,16 +261,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 76:14 -end 76:45 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 69:14 -end 69:45 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 71,
+        "line": 64,
         "col": 0
       },
       "end": {
-        "line": 78,
+        "line": 71,
         "col": 27
       },
       "content": "let fun_name3 (x) (fun_name2) = [(+); (-); fun_name2] @ x
@@ -287,11 +284,11 @@
       ~finally:(Fun.const ())",
       "selection-range": {
         "start": {
-          "line": 71,
+          "line": 64,
           "col": 4
         },
         "end": {
-          "line": 71,
+          "line": 64,
           "col": 13
         }
       }
@@ -299,16 +296,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 82:8 -end 82:22 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 75:8 -end 75:22 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 80,
+        "line": 73,
         "col": 0
       },
       "end": {
-        "line": 88,
+        "line": 81,
         "col": 5
       },
       "content": "let fun_name2 () = [10; 20; 30]
@@ -323,11 +320,11 @@
     end",
       "selection-range": {
         "start": {
-          "line": 80,
+          "line": 73,
           "col": 8
         },
         "end": {
-          "line": 80,
+          "line": 73,
           "col": 17
         }
       }
@@ -335,16 +332,16 @@
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 86:15 -end 86:16 < func.ml
+  $ $MERLIN single refactoring-extract-region -start 79:15 -end 79:16 < func.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 80,
+        "line": 73,
         "col": 0
       },
       "end": {
-        "line": 88,
+        "line": 81,
         "col": 5
       },
       "content": "let rec f = List.map Fun.id
@@ -359,11 +356,302 @@
   and fun_name2 (x) = x",
       "selection-range": {
         "start": {
-          "line": 89,
+          "line": 82,
           "col": 4
         },
         "end": {
-          "line": 89,
+          "line": 82,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 83:12 -end 83:13 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 83,
+        "col": 0
+      },
+      "end": {
+        "line": 83,
+        "col": 13
+      },
+      "content": "let const_name1 = 1
+  let f = 0 + const_name1",
+      "selection-range": {
+        "start": {
+          "line": 83,
+          "col": 4
+        },
+        "end": {
+          "line": 83,
+          "col": 15
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 85:10 -end 85:17 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 85,
+        "col": 0
+      },
+      "end": {
+        "line": 85,
+        "col": 21
+      },
+      "content": "let fun_name2 (x) = x * 2
+  let f x = fun_name2 x + 3",
+      "selection-range": {
+        "start": {
+          "line": 85,
+          "col": 4
+        },
+        "end": {
+          "line": 85,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 89:2 -end 89:10 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 87,
+        "col": 0
+      },
+      "end": {
+        "line": 89,
+        "col": 13
+      },
+      "content": "let fun_name2 (x) (y) = x * y
+  let f x =
+    let y = 0 in
+    fun_name2 x y + 3",
+      "selection-range": {
+        "start": {
+          "line": 87,
+          "col": 4
+        },
+        "end": {
+          "line": 87,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+TODO: This extraction shouldn't be allowed.
+  $ $MERLIN single refactoring-extract-region -start 93:2 -end 93:13 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 91,
+        "col": 0
+      },
+      "end": {
+        "line": 93,
+        "col": 13
+      },
+      "content": "let fun_name2 () = raise Local
+  let f x =
+    let exception Local in
+    fun_name2 ()",
+      "selection-range": {
+        "start": {
+          "line": 91,
+          "col": 4
+        },
+        "end": {
+          "line": 91,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 96:10 -end 96:16 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 96,
+        "col": 0
+      },
+      "end": {
+        "line": 96,
+        "col": 15
+      },
+      "content": "let fun_name2 (x) = x + 1
+  let f x = fun_name2 x",
+      "selection-range": {
+        "start": {
+          "line": 96,
+          "col": 4
+        },
+        "end": {
+          "line": 96,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 100:10 -end 100:16 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 100,
+        "col": 0
+      },
+      "end": {
+        "line": 100,
+        "col": 15
+      },
+      "content": "let fun_name2 (x) = x + y
+  let f x = fun_name2 x",
+      "selection-range": {
+        "start": {
+          "line": 100,
+          "col": 4
+        },
+        "end": {
+          "line": 100,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 102:10 -end 102:38 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 102,
+        "col": 0
+      },
+      "end": {
+        "line": 102,
+        "col": 37
+      },
+      "content": "let fun_name2 (x) = List.map (fun y -> y + 1) x
+  let f x = fun_name2 x",
+      "selection-range": {
+        "start": {
+          "line": 102,
+          "col": 4
+        },
+        "end": {
+          "line": 102,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 106:2 -end 106:7 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 104,
+        "col": 0
+      },
+      "end": {
+        "line": 106,
+        "col": 7
+      },
+      "content": "let fun_name2 (y) = y + 2
+  let f y =
+    let y = y + 1 in
+    fun_name2 y",
+      "selection-range": {
+        "start": {
+          "line": 104,
+          "col": 4
+        },
+        "end": {
+          "line": 104,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 108:11 -end 108:16 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 108,
+        "col": 0
+      },
+      "end": {
+        "line": 108,
+        "col": 16
+      },
+      "content": "let fun_name2 () = y + 1
+  let f () = fun_name2 ()",
+      "selection-range": {
+        "start": {
+          "line": 108,
+          "col": 4
+        },
+        "end": {
+          "line": 108,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 114:2 -end 114:11 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 110,
+        "col": 0
+      },
+      "end": {
+        "line": 114,
+        "col": 15
+      },
+      "content": "let fun_name2 (x) (y) = x * y
+  let f x =
+    let module M = struct
+      let y = 0
+    end in
+    fun_name2 x M.y + 3",
+      "selection-range": {
+        "start": {
+          "line": 110,
+          "col": 4
+        },
+        "end": {
+          "line": 110,
           "col": 13
         }
       }
