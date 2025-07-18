@@ -366,25 +366,35 @@ let find_associated_toplevel_item expr structure =
       | _ -> None)
     structure.Typedtree.str_items
 
+let extract_region ~start ~stop enclosing structure =
+  let open Option.Infix in
+  most_inclusive_expr ~start ~stop enclosing >>= fun (expr, expr_env) ->
+  find_associated_toplevel_item expr structure >>| fun toplevel_item ->
+  (expr, expr_env, toplevel_item)
+
+let is_region_extractable ~start ~stop enclosing structure =
+  match extract_region ~start ~stop enclosing structure with
+  | None -> false
+  | Some _ -> true
+
 let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
   match typedtree with
   | `Interface _ -> raise Not_allowed_in_interface_file
-  | `Implementation structure -> (
+  | `Implementation structure -> begin
     let enclosing =
       Mbrowse.enclosing start [ Mbrowse.of_structure structure ]
     in
-    match most_inclusive_expr ~start ~stop enclosing with
+    match extract_region ~start ~stop enclosing structure with
     | None -> raise Nothing_to_do
-    | Some (expr, expr_env) -> (
-      match find_associated_toplevel_item expr structure with
-      | None -> raise Nothing_to_do
-      | Some toplevel_item -> (
-        match expr.exp_desc with
-        | Texp_constant _ ->
-          (* Special case for constant. They can't produce side effect so it's not
+    | Some (expr, expr_env, toplevel_item) -> begin
+      match expr.exp_desc with
+      | Texp_constant _ ->
+        (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
-          extract_const_to_toplevel ?extract_name expr ~expr_env buffer
-            ~toplevel_item
-        | _ ->
-          extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
-            ~toplevel_item ~local_defs:typedtree ~mconfig)))
+        extract_const_to_toplevel ?extract_name expr ~expr_env buffer
+          ~toplevel_item
+      | _ ->
+        extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
+          ~toplevel_item ~local_defs:typedtree ~mconfig
+    end
+  end

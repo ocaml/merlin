@@ -85,6 +85,14 @@ exception Nothing_to_do
 (** Raised when extraction is called inside an interface file. *)
 exception Not_allowed_in_interface_file
 
+(** Is an expression is extractable in the given region? *)
+val is_region_extractable :
+  start:Lexing.position ->
+  stop:Lexing.position ->
+  (Env.t * Browse_raw.node) list ->
+  Typedtree.structure ->
+  bool
+
 (** [substitute ~start ~stop ~extract_name config buffer typedtree] tries to
     extract the most inclusive expression located in interval [start-stop] into
     a fresh toplevel generated let binding.
