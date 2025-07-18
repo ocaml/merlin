@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1546)
+
 merlin 5.5
 ==========
 Tue Jun 24 16:10:42 CEST 2025
