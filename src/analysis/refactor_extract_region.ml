@@ -90,7 +90,7 @@ let source_sub_loc src loc =
     ~len:(end_offset - start_offset)
   |> Msource.make
 
-type analysis = { bounded_vars : Path.t list; gen_binding_kind : rec_flag }
+type analysis = { bounded_vars : Path.t list; binding_kind : rec_flag }
 
 and rec_flag = Non_recursive | Rec_and
 
@@ -109,8 +109,15 @@ type extraction =
 
 and extraction_name = Default of { basename : string } | Fixed of string
 
-and toplevel_item = { rec_flag : Asttypes.rec_flag; loc : Location.t }
+and toplevel_item =
+  { rec_flag : Asttypes.rec_flag;
+    env : Env.t;
+    loc : Location.t;
+    kind : toplevel_item_kind
+  }
 (* A convenient type for grouping info. *)
+
+and toplevel_item_kind = Let of Typedtree.value_binding list | Class_decl
 
 and generated_binding =
   name:string -> body:Parsetree.expression -> Parsetree.structure_item
@@ -121,25 +128,24 @@ let is_recursive = function
   | { rec_flag = Asttypes.Recursive; _ } -> true
   | { rec_flag = Nonrecursive; _ } -> false
 
+let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.t list =
+ fun { Typedtree.pat_desc; _ } ->
+  match pat_desc with
+  | Typedtree.Tpat_var (ident, _, _) -> [ Pident ident ]
+  | Tpat_tuple pats -> List.concat_map ~f:find_pattern_var pats
+  | Tpat_alias (pat, ident, _, _) -> Pident ident :: find_pattern_var pat
+  | Tpat_construct (_, _, pats, _) -> List.concat_map ~f:find_pattern_var pats
+  | Tpat_variant (_, Some pat, _) -> find_pattern_var pat
+  | Tpat_record (fields, _) ->
+    List.concat_map ~f:(fun (_, _, field) -> find_pattern_var field) fields
+  | Tpat_array arr -> List.concat_map ~f:find_pattern_var arr
+  | Tpat_lazy pat | Tpat_exception pat -> find_pattern_var pat
+  | Tpat_value pat ->
+    find_pattern_var (pat :> Typedtree.value Typedtree.general_pattern)
+  | Tpat_or (l, r, _) -> find_pattern_var l @ find_pattern_var r
+  | _ -> []
+
 let rec occuring_vars node =
-  let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.t list
-      =
-   fun { Typedtree.pat_desc; _ } ->
-    match pat_desc with
-    | Typedtree.Tpat_var (ident, _, _) -> [ Pident ident ]
-    | Tpat_tuple pats -> List.concat_map ~f:find_pattern_var pats
-    | Tpat_alias (pat, ident, _, _) -> Pident ident :: find_pattern_var pat
-    | Tpat_construct (_, _, pats, _) -> List.concat_map ~f:find_pattern_var pats
-    | Tpat_variant (_, Some pat, _) -> find_pattern_var pat
-    | Tpat_record (fields, _) ->
-      List.concat_map ~f:(fun (_, _, field) -> find_pattern_var field) fields
-    | Tpat_array arr -> List.concat_map ~f:find_pattern_var arr
-    | Tpat_lazy pat | Tpat_exception pat -> find_pattern_var pat
-    | Tpat_value pat ->
-      find_pattern_var (pat :> Typedtree.value Typedtree.general_pattern)
-    | Tpat_or (l, r, _) -> find_pattern_var l @ find_pattern_var r
-    | _ -> []
-  in
   let loop acc node =
     match node.Browse_tree.t_node with
     | Browse_raw.Expression { exp_desc = Texp_ident (path, _, _); _ } ->
@@ -153,35 +159,35 @@ let rec occuring_vars node =
   loop [] node |> Path.Set.of_list |> Path.Set.elements |> List.rev
   |> List.filter ~f:(fun path -> Ident.name (Path.head path) <> "Stdlib")
 
-let analyze_expr expr env ~toplevel_item ~mconfig ~local_defs =
-  let unbounded_enclosing =
-    { Location.loc_start = toplevel_item.loc.loc_start;
-      loc_end = expr.Typedtree.exp_loc.loc_start;
-      loc_ghost = false
-    }
+let analyze_expr expr expr_env ~toplevel_item =
+  let is_value_unbound path =
+    let is_bound path env =
+      try
+        let _ = Env.find_value path env in
+        true
+      with Not_found -> false
+    in
+    is_bound path expr_env && not (is_bound path toplevel_item.env)
   in
-  Browse_tree.of_node ~env (Browse_raw.Expression expr)
+  let is_one_of_value_decl var_path bindings =
+    List.exists
+      ~f:(fun vb ->
+        let names = find_pattern_var vb.Typedtree.vb_pat |> Path.Set.of_list in
+        Path.Set.mem var_path names)
+      bindings
+  in
+  Browse_tree.of_node ~env:expr_env (Browse_raw.Expression expr)
   |> occuring_vars
-  |> List.fold_left
-       ~init:{ bounded_vars = []; gen_binding_kind = Non_recursive }
+  |> List.fold_left ~init:{ bounded_vars = []; binding_kind = Non_recursive }
        ~f:(fun acc var_path ->
-         match
-           Locate.from_path
-             ~config:{ mconfig; ml_or_mli = `ML; traverse_aliases = true }
-             ~env ~local_defs ~namespace:Value var_path
-         with
-         | `Found { location; approximated = false; _ } ->
-           let acc =
-             if Location_aux.included location ~into:unbounded_enclosing then
-               { acc with bounded_vars = var_path :: acc.bounded_vars }
-             else acc
-           in
-           if
-             is_recursive toplevel_item
-             && Location_aux.included location ~into:toplevel_item.loc
-           then { acc with gen_binding_kind = Rec_and }
-           else acc
-         | _ -> acc)
+         if is_value_unbound var_path then
+           match toplevel_item.kind with
+           | Let bindings
+             when is_recursive toplevel_item
+                  && is_one_of_value_decl var_path bindings ->
+             { acc with binding_kind = Rec_and }
+           | _ -> { acc with bounded_vars = var_path :: acc.bounded_vars }
+         else acc)
 
 let extract_to_toplevel
     { expr;
@@ -284,14 +290,13 @@ let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
       call_need_parenthesis = false
     }
 
-let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
-    ~local_defs ~mconfig =
+let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
   let is_function = function
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
   in
-  let { bounded_vars; gen_binding_kind } =
-    analyze_expr expr expr_env ~toplevel_item ~local_defs ~mconfig
+  let { bounded_vars; binding_kind } =
+    analyze_expr expr expr_env ~toplevel_item
   in
   let generated_binding, generated_call =
     match bounded_vars with
@@ -312,7 +317,7 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
       expr_env;
       toplevel_item;
       name;
-      gen_binding_kind;
+      gen_binding_kind = binding_kind;
       generated_binding;
       generated_call;
       call_need_parenthesis = true
@@ -361,17 +366,22 @@ let most_inclusive_expr ~start ~stop nodes =
 
 let find_associated_toplevel_item expr structure =
   Stdlib.List.find_map
-    (fun { Typedtree.str_desc; str_loc; _ } ->
+    (fun { Typedtree.str_desc; str_loc; str_env } ->
       match str_desc with
-      | Tstr_value (rec_flag, _)
+      | Tstr_value (rec_flag, vb)
         when Location_aux.included expr.Typedtree.exp_loc ~into:str_loc ->
-        Some { rec_flag; loc = str_loc }
+        Some { rec_flag; env = str_env; loc = str_loc; kind = Let vb }
       | Tstr_class cs ->
         Stdlib.List.find_map
           (fun (class_decl, _) ->
             let loc = class_decl.Typedtree.ci_loc in
             if Location_aux.included expr.exp_loc ~into:loc then
-              Some { rec_flag = Nonrecursive; loc }
+              Some
+                { rec_flag = Nonrecursive;
+                  env = str_env;
+                  loc;
+                  kind = Class_decl
+                }
             else None)
           cs
       | _ -> None)
@@ -380,6 +390,7 @@ let find_associated_toplevel_item expr structure =
 let extract_region ~start ~stop enclosing structure =
   let open Option.Infix in
   most_inclusive_expr ~start ~stop enclosing >>= fun (expr, expr_env) ->
+  (* si contenu de l'expr contient une expression local alors inextrayable *)
   find_associated_toplevel_item expr structure >>| fun toplevel_item ->
   (expr, expr_env, toplevel_item)
 
@@ -388,7 +399,7 @@ let is_region_extractable ~start ~stop enclosing structure =
   | None -> false
   | Some _ -> true
 
-let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
+let substitute ~start ~stop ?extract_name buffer typedtree =
   match typedtree with
   | `Interface _ -> raise Not_allowed_in_interface_file
   | `Implementation structure -> begin
@@ -406,6 +417,6 @@ let substitute ~start ~stop ?extract_name mconfig buffer typedtree =
           ~toplevel_item
       | _ ->
         extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
-          ~toplevel_item ~local_defs:typedtree ~mconfig
+          ~toplevel_item
     end
   end

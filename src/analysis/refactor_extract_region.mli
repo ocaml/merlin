@@ -93,7 +93,7 @@ val is_region_extractable :
   Typedtree.structure ->
   bool
 
-(** [substitute ~start ~stop ~extract_name config buffer typedtree] tries to
+(** [substitute ~start ~stop ~extract_name buffer typedtree] tries to
     extract the most inclusive expression located in interval [start-stop] into
     a fresh toplevel generated let binding.
 
@@ -112,7 +112,6 @@ val substitute :
   start:Lexing.position ->
   stop:Lexing.position ->
   ?extract_name:string ->
-  Mconfig.t ->
   Msource.t ->
   Mtyper.typedtree ->
   Query_protocol.substitution_result

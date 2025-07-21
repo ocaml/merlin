@@ -344,7 +344,8 @@
         "line": 81,
         "col": 5
       },
-      "content": "let rec f = List.map Fun.id
+      "content": "let fun_name2 (x) = x
+  let rec f = List.map Fun.id
   
   and y = [ 10; 20; 30 ]
   
@@ -352,16 +353,15 @@
     object
       method x = (fun_name2 x)
       method y = y
-    end
-  and fun_name2 (x) = x",
+    end",
       "selection-range": {
         "start": {
-          "line": 82,
-          "col": 4
+          "line": 73,
+          "col": 8
         },
         "end": {
-          "line": 82,
-          "col": 13
+          "line": 73,
+          "col": 17
         }
       }
     },
