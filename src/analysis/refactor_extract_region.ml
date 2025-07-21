@@ -314,8 +314,20 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
       name;
       gen_binding_kind;
       generated_binding;
-      generated_call
+      generated_call;
+      call_need_parenthesis = true
     }
+
+let remove_poly expr =
+  let open Typedtree in
+  { expr with
+    exp_extra =
+      List.filter
+        ~f:(function
+          | Texp_poly _, _, _ -> false
+          | _ -> true)
+        expr.exp_extra
+  }
 
 let most_inclusive_expr ~start ~stop nodes =
   let is_inside_region =
@@ -330,31 +342,22 @@ let most_inclusive_expr ~start ~stop nodes =
              select_among_child node.Browse_tree.t_env node.t_node)
     in
     let node_loc = Mbrowse.node_loc node in
-    let remove_poly expr =
-      (* We have to remove poly extra that cause unexpected "!poly!" to be printed
-         in generated code. This happens when you try to extract the body of a method. *)
-      let open Typedtree in
-      { expr with
-        exp_extra =
-          List.filter
-            ~f:(function
-              | Texp_poly _, _, _ -> false
-              | _ -> true)
-            expr.exp_extra
-      }
-    in
     match node with
-    | Expression expr ->
+    | Expression expr
+      when node_loc.loc_ghost = false && is_inside_region node_loc ->
       (* We filter expression that have a ghost location. Otherwise, expression
         such as [let f x = 10 + x] can be extracted and this can lead to invalid 
         code gen.      ^^^^^^^^^^ *)
-      if node_loc.loc_ghost = false && is_inside_region node_loc then
-        Some (remove_poly expr, env)
-      else select_deeper node env
+      Some (expr, env)
     | _ -> select_deeper node env
   in
   nodes |> List.rev
   |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
+  |> Option.map ~f:(fun (expr, env) ->
+         (* We also have to remove poly extra that cause unexpected "!poly!"
+         to be printed in generated code. This happens when you try to extract
+         the body of a method. *)
+         (remove_poly expr, env))
 
 let find_associated_toplevel_item expr structure =
   Stdlib.List.find_map
