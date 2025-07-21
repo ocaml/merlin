@@ -13,7 +13,7 @@
       "content": "let is_empty = (function | [] -> true | _ -> false)
   let all_empty l =
     List.for_all
-      is_empty 
+      (is_empty )
       l",
       "selection-range": {
         "start": {
@@ -42,7 +42,7 @@
         "col": 70
       },
       "content": "let fun_name2 = fun acc x -> if x > acc then x else acc
-  let max l = List.fold_left fun_name2  l",
+  let max l = List.fold_left (fun_name2 ) l",
       "selection-range": {
         "start": {
           "line": 10,
@@ -73,7 +73,7 @@
   let test x y =
     let fun_name2 = Fun.id in
     let m =
-      let m = fun_name3 x y in
+      let m = (fun_name3 x y) in
       m
     in
     m",
@@ -103,7 +103,7 @@
         "line": 32,
         "col": 10
       },
-      "content": "let rec z x = fun_name2 x
+      "content": "let rec z x = (fun_name2 x)
   
   and y = 80
   and fun_name2 (x) = (10 + y) + x",
@@ -135,7 +135,7 @@
       },
       "content": "let fun_name2 () = print_endline \"Wild side effect!\"; [1; 2; 3; 4]
   let f =
-    fun_name2 ()",
+    (fun_name2 ())",
       "selection-range": {
         "start": {
           "line": 34,
@@ -165,7 +165,7 @@
       "content": "let outsider_expr () = let bar = 20 in object method foo = bar end
   class a =
     let inner_expr =
-      outsider_expr ()
+      (outsider_expr ())
     in
     object
       method x = (Fun.const 10) ()
@@ -216,7 +216,7 @@
       method x = (Fun.const 10) ()
       method y = print_endline
       method z =
-        fun_name2 ()
+        (fun_name2 ())
     end",
       "selection-range": {
         "start": {
@@ -246,7 +246,7 @@
       },
       "content": "let fun_name2 () = let var = ref 0 in var := (y * 50); !var
   let my_mutable_state =
-    fun_name2 ()",
+    (fun_name2 ())",
       "selection-range": {
         "start": {
           "line": 59,
@@ -279,7 +279,7 @@
     Fun.protect
       (fun () ->
         let fun_name2 = ( / ) in
-        let y = fun_name3 x fun_name2 in
+        let y = (fun_name3 x fun_name2) in
         List.map2 (fun op (a, b) -> op a b) y [ (1, 1); (3, 2); (8, 2) ])
       ~finally:(Fun.const ())",
       "selection-range": {
@@ -311,7 +311,7 @@
       "content": "let fun_name2 () = [10; 20; 30]
   let rec f = List.map Fun.id
   
-  and y = fun_name2 ()
+  and y = (fun_name2 ())
   
   and z x =
     object
@@ -350,7 +350,7 @@
   
   and z x =
     object
-      method x = fun_name2 x
+      method x = (fun_name2 x)
       method y = y
     end
   and fun_name2 (x) = x",
@@ -409,7 +409,7 @@
         "col": 21
       },
       "content": "let fun_name2 (x) = x * 2
-  let f x = fun_name2 x + 3",
+  let f x = (fun_name2 x) + 3",
       "selection-range": {
         "start": {
           "line": 85,
@@ -439,7 +439,7 @@
       "content": "let fun_name2 (x) (y) = x * y
   let f x =
     let y = 0 in
-    fun_name2 x y + 3",
+    (fun_name2 x y) + 3",
       "selection-range": {
         "start": {
           "line": 87,
@@ -470,7 +470,7 @@ TODO: This extraction shouldn't be allowed.
       "content": "let fun_name2 () = raise Local
   let f x =
     let exception Local in
-    fun_name2 ()",
+    (fun_name2 ())",
       "selection-range": {
         "start": {
           "line": 91,
@@ -498,7 +498,7 @@ TODO: This extraction shouldn't be allowed.
         "col": 15
       },
       "content": "let fun_name2 (x) = x + 1
-  let f x = fun_name2 x",
+  let f x = (fun_name2 x)",
       "selection-range": {
         "start": {
           "line": 96,
@@ -526,7 +526,7 @@ TODO: This extraction shouldn't be allowed.
         "col": 15
       },
       "content": "let fun_name2 (x) = x + y
-  let f x = fun_name2 x",
+  let f x = (fun_name2 x)",
       "selection-range": {
         "start": {
           "line": 100,
@@ -554,7 +554,7 @@ TODO: This extraction shouldn't be allowed.
         "col": 37
       },
       "content": "let fun_name2 (x) = List.map (fun y -> y + 1) x
-  let f x = fun_name2 x",
+  let f x = (fun_name2 x)",
       "selection-range": {
         "start": {
           "line": 102,
@@ -584,7 +584,7 @@ TODO: This extraction shouldn't be allowed.
       "content": "let fun_name2 (y) = y + 2
   let f y =
     let y = y + 1 in
-    fun_name2 y",
+    (fun_name2 y)",
       "selection-range": {
         "start": {
           "line": 104,
@@ -612,7 +612,7 @@ TODO: This extraction shouldn't be allowed.
         "col": 16
       },
       "content": "let fun_name2 () = y + 1
-  let f () = fun_name2 ()",
+  let f () = (fun_name2 ())",
       "selection-range": {
         "start": {
           "line": 108,
@@ -644,7 +644,7 @@ TODO: This extraction shouldn't be allowed.
     let module M = struct
       let y = 0
     end in
-    fun_name2 x M.y + 3",
+    (fun_name2 x M.y) + 3",
       "selection-range": {
         "start": {
           "line": 110,
@@ -675,7 +675,7 @@ TODO: This extraction shouldn't be allowed.
   let f =
     let x = 1 in
     let y = 2 in
-    let z = z x y in
+    let z = (z x y) in
     z + z + 1",
       "selection-range": {
         "start": {
@@ -685,6 +685,43 @@ TODO: This extraction shouldn't be allowed.
         "end": {
           "line": 116,
           "col": 5
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 129:19 -end 132:71 -extract-name pp_markup < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 125,
+        "col": 0
+      },
+      "end": {
+        "line": 133,
+        "col": 7
+      },
+      "content": "let pp_markup (bold_tag) =
+    fun ppf markup ->
+      match markup with
+      | Text txt -> pp_print_string ppf txt
+      | Bold txt -> pp_print_string ppf (bold_tag ^ (txt ^ bold_tag))
+  let pp_document ppf doc =
+    let open Format in
+    let bold_tag = \"**\" in
+    fprintf ppf \"%a\"
+      (pp_print_list (pp_markup bold_tag))
+      doc",
+      "selection-range": {
+        "start": {
+          "line": 125,
+          "col": 4
+        },
+        "end": {
+          "line": 125,
+          "col": 13
         }
       }
     },

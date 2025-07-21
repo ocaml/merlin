@@ -118,3 +118,16 @@ let f =
   let y = 2 in
   let z = x + y in
   z + z + 1
+
+type document = markup list
+and markup = Text of string | Bold of string
+
+let pp_document ppf doc =
+  let open Format in
+  let bold_tag = "**" in
+  fprintf ppf "%a"
+    (pp_print_list (fun ppf markup ->
+         match markup with
+         | Text txt -> pp_print_string ppf txt
+         | Bold txt -> pp_print_string ppf (bold_tag ^ txt ^ bold_tag)))
+    doc

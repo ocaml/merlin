@@ -102,7 +102,9 @@ type extraction =
     name : extraction_name;  (** Binding name of the extracted expression. *)
     gen_binding_kind : rec_flag;
     generated_binding : generated_binding;
-    generated_call : generated_call
+    generated_call : generated_call;
+    call_need_parenthesis : bool
+        (** Sometime we must parenthised call in order to type check. *)
   }
 
 and extraction_name = Default of { basename : string } | Fixed of string
@@ -148,7 +150,8 @@ let rec occuring_vars node =
       |> List.concat_map ~f:occuring_vars
       |> List.append acc
   in
-  loop [] node |> List.rev
+  loop [] node |> Path.Set.of_list |> Path.Set.elements |> List.rev
+  |> List.filter ~f:(fun path -> Ident.name (Path.head path) <> "Stdlib")
 
 let analyze_expr expr env ~toplevel_item ~mconfig ~local_defs =
   let unbounded_enclosing =
@@ -187,7 +190,8 @@ let extract_to_toplevel
       gen_binding_kind;
       generated_binding;
       generated_call;
-      toplevel_item
+      toplevel_item;
+      call_need_parenthesis
     } buffer =
   let val_name =
     match name with
@@ -195,7 +199,12 @@ let extract_to_toplevel
     | Fixed name -> name
   in
   let fresh_call =
-    generated_call ~name:val_name |> Format.asprintf "%a" Pprintast.expression
+    let parenthised_opt s =
+      if call_need_parenthesis then "(" ^ s ^ ")" else s
+    in
+    generated_call ~name:val_name
+    |> Format.asprintf "%a" Pprintast.expression
+    |> parenthised_opt
   in
   let toplevel_item_span = source_sub_loc buffer toplevel_item.loc in
   let subst_loc =
@@ -271,7 +280,8 @@ let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
       name;
       gen_binding_kind = Non_recursive;
       generated_binding = Gen.toplevel_let;
-      generated_call = Gen.ident
+      generated_call = Gen.ident;
+      call_need_parenthesis = false
     }
 
 let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item
