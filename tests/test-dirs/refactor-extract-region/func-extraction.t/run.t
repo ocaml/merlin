@@ -727,3 +727,39 @@ TODO: This extraction shouldn't be allowed.
     },
     "notifications": []
   }
+
+  $ $MERLIN single refactoring-extract-region -start 146:2 -end 146:25 -extract-name add < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 138,
+        "col": 0
+      },
+      "end": {
+        "line": 146,
+        "col": 24
+      },
+      "content": "let add (x) (z) (y) = ((x * z) * y) + A.a
+  let f x =
+    let module Empty = struct end in
+    let module M = struct
+      module MM = struct
+        let y = 0
+      end
+      let z = 0
+    end in
+    (add x M.z M.MM.y)",
+      "selection-range": {
+        "start": {
+          "line": 138,
+          "col": 4
+        },
+        "end": {
+          "line": 138,
+          "col": 7
+        }
+      }
+    },
+    "notifications": []
+  }

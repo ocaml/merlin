@@ -145,7 +145,7 @@ let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.t list =
   | Tpat_or (l, r, _) -> find_pattern_var l @ find_pattern_var r
   | _ -> []
 
-let rec occuring_vars node =
+let rec occuring_vars_path node =
   let loop acc node =
     match node.Browse_tree.t_node with
     | Browse_raw.Expression { exp_desc = Texp_ident (path, _, _); _ } ->
@@ -153,7 +153,7 @@ let rec occuring_vars node =
     | Pattern pat -> find_pattern_var pat @ acc
     | _ ->
       Lazy.force node.t_children
-      |> List.concat_map ~f:occuring_vars
+      |> List.concat_map ~f:occuring_vars_path
       |> List.append acc
   in
   loop [] node |> Path.Set.of_list |> Path.Set.elements |> List.rev
@@ -177,7 +177,7 @@ let analyze_expr expr expr_env ~toplevel_item =
       bindings
   in
   Browse_tree.of_node ~env:expr_env (Browse_raw.Expression expr)
-  |> occuring_vars
+  |> occuring_vars_path
   |> List.fold_left ~init:{ bounded_vars = []; binding_kind = Non_recursive }
        ~f:(fun acc var_path ->
          if is_value_unbound var_path then
@@ -295,8 +295,22 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
   in
+  let is_module_bound path =
+    try
+      let _ = Env.find_module path toplevel_item.env in
+      false
+    with Not_found -> true
+  in
   let { bounded_vars; binding_kind } =
     analyze_expr expr expr_env ~toplevel_item
+  in
+  let bounded_vars_stamp =
+    List.map ~f:(fun p -> Path.head p |> Ident.stamp) bounded_vars
+  in
+  let is_bound_var path =
+    List.exists
+      ~f:(Int.equal (Path.head path |> Ident.stamp))
+      bounded_vars_stamp
   in
   let generated_binding, generated_call =
     match bounded_vars with
@@ -312,8 +326,17 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     | None -> Default { basename = "fun_name" }
     | Some name -> Fixed name
   in
+  let remove_path_prefix mapper expr =
+    match expr.Typedtree.exp_desc with
+    | Texp_ident (Pdot (path, val_name), longident, vd)
+      when is_bound_var path && is_module_bound path ->
+      let ident = { longident with txt = Longident.Lident val_name } in
+      { expr with exp_desc = Texp_ident (path, ident, vd) }
+    | _ -> Tast_mapper.default.expr mapper expr
+  in
+  let mapper = { Tast_mapper.default with expr = remove_path_prefix } in
   extract_to_toplevel
-    { expr;
+    { expr = mapper.expr mapper expr;
       expr_env;
       toplevel_item;
       name;

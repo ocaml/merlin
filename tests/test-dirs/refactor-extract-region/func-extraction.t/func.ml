@@ -131,3 +131,16 @@ let pp_document ppf doc =
          | Text txt -> pp_print_string ppf txt
          | Bold txt -> pp_print_string ppf (bold_tag ^ txt ^ bold_tag)))
     doc
+
+module A = struct
+  let a = 10
+end
+let f x =
+  let module Empty = struct end in
+  let module M = struct
+    module MM = struct
+      let y = 0
+    end
+    let z = 0
+  end in
+  x * M.z * M.MM.y + A.a
