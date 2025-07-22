@@ -463,7 +463,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     str
   | Locate_type _, resp -> json_of_locate resp
   | Locate_type_multi _, resp ->
-    Json.of_yojson_safe (Locate_type_multi_result.yojson_of_t resp)
+    Json.of_yojson_safe (Locate_types_result.yojson_of_t resp)
   | Locate _, resp -> json_of_locate resp
   | Jump _, resp -> begin
     match resp with
