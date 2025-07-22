@@ -8,4 +8,5 @@ module Type_tree : sig
   type t = { data : node_data; children : t list }
 end
 
+(** Convert a type into a simplified tree representation. *)
 val create_type_tree : Types.type_expr -> Type_tree.t option

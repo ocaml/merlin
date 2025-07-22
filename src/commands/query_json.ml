@@ -70,8 +70,7 @@ let dump (type a) : a t -> json =
         ("position", mk_position pos)
       ]
   | Locate_type pos -> mk "locate-type" [ ("position", mk_position pos) ]
-  | Locate_type_multi pos ->
-    mk "locate-type-multi" [ ("position", mk_position pos) ]
+  | Locate_type_multi pos -> mk "locate-types" [ ("position", mk_position pos) ]
   | Enclosing pos -> mk "enclosing" [ ("position", mk_position pos) ]
   | Complete_prefix (prefix, pos, kind, doc, typ) ->
     mk "complete-prefix"

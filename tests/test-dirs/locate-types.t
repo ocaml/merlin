@@ -1,6 +1,6 @@
-Test the locate-type-multi command
+Test the locate-types command
 
-Create a function that runs locate-type-multi on a variable of a given type
+Create a function that runs locate-types on a variable of a given type
   $ run () {
   >   type="$1"
   > 
@@ -19,7 +19,7 @@ Create a function that runs locate-type-multi on a variable of a given type
   >   ()
   > EOF
   > 
-  >   $MERLIN single locate-type-multi -position "9:7" -filename foo.ml < foo.ml \
+  >   $MERLIN single locate-types -position "9:7" -filename foo.ml < foo.ml \
   >     | jq .value[1] \
   >     | jq -r '
   >         def format_node:
@@ -70,7 +70,7 @@ Create a function that runs locate-type-multi on a variable of a given type
   >   ()
   > EOF
   > 
-  >   $MERLIN single locate-type-multi -position "9:7" -filename foo.ml < foo.ml \
+  >   $MERLIN single locate-types -position "9:7" -filename foo.ml < foo.ml \
   >     | jq .value
   > }
 

@@ -376,14 +376,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         | Value_description { val_desc = { ctyp_type = ty; _ }; _ } -> Some ty
         | _ -> None
       in
-      let+ type_tree = Locate_type_multi.create_type_tree overall_ty in
+      let+ type_tree = Locate_types.create_type_tree overall_ty in
       let type_to_string ~env ty =
         Printtyp.wrap_printing_env env ~verbosity (fun () ->
             Type_utils.print_type_with_decl ~verbosity env Format.str_formatter
               ty);
         Format.flush_str_formatter ()
       in
-      let rec make_result ({ data; children } : Locate_type_multi.Type_tree.t) :
+      let rec make_result ({ data; children } : Locate_types.Type_tree.t) :
           Locate_type_multi_result.type_tree =
         let data : Locate_type_multi_result.node_data =
           match data with

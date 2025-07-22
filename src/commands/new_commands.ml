@@ -500,7 +500,7 @@ let all_commands =
           | #Msource.position as pos ->
             run buffer (Query_protocol.Locate_type pos)
       end;
-    command "locate-type-multi"
+    command "locate-types"
       ~spec:
         [ arg "-position" "<position> Position to locate the type of"
             (marg_position (fun pos _ -> pos))
