@@ -2,6 +2,7 @@ module Type_tree : sig
   type node_data =
     | Arrow
     | Tuple
+    | Poly_variant
     | Object
     | Type_ref of { path : Path.t; ty : Types.type_expr }
 

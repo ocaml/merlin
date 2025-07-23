@@ -4,6 +4,7 @@ module Type_tree = struct
   type node_data =
     | Arrow
     | Tuple
+    | Poly_variant
     | Object
     | Type_ref of { path : Path.t; ty : Types.type_expr }
 
@@ -40,5 +41,17 @@ let rec create_type_tree ty : Type_tree.t option =
     let field_types = List.rev (extract_field_types fields_type) in
     let children = List.filter_map field_types ~f:create_type_tree in
     Some { data = Object; children }
-  | Tnil | Tvar _ | Tsubst _ | Tvariant _ | Tunivar _ | Tpackage _ | Tfield _ ->
-    None
+  | Tvariant row_desc ->
+    let fields = Types.row_fields row_desc in
+    let children =
+      List.concat_map fields ~f:(fun (_, row_field) ->
+          match Types.row_field_repr row_field with
+          | Rpresent (Some ty) -> create_type_tree ty |> Option.to_list
+          | Reither (_, tys, _) ->
+            (* CR-someday: Types seem to get duplicated here. For example, if the type is
+               [< `A of a], tys is [a; a]. This leads to duplicated results *)
+            List.filter_map tys ~f:create_type_tree
+          | Rpresent None | Rabsent -> [])
+    in
+    Some { data = Poly_variant; children }
+  | Tnil | Tvar _ | Tsubst _ | Tunivar _ | Tpackage _ | Tfield _ -> None

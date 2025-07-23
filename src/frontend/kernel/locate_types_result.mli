@@ -2,6 +2,7 @@ type node_data =
   | Arrow
   | Tuple
   | Object
+  | Poly_variant
   | Type_ref of
       { type_ : string;
         result :

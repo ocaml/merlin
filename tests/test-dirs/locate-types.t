@@ -135,6 +135,42 @@ Objects
     a (1:5)
     b (2:5)
 
+Polymorphic variant types
+
+  $ run "[\`A of a | \`B of b ]"
+  Poly_variant
+    b (2:5)
+    a (1:5)
+
+  $ run "[> \`A of a | \`B of b ]"
+  Poly_variant
+    b (2:5)
+    a (1:5)
+
+FIXME: stop duplicating types here
+  $ run "[< \`A of a | \`B of b ]"
+  Poly_variant
+    b (2:5)
+    b (2:5)
+    a (1:5)
+    a (1:5)
+
+  $ run "[\`B | \`A of a]"
+  Poly_variant
+    a (1:5)
+
+  $ run "[\`B | \`A]"
+  Poly_variant
+
+  $ run "[]"
+  Poly_variant
+
+  $ run "[ \`A of (a * b) ]"
+  Poly_variant
+    Tuple
+      a (1:5)
+      b (2:5)
+
 Primitive types
 
   $ run "string"

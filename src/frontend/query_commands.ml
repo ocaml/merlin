@@ -390,6 +390,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           | Arrow -> Arrow
           | Tuple -> Tuple
           | Object -> Object
+          | Poly_variant -> Poly_variant
           | Type_ref { path; ty } ->
             Locate.log ~title:"debug" "found type: %s" (Path.name path);
             let config : Locate.config =
