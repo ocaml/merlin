@@ -763,3 +763,68 @@ TODO: This extraction shouldn't be allowed.
     },
     "notifications": []
   }
+
+  $ $MERLIN single refactoring-extract-region -start 154:17 -end 154:45 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 153,
+        "col": 2
+      },
+      "end": {
+        "line": 157,
+        "col": 32
+      },
+      "content": "let fun_name2 () = List.map on_list [1; 2; 3]
+  let x =
+      let a_list = (fun_name2 ()) in
+      let open Format in
+      let printer = pp_print_list pp_print_int in
+      printf \"%a\
+  \" printer a_list",
+      "selection-range": {
+        "start": {
+          "line": 153,
+          "col": 4
+        },
+        "end": {
+          "line": 153,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+  $ $MERLIN single refactoring-extract-region -start 154:18 -end 154:44 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 153,
+        "col": 2
+      },
+      "end": {
+        "line": 157,
+        "col": 32
+      },
+      "content": "let fun_name2 () = on_list
+  let x =
+      let a_list = List.map (fun_name2 ()) [ 1; 2; 3 ] in
+      let open Format in
+      let printer = pp_print_list pp_print_int in
+      printf \"%a\
+  \" printer a_list",
+      "selection-range": {
+        "start": {
+          "line": 153,
+          "col": 4
+        },
+        "end": {
+          "line": 153,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }

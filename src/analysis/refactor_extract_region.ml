@@ -370,6 +370,7 @@ let most_inclusive_expr ~start ~stop nodes =
              select_among_child node.Browse_tree.t_env node.t_node)
     in
     let node_loc = Mbrowse.node_loc node in
+
     match node with
     | Expression expr
       when node_loc.loc_ghost = false && is_inside_region node_loc ->
@@ -387,38 +388,42 @@ let most_inclusive_expr ~start ~stop nodes =
          the body of a method. *)
          (remove_poly expr, env))
 
-let find_associated_toplevel_item expr structure =
+let find_associated_toplevel_item expr enclosing =
   Stdlib.List.find_map
-    (fun { Typedtree.str_desc; str_loc; str_env } ->
-      match str_desc with
-      | Tstr_value (rec_flag, vb)
-        when Location_aux.included expr.Typedtree.exp_loc ~into:str_loc ->
-        Some { rec_flag; env = str_env; loc = str_loc; kind = Let vb }
-      | Tstr_class cs ->
-        Stdlib.List.find_map
-          (fun (class_decl, _) ->
-            let loc = class_decl.Typedtree.ci_loc in
-            if Location_aux.included expr.exp_loc ~into:loc then
-              Some
-                { rec_flag = Nonrecursive;
-                  env = str_env;
-                  loc;
-                  kind = Class_decl
-                }
-            else None)
-          cs
+    (fun (_, item) ->
+      match item with
+      | Browse_raw.Structure_item ({ str_desc; str_loc; str_env }, _) -> begin
+        match str_desc with
+        | Tstr_value (rec_flag, vb)
+          when Location_aux.included expr.Typedtree.exp_loc ~into:str_loc ->
+          Some { rec_flag; env = str_env; loc = str_loc; kind = Let vb }
+        | Tstr_class cs ->
+          Stdlib.List.find_map
+            (fun (class_decl, _) ->
+              let loc = class_decl.Typedtree.ci_loc in
+              if Location_aux.included expr.exp_loc ~into:loc then
+                Some
+                  { rec_flag = Nonrecursive;
+                    env = str_env;
+                    loc;
+                    kind = Class_decl
+                  }
+              else None)
+            cs
+        | _ -> None
+      end
       | _ -> None)
-    structure.Typedtree.str_items
+    enclosing
 
-let extract_region ~start ~stop enclosing structure =
+let extract_region ~start ~stop enclosing =
   let open Option.Infix in
   most_inclusive_expr ~start ~stop enclosing >>= fun (expr, expr_env) ->
   (* si contenu de l'expr contient une expression local alors inextrayable *)
-  find_associated_toplevel_item expr structure >>| fun toplevel_item ->
+  find_associated_toplevel_item expr enclosing >>| fun toplevel_item ->
   (expr, expr_env, toplevel_item)
 
-let is_region_extractable ~start ~stop enclosing structure =
-  match extract_region ~start ~stop enclosing structure with
+let is_region_extractable ~start ~stop enclosing =
+  match extract_region ~start ~stop enclosing with
   | None -> false
   | Some _ -> true
 
@@ -429,7 +434,7 @@ let substitute ~start ~stop ?extract_name buffer typedtree =
     let enclosing =
       Mbrowse.enclosing start [ Mbrowse.of_structure structure ]
     in
-    match extract_region ~start ~stop enclosing structure with
+    match extract_region ~start ~stop enclosing with
     | None -> raise Nothing_to_do
     | Some (expr, expr_env, toplevel_item) -> begin
       match expr.exp_desc with

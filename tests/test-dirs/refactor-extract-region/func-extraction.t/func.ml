@@ -143,4 +143,16 @@ let f x =
     end
     let z = 0
   end in
-  x * M.z * M.MM.y + A.a
+  (x * M.z * M.MM.y) + A.a
+
+module T = struct
+  let on_list x = x + 1
+  let k : (int, int) Result.t = Ok 10
+  let r = Ok 10
+
+  let x =
+    let a_list = List.map on_list [ 1; 2; 3 ] in
+    let open Format in
+    let printer = pp_print_list pp_print_int in
+    printf "%a\n" printer a_list
+end

@@ -87,11 +87,7 @@ exception Not_allowed_in_interface_file
 
 (** Is an expression is extractable in the given region? *)
 val is_region_extractable :
-  start:Lexing.position ->
-  stop:Lexing.position ->
-  (Env.t * Browse_raw.node) list ->
-  Typedtree.structure ->
-  bool
+  start:Lexing.position -> stop:Lexing.position -> Mbrowse.t -> bool
 
 (** [substitute ~start ~stop ~extract_name buffer typedtree] tries to
     extract the most inclusive expression located in interval [start-stop] into
