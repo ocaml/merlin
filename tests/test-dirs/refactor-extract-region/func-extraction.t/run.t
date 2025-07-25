@@ -796,6 +796,7 @@ TODO: This extraction shouldn't be allowed.
     },
     "notifications": []
   }
+
   $ $MERLIN single refactoring-extract-region -start 154:18 -end 154:44 < func.ml
   {
     "class": "return",
@@ -822,6 +823,44 @@ TODO: This extraction shouldn't be allowed.
         },
         "end": {
           "line": 153,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
+
+  $ $MERLIN single refactoring-extract-region -start 128:2 -end 133:7 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 125,
+        "col": 0
+      },
+      "end": {
+        "line": 133,
+        "col": 7
+      },
+      "content": "let fun_name2 (ppf) (doc) (bold_tag) =
+    fprintf ppf \"%a\"
+      (pp_print_list ?pp_sep:None
+         (fun ppf markup ->
+            match markup with
+            | Text txt -> pp_print_string ppf txt
+            | Bold txt -> pp_print_string ppf (bold_tag ^ (txt ^ bold_tag))))
+      doc
+  let pp_document ppf doc =
+    let open Format in
+    let bold_tag = \"**\" in
+    (fun_name2 ppf doc bold_tag)",
+      "selection-range": {
+        "start": {
+          "line": 125,
+          "col": 4
+        },
+        "end": {
+          "line": 125,
           "col": 13
         }
       }

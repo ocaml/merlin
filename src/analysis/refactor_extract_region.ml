@@ -22,6 +22,39 @@ module Fresh_name = struct
     loop 1
 end
 
+let clean_up_for_printing expr =
+  let mapper =
+    { Ast_mapper.default_mapper with
+      expr =
+        (fun mapper expr ->
+          match expr.pexp_desc with
+          | Pexp_construct
+              ( ident,
+                Some
+                  { pexp_desc =
+                      Pexp_tuple
+                        (_
+                        :: ({ pexp_desc =
+                                Pexp_constant
+                                  { pconst_desc = Pconst_string _; _ };
+                              _
+                            } as const)
+                        :: _);
+                    _
+                  } )
+            when Longident.head ident.txt = "CamlinternalFormatBasics" ->
+            (* We need to retransform format specification which has been desugared into string. *)
+            const
+          | Pexp_poly (expr, _) ->
+            (* We also have to remove poly extra that cause unexpected "!poly!"
+               to be printed in generated code. This happens when you try
+               to extract the body of a method. *)
+            expr
+          | _ -> Ast_mapper.default_mapper.expr mapper expr)
+    }
+  in
+  mapper.expr mapper expr |> Parsetree_utils.expr_remove_merlin_attributes
+
 module Gen = struct
   let unit = Longident.Lident "()" |> Location.mknoloc
 
@@ -29,7 +62,7 @@ module Gen = struct
   let toplevel_let ~name ~body =
     let open Ast_helper in
     let pattern = Pat.mk (Ppat_var { txt = name; loc = Location.none }) in
-    let body = Parsetree_utils.expr_remove_merlin_attributes body in
+    let body = clean_up_for_printing body in
     Str.value Nonrecursive [ Vb.mk pattern body ]
 
   (* Generates [let name () = body]. *)
@@ -67,7 +100,9 @@ module Gen = struct
 
   let fun_apply params ~name =
     let open Ast_helper in
-    let params = List.map ~f:(fun p -> (Asttypes.Nolabel, p)) params in
+    let params =
+      List.map ~f:(fun p -> (Asttypes.Nolabel, clean_up_for_printing p)) params
+    in
     Exp.apply (ident ~name) params
 
   let fun_apply_unit = fun_apply [ Ast_helper.Exp.ident unit ]
@@ -157,7 +192,9 @@ let rec occuring_vars_path node =
       |> List.append acc
   in
   loop [] node |> Path.Set.of_list |> Path.Set.elements |> List.rev
-  |> List.filter ~f:(fun path -> Ident.name (Path.head path) <> "Stdlib")
+  |> List.filter ~f:(fun path ->
+         (* TODO: fix this *)
+         Ident.name (Path.head path) <> "Stdlib")
 
 let analyze_expr expr expr_env ~toplevel_item =
   let is_value_unbound path =
@@ -234,18 +271,18 @@ let extract_to_toplevel
       fresh_call
     |> Msource.text
   in
-  let untyped_expr = Untypeast.untype_expression expr in
+  let expr = Untypeast.untype_expression expr in
   let content =
     match gen_binding_kind with
     | Non_recursive ->
       let fresh_let_binding =
-        generated_binding ~name:val_name ~body:untyped_expr
+        generated_binding ~name:val_name ~body:expr
         |> Format.asprintf "%a" Pprintast.structure_item
       in
       fresh_let_binding ^ "\n" ^ substitued_toplevel_binding
     | Rec_and ->
       let fresh_let_binding =
-        generated_binding ~name:val_name ~body:untyped_expr
+        generated_binding ~name:val_name ~body:expr
         |> Format.asprintf "%a" Pprintast.structure_item
       in
       let fresh_and_binding =
@@ -326,17 +363,23 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     | None -> Default { basename = "fun_name" }
     | Some name -> Fixed name
   in
-  let remove_path_prefix mapper expr =
-    match expr.Typedtree.exp_desc with
-    | Texp_ident (Pdot (path, val_name), longident, vd)
-      when is_bound_var path && is_module_bound path ->
-      let ident = { longident with txt = Longident.Lident val_name } in
-      { expr with exp_desc = Texp_ident (path, ident, vd) }
-    | _ -> Tast_mapper.default.expr mapper expr
+  let remove_path_prefix expr =
+    let mapper =
+      { Tast_mapper.default with
+        expr =
+          (fun mapper expr ->
+            match expr.Typedtree.exp_desc with
+            | Texp_ident (Pdot (path, val_name), longident, vd)
+              when is_bound_var path && is_module_bound path ->
+              let ident = { longident with txt = Longident.Lident val_name } in
+              { expr with exp_desc = Texp_ident (path, ident, vd) }
+            | _ -> Tast_mapper.default.expr mapper expr)
+      }
+    in
+    mapper.expr mapper expr
   in
-  let mapper = { Tast_mapper.default with expr = remove_path_prefix } in
   extract_to_toplevel
-    { expr = mapper.expr mapper expr;
+    { expr = remove_path_prefix expr;
       expr_env;
       toplevel_item;
       name;
@@ -345,17 +388,6 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
       generated_call;
       call_need_parenthesis = true
     }
-
-let remove_poly expr =
-  let open Typedtree in
-  { expr with
-    exp_extra =
-      List.filter
-        ~f:(function
-          | Texp_poly _, _, _ -> false
-          | _ -> true)
-        expr.exp_extra
-  }
 
 let most_inclusive_expr ~start ~stop nodes =
   let is_inside_region =
@@ -382,11 +414,6 @@ let most_inclusive_expr ~start ~stop nodes =
   in
   nodes |> List.rev
   |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
-  |> Option.map ~f:(fun (expr, env) ->
-         (* We also have to remove poly extra that cause unexpected "!poly!"
-         to be printed in generated code. This happens when you try to extract
-         the body of a method. *)
-         (remove_poly expr, env))
 
 let find_associated_toplevel_item expr enclosing =
   Stdlib.List.find_map
