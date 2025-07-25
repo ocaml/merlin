@@ -728,7 +728,7 @@ TODO: This extraction shouldn't be allowed.
     "notifications": []
   }
 
-  $ $MERLIN single refactoring-extract-region -start 146:2 -end 146:25 -extract-name add < func.ml
+  $ $MERLIN single refactoring-extract-region -start 146:2 -end 146:26 -extract-name add < func.ml
   {
     "class": "return",
     "value": {
@@ -738,7 +738,7 @@ TODO: This extraction shouldn't be allowed.
       },
       "end": {
         "line": 146,
-        "col": 24
+        "col": 26
       },
       "content": "let add (x) (z) (y) = ((x * z) * y) + A.a
   let f x =
