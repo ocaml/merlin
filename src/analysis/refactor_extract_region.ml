@@ -226,6 +226,12 @@ let analyze_expr expr expr_env ~toplevel_item =
            | _ -> { acc with bounded_vars = var_path :: acc.bounded_vars }
          else acc)
 
+let choose_name name env =
+  match name with
+  | Default { basename } -> Fresh_name.gen_val_name basename env
+  | Fixed name ->
+    if Env.bound_value name env then Fresh_name.gen_val_name name env else name
+
 let extract_to_toplevel
     { expr;
       expr_env;
@@ -236,11 +242,7 @@ let extract_to_toplevel
       toplevel_item;
       call_need_parenthesis
     } buffer =
-  let val_name =
-    match name with
-    | Default { basename } -> Fresh_name.gen_val_name basename expr_env
-    | Fixed name -> name
-  in
+  let val_name = choose_name name expr_env in
   let fresh_call =
     let parenthised_opt s =
       if call_need_parenthesis then "(" ^ s ^ ")" else s

@@ -671,11 +671,11 @@ TODO: This extraction shouldn't be allowed.
         "line": 120,
         "col": 11
       },
-      "content": "let z (x) (y) = x + y
+      "content": "let z1 (x) (y) = x + y
   let f =
     let x = 1 in
     let y = 2 in
-    let z = (z x y) in
+    let z = (z1 x y) in
     z + z + 1",
       "selection-range": {
         "start": {
@@ -684,7 +684,7 @@ TODO: This extraction shouldn't be allowed.
         },
         "end": {
           "line": 116,
-          "col": 5
+          "col": 6
         }
       }
     },
