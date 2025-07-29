@@ -47,6 +47,8 @@ let commands_help () =
       print_endline doc)
     New_commands.all_commands
 
+let old_store = ref None
+
 let run shared =
   let query_num = ref (-1) in
   function
@@ -99,20 +101,35 @@ let run shared =
             in
             (config, command_args)
           in
+
+          (* Temporary fix for data races with Local_store.close_store:
+             - close_store should not be called while the typer is running.
+             - To prevent this, when a new command arrives, the main domain always cancels the typer before closing the store.
+
+             A better solution would be to cancel the typer only when necessary, i.e., when the buffer has changed significantly, or when the command targets a different buffer.
+
+             However, the typer might not be cancelled if its result could still be useful, or if the new command does not require typing. *)
+          (match !old_store with
+          | None -> ()
+          | Some store ->
+            Mpipeline.(
+              (* Shared.set shared.config None; *)
+              cancel_typer shared);
+            Local_store.close_store store);
+
           (* Start processing query *)
           Logger.with_log_file
             Mconfig.(config.merlin.log_file)
             ~sections:Mconfig.(config.merlin.log_sections)
           @@ fun () ->
-          (* TODO : check this does not create bad data races *)
           Mocaml.flush_caches
             ~older_than:
               (float_of_int (60 * Mconfig.(config.merlin.cache_lifespan)))
             ();
-          (* TODO : check this does not create bad data races *)
           File_id.with_cache @@ fun () ->
-          (* TODO : Would it be possible to not expose this function in mpipeline.mli and its type in mocaml.mli ? *)
+          (* TODO: Is it possible to avoid exposing this function in mpipeline.mli and its type in mocaml.mli? *)
           let store = Mpipeline.Cache.get config in
+          old_store := Some store;
           Local_store.open_store store;
           let source = Msource.make (Misc.string_of_file stdin) in
           let json =
@@ -136,7 +153,6 @@ let run shared =
                   Location.print_main Format.str_formatter err;
                   ("error", `String (Format.flush_str_formatter ()), None))
             in
-            Local_store.close_store store;
             let cpu_time = Misc.time_spent () -. start_cpu in
             let gc_stats = Gc.quick_stat () in
             let heap_mbytes =
@@ -173,6 +189,7 @@ let run shared =
                 ("query_num", `Int !query_num)
               ]
           in
+
           log ~title:"run(result)" "%a" Logger.json (fun () -> json);
           begin
             match Mconfig.(config.merlin.protocol) with
