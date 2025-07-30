@@ -277,16 +277,25 @@ let type_implementation config caught partial parsetree =
     | All ->
       let _, _, suffix = type_structure caught partial env' parsetree in
       (aux [] suffix, cache_stats)
-    | Partial _ ->
+    | Partial _ -> (
       let nenv, nparsetree, first_suffix =
         type_structure caught partial env' parsetree
       in
       let partial_result = aux [] first_suffix in
-      perform (Internal_partial (partial_result, cache_stats));
-      let _, _, second_suffix =
-        type_structure caught { partial with comp = All } nenv nparsetree
-      in
-      (aux first_suffix second_suffix, cache_stats)
+      try
+        begin
+          perform (Internal_partial (partial_result, cache_stats));
+          let _, _, second_suffix =
+            type_structure caught { partial with comp = All } nenv nparsetree
+          in
+          (aux first_suffix second_suffix, cache_stats)
+        end
+      with
+      | Cancel_struc suffix ->
+        (* Caching before cancellation *)
+        aux [] suffix |> ignore;
+        raise Domain_msg.Cancel_or_Closing
+      | _ -> raise Exn_after_partial)
   with Cancel_struc suffix ->
     (* Caching before cancellation *)
     aux [] suffix |> ignore;
@@ -347,7 +356,12 @@ let type_interface config caught partial parsetree =
           in
           (aux first_suffix second_suffix, cache_stats)
         end
-      with _ -> raise Exn_after_partial)
+      with
+      | Cancel_sig suffix ->
+        (* Caching before cancellation *)
+        aux [] suffix |> ignore;
+        raise Domain_msg.Cancel_or_Closing
+      | _ -> raise Exn_after_partial)
   with Cancel_sig suffix ->
     (* Caching before cancellation *)
     aux [] suffix |> ignore;
