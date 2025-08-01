@@ -58,7 +58,7 @@ module Server = struct
       (* If the client closes its connection, don't let it kill us with a SIGPIPE. *)
       if Sys.unix then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
 
-      let shared = Mpipeline.create_shared () in
+      let shared = Domain_msg.create () in
       let domain_typer = Domain.spawn @@ Mpipeline.domain_typer shared in
       loop (File_id.get Sys.executable_name) server shared;
       Mpipeline.close_typer shared;
@@ -71,7 +71,7 @@ let main () =
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
   match List.tl (Array.to_list Sys.argv) with
   | "single" :: args ->
-    let shared = Mpipeline.create_shared () in
+    let shared = Domain_msg.create () in
     let domain_typer = Domain.spawn @@ Mpipeline.domain_typer shared in
     let vexit = New_merlin.run ~new_env:None None args shared in
     Mpipeline.close_typer shared;

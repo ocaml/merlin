@@ -127,7 +127,7 @@ let checkout_buffer =
       buffer
 
 let make_pipeline config buffer =
-  let shared = Mpipeline.create_shared () in
+  let shared = Domain_msg.create () in
   Mpipeline.make config buffer.source shared |> Option.get
 
 let dispatch_sync config state (type a) : a sync_command -> a = function

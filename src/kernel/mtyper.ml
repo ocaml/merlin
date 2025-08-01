@@ -105,124 +105,144 @@ let compatible_prefix result_items tree_items =
   in
   aux [] (result_items, tree_items)
 
-type partial =
-  { msg : Domain_msg.msg; shared : unit Shared.t; comp : Domain_msg.completion }
-
-let make_partial ?position msg shared =
-  let comp =
-    match position with
-    | None -> Domain_msg.All
-    | Some (line, column) -> Domain_msg.Partial { line; column }
-  in
-  { msg; shared; comp }
-
 exception Exn_after_partial
 exception
   Cancel_struc of (Parsetree.structure_item, Typedtree.structure_item) item list
 exception
   Cancel_sig of (Parsetree.signature_item, Typedtree.signature_item) item list
 
-let continue_typing comp get_location item =
-  match comp with
-  | Domain_msg.All -> true
-  | Partial { line; column } -> (
+let continue_typing position get_location item =
+  match position with
+  | None -> true
+  | Some (line, column) -> (
     let loc = get_location item in
     let start = loc.Location.loc_start in
     match Int.compare line start.pos_lnum with
     | 0 -> Int.compare column (Lexing.column start) >= 0
     | i -> i >= 0)
 
-let type_structure caught { msg; shared; comp } env parsetree =
+let type_structure caught position (shared : _ Domain_msg.t) env parsetree =
   (*  TODO @xvw *)
-  let continue_typing = continue_typing comp (fun i -> i.Parsetree.pstr_loc) in
+  let open Domain_msg in
+  let continue_typing =
+    continue_typing position (fun i -> i.Parsetree.pstr_loc)
+  in
 
   let rec loop env parsetree acc =
-    (match Atomic.get msg.Domain_msg.from_main with
-    | `Empty -> ()
-    | `Waiting ->
-      while Atomic.get msg.Domain_msg.from_main == `Waiting do
-        Domain.cpu_relax ()
-      done
-    | `Closing -> raise Domain_msg.Cancel_or_Closing
-    | `Cancel ->
-      (* Cancel_struct is catched by type_implementation where the partial 
-      result is going to get cached *)
-      raise (Cancel_struc acc));
+    (* If the main domain is waiting, the typer domain waits to release the lock, ensuring the main domain acquires it. *)
+    if Atomic.get shared.waiting then
+      Shared.protect shared.msg (fun () ->
+          Shared.signal shared.msg;
+          Shared.wait shared.msg);
 
-    Shared.lock shared;
-    match parsetree with
-    | parsetree_item :: rest ->
-      let items, _, part_env =
-        Typemod.merlin_type_structure env [ parsetree_item ]
-      in
-      let typedtree_items =
-        (items.Typedtree.str_items, items.Typedtree.str_type)
-      in
-      let item =
-        { parsetree_item;
-          typedtree_items;
-          part_env;
-          part_snapshot = Btype.snapshot ();
-          part_stamp = Ident.get_currentstamp ();
-          part_uid = Shape.Uid.get_current_stamp ();
-          part_errors = !caught;
-          part_checks = !Typecore.delayed_checks;
-          part_warnings = Warnings.backup ()
-        }
-      in
-      Shared.unlock shared;
-      (*  TODO @xvw *)
-      if not (continue_typing parsetree_item) then (env, rest, item :: acc)
-      else loop part_env rest (item :: acc)
-    | [] ->
-      Shared.unlock shared;
-      (env, [], List.rev acc)
+    Shared.lock shared.msg;
+    match Shared.unsafe_get shared.msg with
+    | Some (Msg `Closing) ->
+      Shared.unlock shared.msg;
+      raise Cancel_or_Closing
+    | Some (Msg `Cancel) ->
+      Shared.unlock shared.msg;
+      (* Cancel_struc is caught by type_interface, where the partial
+         result will be cached. *)
+      raise (Cancel_struc acc)
+    | Some (Config _) ->
+      Shared.unlock shared.msg;
+      failwith "Unexpected message in type_structure : config"
+    | Some (Result _) ->
+      Shared.unlock shared.msg;
+      failwith "Unexpected message in type_structure : result"
+    | Some (Msg (`Exn _)) ->
+      Shared.unlock shared.msg;
+      failwith "Unexpected message in type_structure : exn"
+    | None -> (
+      match parsetree with
+      | parsetree_item :: rest ->
+        let items, _, part_env =
+          Typemod.merlin_type_structure env [ parsetree_item ]
+        in
+        let typedtree_items =
+          (items.Typedtree.str_items, items.Typedtree.str_type)
+        in
+        let item =
+          { parsetree_item;
+            typedtree_items;
+            part_env;
+            part_snapshot = Btype.snapshot ();
+            part_stamp = Ident.get_currentstamp ();
+            part_uid = Shape.Uid.get_current_stamp ();
+            part_errors = !caught;
+            part_checks = !Typecore.delayed_checks;
+            part_warnings = Warnings.backup ()
+          }
+        in
+        Shared.unlock shared.msg;
+        (*  TODO @xvw *)
+        if not (continue_typing parsetree_item) then (env, rest, item :: acc)
+        else loop part_env rest (item :: acc)
+      | [] ->
+        Shared.unlock shared.msg;
+        (env, [], List.rev acc))
   in
   loop env parsetree []
 
-let type_signature caught { msg; shared; comp } env parsetree =
+let type_signature caught position (shared : _ Domain_msg.t) env parsetree =
   (*  TODO @xvw *)
-  let continue_typing = continue_typing comp (fun i -> i.Parsetree.psig_loc) in
+  let open Domain_msg in
+  let continue_typing =
+    continue_typing position (fun i -> i.Parsetree.psig_loc)
+  in
 
   let rec loop env parsetree acc =
-    (match Atomic.get msg.Domain_msg.from_main with
-    | `Empty -> ()
-    | `Waiting ->
-      while Atomic.get msg.Domain_msg.from_main == `Waiting do
-        Domain.cpu_relax ()
-      done
-    | `Closing -> raise Domain_msg.Cancel_or_Closing
-    | `Cancel ->
-      (* Cancel_sig is catched by type_interface where the partial 
-      result is going to get cached *)
-      raise (Cancel_sig acc));
+    (* If the main domain is waiting, the typer domain waits to release the lock, ensuring the main domain acquires it. *)
+    if Atomic.get shared.waiting then
+      Shared.protect shared.msg (fun () ->
+          Shared.signal shared.msg;
+          Shared.wait shared.msg);
 
-    Shared.lock shared;
-
-    match parsetree with
-    | parsetree_item :: rest ->
-      let { Typedtree.sig_final_env = part_env; sig_items; sig_type } =
-        Typemod.merlin_transl_signature env [ parsetree_item ]
-      in
-      let item =
-        { parsetree_item;
-          typedtree_items = (sig_items, sig_type);
-          part_env;
-          part_snapshot = Btype.snapshot ();
-          part_stamp = Ident.get_currentstamp ();
-          part_uid = Shape.Uid.get_current_stamp ();
-          part_errors = !caught;
-          part_checks = !Typecore.delayed_checks;
-          part_warnings = Warnings.backup ()
-        }
-      in
-      Shared.unlock shared;
-      (*  TODO @xvw *)
-      if not (continue_typing parsetree_item) then (env, rest, item :: acc)
-      else loop part_env rest (item :: acc)
-    | [] ->
-      Shared.unlock shared;
-      (env, [], List.rev acc)
+    Shared.lock shared.msg;
+    match Shared.unsafe_get shared.msg with
+    | Some (Msg `Closing) ->
+      Shared.unlock shared.msg;
+      raise Cancel_or_Closing
+    | Some (Msg `Cancel) ->
+      Shared.unlock shared.msg;
+      (* Cancel_sig is caught by type_interface, where the partial
+         result will be cached. *)
+      raise (Cancel_sig acc)
+    | Some (Config _) ->
+      Shared.unlock shared.msg;
+      failwith "Unexpected message in type_signature : config"
+    | Some (Result _) ->
+      Shared.unlock shared.msg;
+      failwith "Unexpected message in type_signature : result"
+    | Some (Msg (`Exn _)) ->
+      Shared.unlock shared.msg;
+      failwith "Unexpected message in type_signature : exn"
+    | None -> (
+      match parsetree with
+      | parsetree_item :: rest ->
+        let { Typedtree.sig_final_env = part_env; sig_items; sig_type } =
+          Typemod.merlin_transl_signature env [ parsetree_item ]
+        in
+        let item =
+          { parsetree_item;
+            typedtree_items = (sig_items, sig_type);
+            part_env;
+            part_snapshot = Btype.snapshot ();
+            part_stamp = Ident.get_currentstamp ();
+            part_uid = Shape.Uid.get_current_stamp ();
+            part_errors = !caught;
+            part_checks = !Typecore.delayed_checks;
+            part_warnings = Warnings.backup ()
+          }
+        in
+        Shared.unlock shared.msg;
+        (*  TODO @xvw *)
+        if not (continue_typing parsetree_item) then (env, rest, item :: acc)
+        else loop part_env rest (item :: acc)
+      | [] ->
+        Shared.unlock shared.msg;
+        (env, [], List.rev acc))
   in
   loop env parsetree []
 
@@ -235,7 +255,7 @@ type _ Effect.t +=
       -> unit t
   | Partial : result -> unit t
 
-let type_implementation config caught partial parsetree =
+let type_implementation config caught position shared parsetree =
   let { env; snapshot; ident_stamp; uid_stamp; value = prefix; index; _ } =
     get_cache config
   in
@@ -273,24 +293,30 @@ let type_implementation config caught partial parsetree =
     return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index }
   in
   try
-    match partial.comp with
-    | All ->
-      let _, _, suffix = type_structure caught partial env' parsetree in
+    match position with
+    | None ->
+      let _, _, suffix = type_structure caught position shared env' parsetree in
       (aux [] suffix, cache_stats)
-    | Partial _ -> (
+    | Some _ -> (
       let nenv, nparsetree, first_suffix =
-        type_structure caught partial env' parsetree
+        type_structure caught position shared env' parsetree
       in
       let partial_result = aux [] first_suffix in
       try
         begin
           perform (Internal_partial (partial_result, cache_stats));
           let _, _, second_suffix =
-            type_structure caught { partial with comp = All } nenv nparsetree
+            type_structure caught None shared nenv nparsetree
           in
           (aux first_suffix second_suffix, cache_stats)
         end
       with
+      (* We need to try to catch Cancel struct here because we don't want it to be overwrite by Exn_after_partial. 
+      
+      TODO (improve caching): we may actually want to cache the result even if another exception than Cancel_struc is raised. In this case, distinguishing between Cancel_struc and Exn_after_partial is not necessary except to keep the semantic of the exception. 
+        
+      Cancel_or_Closing and Exn_after_partial are actually treated the same way when caught on Mpipeline.domain_typer. This is because the message in shared.msg is not set to None (in type_structure and type_structure), so the main domain will wait for the typer domain to finish its work before it can continue i.e. that the typer domain is back to Mpipeline.domain_typer. The msg is set to None only when the typer domain loop in this function. 
+      *)
       | Cancel_struc suffix ->
         (* Caching before cancellation *)
         aux [] suffix |> ignore;
@@ -301,7 +327,7 @@ let type_implementation config caught partial parsetree =
     aux [] suffix |> ignore;
     raise Domain_msg.Cancel_or_Closing
 
-let type_interface config caught partial parsetree =
+let type_interface config caught position shared parsetree =
   let { env; snapshot; ident_stamp; uid_stamp; value = prefix; index; _ } =
     get_cache config
   in
@@ -339,24 +365,25 @@ let type_interface config caught partial parsetree =
     return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index }
   in
   try
-    match partial.comp with
-    | All ->
-      let _, _, suffix = type_signature caught partial env' parsetree in
+    match position with
+    | None ->
+      let _, _, suffix = type_signature caught position shared env' parsetree in
       (aux [] suffix, cache_stats)
-    | Partial _ -> (
+    | Some _ -> (
       let nenv, nparsetree, first_suffix =
-        type_signature caught partial env' parsetree
+        type_signature caught position shared env' parsetree
       in
       let partial_result = aux [] first_suffix in
       try
         begin
           perform (Internal_partial (partial_result, cache_stats));
           let _, _, second_suffix =
-            type_signature caught { partial with comp = All } nenv nparsetree
+            type_signature caught None shared nenv nparsetree
           in
           (aux first_suffix second_suffix, cache_stats)
         end
       with
+      (* TODO : improve caching (See message in type_implementation) *)
       | Cancel_sig suffix ->
         (* Caching before cancellation *)
         aux [] suffix |> ignore;
@@ -367,7 +394,7 @@ let type_interface config caught partial parsetree =
     aux [] suffix |> ignore;
     raise Domain_msg.Cancel_or_Closing
 
-let run config partial parsetree =
+let run config position shared parsetree =
   if not (Env.check_state_consistency ()) then (
     (* Resetting the local store will clear the load_path cache.
        Save it now, reset the store and then restore the path. *)
@@ -398,8 +425,9 @@ let run config partial parsetree =
   match
     match parsetree with
     | `Implementation parsetree ->
-      type_implementation config caught partial parsetree
-    | `Interface parsetree -> type_interface config caught partial parsetree
+      type_implementation config caught position shared parsetree
+    | `Interface parsetree ->
+      type_interface config caught position shared parsetree
   with
   | cached_result, cache_stat -> aux cached_result cache_stat
   | effect Internal_partial (cached_result, cache_stat), k ->
