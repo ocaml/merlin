@@ -118,11 +118,10 @@ let continue_typing position get_location item =
     let loc = get_location item in
     let start = loc.Location.loc_start in
     match Int.compare line start.pos_lnum with
-    | 0 -> Int.compare column (Lexing.column start) >= 0
-    | i -> i >= 0)
+    | 0 -> Int.compare column (Lexing.column start) > 0
+    | i -> i > 0)
 
 let type_structure caught position (shared : _ Domain_msg.t) env parsetree =
-  (*  TODO @xvw *)
   let open Domain_msg in
   let continue_typing =
     continue_typing position (fun i -> i.Parsetree.pstr_loc)
@@ -176,7 +175,6 @@ let type_structure caught position (shared : _ Domain_msg.t) env parsetree =
           }
         in
         Shared.unlock shared.msg;
-        (*  TODO @xvw *)
         if not (continue_typing parsetree_item) then (env, rest, item :: acc)
         else loop part_env rest (item :: acc)
       | [] ->
@@ -186,7 +184,6 @@ let type_structure caught position (shared : _ Domain_msg.t) env parsetree =
   loop env parsetree []
 
 let type_signature caught position (shared : _ Domain_msg.t) env parsetree =
-  (*  TODO @xvw *)
   let open Domain_msg in
   let continue_typing =
     continue_typing position (fun i -> i.Parsetree.psig_loc)
@@ -237,7 +234,6 @@ let type_signature caught position (shared : _ Domain_msg.t) env parsetree =
           }
         in
         Shared.unlock shared.msg;
-        (*  TODO @xvw *)
         if not (continue_typing parsetree_item) then (env, rest, item :: acc)
         else loop part_env rest (item :: acc)
       | [] ->

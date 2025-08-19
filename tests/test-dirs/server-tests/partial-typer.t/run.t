@@ -21,6 +21,7 @@ clean slate:
     }
   ]
 
+
 [complete-prefix:2-1] Disambiguation 1
 
   $ $MERLIN server complete-prefix -position 12:22 -prefix Foo -doc n \
@@ -569,9 +570,9 @@ clean slate:
   "for"
   "functor"
 
-[complete-prefix:11-1] Kind 5 [FIXME from single to server]
+[complete-prefix:11-1] Kind 5
 
-  $ $MERLIN single complete-prefix -position 56:16 \
+  $ $MERLIN server complete-prefix -position 56:16 \
   > -filename ctxt.ml -prefix List.f < ctxt.ml | jq ".value.entries[].name"
   "fast_sort"
   "filter"
@@ -729,9 +730,9 @@ clean slate:
   ]
 
 
-[complete-prefix:17-1] issue-lsp-503 [FIXME from single to server]
+[complete-prefix:17-1] issue-lsp-503
 
-  $ $MERLIN single complete-prefix -position 113:16 -prefix "List.ma" \
+  $ $MERLIN server complete-prefix -position 113:16 -prefix "List.ma" \
   > -filename ctxt.ml < ctxt.ml
   {
     "class": "return",
@@ -1440,7 +1441,6 @@ clean slate:
   ]
 
 [construct:65-1] Simple 4
-FIXME: Results looks suspicious
 
   $ $MERLIN server construct -with-values local -depth 2 -position 302:25 \
   > -filename ctxt.ml < ctxt.ml | jq ".value"
@@ -1709,7 +1709,9 @@ FIXME: Results looks suspicious
         "(Int 0)",
         "(Float 0.0)",
         "(Eq ((Eq (_, _)), (Float _)))",
+        "(Eq ((Int _), (Float _)))",
         "(Eq ((Float _), (Float _)))",
+        "(Eq ((Float _), (Int _)))",
         "(Eq ((Int _), (Int _)))",
         "(Eq ((Eq (_, _)), (Int _)))",
         "(Eq ((Float _), (Eq (_, _))))",
@@ -2329,9 +2331,9 @@ FIXME: Results looks suspicious
   "for"
   "functor"
 
-[complete-prefix:11-2] Kind 5 [FIXME from single to server]
+[complete-prefix:11-2] Kind 5
 
-  $ $MERLIN single complete-prefix -position 56:16 \
+  $ $MERLIN server complete-prefix -position 56:16 \
   > -filename ctxt.ml -prefix List.f < ctxt.ml | jq ".value.entries[].name"
   "fast_sort"
   "filter"
@@ -2490,9 +2492,9 @@ FIXME: Results looks suspicious
   ]
 
 
-[complete-prefix:17-1] issue-lsp-503 [FIXME from single to server]
+[complete-prefix:17-1] issue-lsp-503
 
-  $ $MERLIN single complete-prefix -position 113:16 -prefix "List.ma" \
+  $ $MERLIN server complete-prefix -position 113:16 -prefix "List.ma" \
   > -filename ctxt.ml < ctxt.ml
   {
     "class": "return",
@@ -3203,7 +3205,6 @@ FIXME: Results looks suspicious
   ]
 
 [construct:65-2] Simple 4
-FIXME: Results looks suspicious
 
   $ $MERLIN server construct -with-values local -depth 2 -position 302:25 \
   > -filename ctxt.ml < ctxt.ml | jq ".value"
@@ -3472,7 +3473,9 @@ FIXME: Results looks suspicious
         "(Int 0)",
         "(Float 0.0)",
         "(Eq ((Eq (_, _)), (Float _)))",
+        "(Eq ((Int _), (Float _)))",
         "(Eq ((Float _), (Float _)))",
+        "(Eq ((Float _), (Int _)))",
         "(Eq ((Int _), (Int _)))",
         "(Eq ((Eq (_, _)), (Int _)))",
         "(Eq ((Float _), (Eq (_, _))))",
