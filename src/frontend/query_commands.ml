@@ -351,6 +351,76 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         | `Found { file; location; _ } -> `Found (Some file, location.loc_start)
         | `File_not_found { file = reason; _ } -> `File_not_found reason)
     end
+  | Locate_types pos -> (
+    let typer = Mpipeline.typer_result pipeline in
+    let verbosity = verbosity pipeline in
+    let local_defs = Mtyper.get_typedtree typer in
+    let structures = Mbrowse.of_typedtree local_defs in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let result =
+      let ( let* ) opt f = Option.bind opt ~f in
+      let ( let+ ) opt f = Option.map opt ~f in
+      let* env, node =
+        match Mbrowse.enclosing pos [ structures ] with
+        | path :: _ -> Some path
+        | [] -> None
+      in
+      let* overall_ty =
+        Locate.log ~title:"query_commands Locate_types"
+          "inspecting node: %s"
+          (Browse_raw.string_of_node node);
+        match node with
+        | Expression { exp_type = ty; _ }
+        | Pattern { pat_type = ty; _ }
+        | Core_type { ctyp_type = ty; _ }
+        | Value_description { val_desc = { ctyp_type = ty; _ }; _ } -> Some ty
+        | _ -> None
+      in
+      let+ type_tree = Locate_types.create_type_tree overall_ty in
+      let type_to_string ~env ty =
+        Printtyp.wrap_printing_env env ~verbosity (fun () ->
+            Type_utils.print_type_with_decl ~verbosity env Format.str_formatter
+              ty);
+        Format.flush_str_formatter ()
+      in
+      let rec make_result ({ data; children } : Locate_types.Type_tree.t) :
+          Locate_types_result.type_tree =
+        let data : Locate_types_result.node_data =
+          match data with
+          | Arrow -> Arrow
+          | Tuple -> Tuple
+          | Object -> Object
+          | Poly_variant -> Poly_variant
+          | Type_ref { path; ty } ->
+            Locate.log ~title:"debug" "found type: %s" (Path.name path);
+            let config : Locate.config =
+              { mconfig = Mpipeline.final_config pipeline;
+                ml_or_mli = `MLI;
+                traverse_aliases = true
+              }
+            in
+            let result =
+              match
+                Locate.from_path ~config ~env ~local_defs ~namespace:Type path
+              with
+              | `Builtin (_, s) -> `Builtin s
+              | `Not_in_env _ as s -> s
+              | `Not_found _ as s -> s
+              | `Found { file; location; _ } ->
+                `Found (Some file, location.loc_start)
+              | `File_not_found result -> `File_not_found result.file
+            in
+            let type_ = type_to_string ~env ty in
+            Type_ref { type_; result }
+        in
+        let children = List.map children ~f:make_result in
+        { data; children }
+      in
+      make_result type_tree
+    in
+    match result with
+    | Some result -> Success result
+    | None -> Invalid_context)
   | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
     let pipeline, typer = for_completion pipeline pos in
     let config = Mpipeline.final_config pipeline in

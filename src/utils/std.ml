@@ -257,6 +257,10 @@ module List = struct
         | Some a' -> Cons (a', lazy (filter_map ~f (Lazy.force tl))))
   end
 
+  let hd_opt = function
+    | [] -> None
+    | x :: _ -> Some x
+
   let rec last = function
     | [] -> None
     | [ x ] -> Some x
