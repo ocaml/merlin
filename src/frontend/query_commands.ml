@@ -64,13 +64,10 @@ let print_completion_entries ~with_types config source entries =
 
 let for_completion pipeline _position =
   (* TODO
-
   This functions is an issue because of the removal of laziness (and the fact that the pipeline computation is now done by another domain than the one calling this function !).
 
   This quick patch needs to be corrected or at least properly validated. It breaks a single tests that is about completion with labels.  
 *)
-  (*
-  let pipeline = Mpipeline.for_completion position pipeline in *)
   let typer = Mpipeline.typer_result pipeline in
   (pipeline, typer)
 
@@ -803,8 +800,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     (occurrences, status)
   | Inlay_hints
-      (start, stop, hint_let_binding, hint_pattern_binding, avoid_ghost_location)
-    ->
+      ( start,
+        stop,
+        hint_let_binding,
+        hint_pattern_binding,
+        hint_function_params,
+        avoid_ghost_location ) ->
     let start = Mpipeline.get_lexing_pos pipeline start
     and stop = Mpipeline.get_lexing_pos pipeline stop in
     let typer_result = Mpipeline.typer_result pipeline in
@@ -813,7 +814,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | `Interface _ -> []
       | `Implementation structure ->
         Inlay_hints.of_structure ~hint_let_binding ~hint_pattern_binding
-          ~avoid_ghost_location ~start ~stop structure
+          ~hint_function_params ~avoid_ghost_location ~start ~stop structure
     end
   | Signature_help { position; _ } -> (
     (* Todo: additionnal contextual information could help us provide better

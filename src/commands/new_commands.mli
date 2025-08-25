@@ -35,7 +35,7 @@ type command =
       * Marg.docstring
       * ([ `Mandatory | `Optional | `Many ] * 'args Marg.spec) list
       * 'args
-      * (Mpipeline.shared ->
+      * (Mpipeline.t Domain_msg.t ->
         Mconfig.t ->
         Msource.t ->
         'args ->

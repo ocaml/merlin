@@ -1,18 +1,10 @@
 type t
 
-type shared =
-  { msg : Domain_msg.msg;
-    config : (Mconfig.t * Msource.t * (int * int) option) option Shared.t;
-    (* Partial result *)
-    partial : t option Shared.t;
-    (* Use to protect typer computation *)
-    result : unit Shared.t
-  }
+(* Except inside Mpipeline, this function should only be used in old_merlin *)
+val make :
+  ?position:int * int -> Mconfig.t -> Msource.t -> t Domain_msg.t -> t option
 
-(* Except inside Mpipeline, this function should only use in old_merlin *)
-val make : ?position:int * int -> Mconfig.t -> Msource.t -> shared -> t option
-
-(* Except inside Mpipeline, this function should only use in old_merlin *)
+(* Except inside Mpipeline, this function should only be used in old_merlin *)
 val with_pipeline : t -> (unit -> 'a) -> 'a
 
 (* val for_completion : Msource.position -> t -> t *)
@@ -46,9 +38,9 @@ module Cache : sig
   val get : Mconfig.t -> Mocaml.typer_state
 end
 
-val create_shared : unit -> shared
-val close_typer : shared -> unit
-val share_exn : shared -> exn -> unit
+val close_typer : t Domain_msg.t -> unit
+val cancel_typer : t Domain_msg.t -> unit
+val share_exn : t Domain_msg.t -> exn -> unit
 
-val domain_typer : shared -> unit -> unit
-val get : ?position:int * int -> shared -> Mconfig.t -> Msource.t -> t
+val domain_typer : t Domain_msg.t -> unit -> unit
+val get : ?position:int * int -> t Domain_msg.t -> Mconfig.t -> Msource.t -> t

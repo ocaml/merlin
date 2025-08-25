@@ -9,11 +9,6 @@
 
 type result
 
-type partial
-
-val make_partial :
-  ?position:int * int -> Domain_msg.msg -> unit Shared.t -> partial
-
 type typedtree =
   [ `Interface of Typedtree.signature | `Implementation of Typedtree.structure ]
 
@@ -40,7 +35,12 @@ exception Exn_after_partial
 @raise [Domain_msg.Cancel] and [Domain_msg.Closing]. Botch are caught in
 [Mpipeline.domain_typer]).
 *)
-val run : Mconfig.t -> partial -> Mreader.parsetree -> result
+val run :
+  Mconfig.t ->
+  (int * int) option ->
+  _ Domain_msg.t ->
+  Mreader.parsetree ->
+  result
 
 val get_env : ?pos:Msource.position -> result -> Env.t
 
