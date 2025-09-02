@@ -358,8 +358,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let structures = Mbrowse.of_typedtree local_defs in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
     let result =
-      let ( let* ) opt f = Option.bind opt ~f in
-      let ( let+ ) opt f = Option.map opt ~f in
+      let open Option.Infix in
       let* env, node =
         match Mbrowse.enclosing pos [ structures ] with
         | path :: _ -> Some path

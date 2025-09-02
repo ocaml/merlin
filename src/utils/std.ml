@@ -343,6 +343,8 @@ module Option = struct
     let return x = Some x
     let ( >>= ) x f = bind x ~f
     let ( >>| ) x f = map x ~f
+    let ( let* ) opt f = bind opt ~f
+    let ( let+ ) opt f = map opt ~f
   end
 
   include Infix
