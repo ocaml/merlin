@@ -1,3 +1,8 @@
+unreleased
+==========
+  + merlin library
+    - Fix `merlin_reader` for OpenBSD (#1956)
+
 merlin 5.5
 ==========
 Tue Jun 24 16:10:42 CEST 2025
