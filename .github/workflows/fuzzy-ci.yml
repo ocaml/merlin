@@ -235,13 +235,13 @@ jobs:
       diff_dir: diff
     steps:
       - name: Download base branch data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ env.BASE_BRANCH_ARTIFACT_NAME }}
           path: ${{ env.base_data_dir }}
 
       - name: Download merge branch data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ env.MERGE_BRANCH_ARTIFACT_NAME }}
           path: ${{ env.merge_data_dir }}
@@ -250,7 +250,7 @@ jobs:
         run: mkdir -p "$diff_dir"
 
       - name: Download diff tool
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: diff_tool
 
@@ -313,7 +313,7 @@ jobs:
 
       - name: Download current diff(s)
         if: ${{ env.current_diff_exists == 'true' }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ env.DIFF_ARTIFACT_NAME }}
 
