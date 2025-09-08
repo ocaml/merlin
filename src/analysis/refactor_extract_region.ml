@@ -139,8 +139,9 @@ type extraction =
         (** The value binding toplevel or class declaration enclosing the extracted expression. *)
     name : extraction_name;  (** Binding name of the extracted expression. *)
     gen_binding_kind : rec_flag;
-    binding_generator : binding_generator;
-    call_generator : call_generator;
+    binding_generator :
+      name:string -> body:Parsetree.expression -> Parsetree.structure_item;
+    call_generator : name:string -> Parsetree.expression;
     call_need_parenthesis : bool
         (** Sometime we must parenthised call in order to type check. *)
   }
@@ -156,11 +157,6 @@ and toplevel_item =
 (* A convenient type for grouping info. *)
 
 and toplevel_item_kind = Let of Typedtree.value_binding list | Class_decl
-
-and binding_generator =
-  name:string -> body:Parsetree.expression -> Parsetree.structure_item
-
-and call_generator = name:string -> Parsetree.expression
 
 let is_recursive = function
   | { rec_flag = Asttypes.Recursive; _ } -> true
