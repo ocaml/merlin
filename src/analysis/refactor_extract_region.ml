@@ -426,8 +426,7 @@ let most_inclusive_expr ~start ~stop nodes =
       |> Stdlib.List.find_map (fun node ->
              select_among_child node.Browse_tree.t_env node.t_node)
   in
-  nodes |> List.rev
-  |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
+  nodes |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
 
 let find_associated_toplevel_item expr enclosing =
   Stdlib.List.find_map
@@ -458,6 +457,8 @@ let find_associated_toplevel_item expr enclosing =
 
 let extract_region ~start ~stop enclosing =
   let open Option.Infix in
+  (* We want to traverse [enclosing] in ascending order. *)
+  let enclosing = List.rev enclosing in
   most_inclusive_expr ~start ~stop enclosing >>= fun (expr, expr_env) ->
   find_associated_toplevel_item expr enclosing >>| fun toplevel_item ->
   (expr, expr_env, toplevel_item)
