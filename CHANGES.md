@@ -2,6 +2,7 @@ unreleased
 ==========
   + merlin library
     - Fix `merlin_reader` for OpenBSD (#1956)
+    - Improve recovery of mutually recursive definitions (#1962, fixes #1953)
 
 merlin 5.5
 ==========
