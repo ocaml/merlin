@@ -3,21 +3,36 @@
   > and (a,b) = (1,2)
   > EOF
 
-
-FIXME Surely we can do better here
   $ $MERLIN single type-enclosing -position 1:16 -verbosity 0 \
-  > -filename ./main.ml < ./main.ml | jq
+  > -filename ./main.ml < ./main.ml | jq '.value[0]'
   {
-    "class": "return",
-    "value": [],
-    "notifications": []
+    "start": {
+      "line": 1,
+      "col": 16
+    },
+    "end": {
+      "line": 1,
+      "col": 17
+    },
+    "type": "int",
+    "tail": "no"
   }
 
-FIXME Surely we can do better here
   $ $MERLIN single type-enclosing -position 2:15 -verbosity 0 \
-  > -filename ./main.ml < ./main.ml | jq
+  > -filename ./main.ml < ./main.ml | jq '.value[0]'
   {
-    "class": "return",
-    "value": [],
-    "notifications": []
+    "start": {
+      "line": 2,
+      "col": 15
+    },
+    "end": {
+      "line": 2,
+      "col": 16
+    },
+    "type": "int",
+    "tail": "no"
   }
+
+  $ $MERLIN single errors \
+  > -filename ./main.ml < ./main.ml | jq '.value[].message'
+  "Only variables are allowed as left-hand side of let rec"
