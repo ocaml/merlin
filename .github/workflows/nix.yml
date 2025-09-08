@@ -27,11 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: true
     - name: nix
-      uses: cachix/install-nix-action@31.3.0
+      uses: cachix/install-nix-action@v31.6.1
       with:
         nix_path: nixpkgs=channel:nixos-unstable
     - run: nix develop -c dune build @check @runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
