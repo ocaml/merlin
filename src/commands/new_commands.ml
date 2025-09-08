@@ -591,10 +591,8 @@ let all_commands =
           | `None, _, _ -> failwith "-start <pos> is mandatory"
           | _, `None, _ -> failwith "-end <pos> is mandatory"
           | (#Msource.position as start), (#Msource.position as stop), name ->
-            let raw_source = Mpipeline.raw_source buffer in
             run buffer
-              (Query_protocol.Refactor_extract_region
-                 (start, stop, name, raw_source))
+              (Query_protocol.Refactor_extract_region (start, stop, name))
       end;
     command "search-by-polarity"
       ~doc:"search-by-polarity -position pos -query ident\n\tTODO"

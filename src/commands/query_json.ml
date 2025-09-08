@@ -211,7 +211,7 @@ let dump (type a) : a t -> json =
             | `Unqualify -> "unqualify") );
         ("position", mk_position pos)
       ]
-  | Refactor_extract_region (start, stop, _, _) ->
+  | Refactor_extract_region (start, stop, _) ->
     mk "refactoring-extract-region"
       [ ("start", mk_position start); ("stop", mk_position stop) ]
   | Signature_help { position; _ } ->

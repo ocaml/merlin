@@ -105,15 +105,18 @@ module Gen = struct
     in
     Exp.apply (ident ~name) params
 
+  (* [fun_apply_unit ~name] generates a call to the function named [name] to which we apply unit. *)
   let fun_apply_unit = fun_apply [ Ast_helper.Exp.ident unit ]
 
+  (* [fun_apply_params params ~name] generates a call to the function named [name]
+     to which we apply the list of arguments [params]. *)
   let fun_apply_params params =
     params
     |> List.map ~f:(fun param -> ident ~name:(Path.name param))
     |> fun_apply
 end
 
-let source_sub_loc src loc =
+let extract_source_around_loc src loc =
   let (`Offset start_offset) =
     let line, col = Lexing.split_pos loc.Location.loc_start in
     Msource.get_offset src (`Logical (line, col))
@@ -136,8 +139,8 @@ type extraction =
         (** The value binding toplevel or class declaration enclosing the extracted expression. *)
     name : extraction_name;  (** Binding name of the extracted expression. *)
     gen_binding_kind : rec_flag;
-    generated_binding : generated_binding;
-    generated_call : generated_call;
+    binding_generator : binding_generator;
+    call_generator : call_generator;
     call_need_parenthesis : bool
         (** Sometime we must parenthised call in order to type check. *)
   }
@@ -154,10 +157,10 @@ and toplevel_item =
 
 and toplevel_item_kind = Let of Typedtree.value_binding list | Class_decl
 
-and generated_binding =
+and binding_generator =
   name:string -> body:Parsetree.expression -> Parsetree.structure_item
 
-and generated_call = name:string -> Parsetree.expression
+and call_generator = name:string -> Parsetree.expression
 
 let is_recursive = function
   | { rec_flag = Asttypes.Recursive; _ } -> true
@@ -237,8 +240,8 @@ let extract_to_toplevel
       expr_env;
       name;
       gen_binding_kind;
-      generated_binding;
-      generated_call;
+      binding_generator;
+      call_generator;
       toplevel_item;
       call_need_parenthesis
     } buffer =
@@ -247,11 +250,13 @@ let extract_to_toplevel
     let parenthised_opt s =
       if call_need_parenthesis then "(" ^ s ^ ")" else s
     in
-    generated_call ~name:val_name
+    call_generator ~name:val_name
     |> Format.asprintf "%a" Pprintast.expression
     |> parenthised_opt
   in
-  let toplevel_item_span = source_sub_loc buffer toplevel_item.loc in
+  let toplevel_item_source =
+    extract_source_around_loc buffer toplevel_item.loc
+  in
   let subst_loc =
     let start_lnum =
       1 + expr.exp_loc.Location.loc_start.pos_lnum
@@ -266,8 +271,8 @@ let extract_to_toplevel
       loc_end = { expr.exp_loc.loc_end with pos_lnum = end_lnum }
     }
   in
-  let substitued_toplevel_binding =
-    Msource.substitute toplevel_item_span
+  let substituted_binding =
+    Msource.substitute toplevel_item_source
       (`Logical (Lexing.split_pos subst_loc.loc_start))
       (`Logical (Lexing.split_pos subst_loc.loc_end))
       fresh_call
@@ -278,19 +283,19 @@ let extract_to_toplevel
     match gen_binding_kind with
     | Non_recursive ->
       let fresh_let_binding =
-        generated_binding ~name:val_name ~body:expr
+        binding_generator ~name:val_name ~body:expr
         |> Format.asprintf "%a" Pprintast.structure_item
       in
-      fresh_let_binding ^ "\n" ^ substitued_toplevel_binding
+      fresh_let_binding ^ "\n" ^ substituted_binding
     | Rec_and ->
       let fresh_let_binding =
-        generated_binding ~name:val_name ~body:expr
+        binding_generator ~name:val_name ~body:expr
         |> Format.asprintf "%a" Pprintast.structure_item
       in
       let fresh_and_binding =
         "and" ^ String.drop 3 fresh_let_binding (* Sorry *)
       in
-      substitued_toplevel_binding ^ "\n" ^ fresh_and_binding
+      substituted_binding ^ "\n" ^ fresh_and_binding
   in
   let selection_range =
     let lnum =
@@ -324,8 +329,8 @@ let extract_const_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
       toplevel_item;
       name;
       gen_binding_kind = Non_recursive;
-      generated_binding = Gen.toplevel_let;
-      generated_call = Gen.ident;
+      binding_generator = Gen.toplevel_let;
+      call_generator = Gen.ident;
       call_need_parenthesis = false
     }
 
@@ -334,7 +339,7 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     | { Typedtree.exp_desc = Texp_function _; _ } -> true
     | _ -> false
   in
-  let is_module_bound path =
+  let is_module_bound_in_toplevel_env path =
     try
       let _ = Env.find_module path toplevel_item.env in
       false
@@ -346,12 +351,10 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
   let bounded_vars_stamp =
     List.map ~f:(fun p -> Path.head p |> Ident.stamp) bounded_vars
   in
-  let is_bound_var path =
-    List.exists
-      ~f:(Int.equal (Path.head path |> Ident.stamp))
-      bounded_vars_stamp
+  let is_bound_var ident =
+    List.exists ~f:(Int.equal (Ident.stamp ident)) bounded_vars_stamp
   in
-  let generated_binding, generated_call =
+  let binding_generator, call_generator =
     match bounded_vars with
     | [] when not (is_function expr) ->
       (* If the extracted expr is already a function, no need to delayed computation
@@ -365,15 +368,25 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     | None -> Default { basename = "fun_name" }
     | Some name -> Fixed name
   in
-  let remove_path_prefix expr =
+  let remove_path_prefix_of_bound_values expr =
+    (* We need to unquality bound values. Otherwise, the generated call will use
+       the qualified name even if it does not exist in the scope. Examples:
+
+      let f () =
+        let module X = struct let x = 10 end in
+        X.x
+        ^^^ If we extract this, the corresponding extracted call will be:
+
+      let fun_name1 x = X.x *)
     let mapper =
       { Tast_mapper.default with
         expr =
           (fun mapper expr ->
             match expr.Typedtree.exp_desc with
-            | Texp_ident (Pdot (path, val_name), longident, vd)
-              when is_bound_var path && is_module_bound path ->
-              let ident = { longident with txt = Longident.Lident val_name } in
+            | Texp_ident (Pdot (path, name), longident, vd)
+              when is_bound_var (Path.head path)
+                   && is_module_bound_in_toplevel_env path ->
+              let ident = { longident with txt = Longident.Lident name } in
               { expr with exp_desc = Texp_ident (path, ident, vd) }
             | _ -> Tast_mapper.default.expr mapper expr)
       }
@@ -381,30 +394,28 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     mapper.expr mapper expr
   in
   extract_to_toplevel
-    { expr = remove_path_prefix expr;
+    { expr = remove_path_prefix_of_bound_values expr;
       expr_env;
       toplevel_item;
       name;
       gen_binding_kind = binding_kind;
-      generated_binding;
-      generated_call;
+      binding_generator;
+      call_generator;
       call_need_parenthesis = true
     }
 
+(* [most_inclusive_expr ~start ~stop nodes] tries to find the most inclusive expression
+   within the range [start]-[stop] among [nodes].
+
+   [nodes] is a list of enclosings around the start position from the deepest
+   to the topelevel. It's reversed searched for an expression that fits the range. *)
 let most_inclusive_expr ~start ~stop nodes =
   let is_inside_region =
     Location_aux.included
       ~into:{ Location.loc_start = start; loc_end = stop; loc_ghost = true }
   in
   let rec select_among_child env node =
-    let select_deeper node env =
-      let node = Browse_tree.of_node ~env node in
-      Lazy.force node.t_children |> List.rev
-      |> Stdlib.List.find_map (fun node ->
-             select_among_child node.Browse_tree.t_env node.t_node)
-    in
     let node_loc = Mbrowse.node_loc node in
-
     match node with
     | Expression expr
       when node_loc.loc_ghost = false && is_inside_region node_loc ->
@@ -412,7 +423,12 @@ let most_inclusive_expr ~start ~stop nodes =
         such as [let f x = 10 + x] can be extracted and this can lead to invalid 
         code gen.      ^^^^^^^^^^ *)
       Some (expr, env)
-    | _ -> select_deeper node env
+    | _ ->
+      (* Continue to browse through the child of [node]. *)
+      let node = Browse_tree.of_node ~env node in
+      Lazy.force node.t_children |> List.rev
+      |> Stdlib.List.find_map (fun node ->
+             select_among_child node.Browse_tree.t_env node.t_node)
   in
   nodes |> List.rev
   |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
@@ -447,7 +463,6 @@ let find_associated_toplevel_item expr enclosing =
 let extract_region ~start ~stop enclosing =
   let open Option.Infix in
   most_inclusive_expr ~start ~stop enclosing >>= fun (expr, expr_env) ->
-  (* si contenu de l'expr contient une expression local alors inextrayable *)
   find_associated_toplevel_item expr enclosing >>| fun toplevel_item ->
   (expr, expr_env, toplevel_item)
 
@@ -456,24 +471,18 @@ let is_region_extractable ~start ~stop enclosing =
   | None -> false
   | Some _ -> true
 
-let substitute ~start ~stop ?extract_name buffer typedtree =
-  match typedtree with
-  | `Interface _ -> raise Not_allowed_in_interface_file
-  | `Implementation structure -> begin
-    let enclosing =
-      Mbrowse.enclosing start [ Mbrowse.of_structure structure ]
-    in
-    match extract_region ~start ~stop enclosing with
-    | None -> raise Nothing_to_do
-    | Some (expr, expr_env, toplevel_item) -> begin
-      match expr.exp_desc with
-      | Texp_constant _ ->
-        (* Special case for constant. They can't produce side effect so it's not
+let substitute ~start ~stop ?extract_name buffer structure =
+  let enclosing = Mbrowse.enclosing start [ Mbrowse.of_structure structure ] in
+  match extract_region ~start ~stop enclosing with
+  | None -> raise Nothing_to_do
+  | Some (expr, expr_env, toplevel_item) -> begin
+    match expr.exp_desc with
+    | Texp_constant _ ->
+      (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
-        extract_const_to_toplevel ?extract_name expr ~expr_env buffer
-          ~toplevel_item
-      | _ ->
-        extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
-          ~toplevel_item
-    end
+      extract_const_to_toplevel ?extract_name expr ~expr_env buffer
+        ~toplevel_item
+    | _ ->
+      extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
+        ~toplevel_item
   end

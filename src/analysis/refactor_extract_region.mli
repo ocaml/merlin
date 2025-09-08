@@ -1,6 +1,6 @@
-(** Region extractor allows extracting arbitrary expression into a fresh
-    toplevel binding. The extractor detects bounded variables inside the
-    extracted expression and performs code generation acordingly.
+(** Region extractor allows extracting arbitrary expressions into a fresh
+    toplevel binding. The extractor detects bound variables inside the extracted
+    expression and performs code generation accordingly.
 
     For instance, let's assume that we want to extract the pi value oustide of
     the body of [circle_area]:
@@ -53,9 +53,9 @@
     expression inside an [and] binding. It also substitutes the expression by a
     call to the fresh generated function with the correct parameters.
 
-    Finally, if there is no bounded variable in the expression, a trailing unit
+    Finally, if there is no bound variable in the expression, a trailing unit
     parameter is added to the generated let binding in order to preserve the
-    evaluation order. Let's extract the entire body of [x]:
+    evaluation order. Let's extract the entire body of [my_list]:
     {[
       let my_list =
         print_endline "Wild side effect!";
@@ -63,10 +63,10 @@
     ]}
 
     {[
-      let fun_name1 () =
+      let my_list () =
         print_endline "Wild side effect!";
         [ 1; 2; 3; 4 ]
-      let f = fun_name1 ()
+      let f = my_list ()
     ]}
 
     Final remarks:
@@ -89,7 +89,7 @@ exception Not_allowed_in_interface_file
 val is_region_extractable :
   start:Lexing.position -> stop:Lexing.position -> Mbrowse.t -> bool
 
-(** [substitute ~start ~stop ~extract_name buffer typedtree] tries to
+(** [substitute ~start ~stop ~extract_name buffer typedtree_structure] tries to
     extract the most inclusive expression located in interval [start-stop] into
     a fresh toplevel generated let binding.
 
@@ -109,5 +109,5 @@ val substitute :
   stop:Lexing.position ->
   ?extract_name:string ->
   Msource.t ->
-  Mtyper.typedtree ->
+  Typedtree.structure ->
   Query_protocol.substitution_result
