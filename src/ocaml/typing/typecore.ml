@@ -6395,7 +6395,7 @@ and type_let ?check ?check_strict
       (fun {vb_pat=pat} -> match pat.pat_desc with
            Tpat_var _ -> ()
          | Tpat_alias ({pat_desc=Tpat_any}, _, _, _) -> ()
-         | _ -> raise(error(pat.pat_loc, env, Illegal_letrec_pat)))
+         | _ -> raise_error(error(pat.pat_loc, env, Illegal_letrec_pat)))
       l;
   List.iter (fun vb ->
       if pattern_needs_partial_application_check vb.vb_pat then
