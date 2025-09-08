@@ -21,8 +21,9 @@ let run ?(notify = ignore) ?(debug = ignore) name =
   Unix.set_close_on_exec stdin;
   Unix.set_close_on_exec pstdout;
   Unix.set_close_on_exec stdout;
+  let ocamlmerlin_name = "ocamlmerlin-" ^ name in
   let pid =
-    Unix.create_process ("ocamlmerlin-" ^ name) [||] pstdin pstdout Unix.stderr
+    Unix.create_process ocamlmerlin_name [| ocamlmerlin_name |] pstdin pstdout Unix.stderr
   in
   Unix.close pstdout;
   Unix.close pstdin;
