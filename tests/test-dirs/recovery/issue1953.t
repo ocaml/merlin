@@ -43,7 +43,18 @@
 
   $ $MERLIN single type-enclosing -position 1:28 -verbosity 0 \
   > -filename ./main.ml < ./main.ml | jq '.value[0]'
-  null
+  {
+    "start": {
+      "line": 1,
+      "col": 28
+    },
+    "end": {
+      "line": 1,
+      "col": 29
+    },
+    "type": "unit",
+    "tail": "no"
+  }
 
   $ $MERLIN single errors \
   > -filename ./main.ml < ./main.ml | jq '.value[].message'
