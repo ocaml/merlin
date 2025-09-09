@@ -14,12 +14,16 @@ let () =
 
 module Fresh_name = struct
   (* Generate a fresh name that does not already exist in given environment. *)
-  let gen_val_name basename env =
+  let gen_val_name ~is_bound basename env =
     let rec loop n =
       let guess = basename ^ Int.to_string n in
-      if Env.bound_value guess env then succ n |> loop else guess
+      if is_bound guess env then succ n |> loop else guess
     in
     loop 1
+
+  let gen_val_name_env = gen_val_name ~is_bound:Env.bound_value
+
+  let gen_val_name_set = gen_val_name ~is_bound:String.Set.mem
 end
 
 let clean_up_for_printing expr =
@@ -62,7 +66,7 @@ module Gen = struct
   let toplevel_let ~name ~body =
     let open Ast_helper in
     let pattern = Pat.mk (Ppat_var { txt = name; loc = Location.none }) in
-    let body = clean_up_for_printing body in
+    let body = Untypeast.untype_expression body |> clean_up_for_printing in
     Str.value Nonrecursive [ Vb.mk pattern body ]
 
   (* Generates [let name () = body]. *)
@@ -79,20 +83,61 @@ module Gen = struct
   (* Generates [let name params = body]. *)
   let toplevel_function params ~name ~body =
     let open Ast_helper in
-    let params =
-      List.map
-        ~f:(fun param ->
-          let pattern =
-            Pat.construct
-              (Location.mknoloc (Longident.Lident (Path.last param)))
-              None
+    let used, params =
+      List.fold_left_map
+        ~f:(fun already_used param ->
+          let param_name = Path.last param in
+          let param_name =
+            if String.Set.mem param_name already_used then
+              let other_name =
+                match Path.flatten param with
+                | `Contains_apply -> assert false
+                | `Ok (id, path) ->
+                  Ident.name id :: path
+                  |> List.map ~f:String.lowercase_ascii
+                  |> String.concat ~sep:"_"
+              in
+              if String.Set.mem other_name already_used then
+                Fresh_name.gen_val_name_set other_name already_used
+              else other_name
+            else param_name
           in
-          { Parsetree.pparam_loc = Location.none;
-            pparam_desc = Pparam_val (Nolabel, None, pattern)
-          })
-        params
+          let fun_param =
+            let pattern =
+              Pat.construct
+                (Location.mknoloc (Longident.Lident param_name))
+                None
+            in
+            { Parsetree.pparam_loc = Location.none;
+              pparam_desc = Pparam_val (Nolabel, None, pattern)
+            }
+          in
+          (String.Set.add param_name already_used, fun_param))
+        ~init:String.Set.empty params
     in
-    let body = Exp.function_ params None (Pfunction_body body) in
+    (* traverser parsetree et renommer variable qui ont le même stamp en ça *)
+    (* Parsetree. *)
+    let _mapper =
+      { Tast_mapper.default with
+        expr =
+          (fun mapper expr ->
+            match expr.exp_desc with
+            | Texp_ident _ ->
+              (* Ident.t *)
+              expr
+              (* Longident.flatten  *)
+            | _ -> Tast_mapper.default.expr mapper expr)
+      }
+    in
+    let body =
+      { Typedtree.exp_desc = Texp_function (params, Tfunction_body body);
+        exp_loc = Location.none;
+        exp_extra = [];
+        exp_type = Types.Transient_expr.create Tnil ~level:0 ~scope:0 ~id:0;
+        exp_env = Env.empty;
+        exp_attributes = []
+      }
+    in
     toplevel_let ~name ~body
 
   let ident ~name =
@@ -101,7 +146,9 @@ module Gen = struct
   let fun_apply params ~name =
     let open Ast_helper in
     let params =
-      List.map ~f:(fun p -> (Asttypes.Nolabel, clean_up_for_printing p)) params
+      List.map
+        ~f:(fun param -> (Asttypes.Nolabel, clean_up_for_printing param))
+        params
     in
     Exp.apply (ident ~name) params
 
@@ -235,9 +282,10 @@ let analyze_expr expr expr_env ~toplevel_item =
 
 let choose_name name env =
   match name with
-  | Default { basename } -> Fresh_name.gen_val_name basename env
+  | Default { basename } -> Fresh_name.gen_val_name_env basename env
   | Fixed name ->
-    if Env.bound_value name env then Fresh_name.gen_val_name name env else name
+    if Env.bound_value name env then Fresh_name.gen_val_name_env name env
+    else name
 
 let extract_to_toplevel
     { expr;
@@ -282,7 +330,6 @@ let extract_to_toplevel
       fresh_call
     |> Msource.text
   in
-  let expr = Untypeast.untype_expression expr in
   let content =
     match gen_binding_kind with
     | Non_recursive ->
