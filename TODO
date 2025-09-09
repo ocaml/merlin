@@ -1,0 +1,13 @@
+- let binding extraction and elimination
+  if nom donné pas libre alors génréré fresh name
+
+- interdire extraction exception local
+
+- method:
+  - documenter dans mli les extractions de méthode
+  - si extraction dans classe alors ajouter une méthode
+
+- renvoyer liste des refactorings possibles à un endroit donné
+
+- pas avoir de duplicata dans les noms de paramètre
+
