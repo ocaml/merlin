@@ -36,3 +36,15 @@
   $ $MERLIN single errors \
   > -filename ./main.ml < ./main.ml | jq '.value[].message'
   "Only variables are allowed as left-hand side of let rec"
+
+  $ cat >main.ml <<'EOF'
+  > let rec (x : unit) = ignore x
+  > EOF
+
+  $ $MERLIN single type-enclosing -position 1:28 -verbosity 0 \
+  > -filename ./main.ml < ./main.ml | jq '.value[0]'
+  null
+
+  $ $MERLIN single errors \
+  > -filename ./main.ml < ./main.ml | jq '.value[].message'
+  "This kind of expression is not allowed as right-hand side of let rec"
