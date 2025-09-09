@@ -500,6 +500,23 @@ let all_commands =
           | #Msource.position as pos ->
             run buffer (Query_protocol.Locate_type pos)
       end;
+    command "locate-types"
+      ~spec:
+        [ arg "-position" "<position> Position to locate the type of"
+            (marg_position (fun pos _ -> pos))
+        ]
+      ~doc:
+        "Locate the declaration of the type of the expression. If the type is \
+         expressed via multiple identifiers, it returns the location of each \
+         identifier."
+      ~default:`None
+      begin
+        fun buffer pos ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Locate_types pos)
+      end;
     command "occurrences"
       ~spec:
         [ arg "-identifier-at" "<position> Position of the identifier"
