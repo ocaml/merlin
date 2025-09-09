@@ -179,20 +179,21 @@ let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.t list =
   | Tpat_or (l, r, _) -> find_pattern_var l @ find_pattern_var r
   | _ -> []
 
-let rec occuring_vars_path node =
-  let loop acc node =
+let occuring_vars_path node =
+  let rec loop acc node =
     match node.Browse_tree.t_node with
     | Browse_raw.Expression { exp_desc = Texp_ident (path, _, _); _ } ->
-      path :: acc
-    | Pattern pat -> find_pattern_var pat @ acc
-    | _ ->
-      Lazy.force node.t_children
-      |> List.concat_map ~f:occuring_vars_path
-      |> List.append acc
+      Path.Set.add path acc
+    | Pattern pat ->
+      let paths = find_pattern_var pat |> List.to_seq in
+      Path.Set.add_seq paths acc
+    | _ -> Lazy.force node.t_children |> List.fold_left ~f:loop ~init:acc
   in
-  loop [] node |> Path.Set.of_list |> Path.Set.elements |> List.rev
-  |> List.filter ~f:(fun path ->
-         (* TODO: fix this *)
+  loop Path.Set.empty node
+  |> Path.Set.filter (fun path ->
+         (* Filter identifier that are in Stdlib to avoid cluttering the list
+            of generated parameters.
+            TODO: there probably a more correct way to do this *)
          Ident.name (Path.head path) <> "Stdlib")
 
 let analyze_expr expr expr_env ~toplevel_item =
@@ -212,18 +213,25 @@ let analyze_expr expr expr_env ~toplevel_item =
         Path.Set.mem var_path names)
       bindings
   in
-  Browse_tree.of_node ~env:expr_env (Browse_raw.Expression expr)
-  |> occuring_vars_path
-  |> List.fold_left ~init:{ bounded_vars = []; binding_kind = Non_recursive }
-       ~f:(fun acc var_path ->
-         if is_value_unbound var_path then
-           match toplevel_item.kind with
-           | Let bindings
-             when is_recursive toplevel_item
-                  && is_one_of_value_decl var_path bindings ->
-             { acc with binding_kind = Rec_and }
-           | _ -> { acc with bounded_vars = var_path :: acc.bounded_vars }
-         else acc)
+  let vars_path =
+    Browse_tree.of_node ~env:expr_env (Browse_raw.Expression expr)
+    |> occuring_vars_path
+  in
+  let analysis =
+    Path.Set.fold
+      (fun var_path acc ->
+        if is_value_unbound var_path then
+          match toplevel_item.kind with
+          | Let bindings
+            when is_recursive toplevel_item
+                 && is_one_of_value_decl var_path bindings ->
+            { acc with binding_kind = Rec_and }
+          | _ -> { acc with bounded_vars = var_path :: acc.bounded_vars }
+        else acc)
+      vars_path
+      { bounded_vars = []; binding_kind = Non_recursive }
+  in
+  { analysis with bounded_vars = List.rev analysis.bounded_vars }
 
 let choose_name name env =
   match name with
@@ -400,12 +408,12 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
       call_need_parenthesis = true
     }
 
-(* [most_inclusive_expr ~start ~stop nodes] tries to find the most inclusive expression
+(* [largest_expr_between ~start ~stop nodes] tries to find the most inclusive expression
    within the range [start]-[stop] among [nodes].
 
    [nodes] is a list of enclosings around the start position from the deepest
    to the topelevel. It's reversed searched for an expression that fits the range. *)
-let most_inclusive_expr ~start ~stop nodes =
+let largest_expr_between ~start ~stop nodes =
   let is_inside_region =
     Location_aux.included
       ~into:{ Location.loc_start = start; loc_end = stop; loc_ghost = true }
@@ -459,7 +467,7 @@ let extract_region ~start ~stop enclosing =
   let open Option.Infix in
   (* We want to traverse [enclosing] in ascending order. *)
   let enclosing = List.rev enclosing in
-  most_inclusive_expr ~start ~stop enclosing >>= fun (expr, expr_env) ->
+  largest_expr_between ~start ~stop enclosing >>= fun (expr, expr_env) ->
   find_associated_toplevel_item expr enclosing >>| fun toplevel_item ->
   (expr, expr_env, toplevel_item)
 
