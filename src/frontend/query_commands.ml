@@ -812,6 +812,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         Inlay_hints.of_structure ~hint_let_binding ~hint_pattern_binding
           ~hint_function_params ~avoid_ghost_location ~start ~stop structure
     end
+  | Refactor_extract_region (start, stop, extract_name) ->
+    let start = Mpipeline.get_lexing_pos pipeline start
+    and stop = Mpipeline.get_lexing_pos pipeline stop in
+    let raw_source = Mpipeline.raw_source pipeline in
+    begin
+      match Mpipeline.typer_result pipeline |> Mtyper.get_typedtree with
+      | `Interface _ ->
+        raise Refactor_extract_region.Not_allowed_in_interface_file
+      | `Implementation structure ->
+        Refactor_extract_region.substitute ~start ~stop ?extract_name raw_source
+          structure
+    end
   | Signature_help { position; _ } -> (
     (* Todo: additionnal contextual information could help us provide better
        results.*)

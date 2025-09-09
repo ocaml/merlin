@@ -485,6 +485,25 @@ The result is returned as a list of:
 }
 ```
 
+### `refactor-extract-region -start <position> -stop <position> -extract-name <name>`
+
+```
+    -start <position>  Where extracted region start
+    -stop <position>  Where extracted region end
+    -extract-name <name>  Name used for the generated let binding
+```
+
+Returns the string `Nothing to do` (if extractor is not ables to select an expression to extract in the given position interval) or the following object:
+
+```javascript
+{
+  'start': position, // the start of the region to be substituted
+  'end': position, // the end of the region to be substituted
+  'content' string, // the content of the substitution
+  'selection_range': location // the location where to position the cursor for easy renaming of the generated let binding 
+}
+```
+
 ### `syntax-document -position <position>`
 
 	-position <position>  The position of the keyword to be documented
