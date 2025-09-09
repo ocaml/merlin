@@ -156,3 +156,14 @@ module T = struct
     let printer = pp_print_list pp_print_int in
     printf "%a\n" printer a_list
 end
+
+let z = 100
+
+let complicated_function x y =
+  let a = 10 in
+  let b = 11 in
+  let c = 12 in
+  let module D = struct
+    let x = 13
+  end in
+  a + b + (c * x * y) + z + D.x

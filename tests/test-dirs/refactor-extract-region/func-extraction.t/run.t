@@ -867,3 +867,38 @@ TODO: This extraction shouldn't be allowed.
     },
     "notifications": []
   }
+
+  $ $MERLIN single refactoring-extract-region -start 169:2 -end 169:31 < func.ml
+  {
+    "class": "return",
+    "value": {
+      "start": {
+        "line": 162,
+        "col": 0
+      },
+      "end": {
+        "line": 169,
+        "col": 31
+      },
+      "content": "let fun_name2 (x) (y) (a) (b) (c) (d_x) = (((a + b) + ((c * x) * y)) + z) + d_x
+  let complicated_function x y =
+    let a = 10 in
+    let b = 11 in
+    let c = 12 in
+    let module D = struct
+      let x = 13
+    end in
+    (fun_name2 x y a b c D.x)",
+      "selection-range": {
+        "start": {
+          "line": 162,
+          "col": 4
+        },
+        "end": {
+          "line": 162,
+          "col": 13
+        }
+      }
+    },
+    "notifications": []
+  }
