@@ -22,8 +22,6 @@ module Fresh_name = struct
     loop 1
 
   let gen_val_name_env = gen_val_name ~is_bound:Env.bound_value
-
-  let gen_val_name_set = gen_val_name ~is_bound:String.Set.mem
 end
 
 let clean_up_for_printing expr =
@@ -62,12 +60,14 @@ let clean_up_for_printing expr =
 module Gen = struct
   let unit = Longident.Lident "()" |> Location.mknoloc
 
-  (* Generates [let name = body]. *)
-  let toplevel_let ~name ~body =
+  let untyped_toplevel_let ~name ~body =
     let open Ast_helper in
     let pattern = Pat.mk (Ppat_var { txt = name; loc = Location.none }) in
-    let body = Untypeast.untype_expression body |> clean_up_for_printing in
-    Str.value Nonrecursive [ Vb.mk pattern body ]
+    Str.value Nonrecursive [ Vb.mk pattern (clean_up_for_printing body) ]
+
+  (* Generates [let name = body]. *)
+  let toplevel_let ~name ~body =
+    untyped_toplevel_let ~name ~body:(Untypeast.untype_expression body)
 
   (* Generates [let name () = body]. *)
   let let_unit_toplevel ~name ~body =
@@ -77,68 +77,119 @@ module Gen = struct
         pparam_desc = Pparam_val (Nolabel, None, Pat.construct unit None)
       }
     in
-    let body = Exp.function_ [ unit_param ] None (Pfunction_body body) in
-    toplevel_let ~name ~body
+    let body =
+      Exp.function_ [ unit_param ] None
+        (Pfunction_body (Untypeast.untype_expression body))
+    in
+    untyped_toplevel_let ~name ~body
+
+  module Id_map = Map.Make (struct
+    type t = string list
+
+    let compare = List.compare ~cmp:String.compare
+  end)
 
   (* Generates [let name params = body]. *)
   let toplevel_function params ~name ~body =
-    let open Ast_helper in
-    let used, params =
+    let choose_param_name ~basename ~already_used param_path =
+      let mem_value s = Id_map.exists (fun _ v -> String.equal s v) in
+      if mem_value basename already_used then
+        let other_name =
+          match Path.flatten param_path with
+          | `Contains_apply -> assert false
+          | `Ok (id, path) ->
+            Ident.name id :: path
+            |> List.map ~f:String.lowercase_ascii
+            |> String.concat ~sep:"_"
+        in
+        if mem_value other_name already_used then
+          Fresh_name.gen_val_name ~is_bound:mem_value other_name already_used
+        else other_name
+      else basename
+    in
+    let rec compute_path = function
+      | Path.Pident id -> [ `stamp (Ident.stamp id) ]
+      | Pdot (p, s) -> `string s :: compute_path p
+      | Pextra_ty (p, _) -> compute_path p
+      | Papply (p, p') -> compute_path p @ compute_path p'
+    in
+    let used_params, params =
       List.fold_left_map
         ~f:(fun already_used param ->
-          let param_name = Path.last param in
           let param_name =
-            if String.Set.mem param_name already_used then
-              let other_name =
-                match Path.flatten param with
-                | `Contains_apply -> assert false
-                | `Ok (id, path) ->
-                  Ident.name id :: path
-                  |> List.map ~f:String.lowercase_ascii
-                  |> String.concat ~sep:"_"
-              in
-              if String.Set.mem other_name already_used then
-                Fresh_name.gen_val_name_set other_name already_used
-              else other_name
-            else param_name
+            choose_param_name ~basename:(Path.last param) ~already_used param
+          in
+          let param_pattern =
+            Ast_helper.Pat.var (Location.mknoloc param_name)
           in
           let fun_param =
-            let pattern =
-              Pat.construct
-                (Location.mknoloc (Longident.Lident param_name))
-                None
-            in
             { Parsetree.pparam_loc = Location.none;
-              pparam_desc = Pparam_val (Nolabel, None, pattern)
+              pparam_desc = Pparam_val (Nolabel, None, param_pattern)
             }
           in
-          (String.Set.add param_name already_used, fun_param))
-        ~init:String.Set.empty params
+          let id =
+            match Path.flatten param with
+            | `Contains_apply -> assert false
+            | `Ok (_id, ss) -> ss
+          in
+          Format_doc.asprintf "%a | Computed: %S" Path.print param
+            (compute_path param |> List.rev
+            |> List.map ~f:(function
+                 | `stamp i -> Int.to_string i
+                 | `string s -> s)
+            |> String.concat ~sep:".")
+          |> prerr_endline;
+          (Id_map.add id param_name already_used, fun_param))
+        ~init:Id_map.empty params
     in
-    (* traverser parsetree et renommer variable qui ont le même stamp en ça *)
-    (* Parsetree. *)
-    let _mapper =
-      { Tast_mapper.default with
-        expr =
-          (fun mapper expr ->
-            match expr.exp_desc with
-            | Texp_ident _ ->
-              (* Ident.t *)
-              expr
-              (* Longident.flatten  *)
-            | _ -> Tast_mapper.default.expr mapper expr)
-      }
+
+    (* Id_map.iter
+      (fun stamp v ->
+        Format_doc.asprintf "Stamp: %s | %S"
+          (stamp |> List.rev
+          |> List.map ~f:(function
+               | `stamp i -> Int.to_string i
+               | `string s -> s)
+          |> String.concat ~sep:".")
+          v
+        |> prerr_endline)
+      used_params; *)
+
+    (* prendre résultat de Path.flatten et virer le premier ident *)
+    let foobar expr =
+      let mapper =
+        { Tast_mapper.default with
+          expr =
+            (fun mapper expr ->
+              match expr.exp_desc with
+              | Texp_ident (path, _, vd) -> begin
+                prerr_endline
+                @@ (compute_path path |> List.rev
+                   |> List.map ~f:(function
+                        | `stamp i -> Int.to_string i
+                        | `string s -> s)
+                   |> String.concat ~sep:".");
+                match Id_map.find_opt (    match Path.flatten path with
+            | `Contains_apply -> assert false
+            | `Ok (_id, ss) -> ss) used_params with
+                | Some new_name ->
+                  { expr with
+                    exp_desc =
+                      Typedtree.Texp_ident
+                        (path, Location.mknoloc (Longident.Lident new_name), vd)
+                  }
+                | _ -> expr
+              end
+              | _ -> Tast_mapper.default.expr mapper expr)
+        }
+      in
+      mapper.expr mapper expr
     in
     let body =
-      { Typedtree.exp_desc = Texp_function (params, Tfunction_body body);
-        exp_loc = Location.none;
-        exp_extra = [];
-        exp_type = Types.Transient_expr.create Tnil ~level:0 ~scope:0 ~id:0;
-        exp_env = Env.empty;
-        exp_attributes = []
-      }
+      Ast_helper.Exp.function_ params None
+        (Parsetree.Pfunction_body (Untypeast.untype_expression (foobar body)))
     in
-    toplevel_let ~name ~body
+    untyped_toplevel_let ~name ~body
 
   let ident ~name =
     Longident.Lident name |> Location.mknoloc |> Ast_helper.Exp.ident
@@ -187,7 +238,7 @@ type extraction =
     name : extraction_name;  (** Binding name of the extracted expression. *)
     gen_binding_kind : rec_flag;
     binding_generator :
-      name:string -> body:Parsetree.expression -> Parsetree.structure_item;
+      name:string -> body:Typedtree.expression -> Parsetree.structure_item;
     call_generator : name:string -> Parsetree.expression;
     call_need_parenthesis : bool
         (** Sometime we must parenthised call in order to type check. *)

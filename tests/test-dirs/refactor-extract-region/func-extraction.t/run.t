@@ -69,7 +69,7 @@
         "line": 21,
         "col": 3
       },
-      "content": "let fun_name3 (x) (y) = print_endline (x ^ (y ^ z))
+      "content": "let fun_name3 x y = print_endline (x ^ (y ^ z))
   let test x y =
     let fun_name2 = Fun.id in
     let m =
@@ -106,7 +106,7 @@
       "content": "let rec z x = (fun_name2 x)
   
   and y = 80
-  and fun_name2 (x) = (10 + y) + x",
+  and fun_name2 x = (10 + y) + x",
       "selection-range": {
         "start": {
           "line": 33,
@@ -273,7 +273,7 @@
         "line": 71,
         "col": 27
       },
-      "content": "let fun_name3 (x) (fun_name2) = [(+); (-); fun_name2] @ x
+      "content": "let fun_name3 x fun_name2 = [(+); (-); fun_name2] @ x
   let func () =
     let x = [] in
     Fun.protect
@@ -344,7 +344,7 @@
         "line": 81,
         "col": 5
       },
-      "content": "let fun_name2 (x) = x
+      "content": "let fun_name2 x = x
   let rec f = List.map Fun.id
   
   and y = [ 10; 20; 30 ]
@@ -408,7 +408,7 @@
         "line": 85,
         "col": 21
       },
-      "content": "let fun_name2 (x) = x * 2
+      "content": "let fun_name2 x = x * 2
   let f x = (fun_name2 x) + 3",
       "selection-range": {
         "start": {
@@ -436,7 +436,7 @@
         "line": 89,
         "col": 13
       },
-      "content": "let fun_name2 (x) (y) = x * y
+      "content": "let fun_name2 x y = x * y
   let f x =
     let y = 0 in
     (fun_name2 x y) + 3",
@@ -497,7 +497,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 96,
         "col": 15
       },
-      "content": "let fun_name2 (x) = x + 1
+      "content": "let fun_name2 x = x + 1
   let f x = (fun_name2 x)",
       "selection-range": {
         "start": {
@@ -525,7 +525,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 100,
         "col": 15
       },
-      "content": "let fun_name2 (x) = x + y
+      "content": "let fun_name2 x = x + y
   let f x = (fun_name2 x)",
       "selection-range": {
         "start": {
@@ -553,7 +553,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 102,
         "col": 37
       },
-      "content": "let fun_name2 (x) = List.map (fun y -> y + 1) x
+      "content": "let fun_name2 x = List.map (fun y -> y + 1) x
   let f x = (fun_name2 x)",
       "selection-range": {
         "start": {
@@ -581,7 +581,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 106,
         "col": 7
       },
-      "content": "let fun_name2 (y) = y + 2
+      "content": "let fun_name2 y = y + 2
   let f y =
     let y = y + 1 in
     (fun_name2 y)",
@@ -639,7 +639,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 114,
         "col": 15
       },
-      "content": "let fun_name2 (x) (y) = x * y
+      "content": "let fun_name2 x y = x * y
   let f x =
     let module M = struct
       let y = 0
@@ -671,7 +671,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 120,
         "col": 11
       },
-      "content": "let z1 (x) (y) = x + y
+      "content": "let z1 x y = x + y
   let f =
     let x = 1 in
     let y = 2 in
@@ -703,7 +703,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 133,
         "col": 7
       },
-      "content": "let pp_markup (bold_tag) =
+      "content": "let pp_markup bold_tag =
     fun ppf markup ->
       match markup with
       | Text txt -> pp_print_string ppf txt
@@ -740,7 +740,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 146,
         "col": 26
       },
-      "content": "let add (x) (z) (y) = ((x * z) * y) + A.a
+      "content": "let add x z y = ((x * z) * y) + A.a
   let f x =
     let module Empty = struct end in
     let module M = struct
@@ -842,7 +842,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 133,
         "col": 7
       },
-      "content": "let fun_name2 (ppf) (doc) (bold_tag) =
+      "content": "let fun_name2 ppf doc bold_tag =
     fprintf ppf \"%a\"
       (pp_print_list ?pp_sep:None
          (fun ppf markup ->
@@ -880,7 +880,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 169,
         "col": 31
       },
-      "content": "let fun_name2 (x) (y) (a) (b) (c) (d_x) = (((a + b) + ((c * x) * y)) + z) + d_x
+      "content": "let fun_name2 x y a b c d_x = (((a + b) + ((c * x) * y)) + z) + d_x
   let complicated_function x y =
     let a = 10 in
     let b = 11 in
@@ -902,3 +902,5 @@ TODO: This extraction shouldn't be allowed.
     },
     "notifications": []
   }
+
+  $ $MERLIN single refactoring-extract-region -start 179:2 -end 179:33 < func.ml
