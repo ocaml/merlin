@@ -397,7 +397,9 @@ let json_of_locate_types (resp : Locate_types_result.t) =
     in
     `List (`String variant_name :: payload)
   in
-  let json_of_node_data : Locate_types_result.node_data -> _ = function
+  let json_of_node_data :
+      Locate_types_result.(type_ref_payload Tree.node_data) ->
+      _ = function
     | Arrow -> `List [ `String "Arrow" ]
     | Tuple -> `List [ `String "Tuple" ]
     | Object -> `List [ `String "Object" ]
@@ -411,7 +413,7 @@ let json_of_locate_types (resp : Locate_types_result.t) =
             ]
         ]
   in
-  let rec json_of_type_tree { Locate_types_result.data; children } =
+  let rec json_of_type_tree { Locate_types_result.Tree.data; children } =
     `Assoc
       [ ("data", json_of_node_data data);
         ("children", `List (List.map ~f:json_of_type_tree children))

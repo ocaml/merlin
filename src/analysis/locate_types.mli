@@ -1,12 +1,6 @@
 module Type_tree : sig
-  type node_data =
-    | Arrow
-    | Tuple
-    | Poly_variant
-    | Object
-    | Type_ref of { path : Path.t; ty : Types.type_expr }
-
-  type t = { data : node_data; children : t list }
+  type type_ref_payload = { path : Path.t; ty : Types.type_expr }
+  type t = type_ref_payload Query_protocol.Locate_types_result.Tree.t
 end
 
 (** Convert a type into a simplified tree representation. *)

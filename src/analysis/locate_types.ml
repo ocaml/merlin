@@ -1,14 +1,8 @@
 open Std
 
 module Type_tree = struct
-  type node_data =
-    | Arrow
-    | Tuple
-    | Poly_variant
-    | Object
-    | Type_ref of { path : Path.t; ty : Types.type_expr }
-
-  type t = { data : node_data; children : t list }
+  type type_ref_payload = { path : Path.t; ty : Types.type_expr }
+  type t = type_ref_payload Query_protocol.Locate_types_result.Tree.t
 end
 
 let rec flatten_arrow ret_ty =
