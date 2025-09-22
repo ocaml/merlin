@@ -101,6 +101,14 @@ module Json = struct
     include Ppx_yojson_conv_lib.Yojson_conv
   end
 
+  module E = struct
+    let foobar = 10
+    let foobaz = 11
+    let foofoo = 12
+
+    let x = fo
+  end
+
   module O = struct
     let ( <|> ) c1 c2 json =
       match c1 json with
@@ -49166,6 +49174,14 @@ module UnregistrationParams = struct
 
   let _ = t_of_yojson
 
+  type bencht =
+    | Foo
+    | Bar
+    | Baz
+    | BarBaz
+    | FooBarBaz of int
+    | BarBar of (string, float) result option
+
   let yojson_of_t =
     (function
      | { unregisterations = v_unregisterations } ->
@@ -50777,6 +50793,8 @@ module WorkspaceFoldersInitializeParams = struct
     { workspaceFolders }
 end
 
+let f (x : int option) = x
+
 module WorkspaceSymbol = struct
   type t =
     { containerName : string Json.Nullable_option.t;
@@ -51129,6 +51147,11 @@ module WorkspaceSymbolParams = struct
     { partialResultToken; query; workDoneToken }
 end
 
+module R = struct
+  let xyzabc = `Foo
+  let r = xy
+end
+
 module WorkspaceSymbolRegistrationOptions = struct
   type t =
     { resolveProvider : bool Json.Nullable_option.t;
@@ -51291,3 +51314,6 @@ module Locations = struct
         `LocationLink (List.map ~f:LocationLink.t_of_yojson (x :: xs)))
     | _ -> Json.error "Locations.t" json
 end
+
+let g (x : UnregistrationParams.bencht) = x
+let h = UnregistrationParams.B
