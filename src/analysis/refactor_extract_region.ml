@@ -471,7 +471,7 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
     | Some name -> Fixed name
   in
   let remove_path_prefix_of_bound_values expr =
-    (* We need to unquality bound values. Otherwise, the generated call will use
+    (* We need to unqualify bound values. Otherwise, the generated call will use
        the qualified name even if it does not exist in the scope. Examples:
 
       let f () =

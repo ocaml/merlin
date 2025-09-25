@@ -485,11 +485,11 @@ The result is returned as a list of:
 }
 ```
 
-### `refactor-extract-region -start <position> -stop <position> -extract-name <name>`
+### `refactor-extract-region -start <position> -end <position> -extract-name <name>`
 
 ```
     -start <position>  Where extracted region start
-    -stop <position>  Where extracted region end
+    -end <position>  Where extracted region end
     -extract-name <name>  Name used for the generated let binding
 ```
 
