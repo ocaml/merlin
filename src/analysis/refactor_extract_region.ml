@@ -92,8 +92,8 @@ module Gen = struct
   (* Generates [let name params = body]. *)
   let toplevel_function params ~name ~body =
     let choose_param_name ~basename ~already_used param_path =
-      let mem_value s = Id_map.exists (fun _ v -> String.equal s v) in
-      if mem_value basename already_used then
+      let param_name = Path.last param_path in
+      if String.Set.mem param_name already_used then
         let other_name =
           match Path.flatten param_path with
           | `Contains_apply -> assert false
@@ -102,18 +102,13 @@ module Gen = struct
             |> List.map ~f:String.lowercase_ascii
             |> String.concat ~sep:"_"
         in
-        if mem_value other_name already_used then
-          Fresh_name.gen_val_name ~is_bound:mem_value other_name already_used
+        if String.Set.mem other_name already_used then
+          Fresh_name.gen_val_name ~is_bound:String.Set.mem other_name
+            already_used
         else other_name
       else basename
     in
-    let rec compute_path = function
-      | Path.Pident id -> [ `stamp (Ident.stamp id) ]
-      | Pdot (p, s) -> `string s :: compute_path p
-      | Pextra_ty (p, _) -> compute_path p
-      | Papply (p, p') -> compute_path p @ compute_path p'
-    in
-    let used_params, params =
+    let _used_params, params =
       List.fold_left_map
         ~f:(fun already_used param ->
           let param_name =
@@ -127,67 +122,12 @@ module Gen = struct
               pparam_desc = Pparam_val (Nolabel, None, param_pattern)
             }
           in
-          let id =
-            match Path.flatten param with
-            | `Contains_apply -> assert false
-            | `Ok (_id, ss) -> ss
-          in
-          Format_doc.asprintf "%a | Computed: %S" Path.print param
-            (compute_path param |> List.rev
-            |> List.map ~f:(function
-                 | `stamp i -> Int.to_string i
-                 | `string s -> s)
-            |> String.concat ~sep:".")
-          |> prerr_endline;
-          (Id_map.add id param_name already_used, fun_param))
-        ~init:Id_map.empty params
-    in
-
-    (* Id_map.iter
-      (fun stamp v ->
-        Format_doc.asprintf "Stamp: %s | %S"
-          (stamp |> List.rev
-          |> List.map ~f:(function
-               | `stamp i -> Int.to_string i
-               | `string s -> s)
-          |> String.concat ~sep:".")
-          v
-        |> prerr_endline)
-      used_params; *)
-
-    (* prendre résultat de Path.flatten et virer le premier ident *)
-    let foobar expr =
-      let mapper =
-        { Tast_mapper.default with
-          expr =
-            (fun mapper expr ->
-              match expr.exp_desc with
-              | Texp_ident (path, _, vd) -> begin
-                prerr_endline
-                @@ (compute_path path |> List.rev
-                   |> List.map ~f:(function
-                        | `stamp i -> Int.to_string i
-                        | `string s -> s)
-                   |> String.concat ~sep:".");
-                match Id_map.find_opt (    match Path.flatten path with
-            | `Contains_apply -> assert false
-            | `Ok (_id, ss) -> ss) used_params with
-                | Some new_name ->
-                  { expr with
-                    exp_desc =
-                      Typedtree.Texp_ident
-                        (path, Location.mknoloc (Longident.Lident new_name), vd)
-                  }
-                | _ -> expr
-              end
-              | _ -> Tast_mapper.default.expr mapper expr)
-        }
-      in
-      mapper.expr mapper expr
+          (String.Set.add param_name already_used, fun_param))
+        ~init:String.Set.empty params
     in
     let body =
       Ast_helper.Exp.function_ params None
-        (Parsetree.Pfunction_body (Untypeast.untype_expression (foobar body)))
+        (Parsetree.Pfunction_body (Untypeast.untype_expression body))
     in
     untyped_toplevel_let ~name ~body
 
