@@ -3,6 +3,8 @@ unreleased
   + merlin library
     - Fix `merlin_reader` for OpenBSD (#1956)
     - Improve recovery of mutually recursive definitions (#1962, #1963, fixes #1953)
+  + vim plugin
+    - Fix error when `:MerlinOccurrencesProjectWide` fails to gather code previews (#1970)
 
 merlin 5.5
 ==========
