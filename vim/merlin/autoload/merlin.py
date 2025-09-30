@@ -548,7 +548,8 @@ def with_text_previews(occurs):
         if 'file' not in oc: # Current buffer
             text = vim.current.buffer[lnum - 1]
         else:
-            text = preview_lines_by_file[oc['file']][lnum]
+            buf = preview_lines_by_file.get(oc['file'], [])
+            text = buf[lnum] if lnum < len(buf) else ""
         yield { "text": text, **oc }
 
 # Occurrences
