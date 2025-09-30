@@ -2,7 +2,7 @@ unreleased
 ==========
 
   + merlin library
-    - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1546)
+    - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1948)
     - Fix `merlin_reader` for OpenBSD (#1956)
 
 merlin 5.5
