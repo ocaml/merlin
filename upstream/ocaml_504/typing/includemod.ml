@@ -106,6 +106,7 @@ module Error = struct
 
   and signature_symptom = {
     env: Env.t;
+    subst: Subst.t;
     missings: signature_item list;
     incompatibles: (Ident.t * sigitem_symptom) list;
     oks: (int * module_coercion) list;
@@ -759,6 +760,7 @@ and signatures ~core ~direction ~loc env subst sig1 sig2 mod_shape =
             | missings, incompatibles, runtime_coercions, leftovers ->
                 Error {
                   Error.env=new_env;
+                  subst;
                   missings;
                   incompatibles;
                   oks=runtime_coercions;
@@ -1214,7 +1216,8 @@ module Functor_inclusion_diff = struct
         in
         expand_params { st with env; subst }
 
-  let diff env (l1,res1) (l2,_) =
+  type inclusion_env = { i_env:Env.t; i_subst:Subst.t }
+  let diff {i_env=env; i_subst=subst} (l1,res1) (l2,_) =
     let module Compute = Diff.Left_variadic(struct
         let test st mty1 mty2 =
           let loc = Location.none in
@@ -1231,7 +1234,7 @@ module Functor_inclusion_diff = struct
     let param1 = Array.of_list l1 in
     let param2 = Array.of_list l2 in
     let state =
-      { env; subst = Subst.identity; res = keep_expansible_param res1}
+      { env; subst; res = keep_expansible_param res1}
     in
     Compute.diff state param1 param2
 
