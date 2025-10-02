@@ -639,7 +639,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 114,
         "col": 15
       },
-      "content": "let fun_name2 x y = x * y
+      "content": "let fun_name2 x m_y = x * m_y
   let f x =
     let module M = struct
       let y = 0
@@ -740,7 +740,7 @@ TODO: This extraction shouldn't be allowed.
         "line": 146,
         "col": 26
       },
-      "content": "let add x z y = ((x * z) * y) + A.a
+      "content": "let add x m_z m_mm_y = ((x * m_z) * m_mm_y) + A.a
   let f x =
     let module Empty = struct end in
     let module M = struct

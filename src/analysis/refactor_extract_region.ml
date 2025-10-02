@@ -89,19 +89,20 @@ module Gen = struct
     let compare = List.compare ~cmp:String.compare
   end)
 
+  let param_name_of_path path =
+    match Path.flatten path with
+    | `Contains_apply -> "_functor_paths_not_handled"
+    | `Ok (id, path) ->
+      Ident.name id :: path
+      |> List.map ~f:String.lowercase_ascii
+      |> String.concat ~sep:"_"
+
   (* Generates [let name params = body]. *)
   let toplevel_function params ~name ~body =
     let choose_param_name ~basename ~already_used param_path =
       let param_name = Path.last param_path in
       if String.Set.mem param_name already_used then
-        let other_name =
-          match Path.flatten param_path with
-          | `Contains_apply -> assert false
-          | `Ok (id, path) ->
-            Ident.name id :: path
-            |> List.map ~f:String.lowercase_ascii
-            |> String.concat ~sep:"_"
-        in
+        let other_name = param_name_of_path param_path in
         if String.Set.mem other_name already_used then
           Fresh_name.gen_val_name ~is_bound:String.Set.mem other_name
             already_used
@@ -112,7 +113,8 @@ module Gen = struct
       List.fold_left_map
         ~f:(fun already_used param ->
           let param_name =
-            choose_param_name ~basename:(Path.last param) ~already_used param
+            choose_param_name ~basename:(param_name_of_path param) ~already_used
+              param
           in
           let param_pattern =
             Ast_helper.Pat.var (Location.mknoloc param_name)
@@ -235,7 +237,7 @@ let occuring_vars_path node =
          Ident.name (Path.head path) <> "Stdlib")
 
 let analyze_expr expr expr_env ~toplevel_item =
-  let is_value_unbound path =
+  let is_value_bound_locally path =
     let is_bound path env =
       try
         let _ = Env.find_value path env in
@@ -258,7 +260,7 @@ let analyze_expr expr expr_env ~toplevel_item =
   let analysis =
     Path.Set.fold
       (fun var_path acc ->
-        if is_value_unbound var_path then
+        if is_value_bound_locally var_path then
           match toplevel_item.kind with
           | Let bindings
             when is_recursive toplevel_item
@@ -428,6 +430,7 @@ let extract_expr_to_toplevel ?extract_name expr ~expr_env ~toplevel_item =
             | Texp_ident (Pdot (path, name), longident, vd)
               when is_bound_var (Path.head path)
                    && is_module_bound_in_toplevel_env path ->
+              let name = Gen.param_name_of_path (Pdot (path, name)) in
               let ident = { longident with txt = Longident.Lident name } in
               { expr with exp_desc = Texp_ident (path, ident, vd) }
             | _ -> Tast_mapper.default.expr mapper expr)
@@ -462,7 +465,7 @@ let largest_expr_between ~start ~stop nodes =
     | Expression expr
       when node_loc.loc_ghost = false && is_inside_region node_loc ->
       (* We filter expression that have a ghost location. Otherwise, expression
-        such as [let f x = 10 + x] can be extracted and this can lead to invalid 
+        such as [let f x = 10 + x] can be extracted and this can lead to invalid
         code gen.      ^^^^^^^^^^ *)
       Some (expr, env)
     | _ ->
