@@ -1,5 +1,7 @@
 unreleased
 ==========
+  + merlin binary
+    - Add `locate-types` command (#1951)
   + merlin library
     - Fix `merlin_reader` for OpenBSD (#1956)
     - Improve recovery of mutually recursive definitions (#1962, #1963, fixes #1953)
@@ -30,7 +32,6 @@ Tue Jun 24 16:10:42 CEST 2025
       ocaml/ocaml-lsp#1489)
     - Reproduce and fix a handful of jump-to-definition (locate) issues  (#1930,
       fixes #1580 and #1588, workaround for #1934)
-    - Add `locate-types` command (#1951)
   + ocaml-index
     - Improve the granularity of index reading by segmenting the marshalization
       of the involved data-structures. (#1889)
