@@ -1,4 +1,4 @@
-FIXME: `x` is used instead of `d_x` in the extracted function body!
+`x` is used instead of `d_x` in the extracted function body!
 Should be: (x * y) + d_x
 
   $ $MERLIN single refactoring-extract-region -start 7:2 -end 7:15 < foo.ml
@@ -13,7 +13,7 @@ Should be: (x * y) + d_x
         "line": 7,
         "col": 15
       },
-      "content": "let fun_name1 x y d_x = (x * y) + x
+      "content": "let fun_name1 x y d_x = (x * y) + d_x
   let complicated_function x y =
     let module D = struct
       let x = 13
@@ -33,7 +33,7 @@ Should be: (x * y) + d_x
     "notifications": []
   }
 
-FIXME: the extracted function body is wrong. 
+The extracted function body is wrong. 
 Should be: d_x + x + m_x
 
   $ $MERLIN single refactoring-extract-region -start 17:2 -end 17:16 < foo.ml
@@ -48,7 +48,7 @@ Should be: d_x + x + m_x
         "line": 17,
         "col": 15
       },
-      "content": "let fun_name1 x d_x m_x = (x + x) + x
+      "content": "let fun_name1 x d_x m_x = (d_x + x) + m_x
   let f () =
     let module D = struct
       let x = 42
