@@ -1,7 +1,7 @@
 FIXME: `x` is used instead of `d_x` in the extracted function body!
-Should be: (((a + b) + ((c * x) * y)) + z) + d_x
+Should be: (x * y) + d_x
 
-  $ $MERLIN single refactoring-extract-region -start 10:2 -end 10:31 < foo.ml
+  $ $MERLIN single refactoring-extract-region -start 7:2 -end 7:15 < foo.ml
   {
     "class": "return",
     "value": {
@@ -10,18 +10,15 @@ Should be: (((a + b) + ((c * x) * y)) + z) + d_x
         "col": 0
       },
       "end": {
-        "line": 10,
-        "col": 31
+        "line": 7,
+        "col": 15
       },
-      "content": "let fun_name1 x y a b c d_x = (((a + b) + ((c * x) * y)) + z) + x
+      "content": "let fun_name1 x y d_x = (x * y) + x
   let complicated_function x y =
-    let a = 10 in
-    let b = 11 in
-    let c = 12 in
     let module D = struct
       let x = 13
     end in
-    (fun_name1 x y a b c D.x)",
+    (fun_name1 x y D.x)",
       "selection-range": {
         "start": {
           "line": 3,
@@ -37,22 +34,21 @@ Should be: (((a + b) + ((c * x) * y)) + z) + d_x
   }
 
 FIXME: the extracted function body is wrong. 
-Should be: a + b + c + d_x + x + (m_x + a)
+Should be: d_x + x + m_x
 
-  $ $MERLIN single refactoring-extract-region -start 20:2 -end 20:33 < foo.ml
+  $ $MERLIN single refactoring-extract-region -start 17:2 -end 17:16 < foo.ml
   {
     "class": "return",
     "value": {
       "start": {
-        "line": 12,
+        "line": 9,
         "col": 0
       },
       "end": {
-        "line": 20,
-        "col": 33
+        "line": 17,
+        "col": 15
       },
-      "content": "let fun_name1 a b c x d_x m_x =
-    ((((a + b) + c) + x) + x) + (let open M in x + a)
+      "content": "let fun_name1 x d_x m_x = (x + x) + x
   let f () =
     let module D = struct
       let x = 42
@@ -60,15 +56,15 @@ Should be: a + b + c + d_x + x + (m_x + a)
     let module M = struct
       let x = 1
     end in
-    let a, b, c, x = (1, 2, 3, 4) in
-    (fun_name1 a b c x D.x M.x)",
+    let x = 10 in
+    (fun_name1 x D.x M.x)",
       "selection-range": {
         "start": {
-          "line": 12,
+          "line": 9,
           "col": 4
         },
         "end": {
-          "line": 12,
+          "line": 9,
           "col": 13
         }
       }
