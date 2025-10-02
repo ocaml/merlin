@@ -94,7 +94,8 @@ type merlin =
     flags_applied : string list with_workdir list;
     failures : string list;
     extension_to_reader : (string * string) list;
-    cache_lifespan : int
+    cache_lifespan : int;
+    use_typer_cache : bool
   }
 
 let dump_merlin x =
@@ -373,7 +374,10 @@ let merlin_flags =
     ( (* Legacy support for janestreet. Ignored. To be removed soon. *)
       "-attributes-allowed",
       Marg.unit_ignore,
-      " DEPRECATED" )
+      " DEPRECATED" );
+    ( "-use-typer-cache",
+      Marg.bool (fun b merlin -> { merlin with use_typer_cache = b }),
+      "Whether to enable the typer cache. Default to true." )
   ]
 
 let query_flags =
@@ -682,7 +686,8 @@ let initial =
         flags_applied = [];
         failures = [];
         extension_to_reader = [ (".re", "reason"); (".rei", "reason") ];
-        cache_lifespan = 5
+        cache_lifespan = 5;
+        use_typer_cache = true
       };
     query =
       { filename = "*buffer*";
