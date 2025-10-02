@@ -565,6 +565,35 @@ let all_commands =
           | Some action, (#Msource.position as pos) ->
             run buffer (Query_protocol.Refactor_open (action, pos))
       end;
+    command "refactoring-extract-region" ~doc:"extract a region as function"
+      ~spec:
+        [ arg "-start" "<position> Where extracted region start"
+            (marg_position (fun start (_start, stop, name) ->
+                 (start, stop, name)));
+          arg "-end" "<position> Where extracted region end"
+            (marg_position (fun stop (start, _stop, name) ->
+                 (start, stop, name)));
+          optional "-extract-name"
+            "<name> Name used by the generated let binding"
+            (Marg.param "string" (fun name (start, stop, _name) ->
+                 let name =
+                   match String.trim name with
+                   | "" -> None
+                   | n -> Some n
+                 in
+                 (start, stop, name)))
+        ]
+      ~default:(`None, `None, None)
+      begin
+        fun buffer (start, stop, name) ->
+          match (start, stop, name) with
+          | `None, `None, _ -> failwith "-start <pos> and -end are mandatory"
+          | `None, _, _ -> failwith "-start <pos> is mandatory"
+          | _, `None, _ -> failwith "-end <pos> is mandatory"
+          | (#Msource.position as start), (#Msource.position as stop), name ->
+            run buffer
+              (Query_protocol.Refactor_extract_region (start, stop, name))
+      end;
     command "search-by-polarity"
       ~doc:"search-by-polarity -position pos -query ident\n\tTODO"
       ~spec:

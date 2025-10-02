@@ -355,7 +355,7 @@ val open_pers_signature: string -> t -> (t, [`Not_found]) result
 val remove_last_open: Path.t -> t -> t option
 
 (* Insertion by name *)
-
+(*  *)
 val enter_value:
     ?check:(string -> Warnings.t) ->
     string -> value_description -> t -> Ident.t * t
