@@ -7,6 +7,7 @@ unreleased
     - Improve recovery of mutually recursive definitions (#1962, #1963, fixes #1953)
   + vim plugin
     - Fix error when `:MerlinOccurrencesProjectWide` fails to gather code previews (#1970)
+    - Add more short-paths tests cases (#1904)
 
 merlin 5.5
 ==========
@@ -37,7 +38,6 @@ Tue Jun 24 16:10:42 CEST 2025
       of the involved data-structures. (#1889)
   + test suite
     - Add a test case illustrating wrong open order proposed in issue #1900. (#1901)
-    - Add more short-paths tests cases (#1904)
 
 merlin 5.4.1
 ============
