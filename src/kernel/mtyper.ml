@@ -69,8 +69,9 @@ let get_cache config =
     let index = Stamped_hashtable.create !index_changelog 256 in
     { env; snapshot; ident_stamp; uid_stamp; value = None; index }
 
-let return_and_cache status =
-  cache := Some { status with value = Some status.value };
+let return_and_cache config status =
+  if config.Mconfig.merlin.Mconfig.use_typer_cache then
+    cache := Some { status with value = Some status.value };
   status
 
 type result =
@@ -286,7 +287,8 @@ let type_implementation config caught position shared parsetree =
     let value =
       `Implementation (List.rev_append prefix (preprocessed_suffix @ suffix))
     in
-    return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index }
+    return_and_cache config
+      { env; snapshot; ident_stamp; uid_stamp; value; index }
   in
   try
     match position with
@@ -358,7 +360,8 @@ let type_interface config caught position shared parsetree =
     let value =
       `Interface (List.rev_append prefix (preprocessed_suffix @ suffix))
     in
-    return_and_cache { env; snapshot; ident_stamp; uid_stamp; value; index }
+    return_and_cache config
+      { env; snapshot; ident_stamp; uid_stamp; value; index }
   in
   try
     match position with
