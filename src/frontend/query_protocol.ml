@@ -133,6 +133,26 @@ type occurrences_status =
 
 type occurrence = { loc : Location.t; is_stale : bool }
 
+module Locate_types_result = struct
+  module Tree = struct
+    type 'a node_data = Arrow | Tuple | Object | Poly_variant | Type_ref of 'a
+
+    type 'a t = { data : 'a node_data; children : 'a t list }
+  end
+
+  type type_ref_payload =
+    { type_ : string;
+      result :
+        [ `Found of string option * Lexing.position
+        | `Builtin of string
+        | `Not_in_env of string
+        | `File_not_found of string
+        | `Not_found of string * string option ]
+    }
+
+  type t = Success of type_ref_payload Tree.t | Invalid_context
+end
+
 type _ t =
   | Type_expr (* *) : string * Msource.position -> string t
   | Type_enclosing (* *) :
@@ -182,6 +202,7 @@ type _ t =
          | `Not_found of string * string option
          | `At_origin ]
          t
+  | Locate_types : Msource.position -> Locate_types_result.t t
   | Locate (* *) :
       string option * [ `ML | `MLI ] * Msource.position
       -> [ `Found of string option * Lexing.position
