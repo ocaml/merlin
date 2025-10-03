@@ -1,5 +1,7 @@
-unreleased
+merlin 5.6
 ==========
+Tue Jun 24 17:10:42 CEST 2025
+
   + merlin binary
     - Add `locate-types` command (#1951)
   + merlin library
