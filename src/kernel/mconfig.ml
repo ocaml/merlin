@@ -377,7 +377,7 @@ let merlin_flags =
       " DEPRECATED" );
     ( "-use-typer-cache",
       Marg.bool (fun b merlin -> { merlin with use_typer_cache = b }),
-      "Whether to enable the typer cache. Default to true." )
+      "Whether to enable the typer cache. Defaults to true." )
   ]
 
 let query_flags =
