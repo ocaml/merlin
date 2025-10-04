@@ -4,7 +4,7 @@ name: Check ocaml-lsp compat
 # events but only for the master branch
 on:
   push:
-    branches: [ 504 ]
+    branches: [ main ]
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -14,7 +14,7 @@ on:
       - 'vim/**'
       - '**/emacs-lint.yml'
   pull_request:
-    branches: [ 504 ]
+    branches: [ main ]
     paths-ignore:
       - '**.md'
       - '**.txt'
