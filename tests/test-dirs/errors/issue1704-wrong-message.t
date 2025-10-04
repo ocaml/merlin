@@ -19,7 +19,7 @@ due to it's own type recovery.
         },
         "end": {
           "line": 2,
-          "col": 10
+          "col": 8
         },
         "type": "typer",
         "sub": [],
@@ -33,7 +33,7 @@ due to it's own type recovery.
         },
         "end": {
           "line": 4,
-          "col": 15
+          "col": 13
         },
         "type": "typer",
         "sub": [],

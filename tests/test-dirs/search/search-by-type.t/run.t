@@ -200,11 +200,11 @@
       {
         "file": "either.mli",
         "start": {
-          "line": 86,
+          "line": 100,
           "col": 0
         },
         "end": {
-          "line": 87,
+          "line": 101,
           "col": 73
         },
         "name": "Either.map",

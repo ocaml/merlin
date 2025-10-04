@@ -94,7 +94,7 @@ Merlin reports an error when a hidden dependency is directly used
       },
       "end": {
         "line": 1,
-        "col": 11
+        "col": 9
       },
       "type": "typer",
       "sub": [],

@@ -33,7 +33,7 @@ let dummy_type_scheme desc =
 
 let print_constructor c =
   let open Types in
-  match c.cstr_args with
+  match c.Data_types.cstr_args with
   | [] ->
     Out_type.tree_of_typexp Type_scheme
       (dummy_type_scheme (get_desc c.cstr_res))
@@ -41,7 +41,7 @@ let print_constructor c =
     let desc =
       Tarrow
         ( Ast_helper.no_label,
-          dummy_type_scheme (Ttuple args),
+          dummy_type_scheme (Ttuple (List.map ~f:(fun a -> None, a) args)),
           c.cstr_res,
           commu_ok )
     in
@@ -76,11 +76,11 @@ let signature_of_env ?(ignore_extensions = true) env =
     | Env_type (_, i, t) -> Some (Sig_type (i, t, Trec_not, Exported))
     (* Texp_first == bluff, FIXME *)
     | Env_extension (_, i, e) -> begin
-      match e.ext_type_path with
-      | Path.Pident id when Ident.name id = "exn" ->
-        Some (Sig_typext (i, e, Text_exception, Exported))
-      | _ -> Some (Sig_typext (i, e, Text_first, Exported))
-    end
+        match e.ext_type_path with
+        | Path.Pident id when Ident.name id = "exn" ->
+          Some (Sig_typext (i, e, Text_exception, Exported))
+        | _ -> Some (Sig_typext (i, e, Text_first, Exported))
+      end
     | Env_module (_, i, pr, m) ->
       Some (Sig_module (i, pr, m, Trec_not, Exported))
     | Env_modtype (_, i, m) -> Some (Sig_modtype (i, m, Exported))
@@ -141,7 +141,7 @@ let dump_browse node =
   `List (append Env.empty node [])
 
 let annotate_tail_calls (ts : Mbrowse.t) :
-    (Env.t * Browse_raw.node * Query_protocol.is_tail_position) list =
+  (Env.t * Browse_raw.node * Query_protocol.is_tail_position) list =
   let is_one_of candidates node = List.mem node ~set:candidates in
   let find_entry_points candidates (env, node) =
     (Tail_analysis.entry_points node, (env, node, is_one_of candidates node))
@@ -155,9 +155,9 @@ let annotate_tail_calls (ts : Mbrowse.t) :
   let _, tail_positions = List.fold_n_map entry_points ~f:propagate ~init:[] in
   List.map
     ~f:(fun (env, node, tail) ->
-      ( env,
-        node,
-        if not tail then `No
-        else if Tail_analysis.is_call node then `Tail_call
-        else `Tail_position ))
+        ( env,
+          node,
+          if not tail then `No
+          else if Tail_analysis.is_call node then `Tail_call
+          else `Tail_position ))
     tail_positions

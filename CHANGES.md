@@ -1,12 +1,13 @@
 merlin 5.6
 ==========
-Tue Jun 24 17:10:42 CEST 2025
+Sat Oct 04 15:10:42 CEST 2025
 
   + merlin binary
     - Add `locate-types` command (#1951)
   + merlin library
     - Fix `merlin_reader` for OpenBSD (#1956)
     - Improve recovery of mutually recursive definitions (#1962, #1963, fixes #1953)
+    - Support for OCaml 5.4 (#1974)
   + vim plugin
     - Fix error when `:MerlinOccurrencesProjectWide` fails to gather code previews (#1970)
     - Add more short-paths tests cases (#1904)

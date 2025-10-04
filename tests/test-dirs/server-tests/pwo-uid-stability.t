@@ -13,8 +13,9 @@
   $ $OCAMLC -c -bin-annot -bin-annot-occurrences lib.ml main.ml
   $ ocaml-index aggregate lib.cmt main.cmt -o .ocaml-index
   $ ocaml-index dump .ocaml-index
-  2 uids:
-  {uid: Lib.0; locs: "x": File "lib.ml", line 1, characters 4-5
+  3 uids:
+  {uid: Lib; locs: "Lib": File "main.ml", line 1, characters 9-12
+   uid: Lib.0; locs: "x": File "lib.ml", line 1, characters 4-5
    uid: Lib.1; locs:
      "z": File "lib.ml", line 3, characters 4-5;
      "Lib.z": File "main.ml", line 1, characters 9-14
@@ -62,8 +63,9 @@ Now we insert a def before z:
   $ $OCAMLC -c -bin-annot -bin-annot-occurrences lib.ml main.ml
   $ ocaml-index aggregate lib.cmt main.cmt -o .ocaml-index
   $ ocaml-index dump .ocaml-index
-  3 uids:
-  {uid: Lib.0; locs: "x": File "lib.ml", line 1, characters 4-5
+  4 uids:
+  {uid: Lib; locs: "Lib": File "main.ml", line 1, characters 9-12
+   uid: Lib.0; locs: "x": File "lib.ml", line 1, characters 4-5
    uid: Lib.1; locs: "y": File "lib.ml", line 2, characters 4-5
    uid: Lib.2; locs:
      "z": File "lib.ml", line 3, characters 4-5;
@@ -111,8 +113,9 @@ We are not missing the occurrence in main.ml
   $ $OCAMLC -c -bin-annot -bin-annot-occurrences lib.ml main.ml
   $ ocaml-index aggregate lib.cmt main.cmt -o .ocaml-index
   $ ocaml-index dump .ocaml-index
-  2 uids:
-  {uid: Lib.0; locs: "x": File "lib.ml", line 1, characters 4-5
+  3 uids:
+  {uid: Lib; locs: "Lib": File "main.ml", line 1, characters 9-12
+   uid: Lib.0; locs: "x": File "lib.ml", line 1, characters 4-5
    uid: Lib.1; locs:
      "z": File "lib.ml", line 3, characters 4-5;
      "Lib.z": File "main.ml", line 1, characters 9-14

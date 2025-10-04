@@ -29,8 +29,13 @@
   $ ocaml-index aggregate -o bar.uideps bar.cmt
 
   $ ocaml-index dump main.uideps
-  13 uids:
-  {uid: Foo; locs:
+  14 uids:
+  {uid: Bar; locs: "Bar": File "main.ml", line 2, characters 16-19
+   uid: Foo; locs:
+     "Foo": File "main.ml", line 1, characters 8-11;
+     "Foo": File "main.ml", line 1, characters 16-19;
+     "Foo": File "main.ml", line 2, characters 8-11;
+     "Foo": File "main.ml", line 3, characters 13-16;
      "Foo": File "main.ml", line 10, characters 11-14;
      "Foo": File "main.ml", line 11, characters 8-11
    uid: Bar.0; locs: "Bar.z": File "main.ml", line 2, characters 16-21
@@ -52,7 +57,9 @@
      "ina": File "main.ml", line 6, characters 6-9;
      "ina": File "main.ml", line 7, characters 10-13;
      "A.ina": File "main.ml", line 9, characters 8-13
-   uid: Main.6; locs: "A": File "main.ml", line 5, characters 7-8
+   uid: Main.6; locs:
+     "A": File "main.ml", line 5, characters 7-8;
+     "A": File "main.ml", line 9, characters 8-9
    uid: Stdlib.53; locs:
      "+": File "main.ml", line 1, characters 14-15;
      "+": File "main.ml", line 2, characters 14-15;
@@ -61,8 +68,9 @@
   and related uids:{}
 
   $ ocaml-index dump foo.uideps
-  5 uids:
-  {uid: Bar.0; locs: "Bar.z": File "foo.ml", line 3, characters 13-18
+  6 uids:
+  {uid: Bar; locs: "Bar": File "foo.ml", line 3, characters 13-16
+   uid: Bar.0; locs: "Bar.z": File "foo.ml", line 3, characters 13-18
    uid: Foo.0; locs: "t": File "foo.ml", line 1, characters 5-6
    uid: Foo.1; locs:
      "x": File "foo.ml", line 2, characters 4-5;
@@ -78,8 +86,15 @@
 
   $ ocaml-index -o test.uideps main.cmt foo.cmt bar.cmt
   $ ocaml-index dump test.uideps
-  13 uids:
-  {uid: Foo; locs:
+  14 uids:
+  {uid: Bar; locs:
+     "Bar": File "foo.ml", line 3, characters 13-16;
+     "Bar": File "main.ml", line 2, characters 16-19
+   uid: Foo; locs:
+     "Foo": File "main.ml", line 1, characters 8-11;
+     "Foo": File "main.ml", line 1, characters 16-19;
+     "Foo": File "main.ml", line 2, characters 8-11;
+     "Foo": File "main.ml", line 3, characters 13-16;
      "Foo": File "main.ml", line 10, characters 11-14;
      "Foo": File "main.ml", line 11, characters 8-11
    uid: Bar.0; locs:
@@ -110,7 +125,9 @@
      "ina": File "main.ml", line 6, characters 6-9;
      "ina": File "main.ml", line 7, characters 10-13;
      "A.ina": File "main.ml", line 9, characters 8-13
-   uid: Main.6; locs: "A": File "main.ml", line 5, characters 7-8
+   uid: Main.6; locs:
+     "A": File "main.ml", line 5, characters 7-8;
+     "A": File "main.ml", line 9, characters 8-9
    uid: Stdlib.53; locs:
      "+": File "foo.ml", line 3, characters 11-12;
      "+": File "foo.ml", line 3, characters 19-20;
@@ -122,15 +139,15 @@
 
   $ ocaml-index stats foo.uideps test.uideps
   Index "test.uideps" contains:
-  - 13 definitions
-  - 29 locations
+  - 14 definitions
+  - 36 locations
   - 0 approximated definitions
   - 0 compilation units shapes
   - root dir: none
   
   Index "foo.uideps" contains:
-  - 5 definitions
-  - 7 locations
+  - 6 definitions
+  - 8 locations
   - 0 approximated definitions
   - 0 compilation units shapes
   - root dir: none

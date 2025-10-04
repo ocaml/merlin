@@ -220,11 +220,11 @@ Syntax errors also shouldn't escape:
       {
         "start": {
           "line": 1,
-          "col": 11
+          "col": 19
         },
         "end": {
           "line": 1,
-          "col": 42
+          "col": 41
         },
         "type": "typer",
         "sub": [],
