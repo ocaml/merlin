@@ -17,6 +17,7 @@ let rec create_type_tree ty : Type_tree.t option =
     let children = List.filter_map tys ~f:create_type_tree in
     Some { data = Arrow; children }
   | Ttuple tys ->
+    let tys = List.map ~f:snd tys in
     let children = List.filter_map tys ~f:create_type_tree in
     Some { data = Tuple; children }
   | Tconstr (path, arg_tys, abbrev_memo) ->
