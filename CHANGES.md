@@ -10,6 +10,7 @@ Sat Oct 04 15:10:42 CEST 2025
     - Support for OCaml 5.4 (#1974)
   + vim plugin
     - Fix error when `:MerlinOccurrencesProjectWide` fails to gather code previews (#1970)
+  + test suite
     - Add more short-paths tests cases (#1904)
 
 merlin 5.5
