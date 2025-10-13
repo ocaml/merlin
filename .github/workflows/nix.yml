@@ -31,7 +31,7 @@ jobs:
       with:
         submodules: true
     - name: nix
-      uses: cachix/install-nix-action@v31.7.0
+      uses: cachix/install-nix-action@v31.8.0
       with:
         nix_path: nixpkgs=channel:nixos-unstable
     - run: nix develop -c dune build @check @runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
