@@ -11,7 +11,14 @@ records.
   >   | Constr { som }
   > EOF
 
-  $ $MERLIN single complete-prefix -position 5:16 -prefix 'some' -filename inlined_record.ml < ./inlined_record.ml | jq .value
+DBG: after printing the logs it feels like the issue is due to the special paths
+used for inline records types.
+
+  $ $MERLIN single complete-prefix -position 5:16 -prefix 'some' \
+  > -log-file - -log-section Completion \
+  > -filename inlined_record.ml < ./inlined_record.ml | jq .value
+  # 0.02 Completion - fold_sumtype_constructors
+  node type: t.Constr
   {
     "entries": [],
     "context": null
@@ -26,7 +33,11 @@ records.
   >   | Constr { som }
   > EOF
 
-  $ $MERLIN single complete-prefix -position 6:16 -prefix 'some' -filename indirect.ml < ./indirect.ml | jq .value
+  $ $MERLIN single complete-prefix -position 6:16 -prefix 'some' \
+  > -log-file - -log-section Completion \
+  > -filename indirect.ml < ./indirect.ml | jq .value
+  # 0.01 Completion - fold_sumtype_constructors
+  node type: r
   {
     "entries": [
       {
