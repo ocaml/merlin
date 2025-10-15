@@ -456,15 +456,35 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
           prefix
           Logger.fmt (fun fmt ->
             Format.pp_print_option Pprintast.longident fmt prefix_path);
-        Env.fold_labels
-          (fun ({ lbl_name = name; _ } as l) candidates ->
-            log ~title:"get_candidate" "Found label %s in env" name;
-             if not (validate `Lident `Label name) then candidates
-             else
-               make_weighted_candidate ~exact:(name = prefix) name (`Label l)
-                 ~attrs:(lbl_attributes l)
-               :: candidates)
-          prefix_path env []
+        let consider_label ({ lbl_name = name; _ } as l) candidates =
+          log ~title:"get_candidate" "Found label %s in env" name;
+          if not (validate `Lident `Label name) then candidates
+          else
+            make_weighted_candidate ~exact:(name = prefix) name (`Label l)
+              ~attrs:(lbl_attributes l)
+            :: candidates
+        in
+        let inlined_record_labels =
+          match target_type with
+          | None -> None
+          | Some t ->
+            let t = Types.Transient_expr.repr t in
+            begin match t.desc with
+            | Tconstr (Pextra_ty (_, Pcstr_ty cstr_ty) as path, _, _) ->
+              log ~title:"fold_inlined_record_labels" "Cstr: %s" cstr_ty;
+              let labels =
+                Env.lookup_all_labels_from_type
+                  ~use:false ~loc:Location.none Construct path env
+              in
+              List.fold_left ~init:[] labels
+                ~f:(fun candidates (lbl, _) -> consider_label lbl candidates)
+              |> Option.return
+            | _ -> None
+            end
+        in
+        match inlined_record_labels with
+        | Some candidates -> candidates
+        | None -> Env.fold_labels consider_label prefix_path env []
     in
     let of_kind_group = function
       | #Query_protocol.Compl.kind as k -> of_kind k

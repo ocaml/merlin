@@ -1,6 +1,6 @@
 Test case suggested in issue #1977
 
-FIXME: Label completion should work for inlined records as it does for standard
+Label completion should work for inlined records as it does for standard
 records.
 
   $ cat >inlined_record.ml <<'EOF'
@@ -33,10 +33,20 @@ found when calling Env.fold_labels.
   node type: t.Constr
   # 0.02 Completion - get_candidate
   Labels for prefix=some prefix_path=
+  # 0.02 Completion - fold_inlined_record_labels
+  Cstr: Constr
   # 0.02 Completion - get_candidate
-  Found label contents in env
+  Found label some_lbl in env
   {
-    "entries": [],
+    "entries": [
+      {
+        "name": "some_lbl",
+        "kind": "Label",
+        "desc": "t.Constr -> int",
+        "info": "",
+        "deprecated": false
+      }
+    ],
     "context": null
   }
 
