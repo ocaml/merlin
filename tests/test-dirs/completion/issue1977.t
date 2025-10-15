@@ -12,13 +12,29 @@ records.
   > EOF
 
 DBG: after printing the logs it feels like the issue is due to the special paths
-used for inline records types.
+used for inline records types. 
+
+DBG: the additional debug print shows that the inlined records' label are not
+found when calling Env.fold_labels.
 
   $ $MERLIN single complete-prefix -position 5:16 -prefix 'some' \
   > -log-file - -log-section Completion \
   > -filename inlined_record.ml < ./inlined_record.ml | jq .value
+  # 0.02 Completion - branch_complete
+  Leaf node: pattern (inlined_record.ml[5,71+11]..inlined_record.ml[5,71+18])
+    attribute "merlin.incorrect"
+      []
+    Tpat_any
+  # 0.02 Completion - branch_complete
+  Common case, prefix = some, is_label = false
+  # 0.02 Completion - find
+  prefix = some
   # 0.02 Completion - fold_sumtype_constructors
   node type: t.Constr
+  # 0.02 Completion - get_candidate
+  Labels for prefix=some prefix_path=
+  # 0.02 Completion - get_candidate
+  Found label contents in env
   {
     "entries": [],
     "context": null
@@ -36,8 +52,23 @@ used for inline records types.
   $ $MERLIN single complete-prefix -position 6:16 -prefix 'some' \
   > -log-file - -log-section Completion \
   > -filename indirect.ml < ./indirect.ml | jq .value
+  # 0.01 Completion - branch_complete
+  Leaf node: pattern (indirect.ml[6,82+11]..indirect.ml[6,82+18])
+    attribute "merlin.incorrect"
+      []
+    Tpat_any
+  # 0.01 Completion - branch_complete
+  Common case, prefix = some, is_label = false
+  # 0.01 Completion - find
+  prefix = some
   # 0.01 Completion - fold_sumtype_constructors
   node type: r
+  # 0.01 Completion - get_candidate
+  Labels for prefix=some prefix_path=
+  # 0.01 Completion - get_candidate
+  Found label some_lbl in env
+  # 0.01 Completion - get_candidate
+  Found label contents in env
   {
     "entries": [
       {
