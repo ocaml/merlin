@@ -465,22 +465,19 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
             :: candidates
         in
         let inlined_record_labels =
-          match target_type with
-          | None -> None
-          | Some t ->
-            let t = Types.Transient_expr.repr t in
-            begin match t.desc with
-            | Tconstr (Pextra_ty (_, Pcstr_ty cstr_ty) as path, _, _) ->
-              log ~title:"fold_inlined_record_labels" "Cstr: %s" cstr_ty;
-              let labels =
-                Env.lookup_all_labels_from_type
-                  ~use:false ~loc:Location.none Construct path env
-              in
-              List.fold_left ~init:[] labels
-                ~f:(fun candidates (lbl, _) -> consider_label lbl candidates)
-              |> Option.return
-            | _ -> None
-            end
+          Option.bind target_type ~f:(fun t ->
+              let t = Types.Transient_expr.repr t in
+              match t.desc with
+              | Tconstr ((Pextra_ty (_, Pcstr_ty cstr_ty) as path), _, _) ->
+                log ~title:"fold_inlined_record_labels" "Cstr: %s" cstr_ty;
+                let labels =
+                  Env.lookup_all_labels_from_type ~use:false ~loc:Location.none
+                    Construct path env
+                in
+                List.fold_left ~init:[] labels ~f:(fun candidates (lbl, _) ->
+                    consider_label lbl candidates)
+                |> Option.return
+              | _ -> None)
         in
         match inlined_record_labels with
         | Some candidates -> candidates
