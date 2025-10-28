@@ -452,14 +452,36 @@ let get_candidates ?get_doc ?target_type ?prefix_path ~prefix kind ~validate env
                :: candidates)
           prefix_path env []
       | `Labels ->
-        Env.fold_labels
-          (fun ({ lbl_name = name; _ } as l) candidates ->
-             if not (validate `Lident `Label name) then candidates
-             else
-               make_weighted_candidate ~exact:(name = prefix) name (`Label l)
-                 ~attrs:(lbl_attributes l)
-               :: candidates)
-          prefix_path env []
+        log ~title:"get_candidate" "Labels for prefix=%s prefix_path=%a"
+          prefix
+          Logger.fmt (fun fmt ->
+            Format.pp_print_option Pprintast.longident fmt prefix_path);
+        let consider_label ({ lbl_name = name; _ } as l) candidates =
+          log ~title:"get_candidate" "Found label %s in env" name;
+          if not (validate `Lident `Label name) then candidates
+          else
+            make_weighted_candidate ~exact:(name = prefix) name (`Label l)
+              ~attrs:(lbl_attributes l)
+            :: candidates
+        in
+        let inlined_record_labels =
+          Option.bind target_type ~f:(fun t ->
+              let t = Types.Transient_expr.repr t in
+              match t.desc with
+              | Tconstr ((Pextra_ty (_, Pcstr_ty cstr_ty) as path), _, _) ->
+                log ~title:"fold_inlined_record_labels" "Cstr: %s" cstr_ty;
+                let labels =
+                  Env.lookup_all_labels_from_type ~use:false ~loc:Location.none
+                    Construct path env
+                in
+                List.fold_left ~init:[] labels ~f:(fun candidates (lbl, _) ->
+                    consider_label lbl candidates)
+                |> Option.return
+              | _ -> None)
+        in
+        match inlined_record_labels with
+        | Some candidates -> candidates
+        | None -> Env.fold_labels consider_label prefix_path env []
     in
     let of_kind_group = function
       | #Query_protocol.Compl.kind as k -> of_kind k
@@ -542,6 +564,7 @@ let complete_prefix ?get_doc ?target_type ?(kinds = []) ~keywords ~prefix
     make_candidate ~get_doc ~attrs ~exact name ?loc ?path ty
   in
   let find ?prefix_path ~is_label prefix =
+    log ~title:"find" "prefix = %s" prefix;
     let valid tag name =
       let no_leak () =
         (* Prevent identifiers introduced by type checker
@@ -656,11 +679,13 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
   function
   | [] -> []
   | (env, node) :: branch -> (
+      log ~title:"branch_complete" "Leaf node: %a" Mbrowse.print_node node;
       match node with
       | Method_call (obj, _, _) -> complete_methods ~env ~prefix obj
       | Pattern { Typedtree.pat_desc = Typedtree.Tpat_record _; pat_type = t; _ }
       | Expression
           { Typedtree.exp_desc = Typedtree.Texp_record _; exp_type = t; _ } ->
+        log ~title:"branch_complete" "Record";
         let is_label =
           try
             match Types.get_desc t with
@@ -725,6 +750,9 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
         result
       | _ ->
         let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
+        log ~title:"branch_complete" "Common case, prefix = %a, is_label = %b"
+          Logger.fmt (Fun.flip Pprintast.longident prefix)
+          is_label;
         complete_prefix ?get_doc ?target_type ?kinds ~keywords ~prefix buffer
           ~is_label:(if is_label then `Maybe else `No)
           (env, node) branch)
