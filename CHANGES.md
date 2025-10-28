@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - Fix completion not working for inlined records labels (#1978, fixes #1977)
+
 merlin 5.6
 ==========
 Sat Oct 04 15:10:42 CEST 2025
