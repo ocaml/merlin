@@ -80,7 +80,7 @@ let signature_of_env ?(ignore_extensions = true) env =
       | Path.Pident id when Ident.name id = "exn" ->
         Some (Sig_typext (i, e, Text_exception, Exported))
       | _ -> Some (Sig_typext (i, e, Text_first, Exported))
-    end
+      end
     | Env_module (_, i, pr, m) ->
       Some (Sig_module (i, pr, m, Trec_not, Exported))
     | Env_modtype (_, i, m) -> Some (Sig_modtype (i, m, Exported))

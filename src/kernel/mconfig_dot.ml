@@ -228,7 +228,7 @@ end = struct
     | _ -> begin
       Hashtbl.remove running_processes (dir, configurator);
       raise Process_exited
-    end
+      end
 end
 
 let prepend_config ~dir:cwd configurator (directives : directive list) config =

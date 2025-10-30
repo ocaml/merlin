@@ -366,7 +366,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
                 | `File_not_found msg ->
                   log ~title:"occurrences" "%s" msg;
                   None
-              end
+                end
           in
           Option.map loc ~f:(fun loc : Query_protocol.occurrence ->
               { loc; is_stale = Staleness.is_stale staleness }))

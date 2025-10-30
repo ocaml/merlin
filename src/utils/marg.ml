@@ -59,7 +59,7 @@ let parse_one ~warning global_spec local_spec args global local =
       | exception exn ->
         warning ("flag " ^ arg ^ ": error, " ^ Printexc.to_string exn);
         Some (args, global, local)
-    end
+      end
     | exception Not_found -> (
       match assoc3 arg local_spec with
       | action -> begin
@@ -71,7 +71,7 @@ let parse_one ~warning global_spec local_spec args global local =
         | exception exn ->
           warning ("flag " ^ arg ^ ": error, " ^ Printexc.to_string exn);
           Some (args, global, local)
-      end
+        end
       | exception Not_found -> None))
 
 let parse_all ~warning global_spec local_spec =
@@ -89,7 +89,7 @@ let parse_all ~warning global_spec local_spec =
         with Not_found ->
           warning ("unknown flag " ^ arg);
           resume_parsing args global local
-      end
+        end
       | [] -> (global, local))
   and resume_parsing args global local =
     let args =

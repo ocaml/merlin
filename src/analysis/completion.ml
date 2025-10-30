@@ -66,7 +66,7 @@ let raw_info_printer : raw_info -> _ = function
     | Some te ->
       `Concat
         (label ^ " of ", Out_type (Type_utils.Printtyp.tree_of_typ_scheme te))
-  end
+    end
 
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop
@@ -86,7 +86,7 @@ let rec methods_of_type env ?(acc = []) type_expr =
     | None | Some { type_manifest = None; _ } -> acc
     | Some { type_manifest = Some type_expr; _ } ->
       methods_of_type env ~acc type_expr
-  end
+    end
   | _ -> acc
 
 let classify_node = function
@@ -184,7 +184,7 @@ let make_candidate ~get_doc ~attrs ~exact ~prefix_path name ?loc ?path ty =
           raise Exit;
         (`Module, `Modtype m)
       with Exit -> (`Module, `None)
-    end
+      end
     | `ModType m ->
       if exact then
         (`Modtype, `Modtype_declaration (ident, (*verbose_sig env*) m))
@@ -733,9 +733,9 @@ let branch_complete buffer ?get_doc ?target_type ?kinds ~keywords prefix =
               match decl.Types.type_kind with
               | Types.Type_record (lbls, _) -> `Declaration (ty, lbls)
               | _ -> `Maybe)
-          end
+            end
           | _ | (exception _) -> `Maybe
-        end
+          end
         | lbls -> `Description (Array.to_list lbls)
       in
       let result =

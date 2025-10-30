@@ -16,13 +16,13 @@ let decl_of_path_or_lid env namespace path lid =
     | exception Not_found -> None
     | { cstr_uid; cstr_loc; _ } ->
       Some { Env_lookup.uid = cstr_uid; loc = cstr_loc; namespace }
-  end
+    end
   | Label -> begin
     match Env.find_label_by_name lid env with
     | exception Not_found -> None
     | { lbl_uid; lbl_loc; _ } ->
       Some { Env_lookup.uid = lbl_uid; loc = lbl_loc; namespace }
-  end
+    end
   | _ -> Env_lookup.by_path path namespace env
 
 let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =

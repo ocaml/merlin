@@ -155,7 +155,7 @@ let rec gen_patterns ?(recurse = true) env type_expr =
       else
         raise
           (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
-  end
+    end
   | Tvariant row_desc ->
     List.filter_map (row_fields row_desc) ~f:(fun (lbl, row_field) ->
         match (lbl, row_field_repr row_field) with
@@ -203,7 +203,7 @@ let rec needs_parentheses = function
                 situation but either in [fun param] or [let name param]. *)
         -> needs_parentheses ts
       | _ -> true
-    end
+      end
     | _ -> needs_parentheses ts)
 
 let rec get_match = function
@@ -268,7 +268,7 @@ let collect_every_pattern_for_expression parent =
                     match Typedtree.split_pattern p with
                     | Some p, _ -> (p : Typedtree.pattern) :: acc
                     | None, _ -> acc
-                  end
+                    end
                 end
               | _ -> acc)
             env node acc
@@ -315,7 +315,7 @@ let rec get_every_pattern loc = function
       | None ->
         (* In function body *)
         collect_every_pattern_for_expression parent
-    end
+      end
     | Expression _ ->
       (* We are on the right node *)
       collect_every_pattern_for_expression parent

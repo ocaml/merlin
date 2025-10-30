@@ -188,7 +188,7 @@ let parse ?for_completion config = function
         no_labels_for_completion
       }
     | None -> normal_parse ?for_completion config source
-  end
+    end
   | _, Some parsetree ->
     let lexer_errors, parser_errors, comments = ([], [], []) in
     let lexer_keywords = [] in

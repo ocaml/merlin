@@ -630,7 +630,7 @@ let of_node = function
     match rf.rf_desc with
     | Ttag (_, _, cts) -> list_fold of_core_type cts
     | Tinherit ct -> of_core_type ct
-  end
+    end
   | Value_description { val_desc } -> of_core_type val_desc
   | Type_declaration { typ_params; typ_cstrs; typ_kind; typ_manifest } ->
     let of_typ_cstrs (ct1, ct2, _) = of_core_type ct1 ** of_core_type ct2 in

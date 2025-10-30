@@ -492,7 +492,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     | `Not_in_env str -> `String (Printf.sprintf "Not in environment '%s'" str)
     | `File_not_found msg -> `String msg
     | `Found doc -> `String doc
-  end
+    end
   | Syntax_document _, resp -> (
     match resp with
     | `Found info ->
@@ -525,7 +525,7 @@ let json_of_response (type a) (query : a t) (response : a) : json =
     match resp with
     | `Error str -> `String str
     | `Found pos -> `Assoc [ ("pos", Lexing.json_of_position pos) ]
-  end
+    end
   | Phrase _, pos -> `Assoc [ ("pos", Lexing.json_of_position pos) ]
   | Case_analysis _, ({ Location.loc_start; loc_end; _ }, str) ->
     let assoc =

@@ -1,4 +1,4 @@
-version=0.28.1
+version=0.28.1-2-g1646c68
 disable=false
 
 break-cases=fit-or-vertical

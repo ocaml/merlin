@@ -133,7 +133,7 @@ struct
           match aux xs with
           | `Fail -> `Accept v
           | x -> x
-        end)
+          end)
     in
     aux recoveries
 

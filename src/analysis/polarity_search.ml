@@ -26,7 +26,7 @@ let rec normalize_path env path =
       match Types.get_desc body with
       | Types.Tconstr (path, _, _) -> normalize_path env path
       | _ -> path
-    end
+      end
     | _ -> path)
 
 let match_query env query t =

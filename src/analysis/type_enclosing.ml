@@ -63,7 +63,7 @@ let from_nodes ~path =
       match Types.get_desc exp_type with
       | Tarrow (_, _, t, _) -> ret (Type (env, t))
       | _ -> None
-    end
+      end
     | Class_field
         { cf_desc = Tcf_val (_, _, _, Tcfk_concrete (_, { exp_type = t }), _) }
       -> ret (Type (env, t))

@@ -123,7 +123,7 @@ let dump pipeline = function
             | `Int line, `Int col -> `Logical (line, col)
             | _ -> failwith "Incorrect position"
             | exception Not_found -> failwith "Incorrect position"
-          end
+            end
           | _ -> failwith "Incorrect position")
       | [] -> None
       | _ -> failwith "incorrect position"
@@ -322,7 +322,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
             match Types.get_desc ty with
             | Tconstr (path, _, _) -> Some (env, path)
             | _ -> None
-          end
+            end
           | _ -> None)
     in
     begin match path with

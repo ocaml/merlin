@@ -176,7 +176,7 @@ module List = struct
       match f a b with
       | Some a' -> merge_cons ~f (a' :: tl)
       | None -> a :: merge_cons ~f tl'
-    end
+      end
     | tl -> tl
 
   let rec take_while ~f = function

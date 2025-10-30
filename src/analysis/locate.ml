@@ -370,7 +370,7 @@ let scrape_alias ~env ~fallback_uid ~namespace path =
       match Env.find_modtype path env with
       | { Types.mtd_type = Some mtd_type; mtd_uid; _ } -> (mtd_type, mtd_uid)
       | _ -> raise Not_found
-    end
+      end
     | _ -> raise Not_found
   in
   let rec non_alias_declaration_uid ~fallback_uid path =
@@ -949,8 +949,8 @@ let find_uid_doc_in_cmt cmt_infos uid =
       match doc_of_item_declaration decl with
       | `Found_doc d -> `Found_doc d
       | `No_documentation -> `Found_decl (uid, decl, cmt_infos.cmt_comments)
+      end
     end
-  end
 
 let doc_from_uid ~config ~loc uid =
   begin match uid with
@@ -1070,6 +1070,6 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
       match path with
       | `User_input path -> `Builtin path
       | `Completion_entry (_, path, _) -> `Builtin (Path.name path)
-    end
+      end
     | (`Not_found _ | `No_documentation | `Not_in_env _) as otherwise ->
       otherwise

@@ -186,7 +186,7 @@ let rec mod_smallerthan n m =
             | Some n1, Some mty -> sub n1 mty
             | Some n', _ -> Some (succ n')
           end
-    end
+      end
     | Mty_functor _ ->
       let m1, m2 = unpack_functor m in
       begin match (mod_smallerthan n m2, m1) with
@@ -239,7 +239,7 @@ let print_type_with_decl ~verbosity env ppf typ =
         Printtyp.type_declaration env ident ppf decl
       end
     | _ -> Printtyp.type_scheme env ppf typ
-  end
+    end
 
 let print_exn ppf exn =
   match Location.error_of_exn exn with
@@ -343,7 +343,7 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
               with _ ->
                 print_exn ppf exn;
                 false))))
-    end
+      end
     | `Other -> (
       try
         print_expr e;

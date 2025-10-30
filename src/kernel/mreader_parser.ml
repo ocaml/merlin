@@ -99,7 +99,7 @@ let resume_parse =
           | (_, token) :: _ -> token
         in
         enter_error acc token tokens env
-    end
+      end
     | I.Accepted v -> (acc, v)
     | I.Rejected | I.HandlingError _ -> assert false
   and check_for_error acc token tokens env = function
@@ -110,7 +110,7 @@ let resume_parse =
       | exception exn ->
         Msupport.raise_error exn;
         enter_error acc token tokens env
-    end
+      end
     | checkpoint ->
       normal ((Correct checkpoint, token) :: acc) tokens checkpoint
   and enter_error acc token tokens env =

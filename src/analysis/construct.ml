@@ -124,7 +124,7 @@ module Util = struct
           match type_expr.desc with
           | Tarrow (arg_label, _, te, _) -> check_type te (arg_label :: params)
           | _ -> None
-        end
+          end
       in
       (* TODO we should probably sort the results better *)
       match (is_in_stdlib path, check_type value_description.val_type []) with
@@ -216,7 +216,7 @@ module Gen = struct
       with Not_found ->
         let name = Ident.name (Path.head path) in
         raise (Modtype_not_found (Modtype, name))
-    end
+      end
     | Mty_signature sig_items ->
       let env = Env.add_signature sig_items env in
       Mod.structure @@ structure env sig_items
@@ -237,7 +237,7 @@ module Gen = struct
       with Not_found ->
         let name = Ident.name (Path.head path) in
         raise (Modtype_not_found (Mod, name))
-    end
+      end
     | Mty_for_hole -> Mod.hole ()
 
   and structure_item env =
@@ -355,7 +355,7 @@ module Gen = struct
             let name = uniq_name env (Path.last path) in
             (make_param label (Ast_helper.Pat.var (Location.mknoloc name)), name)
           | _ -> (make_param label (Ast_helper.Pat.any ()), "_")
-        end
+          end
     in
 
     let constructor env type_expr path constrs =
@@ -487,7 +487,7 @@ module Gen = struct
             | Type_variant (constrs, _) -> constructor env rtyp path constrs
             | Type_record (labels, _) -> record env rtyp path labels
             | Type_abstract _ | Type_open -> [])
-        end
+          end
         | Tarrow _ ->
           let rec left_types acc env ty =
             match get_desc ty with
@@ -532,7 +532,7 @@ module Gen = struct
           with Typemod.Error _ ->
             let name = Ident.name (Path.head pack_path) in
             raise (Modtype_not_found (Modtype, name))
-        end
+          end
         | Tobject (fields, _) ->
           let rec aux acc fields =
             match get_desc fields with

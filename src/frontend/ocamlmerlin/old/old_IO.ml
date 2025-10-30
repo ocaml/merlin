@@ -52,7 +52,7 @@ let pos_of_json = function
       | `Int line, `Int col -> `Logical (line, col)
       | _ -> failwith "Incorrect position"
     with Not_found -> failwith "Incorrect position"
-  end
+    end
   | _ -> failwith "Incorrect position"
 
 let mandatory_position = function
@@ -274,7 +274,7 @@ let classify_response = function
     | Some (`Ok error) -> ("error", Query_json.json_of_error error)
     | None | Some `Already_displayed ->
       ("exception", `String (Printexc.to_string exn))
-  end
+    end
   | Return (Query cmd, response) ->
     ("return", Query_json.json_of_response cmd response)
   | Return (Sync cmd, response) -> ("return", json_of_sync_command cmd response)

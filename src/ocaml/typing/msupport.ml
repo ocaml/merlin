@@ -49,7 +49,7 @@ let raise_error ?(ignore_unify = false) exn =
           Printexc.record_backtrace true;
           Format.pp_print_string fmt (Printexc.get_backtrace ()))
     | exn -> l := exn :: !l
-  end
+    end
   | None -> raise exn
 
 let () = Msupport_parsing.msupport_raise_error := raise_error
