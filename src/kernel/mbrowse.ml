@@ -112,7 +112,7 @@ let compare_locations pos l1 l2 =
     | true, false -> 1
     | false, true -> -1
     | _ -> Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
-  end
+    end
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
   | _, 0 -> t2_first

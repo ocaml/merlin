@@ -281,7 +281,7 @@ module Make (Ord : Map.OrderedType) = struct
       match f None with
       | None -> t
       | Some data -> link (Node { l = t; v = x; d = data; r = t; h = 1 })
-    end
+      end
     | Node { l; v; d; r; h } ->
       let c = Ord.compare x v in
       if c = 0 then begin

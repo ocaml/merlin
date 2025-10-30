@@ -49,7 +49,7 @@ let raise_error ?(ignore_unify = false) exn =
           Printexc.record_backtrace true;
           Format.pp_print_string fmt (Printexc.get_backtrace ()))
     | exn -> l := exn :: !l
-  end
+    end
   | None -> raise exn
 
 let () = Msupport_parsing.msupport_raise_error := raise_error
@@ -140,16 +140,15 @@ let rec get_saved_types_from_attributes = function
     let attr, str = Ast_helper.Attr.as_tuple attr in
     if attr = Saved_parts.attribute then
       let open Parsetree in
-      begin
-        match str with
-        | PStr
-            ({ pstr_desc =
-                 Pstr_eval
-                   ({ pexp_desc = Pexp_constant { pconst_desc = key; _ }; _ }, _);
-               _
-             }
-            :: _) -> Saved_parts.find key
-        | _ -> []
+      begin match str with
+      | PStr
+          ({ pstr_desc =
+               Pstr_eval
+                 ({ pexp_desc = Pexp_constant { pconst_desc = key; _ }; _ }, _);
+             _
+           }
+          :: _) -> Saved_parts.find key
+      | _ -> []
       end
     else get_saved_types_from_attributes attrs
 
@@ -163,10 +162,9 @@ let with_saved_types ?warning_attribute ?save_part f =
   Cmt_format.set_saved_types [];
   try
     let result = with_warning_attribute ?warning_attribute f in
-    begin
-      match save_part with
-      | None -> ()
-      | Some f -> Cmt_format.set_saved_types (f result :: saved_types)
+    begin match save_part with
+    | None -> ()
+    | Some f -> Cmt_format.set_saved_types (f result :: saved_types)
     end;
     result
   with exn ->

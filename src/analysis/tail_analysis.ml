@@ -49,7 +49,7 @@ let expr_tail_positions = function
     match List.last args with
     | None | Some (_, Omitted ()) -> []
     | Some (_, Arg expr) -> [ Expression expr ]
-  end
+    end
   | Texp_instvar _
   | Texp_setinstvar _
   | Texp_override _
