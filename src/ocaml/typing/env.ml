@@ -4031,13 +4031,13 @@ let short_paths_class_type_desc clty =
         | ns -> Subst(path, ns)
       end
 
-let short_paths_module_type_desc mty =
+let short_paths_module_type_desc (mty : Subst.Lazy.modtype option) =
   let open Short_paths.Desc.Module_type in
   match mty with
-  | None | Some Mty_for_hole -> Fresh
-  | Some (Mty_ident path) -> Alias path
-  | Some (Mty_signature _ | Mty_functor _) -> Fresh
-  | Some (Mty_alias _) -> assert false
+  | None | Some MtyL_for_hole -> Fresh
+  | Some (MtyL_ident path) -> Alias path
+  | Some (MtyL_signature _ | MtyL_functor _) -> Fresh
+  | Some (MtyL_alias _) -> assert false
 
 let deprecated_of_alerts alerts =
   if
@@ -4054,26 +4054,26 @@ let deprecated_of_alerts alerts =
 let deprecated_of_attributes attrs =
   deprecated_of_alerts (Builtin_attributes.alerts_of_attrs attrs)
 
-let rec short_paths_module_desc env mpath mty comp =
+let rec short_paths_module_desc env mpath (mty : Subst.Lazy.modtype) comp =
   let open Short_paths.Desc.Module in
   match mty with
-  | Mty_alias path -> Alias path
-  | Mty_ident path -> begin
-      match find_modtype_expansion path env with
+  | MtyL_alias path -> Alias path
+  | MtyL_ident path -> begin
+      match find_modtype_expansion_lazy path env with
       | exception Not_found -> Fresh (Signature (lazy []))
       | mty -> short_paths_module_desc env mpath mty comp
     end
-  | Mty_signature _ ->
+  | MtyL_signature _ ->
       let components =
         lazy (short_paths_module_components_desc env mpath comp)
       in
       Fresh (Signature components)
-  | Mty_functor _ ->
+  | MtyL_functor _ ->
       let apply path =
         short_paths_functor_components_desc env mpath comp path
       in
       Fresh (Functor apply)
-  | Mty_for_hole -> Fresh (Signature (lazy []))
+  | MtyL_for_hole -> Fresh (Signature (lazy []))
 
 and short_paths_module_components_desc env mpath comp =
   match get_components comp with
@@ -4098,19 +4098,17 @@ and short_paths_module_components_desc env mpath comp =
       in
       let comps =
         String.Map.fold (fun name mtda acc ->
-          let mtd = Subst.Lazy.force_modtype_decl mtda.mtda_declaration in
-          let desc = short_paths_module_type_desc mtd.mtd_type in
-          let depr = deprecated_of_attributes mtd.mtd_attributes in
+          let desc = short_paths_module_type_desc mtda.mtda_declaration.mtdl_type in
+          let depr = deprecated_of_attributes mtda.mtda_declaration.mtdl_attributes in
           let item = Short_paths.Desc.Module.Module_type(name, desc, depr) in
           item :: acc
         ) c.comp_modtypes comps
       in
       let comps =
         String.Map.fold (fun name { mda_declaration; mda_components; _ } acc ->
-          let mty = Subst.Lazy.force_module_decl mda_declaration in
           let mpath = Pdot(mpath, name) in
           let desc =
-            short_paths_module_desc env mpath mty.md_type mda_components
+            short_paths_module_desc env mpath mda_declaration.mdl_type mda_components
           in
           let depr = deprecated_of_alerts mda_components.alerts in
           let item = Short_paths.Desc.Module.Module(name, desc, depr) in
@@ -4140,6 +4138,7 @@ and short_paths_functor_components_desc env mpath comp path =
           stamped_path_add f.fcomp_subst_cache path mty;
           mty
       in
+      let mty = Subst.Lazy.of_modtype mty in
       let loc = Location.(in_file !input_name) in
       let comps =
         components_of_functor_appl ~loc ~f_comp:f env ~f_path:mpath ~arg:path
@@ -4162,16 +4161,12 @@ let short_paths_additions_desc env additions =
            let depr = deprecated_of_attributes clty.clty_attributes in
            Short_paths.Desc.Class_type(id, desc, source, depr) :: acc
        | Module_type(id, mtd) ->
-           let mtd_type = Option.map Subst.Lazy.force_modtype mtd.mtdl_type in
-           let desc = short_paths_module_type_desc mtd_type in
+           let desc = short_paths_module_type_desc mtd.mtdl_type in
            let source = Short_paths.Desc.Local in
            let depr = deprecated_of_attributes mtd.mtdl_attributes in
            Short_paths.Desc.Module_type(id, desc, source, depr) :: acc
        | Module(id, md, comps) ->
-           let md_type = Subst.Lazy.force_modtype md.mdl_type in
-           let desc =
-             short_paths_module_desc env (Pident id) md_type comps
-           in
+           let desc = short_paths_module_desc env (Pident id) md.mdl_type comps in
            let source = Short_paths.Desc.Local in
            let depr = deprecated_of_alerts comps.alerts in
            Short_paths.Desc.Module(id, desc, source, depr) :: acc
@@ -4196,14 +4191,13 @@ let short_paths_additions_desc env additions =
                 Short_paths.Desc.Class_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_type_open(root, decls) ->
-           let decls = NameMap.map Subst.Lazy.force_modtype_decl decls in
            String.Map.fold
-             (fun name mtd acc ->
+             (fun name (mtd : Subst.Lazy.modtype_declaration) acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
                 let desc = Short_paths.Desc.Module_type.Alias path in
                 let source = Short_paths.Desc.Open in
-                let depr = deprecated_of_attributes mtd.mtd_attributes in
+                let depr = deprecated_of_attributes mtd.mtdl_attributes in
                 Short_paths.Desc.Module_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_open(root, decls) ->
