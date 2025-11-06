@@ -157,10 +157,11 @@ end = struct
 end
 
 let get_buffer_locs result uid =
-  Stamped_hashtable.fold
-    (fun (uid', loc) () acc ->
+  Shape.Uid.Map.fold
+    (fun uid' lids acc ->
        if Shape.Uid.equal uid uid' then
-         Lid_set.add (Index_format.Lid.of_lid loc) acc
+          List.fold_left lids ~init:acc ~f:(fun acc lid ->
+            Lid_set.add (Index_format.Lid.of_lid lid) acc)
        else acc)
     (Mtyper.get_index result) Lid_set.empty
 
