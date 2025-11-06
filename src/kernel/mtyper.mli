@@ -14,16 +14,14 @@ type typedtree =
 
 type typer_cache_stats = Miss | Hit of { reused : int; typed : int }
 
-type index_tbl =
-  (Shape.Uid.t * Longident.t Location.loc, unit) Stamped_hashtable.t
+type index = Longident.t Location.loc list Shape.Uid.Map.t
 
 val set_index_items :
-  (index:index_tbl ->
-  stamp:int ->
+  (index ->
   Mconfig.t ->
   [ `Impl of Typedtree.structure_item list
   | `Intf of Typedtree.signature_item list ] ->
-  unit) ->
+  index) ->
   unit
 
 val run : Mconfig.t -> Mreader.parsetree -> result
@@ -32,7 +30,7 @@ val get_env : ?pos:Msource.position -> result -> Env.t
 
 val get_typedtree : result -> typedtree
 
-val get_index : result -> index_tbl
+val get_index : result -> index
 
 val get_stamp : result -> int
 
