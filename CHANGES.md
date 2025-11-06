@@ -3,6 +3,7 @@ unreleased
 
   + merlin library
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
+    - Stop unnecessarily forcing substitutions when initializing short-paths graph (#1988)
 
 merlin 5.6
 ==========
