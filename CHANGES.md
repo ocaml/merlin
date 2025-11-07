@@ -3,6 +3,7 @@ unreleased
 
   + merlin library
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
+    - Perform buffer indexing only if the query requires it (#1990 and #1991)
 
 merlin 5.6
 ==========
