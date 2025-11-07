@@ -26,7 +26,7 @@ type ('p, 't) item =
     part_errors : exn list;
     part_checks : Typecore.delayed_check list;
     part_warnings : Warnings.state;
-    part_index : index
+    part_index : index lazy_t
   }
 
 type typedtree =
@@ -104,7 +104,9 @@ let rec type_structure config caught env index = function
     let items, _, part_env =
       Typemod.merlin_type_structure env [ parsetree_item ]
     in
-    let part_index = !index_items index config (`Impl items.str_items) in
+    let part_index =
+      lazy (!index_items (Lazy.force index) config (`Impl items.str_items))
+    in
     let typedtree_items =
       (items.Typedtree.str_items, items.Typedtree.str_type)
     in
@@ -129,7 +131,9 @@ let rec type_signature config caught env index = function
     let { Typedtree.sig_final_env = part_env; sig_items; sig_type } =
       Typemod.merlin_transl_signature env [ parsetree_item ]
     in
-    let part_index = !index_items index config (`Intf sig_items) in
+    let part_index =
+      lazy (!index_items (Lazy.force index) config (`Intf sig_items))
+    in
     let item =
       { parsetree_item;
         typedtree_items = (sig_items, sig_type);
@@ -163,7 +167,7 @@ let type_implementation config caught parsetree =
         ident_stamp,
         uid_stamp,
         Warnings.backup (),
-        Shape.Uid.Map.empty )
+        lazy Shape.Uid.Map.empty )
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
@@ -201,7 +205,7 @@ let type_interface config caught parsetree =
         ident_stamp,
         uid_stamp,
         Warnings.backup (),
-        Shape.Uid.Map.empty )
+        lazy Shape.Uid.Map.empty )
     | x :: _ ->
       caught := x.part_errors;
       Typecore.delayed_checks := x.part_checks;
@@ -290,7 +294,7 @@ let get_index t =
   let of_items items =
     List.last items
     |> Option.value_map ~default:Shape.Uid.Map.empty
-         ~f:(fun { part_index; _ } -> part_index)
+         ~f:(fun { part_index; _ } -> Lazy.force part_index)
   in
   match t.typedtree with
   | `Implementation items -> of_items items
