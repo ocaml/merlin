@@ -103,6 +103,23 @@ typedef SSIZE_T ssize_t;
 
 static void dumpinfo(void);
 
+#ifdef _WIN32
+static void failwith_formatmessage(const char *msg)
+{
+    char err[512];
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                  NULL,                 /* message source */
+                  GetLastError(),       /* error number */
+                  0,                    /* default language */
+                  err,                  /* destination */
+                  countof(err),         /* size of destination */
+                  NULL);                /* no inserts */
+    fprintf(stderr, "%s: %s\n", err, msg);
+    dumpinfo();
+    exit(EXIT_FAILURE);
+}
+#endif
+
 static void failwith_perror(const char *msg)
 {
   perror(msg);
@@ -148,7 +165,7 @@ static const char *path_socketdir(void)
     else
       rc = GetTempPathA(countof(dir), dir);
     if (rc == 0)
-      failwith("could not get temporary path");
+      failwith_formatmessage("GetTempPath");
   }
 #else
   static const char *dir = NULL;
@@ -167,9 +184,9 @@ static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds
 {
   DWORD dwNumberOfBytesWritten;
   if (!WriteFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != 3 * sizeof(HANDLE))
-    failwith_perror("sendmsg");
+    failwith_formatmessage("WriteFile/sendmsg");
   if (!WriteFile(hPipe, buffer, len, &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != len)
-    failwith_perror("send");
+    failwith_formatmessage("WriteFile/send");
 }
 
 #else
@@ -287,7 +304,7 @@ static HANDLE connect_socket(const char *socketname, bool fail)
   HANDLE hPipe;
   hPipe = CreateFile(socketname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0);
   if (hPipe == INVALID_HANDLE_VALUE)
-    if (fail) failwith_perror("connect");
+    if (fail) failwith_formatmessage("CreateFile/connect");
   return hPipe;
 }
 #else
@@ -343,11 +360,11 @@ static void start_server(const char *socketname, const char* eventname, const ch
   /* Note that DETACHED_PROCESS means that the process does not appear in Task Manager
      but the server can still be stopped with ocamlmerlin server stop-server */
   if (!CreateProcess(exec_path, buf, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, lpSystemDir, &si, &pi))
-    failwith_perror("fork");
+    failwith_formatmessage("CreateProcess/fork");
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
   if (WaitForSingleObject(hEvent, 5000) != WAIT_OBJECT_0)
-    failwith_perror("execlp");
+    failwith_formatmessage("WaitForSingleObject/execlp");
 }
 #else
 static void make_daemon(void)
@@ -608,7 +625,7 @@ static void compute_socketname(char socketname[ATLEAST PATHSZ], char eventname[A
   LPSTR user_sid_string;
   HANDLE hFile = CreateFile(merlin_path, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (hFile == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(hFile, &info))
-    failwith_perror("stat (cannot find ocamlmerlin binary)");
+    failwith_formatmessage("CreateFile/stat (cannot find ocamlmerlin binary)");
   CloseHandle(hFile);
 
   user_sid_string = retrieve_user_sid_string() ;
@@ -702,17 +719,17 @@ int main(int argc, char **argv)
 #ifdef _WIN32
     hProcess = GetCurrentProcess();
     if (!GetNamedPipeServerProcessId(sock, &pid))
-      failwith_perror("GetNamedPipeServerProcessId");
+      failwith_formatmessage("GetNamedPipeServerProcessId");
     hServerProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
     if (hServerProcess == INVALID_HANDLE_VALUE)
-      failwith_perror("OpenProcess");
+      failwith_formatmessage("OpenProcess");
     if (!DuplicateHandle(hProcess, GetStdHandle(STD_INPUT_HANDLE), hServerProcess, &fds[0], 0, FALSE, DUPLICATE_SAME_ACCESS))
-      failwith_perror("DuplicateHandle(stdin)");
+      failwith_formatmessage("DuplicateHandle(stdin)");
     if (!DuplicateHandle(hProcess, GetStdHandle(STD_OUTPUT_HANDLE), hServerProcess, &fds[1], 0, FALSE, DUPLICATE_SAME_ACCESS))
-      failwith_perror("DuplicateHandle(stdout)");
+      failwith_formatmessage("DuplicateHandle(stdout)");
     CloseHandle(GetStdHandle(STD_OUTPUT_HANDLE));
     if (!DuplicateHandle(hProcess, GetStdHandle(STD_ERROR_HANDLE), hServerProcess, &fds[2], 0, FALSE, DUPLICATE_SAME_ACCESS))
-      failwith_perror("DuplicateHandle(stderr)");
+      failwith_formatmessage("DuplicateHandle(stderr)");
 #else
     int fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 #endif
