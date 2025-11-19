@@ -313,7 +313,7 @@ static void start_server(const char *socketname, const char* eventname, const ch
   PROCESS_INFORMATION pi;
   STARTUPINFO si;
   HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, eventname);
-  DWORD dwResult;
+
   sprintf(buf, "%s server %s %s", exec_path, socketname, eventname);
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
@@ -331,7 +331,7 @@ static void start_server(const char *socketname, const char* eventname, const ch
     failwith_perror("execlp");
 }
 #else
-static void make_daemon(int sock)
+static void make_daemon(void)
 {
   /* On success: The child process becomes session leader */
   if (setsid() < 0)
@@ -349,13 +349,6 @@ static void make_daemon(int sock)
   if (chdir("/") != 0)
     failwith_perror("chdir");
 
-  //int x;
-  //for (x = sysconf(_SC_OPEN_MAX); x>2; x--)
-  //{
-  //  if (x != sock)
-  //    close(x);
-  //}
-
   pid_t child = fork();
   signal(SIGHUP, SIG_IGN);
 
@@ -370,6 +363,7 @@ static void make_daemon(int sock)
 
 static void start_server(const char *socketname, const char* ignored, const char *exec_path)
 {
+  (void) ignored;
   int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1)
     failwith_perror("socket");
@@ -405,7 +399,7 @@ static void start_server(const char *socketname, const char* ignored, const char
 
   if (child == 0)
   {
-    make_daemon(sock);
+    make_daemon();
 
     char socket_fd[50], socket_path[PATHSZ];
     sprintf(socket_fd, "%d", sock);
