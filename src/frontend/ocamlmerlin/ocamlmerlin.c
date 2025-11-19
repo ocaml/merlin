@@ -587,11 +587,7 @@ static LPSTR retrieve_user_sid_string(void)
 }
 
 static void compute_socketname(char socketname[ATLEAST PATHSZ], char eventname[ATLEAST PATHSZ], const char merlin_path[ATLEAST PATHSZ])
-#else
-static void compute_socketname(char socketname[ATLEAST SOCKSZ], struct stat *st)
-#endif
 {
-#ifdef _WIN32
   BY_HANDLE_FILE_INFORMATION info;
   LPSTR user_sid_string;
   HANDLE hFile = CreateFile(merlin_path, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
@@ -613,14 +609,18 @@ static void compute_socketname(char socketname[ATLEAST SOCKSZ], struct stat *st)
       "\\\\.\\pipe\\%s", eventname);
 
   LocalFree(user_sid_string);
+}
+
 #else
+static void compute_socketname(char socketname[ATLEAST SOCKSZ], struct stat *st)
+{
   snprintf(socketname, SOCKSZ,
       "ocamlmerlin_%llu_%llu_%llu.socket",
       (unsigned long long)getuid(),
       (unsigned long long)st->st_dev,
       (unsigned long long)st->st_ino);
-#endif
 }
+#endif
 
 /* Main */
 
