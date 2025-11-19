@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <stdbool.h>
 #ifdef _WIN32
 /* GetNamedPipeServerProcessId requires Windows Vista+ */
 #undef _WIN32_WINNT
@@ -281,7 +282,7 @@ static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **
 
 #ifdef _WIN32
 #define IPC_SOCKET_TYPE HANDLE
-static HANDLE connect_socket(const char *socketname, int fail)
+static HANDLE connect_socket(const char *socketname, bool fail)
 {
   HANDLE hPipe;
   hPipe = CreateFile(socketname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0);
@@ -292,7 +293,7 @@ static HANDLE connect_socket(const char *socketname, int fail)
 #else
 #define IPC_SOCKET_TYPE int
 #define INVALID_HANDLE_VALUE -1
-static int connect_socket(const char *socketname, int fail)
+static int connect_socket(const char *socketname, bool fail)
 {
   int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1) failwith_perror("socket");
@@ -434,12 +435,12 @@ static void start_server(const char *socketname, const char* ignored, const char
 
 static IPC_SOCKET_TYPE connect_and_serve(const char *socket_path, const char* event_path, const char *exec_path)
 {
-  IPC_SOCKET_TYPE sock = connect_socket(socket_path, 0);
+  IPC_SOCKET_TYPE sock = connect_socket(socket_path, false);
 
   if (sock == INVALID_HANDLE_VALUE)
   {
     start_server(socket_path, event_path, exec_path);
-    sock = connect_socket(socket_path, 1);
+    sock = connect_socket(socket_path, true);
   }
 
   if (sock == INVALID_HANDLE_VALUE)
@@ -653,14 +654,14 @@ static void dumpinfo(void)
 
 static void unexpected_termination(int argc, char **argv)
 {
-  int sexp = 0;
+  bool sexp = false;
   int i;
 
   for (i = 1; i < argc - 1; ++i)
   {
     if (strcmp(argv[i], "-protocol") == 0 &&
         strcmp(argv[i+1], "sexp") == 0)
-      sexp = 1;
+      sexp = true;
   }
 
   puts(sexp
