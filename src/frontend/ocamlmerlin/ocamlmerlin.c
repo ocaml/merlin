@@ -560,7 +560,7 @@ static void compute_merlinpath(char merlin_path[ATLEAST PATHSZ], const char *arg
 #ifdef _WIN32
 
 /* May return NULL */
-LPSTR retrieve_user_sid_string()
+static LPSTR retrieve_user_sid_string(void)
 {
   LPSTR usidstr;
   HANDLE process_token;
