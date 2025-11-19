@@ -113,12 +113,29 @@ static void failwith(const char *msg)
 
 static const char *path_socketdir(void)
 {
-  static const char *tmpdir = NULL;
-  if (tmpdir == NULL)
-    tmpdir = getenv("TMPDIR");
-  if (tmpdir == NULL)
-    tmpdir = "/tmp";
-  return tmpdir;
+#ifdef _WIN32
+  static char dir[MAX_PATH+1] = { 0 };
+  if (dir[0] == 0) {
+    DWORD (WINAPI *pGetTempPath2A)(DWORD, LPSTR) =
+      (DWORD (WINAPI *)(DWORD, LPSTR))
+      (void (WINAPI *)(void))
+      GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "GetTempPath2A");
+    DWORD rc;
+    if (pGetTempPath2A != NULL)
+      rc = pGetTempPath2A(_countof(dir), dir);
+    else
+      rc = GetTempPathA(_countof(dir), dir);
+    if (rc == 0)
+      failwith("could not get temporary path");
+  }
+#else
+  static const char *dir = NULL;
+  if (dir == NULL &&
+      (dir = getenv("XDG_RUNTIME_DIR")) == NULL &&
+      (dir = getenv("TMPDIR")) == NULL)
+    dir = "/tmp";
+#endif
+  return dir;
 }
 
 #ifdef _WIN32
