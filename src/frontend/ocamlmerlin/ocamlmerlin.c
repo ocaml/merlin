@@ -47,6 +47,12 @@ typedef SSIZE_T ssize_t;
 #include <sys/param.h>
 #endif
 
+#if !(defined(_MSC_VER) && !defined(__clang__))
+#define ATLEAST static
+#else
+#define ATLEAST
+#endif
+
 /** Portability information **/
 
 /* Determine OS, http://stackoverflow.com/questions/6649936
@@ -141,7 +147,7 @@ static const char *path_socketdir(void)
 #ifdef _WIN32
 /** Deal with Windows IPC **/
 
-static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds[3])
+static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds[ATLEAST 3])
 {
   DWORD dwNumberOfBytesWritten;
   if (!WriteFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != 3 * sizeof(HANDLE))
@@ -153,7 +159,7 @@ static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds
 #else
 /** Deal with UNIX IPC **/
 
-static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
+static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[ATLEAST 3])
 {
   char msg_control[CMSG_SPACE(3 * sizeof(int))];
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
@@ -506,7 +512,7 @@ static char ocamlmerlin_server[] = "ocamlmerlin-server.exe";
 static char ocamlmerlin_server[] = "ocamlmerlin-server";
 #endif
 
-static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0, struct stat *st)
+static void compute_merlinpath(char merlin_path[ATLEAST PATHSZ], const char *argv0, struct stat *st)
 {
   char argv0_dirname[PATHSZ];
   size_t strsz;
@@ -593,9 +599,9 @@ LPSTR retrieve_user_sid_string()
   return usidstr;
 }
 
-static void compute_socketname(char socketname[PATHSZ], char eventname[PATHSZ], const char merlin_path[PATHSZ])
+static void compute_socketname(char socketname[ATLEAST PATHSZ], char eventname[ATLEAST PATHSZ], const char merlin_path[ATLEAST PATHSZ])
 #else
-static void compute_socketname(char socketname[SOCKSZ], struct stat *st)
+static void compute_socketname(char socketname[ATLEAST SOCKSZ], struct stat *st)
 #endif
 {
 #ifdef _WIN32

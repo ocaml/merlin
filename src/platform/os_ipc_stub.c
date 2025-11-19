@@ -30,6 +30,12 @@ typedef SSIZE_T ssize_t;
 #include <caml/alloc.h>
 #include <caml/threads.h>
 
+#if !(defined(_MSC_VER) && !defined(__clang__))
+#define ATLEAST static
+#else
+#define ATLEAST
+#endif
+
 #ifdef _MSC_VER
 extern __declspec(dllimport) char **environ;
 #else
@@ -75,7 +81,7 @@ static unsigned char buffer[BUFFER_SIZE];
 
 #define unbyte(x,n) (((unsigned char)x) << (n * 8))
 
-static ssize_t recv_buffer(int fd, int fds[3])
+static ssize_t recv_buffer(int fd, int fds[ATLEAST 3])
 {
   char msg_control[CMSG_SPACE(3 * sizeof(int))];
   struct iovec iov = { .iov_base = buffer, .iov_len = sizeof(buffer) };
