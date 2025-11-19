@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -282,13 +283,14 @@ static int connect_socket(const char *socketname, int fail)
 
   BEGIN_PROTECTCWD
     struct sockaddr_un address;
-    int address_len;
+    socklen_t address_len;
+    memset(&address, 0, sizeof(address));
 
     /* Return from chdir is ignored */
     err = chdir(path_socketdir());
     address.sun_family = AF_UNIX;
     snprintf(address.sun_path, sizeof(address.sun_path), "./%s", socketname);
-    address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
+    address_len = offsetof(struct sockaddr_un, sun_path) + strlen(address.sun_path) + 1;
 
     NO_EINTR(err, connect(sock, (struct sockaddr*)&address, address_len));
   END_PROTECTCWD
@@ -376,13 +378,14 @@ static void start_server(const char *socketname, const char* ignored, const char
 
   BEGIN_PROTECTCWD
     struct sockaddr_un address;
-    int address_len;
+    socklen_t address_len;
+    memset(&address, 0, sizeof(address));
 
     /* Return from chdir is ignored */
     err = chdir(path_socketdir());
     address.sun_family = AF_UNIX;
     snprintf(address.sun_path, sizeof(address.sun_path), "./%s", socketname);
-    address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
+    address_len = offsetof(struct sockaddr_un, sun_path) + strlen(address.sun_path) + 1;
     unlink(address.sun_path);
 
     NO_EINTR(err, bind(sock, (struct sockaddr*)&address, address_len));
