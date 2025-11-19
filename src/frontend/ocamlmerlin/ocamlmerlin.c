@@ -99,15 +99,11 @@ static void failwith(const char *msg)
 
 #ifdef _WIN32
 #define PATHSZ (MAX_PATH+1)
+#define SOCKSZ (MAX_PATH+1)
 #else
 #define PATHSZ (PATH_MAX+1)
+#define SOCKSZ (sizeof(((struct sockaddr_un *)0)->sun_path) - sizeof("./"))
 #endif
-
-/* On Linux, sun_path size is 108 bytes.
-   On macOS it's 104.
-   We use 102 buffer, as we later append './'
-*/
-#define SOCKSZ (102)
 
 #define BEGIN_PROTECTCWD \
   { char previous_cwd[PATHSZ]; \
@@ -291,7 +287,7 @@ static int connect_socket(const char *socketname, int fail)
     /* Return from chdir is ignored */
     err = chdir(path_socketdir());
     address.sun_family = AF_UNIX;
-    snprintf(address.sun_path, 104, "./%s", socketname);
+    snprintf(address.sun_path, sizeof(address.sun_path), "./%s", socketname);
     address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
 
     NO_EINTR(err, connect(sock, (struct sockaddr*)&address, address_len));
@@ -385,7 +381,7 @@ static void start_server(const char *socketname, const char* ignored, const char
     /* Return from chdir is ignored */
     err = chdir(path_socketdir());
     address.sun_family = AF_UNIX;
-    snprintf(address.sun_path, 104, "./%s", socketname);
+    snprintf(address.sun_path, sizeof(address.sun_path), "./%s", socketname);
     address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
     unlink(address.sun_path);
 
