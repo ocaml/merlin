@@ -37,7 +37,7 @@ typedef SSIZE_T ssize_t;
 #define ATLEAST
 #endif
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 extern __declspec(dllimport) char **environ;
 #else
 extern char **environ;

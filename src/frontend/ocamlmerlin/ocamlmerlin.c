@@ -252,7 +252,7 @@ static void append_argument(unsigned char *buffer, ssize_t len, ssize_t *pos, co
   *pos = j;
 }
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 extern __declspec(dllimport) char **environ;
 #else
 extern char **environ;
