@@ -21,7 +21,6 @@
 #endif
 #ifdef _MSC_VER
 typedef SSIZE_T ssize_t;
-#define PATH_MAX MAX_PATH
 #ifndef _UCRT
 #define snprintf _snprintf
 #endif
@@ -92,7 +91,11 @@ static void failwith(const char *msg)
   exit(EXIT_FAILURE);
 }
 
+#ifdef _WIN32
+#define PATHSZ (MAX_PATH+1)
+#else
 #define PATHSZ (PATH_MAX+1)
+#endif
 
 /* On Linux, sun_path size is 108 bytes.
    On macOS it's 104.
