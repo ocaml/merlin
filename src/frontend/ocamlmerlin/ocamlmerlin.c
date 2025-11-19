@@ -54,6 +54,19 @@ typedef SSIZE_T ssize_t;
 #define ATLEAST
 #endif
 
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+#ifndef __has_extension
+#define __has_extension __has_feature
+#endif
+
+#if __has_feature(c_countof)
+#define countof _Countof
+#else
+#define countof(a) (sizeof(a)/sizeof(*(a)))
+#endif
+
 /** Portability information **/
 
 /* Determine OS, http://stackoverflow.com/questions/6649936
@@ -125,9 +138,9 @@ static const char *path_socketdir(void)
       GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "GetTempPath2A");
     DWORD rc;
     if (pGetTempPath2A != NULL)
-      rc = pGetTempPath2A(_countof(dir), dir);
+      rc = pGetTempPath2A(countof(dir), dir);
     else
-      rc = GetTempPathA(_countof(dir), dir);
+      rc = GetTempPathA(countof(dir), dir);
     if (rc == 0)
       failwith("could not get temporary path");
   }
@@ -534,7 +547,7 @@ static void compute_merlinpath(char merlin_path[ATLEAST PATHSZ], const char *arg
   strsz = strlen(merlin_path);
 
   // Append ocamlmerlin-server
-  if (strsz + sizeof(ocamlmerlin_server) + 8 > PATHSZ)
+  if (strsz + countof(ocamlmerlin_server) + 8 > PATHSZ)
     failwith("path is too long");
 
   strcpy(merlin_path + strsz, ocamlmerlin_server);
