@@ -562,7 +562,7 @@ static void compute_merlinpath(char merlin_path[ATLEAST PATHSZ], const char *arg
 /* May return NULL */
 static LPSTR retrieve_user_sid_string(void)
 {
-  LPSTR usidstr;
+  LPSTR usidstr = NULL;
   HANDLE process_token;
   if ( ! OpenProcessToken( GetCurrentProcess(), TOKEN_QUERY, &process_token ) )
     return NULL;
@@ -570,32 +570,23 @@ static LPSTR retrieve_user_sid_string(void)
   DWORD sid_buffer_size;
   if ( ! GetTokenInformation(process_token, TokenUser, NULL, 0, &sid_buffer_size ) &&
         ( GetLastError() != ERROR_INSUFFICIENT_BUFFER ) )
-  {
-    CloseHandle(process_token);
-    return NULL;
-  }
+    goto close_process_token;
 
-  TOKEN_USER * token_user_ptr = (PTOKEN_USER) malloc(sid_buffer_size);
-  if ( ! token_user_ptr )
-  {
-    CloseHandle( process_token);
-    return NULL;
-  }
+  TOKEN_USER * token_user = (PTOKEN_USER) malloc(sid_buffer_size);
+  if ( ! token_user )
+    goto close_process_token;
 
-  if ( ! GetTokenInformation(process_token, TokenUser, token_user_ptr,
+  if ( ! GetTokenInformation(process_token, TokenUser, token_user,
                              sid_buffer_size, &sid_buffer_size))
-  {
-    free(token_user_ptr);
-    CloseHandle(process_token);
-    return NULL;
-  }
+    goto free_token_user;
 
-  if (! ConvertSidToStringSid(token_user_ptr->User.Sid, &usidstr))
+  if (! ConvertSidToStringSid(token_user->User.Sid, &usidstr))
     usidstr = NULL;
 
-  free(token_user_ptr);
+ free_token_user:
+  free(token_user);
+ close_process_token:
   CloseHandle(process_token);
-
   return usidstr;
 }
 
