@@ -135,57 +135,13 @@ FIXME: Signature help should not appear on the name of the function:
   $ $MERLIN single signature-help -position 1:9 -filename test < test.ml
   {
     "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
+    "value": {},
     "notifications": []
   }
 
   $ $MERLIN single signature-help -position 1:14 -filename test < test.ml
   {
     "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
+    "value": {},
     "notifications": []
   }

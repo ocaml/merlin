@@ -27,6 +27,8 @@ val get_offset : t -> [< position ] -> [> `Offset of int ]
 
 val get_logical : t -> [< position ] -> [> `Logical of int * int ]
 
+val compare_logical : [< `Logical of int * int ] -> [< `Logical of int * int ] -> int
+
 val get_lexing_pos : t -> filename:string -> [< position ] -> Lexing.position
 
 (** {1 Managing content} *)
