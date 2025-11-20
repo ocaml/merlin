@@ -2,6 +2,7 @@ unreleased
 ==========
 
   + merlin library
+    - Signature help should not appear on the function name (#1997)
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
     - Perform buffer indexing only if the query requires it (#1990 and #1991)
     - Stop unnecessarily forcing substitutions when initializing short-paths graph (#1988)
