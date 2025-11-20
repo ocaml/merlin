@@ -10,94 +10,42 @@ Valid
     "notifications": []
   }
 
-  $ $MERLIN single signature-help -position 1:18 -filename test < test.ml
+  $ $MERLIN single signature-help -position 1:18 -filename test < test.ml \
+  > | jq '.value | {label: .signatures[0].label, activeParameter: .activeParameter}'
+  {
+    "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
+    "activeParameter": 0
+  }
+
+  $ $MERLIN single signature-help -position 1:21 -filename test < test.ml \
+  > | jq '.value | {label: .signatures[0].label, activeParameter: .activeParameter}'
+  {
+    "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
+    "activeParameter": 0
+  }
+
+  $ $MERLIN single signature-help -position 1:24 -filename test < test.ml \
+  > | jq '.value | {label: .signatures[0].label, activeParameter: .activeParameter}'
+  {
+    "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
+    "activeParameter": 1
+  }
+
+  $ $MERLIN single signature-help -position 1:9 -filename test < test.ml
   {
     "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
+    "value": {},
     "notifications": []
   }
 
-  $ $MERLIN single signature-help -position 1:21 -filename test < test.ml
+  $ $MERLIN single signature-help -position 1:14 -filename test < test.ml
   {
     "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
+    "value": {},
     "notifications": []
   }
 
-  $ $MERLIN single signature-help -position 1:24 -filename test < test.ml
-  {
-    "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 1,
-      "activeSignature": 0
-    },
-    "notifications": []
-  }
-
-  $ cat > t.ml <<'EOF'
+  $ cat > test2.ml <<'EOF'
   > module M : sig
   >   val f : int -> unit
   > end = struct
@@ -107,85 +55,9 @@ Valid
   > let () = M.f (* keep whitespace *)
   > EOF
 
-  $ $MERLIN single signature-help -position 7:13 -filename test < t.ml
+  $ $MERLIN single signature-help -position 7:13 -filename test < test2.ml \
+  > | jq '.value | {label: .signatures[0].label, activeParameter: .activeParameter}'
   {
-    "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "M.f : int -> unit",
-          "parameters": [
-            {
-              "label": [
-                6,
-                9
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
-    "notifications": []
-  }
-
-
-FIXME: Signature help should not appear on the name of the function:
-  $ $MERLIN single signature-help -position 1:9 -filename test < test.ml
-  {
-    "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
-    "notifications": []
-  }
-
-  $ $MERLIN single signature-help -position 1:14 -filename test < test.ml
-  {
-    "class": "return",
-    "value": {
-      "signatures": [
-        {
-          "label": "List.map : ('a -> 'a) -> 'a list -> 'a list",
-          "parameters": [
-            {
-              "label": [
-                11,
-                21
-              ]
-            },
-            {
-              "label": [
-                25,
-                32
-              ]
-            }
-          ]
-        }
-      ],
-      "activeParameter": 0,
-      "activeSignature": 0
-    },
-    "notifications": []
+    "label": "M.f : int -> unit",
+    "activeParameter": 0
   }

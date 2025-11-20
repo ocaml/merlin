@@ -105,6 +105,11 @@ let get_logical { text } = function
     done;
     `Logical (!line, offset - !cnum)
 
+let compare_position t x y =
+  let `Offset ox = get_offset t x in
+  let `Offset oy = get_offset t y in
+  compare ox oy
+
 let get_lexing_pos t ~filename pos =
   let (`Offset o) = get_offset t pos in
   let (`Logical (line, col)) = get_logical t pos in
