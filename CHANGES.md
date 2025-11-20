@@ -8,6 +8,9 @@ unreleased
     - enclosing: drastically improve the ranges! (#2121)
   + merlin binary
     - Use c library flags from `ocamlc -config`. Fixes Haiku build (#2124)
+  + test suite
+    - Add a test case illustrating `case-analysis` command fails to load module
+      in issue #1786 (#2002)
 
 merlin 5.8.1
 ============
