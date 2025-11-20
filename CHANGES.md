@@ -9,6 +9,8 @@ unreleased
     - Add a test to ensure the behavior showed in issue #1517 is no longer relevant (#1995)
     - Add a test to ensure the code fragment exhibited in issue #1118 no longer makes Merlin crash (#1996)
 
+
+
 merlin 5.6
 ==========
 Sat Oct 04 15:10:42 CEST 2025
