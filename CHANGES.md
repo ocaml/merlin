@@ -8,6 +8,7 @@ unreleased
   + test suite
     - Add a test to ensure the behavior showed in issue #1517 is no longer relevant (#1995)
     - Add a test to ensure the code fragment exhibited in issue #1118 no longer makes Merlin crash (#1996)
+    - Add a test case illustrating how a snippet produces two unrelated errors in issue #2000. (#2003)
 
 merlin 5.6
 ==========
