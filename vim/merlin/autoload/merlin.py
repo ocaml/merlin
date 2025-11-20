@@ -538,6 +538,8 @@ def read_lines_of_file(fname, lines):
 # From the result of [command_occurrences], read the start line for each
 # results. Generate the same occurrences with the 'text' field added.
 def with_text_previews(occurs):
+    occurs.sort(key = lambda oc: oc.get('file'))
+
     preview_lines_by_file = {
             fname: read_lines_of_file(fname, [ oc['start']['line'] for oc in occurs ])
             for fname, occurs
