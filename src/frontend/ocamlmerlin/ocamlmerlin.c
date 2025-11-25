@@ -347,8 +347,11 @@ static void start_server(const char *socketname, const char* eventname, const ch
   PROCESS_INFORMATION pi;
   STARTUPINFO si;
   HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, eventname);
+  int len;
 
-  sprintf(buf, "%s server %s %s", exec_path, socketname, eventname);
+  len = snprintf(buf, countof(buf), "%s server %s %s", exec_path, socketname, eventname);
+  if (len < 0 || (unsigned)len > countof(buf) - 1)
+    failwith("arguments array was truncated");
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
@@ -630,14 +633,18 @@ static void compute_socketname(char socketname[ATLEAST PATHSZ], char eventname[A
   if (! user_sid_string)
     user_sid_string = LocalAlloc(LPTR, 1);
 
+  int len;
   // @@DRA Need to use Windows API functions to get meaningful values for st_dev and st_ino
-  snprintf(eventname, PATHSZ,
-      "ocamlmerlin_%s_%lx_%llx",
-      user_sid_string,
-      info.dwVolumeSerialNumber,
-      ((__int64)info.nFileIndexHigh) << 32 | ((__int64)info.nFileIndexLow));
-  snprintf(socketname, PATHSZ,
-      "\\\\.\\pipe\\%s", eventname);
+  len = snprintf(eventname, PATHSZ, "ocamlmerlin_%s_%lx_%llx",
+                 user_sid_string,
+                 info.dwVolumeSerialNumber,
+                 ((__int64)info.nFileIndexHigh) << 32 | ((__int64)info.nFileIndexLow));
+  if (len < 0 || (unsigned) len > PATHSZ - 1)
+    failwith("event name was truncated");
+
+  len = snprintf(socketname, PATHSZ, "\\\\.\\pipe\\%s", eventname);
+  if (len < 0 || (unsigned) len > PATHSZ - 1)
+    failwith("socket name was truncated");
 
   LocalFree(user_sid_string);
 }
