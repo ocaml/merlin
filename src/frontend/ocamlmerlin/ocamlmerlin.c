@@ -689,7 +689,6 @@ static void unexpected_termination(int argc, char * const *argv)
 int main(int argc, char **argv)
 {
   char result = 0;
-  int err = 0;
   struct stat st;
 #ifdef _WIN32
   HANDLE fds[3];
@@ -735,11 +734,11 @@ int main(int argc, char **argv)
 
 #ifdef _WIN32
     if (ReadFile(sock, &result, 1, &dwNumberOfBytesRead, NULL) && dwNumberOfBytesRead == 1)
-      err = 1;
 #else
-    NO_EINTR(err, read(sock, &result, 1));
+    ssize_t read_;
+    NO_EINTR(read_, read(sock, &result, 1));
+    if (read_ == 1)
 #endif
-    if (err == 1)
       exit(result);
 
     unexpected_termination(argc, argv);
