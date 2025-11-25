@@ -178,7 +178,7 @@ static const char *path_socketdir(void)
 #ifdef _WIN32
 /** Deal with Windows IPC **/
 
-static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, const HANDLE fds[ATLEAST 3])
+static void ipc_send(HANDLE hPipe, unsigned char *buffer, ssize_t len, const HANDLE fds[ATLEAST 3])
 {
   DWORD dwNumberOfBytesWritten;
   if (!WriteFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != 3 * sizeof(HANDLE))
@@ -190,7 +190,7 @@ static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, const HAND
 #else
 /** Deal with UNIX IPC **/
 
-static void ipc_send(int fd, unsigned char *buffer, size_t len, const int fds[ATLEAST 3])
+static void ipc_send(int fd, unsigned char *buffer, ssize_t len, const int fds[ATLEAST 3])
 {
   char msg_control[CMSG_SPACE(3 * sizeof(int))];
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
@@ -234,7 +234,7 @@ static void ipc_send(int fd, unsigned char *buffer, size_t len, const int fds[AT
 
 #define byte(x,n) ((unsigned)((x) >> (n * 8)) & 0xFF)
 
-static void append_argument(unsigned char *buffer, size_t len, ssize_t *pos, const char *p)
+static void append_argument(unsigned char *buffer, ssize_t len, ssize_t *pos, const char *p)
 {
   ssize_t j = *pos;
   while (*p && j < len)
@@ -258,7 +258,7 @@ extern __declspec(dllimport) char **environ;
 extern char **environ;
 #endif
 
-static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char * const *argv)
+static ssize_t prepare_args(unsigned char *buffer, ssize_t len, int argc, char * const *argv)
 {
   int i = 0;
   ssize_t j = 4;
