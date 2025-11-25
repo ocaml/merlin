@@ -57,9 +57,7 @@ ml_merlin_set_environ(value venviron)
   if (environ)
     *environ = NULL;
 
-  size_t i, j;
-
-  for (i = 0, j = 0; i < length; ++i)
+  for (size_t i = 0, j = 0; i < length; ++i)
   {
     if (buffer[i] == '\0')
     {
@@ -142,20 +140,16 @@ static ssize_t recv_buffer(int fd, int fds[ATLEAST 3])
   /* Check malformed packet */
   if (nfds != 3 || recvd != target || buffer[recvd-1] != '\0')
   {
-    int i;
-    for (i = 0; i < nfds; ++i)
+    for (int i = 0; i < nfds; ++i)
       close(fds0[i]);
     return -1;
   }
 
+  for (int i = 0; i < 3; ++i)
   {
-    int i;
-    for (i = 0; i < 3; ++i)
-    {
-      fds[i] = fds0[i];
-      if (fcntl(fds[i], F_SETFD, FD_CLOEXEC) == -1)
-        perror("fcntl");
-    }
+    fds[i] = fds0[i];
+    if (fcntl(fds[i], F_SETFD, FD_CLOEXEC) == -1)
+      perror("fcntl");
   }
 
   return recvd;
