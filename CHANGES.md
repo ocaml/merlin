@@ -1,6 +1,8 @@
 unreleased
 ==========
 
+  + merlin binary
+    - Fix a plethora of minor issues with the C code (#1998)
   + merlin library
     - Signature help should not appear on the function name (#1997)
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
