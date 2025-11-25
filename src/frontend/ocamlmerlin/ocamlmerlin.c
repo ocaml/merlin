@@ -178,7 +178,7 @@ static const char *path_socketdir(void)
 #ifdef _WIN32
 /** Deal with Windows IPC **/
 
-static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds[ATLEAST 3])
+static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, const HANDLE fds[ATLEAST 3])
 {
   DWORD dwNumberOfBytesWritten;
   if (!WriteFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != 3 * sizeof(HANDLE))
@@ -190,7 +190,7 @@ static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds
 #else
 /** Deal with UNIX IPC **/
 
-static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[ATLEAST 3])
+static void ipc_send(int fd, unsigned char *buffer, size_t len, const int fds[ATLEAST 3])
 {
   char msg_control[CMSG_SPACE(3 * sizeof(int))];
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
@@ -258,7 +258,7 @@ extern __declspec(dllimport) char **environ;
 extern char **environ;
 #endif
 
-static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **argv)
+static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char * const *argv)
 {
   int i = 0;
   ssize_t j = 4;
@@ -643,7 +643,7 @@ static void compute_socketname(char socketname[ATLEAST PATHSZ], char eventname[A
 }
 
 #else
-static void compute_socketname(char socketname[ATLEAST SOCKSZ], struct stat *st)
+static void compute_socketname(char socketname[ATLEAST SOCKSZ], const struct stat *st)
 {
   snprintf(socketname, SOCKSZ,
       "ocamlmerlin_%llu_%llu_%llu.socket",
@@ -667,7 +667,7 @@ static void dumpinfo(void)
       "merlin path: %s\nsocket path: %s/%s\n", merlin_path, path_socketdir(), socketname);
 }
 
-static void unexpected_termination(int argc, char **argv)
+static void unexpected_termination(int argc, char * const *argv)
 {
   bool sexp = false;
   int i;
