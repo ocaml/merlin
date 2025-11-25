@@ -1,3 +1,4 @@
+#define __USE_MINGW_ANSI_STDIO 1
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,9 +24,6 @@
 #endif
 #ifdef _MSC_VER
 typedef SSIZE_T ssize_t;
-#ifndef _UCRT
-#define snprintf _snprintf
-#endif
 #endif
 #else
 #include <unistd.h>
