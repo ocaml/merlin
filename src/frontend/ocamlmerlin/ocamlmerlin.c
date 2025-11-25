@@ -192,24 +192,22 @@ static void ipc_send(HANDLE hPipe, unsigned char *buffer, ssize_t len, const HAN
 
 static void ipc_send(int fd, unsigned char *buffer, ssize_t len, const int fds[ATLEAST 3])
 {
-  char msg_control[CMSG_SPACE(3 * sizeof(int))];
+  union {
+    char buf[CMSG_SPACE(3 * sizeof(int))];
+    struct cmsghdr align;
+  } u;
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
-  struct msghdr msg = {
-    .msg_iov = &iov, .msg_iovlen = 1,
-    .msg_controllen = CMSG_SPACE(3 * sizeof(int)),
-  };
-  msg.msg_control = &msg_control;
-  memset(msg.msg_control, 0, msg.msg_controllen);
+  struct msghdr msg = { 0 };
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = &u.buf;
+  msg.msg_controllen = sizeof(u.buf);
 
   struct cmsghdr *cm = CMSG_FIRSTHDR(&msg);
   cm->cmsg_level = SOL_SOCKET;
   cm->cmsg_type = SCM_RIGHTS;
   cm->cmsg_len = CMSG_LEN(3 * sizeof(int));
-
-  int *fds0 = (int*)CMSG_DATA(cm);
-  fds0[0] = fds[0];
-  fds0[1] = fds[1];
-  fds0[2] = fds[2];
+  memcpy(CMSG_DATA(cm), fds, 3 * sizeof(int));
 
   ssize_t sent;
   NO_EINTR(sent, sendmsg(fd, &msg, 0));

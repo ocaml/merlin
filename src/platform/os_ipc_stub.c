@@ -85,14 +85,16 @@ static unsigned char buffer[BUFFER_SIZE];
 
 static ssize_t recv_buffer(int fd, int fds[ATLEAST 3])
 {
-  char msg_control[CMSG_SPACE(3 * sizeof(int))];
+  union {
+    char buf[CMSG_SPACE(3 * sizeof(int))];
+    struct cmsghdr align;
+  } u;
   struct iovec iov = { .iov_base = buffer, .iov_len = sizeof(buffer) };
-  struct msghdr msg = {
-    .msg_iov = &iov, .msg_iovlen = 1,
-    .msg_controllen = CMSG_SPACE(3 * sizeof(int)),
-  };
-  msg.msg_control = &msg_control;
-  memset(msg.msg_control, 0, msg.msg_controllen);
+  struct msghdr msg = { 0 };
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = &u.buf;
+  msg.msg_controllen = sizeof(u.buf);
 
   ssize_t recvd;
   NO_EINTR(recvd, recvmsg(fd, &msg, 0));
@@ -138,20 +140,19 @@ static ssize_t recv_buffer(int fd, int fds[ATLEAST 3])
     perror("recvmsg");
     return -1;
   }
-  int *fds0 = (int*)CMSG_DATA(cm);
   int nfds = (cm->cmsg_len - CMSG_LEN(0)) / sizeof(int);
+  memcpy(fds, CMSG_DATA(cm), nfds * sizeof(int));
 
   /* Check malformed packet */
   if (nfds != 3 || recvd != target || buffer[recvd-1] != '\0')
   {
     for (int i = 0; i < nfds; ++i)
-      close(fds0[i]);
+      close(fds[i]);
     return -1;
   }
 
   for (int i = 0; i < 3; ++i)
   {
-    fds[i] = fds0[i];
     if (fcntl(fds[i], F_SETFD, FD_CLOEXEC) == -1)
       perror("fcntl");
   }
