@@ -160,13 +160,13 @@ value ml_merlin_server_setup(value path, value strfd)
 {
   CAMLparam2(path, strfd);
   CAMLlocal2(payload, ret);
-  char *endptr = NULL;
   int fd;
 
 #ifdef _WIN32
   fd = 0;
   ret = strfd;
 #else
+  char *endptr = NULL;
   fd = strtol(String_val(strfd), &endptr, 0);
   if (!endptr || *endptr != '\0')
     fd = -1;
