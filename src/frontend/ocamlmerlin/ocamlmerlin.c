@@ -343,7 +343,7 @@ static int connect_socket(const char *socketname, bool fail)
 #ifdef _WIN32
 static void start_server(const char *socketname, const char* eventname, const char *exec_path)
 {
-  char buf[PATHSZ], lpSystemDir[PATHSZ];
+  char buf[32767], lpSystemDir[PATHSZ];
   PROCESS_INFORMATION pi;
   STARTUPINFO si;
   HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, eventname);
