@@ -5,6 +5,7 @@ unreleased
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
     - Perform buffer indexing only if the query requires it (#1990 and #1991)
     - Stop unnecessarily forcing substitutions when initializing short-paths graph (#1988)
+    - Fix Mocaml.with_printer didn't update replacement_printer_doc (#2010)
   + test suite
     - Add a test to ensure the behavior showed in issue #1517 is no longer relevant (#1995)
     - Add a test to ensure the code fragment exhibited in issue #1118 no longer makes Merlin crash (#1996)
