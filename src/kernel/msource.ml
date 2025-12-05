@@ -105,6 +105,17 @@ let get_logical { text } = function
     done;
     `Logical (!line, offset - !cnum)
 
+let compare_logical x y : int =
+  match x, y with
+  | `Logical (row_x, col_x),
+    `Logical (row_y, col_y) ->
+      let delta_row = row_x - row_y in
+      if delta_row = 0 then col_x - col_y else delta_row
+  | _ -> failwith "Only `Logical expected."
+
+let compare_logical (`Logical ((row_x: int), (col_x : int))) (`Logical ((row_y:int), (col_y: int))) =
+  compare (row_x, col_x) (row_y, col_y)
+
 let get_lexing_pos t ~filename pos =
   let (`Offset o) = get_offset t pos in
   let (`Logical (line, col)) = get_logical t pos in
