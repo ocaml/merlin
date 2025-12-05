@@ -204,7 +204,7 @@ jobs:
         run: echo "name=$${{ matrix.commit }}_artifact_name" >> $GITHUB_OUTPUT
 
       - name: Upload data
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.artifact_name.outputs.name }}
           path: ${{ env.data_dir }}
@@ -218,7 +218,7 @@ jobs:
 
       - name: Upload diff tool
         if: ${{ matrix.commit == 'merge_branch' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: diff_tool
           path: create_diff
@@ -294,7 +294,7 @@ jobs:
           | ./create_diff "--input-separator--" "--diff-cmd-separator--" "$diff_dir/$DISTILLED_DIFF_FILE"
 
       - name: Upload diff(s)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.DIFF_ARTIFACT_NAME }}
           path: ${{ env.diff_dir }}
@@ -371,7 +371,7 @@ jobs:
 
       - name: Upload instruction to delete label
         if: ${{ env.earlier_diff_was_approved == 'true' &&  steps.approved_diff.outputs.hash != steps.current_diff.outputs.hash }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: forwarded_instructions
           path: forward/
@@ -454,7 +454,7 @@ jobs:
 
       - name: Upload instruction to delete label
         if: ${{ steps.diff_metadata.outputs.exists == 'false' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: forwarded_instructions
           path: forward/
@@ -499,7 +499,7 @@ jobs:
             '{instruction: $instruction, endpoint: $endpoint, artifacts_url: $artifacts_url, hash: $hash}' > ./forward/instruction.json
 
       - name: Upload instruction to comment on PR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: forwarded_instructions
           path: forward/
