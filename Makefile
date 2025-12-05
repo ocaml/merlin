@@ -26,3 +26,4 @@ bench:
 	jq . merl-an_bench/bench.json
 
 .PHONY: all build dev clean test promote bench bench
+.NOTPARALLEL:
