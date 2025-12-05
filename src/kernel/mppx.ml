@@ -12,11 +12,10 @@ let with_include_dir ~visible_path ~hidden_path f =
   Clflags.include_dirs := visible_path;
   Clflags.hidden_include_dirs := hidden_path;
   let result =
-    begin
-      try f ()
-      with e ->
-        restore ();
-        raise e
+    begin try f ()
+    with e ->
+      restore ();
+      raise e
     end
   in
   restore ();

@@ -1,14 +1,11 @@
 module General : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -65,14 +62,11 @@ end
 module Convert : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -144,14 +138,11 @@ end
 module IncrementalEngine : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -232,12 +223,12 @@ module type INCREMENTAL_ENGINE = sig
     'a checkpoint
 
   (* [resume] allows the user to resume the parser after it has suspended
-     itself with a checkpoint of the form [AboutToReduce (env, prod)] or
-     [HandlingError env]. [resume] expects the old checkpoint and produces a
+     itself with a checkpoint of the form [Shifting _], [AboutToReduce _], or
+     [HandlingError _]. [resume] expects the old checkpoint and produces a
      new checkpoint. It does not raise any exception. *)
 
   (* The optional argument [strategy] influences the manner in which [resume]
-     deals with checkpoints of the form [ErrorHandling _]. Its default value
+     deals with checkpoints of the form [HandlingError _]. Its default value
      is [`Legacy]. It can be briefly described as follows:
 
      - If the [error] token is used only to report errors (that is, if the
@@ -633,14 +624,11 @@ end
 module EngineTypes : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -718,6 +706,53 @@ type ('state, 'semantic_value, 'token) env = {
   current: 'state;
 
 }
+
+(* --------------------------------------------------------------------------- *)
+
+(* A number of logging hooks are used to (optionally) emit logging messages. *)
+
+(* The comments indicate the conventional messages that correspond
+   to these hooks in the code-based back-end; see [CodeBackend]. *)
+
+module type LOG = sig
+
+  type state
+  type terminal
+  type production
+
+  (* State %d: *)
+
+  val state: state -> unit
+
+  (* Shifting (<terminal>) to state <state> *)
+
+  val shift: terminal -> state -> unit
+
+  (* Reducing a production should be logged either as a reduction
+     event (for regular productions) or as an acceptance event (for
+     start productions). *)
+
+  (* Reducing production <production> / Accepting *)
+
+  val reduce_or_accept: production -> unit
+
+  (* Lookahead token is now <terminal> (<pos>-<pos>) *)
+
+  val lookahead_token: terminal -> Lexing.position -> Lexing.position -> unit
+
+  (* Initiating error handling *)
+
+  val initiating_error_handling: unit -> unit
+
+  (* Resuming error handling *)
+
+  val resuming_error_handling: unit -> unit
+
+  (* Handling error in state <state> *)
+
+  val handling_error: state -> unit
+
+end
 
 (* --------------------------------------------------------------------------- *)
 
@@ -842,6 +877,16 @@ module type TABLE = sig
     ('env -> 'answer) ->
     'env -> 'answer
 
+  (**[maybe_shift_t s t] determines whether there exists a transition out of
+     the state [s], labeled with the terminal symbol [t], to some state
+     [s']. If so, it returns [Some s']. Otherwise, it returns [None]. *)
+  val maybe_shift_t : state -> terminal -> state option
+
+  (**[may_reduce_prod s t prod] determines whether in the state [s], with
+     lookahead symbol [t], the automaton reduces production [prod]. This test
+     accounts for the possible existence of a default reduction. *)
+  val may_reduce_prod : state -> terminal -> production -> bool
+
   (* This is the automaton's goto table. This table maps a pair of a state
      and a nonterminal symbol to a new state. By extension, it also maps a
      pair of a state and a production to a new state. *)
@@ -856,6 +901,11 @@ module type TABLE = sig
   val       goto_nt  : state -> nonterminal -> state
   val       goto_prod: state -> production  -> state
   val maybe_goto_nt:   state -> nonterminal -> state option
+
+  (* [lhs prod] returns the left-hand side of production [prod],
+     a nonterminal symbol. *)
+
+  val lhs: production -> nonterminal
 
   (* [is_start prod] tells whether the production [prod] is a start production. *)
 
@@ -897,51 +947,17 @@ module type TABLE = sig
 
   val may_reduce: state -> production -> bool
 
-  (* The LR engine requires a number of hooks, which are used for logging. *)
-
-  (* The comments below indicate the conventional messages that correspond
-     to these hooks in the code-based back-end; see [CodeBackend]. *)
-
   (* If the flag [log] is false, then the logging functions are not called.
      If it is [true], then they are called. *)
 
   val log : bool
 
-  module Log : sig
+  (* The logging hooks required by the LR engine. *)
 
-    (* State %d: *)
-
-    val state: state -> unit
-
-    (* Shifting (<terminal>) to state <state> *)
-
-    val shift: terminal -> state -> unit
-
-    (* Reducing a production should be logged either as a reduction
-       event (for regular productions) or as an acceptance event (for
-       start productions). *)
-
-    (* Reducing production <production> / Accepting *)
-
-    val reduce_or_accept: production -> unit
-
-    (* Lookahead token is now <terminal> (<pos>-<pos>) *)
-
-    val lookahead_token: terminal -> Lexing.position -> Lexing.position -> unit
-
-    (* Initiating error handling *)
-
-    val initiating_error_handling: unit -> unit
-
-    (* Resuming error handling *)
-
-    val resuming_error_handling: unit -> unit
-
-    (* Handling error in state <state> *)
-
-    val handling_error: state -> unit
-
-  end
+  module Log : LOG
+    with type state := state
+     and type terminal := terminal
+     and type production := production
 
 end
 
@@ -1034,14 +1050,11 @@ end
 module Engine : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1067,14 +1080,11 @@ end
 module ErrorReports : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1147,57 +1157,62 @@ end
 module LexerUtil : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
 open Lexing
 
-(* [init filename lexbuf] initializes the lexing buffer [lexbuf] so
+(**[init filename lexbuf] initializes the lexing buffer [lexbuf] so
    that the positions that are subsequently read from it refer to the
    file [filename]. It returns [lexbuf]. *)
-
 val init: string -> lexbuf -> lexbuf
 
-(* [read filename] reads the entire contents of the file [filename] and
+(**[read filename] reads the entire contents of the file [filename] and
    returns a pair of this content (a string) and a lexing buffer that
    has been initialized, based on this string. *)
-
 val read: string -> string * lexbuf
 
-(* [newline lexbuf] increments the line counter stored within [lexbuf]. It
+(**[newline lexbuf] increments the line counter stored within [lexbuf]. It
    should be invoked by the lexer itself every time a newline character is
-   consumed. This allows maintaining a current the line number in [lexbuf]. *)
-
+   consumed. This allows maintaining a current the line number in [lexbuf].
+   It is synonymous with [Lexing.new_line lexbuf]. *)
 val newline: lexbuf -> unit
 
-(* [range (startpos, endpos)] prints a textual description of the range
+(**[range (startpos, endpos)] prints a textual description of the range
    delimited by the start and end positions [startpos] and [endpos].
    This description is one line long and ends in a newline character.
    This description mentions the file name, the line number, and a range
    of characters on this line. The line number is correct only if [newline]
    has been correctly used, as described dabove. *)
-
 val range: position * position -> string
+
+(**[tabulate is_eof lexer] tabulates the lexer [lexer]: that is, it
+   immediately runs this lexer all the way until an EOF token is found, stores
+   the tokens in an array in memory, and returns a new lexer which (when
+   invoked) reads tokens from this array. The function [lexer] is not allowed
+   to raise an exception, and must produce a finite stream of tokens: that is,
+   after a finite number of invocations, it must return a token that is
+   identified by the function [is_eof] as an EOF token.
+
+   Both the existing lexer [lexer] and the new lexer returned by [tabulate
+   is_eof lexer] are functions of type [unit -> 'a], where the type ['a] is
+   likely to be instantiated with a triple of a token and two positions, as
+   per the revised lexer API described in the module {!Convert}. *)
+val tabulate: ('a -> bool) -> (unit -> 'a) -> (unit -> 'a)
 end
 module Printers : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1268,14 +1283,11 @@ end
 module InfiniteArray : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1306,14 +1318,11 @@ end
 module PackedIntArray : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1365,33 +1374,34 @@ end
 module RowDisplacement : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
 (* This module compresses a two-dimensional table, where some values
    are considered insignificant, via row displacement. *)
 
-(* A compressed table is represented as a pair of arrays. The
-   displacement array is an array of offsets into the data array. *)
+(* A compressed table is represented as a pair of arrays. The displacement
+   array contains nonnegative integers, which, once decoded in a certain
+   way, represent (possibly negative) offsets into the data array. *)
+
+type displacement =
+  int
 
 type 'a table =
-    int array * (* displacement *)
-     'a array   (* data *)
+  displacement array * (* displacement *)
+            'a array   (* data *)
 
 (* [compress equal insignificant dummy m n t] turns the two-dimensional table
    [t] into a compressed table. The parameter [equal] is equality of data
-   values. The parameter [wildcard] tells which data values are insignificant,
-   and can thus be overwritten with other values. The parameter [dummy] is
-   used to fill holes in the data array. [m] and [n] are the integer
-   dimensions of the table [t]. *)
+   values. The parameter [insignificant] determines which data values are
+   insignificant, and can thus be overwritten with other values. The parameter
+   [dummy] is used to fill holes in the data array. [m] and [n] are the
+   integer dimensions of the table [t]. *)
 
 val compress:
   ('a -> 'a -> bool) ->
@@ -1425,18 +1435,20 @@ val getget:
   int -> int ->
   'a
 
+(* In order to guarantee that all displacements are nonnegative, an encoding
+   of negative numbers is used. It is implemented by the functions [encode]
+   and [decode]. These functions are in principle internal. We expose [encode]
+   because it is used by [FastDisplacement]. *)
+val encode: int -> displacement
 end
 module LinearizedArray : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1503,14 +1515,11 @@ end
 module TableFormat : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1642,14 +1651,11 @@ end
 module InspectionTableFormat : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1718,14 +1724,11 @@ end
 module InspectionTableInterpreter : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1770,14 +1773,11 @@ end
 module TableInterpreter : sig
 (******************************************************************************)
 (*                                                                            *)
-(*                                   Menhir                                   *)
+(*                                    Menhir                                  *)
 (*                                                                            *)
-(*                       François Pottier, Inria Paris                        *)
-(*              Yann Régis-Gianas, PPS, Université Paris Diderot              *)
-(*                                                                            *)
-(*  Copyright Inria. All rights reserved. This file is distributed under the  *)
-(*  terms of the GNU Library General Public License version 2, with a         *)
-(*  special exception on linking, as described in the file LICENSE.           *)
+(*   Copyright Inria. All rights reserved. This file is distributed under     *)
+(*   the terms of the GNU Library General Public License version 2, with a    *)
+(*   special exception on linking, as described in the file LICENSE.          *)
 (*                                                                            *)
 (******************************************************************************)
 
@@ -1803,5 +1803,5 @@ module MakeEngineTable
      and type nonterminal = int
 end
 module StaticVersion : sig
-val require_20201216: unit
+val require_20250912: unit
 end
