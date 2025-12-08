@@ -898,16 +898,20 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     match application_signature with
     | Some s ->
-      let prefix =
-        let fun_name = Option.value ~default:"_" s.function_name in
-        sprintf "%s : " fun_name
-      in
-      Some
-        { label = prefix ^ s.signature;
-          parameters = List.map ~f:(param (String.length prefix)) s.parameters;
-          active_param = Option.value ~default:0 s.active_param;
-          active_signature = 0
-        }
+      if Msource.compare_position source position s.function_position < 0
+      then None
+      else (
+        let prefix =
+          let fun_name = Option.value ~default:"_" s.function_name in
+          sprintf "%s : " fun_name
+        in
+        Some
+          { label = prefix ^ s.signature;
+            parameters = List.map ~f:(param (String.length prefix)) s.parameters;
+            active_param = Option.value ~default:0 s.active_param;
+            active_signature = 0
+          }
+      )
     | None -> None)
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
