@@ -2,7 +2,7 @@
   > let a : type b. 'a as b list = []
   > EOF
 
-FIXME: This syntactically perfectly valid OCaml produce two unrelated cryptic error message.
+FIXME: This syntactically incorrect OCaml snippet produces two unrelated cryptic error message.
 See https://github.com/ocaml/merlin/issues/2000.
   $ $MERLIN single errors -filename main.ml <main.ml
   {
