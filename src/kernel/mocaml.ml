@@ -106,7 +106,9 @@ let default_printer ppf =
   | Out_type_extension x -> Format_doc.compat default_out_type_extension ppf x
   | Out_phrase x -> default_out_phrase ppf x
 
-let with_printer printer f = let_ref replacement_printer (Some printer) f
+let with_printer printer f =
+  let_ref replacement_printer (Some printer) @@ fun () ->
+  let_ref replacement_printer_doc (Some (Format_doc.deprecated printer)) f
 
 (* Cleanup caches *)
 let clear_caches () =
