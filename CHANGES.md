@@ -7,6 +7,7 @@ unreleased
     - Stop unnecessarily forcing substitutions when initializing short-paths graph (#1988)
   + test suite
     - Add a test to ensure the behavior showed in issue #1517 is no longer relevant (#1995)
+    - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
 
 merlin 5.6
 ==========
