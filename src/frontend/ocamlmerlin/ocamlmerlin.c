@@ -1,7 +1,10 @@
+#define __USE_MINGW_ANSI_STDIO 1
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <stdbool.h>
 #ifdef _WIN32
 /* GetNamedPipeServerProcessId requires Windows Vista+ */
 #undef _WIN32_WINNT
@@ -21,10 +24,6 @@
 #endif
 #ifdef _MSC_VER
 typedef SSIZE_T ssize_t;
-#define PATH_MAX MAX_PATH
-#ifndef _UCRT
-#define snprintf _snprintf
-#endif
 #endif
 #else
 #include <unistd.h>
@@ -46,6 +45,30 @@ typedef SSIZE_T ssize_t;
 #include <sys/syslimits.h>
 #elif defined(__OpenBSD__)
 #include <sys/param.h>
+#endif
+
+#if !(defined(_MSC_VER) && !defined(__clang__))
+#define ATLEAST static
+#else
+#define ATLEAST
+#endif
+
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+#ifndef __has_extension
+#define __has_extension __has_feature
+#endif
+#ifndef __has_include
+#define __has_include(x) 0
+#endif
+
+#if __has_include("<stdcountof.h>")
+#include <stdcountof.h>
+#elif __has_extension(c_countof)
+#define countof _Countof
+#else
+#define countof(a) (sizeof(a)/sizeof(*(a)))
 #endif
 
 /** Portability information **/
@@ -78,6 +101,23 @@ typedef SSIZE_T ssize_t;
 
 static void dumpinfo(void);
 
+#ifdef _WIN32
+static void failwith_formatmessage(const char *msg)
+{
+    char err[512];
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                  NULL,                 /* message source */
+                  GetLastError(),       /* error number */
+                  0,                    /* default language */
+                  err,                  /* destination */
+                  countof(err),         /* size of destination */
+                  NULL);                /* no inserts */
+    fprintf(stderr, "%s: %s\n", err, msg);
+    dumpinfo();
+    exit(EXIT_FAILURE);
+}
+#endif
+
 static void failwith_perror(const char *msg)
 {
   perror(msg);
@@ -92,13 +132,13 @@ static void failwith(const char *msg)
   exit(EXIT_FAILURE);
 }
 
+#ifdef _WIN32
+#define PATHSZ (MAX_PATH+1)
+#define SOCKSZ (MAX_PATH+1)
+#else
 #define PATHSZ (PATH_MAX+1)
-
-/* On Linux, sun_path size is 108 bytes.
-   On macOS it's 104.
-   We use 102 buffer, as we later append './'
-*/
-#define SOCKSZ (102)
+#define SOCKSZ (sizeof(((struct sockaddr_un *)0)->sun_path) - sizeof("./"))
+#endif
 
 #define BEGIN_PROTECTCWD \
   { char previous_cwd[PATHSZ]; \
@@ -110,49 +150,64 @@ static void failwith(const char *msg)
 
 static const char *path_socketdir(void)
 {
-  static const char *tmpdir = NULL;
-  if (tmpdir == NULL)
-    tmpdir = getenv("TMPDIR");
-  if (tmpdir == NULL)
-    tmpdir = "/tmp";
-  return tmpdir;
+#ifdef _WIN32
+  static char dir[MAX_PATH+1] = { 0 };
+  if (dir[0] == 0) {
+    DWORD (WINAPI *pGetTempPath2A)(DWORD, LPSTR) =
+      (DWORD (WINAPI *)(DWORD, LPSTR))
+      (void (WINAPI *)(void))
+      GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "GetTempPath2A");
+    DWORD rc;
+    if (pGetTempPath2A != NULL)
+      rc = pGetTempPath2A(countof(dir), dir);
+    else
+      rc = GetTempPathA(countof(dir), dir);
+    if (rc == 0)
+      failwith_formatmessage("GetTempPath");
+  }
+#else
+  static const char *dir = NULL;
+  if (dir == NULL &&
+      (dir = getenv("XDG_RUNTIME_DIR")) == NULL &&
+      (dir = getenv("TMPDIR")) == NULL)
+    dir = "/tmp";
+#endif
+  return dir;
 }
 
 #ifdef _WIN32
 /** Deal with Windows IPC **/
 
-static void ipc_send(HANDLE hPipe, unsigned char *buffer, size_t len, HANDLE fds[3])
+static void ipc_send(HANDLE hPipe, unsigned char *buffer, ssize_t len, const HANDLE fds[ATLEAST 3])
 {
   DWORD dwNumberOfBytesWritten;
   if (!WriteFile(hPipe, fds, 3 * sizeof(HANDLE), &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != 3 * sizeof(HANDLE))
-    failwith_perror("sendmsg");
+    failwith_formatmessage("WriteFile/sendmsg");
   if (!WriteFile(hPipe, buffer, len, &dwNumberOfBytesWritten, NULL) || dwNumberOfBytesWritten != len)
-    failwith_perror("send");
+    failwith_formatmessage("WriteFile/send");
 }
 
 #else
 /** Deal with UNIX IPC **/
 
-static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
+static void ipc_send(int fd, unsigned char *buffer, ssize_t len, const int fds[ATLEAST 3])
 {
-  char msg_control[CMSG_SPACE(3 * sizeof(int))];
+  union {
+    char buf[CMSG_SPACE(3 * sizeof(int))];
+    struct cmsghdr align;
+  } u;
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
-  struct msghdr msg = {
-    .msg_iov = &iov, .msg_iovlen = 1,
-    .msg_controllen = CMSG_SPACE(3 * sizeof(int)),
-  };
-  msg.msg_control = &msg_control;
-  memset(msg.msg_control, 0, msg.msg_controllen);
+  struct msghdr msg = { 0 };
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_control = &u.buf;
+  msg.msg_controllen = sizeof(u.buf);
 
   struct cmsghdr *cm = CMSG_FIRSTHDR(&msg);
   cm->cmsg_level = SOL_SOCKET;
   cm->cmsg_type = SCM_RIGHTS;
   cm->cmsg_len = CMSG_LEN(3 * sizeof(int));
-
-  int *fds0 = (int*)CMSG_DATA(cm);
-  fds0[0] = fds[0];
-  fds0[1] = fds[1];
-  fds0[2] = fds[2];
+  memcpy(CMSG_DATA(cm), fds, 3 * sizeof(int));
 
   ssize_t sent;
   NO_EINTR(sent, sendmsg(fd, &msg, 0));
@@ -177,7 +232,7 @@ static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
 
 #define byte(x,n) ((unsigned)((x) >> (n * 8)) & 0xFF)
 
-static void append_argument(unsigned char *buffer, size_t len, ssize_t *pos, const char *p)
+static void append_argument(unsigned char *buffer, ssize_t len, ssize_t *pos, const char *p)
 {
   ssize_t j = *pos;
   while (*p && j < len)
@@ -195,13 +250,13 @@ static void append_argument(unsigned char *buffer, size_t len, ssize_t *pos, con
   *pos = j;
 }
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 extern __declspec(dllimport) char **environ;
 #else
 extern char **environ;
 #endif
 
-static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **argv)
+static ssize_t prepare_args(unsigned char *buffer, ssize_t len, int argc, char * const *argv)
 {
   int i = 0;
   ssize_t j = 4;
@@ -240,18 +295,18 @@ static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **
 
 #ifdef _WIN32
 #define IPC_SOCKET_TYPE HANDLE
-static HANDLE connect_socket(const char *socketname, int fail)
+static HANDLE connect_socket(const char *socketname, bool fail)
 {
   HANDLE hPipe;
   hPipe = CreateFile(socketname, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, 0);
   if (hPipe == INVALID_HANDLE_VALUE)
-    if (fail) failwith_perror("connect");
+    if (fail) failwith_formatmessage("CreateFile/connect");
   return hPipe;
 }
 #else
 #define IPC_SOCKET_TYPE int
 #define INVALID_HANDLE_VALUE -1
-static int connect_socket(const char *socketname, int fail)
+static int connect_socket(const char *socketname, bool fail)
 {
   int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1) failwith_perror("socket");
@@ -260,13 +315,14 @@ static int connect_socket(const char *socketname, int fail)
 
   BEGIN_PROTECTCWD
     struct sockaddr_un address;
-    int address_len;
+    socklen_t address_len;
+    memset(&address, 0, sizeof(address));
 
     /* Return from chdir is ignored */
     err = chdir(path_socketdir());
     address.sun_family = AF_UNIX;
-    snprintf(address.sun_path, 104, "./%s", socketname);
-    address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
+    snprintf(address.sun_path, sizeof(address.sun_path), "./%s", socketname);
+    address_len = offsetof(struct sockaddr_un, sun_path) + strlen(address.sun_path) + 1;
 
     NO_EINTR(err, connect(sock, (struct sockaddr*)&address, address_len));
   END_PROTECTCWD
@@ -285,12 +341,15 @@ static int connect_socket(const char *socketname, int fail)
 #ifdef _WIN32
 static void start_server(const char *socketname, const char* eventname, const char *exec_path)
 {
-  char buf[PATHSZ], lpSystemDir[PATHSZ];
+  char buf[32767], lpSystemDir[PATHSZ];
   PROCESS_INFORMATION pi;
   STARTUPINFO si;
   HANDLE hEvent = CreateEvent(NULL, FALSE, FALSE, eventname);
-  DWORD dwResult;
-  sprintf(buf, "%s server %s %s", exec_path, socketname, eventname);
+  int len;
+
+  len = snprintf(buf, countof(buf), "%s server %s %s", exec_path, socketname, eventname);
+  if (len < 0 || (unsigned)len > countof(buf) - 1)
+    failwith("arguments array was truncated");
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
@@ -300,14 +359,14 @@ static void start_server(const char *socketname, const char* eventname, const ch
   /* Note that DETACHED_PROCESS means that the process does not appear in Task Manager
      but the server can still be stopped with ocamlmerlin server stop-server */
   if (!CreateProcess(exec_path, buf, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, lpSystemDir, &si, &pi))
-    failwith_perror("fork");
+    failwith_formatmessage("CreateProcess/fork");
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
   if (WaitForSingleObject(hEvent, 5000) != WAIT_OBJECT_0)
-    failwith_perror("execlp");
+    failwith_formatmessage("WaitForSingleObject/execlp");
 }
 #else
-static void make_daemon(int sock)
+static void make_daemon(void)
 {
   /* On success: The child process becomes session leader */
   if (setsid() < 0)
@@ -325,13 +384,6 @@ static void make_daemon(int sock)
   if (chdir("/") != 0)
     failwith_perror("chdir");
 
-  //int x;
-  //for (x = sysconf(_SC_OPEN_MAX); x>2; x--)
-  //{
-  //  if (x != sock)
-  //    close(x);
-  //}
-
   pid_t child = fork();
   signal(SIGHUP, SIG_IGN);
 
@@ -346,6 +398,7 @@ static void make_daemon(int sock)
 
 static void start_server(const char *socketname, const char* ignored, const char *exec_path)
 {
+  (void) ignored;
   int sock = socket(PF_UNIX, SOCK_STREAM, 0);
   if (sock == -1)
     failwith_perror("socket");
@@ -354,13 +407,14 @@ static void start_server(const char *socketname, const char* ignored, const char
 
   BEGIN_PROTECTCWD
     struct sockaddr_un address;
-    int address_len;
+    socklen_t address_len;
+    memset(&address, 0, sizeof(address));
 
     /* Return from chdir is ignored */
     err = chdir(path_socketdir());
     address.sun_family = AF_UNIX;
-    snprintf(address.sun_path, 104, "./%s", socketname);
-    address_len = strlen(address.sun_path) + sizeof(address.sun_family) + 1;
+    snprintf(address.sun_path, sizeof(address.sun_path), "./%s", socketname);
+    address_len = offsetof(struct sockaddr_un, sun_path) + strlen(address.sun_path) + 1;
     unlink(address.sun_path);
 
     NO_EINTR(err, bind(sock, (struct sockaddr*)&address, address_len));
@@ -380,7 +434,7 @@ static void start_server(const char *socketname, const char* ignored, const char
 
   if (child == 0)
   {
-    make_daemon(sock);
+    make_daemon();
 
     char socket_fd[50], socket_path[PATHSZ];
     sprintf(socket_fd, "%d", sock);
@@ -397,12 +451,12 @@ static void start_server(const char *socketname, const char* ignored, const char
 
 static IPC_SOCKET_TYPE connect_and_serve(const char *socket_path, const char* event_path, const char *exec_path)
 {
-  IPC_SOCKET_TYPE sock = connect_socket(socket_path, 0);
+  IPC_SOCKET_TYPE sock = connect_socket(socket_path, false);
 
   if (sock == INVALID_HANDLE_VALUE)
   {
     start_server(socket_path, event_path, exec_path);
-    sock = connect_socket(socket_path, 1);
+    sock = connect_socket(socket_path, true);
   }
 
   if (sock == INVALID_HANDLE_VALUE)
@@ -486,7 +540,7 @@ static char ocamlmerlin_server[] = "ocamlmerlin-server.exe";
 static char ocamlmerlin_server[] = "ocamlmerlin-server";
 #endif
 
-static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0, struct stat *st)
+static void compute_merlinpath(char merlin_path[ATLEAST PATHSZ], const char *argv0, struct stat *st)
 {
   char argv0_dirname[PATHSZ];
   size_t strsz;
@@ -515,7 +569,7 @@ static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0, stru
   strsz = strlen(merlin_path);
 
   // Append ocamlmerlin-server
-  if (strsz + sizeof(ocamlmerlin_server) + 8 > PATHSZ)
+  if (strsz + countof(ocamlmerlin_server) + 8 > PATHSZ)
     failwith("path is too long");
 
   strcpy(merlin_path + strsz, ocamlmerlin_server);
@@ -534,9 +588,9 @@ static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0, stru
 #ifdef _WIN32
 
 /* May return NULL */
-LPSTR retrieve_user_sid_string()
+static LPSTR retrieve_user_sid_string(void)
 {
-  LPSTR usidstr;
+  LPSTR usidstr = NULL;
   HANDLE process_token;
   if ( ! OpenProcessToken( GetCurrentProcess(), TOKEN_QUERY, &process_token ) )
     return NULL;
@@ -544,70 +598,65 @@ LPSTR retrieve_user_sid_string()
   DWORD sid_buffer_size;
   if ( ! GetTokenInformation(process_token, TokenUser, NULL, 0, &sid_buffer_size ) &&
         ( GetLastError() != ERROR_INSUFFICIENT_BUFFER ) )
-  {
-    CloseHandle(process_token);
-    return NULL;
-  }
+    goto close_process_token;
 
-  TOKEN_USER * token_user_ptr = (PTOKEN_USER) malloc(sid_buffer_size);
-  if ( ! token_user_ptr )
-  {
-    CloseHandle( process_token);
-    return NULL;
-  }
+  TOKEN_USER * token_user = (PTOKEN_USER) malloc(sid_buffer_size);
+  if ( ! token_user )
+    goto close_process_token;
 
-  if ( ! GetTokenInformation(process_token, TokenUser, token_user_ptr,
+  if ( ! GetTokenInformation(process_token, TokenUser, token_user,
                              sid_buffer_size, &sid_buffer_size))
-  {
-    free(token_user_ptr);
-    CloseHandle(process_token);
-    return NULL;
-  }
+    goto free_token_user;
 
-  if (! ConvertSidToStringSid(token_user_ptr->User.Sid, &usidstr))
+  if (! ConvertSidToStringSid(token_user->User.Sid, &usidstr))
     usidstr = NULL;
 
-  free(token_user_ptr);
+ free_token_user:
+  free(token_user);
+ close_process_token:
   CloseHandle(process_token);
-
   return usidstr;
 }
 
-static void compute_socketname(char socketname[PATHSZ], char eventname[PATHSZ], const char merlin_path[PATHSZ])
-#else
-static void compute_socketname(char socketname[SOCKSZ], struct stat *st)
-#endif
+static void compute_socketname(char socketname[ATLEAST PATHSZ], char eventname[ATLEAST PATHSZ], const char merlin_path[ATLEAST PATHSZ])
 {
-#ifdef _WIN32
   BY_HANDLE_FILE_INFORMATION info;
   LPSTR user_sid_string;
   HANDLE hFile = CreateFile(merlin_path, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
   if (hFile == INVALID_HANDLE_VALUE || !GetFileInformationByHandle(hFile, &info))
-    failwith_perror("stat (cannot find ocamlmerlin binary)");
+    failwith_formatmessage("CreateFile/stat (cannot find ocamlmerlin binary)");
   CloseHandle(hFile);
 
   user_sid_string = retrieve_user_sid_string() ;
   if (! user_sid_string)
     user_sid_string = LocalAlloc(LPTR, 1);
 
+  int len;
   // @@DRA Need to use Windows API functions to get meaningful values for st_dev and st_ino
-  snprintf(eventname, PATHSZ,
-      "ocamlmerlin_%s_%lx_%llx",
-      user_sid_string,
-      info.dwVolumeSerialNumber,
-      ((__int64)info.nFileIndexHigh) << 32 | ((__int64)info.nFileIndexLow));
-  snprintf(socketname, PATHSZ,
-      "\\\\.\\pipe\\%s", eventname);
+  len = snprintf(eventname, PATHSZ, "ocamlmerlin_%s_%lx_%llx",
+                 user_sid_string,
+                 info.dwVolumeSerialNumber,
+                 ((__int64)info.nFileIndexHigh) << 32 | ((__int64)info.nFileIndexLow));
+  if (len < 0 || (unsigned) len > PATHSZ - 1)
+    failwith("event name was truncated");
+
+  len = snprintf(socketname, PATHSZ, "\\\\.\\pipe\\%s", eventname);
+  if (len < 0 || (unsigned) len > PATHSZ - 1)
+    failwith("socket name was truncated");
 
   LocalFree(user_sid_string);
+}
+
 #else
+static void compute_socketname(char socketname[ATLEAST SOCKSZ], const struct stat *st)
+{
   snprintf(socketname, SOCKSZ,
       "ocamlmerlin_%llu_%llu_%llu.socket",
       (unsigned long long)getuid(),
       (unsigned long long)st->st_dev,
       (unsigned long long)st->st_ino);
-#endif
 }
+#endif
 
 /* Main */
 
@@ -623,16 +672,16 @@ static void dumpinfo(void)
       "merlin path: %s\nsocket path: %s/%s\n", merlin_path, path_socketdir(), socketname);
 }
 
-static void unexpected_termination(int argc, char **argv)
+static void unexpected_termination(int argc, char * const *argv)
 {
-  int sexp = 0;
+  bool sexp = false;
   int i;
 
   for (i = 1; i < argc - 1; ++i)
   {
     if (strcmp(argv[i], "-protocol") == 0 &&
         strcmp(argv[i+1], "sexp") == 0)
-      sexp = 1;
+      sexp = true;
   }
 
   puts(sexp
@@ -645,7 +694,6 @@ static void unexpected_termination(int argc, char **argv)
 int main(int argc, char **argv)
 {
   char result = 0;
-  int err = 0;
   struct stat st;
 #ifdef _WIN32
   HANDLE fds[3];
@@ -673,17 +721,17 @@ int main(int argc, char **argv)
 #ifdef _WIN32
     hProcess = GetCurrentProcess();
     if (!GetNamedPipeServerProcessId(sock, &pid))
-      failwith_perror("GetNamedPipeServerProcessId");
+      failwith_formatmessage("GetNamedPipeServerProcessId");
     hServerProcess = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
     if (hServerProcess == INVALID_HANDLE_VALUE)
-      failwith_perror("OpenProcess");
+      failwith_formatmessage("OpenProcess");
     if (!DuplicateHandle(hProcess, GetStdHandle(STD_INPUT_HANDLE), hServerProcess, &fds[0], 0, FALSE, DUPLICATE_SAME_ACCESS))
-      failwith_perror("DuplicateHandle(stdin)");
+      failwith_formatmessage("DuplicateHandle(stdin)");
     if (!DuplicateHandle(hProcess, GetStdHandle(STD_OUTPUT_HANDLE), hServerProcess, &fds[1], 0, FALSE, DUPLICATE_SAME_ACCESS))
-      failwith_perror("DuplicateHandle(stdout)");
+      failwith_formatmessage("DuplicateHandle(stdout)");
     CloseHandle(GetStdHandle(STD_OUTPUT_HANDLE));
     if (!DuplicateHandle(hProcess, GetStdHandle(STD_ERROR_HANDLE), hServerProcess, &fds[2], 0, FALSE, DUPLICATE_SAME_ACCESS))
-      failwith_perror("DuplicateHandle(stderr)");
+      failwith_formatmessage("DuplicateHandle(stderr)");
 #else
     int fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
 #endif
@@ -691,11 +739,11 @@ int main(int argc, char **argv)
 
 #ifdef _WIN32
     if (ReadFile(sock, &result, 1, &dwNumberOfBytesRead, NULL) && dwNumberOfBytesRead == 1)
-      err = 1;
 #else
-    NO_EINTR(err, read(sock, &result, 1));
+    ssize_t read_;
+    NO_EINTR(read_, read(sock, &result, 1));
+    if (read_ == 1)
 #endif
-    if (err == 1)
       exit(result);
 
     unexpected_termination(argc, argv);
