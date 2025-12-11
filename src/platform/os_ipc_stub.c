@@ -29,6 +29,7 @@ typedef SSIZE_T ssize_t;
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/threads.h>
+#include <caml/unixsupport.h>
 
 #if !(defined(_MSC_VER) && !defined(__clang__))
 #define ATLEAST static
@@ -50,7 +51,10 @@ ml_merlin_set_environ(value venviron)
   const char *ptr = String_val(venviron);
   size_t length = caml_string_length(venviron);
 
-  buffer = realloc(buffer, length);
+  char *newbuffer = realloc(buffer, length);
+  if (newbuffer == NULL)
+    uerror("realloc", Nothing);
+  buffer = newbuffer;
   memcpy(buffer, ptr, length);
 
   // clearenv() is not portable
