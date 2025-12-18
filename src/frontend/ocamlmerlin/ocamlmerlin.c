@@ -63,7 +63,7 @@ typedef SSIZE_T ssize_t;
 #define __has_include(x) 0
 #endif
 
-#if __has_include("<stdcountof.h>")
+#if __has_include(<stdcountof.h>)
 #include <stdcountof.h>
 #elif __has_extension(c_countof)
 #define countof _Countof
