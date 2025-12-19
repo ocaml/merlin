@@ -1,3 +1,10 @@
+merlin 4.7.1
+============
+Fri Dec 19 21:50:42 CET 2022
+
+  + merlin binary
+    - Fix an issue preventing installation. (fixes #1993)
+
 merlin 4.7
 ==========
 Thu Nov 24 13:31:42 CEST 2022
