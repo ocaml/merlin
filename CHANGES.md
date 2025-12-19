@@ -12,6 +12,7 @@ unreleased
   + test suite
     - Add a test case illustrating `case-analysis` command fails to load module
       in issue #1786 (#2002)
+    - Add a test to ensure the behavior showed in issue #1980
 
 merlin 5.8.1
 ============
