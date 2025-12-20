@@ -1,5 +1,6 @@
-unreleased
-==========
+merlin 5.6.1
+============
+Sat Dec 20 11:15:42 CET 2025
 
   + merlin binary
     - Fix a plethora of minor issues with the C code (#1998)
