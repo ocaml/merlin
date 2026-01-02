@@ -1,14 +1,23 @@
-unreleased
-==========
+merlin 5.6.1
+============
+Sat Dec 20 11:15:42 CET 2025
 
+  + merlin binary
+    - Fix a plethora of minor issues with the C code (#1998)
   + merlin library
+    - Signature help should not appear on the function name (#1997)
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
     - Perform buffer indexing only if the query requires it (#1990 and #1991)
     - Stop unnecessarily forcing substitutions when initializing short-paths graph (#1988)
+    - Fix Mocaml.with_printer didn't update replacement_printer_doc (#2010)
   + test suite
     - Add a test to ensure the behavior showed in issue #1517 is no longer relevant (#1995)
     - Add a test to ensure the code fragment exhibited in issue #1118 no longer makes Merlin crash (#1996)
     - Add a test to ensure the behavior showed in issue #1980
+    - Add a test case illustrating how a snippet produces two unrelated errors in issue #2000. (#2003)
+    - Add a test reproducing issue #1983 where `document` command which sometime concatenates consecutive variants and labels (#2005)
+    - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
+
 
 merlin 5.6
 ==========

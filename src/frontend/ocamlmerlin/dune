@@ -14,7 +14,6 @@
   -open Merlin_analysis
   -open Merlin_kernel
   -open Merlin_commands)
- (modules (:standard \ gen_ccflags))
  (libraries merlin-lib.config yojson merlin-lib.analysis merlin-lib.kernel
             merlin-lib.utils merlin-lib.os_ipc merlin-lib.ocaml_parsing
             merlin-lib.query_protocol merlin-lib.query_commands
@@ -22,20 +21,48 @@
             merlin-lib.commands
             unix str))
 
-(executable
- (name      gen_ccflags)
- (modules   gen_ccflags)
- (libraries str))
+; Write one flag per line in the output file
 
 (rule
- (targets pre-flags post-flags)
- (deps    gen_ccflags.exe)
- (action  (run %{deps} "%{ocaml-config:ccomp_type}" %{targets})))
+ (enabled_if (= %{ocaml-config:ccomp_type} "cc"))
+ (action
+  (progn
+   (write-file ldlibs "")
+   (write-file outputexe "-o"))))
 
 (rule
- (targets ocamlmerlin.exe)
- (deps    (:c ocamlmerlin.c) pre-flags post-flags)
- (action  (run %{cc} "%{read-lines:pre-flags}%{targets}" %{c} %{read-lines:post-flags})))
+ (enabled_if (= %{ocaml-config:ccomp_type} "msvc"))
+ (action
+  (progn
+   (write-file ldlibs "advapi32.lib")
+   (write-file outputexe "-Fe"))))
+
+(rule
+ (enabled_if
+  (and
+   (= %{ocaml-config:ccomp_type} "cc")
+   (= %{profile} "dev")))
+ (action
+  (write-file cflags "-Wextra\n-Werror")))
+
+(rule
+ (enabled_if
+  (and
+   (= %{ocaml-config:ccomp_type} "msvc")
+   (= %{profile} "dev")))
+ (action
+  (write-file cflags "-WX")))
+
+(rule
+ (enabled_if
+  (<> %{profile} "dev"))
+ (action
+  (write-file cflags "")))
+
+(rule
+ (target ocamlmerlin.exe)
+ (deps   (:c ocamlmerlin.c))
+ (action (run %{cc} %{read-strings:cflags} %{read:outputexe}%{target} %{c} %{read-strings:ldlibs})))
 
 (install
  (package merlin)
