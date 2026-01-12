@@ -898,8 +898,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     match application_signature with
     | Some s ->
+      (* The signature help should not appear on the name of the function. *)
       if Msource.compare_position source position s.function_position < 0
       then None
+      (* The signature help should not appear after the last parameter. *)
+      else if s.active_param = None then None
       else (
         let prefix =
           let fun_name = Option.value ~default:"_" s.function_name in
