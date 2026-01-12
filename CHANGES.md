@@ -1,3 +1,8 @@
+unreleased
+==========
+  + test suite
+    - Add a test to reproduce [Locate command fails on multi-line type definitions](#1987)
+
 merlin 5.6.1
 ============
 Sat Dec 20 11:15:42 CET 2025
@@ -16,7 +21,6 @@ Sat Dec 20 11:15:42 CET 2025
     - Add a test case illustrating how a snippet produces two unrelated errors in issue #2000. (#2003)
     - Add a test reproducing issue #1983 where `document` command which sometime concatenates consecutive variants and labels (#2005)
     - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
-
 
 merlin 5.6
 ==========
