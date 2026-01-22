@@ -28,8 +28,8 @@ type position = [ `Start | `Offset of int | `Logical of int * int | `End ]
 
 let equal_position p1 p2 = match p1, p2 with
 | `Start, `Start | `End, `End -> true
-| `Offset o1, `Offset o2 when o1 = o2 -> true
-| `Logical (l1, c1), `Logical (l2, c2) when l1 = l2 && c1 = c2 -> true
+| `Offset o1, `Offset o2 -> Int.equal o1 o2
+| `Logical (l1, c1), `Logical (l2, c2) -> Int.equal l1 l2 && Int.equal c1 c2 
 | _ -> false
 ;;
 
