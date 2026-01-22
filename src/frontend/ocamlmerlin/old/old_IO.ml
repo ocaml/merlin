@@ -147,7 +147,7 @@ let request_of_json context =
   | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ]
     -> request (Query (Case_analysis (pos_of_json x, pos_of_json y)))
   | [ `String "enclosing"; jpos ] ->
-    request (Query (Enclosing (pos_of_json jpos)))
+    request (Query (Enclosing (pos_of_json jpos, None)))
   | [ `String "complete"; `String "prefix"; `String prefix; `String "at"; jpos ]
     ->
     request

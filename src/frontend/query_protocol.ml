@@ -164,7 +164,9 @@ type _ t =
       -> (Location.t * [ `String of string | `Index of int ] * is_tail_position)
          list
          t
-  | Enclosing (* *) : Msource.position -> Location.t list t
+  | Enclosing (* *) :
+      Msource.position * Msource.position option
+      -> Location.t list t
   | Complete_prefix (* *) :
       string
       * Msource.position
