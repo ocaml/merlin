@@ -293,11 +293,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
             let printed_type = Type_enclosing.print_type ~verbosity type_info in
             ret (`String printed_type)
           else ret (`Index i))
-  | Enclosing pos ->
+  | Enclosing (pos, stop) ->
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let mbrowse = Mbrowse.enclosing pos [ structures ] in
+    let mbrowse =
+      match stop with
+      | Some stop ->
+        let stop = Mpipeline.get_lexing_pos pipeline stop in
+        Mbrowse.enclosing_from ~start:pos ~stop [ structures ]
+      | None -> Mbrowse.enclosing pos [ structures ]
+    in
     (* We remove possible duplicates from the list*)
     List.fold_left mbrowse ~init:[] ~f:(fun acc node ->
         let loc = Mbrowse.node_loc (snd node) in

@@ -104,3 +104,171 @@ FIXME: with 5.2 new function representation we lost some granularity
     ],
     "notifications": []
   }
+
+
+  $ cat >main.ml <<EOF
+  > let f x = x + (succ 1 + 3) + 10
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:11 -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 10
+        },
+        "end": {
+          "line": 1,
+          "col": 11
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 10
+        },
+        "end": {
+          "line": 1,
+          "col": 26
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 10
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 6
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 0
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      }
+    ],
+    "notifications": []
+  }
+
+
+  $ cat >main.ml <<EOF
+  > let f x = x + (succ 1 + 3) + 10
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:11 -stop 1:31  -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 10
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 6
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 0
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      }
+    ],
+    "notifications": []
+  }
+
+  $ cat >main.ml <<EOF
+  > let f x = x + (succ 1 + 3) + 10
+  > EOF
+
+  $ $MERLIN single enclosing -position 1:15 -stop 1:26  -filename main.ml <main.ml
+  {
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 14
+        },
+        "end": {
+          "line": 1,
+          "col": 26
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 10
+        },
+        "end": {
+          "line": 1,
+          "col": 26
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 10
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 6
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      },
+      {
+        "start": {
+          "line": 1,
+          "col": 0
+        },
+        "end": {
+          "line": 1,
+          "col": 31
+        }
+      }
+    ],
+    "notifications": []
+  }

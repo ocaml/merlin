@@ -71,7 +71,14 @@ let dump (type a) : a t -> json =
       ]
   | Locate_type pos -> mk "locate-type" [ ("position", mk_position pos) ]
   | Locate_types pos -> mk "locate-types" [ ("position", mk_position pos) ]
-  | Enclosing pos -> mk "enclosing" [ ("position", mk_position pos) ]
+  | Enclosing (start, stop) ->
+    mk "enclosing"
+      [ ("position", mk_position start);
+        ( "stop",
+          match stop with
+          | None -> `Null
+          | Some stop -> mk_position stop )
+      ]
   | Complete_prefix (prefix, pos, kind, doc, typ) ->
     mk "complete-prefix"
       [ ("prefix", `String prefix);
