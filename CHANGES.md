@@ -3,6 +3,7 @@ unreleased
 
   + merlin library
     - Add "Other" variant to locate-types result (#2025)
+    - Add `-stop` parameter for `enclosing` (#2029)
 
 merlin 5.6.1
 ============
