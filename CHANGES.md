@@ -1,3 +1,9 @@
+unreleased
+==========
+
+  + merlin library
+    - Add "Other" variant to locate-types result (#2025)
+
 merlin 5.6.1
 ============
 Sat Dec 20 11:15:42 CET 2025
