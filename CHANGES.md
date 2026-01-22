@@ -4,6 +4,7 @@ Sat Dec 20 11:15:42 CET 2025
 
   + merlin binary
     - Fix a plethora of minor issues with the C code (#1998)
+    - Add "Other" variant to locate-types result (#2025)
   + merlin library
     - Signature help should not appear on the function name (#1997)
     - Fix completion not working for inlined records labels (#1978, fixes #1977)
