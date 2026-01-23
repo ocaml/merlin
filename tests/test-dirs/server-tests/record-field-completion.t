@@ -22,8 +22,23 @@ The inlay-hints command will populate the reader cache, but not set for_completi
 
 
 The complete-prefix command returns the field names
-  $ $MERLIN server complete-prefix -position end -log-file merlin_logs -filename a.ml <a.ml | grep 'ababagalamaga' | wc -l
-  2
+  $ $MERLIN server complete-prefix -position end -log-file merlin_logs -filename a.ml -prefix ababa <a.ml | jq '.value.entries'
+  [
+    {
+      "name": "ababagalamaga2",
+      "kind": "Label",
+      "desc": "M.t -> int",
+      "info": "",
+      "deprecated": false
+    },
+    {
+      "name": "ababagalamaga1",
+      "kind": "Label",
+      "desc": "M.t -> int",
+      "info": "",
+      "deprecated": false
+    }
+  ]
 
 The reader cache was invalidated from previous non-for-completetion command
   $ cat merlin_logs | grep 'Phase cache' -A 1 | sed "s/[0-9]*//g"
