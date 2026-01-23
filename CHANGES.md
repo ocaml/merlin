@@ -4,6 +4,7 @@ unreleased
   + merlin library
     - Add "Other" variant to locate-types result (#2025)
     - Don't include `option` in locate-types result for optional parameters (#2027)
+    - Fix record field autocompletion (#2028)
 
 merlin 5.6.1
 ============
