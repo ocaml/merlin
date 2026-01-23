@@ -82,8 +82,7 @@ Functions
   $ run "x:a -> ?y:b -> c"
   Arrow
     a (1:5)
-    option
-      b (2:5)
+    b (2:5)
     c (3:5)
 
 Tuples

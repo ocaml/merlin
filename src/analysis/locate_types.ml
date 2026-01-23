@@ -14,13 +14,22 @@ end
 
 let rec flatten_arrow ret_ty =
   match Types.get_desc ret_ty with
-  | Tarrow (_, ty1, ty2, _) -> ty1 :: flatten_arrow ty2
+  | Tarrow (label, ty1, ty2, _) ->
+    let ty1 =
+      match label with
+      | Optional _ ->
+        (match Types.get_desc ty1 with
+        | Tconstr (path, [ ty1 ], _) when Path.same path Predef.path_option -> ty1
+        | _ -> ty1)
+      | _ -> ty1
+    in
+    ty1 :: flatten_arrow ty2
   | _ -> [ ret_ty ]
 
 let rec create_type_tree ty : Type_tree.t =
   match Types.get_desc ty with
-  | Tarrow (_, ty1, ty2, _) ->
-    let tys = ty1 :: flatten_arrow ty2 in
+  | Tarrow _ ->
+    let tys = flatten_arrow ty in
     let children = List.map tys ~f:create_type_tree in
     { data = Arrow; children }
   | Ttuple tys ->
