@@ -7,6 +7,7 @@ unreleased
     - Fix record field autocompletion (#2028)
     - Signature help should not loop over the parameters once it is finished (#2023)
     - Add a reproduction case for #1214, the issue has been resolved before (#2022)
+    - Add reproduction case for #1763 but it is not failing anymore (#2021)
 
 merlin 5.6.1
 ============
