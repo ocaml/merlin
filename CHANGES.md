@@ -5,6 +5,7 @@ unreleased
     - Add "Other" variant to locate-types result (#2025)
     - Don't include `option` in locate-types result for optional parameters (#2027)
     - Fix record field autocompletion (#2028)
+    - Signature help should not loop over the parameters once it is finished (#2023)
 
 merlin 5.6.1
 ============
@@ -24,7 +25,6 @@ Sat Dec 20 11:15:42 CET 2025
     - Add a test case illustrating how a snippet produces two unrelated errors in issue #2000. (#2003)
     - Add a test reproducing issue #1983 where `document` command which sometime concatenates consecutive variants and labels (#2005)
     - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
-
 
 merlin 5.6
 ==========
