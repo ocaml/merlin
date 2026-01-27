@@ -135,22 +135,26 @@ type occurrence = { loc : Location.t; is_stale : bool }
 
 module Locate_types_result = struct
   module Tree = struct
-    type 'a node_data = Arrow | Tuple | Object | Poly_variant | Type_ref of 'a
+    type node_data =
+      | Arrow
+      | Tuple
+      | Object
+      | Poly_variant
+      | Type_ref of
+          { type_ : string;
+            result :
+              [ `Found of string option * Lexing.position
+              | `Builtin of string
+              | `Not_in_env of string
+              | `File_not_found of string
+              | `Not_found of string * string option ]
+          }
+      | Other of string
 
-    type 'a t = { data : 'a node_data; children : 'a t list }
+    type t = { data : node_data; children : t list }
   end
 
-  type type_ref_payload =
-    { type_ : string;
-      result :
-        [ `Found of string option * Lexing.position
-        | `Builtin of string
-        | `Not_in_env of string
-        | `File_not_found of string
-        | `Not_found of string * string option ]
-    }
-
-  type t = Success of type_ref_payload Tree.t | Invalid_context
+  type t = Success of Tree.t | Invalid_context
 end
 
 type _ t =

@@ -1,7 +1,12 @@
 unreleased
 ==========
-  + test suite
-    - Add a reproduction case for #1214, the issue has been resolved before
+
+  + merlin library
+    - Add "Other" variant to locate-types result (#2025)
+    - Don't include `option` in locate-types result for optional parameters (#2027)
+    - Fix record field autocompletion (#2028)
+    - Signature help should not loop over the parameters once it is finished (#2023)
+    - Add a reproduction case for #1214, the issue has been resolved before (#2022)
 
 merlin 5.6.1
 ============
