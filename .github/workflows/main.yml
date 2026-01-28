@@ -44,9 +44,8 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
-    # Some tests requiring specific ppxes are disabled by default
     env:
-      MERLIN_TESTS: no-ppx
+      MERLIN_TESTS: all
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -67,7 +66,7 @@ jobs:
 
       - name: Build and test in release mode
         run: |
-          MERLIN_TESTS=all opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
+          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
 
       - name: Build in dev mode to check parser changes
         if: matrix.os == 'ubuntu-latest'
