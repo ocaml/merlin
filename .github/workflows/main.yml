@@ -63,10 +63,11 @@ jobs:
         run: |
           opam pin menhirLib 20201216 --no-action
           opam install menhir csexp alcotest yojson conf-jq ocamlfind --yes
+          opam install ppxlib ppx_string reason --yes
 
       - name: Build and test in release mode
         run: |
-          opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
+          MERLIN_TESTS=all opam exec -- dune runtest -p merlin-lib,dot-merlin-reader,ocaml-index,merlin
 
       - name: Build in dev mode to check parser changes
         if: matrix.os == 'ubuntu-latest'
