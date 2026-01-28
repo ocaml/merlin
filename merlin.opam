@@ -20,6 +20,7 @@ depends: [
   "conf-jq" {with-test}
   "ppxlib" {with-test}
   "ppx_string" {with-test}
+  "reason" {with-test}
 ]
 conflicts: [
   "seq" {!= "base"}
