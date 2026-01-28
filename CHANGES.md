@@ -6,9 +6,12 @@ unreleased
     - Don't include `option` in locate-types result for optional parameters (#2027)
     - Fix record field autocompletion (#2028)
     - Signature help should not loop over the parameters once it is finished (#2023)
+
+  + tests
     - Add a reproduction case for #1214, the issue has been resolved before (#2022)
     - Add reproduction case for #1763 but it is not failing anymore (#2021)
     - Add a test to reproduce [Locate command fails on multi-line type definitions](#1987) (#2020)
+    - Add a regression test for issue #2019 (#2030)
 
 merlin 5.6.1
 ============
