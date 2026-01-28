@@ -93,7 +93,15 @@ rule token = parse
   | "'"  { QUOTE }
   | "("  { LPAREN }
   | ")"  { RPAREN }
+  | "}"  { RBRACE }
+  | "]"  { RBRACKET }
+  | ".." { DOTDOT }
+  | "<-" { LESSMINUS }
+  | ";"  { SEMI }
+  | "." dotsymbolchar+ ['(' '{' '[' ]
+         { DOTOP(Lexing.lexeme lexbuf) }
   | "."  { DOT }
+  | ":=" { COLONEQUAL }
   | "!" symbolchar +
             { PREFIXOP(Lexing.lexeme lexbuf) }
   | ['~' '?'] symbolchar +
@@ -144,12 +152,9 @@ rule token = parse
   | "*"
   | ","
   | "->"
-  | ".."
   | ":"
   | "::"
-  | ":="
   | ":>"
-  | ";"
   | ";;"
   | "<"
   | "<-"
@@ -174,7 +179,6 @@ rule token = parse
   | "[@@"
   | "[@@@"
   | "!"
-
   | "!="
   | "+"
   | "+."
