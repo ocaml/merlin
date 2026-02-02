@@ -41,9 +41,10 @@ let findlib_ok =
     in
     (* This is a quick and dirty workaround to get Merlin to work even when
        findlib directory has been removed. *)
-    begin match Sys.getenv "OCAMLFIND_CONF" with
-    | exception Not_found -> Unix.putenv "OCAMLFIND_CONF" "/dev/null"
-    | _ -> ()
+    begin
+      match Sys.getenv "OCAMLFIND_CONF" with
+      | exception Not_found -> Unix.putenv "OCAMLFIND_CONF" "/dev/null"
+      | _ -> ()
     end;
     Error ("Error during findlib initialization: " ^ message)
 
@@ -205,18 +206,20 @@ let ppx_of_package ?(predicates = []) setup pkg =
            (Findlib.package_property predicates pkg "ppxopt"))
     with Not_found -> []
   in
-  begin match ppx with
-  | None -> ()
-  | Some ppx -> log ~title:"ppx" "%s" ppx
+  begin
+    match ppx with
+    | None -> ()
+    | Some ppx -> log ~title:"ppx" "%s" ppx
   end;
-  begin match ppxopts with
-  | [] -> ()
-  | lst ->
-    log ~title:"ppx options" "%a" Logger.json @@ fun () ->
-    let f (ppx, opts) =
-      `List [ `String ppx; `List (List.map ~f:(fun s -> `String s) opts) ]
-    in
-    `List (List.map ~f lst)
+  begin
+    match ppxopts with
+    | [] -> ()
+    | lst ->
+      log ~title:"ppx options" "%a" Logger.json @@ fun () ->
+      let f (ppx, opts) =
+        `List [ `String ppx; `List (List.map ~f:(fun s -> `String s) opts) ]
+      in
+      `List (List.map ~f lst)
   end;
   let setup =
     match ppx with
@@ -343,10 +346,11 @@ let prepend_config ~cwd ~cfg =
       | `PKG ps -> { cfg with packages_to_load = ps @ cfg.packages_to_load }
       | `STDLIB path ->
         let canon_path = canonicalize_filename ~cwd path in
-        begin match cfg.stdlib with
-        | None -> ()
-        | Some p ->
-          log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
+        begin
+          match cfg.stdlib with
+          | None -> ()
+          | Some p ->
+            log ~title:"conflicting paths for stdlib" "%s\n%s" p canon_path
         end;
         { cfg with stdlib = Some canon_path }
       | `SOURCE_ROOT path ->
@@ -354,20 +358,22 @@ let prepend_config ~cwd ~cfg =
         { cfg with source_root = Some canon_path }
       | `FINDLIB path ->
         let canon_path = canonicalize_filename ~cwd path in
-        begin match cfg.stdlib with
-        | None -> ()
-        | Some p ->
-          log ~title:"conflicting paths for findlib" "%s\n%s" p canon_path
+        begin
+          match cfg.stdlib with
+          | None -> ()
+          | Some p ->
+            log ~title:"conflicting paths for findlib" "%s\n%s" p canon_path
         end;
         { cfg with findlib = Some canon_path }
       | `FINDLIB_PATH path ->
         let canon_path = canonicalize_filename ~cwd path in
         { cfg with findlib_path = canon_path :: cfg.findlib_path }
       | `FINDLIB_TOOLCHAIN path ->
-        begin match cfg.stdlib with
-        | None -> ()
-        | Some p ->
-          log ~title:"conflicting paths for findlib toolchain" "%s\n%s" p path
+        begin
+          match cfg.stdlib with
+          | None -> ()
+          | Some p ->
+            log ~title:"conflicting paths for findlib toolchain" "%s\n%s" p path
         end;
         { cfg with findlib_toolchain = Some path })
 

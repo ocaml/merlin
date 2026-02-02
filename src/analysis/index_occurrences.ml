@@ -33,24 +33,25 @@ let iterator ~current_buffer_path ~index ~reduce_for_uid =
     let not_ghost { Location.loc = { loc_ghost; _ }; _ } = not loc_ghost in
     let lid = { lid with loc = set_fname ~file:current_buffer_path lid.loc } in
     let index_decl () =
-      begin match decl_of_path_or_lid env namespace path lid.txt with
-      | (exception _) | None ->
-        log ~title:"index_buffer" "Declaration not found"
-      | Some decl ->
-        log ~title:"index_buffer" "Found declaration: %a" Logger.fmt
-          (Fun.flip Location.print_loc decl.loc);
-        add decl.uid lid
+      begin
+        match decl_of_path_or_lid env namespace path lid.txt with
+        | (exception _) | None ->
+          log ~title:"index_buffer" "Declaration not found"
+        | Some decl ->
+          log ~title:"index_buffer" "Found declaration: %a" Logger.fmt
+            (Fun.flip Location.print_loc decl.loc);
+          add decl.uid lid
       end
     in
-    let reduce_and_store ~namespace lid path =
-      if not_ghost lid then
-        match Env.shape_of_path ~namespace env path with
-        | exception Not_found -> ()
-        | path_shape ->
-          log ~title:"index_buffer" "Shape of path: %a" Logger.fmt
-            (Fun.flip Shape.print path_shape);
-          let result = reduce_for_uid env path_shape in
-          begin match Locate.uid_of_result ~traverse_aliases:false result with
+    let reduce_and_store ~namespace lid path = if not_ghost lid then
+      match Env.shape_of_path ~namespace env path with
+      | exception Not_found -> ()
+      | path_shape ->
+        log ~title:"index_buffer" "Shape of path: %a" Logger.fmt
+          (Fun.flip Shape.print path_shape);
+        let result = reduce_for_uid env path_shape in
+        begin
+          match Locate.uid_of_result ~traverse_aliases:false result with
           | Some uid, false ->
             log ~title:"index_buffer" "Found %a (%a) wiht uid %a" Logger.fmt
               (Fun.flip Pprintast.longident lid.txt)
@@ -67,22 +68,24 @@ let iterator ~current_buffer_path ~index ~reduce_for_uid =
           | None, _ ->
             log ~title:"index_buffer" "Reduction failed: missing uid";
             index_decl ()
-          end
+        end
     in
     (* Shape reduction can be expensive, but the persistent memoization tables
        should make these successive reductions fast. *)
-    let rec index_components namespace lid path =
+    let rec index_components namespace lid path  =
       let module_ = Shape.Sig_component_kind.Module in
-      match (lid.Location.txt, path) with
+      match lid.Location.txt, path with
       | Longident.Ldot (lid', _), Path.Pdot (path', _)
-      | Ldot (lid', _), Pextra_ty (Pdot (path', _), Pcstr_ty _) ->
+      | Ldot (lid', _), Pextra_ty (Pdot(path', _), Pcstr_ty _)->
         reduce_and_store ~namespace lid path;
         index_components module_ lid' path'
       | Lapply (lid', lid''), Papply (path', path'')
-      | Lapply (lid', lid''), Pextra_ty (Papply (path', path''), Pcstr_ty _) ->
+      | Lapply (lid', lid''),
+        Pextra_ty (Papply (path', path''), Pcstr_ty _) ->
         index_components module_ lid'' path'';
         index_components module_ lid' path'
-      | Longident.Lident _, _ -> reduce_and_store ~namespace lid path
+      | Longident.Lident _, _ ->
+        reduce_and_store ~namespace lid path;
       | _, _ -> ()
     in
     index_components namespace lid path

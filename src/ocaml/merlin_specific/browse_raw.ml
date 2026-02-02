@@ -221,8 +221,8 @@ let has_attr ~name node =
   let attrs = node_attributes node in
   List.exists
     ~f:(fun a ->
-      let str, _ = Ast_helper.Attr.as_tuple a in
-      str.Location.txt = name)
+        let str, _ = Ast_helper.Attr.as_tuple a in
+        str.Location.txt = name)
     attrs
 
 let node_merlin_loc loc0 node =
@@ -338,7 +338,7 @@ let of_pattern_desc (type k) (desc : k pattern_desc) =
   | Tpat_record (ls, _) ->
     list_fold
       (fun (lid_loc, desc, p) ->
-        of_pat_record_field p lid_loc desc ** of_pattern p)
+         of_pat_record_field p lid_loc desc ** of_pattern p)
       ls
   | Tpat_or (p1, p2, _) -> of_pattern p1 ** of_pattern p2
 
@@ -358,16 +358,17 @@ let rec of_expression_desc loc = function
   | Texp_apply (e, ls) ->
     of_expression e
     ** list_fold
-         (function
-           | _, Omitted () -> id_fold
-           | _, Arg e -> of_expression e)
-         ls
+      (function
+        | _, Omitted () -> id_fold
+        | _, Arg e -> of_expression e)
+      ls
   | Texp_match (e, cs, vs, _) ->
     of_expression e ** list_fold of_case cs ** list_fold of_case vs
   | Texp_try (e, cs, _) -> of_expression e ** list_fold of_case cs
   | Texp_tuple es ->
     list_fold of_expression (List.map ~f:snd es) (* todo labels ? *)
-  | Texp_construct (_, _, es) | Texp_array (_, es) -> list_fold of_expression es
+  | Texp_construct (_, _, es) | Texp_array (_, es) ->
+    list_fold of_expression es
   | Texp_variant (_, Some e)
   | Texp_assert (e, _)
   | Texp_lazy e
@@ -544,8 +545,8 @@ and of_core_type_desc = function
   | Ttyp_object (cts, _) ->
     list_fold
       (fun of_ ->
-        match of_.of_desc with
-        | OTtag (_, ct) | OTinherit ct -> of_core_type ct)
+         match of_.of_desc with
+         | OTtag (_, ct) | OTinherit ct -> of_core_type ct)
       cts
   | Ttyp_poly (_, ct) | Ttyp_alias (ct, _) -> of_core_type ct
   | Ttyp_variant (rfs, _, _) -> list_fold (fun rf -> app (Row_field rf)) rfs
@@ -595,9 +596,9 @@ let of_node = function
   | Structure { str_items; str_final_env } ->
     list_fold_with_next
       (fun next item ->
-        match next with
-        | None -> app (Structure_item (item, str_final_env))
-        | Some item' -> app (Structure_item (item, item'.str_env)))
+         match next with
+         | None -> app (Structure_item (item, str_final_env))
+         | Some item' -> app (Structure_item (item, item'.str_env)))
       str_items
   | Structure_item ({ str_desc }, _) -> of_structure_item_desc str_desc
   | Module_binding mb ->
@@ -608,9 +609,9 @@ let of_node = function
   | Signature { sig_items; sig_final_env } ->
     list_fold_with_next
       (fun next item ->
-        match next with
-        | None -> app (Signature_item (item, sig_final_env))
-        | Some item' -> app (Signature_item (item, item'.sig_env)))
+         match next with
+         | None -> app (Signature_item (item, sig_final_env))
+         | Some item' -> app (Signature_item (item, item'.sig_env)))
       sig_items
   | Signature_item ({ sig_desc }, _) -> of_signature_item_desc sig_desc
   | Module_declaration md ->
@@ -627,10 +628,10 @@ let of_node = function
   | Package_type { tpt_cstrs } ->
     list_fold (fun (_, ct) -> of_core_type ct) tpt_cstrs
   | Row_field rf -> begin
-    match rf.rf_desc with
-    | Ttag (_, _, cts) -> list_fold of_core_type cts
-    | Tinherit ct -> of_core_type ct
-  end
+      match rf.rf_desc with
+      | Ttag (_, _, cts) -> list_fold of_core_type cts
+      | Tinherit ct -> of_core_type ct
+    end
   | Value_description { val_desc } -> of_core_type val_desc
   | Type_declaration { typ_params; typ_cstrs; typ_kind; typ_manifest } ->
     let of_typ_cstrs (ct1, ct2, _) = of_core_type ct1 ** of_core_type ct2 in
@@ -788,7 +789,7 @@ let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
     | Texp_override (_, ps) ->
       List.map
         ~f:(fun (id, loc, _) ->
-          (reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)))
+            (reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)))
         ps
     | Texp_letmodule (Some id, loc, _, _, _) ->
       [ (reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt) ]
@@ -835,7 +836,7 @@ let structure_item_paths { Typedtree.str_desc } =
   | Tstr_class_type cls ->
     List.map
       ~f:(fun (id, loc, _) ->
-        (reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)))
+          (reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)))
       cls
   | Tstr_open od -> module_expr_paths od.open_expr
   | _ -> []
@@ -909,8 +910,8 @@ let node_paths_full =
 let node_paths t = List.map (node_paths_full t) ~f:fst
 let node_paths_and_longident t =
   List.filter_map (node_paths_full t) ~f:(function
-    | _, None -> None
-    | p, Some lid -> Some (p, lid))
+      | _, None -> None
+      | p, Some lid -> Some (p, lid))
 
 let node_is_constructor = function
   | Constructor_declaration decl ->

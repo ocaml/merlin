@@ -422,13 +422,12 @@ let find_source ~config loc =
     log ~title:"find_source" "failed to find %S in source path (fallback = %b)"
       filename with_fallback;
     log ~title:"find_source" "looking for %S in %S" (File.name file) dir;
-    begin match
-      Utils.find_file_with_path ~config ~with_fallback file [ dir ]
-    with
-    | Some source -> Found source
-    | None -> (
-      log ~title:"find_source" "Trying to find %S in %S directly" fname dir;
-      try Found (Misc.find_in_path [ dir ] fname) with _ -> Not_found file)
+    begin
+      match Utils.find_file_with_path ~config ~with_fallback file [ dir ] with
+      | Some source -> Found source
+      | None -> (
+        log ~title:"find_source" "Trying to find %S in %S directly" fname dir;
+        try Found (Misc.find_in_path [ dir ] fname) with _ -> Not_found file)
     end
   | [ x ] -> Found x
   | files -> (
@@ -905,9 +904,10 @@ let find_compunit_doc_in_typedtree cmt_infos =
   | None -> `No_documentation
   | Some attr ->
     log ~title:"doc_from_uid" "Found attributes for this uid";
-    begin match find_doc_attribute [ attr ] with
-    | Some (doc, _) -> `Found_doc (doc |> String.trim)
-    | None -> `No_documentation
+    begin
+      match find_doc_attribute [ attr ] with
+      | Some (doc, _) -> `Found_doc (doc |> String.trim)
+      | None -> `No_documentation
     end
 
 let doc_of_item_declaration decl =
@@ -953,27 +953,29 @@ let find_uid_doc_in_cmt cmt_infos uid =
   end
 
 let doc_from_uid ~config ~loc uid =
-  begin match uid with
-  | (Shape.Uid.Item { comp_unit; _ } | Shape.Uid.Compilation_unit comp_unit)
-    when Env.get_current_unit_name () <> comp_unit ->
-    log ~title:"get_doc"
-      "the doc (%a) you're looking for is in another\n\
-      \      compilation unit (%s)"
-      Logger.fmt
-      (fun fmt -> Shape.Uid.print fmt uid)
-      comp_unit;
-    log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
-    begin match load_cmt ~config:{ config with ml_or_mli = `MLI } comp_unit with
-    | Error _ -> `No_documentation
-    | Ok (_, cmt_infos) ->
-      log ~title:"doc_from_uid" "Cmt loaded for %s"
-        (Option.value ~default:"<>" cmt_infos.cmt_sourcefile);
-      find_uid_doc_in_cmt cmt_infos uid
-    end
-  | _ ->
-    (* Uid based search doesn't works in the current CU since Merlin's parser
+  begin
+    match uid with
+    | (Shape.Uid.Item { comp_unit; _ } | Shape.Uid.Compilation_unit comp_unit)
+      when Env.get_current_unit_name () <> comp_unit ->
+      log ~title:"get_doc"
+        "the doc (%a) you're looking for is in another\n\
+        \      compilation unit (%s)"
+        Logger.fmt
+        (fun fmt -> Shape.Uid.print fmt uid)
+        comp_unit;
+      log ~title:"doc_from_uid" "Loading the cmt for unit %S" comp_unit;
+      begin
+        match load_cmt ~config:{ config with ml_or_mli = `MLI } comp_unit with
+        | Error _ -> `No_documentation
+        | Ok (_, cmt_infos) ->
+          log ~title:"doc_from_uid" "Cmt loaded for %s"
+            (Option.value ~default:"<>" cmt_infos.cmt_sourcefile);
+          find_uid_doc_in_cmt cmt_infos uid
+      end
+    | _ ->
+      (* Uid based search doesn't works in the current CU since Merlin's parser
          does not attach doc comments to the typedtree *)
-    `Found_loc loc
+      `Found_loc loc
   end
 
 let doc_from_comment_list ~after_only ~buffer_comments loc =
@@ -1020,23 +1022,27 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
           Logger.fmt (fun fmt -> (Format_doc.compat Path.print) fmt path);
 
         let from_path = from_path ~config ~env ~local_defs ~namespace path in
-        begin match from_path with
-        | `Found { uid; location = loc; _ }
-        | `File_not_found { uid; location = loc; _ } ->
-          doc_from_uid ~config ~loc uid
-        | (`Builtin _ | `Not_in_env _ | `Not_found _) as otherwise -> otherwise
+        begin
+          match from_path with
+          | `Found { uid; location = loc; _ }
+          | `File_not_found { uid; location = loc; _ } ->
+            doc_from_uid ~config ~loc uid
+          | (`Builtin _ | `Not_in_env _ | `Not_found _) as otherwise ->
+            otherwise
         end
       | `User_input path ->
         log ~title:"get_doc" "looking for the doc of '%s'" path;
-        begin match from_string ~config ~env ~local_defs ~pos path with
-        | `Found { uid; location = loc; _ }
-        | `File_not_found { uid; location = loc; _ } ->
-          doc_from_uid ~config ~loc uid
-        | `At_origin ->
-          `Found_loc
-            { Location.loc_start = pos; loc_end = pos; loc_ghost = true }
-        | `Missing_labels_namespace -> `No_documentation
-        | (`Builtin _ | `Not_in_env _ | `Not_found _) as otherwise -> otherwise
+        begin
+          match from_string ~config ~env ~local_defs ~pos path with
+          | `Found { uid; location = loc; _ }
+          | `File_not_found { uid; location = loc; _ } ->
+            doc_from_uid ~config ~loc uid
+          | `At_origin ->
+            `Found_loc
+              { Location.loc_start = pos; loc_end = pos; loc_ghost = true }
+          | `Missing_labels_namespace -> `No_documentation
+          | (`Builtin _ | `Not_in_env _ | `Not_found _) as otherwise ->
+            otherwise
         end
     in
     match doc_from_uid_result with
@@ -1058,11 +1064,12 @@ let get_doc ~config:mconfig ~env ~local_defs ~comments ~pos =
         Mbrowse.(leaf_node @@ deepest_before loc.Location.loc_start [ browse ])
       in
       let after_only =
-        begin match deepest_before with
-        | Browse_raw.Constructor_declaration _ -> true
-        (* The remaining `true` cases are currently not reachable *)
-        | Label_declaration _ | Record_field _ | Row_field _ -> true
-        | _ -> false
+        begin
+          match deepest_before with
+          | Browse_raw.Constructor_declaration _ -> true
+          (* The remaining `true` cases are currently not reachable *)
+          | Label_declaration _ | Record_field _ | Row_field _ -> true
+          | _ -> false
         end
       in
       doc_from_comment_list ~after_only ~buffer_comments:comments loc

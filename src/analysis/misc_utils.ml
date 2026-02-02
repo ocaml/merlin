@@ -75,15 +75,17 @@ let reconstruct_identifier pipeline pos = function
       then dot
       else "( " ^ dot ^ ")"
     in
-    begin match path with
-    | [] -> []
-    | base :: tail ->
-      let f { Location.txt = base; loc = bl } { Location.txt = dot; loc = dl } =
-        let loc = Location_aux.union bl dl in
-        let txt = base ^ "." ^ reify dot in
-        Location.mkloc txt loc
-      in
-      [ List.fold_left tail ~init:base ~f ]
+    begin
+      match path with
+      | [] -> []
+      | base :: tail ->
+        let f { Location.txt = base; loc = bl } { Location.txt = dot; loc = dl }
+          =
+          let loc = Location_aux.union bl dl in
+          let txt = base ^ "." ^ reify dot in
+          Location.mkloc txt loc
+        in
+        [ List.fold_left tail ~init:base ~f ]
     end
   | Some (expr, offset) ->
     let loc_start =

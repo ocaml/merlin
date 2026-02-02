@@ -36,8 +36,7 @@ and core_type type_expr =
   | Tarrow (label, type_expr, type_expr_out, _commutable) ->
     Typ.arrow label (core_type type_expr) (core_type type_expr_out)
   | Ttuple type_exprs ->
-    Typ.tuple
-    @@ List.map ~f:(fun (label, ty) -> (label, core_type ty)) type_exprs
+    Typ.tuple @@ List.map ~f:(fun (label, ty) -> label, core_type ty) type_exprs
   | Tconstr (path, type_exprs, _abbrev) ->
     let loc = Untypeast.lident_of_path path |> Location.mknoloc in
     Typ.constr loc @@ List.map ~f:core_type type_exprs
@@ -56,7 +55,7 @@ and core_type type_expr =
       | _ ->
         failwith
         @@ Format.asprintf "Unexpected type constructor in fields list: %a"
-             Printtyp.type_expr type_expr
+          Printtyp.type_expr type_expr
     in
     let fields, closed = aux [] type_expr in
     Typ.object_ fields closed
@@ -85,17 +84,17 @@ and core_type type_expr =
     let names =
       List.map
         ~f:(fun v ->
-          match get_desc v with
-          | Tunivar (Some name) | Tvar (Some name) -> mknoloc name
-          | _ -> failwith "poly: not a var")
+            match get_desc v with
+            | Tunivar (Some name) | Tvar (Some name) -> mknoloc name
+            | _ -> failwith "poly: not a var")
         type_exprs
     in
     Typ.poly names @@ core_type type_expr
   | Tpackage { pack_path; pack_cstrs = lids_type_exprs } ->
     let lid = mknoloc (Untypeast.lident_of_path pack_path) in
     let package_type =
-      Typ.package_type lid
-      @@ List.map lids_type_exprs ~f:(fun (id, t) ->
+      Typ.package_type lid @@
+      List.map lids_type_exprs ~f:(fun (id, t) ->
           let lid = Longident.unflatten id |> Option.get in
           (mknoloc lid, core_type t))
     in
@@ -117,7 +116,7 @@ and extension_constructor id { ext_args; ext_ret_type; ext_attributes; _ } =
     (var_of_id id)
 
 and value_description id { val_type; val_kind = _; val_loc; val_attributes; _ }
-    =
+  =
   let type_ = core_type val_type in
   { Parsetree.pval_name = var_of_id id;
     pval_type = type_;
@@ -221,8 +220,8 @@ and signature_item (str_item : Types.signature_item) =
 
 and signature (items : Types.signature_item list) =
   List.map (group_items items) ~f:(function
-    | Item item -> signature_item item
-    | Type (rec_flag, type_decls) -> Ast_helper.Sig.type_ rec_flag type_decls)
+      | Item item -> signature_item item
+      | Type (rec_flag, type_decls) -> Ast_helper.Sig.type_ rec_flag type_decls)
 
 and group_items (items : Types.signature_item list) =
   let rec read_type type_acc items =

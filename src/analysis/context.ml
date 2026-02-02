@@ -86,7 +86,7 @@ let inspect_pattern (type a) ~cursor ~lid (p : a Typedtree.general_pattern) =
     None
   | Tpat_construct (lid_loc, cd, _, _)
     when cursor_on_longident_end ~cursor ~lid_loc cd.cstr_name
-         && Longident.last lid = Longident.last lid_loc.txt ->
+      && Longident.last lid = Longident.last lid_loc.txt ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the constructor
        itself. *)
@@ -127,26 +127,26 @@ let inspect_browse_tree ~cursor lid browse : t option =
       cursor;
     Some Unknown
   | enclosings -> (
-    let open Browse_raw in
-    let node = Browse_tree.of_browse enclosings in
-    log ~title:"inspect_context" "current enclosing node is: %s"
-      (string_of_node node.Browse_tree.t_node);
-    match node.Browse_tree.t_node with
-    | Pattern p -> inspect_pattern ~cursor ~lid p
-    | Value_description _
-    | Type_declaration _
-    | Extension_constructor _
-    | Module_binding_name _
-    | Module_declaration_name _
-    | Label_declaration _
-    | Constructor_declaration _ -> None
-    | Module_expr _ | Open_description _ -> Some Module_path
-    | Module_type _ -> Some Module_type
-    | Core_type { ctyp_desc = Ttyp_package _; _ } -> Some Module_type
-    | Core_type _ -> Some Type
-    | Record_field (_, lbl, _) when Longident.last lid = lbl.lbl_name ->
-      (* if we stopped here, then we're on the label itself, and whether or
+      let open Browse_raw in
+      let node = Browse_tree.of_browse enclosings in
+      log ~title:"inspect_context" "current enclosing node is: %s"
+        (string_of_node node.Browse_tree.t_node);
+      match node.Browse_tree.t_node with
+      | Pattern p -> inspect_pattern ~cursor ~lid p
+      | Value_description _
+      | Type_declaration _
+      | Extension_constructor _
+      | Module_binding_name _
+      | Module_declaration_name _
+      | Label_declaration _
+      | Constructor_declaration _ -> None
+      | Module_expr _ | Open_description _ -> Some Module_path
+      | Module_type _ -> Some Module_type
+      | Core_type { ctyp_desc = Ttyp_package _; _ } -> Some Module_type
+      | Core_type _ -> Some Type
+      | Record_field (_, lbl, _) when Longident.last lid = lbl.lbl_name ->
+        (* if we stopped here, then we're on the label itself, and whether or
             not punning is happening is not important *)
-      Some (Label lbl)
-    | Expression e -> Some (inspect_expression ~cursor ~lid e)
-    | _ -> Some Unknown)
+        Some (Label lbl)
+      | Expression e -> Some (inspect_expression ~cursor ~lid e)
+      | _ -> Some Unknown)

@@ -26,12 +26,12 @@ let make text = { text }
 
 type position = [ `Start | `Offset of int | `Logical of int * int | `End ]
 
-let equal_position p1 p2 =
-  match (p1, p2) with
-  | `Start, `Start | `End, `End -> true
-  | `Offset o1, `Offset o2 -> Int.equal o1 o2
-  | `Logical (l1, c1), `Logical (l2, c2) -> Int.equal l1 l2 && Int.equal c1 c2
-  | _ -> false
+let equal_position p1 p2 = match p1, p2 with
+| `Start, `Start | `End, `End -> true
+| `Offset o1, `Offset o2 -> Int.equal o1 o2
+| `Logical (l1, c1), `Logical (l2, c2) -> Int.equal l1 l2 && Int.equal c1 c2 
+| _ -> false
+;;
 
 exception Found of int
 
@@ -113,8 +113,8 @@ let get_logical { text } = function
     `Logical (!line, offset - !cnum)
 
 let compare_position t x y =
-  let (`Offset ox) = get_offset t x in
-  let (`Offset oy) = get_offset t y in
+  let `Offset ox = get_offset t x in
+  let `Offset oy = get_offset t y in
   compare ox oy
 
 let get_lexing_pos t ~filename pos =

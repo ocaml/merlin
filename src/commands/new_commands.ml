@@ -117,15 +117,19 @@ let all_commands =
          this variable.\n\
          The return value has the shape `[{'start': position, 'end': \
          position}, content]`, where content is string.\n"
-      ~default:(`Offset (-1), `Offset (-1)) begin fun buffer -> function
-      | `Offset -1, _ -> failwith "-start <pos> is mandatory"
-      | _, `Offset -1 -> failwith "-end <pos> is mandatory"
-      | startp, endp -> run buffer (Query_protocol.Case_analysis (startp, endp))
+      ~default:(`Offset (-1), `Offset (-1))
+      begin
+        fun buffer -> function
+          | `Offset -1, _ -> failwith "-start <pos> is mandatory"
+          | _, `Offset -1 -> failwith "-end <pos> is mandatory"
+          | startp, endp ->
+            run buffer (Query_protocol.Case_analysis (startp, endp))
       end;
     command "holes" ~spec:[]
       ~doc:"Returns the list of the positions of all the holes in the file."
-      ~default:() begin fun buffer () ->
-        run buffer Query_protocol.Holes
+      ~default:()
+      begin
+        fun buffer () -> run buffer Query_protocol.Holes
       end;
     command "construct"
       ~spec:
@@ -155,11 +159,12 @@ let all_commands =
          results of\n\
          inferior depth will not be returned."
       ~default:(`Offset (-1), None, None)
-      begin fun buffer (pos, with_values, max_depth) ->
-      match pos with
-      | `Offset -1 -> failwith "-position <pos> is mandatory"
-      | pos ->
-        run buffer (Query_protocol.Construct (pos, with_values, max_depth))
+      begin
+        fun buffer (pos, with_values, max_depth) ->
+          match pos with
+          | `Offset -1 -> failwith "-position <pos> is mandatory"
+          | pos ->
+            run buffer (Query_protocol.Construct (pos, with_values, max_depth))
       end;
     command "complete-prefix"
       ~spec:
@@ -211,12 +216,14 @@ let all_commands =
          - optional information which might not fit in the completion box, \
          like signatures for modules or documentation string."
       ~default:("", `None, [], false, true)
-      begin fun buffer (txt, pos, kinds, doc, typ) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer
-          (Query_protocol.Complete_prefix (txt, pos, List.rev kinds, doc, typ))
+      begin
+        fun buffer (txt, pos, kinds, doc, typ) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer
+              (Query_protocol.Complete_prefix
+                 (txt, pos, List.rev kinds, doc, typ))
       end;
     command "document"
       ~doc:
@@ -230,11 +237,14 @@ let all_commands =
             (marg_position (fun pos (ident, _pos) -> (ident, pos)));
           optional "-identifier" "<string> Identifier"
             (Marg.param "string" (fun ident (_ident, pos) -> (Some ident, pos)))
-        ] ~default:(None, `None) begin fun buffer (ident, pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Document (ident, pos))
+        ]
+      ~default:(None, `None)
+      begin
+        fun buffer (ident, pos) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Document (ident, pos))
       end;
     command "syntax-document"
       ~doc:
@@ -242,20 +252,27 @@ let all_commands =
       ~spec:
         [ arg "-position" "<position> Position to complete"
             (marg_position (fun pos _pos -> pos))
-        ] ~default:`None begin fun buffer pos ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Syntax_document pos)
+        ]
+      ~default:`None
+      begin
+        fun buffer pos ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Syntax_document pos)
       end;
     command "expand-ppx" ~doc:"Returns the generated code of a PPX."
       ~spec:
         [ arg "-position" "<position> Position to expand"
             (marg_position (fun pos _pos -> pos))
-        ] ~default:`None begin fun buffer pos ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos -> run buffer (Query_protocol.Expand_ppx pos)
+        ]
+      ~default:`None
+      begin
+        fun buffer pos ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Expand_ppx pos)
       end;
     command "enclosing"
       ~spec:
@@ -266,10 +283,14 @@ let all_commands =
         "Returns a list of locations `{'start': position, 'end': position}` in \
          increasing size of all entities surrounding the position.\n\
          (In a lisp, this would be the locations of all s-exps that contain \
-         the cursor.)" ~default:`None begin fun buffer pos ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos -> run buffer (Query_protocol.Enclosing pos)
+         the cursor.)"
+      ~default:`None
+      begin
+        fun buffer pos ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Enclosing pos)
       end;
     command "errors"
       ~spec:
@@ -300,8 +321,10 @@ let all_commands =
          Merlin was expecting such an error to be possible or not, and is \
          useful for debugging purposes.\n\
          `message` is the error description to be shown to the user."
-      ~default:(true, true, true) begin fun buffer (lexing, parsing, typing) ->
-      run buffer (Query_protocol.Errors { lexing; parsing; typing })
+      ~default:(true, true, true)
+      begin
+        fun buffer (lexing, parsing, typing) ->
+          run buffer (Query_protocol.Errors { lexing; parsing; typing })
       end;
     command "expand-prefix"
       ~doc:
@@ -330,13 +353,15 @@ let all_commands =
              cursor context"
             (marg_completion_kind (fun kind (txt, pos, kinds, typ) ->
                  (txt, pos, kind :: kinds, typ)))
-        ] ~default:("", `None, [], false)
-      begin fun buffer (txt, pos, kinds, typ) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer
-          (Query_protocol.Expand_prefix (txt, pos, List.rev kinds, typ))
+        ]
+      ~default:("", `None, [], false)
+      begin
+        fun buffer (txt, pos, kinds, typ) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer
+              (Query_protocol.Expand_prefix (txt, pos, List.rev kinds, typ))
       end;
     command "extension-list"
       ~spec:
@@ -351,20 +376,25 @@ let all_commands =
         ]
       ~doc:
         "List all known / currently enabled / currently disabled extensions as \
-         a list of strings." ~default:`All begin fun buffer status ->
-      run buffer (Query_protocol.Extension_list status)
+         a list of strings."
+      ~default:`All
+      begin
+        fun buffer status -> run buffer (Query_protocol.Extension_list status)
       end;
     command "findlib-list"
       ~doc:"Returns all known findlib packages as a list of string." ~spec:[]
-      ~default:() begin fun buffer () ->
-        run buffer Query_protocol.Findlib_list
+      ~default:()
+      begin
+        fun buffer () -> run buffer Query_protocol.Findlib_list
       end;
     command "flags-list" ~spec:[]
       ~doc:
         "Returns supported compiler flags.The purpose of this command is to \
          implement interactive completion of compiler settings in an IDE."
-      ~default:() begin fun _ () ->
-        `List (List.map ~f:Json.string (Mconfig.flags_for_completion ()))
+      ~default:()
+      begin
+        fun _ () ->
+          `List (List.map ~f:Json.string (Mconfig.flags_for_completion ()))
       end;
     command "jump"
       ~spec:
@@ -379,11 +409,13 @@ let all_commands =
          'module', 'module-type' and 'match' words.\n\
          It returns the starting position of the function, let definition, \
          module or match expression that contains the cursor\n"
-      ~default:("", `None) begin fun buffer (target, pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Jump (target, pos))
+      ~default:("", `None)
+      begin
+        fun buffer (target, pos) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Jump (target, pos))
       end;
     command "phrase"
       ~spec:
@@ -398,12 +430,14 @@ let all_commands =
         ]
       ~doc:
         "Returns the position of the next or previous phrase (top-level \
-         definition or module definition)." ~default:(`Next, `None)
-      begin fun buffer (target, pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Phrase (target, pos))
+         definition or module definition)."
+      ~default:(`Next, `None)
+      begin
+        fun buffer (target, pos) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Phrase (target, pos))
       end;
     command "list-modules"
       ~spec:
@@ -412,9 +446,11 @@ let all_commands =
         ]
       ~doc:
         "Looks into project source paths for files with an extension matching \
-         and prints the corresponding module name." ~default:[]
-      begin fun buffer extensions ->
-      run buffer (Query_protocol.List_modules (List.rev extensions))
+         and prints the corresponding module name."
+      ~default:[]
+      begin
+        fun buffer extensions ->
+          run buffer (Query_protocol.List_modules (List.rev extensions))
       end;
     command "locate"
       ~spec:
@@ -442,12 +478,14 @@ let all_commands =
          - if location failed, a `string` describing the reason to the user,\n\
          - `{'pos': position}` if the location is in the current buffer,\n\
          - `{'file': string, 'pos': position}` if definition is located in a \
-         different file." ~default:(None, `None, `MLI)
-      begin fun buffer (prefix, pos, lookfor) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Locate (prefix, lookfor, pos))
+         different file."
+      ~default:(None, `None, `MLI)
+      begin
+        fun buffer (prefix, pos, lookfor) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Locate (prefix, lookfor, pos))
       end;
     command "locate-type"
       ~spec:
@@ -455,10 +493,12 @@ let all_commands =
             (marg_position (fun pos _ -> pos))
         ]
       ~doc:"Locate the declaration of the type of the expression" ~default:`None
-      begin fun buffer pos ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos -> run buffer (Query_protocol.Locate_type pos)
+      begin
+        fun buffer pos ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Locate_type pos)
       end;
     command "locate-types"
       ~spec:
@@ -468,10 +508,14 @@ let all_commands =
       ~doc:
         "Locate the declaration of the type of the expression. If the type is \
          expressed via multiple identifiers, it returns the location of each \
-         identifier." ~default:`None begin fun buffer pos ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos -> run buffer (Query_protocol.Locate_types pos)
+         identifier."
+      ~default:`None
+      begin
+        fun buffer pos ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Locate_types pos)
       end;
     command "occurrences"
       ~spec:
@@ -488,17 +532,22 @@ let all_commands =
       ~doc:
         "Returns a list of locations `{'start': position, 'end': position}` of \
          all occurrences in current buffer of the entity at the specified \
-         position." ~default:(`None, `Buffer) begin fun buffer -> function
-      | `None, _ -> failwith "-identifier-at <pos> is mandatory"
-      | `Ident_at pos, scope ->
-        run buffer (Query_protocol.Occurrences (`Ident_at pos, scope))
+         position."
+      ~default:(`None, `Buffer)
+      begin
+        fun buffer -> function
+          | `None, _ -> failwith "-identifier-at <pos> is mandatory"
+          | `Ident_at pos, scope ->
+            run buffer (Query_protocol.Occurrences (`Ident_at pos, scope))
       end;
     command "outline" ~spec:[]
       ~doc:
         "Returns a tree of objects `{'start': position, 'end': position, \
          'name': string, 'kind': string, 'children': subnodes}` describing the \
-         content of the buffer." ~default:() begin fun buffer () ->
-        run buffer Query_protocol.Outline
+         content of the buffer."
+      ~default:()
+      begin
+        fun buffer () -> run buffer Query_protocol.Outline
       end;
     command "path-of-source"
       ~doc:
@@ -507,8 +556,11 @@ let all_commands =
       ~spec:
         [ arg "-file" "<filename> filename to look for in project paths"
             (Marg.param "filename" (fun file files -> file :: files))
-        ] ~default:[] begin fun buffer filenames ->
-      run buffer (Query_protocol.Path_of_source (List.rev filenames))
+        ]
+      ~default:[]
+      begin
+        fun buffer filenames ->
+          run buffer (Query_protocol.Path_of_source (List.rev filenames))
       end;
     command "refactor-open"
       ~doc:"refactor-open -position pos -action <qualify|unqualify>\n\tTODO"
@@ -521,11 +573,14 @@ let all_commands =
                  | "qualify" -> (Some `Qualify, pos)
                  | "unqualify" -> (Some `Unqualify, pos)
                  | _ -> failwith "invalid -action"))
-        ] ~default:(None, `None) begin fun buffer -> function
-      | None, _ -> failwith "-action is mandatory"
-      | _, `None -> failwith "-position is mandatory"
-      | Some action, (#Msource.position as pos) ->
-        run buffer (Query_protocol.Refactor_open (action, pos))
+        ]
+      ~default:(None, `None)
+      begin
+        fun buffer -> function
+          | None, _ -> failwith "-action is mandatory"
+          | _, `None -> failwith "-position is mandatory"
+          | Some action, (#Msource.position as pos) ->
+            run buffer (Query_protocol.Refactor_open (action, pos))
       end;
     command "search-by-polarity"
       ~doc:"search-by-polarity -position pos -query ident\n\tTODO"
@@ -538,11 +593,14 @@ let all_commands =
              +option will fetch function that takes string and returns an \
              option. (You can't parametrize types in polarity queries)"
             (Marg.param "string" (fun query (_prefix, pos) -> (query, pos)))
-        ] ~default:("", `None) begin fun buffer (query, pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Polarity_search (query, pos))
+        ]
+      ~default:("", `None)
+      begin
+        fun buffer (query, pos) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Polarity_search (query, pos))
       end;
     command "search-by-type" ~doc:"return a list of values that match a query"
       ~spec:
@@ -559,15 +617,18 @@ let all_commands =
           optional "-with-doc" "<bool> include docstring (default is false)"
             (Marg.bool (fun with_doc (query, pos, limit, _with_doc) ->
                  (query, pos, limit, with_doc)))
-        ] ~default:(None, `None, 100, false)
-      begin fun buffer (query, pos, limit, with_doc) ->
-      match (query, pos) with
-      | None, `None ->
-        failwith "-position <pos> and -query <string> are mandatory"
-      | None, _ -> failwith "-query <string> is mandatory"
-      | _, `None -> failwith "-position <pos> is mandatory"
-      | Some query, (#Msource.position as pos) ->
-        run buffer (Query_protocol.Type_search (query, pos, limit, with_doc))
+        ]
+      ~default:(None, `None, 100, false)
+      begin
+        fun buffer (query, pos, limit, with_doc) ->
+          match (query, pos) with
+          | None, `None ->
+            failwith "-position <pos> and -query <string> are mandatory"
+          | None, _ -> failwith "-query <string> is mandatory"
+          | _, `None -> failwith "-position <pos> is mandatory"
+          | Some query, (#Msource.position as pos) ->
+            run buffer
+              (Query_protocol.Type_search (query, pos, limit, with_doc))
       end;
     command "inlay-hints"
       ~doc:"return a list of inly-hints for additional client (like LSP)"
@@ -677,25 +738,31 @@ let all_commands =
                    pattern_binding,
                    function_params,
                    ghost )))
-        ] ~default:(`None, `None, false, false, false, true)
-      begin fun
-        buffer
-        (start, stop, let_binding, pattern_binding, function_params, avoid_ghost)
-      ->
-      match (start, stop) with
-      | `None, `None -> failwith "-start <pos> and -end are mandatory"
-      | `None, _ -> failwith "-start <pos> is mandatory"
-      | _, `None -> failwith "-end <pos> is mandatory"
-      | (#Msource.position, #Msource.position) as position ->
-        let start, stop = position in
-        run buffer
-          (Query_protocol.Inlay_hints
-             ( start,
-               stop,
-               let_binding,
-               pattern_binding,
-               function_params,
-               avoid_ghost ))
+        ]
+      ~default:(`None, `None, false, false, false, true)
+      begin
+        fun buffer
+          ( start,
+            stop,
+            let_binding,
+            pattern_binding,
+            function_params,
+            avoid_ghost )
+        ->
+          match (start, stop) with
+          | `None, `None -> failwith "-start <pos> and -end are mandatory"
+          | `None, _ -> failwith "-start <pos> is mandatory"
+          | _, `None -> failwith "-end <pos> is mandatory"
+          | (#Msource.position, #Msource.position) as position ->
+            let start, stop = position in
+            run buffer
+              (Query_protocol.Inlay_hints
+                 ( start,
+                   stop,
+                   let_binding,
+                   pattern_binding,
+                   function_params,
+                   avoid_ghost ))
       end;
     command "shape"
       ~doc:
@@ -714,9 +781,12 @@ let all_commands =
       ~spec:
         [ arg "-position" "<position> Position "
             (marg_position (fun pos _pos -> pos))
-        ] ~default:`None begin fun buffer -> function
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos -> run buffer (Query_protocol.Shape pos)
+        ]
+      ~default:`None
+      begin
+        fun buffer -> function
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos -> run buffer (Query_protocol.Shape pos)
       end;
     command "type-enclosing"
       ~doc:
@@ -760,18 +830,22 @@ let all_commands =
                  match int_of_string index with
                  | index -> (expr, cursor, pos, Some index)
                  | exception _ -> failwith "index should be an integer"))
-        ] ~default:("", -1, `None, None)
-      begin fun buffer (expr, cursor, pos, index) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        let expr =
-          if expr = "" then None
-          else
-            let cursor = if cursor = -1 then String.length expr else cursor in
-            Some (expr, cursor)
-        in
-        run buffer (Query_protocol.Type_enclosing (expr, pos, index))
+        ]
+      ~default:("", -1, `None, None)
+      begin
+        fun buffer (expr, cursor, pos, index) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            let expr =
+              if expr = "" then None
+              else
+                let cursor =
+                  if cursor = -1 then String.length expr else cursor
+                in
+                Some (expr, cursor)
+            in
+            run buffer (Query_protocol.Type_enclosing (expr, pos, index))
       end;
     command "type-expression"
       ~doc:
@@ -782,11 +856,14 @@ let all_commands =
             (marg_position (fun pos (expr, _pos) -> (expr, pos)));
           arg "-expression" "<string> Expression to type"
             (Marg.param "string" (fun expr (_expr, pos) -> (expr, pos)))
-        ] ~default:("", `None) begin fun buffer (expr, pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Type_expr (expr, pos))
+        ]
+      ~default:("", `None)
+      begin
+        fun buffer (expr, pos) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as pos ->
+            run buffer (Query_protocol.Type_expr (expr, pos))
       end;
     (* Implemented without support from Query_protocol.  This command might be
        refactored if it proves useful for old protocol too. *)
@@ -799,42 +876,48 @@ let all_commands =
         \  'dot_merlins': [path], // a list of string\n\
         \  'failures': [message]  // a list of string\n\
          }\n\
-         ```" ~default:() begin fun pipeline () ->
-        let config = Mpipeline.final_config pipeline in
-        `Assoc
-          [ (* TODO Remove support for multiple configuration files
+         ```"
+      ~default:()
+      begin
+        fun pipeline () ->
+          let config = Mpipeline.final_config pipeline in
+          `Assoc
+            [ (* TODO Remove support for multiple configuration files
                  The protocol could be changed to:
                  'config_file': path_to_dot_merlin_or_dune
 
                  For now, if the configurator is dune, the field 'dot_merlins'
                  will contain the path to the dune file (or jbuild, or dune-project)
               *)
-            ( "dot_merlins",
-              `List
-                (match Mconfig.(config.merlin.config_path) with
-                | Some path -> [ Json.string path ]
-                | None -> []) );
-            ( "failures",
-              `List (List.map ~f:Json.string Mconfig.(config.merlin.failures))
-            )
-          ]
+              ( "dot_merlins",
+                `List
+                  (match Mconfig.(config.merlin.config_path) with
+                  | Some path -> [ Json.string path ]
+                  | None -> []) );
+              ( "failures",
+                `List (List.map ~f:Json.string Mconfig.(config.merlin.failures))
+              )
+            ]
       end;
     command "signature-help" ~doc:"Returns LSP Signature Help response"
       ~spec:
         [ arg "-position" "<position> Position of Signature Help request"
             (marg_position (fun pos (expr, _pos) -> (expr, pos)))
-        ] ~default:("", `None) begin fun buffer (_, pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as position ->
-        let sh =
-          { Query_protocol.position;
-            trigger_kind = None;
-            is_retrigger = false;
-            active_signature_help = None
-          }
-        in
-        run buffer (Query_protocol.Signature_help sh)
+        ]
+      ~default:("", `None)
+      begin
+        fun buffer (_, pos) ->
+          match pos with
+          | `None -> failwith "-position <pos> is mandatory"
+          | #Msource.position as position ->
+            let sh =
+              { Query_protocol.position;
+                trigger_kind = None;
+                is_retrigger = false;
+                active_signature_help = None
+              }
+            in
+            run buffer (Query_protocol.Signature_help sh)
       end;
     (* Used only for testing *)
     command "dump"
@@ -843,14 +926,15 @@ let all_commands =
             "<source|parsetree|ppxed-source|ppxed-parsetree|typedtree|env|fullenv|browse|tokens|flags|warnings|exn|paths> \
              Information to dump ()"
             (Marg.param "string" (fun what _ -> what))
-        ] ~default:"" ~doc:"Not for the casual user, used for debugging merlin"
-      begin fun pipeline what ->
-      run pipeline (Query_protocol.Dump [ `String what ])
+        ]
+      ~default:"" ~doc:"Not for the casual user, used for debugging merlin"
+      begin
+        fun pipeline what -> run pipeline (Query_protocol.Dump [ `String what ])
       end;
     (* Used only for testing *)
     command "dump-configuration" ~spec:[] ~default:()
       ~doc:"Not for the casual user, used for merlin tests"
-      begin fun pipeline () ->
-        Mconfig.dump (Mpipeline.final_config pipeline)
+      begin
+        fun pipeline () -> Mconfig.dump (Mpipeline.final_config pipeline)
       end
   ]

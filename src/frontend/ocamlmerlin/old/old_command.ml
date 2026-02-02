@@ -117,11 +117,12 @@ let checkout_buffer =
     try List.assoc document !checkout_buffer_cache
     with Not_found ->
       let buffer = new_buffer document in
-      begin match document with
-      | Some _, _ ->
-        checkout_buffer_cache :=
-          (document, buffer) :: List.take_n cache_size !checkout_buffer_cache
-      | None, _ -> ()
+      begin
+        match document with
+        | Some _, _ ->
+          checkout_buffer_cache :=
+            (document, buffer) :: List.take_n cache_size !checkout_buffer_cache
+        | None, _ -> ()
       end;
       buffer
 
@@ -181,11 +182,12 @@ let dispatch_sync config state (type a) : a sync_command -> a = function
           | _ -> true)
         state.customization
   | Protocol_version version ->
-    begin match version with
-    | None -> ()
-    | Some 2 -> Old_IO.current_version := `V2
-    | Some 3 -> Old_IO.current_version := `V3
-    | Some _ -> ()
+    begin
+      match version with
+      | None -> ()
+      | Some 2 -> Old_IO.current_version := `V2
+      | Some 3 -> Old_IO.current_version := `V3
+      | Some _ -> ()
     end;
     ( `Selected !Old_IO.current_version,
       `Latest Old_IO.latest_version,

@@ -828,9 +828,10 @@ let unitname t =
   | Some name -> Misc.unitname name
   | None ->
     let basename = Misc.unitname t.query.filename in
-    begin match t.merlin.wrapping_prefix with
-    | Some prefix -> prefix ^ basename
-    | None -> basename
+    begin
+      match t.merlin.wrapping_prefix with
+      | Some prefix -> prefix ^ basename
+      | None -> basename
     end
 
 let intf_or_impl t =

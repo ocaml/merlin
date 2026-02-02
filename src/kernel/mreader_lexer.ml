@@ -331,10 +331,11 @@ let for_completion t pos =
     | (Triple (token, _, loc_end) as item) :: _ as items
       when Lexing.compare_pos pos loc_end = 0 ->
       check_label item;
-      begin match token with
-      (* Already on identifier, no need to introduce *)
-      | UIDENT _ | LIDENT _ -> raise Exit
-      | _ -> (acc, items)
+      begin
+        match token with
+        (* Already on identifier, no need to introduce *)
+        | UIDENT _ | LIDENT _ -> raise Exit
+        | _ -> (acc, items)
       end
     | items -> (acc, items)
   in

@@ -341,19 +341,21 @@ let make_json ?(on_read = ignore) ~input ~output () =
 let make_sexp ?on_read ~input ~output () =
   (* Fix for emacs: emacs start-process doesn't distinguish between stdout and
      stderr.  So we redirect stderr to /dev/null with sexp frontend. *)
-  begin match
-    begin try Some (Unix.openfile "/dev/null" [ Unix.O_WRONLY ] 0o600)
-    with Unix.Unix_error _ ->
-      if Sys.os_type = "Win32" then
-        try Some (Unix.openfile "NUL" [ Unix.O_WRONLY ] 0o600)
-        with Unix.Unix_error _ -> None
-      else None
-    end
-  with
-  | None -> ()
-  | Some fd ->
-    Unix.dup2 fd Unix.stderr;
-    Unix.close fd
+  begin
+    match
+      begin
+        try Some (Unix.openfile "/dev/null" [ Unix.O_WRONLY ] 0o600)
+        with Unix.Unix_error _ ->
+          if Sys.os_type = "Win32" then
+            try Some (Unix.openfile "NUL" [ Unix.O_WRONLY ] 0o600)
+            with Unix.Unix_error _ -> None
+          else None
+      end
+    with
+    | None -> ()
+    | Some fd ->
+      Unix.dup2 fd Unix.stderr;
+      Unix.close fd
   end;
   let input' = Sexp.of_file_descr ?on_read input in
   let input' () = Option.map ~f:Sexp.to_json (input' ()) in

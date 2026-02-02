@@ -168,25 +168,27 @@ let rec run_tests indent = function
 and run_test indent = function
   | Single (name, f) ->
     Printf.printf "%s%s:\t%!" indent name;
-    begin match f () with
-    | () ->
-      incr passed;
-      Printf.printf "OK\n%!"
-    | exception exn ->
-      let bt = Printexc.get_backtrace () in
-      incr failed;
-      Printf.printf "KO\n%!";
-      Printf.eprintf "%sTest %s failed with exception:\n%s%s\n%!" indent name
-        indent
-        (match exn with
-        | Failure str -> str
-        | exn -> Printexc.to_string exn);
-      begin match Location.error_of_exn exn with
-      | None | Some `Already_displayed -> ()
-      | Some (`Ok { Location.msg; loc }) ->
-        Printf.eprintf "%sError message:\n%s\n%!" indent msg
-      end;
-      Printf.eprintf "%sBacktrace:\n%s\n%!" indent bt
+    begin
+      match f () with
+      | () ->
+        incr passed;
+        Printf.printf "OK\n%!"
+      | exception exn ->
+        let bt = Printexc.get_backtrace () in
+        incr failed;
+        Printf.printf "KO\n%!";
+        Printf.eprintf "%sTest %s failed with exception:\n%s%s\n%!" indent name
+          indent
+          (match exn with
+          | Failure str -> str
+          | exn -> Printexc.to_string exn);
+        begin
+          match Location.error_of_exn exn with
+          | None | Some `Already_displayed -> ()
+          | Some (`Ok { Location.msg; loc }) ->
+            Printf.eprintf "%sError message:\n%s\n%!" indent msg
+        end;
+        Printf.eprintf "%sBacktrace:\n%s\n%!" indent bt
     end
   | Group (name, tests) ->
     Printf.printf "%s-> %s\n" indent name;

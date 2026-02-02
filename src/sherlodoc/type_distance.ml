@@ -52,15 +52,15 @@ let make_path t =
       let prefix = Tyname constr :: prefix in
       args
       |> List.mapi (fun position arg ->
-          let prefix = Argument { position; length } :: prefix in
-          aux prefix arg)
+             let prefix = Argument { position; length } :: prefix in
+             aux prefix arg)
       |> List.fold_left (fun acc xs -> List.rev_append xs acc) []
     | Type_expr.Tuple args ->
       let length = List.length args in
       args
       |> List.mapi (fun position arg ->
-          let prefix = Product { position; length } :: prefix in
-          aux prefix arg)
+             let prefix = Product { position; length } :: prefix in
+             aux prefix arg)
       |> List.fold_left (fun acc xs -> List.rev_append xs acc) []
   in
   List.map List.rev (aux [] t)
@@ -125,8 +125,8 @@ let distance xs ys =
 let make_array list =
   list |> Array.of_list
   |> Array.map (fun li ->
-      let li = List.mapi (fun i x -> (x, i)) li in
-      List.sort Stdlib.compare li)
+         let li = List.mapi (fun i x -> (x, i)) li in
+         List.sort Stdlib.compare li)
 
 let init_heuristic list =
   let used = Array.make List.(length @@ hd list) false in
