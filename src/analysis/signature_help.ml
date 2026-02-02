@@ -23,8 +23,10 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
   let rec longident ppf : Longident.t -> unit = function
     | Lident s -> Format.fprintf ppf "%s" (Misc_utils.parenthesize_name s)
     | Ldot (p, s) ->
-      Format.fprintf ppf "%a.%s" longident p.txt (Misc_utils.parenthesize_name s.txt)
-    | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1.txt longident p2.txt
+      Format.fprintf ppf "%a.%s" longident p.txt
+        (Misc_utils.parenthesize_name s.txt)
+    | Lapply (p1, p2) ->
+      Format.fprintf ppf "%a(%a)" longident p1.txt longident p2.txt
   in
   match exp_desc with
   | Texp_ident (_, { txt = li; _ }, _) ->
@@ -123,19 +125,20 @@ let first_unassigned_argument params =
     | _ -> false
   in
   let labelled = function
-    | { argument = Omitted (); label = Asttypes.Labelled _ | Optional _; _ } -> true
+    | { argument = Omitted (); label = Asttypes.Labelled _ | Optional _; _ } ->
+      true
     | _ -> false
   in
   try Some (List.index params ~f:positional)
   with Not_found -> (
-      try Some (List.index params ~f:labelled) with Not_found -> None)
+    try Some (List.index params ~f:labelled) with Not_found -> None)
 
 let active_parameter_by_prefix ~prefix params =
   let common = function
     | Asttypes.Nolabel -> Some 0
     | l
       when String.is_prefixed ~by:"~" prefix
-        || String.is_prefixed ~by:"?" prefix ->
+           || String.is_prefixed ~by:"?" prefix ->
       Some (String.common_prefix_len (Btype.prefixed_label_name l) prefix)
     | _ -> None
   in
@@ -143,12 +146,12 @@ let active_parameter_by_prefix ~prefix params =
   let rec find_by_prefix ?(i = 0) ?longest_len ?longest_i = function
     | [] -> longest_i
     | p :: ps -> (
-        match (common p.label, longest_len) with
-        | Some common_len, Some longest_len when common_len > longest_len ->
-          find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
-        | Some common_len, None ->
-          find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
-        | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
+      match (common p.label, longest_len) with
+      | Some common_len, Some longest_len when common_len > longest_len ->
+        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+      | Some common_len, None ->
+        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+      | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
   in
   find_by_prefix params
 
