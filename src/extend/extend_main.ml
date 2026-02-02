@@ -137,15 +137,16 @@ end
 (** The main entry point of an extension. *)
 let extension_main ?reader desc =
   (* Check if invoked from Merlin *)
-  begin match Sys.getenv "__MERLIN_MASTER_PID" with
-  | exception Not_found ->
-    Printf.eprintf
-      "This is %s merlin extension, version %s.\n\
-       This binary should be invoked from merlin and cannot be used directly.\n\
-       %!"
-      desc.P.name desc.P.version;
-    exit 1
-  | _ -> ()
+  begin
+    match Sys.getenv "__MERLIN_MASTER_PID" with
+    | exception Not_found ->
+      Printf.eprintf
+        "This is %s merlin extension, version %s.\n\
+         This binary should be invoked from merlin and cannot be used directly.\n\
+         %!"
+        desc.P.name desc.P.version;
+      exit 1
+    | _ -> ()
   end;
   (* Communication happens on stdin/stdout. *)
   Handshake.negotiate { P.reader = reader <> None };

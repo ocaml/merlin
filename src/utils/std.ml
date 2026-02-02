@@ -404,12 +404,12 @@ module String = struct
       let l' = String.length s in
       l' >= l
       &&
-        try
-          for i = 0 to pred l do
-            if s.[i] <> by.[i] then raise Not_found
-          done;
-          true
-        with Not_found -> false
+      try
+        for i = 0 to pred l do
+          if s.[i] <> by.[i] then raise Not_found
+        done;
+        true
+      with Not_found -> false
 
   (* Drop characters from beginning of string *)
   let drop n s = sub s ~pos:n ~len:(length s - n)
@@ -703,17 +703,18 @@ end = struct
       let l = String.length pattern in
       let i = ref 0 in
       while !i < l do
-        begin match pattern.[!i] with
-        | '\\' ->
-          incr i;
-          if !i < l then Buffer.add_char chunk pattern.[!i]
-        | '*' ->
-          flush ();
-          Buffer.add_string regexp ".*"
-        | '?' ->
-          flush ();
-          Buffer.add_char regexp '.'
-        | x -> Buffer.add_char chunk x
+        begin
+          match pattern.[!i] with
+          | '\\' ->
+            incr i;
+            if !i < l then Buffer.add_char chunk pattern.[!i]
+          | '*' ->
+            flush ();
+            Buffer.add_string regexp ".*"
+          | '?' ->
+            flush ();
+            Buffer.add_char regexp '.'
+          | x -> Buffer.add_char chunk x
         end;
         incr i
       done;
@@ -856,21 +857,25 @@ end
  * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
 let modules_in_path ~ext path =
   let seen = Hashtbl.create 7 in
-  List.fold_left ~init:[] path ~f:begin fun results dir ->
-      try
-        Array.fold_left
-          begin fun results file ->
-            if Filename.check_suffix file ext then
-              let name = Filename.chop_extension file in
-              if Hashtbl.mem seen name then results
-              else (
-                Hashtbl.add seen name ();
-                String.capitalize name :: results)
-            else results
-          end
-          results (Sys.readdir dir)
-      with Sys_error _ -> results
-    end
+  List.fold_left ~init:[] path
+    ~f:
+      begin
+        fun results dir ->
+          try
+            Array.fold_left
+              begin
+                fun results file ->
+                  if Filename.check_suffix file ext then
+                    let name = Filename.chop_extension file in
+                    if Hashtbl.mem seen name then results
+                    else (
+                      Hashtbl.add seen name ();
+                      String.capitalize name :: results)
+                  else results
+              end
+              results (Sys.readdir dir)
+          with Sys_error _ -> results
+      end
 
 let file_contents filename =
   let ic = open_in filename in

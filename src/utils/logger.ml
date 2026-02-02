@@ -65,10 +65,11 @@ let fmt_handle = Format.formatter_of_buffer fmt_buffer
 
 let fmt () f =
   Buffer.reset fmt_buffer;
-  begin match f fmt_handle with
-  | () -> ()
-  | exception exn ->
-    Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn)
+  begin
+    match f fmt_handle with
+    | () -> ()
+    | exception exn ->
+      Format.fprintf fmt_handle "@\nException: %s" (Printexc.to_string exn)
   end;
   Format.pp_print_flush fmt_handle ();
   let msg = Buffer.contents fmt_buffer in

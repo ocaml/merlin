@@ -68,9 +68,9 @@ let path_and_loc_of_cstr desc _ =
   match desc.Data_types.cstr_tag with
   | Cstr_extension (path, _) -> (path, desc.cstr_loc)
   | _ -> (
-    match get_desc desc.cstr_res with
-    | Tconstr (path, _, _) -> (path, desc.cstr_loc)
-    | _ -> assert false)
+      match get_desc desc.cstr_res with
+      | Tconstr (path, _, _) -> (path, desc.cstr_loc)
+      | _ -> assert false)
 
 let path_and_loc_from_label desc env =
   let open Types in

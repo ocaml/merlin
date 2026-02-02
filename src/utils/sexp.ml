@@ -45,22 +45,23 @@ let unescaped str =
       match str.[!i] with
       | '\\' ->
         incr i;
-        begin match str.[!i] with
-        | 'n' -> Buffer.add_char buf '\n'
-        | 'r' -> Buffer.add_char buf '\r'
-        | 't' -> Buffer.add_char buf '\t'
-        | 'x' ->
-          let c0 = Char.code str.[!i + 1] in
-          let c1 = Char.code str.[!i + 2] in
-          Buffer.add_char buf (Char.chr (c0 * 16 lor c1));
-          i := !i + 2
-        | '0' .. '9' ->
-          let c0 = Char.code str.[!i + 1] in
-          let c1 = Char.code str.[!i + 2] in
-          let c2 = Char.code str.[!i + 3] in
-          Buffer.add_char buf (Char.chr (c0 * 64 lor (c1 * 8) lor c2));
-          i := !i + 2
-        | c -> Buffer.add_char buf c
+        begin
+          match str.[!i] with
+          | 'n' -> Buffer.add_char buf '\n'
+          | 'r' -> Buffer.add_char buf '\r'
+          | 't' -> Buffer.add_char buf '\t'
+          | 'x' ->
+            let c0 = Char.code str.[!i + 1] in
+            let c1 = Char.code str.[!i + 2] in
+            Buffer.add_char buf (Char.chr (c0 * 16 lor c1));
+            i := !i + 2
+          | '0' .. '9' ->
+            let c0 = Char.code str.[!i + 1] in
+            let c1 = Char.code str.[!i + 2] in
+            let c2 = Char.code str.[!i + 3] in
+            Buffer.add_char buf (Char.chr (c0 * 64 lor (c1 * 8) lor c2));
+            i := !i + 2
+          | c -> Buffer.add_char buf c
         end;
         incr i
       | c ->
@@ -128,9 +129,10 @@ let read_sexp getch =
         | ' ' | '\t' | '\n' -> aux (getch ())
         | _ -> failwith "Invalid parse"
       in
-      ( begin match next with
-        | Some c -> aux c
-        | None -> aux (getch ())
+      ( begin
+          match next with
+          | Some c -> aux c
+          | None -> aux (getch ())
         end,
         None )
     | c ->

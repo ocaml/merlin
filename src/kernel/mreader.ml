@@ -135,14 +135,15 @@ let print_pretty config source tree =
   | None ->
     let ppf, to_string = Std.Format.to_string () in
     let open Extend_protocol.Reader in
-    begin match tree with
-    | Pretty_case_list x -> Pprintast.case_list ppf x
-    | Pretty_core_type x -> Pprintast.core_type ppf x
-    | Pretty_expression x -> Pprintast.expression ppf x
-    | Pretty_pattern x -> Pprintast.pattern ppf x
-    | Pretty_signature x -> Pprintast.signature ppf x
-    | Pretty_structure x -> Pprintast.structure ppf x
-    | Pretty_toplevel_phrase x -> Pprintast.toplevel_phrase ppf x
+    begin
+      match tree with
+      | Pretty_case_list x -> Pprintast.case_list ppf x
+      | Pretty_core_type x -> Pprintast.core_type ppf x
+      | Pretty_expression x -> Pprintast.expression ppf x
+      | Pretty_pattern x -> Pprintast.pattern ppf x
+      | Pretty_signature x -> Pprintast.signature ppf x
+      | Pretty_structure x -> Pprintast.structure ppf x
+      | Pretty_toplevel_phrase x -> Pprintast.toplevel_phrase ppf x
     end;
     to_string ()
 

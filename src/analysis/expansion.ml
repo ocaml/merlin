@@ -4,9 +4,7 @@ type t = Trie of (string * Longident.t * t list lazy_t)
 
 let rec explore_node lident env =
   let add_module name _ _ l =
-    let lident =
-      Longident.Ldot (Location.mknoloc lident, Location.mknoloc name)
-    in
+    let lident = Longident.Ldot (Location.mknoloc lident, Location.mknoloc name) in
     Trie (name, lident, lazy (explore_node lident env)) :: l
   in
   Env.fold_modules add_module (Some lident) env []

@@ -321,12 +321,12 @@ let get_config { workdir; process_dir; configurator } path_abs =
     let path_rel =
       String.chop_prefix ~prefix:p.initial_cwd path_abs
       |> Option.map ~f:(fun path ->
-          (* We need to remove the leading path separator after chopping.
+             (* We need to remove the leading path separator after chopping.
                 There is one case where no separator is left: when [initial_cwd]
                 was the root of the filesystem *)
-          if String.length path > 0 && path.[0] = Filename.dir_sep.[0] then
-            String.drop 1 path
-          else path)
+             if String.length path > 0 && path.[0] = Filename.dir_sep.[0] then
+               String.drop 1 path
+             else path)
     in
 
     let path =

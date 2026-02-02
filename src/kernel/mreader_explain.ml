@@ -57,12 +57,13 @@ let explain env (unexpected, startp, endp) popped shifted =
     | None -> return None
     | Some (Element (st, _, startp, endp)) -> (
       if closing_st st then incr closed;
-      begin match opening_st st with
-      | None -> ()
-      | Some st ->
-        if !closed = 0 && !unclosed = None then
-          unclosed := Some (st, mkloc startp endp)
-        else decr closed
+      begin
+        match opening_st st with
+        | None -> ()
+        | Some st ->
+          if !closed = 0 && !unclosed = None then
+            unclosed := Some (st, mkloc startp endp)
+          else decr closed
       end;
       match Parser_explain.named_item_at (number st) with
       | name -> return (Some (name, mkloc startp endp))

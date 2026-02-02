@@ -70,11 +70,12 @@ let rec summarize node =
       List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
     in
     let deprecated = Type_utils.is_deprecated vb.vb_attributes in
-    begin match name_of_patt vb.vb_pat with
-    | None -> None
-    | Some name ->
-      let typ = outline_type ~env:node.t_env vb.vb_pat.pat_type in
-      Some (mk ~children ~location ~deprecated `Value typ name)
+    begin
+      match name_of_patt vb.vb_pat with
+      | None -> None
+      | Some name ->
+        let typ = outline_type ~env:node.t_env vb.vb_pat.pat_type in
+        Some (mk ~children ~location ~deprecated `Value typ name)
     end
   | Value_description vd ->
     let deprecated = Type_utils.is_deprecated vd.val_attributes in
@@ -82,19 +83,21 @@ let rec summarize node =
     Some (mk ~location ~deprecated `Value typ vd.val_name)
   | Module_declaration md ->
     let children = get_mod_children node in
-    begin match md.md_name with
-    | { txt = None; _ } -> None
-    | { txt = Some txt; loc } ->
-      let deprecated = Type_utils.is_deprecated md.md_attributes in
-      Some (mk ~children ~location ~deprecated `Module None { txt; loc })
+    begin
+      match md.md_name with
+      | { txt = None; _ } -> None
+      | { txt = Some txt; loc } ->
+        let deprecated = Type_utils.is_deprecated md.md_attributes in
+        Some (mk ~children ~location ~deprecated `Module None { txt; loc })
     end
   | Module_binding mb ->
     let children = get_mod_children node in
-    begin match mb.mb_name with
-    | { txt = None; _ } -> None
-    | { txt = Some txt; loc } ->
-      let deprecated = Type_utils.is_deprecated mb.mb_attributes in
-      Some (mk ~children ~location ~deprecated `Module None { txt; loc })
+    begin
+      match mb.mb_name with
+      | { txt = None; _ } -> None
+      | { txt = Some txt; loc } ->
+        let deprecated = Type_utils.is_deprecated mb.mb_attributes in
+        Some (mk ~children ~location ~deprecated `Module None { txt; loc })
     end
   | Module_type_declaration mtd ->
     let children = get_mod_children node in
@@ -169,15 +172,15 @@ and get_class_elements node =
     in
     cf.cf_desc |> get_class_field_desc_infos
     |> Option.map ~f:(fun (str_loc, outline_kind) ->
-        let deprecated = Type_utils.is_deprecated cf.cf_attributes in
-        { Query_protocol.outline_name = str_loc.Location.txt;
-          outline_kind;
-          outline_type = None;
-          location = cf.cf_loc;
-          selection = str_loc.loc;
-          children;
-          deprecated
-        })
+           let deprecated = Type_utils.is_deprecated cf.cf_attributes in
+           { Query_protocol.outline_name = str_loc.Location.txt;
+             outline_kind;
+             outline_type = None;
+             location = cf.cf_loc;
+             selection = str_loc.loc;
+             children;
+             deprecated
+           })
     |> Option.to_list
   | Class_field_kind _ ->
     List.concat_map (Lazy.force node.t_children) ~f:get_val_elements
@@ -187,16 +190,16 @@ and get_class_elements node =
     List.filter_map csig_fields ~f:(fun field ->
         get_class_signature_field_desc_infos field.ctf_desc
         |> Option.map ~f:(fun (name, outline_kind) ->
-            let deprecated = Type_utils.is_deprecated field.ctf_attributes in
-            { Query_protocol.outline_name = name;
-              outline_kind;
-              outline_type = None;
-              location = field.ctf_loc;
-              selection = field.ctf_loc;
-              (* TODO: could we have more precised location information? *)
-              children = [];
-              deprecated
-            }))
+               let deprecated = Type_utils.is_deprecated field.ctf_attributes in
+               { Query_protocol.outline_name = name;
+                 outline_kind;
+                 outline_type = None;
+                 location = field.ctf_loc;
+                 selection = field.ctf_loc;
+                 (* TODO: could we have more precised location information? *)
+                 children = [];
+                 deprecated
+               }))
   | _ -> []
 
 and get_class_field_desc_infos = function

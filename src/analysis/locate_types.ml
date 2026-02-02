@@ -17,10 +17,9 @@ let rec flatten_arrow ret_ty =
   | Tarrow (label, ty1, ty2, _) ->
     let ty1 =
       match label with
-      | Optional _ -> (
-        match Types.get_desc ty1 with
-        | Tconstr (path, [ ty1 ], _) when Path.same path Predef.path_option ->
-          ty1
+      | Optional _ ->
+        (match Types.get_desc ty1 with
+        | Tconstr (path, [ ty1 ], _) when Path.same path Predef.path_option -> ty1
         | _ -> ty1)
       | _ -> ty1
     in

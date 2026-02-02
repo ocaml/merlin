@@ -163,9 +163,10 @@ let run =
               ]
           in
           log ~title:"run(result)" "%a" Logger.json (fun () -> json);
-          begin match Mconfig.(config.merlin.protocol) with
-          | `Sexp -> Sexp.tell_sexp print_string (Sexp.of_json json)
-          | `Json -> Yojson.Basic.to_channel stdout json
+          begin
+            match Mconfig.(config.merlin.protocol) with
+            | `Sexp -> Sexp.tell_sexp print_string (Sexp.of_json json)
+            | `Json -> Yojson.Basic.to_channel stdout json
           end;
           print_newline ()
         end
@@ -186,11 +187,12 @@ let with_wd ~wd ~old_wd f args =
     f args
 
 let run ~new_env wd args =
-  begin match new_env with
-  | Some env ->
-    Os_ipc.merlin_set_environ env;
-    Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
-  | None -> ()
+  begin
+    match new_env with
+    | Some env ->
+      Os_ipc.merlin_set_environ env;
+      Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()))
+    | None -> ()
   end;
   let old_wd = Sys.getcwd () in
   let run args () =
