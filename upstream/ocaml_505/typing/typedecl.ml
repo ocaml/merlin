@@ -69,6 +69,7 @@ type error =
   | Multiple_native_repr_attributes
   | Cannot_unbox_or_untag_type of native_repr_kind
   | Deep_unbox_or_untag_attribute of native_repr_kind
+  | Type_cannot_be_external of type_expr
   | Immediacy of Typedecl_immediacy.error
   | Separability of Typedecl_separability.error
   | Bad_unboxed_attribute of string
@@ -76,6 +77,7 @@ type error =
   | Nonrec_gadt
   | Invalid_private_row_declaration of type_expr
   | Atomic_field_must_be_mutable of string
+  | External_with_non_syntactic_arity
 
 open Typedtree
 
@@ -349,11 +351,11 @@ let transl_declaration env sdecl (id, uid) =
   TyVarEnv.reset();
   let tparams = make_params env sdecl.ptype_params in
   let params = List.map (fun (cty, _) -> cty.ctyp_type) tparams in
-  let cstrs = List.map
+  let constraints = List.map
     (fun (sty, sty', loc) ->
       transl_simple_type env ~closed:false sty,
       transl_simple_type env ~closed:false sty', loc)
-    sdecl.ptype_cstrs
+    sdecl.ptype_constraints
   in
   let unboxed_attr = get_unboxed_from_attributes sdecl in
   begin match unboxed_attr with
@@ -361,7 +363,8 @@ let transl_declaration env sdecl (id, uid) =
   | Some true ->
     let bad msg = raise(Error(sdecl.ptype_loc, Bad_unboxed_attribute msg)) in
     match sdecl.ptype_kind with
-    | Ptype_abstract    -> bad "it is abstract"
+    | Ptype_abstract
+    | Ptype_external _   -> bad "it is abstract"
     | Ptype_open        -> bad "extensible variant types cannot be unboxed"
     | Ptype_record fields -> begin match fields with
         | [] -> bad "it has no fields"
@@ -402,9 +405,10 @@ let transl_declaration env sdecl (id, uid) =
   let (tkind, kind) =
     match sdecl.ptype_kind with
       | Ptype_abstract -> Ttype_abstract, Type_abstract Definition
+      | Ptype_external name -> Ttype_external name, Type_external name
       | Ptype_variant scstrs ->
         if List.exists (fun cstr -> cstr.pcd_res <> None) scstrs then begin
-          match cstrs with
+          match constraints with
             [] -> ()
           | (_,_,loc)::_ ->
               Location.prerr_warning loc Warnings.Constraint_on_gadt
@@ -503,7 +507,7 @@ let transl_declaration env sdecl (id, uid) =
         let ty' = cty'.ctyp_type in
         try Ctype.unify env ty ty' with Ctype.Unify err ->
           raise(Error(loc, Inconsistent_constraint (env, err))))
-      cstrs;
+      constraints;
   (* Add abstract row *)
     if is_fixed_type sdecl then begin
       let p, _ =
@@ -519,7 +523,7 @@ let transl_declaration env sdecl (id, uid) =
         typ_name = sdecl.ptype_name;
         typ_params = tparams;
         typ_type = decl;
-        typ_cstrs = cstrs;
+        typ_constraints = constraints;
         typ_loc = sdecl.ptype_loc;
         typ_manifest = tman;
         typ_kind = tkind;
@@ -532,7 +536,7 @@ let transl_declaration env sdecl (id, uid) =
       match decl.typ_kind with
       | Ttype_variant cstrs -> Shape.str ~uid (shape_map_cstrs cstrs)
       | Ttype_record labels -> Shape.str ~uid (shape_map_labels labels)
-      | Ttype_abstract | Ttype_open -> Shape.leaf uid
+      | Ttype_abstract | Ttype_open | Ttype_external _ -> Shape.leaf uid
     in
     decl, typ_shape
   end
@@ -562,8 +566,14 @@ let rec check_constraints_rec env loc visited ty =
           raise (Error(loc, Constraint_failed (env, err)))
       end;
       List.iter (check_constraints_rec env loc visited) args
+  | Tfunctor (_, us, pack, ty) ->
+      List.iter (fun (_, t) -> check_constraints_rec env loc visited t)
+        pack.pack_constraints;
+      let (env, ty) =
+        Ctype.open_tfunctor env ~loc us pack ty in
+      check_constraints_rec env loc visited ty
   | Tpoly (ty, tl) ->
-      let _, ty = Ctype.instance_poly ~fixed:false tl ty in
+      let ty = Ctype.instance_poly tl ty in
       check_constraints_rec env loc visited ty
   | _ ->
       Btype.iter_type_expr (check_constraints_rec env loc visited) ty
@@ -591,7 +601,8 @@ let check_constraints env sdecl (_, decl) =
   | Type_variant (l, _rep) ->
       let find_pl = function
           Ptype_variant pl -> pl
-        | Ptype_record _ | Ptype_abstract | Ptype_open -> assert false
+        | Ptype_record _ | Ptype_abstract | Ptype_open | Ptype_external _ ->
+            assert false
       in
       let pl = find_pl sdecl.ptype_kind in
       let pl_index =
@@ -624,11 +635,13 @@ let check_constraints env sdecl (_, decl) =
   | Type_record (l, _) ->
       let find_pl = function
           Ptype_record pl -> pl
-        | Ptype_variant _ | Ptype_abstract | Ptype_open -> assert false
+        | Ptype_variant _ | Ptype_abstract | Ptype_open | Ptype_external _ ->
+            assert false
       in
       let pl = find_pl sdecl.ptype_kind in
       check_constraints_labels env visited l pl
   | Type_open -> ()
+  | Type_external _ -> ()
   end;
   begin match decl.type_manifest with
   | None -> ()
@@ -986,8 +999,7 @@ let check_regularity ~abs_env env loc path decl to_check =
           end;
           List.iter (check_subtype cpath args prev_exp trace ty) args'
       | Tpoly (ty, tl) ->
-          let (_, ty) =
-            Ctype.instance_poly ~keep_names:true ~fixed:false tl ty in
+          let ty = Ctype.instance_poly ~keep_names:true tl ty in
           check_regular cpath args prev_exp trace ty
       | _ ->
           Btype.iter_type_expr
@@ -1040,7 +1052,8 @@ let check_duplicates sdecl_list =
             with Not_found -> Hashtbl.add labels cname.txt sdecl.ptype_name.txt)
           fl
     | Ptype_abstract -> ()
-    | Ptype_open -> ())
+    | Ptype_open -> ()
+    | Ptype_external _ -> ())
     sdecl_list
 
 (* Force recursion to go through id for private types*)
@@ -1606,19 +1619,24 @@ let rec parse_native_repr_attributes env core_type ty ~global_repr =
   | Ptyp_arrow _, Tarrow _, Native_repr_attr_present kind  ->
     raise (Error (core_type.ptyp_loc, Cannot_unbox_or_untag_type kind))
   | Ptyp_arrow (_, ct1, ct2), Tarrow (_, t1, t2, _), _ ->
+    let t1, _ = Btype.tpoly_get_poly t1 in
     let repr_arg = make_native_repr env ct1 t1 ~global_repr in
     let repr_args, repr_res =
       parse_native_repr_attributes env ct2 t2 ~global_repr
     in
     (repr_arg :: repr_args, repr_res)
+  | Ptyp_functor _, Tfunctor _, _ ->
+    raise (Error (core_type.ptyp_loc, Type_cannot_be_external ty))
   | (Ptyp_poly (_, t) | Ptyp_alias (t, _)), _, _ ->
      parse_native_repr_attributes env t ty ~global_repr
-  | Ptyp_arrow _, _, _ | _, Tarrow _, _ -> assert false
+  | Ptyp_arrow _, _, _ | Ptyp_functor _, _, _ -> assert false
+  | _, Tarrow _, _ | _, Tfunctor _, _ ->
+      raise (Error (core_type.ptyp_loc, External_with_non_syntactic_arity))
   | _ -> ([], make_native_repr env core_type ty ~global_repr)
 
 
 let check_unboxable env loc ty =
-  let check_type acc ty : Path.Set.t =
+  let rec check_type acc ty : Path.Set.t =
     let ty = Ctype.expand_head_opt env ty in
     try match get_desc ty with
       | Tconstr (p, _, _) ->
@@ -1626,6 +1644,7 @@ let check_unboxable env loc ty =
         if tydecl.type_unboxed_default then
           Path.Set.add p acc
         else acc
+      | Tpoly (ty, []) -> check_type acc ty
       | _ -> acc
     with Not_found -> acc
   in
@@ -1733,7 +1752,7 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
          constraints report an error on the constraint location
          rather than the parameter location. *)
       (cty, cty', loc)
-    ) sdecl.ptype_cstrs
+    ) sdecl.ptype_constraints
   in
   let no_row = not (is_fixed_type sdecl) in
   let (tman, man) =  match sdecl.ptype_manifest with
@@ -1842,7 +1861,7 @@ let transl_with_constraint id ?fixed_row_path ~sig_env ~sig_decl ~outer_env
     typ_name = sdecl.ptype_name;
     typ_params = tparams;
     typ_type = new_sig_decl;
-    typ_cstrs = constraints;
+    typ_constraints = constraints;
     typ_loc = loc;
     typ_manifest = Some tman;
     typ_kind = Ttype_abstract;
@@ -1880,13 +1899,13 @@ let transl_package_constraint ~loc env ty =
 
 (* Approximate a type declaration: just make all types abstract *)
 
-let abstract_type_decl ~injective arity =
+let abstract_type_decl ~injective ~explanation arity =
   let rec make_params n =
     if n <= 0 then [] else Ctype.newvar() :: make_params (n-1) in
   Ctype.with_local_level_generalize begin fun () ->
     { type_params = make_params arity;
       type_arity = arity;
-      type_kind = Type_abstract Definition;
+      type_kind = Type_abstract explanation;
       type_private = Public;
       type_manifest = None;
       type_variance = Variance.unknown_signature ~injective ~arity;
@@ -1901,24 +1920,28 @@ let abstract_type_decl ~injective arity =
     }
   end
 
-let approx_type_decl sdecl_list =
+let approx_type_decl ~explanation sdecl_list =
   let scope = Ctype.create_scope () in
   List.map
     (fun sdecl ->
       let injective = sdecl.ptype_kind <> Ptype_abstract in
       (Ident.create_scoped ~scope sdecl.ptype_name.txt,
-       abstract_type_decl ~injective (List.length sdecl.ptype_params)))
+       abstract_type_decl ~injective ~explanation
+        (List.length sdecl.ptype_params)))
     sdecl_list
 
 (* Check the well-formedness conditions on type abbreviations defined
    within recursive modules. *)
 
-let check_recmod_typedecl env loc recmod_ids path decl =
+(* [abs_env] is an abstract environment without physical cycles.
+  It is used as a printing environment in the case of cycles.
+  [env] is the main typing environment, which may contain cycles. *)
+let check_recmod_typedecl ~abs_env env loc recmod_ids path decl =
   (* recmod_ids is the list of recursively-defined module idents.
      (path, decl) is the type declaration to be checked. *)
   let to_check path = Path.exists_free recmod_ids path in
-  check_well_founded_decl ~abs_env:env env loc path decl to_check;
-  check_regularity ~abs_env:env env loc path decl to_check;
+  check_well_founded_decl ~abs_env env loc path decl to_check;
+  check_regularity ~abs_env env loc path decl to_check;
   (* additional coherence check, as one might build an incoherent signature,
      and use it to build an incoherent module, cf. #7851 *)
   check_coherence env loc path decl
@@ -2291,6 +2314,10 @@ let report_error ~loc = function
          it should not occur deeply into its type."
         Style.inline_code
         (match kind with Unboxed -> "@unboxed" | Untagged -> "@untagged")
+  | Type_cannot_be_external ty ->
+      Location.errorf ~loc
+        "The type@ %a@ cannot be used to annotate an external function."
+          (Style.as_inline_code Printtyp.type_expr) ty
   | Immediacy (Typedecl_immediacy.Bad_immediacy_attribute violation) ->
       (match violation with
        | Type_immediacy.Violation.Not_always_immediate ->
@@ -2348,6 +2375,11 @@ let report_error ~loc = function
       Location.errorf ~loc
         "@[The label %a must be mutable to be declared atomic.@]"
         Style.inline_code name
+  | External_with_non_syntactic_arity ->
+      Location.errorf ~loc
+        "This external declaration has a non-syntactic arity,@ \
+         its arity is greater than its syntactic arity."
+
 
 let () =
   Location.register_error_of_exn

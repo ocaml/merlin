@@ -73,6 +73,8 @@ type 'a loc = {
 let mkloc txt loc = { txt ; loc }
 let mknoloc txt = mkloc txt none
 
+let map f x = { x with txt = f x.txt }
+
 (******************************************************************************)
 (* Input info *)
 
@@ -971,7 +973,7 @@ let auto_include_alert lib =
     {Warnings.kind="ocaml_deprecated_auto_include"; use=none; def=none;
      message = Format.asprintf "@[@\n%a@]" Format.pp_print_text message}
   in
-  prerr_alert none alert
+  prerr_alert (in_file !input_name) alert
 
 let deprecated_script_alert program =
   let message = Fmt.asprintf "\

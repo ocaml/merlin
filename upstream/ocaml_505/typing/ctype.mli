@@ -82,7 +82,18 @@ val increase_global_level: unit -> int
 val restore_global_level: int -> unit
         (* This pair of functions is only used in Typetexp *)
 
-val create_scope : unit -> int
+val create_scope: unit -> int
+        (* Return a level higher than all previous levels.
+           When used as scope in [Ident.create_scoped], this guarantees
+           that the correspondind type cannot escape to a previous
+           environment.
+           Practically, this is done by returning the current level
+           after raising it.
+           Contrary to [with_local_level*], the end of the scope is not
+           specified by [create_scope]. If there is an enclosing
+           [with_local_level*], the scope will end there. Otherwise
+           the scope continues until the end of the compilation unit
+           or toplevel session. *)
 
 val newty: type_desc -> type_expr
 val new_scoped_ty: int -> type_desc -> type_expr
@@ -94,6 +105,8 @@ val new_global_var: ?name:string -> unit -> type_expr
            (as type variables ['a] in type constraints). *)
 val newobj: type_expr -> type_expr
 val newconstr: Path.t -> type_expr list -> type_expr
+val newmono : type_expr -> type_expr
+        (* Create a new, monomorphic type *)
 val none: type_expr
         (* A dummy type expression *)
 
@@ -177,8 +190,14 @@ val new_local_type:
         type_origin -> type_declaration
 
 module Pattern_env : sig
+  type envop
   type t = private
     { mutable env : Env.t;
+      mutable op_list : envop list;
+      (* When comparing module-dependent functions we add a module to the
+         environment locally. [op_list] records all the changes to the
+         environment in order to replay them once again after removing the local
+         module from the environment. *)
       equations_scope : int;
       (* scope for local type declarations *)
       in_counterexample : bool;
@@ -186,6 +205,7 @@ module Pattern_env : sig
     }
   val make: Env.t -> equations_scope:int -> in_counterexample:bool -> t
   val copy: ?equations_scope:int -> t -> t
+  val enter_type: scope:int -> label -> type_declaration -> t -> Ident.t
   val set_env: t -> Env.t -> unit
 end
 
@@ -200,7 +220,7 @@ val instance_constructor:
 (* Same, for a constructor. Also returns existentials. *)
 
 val instance_parameterized_type:
-        ?keep_names:bool ->
+        ?keep_names:bool -> ?scope:int ->
         type_expr list -> type_expr -> type_expr list * type_expr
 val instance_declaration: type_declaration -> type_declaration
 val generic_instance_declaration: type_declaration -> type_declaration
@@ -209,10 +229,32 @@ val instance_class:
         type_expr list -> class_type -> type_expr list * class_type
 
 val instance_poly:
-        ?keep_names:bool -> fixed:bool ->
-        type_expr list -> type_expr -> type_expr list * type_expr
+        ?keep_names:bool ->
+        type_expr list -> type_expr -> type_expr
         (* Take an instance of a type scheme containing free univars *)
-val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * bool
+val instance_poly_fixed:
+        ?keep_names:bool ->
+        type_expr list -> type_expr -> type_expr list * type_expr
+        (* Take an instance of a type scheme containing free univars for
+           checking that an expression matches this scheme. *)
+
+val instance_funct_opt:
+        id_in:Ident.t -> p_out:Path.t -> fixed:bool ->
+        type_expr -> type_expr option
+(** Takes a instance of the functor return type by replacing [id_in]
+    by [p_out]. Returns [None] if [id_in] did not occur in the type. *)
+
+val instance_funct:
+        id_in:Ident.t -> p_out:Path.t -> fixed:bool -> type_expr -> type_expr
+(** Same as [instance_funct_opt] but behaves as identity if [id_in] does
+    not occur in the type. *)
+
+val instance_funct_nondep :
+        Env.t -> arg_label -> tfunctor -> module_type -> type_expr
+(** Tries to use the module argument actual signature to remove the depencies
+    that might occur in the return type of a module-dependent function. *)
+
+val polyfy: Env.t -> type_expr -> type_expr list -> type_expr * type_expr list
 
 val instance_label:
   fixed:bool ->
@@ -283,18 +325,47 @@ val unify_gadt:
 val unify_var: Env.t -> type_expr -> type_expr -> unit
         (* Same as [unify], but allow free univars when first type
            is a variable. *)
-val filter_arrow: Env.t -> type_expr -> arg_label -> type_expr * type_expr
-        (* A special case of unification with [l:'a -> 'b].  Raises
-           [Filter_arrow_failed] instead of [Unify]. *)
+
+type filtered_arrow =
+  { ty_param : type_expr;
+    ty_ret : type_expr;
+  }
+
+type filter_arrow_failure =
+  | Unification_error of Errortrace.unification_error
+  | Label_mismatch of
+      { got           : arg_label
+      ; expected      : arg_label
+      ; expected_type : type_expr
+      }
+  | Not_a_function
+
+val filter_arrow: Env.t -> in_apply:bool -> type_expr -> arg_label ->
+        param_hole:bool -> (filtered_arrow, filter_arrow_failure) result
+        (* A special case of unification with [l:'a -> 'b]. If [param_hole] is
+           true then ['a] might be initialized with a [Tvar _] hole to be filled
+           later by a [Tpoly _].
+           If [in_apply] is false than the type argument is presented as the
+           expected type in the error message if filter_arrow fails.
+           Returns a result instead of raising [Unify]. *)
+val filter_functor:
+        Env.t -> type_expr -> arg_label ->
+        ((Ident.Unscoped.t * package * type_expr) option,
+         filter_arrow_failure) result
+        (* A special case of unification with [{M:P} -> 'a]
+           Returns a result instead of raising [Unify].
+           May return [Some _] when the type is not principally known,
+           so you should check for principality. *)
+val is_really_poly : Env.t -> type_expr -> bool
 val filter_method: Env.t -> string -> type_expr -> type_expr
         (* A special case of unification (with {m : 'a; 'b}).  Raises
            [Filter_method_failed] instead of [Unify]. *)
 val occur_in: Env.t -> type_expr -> type_expr -> bool
 val deep_occur: type_expr -> type_expr -> bool
 val deep_occur_list: type_expr -> type_expr list -> bool
-val moregeneral: Env.t -> bool -> type_expr -> type_expr -> unit
+val moregeneral: Env.t -> type_expr -> type_expr -> unit
         (* Check if the first type scheme is more general than the second. *)
-val is_moregeneral: Env.t -> bool -> type_expr -> type_expr -> bool
+val is_moregeneral: Env.t -> type_expr -> type_expr -> bool
 val rigidify: type_expr -> type_expr list
         (* "Rigidify" a type and return its type variable *)
 val all_distinct_vars: Env.t -> type_expr list -> bool
@@ -311,17 +382,6 @@ val reify_univars : Env.t -> Types.type_expr -> Types.type_expr
         (* Replaces all the variables of a type by a univar. *)
 
 (* Exceptions for special cases of unify *)
-
-type filter_arrow_failure =
-  | Unification_error of Errortrace.unification_error
-  | Label_mismatch of
-      { got           : arg_label
-      ; expected      : arg_label
-      ; expected_type : type_expr
-      }
-  | Not_a_function
-
-exception Filter_arrow_failed of filter_arrow_failure
 
 type filter_method_failure =
   | Unification_error of Errortrace.unification_error
@@ -355,6 +415,7 @@ val equal: Env.t -> bool -> type_expr list -> type_expr list -> unit
         (* [equal env [x1...xn] tau [y1...yn] sigma]
            checks whether the parameterized types
            [/\x1.../\xn.tau] and [/\y1.../\yn.sigma] are equivalent. *)
+val eq_package_path : Env.t -> Path.t -> Path.t -> bool
 val is_equal : Env.t -> bool -> type_expr list -> type_expr list -> bool
 val equal_private :
         Env.t -> type_expr list -> type_expr ->
@@ -457,6 +518,7 @@ type closed_class_failure = {
 val free_variables: ?env:Env.t -> type_expr -> type_expr list
 val free_variables_list: ?env:Env.t -> type_expr list -> type_expr list
         (* If env present, then check for incomplete definitions too *)
+val contains_nongen_variables: ?env:Env.t -> type_expr -> bool
 val closed_type_expr: ?env:Env.t -> type_expr -> bool
 val closed_type_decl: type_declaration -> type_expr option
 val closed_extension_constructor: extension_constructor -> type_expr option
@@ -483,5 +545,12 @@ val package_subtype :
     (Env.t -> package -> package ->
      (unit,Errortrace.first_class_module) Result.t) ref
 
+val modtype_of_package : Env.t -> Location.t -> package -> module_type
+val set_modtype_of_package :
+        (Env.t -> Location.t -> package -> module_type) -> unit
+
 (* Raises [Incompatible] *)
 val mcomp : Env.t -> type_expr -> type_expr -> unit
+
+val open_tfunctor : Env.t -> loc:Location.t -> Ident.Unscoped.t -> package ->
+        type_expr -> Env.t * type_expr
