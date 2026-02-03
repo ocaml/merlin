@@ -69,6 +69,7 @@ let builtin_attrs =
   ; "noalloc"
   ; "poll"
   ; "ppwarning"
+  ; "remove_aliases"
   ; "specialise"
   ; "specialised"
   ; "tailcall"
@@ -411,5 +412,7 @@ let immediate64 attrs = has_attribute "immediate64" attrs
 let has_unboxed attrs = has_attribute "unboxed" attrs
 
 let has_boxed attrs = has_attribute "boxed" attrs
+
+let has_remove_aliases attrs = has_attribute "remove_aliases" attrs
 
 let has_atomic attrs = has_attribute "atomic" attrs

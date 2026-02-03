@@ -214,7 +214,7 @@ let rec nondep_mty_with_presence env va ids pres mty =
       let res_env =
         match param with
         | None -> env
-        | Some param -> Env.add_module ~arg:true param Mp_present arg env
+        | Some param -> Env.add_module ~noalias:true param Mp_present arg env
       in
       let mty =
         Mty_functor(Named (param, nondep_mty env var_inv ids arg),

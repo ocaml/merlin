@@ -99,7 +99,7 @@ let value_descriptions ~loc env name
     loc
     vd1.val_attributes vd2.val_attributes
     name;
-  match Ctype.moregeneral env true vd1.val_type vd2.val_type with
+  match Ctype.moregeneral env vd1.val_type vd2.val_type with
   | exception Ctype.Moregen err -> raise (Dont_match (Type err))
   | () -> value_descriptions_consistency env vd1 vd2
 
@@ -143,12 +143,14 @@ type type_kind =
   | Kind_record
   | Kind_variant
   | Kind_open
+  | Kind_external of string
 
 let of_kind = function
   | Type_abstract _ -> Kind_abstract
   | Type_record (_, _) -> Kind_record
   | Type_variant (_, _) -> Kind_variant
   | Type_open -> Kind_open
+  | Type_external name -> Kind_external name
 
 type kind_mismatch = type_kind * type_kind
 
@@ -429,7 +431,8 @@ let report_kind_mismatch first second ppf (kind1, kind2) =
   | Kind_abstract -> "abstract"
   | Kind_record -> "a record"
   | Kind_variant -> "a variant"
-  | Kind_open -> "an extensible variant" in
+  | Kind_open -> "an extensible variant"
+  | Kind_external name -> Printf.sprintf "external %S" name in
   pr "%s is %s, but %s is %s."
     (String.capitalize_ascii first)
     (kind_to_string kind1)
@@ -1018,6 +1021,7 @@ let type_declarations ?(equality = false) ~loc env ~mark name
           labels1 labels2
           rep1 rep2
     | (Type_open, Type_open) -> None
+    | (Type_external n1, Type_external n2) when n1 = n2 -> None
     | (_, _) -> Some (Kind (of_kind decl1.type_kind, of_kind decl2.type_kind))
   in
   if err <> None then err else

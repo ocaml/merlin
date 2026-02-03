@@ -87,6 +87,8 @@ module Typ :
     val package: ?loc:loc -> ?attrs:attrs -> package_type -> core_type
     val open_ : ?loc:loc -> ?attrs:attrs -> lid -> core_type -> core_type
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> core_type
+    val functor_ : ?loc:loc -> ?attrs:attrs -> arg_label -> str
+                   -> package_type -> core_type -> core_type
 
     val force_poly: core_type -> core_type
 
@@ -127,7 +129,8 @@ module Pat:
     val constraint_: ?loc:loc -> ?attrs:attrs -> pattern -> core_type -> pattern
     val type_: ?loc:loc -> ?attrs:attrs -> lid -> pattern
     val lazy_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern
-    val unpack: ?loc:loc -> ?attrs:attrs -> str_opt -> pattern
+    val unpack: ?loc:loc -> ?attrs:attrs -> str_opt -> package_type option
+                -> pattern
     val open_: ?loc:loc -> ?attrs:attrs  -> lid -> pattern -> pattern
     val exception_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern
     val effect_: ?loc:loc -> ?attrs:attrs -> pattern -> pattern -> pattern
@@ -181,11 +184,6 @@ module Exp:
     val setinstvar: ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
     val override: ?loc:loc -> ?attrs:attrs -> (str * expression) list
                   -> expression
-    val letmodule: ?loc:loc -> ?attrs:attrs -> str_opt -> module_expr
-                   -> expression -> expression
-    val letexception:
-      ?loc:loc -> ?attrs:attrs -> extension_constructor -> expression
-      -> expression
     val assert_: ?loc:loc -> ?attrs:attrs -> expression -> expression
     val lazy_: ?loc:loc -> ?attrs:attrs -> expression -> expression
     val poly: ?loc:loc -> ?attrs:attrs -> expression -> core_type option
@@ -194,12 +192,12 @@ module Exp:
     val newtype: ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
     val pack: ?loc:loc -> ?attrs:attrs -> module_expr -> package_type option
                -> expression
-    val open_: ?loc:loc -> ?attrs:attrs -> open_declaration -> expression
-               -> expression
     val letop: ?loc:loc -> ?attrs:attrs -> binding_op
                -> binding_op list -> expression -> expression
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> expression
     val unreachable: ?loc:loc -> ?attrs:attrs -> unit -> expression
+    val struct_item: ?loc:loc -> ?attrs:attrs -> structure_item -> expression
+      -> expression
 
     val case: pattern -> ?guard:expression -> expression -> case
     val binding_op: str -> pattern -> expression -> loc -> binding_op
@@ -217,7 +215,7 @@ module Type:
   sig
     val mk: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> ?text:text ->
       ?params:(core_type * (variance * injectivity)) list ->
-      ?cstrs:(core_type * core_type * loc) list ->
+      ?constraints:(core_type * core_type * loc) list ->
       ?kind:type_kind -> ?priv:private_flag -> ?manifest:core_type -> str ->
       type_declaration
 
