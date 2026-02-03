@@ -1,0 +1,17 @@
+--- ocaml_504/parsing/builtin_attributes.mli	2025-11-07 15:50:07
++++ ocaml_505/parsing/builtin_attributes.mli	2026-02-03 16:48:21
+@@ -27,6 +27,7 @@
+     - ocaml.noalloc
+     - ocaml.poll
+     - ocaml.ppwarning
++    - ocaml.remove_aliases
+     - ocaml.specialise
+     - ocaml.specialised
+     - ocaml.tailcall
+@@ -186,4 +187,6 @@
+ val has_unboxed: Parsetree.attributes -> bool
+ val has_boxed: Parsetree.attributes -> bool
+ 
++val has_remove_aliases: Parsetree.attributes -> bool
++
+ val has_atomic: Parsetree.attributes -> bool

@@ -1,0 +1,14 @@
+--- ocaml_504/typing/data_types.ml	2025-11-07 15:50:07
++++ ocaml_505/typing/data_types.ml	2026-02-03 16:48:24
+@@ -69,6 +69,11 @@
+   | Tconstr (p, _, _) -> p
+   | _ -> assert false
+ 
++let cstr_res_type_params cstr =
++  match get_desc cstr.cstr_res with
++  | Tconstr (_, tyl, _) -> tyl
++  | _ -> assert false
++
+ type label_description =
+   { lbl_name: string;                   (* Short name *)
+     lbl_res: type_expr;                 (* Type of the result (the record) *)

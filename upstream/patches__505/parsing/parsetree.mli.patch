@@ -1,0 +1,98 @@
+--- ocaml_504/parsing/parsetree.mli	2025-11-07 15:50:07
++++ ocaml_505/parsing/parsetree.mli	2026-02-03 16:48:21
+@@ -178,17 +178,20 @@
+   | Ptyp_package of package_type  (** [(module S)]. *)
+   | Ptyp_open of Longident.t loc * core_type (** [M.(T)] *)
+   | Ptyp_extension of extension  (** [[%id]]. *)
++  | Ptyp_functor of arg_label * string loc * package_type * core_type
++        (** [(module M : S) -> ...] : module-dependent arrow *)
+ 
++
+ and package_type =
+     {
+      ppt_path: Longident.t loc;
+-     ppt_cstrs: (Longident.t loc * core_type) list;
++     ppt_constraints: (Longident.t loc * core_type) list;
+      ppt_loc: Location.t;
+      ppt_attrs: attributes;
+     }
+ (** As {!package_type} typed values:
+-         - [{ppt_path: S; ppt_cstrs: []}] represents [(module S)],
+-         - [{ppt_path: S; ppt_cstrs: [(t1, T1) ; ... ; (tn, Tn)]}]
++         - [{ppt_path: S; ppt_constraints: []}] represents [(module S)],
++         - [{ppt_path: S; ppt_constraints: [(t1, T1) ; ... ; (tn, Tn)]}]
+           represents [(module S with type t1 = T1 and ... and tn = Tn)].
+        *)
+ 
+@@ -288,13 +291,12 @@
+   | Ppat_constraint of pattern * core_type  (** Pattern [(P : T)] *)
+   | Ppat_type of Longident.t loc  (** Pattern [#tconst] *)
+   | Ppat_lazy of pattern  (** Pattern [lazy P] *)
+-  | Ppat_unpack of string option loc
+-      (** [Ppat_unpack(s)] represents:
+-            - [(module P)] when [s] is [Some "P"]
+-            - [(module _)] when [s] is [None]
+-
+-           Note: [(module P : S)] is represented as
+-           [Ppat_constraint(Ppat_unpack(Some "P"), Ptyp_package S)]
++  | Ppat_unpack of string option loc * package_type option
++      (** [Ppat_unpack(s, ptyp)] represents:
++            - [(module P : S)] when [s] is [Some "P"] and [ptyp] is [Some "S"]
++            - [(module _ : S)] when [s] is [None] and [ptyp] is [Some "S"]
++            - [(module P)] when [s] is [Some "P"] and [ptyp] is [None]
++            - [(module _)] when [s] is [None] and [ptyp] is [None]
+          *)
+   | Ppat_exception of pattern  (** Pattern [exception P] *)
+   | Ppat_effect of pattern * pattern (* Pattern [effect P P] *)
+@@ -411,10 +413,8 @@
+   | Pexp_setinstvar of label loc * expression  (** [x <- 2] *)
+   | Pexp_override of (label loc * expression) list
+       (** [{< x1 = E1; ...; xn = En >}] *)
+-  | Pexp_letmodule of string option loc * module_expr * expression
+-      (** [let module M = ME in E] *)
+-  | Pexp_letexception of extension_constructor * expression
+-      (** [let exception C in E] *)
++  | Pexp_struct_item of structure_item * expression
++      (** [let SI in E] *)
+   | Pexp_assert of expression
+       (** [assert E].
+ 
+@@ -431,10 +431,6 @@
+   | Pexp_newtype of string loc * expression  (** [fun (type t) -> E] *)
+   | Pexp_pack of module_expr * package_type option
+       (** [(module ME)] or [(module ME : S)]. *)
+-  | Pexp_open of open_declaration * expression
+-      (** - [M.(E)]
+-            - [let open M in E]
+-            - [let open! M in E] *)
+   | Pexp_letop of letop
+       (** - [let* P = E0 in E1]
+             - [let* P0 = E00 and* P1 = E01 in E1] *)
+@@ -548,7 +544,7 @@
+      ptype_name: string loc;
+      ptype_params: (core_type * (variance * injectivity)) list;
+       (** [('a1,...'an) t] *)
+-     ptype_cstrs: (core_type * core_type * Location.t) list;
++     ptype_constraints: (core_type * core_type * Location.t) list;
+       (** [... constraint T1=T1'  ... constraint Tn=Tn'] *)
+      ptype_kind: type_kind;
+      ptype_private: private_flag;  (** for [= private ...] *)
+@@ -580,6 +576,10 @@
+  - [type t = ..]
+               when [type_kind] is {{!type_kind.Ptype_open}[Ptype_open]},
+                and [manifest]  is [None].
++ - [type t = external "gmp"]
++              when [type_kind] is
++                 {{!type_kind.Ptype_external}[Ptype_external("gmp")]}
++               and [manifest]  is [None].
+ *)
+ 
+ and type_kind =
+@@ -587,6 +587,7 @@
+   | Ptype_variant of constructor_declaration list
+   | Ptype_record of label_declaration list  (** Invariant: non-empty list *)
+   | Ptype_open
++  | Ptype_external of string
+ 
+ and label_declaration =
+     {

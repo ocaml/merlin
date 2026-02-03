@@ -67,9 +67,9 @@ and pat_extra =
                            branches of [tconst].
          *)
   | Tpat_open of Path.t * Longident.t loc * Env.t
-  | Tpat_unpack
-        (** (module P)     { pat_desc  = Tpat_var "P"
-                           ; pat_extra = (Tpat_unpack, _, _) :: ... }
+  | Tpat_unpack of package_type option
+        (** (module P : ?S)     { pat_desc  = Tpat_var "P"
+                           ; pat_extra = (Tpat_unpack ?S, _, _) :: ... }
             (module _)     { pat_desc  = Tpat_any
             ; pat_extra = (Tpat_unpack, _, _) :: ... }
          *)
@@ -290,10 +290,6 @@ and expression_desc =
   | Texp_instvar of Path.t * Path.t * string loc
   | Texp_setinstvar of Path.t * Path.t * string loc * expression
   | Texp_override of Path.t * (Ident.t * string loc * expression) list
-  | Texp_letmodule of
-      Ident.t option * string option loc * Types.module_presence * module_expr *
-        expression
-  | Texp_letexception of extension_constructor * expression
   | Texp_assert of expression * Location.t
   | Texp_lazy of expression
   | Texp_object of class_structure * string list
@@ -695,11 +691,12 @@ and core_type_desc =
   | Ttyp_poly of string list * core_type
   | Ttyp_package of package_type
   | Ttyp_open of Path.t * Longident.t loc * core_type
+  | Ttyp_functor of arg_label * Ident.t loc * package_type * core_type
 
 and package_type = {
   tpt_path : Path.t;
-  tpt_cstrs : (Longident.t loc * core_type) list;
-  tpt_type : Types.module_type;
+  tpt_constraints : (Longident.t loc * core_type) list;
+  tpt_type : Types.package;
   tpt_txt : Longident.t loc;
 }
 
@@ -739,7 +736,7 @@ and type_declaration =
     typ_name: string loc;
     typ_params: (core_type * (variance * injectivity)) list;
     typ_type: Types.type_declaration;
-    typ_cstrs: (core_type * core_type * Location.t) list;
+    typ_constraints: (core_type * core_type * Location.t) list;
     typ_kind: type_kind;
     typ_private: private_flag;
     typ_manifest: core_type option;
@@ -752,6 +749,7 @@ and type_kind =
   | Ttype_variant of constructor_declaration list
   | Ttype_record of label_declaration list
   | Ttype_open
+  | Ttype_external of string
 
 and label_declaration =
     {

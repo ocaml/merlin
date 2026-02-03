@@ -57,17 +57,24 @@ let get_variance ty visited =
   try TypeMap.find ty !visited with Not_found -> Variance.null
 
 let compute_variance env visited vari ty =
-  let rec compute_variance_rec vari ty =
+  let rec compute_variance_rec env vari ty =
     (* Format.eprintf "%a: %x@." Printtyp.type_expr ty (Obj.magic vari); *)
     let vari' = get_variance ty visited in
     if Variance.subset vari vari' then () else
     let vari = Variance.union vari vari' in
     visited := TypeMap.add ty vari !visited;
-    let compute_same = compute_variance_rec vari in
+    let compute_same = compute_variance_rec env vari in
     match get_desc ty with
       Tarrow (_, ty1, ty2, _) ->
-        compute_variance_rec (Variance.conjugate vari) ty1;
+        compute_variance_rec env (Variance.conjugate vari) ty1;
         compute_same ty2
+    | Tfunctor (_, id, pack, ty) ->
+      let env' =
+          Env.add_module (Ident.of_unscoped id) Mp_present
+            (Mty_ident pack.pack_path) env in
+      compute_variance_rec env (Variance.conjugate vari)
+          (Ctype.newty (Tpackage pack));
+      compute_variance_rec env' vari ty
     | Ttuple tl ->
         List.iter (fun (_,t) -> compute_same t) tl
     | Tconstr (path, tl, _) ->
@@ -76,10 +83,10 @@ let compute_variance env visited vari ty =
           try
             let decl = Env.find_type path env in
             List.iter2
-              (fun ty v -> compute_variance_rec (compose vari v) ty)
+              (fun ty v -> compute_variance_rec env (compose vari v) ty)
               tl decl.type_variance
           with Not_found ->
-            List.iter (compute_variance_rec unknown) tl
+            List.iter (compute_variance_rec env unknown) tl
         end
     | Tobject (ty, _) ->
         compute_same ty
@@ -96,7 +103,7 @@ let compute_variance env visited vari ty =
                 compute_same ty
             | Reither (_, tyl, _) ->
                 let v = Variance.(inter vari unknown) in (* cf PR#7269 *)
-                List.iter (compute_variance_rec v) tyl
+                List.iter (compute_variance_rec env v) tyl
             | _ -> ())
           (row_fields row);
         compute_same (row_more row)
@@ -105,9 +112,10 @@ let compute_variance env visited vari ty =
     | Tvar _ | Tnil | Tlink _ | Tunivar _ -> ()
     | Tpackage pack ->
         let v = Variance.(compose vari full) in
-        List.iter (fun (_, ty) -> compute_variance_rec v ty) pack.pack_cstrs
+        List.iter
+          (fun (_, ty) -> compute_variance_rec env v ty) pack.pack_constraints
   in
-  compute_variance_rec vari ty
+  compute_variance_rec env vari ty
 
 let make p n i =
   let open Variance in
@@ -326,7 +334,8 @@ let compute_variance_decl env ~check decl (required, _ as rloc) =
   in
   let abstract = Btype.type_kind_is_abstract decl in
   match decl with
-  | {type_kind = Type_abstract _ | Type_open; type_manifest = None} ->
+  | {type_kind = Type_abstract _ | Type_open | Type_external _;
+     type_manifest = None} ->
     List.map
       (fun (c, n, i) -> make (not n) (not c) (not abstract || i))
       required
@@ -339,7 +348,7 @@ let compute_variance_decl env ~check decl (required, _ as rloc) =
     in
     let vari =
       match decl.type_kind with
-        Type_abstract _ | Type_open ->
+        Type_abstract _ | Type_open | Type_external _ ->
           compute_variance_type env ~check rloc decl mn
       | Type_variant (tll,_rep) ->
           if List.for_all (fun c -> c.Types.cd_res = None) tll then

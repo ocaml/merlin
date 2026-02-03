@@ -74,6 +74,15 @@ module Uid : sig
   val for_actual_declaration : t -> bool
 
   include Identifiable.S with type t := t
+
+  (* Dependencies between related Uids are recorded and written in CMT files *)
+  module Deps : sig
+    type kind = Definition_to_declaration | Declaration_to_declaration
+
+    val clear : unit -> unit
+    val get : unit -> (kind * t * t) list
+    val record_declaration_dependency: kind * t * t -> unit
+  end
 end
 
 module Sig_component_kind : sig
@@ -127,6 +136,7 @@ and desc =
   | Abs of var * t
   | App of t * t
   | Struct of t Item.Map.t
+  | Pack of Ident.t
   | Alias of t
   | Leaf
   | Proj of t * Item.t
@@ -153,7 +163,7 @@ val leaf : Uid.t -> t
 val decompose_abs : t -> (var * t) option
 
 val for_persistent_unit : string -> t
-val leaf_for_unpack : t
+val leaf_for_unpack : unit -> t
 
 module Map : sig
   type shape = t

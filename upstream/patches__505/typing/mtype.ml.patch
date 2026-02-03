@@ -1,0 +1,11 @@
+--- ocaml_504/typing/mtype.ml	2025-11-07 15:50:07
++++ ocaml_505/typing/mtype.ml	2026-02-03 16:48:24
+@@ -214,7 +214,7 @@
+       let res_env =
+         match param with
+         | None -> env
+-        | Some param -> Env.add_module ~arg:true param Mp_present arg env
++        | Some param -> Env.add_module ~noalias:true param Mp_present arg env
+       in
+       let mty =
+         Mty_functor(Named (param, nondep_mty env var_inv ids arg),

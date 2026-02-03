@@ -1,0 +1,13 @@
+@@ -844,12 +863,6 @@
+   | Functor f -> functor_symptom ~expansion_token ~env ~before ~ctx f
+   | After_alias_expansion diff ->
+       module_type ~eqmode ~expansion_token ~env ~before ~ctx diff
+-  | Invalid_module_alias path ->
+-      let printer =
+-        Fmt.dprintf "Module %a cannot be aliased"
+-          (Style.as_inline_code Printtyp.path) path
+-      in
+-      dwith_context ctx printer :: before
+ 
+ and functor_params ~expansion_token ~env ~before ~ctx diff =
+   match diff.got.params, diff.expected.params with
