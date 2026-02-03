@@ -1,0 +1,78 @@
+@@ -1560,7 +1694,7 @@
+             let pres =
+               match tmty.mty_type with
+               | Mty_alias p ->
+-                  if Env.is_functor_arg p env then
++                  if not (Env.is_aliasable p env) then
+                     raise (Error (pmd.pmd_loc, env, Cannot_alias p));
+                   Mp_absent
+               | _ -> Mp_present
+@@ -1947,25 +2081,7 @@
+     ) sdecls dcl2
+   in
+   (dcl2, env2)
+-
+-(* Try to convert a module expression to a module path. *)
+-
+-exception Not_a_path
+-
+-let rec path_of_module mexp =
+-  match mexp.mod_desc with
+-  | Tmod_ident (p,_) -> p
+-  | Tmod_apply(funct, arg, _coercion) when !Clflags.applicative_functors ->
+-      Papply(path_of_module funct, path_of_module arg)
+-  | Tmod_constraint (mexp, _, _, _) ->
+-      path_of_module mexp
+-  | (Tmod_structure _ | Tmod_functor _ | Tmod_apply_unit _ | Tmod_unpack _ |
+-    Tmod_apply _) ->
+-    raise Not_a_path
+ 
+-let path_of_module mexp =
+- try Some (path_of_module mexp) with Not_a_path -> None
+-
+ (* Check that all core type schemes in a structure
+    do not contain non-generalized type variable *)
+ 
+@@ -2472,7 +2592,7 @@
+         mod_env = env;
+         mod_attributes = smod.pmod_attributes;
+         mod_loc = smod.pmod_loc },
+-      Shape.leaf_for_unpack
++      Shape.leaf_for_unpack ()
+   | Pmod_extension ext ->
+       raise (Error_forward (Builtin_attributes.error_of_extension ext))
+ 
+@@ -3025,32 +3175,7 @@
+         Builtin_attributes.warning_attribute x;
+         Tstr_attribute x, [], shape_map, env
+   in
+-  let rec type_struct env shape_map sstr =
+-    match sstr with
+-    | [] -> ([], [], shape_map, env)
+-    | pstr :: srem ->
+-        let previous_saved_types = Cmt_format.get_saved_types () in
+-        let desc, sg, shape_map, new_env = type_str_item env shape_map pstr in
+-        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+-        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+-                                    :: previous_saved_types);
+-        let (str_rem, sig_rem, shape_map, final_env) =
+-          type_struct new_env shape_map srem
+-        in
+-        (str :: str_rem, sg @ sig_rem, shape_map, final_env)
+-  in
+-  let previous_saved_types = Cmt_format.get_saved_types () in
+-  let run () =
+-    let (items, sg, shape_map, final_env) =
+-      type_struct env Shape.Map.empty sstr
+-    in
+-    let str = { str_items = items; str_type = sg; str_final_env = final_env } in
+-    Cmt_format.set_saved_types
+-      (Cmt_format.Partial_structure str :: previous_saved_types);
+-    str, sg, names, Shape.str shape_map, final_env
+-  in
+-  if toplevel then run ()
+-  else Builtin_attributes.warning_scope [] run
++  { str_desc = desc; str_loc = loc; str_env = env }, sg, shape_map, new_env
+ 
+ let type_toplevel_phrase env s =
+   Env.reset_required_globals ();

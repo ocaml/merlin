@@ -1,0 +1,12 @@
+--- ocaml_504/typing/persistent_env.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/persistent_env.mli	2026-02-03 16:48:24
+@@ -100,7 +100,8 @@
+ val imports : 'a t -> crcs
+ 
+ (* Return the CRC of the interface of the given compilation unit *)
+-val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a) -> modname -> Digest.t
++val crc_of_unit:
++  'a t -> (Persistent_signature.t -> 'a) -> modname -> Digest.BLAKE128.t
+ 
+ (* Forward declaration to break mutual recursion with Typecore. *)
+ val add_delayed_check_forward: ((unit -> unit) -> unit) ref

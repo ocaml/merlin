@@ -1,0 +1,22 @@
+--- ocaml_504/typing/rawprinttyp.ml	2025-11-07 15:50:07
++++ ocaml_505/typing/rawprinttyp.ml	2026-02-03 16:48:24
+@@ -82,6 +82,10 @@
+       fprintf ppf "@[<hov1>Tarrow(\"%s\",@,%a,@,%a,@,%s)@]"
+         (string_of_label l) raw_type t1 raw_type t2
+         (if is_commu_ok c then "Cok" else "Cunknown")
++  | Tfunctor (l, id, {pack_path; pack_constraints}, t2) ->
++    fprintf ppf "@[<hov1>Tfunctor(\"%s\",@,%s,@,(%a,@,%a),@,%a)@]"
++      (string_of_label l) (Ident.Unscoped.name id)
++      path pack_path raw_lid_type_list pack_constraints raw_type t2
+   | Ttuple tl ->
+       fprintf ppf "@[<1>Ttuple@,%a@]" labeled_type_list tl
+   | Tconstr (p, tl, abbrev) ->
+@@ -127,7 +131,7 @@
+   | Tpackage pack ->
+     fprintf ppf "@[<hov1>Tpackage(@,%a,@,%a)@]"
+       path pack.pack_path
+-      raw_lid_type_list pack.pack_cstrs
++      raw_lid_type_list pack.pack_constraints
+ and raw_row_fixed ppf = function
+ | None -> fprintf ppf "None"
+ | Some Types.Fixed_private -> fprintf ppf "Some Fixed_private"

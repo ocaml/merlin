@@ -1,0 +1,17 @@
+--- ocaml_504/parsing/builtin_attributes.ml	2025-11-07 15:50:07
++++ ocaml_505/parsing/builtin_attributes.ml	2026-02-03 16:48:21
+@@ -69,6 +69,7 @@
+   ; "noalloc"
+   ; "poll"
+   ; "ppwarning"
++  ; "remove_aliases"
+   ; "specialise"
+   ; "specialised"
+   ; "tailcall"
+@@ -412,4 +413,6 @@
+ 
+ let has_boxed attrs = has_attribute "boxed" attrs
+ 
++let has_remove_aliases attrs = has_attribute "remove_aliases" attrs
++
+ let has_atomic attrs = has_attribute "atomic" attrs

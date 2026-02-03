@@ -1,0 +1,20 @@
+--- ocaml_504/parsing/location.ml	2025-11-07 15:50:07
++++ ocaml_505/parsing/location.ml	2026-02-03 16:48:21
+@@ -72,6 +72,8 @@
+ 
+ let mkloc txt loc = { txt ; loc }
+ let mknoloc txt = mkloc txt none
++
++let map f x = { x with txt = f x.txt }
+ 
+ (******************************************************************************)
+ (* Input info *)
+@@ -971,7 +973,7 @@
+     {Warnings.kind="ocaml_deprecated_auto_include"; use=none; def=none;
+      message = Format.asprintf "@[@\n%a@]" Format.pp_print_text message}
+   in
+-  prerr_alert none alert
++  prerr_alert (in_file !input_name) alert
+ 
+ let deprecated_script_alert program =
+   let message = Fmt.asprintf "\

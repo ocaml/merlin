@@ -1,0 +1,11 @@
+--- ocaml_504/file_formats/cmi_format.ml	2025-11-07 15:50:07
++++ ocaml_505/file_formats/cmi_format.ml	2026-02-03 16:48:51
+@@ -86,7 +86,7 @@
+   output_string oc Config.cmi_magic_number;
+   Compression.output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
+   flush oc;
+-  let crc = Digest.file filename in
++  let crc = Digest.BLAKE128.file filename in
+   let crcs = (cmi.cmi_name, Some crc) :: cmi.cmi_crcs in
+   output_value oc (crcs : crcs);
+   output_value oc (cmi.cmi_flags : flags);

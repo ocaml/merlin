@@ -1,0 +1,13 @@
+--- ocaml_504/utils/build_path_prefix_map.mli	2025-11-07 15:50:07
++++ ocaml_505/utils/build_path_prefix_map.mli	2026-02-03 16:49:03
+@@ -59,3 +59,10 @@
+ (** [rewrite path] uses [rewrite_first] to try to find a
+     mapping for path. If found, it returns that, otherwise
+     it just returns [path]. *)
++
++val invert_all : map -> path -> path list
++(** [invert_all map path] finds all targets in [map] that are a prefix
++    of the input [path]. For each matching target, in priority order,
++    it replaces this prefix with the corresponding source and adds the
++    result to the returned list. If there are no matches, it just
++    returns [[]]. *)

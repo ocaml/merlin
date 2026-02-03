@@ -1,0 +1,10 @@
+--- ocaml_504/typing/includecore.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/includecore.mli	2026-02-03 16:48:24
+@@ -48,6 +48,7 @@
+   | Kind_record
+   | Kind_variant
+   | Kind_open
++  | Kind_external of string
+ 
+ type kind_mismatch = type_kind * type_kind
+ 

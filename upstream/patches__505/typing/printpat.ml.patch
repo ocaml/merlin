@@ -1,0 +1,14 @@
+--- ocaml_504/typing/printpat.ml	2025-11-07 15:50:07
++++ ocaml_505/typing/printpat.ml	2026-02-03 16:48:24
+@@ -35,8 +35,10 @@
+ 
+ let pretty_extra ppf (cstr, _loc, _attrs) pretty_rest rest =
+   match cstr with
+-  | Tpat_unpack ->
++  | Tpat_unpack None ->
+      fprintf ppf "@[(module %a)@]" pretty_rest rest
++  | Tpat_unpack (Some _) ->
++     fprintf ppf "@[(module %a : _)@]" pretty_rest rest
+   | Tpat_constraint _ ->
+      fprintf ppf "@[(%a : _)@]" pretty_rest rest
+   | Tpat_type _ ->

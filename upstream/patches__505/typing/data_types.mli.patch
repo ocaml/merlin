@@ -1,0 +1,12 @@
+--- ocaml_504/typing/data_types.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/data_types.mli	2026-02-03 16:48:24
+@@ -55,6 +55,9 @@
+ (* Type constructor of the constructor's result type. *)
+ val cstr_res_type_path : constructor_description -> Path.t
+ 
++(* Parameters of the type constructor *)
++val cstr_res_type_params : constructor_description -> type_expr list
++
+ type label_description =
+   { lbl_name: string;                   (* Short name *)
+     lbl_res: type_expr;                 (* Type of the result (the record) *)

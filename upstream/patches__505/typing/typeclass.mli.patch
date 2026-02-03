@@ -1,0 +1,10 @@
+--- ocaml_504/typing/typeclass.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/typeclass.mli	2026-02-03 16:48:24
+@@ -123,6 +123,7 @@
+   | No_overriding of string * string
+   | Duplicate of string * string
+   | Closing_self_type of class_signature
++  | Polymorphic_class_parameter
+ 
+ exception Error of Location.t * Env.t * error
+ exception Error_forward of Location.error

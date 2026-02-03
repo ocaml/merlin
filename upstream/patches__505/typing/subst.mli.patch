@@ -1,0 +1,11 @@
+--- ocaml_504/typing/subst.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/subst.mli	2026-02-03 16:48:24
+@@ -35,7 +35,7 @@
+    safe and unsafe variant. Only unsafe substitutions may expand a module type
+    path into a generic module type. *)
+ 
+-(** Type familly for substitutions *)
++(** Type family for substitutions *)
+ type +'k subst
+ 
+ type safe = [`Safe]

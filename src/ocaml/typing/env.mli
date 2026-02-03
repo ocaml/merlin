@@ -41,7 +41,7 @@ type summary =
   | Env_open of summary * Path.t
   (** The string set argument of [Env_open] represents a list of module names
       to skip, i.e. that won't be imported in the toplevel namespace. *)
-  | Env_functor_arg of summary * Ident.t
+  | Env_not_aliasable of summary * Ident.t
   | Env_constraints of summary * type_declaration Path.Map.t
   | Env_copy_types of summary
   | Env_persistent of summary * Ident.t
@@ -113,11 +113,18 @@ val find_module_address: Path.t -> t -> address
 val find_class_address: Path.t -> t -> address
 val find_constructor_address: Path.t -> t -> address
 
+(** Lookup an item in the environment and returns its Uid. *)
+val find_uid : Shape.Sig_component_kind.t -> Path.t -> t -> Uid.t option
+
 val shape_of_path:
   namespace:Shape.Sig_component_kind.t -> t -> Path.t -> Shape.t
 
-val add_functor_arg: Ident.t -> t -> t
-val is_functor_arg: Path.t -> t -> bool
+(** Indicates if a path [p] can be aliased, i.e. if
+    - it does not contain functor applications
+    - it does not start with a functor parameter
+    - it does not start with a recursive module (inside the recursive
+    definition) *)
+val is_aliasable: Path.t -> t -> bool
 
 val normalize_module_path: Location.t option -> t -> Path.t -> Path.t
 (* Normalize the path to a concrete module.
@@ -128,11 +135,18 @@ val normalize_module_path: Location.t option -> t -> Path.t -> Path.t
 val normalize_type_path: Location.t option -> t -> Path.t -> Path.t
 (* Normalize the prefix part of the type path *)
 
+val try_normalize_type_path: Location.t option -> t -> Path.t -> Path.t option
+(* Normalize the prefix part of the type path,
+   returns None if the path did not change *)
+
 val normalize_value_path: Location.t option -> t -> Path.t -> Path.t
 (* Normalize the prefix part of the value path *)
 
 val normalize_modtype_path: t -> Path.t -> Path.t
 (* Normalize a module type path *)
+
+val try_normalize_modtype_path: t -> Path.t -> Path.t option
+(* Normalize a module type path, returns None if the path did not change *)
 
 val reset_required_globals: unit -> unit
 val get_required_globals: unit -> Ident.t list
@@ -312,11 +326,11 @@ val add_type_long_path:
 val add_extension:
   check:bool -> ?shape:Shape.t -> rebind:bool -> Ident.t ->
   extension_constructor -> t -> t
-val add_module: ?arg:bool -> ?shape:Shape.t ->
+val add_module: ?noalias:bool -> ?shape:Shape.t ->
   Ident.t -> module_presence -> module_type -> t -> t
 val add_module_lazy: update_summary:bool ->
   Ident.t -> module_presence -> Subst.Lazy.modtype -> t -> t
-val add_module_declaration: ?arg:bool -> ?shape:Shape.t -> check:bool ->
+val add_module_declaration: ?noalias:bool -> ?shape:Shape.t -> check:bool ->
   Ident.t -> module_presence -> module_declaration -> t -> t
 val add_module_declaration_lazy: update_summary:bool ->
   Ident.t -> module_presence -> Subst.Lazy.module_decl -> t -> t
@@ -426,7 +440,7 @@ val save_signature_with_imports:
            imported units with their CRCs. *)
 
 (* Return the CRC of the interface of the given compilation unit *)
-val crc_of_unit: modname -> Digest.t
+val crc_of_unit: modname -> Digest.BLAKE128.t
 
 (* Return the set of compilation units imported, with their CRC *)
 val imports: unit -> crcs
@@ -457,6 +471,21 @@ val update_short_paths : t -> t
 
 (* Return the short paths table *)
 val short_paths : t -> Short_paths.t
+
+(* Equivalence of unscoped identifiers *)
+
+module Unscoped : sig
+  val with_pairs : (Ident.Unscoped.t * Ident.Unscoped.t) list -> t -> t
+  val get_pairs : t -> (Ident.Unscoped.t * Ident.Unscoped.t) list
+  val path_equiv : t -> Path.t -> Path.t -> bool
+end
+[@@alert dangerous "
+It is unsafe to use the common [Path.same] function in contexts where
+[Unscoped.with_pairs] has been used to enrich the environment with
+unscoped equalities; [Path.equiv] must be used instead. See [ctype.ml]
+for an example of careful usage of [Unscoped], by locally shadowing
+[Path] to hide [Path.same].
+"]
 
 (* Error report *)
 
