@@ -303,8 +303,7 @@ and expression_desc =
     }
   | Texp_unreachable
   | Texp_extension_constructor of Longident.t loc * Path.t
-  | Texp_open of open_declaration * expression
-        (** let open[!] M in e *)
+  | Texp_struct_item of structure_item * expression
   | Texp_typed_hole
 
 and meth =
@@ -952,6 +951,10 @@ val split_pattern:
 
 val map_apply_arg:
   ('a -> ' b) -> ('a, 'omitted) arg_or_omitted ->  ('b, 'omitted) arg_or_omitted
+
+val path_of_module : module_expr -> Path.t option
+
+val remove_module_constraint : module_expr -> module_expr
 
 (** Whether an expression looks nice as the subject of a sentence in a error
     message. *)
