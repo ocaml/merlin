@@ -149,7 +149,7 @@ and expression_desc =
     }
   | Texp_unreachable
   | Texp_extension_constructor of Longident.t loc * Path.t
-  | Texp_open of open_declaration * expression
+  | Texp_struct_item of structure_item * expression
   | Texp_typed_hole
 
 and meth =
@@ -911,6 +911,30 @@ let split_pattern pat =
 let map_apply_arg f = function
   | Arg arg -> Arg (f arg)
   | Omitted _ as arg -> arg
+
+(* Try to convert a module expression to a module path. *)
+
+exception Not_a_path
+
+let rec path_of_module mexp =
+  match mexp.mod_desc with
+  | Tmod_ident (p,_) -> p
+  | Tmod_apply(funct, arg, _coercion) when !Clflags.applicative_functors ->
+      Path.Papply(path_of_module funct, path_of_module arg)
+  | Tmod_constraint (mexp, _, _, _) ->
+      path_of_module mexp
+  | (Tmod_structure _ | Tmod_functor _ | Tmod_apply_unit _ | Tmod_unpack _ |
+    Tmod_apply _ | Tmod_typed_hole) ->
+    raise Not_a_path
+
+let path_of_module mexp =
+ try Some (path_of_module mexp) with Not_a_path -> None
+
+let remove_module_constraint me =
+  match me.mod_desc with
+  | Tmod_constraint (me, _, _, _) -> me
+  | _ -> me
+
 
 (* Expressions are considered nominal if they can be used as the subject of a
    sentence or action. In practice, we consider that an expression is nominal
