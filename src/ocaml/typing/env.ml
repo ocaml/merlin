@@ -772,8 +772,9 @@ let empty = {
   modules = IdTbl.empty; modtypes = IdTbl.empty;
   classes = IdTbl.empty; cltypes = IdTbl.empty;
   summary = Env_empty; local_constraints = Path.Map.empty;
+  id_pairs = [];
   flags = 0;
-  functor_args = Ident.empty;
+  not_aliasable = Ident.empty;
   short_paths = None;
   short_paths_additions = [];
  }
