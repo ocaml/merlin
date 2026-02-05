@@ -385,14 +385,15 @@ val enter_value:
 val enter_type:
   ?long_path:bool -> scope:int ->
   string -> type_declaration -> t -> Ident.t * t
+val reenter_type: Ident.t -> type_declaration -> t -> t
 val enter_extension:
   scope:int -> rebind:bool -> string ->
   extension_constructor -> t -> Ident.t * t
 val enter_module:
-  scope:int -> ?arg:bool -> string -> module_presence ->
+  scope:int -> ?noalias:bool -> string -> module_presence ->
   module_type -> t -> Ident.t * t
 val enter_module_declaration:
-  scope:int -> ?arg:bool -> ?shape:Shape.t -> string -> module_presence ->
+  scope:int -> ?noalias:bool -> ?shape:Shape.t -> string -> module_presence ->
   module_declaration -> t -> Ident.t * t
 val enter_modtype:
   scope:int -> string -> modtype_declaration -> t -> Ident.t * t

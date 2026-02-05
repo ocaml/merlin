@@ -17,7 +17,7 @@ module Style = Misc.Style
 module Fmt = Format_doc
 type inclusion_env = Includemod.Functor_inclusion_diff.inclusion_env =
   { i_env:Env.t; i_subst:Subst.t }
-  
+
 module Context = struct
   type pos =
     | Module of Ident.t
@@ -863,12 +863,6 @@ and module_type_symptom ~eqmode ~expansion_token ~env ~before ~ctx = function
   | Functor f -> functor_symptom ~expansion_token ~env ~before ~ctx f
   | After_alias_expansion diff ->
       module_type ~eqmode ~expansion_token ~env ~before ~ctx diff
-  | Invalid_module_alias path ->
-      let printer =
-        Fmt.dprintf "Module %a cannot be aliased"
-          (Style.as_inline_code Printtyp.Doc.path) path
-      in
-      dwith_context ctx printer :: before
 
 and functor_params ~expansion_token ~env ~before ~ctx diff =
   match diff.got.params, diff.expected.params with
