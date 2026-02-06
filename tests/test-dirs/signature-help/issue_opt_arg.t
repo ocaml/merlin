@@ -1,4 +1,4 @@
-FIXME: Active parameter should be 1 because x is already written
+The cursor is after the second `~`. As `~x` has already been written, the active parameter is `y`.
   $ $MERLIN single signature-help -position 2:17 << EOF
   > let f a ?y ~x t = (a, y, x, t)
   > let _ = f ~x:43 ~ 1
@@ -37,7 +37,7 @@ FIXME: Active parameter should be 1 because x is already written
           ]
         }
       ],
-      "activeParameter": 2,
+      "activeParameter": 1,
       "activeSignature": 0
     },
     "notifications": []
@@ -144,7 +144,7 @@ The cursor is at the end of the second line. The function is waiting for a last 
     "notifications": []
   }
 
-FIXME: Active parameter should be 2
+The cursor is after the second `~`. As `~x` has already been written, the active parameter is `y`.
   $ $MERLIN single signature-help -position 2:17 << EOF
   > let f a ~x ~y t = (a, y, x, t)
   > let _ = f ~x:43 ~ 1
@@ -183,7 +183,7 @@ FIXME: Active parameter should be 2
           ]
         }
       ],
-      "activeParameter": 1,
+      "activeParameter": 2,
       "activeSignature": 0
     },
     "notifications": []

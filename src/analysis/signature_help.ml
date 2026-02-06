@@ -139,16 +139,21 @@ let active_parameter_by_prefix ~prefix params =
       Some (String.common_prefix_len (Btype.prefixed_label_name l) prefix)
     | _ -> None
   in
-
+  let is_omitted = function
+    | Typedtree.Omitted _ -> true
+    | _ -> false
+  in
   let rec find_by_prefix ?(i = 0) ?longest_len ?longest_i = function
     | [] -> longest_i
-    | p :: ps -> (
+    | p :: ps when is_omitted p.argument -> (
+      (* The search is performed only on the arguments not already given in the parameters. *)
         match (common p.label, longest_len) with
         | Some common_len, Some longest_len when common_len > longest_len ->
           find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
         | Some common_len, None ->
           find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
         | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
+    | _ :: ps -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i
   in
   find_by_prefix params
 
