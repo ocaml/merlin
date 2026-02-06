@@ -6,6 +6,7 @@ unreleased
     - Don't include `option` in locate-types result for optional parameters (#2027)
     - Fix record field autocompletion (#2028)
     - Signature help should not loop over the parameters once it is finished (#2023)
+    - Fix bugs on signature help about labelled and optional parameters (#2032)
     - Signature help should appear even if the 'in' is not written (#2036)
 
   + tests
