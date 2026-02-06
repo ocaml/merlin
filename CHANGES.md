@@ -12,6 +12,8 @@ unreleased
     - Add reproduction case for #1763 but it is not failing anymore (#2021)
     - Add a test to reproduce [Locate command fails on multi-line type definitions](#1987) (#2020)
     - Add a regression test for issue #2019 (#2030)
+    - Add a test case illustrating `case-analysis` command fails to load module in issue #1786 (#2002)
+    - Add a test reproducing the locate command failure when editor position is in another declaration (#2033)
 
 merlin 5.6.1
 ============
