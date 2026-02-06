@@ -139,16 +139,21 @@ let active_parameter_by_prefix ~prefix params =
       Some (String.common_prefix_len (Btype.prefixed_label_name l) prefix)
     | _ -> None
   in
-
+  let is_omitted = function
+    | Typedtree.Omitted _ -> true
+    | _ -> false
+  in
   let rec find_by_prefix ?(i = 0) ?longest_len ?longest_i = function
     | [] -> longest_i
-    | p :: ps -> (
+    | p :: ps when is_omitted p.argument -> (
+      (* The search is performed only on the arguments not already given in the parameters. *)
         match (common p.label, longest_len) with
         | Some common_len, Some longest_len when common_len > longest_len ->
           find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
         | Some common_len, None ->
           find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
         | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
+    | _ :: ps -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i
   in
   find_by_prefix params
 
@@ -192,8 +197,8 @@ let application_signature ~prefix ~cursor node =
     Some { result with active_param }
   | _ ->
     let rec find_smallest_arrow_before_pos (e : Typedtree.expression) pos
-        ~(acc : Typedtree.expression) =
-      if Lexing.compare_pos e.exp_loc.loc_start pos = 1 then
+        (acc : Typedtree.expression) =
+      if Lexing.compare_pos e.exp_loc.loc_start pos > 0 then
         match acc.exp_desc with
         | Texp_let (_, vlist, _) ->
           let v =
@@ -208,28 +213,23 @@ let application_signature ~prefix ~cursor node =
         | _ -> None
       else
         match e.exp_desc with
-        | Texp_let (_, _, next) ->
-          find_smallest_arrow_before_pos next pos ~acc:e
+        | Texp_let (_, _, next) -> find_smallest_arrow_before_pos next pos e
         | _ -> None
     in
-    let f node cursor =
-      match node with
-      | _, Browse_raw.Expression e ->
-        find_smallest_arrow_before_pos e cursor ~acc:e
-      | _ -> assert false
-    in
     let expressions =
-      List.filter
+      List.filter_map
         ~f:(fun n ->
           match n with
-          | _, Browse_raw.Expression _ -> true
-          | _ -> false)
+          | _, Browse_raw.Expression e -> Some e
+          | _ -> None)
         node
     in
     if expressions = [] then None
     else
       let last_node = List.hd (List.rev expressions) in
-      let smallest_frag_opt = f last_node cursor in
+      let smallest_frag_opt =
+        find_smallest_arrow_before_pos last_node cursor last_node
+      in
       Option.map
         ~f:(fun frag ->
           let result = separate_function_signature frag ~args:[] in
