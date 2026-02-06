@@ -127,8 +127,8 @@ It can make the non-labelled parameter active.
     "notifications": []
   }
 
-It can make the labelled parameter active.
-  $ $MERLIN single signature-help -position 2:14 <<EOF
+The cursor is after `:`. As `~f:` isn't a valid parameter, signature help waits for the value of `~f`.
+  $ $MERLIN single signature-help -position 2:15 <<EOF
   > let map = ListLabels.map
   > let _ = map ~f:Int.abs
   > EOF
