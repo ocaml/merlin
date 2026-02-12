@@ -499,8 +499,8 @@ let expr sub x =
         Texp_unreachable
     | Texp_extension_constructor (lid, path) ->
         Texp_extension_constructor (map_loc_lid sub lid, path)
-    | Texp_open (od, e) ->
-        Texp_open (sub.open_declaration sub od, sub.expr sub e)
+    | Texp_struct_item (si, e) ->
+        Texp_struct_item (sub.structure_item sub si, sub.expr sub e)
     | Texp_typed_hole ->
         Texp_typed_hole
   in

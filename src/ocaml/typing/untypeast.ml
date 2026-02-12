@@ -567,8 +567,8 @@ let expression sub exp =
                         PStr [ Str.eval ~loc
                                  (Exp.construct ~loc (map_loc sub lid) None)
                              ])
-    | Texp_open (od, exp) ->
-        Pexp_open (sub.open_declaration sub od, sub.expr sub exp)
+    | Texp_struct_item (si, exp) ->
+          Pexp_struct_item (sub.structure_item sub si, sub.expr sub exp)
     | Texp_typed_hole ->
         let id = Location.mkloc hole_txt loc in
         Pexp_extension (id, PStr [])
