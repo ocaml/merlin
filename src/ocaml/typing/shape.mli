@@ -58,6 +58,13 @@ module Uid : sig
   type t = private
     | Compilation_unit of string
     | Item of { comp_unit: string; id: int; from: Unit_info.intf_or_impl }
+    | Local_opaque_item of { comp_unit: string; id: int }
+      (** "Local_opaque_item" is used to give uids to usages of values of which
+          the definition is not known statically. This notably happens when
+          accessing first-class modules' items or usages of a functor
+          parameter's items inside the body of the functor itself. Having Uids
+          synthesized for these usages is useful for tools that provides
+          occurrences and renaming features. *)
     | Internal
     | Predef of string
 
@@ -67,6 +74,7 @@ module Uid : sig
   val stamp_of_uid : t -> int option
 
   val mk : current_unit:(Unit_info.t option) -> t
+  val mk_local_opaque : current_unit:(Unit_info.t option) -> t
   val of_compilation_unit_id : Ident.t -> t
   val of_predef_id : Ident.t -> t
   val internal_not_actually_unique : t

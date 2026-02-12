@@ -1409,13 +1409,13 @@ and tree_of_typfields mode rest = function
       let (fields, rest) = tree_of_typfields mode rest l in
       (field :: fields, rest)
 
-and tree_of_package mode {pack_path; pack_cstrs} =
+and tree_of_package mode {pack_path; pack_constraints} =
   let pack_path = best_module_type_path pack_path in
   { opack_path = tree_of_path (Some Module_type) pack_path;
-    opack_cstrs =
+    opack_constraints =
       List.map
         (fun (li, ty) -> (String.concat "." li, tree_of_typexp mode ty))
-        pack_cstrs }
+        pack_constraints }
 
 let typexp mode ppf ty =
   !Oprint.out_type ppf (tree_of_typexp mode ty)
@@ -1718,16 +1718,26 @@ let extension_constructor_args_and_ret_type_subtree ext_args ext_ret_type =
   let args = tree_of_constructor_arguments ext_args in
   (args, ret)
 
-let prepared_tree_of_extension_constructor
-   id ext es
-  =
+let prepared_tree_of_extension_constructor id ext es =
   let type_path = best_type_path_simple ext.ext_type_path in
   let ty_name = Path.name type_path in
   let ty_params = filter_params ext.ext_type_params in
-  let type_param =
+  let ty_variances =
+    try
+      let variances =
+        (Env.find_type ext.ext_type_path !printing_env).type_variance in
+      List.map syntactic_variance variances
+    with Not_found ->
+      List.map (fun _ -> NoVariance, NoInjectivity) ty_params
+  in
+  let type_param ot_variance =
     function
-    | Otyp_var (_, id) -> id
-    | _ -> "?"
+      | Otyp_var (_ot_non_gen, ot_name) ->
+          {ot_non_gen=false; ot_name; ot_variance}
+          (* NB(#14315): simply using the given ot_non_gen here
+             does not break the testsuite *)
+      | _ ->
+          {ot_non_gen=false; ot_name="?"; ot_variance=NoVariance,NoInjectivity} 
   in
   let param_scope f =
     match ext.ext_ret_type with
@@ -1950,7 +1960,7 @@ let tree_of_cltype_declaration id cl rs =
   in
   Osig_class_type
     (has_virtual_vars || has_virtual_meths, Ident.name id,
-     List.map2 tree_of_class_param params (class_variance cl.clty_variance),
+     List.map2 tree_of_class_param params cl.clty_variance,
      tree_of_class_type Type_scheme params cl.clty_type,
      tree_of_rec rs)
 
@@ -2219,11 +2229,6 @@ let tree_of_type_declaration ident td rs =
 
 let tree_of_class_type kind cty = tree_of_class_type kind [] cty
 let prepare_class_type cty = prepare_class_type [] cty
-
-let tree_of_type_path p =
-  let (p', s) = best_type_path_original p in
-  let p'' = if (s = Id) then p' else p in
-  tree_of_best_type_path p p''
 
 let wrap_printing_env ?(error = true) = wrap_printing_env ~error
 let shorten_type_path env p =

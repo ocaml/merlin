@@ -190,7 +190,7 @@ let proper_abbrevs tl abbrev =
 let current_level = s_ref 0
 let nongen_level = s_ref 0
 let global_level = s_ref 0
-let saved_level = s_ref []
+let saved_levels = s_ref []
 
 
 (* merlin specific *)
@@ -201,29 +201,33 @@ let save_levels () =
   { current_level = !current_level;
     nongen_level = !nongen_level;
     global_level = !global_level;
-    saved_level = !saved_level }
+    saved_level = !saved_levels }
 let set_levels l =
   current_level := l.current_level;
   nongen_level := l.nongen_level;
   global_level := l.global_level;
-  saved_level := l.saved_level
+  saved_levels := l.saved_level
 (* end merlin specific *)
 
 let get_current_level () = !current_level
-let init_def level = current_level := level; nongen_level := level
+let init_def level =
+  assert (level <= generic_level);
+  current_level := level; nongen_level := level
+let save_levels () =
+  saved_levels := (!current_level, !nongen_level) :: !saved_levels
 let begin_def () =
-  saved_level := (!current_level, !nongen_level) :: !saved_level;
-  incr current_level; nongen_level := !current_level
+  assert (!current_level < generic_level);
+  save_levels (); incr current_level; nongen_level := !current_level
 let begin_class_def () =
-  saved_level := (!current_level, !nongen_level) :: !saved_level;
-  incr current_level
+  assert (!current_level < generic_level);
+  save_levels (); incr current_level
 let raise_nongen_level () =
-  saved_level := (!current_level, !nongen_level) :: !saved_level;
-  nongen_level := !current_level
+  save_levels (); nongen_level := !current_level
 let end_def () =
-  let (cl, nl) = List.hd !saved_level in
-  saved_level := List.tl !saved_level;
-  current_level := cl; nongen_level := nl
+  match !saved_levels with
+  |  (cl, nl) :: levels ->
+      saved_levels := levels; current_level := cl; nongen_level := nl
+  | [] -> fatal_error "Ctype.end_def"
 let create_scope () =
   let level = !current_level + 1 in
   init_def level;
@@ -852,22 +856,18 @@ let forward_try_expand_safe = (* Forward declaration *)
    [generic_level]).
 *)
 
-let rec normalize_package_path env p =
-  let t =
-    try (Env.find_modtype p env).mtd_type
-    with Not_found -> None
-  in
-  match t with
-  | Some (Mty_ident p) -> normalize_package_path env p
-  | Some (Mty_signature _ | Mty_functor _ | Mty_alias _ | Mty_for_hole)
-  | None ->
-      match p with
-        Path.Pdot (p1, s) ->
-          (* For module aliases *)
-          let p1' = Env.normalize_module_path None env p1 in
-          if Path.same p1 p1' then p else
-          normalize_package_path env (Path.Pdot (p1', s))
-      | _ -> p
+let modtype_of_package = ref (fun _ _ _ -> assert false)
+ 
+let set_modtype_of_package f =
+  modtype_of_package := f
+
+let modtype_of_package env loc pack =
+  !modtype_of_package env loc pack
+
+let normalize_or_raise_escape env p =
+  match Env.try_normalize_modtype_path env p with
+  | None -> raise_escape_exn (Module_type p)
+  | Some p -> p
 
 let rec check_scope_escape mark env level ty =
   let orig_level = get_level ty in

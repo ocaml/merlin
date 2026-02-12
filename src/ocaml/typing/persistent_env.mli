@@ -106,9 +106,10 @@ val import_crcs : 'a t -> source:filepath -> crcs -> unit
 val imports : 'a t -> crcs
 
 (* Return the CRC of the interface of the given compilation unit *)
-val crc_of_unit: 'a t -> (Persistent_signature.t -> 'a)
+val crc_of_unit:
+  'a t -> (Persistent_signature.t -> 'a)
   -> (string -> 'a -> Short_paths.Desc.Module.components Lazy.t)
-  -> modname -> Digest.t
+  -> modname -> Digest.BLAKE128.t
 
 (* Forward declaration to break mutual recursion with Typecore. *)
 val add_delayed_check_forward: ((unit -> unit) -> unit) ref
