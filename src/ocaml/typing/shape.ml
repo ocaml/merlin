@@ -47,8 +47,11 @@ module Uid = struct
   end)
 
   let id = Local_store.s_ref (-1)
+  let id_param = Local_store.s_ref (-1)
 
-  let reinit () = id := (-1)
+  let reinit () =
+    id := (-1);
+    id_param := (-1)
 
   let get_current_stamp () = !id
   let restore_stamp i = id := i
