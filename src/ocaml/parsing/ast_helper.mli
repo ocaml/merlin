@@ -188,13 +188,6 @@ module Exp:
     val setinstvar: ?loc:loc -> ?attrs:attrs -> str -> expression -> expression
     val override: ?loc:loc -> ?attrs:attrs -> (str * expression) list
                   -> expression
-    val letmodule: ?loc:loc -> ?attrs:attrs -> str_opt -> module_expr
-                   -> expression -> expression
-    val letmodule_no_opt: ?loc:loc -> ?attrs:attrs -> label -> module_expr
-                   -> expression -> expression
-    val letexception:
-      ?loc:loc -> ?attrs:attrs -> extension_constructor -> expression
-      -> expression
     val assert_: ?loc:loc -> ?attrs:attrs -> expression -> expression
     val lazy_: ?loc:loc -> ?attrs:attrs -> expression -> expression
     val poly: ?loc:loc -> ?attrs:attrs -> expression -> core_type option

@@ -232,22 +232,18 @@ module Exp = struct
   let new_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_new a)
   let setinstvar ?loc ?attrs a b = mk ?loc ?attrs (Pexp_setinstvar (a, b))
   let override ?loc ?attrs a = mk ?loc ?attrs (Pexp_override a)
-  let letmodule ?loc ?attrs a b c= mk ?loc ?attrs (Pexp_letmodule (a, b, c))
-  let letmodule_no_opt ?loc ?attrs s b c=
-    let a = Location.mknoloc (Some s) in
-    mk ?loc ?attrs (Pexp_letmodule (a, b, c))
-  let letexception ?loc ?attrs a b = mk ?loc ?attrs (Pexp_letexception (a, b))
   let assert_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_assert a)
   let lazy_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_lazy a)
   let poly ?loc ?attrs a b = mk ?loc ?attrs (Pexp_poly (a, b))
   let object_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_object a)
   let newtype ?loc ?attrs a b = mk ?loc ?attrs (Pexp_newtype (a, b))
   let pack ?loc ?attrs a b = mk ?loc ?attrs (Pexp_pack (a, b))
-  let open_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_open (a, b))
   let letop ?loc ?attrs let_ ands body =
     mk ?loc ?attrs (Pexp_letop {let_; ands; body})
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
+  let struct_item ?loc ?attrs si e = mk ?loc ?attrs (Pexp_struct_item (si, e))
+ 
   let hole ?(loc = !default_loc) ?attrs () =
     let id = Location.mkloc hole_txt loc in
     mk ~loc ?attrs  @@ Pexp_extension (id, PStr [])
