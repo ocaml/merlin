@@ -239,9 +239,9 @@ let iter_on_occurrences
       | Texp_match _ | Texp_try _ | Texp_tuple _ | Texp_variant _ | Texp_array _
       | Texp_ifthenelse _ | Texp_sequence _ | Texp_while _ | Texp_for _
       | Texp_send _
-      | Texp_letmodule _ | Texp_letexception _ | Texp_assert _ | Texp_lazy _
+      | Texp_assert _ | Texp_lazy _
       | Texp_object _ | Texp_pack _ | Texp_letop _ | Texp_unreachable
-      | Texp_open _ | Texp_typed_hole -> ());
+      | Texp_struct_item _ | Texp_typed_hole -> ());
       default_iterator.expr sub e);
 
   (* Remark: some types get iterated over twice due to how constraints are
@@ -259,6 +259,8 @@ let iter_on_occurrences
           f ~namespace:Type ctyp_env path lid
       |  Ttyp_open (path, lid, _ct) ->
           f ~namespace:Module ctyp_env path lid
+      | Ttyp_functor (_, _, {tpt_path; tpt_txt}, _) ->
+          f ~namespace:Module_type ctyp_env tpt_path tpt_txt
       | Ttyp_any | Ttyp_var _ | Ttyp_arrow _ | Ttyp_tuple _ | Ttyp_object _
       | Ttyp_alias _ | Ttyp_variant _ | Ttyp_poly _ -> ());
       default_iterator.typ sub ct);
@@ -292,7 +294,7 @@ let iter_on_occurrences
             f ~namespace:Module pat_env path lid
         | Tpat_type (path, lid) ->
             f ~namespace:Type pat_env path lid
-        | Tpat_constraint _ | Tpat_unpack -> ())
+        | Tpat_constraint _ | Tpat_unpack _ -> ())
         pat_extra;
       default_iterator.pat sub pat);
 
@@ -389,7 +391,9 @@ let index_occurrences binary_annots =
       | exception Not_found -> ()
       | { uid = Some (Predef _); _ } -> ()
       | path_shape ->
-        let result = Shape_reduce.local_reduce_for_uid env path_shape in
+        let result =
+          Shape_reduce.local_reduce_for_uid env ~namespace path path_shape
+        in
         index := (lid, result) :: !index
     in
     (* Shape reduction can be expensive, but the persistent memoization tables
