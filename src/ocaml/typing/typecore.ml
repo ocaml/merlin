@@ -252,9 +252,9 @@ let deep_copy () =
           Tobject (copy t1, ref r)
         | Tfield (s,fk,t1,t2) -> Tfield (s, fk, copy t1, copy t2)
         | Tpoly (t,tl) -> Tpoly (copy t, List.map copy tl)
-        | Tpackage { pack_path; pack_cstrs } ->
-          let pack_cstrs = List.map (fun (l, tl) -> l, copy tl) pack_cstrs in
-          Tpackage { pack_path; pack_cstrs }
+        | Tpackage { pack_path; pack_constraints } ->
+          let pack_constraints = List.map (fun (l, tl) -> l, copy tl) pack_constraints in
+          Tpackage { pack_path; pack_constraints }
         | Tlink _ | Tsubst _ -> assert false
       in
       Transient_expr.(set_desc (repr ty') desc);
@@ -314,8 +314,6 @@ let error (loc, env, err) =
     | Abstract_wrong_label ({ expected_type; _} as awl) ->
       Abstract_wrong_label
         { awl with expected_type = deep_copy () expected_type }
-    | Scoping_let_module (s, t) ->
-      Scoping_let_module (s, deep_copy () t)
     | Less_general (s, tr) ->
       Less_general (s, trace_copy tr)
     | Not_a_packed_module t ->
@@ -3655,7 +3653,6 @@ let type_approx_fun_one_param
     match spato with
     | None -> false
     | Some spat -> check_poly_constraint spat env label
-   in
   in
   let { ty_param; ty_ret } =
     match
@@ -5476,7 +5473,7 @@ and type_expect_
         exp_attributes = sexp.pexp_attributes;
         exp_env = env;
       }
-      with exception exn ->
+      with exn ->
         raise_error exn;
         (* We're dropping the local open node and keeping only its body.
            We also don't report any error in the body, as there's no way to
