@@ -244,13 +244,13 @@ Returns OCamldoc documentation as a string.
 If `-identifier ident` is specified, documentation for this ident is looked up from environment at `-position`.
 Otherwise, Merlin looks for the documentation for the entity under the cursor (at `-position`).
 
-### `enclosing -position <position> [-stop <position>]`
+### `enclosing -position <position> [-end-position <position>]`
 
     -position <position>  Position to complete
 
 Returns a list of locations `{'start': position, 'end': position}` in increasing size of all entities surrounding the position.
 (In a lisp, this would be the locations of all s-exps that contain the cursor.)
-If `-stop` is given, the range `[position; stop]` is the minimal value for accepted enclosing.
+If `-end-position` is given, the range `[position; stop]` is the minimal value for accepted enclosing.
 
 ### `errors`
 

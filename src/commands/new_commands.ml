@@ -271,7 +271,7 @@ let all_commands =
       ~spec:
         [ arg "-position" "<position> Position of the enclosing"
             (marg_position (fun pos (_pos, stop) -> (pos, stop)));
-          arg "-stop" "<position> End of the enclosing range"
+          arg "-end-position" "<position> End of the enclosing range"
             (marg_position (fun stop (pos, _stop) -> (pos, stop)))
         ]
       ~doc:
