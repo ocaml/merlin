@@ -3237,7 +3237,7 @@ let collect_unknown_apply_args env funct ty_fun0 rev_args sargs =
                     previous_arg_loc = previous_arg_loc rev_args ~funct;
                     extra_arg_loc = sarg.pexp_loc; }))
           with Msupport.Resume ->
-            newvar (), ty_fun
+            `Arrow (newvar ()), ty_fun
         in
         let arg, ty_res = match arg_kind with
           | `Arrow ty_arg -> Unknown_arg { sarg; ty_arg }, ty_res
@@ -5721,7 +5721,7 @@ and split_function_ty env ty_expected ~arg_label ~has_poly ~first ~in_function =
         (* Merlin: we recover with an expected type of 'a -> 'b *)
         let level = get_level (instance ty_expected) in
         raise_error (error(loc, env, err));
-        (newvar2 level, ty_expected)
+        { ty_param = newvar2 level; ty_ret = ty_expected }
     end
   in
   if !Clflags.principal
@@ -5751,10 +5751,8 @@ and split_function_mty env ty_expected ~arg_label ~first ~in_function =
         let err =
           error_of_filter_arrow_failure ~explanation ty_fun err ~first
         in
-        (* Merlin: we recover with an expected type of 'a -> 'b *)
-        let level = get_level (instance ty_expected) in
         raise_error (error(loc, env, err));
-        (newvar2 level, ty_expected)
+        None
   end
 
 (* Typecheck parameters one at a time followed by the body. Later parameters
@@ -5920,7 +5918,7 @@ and type_function
               fp_arg_label = arg_label;
               fp_param;
               fp_partial = partial;
-              fp_newtypes = newtypes;
+              fp_newtypes = List.map (fun (_,v,_) -> v) newtypes;
               fp_loc = pparam_loc;
             };
         }
@@ -6097,7 +6095,7 @@ and type_moddep_fun ~env ~name ~pack_param ~rest ~arg_label ~first
       fp_arg_label = arg_label;
       fp_param = s_ident;
       fp_partial = Total;
-      fp_newtypes = newtypes;
+      fp_newtypes = List.map (fun (_,v,_) -> v) newtypes;
       fp_loc = pparam_loc;
     }
   in
