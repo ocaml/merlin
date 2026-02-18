@@ -128,6 +128,7 @@ It can make the non-labelled parameter active.
   }
 
 The cursor is after `:`. As `~f:` isn't a valid parameter, signature help waits for the value of `~f`.
+FIXME we could expect signature help to show the correct parameter with the cursor before the : too
   $ $MERLIN single signature-help -position 2:15 <<EOF
   > let map = ListLabels.map
   > let _ = map ~f:Int.abs
