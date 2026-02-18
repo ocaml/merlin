@@ -608,7 +608,7 @@ let rec get_best_path r =
         l;
       get_best_path r
 
-let best_type_path_original p =
+let _best_type_path_original p =
   if !printing_env == Env.empty
   then (p, Id)
   else if !Clflags.real_paths
@@ -689,8 +689,11 @@ let tree_of_best_type_path p p' =
   else tree_of_path ~disambiguation:false None p'
 
 let tree_of_type_path p =
-  let (p', s) = best_type_path p in
-  let p'' = if (s = Id) then p' else p in
+  let p'' =
+    match best_type_path p with
+    | Path (None, p') -> p'
+    | _ -> p
+  in
   tree_of_best_type_path p p''
 
 (* Print a type expression *)
@@ -1099,8 +1102,8 @@ module Aliases = struct
           | Id ->
               List.iter (mark_loops_rec visited) tyl
         end
-      | Tpackage { pack_cstrs; _ } ->
-          List.iter (fun (_n, ty) -> mark_loops_rec visited ty) pack_cstrs
+      | Tpackage { pack_constraints; _ } ->
+          List.iter (fun (_n, ty) -> mark_loops_rec visited ty) pack_constraints
       | Tvariant row ->
           if List.memq px !visited_objects then add_proxy px else
           begin
@@ -1140,6 +1143,8 @@ module Aliases = struct
           List.iter (fun t -> add t) tyl;
           mark_loops_rec visited ty
       | Tunivar _ -> Variable_names.reserve ty
+      | Tfunctor (_, _, _, ty) ->
+          mark_loops_rec visited ty
 
   let mark_loops ty =
     mark_loops_rec [] ty
@@ -1737,7 +1742,7 @@ let prepared_tree_of_extension_constructor id ext es =
           (* NB(#14315): simply using the given ot_non_gen here
              does not break the testsuite *)
       | _ ->
-          {ot_non_gen=false; ot_name="?"; ot_variance=NoVariance,NoInjectivity} 
+          {ot_non_gen=false; ot_name="?"; ot_variance=NoVariance,NoInjectivity}
   in
   let param_scope f =
     match ext.ext_ret_type with

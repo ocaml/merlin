@@ -242,6 +242,7 @@ let deep_copy () =
         | Tvar _ | Tnil | Tunivar _ as desc -> desc
         | Tvariant _ as desc -> (* fixme *) desc
         | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
+        | Tfunctor (l,i,p,t) -> Tfunctor (l, i, p, copy t)
         | Ttuple tl -> Ttuple (List.map (fun (label, ty) -> label, copy ty) tl)
         | Tconstr (p, tl, _) -> Tconstr (p, List.map copy tl, ref Mnil)
         | Tobject (t1, r) ->

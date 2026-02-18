@@ -66,6 +66,7 @@ val tyvar: Format.formatter -> string -> unit
 type longindent_kind =
 | Constr (** variant constructors *)
 | Type (** core types, module types, class types, and classes *)
+| Value (** values *)
 | Other (** values and modules *)
 
 val case_list : Format.formatter -> Parsetree.case list -> unit

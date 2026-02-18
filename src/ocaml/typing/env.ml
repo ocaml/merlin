@@ -2478,7 +2478,10 @@ let enter_type ?(long_path = false) ~scope name info env =
   (id, env)
 
 let reenter_type id info env =
-  let env = store_type ~check:true id info (Shape.leaf info.type_uid) env in
+  let env =
+    store_type ~check:true ~long_path:true ~predef:false
+      id info (Shape.leaf info.type_uid) env
+  in
   env
 
 let enter_extension ~scope ~rebind name ext env =
