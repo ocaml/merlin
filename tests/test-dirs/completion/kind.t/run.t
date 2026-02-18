@@ -39,6 +39,7 @@ certain path
   "fast_sort"
   "filter"
   "filter_map"
+  "filter_mapi"
   "filteri"
   "find"
   "find_all"

@@ -111,7 +111,7 @@ Test 3.1
           "col": 3
         }
       },
-      "match x with|`Blue -> _|`Yellow -> _|`Red -> _|`Gold -> _"
+      "match x with|`Gold -> _|`Blue -> _|`Yellow -> _|`Red -> _"
     ],
     "notifications": []
   }

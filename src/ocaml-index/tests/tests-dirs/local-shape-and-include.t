@@ -36,7 +36,7 @@
    uid: Main.3; locs: "g": File "main.ml", line 9, characters 6-7
    uid: Main.4; locs: "g": File "main.ml", line 3, characters 6-7
    uid: Main.5; locs: "B": File "main.ml", line 2, characters 7-8
-   uid: Stdlib__String.175; locs:
+   uid: Stdlib__String.453; locs:
      "String.equal": File "main.ml", line 1, characters 8-20
    }, 0 approx shapes: {}, and shapes for CUS .
   and related uids:{(Main.3 Main.4)}
@@ -57,7 +57,7 @@
    uid: Main.3; locs: "g": File "main.ml", line 9, characters 6-7
    uid: Main.4; locs: "g": File "main.ml", line 3, characters 6-7
    uid: Main.5; locs: "B": File "main.ml", line 2, characters 7-8
-   uid: Stdlib__String.175; locs:
+   uid: Stdlib__String.453; locs:
      "String.equal": File "main.ml", line 1, characters 8-20
    }, 0 approx shapes: {}, and shapes for CUS .
   and related uids:{(Main.3 Main.4)}

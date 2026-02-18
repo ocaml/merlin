@@ -25,7 +25,7 @@
               "line": 2,
               "col": 14
             },
-            "message": "Hint: Did you forget a ';'?"
+            "message": "Hint: Did you forget a ;?"
           },
           {
             "start": {
