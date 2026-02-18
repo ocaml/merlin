@@ -595,7 +595,8 @@ let lookup_uid_decl ~config:mconfig uid =
   let title = "lookup_uid_decl" in
   let item =
     match uid with
-    | Shape.Uid.Internal | Predef _ | Compilation_unit _ -> None
+    | Shape.Uid.Internal | Predef _ | Compilation_unit _
+    | Local_opaque_item _ -> None
     | Item { from = Intf; comp_unit; _ } -> Some (`MLI, comp_unit)
     | Item { from = _; comp_unit; _ } -> Some (`ML, comp_unit)
   in
@@ -662,6 +663,7 @@ let find_loc_of_uid ~config ~local_defs ?ident ?fallback (uid : Shape.Uid.t) =
   match uid with
   | Predef s -> `Builtin (uid, s)
   | Internal -> `Builtin (uid, "<internal>")
+  | Local_opaque_item {comp_unit; _}
   | Item { comp_unit; _ } -> `Opt (find_loc_of_item ~comp_unit)
   | Compilation_unit comp_unit -> find_loc_of_comp_unit ~config uid comp_unit
 
@@ -713,7 +715,7 @@ let find_definition_uid ~config ~env ~(decl : Env_lookup.item) path =
   reduced
 
 let rec uid_of_result ~traverse_aliases = function
-  | Shape_reduce.Resolved uid -> (Some uid, false)
+  | Shape_reduce.Resolved uid | Resolved_local_use uid -> (Some uid, false)
   | Resolved_alias
       ( (Item { comp_unit; _ } | Compilation_unit comp_unit),
         (( Resolved_alias (Compilation_unit comp_unit', _)
@@ -729,7 +731,9 @@ let rec uid_of_result ~traverse_aliases = function
   | Resolved_alias (alias, _rest) -> (Some alias, false)
   | Unresolved { uid = Some uid; desc = Comp_unit _; approximated } ->
     (Some uid, approximated)
-  | Approximated _ | Unresolved _ | Internal_error_missing_uid -> (None, true)
+  | Approximated _ | Unresolved _
+  | Internal_error_missing_uid | Missing_uid _ ->
+    (None, true)
 
 (** This is the main function here *)
 let from_path ~config ~env ~local_defs ~decl ?ident:_ path =
