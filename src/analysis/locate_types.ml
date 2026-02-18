@@ -42,7 +42,7 @@ let rec create_type_tree ty : Type_tree.t =
     in
     let children = List.map arg_tys ~f:create_type_tree in
     { data = Type_ref { path; ty = ty_without_args }; children }
-  | Tlink ty | Tpoly (ty, _) -> create_type_tree ty
+  | Tlink ty | Tpoly (ty, _) | Tfunctor (_, _, _, ty) -> create_type_tree ty
   | Tobject (fields_type, _) ->
     let rec extract_field_types (ty : Types.type_expr) =
       match Types.get_desc ty with
@@ -67,5 +67,5 @@ let rec create_type_tree ty : Type_tree.t =
           | Rpresent None | Rabsent -> None)
     in
     { data = Poly_variant; children }
-  | Tnil | Tvar _ | Tsubst _ | Tunivar _ | Tpackage _ | Tfield _ ->
+  | Tnil | Tvar _ | Tsubst _ | Tunivar _ | Tpackage _ | Tfield _  ->
     { data = Other ty; children = [] }

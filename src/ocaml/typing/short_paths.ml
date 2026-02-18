@@ -1021,9 +1021,8 @@ module Shortest = struct
 
   end
 
-  type basis
-
-  type env
+  type basis = private [`basis]
+  type env = private [`env]
 
   type _ kind =
     | Basis :

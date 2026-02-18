@@ -294,7 +294,7 @@ let of_expression e = app (Expression e) ** list_fold of_exp_extra e.exp_extra
 let of_pat_extra (pat, _, _) =
   match pat with
   | Tpat_constraint ct -> of_core_type ct
-  | Tpat_type _ | Tpat_unpack | Tpat_open _ -> id_fold
+  | Tpat_type _ | Tpat_unpack _ | Tpat_open _ -> id_fold
 
 let of_pattern (type k) (p : k general_pattern) =
   app (Pattern p) ** list_fold of_pat_extra p.pat_extra
@@ -394,20 +394,6 @@ let rec of_expression_desc loc = function
   | Texp_send (e, meth) ->
     of_expression e ** of_method_call e meth loc (* TODO ulysse CHECK*)
   | Texp_override (_, ls) -> list_fold (fun (_, _, e) -> of_expression e) ls
-  | Texp_letmodule (mb_id, mb_name, mb_presence, mb_expr, e) ->
-    let mb =
-      { mb_id;
-        mb_name;
-        mb_expr;
-        mb_loc = Location.none;
-        mb_attributes = [];
-        mb_presence;
-        mb_uid = Shape.Uid.internal_not_actually_unique
-      }
-    in
-    app (Module_binding mb) ** of_expression e
-  | Texp_letexception (ec, e) ->
-    app (Extension_constructor ec) ** of_expression e
   | Texp_object (cs, _) -> app (Class_structure cs)
   | Texp_pack me -> of_module_expr me
   | Texp_unreachable | Texp_extension_constructor _ -> id_fold
@@ -428,7 +414,8 @@ let rec of_expression_desc loc = function
     let of_letop (pat, bindop) = of_bop bindop ** of_pattern pat in
     list_fold of_letop (List.combine patterns bindops)
     ** of_expression body.c_rhs
-  | Texp_open (od, e) -> app (Module_expr od.open_expr) ** of_expression e
+  | Texp_struct_item ({ str_desc }, e) ->
+    (of_structure_item_desc str_desc) ** of_expression e
 
 and of_function_param fp = of_function_param_kind fp.fp_kind
 
@@ -538,6 +525,7 @@ and of_core_type_desc = function
   | Ttyp_any | Ttyp_var _ -> id_fold
   | Ttyp_open (_, _, ct) -> of_core_type ct
   | Ttyp_arrow (_, ct1, ct2) -> of_core_type ct1 ** of_core_type ct2
+  | Ttyp_functor (_, _, _, ct) -> of_core_type ct (* todo *)
   | Ttyp_tuple cts ->
     list_fold of_core_type (List.map ~f:snd cts) (* todo labels *)
   | Ttyp_constr (_, _, cts) | Ttyp_class (_, _, cts) ->
@@ -625,21 +613,21 @@ let of_node = function
   | With_constraint (Twith_modtype mt | Twith_modtypesubst mt) ->
     of_module_type mt
   | Core_type { ctyp_desc } -> of_core_type_desc ctyp_desc
-  | Package_type { tpt_cstrs } ->
-    list_fold (fun (_, ct) -> of_core_type ct) tpt_cstrs
+  | Package_type { tpt_constraints } ->
+    list_fold (fun (_, ct) -> of_core_type ct) tpt_constraints
   | Row_field rf -> begin
       match rf.rf_desc with
       | Ttag (_, _, cts) -> list_fold of_core_type cts
       | Tinherit ct -> of_core_type ct
     end
   | Value_description { val_desc } -> of_core_type val_desc
-  | Type_declaration { typ_params; typ_cstrs; typ_kind; typ_manifest } ->
+  | Type_declaration { typ_params; typ_constraints; typ_kind; typ_manifest } ->
     let of_typ_cstrs (ct1, ct2, _) = of_core_type ct1 ** of_core_type ct2 in
     option_fold of_core_type typ_manifest
     ** list_fold of_typ_param typ_params
     ** app (Type_kind typ_kind)
-    ** list_fold of_typ_cstrs typ_cstrs
-  | Type_kind (Ttype_abstract | Ttype_open) -> id_fold
+    ** list_fold of_typ_cstrs typ_constraints
+  | Type_kind (Ttype_abstract | Ttype_open | Ttype_external _) -> id_fold
   | Type_kind (Ttype_variant cds) ->
     list_fold (fun cd -> app (Constructor_declaration cd)) cds
   | Type_kind (Ttype_record lds) -> list_fold of_label_declaration lds
@@ -776,6 +764,13 @@ let bindop_path { bop_op_name; bop_op_path } =
   let path = bop_op_path in
   (reloc path loc, Some (Longident.Lident loc.txt))
 
+let str_item_paths { Typedtree.str_desc; _ } =
+  match str_desc with
+  | Tstr_module  { mb_id = Some id; mb_name = loc; _ } ->
+      [(reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt)]
+  | Tstr_open { open_expr; _ } ->  module_expr_paths open_expr
+  | _ -> []
+
 let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
   let init =
     match exp_desc with
@@ -791,8 +786,6 @@ let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
         ~f:(fun (id, loc, _) ->
             (reloc (Path.Pident id) loc, Some (Longident.Lident loc.txt)))
         ps
-    | Texp_letmodule (Some id, loc, _, _, _) ->
-      [ (reloc (Path.Pident id) loc, Option.map ~f:mk_lident loc.txt) ]
     | Texp_for (id, { Parsetree.ppat_loc = loc; ppat_desc }, _, _, _, _) ->
       let lid =
         match ppat_desc with
@@ -803,7 +796,7 @@ let expression_paths { Typedtree.exp_desc; exp_extra; _ } =
       [ (mkloc (Path.Pident id) loc, lid) ]
     | Texp_construct (lid_loc, { Data_types.cstr_name; cstr_res; _ }, _) ->
       fake_path lid_loc cstr_res cstr_name
-    | Texp_open (od, _) -> module_expr_paths od.open_expr
+    | Texp_struct_item (item, _) -> str_item_paths item
     | _ -> []
   in
   List.fold_left ~init exp_extra ~f:(fun acc (extra, _, _) ->

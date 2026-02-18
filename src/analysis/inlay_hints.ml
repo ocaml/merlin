@@ -13,7 +13,7 @@ let pattern_has_constraint (type a) (pattern : a Typedtree.general_pattern) =
       | Typedtree.Tpat_constraint _ -> true
       | Typedtree.Tpat_type (_, _)
       | Typedtree.Tpat_open (_, _, _)
-      | Typedtree.Tpat_unpack -> false)
+      | Typedtree.Tpat_unpack _ -> false)
     pattern.pat_extra
 
 let structure_iterator hint_let_binding hint_pattern_binding

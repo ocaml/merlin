@@ -467,7 +467,7 @@ module Gen = struct
       let rtyp = Ctype.full_expand ~may_forget_scope:true env typ in
       let constructed_from_type =
         match get_desc rtyp with
-        | Tlink _ | Tsubst _ -> assert false
+        | Tlink _ | Tsubst _ | Tfunctor _ (* TODO *) -> assert false
         | Tpoly (texp, _) ->
           (* We are not going "deeper" so we don't call [exp_or_hole] here *)
           expression ~idents_table values_scope ~depth env texp
@@ -485,7 +485,7 @@ module Gen = struct
                 match def with
                 | Type_variant (constrs, _) -> constructor env rtyp path constrs
                 | Type_record (labels, _) -> record env rtyp path labels
-                | Type_abstract _ | Type_open -> [])
+                | Type_abstract _ | Type_open | Type_external _ -> [])
           end
         | Tarrow _ ->
           let rec left_types acc env ty =

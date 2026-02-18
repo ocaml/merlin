@@ -994,7 +994,6 @@ The precedences must be listed from low to high.
 %nonassoc prec_unary_minus prec_unary_plus /* unary - */
 %nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
 %nonassoc prec_constr_appl              /* above AS BAR COLONCOLON COMMA */
-%left     prec_escape
 %nonassoc below_HASH
 %nonassoc HASH                        /* simple_expr/toplevel_directive */
 %left     HASHOP
@@ -1874,14 +1873,6 @@ signature:
 
 (* A signature item. *)
 signature_item:
-  | item_extension post_item_attributes
-      { let docs = symbol_docs $sloc in
-        mksig ~loc:$sloc (Psig_extension ($1, (add_docs_attrs docs $2))) }
-  | mksig(
-      floating_attribute
-        { Psig_attribute $1 }
-    )
-    { $1 }
   | wrap_mksig_ext(
       item_extension post_item_attributes
         { psig_extension $1 (add_docs_attrs (symbol_docs $sloc) $2) }

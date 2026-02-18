@@ -105,7 +105,9 @@ let uid_and_loc_of_node env node =
   | _ -> None
 
 let comp_unit_of_uid = function
-  | Shape.Uid.Compilation_unit comp_unit | Item { comp_unit; _ } ->
+  | Shape.Uid.Compilation_unit comp_unit
+  | Item { comp_unit; _ }
+  | Local_opaque_item { comp_unit; _ } ->
     Some comp_unit
   | Internal | Predef _ -> None
 

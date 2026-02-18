@@ -79,12 +79,10 @@ let expr_tail_positions = function
   | Texp_typed_hole -> []
   | Texp_match (_, cs, _, _) -> List.map cs ~f:(fun c -> Case c)
   | Texp_try (_, cs, _) -> List.map cs ~f:(fun c -> Case c)
-  | Texp_letmodule (_, _, _, _, e)
-  | Texp_letexception (_, e)
   | Texp_let (_, _, e)
   | Texp_sequence (_, e)
   | Texp_ifthenelse (_, e, None)
-  | Texp_open (_, e) -> [ Expression e ]
+  | Texp_struct_item (_, e) -> [ Expression e ]
   | Texp_ifthenelse (_, e1, Some e2) -> [ Expression e1; Expression e2 ]
 
 let tail_positions = function

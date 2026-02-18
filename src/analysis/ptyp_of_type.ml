@@ -28,6 +28,13 @@ let rec module_type =
     let out = module_type type_out in
     Mty.functor_ param out
 
+and package_type { pack_path; pack_constraints = lids_type_exprs } =
+  let lid = mknoloc (Untypeast.lident_of_path pack_path) in
+  Ast_helper.Typ.package_type lid @@
+  List.map lids_type_exprs ~f:(fun (id, t) ->
+      let lid = Longident.unflatten id |> Option.get in
+      (mknoloc lid, core_type t))
+
 and core_type type_expr =
   let open Ast_helper in
   match Types.get_desc type_expr with
@@ -35,6 +42,10 @@ and core_type type_expr =
   | Tvar (Some s) | Tunivar (Some s) -> Typ.var s
   | Tarrow (label, type_expr, type_expr_out, _commutable) ->
     Typ.arrow label (core_type type_expr) (core_type type_expr_out)
+  | Tfunctor (label, id, p, type_expr) ->
+    let package_type = package_type p in
+    let id = mknoloc (Ident.Unscoped.name id) in
+    Typ.functor_ label id package_type (core_type type_expr)
   | Ttuple type_exprs ->
     Typ.tuple @@ List.map ~f:(fun (label, ty) -> label, core_type ty) type_exprs
   | Tconstr (path, type_exprs, _abbrev) ->
@@ -90,14 +101,8 @@ and core_type type_expr =
         type_exprs
     in
     Typ.poly names @@ core_type type_expr
-  | Tpackage { pack_path; pack_cstrs = lids_type_exprs } ->
-    let lid = mknoloc (Untypeast.lident_of_path pack_path) in
-    let package_type =
-      Typ.package_type lid @@
-      List.map lids_type_exprs ~f:(fun (id, t) ->
-          let lid = Longident.unflatten id |> Option.get in
-          (mknoloc lid, core_type t))
-    in
+  | Tpackage p ->
+    let package_type = package_type p in
     Typ.package package_type
 
 and modtype_declaration id { mtd_type; mtd_attributes; _ } =
@@ -170,6 +175,7 @@ and type_declaration id
       Ptype_variant (List.map ~f:constructor_declaration constrs)
     | Type_record (labels, _repr) ->
       Ptype_record (List.map ~f:label_declaration labels)
+    | Type_external name -> Ptype_external name
   in
   let manifest = Option.map ~f:core_type type_manifest in
   Ast_helper.Type.mk ~attrs:type_attributes ~params ~kind ~priv:type_private
