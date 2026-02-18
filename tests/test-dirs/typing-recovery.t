@@ -70,7 +70,7 @@
         type_declaration t/274 (test.ml[1,0+0]..test.ml[1,0+14])
           ptype_params =
             []
-          ptype_cstrs =
+          ptype_constraints =
             []
           ptype_kind =
             Ttype_variant
@@ -219,7 +219,7 @@
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "The constructor () has type unit but an expression was expected of type int"
+        "message": "This expression should not be a unit literal, the expected type is int"
       }
     ],
     "notifications": []
@@ -235,7 +235,7 @@
         type_declaration t/274 (test2.ml[1,0+0]..test2.ml[1,0+14])
           ptype_params =
             []
-          ptype_cstrs =
+          ptype_constraints =
             []
           ptype_kind =
             Ttype_variant

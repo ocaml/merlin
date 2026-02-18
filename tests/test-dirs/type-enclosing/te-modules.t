@@ -161,6 +161,7 @@ With index 0 only the first type is shown:
     val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
     val rev_map : ('a -> 'b) -> 'a list -> 'b list
     val filter_map : ('a -> 'b option) -> 'a list -> 'b list
+    val filter_mapi : (int -> 'a -> 'b option) -> 'a list -> 'b list
     val concat_map : ('a -> 'b list) -> 'a list -> 'b list
     val fold_left_map :
       ('acc -> 'a -> 'acc * 'b) -> 'acc -> 'a list -> 'acc * 'b list
@@ -203,6 +204,7 @@ With index 0 only the first type is shown:
     val remove_assoc : 'a -> ('a * 'b) list -> ('a * 'b) list
     val remove_assq : 'a -> ('a * 'b) list -> ('a * 'b) list
     val split : ('a * 'b) list -> 'a list * 'b list
+    val split_map : ('c -> 'a * 'b) -> 'c list -> 'a list * 'b list
     val combine : 'a list -> 'b list -> ('a * 'b) list
     val sort : ('a -> 'a -> int) -> 'a list -> 'a list
     val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
