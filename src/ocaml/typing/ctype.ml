@@ -192,23 +192,6 @@ let nongen_level = s_ref 0
 let global_level = s_ref 0
 let saved_levels = s_ref []
 
-
-(* merlin specific *)
-type levels =
-    { current_level: int; nongen_level: int; global_level: int;
-      saved_level: (int * int) list; }
-let save_levels () =
-  { current_level = !current_level;
-    nongen_level = !nongen_level;
-    global_level = !global_level;
-    saved_level = !saved_levels }
-let set_levels l =
-  current_level := l.current_level;
-  nongen_level := l.nongen_level;
-  global_level := l.global_level;
-  saved_levels := l.saved_level
-(* end merlin specific *)
-
 let get_current_level () = !current_level
 let init_def level =
   assert (level <= generic_level);
@@ -857,7 +840,7 @@ let forward_try_expand_safe = (* Forward declaration *)
 *)
 
 let modtype_of_package = ref (fun _ _ _ -> assert false)
- 
+
 let set_modtype_of_package f =
   modtype_of_package := f
 
@@ -6578,3 +6561,20 @@ let immediacy env typ =
       else
         Type_immediacy.Always
   | _ -> Type_immediacy.Unknown
+
+
+(* merlin specific *)
+type levels =
+    { current_level: int; nongen_level: int; global_level: int;
+      saved_level: (int * int) list; }
+let save_levels () =
+  { current_level = !current_level;
+    nongen_level = !nongen_level;
+    global_level = !global_level;
+    saved_level = !saved_levels }
+let set_levels l =
+  current_level := l.current_level;
+  nongen_level := l.nongen_level;
+  global_level := l.global_level;
+  saved_levels := l.saved_level
+(* end merlin specific *)
