@@ -173,7 +173,7 @@ FIXME: with 5.2 new function representation we lost some granularity
   > let f x = x + (succ 1 + 3) + 10
   > EOF
 
-  $ $MERLIN single enclosing -position 1:11 -stop 1:31  -filename main.ml <main.ml
+  $ $MERLIN single enclosing -position 1:11 -end-position 1:31  -filename main.ml <main.ml
   {
     "class": "return",
     "value": [
@@ -215,7 +215,7 @@ FIXME: with 5.2 new function representation we lost some granularity
   > let f x = x + (succ 1 + 3) + 10
   > EOF
 
-  $ $MERLIN single enclosing -position 1:15 -stop 1:26  -filename main.ml <main.ml
+  $ $MERLIN single enclosing -position 1:15 -end-position 1:26  -filename main.ml <main.ml
   {
     "class": "return",
     "value": [

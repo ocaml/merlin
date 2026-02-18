@@ -74,7 +74,7 @@ let dump (type a) : a t -> json =
   | Enclosing (start, stop) ->
     mk "enclosing"
       [ ("position", mk_position start);
-        ( "stop",
+        ( "end-position",
           match stop with
           | None -> `Null
           | Some stop -> mk_position stop )
