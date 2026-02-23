@@ -2,6 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/alloc.h>
+#include <caml/threads.h>
+#include <caml/unixsupport.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
@@ -24,12 +31,6 @@ typedef SSIZE_T ssize_t;
 #include <sys/socket.h>
 #include <sys/select.h>
 #endif
-
-#include <caml/mlvalues.h>
-#include <caml/memory.h>
-#include <caml/alloc.h>
-#include <caml/threads.h>
-#include <caml/unixsupport.h>
 
 #if !(defined(_MSC_VER) && !defined(__clang__))
 #define ATLEAST static
