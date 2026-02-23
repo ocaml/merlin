@@ -7231,7 +7231,7 @@ and type_let ?check ?check_strict
     List.iter
       (fun { pvb_pat = pat; _ } ->
         if not (is_var_pat pat)
-        then raise (Error (pat.ppat_loc, env, Illegal_letrec_pat)))
+        then raise_error (error (pat.ppat_loc, env, Illegal_letrec_pat)))
       spat_sexp_list;
   let (pat_list, exp_list, new_env, mvs) =
     with_local_level_generalize begin fun () ->
