@@ -250,7 +250,7 @@ Otherwise, Merlin looks for the documentation for the entity under the cursor (a
 
 Returns a list of locations `{'start': position, 'end': position}` in increasing size of all entities surrounding the position.
 (In a lisp, this would be the locations of all s-exps that contain the cursor.)
-If `-end-position` is given, the range `[position; stop]` is the minimal value for accepted enclosing.
+If `-end-position` is given, only enclosings containing the range `[position; stop]`  will be returned.
 
 ### `errors`
 
