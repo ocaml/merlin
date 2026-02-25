@@ -301,7 +301,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       match stop with
       | Some stop ->
         let stop = Mpipeline.get_lexing_pos pipeline stop in
-        Mbrowse.enclosing_from ~start:pos ~stop [ structures ]
+        Mbrowse.range_enclosing ~start:pos ~stop [ structures ]
       | None -> Mbrowse.enclosing pos [ structures ]
     in
     (* We remove possible duplicates from the list*)

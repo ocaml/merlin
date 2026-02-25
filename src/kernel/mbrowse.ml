@@ -160,7 +160,7 @@ let deepest_before pos roots =
     in
     aux root
 
-let enclosing_from ~start ~stop roots =
+let range_enclosing ~start ~stop roots =
   List.filter
     ~f:(fun (_, node) ->
       let loc = node_loc node in

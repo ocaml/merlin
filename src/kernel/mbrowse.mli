@@ -50,7 +50,7 @@ val select_open_node : t -> (Path.t * Longident.t * t) option
 
 val enclosing : Lexing.position -> t list -> t
 
-val enclosing_from :
+val range_enclosing :
   start:Lexing.position -> stop:Lexing.position -> t list -> t
 
 val of_structure : Typedtree.structure -> t
