@@ -22,7 +22,8 @@ See https://github.com/ocaml/merlin/issues/1118.
         "type": "typer",
         "sub": [],
         "valid": true,
-        "message": "This definition has type bool which is less general than 'a. 'a"
+        "message": "This definition has type bool which is less general than 'a. 'a
+  The type bool is not a type variable."
       },
       {
         "start": {
