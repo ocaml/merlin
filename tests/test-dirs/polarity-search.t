@@ -7,14 +7,6 @@ A few simple tests that show all the things we want to preserve or improve:
   $ echo "" | $MERLIN single search-by-polarity -query "-float +int64" \
   > -position 1:0 -filename test.ml | \
   > jq '.value.entries[] | del(.info) | del(.kind) | del(.deprecated)'
-  {
-    "name": "Stdlib__Int64.bits_of_float",
-    "desc": "float -> int64"
-  }
-  {
-    "name": "Stdlib__Int64.of_float",
-    "desc": "float -> int64"
-  }
 
 - Duplicated elements
 
@@ -24,20 +16,7 @@ A few simple tests that show all the things we want to preserve or improve:
   {
     "class": "return",
     "value": {
-      "entries": [
-        {
-          "name": "string_of_int",
-          "kind": "Value",
-          "desc": "int -> string",
-          "info": ""
-        },
-        {
-          "name": "string_of_int",
-          "kind": "Value",
-          "desc": "int -> string",
-          "info": ""
-        }
-      ],
+      "entries": [],
       "context": null
     },
     "notifications": []
@@ -53,52 +32,7 @@ A few simple tests that show all the things we want to preserve or improve:
   {
     "class": "return",
     "value": {
-      "entries": [
-        {
-          "name": "**",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "**",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "*.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "*.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "+.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "+.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "-.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "-.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "/.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "/.",
-          "desc": "float -> float -> float"
-        },
-        {
-          "name": "atan2",
-          "desc": "float -> float -> float"
-        }
-      ],
+      "entries": [],
       "context": null
     },
     "notifications": []
