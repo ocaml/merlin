@@ -350,8 +350,11 @@ module Gen = struct
           (* Pun for labelled arguments *)
           (make_param label (Ast_helper.Pat.var (Location.mknoloc s)), s)
         | Nolabel -> begin
+            let ty = match get_desc ty with
+              | Tpoly (ty, _) -> ty | _ -> ty
+            in
             match get_desc ty with
-            | Tconstr (path, _, _) ->
+            | Tconstr (path, _, _)  ->
               let name = uniq_name env (Path.last path) in
               (make_param label (Ast_helper.Pat.var (Location.mknoloc name)), name)
             | _ -> (make_param label (Ast_helper.Pat.any ()), "_")
