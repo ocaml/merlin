@@ -150,7 +150,7 @@ FIXME: the syntax error message is off the mark.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, <unstable suggestion>
+        "message": "Syntax error: let-extension (with punning) <unstable suggestion>
       }
     ],
     "notifications": []
