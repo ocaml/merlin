@@ -82,7 +82,8 @@ Functions
   $ run "x:a -> ?y:b -> c"
   Arrow
     a (1:5)
-    b (2:5)
+    option
+      b (2:5)
     c (3:5)
 
 Tuples
@@ -112,8 +113,8 @@ Objects
 
   $ run "<x : a; y : b>"
   Object
-    a (1:5)
     b (2:5)
+    a (1:5)
 
 Polymorphic variant types
 
