@@ -283,7 +283,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v float mytype mytype_1 -> _)"
+      "(fun ~v float _ _ -> _)"
     ]
   ]
 
@@ -301,7 +301,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v float mytype mytype_1 -> 0)"
+      "(fun ~v float _ _ -> 0)"
     ]
   ]
 

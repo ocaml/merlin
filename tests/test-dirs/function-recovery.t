@@ -33,29 +33,9 @@
                     []
                     None
                   expression (test.ml[3,104+11]..test.ml[3,104+28])
-                    Texp_function
-                    [
-                      Nolabel
-                      Param_pat
-                        pattern (test.ml[3,104+15]..test.ml[3,104+17])
-                          Tpat_construct \"()\"
-                          []
-                          None
-                    ]
-                    Tfunction_body
-                      expression (test.ml[3,104+21]..test.ml[3,104+28])
-                        attribute \"merlin.incorrect\"
-                          []
-                        attribute \"merlin.saved-parts\"
-                          [
-                            structure_item (_none_[0,0+-1]..[0,0+-1]) ghost
-                              Pstr_eval
-                              expression (_none_[0,0+-1]..[0,0+-1]) ghost
-                                Pexp_constant
-                                constant (_none_[0,0+-1]..[0,0+-1]) ghost
-                                  PConst_int (1,None)
-                          ]
-                        Texp_ident \"*type-error*/275\"
+                    attribute \"merlin.incorrect\"
+                      []
+                    Texp_ident \"*type-error*/275\"
               ]
           ]
   ]
@@ -94,11 +74,7 @@
                           Ttyp_constr \"t/276\"
                           []
                       ]
-                  Tpat_alias \"foo/277\"
-                  pattern (type.ml[1,0+22]..type.ml[1,0+25]) ghost
-                    attribute \"merlin.hide\"
-                      []
-                    Tpat_any
+                  Tpat_var \"foo/277\"
             ]
             Tfunction_body
               expression (type.ml[1,0+39]..type.ml[1,0+61])
@@ -218,255 +194,21 @@
                       "col": 17
                     },
                     "ghost": true,
-                    "attrs": [],
-                    "kind": "expression",
-                    "children": [
+                    "attrs": [
                       {
-                        "filename": "test.ml",
                         "start": {
-                          "line": 1,
-                          "col": 6
+                          "line": 0,
+                          "col": -1
                         },
                         "end": {
-                          "line": 1,
-                          "col": 9
+                          "line": 0,
+                          "col": -1
                         },
-                        "ghost": false,
-                        "attrs": [],
-                        "kind": "pattern (test.ml[1,0+6]..test.ml[1,0+9])
-    Tpat_var \"x/276\"
-  ",
-                        "children": []
-                      },
-                      {
-                        "filename": "test.ml",
-                        "start": {
-                          "line": 2,
-                          "col": 4
-                        },
-                        "end": {
-                          "line": 2,
-                          "col": 13
-                        },
-                        "ghost": false,
-                        "attrs": [],
-                        "kind": "case",
-                        "children": [
-                          {
-                            "filename": "test.ml",
-                            "start": {
-                              "line": 2,
-                              "col": 4
-                            },
-                            "end": {
-                              "line": 2,
-                              "col": 8
-                            },
-                            "ghost": false,
-                            "attrs": [],
-                            "kind": "pattern (test.ml[2,27+4]..test.ml[2,27+8])
-    Tpat_construct \"None\"
-    []
-    None
-  ",
-                            "children": []
-                          },
-                          {
-                            "filename": "test.ml",
-                            "start": {
-                              "line": 2,
-                              "col": 12
-                            },
-                            "end": {
-                              "line": 2,
-                              "col": 13
-                            },
-                            "ghost": false,
-                            "attrs": [
-                              {
-                                "start": {
-                                  "line": 2,
-                                  "col": 11
-                                },
-                                "end": {
-                                  "line": 2,
-                                  "col": 13
-                                },
-                                "name": "merlin.loc"
-                              }
-                            ],
-                            "kind": "expression",
-                            "children": []
-                          }
-                        ]
-                      },
-                      {
-                        "filename": "test.ml",
-                        "start": {
-                          "line": 3,
-                          "col": 4
-                        },
-                        "end": {
-                          "line": 3,
-                          "col": 15
-                        },
-                        "ghost": false,
-                        "attrs": [],
-                        "kind": "case",
-                        "children": [
-                          {
-                            "filename": "test.ml",
-                            "start": {
-                              "line": 3,
-                              "col": 4
-                            },
-                            "end": {
-                              "line": 3,
-                              "col": 10
-                            },
-                            "ghost": false,
-                            "attrs": [],
-                            "kind": "pattern (test.ml[3,41+4]..test.ml[3,41+10])
-    Tpat_construct \"Some\"
-    [
-      pattern (test.ml[3,41+9]..test.ml[3,41+10])
-        Tpat_constant Const_int 5
-    ]
-    None
-  ",
-                            "children": [
-                              {
-                                "filename": "test.ml",
-                                "start": {
-                                  "line": 3,
-                                  "col": 9
-                                },
-                                "end": {
-                                  "line": 3,
-                                  "col": 10
-                                },
-                                "ghost": false,
-                                "attrs": [],
-                                "kind": "pattern (test.ml[3,41+9]..test.ml[3,41+10])
-    Tpat_constant Const_int 5
-  ",
-                                "children": []
-                              }
-                            ]
-                          },
-                          {
-                            "filename": "test.ml",
-                            "start": {
-                              "line": 3,
-                              "col": 14
-                            },
-                            "end": {
-                              "line": 3,
-                              "col": 15
-                            },
-                            "ghost": false,
-                            "attrs": [
-                              {
-                                "start": {
-                                  "line": 3,
-                                  "col": 13
-                                },
-                                "end": {
-                                  "line": 3,
-                                  "col": 15
-                                },
-                                "name": "merlin.loc"
-                              }
-                            ],
-                            "kind": "expression",
-                            "children": []
-                          }
-                        ]
-                      },
-                      {
-                        "filename": "test.ml",
-                        "start": {
-                          "line": 4,
-                          "col": 4
-                        },
-                        "end": {
-                          "line": 4,
-                          "col": 17
-                        },
-                        "ghost": false,
-                        "attrs": [],
-                        "kind": "case",
-                        "children": [
-                          {
-                            "filename": "test.ml",
-                            "start": {
-                              "line": 4,
-                              "col": 4
-                            },
-                            "end": {
-                              "line": 4,
-                              "col": 12
-                            },
-                            "ghost": false,
-                            "attrs": [],
-                            "kind": "pattern (test.ml[4,57+4]..test.ml[4,57+12])
-    Tpat_construct \"Some\"
-    [
-      pattern (test.ml[4,57+9]..test.ml[4,57+12])
-        Tpat_var \"_aa/277\"
-    ]
-    None
-  ",
-                            "children": [
-                              {
-                                "filename": "test.ml",
-                                "start": {
-                                  "line": 4,
-                                  "col": 9
-                                },
-                                "end": {
-                                  "line": 4,
-                                  "col": 12
-                                },
-                                "ghost": false,
-                                "attrs": [],
-                                "kind": "pattern (test.ml[4,57+9]..test.ml[4,57+12])
-    Tpat_var \"_aa/277\"
-  ",
-                                "children": []
-                              }
-                            ]
-                          },
-                          {
-                            "filename": "test.ml",
-                            "start": {
-                              "line": 4,
-                              "col": 16
-                            },
-                            "end": {
-                              "line": 4,
-                              "col": 17
-                            },
-                            "ghost": false,
-                            "attrs": [
-                              {
-                                "start": {
-                                  "line": 4,
-                                  "col": 15
-                                },
-                                "end": {
-                                  "line": 4,
-                                  "col": 17
-                                },
-                                "name": "merlin.loc"
-                              }
-                            ],
-                            "kind": "expression",
-                            "children": []
-                          }
-                        ]
+                        "name": "merlin.incorrect"
                       }
-                    ]
+                    ],
+                    "kind": "expression",
+                    "children": []
                   }
                 ]
               }

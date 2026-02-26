@@ -21,7 +21,7 @@ Simple module construction
       | A 
       | B of t 
     type (-!'a, +!'b) t' =
-      | T of ('a -> 'b) 
+      | T of (('a) -> 'b) 
     type t2 =
       | A 
       | B of string 
@@ -49,7 +49,7 @@ Simple module construction
       sig
         type t
         and b
-        val f : int -> float
+        val f : (int) -> float
         module type STyp  = sig  end
         module D : Another
       end
