@@ -162,7 +162,8 @@ let is_arrow t =
   | Tarrow _ -> true
   | _ -> false
 
-let application_signature ~prefix ~cursor = function
+let application_signature ~prefix ~cursor node =
+  match node with
   | (_, Browse_raw.Expression arg)
     :: ( _,
          Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args); _ }
@@ -194,7 +195,49 @@ let application_signature ~prefix ~cursor = function
     let result = separate_function_signature e ~args:[] in
     let active_param = active_parameter_by_prefix ~prefix result.parameters in
     Some { result with active_param }
-  | _ -> None
+  | _ ->
+    let rec find_smallest_arrow_before_pos (e : Typedtree.expression) pos
+        (acc : Typedtree.expression) =
+      if Lexing.compare_pos e.exp_loc.loc_start pos > 0 then
+        match acc.exp_desc with
+        | Texp_let (_, vlist, _) ->
+          let v =
+            List.find_opt
+              ~f:(fun (value_binding : Typedtree.value_binding) ->
+                match Types.get_desc value_binding.vb_expr.exp_type with
+                | Tarrow _ -> true
+                | _ -> false)
+              vlist
+          in
+          Option.map ~f:(fun (v : Typedtree.value_binding) -> v.vb_expr) v
+        | _ -> None
+      else
+        match e.exp_desc with
+        | Texp_let (_, _, next) -> find_smallest_arrow_before_pos next pos e
+        | _ -> None
+    in
+    let expressions =
+      List.filter_map
+        ~f:(fun n ->
+          match n with
+          | _, Browse_raw.Expression e -> Some e
+          | _ -> None)
+        node
+    in
+    if expressions = [] then None
+    else
+      let last_node = List.hd (List.rev expressions) in
+      let smallest_frag_opt =
+        find_smallest_arrow_before_pos last_node cursor last_node
+      in
+      Option.map
+        ~f:(fun frag ->
+          let result = separate_function_signature frag ~args:[] in
+          let active_param =
+            active_parameter_by_prefix ~prefix result.parameters
+          in
+          { result with active_param })
+        smallest_frag_opt
 
 let prefix_of_position ~short_path source position =
   match Msource.text source with
