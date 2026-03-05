@@ -36,11 +36,11 @@ let clean_up_for_printing expr =
                   { pexp_desc =
                       Pexp_tuple
                         (_
-                        :: ({ pexp_desc =
+                         :: (_, ({ pexp_desc =
                                 Pexp_constant
                                   { pconst_desc = Pconst_string _; _ };
                               _
-                            } as const)
+                                } as const))
                         :: _);
                     _
                   } )
@@ -206,13 +206,13 @@ let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.t list =
  fun { Typedtree.pat_desc; _ } ->
   match pat_desc with
   | Typedtree.Tpat_var (ident, _, _) -> [ Pident ident ]
-  | Tpat_tuple pats -> List.concat_map ~f:find_pattern_var pats
-  | Tpat_alias (pat, ident, _, _) -> Pident ident :: find_pattern_var pat
+  | Tpat_tuple fields -> List.concat_map ~f:(fun (_, pat ) -> find_pattern_var pat) fields
+  | Tpat_alias (pat, ident, _, _, _) -> Pident ident :: find_pattern_var pat
   | Tpat_construct (_, _, pats, _) -> List.concat_map ~f:find_pattern_var pats
   | Tpat_variant (_, Some pat, _) -> find_pattern_var pat
   | Tpat_record (fields, _) ->
     List.concat_map ~f:(fun (_, _, field) -> find_pattern_var field) fields
-  | Tpat_array arr -> List.concat_map ~f:find_pattern_var arr
+  | Tpat_array (_, arr) -> List.concat_map ~f:find_pattern_var arr
   | Tpat_lazy pat | Tpat_exception pat -> find_pattern_var pat
   | Tpat_value pat ->
     find_pattern_var (pat :> Typedtree.value Typedtree.general_pattern)
