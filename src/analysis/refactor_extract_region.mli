@@ -1,4 +1,6 @@
-(** Region extractor allows extracting arbitrary expressions into a fresh
+(** {b Warning:} this feature is experimental.
+
+    Region extractor allows extracting arbitrary expressions into a fresh
     toplevel binding. The extractor detects bound variables inside the extracted
     expression and performs code generation accordingly.
 

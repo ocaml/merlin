@@ -2,7 +2,7 @@ unreleased
 ==========
 
   + merlin library
-    - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1948)
+    - Implement new refactor-extract-region command for extracting region to a fresh let binding (warning: this feature is still experimental) (#1948)
     - Add "Other" variant to locate-types result (#2025)
     - Don't include `option` in locate-types result for optional parameters (#2027)
     - Fix record field autocompletion (#2028)

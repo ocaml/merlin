@@ -488,6 +488,8 @@ The result is returned as a list of:
 
 ### `refactor-extract-region -start <position> -end <position> -extract-name <name>`
 
+**Warning:** this feature is experimental.
+
 ```
     -start <position>  Where extracted region start
     -end <position>  Where extracted region end
@@ -501,7 +503,7 @@ Returns the string `Nothing to do` (if extractor is not ables to select an expre
   'start': position, // the start of the region to be substituted
   'end': position, // the end of the region to be substituted
   'content' string, // the content of the substitution
-  'selection_range': location // the location where to position the cursor for easy renaming of the generated let binding 
+  'selection_range': location // the location where to position the cursor for easy renaming of the generated let binding
 }
 ```
 
