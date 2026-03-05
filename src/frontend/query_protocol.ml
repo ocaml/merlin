@@ -133,6 +133,9 @@ type occurrences_status =
 
 type occurrence = { loc : Location.t; is_stale : bool }
 
+type substitution_result =
+  { loc : Location.t; content : string; selection_range : Location.t }
+
 module Locate_types_result = struct
   module Tree = struct
     type node_data =
@@ -184,6 +187,9 @@ type _ t =
   | Refactor_open :
       [ `Qualify | `Unqualify ] * Msource.position
       -> (string * Location.t) list t
+  | Refactor_extract_region :
+      Msource.position * Msource.position * string option
+      -> substitution_result t
   | Document (* *) :
       string option * Msource.position
       -> [ `Found of string

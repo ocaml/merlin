@@ -2,6 +2,7 @@ unreleased
 ==========
 
   + merlin library
+    - Implement new refactor-extract-region command for extracting region to a fresh let binding (warning: this feature is still experimental) (#1948)
     - Add "Other" variant to locate-types result (#2025)
     - Don't include `option` in locate-types result for optional parameters (#2027)
     - Fix record field autocompletion (#2028)
@@ -16,7 +17,6 @@ unreleased
     - Add a regression test for issue #2019 (#2030)
 
 merlin 5.6.1
-============
 Sat Dec 20 11:15:42 CET 2025
 
   + merlin binary
@@ -35,12 +35,12 @@ Sat Dec 20 11:15:42 CET 2025
     - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
 
 merlin 5.6
-==========
 Sat Oct 04 15:10:42 CEST 2025
 
   + merlin binary
     - Add `locate-types` command (#1951)
   + merlin library
+    - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1948)
     - Fix `merlin_reader` for OpenBSD (#1956)
     - Improve recovery of mutually recursive definitions (#1962, #1963, fixes #1953)
     - Support for OCaml 5.4 (#1974)
