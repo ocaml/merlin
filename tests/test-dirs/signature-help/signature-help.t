@@ -127,8 +127,9 @@ It can make the non-labelled parameter active.
     "notifications": []
   }
 
-It can make the labelled parameter active.
-  $ $MERLIN single signature-help -position 2:14 <<EOF
+The cursor is after `:`. As `~f:` isn't a valid parameter, signature help waits for the value of `~f`.
+FIXME we could expect signature help to show the correct parameter with the cursor before the : too
+  $ $MERLIN single signature-help -position 2:15 <<EOF
   > let map = ListLabels.map
   > let _ = map ~f:Int.abs
   > EOF
@@ -161,7 +162,6 @@ It can make the labelled parameter active.
   }
 
 It can make a labelled parameter active by prefix.
-
   $ $MERLIN single signature-help -position 2:15 <<EOF
   > let mem = ListLabels.mem
   > let _ = mem ~se
@@ -195,7 +195,6 @@ It can make a labelled parameter active by prefix.
   }
 
 It can make an optional parameter active by prefix.
-
   $ $MERLIN single signature-help -position 2:18 <<EOF
   > let create = Hashtbl.create
   > let _ = create ?ra

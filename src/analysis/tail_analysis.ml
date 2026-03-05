@@ -47,8 +47,8 @@ let tail_operator = function
 let expr_tail_positions = function
   | Texp_apply (callee, args) when tail_operator callee -> begin
     match List.last args with
-    | None | Some (_, None) -> []
-    | Some (_, Some expr) -> [ Expression expr ]
+    | None | Some (_, Omitted ()) -> []
+    | Some (_, Arg expr) -> [ Expression expr ]
   end
   | Texp_instvar _
   | Texp_setinstvar _
@@ -75,6 +75,7 @@ let expr_tail_positions = function
   | Texp_unreachable
   | Texp_extension_constructor _
   | Texp_letop _
+  | Texp_atomic_loc _
   | Texp_typed_hole -> []
   | Texp_match (_, cs, _, _) -> List.map cs ~f:(fun c -> Case c)
   | Texp_try (_, cs, _) -> List.map cs ~f:(fun c -> Case c)

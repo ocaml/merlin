@@ -122,6 +122,20 @@ let escape_string s =
     Bytes.to_string s'
   end
 
+let print_label_type ppf =
+  function
+  | Some s ->
+    pp_print_string ppf s;
+    pp_print_string ppf ":";
+  | None -> ()
+
+let print_label ppf =
+  function
+  | Some s ->
+    pp_print_string ppf "~";
+    pp_print_string ppf s;
+    pp_print_string ppf ":";
+  | None -> ()
 
 let print_out_string ppf s =
   let not_escaped =
@@ -200,7 +214,7 @@ let print_out_value ppf tree =
         end
     | Oval_list tl ->
         fprintf ppf "@[<1>[%a]@]" (print_tree_list print_tree_1 ";") tl
-    | Oval_array tl ->
+    | Oval_array (tl, _mutability) ->
         fprintf ppf "@[<2>[|%a|]@]" (print_tree_list print_tree_1 ";") tl
     | Oval_constr (name, []) -> print_constr ppf name
     | Oval_variant (name, None) -> fprintf ppf "`%a" print_lident name
@@ -210,7 +224,14 @@ let print_out_value ppf tree =
     | Oval_ellipsis -> raise Ellipsis
     | Oval_printer f -> f ppf
     | Oval_tuple tree_list ->
-        fprintf ppf "@[<1>(%a)@]" (print_tree_list print_tree_1 ",") tree_list
+        let print_elem ppf (lbl, item) =
+          print_label ppf lbl; print_tree_1 ppf item
+        in
+        fprintf ppf "@[<1>(%a)@]" (print_tree_list print_elem ",") tree_list
+    | Oval_floatarray arr ->
+       fprintf ppf "@[<2>[|%a|]@]"
+         (pp_print_seq ~pp_sep:semicolon pp_print_float)
+         (Float.Array.to_seq arr)
     | tree -> fprintf ppf "@[<1>(%a)@]" (cautious print_tree_1) tree
   and print_fields first ppf =
     function
@@ -220,7 +241,8 @@ let print_out_value ppf tree =
         fprintf ppf "@[<1>%a@ =@ %a@]" print_ident name (cautious print_tree_1)
           tree;
         print_fields false ppf fields
-  and print_tree_list print_item sep ppf tree_list =
+  and print_tree_list : 'a . (_ -> 'a -> _) -> _ -> _ -> 'a list -> unit =
+    fun print_item sep ppf tree_list ->
     let rec print_list first ppf =
       function
         [] -> ()
@@ -282,16 +304,31 @@ and print_out_type_1 ppf =
     Otyp_arrow (lab, ty1, ty2) ->
       pp_open_box ppf 0;
       print_arg_label ppf lab;
-      print_out_type_2 ppf ty1;
+      print_out_type_2 ~arg:true ppf ty1;
       pp_print_string ppf " ->";
       pp_print_space ppf ();
       print_out_type_1 ppf ty2;
       pp_close_box ppf ()
-  | ty -> print_out_type_2 ppf ty
-and print_out_type_2 ppf =
+  | ty -> print_out_type_2 ~arg:false ppf ty
+and print_out_type_2 ~arg ppf =
   function
     Otyp_tuple tyl ->
-      fprintf ppf "@[<0>%a@]" (print_typlist print_simple_out_type " *") tyl
+      (* Tuples require parens in argument function argument position (~arg)
+         when the first element has a label. *)
+      let parens =
+        match tyl with
+        | (Some _, _) :: _ -> arg
+        | _ -> false
+      in
+      if parens then pp_print_char ppf '(';
+      let print_elem ppf (label, ty) =
+        pp_open_box ppf 0;
+        print_label_type ppf label;
+        print_simple_out_type ppf ty;
+        pp_close_box ppf ()
+      in
+      fprintf ppf "@[<0>%a@]" (print_typlist print_elem " *") tyl;
+      if parens then pp_print_char ppf ')'
   | ty -> print_simple_out_type ppf ty
 and print_simple_out_type ppf =
   function
@@ -334,18 +371,19 @@ and print_simple_out_type ppf =
   | Otyp_abstract | Otyp_open
   | Otyp_sum _ | Otyp_manifest (_, _) -> ()
   | Otyp_record lbls -> print_record_decl ppf lbls
-  | Otyp_module (p, fl) ->
-      fprintf ppf "@[<1>(module %a" print_ident p;
-      let first = ref true in
-      List.iter
-        (fun (s, t) ->
-          let sep = if !first then (first := false; "with") else "and" in
-          fprintf ppf " %s type %s = %a" sep s print_out_type t
-        )
-        fl;
-      fprintf ppf ")@]"
+  | Otyp_module pack ->
+      fprintf ppf "@[<1>(module %a)@]" print_package pack
   | Otyp_attribute (t, attr) ->
       fprintf ppf "@[<1>(%a [@@%s])@]" print_out_type t attr.oattr_name
+and print_package ppf pack =
+  fprintf ppf "%a" print_ident pack.opack_path;
+  let first = ref true in
+  List.iter
+    (fun (s, t) ->
+      let sep = if !first then (first := false; "with") else "and" in
+      fprintf ppf " %s type %s = %a" sep s print_out_type t
+    )
+    pack.opack_cstrs
 and print_record_decl ppf lbls =
   fprintf ppf "{%a@;<1 -2>}"
     (print_list_init print_out_label (fun ppf -> fprintf ppf "@ ")) lbls
@@ -368,8 +406,9 @@ and print_row_field ppf (l, opt_amp, tyl) =
   fprintf ppf "@[<hv 2>`%a%t%a@]" print_lident l pr_of
     (print_typlist print_out_type " &")
     tyl
-and print_typlist print_elem sep ppf =
-  function
+and print_typlist : 'a . (_ -> 'a -> _) -> _ -> _ -> 'a list -> _ =
+  fun print_elem sep ppf tyl ->
+  match tyl with
     [] -> ()
   | [ty] -> print_elem ppf ty
   | ty :: tyl ->
@@ -388,13 +427,14 @@ and print_typargs ppf =
       pp_print_char ppf ')';
       pp_close_box ppf ();
       pp_print_space ppf ()
-and print_out_label ppf {olab_name; olab_mut; olab_type} =
-  fprintf ppf "@[<2>%s%a :@ %a@];"
+and print_out_label ppf {olab_name; olab_mut; olab_atomic; olab_type} =
+  fprintf ppf "@[<2>%s%a :@ %a%s@];"
     (match olab_mut with
      | Mutable -> "mutable "
      | Immutable -> "")
     print_lident olab_name
     print_out_type olab_type
+    (match olab_atomic with Atomic -> " [@atomic]" | Nonatomic -> "")
 
 let out_label = ref print_out_label
 
@@ -410,7 +450,11 @@ let print_type_parameter ?(non_gen=false) ppf s =
 let type_parameter ppf {ot_non_gen=non_gen; ot_name=ty; ot_variance=var,inj} =
   let open Asttypes in
   fprintf ppf "%s%s%a"
-    (match var with Covariant -> "+" | Contravariant -> "-" | NoVariance ->  "")
+    (match var with
+    | Covariant -> "+"
+    | Contravariant -> "-"
+    | NoVariance ->  ""
+    | Bivariant -> "+-")
     (match inj with Injective -> "!" | NoInjectivity -> "")
     (print_type_parameter ~non_gen) ty
 
@@ -434,7 +478,7 @@ let rec print_out_class_type ppf =
       fprintf ppf "@[%a%a@]" pr_tyl tyl print_ident id
   | Octy_arrow (lab, ty, cty) ->
       fprintf ppf "@[%a%a ->@ %a@]" print_arg_label lab
-        print_out_type_2 ty print_out_class_type cty
+        (print_out_type_2 ~arg:true) ty print_out_class_type cty
   | Octy_signature (self_ty, csil) ->
       let pr_param ppf =
         function

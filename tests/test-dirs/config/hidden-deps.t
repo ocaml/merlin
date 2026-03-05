@@ -67,7 +67,7 @@ Show that hidden deps are actually hidden:
     },
     "end": {
       "line": 1,
-      "col": 24
+      "col": 22
     },
     "type": "typer",
     "sub": [],

@@ -1,7 +1,7 @@
 Testing array desugaring
 
   $ $MERLIN single errors -filename array_good.ml <<EOF
-  > let x = [|0|].(0)
+  > let x = [|0|].(0) (* Array.get [|0|] 0 *)
   > EOF
   {
     "class": "return",

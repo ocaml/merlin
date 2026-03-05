@@ -33,8 +33,22 @@
   > module M : S = _
   > EOF
   {
-    "class": "error",
-    "value": "Module not found: N",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 15
+        },
+        "end": {
+          "line": 2,
+          "col": 16
+        }
+      },
+      [
+        "struct  end"
+      ]
+    ],
     "notifications": []
   }
 

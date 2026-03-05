@@ -16,6 +16,7 @@
 (* Environment handling *)
 
 open Types
+open Data_types
 open Misc
 
 type value_unbound_reason =
@@ -25,7 +26,8 @@ type value_unbound_reason =
   | Val_unbound_ghost_recursive of Location.t
 
 type module_unbound_reason =
-  | Mod_unbound_illegal_recursion
+  | Mod_unbound_illegal_recursion of
+      { container : string option; unbound: string }
 
 type summary =
     Env_empty
@@ -145,14 +147,14 @@ val mark_type_used: Uid.t -> unit
 
 type constructor_usage = Positive | Pattern | Exported_private | Exported
 val mark_constructor_used:
-    constructor_usage -> constructor_declaration -> unit
+    constructor_usage -> Uid.t -> unit
 val mark_extension_used:
-    constructor_usage -> extension_constructor -> unit
+    constructor_usage -> Uid.t -> unit
 
 type label_usage =
     Projection | Mutation | Construct | Exported_private | Exported
 val mark_label_used:
-    label_usage -> label_declaration -> unit
+    label_usage -> Uid.t -> unit
 
 (* Lookup by long identifiers *)
 
@@ -181,7 +183,14 @@ type lookup_error =
   | Functor_used_as_structure of Longident.t
   | Abstract_used_as_structure of Longident.t
   | Generative_used_as_applicative of Longident.t
-  | Illegal_reference_to_recursive_module
+  | Illegal_reference_to_recursive_module of
+      { container : string option; unbound : string }
+  | Illegal_reference_to_recursive_class_type of
+      { container : string option;
+        unbound : string;
+        unbound_class_type : Longident.t;
+        container_class_type : string
+      }
   | Cannot_scrape_alias of Longident.t * Path.t
 
 val lookup_error: Location.t -> t -> lookup_error -> 'a
@@ -458,14 +467,6 @@ type error =
 
 exception Error of error
 
-
-val report_error: error Format_doc.format_printer
-val report_error_doc: error Format_doc.printer
-
-val report_lookup_error:
-  Location.t -> t -> lookup_error Format_doc.format_printer
-val report_lookup_error_doc:
-  Location.t -> t -> lookup_error Format_doc.printer
 val in_signature: bool -> t -> t
 
 val is_in_signature: t -> bool

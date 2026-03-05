@@ -25,8 +25,8 @@ let decl_of_path_or_lid env namespace path lid =
   end
   | _ -> Env_lookup.by_path path namespace env
 
-let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
-  let add uid loc = Stamped_hashtable.add index ~stamp (uid, loc) () in
+let iterator ~current_buffer_path ~index ~reduce_for_uid =
+  let add uid loc = index := Shape.Uid.Map.add_to_list uid loc !index in
   let f ~namespace env path (lid : Longident.t Location.loc) =
     log ~title:"index_buffer" "Path: %a" Logger.fmt
       (Fun.flip (Format_doc.compat Path.print) path);
@@ -43,7 +43,7 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
           add decl.uid lid
       end
     in
-    if not_ghost lid then
+    let reduce_and_store ~namespace lid path = if not_ghost lid then
       match Env.shape_of_path ~namespace env path with
       | exception Not_found -> ()
       | path_shape ->
@@ -69,10 +69,30 @@ let iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid =
             log ~title:"index_buffer" "Reduction failed: missing uid";
             index_decl ()
         end
+    in
+    (* Shape reduction can be expensive, but the persistent memoization tables
+       should make these successive reductions fast. *)
+    let rec index_components namespace lid path  =
+      let module_ = Shape.Sig_component_kind.Module in
+      match lid.Location.txt, path with
+      | Longident.Ldot (lid', _), Path.Pdot (path', _)
+      | Ldot (lid', _), Pextra_ty (Pdot(path', _), Pcstr_ty _)->
+        reduce_and_store ~namespace lid path;
+        index_components module_ lid' path'
+      | Lapply (lid', lid''), Papply (path', path'')
+      | Lapply (lid', lid''),
+        Pextra_ty (Papply (path', path''), Pcstr_ty _) ->
+        index_components module_ lid'' path'';
+        index_components module_ lid' path'
+      | Longident.Lident _, _ ->
+        reduce_and_store ~namespace lid path;
+      | _, _ -> ()
+    in
+    index_components namespace lid path
   in
   Ast_iterators.iterator_on_usages ~f
 
-let items ~index ~stamp (config : Mconfig.t) items =
+let items index (config : Mconfig.t) items =
   let module Shape_reduce = Shape_reduce.Make (struct
     let fuel = 10
 
@@ -91,7 +111,11 @@ let items ~index ~stamp (config : Mconfig.t) items =
     Filename.concat config.query.directory config.query.filename
   in
   let reduce_for_uid = Shape_reduce.reduce_for_uid in
-  let iterator = iterator ~current_buffer_path ~index ~stamp ~reduce_for_uid in
-  match items with
-  | `Impl items -> List.iter ~f:(iterator.structure_item iterator) items
-  | `Intf items -> List.iter ~f:(iterator.signature_item iterator) items
+  let index = ref index in
+  let iterator = iterator ~current_buffer_path ~index ~reduce_for_uid in
+  let () =
+    match items with
+    | `Impl items -> List.iter ~f:(iterator.structure_item iterator) items
+    | `Intf items -> List.iter ~f:(iterator.signature_item iterator) items
+  in
+  !index

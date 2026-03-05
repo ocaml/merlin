@@ -65,7 +65,6 @@ After a # we complete methods names
 And filtering works with methods names
 
   $ $MERLIN single complete-prefix -position 6:23 -prefix "baz" \
-  > -log-file - -log-section Completion \
   > -filename test.ml < test.ml | jq '.value.entries'
   [
     {

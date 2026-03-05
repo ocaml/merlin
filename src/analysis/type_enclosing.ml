@@ -8,7 +8,7 @@ type type_info =
   | Modtype of Env.t * Types.module_type
   | Type of Env.t * Types.type_expr
   | Type_decl of Env.t * Ident.t * Types.type_declaration
-  | Type_constr of Env.t * Types.constructor_description
+  | Type_constr of Env.t * Data_types.constructor_description
   | String of string
 
 type typed_enclosings =
@@ -59,11 +59,11 @@ let from_nodes ~path =
       ret (Modtype (env, m))
     | Class_field
         { cf_desc = Tcf_method (_, _, Tcfk_concrete (_, { exp_type })) } ->
-    begin
-      match Types.get_desc exp_type with
-      | Tarrow (_, _, t, _) -> ret (Type (env, t))
-      | _ -> None
-    end
+      begin
+        match Types.get_desc exp_type with
+        | Tarrow (_, _, t, _) -> ret (Type (env, t))
+        | _ -> None
+      end
     | Class_field
         { cf_desc = Tcf_val (_, _, _, Tcfk_concrete (_, { exp_type = t }), _) }
       -> ret (Type (env, t))
@@ -119,28 +119,28 @@ let from_reconstructed ~nodes ~cursor ~verbosity exprs =
       Some (loc, Type (env, lbl_arg), `No)
     | Some Context.Constant -> None
     | _ -> (
-      let context = Option.value ~default:Context.Expr context in
-      (* Else use the reconstructed identifier *)
-      match source with
-      | "" ->
-        log ~title:"from_reconstructed" "no reconstructed identifier";
-        None
-      | source when (not include_lident) && Char.is_lowercase source.[0] ->
-        log ~title:"from_reconstructed" "skipping lident";
-        None
-      | source when (not include_uident) && Char.is_uppercase source.[0] ->
-        log ~title:"from_reconstructed" "skipping uident";
-        None
-      | source -> (
-        try
-          let ppf, to_string = Format.to_string () in
-          if Type_utils.type_in_env ~verbosity ~context env ppf source then (
-            let result = to_string () in
-            log ~title:"from_reconstructed" "typed %s : %s" source result;
-            Some (loc, String result, `No))
-          else (
-            log ~title:"from_reconstructed" "FAILED to type %s" source;
-            None)
-        with _ -> None))
+        let context = Option.value ~default:Context.Expr context in
+        (* Else use the reconstructed identifier *)
+        match source with
+        | "" ->
+          log ~title:"from_reconstructed" "no reconstructed identifier";
+          None
+        | source when (not include_lident) && Char.is_lowercase source.[0] ->
+          log ~title:"from_reconstructed" "skipping lident";
+          None
+        | source when (not include_uident) && Char.is_uppercase source.[0] ->
+          log ~title:"from_reconstructed" "skipping uident";
+          None
+        | source -> (
+            try
+              let ppf, to_string = Format.to_string () in
+              if Type_utils.type_in_env ~verbosity ~context env ppf source then (
+                let result = to_string () in
+                log ~title:"from_reconstructed" "typed %s : %s" source result;
+                Some (loc, String result, `No))
+              else (
+                log ~title:"from_reconstructed" "FAILED to type %s" source;
+                None)
+            with _ -> None))
   in
   List.filter_map exprs ~f

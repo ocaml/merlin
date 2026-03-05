@@ -21,6 +21,7 @@ open Asttypes
 open Longident
 open Path
 open Types
+open Data_types
 
 open Local_store
 
@@ -146,7 +147,8 @@ type value_unbound_reason =
   | Val_unbound_ghost_recursive of Location.t
 
 type module_unbound_reason =
-  | Mod_unbound_illegal_recursion
+  | Mod_unbound_illegal_recursion of
+      { container : string option; unbound : string }
 
 type summary =
     Env_empty
@@ -660,11 +662,11 @@ and cltype_data =
 and short_paths_addition =
   | Type of Ident.t * type_declaration
   | Class_type of Ident.t * class_type_declaration
-  | Module_type of Ident.t * modtype_declaration
-  | Module of Ident.t * module_declaration * module_components
+  | Module_type of Ident.t * Subst.Lazy.modtype_declaration
+  | Module of Ident.t * Subst.Lazy.module_decl * module_components
   | Type_open of Path.t * type_data NameMap.t
   | Class_type_open of Path.t * class_type_declaration NameMap.t
-  | Module_type_open of Path.t * modtype_declaration NameMap.t
+  | Module_type_open of Path.t * Subst.Lazy.modtype_declaration NameMap.t
   | Module_open of Path.t * module_data NameMap.t
 
 let empty_structure =
@@ -700,7 +702,14 @@ type lookup_error =
   | Functor_used_as_structure of Longident.t
   | Abstract_used_as_structure of Longident.t
   | Generative_used_as_applicative of Longident.t
-  | Illegal_reference_to_recursive_module
+  | Illegal_reference_to_recursive_module of
+      { container: string option; unbound : string }
+  | Illegal_reference_to_recursive_class_type of
+      { container : string option;
+        unbound : string;
+        unbound_class_type : Longident.t;
+        container_class_type : string;
+      }
   | Cannot_scrape_alias of Longident.t * Path.t
 
 type error =
@@ -934,7 +943,7 @@ let add_persistent_structure id env =
          affect the environment at all. We should only observe the
          existence of a cmi when accessing components of the module.
          (See #9991). *)
-      if material || not !Clflags.transparent_modules then
+      if material || not !Clflags.no_alias_deps then
         IdTbl.add id Mod_persistent env.modules
       else
         env.modules
@@ -1391,7 +1400,7 @@ let required_globals = s_ref []
 let reset_required_globals () = required_globals := []
 let get_required_globals () = !required_globals
 let add_required_global id =
-  if Ident.global id && not !Clflags.transparent_modules
+  if Ident.global id && not !Clflags.no_alias_deps
   && not (List.exists (Ident.same id) !required_globals)
   then required_globals := id :: !required_globals
 
@@ -1415,7 +1424,7 @@ and expand_module_path lax env path =
   try match find_module_lazy ~alias:true path env with
     {mdl_type=MtyL_alias path1} ->
       let path' = normalize_module_path lax env path1 in
-      if lax || !Clflags.transparent_modules then path' else
+      if lax || !Clflags.no_alias_deps then path' else
       let id = Path.head path in
       if Ident.global id && not (Ident.same id (Path.head path'))
       then add_required_global id;
@@ -1762,20 +1771,15 @@ let short_paths_class_type_open path decls old =
   else Class_type_open(path, decls) :: old
 
 let short_paths_module_type id decl old =
-  let decl = Subst.Lazy.force_modtype_decl decl in
   if !Clflags.real_paths then old
   else Module_type(id, decl) :: old
 
 let short_paths_module_type_open path decls old =
-  let decls = NameMap.map
-    (fun mtda -> Subst.Lazy.force_modtype_decl mtda.mtda_declaration)
-    decls
-  in
+  let decls = NameMap.map (fun mtda -> mtda.mtda_declaration) decls in
   if !Clflags.real_paths then old
   else Module_type_open(path, decls) :: old
 
 let short_paths_module id decl comps old =
-  let decl = Subst.Lazy.force_module_decl decl in
   if !Clflags.real_paths then old
   else Module(id, decl, comps) :: old
 
@@ -2110,7 +2114,7 @@ and store_type ~check ~long_path ~predef id info shape env =
   let loc = info.type_loc in
   if check then
     check_usage loc id info.type_uid
-      (fun s -> Warnings.Unused_type_declaration s)
+      (fun s -> Warnings.Unused_type_declaration (s, Warnings.Declaration))
       type_declarations;
   let descrs, env =
     let path = Pident id in
@@ -2763,23 +2767,23 @@ let mark_type_path_used env path =
   | decl -> mark_type_used decl.type_uid
   | exception Not_found -> ()
 
-let mark_constructor_used usage cd =
-  match stamped_find used_constructors cd.cd_uid with
+let mark_constructor_used usage uid =
+  match stamped_find used_constructors uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
-let mark_extension_used usage ext =
-  match stamped_find used_constructors ext.ext_uid with
+let mark_extension_used usage uid =
+  match stamped_find used_constructors uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
-let mark_label_used usage ld =
-  match stamped_find used_labels ld.ld_uid with
+let mark_label_used usage uid =
+  match stamped_find used_labels uid with
   | mark -> mark usage
   | exception Not_found -> ()
 
 let mark_constructor_description_used usage env cstr =
-  let ty_path = Btype.cstr_type_path cstr in
+  let ty_path = cstr_res_type_path cstr in
   mark_type_path_used env ty_path;
   match stamped_find used_constructors cstr.cstr_uid with
   | mark -> mark usage
@@ -2826,9 +2830,10 @@ let may_lookup_error report_errors loc env err =
 
 let report_module_unbound ~errors ~loc env reason =
   match reason with
-  | Mod_unbound_illegal_recursion ->
+  | Mod_unbound_illegal_recursion { container; unbound } ->
       (* see #5965 *)
-    may_lookup_error errors loc env Illegal_reference_to_recursive_module
+      may_lookup_error errors loc env
+        (Illegal_reference_to_recursive_module { container; unbound })
 
 let report_value_unbound ~errors ~loc env reason lid =
   match reason with
@@ -3037,7 +3042,8 @@ let rec lookup_module_components ~errors ~use ~loc lid env =
         !components_of_functor_appl' ~loc ~f_path ~f_comp ~arg env in
       Papply (f_path, arg), comps
 
-and lookup_structure_components ~errors ~use ~loc lid env =
+and lookup_structure_components ~errors ~use l env =
+  let { txt=lid; loc } = l in
   let path, comps = lookup_module_components ~errors ~use ~loc lid env in
   match get_components_res comps with
   | Ok (Structure_comps comps) -> path, comps
@@ -3063,24 +3069,26 @@ and get_functor_components ~errors ~loc lid env comps =
   | Error (No_components_alias p) ->
       may_lookup_error errors loc env (Cannot_scrape_alias(lid, p))
 
-and lookup_all_args ~errors ~use ~loc lid0 env =
+and lookup_all_args ~errors ~use lid0 env =
   let rec loop_lid_arg args = function
     | Lident _ | Ldot _ as f_lid ->
         (f_lid, args)
     | Lapply (f_lid, arg_lid) ->
+        let { txt = arg_lid; loc } = arg_lid in
         let arg_path, arg_md = lookup_module ~errors ~use ~loc arg_lid env in
-        loop_lid_arg ((f_lid,arg_path,arg_md.md_type)::args) f_lid
+        loop_lid_arg ((f_lid,arg_path,arg_md.md_type)::args) f_lid.txt
   in
   loop_lid_arg [] lid0
 
 and lookup_apply ~errors ~use ~loc lid0 env =
-  let f0_lid, args0 = lookup_all_args ~errors ~use ~loc lid0 env in
+  let f0_lid, args0 = lookup_all_args ~errors ~use lid0 env in
   let args_for_errors = List.map (fun (_,p,mty) -> (p,mty)) args0 in
   let f0_path, f0_comp =
     lookup_module_components ~errors ~use ~loc f0_lid env
   in
   let check_one_apply ~errors ~loc ~f_lid ~f_comp ~arg_path ~arg_mty env =
     let f_comp, param_mty =
+      let { txt = f_lid; loc } = f_lid in
       get_functor_components ~errors ~loc f_lid env f_comp
     in
     check_functor_appl
@@ -3127,10 +3135,10 @@ and lookup_module ~errors ~use ~loc lid env =
       Papply(path_f, path_arg), md
 
 and lookup_dot_module ~errors ~use ~loc l s env =
-  let p, comps = lookup_structure_components ~errors ~use ~loc l env in
-  match NameMap.find s comps.comp_modules with
+  let p, comps = lookup_structure_components ~errors ~use l env in
+  match NameMap.find s.txt comps.comp_modules with
   | mda ->
-      let path = Pdot(p, s) in
+      let path = Pdot(p, s.txt) in
       use_module ~use ~loc path mda;
       (path, mda)
   | exception Not_found ->
@@ -3138,59 +3146,59 @@ and lookup_dot_module ~errors ~use ~loc l s env =
 
 let lookup_dot_value ~errors ~use ~loc l s env =
   let (path, comps) =
-    lookup_structure_components ~errors ~use ~loc l env
+    lookup_structure_components ~errors ~use l env
   in
-  match NameMap.find s comps.comp_values with
+  match NameMap.find s.txt comps.comp_values with
   | vda ->
-      let path = Pdot(path, s) in
+      let path = Pdot(path, s.txt) in
       use_value ~use ~loc path vda;
       (path, vda.vda_description)
   | exception Not_found ->
       may_lookup_error errors loc env (Unbound_value (Ldot(l, s), No_hint))
 
 let lookup_dot_type ~errors ~use ~loc l s env =
-  let (p, comps) = lookup_structure_components ~errors ~use ~loc l env in
-  match NameMap.find s comps.comp_types with
+  let (p, comps) = lookup_structure_components ~errors ~use l env in
+  match NameMap.find s.txt comps.comp_types with
   | tda ->
-      let path = Pdot(p, s) in
+      let path = Pdot(p, s.txt) in
       use_type ~use ~loc path tda;
       (path, tda)
   | exception Not_found ->
       may_lookup_error errors loc env (Unbound_type (Ldot(l, s)))
 
 let lookup_dot_modtype ~errors ~use ~loc l s env =
-  let (p, comps) = lookup_structure_components ~errors ~use ~loc l env in
-  match NameMap.find s comps.comp_modtypes with
+  let (p, comps) = lookup_structure_components ~errors ~use l env in
+  match NameMap.find s.txt comps.comp_modtypes with
   | mta ->
-      let path = Pdot(p, s) in
+      let path = Pdot(p, s.txt) in
       use_modtype ~use ~loc path mta.mtda_declaration;
       (path, mta.mtda_declaration)
   | exception Not_found ->
       may_lookup_error errors loc env (Unbound_modtype (Ldot(l, s)))
 
 let lookup_dot_class ~errors ~use ~loc l s env =
-  let (p, comps) = lookup_structure_components ~errors ~use ~loc l env in
-  match NameMap.find s comps.comp_classes with
+  let (p, comps) = lookup_structure_components ~errors ~use l env in
+  match NameMap.find s.txt comps.comp_classes with
   | clda ->
-      let path = Pdot(p, s) in
+      let path = Pdot(p, s.txt) in
       use_class ~use ~loc path clda;
       (path, clda.clda_declaration)
   | exception Not_found ->
       may_lookup_error errors loc env (Unbound_class (Ldot(l, s)))
 
 let lookup_dot_cltype ~errors ~use ~loc l s env =
-  let (p, comps) = lookup_structure_components ~errors ~use ~loc l env in
-  match NameMap.find s comps.comp_cltypes with
+  let (p, comps) = lookup_structure_components ~errors ~use l env in
+  match NameMap.find s.txt comps.comp_cltypes with
   | cltda ->
-      let path = Pdot(p, s) in
+      let path = Pdot(p, s.txt) in
       use_cltype ~use ~loc path cltda.cltda_declaration;
       (path, cltda.cltda_declaration)
   | exception Not_found ->
       may_lookup_error errors loc env (Unbound_cltype (Ldot(l, s)))
 
 let lookup_all_dot_labels ~errors ~use ~loc usage l s env =
-  let (_, comps) = lookup_structure_components ~errors ~use ~loc l env in
-  match NameMap.find s comps.comp_labels with
+  let (_, comps) = lookup_structure_components ~errors ~use l env in
+  match NameMap.find s.txt comps.comp_labels with
   | [] | exception Not_found ->
       may_lookup_error errors loc env (Unbound_label (Ldot(l, s)))
   | lbls ->
@@ -3202,13 +3210,14 @@ let lookup_all_dot_labels ~errors ~use ~loc usage l s env =
 
 let lookup_all_dot_constructors ~errors ~use ~loc usage l s env =
   match l with
-  | Longident.Lident "*predef*" ->
+  | { txt=Longident.Lident "*predef*"; _ } ->
       (* Hack to support compilation of default arguments *)
+      let { txt=s; loc } = s in
       lookup_all_ident_constructors
         ~errors ~use ~loc usage s initial
   | _ ->
-      let (_, comps) = lookup_structure_components ~errors ~use ~loc l env in
-      match NameMap.find s comps.comp_constrs with
+      let (_, comps) = lookup_structure_components ~errors ~use l env in
+      match NameMap.find s.txt comps.comp_constrs with
       | [] | exception Not_found ->
           may_lookup_error errors loc env (Unbound_constructor (Ldot(l, s)))
       | cstrs ->
@@ -3223,7 +3232,7 @@ let lookup_all_dot_constructors ~errors ~use ~loc usage l s env =
 let lookup_module_path ~errors ~use ~loc ~load lid env : Path.t =
   match lid with
   | Lident s ->
-      if !Clflags.transparent_modules && not load then
+      if !Clflags.no_alias_deps && not load then
         fst (lookup_ident_module Don't_load ~errors ~use ~loc s env)
       else
         fst (lookup_ident_module Load ~errors ~use ~loc s env)
@@ -3686,18 +3695,25 @@ let print_longident : Longident.t printer ref = ref (fun _ _ -> assert false)
 let print_path: Path.t printer ref = ref (fun _ _ -> assert false)
 let pp_path ppf l = !print_path ppf l
 
-let spellcheck ppf extract env lid =
-  let choices ~path name = Misc.spellcheck (extract path env) name in
-  match lid with
-    | Longident.Lapply _ -> ()
-    | Longident.Lident s ->
-       Misc.did_you_mean ppf (fun () -> choices ~path:None s)
-    | Longident.Ldot (r, s) ->
-       Misc.did_you_mean ppf (fun () -> choices ~path:(Some r) s)
+module Style = Misc.Style
 
-let spellcheck_name ppf extract env name =
-  Misc.did_you_mean ppf
-    (fun () -> Misc.spellcheck (extract env) name)
+let quoted_longident = Style.as_inline_code Pprintast.Doc.longident
+let quoted_constr = Style.as_inline_code Pprintast.Doc.constr
+
+let spellcheck extract env lid =
+  let choices ~path name = Misc.spellcheck (extract path env) name in
+    match lid with
+    | Longident.Lapply _ -> None
+    | Longident.Lident s ->
+       Misc.did_you_mean (choices ~path:None s)
+    | Longident.Ldot (r, s) ->
+       let pp ppf s =
+         quoted_longident ppf (Longident.Ldot(r, Location.mknoloc s))
+       in
+       Misc.did_you_mean ~pp (choices ~path:(Some r.txt) s.txt)
+
+let spellcheck_name extract env name =
+  Misc.did_you_mean (Misc.spellcheck (extract env) name)
 
 let extract_values path env =
   fold_values (fun name _ _ acc -> name :: acc) path env []
@@ -3722,130 +3738,192 @@ let extract_instance_variables env =
        | Val_ivar _ -> name :: acc
        | _ -> acc) None env []
 
-module Style = Misc.Style
-
-let quoted_longident = Style.as_inline_code Pprintast.Doc.longident
-let quoted_constr = Style.as_inline_code Pprintast.Doc.constr
-
-let report_lookup_error_doc _loc env ppf = function
-  | Unbound_value(lid, hint) -> begin
-      fprintf ppf "Unbound value %a" quoted_longident lid;
-      spellcheck ppf extract_values env lid;
-      match hint with
-      | No_hint -> ()
-      | Missing_rec def_loc ->
-          let (_, line, _) =
-            Location.get_pos_info def_loc.Location.loc_start
-          in
-          fprintf ppf
-            "@.@[@{<hint>Hint@}: If this is a recursive definition,@ \
-             you should add the %a keyword on line %i@]"
-            Style.inline_code "rec"
-            line
-    end
+let report_lookup_error_doc loc env = function
+  | Unbound_value(lid, hint) ->
+      Location.aligned_error_hint ~loc
+        "@{<ralign>Unbound value @}%a" quoted_longident lid
+        (spellcheck extract_values env lid)
+        ~sub:(
+          match hint with
+          | No_hint ->[]
+          | Missing_rec def_loc ->
+             let (_, line, _) =
+               Location.get_pos_info def_loc.Location.loc_start
+             in
+             [Location.msg
+                "@[@{<hint>Hint@}: If this is a recursive definition,@ \
+                 you should add the %a keyword on line %i@]"
+                Style.inline_code "rec"
+                line
+             ]
+        )
   | Unbound_type lid ->
-      fprintf ppf "Unbound type constructor %a"
-         quoted_longident lid;
-      spellcheck ppf extract_types env lid;
+     Location.aligned_error_hint ~loc
+       "@{<ralign>Unbound type constructor @}%a"
+       quoted_longident lid
+       (spellcheck extract_types env lid)
   | Unbound_module lid -> begin
-      fprintf ppf "Unbound module %a"
-        quoted_longident lid;
-       match find_modtype_by_name lid env with
-      | exception Not_found -> spellcheck ppf extract_modules env lid;
+      let main ppf =
+        fprintf ppf "@{<ralign>Unbound module @}%a" quoted_longident lid in
+      match find_modtype_by_name lid env with
+      | exception Not_found ->
+         Location.aligned_error_hint ~loc "%t" main
+           (spellcheck extract_modules env lid)
       | _ ->
-         fprintf ppf
-           "@.@[@{<hint>Hint@}: There is a module type named %a, %s@]"
-           quoted_longident lid
-           "but module types are not modules"
+         Location.errorf ~loc "%t" main
+           ~sub:[Location.msg
+                   "@{<hint>Hint@}: There is a module type named %a,@ \
+                    but module types are not modules"
+                   quoted_longident lid
+           ]
     end
   | Unbound_constructor lid ->
-      fprintf ppf "Unbound constructor %a"
-        quoted_constr lid;
-      spellcheck ppf extract_constructors env lid;
+     Location.aligned_error_hint ~loc
+       "@{<ralign>Unbound constructor @}%a"
+       quoted_constr lid
+       (spellcheck extract_constructors env lid)
   | Unbound_label lid ->
-      fprintf ppf "Unbound record field %a"
-        quoted_longident lid;
-      spellcheck ppf extract_labels env lid;
+     Location.aligned_error_hint ~loc
+       "@{<ralign>Unbound record field @}%a"
+       quoted_longident lid
+       (spellcheck extract_labels env lid)
   | Unbound_class lid -> begin
-      fprintf ppf "Unbound class %a"
-        quoted_longident lid;
+      let main ppf =
+        fprintf ppf "@{<ralign>Unbound class @}%a" quoted_longident lid
+      in
       match find_cltype_by_name lid env with
-      | exception Not_found -> spellcheck ppf extract_classes env lid;
+      | exception Not_found ->
+         Location.aligned_error_hint ~loc "%t" main
+           (spellcheck extract_classes env lid)
       | _ ->
-         fprintf ppf
-           "@.@[@{<hint>Hint@}: There is a class type named %a, %s@]"
-           quoted_longident lid
-           "but classes are not class types"
+         Location.errorf ~loc "%t" main
+         ~sub:[
+           Location.msg
+             "@{<hint>Hint@}: There is a class type named %a,@ \
+              but classes are not class types."
+             quoted_longident lid
+         ]
     end
   | Unbound_modtype lid -> begin
-      fprintf ppf "Unbound module type %a"
-        quoted_longident lid;
+      let main ppf  =
+        fprintf ppf "@{<ralign>Unbound module type @}%a"
+          quoted_longident lid in
       match find_module_by_name lid env with
-      | exception Not_found -> spellcheck ppf extract_modtypes env lid;
+      | exception Not_found ->
+         Location.aligned_error_hint ~loc "%t" main
+           (spellcheck extract_modtypes env lid)
       | _ ->
-         fprintf ppf
-           "@.@[@{<hint>Hint@}: There is a module named %a, %s@]"
-           quoted_longident lid
-           "but modules are not module types"
-    end
+         Location.errorf ~loc "%t" main
+           ~sub:[
+             Location.msg
+               "@{<hint>Hint@}: There is a module named %a,@ \
+                but modules are not module types"
+               quoted_longident lid
+           ]
+      end
   | Unbound_cltype lid ->
-      fprintf ppf "Unbound class type %a"
-       quoted_longident lid;
-      spellcheck ppf extract_cltypes env lid;
+     Location.aligned_error_hint ~loc
+       "@{<ralign>Unbound class type @}%a" quoted_longident lid
+      (spellcheck extract_cltypes env lid)
   | Unbound_instance_variable s ->
-      fprintf ppf "Unbound instance variable %a" Style.inline_code s;
-      spellcheck_name ppf extract_instance_variables env s;
+        Location.aligned_error_hint ~loc
+          "@{<ralign>Unbound instance variable @}%a"
+          Style.inline_code s
+          (spellcheck_name extract_instance_variables env s)
   | Not_an_instance_variable s ->
-      fprintf ppf "The value %a is not an instance variable"
-        Style.inline_code s;
-      spellcheck_name ppf extract_instance_variables env s;
+     Location.aligned_error_hint ~loc
+        "@{<ralign>The value @}%a is not an instance variable"
+        Style.inline_code s
+        (spellcheck_name extract_instance_variables env s)
   | Masked_instance_variable lid ->
-      fprintf ppf
-        "The instance variable %a@ \
-         cannot be accessed from the definition of another instance variable"
+      Location.errorf ~loc
+        "The instance variable %a@ cannot@ be@ accessed@ from@ the@ \
+         definition@ of@ another instance variable"
         quoted_longident lid
   | Masked_self_variable lid ->
-      fprintf ppf
-        "The self variable %a@ \
-         cannot be accessed from the definition of an instance variable"
+      Location.errorf ~loc
+        "The self variable %a@ cannot@ be@ accessed@ \
+         from@ the@ definition of an instance variable"
         quoted_longident lid
   | Masked_ancestor_variable lid ->
-      fprintf ppf
-        "The ancestor variable %a@ \
-         cannot be accessed from the definition of an instance variable"
-       quoted_longident lid
-  | Illegal_reference_to_recursive_module ->
-     fprintf ppf "Illegal recursive module reference"
+      Location.errorf ~loc
+        "The ancestor variable %a@ cannot@ be@ accessed@ from@ \
+         the definition of an instance variable"
+        quoted_longident lid
+  | Illegal_reference_to_recursive_module { container; unbound } ->
+      let container = Option.value ~default:"_" container in
+      let self_or_definition, self_or_unbound =
+        if String.equal container unbound
+        then dprintf "its own definition", dprintf "itself"
+        else
+          dprintf "the definition of the module %a" Style.inline_code container,
+          dprintf "the module type of %a" Style.inline_code unbound
+      in
+      Location.errorf ~loc
+        "@[<hov>This module type is recursive.@ \
+         This use of the recursive module %a@ \
+         within %t@ \
+         makes the module type of %a depend on@ %t.@ \
+         Such recursive definitions of module types are not allowed.@]"
+        Style.inline_code unbound
+        self_or_definition
+        Style.inline_code container
+        self_or_unbound
+  | Illegal_reference_to_recursive_class_type
+      { container; unbound; unbound_class_type; container_class_type } ->
+      let container = Option.value ~default:"_" container in
+      let self_or_unbound =
+        if String.equal container unbound
+        then dprintf "itself"
+        else dprintf "the module type of %a" Style.inline_code unbound
+      in
+      Location.errorf ~loc
+        "@[<hov>This class type is recursive.@ This use of the class type %a@ \
+         from the recursive module %a@ within the definition of@ \
+         the class type %a@ in the recursive module %a@ \
+         makes the module type of %a@ depend on %t.@ \
+         Such recursive definitions of@ class types within recursive modules@ \
+         are not allowed.@]"
+        quoted_longident unbound_class_type
+        Style.inline_code unbound
+        Style.inline_code container_class_type
+        Style.inline_code container
+        Style.inline_code container
+        self_or_unbound
   | Structure_used_as_functor lid ->
-      fprintf ppf "@[The module %a is a structure, it cannot be applied@]"
+     Location.errorf ~loc
+       "The module %a is a structure, it cannot be applied"
         quoted_longident lid
   | Abstract_used_as_functor lid ->
-      fprintf ppf "@[The module %a is abstract, it cannot be applied@]"
-        quoted_longident lid
+     Location.errorf ~loc
+       "The module %a is abstract, it cannot be applied"
+       quoted_longident lid
   | Functor_used_as_structure lid ->
-      fprintf ppf "@[The module %a is a functor, \
-                   it cannot have any components@]" quoted_longident lid
+     Location.errorf ~loc
+       "The module %a is a functor, it cannot have any components"
+       quoted_longident lid
   | Abstract_used_as_structure lid ->
-      fprintf ppf "@[The module %a is abstract, \
-                   it cannot have any components@]"
-        quoted_longident lid
+     Location.errorf ~loc
+       "The module %a is abstract, it cannot have any components"
+       quoted_longident lid
   | Generative_used_as_applicative lid ->
-      fprintf ppf "@[The functor %a is generative,@ it@ cannot@ be@ \
-                   applied@ in@ type@ expressions@]"
+     Location.errorf ~loc
+       "The functor %a is generative,@ it@ cannot@ be@ \
+        applied@ in@ type@ expressions"
         quoted_longident lid
   | Cannot_scrape_alias(lid, p) ->
       let cause =
         if Current_unit.Name.is_path p then "is the current compilation unit"
         else "is missing"
       in
-      fprintf ppf
+      Location.errorf ~loc
         "The module %a is an alias for module %a, which %s"
         quoted_longident lid
         (Style.as_inline_code pp_path) p cause
 
-let report_error_doc ppf = function
-  | Missing_module(_, path1, path2) ->
-      fprintf ppf "@[@[<hov>";
+let report_error_doc = function
+  | Missing_module(loc, path1, path2) ->
+     let pp_path path1 path2 ppf =
       if Path.same path1 path2 then
         fprintf ppf "Internal path@ %a@ is dangling."
           Style.inline_code (Path.name path1)
@@ -3853,31 +3931,20 @@ let report_error_doc ppf = function
         fprintf ppf "Internal path@ %a@ expands to@ %a@ which is dangling."
           Style.inline_code (Path.name path1)
           Style.inline_code (Path.name path2);
-      fprintf ppf "@]@ @[%s@ %a@ %s.@]@]"
-        "The compiled interface for module"
+     in
+     Location.errorf ~loc
+       "%t@ @[The compiled interface for module@ %a@ was not found.@]"
+        (pp_path path1 path2)
         Style.inline_code (Ident.name (Path.head path2))
-        "was not found"
-  | Illegal_value_name(_loc, name) ->
-      fprintf ppf "%a is not a valid value identifier."
+  | Illegal_value_name(loc, name) ->
+      Location.errorf ~loc "%a is not a valid value identifier."
        Style.inline_code name
-  | Lookup_error(loc, t, err) -> report_lookup_error_doc loc t ppf err
+  | Lookup_error(loc, t, err) -> report_lookup_error_doc loc t err
 
 let () =
   Location.register_error_of_exn
     (function
-      | Error err ->
-          let loc =
-            match err with
-            | Missing_module (loc, _, _)
-            | Illegal_value_name (loc, _)
-            | Lookup_error(loc, _, _) -> loc
-          in
-          let error_of_printer =
-            if loc = Location.none
-            then Location.error_of_printer_file
-            else Location.error_of_printer ~loc ?sub:None ?footnote:None
-          in
-          Some (error_of_printer report_error_doc err)
+      | Error err ->  Some (report_error_doc err)
       | _ ->
           None
     )
@@ -3964,13 +4031,13 @@ let short_paths_class_type_desc clty =
         | ns -> Subst(path, ns)
       end
 
-let short_paths_module_type_desc mty =
+let short_paths_module_type_desc (mty : Subst.Lazy.modtype option) =
   let open Short_paths.Desc.Module_type in
   match mty with
-  | None | Some Mty_for_hole -> Fresh
-  | Some (Mty_ident path) -> Alias path
-  | Some (Mty_signature _ | Mty_functor _) -> Fresh
-  | Some (Mty_alias _) -> assert false
+  | None | Some MtyL_for_hole -> Fresh
+  | Some (MtyL_ident path) -> Alias path
+  | Some (MtyL_signature _ | MtyL_functor _) -> Fresh
+  | Some (MtyL_alias _) -> assert false
 
 let deprecated_of_alerts alerts =
   if
@@ -3987,26 +4054,26 @@ let deprecated_of_alerts alerts =
 let deprecated_of_attributes attrs =
   deprecated_of_alerts (Builtin_attributes.alerts_of_attrs attrs)
 
-let rec short_paths_module_desc env mpath mty comp =
+let rec short_paths_module_desc env mpath (mty : Subst.Lazy.modtype) comp =
   let open Short_paths.Desc.Module in
   match mty with
-  | Mty_alias path -> Alias path
-  | Mty_ident path -> begin
-      match find_modtype_expansion path env with
+  | MtyL_alias path -> Alias path
+  | MtyL_ident path -> begin
+      match find_modtype_expansion_lazy path env with
       | exception Not_found -> Fresh (Signature (lazy []))
       | mty -> short_paths_module_desc env mpath mty comp
     end
-  | Mty_signature _ ->
+  | MtyL_signature _ ->
       let components =
         lazy (short_paths_module_components_desc env mpath comp)
       in
       Fresh (Signature components)
-  | Mty_functor _ ->
+  | MtyL_functor _ ->
       let apply path =
         short_paths_functor_components_desc env mpath comp path
       in
       Fresh (Functor apply)
-  | Mty_for_hole -> Fresh (Signature (lazy []))
+  | MtyL_for_hole -> Fresh (Signature (lazy []))
 
 and short_paths_module_components_desc env mpath comp =
   match get_components comp with
@@ -4031,19 +4098,17 @@ and short_paths_module_components_desc env mpath comp =
       in
       let comps =
         String.Map.fold (fun name mtda acc ->
-          let mtd = Subst.Lazy.force_modtype_decl mtda.mtda_declaration in
-          let desc = short_paths_module_type_desc mtd.mtd_type in
-          let depr = deprecated_of_attributes mtd.mtd_attributes in
+          let desc = short_paths_module_type_desc mtda.mtda_declaration.mtdl_type in
+          let depr = deprecated_of_attributes mtda.mtda_declaration.mtdl_attributes in
           let item = Short_paths.Desc.Module.Module_type(name, desc, depr) in
           item :: acc
         ) c.comp_modtypes comps
       in
       let comps =
         String.Map.fold (fun name { mda_declaration; mda_components; _ } acc ->
-          let mty = Subst.Lazy.force_module_decl mda_declaration in
           let mpath = Pdot(mpath, name) in
           let desc =
-            short_paths_module_desc env mpath mty.md_type mda_components
+            short_paths_module_desc env mpath mda_declaration.mdl_type mda_components
           in
           let depr = deprecated_of_alerts mda_components.alerts in
           let item = Short_paths.Desc.Module.Module(name, desc, depr) in
@@ -4073,6 +4138,7 @@ and short_paths_functor_components_desc env mpath comp path =
           stamped_path_add f.fcomp_subst_cache path mty;
           mty
       in
+      let mty = Subst.Lazy.of_modtype mty in
       let loc = Location.(in_file !input_name) in
       let comps =
         components_of_functor_appl ~loc ~f_comp:f env ~f_path:mpath ~arg:path
@@ -4095,14 +4161,12 @@ let short_paths_additions_desc env additions =
            let depr = deprecated_of_attributes clty.clty_attributes in
            Short_paths.Desc.Class_type(id, desc, source, depr) :: acc
        | Module_type(id, mtd) ->
-           let desc = short_paths_module_type_desc mtd.mtd_type in
+           let desc = short_paths_module_type_desc mtd.mtdl_type in
            let source = Short_paths.Desc.Local in
-           let depr = deprecated_of_attributes mtd.mtd_attributes in
+           let depr = deprecated_of_attributes mtd.mtdl_attributes in
            Short_paths.Desc.Module_type(id, desc, source, depr) :: acc
        | Module(id, md, comps) ->
-           let desc =
-             short_paths_module_desc env (Pident id) md.md_type comps
-           in
+           let desc = short_paths_module_desc env (Pident id) md.mdl_type comps in
            let source = Short_paths.Desc.Local in
            let depr = deprecated_of_alerts comps.alerts in
            Short_paths.Desc.Module(id, desc, source, depr) :: acc
@@ -4128,12 +4192,12 @@ let short_paths_additions_desc env additions =
              decls acc
        | Module_type_open(root, decls) ->
            String.Map.fold
-             (fun name mtd acc ->
+             (fun name (mtd : Subst.Lazy.modtype_declaration) acc ->
                 let id = Ident.create_local name in
                 let path = Pdot(root, name) in
                 let desc = Short_paths.Desc.Module_type.Alias path in
                 let source = Short_paths.Desc.Open in
-                let depr = deprecated_of_attributes mtd.mtd_attributes in
+                let depr = deprecated_of_attributes mtd.mtdl_attributes in
                 Short_paths.Desc.Module_type(id, desc, source, depr) :: acc)
              decls acc
        | Module_open(root, decls) ->
@@ -4191,22 +4255,7 @@ let cleanup_usage_tables ~stamp =
 let () =
   Location.register_error_of_exn
     (function
-      | Error err ->
-          let loc =
-            match err with
-            | Missing_module (loc, _, _)
-            | Illegal_value_name (loc, _)
-            | Lookup_error(loc, _, _) -> loc
-          in
-          let error_of_printer =
-            if loc = Location.none
-            then Location.error_of_printer_file
-            else Location.error_of_printer ~loc ?sub:None ?footnote:None
-          in
-          Some (error_of_printer report_error_doc err)
+      | Error err ->  Some (report_error_doc err)
       | _ ->
           None
     )
-
-let report_lookup_error = Format_doc.compat2 report_lookup_error_doc
-let report_error = Format_doc.compat report_error_doc

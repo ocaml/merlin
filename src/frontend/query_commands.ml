@@ -293,11 +293,17 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
             let printed_type = Type_enclosing.print_type ~verbosity type_info in
             ret (`String printed_type)
           else ret (`Index i))
-  | Enclosing pos ->
+  | Enclosing (pos, stop) ->
     let typer = Mpipeline.typer_result pipeline in
     let structures = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let mbrowse = Mbrowse.enclosing pos [ structures ] in
+    let mbrowse =
+      match stop with
+      | Some stop ->
+        let stop = Mpipeline.get_lexing_pos pipeline stop in
+        Mbrowse.range_enclosing ~start:pos ~stop [ structures ]
+      | None -> Mbrowse.enclosing pos [ structures ]
+    in
     (* We remove possible duplicates from the list*)
     List.fold_left mbrowse ~init:[] ~f:(fun acc node ->
         let loc = Mbrowse.node_loc (snd node) in
@@ -351,6 +357,75 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         | `Found { file; location; _ } -> `Found (Some file, location.loc_start)
         | `File_not_found { file = reason; _ } -> `File_not_found reason)
     end
+  | Locate_types pos -> (
+    let typer = Mpipeline.typer_result pipeline in
+    let verbosity = verbosity pipeline in
+    let local_defs = Mtyper.get_typedtree typer in
+    let structures = Mbrowse.of_typedtree local_defs in
+    let pos = Mpipeline.get_lexing_pos pipeline pos in
+    let result =
+      let open Option.Infix in
+      let* env, node =
+        match Mbrowse.enclosing pos [ structures ] with
+        | path :: _ -> Some path
+        | [] -> None
+      in
+      let+ overall_ty =
+        Locate.log ~title:"query_commands Locate_types" "inspecting node: %s"
+          (Browse_raw.string_of_node node);
+        match node with
+        | Expression { exp_type = ty; _ }
+        | Pattern { pat_type = ty; _ }
+        | Core_type { ctyp_type = ty; _ }
+        | Value_description { val_desc = { ctyp_type = ty; _ }; _ } -> Some ty
+        | _ -> None
+      in
+      let type_tree = Locate_types.create_type_tree overall_ty in
+      let type_to_string ~env ty =
+        Printtyp.wrap_printing_env env ~verbosity (fun () ->
+            Type_utils.print_type_with_decl ~verbosity env Format.str_formatter
+              ty);
+        Format.flush_str_formatter ()
+      in
+      let rec make_result ({ data; children } : Locate_types.Type_tree.t) :
+          Locate_types_result.Tree.t =
+        let data : Locate_types_result.Tree.node_data =
+          match data with
+          | Arrow -> Arrow
+          | Tuple -> Tuple
+          | Object -> Object
+          | Poly_variant -> Poly_variant
+          | Type_ref { path; ty } ->
+            Locate.log ~title:"debug" "found type: %s" (Path.name path);
+            let config : Locate.config =
+              { mconfig = Mpipeline.final_config pipeline;
+                ml_or_mli = `MLI;
+                traverse_aliases = true
+              }
+            in
+            let result =
+              match
+                Locate.from_path ~config ~env ~local_defs ~namespace:Type path
+              with
+              | `Builtin (_, s) -> `Builtin s
+              | `Not_in_env _ as s -> s
+              | `Not_found _ as s -> s
+              | `Found { file; location; _ } ->
+                `Found (Some file, location.loc_start)
+              | `File_not_found result -> `File_not_found result.file
+            in
+            let type_ = type_to_string ~env ty in
+            Type_ref { type_; result }
+          | Other ty -> Other (type_to_string ~env ty)
+        in
+        let children = List.map children ~f:make_result in
+        { data; children }
+      in
+      make_result type_tree
+    in
+    match result with
+    | Some result -> Success result
+    | None -> Invalid_context)
   | Complete_prefix (prefix, pos, kinds, with_doc, with_types) ->
     let pipeline, typer = for_completion pipeline pos in
     let config = Mpipeline.final_config pipeline in
@@ -842,16 +917,23 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     match application_signature with
     | Some s ->
-      let prefix =
-        let fun_name = Option.value ~default:"_" s.function_name in
-        sprintf "%s : " fun_name
-      in
-      Some
-        { label = prefix ^ s.signature;
-          parameters = List.map ~f:(param (String.length prefix)) s.parameters;
-          active_param = Option.value ~default:0 s.active_param;
-          active_signature = 0
-        }
+      (* The signature help should not appear on the name of the function. *)
+      if Msource.compare_position source position s.function_position < 0
+      then None
+      (* The signature help should not appear after the last parameter. *)
+      else if s.active_param = None then None
+      else (
+        let prefix =
+          let fun_name = Option.value ~default:"_" s.function_name in
+          sprintf "%s : " fun_name
+        in
+        Some
+          { label = prefix ^ s.signature;
+            parameters = List.map ~f:(param (String.length prefix)) s.parameters;
+            active_param = Option.value ~default:0 s.active_param;
+            active_signature = 0
+          }
+      )
     | None -> None)
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"

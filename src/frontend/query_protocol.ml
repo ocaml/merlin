@@ -136,6 +136,30 @@ type occurrence = { loc : Location.t; is_stale : bool }
 type substitution_result =
   { loc : Location.t; content : string; selection_range : Location.t }
 
+module Locate_types_result = struct
+  module Tree = struct
+    type node_data =
+      | Arrow
+      | Tuple
+      | Object
+      | Poly_variant
+      | Type_ref of
+          { type_ : string;
+            result :
+              [ `Found of string option * Lexing.position
+              | `Builtin of string
+              | `Not_in_env of string
+              | `File_not_found of string
+              | `Not_found of string * string option ]
+          }
+      | Other of string
+
+    type t = { data : node_data; children : t list }
+  end
+
+  type t = Success of Tree.t | Invalid_context
+end
+
 type _ t =
   | Type_expr (* *) : string * Msource.position -> string t
   | Type_enclosing (* *) :
@@ -143,7 +167,9 @@ type _ t =
       -> (Location.t * [ `String of string | `Index of int ] * is_tail_position)
          list
          t
-  | Enclosing (* *) : Msource.position -> Location.t list t
+  | Enclosing (* *) :
+      Msource.position * Msource.position option
+      -> Location.t list t
   | Complete_prefix (* *) :
       string
       * Msource.position
@@ -188,6 +214,7 @@ type _ t =
          | `Not_found of string * string option
          | `At_origin ]
          t
+  | Locate_types : Msource.position -> Locate_types_result.t t
   | Locate (* *) :
       string option * [ `ML | `MLI ] * Msource.position
       -> [ `Found of string option * Lexing.position

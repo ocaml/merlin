@@ -57,6 +57,8 @@ type cmt_infos = {
   cmt_declaration_dependencies : (dependency_kind * Uid.t * Uid.t) list;
   cmt_comments : (string * Location.t) list;
   cmt_args : string array;
+    (** {!Sys.argv} from the compiler invocation which created the file.
+        [Sys.argv.(0)] is rewritten using [BUILD_PATH_PREFIX_MAP]. *)
   cmt_sourcefile : string option;
   cmt_builddir : string;
   cmt_loadpath : Load_path.paths;

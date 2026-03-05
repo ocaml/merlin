@@ -23,9 +23,13 @@ val make : string -> t
 
 type position = [ `Start | `Offset of int | `Logical of int * int | `End ]
 
+val equal_position : position -> position -> bool
+
 val get_offset : t -> [< position ] -> [> `Offset of int ]
 
 val get_logical : t -> [< position ] -> [> `Logical of int * int ]
+
+val compare_position : t -> position -> position -> int
 
 val get_lexing_pos : t -> filename:string -> [< position ] -> Lexing.position
 

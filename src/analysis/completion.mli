@@ -31,7 +31,7 @@ open Query_protocol
 (* TODO: document all the following functions *)
 
 type raw_info =
-  [ `Constructor of Types.constructor_description
+  [ `Constructor of Data_types.constructor_description
   | `Modtype of Types.module_type
   | `Modtype_declaration of Ident.t * Types.modtype_declaration
   | `None
@@ -52,7 +52,7 @@ val branch_complete :
   Mconfig.t ->
   ?get_doc:
     ([> `Completion_entry of Env_lookup.Namespace.t * Path.t * Location.t ] ->
-    [> `Found of string ]) ->
+     [> `Found of string ]) ->
   ?target_type:Types.type_expr ->
   ?kinds:Compl.kind list ->
   keywords:string list ->

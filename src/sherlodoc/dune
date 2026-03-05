@@ -6,6 +6,6 @@
  (modules type_parser)
  (enabled_if (<> %{profile} "release"))
  (mode promote)
- (flags :standard --explain))
+ (flags :standard --explain --lalr))
 
 (ocamllex type_lexer)

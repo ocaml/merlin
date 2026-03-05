@@ -40,19 +40,18 @@ jobs:
           - ubuntu-latest
           - windows-latest
         ocaml-compiler:
-          - ocaml-base-compiler.5.3.0
+          - 5.4
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
-    # Some tests requiring specific ppxes are disabled by default
     env:
-      MERLIN_TESTS: no-ppx
+      MERLIN_TESTS: all
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout tree
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set-up OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v3
@@ -63,6 +62,7 @@ jobs:
         run: |
           opam pin menhirLib 20201216 --no-action
           opam install menhir csexp alcotest yojson conf-jq ocamlfind --yes
+          opam install ppxlib ppx_string reason --yes
 
       - name: Build and test in release mode
         run: |

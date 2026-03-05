@@ -45,8 +45,8 @@ env:
 
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
-  merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.3.0
-  base_branch_COMPILER_VERSION: ocaml-base-compiler.5.3.0
+  merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.4.0
+  base_branch_COMPILER_VERSION: ocaml-base-compiler.5.4.0
 
 jobs:
   data:
@@ -67,7 +67,7 @@ jobs:
         commit: ["merge_branch", "base_branch"]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -309,7 +309,7 @@ jobs:
       diff_dir: ${{ needs.artifact_names.outputs.diff_dir }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download current diff(s)
         if: ${{ env.current_diff_exists == 'true' }}

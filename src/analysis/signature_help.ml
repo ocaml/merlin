@@ -6,7 +6,7 @@ type parameter_info =
   { label : Asttypes.arg_label;
     param_start : int;
     param_end : int;
-    argument : Typedtree.expression option
+    argument : Typedtree.apply_arg
   }
 
 type application_signature =
@@ -23,8 +23,8 @@ let extract_ident (exp_desc : Typedtree.expression_desc) =
   let rec longident ppf : Longident.t -> unit = function
     | Lident s -> Format.fprintf ppf "%s" (Misc_utils.parenthesize_name s)
     | Ldot (p, s) ->
-      Format.fprintf ppf "%a.%s" longident p (Misc_utils.parenthesize_name s)
-    | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1 longident p2
+      Format.fprintf ppf "%a.%s" longident p.txt (Misc_utils.parenthesize_name s.txt)
+    | Lapply (p1, p2) -> Format.fprintf ppf "%a(%a)" longident p1.txt longident p2.txt
   in
   match exp_desc with
   | Texp_ident (_, { txt = li; _ }, _) ->
@@ -71,7 +71,7 @@ let pp_parameter env label ppf ty =
     Format.fprintf ppf "?%s:%a" l (pp_parameter_type env) (unwrap_option ty)
 
 (* record buffer offsets to be able to underline parameter types *)
-let print_parameter_offset ?arg:argument ppf buffer env label ty =
+let print_parameter_offset ~arg:argument ppf buffer env label ty =
   let param_start = Buffer.length buffer in
   Format.fprintf ppf "%a%!" (pp_parameter env label) ty;
   let param_end = Buffer.length buffer in
@@ -90,11 +90,13 @@ let separate_function_signature ~args (e : Typedtree.expression) =
     match (args, Types.get_desc ty) with
     | (_l, arg) :: args, Tarrow (label, ty1, ty2, _) ->
       let parameter =
-        print_parameter_offset ppf buffer e.exp_env label ty1 ?arg
+        print_parameter_offset ~arg ppf buffer e.exp_env label ty1
       in
       separate args ty2 ~parameters:(parameter :: parameters)
     | [], Tarrow (label, ty1, ty2, _) ->
-      let parameter = print_parameter_offset ppf buffer e.exp_env label ty1 in
+      let parameter =
+        print_parameter_offset ~arg:(Omitted ()) ppf buffer e.exp_env label ty1
+      in
       separate args ty2 ~parameters:(parameter :: parameters)
     (* end of function type, print remaining type without recording offsets *)
     | _ ->
@@ -110,43 +112,48 @@ let separate_function_signature ~args (e : Typedtree.expression) =
 
 let active_parameter_by_arg ~arg params =
   let find_by_arg = function
-    | { argument = Some a; _ } when a == arg -> true
+    | { argument = Arg a; _ } when a == arg -> true
     | _ -> false
   in
   try Some (List.index params ~f:find_by_arg) with Not_found -> None
 
 let first_unassigned_argument params =
   let positional = function
-    | { argument = None; label = Asttypes.Nolabel; _ } -> true
+    | { argument = Omitted (); label = Asttypes.Nolabel; _ } -> true
     | _ -> false
   in
   let labelled = function
-    | { argument = None; label = Asttypes.Labelled _ | Optional _; _ } -> true
+    | { argument = Omitted (); label = Asttypes.Labelled _ | Optional _; _ } -> true
     | _ -> false
   in
   try Some (List.index params ~f:positional)
   with Not_found -> (
-    try Some (List.index params ~f:labelled) with Not_found -> None)
+      try Some (List.index params ~f:labelled) with Not_found -> None)
 
 let active_parameter_by_prefix ~prefix params =
   let common = function
     | Asttypes.Nolabel -> Some 0
     | l
       when String.is_prefixed ~by:"~" prefix
-           || String.is_prefixed ~by:"?" prefix ->
+        || String.is_prefixed ~by:"?" prefix ->
       Some (String.common_prefix_len (Btype.prefixed_label_name l) prefix)
     | _ -> None
   in
-
+  let is_omitted = function
+    | Typedtree.Omitted _ -> true
+    | _ -> false
+  in
   let rec find_by_prefix ?(i = 0) ?longest_len ?longest_i = function
     | [] -> longest_i
-    | p :: ps -> (
-      match (common p.label, longest_len) with
-      | Some common_len, Some longest_len when common_len > longest_len ->
-        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
-      | Some common_len, None ->
-        find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
-      | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
+    | p :: ps when is_omitted p.argument -> (
+      (* The search is performed only on the arguments not already given in the parameters. *)
+        match (common p.label, longest_len) with
+        | Some common_len, Some longest_len when common_len > longest_len ->
+          find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+        | Some common_len, None ->
+          find_by_prefix ps ~i:(succ i) ~longest_len:common_len ~longest_i:i
+        | _ -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i)
+    | _ :: ps -> find_by_prefix ps ~i:(succ i) ?longest_len ?longest_i
   in
   find_by_prefix params
 
@@ -155,7 +162,8 @@ let is_arrow t =
   | Tarrow _ -> true
   | _ -> false
 
-let application_signature ~prefix ~cursor = function
+let application_signature ~prefix ~cursor node =
+  match node with
   | (_, Browse_raw.Expression arg)
     :: ( _,
          Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args); _ }
@@ -187,7 +195,49 @@ let application_signature ~prefix ~cursor = function
     let result = separate_function_signature e ~args:[] in
     let active_param = active_parameter_by_prefix ~prefix result.parameters in
     Some { result with active_param }
-  | _ -> None
+  | _ ->
+    let rec find_smallest_arrow_before_pos (e : Typedtree.expression) pos
+        (acc : Typedtree.expression) =
+      if Lexing.compare_pos e.exp_loc.loc_start pos > 0 then
+        match acc.exp_desc with
+        | Texp_let (_, vlist, _) ->
+          let v =
+            List.find_opt
+              ~f:(fun (value_binding : Typedtree.value_binding) ->
+                match Types.get_desc value_binding.vb_expr.exp_type with
+                | Tarrow _ -> true
+                | _ -> false)
+              vlist
+          in
+          Option.map ~f:(fun (v : Typedtree.value_binding) -> v.vb_expr) v
+        | _ -> None
+      else
+        match e.exp_desc with
+        | Texp_let (_, _, next) -> find_smallest_arrow_before_pos next pos e
+        | _ -> None
+    in
+    let expressions =
+      List.filter_map
+        ~f:(fun n ->
+          match n with
+          | _, Browse_raw.Expression e -> Some e
+          | _ -> None)
+        node
+    in
+    if expressions = [] then None
+    else
+      let last_node = List.hd (List.rev expressions) in
+      let smallest_frag_opt =
+        find_smallest_arrow_before_pos last_node cursor last_node
+      in
+      Option.map
+        ~f:(fun frag ->
+          let result = separate_function_signature frag ~args:[] in
+          let active_param =
+            active_parameter_by_prefix ~prefix result.parameters
+          in
+          { result with active_param })
+        smallest_frag_opt
 
 let prefix_of_position ~short_path source position =
   match Msource.text source with

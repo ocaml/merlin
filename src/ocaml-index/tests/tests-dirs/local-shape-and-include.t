@@ -22,36 +22,42 @@
   $ ocaml-index aggregate -o test.uideps main.uideps
 
   $ ocaml-index dump main.uideps
-  9 uids:
+  10 uids:
   {uid: External; locs: "External": File "main.ml", line 6, characters 12-20
+   uid: Stdlib__String; locs: "String": File "main.ml", line 1, characters 8-14
    uid: External.0; locs: "equal": File "main.ml", line 7, characters 12-17
    uid: Main.0; locs: "f": File "main.ml", line 1, characters 4-5
    uid: Main.1; locs:
      "g": File "main.ml", line 7, characters 8-9;
      "C.g": File "main.ml", line 9, characters 10-13
-   uid: Main.2; locs: "C": File "main.ml", line 5, characters 9-10
+   uid: Main.2; locs:
+     "C": File "main.ml", line 5, characters 9-10;
+     "C": File "main.ml", line 9, characters 10-11
    uid: Main.3; locs: "g": File "main.ml", line 9, characters 6-7
    uid: Main.4; locs: "g": File "main.ml", line 3, characters 6-7
    uid: Main.5; locs: "B": File "main.ml", line 2, characters 7-8
-   uid: Stdlib__String.174; locs:
+   uid: Stdlib__String.175; locs:
      "String.equal": File "main.ml", line 1, characters 8-20
    }, 0 approx shapes: {}, and shapes for CUS .
   and related uids:{(Main.3 Main.4)}
 
 
   $ ocaml-index dump test.uideps
-  9 uids:
+  10 uids:
   {uid: External; locs: "External": File "main.ml", line 6, characters 12-20
+   uid: Stdlib__String; locs: "String": File "main.ml", line 1, characters 8-14
    uid: External.0; locs: "equal": File "main.ml", line 7, characters 12-17
    uid: Main.0; locs: "f": File "main.ml", line 1, characters 4-5
    uid: Main.1; locs:
      "g": File "main.ml", line 7, characters 8-9;
      "C.g": File "main.ml", line 9, characters 10-13
-   uid: Main.2; locs: "C": File "main.ml", line 5, characters 9-10
+   uid: Main.2; locs:
+     "C": File "main.ml", line 5, characters 9-10;
+     "C": File "main.ml", line 9, characters 10-11
    uid: Main.3; locs: "g": File "main.ml", line 9, characters 6-7
    uid: Main.4; locs: "g": File "main.ml", line 3, characters 6-7
    uid: Main.5; locs: "B": File "main.ml", line 2, characters 7-8
-   uid: Stdlib__String.174; locs:
+   uid: Stdlib__String.175; locs:
      "String.equal": File "main.ml", line 1, characters 8-20
    }, 0 approx shapes: {}, and shapes for CUS .
   and related uids:{(Main.3 Main.4)}

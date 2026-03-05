@@ -40,9 +40,9 @@ let fmt_location f loc =
 let rec fmt_longident_aux f x =
   match x with
   | Longident.Lident (s) -> fprintf f "%s" s
-  | Longident.Ldot (y, s) -> fprintf f "%a.%s" fmt_longident_aux y s
+  | Longident.Ldot (y, s) -> fprintf f "%a.%s" fmt_longident_aux y.txt s.txt
   | Longident.Lapply (y, z) ->
-      fprintf f "%a(%a)" fmt_longident_aux y fmt_longident_aux z
+      fprintf f "%a(%a)" fmt_longident_aux y.txt fmt_longident_aux z.txt
 
 let fmt_longident f x = fprintf f "\"%a\"" fmt_longident_aux x
 
@@ -138,6 +138,10 @@ let arg_label i ppf = function
 let typevars ppf vs =
   List.iter (fun x -> fprintf ppf " %a" Pprintast.tyvar x.txt) vs
 
+let labeled_tuple_element f i ppf (l, ct) =
+  option i string ppf l;
+  f i ppf ct
+
 let rec core_type i ppf x =
   line i ppf "core_type %a\n" fmt_location x.ptyp_loc;
   attributes i ppf x.ptyp_attributes;
@@ -152,7 +156,7 @@ let rec core_type i ppf x =
       core_type i ppf ct2;
   | Ptyp_tuple l ->
       line i ppf "Ptyp_tuple\n";
-      list i core_type ppf l;
+      list i (labeled_tuple_element core_type) ppf l;
   | Ptyp_constr (li, l) ->
       line i ppf "Ptyp_constr %a\n" fmt_longident_loc li;
       list i core_type ppf l;
@@ -182,15 +186,21 @@ let rec core_type i ppf x =
   | Ptyp_poly (sl, ct) ->
       line i ppf "Ptyp_poly%a\n" typevars sl;
       core_type i ppf ct;
-  | Ptyp_package (s, l) ->
-      line i ppf "Ptyp_package %a\n" fmt_longident_loc s;
-      list i package_with ppf l;
+  | Ptyp_package ptyp ->
+      line i ppf "Ptyp_package\n";
+      package_type i ppf ptyp;
   | Ptyp_open (mod_ident, t) ->
       line i ppf "Ptyp_open \"%a\"\n" fmt_longident_loc mod_ident;
       core_type i ppf t
   | Ptyp_extension (s, arg) ->
       line i ppf "Ptyp_extension \"%s\"\n" s.txt;
       payload i ppf arg
+
+and package_type i ppf ptyp =
+  let i = i + 1 in
+  line i ppf "package_type %a\n" fmt_longident_loc ptyp.ppt_path;
+  list i package_with ppf ptyp.ppt_cstrs;
+  attributes i ppf ptyp.ppt_attrs
 
 and package_with i ppf (s, t) =
   line i ppf "with type %a\n" fmt_longident_loc s;
@@ -213,9 +223,9 @@ and pattern i ppf x =
       line i ppf "Ppat_interval\n";
       fmt_constant i ppf c1;
       fmt_constant i ppf c2;
-  | Ppat_tuple (l) ->
-      line i ppf "Ppat_tuple\n";
-      list i pattern ppf l;
+  | Ppat_tuple (l, c) ->
+      line i ppf "Ppat_tuple\n %a\n" fmt_closed_flag c;
+      list i (labeled_tuple_element pattern) ppf l;
   | Ppat_construct (li, po) ->
       line i ppf "Ppat_construct %a\n" fmt_longident_loc li;
       option i
@@ -294,7 +304,7 @@ and expression i ppf x =
       list i case ppf l;
   | Pexp_tuple (l) ->
       line i ppf "Pexp_tuple\n";
-      list i expression ppf l;
+      list i (labeled_tuple_element expression) ppf l;
   | Pexp_construct (li, eo) ->
       line i ppf "Pexp_construct %a\n" fmt_longident_loc li;
       option i expression ppf eo;
@@ -379,9 +389,10 @@ and expression i ppf x =
   | Pexp_newtype (s, e) ->
       line i ppf "Pexp_newtype \"%s\"\n" s.txt;
       expression i ppf e
-  | Pexp_pack me ->
+  | Pexp_pack (me, optyp) ->
       line i ppf "Pexp_pack\n";
-      module_expr i ppf me
+      module_expr i ppf me;
+      option i package_type ppf optyp
   | Pexp_open (o, e) ->
       line i ppf "Pexp_open %a\n" fmt_override_flag o.popen_override;
       module_expr i ppf o.popen_expr;

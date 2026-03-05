@@ -10,7 +10,7 @@
  (modules parser_raw)
  (enabled_if (<> %{profile} "release"))
  (mode    (promote (only parser_raw.ml parser_raw.mli)))
- (flags :standard --inspection --table --cmly))
+ (flags :standard --inspection --table --cmly --lalr))
 
 (rule
   (targets parser_recover.ml)

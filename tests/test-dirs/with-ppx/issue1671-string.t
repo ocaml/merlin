@@ -14,7 +14,8 @@
   $ cat >dune <<EOF
   > (executable
   >  (name main)
-  >  (preprocess (pps ppx_string)))
+  >  (preprocess (pps ppx_string))
+  >  (libraries ppx_string))
   > EOF
 
   $ dune build @check 
@@ -58,7 +59,8 @@ Merlin should ignore hidden nodes in occurrences results
         "end": {
           "line": 1,
           "col": 7
-        }
+        },
+        "stale": false
       }
     ],
     "notifications": []

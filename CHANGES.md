@@ -3,7 +3,51 @@ unreleased
 
   + merlin library
     - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1948)
+    - Add "Other" variant to locate-types result (#2025)
+    - Don't include `option` in locate-types result for optional parameters (#2027)
+    - Fix record field autocompletion (#2028)
+    - Signature help should not loop over the parameters once it is finished (#2023)
+    - Fix bugs on signature help about labelled and optional parameters (#2032)
+    - Add `-end-position` parameter for `enclosing` (#2029)
+    - Signature help should appear even if the 'in' is not written (#2036)
+  + tests
+    - Add a reproduction case for #1214, the issue has been resolved before (#2022)
+    - Add reproduction case for #1763 but it is not failing anymore (#2021)
+    - Add a test to reproduce [Locate command fails on multi-line type definitions](#1987) (#2020)
+    - Add a regression test for issue #2019 (#2030)
+
+merlin 5.6.1
+Sat Dec 20 11:15:42 CET 2025
+
+  + merlin binary
+    - Fix a plethora of minor issues with the C code (#1998)
+  + merlin library
+    - Signature help should not appear on the function name (#1997)
+    - Fix completion not working for inlined records labels (#1978, fixes #1977)
+    - Perform buffer indexing only if the query requires it (#1990 and #1991)
+    - Stop unnecessarily forcing substitutions when initializing short-paths graph (#1988)
+    - Fix Mocaml.with_printer didn't update replacement_printer_doc (#2010)
+  + test suite
+    - Add a test to ensure the behavior showed in issue #1517 is no longer relevant (#1995)
+    - Add a test to ensure the code fragment exhibited in issue #1118 no longer makes Merlin crash (#1996)
+    - Add a test case illustrating how a snippet produces two unrelated errors in issue #2000. (#2003)
+    - Add a test reproducing issue #1983 where `document` command which sometime concatenates consecutive variants and labels (#2005)
+    - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
+
+merlin 5.6
+Sat Oct 04 15:10:42 CEST 2025
+
+  + merlin binary
+    - Add `locate-types` command (#1951)
+  + merlin library
+    - Implement new refactor-extract-region command for extracting region to a fresh let binding (#1948)
     - Fix `merlin_reader` for OpenBSD (#1956)
+    - Improve recovery of mutually recursive definitions (#1962, #1963, fixes #1953)
+    - Support for OCaml 5.4 (#1974)
+  + vim plugin
+    - Fix error when `:MerlinOccurrencesProjectWide` fails to gather code previews (#1970)
+  + test suite
+    - Add more short-paths tests cases (#1904)
 
 merlin 5.5
 ==========

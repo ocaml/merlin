@@ -10,7 +10,7 @@ bug-reports: "https://github.com/ocaml/merlin/issues"
 x-maintenance-intent: ["(latest)"]
 depends: [
   "dune" {>= "3.0.0"}
-  "ocaml" {>= "5.3"}
+  "ocaml" {>= "5.4"}
   "merlin-lib" {= version}
   "odoc" {with-doc}
 ]

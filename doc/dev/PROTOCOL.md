@@ -244,12 +244,13 @@ Returns OCamldoc documentation as a string.
 If `-identifier ident` is specified, documentation for this ident is looked up from environment at `-position`.
 Otherwise, Merlin looks for the documentation for the entity under the cursor (at `-position`).
 
-### `enclosing -position <position>`
+### `enclosing -position <position> [-end-position <position>]`
 
     -position <position>  Position to complete
 
 Returns a list of locations `{'start': position, 'end': position}` in increasing size of all entities surrounding the position.
 (In a lisp, this would be the locations of all s-exps that contain the cursor.)
+If `-end-position` is given, only enclosings containing the range `[position; stop]`  will be returned.
 
 ### `errors`
 
@@ -548,6 +549,54 @@ The type is defined in the same file, and the result will be the following objec
     'start': position, // the start of the region where the type is defined
 	'end': position // the end of the region where the type is defined
   }
+}
+```
+
+The type is described in another file, and the result will be the following object:
+
+```javascript
+{
+  'file': string, // the file where the type is defined
+  'pos': {
+    'start': position, // the start of the region where the type is defined
+	'end': position // the end of the region where the type is defined
+  }
+}
+```
+
+### `locate-types -position <position>`
+
+	-position <position>  The position of the type to be located
+
+Checks the type of the item at the given position. Unlike `locate-type`, if the type is
+expressed via multiple paths (ex: the type is `int list` or `(int foo * string) -> unit`),
+it will return a tree that represents the type. Each entry in the tree will contains the
+definition location of that type.
+
+The below schema defines the response object (where `response` is the type of the object
+returned):
+```javascript
+response = tree | "Invalid context"
+
+tree = {
+  "data": node_data,
+  "children": [tree]
+}
+
+node_data =
+  | [ "Arrow" ]
+  | [ "Tuple" ]
+  | [ "Object" ]
+  | [ "Poly_variant" ]
+  | [ "Type_ref", { "type": string, "result": [ "Found", file, position ] } ]
+
+file = string
+
+position = {
+  "pos_fname": string,
+  "pos_lnum": int,
+  "pos_bol": int,
+  "pos_cnum": int
 }
 ```
 

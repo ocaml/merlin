@@ -4,7 +4,7 @@ type t = Trie of (string * Longident.t * t list lazy_t)
 
 let rec explore_node lident env =
   let add_module name _ _ l =
-    let lident = Longident.Ldot (lident, name) in
+    let lident = Longident.Ldot (Location.mknoloc lident, Location.mknoloc name) in
     Trie (name, lident, lazy (explore_node lident env)) :: l
   in
   Env.fold_modules add_module (Some lident) env []
@@ -120,21 +120,21 @@ let get_lidents ts path =
   let lident, last =
     match lident with
     | Ldot (l, id) -> (l, id)
-    | Lident id -> (Lident "", id)
+    | Lident id -> (Location.mknoloc (Lident ""), Location.mknoloc id)
     | Lapply _ -> assert false
   in
   let rec components acc = function
     | Lident "" -> acc
     | Lident id -> id :: acc
     | Lapply _ -> assert false
-    | Ldot (l, id) -> components (id :: acc) l
+    | Ldot (l, id) -> components (id.txt :: acc) l.txt
   in
   let lidents =
-    match components [] lident with
+    match components [] lident.txt with
     | [] -> [ None ]
     | components ->
       let ts = filter components ts in
       let lidents = to_lidents (List.length components - 1) ts in
       List.map ~f:(fun x -> Some x) lidents
   in
-  (lidents, last)
+  (lidents, last.txt)

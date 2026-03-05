@@ -282,26 +282,22 @@ let dummy_mod =
 let of_path ~find_shape ~namespace path =
   (* We need to handle the following cases:
     Path of constructor:
-      M.t.C
+      M.t.C [Pextra_ty("M.t", "C")]
     Path of label:
-      M.t.lbl
+      M.t.lbl [Pextra_ty("M.t", "lbl")]
     Path of label of inline record:
-      M.t.C.lbl *)
+      M.t.C.lbl [Pextra_ty(Pextra_ty("M.t", "C"), "lbl")] *)
   let rec aux : Sig_component_kind.t -> Path.t -> t = fun ns -> function
     | Pident id -> find_shape ns id
-    | Pdot (path, name) ->
-        let namespace :  Sig_component_kind.t =
-          match (ns : Sig_component_kind.t) with
-          | Constructor -> Type
-          | Label -> Type
-          | _ -> Module
-        in
-        proj (aux namespace path) (name, ns)
+    | Pdot (path, name) -> proj (aux Module path) (name, ns)
     | Papply (p1, p2) -> app (aux Module p1) ~arg:(aux Module p2)
     | Pextra_ty (path, extra) -> begin
-        match extra with
-          Pcstr_ty name -> proj (aux Type path) (name, Constructor)
-        | Pext_ty -> aux Extension_constructor path
+        match extra, ns, path with
+        | Pcstr_ty name, Label, Pextra_ty _ ->
+            (* Handle the M.t.C.lbl case *)
+            proj (aux Constructor path) (name, ns)
+        | Pcstr_ty name, _, _ -> proj (aux Type path) (name, ns)
+        | Pext_ty, _, _ -> aux Extension_constructor path
       end
   in
   aux namespace path
