@@ -10,6 +10,8 @@ unreleased
     - Fix bugs on signature help about labelled and optional parameters (#2032)
     - Add `-end-position` parameter for `enclosing` (#2029)
     - Signature help should appear even if the 'in' is not written (#2036)
+  + merlin binary
+    - Define PATH_MAX to 4096 if undefined (eg. hurd) (#2039)
   + tests
     - Add a reproduction case for #1214, the issue has been resolved before (#2022)
     - Add reproduction case for #1763 but it is not failing anymore (#2021)

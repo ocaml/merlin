@@ -132,6 +132,11 @@ static void failwith(const char *msg)
   exit(EXIT_FAILURE);
 }
 
+#ifndef PATH_MAX
+/* PATH_MAX is undefined on e.g. Hurd */
+#define PATH_MAX 8192
+#endif
+
 #ifdef _WIN32
 #define PATHSZ (MAX_PATH+1)
 #define SOCKSZ (MAX_PATH+1)
