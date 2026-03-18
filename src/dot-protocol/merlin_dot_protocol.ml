@@ -88,8 +88,8 @@ module Sexp = struct
 
   let to_directive sexp =
     match sexp with
-    | List [ Atom tag; Atom value ] -> begin
-      match tag with
+    | List [ Atom tag; Atom value ] ->
+      begin match tag with
       | "S" -> `S value
       | "B" -> `B value
       | "SH" -> `SH value
@@ -108,15 +108,14 @@ module Sexp = struct
            But the protocole evolved, only dune 2.8 should be used *)
         `ERROR_MSG "No .merlin file found. Try building the project."
       | tag -> `UNKNOWN_TAG tag
-    end
+      end
     | List [ Atom tag; List l ] ->
       let value = strings_of_atoms l in
-      begin
-        match tag with
-        | "EXT" -> `EXT value
-        | "FLG" -> `FLG value
-        | "READER" -> `READER value
-        | tag -> `UNKNOWN_TAG tag
+      begin match tag with
+      | "EXT" -> `EXT value
+      | "FLG" -> `FLG value
+      | "READER" -> `READER value
+      | tag -> `UNKNOWN_TAG tag
       end
     | List [ Atom "EXCLUDE_QUERY_DIR" ] -> `EXCLUDE_QUERY_DIR
     | List [ Atom "USE_PPX_CACHE" ] -> `USE_PPX_CACHE

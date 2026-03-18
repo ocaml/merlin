@@ -74,30 +74,30 @@ module Make (Ord : Map.OrderedType) = struct
       | Empty -> 0
       | Node { h; _ } -> h
     in
-    if hl > hr + 2 then begin
-      match fetch l with
+    if hl > hr + 2 then
+      begin match fetch l with
       | Empty -> invalid_arg "Map.bal"
       | Node { l = ll; v = lv; d = ld; r = lr; _ } ->
         if height ll >= height lr then create ll lv ld (create lr x d r)
-        else begin
-          match fetch lr with
+        else
+          begin match fetch lr with
           | Empty -> invalid_arg "Map.bal"
           | Node { l = lrl; v = lrv; d = lrd; r = lrr; _ } ->
             create (create ll lv ld lrl) lrv lrd (create lrr x d r)
-        end
-    end
-    else if hr > hl + 2 then begin
-      match fetch r with
+          end
+      end
+    else if hr > hl + 2 then
+      begin match fetch r with
       | Empty -> invalid_arg "Map.bal"
       | Node { l = rl; v = rv; d = rd; r = rr; _ } ->
         if height rr >= height rl then create (create l x d rl) rv rd rr
-        else begin
-          match fetch rl with
+        else
+          begin match fetch rl with
           | Empty -> invalid_arg "Map.bal"
           | Node { l = rll; v = rlv; d = rld; r = rlr; _ } ->
             create (create l x d rll) rlv rld (create rlr rv rd rr)
-        end
-    end
+          end
+      end
     else
       link (Node { l; v = x; d; r; h = (if hl >= hr then hl + 1 else hr + 1) })
 
@@ -277,19 +277,19 @@ module Make (Ord : Map.OrderedType) = struct
 
   let rec update x f t =
     match fetch t with
-    | Empty -> begin
-      match f None with
+    | Empty ->
+      begin match f None with
       | None -> t
       | Some data -> link (Node { l = t; v = x; d = data; r = t; h = 1 })
-    end
+      end
     | Node { l; v; d; r; h } ->
       let c = Ord.compare x v in
-      if c = 0 then begin
-        match f (Some d) with
+      if c = 0 then
+        begin match f (Some d) with
         | None -> merge l r
         | Some data ->
           if d == data then t else link (Node { l; v = x; d = data; r; h })
-      end
+        end
       else if c < 0 then
         let ll = update x f l in
         if l == ll then t else bal ll v d r

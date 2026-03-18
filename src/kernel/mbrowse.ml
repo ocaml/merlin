@@ -107,12 +107,12 @@ let compare_locations pos l1 l2 =
   let t1_first = -1 in
   match (Location_aux.compare_pos pos l1, Location_aux.compare_pos pos l2) with
   (* Cursor inside both locations: favor non-ghost closer to the end *)
-  | 0, 0 -> begin
-    match (l1.Location.loc_ghost, l2.Location.loc_ghost) with
+  | 0, 0 ->
+    begin match (l1.Location.loc_ghost, l2.Location.loc_ghost) with
     | true, false -> 1
     | false, true -> -1
     | _ -> Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
-  end
+    end
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
   | _, 0 -> t2_first

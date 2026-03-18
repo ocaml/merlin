@@ -170,36 +170,32 @@ let rec mod_smallerthan n m =
     let open Types in
     match m with
     | Mty_ident _ -> Some 1
-    | Mty_signature s -> begin
-      match List.length_lessthan n s with
+    | Mty_signature s ->
+      begin match List.length_lessthan n s with
       | None -> None
       | Some _ ->
-        List.fold_left s ~init:(Some 0)
-          ~f:
-            begin
-              fun acc item ->
-                let sub n1 m =
-                  match mod_smallerthan (n - n1) m with
-                  | Some n2 -> Some (n1 + n2)
-                  | None -> None
-                in
-                match (acc, si_modtype_opt item) with
-                | None, _ -> None
-                | Some n', _ when n' > n -> None
-                | Some n1, Some mty -> sub n1 mty
-                | Some n', _ -> Some (succ n')
-            end
-    end
+        List.fold_left s ~init:(Some 0) ~f:begin fun acc item ->
+            let sub n1 m =
+              match mod_smallerthan (n - n1) m with
+              | Some n2 -> Some (n1 + n2)
+              | None -> None
+            in
+            match (acc, si_modtype_opt item) with
+            | None, _ -> None
+            | Some n', _ when n' > n -> None
+            | Some n1, Some mty -> sub n1 mty
+            | Some n', _ -> Some (succ n')
+          end
+      end
     | Mty_functor _ ->
       let m1, m2 = unpack_functor m in
-      begin
-        match (mod_smallerthan n m2, m1) with
-        | None, _ -> None
-        | result, Unit -> result
-        | Some n1, Named (_, mt) -> (
-          match mod_smallerthan (n - n1) mt with
-          | None -> None
-          | Some n2 -> Some (n1 + n2))
+      begin match (mod_smallerthan n m2, m1) with
+      | None, _ -> None
+      | result, Unit -> result
+      | Some n1, Named (_, mt) -> (
+        match mod_smallerthan (n - n1) mt with
+        | None -> None
+        | Some n2 -> Some (n1 + n2))
       end
     | _ -> Some 1
 
@@ -214,8 +210,8 @@ let print_short_modtype verbosity env ppf md =
 let print_type_with_decl ~verbosity env ppf typ =
   match verbosity with
   | Verbosity.Smart | Lvl 0 -> Printtyp.type_scheme env ppf typ
-  | Lvl _ -> begin
-    match Types.get_desc typ with
+  | Lvl _ ->
+    begin match Types.get_desc typ with
     | Types.Tconstr (path, params, _) ->
       let decl = Env.with_cmis @@ fun () -> Env.find_type path env in
       let is_abstract =
@@ -243,7 +239,7 @@ let print_type_with_decl ~verbosity env ppf typ =
         Printtyp.type_declaration env ident ppf decl
       end
     | _ -> Printtyp.type_scheme env ppf typ
-  end
+    end
 
 let print_exn ppf exn =
   match Location.error_of_exn exn with
@@ -308,22 +304,21 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
     in
     let open Context in
     match extract_specific_parsing_info e with
-    | `Ident longident | `Constr longident -> begin
-      try
-        begin
-          match context with
-          | Label lbl_des ->
-            (* We use information from the context because `Env.find_label_by_name`
+    | `Ident longident | `Constr longident ->
+      begin try
+        begin match context with
+        | Label lbl_des ->
+          (* We use information from the context because `Env.find_label_by_name`
                can fail *)
-            Printtyp.type_expr ppf lbl_des.lbl_arg
-          | Type ->
-            log ~title:"type_in_env" "Type type";
-            print_type ppf env longident
-          (* TODO: special processing for module aliases ? *)
-          | Module_type -> print_modtype ppf verbosity env longident
-          | Module_path -> print_modpath ppf verbosity env longident
-          | Constructor _ -> print_constr ppf env longident
-          | _ -> raise Fallback
+          Printtyp.type_expr ppf lbl_des.lbl_arg
+        | Type ->
+          log ~title:"type_in_env" "Type type";
+          print_type ppf env longident
+        (* TODO: special processing for module aliases ? *)
+        | Module_type -> print_modtype ppf verbosity env longident
+        | Module_path -> print_modpath ppf verbosity env longident
+        | Constructor _ -> print_constr ppf env longident
+        | _ -> raise Fallback
         end;
         true
       with _ -> (
@@ -348,7 +343,7 @@ let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
               with _ ->
                 print_exn ppf exn;
                 false))))
-    end
+      end
     | `Other -> (
       try
         print_expr e;

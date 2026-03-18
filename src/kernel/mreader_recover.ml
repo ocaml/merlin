@@ -129,11 +129,11 @@ struct
               (env_state x.env) (let (t,_,_) = token in Dump.token t);*)
           aux xs
         | `Recovered (checkpoint, _) -> `Ok (checkpoint, x.env)
-        | `Accept v -> begin
-          match aux xs with
+        | `Accept v ->
+          begin match aux xs with
           | `Fail -> `Accept v
           | x -> x
-        end)
+          end)
     in
     aux recoveries
 
@@ -199,11 +199,10 @@ struct
             in
             let v = Recovery.default_value loc sym in
             let token = (Recovery.token_of_terminal t v, endp, endp) in
-            begin
-              match feed_token ~allow_reduction:true token env with
-              | `Fail -> assert false
-              | `Accept v -> raise (E.Result v)
-              | `Recovered (_, env) -> env
+            begin match feed_token ~allow_reduction:true token env with
+            | `Fail -> assert false
+            | `Accept v -> raise (E.Result v)
+            | `Recovered (_, env) -> env
             end
           | Recovery.Sub actions ->
             log ~title:"enter Sub" "";
