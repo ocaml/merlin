@@ -11,6 +11,7 @@ and 'a repr =
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
+  | On_disk_ptr of { filename : string; loc : int }
   | In_memory of 'a
   | In_memory_reused of 'a
   | Duplicate of 'a link
@@ -23,6 +24,11 @@ and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 let schema_no_sublinks : _ schema = fun _ _ -> ()
 
 let link v = ref (In_memory v)
+
+let is_on_disk lnk =
+  match !lnk with
+  | On_disk _ | On_disk_ptr _ -> false
+  | _ -> true
 
 let rec normalize lnk =
   match !lnk with
@@ -53,6 +59,10 @@ let read_loc store fd loc schema =
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
+          | On_disk_ptr { filename; loc } ->
+            lnk :=
+              On_disk
+                { store = { filename; cache = Cache.create 0 }; loc; schema }
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -88,7 +98,7 @@ let fetch_loc store loc schema =
 let rec fetch lnk =
   match !lnk with
   | In_memory v | In_memory_reused v -> v
-  | Serialized _ | Serialized_reused _ | Small _ ->
+  | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ ->
     invalid_arg "Granular_marshal.fetch: serialized"
   | Placeholder -> invalid_arg "Granular_marshal.fetch: during a write"
   | Duplicate original_lnk ->
@@ -130,13 +140,15 @@ let int_of_binstring s =
     0
 
 let write ?(flags = []) fd root_schema root_value =
+  (* TODO: remove this counter *)
+  let count = ref 0 in
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
     { yield =
         (fun (type a) (lnk : a link) _type_id (schema : a schema) : unit ->
           match !lnk with
-          | Serialized _ | Serialized_reused _ | Small _ -> ()
+          | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ -> ()
           | Placeholder -> failwith "big nono"
           | In_memory_reused v -> write_child_reused lnk schema v
           | Duplicate original_lnk ->
@@ -146,8 +158,9 @@ let write ?(flags = []) fd root_schema root_value =
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | On_disk _ ->
-            write_child lnk schema (fetch lnk) size ~placeholders ~restore)
+          | On_disk { store; loc; _ } ->
+            incr count;
+            lnk := On_disk_ptr { filename = store.filename; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
@@ -182,6 +195,7 @@ let write ?(flags = []) fd root_schema root_value =
   let root_loc = pos_out fd in
   Marshal.to_channel fd root_value flags;
   seek_out fd pt_root;
+  prerr_endline @@ Int.to_string !count;
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
