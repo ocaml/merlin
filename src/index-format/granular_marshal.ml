@@ -13,7 +13,7 @@ and 'a repr =
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
-  | On_disk_ptr of { filename : string; loc : int; id : int }
+  | On_disk_ptr of { filename : string; loc : int }
   | In_memory of 'a
   | In_memory_reused of 'a
   | Duplicate of 'a link
@@ -33,8 +33,8 @@ let link v = ref (In_memory v)
 
 let is_on_disk lnk =
   match !lnk with
-  | On_disk _ | On_disk_ptr _ -> true
-  | _ -> false
+  | On_disk _ | On_disk_ptr _ -> false
+  | _ -> true
 
 let rec normalize lnk =
   match !lnk with
@@ -116,9 +116,10 @@ let read_loc store fd loc schema =
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
-          | On_disk_ptr { filename; loc; id } ->
-            let store = { filename; id; cache = Cache_cache.read filename } in
-            lnk := On_disk { store; loc; schema }
+          | On_disk_ptr { filename; loc } ->
+            lnk :=
+              On_disk
+                { store = { filename; cache = Cache.create 0 }; loc; schema }
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -163,9 +164,20 @@ let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
       lnk := Duplicate original_lnk
     | exception Not_found -> H.add cache key lnk
 
-let write ?(flags = []) fd ~id root_schema root_value =
-  let id = binstring_of_int id in
-  output_string fd id;
+let ptr_size = 8
+
+let binstring_of_int v =
+  String.init ptr_size (fun i -> Char.chr ((v lsr i lsl 3) land 255))
+
+let int_of_binstring s =
+  Array.fold_right
+    (fun v acc -> (acc lsl 8) + v)
+    (Array.init ptr_size (fun i -> Char.code s.[i]))
+    0
+
+let write ?(flags = []) fd root_schema root_value =
+  (* TODO: remove this counter *)
+  let count = ref 0 in
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
@@ -182,8 +194,9 @@ let write ?(flags = []) fd ~id root_schema root_value =
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | On_disk { store = { filename; id; _ }; loc; _ } ->
-            lnk := On_disk_ptr { filename; id; loc })
+          | On_disk { store; loc; _ } ->
+            incr count;
+            lnk := On_disk_ptr { filename = store.filename; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
@@ -218,6 +231,7 @@ let write ?(flags = []) fd ~id root_schema root_value =
   let root_loc = pos_out fd in
   Marshal.to_channel fd root_value flags;
   seek_out fd pt_root;
+  prerr_endline @@ Int.to_string !count;
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
