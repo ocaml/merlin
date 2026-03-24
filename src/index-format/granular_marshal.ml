@@ -1,4 +1,4 @@
-module Cache = Hashtbl.Make (Int)
+module Cache = Lru.Make (Int)
 
 type store = { filename : string; cache : any_link Cache.t }
 
@@ -41,15 +41,15 @@ let read_loc store fd loc schema =
             lnk := In_memory v
           | Serialized { loc } -> lnk := On_disk { store; loc; schema }
           | Serialized_reused { loc } -> (
-            match Cache.find store.cache loc with
-            | Link (type b) ((lnk', type_id') : b link * _) -> (
+            match Cache.find_opt store.cache loc with
+            | Some (Link (type b) ((lnk', type_id') : b link * _)) -> (
               match Type.Id.provably_equal type_id type_id' with
               | Some (Equal : (a link, b link) Type.eq) ->
                 lnk := Duplicate (normalize lnk')
               | None ->
                 invalid_arg
                   "Granular_marshal.read_loc: reuse of a different type")
-            | exception Not_found ->
+            | None ->
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
@@ -185,7 +185,7 @@ let write ?(flags = []) fd root_schema root_value =
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
-  let store = { filename; cache = Cache.create 0 } in
+  let store = { filename; cache = Cache.create 1 } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let root_value = read_loc store fd root_loc root_schema in
   root_value
