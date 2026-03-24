@@ -140,8 +140,6 @@ let int_of_binstring s =
     0
 
 let write ?(flags = []) fd root_schema root_value =
-  (* TODO: remove this counter *)
-  let count = ref 0 in
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
@@ -195,7 +193,6 @@ let write ?(flags = []) fd root_schema root_value =
   let root_loc = pos_out fd in
   Marshal.to_channel fd root_value flags;
   seek_out fd pt_root;
-  prerr_endline @@ Int.to_string !count;
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
