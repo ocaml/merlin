@@ -37,12 +37,7 @@ Then for `both`:
 
 Merge everything together, which reveals the relation between `test` and `sig` uids:
 
-~66 write operation avoided thanks to on_disk_ptr
   $ ocaml-index aggregate test_sig.ocaml-index project.ocaml-index
-
-~384691 bytes before.
-  $ stat -c "%s" project.ocaml-index
-  167646
 
 All files should be listed on queries: (except `both.ml`)
 
