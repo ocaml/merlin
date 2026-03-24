@@ -4,8 +4,8 @@ type 'a cell = {
   mutable next : 'a cell;
 }
 
-type 'a tt = Nil | List of { mutable first : 'a cell; mutable last : 'a cell }
-type 'a t = 'a tt ref
+type 'a dbll = Nil | List of { mutable first : 'a cell; mutable last : 'a cell }
+type 'a t = 'a dbll ref
 
 let create () = ref Nil
 
