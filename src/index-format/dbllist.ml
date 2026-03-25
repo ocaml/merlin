@@ -7,6 +7,8 @@ type 'a cell = {
 type 'a dbll = Nil | List of { mutable first : 'a cell; mutable last : 'a cell }
 type 'a t = 'a dbll ref
 
+exception Action_on_empty_list of string
+
 let create () = ref Nil
 
 let is_empty l = match !l with Nil -> true | List _ -> false
@@ -29,7 +31,7 @@ let add_front t v =
 
 let discard t =
   match !t with
-  | Nil -> failwith "unable to discard in an empty dllist."
+  | Nil -> raise (Action_on_empty_list "Unable to discard the last element, the doubly linked list is empty.")
   | List l ->
     if l.first == l.last then (
       t := Nil;
@@ -44,7 +46,7 @@ let discard t =
 
 let promote_update t c v =
   match !t with
-  | Nil -> failwith "unable to promote a cell in an empty dllist."
+  | Nil -> raise (Action_on_empty_list "Unable to promote a cell, the doubly linked list is empty.")
   | List l ->
     c.content <- v;
     if l.first == c then ()
