@@ -87,8 +87,8 @@ let resume_parse =
         | [] -> (eof_token, [])
       in
       check_for_error acc token tokens env (I.offer checkpoint token)
-    | (I.Shifting (_, env, _) | I.AboutToReduce (env, _)) as checkpoint -> begin
-      match I.resume checkpoint with
+    | (I.Shifting (_, env, _) | I.AboutToReduce (env, _)) as checkpoint ->
+      begin match I.resume checkpoint with
       | checkpoint' -> normal acc tokens checkpoint'
       | exception exn ->
         Msupport.raise_error exn;
@@ -99,18 +99,18 @@ let resume_parse =
           | (_, token) :: _ -> token
         in
         enter_error acc token tokens env
-    end
+      end
     | I.Accepted v -> (acc, v)
     | I.Rejected | I.HandlingError _ -> assert false
   and check_for_error acc token tokens env = function
     | I.HandlingError _ -> enter_error acc token tokens env
-    | (I.Shifting _ | I.AboutToReduce _) as checkpoint -> begin
-      match I.resume checkpoint with
+    | (I.Shifting _ | I.AboutToReduce _) as checkpoint ->
+      begin match I.resume checkpoint with
       | checkpoint' -> check_for_error acc token tokens env checkpoint'
       | exception exn ->
         Msupport.raise_error exn;
         enter_error acc token tokens env
-    end
+      end
     | checkpoint ->
       normal ((Correct checkpoint, token) :: acc) tokens checkpoint
   and enter_error acc token tokens env =

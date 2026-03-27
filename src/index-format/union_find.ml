@@ -17,8 +17,8 @@ let union ~f x y =
   let x = find x in
   let y = find y in
   if x == y then x
-  else begin
-    match (!x, !y) with
+  else
+    begin match (!x, !y) with
     | ( Root ({ rank = rank_x; value = value_x } as root_x),
         Root ({ rank = rank_y; value = value_y } as root_y) ) ->
       let new_value = f value_x value_y in
@@ -32,7 +32,7 @@ let union ~f x y =
         if rank_x = rank_y then root_x.rank <- root_x.rank + 1;
         x)
     | _ -> assert false
-  end
+    end
 
 let get elt =
   match !(find elt) with

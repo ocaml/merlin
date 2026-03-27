@@ -71,30 +71,30 @@ module Make (Ord : Set.OrderedType) = struct
       | Empty -> 0
       | Node { h; _ } -> h
     in
-    if hl > hr + 2 then begin
-      match fetch l with
+    if hl > hr + 2 then
+      begin match fetch l with
       | Empty -> invalid_arg "Set.bal"
       | Node { l = ll; v = lv; r = lr; _ } ->
         if height ll >= height lr then create ll lv (create lr v r)
-        else begin
-          match fetch lr with
+        else
+          begin match fetch lr with
           | Empty -> invalid_arg "Set.bal"
           | Node { l = lrl; v = lrv; r = lrr; _ } ->
             create (create ll lv lrl) lrv (create lrr v r)
-        end
-    end
-    else if hr > hl + 2 then begin
-      match fetch r with
+          end
+      end
+    else if hr > hl + 2 then
+      begin match fetch r with
       | Empty -> invalid_arg "Set.bal"
       | Node { l = rl; v = rv; r = rr; _ } ->
         if height rr >= height rl then create (create l v rl) rv rr
-        else begin
-          match fetch rl with
+        else
+          begin match fetch rl with
           | Empty -> invalid_arg "Set.bal"
           | Node { l = rll; v = rlv; r = rlr; _ } ->
             create (create l v rll) rlv (create rlr rv rr)
-        end
-    end
+          end
+      end
     else link (Node { l; v; r; h = (if hl >= hr then hl + 1 else hr + 1) })
 
   let empty = link Empty

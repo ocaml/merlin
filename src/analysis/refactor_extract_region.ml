@@ -36,11 +36,12 @@ let clean_up_for_printing expr =
                   { pexp_desc =
                       Pexp_tuple
                         (_
-                         :: (_, ({ pexp_desc =
-                                Pexp_constant
-                                  { pconst_desc = Pconst_string _; _ };
-                              _
-                                } as const))
+                        :: ( _,
+                             ({ pexp_desc =
+                                  Pexp_constant
+                                    { pconst_desc = Pconst_string _; _ };
+                                _
+                              } as const) )
                         :: _);
                     _
                   } )
@@ -206,7 +207,8 @@ let rec find_pattern_var : type a. a Typedtree.general_pattern -> Path.t list =
  fun { Typedtree.pat_desc; _ } ->
   match pat_desc with
   | Typedtree.Tpat_var (ident, _, _) -> [ Pident ident ]
-  | Tpat_tuple fields -> List.concat_map ~f:(fun (_, pat ) -> find_pattern_var pat) fields
+  | Tpat_tuple fields ->
+    List.concat_map ~f:(fun (_, pat) -> find_pattern_var pat) fields
   | Tpat_alias (pat, ident, _, _, _) -> Pident ident :: find_pattern_var pat
   | Tpat_construct (_, _, pats, _) -> List.concat_map ~f:find_pattern_var pats
   | Tpat_variant (_, Some pat, _) -> find_pattern_var pat
@@ -231,10 +233,10 @@ let occuring_vars_path node =
   in
   loop Path.Set.empty node
   |> Path.Set.filter (fun path ->
-         (* Filter identifier that are in Stdlib to avoid cluttering the list
+      (* Filter identifier that are in Stdlib to avoid cluttering the list
             of generated parameters.
             TODO: there probably a more correct way to do this *)
-         Ident.name (Path.head path) <> "Stdlib")
+      Ident.name (Path.head path) <> "Stdlib")
 
 let analyze_expr expr expr_env ~toplevel_item =
   let is_value_bound_locally path =
@@ -473,7 +475,7 @@ let largest_expr_between ~start ~stop nodes =
       let node = Browse_tree.of_node ~env node in
       Lazy.force node.t_children |> List.rev
       |> Stdlib.List.find_map (fun node ->
-             select_among_child node.Browse_tree.t_env node.t_node)
+          select_among_child node.Browse_tree.t_env node.t_node)
   in
   nodes |> Stdlib.List.find_map (fun (env, node) -> select_among_child env node)
 
@@ -481,8 +483,8 @@ let find_associated_toplevel_item expr enclosing =
   Stdlib.List.find_map
     (fun (_, item) ->
       match item with
-      | Browse_raw.Structure_item ({ str_desc; str_loc; str_env }, _) -> begin
-        match str_desc with
+      | Browse_raw.Structure_item ({ str_desc; str_loc; str_env }, _) ->
+        begin match str_desc with
         | Tstr_value (rec_flag, vb)
           when Location_aux.included expr.Typedtree.exp_loc ~into:str_loc ->
           Some { rec_flag; env = str_env; loc = str_loc; kind = Let vb }
@@ -500,7 +502,7 @@ let find_associated_toplevel_item expr enclosing =
               else None)
             cs
         | _ -> None
-      end
+        end
       | _ -> None)
     enclosing
 
@@ -521,8 +523,8 @@ let substitute ~start ~stop ?extract_name buffer structure =
   let enclosing = Mbrowse.enclosing start [ Mbrowse.of_structure structure ] in
   match extract_region ~start ~stop enclosing with
   | None -> raise Nothing_to_do
-  | Some (expr, expr_env, toplevel_item) -> begin
-    match expr.exp_desc with
+  | Some (expr, expr_env, toplevel_item) ->
+    begin match expr.exp_desc with
     | Texp_constant _ ->
       (* Special case for constant. They can't produce side effect so it's not
          necessary to add a trailing unit parameter to the let binding. *)
@@ -531,4 +533,4 @@ let substitute ~start ~stop ?extract_name buffer structure =
     | _ ->
       extract_expr_to_toplevel ?extract_name expr buffer ~expr_env
         ~toplevel_item
-  end
+    end
