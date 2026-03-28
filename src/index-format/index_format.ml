@@ -60,7 +60,8 @@ let index_schema (iter : Granular_marshal.iter) index =
 let compress index =
   let cache = Lid.cache () in
   let compress_map_set =
-    Uid_map.iter (fun _ -> Lid_set.iter (Lid.deduplicate cache))
+    Uid_map.iter_in_memory (fun _ ->
+        Lid_set.iter_in_memory (Lid.deduplicate cache))
   in
   compress_map_set index.defs;
   compress_map_set index.approximated;

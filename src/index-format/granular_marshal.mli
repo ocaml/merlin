@@ -12,6 +12,9 @@ val reuse : 'a link -> unit
     the same value, resulting in a compressed file. *)
 val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit
 
+(** [is_on_disk link] tests if [link] is stored in another index file. *)
+val is_on_disk : 'a link -> bool
+
 (** [fetch lnk] returns the value pointed by the link [lnk].
 
     We of course have [fetch (link v) = v] and [link (fetch lnk) = lnk]. *)
