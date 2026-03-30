@@ -1,6 +1,6 @@
 module Cache = Hashtbl.Make (Int)
 
-type store = { filename : string; id : int; cache : cache }
+type store = { filename : string; cache : cache }
 
 and cache = any_link Cache.t
 
@@ -48,50 +48,6 @@ module Cache_cache = File_cache.Make (struct
   let cache_name = "Cache_cache"
 end)
 
-let ptr_size = 8
-
-let binstring_of_int v =
-  String.init ptr_size (fun i -> Char.chr ((v lsr i lsl 3) land 255))
-
-let int_of_binstring s =
-  Array.fold_right
-    (fun v acc -> (acc lsl 8) + v)
-    (Array.init ptr_size (fun i -> Char.code s.[i]))
-    0
-
-let last_open_store = ref None
-
-let () =
-  at_exit (fun () ->
-      match !last_open_store with
-      | None -> ()
-      | Some (_, fd) -> close_in fd)
-
-let force_open_store store =
-  try
-    let fd = open_in_bin store.filename in
-    seek_in fd (String.length Config.index_magic_number);
-    let required_id = int_of_binstring (really_input_string fd ptr_size) in
-    if required_id = store.id then (
-      last_open_store := Some (store, fd);
-      fd)
-    else
-      raise
-        (Outdated_store
-           { filename = store.filename; reason = `Index_ids_do_not_match })
-  with Sys_error _ ->
-    raise (Outdated_store { filename = store.filename; reason = `Missing_file })
-
-let open_store store =
-  match !last_open_store with
-  | Some (store', fd)
-    when Int.equal store.id store'.id
-         && String.equal store.filename store'.filename -> fd
-  | Some (_, fd) ->
-    close_in fd;
-    force_open_store store
-  | None -> force_open_store store
-
 let read_loc store fd loc schema =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
@@ -117,9 +73,8 @@ let read_loc store fd loc schema =
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
           | On_disk_ptr { filename; loc } ->
-            lnk :=
-              On_disk
-                { store = { filename; cache = Cache.create 0 }; loc; schema }
+            let store = { filename; cache = Cache_cache.read filename } in
+            lnk := On_disk { store; loc; schema }
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -193,7 +148,6 @@ let write ?(flags = []) fd root_schema root_value =
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
           | On_disk { store; loc; _ } ->
-            incr count;
             lnk := On_disk_ptr { filename = store.filename; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
