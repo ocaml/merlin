@@ -1,6 +1,8 @@
 module Cache = Hashtbl.Make (Int)
 
-type store = { filename : string; cache : any_link Cache.t }
+type store = { filename : string; cache : cache }
+
+and cache = any_link Cache.t
 
 and any_link = Link : 'a link * 'a link Type.Id.t -> any_link
 
@@ -35,6 +37,13 @@ let rec normalize lnk =
   | Duplicate lnk -> normalize lnk
   | _ -> lnk
 
+module Cache_cache = File_cache.Make (struct
+  type t = cache
+  let read _filename = Cache.create 0
+
+  let cache_name = "Cache_cache"
+end)
+
 let read_loc store fd loc schema =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
@@ -60,9 +69,8 @@ let read_loc store fd loc schema =
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
           | On_disk_ptr { filename; loc } ->
-            lnk :=
-              On_disk
-                { store = { filename; cache = Cache.create 0 }; loc; schema }
+            let store = { filename; cache = Cache_cache.read filename } in
+            lnk := On_disk { store; loc; schema }
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -157,7 +165,6 @@ let write ?(flags = []) fd root_schema root_value =
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
           | On_disk { store; loc; _ } ->
-            incr count;
             lnk := On_disk_ptr { filename = store.filename; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
