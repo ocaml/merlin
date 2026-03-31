@@ -1,6 +1,12 @@
 (** A pointer to an ['a] value, either residing in memory or on disk. *)
 type 'a link
 
+type cached
+
+val create_lru : int -> unit
+
+val get_lru : unit -> cached Dbllist.t
+
 (** [link v] returns a new link to the in-memory value [v]. *)
 val link : 'a -> 'a link
 
