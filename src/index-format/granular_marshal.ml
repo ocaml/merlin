@@ -203,7 +203,7 @@ let write ?(flags = []) fd root_schema root_value =
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
-  let store = { filename; cache = Cache.create 0 } in
+  let store = { filename; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let root_value = read_loc store fd root_loc root_schema in
   root_value
