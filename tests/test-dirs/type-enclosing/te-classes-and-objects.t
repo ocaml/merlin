@@ -16,54 +16,76 @@
   > let () = (new c ())#m
   > EOF
 
-class c: FIXME 
+class c: 
 We expect 1:6 1:7
   $ $MERLIN single type-enclosing -position 1:6 \
   > -filename main.ml <main.ml | jq '.value[0]'
-  null
+  {
+    "start": {
+      "line": 1,
+      "col": 6
+    },
+    "end": {
+      "line": 1,
+      "col": 7
+    },
+    "type": "unit -> object method m : unit end",
+    "tail": "no"
+  }
 
-method m: FIXME BAD LOC
+method m:
 We expect 2:9 2:10
   $ $MERLIN single type-enclosing -position 2:9 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
     "start": {
       "line": 2,
-      "col": 2
+      "col": 9
     },
     "end": {
       "line": 2,
-      "col": 15
+      "col": 10
     },
     "type": "unit",
     "tail": "no"
   }
 
-inherit c: FIXME
+inherit c:
 We expect 6:10 6:11
   $ $MERLIN single type-enclosing -position 6:10 \
   > -filename main.ml <main.ml | jq '.value[0]'
-  null
+  {
+    "start": {
+      "line": 6,
+      "col": 10
+    },
+    "end": {
+      "line": 6,
+      "col": 11
+    },
+    "type": "unit -> c",
+    "tail": "no"
+  }
 
 as super: FIXME location is missing from the Typedtree
   $ $MERLIN single type-enclosing -position 6:20 \
   > -filename main.ml <main.ml | jq '.value[0]'
   null
 
-sig class c: FIXME bad loc and result
+sig class c:
 we expect 10:8 10:9
   $ $MERLIN single type-enclosing -position 10:8 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
     "start": {
-      "line": 9,
-      "col": 16
+      "line": 10,
+      "col": 8
     },
     "end": {
-      "line": 13,
-      "col": 3
+      "line": 10,
+      "col": 9
     },
-    "type": "sig class c : unit -> object method m : unit end end",
+    "type": "unit -> object method m : unit end",
     "tail": "no"
   }
 
@@ -85,14 +107,14 @@ information is missing from the Typedtree
     "tail": "no"
   }
 
-new c: FIXME bad loc
+new c:
 we expect 15:14 15:15
   $ $MERLIN single type-enclosing -verbosity 0 -position 15:14 \
   > -filename main.ml <main.ml | jq '.value[0]'
   {
     "start": {
       "line": 15,
-      "col": 10
+      "col": 14
     },
     "end": {
       "line": 15,
@@ -108,7 +130,7 @@ new c with verbosity 1
   {
     "start": {
       "line": 15,
-      "col": 10
+      "col": 14
     },
     "end": {
       "line": 15,

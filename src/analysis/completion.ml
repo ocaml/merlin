@@ -133,6 +133,11 @@ let classify_node = function
   | Module_binding_name _ -> `Module
   | Module_declaration_name _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
+  | Class_declaration_name _ -> `Expression
+  | Class_type_declaration_name _ -> `Type
+  | Class_description_name _ -> `Type
+  | Class_field_name _ -> `Expression
+  | Exp_new_class_name _ -> `Expression
   | Open_description _ -> `Module
   | Open_declaration _ -> `Module
   | Include_declaration _ -> `Module
