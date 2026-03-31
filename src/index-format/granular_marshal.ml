@@ -13,7 +13,7 @@ and 'a repr =
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
-  | On_disk_ptr of { filename : string; loc : int }
+  | On_disk_ptr of { filename : string; loc : int; id : int }
   | In_memory of 'a
   | In_memory_reused of 'a
   | Duplicate of 'a link
@@ -44,6 +44,22 @@ module Cache_cache = File_cache.Make (struct
   let cache_name = "Cache_cache"
 end)
 
+let ptr_size = 8
+
+let binstring_of_int v =
+  String.init ptr_size (fun i -> Char.chr ((v lsr i lsl 3) land 255))
+
+let int_of_binstring s =
+  Array.fold_right
+    (fun v acc -> (acc lsl 8) + v)
+    (Array.init ptr_size (fun i -> Char.code s.[i]))
+    0
+
+let fetch_id filename =
+  In_channel.with_open_bin filename (fun fd ->
+      seek_in fd (String.length Config.index_magic_number);
+      int_of_binstring (really_input_string fd ptr_size))
+
 let read_loc store fd loc schema =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
@@ -68,9 +84,12 @@ let read_loc store fd loc schema =
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
-          | On_disk_ptr { filename; loc } ->
-            let store = { filename; cache = Cache_cache.read filename } in
-            lnk := On_disk { store; loc; schema }
+          | On_disk_ptr { filename; loc; id } ->
+            let pointed_index_id = fetch_id filename in
+            if pointed_index_id = id then
+              let store = { filename; cache = Cache_cache.read filename } in
+              lnk := On_disk { store; loc; schema }
+            else failwith "error"
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -136,18 +155,9 @@ let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
       lnk := Duplicate original_lnk
     | exception Not_found -> H.add cache key lnk
 
-let ptr_size = 8
-
-let binstring_of_int v =
-  String.init ptr_size (fun i -> Char.chr ((v lsr i lsl 3) land 255))
-
-let int_of_binstring s =
-  Array.fold_right
-    (fun v acc -> (acc lsl 8) + v)
-    (Array.init ptr_size (fun i -> Char.code s.[i]))
-    0
-
 let write ?(flags = []) fd root_schema root_value =
+  let id = Random.int ((Float.pow 2. 30. |> Float.to_int) - 1) in
+  output_string fd (binstring_of_int id);
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
@@ -165,7 +175,8 @@ let write ?(flags = []) fd root_schema root_value =
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
           | On_disk { store; loc; _ } ->
-            lnk := On_disk_ptr { filename = store.filename; loc })
+            let id = fetch_id store.filename in
+            lnk := On_disk_ptr { filename = store.filename; loc; id })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
@@ -204,6 +215,7 @@ let write ?(flags = []) fd root_schema root_value =
 
 let read filename fd root_schema =
   let store = { filename; cache = Cache_cache.read filename } in
+  let _id = really_input_string fd 8 in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let root_value = read_loc store fd root_loc root_schema in
   root_value

@@ -134,6 +134,7 @@ let write ~file index =
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
     (fun _temp_file_name oc ->
       output_string oc magic_number;
+      Random.self_init ();
       Granular_marshal.write oc index_schema (index : index))
 
 type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
