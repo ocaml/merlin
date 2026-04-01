@@ -77,6 +77,7 @@ let () =
   (match !command with
   | Some Aggregate ->
     let root = if String.equal "" !root then None else Some !root in
+    Granular_marshal.create_lru 1000;
     Index.from_files ~store_shapes:!store_shapes ~root
       ~rewrite_root:!rewrite_root ~output_file:!output_file
       ~build_path:

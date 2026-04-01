@@ -26,7 +26,18 @@ and 'a schema = iter -> 'a -> unit
 
 and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 
-let lru_dbllist : cached Dbllist.t = Dbllist.create 3_000_000
+let lru_dbllist : cached Dbllist.t option ref = ref None
+
+let create_lru cap =
+  lru_dbllist := Some (Dbllist.create cap)
+
+let get_lru () =
+  match !lru_dbllist with
+  | Some lru -> lru
+  | None ->
+    let lru = Dbllist.create 1_000 in
+    lru_dbllist := Some lru;
+    lru
 
 let schema_no_sublinks : _ schema = fun _ _ -> ()
 
@@ -95,6 +106,12 @@ let () =
       | None -> ()
       | Some (_, fd) -> close_in fd)
 
+let () =
+  at_exit (fun () ->
+    match !lru_dbllist with
+    | None -> ()
+    | Some lru -> Dbllist.pp_stats lru)
+
 let force_open_store store =
   let fd = open_in_bin store.filename in
   last_open_store := Some (store, fd);
@@ -116,7 +133,7 @@ let fetch_loc store loc schema =
 let rec fetch lnk =
   match !lnk with
   | In_memory_c (v, cell) ->
-    Dbllist.promote lru_dbllist cell;
+    Dbllist.promote (get_lru ()) cell;
     v
   | In_memory v | In_memory_reused v -> v
   | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ ->
@@ -128,13 +145,14 @@ let rec fetch lnk =
     v
   | On_disk { store; loc; schema } ->
     let v, size = fetch_loc store loc schema in
-    let discarded = Dbllist.discard_size lru_dbllist size in
+    let discarded = Dbllist.discard_size (get_lru ()) size in
     let cell =
-      Dbllist.add_front lru_dbllist (Cached (lnk, loc, store, schema), size)
+      Dbllist.add_front (get_lru ()) (Cached (lnk, loc, store, schema), size)
     in
     List.iter
       (fun (Cached (link, loc, store, schema)) ->
-        Cache.remove store.cache loc;
+        (* Cache.remove store.cache loc; *)
+        (* Format.eprintf "evicting %d\n%!" loc; *)
         link := On_disk { store; loc; schema })
       discarded;
     lnk := In_memory_c (v, cell);
@@ -186,8 +204,11 @@ let write ?(flags = []) fd root_schema root_value =
             | In_memory_reused v -> write_child_reused original_lnk schema v
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
-          | In_memory v | In_memory_c (v, _) ->
+          | In_memory v
+          (* | In_memory_c (v, _) *)
+          ->
             write_child lnk schema v size ~placeholders ~restore
+          | In_memory_c _ -> assert(false)
           | On_disk { store; loc; _ } ->
             lnk := On_disk_ptr { filename = store.filename; loc })
     }
