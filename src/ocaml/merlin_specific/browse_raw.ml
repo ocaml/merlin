@@ -84,6 +84,11 @@ type node =
   | Module_binding_name of module_binding
   | Module_declaration_name of module_declaration
   | Module_type_declaration_name of module_type_declaration
+  | Class_declaration_name of class_declaration
+  | Class_type_declaration_name of class_type_declaration
+  | Class_description_name of class_description
+  | Class_field_name of class_field
+  | Exp_new_class_name of Longident.t Location.loc * Types.class_declaration
 
 let node_update_env env0 = function
   | Pattern { pat_env = env }
@@ -104,6 +109,11 @@ let node_update_env env0 = function
   | Class_signature _
   | Class_field _
   | Class_field_kind _
+  | Class_declaration_name _
+  | Class_type_declaration_name _
+  | Class_description_name _
+  | Class_field_name _
+  | Exp_new_class_name _
   | Type_extension _
   | Extension_constructor _
   | Package_type _
@@ -159,6 +169,12 @@ let node_real_loc loc0 = function
   | Class_declaration { ci_loc = loc }
   | Class_description { ci_loc = loc }
   | Class_type_declaration { ci_loc = loc }
+  | Class_declaration_name { ci_id_name = { loc } }
+  | Class_type_declaration_name { ci_id_name = { loc } }
+  | Class_description_name { ci_id_name = { loc } }
+  | Class_field_name
+      { cf_desc = Tcf_val ({ loc }, _, _, _, _) | Tcf_method ({ loc }, _, _) }
+  | Exp_new_class_name ({ loc }, _)
   | Extension_constructor { ext_loc = loc }
   | Include_description { incl_loc = loc }
   | Include_declaration { incl_loc = loc }
@@ -180,6 +196,7 @@ let node_real_loc loc0 = function
   | Type_kind _
   | Class_signature _
   | Package_type _
+  | Class_field_name _
   | Dummy -> loc0
 
 let node_attributes = function
@@ -351,7 +368,8 @@ let of_method_call obj meth loc env (f : _ f0) acc =
 let rec of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_, None)
-  | Texp_new _ | Texp_typed_hole -> id_fold
+  | Texp_typed_hole -> id_fold
+  | Texp_new (_, lid, decl) -> app (Exp_new_class_name (lid, decl))
   | Texp_let (_, vbs, e) -> of_expression e ** list_fold of_value_binding vbs
   | Texp_function (params, body) ->
     list_fold of_function_param params ** of_function_body body
@@ -586,7 +604,8 @@ let of_node = function
   | Class_expr { cl_desc } -> of_class_expr_desc cl_desc
   | Class_structure { cstr_self; cstr_fields } ->
     of_pattern cstr_self ** list_fold (fun f -> app (Class_field f)) cstr_fields
-  | Class_field { cf_desc } -> of_class_field_desc cf_desc
+  | Class_field ({ cf_desc } as cf) ->
+    of_class_field_desc cf_desc ** app (Class_field_name cf)
   | Class_field_kind (Tcfk_virtual ct) -> of_core_type ct
   | Class_field_kind (Tcfk_concrete (_, e)) -> of_expression e
   | Module_expr { mod_desc } -> of_module_expr_desc mod_desc
@@ -656,17 +675,28 @@ let of_node = function
     of_core_type csig_self
     ** list_fold (fun x -> app (Class_type_field x)) csig_fields
   | Class_type_field { ctf_desc } -> of_class_type_field_desc ctf_desc
-  | Class_declaration { ci_params; ci_expr } ->
-    app (Class_expr ci_expr) ** list_fold of_typ_param ci_params
-  | Class_description { ci_params; ci_expr } ->
-    app (Class_type ci_expr) ** list_fold of_typ_param ci_params
-  | Class_type_declaration { ci_params; ci_expr } ->
-    app (Class_type ci_expr) ** list_fold of_typ_param ci_params
+  | Class_declaration ({ ci_params; ci_expr } as cd) ->
+    app (Class_expr ci_expr)
+    ** list_fold of_typ_param ci_params
+    ** app (Class_declaration_name cd)
+  | Class_description ({ ci_params; ci_expr } as cd) ->
+    app (Class_type ci_expr)
+    ** list_fold of_typ_param ci_params
+    ** app (Class_description_name cd)
+  | Class_type_declaration ({ ci_params; ci_expr } as ctd) ->
+    app (Class_type ci_expr)
+    ** list_fold of_typ_param ci_params
+    ** app (Class_type_declaration_name ctd)
   | Method_call _ -> id_fold
   | Record_field _ -> id_fold
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
+  | Class_declaration_name _ -> id_fold
+  | Class_type_declaration_name _ -> id_fold
+  | Class_description_name _ -> id_fold
+  | Class_field_name _ -> id_fold
+  | Exp_new_class_name _ -> id_fold
   | Open_description _ -> id_fold
   | Open_declaration od -> app (Module_expr od.open_expr)
   | Include_declaration i -> of_module_expr i.incl_mod
@@ -723,6 +753,11 @@ let string_of_node = function
   | Module_binding_name _ -> "module_binding_name"
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
+  | Class_declaration_name _ -> "class_declaration_name"
+  | Class_type_declaration_name _ -> "class_type_declaration_name"
+  | Class_description_name _ -> "class_description_name"
+  | Class_field_name _ -> "class_field_name"
+  | Exp_new_class_name _ -> "exp_new_class_name"
   | Open_description _ -> "open_description"
   | Open_declaration _ -> "open_declaration"
   | Include_description _ -> "include_description"

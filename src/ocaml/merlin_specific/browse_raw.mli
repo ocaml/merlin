@@ -97,6 +97,11 @@ type node =
   | Module_binding_name of module_binding
   | Module_declaration_name of module_declaration
   | Module_type_declaration_name of module_type_declaration
+  | Class_declaration_name of class_declaration
+  | Class_type_declaration_name of class_type_declaration
+  | Class_description_name of class_description
+  | Class_field_name of class_field
+  | Exp_new_class_name of Longident.t Location.loc * Types.class_declaration
 
 val fold_node : (Env.t -> node -> 'a -> 'a) -> Env.t -> node -> 'a -> 'a
 
