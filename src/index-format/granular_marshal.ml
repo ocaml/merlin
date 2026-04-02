@@ -89,7 +89,9 @@ let read_loc store fd loc schema =
             if pointed_index_id = id then
               let store = { filename; cache = Cache_cache.read filename } in
               lnk := On_disk { store; loc; schema }
-            else failwith "error"
+            else
+              failwith
+                "Granular_marshal.read_loc: pointing to an outdated index file"
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
