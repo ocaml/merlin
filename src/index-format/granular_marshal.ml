@@ -157,10 +157,10 @@ let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
       lnk := Duplicate original_lnk
     | exception Not_found -> H.add cache key lnk
 
-let write ?(flags = []) fd root_schema root_value =
+let write ?(flags = []) fd root_schema root_value rand_state =
   let id =
     let buf = Bytes.create 8 in
-    Bytes.set_int64_be buf 0 (Random.int64 Int64.max_int);
+    Bytes.set_int64_be buf 0 (Random.State.int64 rand_state Int64.max_int);
     Bytes.to_string buf
   in
   output_string fd id;

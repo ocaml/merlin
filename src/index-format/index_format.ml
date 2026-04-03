@@ -131,11 +131,11 @@ let magic_number = Config.index_magic_number
 
 let write ~file index =
   let index = compress index in
+  let rand_state = Random.State.make_self_init () in
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
     (fun _temp_file_name oc ->
       output_string oc magic_number;
-      Random.self_init ();
-      Granular_marshal.write oc index_schema (index : index))
+      Granular_marshal.write oc index_schema (index : index) rand_state)
 
 type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
