@@ -158,8 +158,12 @@ let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
     | exception Not_found -> H.add cache key lnk
 
 let write ?(flags = []) fd root_schema root_value =
-  let id = Random.int ((Float.pow 2. 30. |> Float.to_int) - 1) in
-  output_string fd (binstring_of_int id);
+  let id =
+    let buf = Bytes.create 8 in
+    Bytes.set_int64_be buf 0 (Random.int64 Int64.max_int);
+    Bytes.to_string buf
+  in
+  output_string fd id;
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
