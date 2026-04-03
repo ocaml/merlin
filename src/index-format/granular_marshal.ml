@@ -29,8 +29,8 @@ let link v = ref (In_memory v)
 
 let is_on_disk lnk =
   match !lnk with
-  | On_disk _ | On_disk_ptr _ -> false
-  | _ -> true
+  | On_disk _ | On_disk_ptr _ -> true
+  | _ -> false
 
 let rec normalize lnk =
   match !lnk with

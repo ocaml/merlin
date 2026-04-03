@@ -268,7 +268,7 @@ module Make (Ord : Set.OrderedType) = struct
       iter f r
 
   let rec iter_in_memory f t =
-    if Granular_marshal.is_on_disk t then
+    if not (Granular_marshal.is_on_disk t) then
       match fetch t with
       | Empty -> ()
       | Node { l; v; r; _ } ->
