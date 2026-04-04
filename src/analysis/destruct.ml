@@ -696,11 +696,10 @@ let refine_and_generate_branches patt config source patterns sub_patterns =
     (top_patt.Typedtree.pat_loc, str)
 
 let refine_complete_match (type a) parents (patt : a Typedtree.general_pattern)
-    config source patterns =
+    config source (patterns : Typedtree.pattern list) =
   match Typedtree.classify_pattern patt with
   | Computation -> raise (Not_allowed "computation pattern")
   | Value ->
-    let _ : Typedtree.value Typedtree.general_pattern = patt in
     if not (destructible patt) then raise Nothing_to_do
     else
       let ty = patt.Typedtree.pat_type in
