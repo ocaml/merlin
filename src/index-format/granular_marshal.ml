@@ -12,7 +12,7 @@ and 'a repr =
   | Small of 'a
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
-  | On_disk of { store : store; loc : int; schema : 'a schema }
+  | On_disk of { store : store; loc : int; schema : 'a schema; id : int }
   | On_disk_ptr of { filename : string; loc : int; id : int }
   | In_memory of 'a
   | In_memory_reused of 'a
@@ -55,49 +55,6 @@ let int_of_binstring s =
     (Array.init ptr_size (fun i -> Char.code s.[i]))
     0
 
-let fetch_id filename =
-  In_channel.with_open_bin filename (fun fd ->
-      seek_in fd (String.length Config.index_magic_number);
-      int_of_binstring (really_input_string fd ptr_size))
-
-let read_loc store fd loc schema =
-  seek_in fd loc;
-  let v = Marshal.from_channel fd in
-  let rec iter =
-    { yield =
-        (fun (type a) (lnk : a link) type_id schema ->
-          match !lnk with
-          | Small v ->
-            schema iter v;
-            lnk := In_memory v
-          | Serialized { loc } -> lnk := On_disk { store; loc; schema }
-          | Serialized_reused { loc } -> (
-            match Cache.find store.cache loc with
-            | Link (type b) ((lnk', type_id') : b link * _) -> (
-              match Type.Id.provably_equal type_id type_id' with
-              | Some (Equal : (a link, b link) Type.eq) ->
-                lnk := Duplicate (normalize lnk')
-              | None ->
-                invalid_arg
-                  "Granular_marshal.read_loc: reuse of a different type")
-            | exception Not_found ->
-              lnk := On_disk { store; loc; schema };
-              Cache.add store.cache loc (Link (lnk, type_id)))
-          | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
-          | On_disk_ptr { filename; loc; id } ->
-            let pointed_index_id = fetch_id filename in
-            if pointed_index_id = id then
-              let store = { filename; cache = Cache_cache.read filename } in
-              lnk := On_disk { store; loc; schema }
-            else
-              failwith
-                "Granular_marshal.read_loc: pointing to an outdated index file"
-          | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
-    }
-  in
-  schema iter v;
-  v
-
 let last_open_store = ref None
 
 let () =
@@ -119,6 +76,45 @@ let open_store store =
     force_open_store store
   | None -> force_open_store store
 
+let fetch_id store =
+  let fd = open_store store in
+  seek_in fd (String.length Config.index_magic_number);
+  int_of_binstring (really_input_string fd ptr_size)
+
+let read_loc store fd loc schema =
+  seek_in fd loc;
+  let v = Marshal.from_channel fd in
+  let rec iter =
+    { yield =
+        (fun (type a) (lnk : a link) type_id schema ->
+          match !lnk with
+          | Small v ->
+            schema iter v;
+            lnk := In_memory v
+          | Serialized { loc } ->
+            lnk := On_disk { store; loc; schema; id = fetch_id store }
+          | Serialized_reused { loc } -> (
+            match Cache.find store.cache loc with
+            | Link (type b) ((lnk', type_id') : b link * _) -> (
+              match Type.Id.provably_equal type_id type_id' with
+              | Some (Equal : (a link, b link) Type.eq) ->
+                lnk := Duplicate (normalize lnk')
+              | None ->
+                invalid_arg
+                  "Granular_marshal.read_loc: reuse of a different type")
+            | exception Not_found ->
+              lnk := On_disk { store; loc; schema; id = fetch_id store };
+              Cache.add store.cache loc (Link (lnk, type_id)))
+          | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
+          | On_disk_ptr { filename; loc; id } ->
+            let store = { filename; cache = Cache_cache.read filename } in
+            lnk := On_disk { store; loc; schema; id }
+          | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
+    }
+  in
+  schema iter v;
+  v
+
 let fetch_loc store loc schema =
   let fd = open_store store in
   let v = read_loc store fd loc schema in
@@ -134,10 +130,14 @@ let rec fetch lnk =
     let v = fetch original_lnk in
     lnk := In_memory v;
     v
-  | On_disk { store; loc; schema } ->
-    let v = fetch_loc store loc schema in
-    lnk := In_memory v;
-    v
+  | On_disk { store; loc; schema; id } ->
+    let pointed_index_id = fetch_id store in
+    if pointed_index_id = id then (
+      let v = fetch_loc store loc schema in
+      lnk := In_memory v;
+      v)
+    else
+      failwith "Granular_marshal.read_loc: pointing to an outdated index file"
 
 let reuse lnk =
   match !lnk with
@@ -181,7 +181,7 @@ let write ?(flags = []) fd root_schema root_value rand_state =
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
           | On_disk { store; loc; _ } ->
-            let id = fetch_id store.filename in
+            let id = fetch_id store in
             lnk := On_disk_ptr { filename = store.filename; loc; id })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
