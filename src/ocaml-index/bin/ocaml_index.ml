@@ -72,12 +72,17 @@ let set_log_level debug verbose =
   if debug then Log.set_log_level Debug
 
 let () =
+  (* let r = Gc.c () in
+  Format.eprintf "%d\n%!" r.heap_words; *)
+  (* {r with heap_words = } *)
   Arg.parse speclist anon_fun usage_msg;
   set_log_level !debug !verbose;
   (match !command with
   | Some Aggregate ->
     let root = if String.equal "" !root then None else Some !root in
-    Granular_marshal.create_lru 1000;
+    (* Granular_marshal.create_lru 1_000; *)
+    Granular_marshal.create_lru 30_000_000; (* 300 adds*)
+    (* Granular_marshal.create_lru 100_000_000; *)
     Index.from_files ~store_shapes:!store_shapes ~root
       ~rewrite_root:!rewrite_root ~output_file:!output_file
       ~build_path:

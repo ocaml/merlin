@@ -25,12 +25,22 @@ type 'a t = { mutable dbll : 'a dbll; stats : stats }
 
 exception Action_on_empty_list of string
 
-let pp_stats t =
-  Format.eprintf "total_cap \t: %d\npromote \t: %d\nadd \t\t: %d\ndiscard \t: %d\n%!"
+(* let pp_stats oc t =
+  Printf.fprintf oc "total_cap \t: %d\nsize \t: %d\npromote \t: %d\nadd \t\t: %d\ndiscard \t: %d\n%!"
   t.stats.total_cap
+  (match t.dbll with | Nil _ -> 0 | List l -> l.size)
+  t.stats.promote
+  t.stats.add
+  t.stats.discard *)
+
+let pp_stats t =
+  Format.eprintf "total_cap \t: %d\nsize \t: %d\npromote \t: %d\nadd \t\t: %d\ndiscard \t: %d\n%!"
+  t.stats.total_cap
+  (match t.dbll with | Nil _ -> 0 | List l -> l.size)
   t.stats.promote
   t.stats.add
   t.stats.discard
+
 
 (* let clear t =
   match !t with
@@ -149,3 +159,34 @@ let promote_update t c v =
 let promote t c = promote_update t c c.content
 
 let get c = c.content
+
+let length t =
+  let rec iter c acc =
+    Format.eprintf "dbllist.length\n%!";
+    if c == c.next then acc else
+    iter c.next (acc + 1)
+  in
+  match t.dbll with
+  | Nil _ -> 0
+  | List l -> iter l.first 1
+
+let mem t v =
+  match t.dbll with
+  | Nil _ -> false
+  | List l ->
+    let rec iter c =
+      Format.eprintf "dbllist.mem\n%!";
+      if c.content = v then true
+      else if c.next == c then false
+      else iter c.next
+    in
+    iter l.first
+
+let get_first t =
+  match t.dbll with
+  | Nil _ -> None
+  | List l -> Some l.first
+
+let is_last c = c == c.next
+
+let get_next c = c.next

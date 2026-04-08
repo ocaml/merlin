@@ -17,4 +17,11 @@ val discard_size : 'a t -> int -> 'a list
 val promote : 'a t -> 'a cell -> unit
 val get : 'a cell -> 'a
 val promote_update : 'a t -> 'a cell -> 'a -> unit
+(* val pp_stats : out_channel -> 'a t -> unit *)
 val pp_stats : 'a t -> unit
+val length : 'a t -> int
+val mem : 'a t -> 'a -> bool
+
+val get_first : 'a t -> 'a cell option
+val is_last : 'a cell -> bool
+val get_next : 'a cell -> 'a cell
