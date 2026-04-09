@@ -1,6 +1,6 @@
 module Cache = Hashtbl.Make (Int)
 
-type store = { filename : string; cache : cache }
+type store = { filename : string; id : int; cache : cache }
 
 and cache = any_link Cache.t
 
@@ -12,7 +12,7 @@ and 'a repr =
   | Small of 'a
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
-  | On_disk of { store : store; loc : int; schema : 'a schema; id : int }
+  | On_disk of { store : store; loc : int; schema : 'a schema }
   | On_disk_ptr of { filename : string; loc : int; id : int }
   | In_memory of 'a
   | In_memory_reused of 'a
@@ -65,8 +65,13 @@ let () =
 
 let force_open_store store =
   let fd = open_in_bin store.filename in
-  last_open_store := Some (store, fd);
-  fd
+
+  seek_in fd (String.length Config.index_magic_number);
+  let required_id = int_of_binstring (really_input_string fd ptr_size) in
+  if required_id = store.id then (
+    last_open_store := Some (store, fd);
+    fd)
+  else failwith "Granular_marshal.read_loc: pointing to an outdated index file"
 
 let open_store store =
   match !last_open_store with
@@ -75,11 +80,6 @@ let open_store store =
     close_in fd;
     force_open_store store
   | None -> force_open_store store
-
-let fetch_id store =
-  let fd = open_store store in
-  seek_in fd (String.length Config.index_magic_number);
-  int_of_binstring (really_input_string fd ptr_size)
 
 let read_loc store fd loc schema =
   seek_in fd loc;
@@ -91,8 +91,7 @@ let read_loc store fd loc schema =
           | Small v ->
             schema iter v;
             lnk := In_memory v
-          | Serialized { loc } ->
-            lnk := On_disk { store; loc; schema; id = fetch_id store }
+          | Serialized { loc } -> lnk := On_disk { store; loc; schema }
           | Serialized_reused { loc } -> (
             match Cache.find store.cache loc with
             | Link (type b) ((lnk', type_id') : b link * _) -> (
@@ -103,12 +102,12 @@ let read_loc store fd loc schema =
                 invalid_arg
                   "Granular_marshal.read_loc: reuse of a different type")
             | exception Not_found ->
-              lnk := On_disk { store; loc; schema; id = fetch_id store };
+              lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
           | On_disk_ptr { filename; loc; id } ->
-            let store = { filename; cache = Cache_cache.read filename } in
-            lnk := On_disk { store; loc; schema; id }
+            let store = { filename; id; cache = Cache_cache.read filename } in
+            lnk := On_disk { store; loc; schema }
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
@@ -130,14 +129,10 @@ let rec fetch lnk =
     let v = fetch original_lnk in
     lnk := In_memory v;
     v
-  | On_disk { store; loc; schema; id } ->
-    let pointed_index_id = fetch_id store in
-    if pointed_index_id = id then (
-      let v = fetch_loc store loc schema in
-      lnk := In_memory v;
-      v)
-    else
-      failwith "Granular_marshal.read_loc: pointing to an outdated index file"
+  | On_disk { store; loc; schema } ->
+    let v = fetch_loc store loc schema in
+    lnk := In_memory v;
+    v
 
 let reuse lnk =
   match !lnk with
@@ -157,12 +152,8 @@ let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
       lnk := Duplicate original_lnk
     | exception Not_found -> H.add cache key lnk
 
-let write ?(flags = []) fd root_schema root_value rand_state =
-  let id =
-    let buf = Bytes.create 8 in
-    Bytes.set_int64_be buf 0 (Random.State.int64 rand_state Int64.max_int);
-    Bytes.to_string buf
-  in
+let write ?(flags = []) fd id root_schema root_value =
+  let id = binstring_of_int id in
   output_string fd id;
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
@@ -180,9 +171,8 @@ let write ?(flags = []) fd root_schema root_value rand_state =
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | On_disk { store; loc; _ } ->
-            let id = fetch_id store in
-            lnk := On_disk_ptr { filename = store.filename; loc; id })
+          | On_disk { store = { filename; id; _ }; loc; _ } ->
+            lnk := On_disk_ptr { filename; id; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
@@ -220,8 +210,8 @@ let write ?(flags = []) fd root_schema root_value rand_state =
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
-  let store = { filename; cache = Cache_cache.read filename } in
-  let _id = really_input_string fd 8 in
+  let id = int_of_binstring (really_input_string fd 8) in
+  let store = { filename; id; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let root_value = read_loc store fd root_loc root_schema in
   root_value
