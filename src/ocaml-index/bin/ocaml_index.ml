@@ -115,12 +115,12 @@ let () =
         !input_files
     | _ -> Printf.printf "Nothing to do.\n%!");
     exit 0
-  with Granular_marshal.Outdated_store { filename; reason } ->
+  with Granular_marshal.Outdated_store reason ->
     let msg =
       match reason with
-      | `Missing_file -> Format.asprintf "Missing file \"%s\"." filename
-      | `Index_ids_do_not_match ->
-        Format.asprintf "Index IDs doesn't match for \"%s\"." filename
+      | `Missing_file filename ->
+        Format.asprintf "Missing file \"%s\"." filename
+      | `Index_ids_doesn't_match -> "Index IDs doesn't match."
     in
     Printf.printf
       "%s\nHint: try to rebuild indexes with dune build @ocaml-index.\n%!" msg;
