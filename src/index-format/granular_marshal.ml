@@ -23,6 +23,9 @@ and 'a schema = iter -> 'a -> unit
 
 and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 
+exception
+  Outdated_store of [ `Missing_file of string | `Index_ids_doesn't_match ]
+
 let schema_no_sublinks : _ schema = fun _ _ -> ()
 
 let link v = ref (In_memory v)
@@ -64,14 +67,15 @@ let () =
       | Some (_, fd) -> close_in fd)
 
 let force_open_store store =
-  let fd = open_in_bin store.filename in
-
-  seek_in fd (String.length Config.index_magic_number);
-  let required_id = int_of_binstring (really_input_string fd ptr_size) in
-  if required_id = store.id then (
-    last_open_store := Some (store, fd);
-    fd)
-  else failwith "Granular_marshal.read_loc: pointing to an outdated index file"
+  try
+    let fd = open_in_bin store.filename in
+    seek_in fd (String.length Config.index_magic_number);
+    let required_id = int_of_binstring (really_input_string fd ptr_size) in
+    if required_id = store.id then (
+      last_open_store := Some (store, fd);
+      fd)
+    else raise (Outdated_store `Index_ids_doesn't_match)
+  with Sys_error _ -> raise (Outdated_store (`Missing_file store.filename))
 
 let open_store store =
   match !last_open_store with
