@@ -1,8 +1,12 @@
 module Cache = Hashtbl.Make (Int)
 
-type store = { filename : string; cache : any_link Cache.t }
+type store = { filename : string; cache : cache }
+
+and cache = any_link Cache.t
 
 and any_link = Link : 'a link * 'a link Type.Id.t -> any_link
+
+and cached = Cached : 'a link * int * store * 'a schema -> cached
 
 and 'a link = 'a repr ref
 
@@ -11,7 +15,9 @@ and 'a repr =
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
+  | On_disk_ptr of { filename : string; loc : int }
   | In_memory of 'a
+  | In_cache of 'a * cached Dbllist.cell
   | In_memory_reused of 'a
   | Duplicate of 'a link
   | Placeholder
@@ -20,18 +26,68 @@ and 'a schema = iter -> 'a -> unit
 
 and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 
+let lru_dbllist : cached Dbllist.t option ref = ref None
+
+let fetch_count = Hashtbl.create 16
+let debug h =
+  let r = Hashtbl.create 16 in
+  Hashtbl.iter (fun _k v ->
+    let count = try Hashtbl.find r v with Not_found -> 0 in
+    Hashtbl.replace r v (count + 1);
+  ) h;
+  Hashtbl.iter (fun k v ->
+    Format.eprintf "fetché %d fois -> %d valeurs\n%!" k v
+  ) r
+
+let create_lru cap =
+  lru_dbllist := Some (Dbllist.create cap)
+
+let get_lru () =
+  match !lru_dbllist with
+  | Some lru -> lru
+  | None ->
+    let lru = Dbllist.create 1_000 in
+    lru_dbllist := Some lru;
+    lru
+
 let schema_no_sublinks : _ schema = fun _ _ -> ()
 
 let link v = ref (In_memory v)
+
+let is_on_disk lnk =
+  match !lnk with
+  | On_disk _ | On_disk_ptr _ -> false
+  | _ -> true
 
 let rec normalize lnk =
   match !lnk with
   | Duplicate lnk -> normalize lnk
   | _ -> lnk
 
+module Cache_cache = File_cache.Make (struct
+  type t = cache
+  let read _filename = Cache.create 0
+
+  let cache_name = "Cache_cache"
+end)
+
+let f (type a) store loc type_id (lnk: a link) schema =
+  match Cache.find_opt store.cache loc with
+  | Some (Link (type b) ((lnk', type_id') : b link * _)) -> (
+    match Type.Id.provably_equal type_id type_id' with
+    | Some (Equal : (a link, b link) Type.eq) ->
+      lnk := Duplicate (normalize lnk')
+    | None ->
+      invalid_arg
+        "Granular_marshal.read_loc: reuse of a different type")
+  | None ->
+    lnk := On_disk { store; loc; schema };
+    Cache.add store.cache loc (Link (lnk, type_id))
+
 let read_loc store fd loc schema =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
+  let size_read = pos_in fd - loc in
   let rec iter =
     { yield =
         (fun (type a) (lnk : a link) type_id schema ->
@@ -39,25 +95,22 @@ let read_loc store fd loc schema =
           | Small v ->
             schema iter v;
             lnk := In_memory v
-          | Serialized { loc } -> lnk := On_disk { store; loc; schema }
-          | Serialized_reused { loc } -> (
-            match Cache.find store.cache loc with
-            | Link (type b) ((lnk', type_id') : b link * _) -> (
-              match Type.Id.provably_equal type_id type_id' with
-              | Some (Equal : (a link, b link) Type.eq) ->
-                lnk := Duplicate (normalize lnk')
-              | None ->
-                invalid_arg
-                  "Granular_marshal.read_loc: reuse of a different type")
-            | exception Not_found ->
-              lnk := On_disk { store; loc; schema };
-              Cache.add store.cache loc (Link (lnk, type_id)))
-          | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
+          | Serialized { loc }
+          | Serialized_reused { loc } -> 
+            f store loc type_id lnk schema
+          | In_memory _
+          | In_cache _
+          | In_memory_reused _
+          | On_disk _
+          | Duplicate _ -> ()
+          | On_disk_ptr { filename; loc } ->
+            let store = { filename; cache = Cache_cache.read filename } in
+            f store loc type_id lnk schema;
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
   schema iter v;
-  v
+  (v, size_read)
 
 let last_open_store = ref None
 
@@ -66,6 +119,17 @@ let () =
       match !last_open_store with
       | None -> ()
       | Some (_, fd) -> close_in fd)
+
+let () =
+  at_exit (fun () ->
+    match !lru_dbllist with
+    | None -> ()
+    | Some lru ->
+      (* let oc = open_out "/tmp/filename.txt" in *)
+      Dbllist.pp_stats  lru;
+      debug fetch_count;
+      (* close_out oc) *)
+      )
 
 let force_open_store store =
   let fd = open_in_bin store.filename in
@@ -82,13 +146,19 @@ let open_store store =
 
 let fetch_loc store loc schema =
   let fd = open_store store in
-  let v = read_loc store fd loc schema in
-  v
+  let v, size = read_loc store fd loc schema in
+  (v, size)
 
 let rec fetch lnk =
   match !lnk with
+  | In_cache (v, cell) ->
+    let Cached (_, _loc, _, _) = Dbllist.get cell in
+    (* Format.eprintf "\t[FETCH]promoting loc = %d\n%!" loc; *)
+    Dbllist.promote (get_lru ()) cell;
+    (* Format.eprintf ".......(0)lru length = %d\n%!" (Dbllist.length (get_lru())); *)
+    v
   | In_memory v | In_memory_reused v -> v
-  | Serialized _ | Serialized_reused _ | Small _ ->
+  | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ ->
     invalid_arg "Granular_marshal.fetch: serialized"
   | Placeholder -> invalid_arg "Granular_marshal.fetch: during a write"
   | Duplicate original_lnk ->
@@ -96,14 +166,25 @@ let rec fetch lnk =
     lnk := In_memory v;
     v
   | On_disk { store; loc; schema } ->
-    let v = fetch_loc store loc schema in
-    lnk := In_memory v;
+    let count = try Hashtbl.find fetch_count (loc, store.filename) with Not_found -> 0 in
+    Hashtbl.replace fetch_count (loc, store.filename) (count + 1);
+    let v, size = fetch_loc store loc schema in
+    let discarded = Dbllist.discard_size (get_lru ()) size in
+    let cell =
+      Dbllist.add_front (get_lru ()) (Cached (lnk, loc, store, schema), size)
+    in
+    List.iter
+      (fun (Cached (link, loc, store, schema)) ->
+        link := On_disk { store; loc; schema })
+      discarded;
+    lnk := In_cache (v, cell);
     v
 
 let reuse lnk =
   match !lnk with
-  | In_memory v -> lnk := In_memory_reused v
+  | In_memory v | In_cache (v, _) -> lnk := In_memory_reused v
   | In_memory_reused _ -> ()
+  | On_disk _ -> ()
   | _ -> invalid_arg "Granular_marshal.reuse: not in memory"
 
 let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
@@ -136,18 +217,22 @@ let write ?(flags = []) fd root_schema root_value =
     { yield =
         (fun (type a) (lnk : a link) _type_id (schema : a schema) : unit ->
           match !lnk with
-          | Serialized _ | Serialized_reused _ | Small _ -> ()
+          | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ -> ()
           | Placeholder -> failwith "big nono"
           | In_memory_reused v -> write_child_reused lnk schema v
           | Duplicate original_lnk ->
             (match !original_lnk with
-            | Serialized_reused _ -> ()
+            | Serialized_reused _ | On_disk_ptr _ -> ()
             | In_memory_reused v -> write_child_reused original_lnk schema v
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
-          | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | On_disk _ ->
-            write_child lnk schema (fetch lnk) size ~placeholders ~restore)
+          | In_memory v ->
+            write_child lnk schema v size ~placeholders ~restore
+          | In_cache (_, t) ->
+            let Cached (_, loc, store, _) = t.content in
+            lnk := On_disk_ptr { filename = store.filename; loc }
+          | On_disk { store; loc; _ } ->
+            lnk := On_disk_ptr { filename = store.filename; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
@@ -185,7 +270,7 @@ let write ?(flags = []) fd root_schema root_value =
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
-  let store = { filename; cache = Cache.create 0 } in
+  let store = { filename; cache = Cache.create 16 } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
-  let root_value = read_loc store fd root_loc root_schema in
+  let root_value, _ = read_loc store fd root_loc root_schema in
   root_value

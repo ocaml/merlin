@@ -29,6 +29,7 @@ module type S = sig
   val union : t -> t -> t
   val map : (elt -> elt) -> t -> t
   val iter : (elt -> unit) -> t -> unit
+  val iter_in_memory : (elt -> unit) -> t -> unit
   val cardinal : t -> int
   val elements : t -> elt list
   val fold : ('acc -> elt -> 'acc) -> 'acc -> t -> 'acc
@@ -265,6 +266,15 @@ module Make (Ord : Set.OrderedType) = struct
       iter f l;
       f v;
       iter f r
+
+  let rec iter_in_memory f t =
+    if Granular_marshal.is_on_disk t then
+      match fetch t with
+      | Empty -> ()
+      | Node { l; v; r; _ } ->
+        iter_in_memory f l;
+        f v;
+        iter_in_memory f r
 
   let type_id = Type.Id.make ()
 

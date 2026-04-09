@@ -3,7 +3,7 @@ algorithm relies on deserialization preserving physical identity (for mutations
 to work).  The issue manifested on sufficiently large indexes (if small, then
 the marshal wouldn't be granular):
 
-  $ NB=1024
+  $ NB=100004
   $ for i in $(seq 1 $NB); do echo "let x$i = 0"; done >test.ml
   $ for i in $(seq 1 $NB); do echo "val x$i : int"; done >test.mli
   $ $OCAMLC -bin-annot -bin-annot-occurrences -c test.mli test.ml
@@ -37,7 +37,9 @@ Then for `both`:
 
 Merge everything together, which reveals the relation between `test` and `sig` uids:
 
-  $ ocaml-index aggregate test_sig.ocaml-index project.ocaml-index
+  $ ls -lhtr *.ocaml-index
+  $ /usr/bin/time -v ocaml-index aggregate test_sig.ocaml-index project.ocaml-index
+  $ ls -lhtr *.ocaml-index
 
 All files should be listed on queries: (except `both.ml`)
 

@@ -1,6 +1,12 @@
 (** A pointer to an ['a] value, either residing in memory or on disk. *)
 type 'a link
 
+type cached
+
+val create_lru : int -> unit
+
+val get_lru : unit -> cached Dbllist.t
+
 (** [link v] returns a new link to the in-memory value [v]. *)
 val link : 'a -> 'a link
 
@@ -11,6 +17,9 @@ val reuse : 'a link -> unit
 (** [cache (module Hash)] returns a function to de-duplicate links which share
     the same value, resulting in a compressed file. *)
 val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit
+
+(** [is_on_disk link] tests if [link] is stored in another index file. *)
+val is_on_disk : 'a link -> bool
 
 (** [fetch lnk] returns the value pointed by the link [lnk].
 
