@@ -1,5 +1,6 @@
-unreleased
-==========
+merlin 5.7.0-504
+================
+Thu Apr 09 09:59:38 WAT 2026
 
   + merlin library
     - Implement new refactor-extract-region command for extracting region to a fresh let binding (warning: this feature is still experimental) (#1948)
@@ -14,7 +15,7 @@ unreleased
       (#2053)
   + merlin binary
     - Define PATH_MAX to 4096 if undefined (eg. hurd) (#2039)
-  + tests
+  + test suite
     - Add a reproduction case for #1214, the issue has been resolved before (#2022)
     - Add reproduction case for #1763 but it is not failing anymore (#2021)
     - Add a test to reproduce [Locate command fails on multi-line type definitions](#1987) (#2020)
