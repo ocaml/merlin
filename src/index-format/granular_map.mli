@@ -28,6 +28,7 @@ module type S = sig
   val find_opt : key -> 'a t -> 'a option
   val choose_opt : 'a t -> (key * 'a) option
   val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val iter_in_memory : (key -> 'a -> unit) -> 'a t -> unit
   val fold : (key -> 'a -> 'acc -> 'acc) -> 'a t -> 'acc -> 'acc
   val map : ('a -> 'b) -> 'a t -> 'b t
   val is_empty : 'a t -> bool

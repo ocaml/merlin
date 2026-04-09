@@ -1,6 +1,8 @@
 module Cache = Hashtbl.Make (Int)
 
-type store = { filename : string; cache : any_link Cache.t }
+type store = { filename : string; id : int; cache : cache }
+
+and cache = any_link Cache.t
 
 and any_link = Link : 'a link * 'a link Type.Id.t -> any_link
 
@@ -11,6 +13,7 @@ and 'a repr =
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
+  | On_disk_ptr of { filename : string; loc : int; id : int }
   | In_memory of 'a
   | In_memory_reused of 'a
   | Duplicate of 'a link
@@ -20,14 +23,67 @@ and 'a schema = iter -> 'a -> unit
 
 and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 
+exception
+  Outdated_store of [ `Missing_file of string | `Index_ids_doesn't_match ]
+
 let schema_no_sublinks : _ schema = fun _ _ -> ()
 
 let link v = ref (In_memory v)
+
+let is_on_disk lnk =
+  match !lnk with
+  | On_disk _ | On_disk_ptr _ -> true
+  | _ -> false
 
 let rec normalize lnk =
   match !lnk with
   | Duplicate lnk -> normalize lnk
   | _ -> lnk
+
+module Cache_cache = File_cache.Make (struct
+  type t = cache
+  let read _filename = Cache.create 0
+
+  let cache_name = "Cache_cache"
+end)
+
+let ptr_size = 8
+
+let binstring_of_int v =
+  String.init ptr_size (fun i -> Char.chr ((v lsr i lsl 3) land 255))
+
+let int_of_binstring s =
+  Array.fold_right
+    (fun v acc -> (acc lsl 8) + v)
+    (Array.init ptr_size (fun i -> Char.code s.[i]))
+    0
+
+let last_open_store = ref None
+
+let () =
+  at_exit (fun () ->
+      match !last_open_store with
+      | None -> ()
+      | Some (_, fd) -> close_in fd)
+
+let force_open_store store =
+  try
+    let fd = open_in_bin store.filename in
+    seek_in fd (String.length Config.index_magic_number);
+    let required_id = int_of_binstring (really_input_string fd ptr_size) in
+    if required_id = store.id then (
+      last_open_store := Some (store, fd);
+      fd)
+    else raise (Outdated_store `Index_ids_doesn't_match)
+  with Sys_error _ -> raise (Outdated_store (`Missing_file store.filename))
+
+let open_store store =
+  match !last_open_store with
+  | Some (store', fd) when store == store' -> fd
+  | Some (_, fd) ->
+    close_in fd;
+    force_open_store store
+  | None -> force_open_store store
 
 let read_loc store fd loc schema =
   seek_in fd loc;
@@ -53,32 +109,14 @@ let read_loc store fd loc schema =
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
           | In_memory _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
+          | On_disk_ptr { filename; loc; id } ->
+            let store = { filename; id; cache = Cache_cache.read filename } in
+            lnk := On_disk { store; loc; schema }
           | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
     }
   in
   schema iter v;
   v
-
-let last_open_store = ref None
-
-let () =
-  at_exit (fun () ->
-      match !last_open_store with
-      | None -> ()
-      | Some (_, fd) -> close_in fd)
-
-let force_open_store store =
-  let fd = open_in_bin store.filename in
-  last_open_store := Some (store, fd);
-  fd
-
-let open_store store =
-  match !last_open_store with
-  | Some (store', fd) when store == store' -> fd
-  | Some (_, fd) ->
-    close_in fd;
-    force_open_store store
-  | None -> force_open_store store
 
 let fetch_loc store loc schema =
   let fd = open_store store in
@@ -88,7 +126,7 @@ let fetch_loc store loc schema =
 let rec fetch lnk =
   match !lnk with
   | In_memory v | In_memory_reused v -> v
-  | Serialized _ | Serialized_reused _ | Small _ ->
+  | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ ->
     invalid_arg "Granular_marshal.fetch: serialized"
   | Placeholder -> invalid_arg "Granular_marshal.fetch: during a write"
   | Duplicate original_lnk ->
@@ -118,25 +156,16 @@ let cache (type a) (module Key : Hashtbl.HashedType with type t = a) =
       lnk := Duplicate original_lnk
     | exception Not_found -> H.add cache key lnk
 
-let ptr_size = 8
-
-let binstring_of_int v =
-  String.init ptr_size (fun i -> Char.chr ((v lsr i lsl 3) land 255))
-
-let int_of_binstring s =
-  Array.fold_right
-    (fun v acc -> (acc lsl 8) + v)
-    (Array.init ptr_size (fun i -> Char.code s.[i]))
-    0
-
-let write ?(flags = []) fd root_schema root_value =
+let write ?(flags = []) fd id root_schema root_value =
+  let id = binstring_of_int id in
+  output_string fd id;
   let pt_root = pos_out fd in
   output_string fd (String.make ptr_size '\000');
   let rec iter size ~placeholders ~restore =
     { yield =
         (fun (type a) (lnk : a link) _type_id (schema : a schema) : unit ->
           match !lnk with
-          | Serialized _ | Serialized_reused _ | Small _ -> ()
+          | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ -> ()
           | Placeholder -> failwith "big nono"
           | In_memory_reused v -> write_child_reused lnk schema v
           | Duplicate original_lnk ->
@@ -146,8 +175,8 @@ let write ?(flags = []) fd root_schema root_value =
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | On_disk _ ->
-            write_child lnk schema (fetch lnk) size ~placeholders ~restore)
+          | On_disk { store = { filename; id; _ }; loc; _ } ->
+            lnk := On_disk_ptr { filename; id; loc })
     }
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
@@ -185,7 +214,8 @@ let write ?(flags = []) fd root_schema root_value =
   output_string fd (binstring_of_int root_loc)
 
 let read filename fd root_schema =
-  let store = { filename; cache = Cache.create 0 } in
+  let id = int_of_binstring (really_input_string fd 8) in
+  let store = { filename; id; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
   let root_value = read_loc store fd root_loc root_schema in
   root_value

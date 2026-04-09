@@ -74,43 +74,54 @@ let set_log_level debug verbose =
 let () =
   Arg.parse speclist anon_fun usage_msg;
   set_log_level !debug !verbose;
-  (match !command with
-  | Some Aggregate ->
-    let root = if String.equal "" !root then None else Some !root in
-    Index.from_files ~store_shapes:!store_shapes ~root
-      ~rewrite_root:!rewrite_root ~output_file:!output_file
-      ~build_path:
-        { visible = List.rev !build_path_rev.visible;
-          hidden = List.rev !build_path_rev.hidden
-        }
-      ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files
-  | Some Dump ->
-    List.iter
-      (fun file ->
-        let index = Index_format.read_exn ~file in
-        Index_format.pp Format.std_formatter index)
-      !input_files
-  | Some Stats ->
-    List.iter
-      (fun file ->
-        let open Merlin_index_format.Index_format in
-        let { defs; approximated; cu_shape; root_directory; _ } =
-          read_exn ~file
-        in
-        Printf.printf
-          "Index %S contains:\n\
-           - %i definitions\n\
-           - %i locations\n\
-           - %i approximated definitions\n\
-           - %i compilation units shapes\n\
-           - root dir: %s\n\n"
-          file (Uid_map.cardinal defs)
-          (Uid_map.fold
-             (fun _uid locs acc -> acc + Lid_set.cardinal locs)
-             defs 0)
-          (Uid_map.cardinal approximated)
-          (Hashtbl.length cu_shape)
-          (Option.value ~default:"none" root_directory))
-      !input_files
-  | _ -> Printf.printf "Nothing to do.\n%!");
-  exit 0
+  try
+    (match !command with
+    | Some Aggregate ->
+      let root = if String.equal "" !root then None else Some !root in
+      Index.from_files ~store_shapes:!store_shapes ~root
+        ~rewrite_root:!rewrite_root ~output_file:!output_file
+        ~build_path:
+          { visible = List.rev !build_path_rev.visible;
+            hidden = List.rev !build_path_rev.hidden
+          }
+        ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files
+    | Some Dump ->
+      List.iter
+        (fun file ->
+          let index = Index_format.read_exn ~file in
+          Index_format.pp Format.std_formatter index)
+        !input_files
+    | Some Stats ->
+      List.iter
+        (fun file ->
+          let open Merlin_index_format.Index_format in
+          let { defs; approximated; cu_shape; root_directory; _ } =
+            read_exn ~file
+          in
+          Printf.printf
+            "Index %S contains:\n\
+             - %i definitions\n\
+             - %i locations\n\
+             - %i approximated definitions\n\
+             - %i compilation units shapes\n\
+             - root dir: %s\n\n"
+            file (Uid_map.cardinal defs)
+            (Uid_map.fold
+               (fun _uid locs acc -> acc + Lid_set.cardinal locs)
+               defs 0)
+            (Uid_map.cardinal approximated)
+            (Hashtbl.length cu_shape)
+            (Option.value ~default:"none" root_directory))
+        !input_files
+    | _ -> Printf.printf "Nothing to do.\n%!");
+    exit 0
+  with Granular_marshal.Outdated_store reason ->
+    let msg =
+      match reason with
+      | `Missing_file filename ->
+        Format.asprintf "Missing file \"%s\"." filename
+      | `Index_ids_doesn't_match -> "Index IDs doesn't match."
+    in
+    Printf.printf
+      "%s\nHint: try to rebuild indexes with dune build @ocaml-index.\n%!" msg;
+    exit 1

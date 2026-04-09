@@ -60,7 +60,8 @@ let index_schema (iter : Granular_marshal.iter) index =
 let compress index =
   let cache = Lid.cache () in
   let compress_map_set =
-    Uid_map.iter (fun _ -> Lid_set.iter (Lid.deduplicate cache))
+    Uid_map.iter_in_memory (fun _ ->
+        Lid_set.iter_in_memory (Lid.deduplicate cache))
   in
   compress_map_set index.defs;
   compress_map_set index.approximated;
@@ -133,7 +134,8 @@ let write ~file index =
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
     (fun _temp_file_name oc ->
       output_string oc magic_number;
-      Granular_marshal.write oc index_schema (index : index))
+      let id = Random.State.(full_int (make_self_init ()) max_int) in
+      Granular_marshal.write oc id index_schema (index : index))
 
 type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
