@@ -22,6 +22,7 @@ Thu Apr 09 09:59:38 WAT 2026
     - Add a regression test for issue #2019 (#2030)
 
 merlin 5.6.1
+============
 Sat Dec 20 11:15:42 CET 2025
 
   + merlin binary
@@ -40,6 +41,7 @@ Sat Dec 20 11:15:42 CET 2025
     - Signature-help should trigger on unfinished `let ... in` bindings (#2009)
 
 merlin 5.6
+==========
 Sat Oct 04 15:10:42 CEST 2025
 
   + merlin binary
