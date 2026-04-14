@@ -80,16 +80,16 @@ let parse_all ~warning global_spec local_spec =
     | Some (args, global, local) -> normal_parsing args global local
     | None -> (
       match args with
-      | arg :: args ->
+      | arg :: args -> (
         (* We split on the first '=' to check if the argument was
            of the form name=value *)
-        begin try
-          let name, value = Misc.cut_at arg '=' in
-          normal_parsing (name :: value :: args) global local
-        with Not_found ->
+        match Stdlib.String.split_on_char '=' arg with
+        | [] | [ _ ] ->
           warning ("unknown flag " ^ arg);
           resume_parsing args global local
-        end
+        | name :: rest ->
+          let value = String.concat ~sep:"=" rest in
+          normal_parsing (name :: value :: args) global local)
       | [] -> (global, local))
   and resume_parsing args global local =
     let args =
