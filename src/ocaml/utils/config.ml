@@ -26,6 +26,8 @@
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
+let as_has_debug_prefix_map = false
+
 let flambda = false
 
 let ext_obj = ".o_The boot compiler cannot process C objects"
@@ -57,3 +59,7 @@ let flat_float_array = true
 let max_tag = 245
 
 let merlin = true
+
+let config_var _ = failwith "Config.config_var is unimplemented in Merlin"
+
+let print_config _ = failwith "print_config is unimplemented in Merlin"

@@ -683,53 +683,6 @@ module Char = struct
   let is_strictly_uppercase c = not (is_lowercase c)
 end
 
-module Glob : sig
-  type pattern = Wildwild | Exact of string | Regexp of Str.regexp
-  val compile_pattern : string -> pattern
-  val match_pattern : pattern -> string -> bool
-end = struct
-  type pattern = Wildwild | Exact of string | Regexp of Str.regexp
-
-  let compile_pattern = function
-    | "**" -> Wildwild
-    | pattern ->
-      let regexp = Buffer.create 15 in
-      let chunk = Buffer.create 15 in
-      let flush () =
-        if Buffer.length chunk > 0 then (
-          Buffer.add_string regexp (Str.quote (Buffer.contents chunk));
-          Buffer.clear chunk)
-      in
-      let l = String.length pattern in
-      let i = ref 0 in
-      while !i < l do
-        begin match pattern.[!i] with
-        | '\\' ->
-          incr i;
-          if !i < l then Buffer.add_char chunk pattern.[!i]
-        | '*' ->
-          flush ();
-          Buffer.add_string regexp ".*"
-        | '?' ->
-          flush ();
-          Buffer.add_char regexp '.'
-        | x -> Buffer.add_char chunk x
-        end;
-        incr i
-      done;
-      if Buffer.length regexp = 0 then Exact (Buffer.contents chunk)
-      else (
-        flush ();
-        Buffer.add_char regexp '$';
-        Regexp (Str.regexp (Buffer.contents regexp)))
-
-  let match_pattern re str =
-    match re with
-    | Wildwild -> true
-    | Regexp re -> Str.string_match re str 0
-    | Exact s -> s = str
-end
-
 let fprintf = Format.fprintf
 
 let lazy_eq a b =

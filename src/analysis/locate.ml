@@ -88,7 +88,7 @@ end = struct
   let cmti s = CMTI (file_path_to_mod_name s)
 
   let of_filename fn =
-    match Misc.rev_string_split ~on:'.' fn with
+    match String.split_on_char ~sep:'.' fn |> List.rev with
     | [] | [ _ ] -> None
     | ext :: _ ->
       let ext = String.lowercase ext in

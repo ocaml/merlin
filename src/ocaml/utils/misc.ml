@@ -15,15 +15,19 @@
 
 (* Errors *)
 
-exception Fatal_error
+exception Fatal_error of string * Printexc.raw_backtrace
 
-let fatal_errorf fmt =
-  Format.kfprintf
-    (fun _ -> raise Fatal_error)
-    Format.err_formatter
-    ("@?>> Fatal error: " ^^ fmt ^^ "@.")
+let () = Printexc.register_printer (function
+    | Fatal_error (msg, bt) ->
+      Some (Printf.sprintf "Fatal error: %s\n%s"
+              msg (Printexc.raw_backtrace_to_string bt))
+    | _ -> None
+  )
 
-let fatal_error msg = fatal_errorf "%s" msg
+let fatal_error msg =
+  raise (Fatal_error (msg, Printexc.get_callstack 50))
+
+let fatal_errorf fmt = Format.kasprintf fatal_error fmt
 
 (* Exceptions *)
 
@@ -33,20 +37,24 @@ let try_finally ?(always=(fun () -> ())) ?(exceptionally=(fun () -> ())) work =
       begin match always () with
         | () -> result
         | exception always_exn ->
-          let always_bt = Printexc.get_raw_backtrace () in
+          (* raise_with_backtrace is not available before OCaml 4.05 *)
+          (*let always_bt = Printexc.get_raw_backtrace () in*)
           exceptionally ();
-          Printexc.raise_with_backtrace always_exn always_bt
+          (*Printexc.raise_with_backtrace always_exn always_bt*)
+          raise always_exn
       end
     | exception work_exn ->
-      let work_bt = Printexc.get_raw_backtrace () in
+      (*let work_bt = Printexc.get_raw_backtrace () in*)
       begin match always () with
         | () ->
           exceptionally ();
-          Printexc.raise_with_backtrace work_exn work_bt
+          (*Printexc.raise_with_backtrace work_exn work_bt*)
+          raise work_exn
         | exception always_exn ->
-          let always_bt = Printexc.get_raw_backtrace () in
+          (*let always_bt = Printexc.get_raw_backtrace () in*)
           exceptionally ();
-          Printexc.raise_with_backtrace always_exn always_bt
+          (*Printexc.raise_with_backtrace always_exn always_bt*)
+          raise always_exn
       end
 
 let reraise_preserving_backtrace e f =
@@ -502,16 +510,194 @@ end
 
 (* File functions *)
 
+let remove_file filename =
+  try
+    if Sys.is_regular_file filename
+    then Sys.remove filename
+  with Sys_error _msg ->
+    ()
+
+let rec split_path_and_prepend path acc =
+  match Filename.dirname path with
+  | dir when dir = path ->
+    let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
+    let dir =
+      if not Sys.unix && String.length dir > 2 && is_letter dir.[0] && dir.[1] = ':'
+      then
+        (* We do two things here:
+            - We use an uppercase letter to match Dune's behavior
+            - We also add the separator ousrselves because [Filename.concat]
+            does not if its first argument is of the form ["C:"] *)
+        Printf.sprintf "%c:%s"
+          (Char.uppercase_ascii dir.[0])
+          Filename.dir_sep
+      else dir
+    in
+    dir :: acc
+  | dir -> split_path_and_prepend dir (Filename.basename path :: acc)
+
+let split_path path = split_path_and_prepend path []
+
+(* Deal with case insensitive FS *)
+
+external fs_exact_case : string -> string = "ml_merlin_fs_exact_case"
+external fs_exact_case_basename: string -> string option = "ml_merlin_fs_exact_case_basename"
+
+(* A replacement for sys_file_exists that makes use of stat_cache *)
+module Exists_in_directory = File_cache.Make(struct
+    let cache_name = "Exists_in_directory"
+    type t = string -> bool
+    let read dir =
+      if Sys.file_exists dir &&
+         Sys.is_directory dir
+      then
+        let cache = Hashtbl.create 4 in
+        (fun filename ->
+           match Hashtbl.find cache filename with
+           | x -> x
+           | exception Not_found ->
+             let exists = Sys.file_exists (Filename.concat dir filename) in
+             Hashtbl.add cache filename exists;
+             exists)
+      else (fun _ -> false)
+  end)
+
+let exact_file_exists ~dirname ~basename =
+  Exists_in_directory.read dirname basename &&
+  let path = Filename.concat dirname basename in
+  match fs_exact_case_basename path with
+  | None ->
+    let path' = fs_exact_case path in
+    path == path' || (* only on macos *) basename = Filename.basename path'
+  | Some bn ->
+    (* only on windows *)
+    basename = bn
+
+let canonicalize_filename ?cwd path =
+  let parts =
+    match split_path path with
+    | dot :: rest when dot = Filename.current_dir_name ->
+      split_path_and_prepend (match cwd with None -> Sys.getcwd () | Some c -> c) rest
+    | parts -> parts
+  in
+  let goup path = function
+    | dir when dir = Filename.parent_dir_name ->
+      (match path with _ :: t -> t | [] -> [])
+    | dir when dir = Filename.current_dir_name ->
+      path
+    | dir -> dir :: path
+  in
+  let parts = List.rev (List.fold_left goup [] parts) in
+  let filename_concats = function
+    | [] -> ""
+    | root :: subs -> List.fold_left Filename.concat root subs
+  in
+  fs_exact_case (filename_concats parts)
+
+module Glob : sig
+  type pattern = Wildwild | Exact of string | Regexp of Str.regexp
+  val compile_pattern : string -> pattern
+  val match_pattern : pattern -> string -> bool
+end = struct
+  type pattern = Wildwild | Exact of string | Regexp of Str.regexp
+
+  let compile_pattern = function
+    | "**" -> Wildwild
+    | pattern ->
+      let regexp = Buffer.create 15 in
+      let chunk = Buffer.create 15 in
+      let flush () =
+        if Buffer.length chunk > 0 then (
+          Buffer.add_string regexp (Str.quote (Buffer.contents chunk));
+          Buffer.clear chunk)
+      in
+      let l = String.length pattern in
+      let i = ref 0 in
+      while !i < l do
+        begin match pattern.[!i] with
+        | '\\' ->
+          incr i;
+          if !i < l then Buffer.add_char chunk pattern.[!i]
+        | '*' ->
+          flush ();
+          Buffer.add_string regexp ".*"
+        | '?' ->
+          flush ();
+          Buffer.add_char regexp '.'
+        | x -> Buffer.add_char chunk x
+        end;
+        incr i
+      done;
+      if Buffer.length regexp = 0 then Exact (Buffer.contents chunk)
+      else (
+        flush ();
+        Buffer.add_char regexp '$';
+        Regexp (Str.regexp (Buffer.contents regexp)))
+
+  let match_pattern re str =
+    match re with
+    | Wildwild -> true
+    | Regexp re -> Str.string_match re str 0
+    | Exact s -> s = str
+end
+
+let rec expand_glob ~filter acc root = function
+  | [] -> root :: acc
+  | Glob.Wildwild :: _tl -> (* FIXME: why is tl not used? *)
+    let rec append acc root =
+      let items = try Sys.readdir root with Sys_error _ -> [||] in
+      let process acc dir =
+        let filename = Filename.concat root dir in
+        if filter filename
+        then append (filename :: acc) filename
+        else acc
+      in
+      Array.fold_left process (root :: acc) items
+    in
+    append acc root
+  | Glob.Exact component :: tl ->
+    let filename = Filename.concat root component in
+    expand_glob ~filter acc filename tl
+  | pattern :: tl ->
+    let items = try Sys.readdir root with Sys_error _ -> [||] in
+    let process acc dir =
+      if Glob.match_pattern pattern dir then
+        let root' = Filename.concat root dir in
+        if filter root' then
+          expand_glob ~filter acc root' tl
+        else acc
+      else acc
+    in
+    Array.fold_left process acc items
+
+let expand_glob ?(filter=fun _ -> true) path acc =
+  match split_path path with
+  | [] -> acc
+  | root :: subs ->
+    let patterns = List.map Glob.compile_pattern subs in
+    expand_glob ~filter acc root patterns
+
 let find_in_path path name =
-  if not (Filename.is_implicit name) then
-    if Sys.file_exists name then name else raise Not_found
-  else begin
-    let rec try_dir = function
-      [] -> raise Not_found
-    | dir::rem ->
-        let fullname = Filename.concat dir name in
-        if Sys.file_exists fullname then fullname else try_dir rem
-    in try_dir path
+  canonicalize_filename
+  begin
+    if not (Filename.is_implicit name) then
+      if exact_file_exists
+          ~dirname:(Filename.dirname name)
+          ~basename:(Filename.basename name)
+      then name
+      else raise Not_found
+    else
+      let result =
+        List.find_map
+          (fun dirname ->
+            if exact_file_exists ~dirname ~basename:name
+            then Some (Filename.concat dirname name)
+            else None)
+          path
+      in
+      match result with
+      | Some result -> result
+      | None -> raise Not_found
   end
 
 let find_in_path_rel path name =
@@ -524,34 +710,48 @@ let find_in_path_rel path name =
     else concat (simplify dir) base
   in
   let rec try_dir = function
-    [] -> raise Not_found
-  | dir::rem ->
-      let fullname = simplify (Filename.concat dir name) in
-      if Sys.file_exists fullname then fullname else try_dir rem
+    | [] -> raise Not_found
+    | dir::rem ->
+      let dir = simplify dir in
+      if Exists_in_directory.read dir name
+      then Filename.concat dir name
+      else try_dir rem
   in try_dir path
 
 let normalized_unit_filename = Utf8_lexeme.uncapitalize
 
-let find_in_path_normalized path name =
-  match normalized_unit_filename name with
-  | Error _ -> raise Not_found
-  | Ok uname ->
-  let rec try_dir = function
-    [] -> raise Not_found
-  | dir::rem ->
-      let fullname = Filename.concat dir name
-      and ufullname = Filename.concat dir uname in
-      if Sys.file_exists ufullname then ufullname
-      else if Sys.file_exists fullname then fullname
-      else try_dir rem
-  in try_dir path
-
-let remove_file filename =
-  try
-    if Sys.is_regular_file filename
-    then Sys.remove filename
-  with Sys_error _msg ->
-    ()
+let find_in_path_normalized ?(fallback="") path name =
+  let has_fallback = fallback <> "" in
+  let value_or_raise_not_found = function
+    | Some x -> x
+    | None -> raise Not_found
+  in
+  canonicalize_filename
+  begin
+    let uname =
+      normalized_unit_filename name |> Result.to_option |> value_or_raise_not_found
+    in
+    let ufallback =
+      normalized_unit_filename fallback |> Result.to_option |> value_or_raise_not_found
+    in
+    List.find_map (fun dirname ->
+        if exact_file_exists ~dirname ~basename:uname
+        then Some (Filename.concat dirname uname)
+        else if exact_file_exists ~dirname ~basename:name
+        then Some (Filename.concat dirname name)
+        else
+          let () = Logger.log
+            ~section:"locate"
+            ~title:"find_in_path_uncap"
+            "Failed to load %s/%s" dirname name
+          in
+          if has_fallback && exact_file_exists ~dirname ~basename:ufallback
+        then Some (Filename.concat dirname ufallback)
+        else if has_fallback && exact_file_exists ~dirname ~basename:fallback
+        then Some (Filename.concat dirname fallback)
+        else None
+      ) path |> value_or_raise_not_found
+  end
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
@@ -608,7 +808,7 @@ let string_of_file ic =
 let output_to_file_via_temporary ?(mode = [Open_text]) filename fn =
   let (temp_filename, oc) =
     Filename.open_temp_file
-       ~mode ~perms:0o666 ~temp_dir:(Filename.dirname filename)
+       ~mode (*~perms:0o666*) ~temp_dir:(Filename.dirname filename)
        (Filename.basename filename) ".tmp" in
     (* The 0o666 permissions will be modified by the umask.  It's just
        like what [open_out] and [open_out_bin] do.
@@ -1048,6 +1248,7 @@ module Error_style = struct
   type setting =
     | Contextual
     | Short
+    | Merlin
 
   let default_setting = Contextual
 end
@@ -1415,3 +1616,40 @@ module Magic_number = struct
            | Error err -> Error (Unexpected_error err)
            | Ok () -> Ok info
 end
+
+(* Merlin-specific: The below functions are specific to Merlin. *)
+
+let time_spent () =
+  let open Unix in
+  let t = times () in
+  ((t.tms_utime +. t.tms_stime +. t.tms_cutime +. t.tms_cstime) *. 1000.0)
+
+let unitname filename =
+  let unitname =
+    try String.sub filename 0 (String.index filename '.')
+    with Not_found -> filename
+  in
+  String.capitalize_ascii unitname
+
+(* [modules_in_path ~ext path] lists ocaml modules corresponding to
+                    * filenames with extension [ext] in given [path]es.
+                    * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
+                    * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
+                    * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
+let modules_in_path ~ext path =
+  let seen = Hashtbl.create 7 in
+  List.fold_left
+    (fun results dir ->
+      try
+        Array.fold_left
+          begin fun results file ->
+            if Filename.check_suffix file ext
+            then let name = Filename.chop_extension file in
+              (if Hashtbl.mem seen name
+               then results
+               else
+                 (Hashtbl.add seen name (); String.capitalize_ascii name :: results))
+            else results
+          end results (Sys.readdir dir)
+      with Sys_error _ -> results)
+    [] path
