@@ -17,7 +17,7 @@
 open Misc
 
 module Consistbl : module type of struct
-  include Consistbl.Make (Misc.String)
+  include Consistbl.Make (Misc.Stdlib.String)
 end
 
 type error =

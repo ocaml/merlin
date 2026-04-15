@@ -26,7 +26,7 @@ module Style = Misc.Style
 let () = Includemod_errorprinter.register ()
 
 module Sig_component_kind = Shape.Sig_component_kind
-module String = Misc.String
+module String = Misc.Stdlib.String
 
 type hiding_error =
   | Illegal_shadowing of {
@@ -3530,7 +3530,7 @@ let package_units initial_env objfiles target_cmi =
     (* Write packaged signature *)
     if not !Clflags.dont_write_files then begin
       let cmi =
-        Env.save_signature_with_imports ~alerts:Misc.String.Map.empty
+        Env.save_signature_with_imports ~alerts:Misc.Stdlib.String.Map.empty
           sg target_cmi imports
       in
       Cmt_format.save_cmt (Unit_info.companion_cmt target_cmi)

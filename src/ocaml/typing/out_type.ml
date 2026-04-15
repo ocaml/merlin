@@ -24,6 +24,7 @@ open Types
 open Btype
 open Outcometree
 
+module String = Misc.Stdlib.String
 module Sig_component_kind = Shape.Sig_component_kind
 module Style = Misc.Style
 
