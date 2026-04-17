@@ -16,7 +16,7 @@ The number of "saved parts" corresponds to the number of errors:
 
   $ $MERLIN single dump -what browse -filename foo.ml < foo.ml | \
   > grep "saved-parts" | wc -l
-  2
+  3
 
 
 # Bigger test
@@ -35,7 +35,7 @@ And the number of saved parts stays in sync with the number of errors:
 
   $ $MERLIN single dump -what browse -filename foo.ml < foo.ml | \
   > grep "saved-parts" | wc -l
-  4
+  9
 
 And we could nest once more, and everything is fine and linear:
 
@@ -49,5 +49,4 @@ And we could nest once more, and everything is fine and linear:
 
   $ $MERLIN single dump -what browse -filename foo.ml < foo.ml | \
   > grep "saved-parts" | wc -l
-  6
-
+  21

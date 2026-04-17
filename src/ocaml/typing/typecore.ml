@@ -3874,7 +3874,8 @@ let rec type_exp ?recarg env sexp =
 
 and type_expect ?recarg env sexp ty_expected_explained =
   Msupport.with_saved_types
-    ~warning_attribute:sexp.pexp_attributes ?save_part:None
+    ~save_part:(fun e -> Partial_expression e)
+    ~warning_attribute:sexp.pexp_attributes
       (fun () ->
         let saved = save_levels () in
         try
