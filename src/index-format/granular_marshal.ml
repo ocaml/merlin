@@ -6,18 +6,23 @@ and cache = any_link Cache.t
 
 and any_link = Link : 'a link * 'a link Type.Id.t -> any_link
 
+and papa_link = PLink : 'a link -> papa_link
+
+and any_value = Value : 'a -> any_value
+
 and cached = Cached : 'a link * int * store * 'a schema -> cached
 
 and 'a link = 'a repr ref
 
 and 'a repr =
   | Small of 'a
+  | Small_from_papa of { papa : papa_link; pos : int }
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
   | On_disk_ptr of { filename : string; loc : int; id : int }
   | In_memory of 'a
-  | In_cache of 'a * cached Dbllist.cell
+  | In_cache of 'a * cached Dbllist.cell * any_value array
   | In_memory_reused of 'a
   | Duplicate of 'a link
   | Placeholder
@@ -29,11 +34,10 @@ and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 exception
   Outdated_store of [ `Missing_file of string | `Index_ids_doesn't_match ]
 
-let is_lru = ref false
-
 let lru_dbllist : cached Dbllist.t option ref = ref None
 
-let fetch_count = Hashtbl.create 16
+(* let fetch_count = Hashtbl.create 16
+
 let debug h =
   let r = Hashtbl.create 16 in
   Hashtbl.iter (fun _k v ->
@@ -45,11 +49,9 @@ let debug h =
     acc := !acc + v;
     Format.eprintf "fetché %d fois -> %d valeurs\n%!" k v
   ) r;
-  Format.eprintf "en tout : %d valeurs\n%!" !acc
+  Format.eprintf "en tout : %d valeurs\n%!" !acc *)
 
-let create_lru cap =
-  is_lru := true;
-  lru_dbllist := Some (Dbllist.create cap)
+let create_lru cap = lru_dbllist := Some (Dbllist.create cap)
 
 let get_lru () =
   match !lru_dbllist with
@@ -118,17 +120,21 @@ let open_store store =
     force_open_store store
   | None -> force_open_store store
 
-let read_loc store fd loc schema =
+let read_loc store fd loc schema papa_link =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
   let size_read = pos_in fd - loc in
+  let child_pos = ref 0 in
+  let child_smalls = ref [] in
   let rec iter =
     { yield =
         (fun (type a) (lnk : a link) type_id schema ->
           match !lnk with
           | Small v ->
             schema iter v;
-            lnk := In_memory v
+            child_smalls:= (Value (Obj.magic v)) :: !child_smalls;
+            lnk := Small_from_papa { papa = papa_link; pos = !child_pos };
+            child_pos := !child_pos + 1
           | Serialized { loc } -> lnk := On_disk { store; loc; schema }
           | Serialized_reused { loc } -> (
             match Cache.find_opt store.cache loc with
@@ -142,35 +148,34 @@ let read_loc store fd loc schema =
             | None ->
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
-          | In_memory _ | In_cache _ | In_memory_reused _ | On_disk _ | Duplicate _ -> ()
+          | In_memory _ | In_cache _ | In_memory_reused _ | On_disk _ | Small_from_papa _ | Duplicate _ -> ()
           | On_disk_ptr { filename; loc; id } ->
             let store = { filename; id; cache = Cache_cache.read filename } in
             lnk := On_disk { store; loc; schema }
-          | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder")
+          | Placeholder -> invalid_arg "Granular_marshal.read_loc: Placeholder");
     }
   in
   schema iter v;
-  (v, size_read)
+  let small_poses = Array.of_list (List.rev !child_smalls) in
+  (v, size_read, small_poses)
 
 let () =
   at_exit (fun () ->
-    if !is_lru then
+    (* debug fetch_count; *)
     match !lru_dbllist with
     | None -> ()
     | Some lru ->
       Dbllist.pp_stats lru;
-      debug fetch_count;
       )
 
-let fetch_loc store loc schema =
+let fetch_loc store loc schema papa_link =
   let fd = open_store store in
-  let v, size = read_loc store fd loc schema in
-  (v, size)
+  let v, size, small_poses = read_loc store fd loc schema papa_link in
+  (v, size, small_poses)
 
 let rec fetch lnk =
   match !lnk with
-  | In_cache (v, cell) ->
-    assert(!is_lru);
+  | In_cache (v, cell, _) ->
     let Cached (_, _loc, _, _) = Dbllist.get cell in
     Dbllist.promote (get_lru ()) cell;
     v
@@ -183,30 +188,32 @@ let rec fetch lnk =
     (* let v = fetch original_lnk in
     lnk := In_memory v;
     v *)
+  | Small_from_papa { papa; pos } ->
+    let PLink papa = papa in
+      ignore(fetch (Obj.magic papa));
+      (match !papa with
+      | In_cache (_, _, small_poses) ->
+        let Value v = small_poses.(pos) in
+        Obj.magic v
+      | _ -> assert false)
   | On_disk { store; loc; schema } ->
-    if not !is_lru then (
-      let v, _ = fetch_loc store loc schema in
-      lnk := In_memory v;
-      v
-    ) else (
-      let count = try Hashtbl.find fetch_count (loc, store.filename) with Not_found -> 0 in
-      Hashtbl.replace fetch_count (loc, store.filename) (count + 1);
-      let v, size = fetch_loc store loc schema in
-      let discarded = Dbllist.discard_size (get_lru ()) size in
-      let cell =
-        Dbllist.add_front (get_lru ()) (Cached (lnk, loc, store, schema), size)
-      in
-      List.iter
-        (fun (Cached (link, loc, store, schema)) ->
-          link := On_disk { store; loc; schema })
-        discarded;
-      lnk := In_cache (v, cell);
-      v
-    )
+    (* let count = try Hashtbl.find fetch_count (loc, store.filename) with Not_found -> 0 in
+    Hashtbl.replace fetch_count (loc, store.filename) (count + 1); *)
+    let v, size, small_poses = fetch_loc store loc schema (PLink lnk) in
+    let discarded = Dbllist.discard_size (get_lru ()) size in
+    let cell =
+      Dbllist.add_front (get_lru ()) (Cached (lnk, loc, store, schema), size)
+    in
+    List.iter
+      (fun (Cached (link, loc, store, schema)) ->
+        link := On_disk { store; loc; schema })
+      discarded;
+    lnk := In_cache (v, cell, small_poses);
+    v
 
 let rec reuse lnk =
   match !lnk with
-  | In_memory v | In_cache (v, _) -> lnk := In_memory_reused v
+  | In_memory v | In_cache (v, _, _) -> lnk := In_memory_reused v
   | In_memory_reused _ -> ()
   | On_disk _ -> ()
   | Duplicate original_lnk -> reuse original_lnk
@@ -244,7 +251,10 @@ let write ?(flags = []) fd id root_schema root_value =
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | In_cache (_, t) ->
+          | Small_from_papa _ ->
+            let v = fetch lnk in
+            write_child lnk schema v size ~placeholders ~restore
+          | In_cache (_v, t, _children) ->
             let Cached (_, loc, {filename; id; _}, _) = t.content in
             lnk := On_disk_ptr { filename; id; loc }
           | On_disk { store = { filename; id; _ }; loc; _ } ->
@@ -289,5 +299,6 @@ let read filename fd root_schema =
   let id = int_of_binstring (really_input_string fd 8) in
   let store = { filename; id; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
-  let root_value, _ = read_loc store fd root_loc root_schema in
+  let papa_lien = ref (On_disk { loc = root_loc; store; schema = root_schema }) in
+  let root_value, _, _ = read_loc store fd root_loc root_schema (PLink papa_lien) in
   root_value
