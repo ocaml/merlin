@@ -6,7 +6,7 @@ and cache = any_link Cache.t
 
 and any_link = Link : 'a link * 'a link Type.Id.t -> any_link
 
-and papa_link = PLink : 'a link -> papa_link
+and parent_link = PLink : 'a link -> parent_link
 
 and any_value = Value : 'a -> any_value
 
@@ -16,7 +16,7 @@ and 'a link = 'a repr ref
 
 and 'a repr =
   | Small of 'a
-  | Small_from_papa of { papa : papa_link; pos : int }
+  | Small_child of { parent : parent_link; pos : int }
   | Serialized of { loc : int }
   | Serialized_reused of { loc : int }
   | On_disk of { store : store; loc : int; schema : 'a schema }
@@ -120,7 +120,7 @@ let open_store store =
     force_open_store store
   | None -> force_open_store store
 
-let read_loc store fd loc schema papa_link =
+let read_loc store fd loc schema parent_link =
   seek_in fd loc;
   let v = Marshal.from_channel fd in
   let size_read = pos_in fd - loc in
@@ -132,8 +132,8 @@ let read_loc store fd loc schema papa_link =
           match !lnk with
           | Small v ->
             schema iter v;
-            child_smalls:= (Value (Obj.magic v)) :: !child_smalls;
-            lnk := Small_from_papa { papa = papa_link; pos = !child_pos };
+            child_smalls:= (Value v) :: !child_smalls;
+            lnk := Small_child { parent = parent_link; pos = !child_pos };
             child_pos := !child_pos + 1
           | Serialized { loc } -> lnk := On_disk { store; loc; schema }
           | Serialized_reused { loc } -> (
@@ -148,7 +148,7 @@ let read_loc store fd loc schema papa_link =
             | None ->
               lnk := On_disk { store; loc; schema };
               Cache.add store.cache loc (Link (lnk, type_id)))
-          | In_memory _ | In_cache _ | In_memory_reused _ | On_disk _ | Small_from_papa _ | Duplicate _ -> ()
+          | In_memory _ | In_cache _ | In_memory_reused _ | On_disk _ | Small_child _ | Duplicate _ -> ()
           | On_disk_ptr { filename; loc; id } ->
             let store = { filename; id; cache = Cache_cache.read filename } in
             lnk := On_disk { store; loc; schema }
@@ -168,12 +168,12 @@ let () =
       Dbllist.pp_stats lru;
       )
 
-let fetch_loc store loc schema papa_link =
+let fetch_loc store loc schema parent_link =
   let fd = open_store store in
-  let v, size, small_poses = read_loc store fd loc schema papa_link in
+  let v, size, small_poses = read_loc store fd loc schema parent_link in
   (v, size, small_poses)
 
-let rec fetch lnk =
+let rec fetch : type a. a link -> a = fun lnk ->
   match !lnk with
   | In_cache (v, cell, _) ->
     let Cached (_, _loc, _, _) = Dbllist.get cell in
@@ -183,15 +183,11 @@ let rec fetch lnk =
   | Serialized _ | Serialized_reused _ | Small _ | On_disk_ptr _ ->
     invalid_arg "Granular_marshal.fetch: serialized"
   | Placeholder -> invalid_arg "Granular_marshal.fetch: during a write"
-  | Duplicate original_lnk ->
-    fetch original_lnk
-    (* let v = fetch original_lnk in
-    lnk := In_memory v;
-    v *)
-  | Small_from_papa { papa; pos } ->
-    let PLink papa = papa in
-      ignore(fetch (Obj.magic papa));
-      (match !papa with
+  | Duplicate original_lnk -> fetch original_lnk
+  | Small_child { parent; pos } ->
+    let PLink parent = parent in
+      ignore(fetch parent);
+      (match !parent with
       | In_cache (_, _, small_poses) ->
         let Value v = small_poses.(pos) in
         Obj.magic v
@@ -251,7 +247,7 @@ let write ?(flags = []) fd id root_schema root_value =
             | _ -> failwith "Granular_marshal.write: duplicate not reused");
             lnk := !original_lnk
           | In_memory v -> write_child lnk schema v size ~placeholders ~restore
-          | Small_from_papa _ ->
+          | Small_child _ ->
             let v = fetch lnk in
             write_child lnk schema v size ~placeholders ~restore
           | In_cache (_v, t, _children) ->
@@ -299,6 +295,6 @@ let read filename fd root_schema =
   let id = int_of_binstring (really_input_string fd 8) in
   let store = { filename; id; cache = Cache_cache.read filename } in
   let root_loc = int_of_binstring (really_input_string fd 8) in
-  let papa_lien = ref (On_disk { loc = root_loc; store; schema = root_schema }) in
-  let root_value, _, _ = read_loc store fd root_loc root_schema (PLink papa_lien) in
+  let parent_link = ref (On_disk { loc = root_loc; store; schema = root_schema }) in
+  let root_value, _, _ = read_loc store fd root_loc root_schema (PLink parent_link) in
   root_value

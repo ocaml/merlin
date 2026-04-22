@@ -1,5 +1,5 @@
 type 'a cell =
-  { mutable content : 'a;
+  { content : 'a;
     weight : int;
     mutable prev : 'a cell;
     mutable next : 'a cell
@@ -17,9 +17,9 @@ type stats = {
 type 'a dbll =
   | Nil of int
   | List of
-      { mutable first : 'a cell;
-        mutable last : 'a cell;
-        mutable size : int;
+      { first : 'a cell;
+        last : 'a cell;
+        size : int;
         cap : int;
       }
 
