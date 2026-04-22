@@ -1,3 +1,11 @@
+unreleased
+==========
+
++ index format
+    - Merged indexes now point to each-others. This results in smaller index
+      files. The index of a project is now defined by all its index files, not
+      only the final aggregation. (#2051)
+
 merlin 5.7.0-504
 ================
 Thu Apr 09 09:59:38 WAT 2026
@@ -20,8 +28,6 @@ Thu Apr 09 09:59:38 WAT 2026
     - Add reproduction case for #1763 but it is not failing anymore (#2021)
     - Add a test to reproduce [Locate command fails on multi-line type definitions](#1987) (#2020)
     - Add a regression test for issue #2019 (#2030)
-    - Add a regression test for issue #2019 (#2030)
-    - Implemente a pointer to another index file: a new optimization of how ocaml-index builds index files. The resulting index files should take up less disk space (#2051)
 
 merlin 5.6.1
 ============
