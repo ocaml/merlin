@@ -12,6 +12,9 @@ val reuse : 'a link -> unit
     the same value, resulting in a compressed file. *)
 val cache : 'a. (module Hashtbl.HashedType with type t = 'a) -> 'a link -> unit
 
+(** [is_on_disk link] tests if [link] is stored in another index file. *)
+val is_on_disk : 'a link -> bool
+
 (** [fetch lnk] returns the value pointed by the link [lnk].
 
     We of course have [fetch (link v) = v] and [link (fetch lnk) = lnk]. *)
@@ -53,11 +56,19 @@ and iter = { yield : 'a. 'a link -> 'a link Type.Id.t -> 'a schema -> unit }
 (** A schema usable when the ['a] value does not contain any links. *)
 val schema_no_sublinks : 'a schema
 
-(** [write oc schema value] writes the [value] in the output channel [oc],
-    creating unmarshalling boundaries on every link in [value] specified
-    by the [schema]. *)
+(** Exception raised when attempting to consult an outdated store. *)
+exception
+  Outdated_store of
+    { filename : string; reason : [ `Missing_file | `Index_ids_do_not_match ] }
+
+(** [write oc ~id schema value] writes the [value] in the output channel [oc], creating unmarshalling boundaries on every link in [value] specified by the [schema]. [id] is used as index UID. *)
 val write :
-  ?flags:Marshal.extern_flags list -> out_channel -> 'a schema -> 'a -> unit
+  ?flags:Marshal.extern_flags list ->
+  out_channel ->
+  id:int ->
+  'a schema ->
+  'a ->
+  unit
 
 (** [read ic schema] reads the value marshalled in the input channel [ic],
     stopping the unmarshalling on every link boundary indicated by the [schema].

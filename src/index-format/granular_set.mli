@@ -27,6 +27,7 @@ module type S = sig
   val union : t -> t -> t
   val map : (elt -> elt) -> t -> t
   val iter : (elt -> unit) -> t -> unit
+  val iter_in_memory : (elt -> unit) -> t -> unit
   val cardinal : t -> int
   val elements : t -> elt list
   val fold : ('acc -> elt -> 'acc) -> 'acc -> t -> 'acc
