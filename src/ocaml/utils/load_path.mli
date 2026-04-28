@@ -118,3 +118,8 @@ val prepend_dir : Dir.t -> unit
 val get_visible : unit -> Dir.t list
 (** Same as [get_paths ()], except that it returns a [Dir.t list], and doesn't
     include the -H paths. *)
+
+val content_version : unit -> int
+(** A monotonic counter that is bumped every time this module observes a change
+    to the load path (directories added/removed, or the contents of a cached
+    directory changing on disk between calls to {!init}). *)

@@ -49,6 +49,20 @@ type 'a cache_result =
 
 let cache : typedtree_items option cache_result option ref = s_ref None
 
+(* The value of [Load_path.content_version ()] as of the last successful run.
+   [None] means [run] has not yet been called in this store, and so there is
+   nothing to invalidate on a load path change.
+
+   [Env.check_state_consistency] only inspects entries already recorded in
+   [Persistent_env.imports], and lookups made with [~allow_hidden:false] do not
+   record their failures there. So a [.cmi] that merlin failed to find before
+   a build can silently become findable afterwards without
+   [check_state_consistency] noticing, leaving stale polymorphic types in the
+   per-item [cache] above (which is reused by [compatible_prefix_rev] as long
+   as the parsetree is unchanged). Comparing the load path's content version
+   catches that case and triggers the same reset path. *)
+let last_load_path_version : int option ref = s_ref None
+
 let fresh_env config =
   let env0 = Typer_raw.fresh_env () in
   let env0 = Extension.register Mconfig.(config.merlin.extensions) env0 in
@@ -227,7 +241,26 @@ let type_interface config caught parsetree =
     cache_stats )
 
 let run config parsetree =
-  if not (Env.check_state_consistency ()) then (
+  let current_load_path_version = Load_path.content_version () in
+  let load_path_changed =
+    match !last_load_path_version with
+    | None -> false (* First run in this store; nothing to invalidate. *)
+    | Some v -> v <> current_load_path_version
+  in
+  let state_consistent = Env.check_state_consistency () in
+  if load_path_changed || not state_consistent then (
+    (if load_path_changed
+     then
+       log ~title:"run"
+         "load path content changed (version %s -> %d); invalidating typer \
+          cache"
+         (match !last_load_path_version with
+          | Some v -> string_of_int v
+          | None -> "-")
+         current_load_path_version
+     else
+       log ~title:"run"
+         "persistent env state inconsistent; invalidating typer cache");
     (* Resetting the local store will clear the load_path cache.
        Save it now, reset the store and then restore the path. *)
     let { Load_path.visible; hidden } = Load_path.get_paths () in
@@ -235,6 +268,7 @@ let run config parsetree =
     Local_store.reset ();
     Load_path.reset ();
     Load_path.(init ~auto_include:no_auto_include ~visible ~hidden));
+  last_load_path_version := Some (Load_path.content_version ());
   let caught = ref [] in
   Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();
