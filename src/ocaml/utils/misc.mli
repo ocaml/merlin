@@ -898,20 +898,3 @@ val split_path : string -> string list
           [split_path "/a/b/c"] = ["/"; "a"; "b"; "c"]
         FIXME: explain windows behavior
         *)
-
-(* [modules_in_path ~ext path] lists ocaml modules corresponding to
- * filenames with extension [ext] in given [path]es.
- * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
- * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
- * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-val modules_in_path : ext:string -> string list -> string list
-
-val time_spent : unit -> float
-(** Returns a more precise measurement of resources usage than
-    Sys.times/Unix.times.
-    Both user and kernel cpu time is accounted.  *)
-
-val unitname: string -> string
-(** Return the name of the OCaml module matching a basename
-    (filename without directory).
-    Remove the extension and capitalize *)

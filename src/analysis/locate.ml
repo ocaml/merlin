@@ -79,7 +79,7 @@ end = struct
     | CMT of string
     | CMTI of string
 
-  let file_path_to_mod_name f = Misc.unitname (Filename.basename f)
+  let file_path_to_mod_name f = unitname (Filename.basename f)
 
   let ml s = ML (file_path_to_mod_name s)
   let mll s = MLL (file_path_to_mod_name s)
@@ -265,7 +265,7 @@ module Utils = struct
     log ~title "Try find %S" filename;
     if
       File.is_source file
-      && filename = Misc.unitname Mconfig.(config.query.filename)
+      && filename = unitname Mconfig.(config.query.filename)
     then
       (* No need to search when looking for the source of the current buffer's
          compilation unit *)

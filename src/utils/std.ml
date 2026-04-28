@@ -852,3 +852,15 @@ type 'a with_workdir = { workdir : string; workval : 'a }
 
 let dump_with_workdir f x : json =
   `Assoc [ ("workdir", `String x.workdir); ("workval", f x.workval) ]
+
+let time_spent () =
+  let open Unix in
+  let t = times () in
+  ((t.tms_utime +. t.tms_stime +. t.tms_cutime +. t.tms_cstime) *. 1000.0)
+
+let unitname filename =
+  let unitname =
+    try String.sub filename ~pos:0 ~len:(String.index filename '.')
+    with Not_found -> filename
+  in
+  String.capitalize_ascii unitname

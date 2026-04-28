@@ -84,7 +84,7 @@ let run =
       (* Parse commandline *)
       match
         begin
-          let start_cpu = Misc.time_spent () in
+          let start_cpu = Std.time_spent () in
           let start_clock = Unix.gettimeofday () *. 1000. in
           let config, command_args =
             let fails = ref [] in
@@ -133,7 +133,7 @@ let run =
                   Location.print_main Format.str_formatter err;
                   ("error", `String (Format.flush_str_formatter ())))
             in
-            let cpu_time = Misc.time_spent () -. start_cpu in
+            let cpu_time = Std.time_spent () -. start_cpu in
             let gc_stats = Gc.quick_stat () in
             let heap_mbytes =
               gc_stats.heap_words * (Sys.word_size / 8) / 1_000_000
