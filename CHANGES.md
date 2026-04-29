@@ -1,7 +1,11 @@
 unreleased
 ==========
 
-+ index format
+
+  + merlin library
+    - Fix a cache invalidation issue due to the introduction of hidden deps in
+      OCaml 5.2. (#2062)
+  + index format
     - Merged indexes now point to each-others. This results in smaller index
       files. The index of a project is now defined by all its index files, not
       only the final aggregation. (#2051)
