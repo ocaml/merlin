@@ -1,7 +1,9 @@
 unreleased
 ==========
 
-+ index format
+  + merlin library
+    - Refactor the `Misc` module from `merlin_utils` to `ocaml_utils` to reduce diff with the compiler (#2059)
+  + index format
     - Merged indexes now point to each-others. This results in smaller index
       files. The index of a project is now defined by all its index files, not
       only the final aggregation. (#2051)
