@@ -15,9 +15,9 @@ depends: [
   "dune" {>= "3.0.0"}
   "csexp" {>= "1.5.1"}
   "alcotest" {with-test & >= "1.3.0" }
-  "menhir"    {dev & >= "20201216"}
-  "menhirLib" {dev & >= "20201216"}
-  "menhirSdk" {dev & >= "20201216"}
+  "menhir"    {dev & >= "20230608"}
+  "menhirLib" {dev & >= "20230608"}
+  "menhirSdk" {dev & >= "20230608"}
 ]
 synopsis:
   "Merlin's libraries"

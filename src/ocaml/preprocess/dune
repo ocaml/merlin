@@ -42,7 +42,4 @@
 (rule
  (targets menhirLib.ml menhirLib.mli)
  (mode promote)
- (action
-  (progn
-   (copy %{lib:menhirLib:menhirLib.ml}  menhirLib.ml)
-   (copy %{lib:menhirLib:menhirLib.mli} menhirLib.mli))))
+ (action (run menhir --dump-menhirLib .)))

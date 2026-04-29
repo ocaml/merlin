@@ -1,3 +1,11 @@
+unreleased
+==========
+
++ index format
+    - Merged indexes now point to each-others. This results in smaller index
+      files. The index of a project is now defined by all its index files, not
+      only the final aggregation. (#2051)
+
 merlin 5.7.0-504
 ================
 Thu Apr 09 09:59:38 WAT 2026
