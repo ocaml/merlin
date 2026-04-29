@@ -19,11 +19,9 @@ Bump the directory's mtime to defeat File_id's 1-second mtime granularity (the
 systems where the mtime granularity is 1 second.
   $ touch -d '+2 seconds' lib
 
-TODO: Fix this.
 Second query: lib/bar.cmi is now present, so we shouldn't get an "Unbound module Bar"
 error.
   $ $MERLIN server errors -filename test.ml < test.ml | jq .value[].message -r
-  Unbound module Bar
 
 For reference, single mode (which spawns a fresh process and so cannot reuse
 any cache) returns the correct answer:
