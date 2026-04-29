@@ -264,8 +264,7 @@ module Utils = struct
     let filename = File.name file in
     log ~title "Try find %S" filename;
     if
-      File.is_source file
-      && filename = unitname Mconfig.(config.query.filename)
+      File.is_source file && filename = unitname Mconfig.(config.query.filename)
     then
       (* No need to search when looking for the source of the current buffer's
          compilation unit *)

@@ -856,7 +856,7 @@ let dump_with_workdir f x : json =
 let time_spent () =
   let open Unix in
   let t = times () in
-  ((t.tms_utime +. t.tms_stime +. t.tms_cutime +. t.tms_cstime) *. 1000.0)
+  (t.tms_utime +. t.tms_stime +. t.tms_cutime +. t.tms_cstime) *. 1000.0
 
 let unitname filename =
   let unitname =
