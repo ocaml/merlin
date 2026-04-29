@@ -17,7 +17,7 @@ Now create lib/bar.cmi.
 Bump the directory's mtime to defeat File_id's 1-second mtime granularity (the
 .cmi above and the test could otherwise share the same second). This only matters on
 systems where the mtime granularity is 1 second.
-  $ touch -d '+2 seconds' lib
+  $ if [ "$(uname)" = "Darwin" ]; then touch -A 02 lib; else touch -d '+2 seconds' lib; fi
 
 Second query: lib/bar.cmi is now present, so we shouldn't get an "Unbound module Bar"
 error.
