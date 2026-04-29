@@ -67,17 +67,6 @@ let hidden_dirs = s_ref []
 let no_auto_include _ _ = raise Not_found
 let auto_include_callback = ref no_auto_include
 
-(* Merlin-specific: a monotonic counter incremented whenever this module
-   observes a change to the load path (directories added/removed, or directory
-   contents changing on disk). Callers can use {!content_version} as a coarse
-   "did anything on the search path potentially change?" signal to invalidate
-   caches that depend on the load path. *)
-let content_version_counter = s_ref 0
-
-let bump_content_version () = incr content_version_counter
-
-let content_version () = !content_version_counter
-
 let reset_visible () =
   assert (not Config.merlin || Local_store.is_bound ());
   STbl.clear !visible_files;
@@ -91,7 +80,6 @@ let reset_hidden () =
   hidden_dirs := []
 
 let reset ?(only_hidden = false) ?(only_visible = false) () =
-  bump_content_version ();
   if not only_visible then reset_hidden ();
   if not only_hidden then reset_visible ();
   auto_include_callback := no_auto_include
@@ -188,7 +176,6 @@ let remove_dir dir =
    left-to-right precedence. *)
 let add (dir : Dir.t) =
   assert (not Config.merlin || Local_store.is_bound ());
-  bump_content_version ();
   let update base fn visible_files hidden_files =
     if dir.hidden && not (STbl.mem !hidden_files base) then
       STbl.replace !hidden_files base fn
@@ -215,7 +202,6 @@ let add_dir ~hidden dir = add (Dir.create ~hidden dir)
    unconditionally added. *)
 let prepend_dir (dir : Dir.t) =
   assert (not Config.merlin || Local_store.is_bound ());
-  bump_content_version ();
   prepend_add dir;
   if dir.hidden then
     hidden_dirs := !hidden_dirs @ [dir]
