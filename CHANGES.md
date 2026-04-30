@@ -1,6 +1,6 @@
-unreleased
-==========
-
+merlin 5.7.1
+============
+Thu Apr 30 14:15:42 CEST 2026
 
   + merlin library
     - Fix a cache invalidation issue due to the introduction of hidden deps in
@@ -10,8 +10,8 @@ unreleased
       files. The index of a project is now defined by all its index files, not
       only the final aggregation. (#2051)
 
-merlin 5.7.0-504
-================
+merlin 5.7.0
+============
 Thu Apr 09 09:59:38 WAT 2026
 
   + merlin library
