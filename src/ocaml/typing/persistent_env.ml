@@ -66,7 +66,7 @@ module String = Misc.Stdlib.String
 (* If a .cmi file is missing (or invalid), we
    store it as Missing in the cache. *)
 type 'a pers_struct_info =
-  | Missing
+  | Missing of { hidden_were_allowed : bool }
   | Found of pers_struct * 'a
 
 type 'a t = {
@@ -107,7 +107,9 @@ let clear penv =
 let clear_missing {persistent_structures; _} =
   let missing_entries =
     Hashtbl.fold
-      (fun name r acc -> if r = Missing then name :: acc else acc)
+      (fun name r acc -> match r with
+       | Missing _ -> name :: acc
+       | Found _ -> acc)
       persistent_structures []
   in
   List.iter (Hashtbl.remove persistent_structures) missing_entries
@@ -121,7 +123,7 @@ let register_import_as_opaque {imported_opaque_units; _} s =
 let find_in_cache {persistent_structures; _} s =
   match Hashtbl.find persistent_structures s with
   | exception Not_found -> None
-  | Missing -> None
+  | Missing _ -> None
   | Found (_ps, pm) -> Some pm
 
 let import_crcs penv ~source crcs =
@@ -162,7 +164,7 @@ let without_cmis penv f x =
 
 let fold {persistent_structures; _} f x =
   Hashtbl.fold (fun modname pso x -> match pso with
-      | Missing -> x
+      | Missing _ -> x
       | Found (_, pm) -> f modname pm x)
     persistent_structures x
 
@@ -253,7 +255,8 @@ let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check n
   | Found (ps, pm) when allow_hidden || ps.ps_visibility = Load_path.Visible ->
     (ps, pm)
   | Found _ -> raise Not_found
-  | Missing -> raise Not_found
+  | Missing { hidden_were_allowed = true } -> raise Not_found
+  | Missing { hidden_were_allowed = false }
   | exception Not_found ->
     match can_load_cmis penv with
     | Cannot_load_cmis _ -> raise Not_found
@@ -262,7 +265,8 @@ let find_pers_struct ~allow_hidden penv val_of_pers_sig short_path_comps check n
           match !Persistent_signature.load ~allow_hidden ~unit_name:name with
           | Some psig -> psig
           | None ->
-            if allow_hidden then Hashtbl.add persistent_structures name Missing;
+            Hashtbl.replace persistent_structures name
+              (Missing { hidden_were_allowed = allow_hidden});
             raise Not_found
         in
         add_import penv name;
@@ -419,7 +423,7 @@ let with_cmis penv f x =
 
 let forall ~found ~missing t =
   Std.Hashtbl.forall t.persistent_structures (fun name -> function
-      | Missing -> missing name
+      | Missing _ -> missing name
       | Found (pers_struct, a) ->
         found name pers_struct.ps_filename pers_struct.ps_name a
     )
