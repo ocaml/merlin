@@ -29,7 +29,7 @@ exception Action_on_empty_list of string
 
 let pp_stats t =
   let size = match t.dbll with | Nil _ -> 0 | List l -> l.size in
-  Printf.printf "total_cap \t\t: %d\nsize \t\t: %d\npromote_count \t: %d\nadd_count \t\t: %d\ndiscard_count \t: %d\nadd_size \t\t: %d\ndiscard_size \t: %d\nvolume_conservation \t: %d = %d + %d : %b\n%!"
+  Printf.eprintf "total_cap \t\t: %d\nsize \t\t: %d\npromote_count \t: %d\nadd_count \t\t: %d\ndiscard_count \t: %d\nadd_size \t\t: %d\ndiscard_size \t: %d\nvolume_conservation \t: %d = %d + %d : %b\n%!"
   t.stats.total_cap
   size
   t.stats.promote_count

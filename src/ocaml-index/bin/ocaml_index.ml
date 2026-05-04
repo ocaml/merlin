@@ -90,7 +90,7 @@ let () =
         ~do_not_use_cmt_loadpath:!do_not_use_cmt_loadpath !input_files;
       Gc.compact ();
       let after = Gc.quick_stat () in
-      Printf.printf "Major words before: %.0f, after: %.0f\n" before.Gc.major_words after.Gc.major_words
+      Printf.eprintf "Major words before: %.0f, after: %.0f\n" before.Gc.major_words after.Gc.major_words
     | Some Dump ->
       List.iter
         (fun file ->
