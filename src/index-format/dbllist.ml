@@ -69,6 +69,7 @@ let discard t =
   | List l ->
     if l.first == l.last then (
       t.dbll <- Nil l.cap;
+      t.stats.discarded_size <- t.stats.discarded_size + l.last.weight;
       l.last.content)
     else
       let discarded_value = l.last.content in
