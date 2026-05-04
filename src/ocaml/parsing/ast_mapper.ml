@@ -27,7 +27,7 @@ open Parsetree
 open Ast_helper
 open Location
 
-module String = Misc.String
+module String = Misc.Stdlib.String
 
 type mapper = {
   attribute: mapper -> attribute -> attribute;

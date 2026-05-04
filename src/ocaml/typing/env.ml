@@ -25,7 +25,7 @@ open Data_types
 
 open Local_store
 
-module String = Misc.String
+module String = Misc.Stdlib.String
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
@@ -974,7 +974,7 @@ let sign_of_cmi ~freshen { Persistent_env.Persistent_signature.cmi; _ } =
   let path = Pident id in
   let alerts =
     List.fold_left (fun acc -> function Alerts s -> s | _ -> acc)
-      Misc.String.Map.empty
+      Misc.Stdlib.String.Map.empty
       flags
   in
   let md =
@@ -2295,7 +2295,7 @@ let components_of_functor_appl ~loc ~f_path ~f_comp ~arg env =
     in
     let shape = Shape.app f_comp.fcomp_shape ~arg:shape_arg in
     let comps =
-      components_of_module ~alerts:Misc.String.Map.empty
+      components_of_module ~alerts:Misc.Stdlib.String.Map.empty
         ~uid:Uid.internal_not_actually_unique
         (*???*)
         env Subst.identity p addr (Subst.Lazy.of_modtype mty) shape
@@ -2858,7 +2858,7 @@ let use_module ~use ~loc path mda =
   if use then begin
     let comps = mda.mda_components in
     mark_module_used comps.uid;
-    Misc.String.Map.iter
+    Misc.Stdlib.String.Map.iter
       (fun kind message ->
          let message = if message = "" then "" else "\n" ^ message in
          Location.alert ~kind loc

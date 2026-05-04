@@ -1,5 +1,5 @@
 
-module String_map = Misc.String.Map
+module String_map = Misc.Stdlib.String.Map
 
 module Ident = struct
 

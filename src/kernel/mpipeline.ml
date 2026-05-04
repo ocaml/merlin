@@ -6,10 +6,10 @@ let time_shift = ref 0.0
 
 let timed_lazy r x =
   lazy
-    (let start = Misc.time_spent () in
+    (let start = time_spent () in
      let time_shift0 = !time_shift in
      let update () =
-       let delta = Misc.time_spent () -. start in
+       let delta = time_spent () -. start in
        let shift = !time_shift -. time_shift0 in
        time_shift := time_shift0 +. delta;
        r := !r +. delta -. shift

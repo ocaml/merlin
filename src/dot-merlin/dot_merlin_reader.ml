@@ -27,7 +27,7 @@
    )* }}} *)
 
 open Merlin_utils
-open Misc
+open Ocaml_utils.Misc
 open Std
 open Std.Result
 

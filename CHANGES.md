@@ -5,6 +5,7 @@ Thu Apr 30 14:15:42 CEST 2026
   + merlin library
     - Fix a cache invalidation issue due to the introduction of hidden deps in
       OCaml 5.2. (#2062)
+    - Refactor the `Misc` module from `merlin_utils` to `ocaml_utils` to reduce diff with the compiler (#2059)
   + index format
     - Merged indexes now point to each-others. This results in smaller index
       files. The index of a project is now defined by all its index files, not

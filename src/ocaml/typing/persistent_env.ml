@@ -19,7 +19,7 @@
 open Misc
 open Cmi_format
 
-module Consistbl = Consistbl.Make (Misc.String)
+module Consistbl = Consistbl.Make (Misc.Stdlib.String)
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
@@ -61,7 +61,7 @@ type pers_struct = {
   ps_visibility: Load_path.visibility;
 }
 
-module String = Misc.String
+module String = Misc.Stdlib.String
 
 (* If a .cmi file is missing (or invalid), we
    store it as Missing in the cache. *)

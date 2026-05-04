@@ -73,7 +73,7 @@ module Swap = Map.Make(struct
     type t = Two_cycle.t
     let compare: t -> t -> int = Stdlib.compare
   end)
-module Move = Misc.String.Map
+module Move = Misc.Stdlib.String.Map
 
 
 module Define(D:Diffing.Defs with type eq := unit) = struct

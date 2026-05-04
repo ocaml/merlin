@@ -79,7 +79,7 @@ end = struct
     | CMT of string
     | CMTI of string
 
-  let file_path_to_mod_name f = Misc.unitname (Filename.basename f)
+  let file_path_to_mod_name f = unitname (Filename.basename f)
 
   let ml s = ML (file_path_to_mod_name s)
   let mll s = MLL (file_path_to_mod_name s)
@@ -88,7 +88,7 @@ end = struct
   let cmti s = CMTI (file_path_to_mod_name s)
 
   let of_filename fn =
-    match Misc.rev_string_split ~on:'.' fn with
+    match String.split_on_char ~sep:'.' fn |> List.rev with
     | [] | [ _ ] -> None
     | ext :: _ ->
       let ext = String.lowercase ext in
@@ -264,8 +264,7 @@ module Utils = struct
     let filename = File.name file in
     log ~title "Try find %S" filename;
     if
-      File.is_source file
-      && filename = Misc.unitname Mconfig.(config.query.filename)
+      File.is_source file && filename = unitname Mconfig.(config.query.filename)
     then
       (* No need to search when looking for the source of the current buffer's
          compilation unit *)
