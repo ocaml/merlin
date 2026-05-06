@@ -1,6 +1,9 @@
 (* This file is part of the ocamlgrep package
    See the attached LICENSE file.
-   Copyright (C) 2026 LexiFi *)
+   Copyright (C) 2026 LexiFi
+
+   Originally written by Nicolás Ojeda Bär (LexiFi);
+   maintained by Martin Jambon (LexiFi). *)
 (**
    Match a pattern against a program
 *)
