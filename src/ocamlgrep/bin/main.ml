@@ -89,9 +89,94 @@ let handle_event (ev : Scan.event) =
   | Warning msg -> warn msg
   | Finding finding -> print_finding finding
 
+let usage_msg =
+{|Usage: ocamlgrep <pattern>
+
+Search a Dune project for OCaml code matching a structural pattern.
+ocamlgrep walks the cmt files under _build/ and matches each typed
+expression against <pattern>, which must be a valid OCaml expression.
+The project's cmt files must be up to date: run `dune build @check`
+first.
+
+Pattern syntax
+==============
+
+  __                Matches any expression or record field. Often
+                    called a "wildcard"; the same role as a
+                    "metavariable" in coccinelle or semgrep.
+
+  __1, __2, ...     Numbered metavariables. Match any expression and
+                    require *equality* across all occurrences with
+                    the same number. For example,
+                      match __ with Some __1 -> Some __1 | _ -> None
+                    only matches branches that return their input
+                    unchanged.
+
+  Foo, M.f          A value or constructor identifier matches as a
+                    suffix of the fully qualified path of the typed
+                    expression: `f` matches `Module.f`, `M.f` matches
+                    `Outer.M.f`. This makes patterns robust to
+                    `open`s in the matched code.
+
+  foo a b           In a function application, you can omit any
+                    argument of the actual call. The special forms
+                    `foo ?arg:PRESENT` and `foo ?arg:MISSING` enforce
+                    that an optional argument is supplied or omitted
+                    at the call site.
+
+  (e : t)           Type-constrained match. Matches any expression
+                    that matches `e` and whose inferred type unifies
+                    with `t`. The wildcard `__` is allowed in `t`.
+
+  match e with ...  Clauses are matched as a set, in any order. A
+                    single clause in the pattern may match multiple
+                    clauses in the code. Same set semantics applies
+                    to record expressions.
+
+  e.lid             Matches both reads (`x.lid`) and writes
+                    (`x.lid <- _`). The special form `__.id` also
+                    matches record patterns `{...; P.id; ...}`, so
+                    `__.foo` finds every read or write of field
+                    `foo`, including in patterns.
+
+Examples
+========
+
+  ocamlgrep 'List.filter'
+  ocamlgrep '(__ (__ : floatarray) : float array)'
+  ocamlgrep 'List.rev __ @ __'
+  ocamlgrep 'match __ with None -> __ | Some __1 -> Some __1'
+  ocamlgrep 'List.fold_left __ __ (List.map __ __)'
+  ocamlgrep 'Stdlib.max (__ : float) __'
+
+Output
+======
+
+Each finding is rendered as a header line giving the file and
+location range, followed by the matched source lines with an
+OCaml-compiler-style gutter:
+
+  foo.ml:5:10-22:
+  5 |   let x = List.length xs
+
+  foo.ml:6:2-8:9:
+  6 |   match x with
+  7 |   | None -> None
+  8 |   | Some y -> Some y
+
+The matched range is highlighted in red unless the standard NO_COLOR
+environment variable is set (https://no-color.org/).
+
+For JSON output suitable for editor or tooling integration, use the
+merlin subcommand instead:
+
+  ocamlmerlin single ocamlgrep -query <pattern> < /dev/null
+
+Options
+=======|}
+
 let main () =
   let query = ref None in
-  let usage_msg = "Usage: ocamlgrep <pattern>" in
   Arg.parse [] (fun s -> query := Some s) usage_msg;
   let paths =
     match Paths.identify_dune_project () with

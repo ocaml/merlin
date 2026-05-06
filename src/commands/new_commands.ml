@@ -504,8 +504,11 @@ let all_commands =
     command "ocamlgrep"
       ~spec:
         [ arg "-query"
-            "<pattern> An OCaml expression pattern to search for. Use __ as a \
-             wildcard."
+            "<pattern> An OCaml expression pattern to search for. The plain \
+             wildcard `__` matches any expression or record field. Numbered \
+             metavariables `__1`, `__2`, ... (a la coccinelle/semgrep) match \
+             any expression and additionally enforce that all occurrences \
+             with the same number resolve to the same expression."
             (Marg.param "pattern" (fun query (_query, root) -> (query, root)));
           optional "-root"
             "<dir> Root directory of the project to search (defaults to the \
@@ -515,8 +518,13 @@ let all_commands =
       ~doc:
         "Search for an OCaml expression pattern across the typed trees of a \
          Dune project. The project's cmt files must be up-to-date (e.g. via \
-         `dune build @check`). Returns a list of findings with file, line, \
-         and column ranges. Ignores the buffer on stdin."
+         `dune build @check`). Returns a JSON object {findings, warnings} \
+         where each finding carries the file, a start/end position pair \
+         (using merlin's standard `{line, col}` shape), and the matched \
+         source lines. Ignores the buffer on stdin (this command is \
+         project-wide, not buffer-local). For the standalone CLI with \
+         human-readable output and a full pattern-syntax guide, see \
+         `ocamlgrep --help`."
       ~default:("", None) begin fun buffer (query, root) ->
       if query = "" then failwith "-query <pattern> is mandatory";
       run buffer (Query_protocol.Ocamlgrep (query, root))
