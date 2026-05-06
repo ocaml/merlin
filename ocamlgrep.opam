@@ -1,0 +1,33 @@
+opam-version: "2.0"
+synopsis: "Structural search for OCaml code"
+description:
+  "ocamlgrep is a command-line tool to perform structural (typed) search of OCaml code. It walks the cmt files of a Dune project and matches each typed expression or pattern against an OCaml expression query, in which `__` is a wildcard."
+maintainer: ["Martin Jambon <martin@mjambon.com>"]
+authors: ["LexiFi" "The Merlin team"]
+license: "MIT"
+homepage: "https://github.com/ocaml/merlin"
+bug-reports: "https://github.com/ocaml/merlin/issues"
+x-maintenance-intent: ["(latest)"]
+depends: [
+  "dune" {>= "3.0.0"}
+  "ocaml" {>= "5.4" & < "5.5"}
+  "merlin-lib" {= version}
+  "odoc" {with-doc}
+]
+build: [
+  ["dune" "subst"] {dev}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "--promote-install-files=false"
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+  ["dune" "install" "-p" name "--create-install-files" name]
+]
+dev-repo: "git+https://github.com/ocaml/merlin.git"

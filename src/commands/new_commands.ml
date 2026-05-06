@@ -501,6 +501,26 @@ let all_commands =
       | `Ident_at pos, scope ->
         run buffer (Query_protocol.Occurrences (`Ident_at pos, scope))
       end;
+    command "ocamlgrep"
+      ~spec:
+        [ arg "-query"
+            "<pattern> An OCaml expression pattern to search for. Use __ as a \
+             wildcard."
+            (Marg.param "pattern" (fun query (_query, root) -> (query, root)));
+          optional "-root"
+            "<dir> Root directory of the project to search (defaults to the \
+             current working directory)."
+            (Marg.param "dir" (fun root (query, _root) -> (query, Some root)))
+        ]
+      ~doc:
+        "Search for an OCaml expression pattern across the typed trees of a \
+         Dune project. The project's cmt files must be up-to-date (e.g. via \
+         `dune build @check`). Returns a list of findings with file, line, \
+         and column ranges. Ignores the buffer on stdin."
+      ~default:("", None) begin fun buffer (query, root) ->
+      if query = "" then failwith "-query <pattern> is mandatory";
+      run buffer (Query_protocol.Ocamlgrep (query, root))
+      end;
     command "outline" ~spec:[]
       ~doc:
         "Returns a tree of objects `{'start': position, 'end': position, \

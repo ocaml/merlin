@@ -921,3 +921,33 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
   | Version ->
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version
+  | Ocamlgrep (query, search_root) ->
+    (* Walk a Dune project's [_build/] directory looking for cmt files,
+       match the typed trees against [query], and return findings. The
+       merlin pipeline (built from stdin) is intentionally ignored:
+       ocamlgrep operates project-wide, not buffer-local. *)
+    let paths =
+      match Ocamlgrep.Paths.identify_dune_project ?search_root () with
+      | Ok paths -> paths
+      | Error msg -> failwith msg
+    in
+    Ocamlgrep.Paths.init paths;
+    let findings = ref [] in
+    let warnings = ref [] in
+    let handle_event = function
+      | Ocamlgrep.Scan.Scan_file _ -> ()
+      | Ocamlgrep.Scan.Warning msg -> warnings := msg :: !warnings
+      | Ocamlgrep.Scan.Finding { source; i; c1; c2; s } ->
+        findings :=
+          { Query_protocol.file = source;
+            line = i;
+            col_start = c1;
+            col_end = c2;
+            context = s
+          }
+          :: !findings
+    in
+    Ocamlgrep.Scan.incremental_search paths handle_event query;
+    { Query_protocol.findings = List.rev !findings;
+      warnings = List.rev !warnings
+    }

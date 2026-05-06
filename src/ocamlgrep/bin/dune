@@ -1,0 +1,6 @@
+(executable
+ (name main)
+ (public_name ocamlgrep)
+ (package ocamlgrep)
+ (libraries ocamlgrep ocaml_utils)
+ (flags :standard -open Ocamlgrep -open Ocaml_utils))

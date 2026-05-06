@@ -225,6 +225,14 @@ let dump (type a) : a t -> json =
   | Signature_help { position; _ } ->
     mk "signature-help" [ ("position", mk_position position) ]
   | Version -> mk "version" []
+  | Ocamlgrep (query, search_root) ->
+    mk "ocamlgrep"
+      [ ("query", `String query);
+        ( "root",
+          match search_root with
+          | None -> `Null
+          | Some root -> `String root )
+      ]
 
 let string_of_completion_kind = function
   | `Value -> "Value"
@@ -587,3 +595,17 @@ let json_of_response (type a) (query : a t) (response : a) : json =
              [ ("stale", Json.bool occurrence.is_stale) ]))
   | Signature_help _, s -> json_of_signature_help s
   | Version, version -> `String version
+  | Ocamlgrep _, { findings; warnings } ->
+    let json_of_finding (f : Query_protocol.ocamlgrep_finding) =
+      `Assoc
+        [ ("file", `String f.file);
+          ("line", `Int f.line);
+          ("col_start", `Int f.col_start);
+          ("col_end", `Int f.col_end);
+          ("context", `String f.context)
+        ]
+    in
+    `Assoc
+      [ ("findings", `List (List.map ~f:json_of_finding findings));
+        ("warnings", `List (List.map ~f:Json.string warnings))
+      ]

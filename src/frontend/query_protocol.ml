@@ -136,6 +136,17 @@ type occurrence = { loc : Location.t; is_stale : bool }
 type substitution_result =
   { loc : Location.t; content : string; selection_range : Location.t }
 
+type ocamlgrep_finding =
+  { file : string;
+    line : int;
+    col_start : int;
+    col_end : int;
+    context : string
+  }
+
+type ocamlgrep_result =
+  { findings : ocamlgrep_finding list; warnings : string list }
+
 module Locate_types_result = struct
   module Tree = struct
     type node_data =
@@ -251,6 +262,9 @@ type _ t =
   | Occurrences (* *) :
       [ `Ident_at of Msource.position ] * [ `Project | `Buffer | `Renaming ]
       -> (occurrence list * occurrences_status) t
+  | Ocamlgrep (* *) :
+      string * string option
+      -> ocamlgrep_result t
   | Signature_help : signature_help -> signature_help_result option t
       (** In current version, Merlin only uses the parameter [position] to answer
         signature_help queries. The additionnal parameters are described in the
