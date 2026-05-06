@@ -937,13 +937,15 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let handle_event = function
       | Ocamlgrep.Scan.Scan_file _ -> ()
       | Ocamlgrep.Scan.Warning msg -> warnings := msg :: !warnings
-      | Ocamlgrep.Scan.Finding { source; i; c1; c2; s } ->
+      | Ocamlgrep.Scan.Finding
+          { source; start_line; start_col; end_line; end_col; lines } ->
         findings :=
           { Query_protocol.file = source;
-            line = i;
-            col_start = c1;
-            col_end = c2;
-            context = s
+            start_line;
+            start_col;
+            end_line;
+            end_col;
+            lines
           }
           :: !findings
     in

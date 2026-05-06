@@ -6,10 +6,11 @@ open Printf
 
 type finding = {
   source: string;
-  i: int; (* 1-based line number of start of the matching snippet *)
-  c1: int; (* 0-based index of the start of the match on the first line *)
-  c2: int; (* 0-based index of the end of the match on the first line *)
-  s: string; (* full first line of the region containing the match *)
+  start_line: int;     (* 1-based *)
+  start_col: int;      (* 0-based column on [start_line] *)
+  end_line: int;       (* 1-based; equals [start_line] for single-line matches *)
+  end_col: int;        (* 0-based column on [end_line] *)
+  lines: string list;  (* source lines [start_line..end_line] inclusive *)
 }
 
 type event =
@@ -94,18 +95,31 @@ let incremental_search
                 | [] -> ()
                 | _ :: _ as locs ->
                     let src_lines = Array.of_list (read_lines source) in
+                    let nb_lines = Array.length src_lines in
                     List.iter
                       (fun {Location.loc_start; loc_end; _} ->
-                         let i = loc_start.pos_lnum in
-                         let s = src_lines.(i - 1) in
-                         let c1 = loc_start.pos_cnum - loc_start.pos_bol in
-                         let c2 =
-                           if loc_end.pos_lnum = loc_start.pos_lnum then
-                             loc_end.pos_cnum - loc_end.pos_bol
-                           else
-                             String.length s
+                         let start_line = loc_start.pos_lnum in
+                         let start_col =
+                           loc_start.pos_cnum - loc_start.pos_bol
                          in
-                         handle_event (Finding { source; i; c1; c2; s })
+                         let end_line = loc_end.pos_lnum in
+                         let end_col = loc_end.pos_cnum - loc_end.pos_bol in
+                         (* Clamp to the actual file extent. With a matching
+                            digest this should be a no-op, but it keeps us
+                            from raising on edge cases. *)
+                         let s = max 1 (min nb_lines start_line) in
+                         let e = max s (min nb_lines end_line) in
+                         let lines =
+                           List.init (e - s + 1) (fun k -> src_lines.(s - 1 + k))
+                         in
+                         handle_event (Finding {
+                           source;
+                           start_line;
+                           start_col;
+                           end_line;
+                           end_col;
+                           lines;
+                         })
                       ) locs
               end
           | {cmt_sourcefile = None; _} | {cmt_source_digest = None; _} ->

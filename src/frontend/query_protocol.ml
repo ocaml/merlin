@@ -138,10 +138,11 @@ type substitution_result =
 
 type ocamlgrep_finding =
   { file : string;
-    line : int;
-    col_start : int;
-    col_end : int;
-    context : string
+    start_line : int;
+    start_col : int;
+    end_line : int;
+    end_col : int;
+    lines : string list
   }
 
 type ocamlgrep_result =

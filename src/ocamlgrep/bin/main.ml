@@ -34,27 +34,60 @@ let color c fmt =
 let warn msg =
   eprintf "%s: %s\n%!" (color Yellow "Warning") msg
 
-let print_finding_with_color_range (finding : Scan.finding) =
-  let file_color = color Green "%s" finding.source in
-  let i_color = color Yellow "%d" finding.i in
-  let s_color =
-    let len = String.length finding.s in
-    if finding.c2 > len || finding.c1 > len then
-      sprintf
-        " Skipping this line with wrong indexes -- Maybe you should think \
-         about recompiling this file."
+(* Highlight the substring [s.[lo..hi)] in red. Out-of-range indices
+   are clamped silently — a stale cmt could in principle produce them
+   even after the digest check, and crashing the renderer would be a
+   poor failure mode. *)
+let highlight_range line lo hi =
+  let n = String.length line in
+  let lo = max 0 (min n lo) in
+  let hi = max lo (min n hi) in
+  if lo = hi then line
+  else
+    String.sub line 0 lo
+    ^ color Red "%s" (String.sub line lo (hi - lo))
+    ^ String.sub line hi (n - hi)
+
+(* Format A: a header line giving the precise location, followed by
+   the matched source lines with an OCaml-compiler-style [N |] gutter.
+
+       foo.ml:5:10-22:
+       5 |   let x = List.length xs
+
+       foo.ml:6:10-8:9:
+       6 |   let y =
+       7 |     foo bar
+       8 |       baz
+
+   The header is unambiguous so consecutive findings need no
+   separator between them. *)
+let print_finding (f : Scan.finding) =
+  let file = color Green "%s" f.source in
+  let header =
+    if f.start_line = f.end_line then
+      sprintf "%s:%d:%d-%d:" file f.start_line f.start_col f.end_col
     else
-      String.sub finding.s 0 finding.c1
-      ^ color Red "%s" (String.sub finding.s finding.c1 (finding.c2 - finding.c1))
-      ^ String.sub finding.s finding.c2 (String.length finding.s - finding.c2)
+      sprintf "%s:%d:%d-%d:%d:" file
+        f.start_line f.start_col f.end_line f.end_col
   in
-  printf "%s:%s:%s\n%!" file_color i_color s_color
+  print_endline header;
+  let gutter_width = String.length (string_of_int f.end_line) in
+  List.iteri
+    (fun i line ->
+      let lineno = f.start_line + i in
+      let lo = if lineno = f.start_line then f.start_col else 0 in
+      let hi = if lineno = f.end_line then f.end_col else String.length line in
+      printf "%s | %s\n" (color Yellow "%*d" gutter_width lineno)
+        (highlight_range line lo hi))
+    f.lines;
+  (* Flush so streamed output is interleaved with stderr warnings in order. *)
+  printf "%!"
 
 let handle_event (ev : Scan.event) =
   match ev with
   | Scan_file _path -> ()
   | Warning msg -> warn msg
-  | Finding finding -> print_finding_with_color_range finding
+  | Finding finding -> print_finding finding
 
 let main () =
   let query = ref None in

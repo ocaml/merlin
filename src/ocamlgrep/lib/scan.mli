@@ -5,16 +5,17 @@
    Ocamlgrep library - type-aware search for OCaml code patterns
 *)
 
-(** Matching snippet of code. This will change.
-    It currently only shows the first line of the match.
-    TODO: include multiline match info
-*)
+(** A region of source code matched by a query. Lines and columns are
+    1-based and 0-based respectively, matching [Lexing.position]. *)
 type finding = {
   source: string;
-  i: int;
-  c1: int;
-  c2: int;
-  s: string;
+  start_line: int;
+  start_col: int;
+  end_line: int;
+  end_col: int;
+  lines: string list;
+    (** The source lines from [start_line] through [end_line] inclusive,
+        in order. Always non-empty. *)
 }
 
 type event =
