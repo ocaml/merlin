@@ -927,7 +927,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
        merlin pipeline (built from stdin) is intentionally ignored:
        ocamlgrep operates project-wide, not buffer-local. *)
     let paths =
-      match Ocamlgrep.Paths.identify_dune_project ?search_root () with
+      match Ocamlgrep.Paths.find ?search_root () with
       | Ok paths -> paths
       | Error msg -> failwith msg
     in

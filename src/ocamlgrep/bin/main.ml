@@ -182,7 +182,7 @@ let main () =
   let query = ref None in
   Arg.parse [] (fun s -> query := Some s) usage_msg;
   let paths =
-    match Paths.identify_dune_project () with
+    match Paths.find () with
     | Error msg -> failwith msg
     | Ok paths -> paths
   in

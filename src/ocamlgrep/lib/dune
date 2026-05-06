@@ -2,13 +2,14 @@
  (name ocamlgrep)
  (public_name merlin-lib.ocamlgrep)
  (libraries ocaml_parsing ocaml_preprocess ocaml_typing ocaml_utils
-            merlin_utils unix)
+            merlin_kernel merlin_utils unix)
  (flags
   :standard
   -open Ocaml_parsing
   -open Ocaml_preprocess
   -open Ocaml_typing
   -open Ocaml_utils
+  -open Merlin_kernel
   -open Merlin_utils))
 
 ; Generate standard_library.ml exposing the OCaml standard library path.

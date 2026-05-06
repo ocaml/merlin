@@ -12,6 +12,8 @@
    keeps its files.
 *)
 
+open Std (* extends [String] with [chop_prefix] etc. *)
+
 type dune_project_info = {
   search_root: string option;
     (* The scan root as specified by the user. It can be absolute or relative.
@@ -58,42 +60,64 @@ let search_root x = x.search_root
 let project_root x = x.project_root
 let project_relative_search_root x = x.project_relative_search_root
 
-(*
-   This looks for a folder containing '_build/', starting from the search root
-   (typically cwd) and then by recursively checking its parents.
+(* Compute the path of [abs_search_root] relative to [project_root].
+   Both must be absolute and normalized (e.g. via [Unix.realpath]).
+   Returns [""] when they are the same directory. *)
+let relative_to ~project_root abs_search_root =
+  match String.chop_prefix ~prefix:project_root abs_search_root with
+  | None ->
+    (* find_project_context found the project by walking *up* from
+       abs_search_root, so the prefix relation must hold. *)
+    ""
+  | Some "" -> ""
+  | Some s when s.[0] = '/' -> String.sub s ~pos:1 ~len:(String.length s - 1)
+  | Some s -> s
 
-   TODO: use Dune's algorithm instead?
-   The Dune docs cover this well:
-   https://dune.readthedocs.io/en/latest/usage.html#finding-root
-*)
-let identify_dune_project
+(* Project location is delegated to [Mconfig_dot.find_project_context]
+   so the rule for "what counts as a project root" stays consistent
+   with the rest of merlin: walk up looking for a [.merlin],
+   [dune-project], or [dune-workspace] file.
+
+   The [Mconfig_dot.context] is abstract in the .mli, so we read what
+   we need from the second return value, which is the path of the
+   config file: its directory is the project root, its basename tells
+   us whether the configurator is dune or .merlin. *)
+let find
     ?(context = "default")
     ?search_root
     () : (t, string) result =
-  let rec loop prefix abs_dir =
-    (* abs_dir: search_root or one of its ancestors
-       prefix: path from dir to search_root s.t. search_root = dir / prefix *)
-    if Sys.file_exists (Filename.concat abs_dir "_build") then
-      let project_root = abs_dir in
-      let build_source_root = project_root / "_build" / context in
-      Ok {
-        search_root;
-        project_root;
-        project_relative_search_root = prefix;
-        build_source_root;
-      }
-    else
-      let dir' = Filename.dirname abs_dir in
-      if dir' = abs_dir then
-        (* reached "/" *)
-        failwith "Could not detect _build";
-      loop (Filename.concat (Filename.basename abs_dir) prefix) dir'
-  in
   let abs_search_root =
     Option.value ~default:Filename.current_dir_name (* . *) search_root
     |> Unix.realpath
   in
-  loop "" abs_search_root
+  match Mconfig_dot.find_project_context abs_search_root with
+  | None ->
+    Error
+      (Printf.sprintf
+         "Could not find a project rooted at or above %s. ocamlgrep \
+          looks for a dune-project, dune-workspace, or .merlin file."
+         abs_search_root)
+  | Some (_ctx, config_file) ->
+    let project_root = Filename.dirname config_file in
+    let basename = Filename.basename config_file in
+    if basename = ".merlin" then
+      Error
+        (Printf.sprintf
+           "ocamlgrep currently only supports Dune projects, but the \
+            project at %s was located via a .merlin file. Support for \
+            other build systems is a TODO."
+           project_root)
+    else
+      let build_source_root = project_root / "_build" / context in
+      let project_relative_search_root =
+        relative_to ~project_root abs_search_root
+      in
+      Ok
+        { search_root;
+          project_root;
+          project_relative_search_root;
+          build_source_root
+        }
 
 (* foo/bar -> <root>/_build/default/foo/bar
 

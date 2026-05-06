@@ -33,8 +33,16 @@ val project_root : t -> string
     the project root. *)
 val project_relative_search_root : t -> string
 
-(** [identify_dune_project ()] identifies
-    where the source files and compiled files we need are located.
+(** [find ()] locates the OCaml project containing [search_root] and
+    derives the dune-specific paths ocamlgrep needs.
+
+    Project location is delegated to {!Mconfig_dot.find_project_context}
+    so the heuristic stays consistent with the rest of merlin: the
+    project is rooted at the directory containing the closest
+    [dune-project], [dune-workspace], or [.merlin] file, walking up
+    from [search_root]. Currently only Dune projects are supported;
+    [.merlin]-located projects yield an [Error] explaining the
+    limitation.
 
     @param context a Dune context for which type information for the project
     is available (cmt files).
@@ -43,7 +51,7 @@ val project_relative_search_root : t -> string
     @param search_root specifies a search root other than the current working
     directory. It must be within a Dune project.
 *)
-val identify_dune_project :
+val find :
   ?context:string ->
   ?search_root:string ->
   unit -> (t, string) result
