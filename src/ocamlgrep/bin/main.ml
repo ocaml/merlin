@@ -191,7 +191,9 @@ let main () =
   | None ->
     Arg.usage [] usage_msg;
     exit 0
-  | Some s -> Scan.incremental_search paths handle_event s
+  | Some s ->
+    let cmt_files = Paths.collect_cmt_files paths in
+    Scan.incremental_search paths cmt_files handle_event s
 
 let () =
   try

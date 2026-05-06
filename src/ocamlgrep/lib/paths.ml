@@ -139,3 +139,20 @@ let init paths =
     ~auto_include:Load_path.no_auto_include
     ~visible:(List.append extra_includes [Standard_library.path])
     ~hidden:[]
+
+(* Walk the project's [_build/] tree under the search root and return
+   every cmt file underneath it. Dune-specific: it relies on the
+   layout produced by [dune build @check]. Kept here next to the rest
+   of the dune assumptions so [Scan] can stay filesystem-walk-free. *)
+let collect_cmt_files paths =
+  let res = ref [] in
+  let rec walk dir =
+    Array.iter (fun entry ->
+        let entry = Filename.concat dir entry in
+        if Sys.is_directory entry then walk entry
+        else if Filename.check_suffix entry ".cmt" then
+          res := entry :: !res)
+      (Sys.readdir dir)
+  in
+  walk (in_build_dir paths (project_relative_search_root paths));
+  List.rev !res

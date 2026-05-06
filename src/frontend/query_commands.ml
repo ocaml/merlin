@@ -949,7 +949,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           }
           :: !findings
     in
-    Ocamlgrep.Scan.incremental_search paths handle_event query;
+    let cmt_files = Ocamlgrep.Paths.collect_cmt_files paths in
+    Ocamlgrep.Scan.incremental_search paths cmt_files handle_event query;
     { Query_protocol.findings = List.rev !findings;
       warnings = List.rev !warnings
     }

@@ -27,11 +27,18 @@ type event =
   | Finding of finding (** found a matching region of code *)
   | Warning of string (** a warning message, possibly containing line breaks *)
 
-(** [incremental_search paths handler] scans the project starting
-    from the search root embedded in [paths]. Each time a finding or a
-    warning is created, the [handler] function is called. *)
-val incremental_search : Paths.t -> (event -> unit) -> string -> unit
+(** [incremental_search paths cmt_files handler query] processes each
+    cmt file in [cmt_files] and matches its typed tree against the
+    pattern [query]. The caller is responsible for enumerating
+    [cmt_files] (e.g. via {!Paths.collect_cmt_files}); this function
+    does no filesystem traversal of its own. [paths] is used to
+    resolve cmt-recorded source paths to project-relative display
+    paths and to locate preprocessed sources for digest checks.
+
+    Each time a finding or a warning is created, [handler] is called. *)
+val incremental_search :
+  Paths.t -> string list -> (event -> unit) -> string -> unit
 
 (** Wrapper around [incremental_search] that returns the results as a list
     at the end instead of incrementally. *)
-val search : Paths.t -> string -> event list
+val search : Paths.t -> string list -> string -> event list
