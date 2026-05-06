@@ -37,6 +37,16 @@ type dune_project_info = {
 }
 
 (* TODO: add support for other build systems that Dune? *)
+
+(* TODO: project enumeration via the build system rather than walking
+   [_build/].
+
+   The pattern in the merlin tree (see ocaml-index) is to let the build
+   system enumerate cmt files and pass them in, instead of discovering
+   them ourselves. Dune publishes cmts via aliases like [@ocaml-index];
+   ocamlgrep could consume an explicit cmt-file list (or read an
+   existing .ocaml-index file) and stop walking [_build/] altogether.
+   That would also remove the hard-coded Dune-only assumption below. *)
 type t = dune_project_info
 
 let ( / ) = Filename.concat
