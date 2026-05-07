@@ -949,7 +949,18 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
           }
           :: !findings
     in
-    let cmt_files = Ocamlgrep.Paths.collect_cmt_files paths in
+    (* Cmt enumeration goes through dune itself rather than a manual
+       [_build/] walk: dune is authoritative about what compiled and
+       where. *)
+    let cmt_files =
+      match
+        Merlin_project.Dune_workspace.describe
+          ~root:(Ocamlgrep.Paths.project_root paths)
+          ()
+      with
+      | Ok ws -> Merlin_project.Dune_workspace.local_cmt_files ws
+      | Error msg -> failwith msg
+    in
     Ocamlgrep.Scan.incremental_search paths cmt_files handle_event query;
     { Query_protocol.findings = List.rev !findings;
       warnings = List.rev !warnings

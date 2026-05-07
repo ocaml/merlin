@@ -65,9 +65,3 @@ val find :
 *)
 val in_build_dir : t -> string -> string
 
-(** [collect_cmt_files paths] returns every [.cmt] file found by
-    walking the project's [_build/] tree under the search root. This
-    is Dune-specific and is the canonical way for the standalone
-    [ocamlgrep] binary to populate the [cmt_files] argument of
-    {!Scan.incremental_search}. *)
-val collect_cmt_files : t -> string list

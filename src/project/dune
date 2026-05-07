@@ -1,0 +1,9 @@
+; Library housing structured access to information that the user's build
+; system can give us about the project: source files, modules, cmt
+; layout, etc. Currently dune is the only backend supported, but other
+; modules (e.g. dot-merlin) could be added here.
+(library
+ (name merlin_project)
+ (public_name merlin-lib.project)
+ (libraries csexp sexplib0 unix)
+ (preprocess (pps ppx_sexp_conv)))

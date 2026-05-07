@@ -192,8 +192,15 @@ let main () =
     Arg.usage [] usage_msg;
     exit 0
   | Some s ->
-    let cmt_files = Paths.collect_cmt_files paths in
-    Scan.incremental_search paths cmt_files handle_event s
+    (* Ask dune for the project's cmt files instead of walking
+       [_build/] ourselves: dune is the source of truth for what
+       compiled and where, knows about generated modules, and tells
+       us which libraries are project-local vs external. *)
+    (match Dune_workspace.describe ~root:(Paths.project_root paths) () with
+     | Error msg -> failwith msg
+     | Ok ws ->
+       let cmt_files = Dune_workspace.local_cmt_files ws in
+       Scan.incremental_search paths cmt_files handle_event s)
 
 let () =
   try
