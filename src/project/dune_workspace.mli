@@ -3,23 +3,17 @@
 
 (** Structured access to the output of [dune describe workspace]. *)
 
-(** A module described by dune. Each of [impl], [intf], [cmt], [cmti]
-    is encoded by dune as a 0-or-1-element list -- e.g. [(intf ())] or
-    [(intf (lib/foo.mli))]. We mirror that shape with [string list];
-    use {!impl_path}, {!cmt_path} etc. for the convenient
-    [string option] view. *)
+(** A module described by dune. dune encodes each of [impl], [intf],
+    [cmt], [cmti] as a 0-or-1-element list ([(intf ())] or
+    [(intf (lib/foo.mli))]); the sexp deriver maps that directly to
+    [string option]. *)
 type module_ =
   { name : string;
-    impl : string list;
-    intf : string list;
-    cmt : string list;
-    cmti : string list
+    impl : string option;
+    intf : string option;
+    cmt : string option;
+    cmti : string option
   }
-
-val impl_path : module_ -> string option
-val intf_path : module_ -> string option
-val cmt_path : module_ -> string option
-val cmti_path : module_ -> string option
 
 (** A [(library ...)] entry from the workspace description. *)
 type library =

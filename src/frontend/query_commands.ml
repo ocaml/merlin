@@ -927,11 +927,10 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
        merlin pipeline (built from stdin) is intentionally ignored:
        ocamlgrep operates project-wide, not buffer-local. *)
     let paths =
-      match Ocamlgrep.Paths.find ?search_root () with
+      match Ocamlgrep.Paths.init ?search_root () with
       | Ok paths -> paths
       | Error msg -> failwith msg
     in
-    Ocamlgrep.Paths.init paths;
     let findings = ref [] in
     let warnings = ref [] in
     let handle_event = function

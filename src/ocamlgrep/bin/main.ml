@@ -182,11 +182,10 @@ let main () =
   let query = ref None in
   Arg.parse [] (fun s -> query := Some s) usage_msg;
   let paths =
-    match Paths.find () with
+    match Paths.init () with
     | Error msg -> failwith msg
     | Ok paths -> paths
   in
-  Paths.init paths;
   match !query with
   | None ->
     Arg.usage [] usage_msg;

@@ -3,25 +3,24 @@
 
 open Sexplib0.Sexp_conv
 
-(* The following four record types match the exact field shape of
-   dune's [--format=csexp --lang 0.1] output. [@@deriving of_sexp]
-   gives us the parsing code for free; we only hand-write the
-   top-level dispatch (where the same tag may repeat). *)
+(* The following record types match the exact field shape of dune's
+   [--format=csexp --lang 0.1] output. [@@deriving of_sexp] gives us
+   the parsing code for free; we only hand-write the top-level
+   dispatch (where the same tag may repeat).
+
+   Note on [string option]: sexp_conv encodes [None] as the empty
+   list [()] and [Some x] as [(x)], which is exactly how dune
+   encodes its optional path fields like [(intf ())] /
+   [(intf (lib/foo.mli))]. So no custom converter is needed. *)
 
 type module_ =
   { name : string;
-    impl : string list;
-    intf : string list;
-    cmt : string list;
-    cmti : string list
+    impl : string option;
+    intf : string option;
+    cmt : string option;
+    cmti : string option
   }
 [@@deriving of_sexp]
-
-let single = function [ s ] -> Some s | _ -> None
-let impl_path m = single m.impl
-let intf_path m = single m.intf
-let cmt_path m = single m.cmt
-let cmti_path m = single m.cmti
 
 type library =
   { name : string;
@@ -119,30 +118,38 @@ let describe ?root () =
   in
   let argv = Array.of_list ("dune" :: args) in
   let env = Unix.environment () in
-  let ic, oc, ec = Unix.open_process_args_full "dune" argv env in
-  close_out oc;
-  let sexp_result = Csexp.input ic in
-  let stderr_data = read_all ec in
-  match Unix.close_process_full (ic, oc, ec) with
-  | WEXITED 0 -> begin
-    match sexp_result with
-    | Ok sexp -> parse_csexp sexp
-    | Error msg ->
-      Error (Printf.sprintf "could not parse dune's csexp output: %s" msg)
-  end
-  | WEXITED n ->
+  match Unix.open_process_args_full "dune" argv env with
+  | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
     Error
-      (Printf.sprintf "dune describe workspace exited with code %d:\n%s" n
-         (String.trim stderr_data))
-  | WSIGNALED n ->
-    Error (Printf.sprintf "dune describe workspace killed by signal %d" n)
-  | WSTOPPED n ->
-    Error (Printf.sprintf "dune describe workspace stopped by signal %d" n)
+      "could not find `dune` in PATH. Install dune or make it available."
+  | exception Unix.Unix_error (err, _, _) ->
+    Error
+      (Printf.sprintf "could not run `dune describe workspace`: %s"
+         (Unix.error_message err))
+  | ic, oc, ec ->
+    close_out oc;
+    let sexp_result = Csexp.input ic in
+    let stderr_data = read_all ec in
+    (match Unix.close_process_full (ic, oc, ec) with
+     | WEXITED 0 -> begin
+       match sexp_result with
+       | Ok sexp -> parse_csexp sexp
+       | Error msg ->
+         Error (Printf.sprintf "could not parse dune's csexp output: %s" msg)
+     end
+     | WEXITED n ->
+       Error
+         (Printf.sprintf "dune describe workspace exited with code %d:\n%s" n
+            (String.trim stderr_data))
+     | WSIGNALED n ->
+       Error (Printf.sprintf "dune describe workspace killed by signal %d" n)
+     | WSTOPPED n ->
+       Error (Printf.sprintf "dune describe workspace stopped by signal %d" n))
 
 let local_cmt_files t =
   let from_modules acc modules =
     List.fold_left
-      (fun acc m -> match cmt_path m with None -> acc | Some p -> p :: acc)
+      (fun acc m -> match m.cmt with None -> acc | Some p -> p :: acc)
       acc modules
   in
   let acc = [] in

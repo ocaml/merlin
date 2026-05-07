@@ -41,17 +41,7 @@ type dune_project_info = {
     *)
 }
 
-(* TODO: add support for other build systems that Dune? *)
-
-(* TODO: project enumeration via the build system rather than walking
-   [_build/].
-
-   The pattern in the merlin tree (see ocaml-index) is to let the build
-   system enumerate cmt files and pass them in, instead of discovering
-   them ourselves. Dune publishes cmts via aliases like [@ocaml-index];
-   ocamlgrep could consume an explicit cmt-file list (or read an
-   existing .ocaml-index file) and stop walking [_build/] altogether.
-   That would also remove the hard-coded Dune-only assumption below. *)
+(* TODO: add support for build systems other than dune. *)
 type t = dune_project_info
 
 let ( / ) = Filename.concat
@@ -72,52 +62,6 @@ let relative_to ~project_root abs_search_root =
   | Some "" -> ""
   | Some s when s.[0] = '/' -> String.sub s ~pos:1 ~len:(String.length s - 1)
   | Some s -> s
-
-(* Project location is delegated to [Mconfig_dot.find_project_context]
-   so the rule for "what counts as a project root" stays consistent
-   with the rest of merlin: walk up looking for a [.merlin],
-   [dune-project], or [dune-workspace] file.
-
-   The [Mconfig_dot.context] is abstract in the .mli, so we read what
-   we need from the second return value, which is the path of the
-   config file: its directory is the project root, its basename tells
-   us whether the configurator is dune or .merlin. *)
-let find
-    ?(context = "default")
-    ?search_root
-    () : (t, string) result =
-  let abs_search_root =
-    Option.value ~default:Filename.current_dir_name (* . *) search_root
-    |> Unix.realpath
-  in
-  match Mconfig_dot.find_project_context abs_search_root with
-  | None ->
-    Error
-      (Printf.sprintf
-         "Could not find a project rooted at or above %s. ocamlgrep \
-          looks for a dune-project, dune-workspace, or .merlin file."
-         abs_search_root)
-  | Some (_ctx, config_file) ->
-    let project_root = Filename.dirname config_file in
-    let basename = Filename.basename config_file in
-    if basename = ".merlin" then
-      Error
-        (Printf.sprintf
-           "ocamlgrep currently only supports Dune projects, but the \
-            project at %s was located via a .merlin file. Support for \
-            other build systems is a TODO."
-           project_root)
-    else
-      let build_source_root = project_root / "_build" / context in
-      let project_relative_search_root =
-        relative_to ~project_root abs_search_root
-      in
-      Ok
-        { search_root;
-          project_root;
-          project_relative_search_root;
-          build_source_root
-        }
 
 (* foo/bar -> <root>/_build/default/foo/bar
 
@@ -157,10 +101,60 @@ let collect_cmi_dirs paths =
   walk paths.build_source_root;
   List.rev !res
 
-let init paths =
-  let extra_includes = collect_cmi_dirs paths in
-  Load_path.init
-    ~auto_include:Load_path.no_auto_include
-    ~visible:(List.append extra_includes [Standard_library.path])
-    ~hidden:[]
+(* Project location is delegated to [Mconfig_dot.find_project_context]
+   so the rule for "what counts as a project root" stays consistent
+   with the rest of merlin: walk up looking for a [.merlin],
+   [dune-project], or [dune-workspace] file.
+
+   The [Mconfig_dot.context] is abstract in the .mli, so we read what
+   we need from the second return value, which is the path of the
+   config file: its directory is the project root, its basename tells
+   us whether the configurator is dune or .merlin.
+
+   We also set up [Load_path] with the project's cmi directories.
+   These two steps used to be split between [find] and [init], but
+   callers always need both, so we expose a single entry point. *)
+let init
+    ?(context = "default")
+    ?search_root
+    () : (t, string) result =
+  let abs_search_root =
+    Option.value ~default:Filename.current_dir_name (* . *) search_root
+    |> Unix.realpath
+  in
+  match Mconfig_dot.find_project_context abs_search_root with
+  | None ->
+    Error
+      (Printf.sprintf
+         "Could not find a project rooted at or above %s. ocamlgrep \
+          looks for a dune-project, dune-workspace, or .merlin file."
+         abs_search_root)
+  | Some (_ctx, config_file) ->
+    let project_root = Filename.dirname config_file in
+    let basename = Filename.basename config_file in
+    if basename = ".merlin" then
+      Error
+        (Printf.sprintf
+           "ocamlgrep currently only supports Dune projects, but the \
+            project at %s was located via a .merlin file. Support for \
+            other build systems is a TODO."
+           project_root)
+    else
+      let build_source_root = project_root / "_build" / context in
+      let project_relative_search_root =
+        relative_to ~project_root abs_search_root
+      in
+      let paths =
+        { search_root;
+          project_root;
+          project_relative_search_root;
+          build_source_root
+        }
+      in
+      let extra_includes = collect_cmi_dirs paths in
+      Load_path.init
+        ~auto_include:Load_path.no_auto_include
+        ~visible:(List.append extra_includes [ Standard_library.path ])
+        ~hidden:[];
+      Ok paths
 
