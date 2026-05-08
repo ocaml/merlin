@@ -109,12 +109,16 @@ let read_all ic =
   in
   loop ()
 
-let describe ?root () =
-  (* dune parses [--root] positionally: it must come *after* the
-     [describe workspace] subcommand, not before [describe]. *)
+let describe ?context ?root () =
+  (* dune parses [--root] and [--context] positionally: they must come
+     *after* the [describe workspace] subcommand, not before
+     [describe]. *)
   let base_args = [ "describe"; "workspace"; "--format=csexp"; "--lang"; "0.1" ] in
   let args =
-    match root with None -> base_args | Some dir -> base_args @ [ "--root"; dir ]
+    match context with None -> base_args | Some name -> base_args @ [ "--context"; name ]
+  in
+  let args =
+    match root with None -> args | Some dir -> args @ [ "--root"; dir ]
   in
   let argv = Array.of_list ("dune" :: args) in
   let env = Unix.environment () in

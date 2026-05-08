@@ -1,7 +1,20 @@
 (* This file is part of the merlin-lib.project library
    See the attached LICENSE file. *)
 
-(** Structured access to the output of [dune describe workspace]. *)
+(** Structured access to the output of [dune describe workspace].
+
+    Requires the [dune] command.
+
+    This provides locations of build assets (ml, cmi, cmt, ...)
+    in the build folder so that they can could scanned after a build.
+    Files are listed based on the source files and the build rules
+    identified by Dune. Listed files may or may not exist depending
+    on the build state.
+
+    Building all the cmt files of a project in the default workspace
+    can be done with [dune build @check] which may be slightly faster
+    than a full [dune build].
+*)
 
 (** A module described by dune. dune encodes each of [impl], [intf],
     [cmt], [cmti] as a 0-or-1-element list ([(intf ())] or
@@ -45,23 +58,27 @@ type t =
     executables : executables list
   }
 
-(** [describe ?root ()] runs
+(** [describe ?context ?root ()] runs
     {[
       dune describe workspace --format=csexp --lang 0.1
     ]}
-    in the given directory (defaulting to the current working
-    directory; passed via dune's [--root] flag) and parses its output.
+    in the given directory and parses its output.
 
     The [--lang 0.1] pin is dune's stability contract for this output
     format: dune commits to keeping the format unchanged across
     versions. New top-level entry kinds added in a future [--lang] are
-    silently ignored, so old code keeps working against newer dunes. *)
-val describe : ?root:string -> unit -> (t, string) result
+    silently ignored, so old code keeps working against newer dunes.
 
-(** [parse_csexp sexp] interprets a [Csexp.t] produced by [dune
-    describe workspace --format=csexp --lang 0.1]. Useful when you
-    have the output already in hand (e.g. from a test fixture). *)
-val parse_csexp : Csexp.t -> (t, string) result
+    @param context specify which build context to describe. The default
+    if Dune's default which is named [default].
+
+    @param root force the project root instead of inferring it by scanning
+    the file system starting from the current directory.
+*)
+val describe :
+  ?context:string ->
+  ?root:string ->
+  unit -> (t, string) result
 
 (** Every cmt path declared by dune for project-local modules across
     all libraries (excluding [(local false)]) and all executables.
