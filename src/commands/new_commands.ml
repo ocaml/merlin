@@ -522,9 +522,9 @@ let all_commands =
          where each finding carries the file, a start/end position pair \
          (using merlin's standard `{line, col}` shape), and the matched \
          source lines. Ignores the buffer on stdin (this command is \
-         project-wide, not buffer-local). For the standalone CLI with \
-         human-readable output and a full pattern-syntax guide, see \
-         `ocamlgrep --help`."
+         project-wide, not buffer-local). The pattern language is the one \
+         from LexiFi's ocamlgrep (https://github.com/LexiFi/ocamlgrep) -- \
+         see its README for the full syntax reference."
       ~default:("", None) begin fun buffer (query, root) ->
       if query = "" then failwith "-query <pattern> is mandatory";
       run buffer (Query_protocol.Ocamlgrep (query, root))

@@ -16,10 +16,6 @@
   %{bin:dot-merlin-reader}))
 
 (cram
- (applies_to ocamlgrep)
- (deps %{bin:ocamlgrep}))
-
-(cram
  (applies_to with-ppx)
  (deps
   (package ppxlib)))
