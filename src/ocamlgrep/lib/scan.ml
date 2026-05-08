@@ -8,12 +8,8 @@
 open Printf
 
 type finding = {
-  source: string;
-  start_line: int;     (* 1-based *)
-  start_col: int;      (* 0-based column on [start_line] *)
-  end_line: int;       (* 1-based; equals [start_line] for single-line matches *)
-  end_col: int;        (* 0-based column on [end_line] *)
-  lines: string list;  (* source lines [start_line..end_line] inclusive *)
+  loc: Location.t;
+  lines: string list;  (* lines spanned by [loc], inclusive *)
 }
 
 type event =
@@ -76,23 +72,29 @@ let process_one_cmt (paths : Paths.t) handle_event expr cmt_path =
       | _ :: _ as locs ->
         let src_lines = Array.of_list (read_lines source) in
         let nb_lines = Array.length src_lines in
+        (* Override [pos_fname] so the loc carries the user-friendly
+           project-relative source path instead of whatever the
+           compiler recorded in the cmt. *)
+        let with_fname (pos : Lexing.position) =
+          { pos with pos_fname = source }
+        in
         List.iter
-          (fun { Location.loc_start; loc_end; _ } ->
-            let start_line = loc_start.pos_lnum in
-            let start_col = loc_start.pos_cnum - loc_start.pos_bol in
-            let end_line = loc_end.pos_lnum in
-            let end_col = loc_end.pos_cnum - loc_end.pos_bol in
-            (* Clamp to the actual file extent. With a matching
-               digest this should be a no-op, but it keeps us
-               from raising on edge cases. *)
-            let s = max 1 (min nb_lines start_line) in
-            let e = max s (min nb_lines end_line) in
+          (fun ({ Location.loc_start; loc_end; loc_ghost } : Warnings.loc) ->
+            (* Clamp to the actual file extent. With a matching digest
+               this should be a no-op, but it keeps us from raising on
+               edge cases. *)
+            let s = max 1 (min nb_lines loc_start.pos_lnum) in
+            let e = max s (min nb_lines loc_end.pos_lnum) in
             let lines =
               List.init (e - s + 1) (fun k -> src_lines.(s - 1 + k))
             in
-            handle_event
-              (Finding
-                 { source; start_line; start_col; end_line; end_col; lines }))
+            let loc =
+              { Location.loc_start = with_fname loc_start;
+                loc_end = with_fname loc_end;
+                loc_ghost
+              }
+            in
+            handle_event (Finding { loc; lines }))
           locs
     end
   | { cmt_sourcefile = None; _ } | { cmt_source_digest = None; _ } -> ()

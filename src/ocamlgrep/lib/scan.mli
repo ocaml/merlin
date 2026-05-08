@@ -8,16 +8,13 @@
    Ocamlgrep library - type-aware search for OCaml code patterns
 *)
 
-(** A region of source code matched by a query. Lines and columns are
-    1-based and 0-based respectively, matching [Lexing.position]. *)
+(** A region of source code matched by a query. The user-friendly
+    source path lives in [loc.loc_start.pos_fname]. *)
 type finding = {
-  source: string;
-  start_line: int;
-  start_col: int;
-  end_line: int;
-  end_col: int;
+  loc: Location.t;
   lines: string list;
-    (** The source lines from [start_line] through [end_line] inclusive,
+    (** The source lines spanned by [loc], i.e. lines
+        [loc.loc_start.pos_lnum .. loc.loc_end.pos_lnum] inclusive,
         in order. Always non-empty. *)
 }
 

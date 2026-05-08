@@ -936,17 +936,8 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let handle_event = function
       | Ocamlgrep.Scan.Scan_file _ -> ()
       | Ocamlgrep.Scan.Warning msg -> warnings := msg :: !warnings
-      | Ocamlgrep.Scan.Finding
-          { source; start_line; start_col; end_line; end_col; lines } ->
-        findings :=
-          { Query_protocol.file = source;
-            start_line;
-            start_col;
-            end_line;
-            end_col;
-            lines
-          }
-          :: !findings
+      | Ocamlgrep.Scan.Finding { loc; lines } ->
+        findings := { Query_protocol.loc; lines } :: !findings
     in
     (* Cmt enumeration goes through dune itself rather than a manual
        [_build/] walk: dune is authoritative about what compiled and

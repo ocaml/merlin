@@ -65,21 +65,26 @@ let highlight_range line lo hi =
    The header is unambiguous so consecutive findings need no
    separator between them. *)
 let print_finding (f : Scan.finding) =
-  let file = color Green "%s" f.source in
+  let s = f.loc.Location.loc_start in
+  let e = f.loc.Location.loc_end in
+  let file = color Green "%s" s.Lexing.pos_fname in
+  let start_line = s.Lexing.pos_lnum in
+  let start_col = s.Lexing.pos_cnum - s.Lexing.pos_bol in
+  let end_line = e.Lexing.pos_lnum in
+  let end_col = e.Lexing.pos_cnum - e.Lexing.pos_bol in
   let header =
-    if f.start_line = f.end_line then
-      sprintf "%s:%d:%d-%d:" file f.start_line f.start_col f.end_col
+    if start_line = end_line then
+      sprintf "%s:%d:%d-%d:" file start_line start_col end_col
     else
-      sprintf "%s:%d:%d-%d:%d:" file
-        f.start_line f.start_col f.end_line f.end_col
+      sprintf "%s:%d:%d-%d:%d:" file start_line start_col end_line end_col
   in
   print_endline header;
-  let gutter_width = String.length (string_of_int f.end_line) in
+  let gutter_width = String.length (string_of_int end_line) in
   List.iteri
     (fun i line ->
-      let lineno = f.start_line + i in
-      let lo = if lineno = f.start_line then f.start_col else 0 in
-      let hi = if lineno = f.end_line then f.end_col else String.length line in
+      let lineno = start_line + i in
+      let lo = if lineno = start_line then start_col else 0 in
+      let hi = if lineno = end_line then end_col else String.length line in
       printf "%s | %s\n" (color Yellow "%*d" gutter_width lineno)
         (highlight_range line lo hi))
     f.lines;

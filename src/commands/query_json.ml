@@ -597,14 +597,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Version, version -> `String version
   | Ocamlgrep _, { findings; warnings } ->
     let json_of_finding (f : Query_protocol.ocamlgrep_finding) =
-      `Assoc
-        [ ("file", `String f.file);
-          ( "start",
-            `Assoc [ ("line", `Int f.start_line); ("col", `Int f.start_col) ] );
-          ( "end",
-            `Assoc [ ("line", `Int f.end_line); ("col", `Int f.end_col) ] );
-          ("lines", `List (List.map ~f:Json.string f.lines))
-        ]
+      with_location ~with_file:true f.loc
+        [ ("lines", `List (List.map ~f:Json.string f.lines)) ]
     in
     `Assoc
       [ ("findings", `List (List.map ~f:json_of_finding findings));

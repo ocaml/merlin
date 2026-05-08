@@ -137,12 +137,12 @@ type substitution_result =
   { loc : Location.t; content : string; selection_range : Location.t }
 
 type ocamlgrep_finding =
-  { file : string;
-    start_line : int;
-    start_col : int;
-    end_line : int;
-    end_col : int;
+  { loc : Location.t;
+        (** Region of source matched by the query. The source file
+            path is carried in [loc.loc_start.pos_fname]. *)
     lines : string list
+        (** Source lines spanned by [loc], i.e. lines
+            [loc.loc_start.pos_lnum .. loc.loc_end.pos_lnum] inclusive. *)
   }
 
 type ocamlgrep_result =
