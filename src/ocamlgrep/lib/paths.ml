@@ -52,7 +52,9 @@ let project_relative_search_root x = x.project_relative_search_root
 
 (* Compute the path of [abs_search_root] relative to [project_root].
    Both must be absolute and normalized (e.g. via [Unix.realpath]).
-   Returns [""] when they are the same directory. *)
+   Returns [""] when they are the same directory.
+   TODO: use Fpath.relativize for a more reliable implementation
+*)
 let relative_to ~project_root abs_search_root =
   match String.chop_prefix ~prefix:project_root abs_search_root with
   | None ->
