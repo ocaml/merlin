@@ -6,49 +6,24 @@
    maintained by Martin Jambon (LexiFi). *)
 
 (*
-   Path management for ocamlgrep: where to look for the files we need
+   Path management for iterating of the cmt files of a project.
 
-   We provide utilities that make assumptions about where the build system
-   keeps its files.
+   This is currently limited to Dune projects.
 *)
 
 open Std (* extends [String] with [chop_prefix] etc. *)
 
-type dune_project_info = {
+type t = {
+  (* see mli for field documentation *)
+  project_kind: Mconfig_dot.Configurator.t;
+  dune_context: string option;
   search_root: string option;
-    (* The scan root as specified by the user. It can be absolute or relative.
-
-       If unspecified, the current directory (.) is assumed.
-       If specified, this path must be a prefix of every file in search
-       results. For example, specifying the search root as foo/../bar should
-       return results such as foo/../bar/baz.ml, not an absolute path,
-       not a normalized path (bar/baz.ml).
-
-       It's also the starting point for locating
-       which Dune project we're in and for locating the compiled data
-       we need to run a pattern search.
-    *)
   project_root: string;
-    (* Folder containing source files *)
   project_relative_search_root: string;
-    (* search_root made relative to project_root *)
   build_source_root: string;
-    (* Path equivalent to project_root but for the copy of source files
-       in Dune's build workspace.
-       For example, <project root>/src/foo.ml exists as a copy in
-       <project_root>/_build/default/src/foo.ml.
-       In this case, build_source_root = <project_root>/_build/default
-    *)
 }
 
-(* TODO: add support for build systems other than dune. *)
-type t = dune_project_info
-
 let ( / ) = Filename.concat
-
-let search_root x = x.search_root
-let project_root x = x.project_root
-let project_relative_search_root x = x.project_relative_search_root
 
 (* Compute the path of [abs_search_root] relative to [project_root].
    Both must be absolute and normalized (e.g. via [Unix.realpath]).
@@ -117,7 +92,7 @@ let collect_cmi_dirs paths =
    These two steps used to be split between [find] and [init], but
    callers always need both, so we expose a single entry point. *)
 let init
-    ?(context = "default")
+    ?(dune_context = "default")
     ?search_root
     () : (t, string) result =
   let abs_search_root =
@@ -133,30 +108,36 @@ let init
          abs_search_root)
   | Some (_ctx, config_file) ->
     let project_root = Filename.dirname config_file in
-    let basename = Filename.basename config_file in
-    if basename = ".merlin" then
-      Error
-        (Printf.sprintf
-           "ocamlgrep currently only supports Dune projects, but the \
-            project at %s was located via a .merlin file. Support for \
-            other build systems is a TODO."
-           project_root)
-    else
-      let build_source_root = project_root / "_build" / context in
-      let project_relative_search_root =
-        relative_to ~project_root abs_search_root
-      in
-      let paths =
-        { search_root;
+    match Filename.basename config_file with
+    | ".merlin" ->
+        Error
+          (Printf.sprintf
+             "ocamlgrep currently only supports Dune projects, but the \
+              project at %s was located via a .merlin file. Support for \
+              other build systems is a TODO."
+             project_root)
+    | "dune-project"
+    | "dune-workspace" ->
+        let build_source_root = project_root / "_build" / dune_context in
+        let project_relative_search_root =
+          relative_to ~project_root abs_search_root
+        in
+        let paths = {
+          project_kind = Dune;
+          dune_context = Some dune_context;
+          search_root;
           project_root;
           project_relative_search_root;
           build_source_root
         }
-      in
-      let extra_includes = collect_cmi_dirs paths in
-      Load_path.init
-        ~auto_include:Load_path.no_auto_include
-        ~visible:(List.append extra_includes [ Standard_library.path ])
-        ~hidden:[];
-      Ok paths
+        in
+        let extra_includes = collect_cmi_dirs paths in
+        Load_path.init
+          ~auto_include:Load_path.no_auto_include
+          ~visible:(List.append extra_includes [ Standard_library.path ])
+          ~hidden:[];
+        Ok paths
+    | _ ->
+        failwith ("merlin internal error: unexpected project root file: "
+                  ^ config_file)
 

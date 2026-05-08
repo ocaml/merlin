@@ -70,7 +70,7 @@ type t =
     silently ignored, so old code keeps working against newer dunes.
 
     @param context specify which build context to describe. The default
-    if Dune's default which is named [default].
+    is Dune's default which is named [default].
 
     @param root force the project root instead of inferring it by scanning
     the file system starting from the current directory.

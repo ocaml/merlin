@@ -939,13 +939,12 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | Ocamlgrep.Scan.Finding { loc; lines } ->
         findings := { Query_protocol.loc; lines } :: !findings
     in
-    (* Cmt enumeration goes through dune itself rather than a manual
-       [_build/] walk: dune is authoritative about what compiled and
-       where. *)
+    (* Enumerate the valid locations for cmt files. These files may or
+       may not exist depending on the build status. *)
     let cmt_files =
       match
         Merlin_project.Dune_workspace.describe
-          ~root:(Ocamlgrep.Paths.project_root paths)
+          ~root:paths.project_root
           ()
       with
       | Ok ws -> Merlin_project.Dune_workspace.local_cmt_files ws

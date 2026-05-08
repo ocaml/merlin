@@ -47,7 +47,7 @@ let process_one_cmt (paths : Paths.t) handle_event expr cmt_path =
           Paths.in_build_dir paths source )
       else
         let source =
-          drop_prefix ~prefix:(Paths.project_relative_search_root paths) source
+          drop_prefix ~prefix:paths.project_relative_search_root source
         in
         (source, source)
     in
