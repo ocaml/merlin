@@ -1,11 +1,129 @@
-(* This file is part of the ocamlgrep package
+(* This file is part of merlin.
    See the attached LICENSE file.
    Copyright (C) 2026 LexiFi
 
    Originally written by Nicolás Ojeda Bär (LexiFi);
    maintained by Martin Jambon (LexiFi). *)
+
 (**
-   Match a pattern against a program
+   Type-aware structural search for OCaml code.
+
+   This module implements the pattern matching engine behind the
+   [ocamlmerlin single ocamlgrep -query <pattern>] subcommand.  It
+   searches the typed AST (cmt files) of a Dune project for
+   sub-expressions matching a given pattern.
+
+   {2 Quick start}
+
+   Run [dune build @check] to make sure the project's cmt files are
+   up to date, then:
+
+   {[
+     ocamlmerlin single ocamlgrep -query 'List.filter __ __' < /dev/null
+   ]}
+
+   {2 Pattern syntax}
+
+   A pattern is any valid OCaml expression.  The special identifiers
+   below carry additional meaning:
+
+   {3 Wildcards}
+
+   [__] (two underscores) matches any expression or record field
+   (a "metavariable" in the sense of coccinelle/semgrep).
+
+   [__1], [__2], ... are {e numbered} metavariables: each occurrence
+   of the same number must match the same (structurally equal)
+   expression.  For example,
+   {[
+     match __ with Some __1 -> Some __1 | _ -> None
+   ]}
+   only matches branches that return their [Some] payload unchanged.
+
+   {3 Identifiers}
+
+   An identifier or constructor in the pattern is matched as a
+   {e suffix} of the fully-qualified path in the typed tree:
+   [f] matches [Module.f], [M.f] matches [Outer.M.f].  This makes
+   patterns robust to [open] declarations in the matched code.
+
+   {3 Function application}
+
+   In a function application, trailing arguments may be omitted; the
+   pattern matches any call that supplies at least the listed
+   arguments.  Optional arguments have two special forms:
+
+   - [foo ?arg:PRESENT] — the optional argument must be supplied
+   - [foo ?arg:MISSING] — the optional argument must be omitted
+
+   {3 Type constraints}
+
+   [(e : t)] matches any expression that matches [e] and whose
+   inferred type unifies with [t].  The wildcard [__] is allowed in
+   [t], e.g. [(__ : __ list)].
+
+   {3 Match and record expressions}
+
+   Clauses in a [match] or [try] expression, and fields in a record
+   expression, are matched as a {e set}: order does not matter, and a
+   single pattern clause may match multiple program clauses.
+
+   {3 Field access}
+
+   [e.lid] matches both field reads ([x.lid]) and writes
+   ([x.lid <- _]).  The form [__.id] additionally matches record
+   patterns [{...; id; ...}], making it a universal "find all uses of
+   field [id]" pattern.
+
+   {2 Examples}
+
+   {[
+     (* Every call to List.filter: *)
+     List.filter
+
+     (* Casts from floatarray that go through float array: *)
+     (__ (__ : floatarray) : float array)
+
+     (* The classic list-reversal antipattern: *)
+     List.rev __ @ __
+
+     (* Identity-like Some/None pattern: *)
+     match __ with None -> __ | Some __1 -> Some __1
+
+     (* Composed map and fold: *)
+     List.fold_left __ __ (List.map __ __)
+
+     (* Float max with stdlib: *)
+     Stdlib.max (__ : float) __
+   ]}
+
+   {2 Output format}
+
+   Each finding is rendered as a header line giving the file and
+   location, followed by the matched source lines with an
+   OCaml-compiler-style gutter.  The matched range is highlighted in
+   the terminal.  Single-line match:
+
+   {v
+   foo.ml:5:10-22:
+   5 |   let x = List.length xs
+   v}
+
+   Multi-line match:
+
+   {v
+   foo.ml:6:2-8:9:
+   6 |   match x with
+   7 |   | None -> None
+   8 |   | Some y -> Some y
+   v}
+
+   For machine-readable JSON output (suitable for editor integration)
+   use the merlin subcommand:
+
+   {v
+   ocamlmerlin single ocamlgrep -query <pattern> < /dev/null
+   v}
 *)
 
 exception Cannot_parse_type of exn
