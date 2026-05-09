@@ -922,21 +922,21 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version
   | Ocamlgrep (query, search_root) ->
-    (* Walk a Dune project's [_build/] directory looking for cmt files,
-       match the typed trees against [query], and return findings. The
-       merlin pipeline (built from stdin) is intentionally ignored:
-       ocamlgrep operates project-wide, not buffer-local. *)
+    (* Scan a Dune project's cmt files for expressions matching [query]
+       and return findings. The merlin pipeline (built from stdin) is
+       intentionally ignored: ocamlgrep operates project-wide, not
+       buffer-local. *)
     let paths =
-      match Ocamlgrep.Paths.init ?search_root () with
+      match Merlin_project.Paths.init ?search_root () with
       | Ok paths -> paths
       | Error msg -> failwith msg
     in
     let findings = ref [] in
     let warnings = ref [] in
     let handle_event = function
-      | Ocamlgrep.Scan.Scan_file _ -> ()
-      | Ocamlgrep.Scan.Warning msg -> warnings := msg :: !warnings
-      | Ocamlgrep.Scan.Finding { loc; lines } ->
+      | Merlin_project.Scan.Scan_file _ -> ()
+      | Merlin_project.Scan.Warning msg -> warnings := msg :: !warnings
+      | Merlin_project.Scan.Finding { Ocamlgrep.Match.loc; lines } ->
         findings := { Query_protocol.loc; lines } :: !findings
     in
     (* Enumerate the valid locations for cmt files. These files may or
@@ -950,7 +950,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | Ok ws -> Merlin_project.Dune_workspace.local_cmt_files ws
       | Error msg -> failwith msg
     in
-    Ocamlgrep.Scan.incremental_search paths cmt_files handle_event query;
+    let expr = Ocamlgrep.Match.parse_query query in
+    Merlin_project.Scan.incremental_search paths cmt_files handle_event
+      (Ocamlgrep.Match.search_findings expr);
     { Query_protocol.findings = List.rev !findings;
       warnings = List.rev !warnings
     }

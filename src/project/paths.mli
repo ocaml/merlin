@@ -1,4 +1,4 @@
-(* This file is part of the ocamlgrep package
+(* This file is part of merlin.
    See the attached LICENSE file.
    Copyright (C) 2026 LexiFi
 
@@ -51,11 +51,11 @@ type t = private {
 }
 
 (** [init ()] locates the OCaml project containing [search_root],
-    derives the dune-specific paths ocamlgrep needs, and initializes
-    [Load_path] with the project's cmi directories so that user
-    queries containing type annotations can be typechecked. Returns
-    [Error] if no project is found or if the build system is not
-    supported.
+    derives the dune-specific paths needed for cmt scanning, and
+    initializes [Load_path] with the project's cmi directories so
+    that user queries containing type annotations can be typechecked.
+    Returns [Error] if no project is found or if the build system is
+    not supported.
 
     Project location is delegated to {!Mconfig_dot.find_project_context}
     so the heuristic stays consistent with the rest of merlin: walk
@@ -83,4 +83,3 @@ val init :
     then [in_build_dir paths "bar.ml"] is [/project/_build/default/foo/bar.ml].
 *)
 val in_build_dir : t -> string -> string
-

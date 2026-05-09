@@ -5,5 +5,23 @@
 (library
  (name merlin_project)
  (public_name merlin-lib.project)
- (libraries csexp sexplib0 unix)
+ (libraries csexp sexplib0 unix
+            ocaml_parsing ocaml_typing ocaml_utils
+            merlin_kernel merlin_utils)
+ (flags
+  :standard
+  -open Ocaml_parsing
+  -open Ocaml_typing
+  -open Ocaml_utils
+  -open Merlin_kernel
+  -open Merlin_utils)
  (preprocess (pps ppx_sexp_conv)))
+
+; Generate standard_library.ml exposing the OCaml standard library path.
+; The same trick is used in src/kernel/dune. Merlin's vendored Config
+; module strips the upstream Config.standard_library field, so we recover
+; it at build time from %{ocaml-config:standard_library}.
+(rule
+ (targets standard_library.ml)
+ (action (write-file %{targets}
+          "let path = {|%{ocaml-config:standard_library}|}")))

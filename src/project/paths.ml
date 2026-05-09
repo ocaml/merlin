@@ -1,4 +1,4 @@
-(* This file is part of the ocamlgrep package
+(* This file is part of merlin.
    See the attached LICENSE file.
    Copyright (C) 2026 LexiFi
 
@@ -6,7 +6,7 @@
    maintained by Martin Jambon (LexiFi). *)
 
 (*
-   Path management for iterating of the cmt files of a project.
+   Path management for iterating over the cmt files of a project.
 
    This is currently limited to Dune projects.
 *)
@@ -53,7 +53,7 @@ let in_build_dir paths source_path =
      shopt -s dotglob
      dirname **/byte/*.cmi
 
-   Example for this project which is built with dune:
+   Example for a project built with dune:
    $ ls _build/default/lib/.ocamlgrep.objs/byte/
    ocamlgrep.cmi  ocamlgrep.cmo  ocamlgrep.cmt  ocamlgrep.cmti
 
@@ -103,8 +103,8 @@ let init
   | None ->
     Error
       (Printf.sprintf
-         "Could not find a project rooted at or above %s. ocamlgrep \
-          looks for a dune-project, dune-workspace, or .merlin file."
+         "Could not find a project rooted at or above %s. \
+          Looks for a dune-project, dune-workspace, or .merlin file."
          abs_search_root)
   | Some (_ctx, config_file) ->
     let project_root = Filename.dirname config_file in
@@ -112,7 +112,7 @@ let init
     | ".merlin" ->
         Error
           (Printf.sprintf
-             "ocamlgrep currently only supports Dune projects, but the \
+             "cmt scanning currently only supports Dune projects, but the \
               project at %s was located via a .merlin file. Support for \
               other build systems is a TODO."
              project_root)
@@ -140,4 +140,3 @@ let init
     | _ ->
         failwith ("merlin internal error: unexpected project root file: "
                   ^ config_file)
-

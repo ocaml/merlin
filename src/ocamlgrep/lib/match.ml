@@ -395,6 +395,26 @@ and match_case : type k. k case -> _ -> _ = fun {c_lhs; c_guard; c_rhs; _} {pc_l
   match_opt match_expr c_guard pc_guard;
   match_expr c_rhs pc_rhs
 
+type finding = {
+  loc : Location.t;
+  lines : string list;
+}
+
+let parse_query query =
+  (* Use Merlin's vendored parser ([Parser_raw.parse_expression]) rather than
+     upstream [Parse.implementation], following the pattern in
+     [src/analysis/type_utils.ml]. *)
+  let lexbuf = Lexing.from_string query in
+  let state = Lexer_raw.make (Lexer_raw.keywords []) in
+  let rec lexer = function
+    | Lexer_raw.Fail (e, l) -> raise (Lexer_raw.Error (e, l))
+    | Lexer_raw.Return token -> token
+    | Lexer_raw.Refill k -> lexer (k ())
+  in
+  let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
+  try Parser_raw.parse_expression lexer lexbuf
+  with _ -> failwith "Could not parse search expression."
+
 let search_cmt cmt query_expr =
   let open Cmt_format in
   let res = ref [] in
@@ -424,3 +444,19 @@ let search_cmt cmt query_expr =
   | _ -> ()
   end;
   List.sort Stdlib.compare !res
+
+let search_findings query_expr cmt ~source ~src_lines =
+  let nb_lines = Array.length src_lines in
+  let with_fname (pos : Lexing.position) = { pos with pos_fname = source } in
+  List.filter_map
+    (fun ({ Location.loc_start; loc_end; loc_ghost } : Location.t) ->
+      let s = max 1 (min nb_lines loc_start.pos_lnum) in
+      let e = max s (min nb_lines loc_end.pos_lnum) in
+      let lines = List.init (e - s + 1) (fun k -> src_lines.(s - 1 + k)) in
+      let loc =
+        { Location.loc_start = with_fname loc_start;
+          loc_end = with_fname loc_end;
+          loc_ghost }
+      in
+      Some { loc; lines })
+    (search_cmt cmt query_expr)
