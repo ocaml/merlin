@@ -35,7 +35,7 @@
 
 (** Events emitted during a scan.  The type parameter ['a] is the
     finding type chosen by the caller — for example
-    [Ocamlgrep.Match.finding]. *)
+    [Merlin_analysis.Match.finding]. *)
 type 'a event =
   | Scan_file of string
       (** Emitted when scanning of a new source file begins. The

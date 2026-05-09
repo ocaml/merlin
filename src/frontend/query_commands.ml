@@ -936,7 +936,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let handle_event = function
       | Merlin_project.Scan.Scan_file _ -> ()
       | Merlin_project.Scan.Warning msg -> warnings := msg :: !warnings
-      | Merlin_project.Scan.Finding { Ocamlgrep.Match.loc; lines } ->
+      | Merlin_project.Scan.Finding { Match.loc; lines } ->
         findings := { Query_protocol.loc; lines } :: !findings
     in
     (* Enumerate the valid locations for cmt files. These files may or
@@ -950,9 +950,9 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | Ok ws -> Merlin_project.Dune_workspace.local_cmt_files ws
       | Error msg -> failwith msg
     in
-    let expr = Ocamlgrep.Match.parse_query query in
+    let expr = Match.parse_query query in
     Merlin_project.Scan.incremental_search paths cmt_files handle_event
-      (Ocamlgrep.Match.search_findings expr);
+      (Match.search_findings expr);
     { Query_protocol.findings = List.rev !findings;
       warnings = List.rev !warnings
     }

@@ -31,6 +31,5 @@
   merlin_analysis
   merlin_sherlodoc
   merlin_project
-  ocamlgrep
   query_protocol
   str))
