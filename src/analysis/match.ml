@@ -83,34 +83,34 @@ let try_match f x =
 let one_of f l =
   if not (List.exists (fun x -> try_match f x) l) then raise DontMatch
 
-let match_set f ts ps =
+let match_set f ps ts =
   let ok = Hashtbl.create 8 in
-  let f t p = f t p; Hashtbl.add ok p () in
+  let f t p = f p t; Hashtbl.add ok p () in
   List.iter (fun t -> one_of (f t) ps) ts;
   List.iter (fun p -> if not (Hashtbl.mem ok p) then raise DontMatch) ps
 
-let rec path_matches_lident p l =
-  match p, l with
-  | _, Lident "__" ->
+let rec path_matches_lident l p =
+  match l, p with
+  | Lident "__", _ ->
       true
-  | Path.Pdot (p0, s1), Ldot (l0, {txt=s2; _}) when s1 = s2 || s2 = "__" ->
-      path_matches_lident p0 l0.txt
-  | Path.Pdot (_, s1), Lident s2 when s1 = s2 ->
+  | Ldot (l0, {txt=s2; _}), Path.Pdot (p0, s1) when s1 = s2 || s2 = "__" ->
+      path_matches_lident l0.txt p0
+  | Lident s2, Path.Pdot (_, s1) when s1 = s2 ->
       true  (* the longident can be a suffix of the path *)
-  | Path.Pident id, Lident s ->
+  | Lident s, Path.Pident id ->
       Ident.name id = s
   | _ ->
       false
 
-let rec constructor_match t p =
-  match t, p with
-  | _, Lident "__" -> ()
-  | _, Lident s when is_wildcard s -> check_wildcard_lid s t
-  | Lident s1, Lident s2 when s1 = s2 -> ()
-  | Ldot (_, {txt=s1; _}), Lident s2 when s1 = s2 -> () (* the ident can be a suffix *)
-  | Lident s1, Ldot (_, {txt=s2; _}) when s1 = s2 -> ()
-  | Ldot (t, s1), Ldot (p, s2) when s1.txt = s2.txt ->
-      constructor_match t.txt p.txt
+let rec constructor_match p t =
+  match p, t with
+  | Lident "__", _ -> ()
+  | Lident s, _ when is_wildcard s -> check_wildcard_lid s t
+  | Lident s2, Lident s1 when s1 = s2 -> ()
+  | Lident s2, Ldot (_, {txt=s1; _}) when s1 = s2 -> () (* the ident can be a suffix *)
+  | Ldot (_, {txt=s2; _}), Lident s1 when s1 = s2 -> ()
+  | Ldot (p, s2), Ldot (t, s1) when s1.txt = s2.txt ->
+      constructor_match p.txt t.txt
   | _ -> raise DontMatch
 
 let remove_loc =
@@ -118,14 +118,14 @@ let remove_loc =
   {super with location = (fun _ _ -> Location.none);
               attributes = (fun _ _ -> [])}
 
-let match_opt f t p =
-  match t, p with
+let match_opt f p t =
+  match p, t with
   | None, None -> ()
-  | Some _, None | None, Some _ -> raise DontMatch
-  | Some t, Some p -> f t p
+  | None, Some _ | Some _, None -> raise DontMatch
+  | Some p, Some t -> f p t
 
-let match_list f t p =
-  if List.compare_lengths t p = 0 then List.iter2 f t p
+let match_list f p t =
+  if List.compare_lengths p t = 0 then List.iter2 f p t
   else raise DontMatch
 
 let match_string : string -> string -> unit = match_equal String.equal
@@ -135,48 +135,48 @@ let match_label : string option -> string option -> unit =
 
 (* As of ocaml 5.4, labeled tuple expressions may not be reordered, so we
    match each labeled pair in order and require the labels to agree. *)
-let match_labeled f (t_lbl, t) (p_lbl, p) =
-  match_label t_lbl p_lbl;
-  f t p
+let match_labeled f (p_lbl, p) (t_lbl, t) =
+  match_label p_lbl t_lbl;
+  f p t
 
 let tconstant_equal_pconst tconst pconst =
   match Typecore.constant pconst with
   | Error _ -> false
   | Ok pconst -> Parmatch.const_compare tconst pconst = 0
 
-let rec match_expr texpr (pexpr : Parsetree.expression) =
+let rec match_expr (pexpr : Parsetree.expression) texpr =
   if texpr.exp_loc.loc_ghost && not pexpr.pexp_loc.loc_ghost
   then raise DontMatch;
 
-  match texpr.exp_desc, pexpr.pexp_desc with
+  match pexpr.pexp_desc, texpr.exp_desc with
   (* __ matches any expression *)
-  | _, Pexp_ident {txt=Lident "__"; _} ->
+  | Pexp_ident {txt=Lident "__"; _}, _ ->
       ()
 
   (* __1234 matches any expression, and checks equality *)
-  | _, Pexp_ident {txt=Lident id; _} when is_wildcard id ->
+  | Pexp_ident {txt=Lident id; _}, _ when is_wildcard id ->
       let e = remove_loc.expr remove_loc (Untypeast.(default_mapper.expr default_mapper texpr)) in
       check_wildcard id e
 
-  | Texp_ident (path, _, _), Pexp_ident {txt=lid; _}
-    when path_matches_lident path lid ->
+  | Pexp_ident {txt=lid; _}, Texp_ident (path, _, _)
+    when path_matches_lident lid path ->
       ()
 
-  | Texp_tuple texprs, Pexp_tuple pexprs ->
+  | Pexp_tuple pexprs, Texp_tuple texprs ->
       (* as of ocaml 5.4, labeled tuple expressions may not be reordered
          so they must match as-is without sorting *)
       match_list
         (match_labeled match_expr)
-        texprs pexprs
+        pexprs texprs
 
-  | Texp_array (_, texprs), Pexp_array pexprs ->
-      match_exprs texprs pexprs
+  | Pexp_array pexprs, Texp_array (_, texprs) ->
+      match_exprs pexprs texprs
 
-  | Texp_constant tconst, Pexp_constant pconst when tconstant_equal_pconst tconst pconst ->
+  | Pexp_constant pconst, Texp_constant tconst when tconstant_equal_pconst tconst pconst ->
       ()
 
-  | Texp_apply (tapply_expr, targs), Pexp_apply (pexpr, pargs) ->
-      match_expr tapply_expr pexpr;
+  | Pexp_apply (pexpr, pargs), Texp_apply (tapply_expr, targs) ->
+      match_expr pexpr tapply_expr;
       let rec check_all targs = function
         | [] -> () (* ok if more arguments in the typed expression *)
         | (Asttypes.Optional _ as lab, {pexp_desc=Pexp_construct({txt=Lident ("MISSING"|"PRESENT" as cstr); _}, None); _}) :: pargs ->
@@ -194,19 +194,19 @@ let rec match_expr texpr (pexpr : Parsetree.expression) =
             let rec loop = function
               | [] -> raise DontMatch
               | (l, Arg targ) :: targs when l = lab ->
-                  match_expr targ parg; targs
+                  match_expr parg targ; targs
               | (Asttypes.Optional _ as l, Arg {exp_desc=Texp_construct({txt=Lident "Some"; _}, _, [targ]); _}) :: targs when l = lab ->
-                  match_expr targ parg; targs
+                  match_expr parg targ; targs
               | x :: targs -> x :: loop targs
             in
             check_all (loop targs) pargs
       in
       check_all targs pargs
-  | Texp_function ([{fp_arg_label = Nolabel; _}], Tfunction_cases {cases = tcases; _}), Pexp_function ([{pparam_desc = Pparam_val (Nolabel, None, _); _}], _, Pfunction_cases (pcases, _, _)) ->
-      match_cases tcases pcases
+  | Pexp_function ([{pparam_desc = Pparam_val (Nolabel, None, _); _}], _, Pfunction_cases (pcases, _, _)), Texp_function ([{fp_arg_label = Nolabel; _}], Tfunction_cases {cases = tcases; _}) ->
+      match_cases pcases tcases
 
-  | Texp_construct (tcstr, _tconstr_desc, texprs), Pexp_construct (pcstr, pexpr_opt) ->
-      constructor_match tcstr.txt pcstr.txt;
+  | Pexp_construct (pcstr, pexpr_opt), Texp_construct (tcstr, _tconstr_desc, texprs) ->
+      constructor_match pcstr.txt tcstr.txt;
       begin match pexpr_opt, texprs with
       | Some {pexp_desc = Pexp_ident {txt = Lident "__"; _}; _}, _ -> ()
       | None, [] -> ()
@@ -214,96 +214,96 @@ let rec match_expr texpr (pexpr : Parsetree.expression) =
           (* The typed args of a constructor are an unlabeled list, so we
              drop the labels of the parsetree tuple. *)
           let pexprs = List.map snd pexprs in
-          match_exprs texprs pexprs
-      | Some pexpr, [ texpr ] -> match_expr texpr pexpr
+          match_exprs pexprs texprs
+      | Some pexpr, [ texpr ] -> match_expr pexpr texpr
       | _ -> raise DontMatch
       end
 
-  | Texp_variant (tl, te), Pexp_variant (pl, pe) when tl = pl ->
-      match_opt match_expr te pe
+  | Pexp_variant (pl, pe), Texp_variant (tl, te) when tl = pl ->
+      match_opt match_expr pe te
 
-  | Texp_match (te, tcases, _teffects, _), Pexp_match (pe, pcases) ->
+  | Pexp_match (pe, pcases), Texp_match (te, tcases, _teffects, _) ->
       (* TODO: split effects from the other cases in the parsetree *)
-      match_expr te pe;
-      match_cases tcases pcases
+      match_expr pe te;
+      match_cases pcases tcases
 
-  | Texp_try (te, tcases, _teffects), Pexp_try (pe, pcases) ->
+  | Pexp_try (pe, pcases), Texp_try (te, tcases, _teffects) ->
       (* TODO: split effects from the other cases in the parsetree *)
-      match_expr te pe;
-      match_cases tcases pcases
+      match_expr pe te;
+      match_cases pcases tcases
 
-  | Texp_let (trf, tvb, te), Pexp_let (prf, pvb, pe) when trf = prf ->
-      match_expr te pe;
-      match_value_bindings tvb pvb
+  | Pexp_let (prf, pvb, pe), Texp_let (trf, tvb, te) when trf = prf ->
+      match_expr pe te;
+      match_value_bindings pvb tvb
 
-  | Texp_ifthenelse (te1, te2, te3), Pexp_ifthenelse (pe1, pe2, pe3) ->
-      match_expr te1 pe1;
-      match_expr te2 pe2;
-      match_opt match_expr te3 pe3
+  | Pexp_ifthenelse (pe1, pe2, pe3), Texp_ifthenelse (te1, te2, te3) ->
+      match_expr pe1 te1;
+      match_expr pe2 te2;
+      match_opt match_expr pe3 te3
 
-  | Texp_sequence (te1, te2), Pexp_sequence (pe1, pe2)
-  | Texp_while (te1, te2), Pexp_while (pe1, pe2) ->
-      match_expr te1 pe1;
-      match_expr te2 pe2
+  | Pexp_sequence (pe1, pe2), Texp_sequence (te1, te2)
+  | Pexp_while (pe1, pe2), Texp_while (te1, te2) ->
+      match_expr pe1 te1;
+      match_expr pe2 te2
 
-  | Texp_assert (te, _), Pexp_assert pe
-  | Texp_lazy te, Pexp_lazy pe ->
-      match_expr te pe
+  | Pexp_assert pe, Texp_assert (te, _)
+  | Pexp_lazy pe, Texp_lazy te ->
+      match_expr pe te
 
-  | Texp_field (texpr, tid, _), Pexp_field (pexpr, pid)  ->
-      constructor_match tid.txt pid.txt;
-      match_expr texpr pexpr
+  | Pexp_field (pexpr, pid), Texp_field (texpr, tid, _) ->
+      constructor_match pid.txt tid.txt;
+      match_expr pexpr texpr
 
-  | Texp_setfield (te1, tid, _, te2), Pexp_setfield (pe1, pid, pe2) ->
-      constructor_match tid.txt pid.txt;
-      match_expr te1 pe1;
-      match_expr te2 pe2
+  | Pexp_setfield (pe1, pid, pe2), Texp_setfield (te1, tid, _, te2) ->
+      constructor_match pid.txt tid.txt;
+      match_expr pe1 te1;
+      match_expr pe2 te2
 
-  | Texp_setfield (te1, tid, _, _), Pexp_field (pexpr, pid) ->
-      constructor_match tid.txt pid.txt;
-      match_expr te1 pexpr
+  | Pexp_field (pexpr, pid), Texp_setfield (te1, tid, _, _) ->
+      constructor_match pid.txt tid.txt;
+      match_expr pexpr te1
 
-  | _, Pexp_constraint (pe, pt) ->
-      match_expr texpr pe;
-      if not (match_typ texpr.exp_type pt) then raise DontMatch
+  | Pexp_constraint (pe, pt), _ ->
+      match_expr pe texpr;
+      if not (match_typ pt texpr.exp_type) then raise DontMatch
 
-  | Texp_record {fields = tfields; extended_expression = tdef; _}, Pexp_record (pfields, pdef) ->
-      match_opt match_expr tdef pdef;
-      let f (tid, _, te) (pid, pe) =
-        constructor_match tid.txt pid.txt;
-        match_expr te pe
+  | Pexp_record (pfields, pdef), Texp_record {fields = tfields; extended_expression = tdef; _} ->
+      match_opt match_expr pdef tdef;
+      let f (pid, pe) (tid, _, te) =
+        constructor_match pid.txt tid.txt;
+        match_expr pe te
       in
       let tfields = List.filter_map (function
           | (_, Kept _) -> None
           | (lbl, Overridden (id, e)) -> Some (id, lbl, e)
         ) (Array.to_list tfields)
       in
-      match_set f tfields pfields
+      match_set f pfields tfields
 
-  | Texp_send (te, Tmeth_name ts), Pexp_send (pe, {txt = ps; _}) when ts = ps ->
-      match_expr te pe
-  | Texp_send (te, Tmeth_val id), Pexp_send (pe, {txt = ps; _}) when Ident.name id = ps ->
-      match_expr te pe
+  | Pexp_send (pe, {txt = ps; _}), Texp_send (te, Tmeth_name ts) when ts = ps ->
+      match_expr pe te
+  | Pexp_send (pe, {txt = ps; _}), Texp_send (te, Tmeth_val id) when Ident.name id = ps ->
+      match_expr pe te
 
-  | Texp_new (path, _, _), Pexp_new lid when path_matches_lident path lid.txt ->
+  | Pexp_new lid, Texp_new (path, _, _) when path_matches_lident lid.txt path ->
       ()
 
-  | Texp_for (tident, patident, texpr1, texpr2, tdir_flag, texpr), Pexp_for (pident, pexpr1, pexpr2, pdir_flag, pexpr)  when tdir_flag = pdir_flag ->
-      begin match patident.ppat_desc, pident.ppat_desc with
+  | Pexp_for (pident, pexpr1, pexpr2, pdir_flag, pexpr), Texp_for (tident, patident, texpr1, texpr2, tdir_flag, texpr) when tdir_flag = pdir_flag ->
+      begin match pident.ppat_desc, patident.ppat_desc with
       | Ppat_any, Ppat_any -> ()
-      | Ppat_any, Ppat_var {txt = "__"; loc = _} -> ()
-      | Ppat_var {txt; loc = _}, Ppat_any when String.starts_with ~prefix:"_" txt -> ()
-      | Ppat_var _, Ppat_var {txt; loc = _} when path_matches_lident (Path.Pident tident) (Longident.Lident txt) -> ()
+      | Ppat_var {txt = "__"; loc = _}, Ppat_any -> ()
+      | Ppat_any, Ppat_var {txt; loc = _} when String.starts_with ~prefix:"_" txt -> ()
+      | Ppat_var {txt; loc = _}, Ppat_var _ when path_matches_lident (Longident.Lident txt) (Path.Pident tident) -> ()
       | _ -> raise DontMatch
       end;
-      match_expr texpr1 pexpr1;
-      match_expr texpr2 pexpr2;
-      match_expr texpr pexpr;
+      match_expr pexpr1 texpr1;
+      match_expr pexpr2 texpr2;
+      match_expr pexpr texpr;
 
   | _ ->
       raise DontMatch
 
-and match_typ texpr ptyp =
+and match_typ ptyp texpr =
   match parse_type ptyp with
   | typ ->
       let env = Lazy.force initial_env in
@@ -315,85 +315,85 @@ and match_typ texpr ptyp =
         false
       end
   | exception _ ->
-      begin match Types.get_desc texpr, ptyp.Parsetree.ptyp_desc with
-      | Tconstr (path, ty_args, _), Ptyp_constr ({Location.txt; loc = _}, pty_args) ->
-          if path_matches_lident path txt then begin
+      begin match ptyp.Parsetree.ptyp_desc, Types.get_desc texpr with
+      | Ptyp_constr ({Location.txt; loc = _}, pty_args), Tconstr (path, ty_args, _) ->
+          if path_matches_lident txt path then begin
             match pty_args with
             | [{ptyp_desc = Ptyp_constr({Location.txt = Lident "__"; loc = _}, []); _}] -> true
             | _ ->
                 if List.length ty_args = List.length pty_args then
-                  List.for_all2 match_typ ty_args pty_args
+                  List.for_all2 match_typ pty_args ty_args
                 else false
           end else false
       | _ -> false
       end
 
-and match_pat : type k. k general_pattern -> _ -> _ = fun tpat ppat ->
-  match tpat.pat_desc, ppat.ppat_desc with
-  | Tpat_any, Ppat_any -> ()
-  | _, Ppat_var {txt = "__"; _} -> ()
-  | Tpat_var (_, {txt = s1; _}, _), Ppat_var {txt = s2; _} when is_wildcard s2 ->
+and match_pat : type k. _ -> k general_pattern -> _ = fun ppat tpat ->
+  match ppat.ppat_desc, tpat.pat_desc with
+  | Ppat_any, Tpat_any -> ()
+  | Ppat_var {txt = "__"; _}, _ -> ()
+  | Ppat_var {txt = s2; _}, Tpat_var (_, {txt = s1; _}, _) when is_wildcard s2 ->
       check_wildcard_lid s2 (Lident s1)
-  | Tpat_var (_, {txt = s1; _}, _), Ppat_var {txt = s2; _} when s1 = s2 -> ()
-  | Tpat_tuple tl, Ppat_tuple (pl, _closed_flag) ->
+  | Ppat_var {txt = s2; _}, Tpat_var (_, {txt = s1; _}, _) when s1 = s2 -> ()
+  | Ppat_tuple (pl, _closed_flag), Tpat_tuple tl ->
       (* As of ocaml 5.4, both pattern tuples carry optional labels.
          Match them in order, requiring labels to agree. We ignore the
          closed_flag for now: a query of `(a, b)` will still match a typed
          tuple of length 2. *)
-      match_list (match_labeled match_pat) tl pl
-  | Tpat_constant tc, Ppat_constant pc when tconstant_equal_pconst tc pc -> ()
-  | Tpat_construct (tcstr, _tconstr_desc, tpats, _), Ppat_construct (pcstr, ppat_opt) ->
-      constructor_match tcstr.txt pcstr.txt;
+      match_list (match_labeled match_pat) pl tl
+  | Ppat_constant pc, Tpat_constant tc when tconstant_equal_pconst tc pc -> ()
+  | Ppat_construct (pcstr, ppat_opt), Tpat_construct (tcstr, _tconstr_desc, tpats, _) ->
+      constructor_match pcstr.txt tcstr.txt;
       begin match ppat_opt, tpats with
       | None, [] -> ()
       | Some (_, {ppat_desc = Ppat_tuple (ppats, _closed_flag); _}), _ :: _ :: _ ->
           (* Typed constructor args are an unlabeled list, so drop the
              labels from the parsetree tuple. *)
           let ppats = List.map snd ppats in
-          match_list match_pat tpats ppats
-      | Some (_, ppat), [ tpat ] -> match_pat tpat ppat
+          match_list match_pat ppats tpats
+      | Some (_, ppat), [ tpat ] -> match_pat ppat tpat
       | _ -> raise DontMatch
       end
-  | _, Ppat_constraint (ppat, pt) ->
-      match_pat tpat ppat;
+  | Ppat_constraint (ppat, pt), _ ->
+      match_pat ppat tpat;
       let pt = parse_type pt in
       let env = Lazy.force initial_env in
       let eq = Ctype.is_moregeneral env false pt tpat.pat_type in
       if not eq then raise DontMatch
-  | Tpat_or (t1, t2, _), Ppat_or (p1, p2) ->
-      match_pat t1 p1;
-      match_pat t2 p2
-  | Tpat_value t, _ ->
-      match_pat (t :> value general_pattern) ppat
+  | Ppat_or (p1, p2), Tpat_or (t1, t2, _) ->
+      match_pat p1 t1;
+      match_pat p2 t2
+  | _, Tpat_value t ->
+      match_pat ppat (t :> value general_pattern)
   | _ -> raise DontMatch
 
-and match_pat_expr : type k. k general_pattern -> _ -> _ = fun tpat pexpr ->
-  match tpat.pat_desc, pexpr.pexp_desc with
-  | Tpat_record (fields, _), Pexp_field ({pexp_desc = Pexp_ident {txt=Lident "__"; _}; _}, {txt = Lident s; _}) ->
+and match_pat_expr : type k. _ -> k general_pattern -> _ = fun pexpr tpat ->
+  match pexpr.pexp_desc, tpat.pat_desc with
+  | Pexp_field ({pexp_desc = Pexp_ident {txt=Lident "__"; _}; _}, {txt = Lident s; _}), Tpat_record (fields, _) ->
       if not (List.exists (fun (_, {Data_types.lbl_name; _}, _) -> lbl_name = s) fields) then
         raise DontMatch
   | _ ->
       raise DontMatch
 
-and match_exprs texprs pexprs =
-  match_list match_expr texprs pexprs
+and match_exprs pexprs texprs =
+  match_list match_expr pexprs texprs
 
-and match_cases : type k. k case list -> _ -> _ = fun tcases pcases ->
-  match_set match_case tcases pcases
+and match_cases : type k. _ -> k case list -> _ = fun pcases tcases ->
+  match_set match_case pcases tcases
 
-and match_value_bindings t p =
-  match_set match_value_binding t p
+and match_value_bindings p t =
+  match_set match_value_binding p t
 
 and match_value_binding
-    {vb_pat; vb_expr; vb_attributes = _; vb_loc = _; vb_rec_kind = _}
-    {pvb_pat; pvb_expr; pvb_attributes = _; pvb_loc = _; pvb_constraint = _} =
-  match_expr vb_expr pvb_expr;
-  match_pat vb_pat pvb_pat
+    {pvb_pat; pvb_expr; pvb_attributes = _; pvb_loc = _; pvb_constraint = _}
+    {vb_pat; vb_expr; vb_attributes = _; vb_loc = _; vb_rec_kind = _} =
+  match_expr pvb_expr vb_expr;
+  match_pat pvb_pat vb_pat
 
-and match_case : type k. k case -> _ -> _ = fun {c_lhs; c_guard; c_rhs; _} {pc_lhs; pc_guard; pc_rhs} ->
-  match_pat c_lhs pc_lhs;
-  match_opt match_expr c_guard pc_guard;
-  match_expr c_rhs pc_rhs
+and match_case : type k. _ -> k case -> _ = fun {pc_lhs; pc_guard; pc_rhs} {c_lhs; c_guard; c_rhs; _} ->
+  match_pat pc_lhs c_lhs;
+  match_opt match_expr pc_guard c_guard;
+  match_expr pc_rhs c_rhs
 
 type finding = {
   loc : Location.t;
@@ -415,8 +415,6 @@ let parse_query query =
   try Parser_raw.parse_expression lexer lexbuf
   with _ -> failwith "Could not parse search expression."
 
-(* TODO: use the order (query, target program) rather than
-   (target program, query) everywhere in this module *)
 let search_cmt query_expr cmt =
   let open Cmt_format in
   let res = ref [] in
@@ -425,7 +423,7 @@ let search_cmt query_expr cmt =
     let super = default_iterator in
     let pat : type k. _ -> k general_pattern -> _ = fun self p ->
       try
-        match_pat_expr p query_expr;
+        match_pat_expr query_expr p;
         res := p.Typedtree.pat_loc :: !res
       with DontMatch ->
         super.pat self p
@@ -433,7 +431,7 @@ let search_cmt query_expr cmt =
     let expr self e =
       wildcards := [];
       try
-        match_expr e query_expr;
+        match_expr query_expr e;
         res := e.Typedtree.exp_loc :: !res
       with DontMatch ->
         super.expr self e
