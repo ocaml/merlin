@@ -138,11 +138,13 @@ type substitution_result =
 
 type ocamlgrep_finding =
   { loc : Location.t;
-        (** Region of source matched by the query. The source file
-            path is carried in [loc.loc_start.pos_fname]. *)
+        (** Region of source code matched by the query.
+            [loc.loc_start.pos_fname] carries the project-relative source path.
+            Line numbers ([pos_lnum]) are 1-based; column offsets
+            ([pos_cnum - pos_bol]) are 0-based, following merlin conventions. *)
     lines : string list
-        (** Source lines spanned by [loc], i.e. lines
-            [loc.loc_start.pos_lnum .. loc.loc_end.pos_lnum] inclusive. *)
+        (** Source lines from [loc_start.pos_lnum] to [loc_end.pos_lnum]
+            inclusive, in order.  Always non-empty. *)
   }
 
 type ocamlgrep_result =

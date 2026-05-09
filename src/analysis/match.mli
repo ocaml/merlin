@@ -99,31 +99,24 @@
 
    {2 Output format}
 
-   Each finding is rendered as a header line giving the file and
-   location, followed by the matched source lines with an
-   OCaml-compiler-style gutter.  The matched range is highlighted in
-   the terminal.  Single-line match:
-
-   {v
-   foo.ml:5:10-22:
-   5 |   let x = List.length xs
-   v}
-
-   Multi-line match:
-
-   {v
-   foo.ml:6:2-8:9:
-   6 |   match x with
-   7 |   | None -> None
-   8 |   | Some y -> Some y
-   v}
-
-   For machine-readable JSON output (suitable for editor integration)
-   use the merlin subcommand:
+   Results are returned as JSON by the merlin subcommand:
 
    {v
    ocamlmerlin single ocamlgrep -query <pattern> < /dev/null
    v}
+
+   Each finding in the [findings] array has the shape:
+
+   {v
+   { "file":  "src/foo.ml",
+     "start": { "line": 5, "col": 10 },
+     "end":   { "line": 5, "col": 22 },
+     "lines": [ "  let x = List.length xs in" ] }
+   v}
+
+   Line numbers are 1-based; column offsets are 0-based (character
+   offset from the start of the line).  [lines] contains every source
+   line from [start.line] to [end.line] inclusive, in order.
 *)
 
 exception Cannot_parse_type of exn
