@@ -415,7 +415,9 @@ let parse_query query =
   try Parser_raw.parse_expression lexer lexbuf
   with _ -> failwith "Could not parse search expression."
 
-let search_cmt cmt query_expr =
+(* TODO: use the order (query, target program) rather than
+   (target program, query) everywhere in this module *)
+let search_cmt query_expr cmt =
   let open Cmt_format in
   let res = ref [] in
   let cmt_search =
@@ -445,7 +447,7 @@ let search_cmt cmt query_expr =
   end;
   List.sort Stdlib.compare !res
 
-let search_findings query_expr cmt ~source ~src_lines =
+let search query_expr cmt ~source ~src_lines =
   let nb_lines = Array.length src_lines in
   let with_fname (pos : Lexing.position) = { pos with pos_fname = source } in
   List.filter_map
@@ -459,4 +461,4 @@ let search_findings query_expr cmt ~source ~src_lines =
           loc_ghost }
       in
       Some { loc; lines })
-    (search_cmt cmt query_expr)
+    (search_cmt query_expr cmt)

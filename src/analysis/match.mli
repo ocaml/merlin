@@ -146,9 +146,9 @@ val parse_query : string -> Parsetree.expression
 
     Exceptions will be raised, including [Cannot_parse_type]. *)
 val search_cmt :
-  Cmt_format.cmt_infos -> Parsetree.expression -> Location.t list
+  Parsetree.expression -> Cmt_format.cmt_infos -> Location.t list
 
-(** [search_findings query cmt ~source ~src_lines] calls {!search_cmt}
+(** [search query cmt ~source ~src_lines] calls {!search_cmt}
     and converts each matching location into a {!finding}, clamping
     line numbers to the actual extent of the file and overriding
     [pos_fname] with [source] so locations carry the user-friendly
@@ -161,7 +161,7 @@ val search_cmt :
       let search = Match.search_findings expr in
       Scan.incremental_search paths cmt_files handler search
     ]} *)
-val search_findings :
+val search :
   Parsetree.expression ->
   Cmt_format.cmt_infos -> source:string -> src_lines:string array ->
   finding list
