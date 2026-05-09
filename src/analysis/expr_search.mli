@@ -132,7 +132,7 @@ type finding = {
 }
 
 (** [parse_query s] parses the string [s] as a single OCaml expression
-    to be used as a pattern in {!search_cmt} or {!search_findings}.
+    to be used as a pattern in {!Expr_search.search_cmt} or {!Expr_search.search}.
     Raises [Failure] with a human-readable message if [s] is not a
     valid OCaml expression. *)
 val parse_query : string -> Parsetree.expression
@@ -148,7 +148,7 @@ val parse_query : string -> Parsetree.expression
 val search_cmt :
   Parsetree.expression -> Cmt_format.cmt_infos -> Location.t list
 
-(** [search query cmt ~source ~src_lines] calls {!search_cmt}
+(** [search query cmt ~source ~src_lines] calls {!Expr_search.search_cmt}
     and converts each matching location into a {!finding}, clamping
     line numbers to the actual extent of the file and overriding
     [pos_fname] with [source] so locations carry the user-friendly
@@ -158,7 +158,7 @@ val search_cmt :
     {!Merlin_project.Scan.incremental_search} when partially applied
     to [query]:
     {[
-      let search = Match.search_findings expr in
+      let search = Match.search expr in
       Scan.incremental_search paths cmt_files handler search
     ]} *)
 val search :

@@ -5,7 +5,7 @@
    Originally written by Nicolás Ojeda Bär (LexiFi);
    maintained by Martin Jambon (LexiFi). *)
 (*
-   Match a pattern against a program
+   Typed expression search for OCaml code
 *)
 
 open Asttypes
