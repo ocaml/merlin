@@ -952,7 +952,7 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     let expr = Match.parse_query query in
     Merlin_project.Scan.incremental_search paths cmt_files handle_event
-      (Match.search_findings expr);
+      (Match.search expr);
     { Query_protocol.findings = List.rev !findings;
       warnings = List.rev !warnings
     }
