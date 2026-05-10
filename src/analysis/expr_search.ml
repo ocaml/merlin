@@ -99,7 +99,7 @@ let rec path_matches_lident l p =
       true  (* the longident can be a suffix of the path *)
   | Lident s, Path.Pident id ->
       Ident.name id = s
-  | _ ->
+  | (Lident _ | Ldot _ | Lapply _), (Pident _ | Pdot _ | Papply _ | Pextra_ty _) ->
       false
 
 let rec constructor_match p t =
@@ -111,7 +111,8 @@ let rec constructor_match p t =
   | Ldot (_, {txt=s2; _}), Lident s1 when s1 = s2 -> ()
   | Ldot (p, s2), Ldot (t, s1) when s1.txt = s2.txt ->
       constructor_match p.txt t.txt
-  | _ -> raise DontMatch
+  | (Lident _ | Ldot _ | Lapply _), (Lident _ | Ldot _ | Lapply _) ->
+      raise DontMatch
 
 let remove_loc =
   let super = Ast_mapper.default_mapper in
@@ -294,14 +295,35 @@ let rec match_expr (pexpr : Parsetree.expression) texpr =
       | Ppat_var {txt = "__"; loc = _}, Ppat_any -> ()
       | Ppat_any, Ppat_var {txt; loc = _} when String.starts_with ~prefix:"_" txt -> ()
       | Ppat_var {txt; loc = _}, Ppat_var _ when path_matches_lident (Longident.Lident txt) (Path.Pident tident) -> ()
-      | _ -> raise DontMatch
+      | ( Ppat_any | Ppat_var _ | Ppat_alias _ | Ppat_constant _ | Ppat_interval _
+        | Ppat_tuple _ | Ppat_construct _ | Ppat_variant _ | Ppat_record _
+        | Ppat_array _ | Ppat_or _ | Ppat_constraint _ | Ppat_type _
+        | Ppat_lazy _ | Ppat_unpack _ | Ppat_exception _ | Ppat_effect _
+        | Ppat_extension _ | Ppat_open _ ), _ -> raise DontMatch
       end;
       match_expr pexpr1 texpr1;
       match_expr pexpr2 texpr2;
       match_expr pexpr texpr;
 
-  | _ ->
-      raise DontMatch
+  | ( Pexp_ident _ | Pexp_constant _ | Pexp_let _ | Pexp_function _
+    | Pexp_apply _ | Pexp_match _ | Pexp_try _ | Pexp_tuple _
+    | Pexp_construct _ | Pexp_variant _ | Pexp_record _ | Pexp_field _
+    | Pexp_setfield _ | Pexp_array _ | Pexp_ifthenelse _ | Pexp_sequence _
+    | Pexp_while _ | Pexp_for _ | Pexp_coerce _
+    | Pexp_send _ | Pexp_new _ | Pexp_setinstvar _ | Pexp_override _
+    | Pexp_letmodule _ | Pexp_letexception _ | Pexp_assert _ | Pexp_lazy _
+    | Pexp_poly _ | Pexp_object _ | Pexp_newtype _ | Pexp_pack _
+    | Pexp_open _ | Pexp_letop _ | Pexp_extension _ | Pexp_unreachable ),
+    ( Texp_ident _ | Texp_constant _ | Texp_let _ | Texp_function _
+    | Texp_apply _ | Texp_match _ | Texp_try _ | Texp_tuple _
+    | Texp_construct _ | Texp_variant _ | Texp_record _ | Texp_atomic_loc _
+    | Texp_field _ | Texp_setfield _ | Texp_array _ | Texp_ifthenelse _
+    | Texp_sequence _ | Texp_while _ | Texp_for _ | Texp_send _
+    | Texp_new _ | Texp_instvar _ | Texp_setinstvar _ | Texp_override _
+    | Texp_letmodule _ | Texp_letexception _ | Texp_assert _ | Texp_lazy _
+    | Texp_object _ | Texp_pack _ | Texp_letop _ | Texp_unreachable
+    | Texp_extension_constructor _ | Texp_open _ | Texp_typed_hole ) ->
+    raise DontMatch
 
 and match_typ ptyp texpr =
   match parse_type ptyp with
@@ -325,7 +347,12 @@ and match_typ ptyp texpr =
                   List.for_all2 match_typ pty_args ty_args
                 else false
           end else false
-      | _ -> false
+      | ( Ptyp_any | Ptyp_var _ | Ptyp_arrow _ | Ptyp_tuple _ | Ptyp_constr _
+        | Ptyp_object _ | Ptyp_class _ | Ptyp_alias _ | Ptyp_variant _
+        | Ptyp_poly _ | Ptyp_package _ | Ptyp_open _ | Ptyp_extension _ ),
+        ( Tvar _ | Tarrow _ | Ttuple _ | Tconstr _ | Tobject _ | Tfield _
+        | Tnil | Tlink _ | Tsubst _ | Tvariant _ | Tunivar _ | Tpoly _
+        | Tpackage _ ) -> false
       end
 
 and match_pat : type k. _ -> k general_pattern -> _ = fun ppat tpat ->
@@ -365,15 +392,27 @@ and match_pat : type k. _ -> k general_pattern -> _ = fun ppat tpat ->
       match_pat p2 t2
   | _, Tpat_value t ->
       match_pat ppat (t :> value general_pattern)
-  | _ -> raise DontMatch
+  | ( Ppat_any | Ppat_var _ | Ppat_alias _ | Ppat_constant _ | Ppat_interval _
+    | Ppat_tuple _ | Ppat_construct _ | Ppat_variant _ | Ppat_record _
+    | Ppat_array _ | Ppat_or _ | Ppat_type _
+    | Ppat_lazy _ | Ppat_unpack _ | Ppat_exception _ | Ppat_effect _
+    | Ppat_extension _ | Ppat_open _ ), _ -> raise DontMatch
 
 and match_pat_expr : type k. _ -> k general_pattern -> _ = fun pexpr tpat ->
   match pexpr.pexp_desc, tpat.pat_desc with
   | Pexp_field ({pexp_desc = Pexp_ident {txt=Lident "__"; _}; _}, {txt = Lident s; _}), Tpat_record (fields, _) ->
       if not (List.exists (fun (_, {Data_types.lbl_name; _}, _) -> lbl_name = s) fields) then
         raise DontMatch
-  | _ ->
-      raise DontMatch
+  | ( Pexp_ident _ | Pexp_constant _ | Pexp_let _ | Pexp_function _
+    | Pexp_apply _ | Pexp_match _ | Pexp_try _ | Pexp_tuple _
+    | Pexp_construct _ | Pexp_variant _ | Pexp_record _ | Pexp_field _
+    | Pexp_setfield _ | Pexp_array _ | Pexp_ifthenelse _ | Pexp_sequence _
+    | Pexp_while _ | Pexp_for _ | Pexp_constraint _ | Pexp_coerce _
+    | Pexp_send _ | Pexp_new _ | Pexp_setinstvar _ | Pexp_override _
+    | Pexp_letmodule _ | Pexp_letexception _ | Pexp_assert _ | Pexp_lazy _
+    | Pexp_poly _ | Pexp_object _ | Pexp_newtype _ | Pexp_pack _
+    | Pexp_open _ | Pexp_letop _ | Pexp_extension _ | Pexp_unreachable ), _ ->
+    raise DontMatch
 
 and match_exprs pexprs texprs =
   match_list match_expr pexprs texprs
