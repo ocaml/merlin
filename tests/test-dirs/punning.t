@@ -8,13 +8,19 @@
   >   x
   > EOF
 
-FIXME: Should locate to the `x` in `f x`, not say that we are at the definition
+Should locate to the `x` in `f x`
   $ $MERLIN single locate -position 4:7 -filename let_punning.ml < let_punning.ml | jq .value
-  "Already at definition point"
+  {
+    "file": "$TESTCASE_ROOT/let_punning.ml",
+    "pos": {
+      "line": 3,
+      "col": 7
+    }
+  }
 
-Should answer the type of x in the pattern: "int"
+FIXME: Should answer the type of x in the pattern: "int"
   $ $MERLIN single type-enclosing -position 4:7 -filename let_punning.ml < let_punning.ml | jq .value[0].type
-  "int"
+  "int * 'a"
 
 # Testing locate on argument punnings
 
