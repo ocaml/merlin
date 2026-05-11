@@ -3,6 +3,8 @@ unreleased
 
   + merlin library
     - Fix signature-help with type aliases (#2067, fixes #1927)
+    - Fix locate on punned let bindings, to use the common identifier as the
+      expression (instead of the pattern) (#2066)
   + test suite
     - Remove the FIXME line for #1404 as the issue was already fixed and add two tests (#2073).
 
