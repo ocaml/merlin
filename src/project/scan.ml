@@ -53,7 +53,20 @@ let process_one_cmt
         let rel =
           drop_prefix ~prefix:paths.project_relative_search_root source
         in
-        (rel, Filename.concat paths.project_root rel)
+        let abs = Filename.concat paths.project_root rel in
+        (* cmt_sourcefile may point into _build/default/ where dune places
+           preprocessed (potentially binary) versions of source files.
+           When that happens, redirect to the actual source in the project tree. *)
+        let build_prefix = paths.build_source_root ^ "/" in
+        let abs_source =
+          match String.chop_prefix ~prefix:build_prefix abs with
+          | Some project_rel -> Filename.concat paths.project_root project_rel
+          | None -> abs
+        in
+        let source_rel =
+          drop_prefix ~prefix:(paths.project_root ^ "/") abs_source
+        in
+        (source_rel, abs_source)
     in
     handle_event (Scan_file source);
     if not (Sys.file_exists abs_source) then true
