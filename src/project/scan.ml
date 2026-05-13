@@ -27,7 +27,8 @@ let read_lines fn =
 
 (* Process a single cmt file: read it, digest-check the source, then
    call [search] with the cmt data, the resolved source path, and the
-   source lines array.  Each result is emitted as a [Finding] event. *)
+   source lines array.  Each result is emitted as a [Finding] event.
+   Returns true if the cmt file was found, false if it was missing. *)
 let process_one_cmt
     (paths : Paths.t)
     handle_event
@@ -52,32 +53,57 @@ let process_one_cmt
         (source, source)
     in
     handle_event (Scan_file source);
-    if not (Sys.file_exists pp_source) then ()
-    else if digest <> Digest.file pp_source then
+    if not (Sys.file_exists pp_source) then true
+    else if digest <> Digest.file pp_source then begin
       handle_event
         (Warning
-           (sprintf "%s does not correspond to %s (ignoring)" cmt_path pp_source))
+           (sprintf "%s does not correspond to %s (ignoring)" cmt_path pp_source));
+      true
+    end
     else begin
       let src_lines = Array.of_list (read_lines source) in
-      match search cmt ~source ~src_lines with
-      | exception exn ->
-        handle_event
-          (Warning
-             (Format.asprintf "error while analysing %s: %a" cmt_path
-                Location.report_exception exn))
-      | results ->
-        List.iter (fun r -> handle_event (Finding r)) results
+      (match search cmt ~source ~src_lines with
+       | exception exn ->
+         handle_event
+           (Warning
+              (Format.asprintf "error while analysing %s: %a" cmt_path
+                 Location.report_exception exn))
+       | results ->
+         List.iter (fun r -> handle_event (Finding r)) results);
+      true
     end
-  | { cmt_sourcefile = None; _ } | { cmt_source_digest = None; _ } -> ()
+  | { cmt_sourcefile = None; _ } | { cmt_source_digest = None; _ } -> true
   | exception Cmt_format.Error (Cmt_format.Not_a_typedtree _) ->
-    failwith ("error reading cmt file: " ^ cmt_path)
+    handle_event (Warning (sprintf "error reading cmt file: %s" cmt_path));
+    true
+  | exception Sys_error _ ->
+    (* cmt file does not exist yet — project needs to be (re)built *)
+    false
 
 let incremental_search
     (paths : Paths.t)
     (cmt_files : string list)
     (handle_event : 'a event -> unit)
     (search : Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list) : unit =
-  List.iter (process_one_cmt paths handle_event search) cmt_files
+  let total = List.length cmt_files in
+  let found =
+    List.fold_left
+      (fun acc cmt_path ->
+        if process_one_cmt paths handle_event search cmt_path then acc + 1
+        else acc)
+      0
+      cmt_files
+  in
+  if found < total then begin
+    let missing = total - found in
+    let pct = (found * 100) / total in
+    handle_event
+      (Warning
+         (sprintf
+            "%d/%d cmt files found (%d%% coverage); \
+             %d missing — run 'dune build @check' to generate them"
+            found total pct missing))
+  end
 
 let search paths cmt_files fn =
   let events = ref [] in
