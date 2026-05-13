@@ -59,9 +59,13 @@ let process_one_cmt
            When that happens, redirect to the actual source in the project tree. *)
         let build_prefix = paths.build_source_root ^ "/" in
         let abs_source =
-          match String.chop_prefix ~prefix:build_prefix abs with
-          | Some project_rel -> Filename.concat paths.project_root project_rel
-          | None -> abs
+          (* drop_prefix returns the string unchanged when the prefix doesn't match,
+             so a shorter result means abs was inside the build directory. *)
+          let stripped = drop_prefix ~prefix:build_prefix abs in
+          if String.length stripped < String.length abs then
+            Filename.concat paths.project_root stripped
+          else
+            abs
         in
         let source_rel =
           drop_prefix ~prefix:(paths.project_root ^ "/") abs_source
