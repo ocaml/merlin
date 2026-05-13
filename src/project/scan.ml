@@ -45,36 +45,50 @@ let process_one_cmt
     (* [source] is the project-relative path used in findings (pos_fname).
        [abs_source] is the absolute path used for all filesystem operations,
        so they work regardless of the process's CWD. *)
-    let source, abs_source =
-      if Filename.check_suffix source ".pp.ml" then
-        ( Filename.chop_suffix source ".pp.ml" ^ ".ml",
-          Paths.in_build_dir paths source )
-      else
-        let rel =
-          drop_prefix ~prefix:paths.project_relative_search_root source
+    (* Resolve [source] (from cmt_sourcefile) to an absolute path we can read.
+       Returns [(project_rel, abs, skip_digest)] where skip_digest is true when
+       we are reading the human-written .ml instead of the preprocessed .pp.ml
+       that was actually compiled (so the digest check does not apply). *)
+    let resolve_source source =
+      let build_prefix = paths.build_source_root ^ "/" in
+      (* Strip any build-dir prefix from an absolute path. *)
+      let strip_build abs =
+        let stripped = drop_prefix ~prefix:build_prefix abs in
+        if String.length stripped < String.length abs then Some stripped
+        else None
+      in
+      if Filename.check_suffix source ".pp.ml" then begin
+        (* The cmt was compiled from a ppx-preprocessed file.  The .pp.ml in
+           _build/ may be binary (OCaml binary AST).  Find the original .ml in
+           the project source tree instead and skip the digest check. *)
+        let rel_pp =
+          let r = drop_prefix ~prefix:paths.project_relative_search_root source in
+          let abs = Filename.concat paths.project_root r in
+          match strip_build abs with
+          | Some s -> s          (* was build-relative *)
+          | None ->
+            drop_prefix ~prefix:(paths.project_root ^ "/") abs
         in
+        let rel_ml = Filename.chop_suffix rel_pp ".pp.ml" ^ ".ml" in
+        (rel_ml, Filename.concat paths.project_root rel_ml, true)
+      end else begin
+        let rel = drop_prefix ~prefix:paths.project_relative_search_root source in
         let abs = Filename.concat paths.project_root rel in
-        (* cmt_sourcefile may point into _build/default/ where dune places
-           preprocessed (potentially binary) versions of source files.
-           When that happens, redirect to the actual source in the project tree. *)
-        let build_prefix = paths.build_source_root ^ "/" in
         let abs_source =
-          (* drop_prefix returns the string unchanged when the prefix doesn't match,
-             so a shorter result means abs was inside the build directory. *)
-          let stripped = drop_prefix ~prefix:build_prefix abs in
-          if String.length stripped < String.length abs then
-            Filename.concat paths.project_root stripped
-          else
-            abs
+          match strip_build abs with
+          | Some project_rel -> Filename.concat paths.project_root project_rel
+          | None -> abs
         in
         let source_rel =
           drop_prefix ~prefix:(paths.project_root ^ "/") abs_source
         in
-        (source_rel, abs_source)
+        (source_rel, abs_source, false)
+      end
     in
+    let source, abs_source, skip_digest = resolve_source source in
     handle_event (Scan_file source);
     if not (Sys.file_exists abs_source) then true
-    else if digest <> Digest.file abs_source then begin
+    else if (not skip_digest) && digest <> Digest.file abs_source then begin
       handle_event
         (Warning
            (sprintf "%s does not correspond to %s (ignoring)" cmt_path abs_source));
