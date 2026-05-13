@@ -42,26 +42,29 @@ let process_one_cmt
     (* source     = user-friendly path to the source file, relative to
                     the search root (typically cwd)
        pp_source = any valid path to the preprocessed ml file *)
-    let source, pp_source =
+    (* [source] is the project-relative path used in findings (pos_fname).
+       [abs_source] is the absolute path used for all filesystem operations,
+       so they work regardless of the process's CWD. *)
+    let source, abs_source =
       if Filename.check_suffix source ".pp.ml" then
         ( Filename.chop_suffix source ".pp.ml" ^ ".ml",
           Paths.in_build_dir paths source )
       else
-        let source =
+        let rel =
           drop_prefix ~prefix:paths.project_relative_search_root source
         in
-        (source, source)
+        (rel, Filename.concat paths.project_root rel)
     in
     handle_event (Scan_file source);
-    if not (Sys.file_exists pp_source) then true
-    else if digest <> Digest.file pp_source then begin
+    if not (Sys.file_exists abs_source) then true
+    else if digest <> Digest.file abs_source then begin
       handle_event
         (Warning
-           (sprintf "%s does not correspond to %s (ignoring)" cmt_path pp_source));
+           (sprintf "%s does not correspond to %s (ignoring)" cmt_path abs_source));
       true
     end
     else begin
-      let src_lines = Array.of_list (read_lines source) in
+      let src_lines = Array.of_list (read_lines abs_source) in
       (match search cmt ~source ~src_lines with
        | exception exn ->
          handle_event
