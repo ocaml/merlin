@@ -151,7 +151,7 @@ val search_cmt :
     {!Merlin_project.Scan.incremental_search} when partially applied
     to [query]:
     {[
-      let search = Match.search expr in
+      let search = Expr_search.search expr in
       Scan.incremental_search paths cmt_files handler search
     ]} *)
 val search :
