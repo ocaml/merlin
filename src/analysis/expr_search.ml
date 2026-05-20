@@ -1,11 +1,8 @@
-(* This file is part of the ocamlgrep package
-   See the attached LICENSE file.
-   Copyright (C) 2026 LexiFi
-
-   Originally written by Nicolás Ojeda Bär (LexiFi);
-   maintained by Martin Jambon (LexiFi). *)
 (*
-   Typed expression search for OCaml code
+   Type-aware structural search for OCaml code.
+
+   This implementation was imported and adapted from the ocamlgrep project,
+   formerly known as cmt_grep.
 *)
 
 open Asttypes

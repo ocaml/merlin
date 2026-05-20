@@ -1,10 +1,3 @@
-(* This file is part of merlin.
-   See the attached LICENSE file.
-   Copyright (C) 2026 LexiFi
-
-   Originally written by Nicolás Ojeda Bär (LexiFi);
-   maintained by Martin Jambon (LexiFi). *)
-
 (**
    Path management for iterating over the cmt files of a project.
 
