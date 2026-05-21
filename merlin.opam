@@ -28,4 +28,6 @@ conflicts: [
 synopsis:
   "Editor service that provides advanced IDE features for OCaml"
 description:
-  "Merlin is an assistant for editing OCaml code. It aims to provide the features available in modern IDEs: error reporting, auto completion, source browsing and much more."
+  "Merlin is an assistant for editing OCaml code. It aims to provide the features
+  available in modern IDEs: error reporting, auto completion, source browsing and
+  much more. It can be used as a standalone server or through an LSP server."
