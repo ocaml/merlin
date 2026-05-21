@@ -26,7 +26,7 @@ Let's create an environment with a simple PPX and a simple executable
 
 By default, the cache for the reader phase and the PPX phase are disabled
   $ cat > .merlin <<EOF
-  > FLG -ppx '_build/default/.ppx/4ade71ccdeb8c5e1413c18cb5cbd80e5/ppx.exe -as-ppx
+  > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx
   > EOF
 
   $ dune exec ./main.exe 2>/dev/null
@@ -42,7 +42,7 @@ By default, the cache for the reader phase and the PPX phase are disabled
 
 The cache can be enabled via the USE_PPX_CACHE directive
   $ cat > .merlin <<EOF
-  > FLG -ppx '_build/default/.ppx/4ade71ccdeb8c5e1413c18cb5cbd80e5/ppx.exe -as-ppx
+  > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx
   > USE_PPX_CACHE
   > EOF
 
@@ -135,7 +135,7 @@ Also, modifying the PPX invalidates the PPX cache
 
 Also, modifying the args to the PPX invalidates the PPX cache
   $ cat > .merlin <<EOF
-  > FLG -ppx '_build/default/.ppx/4ade71ccdeb8c5e1413c18cb5cbd80e5/ppx.exe -as-ppx -no-color
+  > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx -no-color
   > USE_PPX_CACHE
   > EOF
 
@@ -220,7 +220,7 @@ Merlin just uses the cache, though, and doesn't notice the ppx_dep.txt change.
 That's why it's important that the build system doesn't enable the cache
 when the project has PPX dependencies
   $ cat > .merlin <<EOF
-  > FLG -ppx '_build/default/.ppx/4ade71ccdeb8c5e1413c18cb5cbd80e5/ppx.exe -as-ppx
+  > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx
   > EOF
 
 Again: when ppx_dep.txt contains an int, there are no errors.
