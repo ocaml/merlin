@@ -26,6 +26,6 @@ conflicts: [
   "seq" {!= "base"}
 ]
 synopsis:
-  "Editor helper, provides completion, typing and source browsing in Vim and Emacs"
+  "Editor service that provides advanced IDE features for OCaml"
 description:
   "Merlin is an assistant for editing OCaml code. It aims to provide the features available in modern IDEs: error reporting, auto completion, source browsing and much more."
