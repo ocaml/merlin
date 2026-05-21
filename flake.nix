@@ -4,7 +4,7 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:nixos/nixpkgs";
   inputs.menhir-repository = {
-    url = "gitlab:fpottier/menhir/20201216?host=gitlab.inria.fr";
+    url = "gitlab:fpottier/menhir/20230608?host=gitlab.inria.fr";
     flake = false;
   };
 
@@ -18,7 +18,7 @@
           (_: osuper: {
             # Override menhirLib to the pinned version
             menhirLib = osuper.menhirLib.overrideAttrs (_: {
-              version = "20201216";
+              version = "20230608";
               src = menhir-repository;
             });
 
