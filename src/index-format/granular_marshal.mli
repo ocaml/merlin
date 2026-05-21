@@ -3,7 +3,7 @@ type 'a link
 
 type cached
 
-val create_lru : int -> unit
+(* val create_lru : int -> unit *)
 
 val get_lru : unit -> cached Dbllist.t
 

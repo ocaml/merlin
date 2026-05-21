@@ -52,7 +52,7 @@ let debug h =
   ) r;
   Format.eprintf "en tout : %d valeurs\n%!" !acc *)
 
-let create_lru cap = lru_dbllist := Some (Dbllist.create cap)
+(* let create_lru cap = lru_dbllist := Some (Dbllist.create cap) *)
 
 let get_lru () =
   match !lru_dbllist with
@@ -96,12 +96,6 @@ let int_of_binstring s =
 
 let last_open_store = ref None
 
-let () =
-  at_exit (fun () ->
-      match !last_open_store with
-      | None -> ()
-      | Some (_, fd) -> close_in fd)
-
 let force_open_store store =
   try
     let fd = open_in_bin store.filename in
@@ -139,7 +133,7 @@ let read_loc store fd loc schema parent_link =
           match !lnk with
           | Small v ->
             schema iter v;
-            child_smalls:= (Value v) :: !child_smalls;
+            child_smalls := (Value v) :: !child_smalls;
             lnk := Small_child { parent = parent_link; pos = !child_pos };
             child_pos := !child_pos + 1
           | Serialized { loc } -> lnk := On_disk { store; loc; schema }
@@ -165,15 +159,6 @@ let read_loc store fd loc schema parent_link =
   schema iter v;
   let small_poses = Array.of_list (List.rev !child_smalls) in
   (v, size_read, small_poses)
-
-let () =
-  at_exit (fun () ->
-    (* debug fetch_count; *)
-    match !lru_dbllist with
-    | None -> ()
-    | Some lru ->
-      Dbllist.pp_stats lru;
-      )
 
 let fetch_loc store loc schema parent_link =
   let fd = open_store store in
@@ -266,8 +251,20 @@ let write ?(flags = []) fd id root_schema root_value =
   and write_child : type a. a link -> a schema -> a -> _ =
    fun lnk schema v size ~placeholders ~restore ->
     let v_size = write_children schema v in
-    if v_size > 1024 then (
+    if v_size > 1 then (
       lnk := Serialized { loc = pos_out fd };
+      let rec iter =
+        { yield =
+            (fun (type b) (lnk : b link) _type_id schema ->
+              match !lnk with
+              | Small v -> schema iter v
+              | On_disk { store = { filename; id; _ }; loc; _ } ->
+                lnk := On_disk_ptr { filename; id; loc }
+              | _ -> ()
+            );
+        }
+      in
+      schema iter v;
       Marshal.to_channel fd v flags)
     else (
       size := !size + v_size;
@@ -294,6 +291,18 @@ let write ?(flags = []) fd id root_schema root_value =
   in
   let _ : int = write_children root_schema root_value in
   let root_loc = pos_out fd in
+  let rec iter =
+    { yield =
+        (fun (type b) (lnk : b link) _type_id schema ->
+          match !lnk with
+          | Small v -> schema iter v
+          | On_disk { store = { filename; id; _ }; loc; _ } ->
+            lnk := On_disk_ptr { filename; id; loc }
+          | _ -> ()
+        );
+    }
+  in
+  root_schema iter root_value;
   Marshal.to_channel fd root_value flags;
   seek_out fd pt_root;
   output_string fd (binstring_of_int root_loc)
@@ -305,3 +314,18 @@ let read filename fd root_schema =
   let parent_link = ref (On_disk { loc = root_loc; store; schema = root_schema }) in
   let root_value, _, _ = read_loc store fd root_loc root_schema (PLink parent_link) in
   root_value
+
+let () =
+  at_exit (fun () ->
+      match !last_open_store with
+      | None -> ()
+      | Some (_, fd) -> close_in fd)
+
+let () =
+  at_exit (fun () ->
+    (* debug fetch_count; *)
+    match !lru_dbllist with
+    | None -> ()
+    | Some lru ->
+      Dbllist.pp_stats lru;
+      )
