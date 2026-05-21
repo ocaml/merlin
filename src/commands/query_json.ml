@@ -595,12 +595,20 @@ let json_of_response (type a) (query : a t) (response : a) : json =
              [ ("stale", Json.bool occurrence.is_stale) ]))
   | Signature_help _, s -> json_of_signature_help s
   | Version, version -> `String version
-  | Ocamlgrep _, { findings; warnings } ->
-    let json_of_finding (f : Query_protocol.ocamlgrep_finding) =
-      with_location ~with_file:true f.loc
-        [ ("lines", `List (List.map ~f:Json.string f.lines)) ]
-    in
-    `Assoc
-      [ ("findings", `List (List.map ~f:json_of_finding findings));
-        ("warnings", `List (List.map ~f:Json.string warnings))
-      ]
+  | Ocamlgrep _, res ->
+      (match (res : _ Result.t) with
+       | Ok { findings; warnings } ->
+           let json_of_finding (f : Query_protocol.ocamlgrep_finding) =
+             with_location ~with_file:true f.loc
+               [ ("lines", `List (List.map ~f:Json.string f.lines)) ]
+           in
+           `Assoc
+             [ ("findings", `List (List.map ~f:json_of_finding findings));
+               ("warnings", `List (List.map ~f:Json.string warnings));
+               ("errors", `List []) ]
+       | Error msg ->
+           `Assoc
+             [ ("findings", `List []);
+               ("warnings", `List []);
+               ("errors", `List [`String msg]) ]
+      )

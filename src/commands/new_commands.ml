@@ -518,7 +518,8 @@ let all_commands =
       ~doc:
         "Search for an OCaml expression pattern across the typed trees of a \
          Dune project. The project's cmt files must be up-to-date (e.g. via \
-         `dune build @check`). Returns a JSON object {findings, warnings} \
+         `dune build @check`). \
+         Returns a JSON object {findings, warnings, error} \
          where each finding carries the file, a start/end position pair \
          (using merlin's standard `{line, col}` shape), and the matched \
          source lines. Ignores the buffer on stdin (this command is \

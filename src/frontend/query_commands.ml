@@ -33,6 +33,10 @@ module Printtyp = Type_utils.Printtyp
 
 exception No_nodes
 
+(* Use this to propagate errors locally without using exceptions or a bunch
+   of match-with *)
+let ( let/ ) x f = Result.bind ~f x
+
 let print_completion_entries ~with_types config source entries =
   if with_types then (
     let input_ref = ref [] and output_ref = ref [] in
@@ -922,16 +926,14 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
       Merlin_config.version Sys.ocaml_version
   | Ocamlgrep (query, search_root) ->
+    (* TODO: don't assume it's a Dune project *)
     (* Scan a Dune project's cmt files for expressions matching [query]
        and return findings. The merlin pipeline (built from stdin) is
        intentionally ignored: ocamlgrep operates project-wide, not
        buffer-local. *)
-    let paths =
-      match Merlin_project.Paths.init ?search_root () with
-      | Ok paths -> paths
-      | Error msg -> failwith msg
-    in
-    let handle_event ((findings, warnings) as acc) = function
+    let/ paths = Merlin_project.Paths.init ?search_root () in
+    let handle_event ((findings, warnings) as acc) ev =
+      match ev with
       | Merlin_project.Scan.Scan_file _ -> acc
       | Merlin_project.Scan.Warning msg -> (findings, msg :: warnings)
       | Merlin_project.Scan.Finding { Expr_search.loc; lines } ->
@@ -939,21 +941,20 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     in
     (* Enumerate the valid locations for cmt files. These files may or
        may not exist depending on the build status. *)
-    let cmt_files =
-      match
-        Merlin_project.Dune_workspace.describe
-          ~root:paths.project_root
-          ()
-      with
-      | Ok ws -> Merlin_project.Dune_workspace.local_cmt_files ws
-      | Error msg -> failwith msg
+    let/ ws =
+      Merlin_project.Dune_workspace.describe
+        ~root:paths.project_root
+        ?context:paths.dune_context
+        ()
     in
+    let cmt_files = Merlin_project.Dune_workspace.local_cmt_files ws in
     let expr = Expr_search.parse_query query in
     let findings, warnings =
       Merlin_project.Scan.incremental_search
         ([], []) paths cmt_files handle_event
         (Expr_search.search expr)
     in
-    { Query_protocol.findings = List.rev findings;
+    Ok {
+      Query_protocol.findings = List.rev findings;
       warnings = List.rev warnings
     }

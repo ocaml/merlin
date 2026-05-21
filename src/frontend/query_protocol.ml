@@ -148,7 +148,9 @@ type ocamlgrep_finding =
   }
 
 type ocamlgrep_result =
-  { findings : ocamlgrep_finding list; warnings : string list }
+  { findings : ocamlgrep_finding list;
+    warnings : string list
+  }
 
 module Locate_types_result = struct
   module Tree = struct
@@ -267,7 +269,7 @@ type _ t =
       -> (occurrence list * occurrences_status) t
   | Ocamlgrep (* *) :
       string * string option
-      -> ocamlgrep_result t
+      -> (ocamlgrep_result, string) result t
   | Signature_help : signature_help -> signature_help_result option t
       (** In current version, Merlin only uses the parameter [position] to answer
         signature_help queries. The additionnal parameters are described in the
