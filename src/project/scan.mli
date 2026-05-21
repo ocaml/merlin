@@ -38,10 +38,11 @@ type 'a event =
   | Warning of string
       (** A non-fatal diagnostic, possibly containing line breaks. *)
 
-(** [incremental_search paths cmt_files handler search] iterates over
+(** [incremental_search acc paths cmt_files handler search] iterates over
     [cmt_files], reads each one, verifies its source digest, and calls
     [search cmt ~source ~src_lines] where:
 
+    - [acc] is the initial value of the result accumulator,
     - [cmt] is the parsed cmt data,
     - [source] is the user-friendly, project-relative path to the
       source file (suitable for use as [pos_fname] in locations), and
@@ -61,11 +62,12 @@ type 'a event =
     project-relative display paths and to locate preprocessed sources
     for digest checks. *)
 val incremental_search :
+  'acc ->
   Paths.t ->
   string list ->
-  ('a event -> unit) ->
+  ('acc -> 'a event -> 'acc) ->
   (Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list) ->
-  unit
+  'acc
 
 (** Wrapper around [incremental_search] that accumulates events into a
     list returned at the end instead of calling a handler

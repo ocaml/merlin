@@ -931,13 +931,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | Ok paths -> paths
       | Error msg -> failwith msg
     in
-    let findings = ref [] in
-    let warnings = ref [] in
-    let handle_event = function
-      | Merlin_project.Scan.Scan_file _ -> ()
-      | Merlin_project.Scan.Warning msg -> warnings := msg :: !warnings
+    let handle_event ((findings, warnings) as acc) = function
+      | Merlin_project.Scan.Scan_file _ -> acc
+      | Merlin_project.Scan.Warning msg -> (findings, msg :: warnings)
       | Merlin_project.Scan.Finding { Expr_search.loc; lines } ->
-        findings := { Query_protocol.loc; lines } :: !findings
+          ({ Query_protocol.loc; lines } :: findings, warnings)
     in
     (* Enumerate the valid locations for cmt files. These files may or
        may not exist depending on the build status. *)
@@ -951,8 +949,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
       | Error msg -> failwith msg
     in
     let expr = Expr_search.parse_query query in
-    Merlin_project.Scan.incremental_search paths cmt_files handle_event
-      (Expr_search.search expr);
-    { Query_protocol.findings = List.rev !findings;
-      warnings = List.rev !warnings
+    let findings, warnings =
+      Merlin_project.Scan.incremental_search
+        ([], []) paths cmt_files handle_event
+        (Expr_search.search expr)
+    in
+    { Query_protocol.findings = List.rev findings;
+      warnings = List.rev warnings
     }

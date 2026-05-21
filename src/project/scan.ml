@@ -25,10 +25,11 @@ let read_lines fn =
    source lines array.  Each result is emitted as a [Finding] event.
    Returns true if the cmt file was found, false if it was missing. *)
 let process_one_cmt
+    (acc : 'acc)
     (paths : Paths.t)
     handle_event
     (search : Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list)
-    cmt_path =
+    cmt_path : ('acc, unit) result =
   match Cmt_format.read_cmt cmt_path with
   | { Cmt_format.cmt_sourcefile = Some source;
       cmt_source_digest = Some digest;
@@ -81,61 +82,75 @@ let process_one_cmt
       end
     in
     let source, abs_source, skip_digest = resolve_source source in
-    handle_event (Scan_file source);
-    if not (Sys.file_exists abs_source) then true
+    let acc = handle_event acc (Scan_file source) in
+    if not (Sys.file_exists abs_source) then Ok acc
     else if (not skip_digest) && digest <> Digest.file abs_source then begin
-      handle_event
-        (Warning
-           (sprintf "%s does not correspond to %s (ignoring)" cmt_path abs_source));
-      true
+      let acc =
+        handle_event acc
+          (Warning
+             (sprintf
+                "%s does not correspond to %s (ignoring)"
+                cmt_path abs_source))
+      in
+      Ok acc
     end
     else begin
       let src_lines = Array.of_list (read_lines abs_source) in
-      (match search cmt ~source ~src_lines with
-       | exception exn ->
-         handle_event
-           (Warning
-              (Format.asprintf "error while analysing %s: %a" cmt_path
-                 Location.report_exception exn))
-       | results ->
-         List.iter (fun r -> handle_event (Finding r)) results);
-      true
+      let acc =
+        match search cmt ~source ~src_lines with
+        | exception exn ->
+            handle_event acc
+              (Warning
+                 (Format.asprintf "error while analysing %s: %a" cmt_path
+                    Location.report_exception exn))
+        | results ->
+            List.fold_left
+              (fun acc r -> handle_event acc (Finding r)) acc results
+      in
+      Ok acc
     end
-  | { cmt_sourcefile = None; _ } | { cmt_source_digest = None; _ } -> true
+  | { cmt_sourcefile = None; _ } | { cmt_source_digest = None; _ } -> Ok acc
   | exception Cmt_format.Error (Cmt_format.Not_a_typedtree _) ->
-    handle_event (Warning (sprintf "error reading cmt file: %s" cmt_path));
-    true
+      let acc =
+        handle_event acc
+          (Warning (sprintf "error reading cmt file: %s" cmt_path))
+      in
+      Ok acc
   | exception Sys_error _ ->
-    (* cmt file does not exist yet — project needs to be (re)built *)
-    false
+      (* cmt file does not exist yet — project needs to be (re)built *)
+      Error ()
 
 let incremental_search
+    (acc : 'acc)
     (paths : Paths.t)
     (cmt_files : string list)
-    (handle_event : 'a event -> unit)
-    (search : Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list) : unit =
+    (handle_event : 'acc -> 'a event -> 'acc)
+    (search : Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list) : 'acc =
   let total = List.length cmt_files in
-  let found =
+  let acc, found =
     List.fold_left
-      (fun acc cmt_path ->
-        if process_one_cmt paths handle_event search cmt_path then acc + 1
-        else acc)
-      0
+      (fun (acc, found) cmt_path ->
+        match process_one_cmt acc paths handle_event search cmt_path with
+          | Ok acc -> (acc, found + 1)
+          | Error () -> (acc, found)
+      )
+      (acc, 0)
       cmt_files
   in
   if found < total then begin
     let missing = total - found in
     let pct = (found * 100) / total in
-    handle_event
+    handle_event acc
       (Warning
          (sprintf
             "%d/%d cmt files found (%d%% coverage); \
              %d missing — run 'dune build @check' to generate them"
             found total pct missing))
   end
+  else
+    acc
 
 let search paths cmt_files fn =
-  let events = ref [] in
-  let handle_event ev = events := ev :: !events in
-  incremental_search paths cmt_files handle_event fn;
-  List.rev !events
+  let handle_event events ev = ev :: events in
+  let events = incremental_search [] paths cmt_files handle_event fn in
+  List.rev events
