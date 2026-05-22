@@ -3,7 +3,7 @@
 
 (* Note: we do not use [ppx_sexp_conv] here even though it would make
    the record parsers below shorter.  [ppx_sexp_conv] depends on
-   [sexplib0] which in turn pulls in Jane Street's [base] library, and
+   which pulls in Jane Street's [base] library, and
    merlin avoids that dependency. *)
 
 type module_ =
