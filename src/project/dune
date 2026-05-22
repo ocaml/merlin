@@ -5,7 +5,7 @@
 (library
  (name merlin_project)
  (public_name merlin-lib.project)
- (libraries csexp sexplib0 unix
+ (libraries csexp unix
             ocaml_parsing ocaml_typing ocaml_utils
             merlin_kernel merlin_utils)
  (flags
@@ -14,8 +14,7 @@
   -open Ocaml_typing
   -open Ocaml_utils
   -open Merlin_kernel
-  -open Merlin_utils)
- (preprocess (pps ppx_sexp_conv)))
+  -open Merlin_utils))
 
 ; Generate standard_library.ml exposing the OCaml standard library path.
 ; The same trick is used in src/kernel/dune. Merlin's vendored Config
