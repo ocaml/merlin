@@ -948,7 +948,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
         ()
     in
     let cmt_files = Merlin_project.Dune_workspace.local_cmt_files ws in
-    let expr = Expr_search.parse_query query in
+    let/ expr =
+      match Expr_search.parse_query query with
+      | expr -> Ok expr
+      | exception Failure msg -> Error msg
+    in
     let findings, warnings =
       Merlin_project.Scan.incremental_search
         ([], []) paths cmt_files handle_event
