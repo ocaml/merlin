@@ -39,7 +39,7 @@ Make sure that this test doesn't depend on previous state
   > EOF
 
   $ cat > .merlin <<EOF
-  > FLG -ppx '_build/default/.ppx/4ade71ccdeb8c5e1413c18cb5cbd80e5/ppx.exe -as-ppx
+  > FLG -ppx '_build/default/.ppx/68ba10540cd1df30ebd46af5ef6706d9/ppx.exe -as-ppx
   > USE_PPX_CACHE
   > EOF
 
