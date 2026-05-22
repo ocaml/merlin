@@ -1,6 +1,11 @@
 (* This file is part of the merlin-lib.project library
    See the attached LICENSE file. *)
 
+(* Note: we do not use [ppx_sexp_conv] here even though it would make
+   the record parsers below shorter.  [ppx_sexp_conv] depends on
+   [sexplib0] which in turn pulls in Jane Street's [base] library, and
+   merlin avoids that dependency. *)
+
 type module_ =
   { name : string;
     impl : string option;
