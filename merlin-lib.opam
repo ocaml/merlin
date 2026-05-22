@@ -15,7 +15,6 @@ depends: [
   "dune" {>= "3.0.0"}
   "csexp" {>= "1.5.1"}
   "sexplib0"
-  "ppx_sexp_conv"
   "alcotest" {with-test & >= "1.3.0" }
   "menhir"    {dev & >= "20230608"}
   "menhirLib" {dev & >= "20230608"}
