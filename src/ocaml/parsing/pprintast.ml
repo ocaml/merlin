@@ -1987,7 +1987,9 @@ let prepare_error err =
         (Style.as_inline_code Doc.tyvar) var
         Style.inline_code var
   | Other loc ->
-      Location.errorf ~source ~loc "Syntax error"
+      Location.error ~source ~loc "Syntax error"
+  | Custom (loc, msg) ->
+      Location.error ~source ~loc msg
   | Ill_formed_ast (loc, s) ->
       Location.errorf ~loc
         "broken invariant in parsetree: %s" s
