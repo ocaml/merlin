@@ -30,7 +30,7 @@ let process_one_cmt
     handle_event
     (search : Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list)
     cmt_path : ('acc, unit) result =
-  match Cmt_format.read_cmt cmt_path with
+  match (Cmt_cache.read cmt_path).cmt_infos with
   | { Cmt_format.cmt_sourcefile = Some source;
       cmt_source_digest = Some digest;
       _
@@ -117,7 +117,7 @@ let process_one_cmt
       in
       Ok acc
   | exception Sys_error _ ->
-      (* cmt file does not exist yet — project needs to be (re)built *)
+      (* cmt file does not exist yet - project needs to be (re)built *)
       Error ()
 
 let incremental_search
