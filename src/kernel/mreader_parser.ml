@@ -78,7 +78,7 @@ let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
 
 let errors_ref = ref []
 
-let resume_parse =
+let resume_parse keywords =
   let rec normal acc tokens = function
     | I.InputNeeded env as checkpoint ->
       let token, tokens =
@@ -115,10 +115,18 @@ let resume_parse =
       normal ((Correct checkpoint, token) :: acc) tokens checkpoint
   and enter_error acc token tokens env =
     let candidates = R.generate env in
-    let explanation =
-      Mreader_explain.explain env token candidates.R.popped candidates.R.shifted
+    let error =
+      match Parse_errors.error_messages keywords env token with
+      | Some message ->
+        let _, loc_start, loc_end = token in
+        let loc = { Location.loc_start; loc_end; loc_ghost = false } in
+        Syntaxerr.Error (Syntaxerr.Custom (loc, message))
+      | None ->
+        Mreader_explain.Syntax_explanation
+          (Mreader_explain.explain env token candidates.R.popped
+             candidates.R.shifted)
     in
-    errors_ref := Mreader_explain.Syntax_explanation explanation :: !errors_ref;
+    errors_ref := error :: !errors_ref;
     recover acc (token :: tokens) candidates
   and recover acc tokens candidates =
     let token, tokens =
@@ -150,14 +158,14 @@ let seek_step steps tokens =
   in
   aux [] (steps, tokens)
 
-let parse initial steps tokens initial_pos =
+let parse initial steps keywords tokens initial_pos =
   let acc, tokens = seek_step steps tokens in
   let step =
     match acc with
     | (step, _) :: _ -> step
     | [] -> Correct (initial initial_pos)
   in
-  let acc, result = resume_parse acc tokens step in
+  let acc, result = resume_parse keywords acc tokens step in
   (List.rev acc, result)
 
 let run_parser warnings lexer previous kind =
@@ -173,7 +181,7 @@ let run_parser warnings lexer previous kind =
     in
     let steps, result =
       let state = Parser_raw.Incremental.implementation in
-      parse state steps tokens initial_pos
+      parse state steps (Mreader_lexer.keywords lexer) tokens initial_pos
     in
     (`Structure steps, `Implementation result)
   | MLI ->
@@ -184,7 +192,7 @@ let run_parser warnings lexer previous kind =
     in
     let steps, result =
       let state = Parser_raw.Incremental.interface in
-      parse state steps tokens initial_pos
+      parse state steps (Mreader_lexer.keywords lexer) tokens initial_pos
     in
     (`Signature steps, `Interface result)
 
