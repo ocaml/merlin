@@ -151,8 +151,3 @@ let incremental_search
   end
   else
     acc
-
-let search paths cmt_files fn =
-  let handle_event events ev = ev :: events in
-  let events = incremental_search [] paths cmt_files handle_event fn in
-  List.rev events

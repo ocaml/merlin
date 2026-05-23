@@ -68,12 +68,3 @@ val incremental_search :
   ('acc -> 'a event -> 'acc) ->
   (Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list) ->
   'acc
-
-(** Wrapper around [incremental_search] that accumulates events into a
-    list returned at the end instead of calling a handler
-    incrementally. *)
-val search :
-  Paths.t ->
-  string list ->
-  (Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list) ->
-  'a event list
