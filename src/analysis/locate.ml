@@ -118,9 +118,9 @@ end = struct
   let with_ext ?(src_suffix_pair = (".ml", ".mli")) t =
     name t ^ ext src_suffix_pair t
 
-  let explain_not_found ?(doc_from = "") str_ident path =
+  let explain_not_found ?(doc_from = "") str_ident file_path =
     let msg =
-      match path with
+      match file_path with
       | ML file ->
         sprintf
           "'%s' seems to originate from '%s' whose ML file could not be found"
@@ -218,11 +218,11 @@ module Utils = struct
      call site to choose the appropriate file.
 
      Note: We do not refine the load path for module path as we used too. *)
-  let find_all_in_path_uncap ?src_suffix_pair ~with_fallback path file =
+  let find_all_in_path_uncap ?src_suffix_pair ~with_fallback search_path file =
     let name = File.with_ext ?src_suffix_pair file in
     log ~title:"find_all_in_path_uncap" "Looking for file %S in path:\n%a" name
       Logger.fmt (fun fmt ->
-        Format.pp_print_list Format.pp_print_string fmt path);
+        Format.pp_print_list Format.pp_print_string fmt search_path);
     let uname = String.uncapitalize name in
     let fallback, ufallback =
       let alt = File.alternate file in
@@ -246,7 +246,7 @@ module Utils = struct
       in
       acc
     in
-    List.fold_left ~f:try_dir ~init:[] path
+    List.fold_left ~f:try_dir ~init:[] search_path
 
   let find_all_matches ~config ?(with_fallback = false) file =
     let files =
@@ -259,7 +259,7 @@ module Utils = struct
     in
     List.dedup_adjacent files ~cmp:String.compare
 
-  let find_file_with_path ~config ?(with_fallback = false) file path =
+  let find_file_with_path ~config ?(with_fallback = false) file search_path =
     let title = "find_file_with_path" in
     let filename = File.name file in
     log ~title "Try find %S" filename;
@@ -278,7 +278,7 @@ module Utils = struct
         in
         let fname = File.with_ext ~src_suffix_pair file in
         log ~title "Trying %S" fname;
-        try Some (Misc.find_in_path_normalized ?fallback path fname)
+        try Some (Misc.find_in_path_normalized ?fallback search_path fname)
         with Not_found -> None
       in
       try
@@ -858,23 +858,23 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
         "dropping inferred context, it is not precise enough";
       `Ok [ `Labels ])
 
-let from_string ~config ~env ~local_defs ~pos ?namespaces path =
+let from_string ~config ~env ~local_defs ~pos ?namespaces longident =
   File_switching.reset ();
   let browse = Mbrowse.of_typedtree local_defs in
-  let lid = Type_utils.parse_longident path in
+  let lid = Type_utils.parse_longident longident in
   let from_lid lid =
     let ident, is_label = Longident.keep_suffix lid in
     match infer_namespace ?namespaces ~pos lid browse is_label with
     | `Error e -> e
     | `Ok nss ->
       log ~title:"from_string"
-        "looking for the source of '%s' (prioritizing %s files)" path
+        "looking for the source of '%s' (prioritizing %s files)" longident
         (match config.ml_or_mli with
         | `ML | `Smart -> ".ml"
         | `MLI -> ".mli");
       from_longident ~config ~env ~local_defs nss ident
   in
-  Option.value_map ~f:from_lid ~default:(`Not_found (path, None)) lid
+  Option.value_map ~f:from_lid ~default:(`Not_found (longident, None)) lid
 
 let find_doc_attribute attrs =
   let open Parsetree in
