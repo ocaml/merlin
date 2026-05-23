@@ -118,14 +118,13 @@ let resume_parse keywords =
     let error =
       match Parse_errors.error_messages keywords env token with
       | Some message ->
-         let (_, loc_start, loc_end) = token in
-         let loc = {Location. loc_start; loc_end; loc_ghost = false} in
-         Syntaxerr.Error (Syntaxerr.Custom (loc, message))
+        let _, loc_start, loc_end = token in
+        let loc = { Location.loc_start; loc_end; loc_ghost = false } in
+        Syntaxerr.Error (Syntaxerr.Custom (loc, message))
       | None ->
-         Mreader_explain.Syntax_explanation (
-             Mreader_explain.explain env token
-               candidates.R.popped candidates.R.shifted
-           )
+        Mreader_explain.Syntax_explanation
+          (Mreader_explain.explain env token candidates.R.popped
+             candidates.R.shifted)
     in
     errors_ref := error :: !errors_ref;
     recover acc (token :: tokens) candidates
