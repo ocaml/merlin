@@ -26,18 +26,10 @@
 
 )* }}} *)
 
-type cmt_item = {
-  cmt_infos : Cmt_format.cmt_infos ;
-  mutable location_trie : exn;
-}
-
 include File_cache.Make (struct
-  type t = cmt_item
+  type t = Cmt_format.cmt_infos
 
-  let read file = {
-    cmt_infos = Cmt_format.read_cmt file ;
-    location_trie = Not_found;
-  }
+  let read file = Cmt_format.read_cmt file
 
   let cache_name = "Cmt_cache"
 end)

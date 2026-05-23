@@ -52,9 +52,9 @@ module Reduce_conf = struct
   let try_load ~unit_name () =
     let cmt = Format.sprintf "%s.cmt" unit_name in
     match Cmt_cache.read (Load_path.find_normalized cmt) with
-    | cmt_item ->
+    | cmt_infos ->
       Log.debug "Loaded CMT %s" cmt;
-      cmt_item.cmt_infos.cmt_impl_shape
+      cmt_infos.cmt_impl_shape
     | exception Not_found ->
       Log.warn "Failed to load file %S in load_path: @[%s@]\n%!" cmt
       @@ String.concat "; " (Load_path.get_path_list ());
@@ -186,9 +186,9 @@ let from_files ~store_shapes ~output_file ~root ~rewrite_root ~build_path
     List.fold_left
       (fun into file ->
         match Cmt_cache.read file with
-        | cmt_item ->
+        | cmt_infos ->
           index_of_cmt ~into ~root ~rewrite_root ~build_path ~store_shapes
-            ~do_not_use_cmt_loadpath cmt_item.cmt_infos
+            ~do_not_use_cmt_loadpath cmt_infos
         | exception _ -> (
           match read ~file with
           | Index index -> merge_index ~store_shapes ~into index
