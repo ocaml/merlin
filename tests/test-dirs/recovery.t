@@ -37,7 +37,7 @@ The hole is filled with merlin.hole.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting fun_expr"
+        "message": "Expected expression after `=`"
       }
     ],
     "notifications": []
@@ -82,7 +82,7 @@ The hole is filled with merlin.hole.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting module_expr"
+        "message": "Expected module expression after `=`"
       }
     ],
     "notifications": []
@@ -118,7 +118,7 @@ penalty should prevent it.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting fun_expr"
+        "message": "Expected expression (or `.`) after `->`"
       }
     ],
     "notifications": []
@@ -150,7 +150,7 @@ FIXME: the syntax error message is off the mark.
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, <unstable suggestion>
+        "message": "Expected let binding after `let`"
       }
     ],
     "notifications": []
