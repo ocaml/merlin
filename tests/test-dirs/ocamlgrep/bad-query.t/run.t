@@ -7,7 +7,7 @@ A query that does not parse as an OCaml expression is reported as a
 
   $ $MERLIN single ocamlgrep -query 'let x =' < /dev/null \
   >   | jq -r '"\(.class): \(.value)"'
-  failure: Could not parse search expression.
+  return: {"findings":[],"warnings":[],"errors":["Could not parse search expression."]}
 
 A missing query argument is also a failure (the [-query] flag is
 mandatory).
