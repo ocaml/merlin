@@ -4,7 +4,7 @@
   (name ocaml_preprocess)
   (public_name merlin-lib.ocaml_preprocess)
   (flags :standard -open Ocaml_parsing -open Ocaml_utils -open Merlin_utils)
-  (libraries ocaml_parsing ocaml_utils merlin_utils lrgrep.runtime))
+  (libraries ocaml_parsing ocaml_utils merlin_utils))
 
 (menhir
  (modules parser_raw)
@@ -50,3 +50,13 @@
  (deps parser_raw.cmly parse_errors.lrgrep)
  (mode    promote)
  (action (run lrgrep compile -g parser_raw.cmly -s parse_errors.lrgrep)))
+
+(rule
+ (targets lrgrep_runtime.ml)
+ (mode promote)
+ (action (copy %{lib:lrgrep.runtime:lrgrep_runtime.ml} lrgrep_runtime.ml)))
+
+(rule
+ (targets lrgrep_runtime.mli)
+ (mode promote)
+ (action (copy %{lib:lrgrep.runtime:lrgrep_runtime.mli} lrgrep_runtime.mli)))
