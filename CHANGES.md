@@ -1,3 +1,10 @@
+UNRELEASED
+==========
+Sat May 23 11:00:27 AM JST 2026
+
+  + merlin library
+    - Use LRgrep to specify & generate syntax error messages (#2072)
+
 merlin 5.7.1
 ============
 Thu Apr 30 14:15:42 CEST 2026
