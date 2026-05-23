@@ -109,7 +109,9 @@ let tokens t =
     | Triple t -> Some t
     | _ -> None)
 
-let keywords t = Lexer_raw.list_keywords t.keywords
+let keywords t = t.keywords
+
+let list_keywords t = Lexer_raw.list_keywords t.keywords
 
 let errors t =
   rev_filter_map t.items ~f:(function

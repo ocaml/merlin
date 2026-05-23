@@ -62,6 +62,7 @@ val make: ?preprocessor:preprocessor -> keywords -> state
 
 val skip_sharp_bang: state -> Lexing.lexbuf -> Parser_raw.token result
 val token: state -> Lexing.lexbuf -> Parser_raw.token result
+val as_keyword : keywords -> Parser_raw.token -> string option
 
 (* Comments are filtered out from the token rule and stored in a global
    variable. *)

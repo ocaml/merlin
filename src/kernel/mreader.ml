@@ -47,7 +47,7 @@ let normal_parse ?for_completion config source =
       Mreader_lexer.for_completion lexer pos
   in
   let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
-  let lexer_keywords = Mreader_lexer.keywords lexer
+  let lexer_keywords = Mreader_lexer.list_keywords lexer
   and lexer_errors = Mreader_lexer.errors lexer
   and parser_errors = Mreader_parser.errors parser
   and parsetree = Mreader_parser.result parser
