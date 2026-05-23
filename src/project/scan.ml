@@ -30,7 +30,9 @@ let process_one_cmt
     handle_event
     (search : Cmt_format.cmt_infos -> source:string -> src_lines:string array -> 'a list)
     cmt_path : ('acc, unit) result =
-  match (Cmt_cache.read cmt_path).cmt_infos with
+  (* Read from the cache but don't add new entries to it since it would grow
+     as big as the whole project. *)
+  match (Cmt_cache.read ~read_only:true cmt_path).cmt_infos with
   | { Cmt_format.cmt_sourcefile = Some source;
       cmt_source_digest = Some digest;
       _
