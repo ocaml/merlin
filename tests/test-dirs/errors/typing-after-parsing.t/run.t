@@ -30,7 +30,7 @@ First ask for all the errors:
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting fun_expr"
+        "message": "Expected expression after `=`"
       }
     ],
     "notifications": []
@@ -81,7 +81,7 @@ And let's also try filtering out type errors:
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, expecting fun_expr"
+        "message": "Expected expression after `=`"
       }
     ],
     "notifications": []
