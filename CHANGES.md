@@ -1,3 +1,8 @@
+unreleased
+============
+  + test suite
+    - Remove the FIXME line for #1404 as the issue was already fixed and add two tests (#2073).
+
 merlin 5.7.1
 ============
 Thu Apr 30 14:15:42 CEST 2026
