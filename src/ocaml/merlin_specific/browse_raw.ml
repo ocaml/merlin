@@ -442,7 +442,7 @@ let rec of_expression_desc loc = function
     in
     let bindops = let_ :: ands in
     let patterns = flatten_patterns ~size:(List.length ands) [] body.c_lhs in
-    let of_letop (pat, bindop) = of_pattern pat ** of_bop bindop in
+    let of_letop (pat, bindop) = of_bop bindop ** of_pattern pat in
     list_fold of_letop (List.combine patterns bindops)
     ** of_expression body.c_rhs
   | Texp_open (od, e) -> app (Module_expr od.open_expr) ** of_expression e
