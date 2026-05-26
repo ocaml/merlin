@@ -1,9 +1,9 @@
-# Testing locate on let punnings
+# Testing queries on punned forms
 
   $ cat > let_punning.ml <<EOF
-  > let (let+) x f = f x
+  > let (let+) x f = f (fst x)
   > 
-  > let f x =
+  > let f (x : int * _) =
   >   let+ x in
   >   x
   > EOF
@@ -11,6 +11,10 @@
 FIXME: Should locate to the `x` in `f x`, not say that we are at the definition
   $ $MERLIN single locate -position 4:7 -filename let_punning.ml < let_punning.ml | jq .value
   "Already at definition point"
+
+Should answer the type of x in the pattern: "int"
+  $ $MERLIN single type-enclosing -position 4:7 -filename let_punning.ml < let_punning.ml | jq .value[0].type
+  "int"
 
 # Testing locate on argument punnings
 
