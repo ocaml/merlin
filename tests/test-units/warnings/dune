@@ -1,0 +1,5 @@
+(test
+ (name warnings_test)
+ (package merlin-lib)
+ (libraries fmt alcotest merlin-lib.analysis merlin-lib.ocaml_utils))
+

@@ -39,3 +39,6 @@ val reconstruct_identifier :
   Lexing.position ->
   (string * int) option ->
   string Location.loc list
+
+val warning_description : int -> Warnings.description option
+

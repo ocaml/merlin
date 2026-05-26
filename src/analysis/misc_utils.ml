@@ -111,3 +111,13 @@ let reconstruct_identifier pipeline pos = function
       else aux acc (succ i)
     in
     aux [] offset
+
+let warning_description w =
+  try
+    Some
+      (List.find_map Warnings.descriptions ~f:(fun (desc : Warnings.description) ->
+           if desc.number = w then Some desc else None))
+  with Not_found -> None
+
+
+
