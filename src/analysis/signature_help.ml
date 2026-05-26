@@ -47,7 +47,6 @@ let pp_type env ppf ty =
 let rec type_is_arrow ty =
   match Types.get_desc ty with
   | Tarrow _ -> true
-  | Tlink ty -> type_is_arrow ty
   | Tpoly (ty, _) -> type_is_arrow ty
   | _ -> false
 
@@ -89,7 +88,13 @@ let separate_function_signature ~args (e : Typedtree.expression) =
   let buffer = Buffer.create 16 in
   let ppf = Format.formatter_of_buffer buffer in
   let rec separate ?(parameters = []) args ty =
-    match (args, Types.get_desc ty) with
+    let desc =
+      match args with
+      | _ :: _ -> Types.get_desc (Ctype.expand_head e.exp_env ty)
+      (* expand the type only if there are remaining arguments *)
+      | [] -> Types.get_desc ty
+    in
+    match (args, desc) with
     | (_l, arg) :: args, Tarrow (label, ty1, ty2, _) ->
       let parameter =
         print_parameter_offset ~arg ppf buffer e.exp_env label ty1
@@ -110,7 +115,8 @@ let separate_function_signature ~args (e : Typedtree.expression) =
         active_param = None
       }
   in
-  separate args e.exp_type
+  let expanded_ty = Ctype.expand_head e.exp_env e.exp_type in
+  separate args expanded_ty
 
 let active_parameter_by_arg ~arg params =
   let find_by_arg = function
@@ -160,8 +166,8 @@ let active_parameter_by_prefix ~prefix params =
   in
   find_by_prefix params
 
-let is_arrow t =
-  match Types.get_desc t with
+let is_arrow env t =
+  match Types.get_desc (Ctype.expand_head env t) with
   | Tarrow _ -> true
   | _ -> false
 
@@ -169,10 +175,11 @@ let application_signature ~prefix ~cursor node =
   match node with
   | (_, Browse_raw.Expression arg)
     :: ( _,
-         Expression { exp_desc = Texp_apply (({ exp_type; _ } as e), args); _ }
+         Expression
+           { exp_desc = Texp_apply (({ exp_type; exp_env; _ } as e), args); _ }
        )
     :: _
-    when is_arrow exp_type ->
+    when is_arrow exp_env exp_type ->
     log ~title:"application_signature" "Last arg:\n%a" Logger.fmt (fun fmt ->
         Printtyped.expression fmt arg);
     let result = separate_function_signature e ~args in
@@ -192,7 +199,8 @@ let application_signature ~prefix ~cursor node =
         | None -> active_parameter_by_prefix ~prefix result.parameters
     in
     Some { result with active_param }
-  | (_, Expression ({ exp_type; _ } as e)) :: _ when is_arrow exp_type ->
+  | (_, Expression ({ exp_type; exp_env; _ } as e)) :: _
+    when is_arrow exp_env exp_type ->
     (* provide signature information directly after an unapplied function-type
        value *)
     let result = separate_function_signature e ~args:[] in
@@ -207,9 +215,8 @@ let application_signature ~prefix ~cursor node =
           let v =
             List.find_opt
               ~f:(fun (value_binding : Typedtree.value_binding) ->
-                match Types.get_desc value_binding.vb_expr.exp_type with
-                | Tarrow _ -> true
-                | _ -> false)
+                is_arrow value_binding.vb_expr.exp_env
+                  value_binding.vb_expr.exp_type)
               vlist
           in
           Option.map ~f:(fun (v : Typedtree.value_binding) -> v.vb_expr) v

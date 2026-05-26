@@ -1,3 +1,8 @@
+Unreleased
+============
+  + merlin library
+    - Fix signature-help with type aliases (#2067, fixes #1927)
+
 merlin 5.7.1
 ============
 Thu Apr 30 14:15:42 CEST 2026
