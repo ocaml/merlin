@@ -18,7 +18,7 @@ Should locate to the `x` in `f x`
     }
   }
 
-FIXME: Should answer the type of x in the pattern: "int"
+Should answer the type of x in the pattern: "int"
   $ $MERLIN single type-enclosing -position 4:7 -filename let_punning.ml < let_punning.ml | jq .value[0].type
   "int"
 

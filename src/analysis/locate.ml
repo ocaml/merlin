@@ -845,7 +845,10 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
       `Error `Missing_labels_namespace)
   | None -> (
     match
-      (Context.inspect_browse_tree ~cursor:pos lid [ browse ], is_label)
+      ( Context.inspect_browse_tree
+          ~disambiguate:Mbrowse.Tie_breaker.prefer_expression ~cursor:pos lid
+          [ browse ],
+        is_label )
     with
     | None, _ ->
       log ~title:"from_string" "already at origin, doing nothing";
