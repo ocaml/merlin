@@ -352,7 +352,7 @@ let load_cmt ~config ?(with_fallback = true) comp_unit =
   match Utils.find_file ~config:config.mconfig ~with_fallback file with
   | Some path ->
     log ~title "Found %S at path %S" comp_unit path;
-    let cmt_infos = (Cmt_cache.read path).cmt_infos in
+    let cmt_infos = Cmt_cache.read path in
     let source_file = cmt_infos.cmt_sourcefile in
     let source_file = Option.value ~default:"*pack*" source_file in
     move_to config.mconfig path cmt_infos;
@@ -986,7 +986,7 @@ let doc_from_comment_list ~after_only ~buffer_comments loc =
       buffer_comments
     | Some cmt_path ->
       log ~title:"get_doc" "File switching: actually in %s" cmt_path;
-      let { Cmt_cache.cmt_infos; _ } = Cmt_cache.read cmt_path in
+      let cmt_infos = Cmt_cache.read cmt_path in
       cmt_infos.Cmt_format.cmt_comments
   in
   log ~title:"get_doc" "%a" Logger.fmt (fun fmt ->

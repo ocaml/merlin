@@ -97,7 +97,7 @@ let items index (config : Mconfig.t) items =
       log ~title:"read_unit_shape" "inspecting %s" unit_name;
       let cmt = Format.sprintf "%s.cmt" unit_name in
       match Cmt_cache.read (Load_path.find_normalized cmt) with
-      | { cmt_infos = { cmt_impl_shape; _ }; _ } ->
+      | { cmt_impl_shape; _ } ->
         log ~title:"read_unit_shape" "shapes loaded for %s" unit_name;
         cmt_impl_shape
       | exception _ ->
