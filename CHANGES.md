@@ -1,7 +1,10 @@
-Unreleased
-============
+unreleased
+==========
+
   + merlin library
     - Fix signature-help with type aliases (#2067, fixes #1927)
+  + test suite
+    - Remove the FIXME line for #1404 as the issue was already fixed and add two tests (#2073).
 
 merlin 5.7.1
 ============
