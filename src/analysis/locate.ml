@@ -844,12 +844,11 @@ let infer_namespace ?namespaces ~pos lid browse is_label =
         "input is clearly a label, but the given namespaces don't cover that";
       `Error `Missing_labels_namespace)
   | None -> (
-    match
-      ( Context.inspect_browse_tree
-          ~disambiguate:Mbrowse.Tie_breaker.prefer_expression ~cursor:pos lid
-          [ browse ],
-        is_label )
-    with
+    let context =
+      let disambiguate = Mbrowse.Tie_breaker.prefer_expression in
+      Context.inspect_browse_tree ~disambiguate ~cursor:pos lid [ browse ]
+    in
+    match (context, is_label) with
     | None, _ ->
       log ~title:"from_string" "already at origin, doing nothing";
       `Error `At_origin
