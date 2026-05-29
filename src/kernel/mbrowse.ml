@@ -102,14 +102,14 @@ let select_leafs pos root =
   !branches
 
 module Tie_breaker = struct
-  type tie_break = [ `Prefer_first | `Prefer_second ]
+  type tie_break = Prefer_first | Prefer_second
   type t = node -> node -> tie_break option
 
   let prefer_expression node1 node2 : tie_break option =
     match (node1, node2) with
     | Expression _, Expression _ -> None
-    | Expression _, _ -> Some `Prefer_first
-    | _, Expression _ -> Some `Prefer_second
+    | Expression _, _ -> Some Prefer_first
+    | _, Expression _ -> Some Prefer_second
     | _ -> None
 end
 
@@ -123,8 +123,8 @@ let compare_locations ?tie_break pos l1 l2 =
     begin match (tie_break, l1.Location.loc_ghost, l2.Location.loc_ghost) with
     | _, true, false -> 1
     | _, false, true -> -1
-    | Some `Prefer_first, _, _ -> t1_first
-    | Some `Prefer_second, _, _ -> t2_first
+    | Some Tie_breaker.Prefer_first, _, _ -> t1_first
+    | Some Prefer_second, _, _ -> t2_first
     | _ -> Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
     end
   (* Cursor inside one location: it has priority *)

@@ -52,12 +52,14 @@ module Tie_breaker : sig
       This module is about tie-breaking those cases to select the node that we
       want.  *)
 
+  type tie_break = Prefer_first | Prefer_second
+
   (** If [f : t], then [f node1 node2] answers:
-      - [Some `Prefer_first] to select [node1]
-      - [Some `Prefer_first] to select [node1]
+      - [Some Prefer_first] to select [node1]
+      - [Some Prefer_second] to select [node2]
       - [None] to let the default disambiguation mechanism break the tie.
   *)
-  type t = node -> node -> [ `Prefer_first | `Prefer_second ] option
+  type t = node -> node -> tie_break option
 
   (** Tie-break by preferring expression over other nodes *)
   val prefer_expression : t
