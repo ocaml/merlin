@@ -1545,16 +1545,17 @@ strictly within, or nil if there is no such element."
 
 If WITH-LOCAL-VALUES is non-nil, pass \"-with-values local\" to
 include local values in the candidate list."
-  (when-let ((result (merlin-call "construct"
-                                  "-position" (merlin-unmake-point point)
-                                  "-with-values"
-                                  (if (or with-local-values merlin-construct-with-local-values)
-                                      "local"
-                                    "null"))))
-    (let* ((loc   (car result))
-           (start (cdr (assoc 'start loc)))
-           (stop  (cdr (assoc 'end loc))))
-      (merlin--construct-complete start stop (cadr result)))))
+  (let ((result (merlin-call "construct"
+                             "-position" (merlin-unmake-point point)
+                             "-with-values"
+                             (if (or with-local-values merlin-construct-with-local-values)
+                                 "local"
+                               "null"))))
+    (when result
+      (let* ((loc   (car result))
+             (start (cdr (assoc 'start loc)))
+             (stop  (cdr (assoc 'end loc))))
+        (merlin--construct-complete start stop (cadr result))))))
 
 (defun merlin-construct (&optional arg)
   "Construct over the current hole.
