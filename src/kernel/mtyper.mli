@@ -53,5 +53,13 @@ val get_cache_stat : result -> typer_cache_stats
  *      In this case, the env found is the same as in case a, however it is
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
+ *
+ *  [disambiguate] argument is used to select the node at cursor when multiple
+ *  nodes share the same location.
  *)
-val node_at : ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
+val node_at :
+  ?disambiguate:Mbrowse.Tie_breaker.t ->
+  ?skip_recovered:bool ->
+  result ->
+  Lexing.position ->
+  Mbrowse.t

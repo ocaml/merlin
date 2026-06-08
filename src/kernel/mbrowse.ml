@@ -69,7 +69,6 @@ let node_loc node = approximate_loc Browse_raw.node_real_loc node
 let node_merlin_loc node = approximate_loc Browse_raw.node_merlin_loc node
 
 let leaf_node = List.hd
-let leaf_loc t = node_loc (snd (leaf_node t))
 
 let drop_leaf t =
   match t with
@@ -102,15 +101,30 @@ let select_leafs pos root =
   (try traverse root with Exit -> ());
   !branches
 
-let compare_locations pos l1 l2 =
+module Tie_breaker = struct
+  type tie_break = Prefer_first | Prefer_second
+  type t = node -> node -> tie_break option
+
+  let prefer_expression node1 node2 : tie_break option =
+    match (node1, node2) with
+    | Expression _, Expression _ -> None
+    | Expression _, _ -> Some Prefer_first
+    | _, Expression _ -> Some Prefer_second
+    | _ -> None
+end
+
+let compare_locations ?tie_break pos l1 l2 =
   let t2_first = 1 in
   let t1_first = -1 in
   match (Location_aux.compare_pos pos l1, Location_aux.compare_pos pos l2) with
-  (* Cursor inside both locations: favor non-ghost closer to the end *)
+  (* Cursor inside both locations: favor non-ghost, fallback to user-provided
+     tie-break, fallback to being closer to the end *)
   | 0, 0 ->
-    begin match (l1.Location.loc_ghost, l2.Location.loc_ghost) with
-    | true, false -> 1
-    | false, true -> -1
+    begin match (tie_break, l1.Location.loc_ghost, l2.Location.loc_ghost) with
+    | _, true, false -> 1
+    | _, false, true -> -1
+    | Some Tie_breaker.Prefer_first, _, _ -> t1_first
+    | Some Prefer_second, _, _ -> t2_first
     | _ -> Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
     end
   (* Cursor inside one location: it has priority *)
@@ -122,21 +136,29 @@ let compare_locations pos l1 l2 =
   (* Cursor is after both, select the closest one *)
   | _, _ -> Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end
 
-let best_node pos = function
+let best_node ?disambiguate pos = function
   | [] -> []
   | init :: xs ->
     let f acc x =
-      if compare_locations pos (leaf_loc acc) (leaf_loc x) <= 0 then acc else x
+      let node1 = snd @@ leaf_node acc and node2 = snd @@ leaf_node x in
+      let tie_break =
+        Option.bind
+          ~f:(fun disambiguate -> disambiguate node1 node2)
+          disambiguate
+      in
+      if compare_locations ?tie_break pos (node_loc node1) (node_loc node2) <= 0
+      then acc
+      else x
     in
     List.fold_left ~f ~init xs
 
-let enclosing pos roots =
-  match best_node pos roots with
+let enclosing ?disambiguate pos roots =
+  match best_node ?disambiguate pos roots with
   | [] -> []
-  | root -> best_node pos (select_leafs pos root)
+  | root -> best_node ?disambiguate pos (select_leafs pos root)
 
-let deepest_before pos roots =
-  match enclosing pos roots with
+let deepest_before ?disambiguate pos roots =
+  match enclosing ?disambiguate pos roots with
   | [] -> []
   | root ->
     let rec aux path =
@@ -150,8 +172,15 @@ let deepest_before pos roots =
           || Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
         then
           match acc with
-          | Some (_, loc', _) when compare_locations pos loc' loc <= 0 -> acc
-          | Some _ | None -> Some (env, loc, node)
+          | Some (_, loc', node') ->
+            let tie_break =
+              Option.bind
+                ~f:(fun disambiguate -> disambiguate node node')
+                disambiguate
+            in
+            if compare_locations ?tie_break pos loc' loc <= 0 then acc
+            else Some (env, loc, node)
+          | None -> Some (env, loc, node)
         else acc
       in
       match fold_node select_candidate env0 node0 None with

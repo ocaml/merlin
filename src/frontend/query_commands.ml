@@ -562,7 +562,11 @@ let dispatch pipeline (type a) : a Query_protocol.t -> a = function
     let typer = Mpipeline.typer_result pipeline in
     let local_defs = Mtyper.get_typedtree typer in
     let pos = Mpipeline.get_lexing_pos pipeline pos in
-    let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
+    let env, _ =
+      Mbrowse.leaf_node
+        (Mtyper.node_at ~disambiguate:Mbrowse.Tie_breaker.prefer_expression
+           typer pos)
+    in
     let path =
       match patho with
       | Some p -> p

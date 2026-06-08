@@ -47,6 +47,9 @@ val to_string : t -> string
    information given the selected identifier, the position of the cursor and the
    typed tree. It is used by Locate and Type_enclosing.
 
+   [disambiguate] is used to get the enclosing node when some nodes share the
+   same location (but have different context).
+
    The cursor position is used to distinguished whether a module path or an actual
    constructor name is pointed at when the cursor is in the middle of a
    longident, e.g. [Foo.B|ar.Constructor] (with | being the cursor).
@@ -55,4 +58,8 @@ val to_string : t -> string
    breaking the context inference.
 *)
 val inspect_browse_tree :
-  cursor:Std.Lexing.position -> Longident.t -> Mbrowse.t list -> t option
+  ?disambiguate:Mbrowse.Tie_breaker.t ->
+  cursor:Std.Lexing.position ->
+  Longident.t ->
+  Mbrowse.t list ->
+  t option

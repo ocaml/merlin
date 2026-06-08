@@ -39,16 +39,43 @@ val drop_leaf : t -> t option
 
 (* Navigate through tree *)
 
+module Tie_breaker : sig
+  (** Some nodes in the typedtree may share the same, non-ghost, location, while
+      being different. One example of this is let-punning:
+
+      {@ocaml[
+      let+ x in
+      ]}
+
+      Both [x] as an expression and as a pattern share the exact same location.
+
+      This module is about tie-breaking those cases to select the node that we
+      want.  *)
+
+  type tie_break = Prefer_first | Prefer_second
+
+  (** If [f : t], then [f node1 node2] answers:
+      - [Some Prefer_first] to select [node1]
+      - [Some Prefer_second] to select [node2]
+      - [None] to let the default disambiguation mechanism break the tie.
+  *)
+  type t = node -> node -> tie_break option
+
+  (** Tie-break by preferring expression over other nodes *)
+  val prefer_expression : t
+end
+
 (** The deepest context inside or before the node, for instance, navigating
  * through:
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
-val deepest_before : Lexing.position -> t list -> t
+val deepest_before :
+  ?disambiguate:Tie_breaker.t -> Lexing.position -> t list -> t
 
 val select_open_node : t -> (Path.t * Longident.t * t) option
 
-val enclosing : Lexing.position -> t list -> t
+val enclosing : ?disambiguate:Tie_breaker.t -> Lexing.position -> t list -> t
 
 val range_enclosing :
   start:Lexing.position -> stop:Lexing.position -> t list -> t
