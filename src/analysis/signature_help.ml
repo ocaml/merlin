@@ -64,6 +64,13 @@ let pp_parameter env label ppf ty =
     (* unwrap option for optional labels the same way as
        [Raw_compat.labels_of_application] *)
     let unwrap_option ty =
+      (* Since OCaml 5.5 the argument type of a [Tarrow] is wrapped in a mono
+         [Tpoly] node, look through it before unwrapping the option. *)
+      let ty =
+        match Types.get_desc ty with
+        | Types.Tpoly (ty, []) -> ty
+        | _ -> ty
+      in
       match Types.get_desc ty with
       | Types.Tconstr (path, [ ty ], _) when Path.same path Predef.path_option
         -> ty

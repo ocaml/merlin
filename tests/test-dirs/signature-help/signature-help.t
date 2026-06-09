@@ -204,18 +204,18 @@ It can make an optional parameter active by prefix.
     "value": {
       "signatures": [
         {
-          "label": "create : ?random:bool option -> int -> ('a, 'b) Hashtbl.t",
+          "label": "create : ?random:bool -> int -> ('a, 'b) Hashtbl.t",
           "parameters": [
             {
               "label": [
                 9,
-                28
+                21
               ]
             },
             {
               "label": [
-                32,
-                35
+                25,
+                28
               ]
             }
           ]
