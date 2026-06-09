@@ -11,14 +11,14 @@
   > -filename under.ml <test.ml | jq '.value[0]' 
   {
     "start": {
-      "line": 1,
-      "col": 6
+      "line": 4,
+      "col": 9
     },
     "end": {
       "line": 4,
-      "col": 17
+      "col": 12
     },
-    "type": "'a -> 'b",
+    "type": "int",
     "tail": "no"
   }
 
@@ -31,10 +31,10 @@
       "col": 6
     },
     "end": {
-      "line": 4,
-      "col": 17
+      "line": 1,
+      "col": 9
     },
-    "type": "'a -> 'b",
+    "type": "'a",
     "tail": "no"
   }
 

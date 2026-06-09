@@ -265,7 +265,7 @@ Test 3.1
 Test 3.2
 
   $ cat >c32.ml <<EOF
-  > let type mytype = float
+  > type mytype = float
   > let x : v:string -> float -> mytype -> mytype -> int = _
   > EOF
 
@@ -283,7 +283,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v float _ _ -> _)"
+      "(fun ~v float mytype mytype_1 -> _)"
     ]
   ]
 
@@ -301,7 +301,7 @@ Test 3.2
       }
     },
     [
-      "(fun ~v float _ _ -> 0)"
+      "(fun ~v float mytype mytype_1 -> 0)"
     ]
   ]
 

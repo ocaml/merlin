@@ -5722,7 +5722,7 @@ and split_function_ty env ty_expected ~arg_label ~has_poly ~first ~in_function =
         (* Merlin: we recover with an expected type of 'a -> 'b *)
         let level = get_level (instance ty_expected) in
         raise_error (error(loc, env, err));
-        { ty_param = newvar2 level; ty_ret = ty_expected }
+        { ty_param = newmono (newvar2 level); ty_ret = ty_expected }
     end
   in
   if !Clflags.principal

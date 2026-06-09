@@ -59,5 +59,7 @@ Merlin is still able to inspect part of the ill-typed tree
 And locate works as well
   $ $MERLIN single locate -position 8:25 \
   > -filename ill.ml <ill.ml | jq '.value.pos'
-  jq: error (at <stdin>:5): Cannot index string with string "pos"
-  [5]
+  {
+    "line": 4,
+    "col": 6
+  }

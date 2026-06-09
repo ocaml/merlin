@@ -27,8 +27,21 @@
   > let f = function A x -> x
   > EOF
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 2,
+          "col": 25
+        },
+        "end": {
+          "line": 2,
+          "col": 25
+        }
+      },
+      "
+  | B | C -> _"
+    ],
     "notifications": []
   }
 

@@ -67,8 +67,21 @@ Test 1.3 : with type constructor
   >   | None -> ()
   > EOF
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 14
+        },
+        "end": {
+          "line": 3,
+          "col": 14
+        }
+      },
+      "
+  | Some _ -> _"
+    ],
     "notifications": []
   }
 
@@ -253,8 +266,20 @@ Test 4.2
   $ $MERLIN single case-analysis -start 8:4 -end 8:4 -filename typ4.ml <typ4.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 8,
+          "col": 13
+        },
+        "end": {
+          "line": 8,
+          "col": 13
+        }
+      },
+      "|App (_,_) -> _"
+    ],
     "notifications": []
   }
 
@@ -317,7 +342,20 @@ Test 5.1 : Module path (with function)
   >   | T.A -> ()
   > EOF
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 3,
+          "col": 13
+        },
+        "end": {
+          "line": 3,
+          "col": 13
+        }
+      },
+      "
+  | T.B _ -> _"
+    ],
     "notifications": []
   }

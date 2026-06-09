@@ -218,6 +218,14 @@ let rec get_match = function
       | Typedtree.Texp_match (e, _, _, _) -> (m, e.exp_type)
       | Typedtree.Texp_function _ -> (
         let typ = m.exp_type in
+        (* Since OCaml 5.5 the argument type of an arrow is wrapped in a
+                 mono [Tpoly] node; we unwrap it so that the resulting type can
+                 be used to typecheck counter-examples. *)
+        let arrow_arg te =
+          match Types.get_desc te with
+          | Tpoly (t, []) -> t
+          | _ -> te
+        in
         (* Function must have arrow type. This arrow type
                  might be hidden behind type constructors *)
         ( m,
@@ -627,13 +635,17 @@ let destruct_expression loc config source parents expr =
   let needs_parentheses, result =
     if is_package (Types.Transient_expr.repr ty) then
       let pmb_expr = Ast_helper.Mod.unpack pexp in
-      let module_binding = {
-        Parsetree.pmb_name = Location.mknoloc (Some "M");
-        pmb_expr;
-        pmb_attributes = [];
-        pmb_loc = Location.none } in
-      (false, Ast_helper.Exp.struct_item
-        (Ast_helper.Str.module_ module_binding) placeholder)
+      let module_binding =
+        { Parsetree.pmb_name = Location.mknoloc (Some "M");
+          pmb_expr;
+          pmb_attributes = [];
+          pmb_loc = Location.none
+        }
+      in
+      ( false,
+        Ast_helper.Exp.struct_item
+          (Ast_helper.Str.module_ module_binding)
+          placeholder )
     else
       let ps = gen_patterns expr.Typedtree.exp_env ty in
       let cases =

@@ -58,8 +58,20 @@ Test case-analysis on a function parameter:
   > -filename fun.ml <fun.ml | \
   > sed -e 's/, /,/g' | sed -e 's/ *| */|/g' | tr -d '\n' | jq '.'
   {
-    "class": "error",
-    "value": "Nothing to do",
+    "class": "return",
+    "value": [
+      {
+        "start": {
+          "line": 1,
+          "col": 15
+        },
+        "end": {
+          "line": 1,
+          "col": 15
+        }
+      },
+      "|true -> _"
+    ],
     "notifications": []
   }
 
