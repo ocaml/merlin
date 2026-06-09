@@ -53,6 +53,9 @@ let match_query env query t =
       traverse pos pos_fun neg neg_fun t1
     | Types.Ttuple ts ->
       List.iter ~f:(fun (_, t) -> traverse neg neg_fun pos pos_fun t) ts
+    (* Since OCaml 5.5 the argument type of a [Tarrow] is wrapped in a [Tpoly]
+       node. This wrapper is transparent for the traversal. *)
+    | Types.Tpoly (t, _) -> traverse neg neg_fun pos pos_fun t
     | Types.Tvar _ | Types.Tunivar _ -> decr cost (* Favor polymorphic defs *)
     | _ -> ()
   in
