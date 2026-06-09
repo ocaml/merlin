@@ -230,13 +230,13 @@ let rec get_match = function
                  might be hidden behind type constructors *)
         ( m,
           match Types.get_desc typ with
-          | Tarrow (_, te, _, _) -> te
+          | Tarrow (_, te, _, _) -> arrow_arg te
           | Tconstr _ -> (
             match
               Ctype.full_expand ~may_forget_scope:true m.exp_env typ
               |> Types.get_desc
             with
-            | Tarrow (_, te, _, _) -> te
+            | Tarrow (_, te, _, _) -> arrow_arg te
             | _ -> assert false)
           | _ -> assert false ))
       | _ ->
