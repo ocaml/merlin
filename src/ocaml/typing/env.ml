@@ -2517,7 +2517,7 @@ let enter_module ~scope ?noalias s presence mty env =
 
 (* Insertion of all components of a signature *)
 
-let add_item (map, mod_shape) comp env =
+let add_item ?(long_path = false) (map, mod_shape) comp env =
   let proj_shape item =
     match mod_shape with
     | None -> map, None
@@ -2532,7 +2532,7 @@ let add_item (map, mod_shape) comp env =
   | Sig_type(id, decl, _, _) ->
       let map, shape = proj_shape (Shape.Item.type_ id) in
       map,
-      add_type ~long_path:false ~check:false ~predef:false ?shape id decl env
+      add_type ~long_path ~check:false ~predef:false ?shape id decl env
   | Sig_typext(id, ext, _, _) ->
       let map, shape = proj_shape (Shape.Item.extension_constructor id) in
       map, add_extension ~check:false ?shape ~rebind:false id ext env
@@ -2549,12 +2549,12 @@ let add_item (map, mod_shape) comp env =
       let map, shape = proj_shape (Shape.Item.class_type id) in
       map, add_cltype ?shape id decl env
 
-let rec add_signature (map, mod_shape) sg env =
+let rec add_signature ?(long_path = false) (map, mod_shape) sg env =
   match sg with
       [] -> map, env
   | comp :: rem ->
-      let map, env = add_item (map, mod_shape) comp env in
-      add_signature (map, mod_shape) rem env
+      let map, env = add_item ~long_path (map, mod_shape) comp env in
+      add_signature ~long_path (map, mod_shape) rem env
 
 let enter_signature_and_shape ~scope ~parent_shape mod_shape sg env =
   let sg = Subst.signature (Rescope scope) Subst.identity sg in
@@ -2575,8 +2575,8 @@ let add_value = add_value ?shape:None
 let add_class = add_class ?shape:None
 let add_cltype = add_cltype ?shape:None
 let add_modtype = add_modtype ?shape:None
-let add_signature sg env =
-  let _, env = add_signature (Shape.Map.empty, None) sg env in
+let add_signature ?long_path sg env =
+  let _, env = add_signature ?long_path (Shape.Map.empty, None) sg env in
   env
 
 (* Add "unbound" bindings *)

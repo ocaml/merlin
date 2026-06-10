@@ -362,7 +362,11 @@ val filter_non_loaded_persistent : (Ident.t -> bool) -> t -> t
 
 (* Insertion of all fields of a signature. *)
 
-val add_signature: signature -> t -> t
+(* [long_path] (defaults to [false]) prevents the inserted types from being
+   added to the short-paths graph. It is used when the signature is already in
+   scope and is being re-inserted only for a local check, to avoid defining the
+   same identifier twice in the graph. *)
+val add_signature: ?long_path:bool -> signature -> t -> t
 
 (* Insertion of all fields of a signature, relative to the given path.
    Used to implement open. Returns None if the path refers to a functor,
