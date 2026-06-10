@@ -82,8 +82,7 @@ Functions
   $ run "x:a -> ?y:b -> c"
   Arrow
     a (1:5)
-    option
-      b (2:5)
+    b (2:5)
     c (3:5)
 
 Tuples
@@ -113,25 +112,25 @@ Objects
 
   $ run "<x : a; y : b>"
   Object
-    b (2:5)
     a (1:5)
+    b (2:5)
 
 Polymorphic variant types
 
   $ run "[\`A of a | \`B of b ]"
   Poly_variant
-    b (2:5)
     a (1:5)
+    b (2:5)
 
   $ run "[> \`A of a | \`B of b ]"
   Poly_variant
-    b (2:5)
     a (1:5)
+    b (2:5)
 
   $ run "[< \`A of a | \`B of b ]"
   Poly_variant
-    b (2:5)
     a (1:5)
+    b (2:5)
 
   $ run "[\`B | \`A of a]"
   Poly_variant
