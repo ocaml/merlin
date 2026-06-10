@@ -223,7 +223,7 @@ let rec get_match = function
                  be used to typecheck counter-examples. *)
         let arrow_arg te =
           match Types.get_desc te with
-          | Tpoly (t, []) -> t
+          | Tpoly (t, _) -> t
           | _ -> te
         in
         (* Function must have arrow type. This arrow type

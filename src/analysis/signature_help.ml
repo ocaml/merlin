@@ -68,7 +68,7 @@ let pp_parameter env label ppf ty =
          [Tpoly] node, look through it before unwrapping the option. *)
       let ty =
         match Types.get_desc ty with
-        | Types.Tpoly (ty, []) -> ty
+        | Types.Tpoly (ty, _) -> ty
         | _ -> ty
       in
       match Types.get_desc ty with

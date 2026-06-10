@@ -44,7 +44,9 @@ and core_type type_expr =
     (* Since OCaml 5.5 arrow argument types are wrapped in a mono [Tpoly]
        node; we unwrap it to avoid printing spurious parentheses. *)
     let type_expr =
-      match Types.get_desc type_expr with Tpoly (t, []) -> t | _ -> type_expr
+      match Types.get_desc type_expr with
+      | Tpoly (t, _) -> t
+      | _ -> type_expr
     in
     Typ.arrow label (core_type type_expr) (core_type type_expr_out)
   | Tfunctor (label, id, p, type_expr) ->
