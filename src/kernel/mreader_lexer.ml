@@ -123,6 +123,12 @@ let comments t =
 
 open Parser_raw
 
+let pair_bracket = function
+  | '{' -> Some RBRACE
+  | '(' -> Some RPAREN
+  | '[' -> Some RBRACKET
+  | _ -> None
+
 let is_operator = function
   | PREFIXOP s
   | LETOP s
@@ -148,6 +154,20 @@ let is_operator = function
   | AMPERAMPER -> Some "&&"
   | COLONEQUAL -> Some ":="
   | PLUSEQ -> Some "+="
+  | DOTOP s -> (
+    let last = String.get s (String.length s - 1) in
+    match pair_bracket last with
+    | Some pair ->
+      (* note: this is a heuristic which ignores the difference between
+        the following three operators:
+          [.%( )]
+          [.%(;..)]
+          [.%(;..)<-]
+        It will always return the first one. Now, typically, if one
+        is defined, all are, with the same semantics, but this is
+        still unfortunate. *)
+      Some (s ^ Parser_printer.print_token pair)
+    | None -> Some s)
   | _ -> None
 
 (* [reconstruct_identifier] is impossible to read at the moment, here is a
@@ -233,6 +253,75 @@ let reconstruct_identifier_from_tokens tokens pos =
     (* LIDENT always begin a new identifier *)
     | ((LIDENT _, _, _) as item) :: items ->
       if acc = [] then look_for_dot [ item ] items else check acc (item :: items)
+    (* Reified custom indexing operators *)
+    (* e.g. [( .%(;..) )] *)
+    | (RPAREN, _, _)
+      :: (token, _, tend)
+      :: (DOTDOT, _, _)
+      :: (SEMI, _, _)
+      :: (DOTOP s, tstart, _)
+      :: (LPAREN, _, _)
+      :: items
+      when acc = [] -> (
+      let last = String.get s (String.length s - 1) in
+      match pair_bracket last with
+      | Some pair when pair = token ->
+        let item =
+          (DOTOP (s ^ ";.." ^ Parser_printer.print_token pair), tstart, tend)
+        in
+        look_for_dot [ item ] items
+      | _ -> check acc items)
+    (* e.g. [( .%(;..)<- )] *)
+    | (RPAREN, _, _)
+      :: (LESSMINUS, _, tend)
+      :: (token, _, _)
+      :: (DOTDOT, _, _)
+      :: (SEMI, _, _)
+      :: (DOTOP s, tstart, _)
+      :: (LPAREN, _, _)
+      :: items
+      when acc = [] -> (
+      let last = String.get s (String.length s - 1) in
+      match pair_bracket last with
+      | Some pair when pair = token ->
+        let item =
+          ( DOTOP (s ^ ";.." ^ Parser_printer.print_token pair ^ "<-"),
+            tstart,
+            tend )
+        in
+        look_for_dot [ item ] items
+      | _ -> check acc items)
+    (* e.g. [( .%( ) )] *)
+    | (RPAREN, _, _)
+      :: (token, _, tend)
+      :: (DOTOP s, tstart, _)
+      :: (LPAREN, _, _)
+      :: items
+      when acc = [] -> (
+      let last = String.get s (String.length s - 1) in
+      match pair_bracket last with
+      | Some pair when pair = token ->
+        let item =
+          (DOTOP (s ^ Parser_printer.print_token pair), tstart, tend)
+        in
+        look_for_dot [ item ] items
+      | _ -> check acc items)
+    (* e.g. [( .%( )<- )] *)
+    | (RPAREN, _, _)
+      :: (LESSMINUS, _, tend)
+      :: (token, _, _)
+      :: (DOTOP s, tstart, _)
+      :: (LPAREN, _, _)
+      :: items
+      when acc = [] -> (
+      let last = String.get s (String.length s - 1) in
+      match pair_bracket last with
+      | Some pair when pair = token ->
+        let item =
+          (DOTOP (s ^ Parser_printer.print_token pair ^ "<-"), tstart, tend)
+        in
+        look_for_dot [ item ] items
+      | _ -> check acc items)
     (* Reified operators behave like LIDENT *)
     | (RPAREN, _, _) :: ((token, _, _) as item) :: (LPAREN, _, _) :: items
       when is_operator token <> None && acc = [] -> look_for_dot [ item ] items
