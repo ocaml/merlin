@@ -230,16 +230,26 @@ let rec core_type i ppf x =
       line i ppf "Ttyp_poly%a\n"
         (fun ppf -> List.iter (fun x -> fprintf ppf " '%s" x)) sl;
       core_type i ppf ct;
-  | Ttyp_package { tpt_path = s; tpt_cstrs = l } ->
-      line i ppf "Ttyp_package %a\n" fmt_path s;
-      list i package_with ppf l;
+  | Ttyp_package pack_ty ->
+      line i ppf "Ttyp_package\n";
+      package_type i ppf pack_ty
   | Ttyp_open (path, _mod_ident, t) ->
       line i ppf "Ttyp_open %a\n" fmt_path path;
       core_type i ppf t
+  | Ttyp_functor (lab, id, { tpt_path = s; tpt_constraints = l}, ct) ->
+      line i ppf "Ttyp_functor\n";
+      arg_label i ppf lab;
+      line i ppf "module \"%a\" : %a" fmt_ident id.txt fmt_path s;
+      list i package_with ppf l;
+      core_type i ppf ct
 
 and labeled_core_type i ppf (l, t) =
   tuple_component_label i ppf l;
   core_type i ppf t
+
+and package_type i ppf { tpt_path; tpt_constraints } =
+  line i ppf "package_type %a\n" fmt_path tpt_path;
+  list (i+1) package_with ppf tpt_constraints;
 
 and package_with i ppf (s, t) =
   line i ppf "with type %a\n" fmt_longident s;
@@ -302,9 +312,10 @@ and pattern_extra i ppf (extra_pat, loc, attrs) =
   line i ppf "extra %a\n" fmt_location loc;
   let i = i + 1 in
   match extra_pat with
-  | Tpat_unpack ->
+  | Tpat_unpack ptyp ->
      line i ppf "Tpat_extra_unpack\n";
      attributes i ppf attrs;
+     option i package_type ppf ptyp;
   | Tpat_constraint cty ->
      line i ppf "Tpat_extra_constraint\n";
      attributes i ppf attrs;
@@ -454,14 +465,6 @@ and expression i ppf x =
   | Texp_override (_, l) ->
       line i ppf "Texp_override\n";
       list i string_x_expression ppf l;
-  | Texp_letmodule (s, _, _, me, e) ->
-      line i ppf "Texp_letmodule \"%a\"\n" fmt_modname s;
-      module_expr i ppf me;
-      expression i ppf e;
-  | Texp_letexception (cd, e) ->
-      line i ppf "Texp_letexception\n";
-      extension_constructor i ppf cd;
-      expression i ppf e;
   | Texp_assert (e, _) ->
       line i ppf "Texp_assert";
       expression i ppf e;
@@ -484,11 +487,9 @@ and expression i ppf x =
       line i ppf "Texp_unreachable"
   | Texp_extension_constructor (li, _) ->
       line i ppf "Texp_extension_constructor %a" fmt_longident li
-  | Texp_open (o, e) ->
-      line i ppf "Texp_open %a\n"
-        fmt_override_flag o.open_override;
-      module_expr i ppf o.open_expr;
-      attributes i ppf o.open_attributes;
+  | Texp_struct_item (si, e) ->
+      line i ppf "Texp_struct_item\n";
+      structure_item i ppf si;
       expression i ppf e;
   | Texp_typed_hole ->
       line i ppf "Texp_typed_hole"
@@ -528,8 +529,8 @@ and type_declaration i ppf x =
   let i = i+1 in
   line i ppf "ptype_params =\n";
   list (i+1) type_parameter ppf x.typ_params;
-  line i ppf "ptype_cstrs =\n";
-  list (i+1) core_type_x_core_type_x_location ppf x.typ_cstrs;
+  line i ppf "ptype_constraints =\n";
+  list (i+1) core_type_x_core_type_x_location ppf x.typ_constraints;
   line i ppf "ptype_kind =\n";
   type_kind (i+1) ppf x.typ_kind;
   line i ppf "ptype_private = %a\n" fmt_private_flag x.typ_private;
@@ -548,6 +549,8 @@ and type_kind i ppf x =
       list (i+1) label_decl ppf l;
   | Ttype_open ->
       line i ppf "Ttype_open\n"
+  | Ttype_external name ->
+      line i ppf "Ttype_external %S\n" name
 
 and type_extension i ppf x =
   line i ppf "type_extension\n";

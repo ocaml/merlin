@@ -19,8 +19,11 @@ let rec flatten_arrow ret_ty =
       match label with
       | Optional _ -> (
         match Types.get_desc ty1 with
-        | Tconstr (path, [ ty1 ], _) when Path.same path Predef.path_option ->
-          ty1
+        | Tpoly (ty, _vars) -> (
+          match Types.get_desc ty with
+          | Tconstr (path, [ ty1 ], _) when Path.same path Predef.path_option ->
+            ty1
+          | _ -> ty1)
         | _ -> ty1)
       | _ -> ty1
     in
@@ -43,7 +46,7 @@ let rec create_type_tree ty : Type_tree.t =
     in
     let children = List.map arg_tys ~f:create_type_tree in
     { data = Type_ref { path; ty = ty_without_args }; children }
-  | Tlink ty | Tpoly (ty, _) -> create_type_tree ty
+  | Tlink ty | Tpoly (ty, _) | Tfunctor (_, _, _, ty) -> create_type_tree ty
   | Tobject (fields_type, _) ->
     let rec extract_field_types (ty : Types.type_expr) =
       match Types.get_desc ty with
@@ -51,7 +54,7 @@ let rec create_type_tree ty : Type_tree.t =
       | _ -> []
     in
     let field_types = List.rev (extract_field_types fields_type) in
-    let children = List.map field_types ~f:create_type_tree in
+    let children = List.rev_map field_types ~f:create_type_tree in
     { data = Object; children }
   | Tvariant row_desc ->
     let fields = Types.row_fields row_desc in
@@ -67,6 +70,6 @@ let rec create_type_tree ty : Type_tree.t =
             List.hd_opt tys |> Option.map ~f:create_type_tree
           | Rpresent None | Rabsent -> None)
     in
-    { data = Poly_variant; children }
+    { data = Poly_variant; children = List.rev children }
   | Tnil | Tvar _ | Tsubst _ | Tunivar _ | Tpackage _ | Tfield _ ->
     { data = Other ty; children = [] }

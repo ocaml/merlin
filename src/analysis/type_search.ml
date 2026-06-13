@@ -34,11 +34,14 @@ let sherlodoc_type_of env typ =
   let open Merlin_sherlodoc in
   let rec aux typ =
     match Types.get_desc typ with
-    | Types.Tvar None -> Type_parsed.Wildcard
-    | Types.Tvar (Some ty) -> Type_parsed.Tyvar ty
+    | Types.Tvar None | Types.Tunivar None -> Type_parsed.Wildcard
+    | Types.Tvar (Some ty) | Types.Tunivar (Some ty) -> Type_parsed.Tyvar ty
     | Types.Ttuple elts ->
       Type_parsed.tuple @@ List.map ~f:(fun (_, t) -> aux t) elts
     | Types.Tarrow (_, a, b, _) -> Type_parsed.Arrow (aux a, aux b)
+    (* Since OCaml 5.5 the argument type of a [Tarrow] is wrapped in a [Tpoly]
+       node. This wrapper is transparent for the conversion. *)
+    | Types.Tpoly (t, _) -> aux t
     | Types.Tconstr (p, args, _) ->
       let p = Out_type.rewrite_double_underscore_paths env p in
       let name = Format.asprintf "%a" Printtyp.path p in

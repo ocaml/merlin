@@ -94,6 +94,7 @@ type 'a loc = {
 
 val mknoloc : 'a -> 'a loc
 val mkloc : 'a -> t -> 'a loc
+val map : ('a -> 'b) -> 'a loc -> 'b loc
 
 
 (** {1 Input info} *)
@@ -268,7 +269,7 @@ type report_printer = {
     Format.formatter -> Format_doc.t -> unit;
 }
 (** A printer for [report]s, defined using open-recursion.
-    The goal is to make it easy to define new printers by re-using code from
+    The goal is to make it easy to define new printers by reusing code from
     existing ones.
 *)
 

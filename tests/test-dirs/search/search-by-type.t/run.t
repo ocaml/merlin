@@ -152,11 +152,11 @@
       {
         "file": "hashtbl.mli",
         "start": {
-          "line": 152,
+          "line": 156,
           "col": 0
         },
         "end": {
-          "line": 152,
+          "line": 156,
           "col": 44
         },
         "name": "Hashtbl.replace",
@@ -168,11 +168,27 @@
       {
         "file": "hashtbl.mli",
         "start": {
-          "line": 302,
+          "line": 163,
           "col": 0
         },
         "end": {
-          "line": 302,
+          "line": 163,
+          "col": 58
+        },
+        "name": "Hashtbl.find_and_replace",
+        "type": "('a, 'b) Hashtbl.t -> 'a -> 'b -> 'b option",
+        "cost": 9,
+        "doc": null,
+        "constructible": "Hashtbl.find_and_replace _ _ _"
+      },
+      {
+        "file": "hashtbl.mli",
+        "start": {
+          "line": 310,
+          "col": 0
+        },
+        "end": {
+          "line": 310,
           "col": 50
         },
         "name": "Hashtbl.add_seq",
@@ -184,11 +200,11 @@
       {
         "file": "hashtbl.mli",
         "start": {
-          "line": 306,
+          "line": 314,
           "col": 0
         },
         "end": {
-          "line": 306,
+          "line": 314,
           "col": 54
         },
         "name": "Hashtbl.replace_seq",
@@ -233,11 +249,11 @@
       {
         "file": "moreLabels.mli",
         "start": {
-          "line": 319,
+          "line": 327,
           "col": 2
         },
         "end": {
-          "line": 319,
+          "line": 327,
           "col": 52
         },
         "name": "MoreLabels.Hashtbl.add_seq",
@@ -249,11 +265,11 @@
       {
         "file": "moreLabels.mli",
         "start": {
-          "line": 169,
+          "line": 173,
           "col": 2
         },
         "end": {
-          "line": 169,
+          "line": 173,
           "col": 55
         },
         "name": "MoreLabels.Hashtbl.replace",
@@ -265,11 +281,11 @@
       {
         "file": "moreLabels.mli",
         "start": {
-          "line": 323,
+          "line": 331,
           "col": 2
         },
         "end": {
-          "line": 323,
+          "line": 331,
           "col": 56
         },
         "name": "MoreLabels.Hashtbl.replace_seq",
@@ -277,22 +293,6 @@
         "cost": 49,
         "doc": null,
         "constructible": "MoreLabels.Hashtbl.replace_seq _ _"
-      },
-      {
-        "file": "ephemeron.mli",
-        "start": {
-          "line": 203,
-          "col": 2
-        },
-        "end": {
-          "line": 203,
-          "col": 55
-        },
-        "name": "Ephemeron.K2.query",
-        "type": "('k1, 'k2, 'd) Ephemeron.K2.t -> 'k1 -> 'k2 -> 'd option",
-        "cost": 53,
-        "doc": null,
-        "constructible": "Ephemeron.K2.query _ _ _"
       }
     ],
     "notifications": []

@@ -1,0 +1,47 @@
+--- ocaml_504/typing/btype.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/btype.mli	2026-02-03 16:48:24
+@@ -77,6 +77,8 @@
+ 
+ val newgenty: type_desc -> type_expr
+         (* Create a generic type *)
++val newgenmono: type_expr -> type_expr
++        (* Create a new generic type wrapped inside a [Tpoly(x,[])] *)
+ val newgenvar: ?name:string -> unit -> type_expr
+         (* Return a fresh generic variable *)
+ val newgenstub: scope:int -> type_expr
+@@ -88,11 +90,24 @@
+ val is_Tvar: type_expr -> bool
+ val is_Tunivar: type_expr -> bool
+ val is_Tconstr: type_expr -> bool
+-val is_poly_Tpoly: type_expr -> bool
+ val dummy_method: label
+ val type_kind_is_abstract: type_declaration -> bool
+ val type_origin: type_declaration -> type_origin
++
++(**** Utilities for poly types ****)
++
++val is_Tpoly: type_expr -> bool
++
++(* This function is used for polymorphic records where we don't have the
++   invariant that the type of record fields are Tpoly *)
++val is_poly_Tpoly: type_expr -> bool
+ 
++(* These four functions can only be called on [Tpoly] nodes. *)
++val tpoly_is_mono : type_expr -> bool
++val tpoly_get_mono : type_expr -> type_expr
++val tpoly_get_poly : type_expr -> type_expr * type_expr list
++val tpoly_get_mono_opt : type_expr -> type_expr option
++
+ (**** polymorphic variants ****)
+ 
+ val is_fixed: row_desc -> bool
+@@ -146,6 +161,9 @@
+ val map_type_expr_cstr_args: (type_expr -> type_expr) ->
+   (constructor_arguments -> constructor_arguments)
+ 
++val map_pack : (Path.t -> Path.t) -> (type_expr -> type_expr) -> package ->
++  package
++
+ (**** Utilities for type marking ****)
+ 
+ val mark_type: type_mark -> type_expr -> unit

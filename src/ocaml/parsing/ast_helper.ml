@@ -83,6 +83,7 @@ module Typ = struct
   let alias ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_alias (a, b))
   let variant ?loc ?attrs a b c = mk ?loc ?attrs (Ptyp_variant (a, b, c))
   let poly ?loc ?attrs a b = mk ?loc ?attrs (Ptyp_poly (a, b))
+  let functor_ ?loc ?attrs a b c d = mk ?loc ?attrs (Ptyp_functor (a, b, c, d))
   let package ?loc ?attrs a = mk ?loc ?attrs (Ptyp_package a)
   let extension ?loc ?attrs a = mk ?loc ?attrs (Ptyp_extension a)
   let open_ ?loc ?attrs mod_ident t = mk ?loc ?attrs (Ptyp_open (mod_ident, t))
@@ -133,6 +134,8 @@ module Typ = struct
             Ptyp_open (mod_ident, loop core_type)
         | Ptyp_extension (s, arg) ->
             Ptyp_extension (s, arg)
+        | Ptyp_functor (label, name, ptyp, codomain) ->
+            Ptyp_functor (label, name, loop_package_type ptyp, loop codomain)
       in
       {t with ptyp_desc = desc}
     and loop_row_field field =
@@ -153,14 +156,15 @@ module Typ = struct
       { field with pof_desc; }
     and loop_package_type ptyp =
       { ptyp with
-        ppt_cstrs = List.map (fun (n,typ) -> (n,loop typ) ) ptyp.ppt_cstrs }
+        ppt_constraints =
+          List.map (fun (n,typ) -> (n,loop typ) ) ptyp.ppt_constraints }
     in
     loop t
 
   let package_type ?(loc = !default_loc) ?(attrs = []) p c =
     {ppt_loc = loc;
      ppt_path = p;
-     ppt_cstrs = c;
+     ppt_constraints = c;
      ppt_attrs = attrs}
 end
 
@@ -186,7 +190,7 @@ module Pat = struct
   let constraint_ ?loc ?attrs a b = mk ?loc ?attrs (Ppat_constraint (a, b))
   let type_ ?loc ?attrs a = mk ?loc ?attrs (Ppat_type a)
   let lazy_ ?loc ?attrs a = mk ?loc ?attrs (Ppat_lazy a)
-  let unpack ?loc ?attrs a = mk ?loc ?attrs (Ppat_unpack a)
+  let unpack ?loc ?attrs a b = mk ?loc ?attrs (Ppat_unpack (a, b))
   let open_ ?loc ?attrs a b = mk ?loc ?attrs (Ppat_open (a, b))
   let exception_ ?loc ?attrs a = mk ?loc ?attrs (Ppat_exception a)
   let effect_ ?loc ?attrs a b = mk ?loc ?attrs (Ppat_effect(a, b))
@@ -228,22 +232,18 @@ module Exp = struct
   let new_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_new a)
   let setinstvar ?loc ?attrs a b = mk ?loc ?attrs (Pexp_setinstvar (a, b))
   let override ?loc ?attrs a = mk ?loc ?attrs (Pexp_override a)
-  let letmodule ?loc ?attrs a b c= mk ?loc ?attrs (Pexp_letmodule (a, b, c))
-  let letmodule_no_opt ?loc ?attrs s b c=
-    let a = Location.mknoloc (Some s) in
-    mk ?loc ?attrs (Pexp_letmodule (a, b, c))
-  let letexception ?loc ?attrs a b = mk ?loc ?attrs (Pexp_letexception (a, b))
   let assert_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_assert a)
   let lazy_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_lazy a)
   let poly ?loc ?attrs a b = mk ?loc ?attrs (Pexp_poly (a, b))
   let object_ ?loc ?attrs a = mk ?loc ?attrs (Pexp_object a)
   let newtype ?loc ?attrs a b = mk ?loc ?attrs (Pexp_newtype (a, b))
   let pack ?loc ?attrs a b = mk ?loc ?attrs (Pexp_pack (a, b))
-  let open_ ?loc ?attrs a b = mk ?loc ?attrs (Pexp_open (a, b))
   let letop ?loc ?attrs let_ ands body =
     mk ?loc ?attrs (Pexp_letop {let_; ands; body})
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
   let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
+  let struct_item ?loc ?attrs si e = mk ?loc ?attrs (Pexp_struct_item (si, e))
+
   let hole ?(loc = !default_loc) ?attrs () =
     let id = Location.mkloc hole_txt loc in
     mk ~loc ?attrs  @@ Pexp_extension (id, PStr [])
@@ -550,7 +550,7 @@ module Type = struct
   let mk ?(loc = !default_loc) ?(attrs = [])
         ?(docs = empty_docs) ?(text = [])
       ?(params = [])
-      ?(cstrs = [])
+      ?(constraints = [])
       ?(kind = Ptype_abstract)
       ?(priv = Public)
       ?manifest
@@ -558,7 +558,7 @@ module Type = struct
     {
      ptype_name = name;
      ptype_params = params;
-     ptype_cstrs = cstrs;
+     ptype_constraints = constraints;
      ptype_kind = kind;
      ptype_private = priv;
      ptype_manifest = manifest;

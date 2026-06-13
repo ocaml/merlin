@@ -37,7 +37,9 @@
    uid: Lib.2; locs:
      "x": File "lib.ml", line 5, characters 32-33;
      "X.x": File "lib.ml", line 6, characters 2-5
-   uid: Lib.3; locs: "X": File "lib.ml", line 6, characters 2-3
+   uid: Lib.3; locs:
+     "X": File "lib.ml", line 5, characters 13-14;
+     "X": File "lib.ml", line 6, characters 2-3
    uid: Main.0; locs:
      "x": File "main.ml", line 2, characters 6-7;
      "N.x": File "main.ml", line 5, characters 23-26

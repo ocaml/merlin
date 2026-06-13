@@ -1,0 +1,54 @@
+--- ocaml_504/parsing/ast_invariants.ml	2025-11-07 15:50:07
++++ ocaml_505/parsing/ast_invariants.ml	2026-02-03 16:48:21
+@@ -34,7 +34,12 @@
+   err loc "Module type substitution with no right hand side"
+ let function_without_value_parameters loc =
+   err loc "Function without any value parameters"
++let invalid_struct_item loc =
++  err loc "This kind of structure item is not allowed in this context."
+ 
++let optional_label_on_functor loc =
++  err loc "Optional argument for a module dependent function."
++
+ let simple_longident id =
+   let rec is_simple = function
+     | Longident.Lident _ -> true
+@@ -43,6 +48,14 @@
+   in
+   if not (is_simple id.txt) then complex_id id.loc
+ 
++let not_optional_label loc l =
++  let is_optional =
++    match l with
++    | Optional _ -> true
++    | _ -> false
++  in
++  if is_optional then optional_label_on_functor loc
++
+ let iterator =
+   let super = Ast_iterator.default_iterator in
+   let type_declaration self td =
+@@ -58,7 +71,10 @@
+     match ty.ptyp_desc with
+     | Ptyp_tuple ([] | [_]) -> invalid_tuple loc
+     | Ptyp_package ptyp ->
+-      List.iter (fun (id, _) -> simple_longident id) ptyp.ppt_cstrs
++      List.iter (fun (id, _) -> simple_longident id) ptyp.ppt_constraints
++    | Ptyp_functor  (l, _, ptyp, _) ->
++      not_optional_label loc l;
++      List.iter (fun (id, _) -> simple_longident id) ptyp.ppt_constraints
+     | Ptyp_poly([],_) -> empty_poly_binder loc
+     | _ -> ()
+   in
+@@ -109,6 +125,11 @@
+               | { pparam_desc = Pparam_val _ } -> false)
+             params
+         then function_without_value_parameters loc
++    | Pexp_struct_item ({pstr_loc = loc;
++                         pstr_desc = Pstr_eval _
++                                   | Pstr_value _
++                                   | Pstr_include _}, _) ->
++        invalid_struct_item loc
+     | _ -> ()
+   in
+   let extension_constructor self ec =

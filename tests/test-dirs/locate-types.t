@@ -119,18 +119,18 @@ Polymorphic variant types
 
   $ run "[\`A of a | \`B of b ]"
   Poly_variant
-    b (2:5)
     a (1:5)
+    b (2:5)
 
   $ run "[> \`A of a | \`B of b ]"
   Poly_variant
-    b (2:5)
     a (1:5)
+    b (2:5)
 
   $ run "[< \`A of a | \`B of b ]"
   Poly_variant
-    b (2:5)
     a (1:5)
+    b (2:5)
 
   $ run "[\`B | \`A of a]"
   Poly_variant

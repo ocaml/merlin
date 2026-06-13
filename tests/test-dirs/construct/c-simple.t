@@ -265,7 +265,7 @@ Test 3.1
 Test 3.2
 
   $ cat >c32.ml <<EOF
-  > let type mytype = float
+  > type mytype = float
   > let x : v:string -> float -> mytype -> mytype -> int = _
   > EOF
 

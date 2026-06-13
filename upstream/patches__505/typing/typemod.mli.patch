@@ -1,0 +1,19 @@
+--- ocaml_504/typing/typemod.mli	2025-11-07 15:50:07
++++ ocaml_505/typing/typemod.mli	2026-02-03 16:48:24
+@@ -54,8 +54,6 @@
+ val modtype_of_package:
+         Env.t -> Location.t -> package -> module_type
+ 
+-val path_of_module : Typedtree.module_expr -> Path.t option
+-
+ val save_signature:
+   Unit_info.t -> Typedtree.signature -> Env.t ->
+   Cmi_format.cmi_infos -> unit
+@@ -113,6 +111,7 @@
+   | With_makes_applicative_functor_ill_typed of
+       Longident.t * Path.t * Includemod.explanation
+   | With_changes_module_alias of Longident.t * Ident.t * Path.t
++  | With_creates_invalid_aliases of Ident.t * Path.t * Path.t
+   | With_cannot_remove_constrained_type
+   | With_package_manifest of Longident.t * type_expr
+   | Repeated_name of Sig_component_kind.t * string

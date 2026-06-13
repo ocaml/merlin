@@ -134,23 +134,23 @@ FIXME: the syntax error message is off the mark.
 
   $ echo "let" | \
   > $MERLIN single errors -filename  "two_constr.ml" | \
-  > sed 's/expecting.*/<unstable suggestion>/'
+  > sed 's/expected.*/<unstable suggestion>/'
   {
     "class": "return",
     "value": [
       {
         "start": {
-          "line": 2,
+          "line": 1,
           "col": 0
         },
         "end": {
-          "line": 2,
-          "col": 0
+          "line": 1,
+          "col": 3
         },
         "type": "parser",
         "sub": [],
         "valid": true,
-        "message": "Syntax error, <unstable suggestion>
+        "message": "Syntax error: let-extension (with punning) <unstable suggestion>
       }
     ],
     "notifications": []
