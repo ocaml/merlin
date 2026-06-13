@@ -57,25 +57,6 @@ let index_schema (iter : Granular_marshal.iter) index =
     (fun iter _ v -> Union_find.schema iter v)
     index.related_uids
 
-let compress index =
-  let cache = Lid.cache () in
-  let compress_map_set =
-    Uid_map.iter_in_memory (fun _ ->
-        Lid_set.iter_in_memory (Lid.deduplicate cache))
-  in
-  compress_map_set index.defs;
-  compress_map_set index.approximated;
-  let related_uids =
-    Uid_map.map
-      (fun set ->
-        let uid = Uid_set.min_elt (Union_find.get set) in
-        let reference_set = Uid_map.find uid index.related_uids in
-        Granular_marshal.reuse reference_set;
-        reference_set)
-      index.related_uids
-  in
-  { index with related_uids }
-
 let pp_lidset fmt locs =
   Format.pp_print_list
     ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@;")
@@ -130,12 +111,11 @@ let ext = "ocaml-index"
 let magic_number = Config.index_magic_number
 
 let write ~file index =
-  let index = compress index in
   Misc.output_to_file_via_temporary ~mode:[ Open_binary ] file
     (fun _temp_file_name oc ->
       output_string oc magic_number;
       let id = Random.State.(full_int (make_self_init ()) max_int) in
-      Granular_marshal.write oc ~id index_schema (index : index))
+      Granular_marshal.write oc id index_schema (index : index))
 
 type file_content = Cmt of Cmt_format.cmt_infos | Index of index | Unknown
 
