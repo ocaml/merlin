@@ -368,6 +368,41 @@ the usages of the current definition will be returned.
 
 Returns a tree of objects `{'start': position, 'end': position, 'name': string, 'kind': string, 'children': subnodes}` describing the content of the buffer.
 
+### `ocamlgrep -query <pattern> [ -root <dir> ]`
+
+```
+    -query <pattern>  An OCaml expression pattern to search for (mandatory).
+      -root <dir>     Root directory of the project to search. Defaults to the
+                      directory of the file passed on stdin.
+```
+
+Search for a structural expression pattern across the typed trees (cmt files)
+of a Dune project. The project's cmt files must be up to date, e.g. via
+`dune build @check`. This command is project-wide and ignores the buffer
+content on stdin — the file on stdin is used only to locate the project root.
+
+The pattern language follows LexiFi's ocamlgrep: `__` is a wildcard matching
+any expression or record field; `__1`, `__2`, … are numbered metavariables
+that additionally enforce equality across occurrences. See the
+[ocamlgrep README](https://github.com/LexiFi/ocamlgrep) for the full syntax.
+
+Returns an object of the following shape:
+
+```javascript
+{
+  'findings': [ // list of matches
+    {
+      'file': string,       // project-relative path to the source file
+      'start': position,    // start of the matched region (line: 1-based, col: 0-based)
+      'end': position,      // end of the matched region
+      'lines': [string]     // source lines from start.line to end.line inclusive
+    }
+  ],
+  'warnings': [string],    // non-fatal diagnostics (e.g. stale cmt files)
+  'errors': [string]       // fatal errors (e.g. unparseable query); findings is [] in this case
+}
+```
+
 ### `path-of-source -file <filename>`
 
         -file <filename>  filename to look for in project paths

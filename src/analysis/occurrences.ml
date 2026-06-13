@@ -274,14 +274,14 @@ let find_linked_uids ~config ~scope ~name uid =
     List.filter ~f:check_name related_uids
   | _ -> []
 
-let locs_of ~config ~env ~typer_result ~pos ~scope path =
-  log ~title:"occurrences" "Looking for occurences of %s (pos: %s)" path
+let locs_of ~config ~env ~typer_result ~pos ~scope longident =
+  log ~title:"occurrences" "Looking for occurences of %s (pos: %s)" longident
     (Lexing.print_position () pos);
   let local_defs = Mtyper.get_typedtree typer_result in
   let locate_result =
     Locate.from_string
       ~config:{ mconfig = config; traverse_aliases = false; ml_or_mli = `ML }
-      ~env ~local_defs ~pos path
+      ~env ~local_defs ~pos longident
   in
   (* When we fail to find an exact definition we restrict scope to `Buffer *)
   let def, scope =
@@ -328,7 +328,7 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
       if scope = `Buffer then []
       else
         let name =
-          String.split_on_char ~sep:'.' path |> List.last |> Option.get
+          String.split_on_char ~sep:'.' longident |> List.last |> Option.get
         in
         let additional_uids = find_linked_uids ~config ~scope ~name def_uid in
         List.concat_map
@@ -350,9 +350,9 @@ let locs_of ~config ~env ~typer_result ~pos ~scope path =
     let occurrences =
       List.filter_map occurrences ~f:(fun (lid, staleness) ->
           let ({ txt; loc } : 'a Location.loc) = Index_format.Lid.to_lid lid in
-          (* Canonoicalize filenames. Some of the paths may have redundant `.`s or `..`s in
-             them. Although canonicalizing is not necessary for correctness, it makes the
-             output a bit nicer. *)
+          (* Canonicalize filenames. Some of the paths may have redundant
+             `.`s or `..`s in them. Although canonicalizing is not necessary
+             for correctness, it makes the output a bit nicer. *)
           let file =
             Misc.canonicalize_filename ?cwd:config.merlin.source_root
               loc.loc_start.pos_fname

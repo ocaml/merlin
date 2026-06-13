@@ -27,14 +27,39 @@
    )* }}} *)
 
 module Make (Input : sig
+  (** The type of cached values computed from a file.
+
+      The cache can grow indefinitely if only [read] or [read_only]
+      are called.
+  *)
   type t
+
+  (** Compute/obtain a value from a file - an expensive operation *)
   val read : string -> t
+
   val cache_name : string
 end) : sig
-  val read : string -> Input.t
-  val flush : ?older_than:float -> unit -> unit
-  val clear : unit -> unit
+  (** [read file_path] checks the cache for a valid entry mapping
+      the file path [file_path] to a value. If the entry doesn't exist
+      of if it is outdated based on the file's attributes (stat record),
+      a fresh value is obtained from the user-specified [read] function.
+
+      Exceptions go through and invalidate the cache entry.
+
+      @param read_only if true, don't update the cache
+  *)
+  val read : ?read_only:bool -> string -> Input.t
+
+  (** Remove this entry if it is outdated based on inspecting file metadata
+      (stat record). *)
   val check : string -> bool
+
+  (** Scan the cache and remove entries that are outdated
+      or older than [older_than] (age in seconds). *)
+  val flush : ?older_than:float -> unit -> unit
+
+  (** Remove all entries *)
+  val clear : unit -> unit
 
   (** @raises Not_found if the file is not in cache. *)
   val get_cached_entry : string -> Input.t

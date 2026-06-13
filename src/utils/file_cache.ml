@@ -58,7 +58,7 @@ struct
     latest_use := Unix.time ();
     file
 
-  let read filename =
+  let read ?(read_only = false) filename =
     let fid = File_id.get filename in
     let title = "read" in
     try get_cached_entry ~title fid filename
@@ -67,12 +67,14 @@ struct
         cache_miss := !cache_miss + 1;
         log ~title "reading %S from disk" filename;
         let file = Input.read filename in
-        Hashtbl.replace cache filename (fid, ref (Unix.time ()), file);
+        if not read_only then
+          Hashtbl.replace cache filename (fid, ref (Unix.time ()), file);
         file
       with exn ->
         log ~title "failed to read %S (%t)" filename (fun () ->
             Printexc.to_string exn);
-        Hashtbl.remove cache filename;
+        if not read_only then
+          Hashtbl.remove cache filename;
         raise exn)
 
   let check filename =

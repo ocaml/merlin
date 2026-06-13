@@ -30,5 +30,6 @@
   merlin_config
   merlin_analysis
   merlin_sherlodoc
+  merlin_project
   query_protocol
   str))

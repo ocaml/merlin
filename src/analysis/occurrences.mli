@@ -3,6 +3,7 @@ type t =
     status : Query_protocol.occurrences_status
   }
 
+(** Find occurrences of an unparsed identifier (longident) *)
 val locs_of :
   config:Mconfig.t ->
   env:Env.t ->
