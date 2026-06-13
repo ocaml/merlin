@@ -1,6 +1,6 @@
   $ mkdir bin
-  $ cp ../../../../install/default/bin/ocamlmerlin bin/ocamlmerlin
-  $ cp ../../../../install/default/bin/ocamlmerlin-server bin/ocamlmerlin-server
+  $ cp $(which ocamlmerlin) bin/ocamlmerlin
+  $ cp $(which ocamlmerlin-server) bin/ocamlmerlin-server
 
   $ cat >dune-project <<EOF
   > (lang dune 2.0)
