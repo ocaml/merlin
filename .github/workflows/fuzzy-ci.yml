@@ -40,13 +40,11 @@ env:
 
   # Irmin version and merl-an version need to be consistent for reproducibility (Irmin is used as the test code base to test `ocamlmerlin` on)
   IRMIN_VERSION: 3.10.0
-  # TODO: Release merl-an and install a certain version instead of pinning it to a certain commit
-  MERL_AN_SHA: 344a079bf502f27e9269498db9ed5369753f2ddb
 
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
-  merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.4.0
-  base_branch_COMPILER_VERSION: ocaml-base-compiler.5.4.0
+  merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.5.0
+  base_branch_COMPILER_VERSION: ocaml-base-compiler.5.5.0
 
 jobs:
   data:
@@ -110,7 +108,7 @@ jobs:
         id: irmin-cache
         with:
           path: irmin/
-          key: os${{ runner.os }}+arch${{ runner.arch }}+${{ hashFiles('fuzzy-ci-helpers/irmin.3.10.0.opam.locked') }}+${{ env.IRMIN_VERSION }}+${{ steps.compiler.outputs.version }}
+          key: os${{ runner.os }}+arch${{ runner.arch }}+${{ hashFiles('fuzzy-ci-helpers/irmin.$IRMIN_VERSION.opam.locked') }}+${{ env.IRMIN_VERSION }}+${{ steps.compiler.outputs.version }}
 
       - name: Download Irmin tarball
         if: steps.irmin-cache.outputs.cache-hit != 'true'
@@ -128,7 +126,7 @@ jobs:
       - name: Get Irmin's lock files
         if: steps.irmin-cache.outputs.cache-hit != 'true'
         run: |
-          cp .github/fuzzy-ci-helpers/irmin.3.10.0.opam.locked irmin/irmin.opam.locked
+          cp .github/fuzzy-ci-helpers/irmin.$IRMIN_VERSION.opam.locked irmin/irmin.opam.locked
 
       - name: Install opam monorepo
         if: steps.irmin-cache.outputs.cache-hit != 'true'
@@ -166,11 +164,11 @@ jobs:
         id: merl-an-cache
         with:
           path: /usr/local/bin/merl-an
-          key: os${{ runner.os }}+arch${{ runner.arch }}+merl-an-sha$MERL_AN_SHA
+          key: os${{ runner.os }}+arch${{ runner.arch }}+merl-an
 
       - name: Install merl-an
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
-        run: opam pin -y merl-an https://github.com/xvw/merl-an.git#$MERL_AN_SHA
+        run: opam pin -y merl-an https://github.com/tarides/merl-an.git
 
       - name: Add merl-an to /usr/local/bin/
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
@@ -184,7 +182,7 @@ jobs:
           # `--queries`: The `ocamlmerlin` queries that are being run.
           opam exec -- merl-an behavior \
           --queries=type-enclosing,occurrences,locate,complete-prefix,errors \
-          --sample-size=30 \
+          --per-file-samples=30 \
           --data=${{ env.data_dir }} \
           --merlin=ocamlmerlin \
           --project=irmin/src/irmin,irmin/src/irmin-pack,irmin/test/irmin-pack
