@@ -80,7 +80,8 @@ and core_type type_expr =
     Typ.object_ fields closed
   | Tfield _ -> failwith "Found object field outside of object."
   | Tnil -> Typ.object_ [] Closed
-  | Tlink type_expr | Tsubst (type_expr, _) -> core_type type_expr
+  | Tlink type_expr | Tsubst (type_expr, _) | Texpand (type_expr, _, _) ->
+    core_type type_expr
   | Tvariant row ->
     let row_fields = row_fields row in
     let row_closed = row_closed row in
@@ -133,7 +134,6 @@ and value_description id { val_type; val_kind = _; val_loc; val_attributes; _ }
   let type_ = core_type val_type in
   { Parsetree.pval_name = var_of_id id;
     pval_type = type_;
-    pval_prim = [];
     pval_attributes = val_attributes;
     pval_loc = val_loc
   }
