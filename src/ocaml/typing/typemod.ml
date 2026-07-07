@@ -154,7 +154,7 @@ let initial_env ~loc ~initially_opened_module
       snd (type_open_ Override env loc {txt;loc})
     with
     | Typetexp.Error.In_context _
-    | Cmi_format.Error _
+    | Magic_numbers.Cmi.Error _
     | Env.Error.In_context _
     | Persistent_env.Error _ when !Clflags.typing_recovery -> env
   in
