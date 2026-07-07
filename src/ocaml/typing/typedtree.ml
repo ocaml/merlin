@@ -160,7 +160,7 @@ and meth =
 and 'k case =
     {
      c_lhs: 'k general_pattern;
-     c_cont: (Ident.t * Types.value_description) option;
+     c_cont: Ident.t option;
      c_guard: expression option;
      c_rhs: expression;
     }

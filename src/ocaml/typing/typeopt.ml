@@ -191,14 +191,6 @@ let value_kind env ty =
   end
 *)
 
-(** Whether a forward block is needed for a lazy thunk on a value, i.e.
-    if the value can be represented as a float/forward/lazy *)
-let lazy_val_requires_forward env ty =
-  match classify env ty with
-  | Any | Lazy -> true
-  | Float -> false (* TODO: Config.flat_float_array *)
-  | Addr | Int -> false
-
 (** The compilation of the expression [lazy e] depends on the form of e:
     in some cases we optimize it into [let x = e in lazy x], evaluating
     [e] right now (if it is equivalent) and avoiding creating a thunk.
@@ -277,6 +269,7 @@ let classify_lazy_argument e =
     | Texp_assert _
     | Texp_letop _
     | Texp_unreachable
+    | Texp_typed_hole
       -> false
   in
   (* In [let x = e in lazy x], [lazy x] sometimes need to be
