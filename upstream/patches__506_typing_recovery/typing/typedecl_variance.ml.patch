@@ -1,0 +1,26 @@
+--- ocaml_505/typing/typedecl_variance.ml	2026-07-07 01:48:43.519538853 +0200
++++ ocaml_506_typing_recovery/typing/typedecl_variance.ml	2026-07-07 02:21:17.012606545 +0200
+@@ -93,8 +93,6 @@
+     | Tfield (_, _, ty1, ty2) ->
+         compute_same ty1;
+         compute_same ty2
+-    | Tsubst _ ->
+-        assert false
+     | Tvariant row ->
+         List.iter
+           (fun (_,f) ->
+@@ -109,11 +107,13 @@
+         compute_same (row_more row)
+     | Tpoly (ty, _) ->
+         compute_same ty
+-    | Tvar _ | Tnil | Tlink _ | Tunivar _ -> ()
++    | Tvar _ | Tnil | Tunivar _ -> ()
+     | Tpackage pack ->
+         let v = Variance.(compose vari full) in
+         List.iter
+           (fun (_, ty) -> compute_variance_rec env v ty) pack.pack_constraints
++    | Tsubst _ | Tlink _ | Texpand _ ->
++        assert false
+   in
+   compute_variance_rec env vari ty
+ 

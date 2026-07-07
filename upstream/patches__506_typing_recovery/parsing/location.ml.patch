@@ -1,0 +1,15 @@
+--- ocaml_505/parsing/location.ml	2026-07-07 01:48:43.510538861 +0200
++++ ocaml_506_typing_recovery/parsing/location.ml	2026-07-07 02:21:01.032683467 +0200
+@@ -875,6 +875,12 @@
+ let errorf ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) =
+   Fmt.kdoc_printf (mkerror loc sub footnote)
+ 
++let multiple_errors ?loc ?footnote = function
++  | [error] -> error
++  | errors ->
++      let sub = List.concat_map (fun err -> err.main :: err.sub) errors in
++      errorf ?loc ?footnote ~sub "Multiple errors were encountered@,"
++
+ let aligned_error_hint
+     ?(loc = none) ?(sub = []) ?(footnote=Fun.const None) fmt =
+   Fmt.kdoc_printf (fun main hint ->

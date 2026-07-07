@@ -1,0 +1,24 @@
+--- ocaml_505/utils/warnings.ml	2026-07-07 01:48:43.523538849 +0200
++++ ocaml_506_typing_recovery/utils/warnings.ml	2026-07-07 02:21:40.498792577 +0200
+@@ -883,7 +883,11 @@
+ (* If you change these, don't forget to change them in man/ocamlc.m *)
+ let defaults_w = "+a-4-7-9-27-29-30-32..42-44-45-48-50-60-66..70-74"
+ let defaults_warn_error = "-a"
+-let default_disabled_alerts = [ "unstable"; "unsynchronized_access" ]
++let default_disabled_alerts = [
++    "unstable";
++    "unsynchronized_access";
++    "todo";
++  ]
+ 
+ let () = ignore @@ parse_options false defaults_w
+ let () = ignore @@ parse_options true defaults_warn_error
+@@ -1151,7 +1155,7 @@
+               Style.inline_code x
+         | _::_ ->
+             Fmt.dprintf
+-              "variables %a appears in@ different@ places@ in@ \
++              "variables %a appear in@ different@ places@ in@ \
+                different@ or-pattern@ alternatives."
+               comma_inline_list vars
+       in

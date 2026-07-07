@@ -1,0 +1,14 @@
+--- ocaml_505/typing/rawprinttyp.mli	2026-07-07 01:48:43.517538855 +0200
++++ ocaml_506_typing_recovery/typing/rawprinttyp.mli	2026-07-07 02:21:16.978498149 +0200
+@@ -17,4 +17,10 @@
+     type expressions. It is targeted at internal use when debugging the
+     compiler itself. *)
+ 
+-val type_expr: Format.formatter -> Types.type_expr -> unit
++open Format
++open Types
++
++val type_expr: formatter -> type_expr -> unit
++val type_declaration: formatter -> type_declaration -> unit
++val signature: formatter -> signature -> unit
++val modtype: formatter -> module_type -> unit

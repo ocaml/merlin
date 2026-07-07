@@ -1,0 +1,11 @@
+--- ocaml_505/typing/subst.mli	2026-07-07 01:48:43.517538855 +0200
++++ ocaml_506_typing_recovery/typing/subst.mli	2026-07-07 02:21:16.984898301 +0200
+@@ -25,7 +25,7 @@
+    they are inferior to the maximum level of the new context.
+ 
+    Substitutions can also be used to create a "clean" copy of a type.
+-   Indeed, non-variable node of a type are duplicated, with their
++   Indeed, non-variable nodes of a type are duplicated, with their
+    levels set to generic level.  That way, the resulting type is
+    well-formed (decreasing levels), even if the original one was not.
+ 

@@ -1,0 +1,11 @@
+--- ocaml_505/typing/parmatch.ml	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/parmatch.ml	2026-07-07 02:21:16.967259487 +0200
+@@ -371,7 +371,7 @@
+   else Subst.type_expr Subst.identity ty
+ 
+ let get_constructor_type_path ty tenv =
+-  let ty = Ctype.expand_head tenv (clean_copy ty) in
++  let ty = Ctype.expand_head_nolink tenv (clean_copy ty) in
+   match get_desc ty with
+   | Tconstr (path,_,_) -> path
+   | _ -> assert false

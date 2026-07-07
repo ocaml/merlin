@@ -1,0 +1,10 @@
+--- ocaml_505/typing/tast_iterator.mli	2026-07-07 01:48:43.517538855 +0200
++++ ocaml_506_typing_recovery/typing/tast_iterator.mli	2026-07-07 02:21:16.988313260 +0200
+@@ -65,6 +65,7 @@
+     value_binding: iterator -> value_binding -> unit;
+     value_bindings: iterator -> (rec_flag * value_binding list) -> unit;
+     value_description: iterator -> value_description -> unit;
++    primitive_description: iterator -> primitive_description -> unit;
+     with_constraint: iterator -> with_constraint -> unit;
+     item_declaration: iterator -> item_declaration -> unit;
+   }

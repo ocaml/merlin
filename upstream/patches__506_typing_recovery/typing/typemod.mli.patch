@@ -1,0 +1,22 @@
+--- ocaml_505/typing/typemod.mli	2026-07-07 01:48:43.519538853 +0200
++++ ocaml_506_typing_recovery/typing/typemod.mli	2026-07-07 02:21:17.018153129 +0200
+@@ -42,7 +42,7 @@
+   Unit_info.t -> Env.t -> Parsetree.structure ->
+   Typedtree.implementation
+ val type_interface:
+-        Env.t -> Parsetree.signature -> Typedtree.signature
++   Unit_info.t -> Env.t -> Parsetree.signature -> Typedtree.signature
+ val check_nongen_signature:
+         Env.t -> Types.signature -> unit
+         (*
+@@ -134,8 +134,9 @@
+   | Non_packable_local_modtype_subst of Path.t
+   | With_cannot_remove_packed_modtype of Path.t * module_type
+   | Cannot_alias of Path.t
++  | Val_in_structure
+ 
+-exception Error of Location.t * Env.t * error
+ exception Error_forward of Location.error
++exception Errors of Location.t * Typing_recovery.Error_set.t
+ 
+ val report_error: Env.t -> loc:Location.t -> error -> Location.error

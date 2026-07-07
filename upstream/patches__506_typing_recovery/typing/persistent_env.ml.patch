@@ -1,0 +1,18 @@
+--- ocaml_505/typing/persistent_env.ml	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/persistent_env.ml	2026-07-07 02:21:16.970163450 +0200
+@@ -28,8 +28,13 @@
+   | Inconsistent_import of modname * filepath * filepath
+   | Need_recursive_types of modname
+ 
+-exception Error of error
+-let error err = raise (Error err)
++include (struct
++  exception Error of error
++  let error e = Typing_recovery.log_and_raise (Error e)
++end : sig
++  type exn += private Error of error
++  val error : error -> 'a
++end)
+ 
+ module Persistent_signature = struct
+   type t =

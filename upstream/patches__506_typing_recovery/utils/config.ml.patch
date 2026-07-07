@@ -1,0 +1,151 @@
+--- ocaml_505/utils/config.ml	2026-07-07 01:48:43.521971910 +0200
++++ ocaml_506_typing_recovery/utils/config.ml	2026-07-07 02:21:40.471392032 +0200
+@@ -23,17 +23,17 @@
+ 
+ let ccomp_type = {|cc|}
+ let c_compiler = {|gcc|}
+-let c_compiler_vendor = {|clang-17-0|}
++let c_compiler_vendor = {|gcc-15-2|}
+ let c_output_obj = {|-o |}
+ let c_has_debug_prefix_map = true
+-let as_has_debug_prefix_map = false
+-let as_is_cc = true
+-let bytecode_cflags = {|-O2 -fno-strict-aliasing -fwrapv   -pthread |}
++let as_has_debug_prefix_map = true
++let as_is_cc = false
++let bytecode_cflags = {|-O2 -fno-strict-aliasing -fwrapv -fPIC  -pthread |}
+ let bytecode_cppflags = {| -D_FILE_OFFSET_BITS=64 |}
+-let native_cflags = {|-O2 -fno-strict-aliasing -fwrapv   -pthread |}
++let native_cflags = {|-O2 -fno-strict-aliasing -fwrapv -fPIC  -pthread |}
+ let native_cppflags = {| -D_FILE_OFFSET_BITS=64 |}
+ 
+-let bytecomp_c_libraries = {|-L/opt/homebrew/opt/zstd/lib -lzstd    -lpthread|}
++let bytecomp_c_libraries = {|-lzstd  -lm  -lpthread|}
+ (* bytecomp_c_compiler and native_c_compiler have been supported for a
+    long time and are retained for backwards compatibility.
+    For programs that don't need compatibility with older OCaml releases
+@@ -44,19 +44,19 @@
+   c_compiler ^ " " ^ bytecode_cflags ^ " " ^ bytecode_cppflags
+ let native_c_compiler =
+   c_compiler ^ " " ^ native_cflags ^ " " ^ native_cppflags
+-let native_c_libraries = {|   -lpthread|}
+-let compression_c_libraries = {|-L/opt/homebrew/opt/zstd/lib -lzstd|}
++let native_c_libraries = {| -lm  -lpthread|}
++let compression_c_libraries = {|-lzstd|}
+ let native_ldflags = {||}
+-let with_nonexecstack_note = false
++let with_nonexecstack_note = true
+ let native_pack_linker = {|ld -r -o |}
+-let default_rpath = {||}
+-let mksharedlibrpath = {||}
++let default_rpath = {|-Wl,-rpath,|}
++let mksharedlibrpath = {|-Wl,-rpath,|}
+ let ar = {|ar|}
+ let supports_shared_libraries = true
+ let native_dynlink = true
+-let mkdll = {|gcc -shared -undefined dynamic_lookup -Wl,-w |}
+-let mkexe = {|gcc  |}
+-let mkmaindll = {|gcc -shared -undefined dynamic_lookup -Wl,-w |}
++let mkdll = {|gcc -shared |}
++let mkexe = {|gcc  -Wl,-E |}
++let mkmaindll = {|gcc -shared |}
+ 
+ let flambda = false
+ let with_flambda_invariants = false
+@@ -68,23 +68,23 @@
+ let align_double = false
+ let align_int64 = false
+ 
+-let function_sections = false
++let function_sections = true
+ let afl_instrument = false
+ 
+-let bytecode_runtime_id = {|b100|}
+-let native_runtime_id = {|b100|}
++let bytecode_runtime_id = {|d100|}
++let native_runtime_id = {|d100|}
+ 
+ let native_compiler = true
+ 
+-let architecture = {|arm64|}
++let architecture = {|amd64|}
+ let model = {|default|}
+-let system = {|macosx|}
++let system = {|linux|}
+ let target_os_type = {|Unix|}
+ 
+-let asm = {|gcc -c -Wno-trigraphs|}
++let asm = {|as|}
+ let asm_cfi_supported = true
+-let asm_size_type_directives = false
+-let asm_dwarf_version = Some 5
++let asm_size_type_directives = true
++let asm_dwarf_version = None
+ let with_frame_pointers = false
+ let reserved_header_bits = 0
+ 
+@@ -94,14 +94,14 @@
+ let ext_lib = "." ^ {|a|}
+ let ext_dll = "." ^ {|so|}
+ 
+-let host = {|aarch64-apple-darwin24.5.0|}
+-let target = {|aarch64-apple-darwin24.5.0|}
++let host = {|x86_64-pc-linux-gnu|}
++let target = {|x86_64-pc-linux-gnu|}
+ 
+ let systhread_supported = true
+ 
+ let flexdll_dirs = []
+ 
+-let ar_supports_response_files = false
++let ar_supports_response_files = true
+ 
+ let tsan = false
+ 
+@@ -138,7 +138,7 @@
+    from values in ../build-aux/ocaml_version.m4 - do not edit these lines
+    directly. *)
+ let is_official_release = false
+-let release_number = 21
++let release_number = 22
+ 
+ external standard_library_default : unit -> string = "%standard_library_default"
+ 
+@@ -172,18 +172,18 @@
+   else
+     target_bindir
+ 
+-let exec_magic_number = {magic|Caml1999X037|magic}
++let exec_magic_number = {magic|Caml1999X038|magic}
+     (* exec_magic_number is duplicated in runtime/caml/exec.h *)
+-and cmi_magic_number = {magic|Caml1999I037|magic}
+-and cmo_magic_number = {magic|Caml1999O037|magic}
+-and cma_magic_number = {magic|Caml1999A037|magic}
+-and cmx_magic_number = {magic|Caml1999Y037|magic}
+-and cmxa_magic_number = {magic|Caml1999Z037|magic}
+-and ast_impl_magic_number = {magic|Caml1999M037|magic}
+-and ast_intf_magic_number = {magic|Caml1999N037|magic}
+-and cmxs_magic_number = {magic|Caml1999D037|magic}
+-and cmt_magic_number = {magic|Caml1999T037|magic}
+-and linear_magic_number = {magic|Caml1999L037|magic}
++and cmi_magic_number = {magic|Caml1999I038|magic}
++and cmo_magic_number = {magic|Caml1999O038|magic}
++and cma_magic_number = {magic|Caml1999A038|magic}
++and cmx_magic_number = {magic|Caml1999Y038|magic}
++and cmxa_magic_number = {magic|Caml1999Z038|magic}
++and ast_impl_magic_number = {magic|Caml1999M038|magic}
++and ast_intf_magic_number = {magic|Caml1999N038|magic}
++and cmxs_magic_number = {magic|Caml1999D038|magic}
++and cmt_magic_number = {magic|Caml1999T038|magic}
++and linear_magic_number = {magic|Caml1999L038|magic}
+ 
+ let safe_string = true
+ let default_safe_string = true
+@@ -296,6 +296,7 @@
+   p_bool "native_dynlink" native_dynlink;
+   p_bool "naked_pointers" naked_pointers;
+   p_bool "with_codegen_invariants" with_codegen_invariants;
++  p_int "reserved_header_bits" reserved_header_bits;
+ 
+   p "exec_magic_number" exec_magic_number;
+   p "cmi_magic_number" cmi_magic_number;

@@ -1,0 +1,10 @@
+--- ocaml_505/parsing/ast_iterator.mli	2026-07-07 01:48:43.509116732 +0200
++++ ocaml_506_typing_recovery/parsing/ast_iterator.mli	2026-07-07 02:21:01.011671534 +0200
+@@ -62,6 +62,7 @@
+   package_type: iterator -> package_type -> unit;
+   pat: iterator -> pattern -> unit;
+   payload: iterator -> payload -> unit;
++  primitive_description: iterator -> primitive_description -> unit;
+   signature: iterator -> signature -> unit;
+   signature_item: iterator -> signature_item -> unit;
+   structure: iterator -> structure -> unit;

@@ -1,0 +1,11 @@
+--- ocaml_505/typing/tast_mapper.mli	2026-07-07 01:48:43.517538855 +0200
++++ ocaml_506_typing_recovery/typing/tast_mapper.mli	2026-07-07 02:21:16.990088535 +0200
+@@ -68,6 +68,8 @@
+     value_bindings: mapper -> (rec_flag * value_binding list) ->
+       (rec_flag * value_binding list);
+     value_description: mapper -> value_description -> value_description;
++    primitive_description:
++      mapper -> primitive_description -> primitive_description;
+     with_constraint: mapper -> with_constraint -> with_constraint;
+   }
+ 

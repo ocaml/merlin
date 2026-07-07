@@ -1,0 +1,13 @@
+--- ocaml_505/typing/oprint.ml	2026-07-07 01:48:43.515538857 +0200
++++ ocaml_506_typing_recovery/typing/oprint.ml	2026-07-07 02:21:16.960485208 +0200
+@@ -367,7 +367,9 @@
+             print_list print_row_field (fun ppf -> fprintf ppf "@;<1 -2>| ")
+               ppf fields
+         | Ovar_typ typ ->
+-           print_simple_out_type ppf typ
++            (* conflict with class argument after arrow at [ t ] *)
++            if closed && tags = None then pp_print_string ppf "| ";
++            print_simple_out_type ppf typ
+       in
+       fprintf ppf "@[<hov>[%s@[<hv>@[<hv>%a@]%a@]@ ]@]"
+         (if closed then if tags = None then " " else "< "
