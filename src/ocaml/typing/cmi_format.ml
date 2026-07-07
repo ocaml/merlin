@@ -20,6 +20,13 @@ type pers_flags =
   | Alerts of alerts
   | Opaque
 
+type error =
+  | Not_an_interface of filepath
+  | Wrong_version_interface of filepath * string
+  | Corrupted_interface of filepath
+
+exception Error of error
+
 (* these type abbreviations are not exported;
    they are used to provide consistency across
    input_value and output_value usage. *)
@@ -35,7 +42,7 @@ type cmi_infos = {
 }
 
 let input_cmi ic =
-  let (name, sign) = (input_value ic : header) in
+  let (name, sign) = (Compression.input_value ic : header) in
   let crcs = (input_value ic : crcs) in
   let flags = (input_value ic : flags) in
   {
@@ -46,7 +53,6 @@ let input_cmi ic =
     }
 
 let read_cmi filename =
-  let open Magic_numbers.Cmi in
   let ic = open_in_bin filename in
   try
     let buffer =
@@ -58,7 +64,9 @@ let read_cmi filename =
       if String.sub buffer 0 pre_len
           = String.sub Config.cmi_magic_number 0 pre_len then
       begin
-        raise (Error (Wrong_version_interface (filename, buffer)))
+        let msg =
+          if buffer < Config.cmi_magic_number then "an older" else "a newer" in
+        raise (Error (Wrong_version_interface (filename, msg)))
       end else begin
         raise(Error(Not_an_interface filename))
       end
@@ -74,17 +82,38 @@ let read_cmi filename =
       raise (Error e)
 
 let output_cmi filename oc cmi =
-  ignore (filename, oc, cmi); ""
-(*
 (* beware: the provided signature must have been substituted for saving *)
   output_string oc Config.cmi_magic_number;
-  Marshal.(to_channel oc ((cmi.cmi_name, cmi.cmi_sign) : header) [Compression]);
+  Compression.output_value oc ((cmi.cmi_name, cmi.cmi_sign) : header);
   flush oc;
-  let crc = Digest.file filename in
+  let crc = Digest.BLAKE128.file filename in
   let crcs = (cmi.cmi_name, Some crc) :: cmi.cmi_crcs in
   output_value oc (crcs : crcs);
   output_value oc (cmi.cmi_flags : flags);
   crc
-*)
 
-(* Error report moved to src/ocaml/typing/magic_numbers.ml *)
+(* Error report *)
+
+open Format_doc
+
+let report_error_doc ppf = function
+  | Not_an_interface filename ->
+      fprintf ppf "%a@ is not a compiled interface"
+        Location.Doc.quoted_filename filename
+  | Wrong_version_interface (filename, older_newer) ->
+      fprintf ppf
+        "%a@ is not a compiled interface for this version of OCaml.@.\
+         It seems to be for %s version of OCaml."
+        Location.Doc.quoted_filename filename older_newer
+  | Corrupted_interface filename ->
+      fprintf ppf "Corrupted compiled interface@ %a"
+        Location.Doc.quoted_filename filename
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error err -> Some (Location.error_of_printer_file report_error_doc err)
+      | _ -> None
+    )
+
+let report_error = Format_doc.compat report_error_doc
