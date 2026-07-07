@@ -2,9 +2,9 @@ open Std
 
 module Cmi = struct
   type error =
-    | Not_an_interface of string
-    | Wrong_version_interface of string * string
-    | Corrupted_interface of string
+    | Not_an_interface of filepath
+    | Wrong_version_interface of filepath * string
+    | Corrupted_interface of filepath
 
   exception Error of error
 

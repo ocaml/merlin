@@ -890,7 +890,11 @@ let parse_options errflag s =
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-7-9-27-29-30-32..42-44-45-48-50-60-66..70-74"
 let defaults_warn_error = "-a"
-let default_disabled_alerts = [ "unstable"; "unsynchronized_access" ]
+let default_disabled_alerts = [
+    "unstable";
+    "unsynchronized_access";
+    "todo";
+  ]
 
 
 let () = ignore @@ parse_options false defaults_w
@@ -1159,7 +1163,7 @@ let message = function
               Style.inline_code x
         | _::_ ->
             Fmt.dprintf
-              "variables %a appears in@ different@ places@ in@ \
+              "variables %a appear in@ different@ places@ in@ \
                different@ or-pattern@ alternatives."
               comma_inline_list vars
       in
