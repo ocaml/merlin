@@ -2,8 +2,8 @@
 
 D_MERLIN=../src/ocaml
 
-FROM=504
-TO=505
+FROM=505
+TO=506_typing_recovery
 
 D_FROM=ocaml_${FROM}
 D_TO=ocaml_${TO}
