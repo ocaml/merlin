@@ -6,6 +6,7 @@ let extract_toplevel_identifier item =
   | Typedtree.Tsig_modsubst { ms_id; _ } -> [ ms_id ]
   | Typedtree.Tsig_modtype { mtd_id; _ }
   | Typedtree.Tsig_modtypesubst { mtd_id; _ } -> [ mtd_id ]
+  | Typedtree.Tsig_primitive { prim_id; _ } -> [ prim_id ]
   | Typedtree.Tsig_module { md_id; _ } -> Option.to_list md_id
   | Typedtree.Tsig_recmodule mods ->
     List.filter_map ~f:(fun Typedtree.{ md_id; _ } -> md_id) mods
@@ -51,6 +52,7 @@ let location_of_declaration ~uid =
   function
   | Typedtree.Value vd -> Some vd.val_name
   | Value_binding vb -> of_value_binding vb
+  | Primitive pd -> Some pd.prim_name
   | Type td -> Some td.typ_name
   | Constructor cd -> Some cd.cd_name
   | Extension_constructor ec -> Some ec.ext_name

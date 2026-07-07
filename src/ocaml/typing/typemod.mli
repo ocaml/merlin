@@ -139,6 +139,13 @@ type error =
 exception Error_forward of Location.error
 exception Errors of Location.t * Typing_recovery.Error_set.t
 
+module Error : sig
+    type exn += private In_context of Location.t * Env.t * error
+
+  val log_or_raise : Location.t -> Env.t -> error -> unit
+  val log_and_raise : Location.t -> Env.t -> error -> 'a
+end
+
 val report_error: Env.t -> loc:Location.t -> error -> Location.error
 
 (* merlin *)

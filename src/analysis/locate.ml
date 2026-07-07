@@ -917,6 +917,7 @@ let doc_of_item_declaration decl =
     match decl with
     | Typedtree.Value { val_attributes; _ } -> val_attributes
     | Value_binding { vb_attributes; _ } -> vb_attributes
+    | Primitive { prim_attributes; _ } -> prim_attributes
     | Type { typ_attributes; _ } -> typ_attributes
     | Constructor { cd_attributes; _ } -> cd_attributes
     | Extension_constructor { ext_attributes; _ } -> ext_attributes

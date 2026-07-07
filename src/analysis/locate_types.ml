@@ -71,5 +71,5 @@ let rec create_type_tree ty : Type_tree.t =
           | Rpresent None | Rabsent -> None)
     in
     { data = Poly_variant; children = List.rev children }
-  | Tnil | Tvar _ | Tsubst _ | Tunivar _ | Tpackage _ | Tfield _ ->
+  | Tnil | Tvar _ | Tsubst _ | Tunivar _ | Tpackage _ | Tfield _ | Texpand _ ->
     { data = Other ty; children = [] }

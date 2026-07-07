@@ -473,7 +473,7 @@ module Gen = struct
       let rtyp = Ctype.full_expand ~may_forget_scope:true env typ in
       let constructed_from_type =
         match get_desc rtyp with
-        | Tlink _ | Tsubst _ | Tfunctor _ (* TODO *) -> assert false
+        | Tlink _ | Tsubst _ | Tfunctor _ | Texpand _ (* TODO *) -> assert false
         | Tpoly (texp, _) ->
           (* We are not going "deeper" so we don't call [exp_or_hole] here *)
           expression ~idents_table values_scope ~depth env texp
@@ -534,7 +534,7 @@ module Gen = struct
                 (Ptyp_of_type.core_type typ)
             in
             [ ast ]
-          with Typemod.Error _ ->
+          with Typemod.Error.In_context _ ->
             let name = Ident.name (Path.head pack_path) in
             raise (Modtype_not_found (Modtype, name))
           end
