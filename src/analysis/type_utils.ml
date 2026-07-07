@@ -279,7 +279,7 @@ exception Fallback
 let type_in_env ?(verbosity = Verbosity.default) ?keywords ~context env ppf expr
     =
   let print_expr expression =
-    let str, _sg, _shape, _ =
+    let str, _sg, _sn, _shape, _ =
       Env.with_cmis @@ fun () ->
       Typemod.type_toplevel_phrase env [ Ast_helper.Str.eval expression ]
     in
