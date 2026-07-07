@@ -11,6 +11,7 @@ let real_paths          = ref true
 let recursive_types     = ref false
 let strict_sequence     = ref false
 let applicative_functors = ref true
+let typing_recovery     = ref true
 
 let nopervasives        = ref false
 let strict_formats      = ref true
