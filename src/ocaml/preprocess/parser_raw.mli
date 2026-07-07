@@ -373,12 +373,13 @@ module MenhirInterpreter : sig
     | N_reversed_bar_llist_extension_constructor_declaration_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_extension_constructor_ : (Parsetree.extension_constructor list) nonterminal
     | N_reversed_bar_llist_constructor_declaration_ : (Parsetree.constructor_declaration list) nonterminal
+    | N_record_update_expr : (Parsetree.expression) nonterminal
     | N_record_expr_content : (Parsetree.expression option *
   (Longident.t Location.loc * Parsetree.expression) list) nonterminal
     | N_rec_flag : (Asttypes.rec_flag) nonterminal
     | N_private_virtual_flags : (Asttypes.private_flag * Asttypes.virtual_flag) nonterminal
     | N_private_flag : (Asttypes.private_flag) nonterminal
-    | N_primitive_declaration : (Parsetree.value_description * string Location.loc option) nonterminal
+    | N_primitive_description : (Parsetree.primitive_description * string Location.loc option) nonterminal
     | N_post_item_attribute : (Parsetree.attribute) nonterminal
     | N_possibly_poly_core_type_no_attr_ : (Parsetree.core_type) nonterminal
     | N_possibly_poly_core_type_ : (Parsetree.core_type) nonterminal
