@@ -41,6 +41,9 @@ env:
   # Irmin version and merl-an version need to be consistent for reproducibility (Irmin is used as the test code base to test `ocamlmerlin` on)
   IRMIN_VERSION: 3.10.0
 
+  # Pinned Merl-an version commit hash
+  MERL_AN_SHA: a61cb2b6c2f57baf00b88a74f67b332c459575ef
+  
   # The compiler version used on the respective branches. It also needs to form part of Irmin's build cache key.
   # Bump either of these whenever the compiler version is bumped on either of the two branches.
   merge_branch_COMPILER_VERSION: ocaml-base-compiler.5.5.0
@@ -164,11 +167,11 @@ jobs:
         id: merl-an-cache
         with:
           path: /usr/local/bin/merl-an
-          key: os${{ runner.os }}+arch${{ runner.arch }}+merl-an
+          key: os${{ runner.os }}+arch${{ runner.arch }}+merl-an-sha$MERL_AN_SHA
 
       - name: Install merl-an
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
-        run: opam pin -y merl-an https://github.com/tarides/merl-an.git
+        run: opam pin -y merl-an https://github.com/tarides/merl-an.git#$MERL_AN_SHA
 
       - name: Add merl-an to /usr/local/bin/
         if: steps.merl-an-cache.outputs.cache-hit != 'true'
