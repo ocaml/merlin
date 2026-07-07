@@ -36,7 +36,7 @@ val type_structure:
   Env.t
 val type_toplevel_phrase:
   Env.t -> Parsetree.structure ->
-  Typedtree.structure * Types.signature * (* Signature_names.t * *) Shape.t *
+  Typedtree.structure * Types.signature * Signature_names.t * Shape.t *
   Env.t
 val type_implementation:
   Unit_info.t -> Env.t -> Parsetree.structure ->
@@ -144,10 +144,3 @@ val report_error: Env.t -> loc:Location.t -> error -> Location.error
 (* merlin *)
 
 val normalize_signature : Types.signature -> unit
-
-val merlin_type_structure:
-  Env.t -> Parsetree.structure ->
-  Typedtree.structure * Types.signature * (* Signature_names.t * *) Env.t
-
-val merlin_transl_signature:
-  Env.t -> Parsetree.signature -> Typedtree.signature

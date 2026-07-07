@@ -2100,6 +2100,7 @@ and transl_recmodule_modtypes env sdecls =
 let rec nongen_modtype env = function
     Mty_ident _ -> None
   | Mty_alias _ -> None
+  | Mty_for_hole -> None
   | Mty_signature sg ->
       let env = Env.add_signature sg env in
       List.find_map (nongen_signature_item env) sg
@@ -2328,6 +2329,7 @@ and package_constraints env loc mty constrs =
     | Mty_signature sg ->
         Mty_signature (package_constraints_sig env loc sg constrs)
     | Mty_functor _ | Mty_alias _ -> assert false
+    | Mty_for_hole -> Mty_for_hole
     | Mty_ident p ->
         Error.log_and_raise loc env (Cannot_scrape_package_type p)
   end
@@ -2747,7 +2749,7 @@ and type_one_application ~ctx:(apply_loc,sfunct,md_f,args)
     end
   | Mty_alias path ->
       Error.log_and_raise app_view.f_loc env (Cannot_scrape_alias path)
-  | Mty_ident _ | Mty_signature _  ->
+  | Mty_ident _ | Mty_signature _ | Mty_for_hole ->
       let args = List.map simplify_app_summary args in
       let mty_f = md_f.mod_type in
       let app_name = match sfunct.pmod_desc with
@@ -3207,7 +3209,8 @@ let type_structure =
 
 let rec normalize_modtype = function
     Mty_ident _
-  | Mty_alias _ -> ()
+  | Mty_alias _
+  | Mty_for_hole -> ()
   | Mty_signature sg -> normalize_signature sg
   | Mty_functor(_param, body) -> normalize_modtype body
 
