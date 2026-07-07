@@ -60,7 +60,7 @@ type set = string list
 val keywords : set -> Lexer_raw.keywords
 
 (* Register extensions in typing environment *)
-val register : set -> Env.t -> Env.t
+val register : Unit_info.t -> set -> Env.t -> Env.t
 
 (* Known extensions *)
 val all : set
