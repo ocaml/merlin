@@ -59,6 +59,7 @@ type node =
   | Package_type of package_type
   | Row_field of row_field
   | Value_description of value_description
+  | Primitive_description of primitive_description
   | Type_declaration of type_declaration
   | Type_kind of type_kind
   | Type_extension of type_extension
@@ -132,6 +133,7 @@ let node_update_env env0 = function
   | Structure _
   | Signature _
   | Value_description _
+  | Primitive_description _
   | Value_binding _
   | Constructor_declaration _
   | Label_declaration _
@@ -161,6 +163,7 @@ let node_real_loc loc0 = function
   | Module_declaration { md_loc = loc }
   | Module_type_declaration { mtd_loc = loc }
   | Value_description { val_loc = loc }
+  | Primitive_description { prim_loc = loc }
   | Value_binding { vb_loc = loc }
   | Type_declaration { typ_loc = loc }
   | Label_declaration { ld_loc = loc }
@@ -489,7 +492,7 @@ and of_module_expr_desc = function
 and of_structure_item_desc = function
   | Tstr_eval (e, _) -> of_expression e
   | Tstr_value (_, vbs) -> list_fold of_value_binding vbs
-  | Tstr_primitive vd -> app (Value_description vd)
+  | Tstr_primitive pd -> app (Primitive_description pd)
   | Tstr_type (_, tds) -> list_fold (fun td -> app (Type_declaration td)) tds
   | Tstr_typext text -> app (Type_extension text)
   | Tstr_exception texn -> app (Extension_constructor texn.tyexn_constructor)
@@ -518,6 +521,7 @@ and of_signature_item_desc sig_env = function
   | Tsig_attribute _ -> id_fold
   | Tsig_open d -> app (Open_description (d, sig_env))
   | Tsig_value vd -> app (Value_description vd)
+  | Tsig_primitive pd -> app (Primitive_description pd)
   | Tsig_type (_, tds) -> list_fold (fun td -> app (Type_declaration td)) tds
   | Tsig_typext text -> app (Type_extension text)
   | Tsig_exception texn -> app (Extension_constructor texn.tyexn_constructor)

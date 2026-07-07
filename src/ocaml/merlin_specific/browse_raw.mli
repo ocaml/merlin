@@ -72,6 +72,7 @@ type node =
   | Package_type of package_type
   | Row_field of row_field
   | Value_description of value_description
+  | Primitive_description of primitive_description
   | Type_declaration of type_declaration
   | Type_kind of type_kind
   | Type_extension of type_extension
