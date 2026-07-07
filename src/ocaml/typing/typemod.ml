@@ -149,7 +149,7 @@ let initial_env ~loc ~initially_opened_module
     let lexbuf = Lexing.from_string m in
     let txt =
       Location.init lexbuf (Printf.sprintf "command line argument: -open %S" m);
-      Parse.simple_module_path lexbuf in
+      Ocaml_preprocess.Parse.simple_module_path lexbuf in
     try
       snd (type_open_ Override env loc {txt;loc})
     with
