@@ -114,7 +114,16 @@ module Stdlib : sig
 
 (** {2 Extensions to the List module} *)
   module List : sig
-    type 'a t = 'a list
+    include module type of struct include List end
+
+    val fold_left4
+      :  ('acc -> 'a0 -> 'a1 -> 'a2 -> 'a3 -> 'acc)
+      -> 'acc
+      -> 'a0 list
+      -> 'a1 list
+      -> 'a2 list
+      -> 'a3 list
+      -> 'acc
 
     val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
     (** The lexicographic order supported by the provided order.
@@ -586,6 +595,9 @@ val print_if :
 
 val print_see_manual : int list Format_doc.printer
 (** See manual section *)
+
+val print_manual_hint : int list Format_doc.printer
+(** Manual hint, reserved for hints that are essentially quoting the manual *)
 
 (** {1 Displaying configuration variables} *)
 

@@ -134,7 +134,6 @@ let idx__external_raise = curr in let curr = curr + 1 in
 let idx__memprof = curr in let curr = curr + 1 in
 let idx__memprof_young_trigger = curr in let curr = curr + 1 in
 let idx__extra_params = curr in let curr = curr + 1 in
-
   let _ = curr in
   function
 | Domain_young_limit -> idx__young_limit
@@ -203,4 +202,3 @@ let idx__extra_params = curr in let curr = curr + 1 in
 | Domain_memprof -> idx__memprof
 | Domain_memprof_young_trigger -> idx__memprof_young_trigger
 | Domain_extra_params -> idx__extra_params
-
